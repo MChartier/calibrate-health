@@ -4,6 +4,7 @@ import axios from 'axios';
 interface User {
     id: number;
     email: string;
+    weight_unit: 'lbs' | 'kg';
 }
 
 interface AuthContextType {
@@ -11,6 +12,7 @@ interface AuthContextType {
     login: (email: string, password: string) => Promise<void>;
     register: (email: string, password: string) => Promise<void>;
     logout: () => Promise<void>;
+    updateUser: (user: User) => void;
     isLoading: boolean;
 }
 
@@ -54,8 +56,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(null);
     };
 
+    const updateUser = (updatedUser: User) => {
+        setUser(updatedUser);
+    };
+
     return (
-        <AuthContext.Provider value={{ user, login, register, logout, isLoading }}>
+        <AuthContext.Provider value={{ user, login, register, logout, updateUser, isLoading }}>
             {children}
         </AuthContext.Provider>
     );

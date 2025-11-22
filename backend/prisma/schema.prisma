@@ -14,6 +14,7 @@ model User {
   id            Int       @id @default(autoincrement())
   email         String    @unique
   password_hash String
+  weight_unit   String    @default("lbs") // "lbs" or "kg"
   created_at    DateTime  @default(now())
   
   goals         Goal[]
@@ -24,21 +25,23 @@ model User {
 model Goal {
   id            Int       @id @default(autoincrement())
   user_id       Int
-  user          User      @relation(fields: [user_id], references: [id])
-  start_weight  Float
-  target_weight Float
+  start_weight  Int       // stored in grams
+  target_weight Int       // stored in grams
   target_date   DateTime?
   daily_deficit Int       @default(500)
   created_at    DateTime  @default(now())
+  
+  user          User      @relation(fields: [user_id], references: [id])
 }
 
 model BodyMetric {
   id               Int      @id @default(autoincrement())
   user_id          Int
-  user             User     @relation(fields: [user_id], references: [id])
-  date             DateTime @default(now())
-  weight           Float
+  date             DateTime
+  weight           Int      // stored in grams
   body_fat_percent Float?
+  
+  user             User     @relation(fields: [user_id], references: [id])
   
   @@unique([user_id, date])
 }

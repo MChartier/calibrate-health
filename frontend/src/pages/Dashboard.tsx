@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Typography, Box, Grid, Paper, TextField, Button, MenuItem, Select, FormControl, InputLabel } from '@mui/material';
 import axios from 'axios';
+import { useAuth } from '../context/AuthContext';
 
 const Dashboard: React.FC = () => {
+    const { user } = useAuth();
     const [weight, setWeight] = useState('');
     const [foodName, setFoodName] = useState('');
     const [calories, setCalories] = useState('');
@@ -54,7 +56,11 @@ const Dashboard: React.FC = () => {
     };
 
     const totalCalories = Array.isArray(logs) ? logs.reduce((acc, log) => acc + log.calories, 0) : 0;
-    const currentWeight = metrics.length > 0 ? metrics[0].weight : 'N/A';
+
+    // Backend now returns { value, unit } for weight
+    const currentWeightObj = metrics.length > 0 ? metrics[0].weight : null;
+    const displayWeight = currentWeightObj ? currentWeightObj.value : 'N/A';
+    const displayUnit = currentWeightObj ? currentWeightObj.unit : (user?.weight_unit || 'kg');
 
     console.log('Dashboard logs:', logs);
 
@@ -67,7 +73,7 @@ const Dashboard: React.FC = () => {
                     <Paper sx={{ p: 2 }}>
                         <Typography variant="h6">Summary Today</Typography>
                         <Typography>Calories Consumed: {totalCalories}</Typography>
-                        <Typography>Current Weight: {currentWeight} kg</Typography>
+                        <Typography>Current Weight: {displayWeight} {displayUnit}</Typography>
                     </Paper>
                 </Grid>
 
@@ -75,7 +81,7 @@ const Dashboard: React.FC = () => {
                     <Paper sx={{ p: 2 }}>
                         <Typography variant="h6">Track Weight</Typography>
                         <TextField
-                            label="Weight (kg)"
+                            label={`Weight (${user?.weight_unit || 'kg'})`}
                             type="number"
                             fullWidth
                             margin="normal"

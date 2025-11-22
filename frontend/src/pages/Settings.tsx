@@ -1,27 +1,46 @@
 import React, { useState, useEffect } from 'react';
-import { Typography, Box, TextField, Button, Alert } from '@mui/material';
+import { Typography, Box, TextField, Button, Alert, ToggleButton, ToggleButtonGroup } from '@mui/material';
 import axios from 'axios';
+import { useAuth } from '../context/AuthContext';
 
 const Settings: React.FC = () => {
+    const { user, updateUser } = useAuth();
     const [startWeight, setStartWeight] = useState('');
     const [targetWeight, setTargetWeight] = useState('');
     const [dailyDeficit, setDailyDeficit] = useState('500');
+    const [weightUnit, setWeightUnit] = useState<'lbs' | 'kg'>('lbs');
     const [message, setMessage] = useState('');
 
     useEffect(() => {
+        if (user?.weight_unit) {
+            setWeightUnit(user.weight_unit);
+        }
         fetchGoal();
-    }, []);
+    }, [user]);
 
     const fetchGoal = async () => {
         try {
             const res = await axios.get('/api/goals');
             if (res.data) {
-                setStartWeight(res.data.start_weight);
-                setTargetWeight(res.data.target_weight);
+                // Backend returns { value, unit } for weights
+                setStartWeight(res.data.start_weight?.value || '');
+                setTargetWeight(res.data.target_weight?.value || '');
                 setDailyDeficit(res.data.daily_deficit);
             }
         } catch (err) {
             console.error(err);
+        }
+    };
+
+    const handleUnitChange = async (event: React.MouseEvent<HTMLElement>, newUnit: 'lbs' | 'kg') => {
+        if (newUnit !== null) {
+            setWeightUnit(newUnit);
+            try {
+                const res = await axios.put('/auth/settings', { weight_unit: newUnit });
+                updateUser(res.data.user);
+            } catch (err) {
+                console.error('Failed to update unit preference');
+            }
         }
     };
 
@@ -43,8 +62,26 @@ const Settings: React.FC = () => {
         <Box component="form" onSubmit={handleSubmit} sx={{ maxWidth: 600, mx: 'auto', mt: 4 }}>
             <Typography variant="h4" gutterBottom>Settings & Goals</Typography>
             {message && <Alert severity="info" sx={{ mb: 2 }}>{message}</Alert>}
+
+            <Box sx={{ mb: 3 }}>
+                <Typography gutterBottom>Weight Unit</Typography>
+                <ToggleButtonGroup
+                    value={weightUnit}
+                    exclusive
+                    onChange={handleUnitChange}
+                    aria-label="weight unit"
+                >
+                    <ToggleButton value="lbs" aria-label="lbs">
+                        lbs
+                    </ToggleButton>
+                    <ToggleButton value="kg" aria-label="kg">
+                        kg
+                    </ToggleButton>
+                </ToggleButtonGroup>
+            </Box>
+
             <TextField
-                label="Start Weight (kg)"
+                label={`Start Weight (${weightUnit})`}
                 type="number"
                 fullWidth
                 margin="normal"
@@ -52,7 +89,7 @@ const Settings: React.FC = () => {
                 onChange={(e) => setStartWeight(e.target.value)}
             />
             <TextField
-                label="Target Weight (kg)"
+                label={`Target Weight (${weightUnit})`}
                 type="number"
                 fullWidth
                 margin="normal"
