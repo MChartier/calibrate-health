@@ -4,6 +4,8 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
+    "prisma:generate": "prisma generate",
+    "predev": "npm run prisma:generate",
     "dev": "nodemon src/index.ts"
   },
   "keywords": [],
