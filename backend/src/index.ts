@@ -1,74 +1,34 @@
 import express from 'express';
-import session from 'express-session';
-import passport from 'passport';
 import cors from 'cors';
-import { Strategy as LocalStrategy } from 'passport-local';
-import prisma from './config/database';
-import bcrypt from 'bcryptjs'; // We need to install bcryptjs
-
-const app = express();
-const PORT = process.env.PORT || 3000;
-
-// Middleware
-app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-app.use(session({
-    secret: process.env.SESSION_SECRET || 'secret',
-    resave: false,
-    saveUninitialized: false
-}));
-app.use(passport.initialize());
-app.use(passport.session());
-
-// Passport Config
-passport.use(new LocalStrategy({ usernameField: 'email' }, async (email, password, done) => {
-    try {
-        const user = await prisma.user.findUnique({ where: { email } });
-        if (!user) return done(null, false, { message: 'Incorrect email.' });
-
-        const isMatch = await bcrypt.compare(password, user.password_hash);
-        if (!isMatch) {
-            return done(null, false, { message: 'Incorrect password.' });
-        }
-
-        return done(null, user);
-    } catch (err) {
-        return done(err);
-    }
-}));
-
-passport.serializeUser((user: any, done) => {
-    done(null, user.id);
-});
-
-passport.deserializeUser(async (id: number, done) => {
-    try {
-        const user = await prisma.user.findUnique({ where: { id } });
-        done(null, user);
-    } catch (err) {
-        done(err);
-    }
-});
-
+import cookieParser from 'cookie-parser';
+import { config } from './config';
 import authRoutes from './routes/auth';
 import goalRoutes from './routes/goals';
-import metricRoutes from './routes/metrics';
+import weightRoutes from './routes/weights';
 import foodRoutes from './routes/food';
+import summaryRoutes from './routes/summary';
+import passport from './auth/passport';
 
-// Routes
+const app = express();
+
+app.use(cors({ origin: config.clientOrigin, credentials: true }));
+app.use(express.json());
+app.use(cookieParser());
+app.use(passport.initialize());
+
+app.get('/health', (_req, res) => res.json({ ok: true }));
+
 app.use('/auth', authRoutes);
-const apiRouter = express.Router();
-app.use('/api', apiRouter);
+app.use('/goals', goalRoutes);
+app.use('/weights', weightRoutes);
+app.use('/food', foodRoutes);
+app.use('/summary', summaryRoutes);
 
-apiRouter.use('/goals', goalRoutes);
-apiRouter.use('/metrics', metricRoutes);
-apiRouter.use('/food', foodRoutes);
-
-app.get('/', (req, res) => {
-    res.send('Fitness App API');
+app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+  console.error(err);
+  res.status(500).json({ message: 'Internal server error' });
 });
 
-app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+app.listen(config.port, () => {
+  console.log(`API running on port ${config.port}`);
 });

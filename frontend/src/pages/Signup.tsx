@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { Avatar, Box, Button, Card, CardContent, Stack, TextField, Typography } from '@mui/material';
+import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import { useAuth } from '../context/AuthContext';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
-import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 
-export default function Login() {
-  const { login } = useAuth();
+export default function Signup() {
+  const { signup } = useAuth();
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -17,10 +17,10 @@ export default function Login() {
     setLoading(true);
     setError('');
     try {
-      await login(email, password);
+      await signup(email, password);
       navigate('/');
     } catch (err: any) {
-      setError(err?.response?.data?.message || 'Login failed');
+      setError(err?.response?.data?.message || 'Signup failed');
     } finally {
       setLoading(false);
     }
@@ -33,20 +33,20 @@ export default function Login() {
           <Stack spacing={2} component="form" onSubmit={handleSubmit}>
             <Stack direction="row" spacing={1} alignItems="center">
               <Avatar sx={{ bgcolor: 'primary.main' }}>
-                <LockOutlinedIcon />
+                <PersonAddIcon />
               </Avatar>
-              <Typography variant="h5">Welcome back</Typography>
+              <Typography variant="h5">Create your account</Typography>
             </Stack>
             <TextField label="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required fullWidth />
             <TextField label="Password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required fullWidth />
             {error && <Typography color="error">{error}</Typography>}
             <Button type="submit" variant="contained" disabled={loading} size="large">
-              {loading ? 'Signing in...' : 'Sign in'}
+              {loading ? 'Signing up...' : 'Sign up'}
             </Button>
             <Typography variant="body2">
-              Need an account?{' '}
-              <RouterLink to="/signup" style={{ color: '#0f766e', textDecoration: 'none', fontWeight: 600 }}>
-                Sign up
+              Already have an account?{' '}
+              <RouterLink to="/login" style={{ color: '#0f766e', textDecoration: 'none', fontWeight: 600 }}>
+                Sign in
               </RouterLink>
             </Typography>
           </Stack>

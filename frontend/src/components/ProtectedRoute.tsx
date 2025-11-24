@@ -1,26 +1,21 @@
-import React from 'react';
+import { CircularProgress, Box } from '@mui/material';
 import { Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { CircularProgress, Box } from '@mui/material';
 
-const ProtectedRoute: React.FC = () => {
-    const { user, isLoading } = useAuth();
-    console.log('ProtectedRoute: user=', user, 'isLoading=', isLoading);
+export function ProtectedRoute() {
+  const { user, initializing } = useAuth();
 
-    if (isLoading) {
-        return (
-            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
-                <CircularProgress />
-            </Box>
-        );
-    }
+  if (initializing) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '60vh' }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
 
-    if (!user) {
-        console.log('Redirecting to login...');
-        return <Navigate to="/login" replace />;
-    }
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
 
-    return <Outlet />;
-};
-
-export default ProtectedRoute;
+  return <Outlet />;
+}

@@ -1,47 +1,39 @@
-import express from 'express';
-import prisma from '../config/database';
+import { Router } from 'express';
+import { z } from 'zod';
+import { prisma } from '../prisma';
+import { AuthenticatedRequest, requireAuth } from '../middleware/auth';
 
-const router = express.Router();
+const router = Router();
 
-const isAuthenticated = (req: express.Request, res: express.Response, next: express.NextFunction) => {
-    if (req.isAuthenticated()) {
-        return next();
-    }
-    res.status(401).json({ message: 'Not authenticated' });
-};
-
-router.use(isAuthenticated);
-
-router.get('/', async (req, res) => {
-    const user = req.user as any;
-    try {
-        const goal = await prisma.goal.findFirst({
-            where: { user_id: user.id },
-            orderBy: { created_at: 'desc' }
-        });
-        res.json(goal);
-    } catch (err) {
-        res.status(500).json({ message: 'Server error' });
-    }
+const goalSchema = z.object({
+  currentWeight: z.number().positive().optional(),
+  targetWeight: z.number().positive().optional(),
+  targetCalorieDeficit: z.union([z.literal(250), z.literal(500), z.literal(750), z.literal(1000)]).optional(),
 });
 
-router.post('/', async (req, res) => {
-    const user = req.user as any;
-    const { start_weight, target_weight, target_date, daily_deficit } = req.body;
-    try {
-        const goal = await prisma.goal.create({
-            data: {
-                user_id: user.id,
-                start_weight: parseFloat(start_weight),
-                target_weight: parseFloat(target_weight),
-                target_date: target_date ? new Date(target_date) : null,
-                daily_deficit: parseInt(daily_deficit)
-            }
-        });
-        res.json(goal);
-    } catch (err) {
-        res.status(500).json({ message: 'Server error' });
-    }
+router.get('/', requireAuth, async (req: AuthenticatedRequest, res) => {
+  const user = await prisma.user.findUnique({ where: { id: req.userId } });
+  if (!user) return res.status(404).json({ message: 'User not found' });
+  return res.json({
+    currentWeight: user.currentWeight,
+    targetWeight: user.targetWeight,
+    targetCalorieDeficit: user.targetCalorieDeficit,
+  });
+});
+
+router.put('/', requireAuth, async (req: AuthenticatedRequest, res) => {
+  const parsed = goalSchema.safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ message: 'Invalid goal payload' });
+  const data = parsed.data;
+  const user = await prisma.user.update({
+    where: { id: req.userId },
+    data,
+  });
+  return res.json({
+    currentWeight: user.currentWeight,
+    targetWeight: user.targetWeight,
+    targetCalorieDeficit: user.targetCalorieDeficit,
+  });
 });
 
 export default router;

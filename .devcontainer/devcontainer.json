@@ -14,5 +14,6 @@
     "features": {
         "ghcr.io/devcontainers/features/docker-in-docker:2": {}
     },
-    "remoteUser": "node"
+    "remoteUser": "node",
+    "forwardPorts": [5173, 4000, 5432]
 }

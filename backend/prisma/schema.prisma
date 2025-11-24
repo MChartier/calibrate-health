@@ -1,55 +1,54 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = "file:./dev.db"
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum MealCategory {
+  BREAKFAST
+  MORNING
+  LUNCH
+  AFTERNOON
+  DINNER
+  EVENING
 }
 
 model User {
-  id            Int       @id @default(autoincrement())
-  email         String    @unique
-  password_hash String
-  created_at    DateTime  @default(now())
-  
-  goals         Goal[]
-  metrics       BodyMetric[]
-  food_logs     FoodLog[]
+  id                    String       @id @default(cuid())
+  email                 String       @unique
+  passwordHash          String
+  currentWeight         Float?
+  targetWeight          Float?
+  targetCalorieDeficit  Int?
+  createdAt             DateTime     @default(now())
+
+  weights               DailyWeight[]
+  foodEntries           FoodEntry[]
 }
 
-model Goal {
-  id            Int       @id @default(autoincrement())
-  user_id       Int
-  user          User      @relation(fields: [user_id], references: [id])
-  start_weight  Float
-  target_weight Float
-  target_date   DateTime?
-  daily_deficit Int       @default(500)
-  created_at    DateTime  @default(now())
+model DailyWeight {
+  id       String   @id @default(cuid())
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId   String
+  date     DateTime
+  weight   Float
+  createdAt DateTime @default(now())
+
+  @@unique([userId, date])
 }
 
-model BodyMetric {
-  id               Int      @id @default(autoincrement())
-  user_id          Int
-  user             User     @relation(fields: [user_id], references: [id])
-  date             DateTime @default(now())
-  weight           Float
-  body_fat_percent Float?
-  
-  @@unique([user_id, date])
-}
+model FoodEntry {
+  id        String       @id @default(cuid())
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  date      DateTime
+  label     String
+  calories  Int
+  meal      MealCategory
+  createdAt DateTime @default(now())
 
-model FoodLog {
-  id          Int      @id @default(autoincrement())
-  user_id     Int
-  user        User     @relation(fields: [user_id], references: [id])
-  date        DateTime @default(now())
-  meal_period String   // Breakfast, Morning, Lunch, Afternoon, Dinner, Evening
-  name        String
-  calories    Int
-  created_at  DateTime @default(now())
+  @@index([userId, date])
 }

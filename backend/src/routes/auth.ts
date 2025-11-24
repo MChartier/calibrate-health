@@ -1,58 +1,94 @@
-import express from 'express';
-import passport from 'passport';
+import { Router } from 'express';
 import bcrypt from 'bcryptjs';
-import prisma from '../config/database';
+import passport from '../auth/passport';
+import { prisma } from '../prisma';
+import { signAccessToken, signRefreshToken, verifyRefreshToken } from '../auth/tokens';
+import { z } from 'zod';
+import { AuthenticatedRequest, requireAuth } from '../middleware/auth';
 
-const router = express.Router();
+const router = Router();
 
-router.post('/register', async (req, res) => {
-    const { email, password } = req.body;
-    try {
-        const existingUser = await prisma.user.findUnique({ where: { email } });
-        if (existingUser) {
-            return res.status(400).json({ message: 'User already exists' });
-        }
-
-        const salt = await bcrypt.genSalt(10);
-        const password_hash = await bcrypt.hash(password, salt);
-
-        const newUser = await prisma.user.create({
-            data: {
-                email,
-                password_hash
-            }
-        });
-
-        req.login(newUser, (err) => {
-            if (err) throw err;
-            res.json({ user: { id: newUser.id, email: newUser.email } });
-        });
-    } catch (err) {
-        res.status(500).json({ message: 'Server error' });
-    }
+const credentialsSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(8),
 });
 
-router.post('/login', passport.authenticate('local'), (req, res) => {
-    // If this function gets called, authentication was successful.
-    // `req.user` contains the authenticated user.
-    const user = req.user as any;
-    res.json({ user: { id: user.id, email: user.email } });
+function setAuthCookies(res: any, accessToken: string, refreshToken: string) {
+  res.cookie('accessToken', accessToken, {
+    httpOnly: true,
+    sameSite: 'lax',
+  });
+  res.cookie('refreshToken', refreshToken, {
+    httpOnly: true,
+    sameSite: 'lax',
+  });
+}
+
+router.post('/signup', async (req, res) => {
+  const parsed = credentialsSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({ message: 'Invalid input' });
+  }
+  const { email, password } = parsed.data;
+  const existing = await prisma.user.findUnique({ where: { email: email.toLowerCase() } });
+  if (existing) {
+    return res.status(409).json({ message: 'Email already in use' });
+  }
+  const passwordHash = await bcrypt.hash(password, 10);
+  const user = await prisma.user.create({ data: { email: email.toLowerCase(), passwordHash } });
+  const accessToken = signAccessToken({ userId: user.id });
+  const refreshToken = signRefreshToken({ userId: user.id });
+  setAuthCookies(res, accessToken, refreshToken);
+  return res.status(201).json({ user: { id: user.id, email: user.email } });
 });
 
-router.post('/logout', (req, res, next) => {
-    req.logout((err) => {
-        if (err) { return next(err); }
-        res.json({ message: 'Logged out' });
-    });
+router.post('/login', (req, res, next) => {
+  passport.authenticate('local', { session: false }, (err: any, user: any, info: any) => {
+    if (err) return next(err);
+    if (!user) return res.status(401).json({ message: info?.message || 'Unauthorized' });
+
+    const accessToken = signAccessToken({ userId: user.id });
+    const refreshToken = signRefreshToken({ userId: user.id });
+    setAuthCookies(res, accessToken, refreshToken);
+    return res.json({ user: { id: user.id, email: user.email } });
+  })(req, res, next);
 });
 
-router.get('/me', (req, res) => {
-    if (req.isAuthenticated()) {
-        const user = req.user as any;
-        res.json({ user: { id: user.id, email: user.email } });
-    } else {
-        res.status(401).json({ message: 'Not authenticated' });
-    }
+router.post('/refresh', async (req, res) => {
+  const token = (req.cookies?.refreshToken as string) || '';
+  if (!token) return res.status(401).json({ message: 'No refresh token' });
+  try {
+    const payload = verifyRefreshToken(token);
+    const user = await prisma.user.findUnique({ where: { id: payload.userId } });
+    if (!user) return res.status(401).json({ message: 'Invalid refresh token' });
+    const accessToken = signAccessToken({ userId: user.id });
+    const refreshToken = signRefreshToken({ userId: user.id });
+    setAuthCookies(res, accessToken, refreshToken);
+    return res.json({ user: { id: user.id, email: user.email } });
+  } catch (err) {
+    return res.status(401).json({ message: 'Invalid refresh token' });
+  }
+});
+
+router.post('/logout', (_req, res) => {
+  res.clearCookie('accessToken');
+  res.clearCookie('refreshToken');
+  res.json({ success: true });
+});
+
+router.get('/me', requireAuth, async (req: AuthenticatedRequest, res) => {
+  if (!req.userId) return res.status(401).json({ message: 'Unauthorized' });
+  const user = await prisma.user.findUnique({ where: { id: req.userId } });
+  if (!user) return res.status(404).json({ message: 'User not found' });
+  return res.json({
+    user: {
+      id: user.id,
+      email: user.email,
+      currentWeight: user.currentWeight,
+      targetWeight: user.targetWeight,
+      targetCalorieDeficit: user.targetCalorieDeficit,
+    },
+  });
 });
 
 export default router;
