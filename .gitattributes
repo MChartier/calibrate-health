@@ -1,0 +1,21 @@
+# Normalize all text files to LF in the repo and working tree.
+* text=auto eol=lf
+
+# Never perform line-ending conversion on binary files.
+*.db binary
+*.sqlite binary
+*.sqlite3 binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.zip binary
+*.gz binary
+*.tgz binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.eot binary
+*.otf binary
