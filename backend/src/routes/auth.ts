@@ -25,7 +25,7 @@ router.post('/register', async (req, res) => {
 
         req.login(newUser, (err) => {
             if (err) throw err;
-            res.json({ user: { id: newUser.id, email: newUser.email } });
+            res.json({ user: { id: newUser.id, email: newUser.email, weight_unit: newUser.weight_unit } });
         });
     } catch (err) {
         res.status(500).json({ message: 'Server error' });
@@ -36,7 +36,7 @@ router.post('/login', passport.authenticate('local'), (req, res) => {
     // If this function gets called, authentication was successful.
     // `req.user` contains the authenticated user.
     const user = req.user as any;
-    res.json({ user: { id: user.id, email: user.email } });
+    res.json({ user: { id: user.id, email: user.email, weight_unit: user.weight_unit } });
 });
 
 router.post('/logout', (req, res, next) => {
@@ -49,7 +49,7 @@ router.post('/logout', (req, res, next) => {
 router.get('/me', (req, res) => {
     if (req.isAuthenticated()) {
         const user = req.user as any;
-        res.json({ user: { id: user.id, email: user.email } });
+        res.json({ user: { id: user.id, email: user.email, weight_unit: user.weight_unit } });
     } else {
         res.status(401).json({ message: 'Not authenticated' });
     }

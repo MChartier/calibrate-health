@@ -10,11 +10,18 @@ datasource db {
   provider = "postgresql"
 }
 
+enum WeightUnit {
+  KG
+  LB
+}
+
 model User {
   id            Int       @id @default(autoincrement())
   email         String    @unique
   password_hash String
   created_at    DateTime  @default(now())
+
+  weight_unit   WeightUnit @default(KG)
   
   goals         Goal[]
   metrics       BodyMetric[]
@@ -25,8 +32,8 @@ model Goal {
   id            Int       @id @default(autoincrement())
   user_id       Int
   user          User      @relation(fields: [user_id], references: [id])
-  start_weight  Float
-  target_weight Float
+  start_weight_grams  Int
+  target_weight_grams Int
   target_date   DateTime?
   daily_deficit Int       @default(500)
   created_at    DateTime  @default(now())
@@ -37,7 +44,7 @@ model BodyMetric {
   user_id          Int
   user             User     @relation(fields: [user_id], references: [id])
   date             DateTime @default(now())
-  weight           Float
+  weight_grams     Int
   body_fat_percent Float?
   
   @@unique([user_id, date])

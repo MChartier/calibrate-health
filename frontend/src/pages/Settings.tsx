@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { Typography, Box, TextField, Button, Alert } from '@mui/material';
+import { Typography, Box, TextField, Button, Alert, FormControl, InputLabel, Select, MenuItem } from '@mui/material';
 import axios from 'axios';
+import { useAuth } from '../context/AuthContext';
 
 const Settings: React.FC = () => {
+    const { user, updateWeightUnit } = useAuth();
     const [startWeight, setStartWeight] = useState('');
     const [targetWeight, setTargetWeight] = useState('');
     const [dailyDeficit, setDailyDeficit] = useState('500');
     const [message, setMessage] = useState('');
+    const weightUnitLabel = user?.weight_unit === 'LB' ? 'lb' : 'kg';
 
     useEffect(() => {
         fetchGoal();
@@ -16,12 +19,22 @@ const Settings: React.FC = () => {
         try {
             const res = await axios.get('/api/goals');
             if (res.data) {
-                setStartWeight(res.data.start_weight);
-                setTargetWeight(res.data.target_weight);
-                setDailyDeficit(res.data.daily_deficit);
+                setStartWeight(res.data.start_weight?.toString() ?? '');
+                setTargetWeight(res.data.target_weight?.toString() ?? '');
+                setDailyDeficit(res.data.daily_deficit?.toString() ?? '500');
             }
         } catch (err) {
             console.error(err);
+        }
+    };
+
+    const handleWeightUnitChange = async (e: any) => {
+        try {
+            await updateWeightUnit(e.target.value);
+            setMessage('Preferences updated');
+            fetchGoal();
+        } catch (err) {
+            setMessage('Failed to update preferences');
         }
     };
 
@@ -43,21 +56,34 @@ const Settings: React.FC = () => {
         <Box component="form" onSubmit={handleSubmit} sx={{ maxWidth: 600, mx: 'auto', mt: 4 }}>
             <Typography variant="h4" gutterBottom>Settings & Goals</Typography>
             {message && <Alert severity="info" sx={{ mb: 2 }}>{message}</Alert>}
+            <FormControl fullWidth margin="normal">
+                <InputLabel>Weight Unit</InputLabel>
+                <Select
+                    value={user?.weight_unit ?? 'KG'}
+                    label="Weight Unit"
+                    onChange={handleWeightUnitChange}
+                >
+                    <MenuItem value="KG">Kilograms (kg)</MenuItem>
+                    <MenuItem value="LB">Pounds (lb)</MenuItem>
+                </Select>
+            </FormControl>
             <TextField
-                label="Start Weight (kg)"
+                label={`Start Weight (${weightUnitLabel})`}
                 type="number"
                 fullWidth
                 margin="normal"
                 value={startWeight}
                 onChange={(e) => setStartWeight(e.target.value)}
+                inputProps={{ step: 0.1 }}
             />
             <TextField
-                label="Target Weight (kg)"
+                label={`Target Weight (${weightUnitLabel})`}
                 type="number"
                 fullWidth
                 margin="normal"
                 value={targetWeight}
                 onChange={(e) => setTargetWeight(e.target.value)}
+                inputProps={{ step: 0.1 }}
             />
             <TextField
                 label="Daily Calorie Deficit"

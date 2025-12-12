@@ -57,6 +57,7 @@ import authRoutes from './routes/auth';
 import goalRoutes from './routes/goals';
 import metricRoutes from './routes/metrics';
 import foodRoutes from './routes/food';
+import userRoutes from './routes/user';
 
 // Routes
 app.use('/auth', authRoutes);
@@ -66,6 +67,7 @@ app.use('/api', apiRouter);
 apiRouter.use('/goals', goalRoutes);
 apiRouter.use('/metrics', metricRoutes);
 apiRouter.use('/food', foodRoutes);
+apiRouter.use('/user', userRoutes);
 
 app.get('/', (req, res) => {
     res.send('Fitness App API');

@@ -1,14 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { Typography, Box, Grid, Paper, TextField, Button, MenuItem, Select, FormControl, InputLabel } from '@mui/material';
 import axios from 'axios';
+import { useAuth } from '../context/AuthContext';
 
 const Dashboard: React.FC = () => {
+    const { user } = useAuth();
     const [weight, setWeight] = useState('');
     const [foodName, setFoodName] = useState('');
     const [calories, setCalories] = useState('');
     const [mealPeriod, setMealPeriod] = useState('Breakfast');
     const [logs, setLogs] = useState<any[]>([]);
     const [metrics, setMetrics] = useState<any[]>([]);
+    const weightUnitLabel = user?.weight_unit === 'LB' ? 'lb' : 'kg';
 
     useEffect(() => {
         fetchData();
@@ -67,7 +70,9 @@ const Dashboard: React.FC = () => {
                     <Paper sx={{ p: 2 }}>
                         <Typography variant="h6">Summary Today</Typography>
                         <Typography>Calories Consumed: {totalCalories}</Typography>
-                        <Typography>Current Weight: {currentWeight} kg</Typography>
+                        <Typography>
+                            Current Weight: {typeof currentWeight === 'number' ? `${currentWeight.toFixed(1)} ${weightUnitLabel}` : 'N/A'}
+                        </Typography>
                     </Paper>
                 </Grid>
 
@@ -75,12 +80,13 @@ const Dashboard: React.FC = () => {
                     <Paper sx={{ p: 2 }}>
                         <Typography variant="h6">Track Weight</Typography>
                         <TextField
-                            label="Weight (kg)"
+                            label={`Weight (${weightUnitLabel})`}
                             type="number"
                             fullWidth
                             margin="normal"
                             value={weight}
                             onChange={(e) => setWeight(e.target.value)}
+                            inputProps={{ step: 0.1 }}
                         />
                         <Button variant="contained" onClick={handleAddWeight}>Add Weight</Button>
                     </Paper>

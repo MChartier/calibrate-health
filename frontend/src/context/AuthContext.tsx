@@ -4,6 +4,7 @@ import axios from 'axios';
 interface User {
     id: number;
     email: string;
+    weight_unit: 'KG' | 'LB';
 }
 
 interface AuthContextType {
@@ -11,6 +12,7 @@ interface AuthContextType {
     login: (email: string, password: string) => Promise<void>;
     register: (email: string, password: string) => Promise<void>;
     logout: () => Promise<void>;
+    updateWeightUnit: (weight_unit: User['weight_unit']) => Promise<void>;
     isLoading: boolean;
 }
 
@@ -54,8 +56,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(null);
     };
 
+    const updateWeightUnit = async (weight_unit: User['weight_unit']) => {
+        const res = await axios.patch('/api/user/preferences', { weight_unit });
+        setUser(res.data.user);
+    };
+
     return (
-        <AuthContext.Provider value={{ user, login, register, logout, isLoading }}>
+        <AuthContext.Provider value={{ user, login, register, logout, updateWeightUnit, isLoading }}>
             {children}
         </AuthContext.Provider>
     );
