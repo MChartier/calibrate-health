@@ -57,4 +57,4 @@ cal-io is a responsive calorie tracker (desktop + mobile web) for users who want
 - No advanced body composition modeling (beyond optional fields like body fat % if present).
 
 ## Current Repo Notes (Keep Aligned With Goals)
-- The repo currently includes Prisma schema files under `backend/prisma/`. Ensure the database/provider aligns with the Postgres requirement (avoid drifting between SQLite for dev and Postgres for deploy).
+- Prisma is configured for Postgres (Prisma schema + migrations live under `backend/prisma/`).

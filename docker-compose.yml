@@ -19,7 +19,7 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     environment:
-      DATABASE_URL: postgres://user:password@postgres:5432/fitness_app
+      DATABASE_URL: postgresql://user:password@postgres:5432/fitness_app?schema=public
       PORT: 3000
       SESSION_SECRET: development_secret_key
     ports:
