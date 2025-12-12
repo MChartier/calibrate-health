@@ -7,5 +7,5 @@
   "forwardPorts": [3000, 5173],
 
   "onCreateCommand": "npm install -g @openai/codex",
-  "postCreateCommand": "npm run setup"
+  "postCreateCommand": "npm run setup:devcontainer"
 }
