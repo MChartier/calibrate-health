@@ -47,7 +47,7 @@ cal-io is a responsive calorie tracker (desktop + mobile web) for users who want
 
 ## Self-Hosting and Dev Workflow Requirements
 - Self-hosting: docker-compose with Postgres as a separate service.
-- Local development (devcontainer): run services directly (e.g., `npm run dev` in `backend/` and `frontend/`); avoid docker-in-docker workflows for development.
+- Local development (devcontainer): run services directly (e.g., `npm run dev` at repo root, or `npm run dev` in `backend/` and `frontend/`); avoid docker-in-docker workflows for development.
 
 ## Non-Goals (for MVP)
 - No external food database/search integration (manual entry only).

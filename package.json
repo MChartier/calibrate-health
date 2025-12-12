@@ -4,6 +4,13 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "dev": "node scripts/dev.mjs",
+    "dev:backend": "npm --prefix backend run dev",
+    "dev:frontend": "npm --prefix frontend run dev",
+    "prisma:generate": "npm --prefix backend run prisma:generate",
+    "setup": "npm --prefix backend install && npm run prisma:generate && npm --prefix frontend install",
+    "build": "npm --prefix frontend run build",
+    "lint": "npm --prefix frontend run lint",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
