@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { Typography, Box, TextField, Button, Alert } from '@mui/material';
+import { Typography, Box, TextField, Button, Alert, Link } from '@mui/material';
 import { useAuth } from '../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { Link as RouterLink, useNavigate } from 'react-router-dom';
 
 const Login: React.FC = () => {
     const [email, setEmail] = useState('');
@@ -40,6 +40,12 @@ const Login: React.FC = () => {
                 onChange={(e) => setPassword(e.target.value)}
             />
             <Button type="submit" variant="contained" fullWidth sx={{ mt: 2 }}>Login</Button>
+            <Typography variant="body2" sx={{ mt: 2 }}>
+                Don&apos;t have an account?{' '}
+                <Link component={RouterLink} to="/register">
+                    Register
+                </Link>
+            </Typography>
         </Box>
     );
 };
