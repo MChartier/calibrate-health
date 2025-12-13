@@ -117,7 +117,7 @@ const FoodLogMeals: React.FC<{ logs: FoodLogEntry[] }> = ({ logs }) => {
                         disableGutters
                     >
                         <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                            <Typography sx={{ flexGrow: 1 }}>{meal.label}</Typography>
+                            <Typography sx={{ flexGrow: 1, fontWeight: 'bold' }}>{meal.label}</Typography>
                             <Typography color="text.secondary">{total} kcal</Typography>
                         </AccordionSummary>
                         <AccordionDetails>
