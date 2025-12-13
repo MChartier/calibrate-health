@@ -5,15 +5,17 @@ import { useAuth } from '../context/AuthContext';
 
 type Props = {
     onSuccess?: () => void;
+    date?: string;
 };
 
-const WeightEntryForm: React.FC<Props> = ({ onSuccess }) => {
+const WeightEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
     const { user } = useAuth();
     const [weight, setWeight] = useState('');
     const weightUnitLabel = user?.weight_unit === 'LB' ? 'lb' : 'kg';
 
     const handleAddWeight = async () => {
-        await axios.post('/api/metrics', { weight });
+        const entryDate = date ? `${date}T12:00:00` : undefined;
+        await axios.post('/api/metrics', { weight, date: entryDate });
         setWeight('');
         onSuccess?.();
     };
@@ -36,4 +38,3 @@ const WeightEntryForm: React.FC<Props> = ({ onSuccess }) => {
 };
 
 export default WeightEntryForm;
-

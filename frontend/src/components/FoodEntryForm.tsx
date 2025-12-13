@@ -4,19 +4,21 @@ import axios from 'axios';
 
 type Props = {
     onSuccess?: () => void;
+    date?: string;
 };
 
-const FoodEntryForm: React.FC<Props> = ({ onSuccess }) => {
+const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
     const [foodName, setFoodName] = useState('');
     const [calories, setCalories] = useState('');
     const [mealPeriod, setMealPeriod] = useState('Breakfast');
 
     const handleAddFood = async () => {
+        const entryDate = date ? `${date}T12:00:00` : new Date();
         await axios.post('/api/food', {
             name: foodName,
             calories,
             meal_period: mealPeriod,
-            date: new Date()
+            date: entryDate
         });
         setFoodName('');
         setCalories('');
