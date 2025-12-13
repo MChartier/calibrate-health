@@ -1,6 +1,7 @@
 import express from 'express';
 import prisma from '../config/database';
 import { gramsToWeight, parseWeightToGrams, type WeightUnit } from '../utils/weight';
+import { getUtcTodayDateOnly, normalizeToUtcDateOnly } from '../utils/date';
 
 const router = express.Router();
 
@@ -16,9 +17,22 @@ router.use(isAuthenticated);
 router.get('/', async (req, res) => {
     const user = req.user as any;
     const weightUnit = (user.weight_unit ?? 'KG') as WeightUnit;
+    const start = typeof req.query.start === 'string' ? req.query.start : undefined;
+    const end = typeof req.query.end === 'string' ? req.query.end : undefined;
     try {
+        const whereClause: any = { user_id: user.id };
+        if (start || end) {
+            whereClause.date = {};
+            try {
+                if (start) whereClause.date.gte = normalizeToUtcDateOnly(start);
+                if (end) whereClause.date.lte = normalizeToUtcDateOnly(end);
+            } catch {
+                return res.status(400).json({ message: 'Invalid date range' });
+            }
+        }
+
         const metrics = await prisma.bodyMetric.findMany({
-            where: { user_id: user.id },
+            where: whereClause,
             orderBy: { date: 'desc' }
         });
         res.json(
@@ -37,20 +51,66 @@ router.post('/', async (req, res) => {
     const { weight, body_fat_percent, date } = req.body;
     const weightUnit = (user.weight_unit ?? 'KG') as WeightUnit;
     try {
-        const weight_grams = parseWeightToGrams(weight, weightUnit);
-        const metric = await prisma.bodyMetric.create({
-            data: {
-                user_id: user.id,
-                weight_grams,
-                body_fat_percent: body_fat_percent ? parseFloat(body_fat_percent) : null,
-                date: date ? new Date(date) : new Date()
+        let metricDate: Date;
+        try {
+            metricDate = date ? normalizeToUtcDateOnly(date) : getUtcTodayDateOnly();
+        } catch {
+            return res.status(400).json({ message: 'Invalid date' });
+        }
+
+        const updateData: { weight_grams?: number; body_fat_percent?: number | null } = {};
+
+        if (weight !== undefined && weight !== '') {
+            try {
+                updateData.weight_grams = parseWeightToGrams(weight, weightUnit);
+            } catch {
+                return res.status(400).json({ message: 'Invalid weight' });
             }
-        });
-        const { weight_grams: createdWeightGrams, ...createdMetric } = metric;
-        res.json({
-            ...createdMetric,
-            weight: gramsToWeight(createdWeightGrams, weightUnit)
-        });
+        }
+
+        if (body_fat_percent !== undefined) {
+            if (body_fat_percent === '' || body_fat_percent === null) {
+                updateData.body_fat_percent = null;
+            } else {
+                const parsedBodyFat = parseFloat(body_fat_percent);
+                if (!Number.isFinite(parsedBodyFat)) {
+                    return res.status(400).json({ message: 'Invalid body_fat_percent' });
+                }
+                updateData.body_fat_percent = parsedBodyFat;
+            }
+        }
+
+        if (Object.keys(updateData).length === 0) {
+            return res.status(400).json({ message: 'No fields to update' });
+        }
+
+        const whereUnique = { user_id_date: { user_id: user.id, date: metricDate } } as const;
+
+        let metric;
+        if (updateData.weight_grams === undefined) {
+            const existing = await prisma.bodyMetric.findUnique({ where: whereUnique });
+            if (!existing) {
+                return res.status(400).json({ message: 'Weight is required for a new day' });
+            }
+            metric = await prisma.bodyMetric.update({
+                where: { id: existing.id },
+                data: updateData
+            });
+        } else {
+            metric = await prisma.bodyMetric.upsert({
+                where: whereUnique,
+                update: updateData,
+                create: {
+                    user_id: user.id,
+                    date: metricDate,
+                    weight_grams: updateData.weight_grams,
+                    body_fat_percent: updateData.body_fat_percent ?? null
+                }
+            });
+        }
+
+        const { weight_grams: savedWeightGrams, ...savedMetric } = metric;
+        res.json({ ...savedMetric, weight: gramsToWeight(savedWeightGrams, weightUnit) });
     } catch (err) {
         res.status(500).json({ message: 'Server error' });
     }

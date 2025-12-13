@@ -8,13 +8,20 @@ type Props = {
     date?: string;
 };
 
+function getLocalDateString(date: Date): string {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
+
 const WeightEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
     const { user } = useAuth();
     const [weight, setWeight] = useState('');
     const weightUnitLabel = user?.weight_unit === 'LB' ? 'lb' : 'kg';
 
     const handleAddWeight = async () => {
-        const entryDate = date ? `${date}T12:00:00` : undefined;
+        const entryDate = date ?? getLocalDateString(new Date());
         await axios.post('/api/metrics', { weight, date: entryDate });
         setWeight('');
         onSuccess?.();

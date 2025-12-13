@@ -17,6 +17,7 @@ import { Outlet, Link as RouterLink, useLocation, useNavigate } from 'react-rout
 import MenuIcon from '@mui/icons-material/Menu';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import ListAltIcon from '@mui/icons-material/ListAlt';
+import ShowChartIcon from '@mui/icons-material/ShowChart';
 import SettingsIcon from '@mui/icons-material/Settings';
 import LogoutIcon from '@mui/icons-material/Logout';
 import { useTheme } from '@mui/material/styles';
@@ -80,6 +81,16 @@ const Layout: React.FC = () => {
                                 <ListAltIcon />
                             </ListItemIcon>
                             <ListItemText primary="Log" />
+                        </ListItemButton>
+
+                        <ListItemButton
+                            selected={location.pathname.startsWith('/history')}
+                            onClick={() => handleNavigate('/history')}
+                        >
+                            <ListItemIcon>
+                                <ShowChartIcon />
+                            </ListItemIcon>
+                            <ListItemText primary="History" />
                         </ListItemButton>
                     </List>
                 </Box>

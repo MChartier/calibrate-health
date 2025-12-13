@@ -4,6 +4,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import Log from './pages/Log';
+import History from './pages/History';
 import Settings from './pages/Settings';
 
 import ProtectedRoute from './components/ProtectedRoute';
@@ -19,6 +20,7 @@ function App() {
         <Route element={<ProtectedRoute />}>
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="log" element={<Log />} />
+          <Route path="history" element={<History />} />
           <Route path="settings" element={<Settings />} />
         </Route>
       </Route>

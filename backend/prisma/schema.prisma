@@ -43,7 +43,7 @@ model BodyMetric {
   id               Int      @id @default(autoincrement())
   user_id          Int
   user             User     @relation(fields: [user_id], references: [id])
-  date             DateTime @default(now())
+  date             DateTime @default(dbgenerated("CURRENT_DATE")) @db.Date
   weight_grams     Int
   body_fat_percent Float?
   
