@@ -33,8 +33,12 @@ class OpenFoodFactsProvider implements FoodDataProvider {
 
         const pageSize = Math.min(request.pageSize ?? 10, 50);
         const page = request.page ?? 1;
-        const url = `${this.baseUrl}/api/v2/search?search_terms=${encodeURIComponent(query)}&page_size=${pageSize}&page=${page}&fields=product_name,brands,code,nutriments,serving_size,serving_quantity,product_quantity,quantity`;
-        const response = await fetch(url);
+        const url = `${this.baseUrl}/cgi/search.pl?search_terms=${encodeURIComponent(query)}&search_simple=1&json=1&action=process&page_size=${pageSize}&page=${page}&sort_by=unique_scans_n&fields=product_name,brands,code,nutriments,serving_size,serving_quantity,product_quantity,quantity,lc`;
+        const response = await fetch(url, {
+            headers: {
+                'User-Agent': 'cal-io/food-search'
+            }
+        });
 
         if (!response.ok) {
             const message = await response.text();
@@ -46,6 +50,7 @@ class OpenFoodFactsProvider implements FoodDataProvider {
             ? data.products
                   .map((product: OpenFoodFactsProduct) => this.normalizeProduct(product, request.quantityInGrams))
                   .filter((item: NormalizedFoodItem | null): item is NormalizedFoodItem => Boolean(item))
+                  .filter((item: NormalizedFoodItem) => item.description.toLowerCase().includes(query.toLowerCase()))
             : [];
 
         return { items };
