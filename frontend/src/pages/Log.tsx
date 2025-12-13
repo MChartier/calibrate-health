@@ -6,13 +6,15 @@ import {
     DialogActions,
     DialogContent,
     DialogTitle,
-    Fab,
     Paper,
-    Stack,
     Typography,
     Button
 } from '@mui/material';
+import SpeedDial from '@mui/material/SpeedDial';
+import SpeedDialAction from '@mui/material/SpeedDialAction';
 import AddIcon from '@mui/icons-material/Add';
+import RestaurantIcon from '@mui/icons-material/Restaurant';
+import MonitorWeightIcon from '@mui/icons-material/MonitorWeight';
 import axios from 'axios';
 import WeightEntryForm from '../components/WeightEntryForm';
 import FoodEntryForm from '../components/FoodEntryForm';
@@ -29,7 +31,8 @@ function getLocalDateString(date: Date): string {
 const Log: React.FC = () => {
     const today = getLocalDateString(new Date());
     const [selectedDate, setSelectedDate] = useState(today);
-    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isFoodDialogOpen, setIsFoodDialogOpen] = useState(false);
+    const [isWeightDialogOpen, setIsWeightDialogOpen] = useState(false);
 
     type FoodLogEntry = {
         id: number;
@@ -46,7 +49,8 @@ const Log: React.FC = () => {
         }
     });
 
-    const handleCloseModal = () => setIsModalOpen(false);
+    const handleCloseFoodDialog = () => setIsFoodDialogOpen(false);
+    const handleCloseWeightDialog = () => setIsWeightDialogOpen(false);
 
     return (
         <Box sx={{ mt: 1 }}>
@@ -76,36 +80,58 @@ const Log: React.FC = () => {
                 </Box>
             </Paper>
 
-            <Fab
-                color="primary"
-                aria-label="Add"
-                onClick={() => setIsModalOpen(true)}
+            <SpeedDial
+                ariaLabel="Add entry"
+                icon={<AddIcon />}
                 sx={{ position: 'fixed', right: 24, bottom: 24 }}
             >
-                <AddIcon />
-            </Fab>
+                <SpeedDialAction
+                    key="add-food"
+                    icon={<RestaurantIcon />}
+                    tooltipTitle="Add Food"
+                    onClick={() => setIsFoodDialogOpen(true)}
+                />
+                <SpeedDialAction
+                    key="add-weight"
+                    icon={<MonitorWeightIcon />}
+                    tooltipTitle="Add Weight"
+                    onClick={() => setIsWeightDialogOpen(true)}
+                />
+            </SpeedDial>
 
-            <Dialog open={isModalOpen} onClose={handleCloseModal} fullWidth maxWidth="sm">
-                <DialogTitle>Add</DialogTitle>
+            <Dialog open={isFoodDialogOpen} onClose={handleCloseFoodDialog} fullWidth maxWidth="sm">
+                <DialogTitle>Track Food</DialogTitle>
                 <DialogContent>
-                    <Stack spacing={3} sx={{ mt: 1 }}>
-                        <Paper sx={{ p: 2 }}>
-                            <Typography variant="h6" gutterBottom>
-                                Track Weight
-                            </Typography>
-                            <WeightEntryForm date={selectedDate} onSuccess={() => void foodQuery.refetch()} />
-                        </Paper>
-
-                        <Paper sx={{ p: 2 }}>
-                            <Typography variant="h6" gutterBottom>
-                                Track Food
-                            </Typography>
-                            <FoodEntryForm date={selectedDate} onSuccess={() => void foodQuery.refetch()} />
-                        </Paper>
-                    </Stack>
+                    <Paper sx={{ p: 2, mt: 1 }}>
+                        <FoodEntryForm
+                            date={selectedDate}
+                            onSuccess={() => {
+                                void foodQuery.refetch();
+                                handleCloseFoodDialog();
+                            }}
+                        />
+                    </Paper>
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={handleCloseModal}>Close</Button>
+                    <Button onClick={handleCloseFoodDialog}>Close</Button>
+                </DialogActions>
+            </Dialog>
+
+            <Dialog open={isWeightDialogOpen} onClose={handleCloseWeightDialog} fullWidth maxWidth="sm">
+                <DialogTitle>Track Weight</DialogTitle>
+                <DialogContent>
+                    <Paper sx={{ p: 2, mt: 1 }}>
+                        <WeightEntryForm
+                            date={selectedDate}
+                            onSuccess={() => {
+                                void foodQuery.refetch();
+                                handleCloseWeightDialog();
+                            }}
+                        />
+                    </Paper>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={handleCloseWeightDialog}>Close</Button>
                 </DialogActions>
             </Dialog>
         </Box>
