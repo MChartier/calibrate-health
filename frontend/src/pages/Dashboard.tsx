@@ -1,14 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { Typography, Box, Grid, Paper, TextField, Button, MenuItem, Select, FormControl, InputLabel } from '@mui/material';
+import { Typography, Box, Grid, Paper } from '@mui/material';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
+import WeightEntryForm from '../components/WeightEntryForm';
+import FoodEntryForm from '../components/FoodEntryForm';
+import FoodLogMeals from '../components/FoodLogMeals';
 
 const Dashboard: React.FC = () => {
     const { user } = useAuth();
-    const [weight, setWeight] = useState('');
-    const [foodName, setFoodName] = useState('');
-    const [calories, setCalories] = useState('');
-    const [mealPeriod, setMealPeriod] = useState('Breakfast');
     const [logs, setLogs] = useState<any[]>([]);
     const [metrics, setMetrics] = useState<any[]>([]);
     const weightUnitLabel = user?.weight_unit === 'LB' ? 'lb' : 'kg';
@@ -25,32 +24,6 @@ const Dashboard: React.FC = () => {
             ]);
             setLogs(foodRes.data);
             setMetrics(metricRes.data);
-        } catch (err) {
-            console.error(err);
-        }
-    };
-
-    const handleAddWeight = async () => {
-        try {
-            await axios.post('/api/metrics', { weight });
-            setWeight('');
-            fetchData();
-        } catch (err) {
-            console.error(err);
-        }
-    };
-
-    const handleAddFood = async () => {
-        try {
-            await axios.post('/api/food', {
-                name: foodName,
-                calories,
-                meal_period: mealPeriod,
-                date: new Date()
-            });
-            setFoodName('');
-            setCalories('');
-            fetchData();
         } catch (err) {
             console.error(err);
         }
@@ -79,65 +52,27 @@ const Dashboard: React.FC = () => {
                 <Grid size={{ xs: 12, md: 4 }}>
                     <Paper sx={{ p: 2 }}>
                         <Typography variant="h6">Track Weight</Typography>
-                        <TextField
-                            label={`Weight (${weightUnitLabel})`}
-                            type="number"
-                            fullWidth
-                            margin="normal"
-                            value={weight}
-                            onChange={(e) => setWeight(e.target.value)}
-                            inputProps={{ step: 0.1 }}
-                        />
-                        <Button variant="contained" onClick={handleAddWeight}>Add Weight</Button>
+                        <Box sx={{ mt: 2 }}>
+                            <WeightEntryForm onSuccess={fetchData} />
+                        </Box>
                     </Paper>
                 </Grid>
 
                 <Grid size={{ xs: 12, md: 4 }}>
                     <Paper sx={{ p: 2 }}>
                         <Typography variant="h6">Track Food</Typography>
-                        <TextField
-                            label="Food Name"
-                            fullWidth
-                            margin="normal"
-                            value={foodName}
-                            onChange={(e) => setFoodName(e.target.value)}
-                        />
-                        <TextField
-                            label="Calories"
-                            type="number"
-                            fullWidth
-                            margin="normal"
-                            value={calories}
-                            onChange={(e) => setCalories(e.target.value)}
-                        />
-                        <FormControl fullWidth margin="normal">
-                            <InputLabel>Meal Period</InputLabel>
-                            <Select
-                                value={mealPeriod}
-                                label="Meal Period"
-                                onChange={(e) => setMealPeriod(e.target.value)}
-                            >
-                                <MenuItem value="Breakfast">Breakfast</MenuItem>
-                                <MenuItem value="Morning">Morning</MenuItem>
-                                <MenuItem value="Lunch">Lunch</MenuItem>
-                                <MenuItem value="Afternoon">Afternoon</MenuItem>
-                                <MenuItem value="Dinner">Dinner</MenuItem>
-                                <MenuItem value="Evening">Evening</MenuItem>
-                            </Select>
-                        </FormControl>
-                        <Button variant="contained" onClick={handleAddFood}>Add Food</Button>
+                        <Box sx={{ mt: 2 }}>
+                            <FoodEntryForm onSuccess={fetchData} />
+                        </Box>
                     </Paper>
                 </Grid>
 
                 <Grid size={{ xs: 12 }}>
                     <Paper sx={{ p: 2 }}>
                         <Typography variant="h6">Today's Food Log</Typography>
-                        {Array.isArray(logs) && logs.map((log) => (
-                            <Box key={log.id} sx={{ display: 'flex', justifyContent: 'space-between', py: 1, borderBottom: '1px solid #eee' }}>
-                                <Typography>{log.meal_period}: {log.name}</Typography>
-                                <Typography>{log.calories} kcal</Typography>
-                            </Box>
-                        ))}
+                        <Box sx={{ mt: 2 }}>
+                            <FoodLogMeals logs={logs} />
+                        </Box>
                     </Paper>
                 </Grid>
             </Grid>

@@ -16,6 +16,7 @@ import {
 import { Outlet, Link as RouterLink, useLocation, useNavigate } from 'react-router-dom';
 import MenuIcon from '@mui/icons-material/Menu';
 import DashboardIcon from '@mui/icons-material/Dashboard';
+import ListAltIcon from '@mui/icons-material/ListAlt';
 import SettingsIcon from '@mui/icons-material/Settings';
 import LogoutIcon from '@mui/icons-material/Logout';
 import { useTheme } from '@mui/material/styles';
@@ -59,19 +60,29 @@ const Layout: React.FC = () => {
         <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
             <Toolbar />
 
-            <Box sx={{ flexGrow: 1 }}>
-                <List>
-                    <ListItemButton
-                        selected={location.pathname.startsWith('/dashboard')}
-                        onClick={() => handleNavigate('/dashboard')}
-                    >
-                        <ListItemIcon>
-                            <DashboardIcon />
-                        </ListItemIcon>
-                        <ListItemText primary="Dashboard" />
-                    </ListItemButton>
-                </List>
-            </Box>
+                <Box sx={{ flexGrow: 1 }}>
+                    <List>
+                        <ListItemButton
+                            selected={location.pathname.startsWith('/dashboard')}
+                            onClick={() => handleNavigate('/dashboard')}
+                        >
+                            <ListItemIcon>
+                                <DashboardIcon />
+                            </ListItemIcon>
+                            <ListItemText primary="Dashboard" />
+                        </ListItemButton>
+
+                        <ListItemButton
+                            selected={location.pathname.startsWith('/log')}
+                            onClick={() => handleNavigate('/log')}
+                        >
+                            <ListItemIcon>
+                                <ListAltIcon />
+                            </ListItemIcon>
+                            <ListItemText primary="Log" />
+                        </ListItemButton>
+                    </List>
+                </Box>
 
             <Divider />
 
