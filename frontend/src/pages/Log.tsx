@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import {
     Box,
     TextField,
@@ -17,6 +17,7 @@ import axios from 'axios';
 import WeightEntryForm from '../components/WeightEntryForm';
 import FoodEntryForm from '../components/FoodEntryForm';
 import FoodLogMeals from '../components/FoodLogMeals';
+import { useQuery } from '@tanstack/react-query';
 
 function getLocalDateString(date: Date): string {
     const year = date.getFullYear();
@@ -28,21 +29,22 @@ function getLocalDateString(date: Date): string {
 const Log: React.FC = () => {
     const today = getLocalDateString(new Date());
     const [selectedDate, setSelectedDate] = useState(today);
-    const [logs, setLogs] = useState<any[]>([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
 
-    const fetchLogs = useCallback(async (date: string) => {
-        try {
-            const foodRes = await axios.get('/api/food?date=' + encodeURIComponent(`${date}T12:00:00`));
-            setLogs(foodRes.data);
-        } catch (err) {
-            console.error(err);
-        }
-    }, []);
+    type FoodLogEntry = {
+        id: number;
+        meal_period: string;
+        name: string;
+        calories: number;
+    };
 
-    useEffect(() => {
-        fetchLogs(selectedDate);
-    }, [fetchLogs, selectedDate]);
+    const foodQuery = useQuery({
+        queryKey: ['food', selectedDate],
+        queryFn: async (): Promise<FoodLogEntry[]> => {
+            const res = await axios.get('/api/food?date=' + encodeURIComponent(`${selectedDate}T12:00:00`));
+            return Array.isArray(res.data) ? res.data : [];
+        }
+    });
 
     const handleCloseModal = () => setIsModalOpen(false);
 
@@ -70,7 +72,7 @@ const Log: React.FC = () => {
             <Paper sx={{ p: 2 }}>
                 <Typography variant="h6">Food Log</Typography>
                 <Box sx={{ mt: 2 }}>
-                    <FoodLogMeals logs={logs} />
+                    <FoodLogMeals logs={foodQuery.data ?? []} />
                 </Box>
             </Paper>
 
@@ -91,14 +93,14 @@ const Log: React.FC = () => {
                             <Typography variant="h6" gutterBottom>
                                 Track Weight
                             </Typography>
-                            <WeightEntryForm date={selectedDate} onSuccess={() => fetchLogs(selectedDate)} />
+                            <WeightEntryForm date={selectedDate} onSuccess={() => void foodQuery.refetch()} />
                         </Paper>
 
                         <Paper sx={{ p: 2 }}>
                             <Typography variant="h6" gutterBottom>
                                 Track Food
                             </Typography>
-                            <FoodEntryForm date={selectedDate} onSuccess={() => fetchLogs(selectedDate)} />
+                            <FoodEntryForm date={selectedDate} onSuccess={() => void foodQuery.refetch()} />
                         </Paper>
                     </Stack>
                 </DialogContent>

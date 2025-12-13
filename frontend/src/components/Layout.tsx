@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import {
     AppBar,
     Box,
@@ -21,7 +21,7 @@ import ShowChartIcon from '@mui/icons-material/ShowChart';
 import SettingsIcon from '@mui/icons-material/Settings';
 import LogoutIcon from '@mui/icons-material/Logout';
 import { useTheme } from '@mui/material/styles';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/useAuth';
 
 const drawerWidth = 240;
 
@@ -34,10 +34,6 @@ const Layout: React.FC = () => {
     const location = useLocation();
 
     const showDrawer = Boolean(user) && !isLoading;
-
-    useEffect(() => {
-        if (!showDrawer || isDesktop) setMobileDrawerOpen(false);
-    }, [isDesktop, showDrawer]);
 
     const handleMenuClick = () => {
         if (!showDrawer || isDesktop) return;
@@ -143,7 +139,7 @@ const Layout: React.FC = () => {
                 <>
                     <Drawer
                         variant="temporary"
-                        open={mobileDrawerOpen}
+                        open={mobileDrawerOpen && !isDesktop}
                         onClose={() => setMobileDrawerOpen(false)}
                         ModalProps={{ keepMounted: true }}
                         sx={{

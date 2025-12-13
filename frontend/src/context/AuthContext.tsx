@@ -1,32 +1,12 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import axios from 'axios';
-
-interface User {
-    id: number;
-    email: string;
-    weight_unit: 'KG' | 'LB';
-}
-
-interface AuthContextType {
-    user: User | null;
-    login: (email: string, password: string) => Promise<void>;
-    register: (email: string, password: string) => Promise<void>;
-    logout: () => Promise<void>;
-    updateWeightUnit: (weight_unit: User['weight_unit']) => Promise<void>;
-    isLoading: boolean;
-}
-
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+import { AuthContext, type User } from './authContext';
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [user, setUser] = useState<User | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
-    useEffect(() => {
-        checkAuth();
-    }, []);
-
-    const checkAuth = async () => {
+    const checkAuth = useCallback(async () => {
         try {
             console.log('Checking auth...');
             const res = await axios.get('/auth/me');
@@ -39,7 +19,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setIsLoading(false);
             console.log('Auth check complete, isLoading: false');
         }
-    };
+    }, []);
+
+    useEffect(() => {
+        checkAuth();
+    }, [checkAuth]);
 
     const login = async (email: string, password: string) => {
         const res = await axios.post('/auth/login', { email, password });
@@ -66,12 +50,4 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             {children}
         </AuthContext.Provider>
     );
-};
-
-export const useAuth = () => {
-    const context = useContext(AuthContext);
-    if (!context) {
-        throw new Error('useAuth must be used within an AuthProvider');
-    }
-    return context;
 };

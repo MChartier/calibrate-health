@@ -1,38 +1,58 @@
-import React, { useState, useEffect } from 'react';
+import React, { useCallback } from 'react';
 import { Typography, Box, Grid, Paper } from '@mui/material';
 import axios from 'axios';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/useAuth';
 import WeightEntryForm from '../components/WeightEntryForm';
 import FoodEntryForm from '../components/FoodEntryForm';
 import FoodLogMeals from '../components/FoodLogMeals';
+import { useQuery } from '@tanstack/react-query';
 
 const Dashboard: React.FC = () => {
     const { user } = useAuth();
-    const [logs, setLogs] = useState<any[]>([]);
-    const [metrics, setMetrics] = useState<any[]>([]);
     const weightUnitLabel = user?.weight_unit === 'LB' ? 'lb' : 'kg';
 
-    useEffect(() => {
-        fetchData();
-    }, []);
+    const today = new Date().toISOString().split('T')[0] ?? '';
 
-    const fetchData = async () => {
-        try {
-            const [foodRes, metricRes] = await Promise.all([
-                axios.get('/api/food?date=' + new Date().toISOString()),
-                axios.get('/api/metrics')
-            ]);
-            setLogs(foodRes.data);
-            setMetrics(metricRes.data);
-        } catch (err) {
-            console.error(err);
-        }
+    type FoodLogEntry = {
+        id: number;
+        meal_period: string;
+        name: string;
+        calories: number;
     };
 
-    const totalCalories = Array.isArray(logs) ? logs.reduce((acc, log) => acc + log.calories, 0) : 0;
-    const currentWeight = metrics.length > 0 ? metrics[0].weight : 'N/A';
+    type MetricEntry = {
+        id: number;
+        date: string;
+        weight: number;
+        body_fat_percent?: number | null;
+    };
 
-    console.log('Dashboard logs:', logs);
+    const foodQuery = useQuery({
+        queryKey: ['food', today],
+        queryFn: async (): Promise<FoodLogEntry[]> => {
+            const res = await axios.get('/api/food?date=' + encodeURIComponent(`${today}T12:00:00`));
+            return Array.isArray(res.data) ? res.data : [];
+        }
+    });
+
+    const metricsQuery = useQuery({
+        queryKey: ['metrics'],
+        queryFn: async (): Promise<MetricEntry[]> => {
+            const res = await axios.get('/api/metrics');
+            return Array.isArray(res.data) ? res.data : [];
+        }
+    });
+
+    const logs = foodQuery.data ?? [];
+    const metrics = metricsQuery.data ?? [];
+
+    const refetchAll = useCallback(() => {
+        void foodQuery.refetch();
+        void metricsQuery.refetch();
+    }, [foodQuery, metricsQuery]);
+
+    const totalCalories = logs.reduce((acc, log) => acc + log.calories, 0);
+    const currentWeight = metrics.length > 0 ? metrics[0].weight : null;
 
     return (
         <Box sx={{ mt: 4 }}>
@@ -53,7 +73,7 @@ const Dashboard: React.FC = () => {
                     <Paper sx={{ p: 2 }}>
                         <Typography variant="h6">Track Weight</Typography>
                         <Box sx={{ mt: 2 }}>
-                            <WeightEntryForm onSuccess={fetchData} />
+                            <WeightEntryForm onSuccess={refetchAll} />
                         </Box>
                     </Paper>
                 </Grid>
@@ -62,7 +82,7 @@ const Dashboard: React.FC = () => {
                     <Paper sx={{ p: 2 }}>
                         <Typography variant="h6">Track Food</Typography>
                         <Box sx={{ mt: 2 }}>
-                            <FoodEntryForm onSuccess={fetchData} />
+                            <FoodEntryForm date={today} onSuccess={refetchAll} />
                         </Box>
                     </Paper>
                 </Grid>

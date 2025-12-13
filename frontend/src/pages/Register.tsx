@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Typography, Box, TextField, Button, Alert, Link } from '@mui/material';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/useAuth';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 
 const Register: React.FC = () => {
@@ -15,7 +15,7 @@ const Register: React.FC = () => {
         try {
             await register(email, password);
             navigate('/dashboard');
-        } catch (err) {
+        } catch {
             setError('Registration failed');
         }
     };

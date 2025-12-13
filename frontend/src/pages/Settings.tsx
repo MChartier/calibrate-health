@@ -1,39 +1,64 @@
-import React, { useState, useEffect } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Typography, Box, TextField, Button, Alert, FormControl, InputLabel, Select, MenuItem } from '@mui/material';
+import type { SelectChangeEvent } from '@mui/material/Select';
 import axios from 'axios';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/useAuth';
+import { useQuery } from '@tanstack/react-query';
 
 const Settings: React.FC = () => {
     const { user, updateWeightUnit } = useAuth();
-    const [startWeight, setStartWeight] = useState('');
-    const [targetWeight, setTargetWeight] = useState('');
-    const [dailyDeficit, setDailyDeficit] = useState('500');
+    const [startWeightInput, setStartWeightInput] = useState<string | null>(null);
+    const [targetWeightInput, setTargetWeightInput] = useState<string | null>(null);
+    const [dailyDeficitInput, setDailyDeficitInput] = useState<string | null>(null);
     const [message, setMessage] = useState('');
     const weightUnitLabel = user?.weight_unit === 'LB' ? 'lb' : 'kg';
 
-    useEffect(() => {
-        fetchGoal();
-    }, []);
-
-    const fetchGoal = async () => {
-        try {
-            const res = await axios.get('/api/goals');
-            if (res.data) {
-                setStartWeight(res.data.start_weight?.toString() ?? '');
-                setTargetWeight(res.data.target_weight?.toString() ?? '');
-                setDailyDeficit(res.data.daily_deficit?.toString() ?? '500');
-            }
-        } catch (err) {
-            console.error(err);
-        }
+    type GoalResponse = {
+        start_weight: number;
+        target_weight: number;
+        daily_deficit: number;
     };
 
-    const handleWeightUnitChange = async (e: any) => {
+    const goalQuery = useQuery({
+        queryKey: ['goal'],
+        queryFn: async (): Promise<GoalResponse | null> => {
+            const res = await axios.get('/api/goals');
+            return res.data ?? null;
+        }
+    });
+
+    const startWeight = useMemo(() => {
+        if (startWeightInput !== null) return startWeightInput;
+        const value = goalQuery.data?.start_weight;
+        return typeof value === 'number' ? value.toString() : '';
+    }, [goalQuery.data?.start_weight, startWeightInput]);
+
+    const targetWeight = useMemo(() => {
+        if (targetWeightInput !== null) return targetWeightInput;
+        const value = goalQuery.data?.target_weight;
+        return typeof value === 'number' ? value.toString() : '';
+    }, [goalQuery.data?.target_weight, targetWeightInput]);
+
+    const dailyDeficit = useMemo(() => {
+        if (dailyDeficitInput !== null) return dailyDeficitInput;
+        const value = goalQuery.data?.daily_deficit;
+        return typeof value === 'number' ? value.toString() : '500';
+    }, [dailyDeficitInput, goalQuery.data?.daily_deficit]);
+
+    const handleWeightUnitChange = async (e: SelectChangeEvent) => {
+        const nextUnit = e.target.value;
+        if (nextUnit !== 'KG' && nextUnit !== 'LB') {
+            setMessage('Failed to update preferences');
+            return;
+        }
+
         try {
-            await updateWeightUnit(e.target.value);
+            await updateWeightUnit(nextUnit);
+            setStartWeightInput(null);
+            setTargetWeightInput(null);
             setMessage('Preferences updated');
-            fetchGoal();
-        } catch (err) {
+            void goalQuery.refetch();
+        } catch {
             setMessage('Failed to update preferences');
         }
     };
@@ -47,7 +72,11 @@ const Settings: React.FC = () => {
                 daily_deficit: dailyDeficit
             });
             setMessage('Goal updated successfully');
-        } catch (err) {
+            setStartWeightInput(null);
+            setTargetWeightInput(null);
+            setDailyDeficitInput(null);
+            void goalQuery.refetch();
+        } catch {
             setMessage('Failed to update goal');
         }
     };
@@ -73,7 +102,7 @@ const Settings: React.FC = () => {
                 fullWidth
                 margin="normal"
                 value={startWeight}
-                onChange={(e) => setStartWeight(e.target.value)}
+                onChange={(e) => setStartWeightInput(e.target.value)}
                 inputProps={{ step: 0.1 }}
             />
             <TextField
@@ -82,7 +111,7 @@ const Settings: React.FC = () => {
                 fullWidth
                 margin="normal"
                 value={targetWeight}
-                onChange={(e) => setTargetWeight(e.target.value)}
+                onChange={(e) => setTargetWeightInput(e.target.value)}
                 inputProps={{ step: 0.1 }}
             />
             <TextField
@@ -91,7 +120,7 @@ const Settings: React.FC = () => {
                 fullWidth
                 margin="normal"
                 value={dailyDeficit}
-                onChange={(e) => setDailyDeficit(e.target.value)}
+                onChange={(e) => setDailyDeficitInput(e.target.value)}
                 helperText="Recommended: 250 - 1000"
             />
             <Button type="submit" variant="contained" fullWidth sx={{ mt: 2 }}>Save Goal</Button>

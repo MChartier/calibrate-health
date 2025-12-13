@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Button, Stack, TextField } from '@mui/material';
 import axios from 'axios';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/useAuth';
 
 type Props = {
     onSuccess?: () => void;

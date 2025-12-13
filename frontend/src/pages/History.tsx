@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Box, Paper, Typography } from '@mui/material';
 import axios from 'axios';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/useAuth';
 import { LineChart } from '@mui/x-charts/LineChart';
 import { ChartsReferenceLine } from '@mui/x-charts/ChartsReferenceLine';
 
