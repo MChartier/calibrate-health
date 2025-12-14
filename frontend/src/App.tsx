@@ -6,6 +6,7 @@ import Dashboard from './pages/Dashboard';
 import Log from './pages/Log';
 import History from './pages/History';
 import Settings from './pages/Settings';
+import Onboarding from './pages/Onboarding';
 
 import ProtectedRoute from './components/ProtectedRoute';
 
@@ -18,6 +19,7 @@ function App() {
         <Route path="register" element={<Register />} />
 
         <Route element={<ProtectedRoute />}>
+          <Route path="onboarding" element={<Onboarding />} />
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="log" element={<Log />} />
           <Route path="history" element={<History />} />

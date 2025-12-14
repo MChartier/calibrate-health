@@ -33,7 +33,8 @@ const Layout: React.FC = () => {
     const navigate = useNavigate();
     const location = useLocation();
 
-    const showDrawer = Boolean(user) && !isLoading;
+    const hideNav = location.pathname.startsWith('/onboarding');
+    const showDrawer = Boolean(user) && !isLoading && !hideNav;
 
     const handleMenuClick = () => {
         if (!showDrawer || isDesktop) return;

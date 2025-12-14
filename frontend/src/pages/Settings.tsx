@@ -4,6 +4,7 @@ import type { SelectChangeEvent } from '@mui/material/Select';
 import axios from 'axios';
 import { useAuth } from '../context/useAuth';
 import { useQuery } from '@tanstack/react-query';
+import { activityLevelOptions } from '../constants/activityLevels';
 
 const Settings: React.FC = () => {
     const { user, updateWeightUnit } = useAuth();
@@ -184,14 +185,6 @@ const Settings: React.FC = () => {
         }
     };
 
-    const activityOptions = [
-        { value: 'SEDENTARY', label: 'Sedentary (little or no exercise)' },
-        { value: 'LIGHT', label: 'Light (1-3 days/week)' },
-        { value: 'MODERATE', label: 'Moderate (3-5 days/week)' },
-        { value: 'ACTIVE', label: 'Active (6-7 days/week)' },
-        { value: 'VERY_ACTIVE', label: 'Very Active (hard exercise/physical job)' }
-    ];
-
     return (
         <Box sx={{ maxWidth: 700, mx: 'auto', mt: 4 }}>
             <Typography variant="h4" gutterBottom>Settings & Goals</Typography>
@@ -257,7 +250,7 @@ const Settings: React.FC = () => {
                 <FormControl fullWidth>
                     <InputLabel>Activity Level</InputLabel>
                     <Select value={activityValue} label="Activity Level" onChange={(e) => setActivityLevel(e.target.value)}>
-                        {activityOptions.map((option) => (
+                        {activityLevelOptions.map((option) => (
                             <MenuItem key={option.value} value={option.value}>{option.label}</MenuItem>
                         ))}
                     </Select>

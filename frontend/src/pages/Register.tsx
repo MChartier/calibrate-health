@@ -14,7 +14,7 @@ const Register: React.FC = () => {
         e.preventDefault();
         try {
             await register(email, password);
-            navigate('/dashboard');
+            navigate('/onboarding');
         } catch {
             setError('Registration failed');
         }
