@@ -15,6 +15,19 @@ enum WeightUnit {
   LB
 }
 
+enum Sex {
+  MALE
+  FEMALE
+}
+
+enum ActivityLevel {
+  SEDENTARY
+  LIGHT
+  MODERATE
+  ACTIVE
+  VERY_ACTIVE
+}
+
 model User {
   id            Int       @id @default(autoincrement())
   email         String    @unique
@@ -22,6 +35,10 @@ model User {
   created_at    DateTime  @default(now())
 
   weight_unit   WeightUnit @default(KG)
+  date_of_birth DateTime?
+  sex           Sex?
+  height_mm     Int?
+  activity_level ActivityLevel?
   
   goals         Goal[]
   metrics       BodyMetric[]

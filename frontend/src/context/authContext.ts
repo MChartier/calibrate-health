@@ -6,6 +6,10 @@ export type User = {
     id: number;
     email: string;
     weight_unit: WeightUnit;
+    date_of_birth?: string | null;
+    sex?: 'MALE' | 'FEMALE' | null;
+    height_mm?: number | null;
+    activity_level?: 'SEDENTARY' | 'LIGHT' | 'MODERATE' | 'ACTIVE' | 'VERY_ACTIVE' | null;
 };
 
 export type AuthContextType = {
@@ -18,4 +22,3 @@ export type AuthContextType = {
 };
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
-

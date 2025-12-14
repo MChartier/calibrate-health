@@ -20,6 +20,7 @@ import WeightEntryForm from '../components/WeightEntryForm';
 import FoodEntryForm from '../components/FoodEntryForm';
 import FoodLogMeals from '../components/FoodLogMeals';
 import { useQuery } from '@tanstack/react-query';
+import CalorieTargetBanner from '../components/CalorieTargetBanner';
 
 function getLocalDateString(date: Date): string {
     const year = date.getFullYear();
@@ -72,6 +73,8 @@ const Log: React.FC = () => {
                     sx={{ width: { xs: '100%', sm: 200 } }}
                 />
             </Box>
+
+            <CalorieTargetBanner />
 
             <Paper sx={{ p: 2 }}>
                 <Typography variant="h6">Food Log</Typography>

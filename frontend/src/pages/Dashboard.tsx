@@ -6,6 +6,7 @@ import WeightEntryForm from '../components/WeightEntryForm';
 import FoodEntryForm from '../components/FoodEntryForm';
 import FoodLogMeals from '../components/FoodLogMeals';
 import { useQuery } from '@tanstack/react-query';
+import CalorieTargetBanner from '../components/CalorieTargetBanner';
 
 const Dashboard: React.FC = () => {
     const { user } = useAuth();
@@ -57,6 +58,7 @@ const Dashboard: React.FC = () => {
     return (
         <Box sx={{ mt: 4 }}>
             <Typography variant="h4" gutterBottom>Dashboard</Typography>
+            <CalorieTargetBanner />
 
             <Grid container spacing={3}>
                 <Grid size={{ xs: 12, md: 4 }}>

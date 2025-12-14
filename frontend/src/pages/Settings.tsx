@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Typography, Box, TextField, Button, Alert, FormControl, InputLabel, Select, MenuItem } from '@mui/material';
+import { Typography, Box, TextField, Button, Alert, FormControl, InputLabel, Select, MenuItem, Divider, Stack } from '@mui/material';
 import type { SelectChangeEvent } from '@mui/material/Select';
 import axios from 'axios';
 import { useAuth } from '../context/useAuth';
@@ -12,6 +12,15 @@ const Settings: React.FC = () => {
     const [dailyDeficitInput, setDailyDeficitInput] = useState<string | null>(null);
     const [message, setMessage] = useState('');
     const weightUnitLabel = user?.weight_unit === 'LB' ? 'lb' : 'kg';
+    const [profileMessage, setProfileMessage] = useState('');
+
+    const [dateOfBirth, setDateOfBirth] = useState<string | null>(null);
+    const [sex, setSex] = useState<string | null>(null);
+    const [heightCm, setHeightCm] = useState<string | null>(null);
+    const [heightFeet, setHeightFeet] = useState<string | null>(null);
+    const [heightInches, setHeightInches] = useState<string | null>(null);
+    const [heightUnit, setHeightUnit] = useState<'cm' | 'ftin'>('cm');
+    const [activityLevel, setActivityLevel] = useState<string | null>(null);
 
     type GoalResponse = {
         start_weight: number;
@@ -19,11 +28,34 @@ const Settings: React.FC = () => {
         daily_deficit: number;
     };
 
+    type ProfileResponse = {
+        profile: {
+            date_of_birth: string | null;
+            sex: 'MALE' | 'FEMALE' | null;
+            height_mm: number | null;
+            activity_level: 'SEDENTARY' | 'LIGHT' | 'MODERATE' | 'ACTIVE' | 'VERY_ACTIVE' | null;
+            weight_unit: 'KG' | 'LB';
+        };
+        calorieSummary: {
+            dailyCalorieTarget?: number;
+            tdee?: number;
+            missing: string[];
+        };
+    };
+
     const goalQuery = useQuery({
         queryKey: ['goal'],
         queryFn: async (): Promise<GoalResponse | null> => {
             const res = await axios.get('/api/goals');
             return res.data ?? null;
+        }
+    });
+
+    const profileQuery = useQuery({
+        queryKey: ['profile'],
+        queryFn: async (): Promise<ProfileResponse> => {
+            const res = await axios.get('/api/user/profile');
+            return res.data;
         }
     });
 
@@ -44,6 +76,49 @@ const Settings: React.FC = () => {
         const value = goalQuery.data?.daily_deficit;
         return typeof value === 'number' ? value.toString() : '500';
     }, [dailyDeficitInput, goalQuery.data?.daily_deficit]);
+
+    const dobValue = useMemo(() => {
+        if (dateOfBirth !== null) return dateOfBirth;
+        const value = profileQuery.data?.profile.date_of_birth;
+        return value ? value.slice(0, 10) : '';
+    }, [dateOfBirth, profileQuery.data?.profile.date_of_birth]);
+
+    const sexValue = useMemo(() => {
+        if (sex !== null) return sex;
+        const value = profileQuery.data?.profile.sex;
+        return value ?? '';
+    }, [sex, profileQuery.data?.profile.sex]);
+
+    const parsedHeight = useMemo(() => {
+        const mm = profileQuery.data?.profile.height_mm;
+        if (!mm) return null;
+        const cm = Math.round(mm) / 10;
+        const totalInches = mm / 25.4;
+        const feet = Math.floor(totalInches / 12);
+        const inches = Math.round((totalInches - feet * 12) * 10) / 10;
+        return { mm, cm, feet, inches };
+    }, [profileQuery.data?.profile.height_mm]);
+
+    const heightCmValue = useMemo(() => {
+        if (heightCm !== null) return heightCm;
+        return parsedHeight ? parsedHeight.cm.toString() : '';
+    }, [heightCm, parsedHeight]);
+
+    const heightFeetValue = useMemo(() => {
+        if (heightFeet !== null) return heightFeet;
+        return parsedHeight ? parsedHeight.feet.toString() : '';
+    }, [heightFeet, parsedHeight]);
+
+    const heightInchesValue = useMemo(() => {
+        if (heightInches !== null) return heightInches;
+        return parsedHeight ? parsedHeight.inches.toString() : '';
+    }, [heightInches, parsedHeight]);
+
+    const activityValue = useMemo(() => {
+        if (activityLevel !== null) return activityLevel;
+        const value = profileQuery.data?.profile.activity_level;
+        return value ?? '';
+    }, [activityLevel, profileQuery.data?.profile.activity_level]);
 
     const handleWeightUnitChange = async (e: SelectChangeEvent) => {
         const nextUnit = e.target.value;
@@ -81,49 +156,170 @@ const Settings: React.FC = () => {
         }
     };
 
+    const handleProfileSave = async () => {
+        try {
+            const payload: any = {
+                date_of_birth: dobValue || null,
+                sex: sexValue || null,
+                activity_level: activityValue || null
+            };
+            if (heightUnit === 'cm') {
+                payload.height_cm = heightCmValue || null;
+            } else {
+                payload.height_feet = heightFeetValue || null;
+                payload.height_inches = heightInchesValue || null;
+            }
+
+            await axios.patch('/api/user/profile', payload);
+            setProfileMessage('Profile updated');
+            setDateOfBirth(null);
+            setSex(null);
+            setHeightCm(null);
+            setHeightFeet(null);
+            setHeightInches(null);
+            setActivityLevel(null);
+            void profileQuery.refetch();
+        } catch {
+            setProfileMessage('Failed to update profile');
+        }
+    };
+
+    const activityOptions = [
+        { value: 'SEDENTARY', label: 'Sedentary (little or no exercise)' },
+        { value: 'LIGHT', label: 'Light (1-3 days/week)' },
+        { value: 'MODERATE', label: 'Moderate (3-5 days/week)' },
+        { value: 'ACTIVE', label: 'Active (6-7 days/week)' },
+        { value: 'VERY_ACTIVE', label: 'Very Active (hard exercise/physical job)' }
+    ];
+
     return (
-        <Box component="form" onSubmit={handleSubmit} sx={{ maxWidth: 600, mx: 'auto', mt: 4 }}>
+        <Box sx={{ maxWidth: 700, mx: 'auto', mt: 4 }}>
             <Typography variant="h4" gutterBottom>Settings & Goals</Typography>
-            {message && <Alert severity="info" sx={{ mb: 2 }}>{message}</Alert>}
-            <FormControl fullWidth margin="normal">
-                <InputLabel>Weight Unit</InputLabel>
-                <Select
-                    value={user?.weight_unit ?? 'KG'}
-                    label="Weight Unit"
-                    onChange={handleWeightUnitChange}
-                >
-                    <MenuItem value="KG">Kilograms (kg)</MenuItem>
-                    <MenuItem value="LB">Pounds (lb)</MenuItem>
-                </Select>
-            </FormControl>
-            <TextField
-                label={`Start Weight (${weightUnitLabel})`}
-                type="number"
-                fullWidth
-                margin="normal"
-                value={startWeight}
-                onChange={(e) => setStartWeightInput(e.target.value)}
-                inputProps={{ step: 0.1 }}
-            />
-            <TextField
-                label={`Target Weight (${weightUnitLabel})`}
-                type="number"
-                fullWidth
-                margin="normal"
-                value={targetWeight}
-                onChange={(e) => setTargetWeightInput(e.target.value)}
-                inputProps={{ step: 0.1 }}
-            />
-            <TextField
-                label="Daily Calorie Deficit"
-                type="number"
-                fullWidth
-                margin="normal"
-                value={dailyDeficit}
-                onChange={(e) => setDailyDeficitInput(e.target.value)}
-                helperText="Recommended: 250 - 1000"
-            />
-            <Button type="submit" variant="contained" fullWidth sx={{ mt: 2 }}>Save Goal</Button>
+
+            <Typography variant="h6" sx={{ mt: 3 }}>Profile</Typography>
+            {profileMessage && <Alert severity="info" sx={{ mb: 2 }}>{profileMessage}</Alert>}
+            <Stack spacing={2} sx={{ mb: 3 }}>
+                <TextField
+                    label="Date of Birth"
+                    type="date"
+                    InputLabelProps={{ shrink: true }}
+                    value={dobValue}
+                    onChange={(e) => setDateOfBirth(e.target.value)}
+                    fullWidth
+                />
+                <FormControl fullWidth>
+                    <InputLabel>Sex</InputLabel>
+                    <Select value={sexValue} label="Sex" onChange={(e) => setSex(e.target.value)}>
+                        <MenuItem value="MALE">Male</MenuItem>
+                        <MenuItem value="FEMALE">Female</MenuItem>
+                    </Select>
+                </FormControl>
+                <FormControl fullWidth>
+                    <InputLabel>Height Units</InputLabel>
+                    <Select
+                        value={heightUnit}
+                        label="Height Units"
+                        onChange={(e) => setHeightUnit(e.target.value as 'cm' | 'ftin')}
+                    >
+                        <MenuItem value="cm">Centimeters</MenuItem>
+                        <MenuItem value="ftin">Feet / Inches</MenuItem>
+                    </Select>
+                </FormControl>
+                {heightUnit === 'cm' ? (
+                    <TextField
+                        label="Height (cm)"
+                        type="number"
+                        value={heightCmValue}
+                        onChange={(e) => setHeightCm(e.target.value)}
+                        inputProps={{ min: 50, max: 272, step: 0.1 }}
+                        fullWidth
+                    />
+                ) : (
+                    <Box sx={{ display: 'flex', gap: 2 }}>
+                        <TextField
+                            label="Feet"
+                            type="number"
+                            value={heightFeetValue}
+                            onChange={(e) => setHeightFeet(e.target.value)}
+                            inputProps={{ min: 1, max: 8, step: 1 }}
+                            fullWidth
+                        />
+                        <TextField
+                            label="Inches"
+                            type="number"
+                            value={heightInchesValue}
+                            onChange={(e) => setHeightInches(e.target.value)}
+                            inputProps={{ min: 0, max: 11.9, step: 0.1 }}
+                            fullWidth
+                        />
+                    </Box>
+                )}
+                <FormControl fullWidth>
+                    <InputLabel>Activity Level</InputLabel>
+                    <Select value={activityValue} label="Activity Level" onChange={(e) => setActivityLevel(e.target.value)}>
+                        {activityOptions.map((option) => (
+                            <MenuItem key={option.value} value={option.value}>{option.label}</MenuItem>
+                        ))}
+                    </Select>
+                </FormControl>
+                <Box sx={{ display: 'flex', gap: 2 }}>
+                    <Button variant="contained" onClick={() => void handleProfileSave()} disabled={profileQuery.isLoading}>
+                        Save Profile
+                    </Button>
+                </Box>
+                {profileQuery.data?.calorieSummary && (
+                    <Alert severity={profileQuery.data.calorieSummary.dailyCalorieTarget ? 'success' : 'warning'}>
+                        {profileQuery.data.calorieSummary.dailyCalorieTarget
+                            ? `Estimated target: ${profileQuery.data.calorieSummary.dailyCalorieTarget} kcal/day`
+                            : 'Add birthday, sex, height, activity level, weight, and goal to compute a daily target.'}
+                    </Alert>
+                )}
+            </Stack>
+
+            <Divider sx={{ my: 3 }} />
+
+            <Box component="form" onSubmit={handleSubmit}>
+                {message && <Alert severity="info" sx={{ mb: 2 }}>{message}</Alert>}
+                <FormControl fullWidth margin="normal">
+                    <InputLabel>Weight Unit</InputLabel>
+                    <Select
+                        value={user?.weight_unit ?? 'KG'}
+                        label="Weight Unit"
+                        onChange={handleWeightUnitChange}
+                    >
+                        <MenuItem value="KG">Kilograms (kg)</MenuItem>
+                        <MenuItem value="LB">Pounds (lb)</MenuItem>
+                    </Select>
+                </FormControl>
+                <TextField
+                    label={`Start Weight (${weightUnitLabel})`}
+                    type="number"
+                    fullWidth
+                    margin="normal"
+                    value={startWeight}
+                    onChange={(e) => setStartWeightInput(e.target.value)}
+                    inputProps={{ step: 0.1 }}
+                />
+                <TextField
+                    label={`Target Weight (${weightUnitLabel})`}
+                    type="number"
+                    fullWidth
+                    margin="normal"
+                    value={targetWeight}
+                    onChange={(e) => setTargetWeightInput(e.target.value)}
+                    inputProps={{ step: 0.1 }}
+                />
+                <TextField
+                    label="Daily Calorie Deficit"
+                    type="number"
+                    fullWidth
+                    margin="normal"
+                    value={dailyDeficit}
+                    onChange={(e) => setDailyDeficitInput(e.target.value)}
+                    helperText="Recommended: 250 - 1000"
+                />
+                <Button type="submit" variant="contained" fullWidth sx={{ mt: 2 }}>Save Goal</Button>
+            </Box>
         </Box>
     );
 };

@@ -25,7 +25,17 @@ router.post('/register', async (req, res) => {
 
         req.login(newUser, (err) => {
             if (err) throw err;
-            res.json({ user: { id: newUser.id, email: newUser.email, weight_unit: newUser.weight_unit } });
+            res.json({
+                user: {
+                    id: newUser.id,
+                    email: newUser.email,
+                    weight_unit: newUser.weight_unit,
+                    date_of_birth: newUser.date_of_birth,
+                    sex: newUser.sex,
+                    height_mm: newUser.height_mm,
+                    activity_level: newUser.activity_level
+                }
+            });
         });
     } catch (err) {
         res.status(500).json({ message: 'Server error' });
@@ -36,7 +46,17 @@ router.post('/login', passport.authenticate('local'), (req, res) => {
     // If this function gets called, authentication was successful.
     // `req.user` contains the authenticated user.
     const user = req.user as any;
-    res.json({ user: { id: user.id, email: user.email, weight_unit: user.weight_unit } });
+    res.json({
+        user: {
+            id: user.id,
+            email: user.email,
+            weight_unit: user.weight_unit,
+            date_of_birth: user.date_of_birth,
+            sex: user.sex,
+            height_mm: user.height_mm,
+            activity_level: user.activity_level
+        }
+    });
 });
 
 router.post('/logout', (req, res, next) => {
@@ -49,7 +69,17 @@ router.post('/logout', (req, res, next) => {
 router.get('/me', (req, res) => {
     if (req.isAuthenticated()) {
         const user = req.user as any;
-        res.json({ user: { id: user.id, email: user.email, weight_unit: user.weight_unit } });
+        res.json({
+            user: {
+                id: user.id,
+                email: user.email,
+                weight_unit: user.weight_unit,
+                date_of_birth: user.date_of_birth,
+                sex: user.sex,
+                height_cm: user.height_cm,
+                activity_level: user.activity_level
+            }
+        });
     } else {
         res.status(401).json({ message: 'Not authenticated' });
     }
