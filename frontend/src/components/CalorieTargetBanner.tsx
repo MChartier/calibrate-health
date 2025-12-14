@@ -4,6 +4,20 @@ import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 
+/**
+ * CalorieTargetBanner
+ *
+ * Intent:
+ * - Surface the daily calorie target prominently on dashboard/log.
+ * - Make the math transparent: BMR (sex/age/height/weight) -> activity multiplier -> goal adjustment -> target.
+ * - Use an "invoice" style breakdown: green positives (energy available), red negatives (deficit), right-aligned numbers, clear total.
+ *
+ * UX rationale:
+ * - If data is missing, explain which inputs are needed.
+ * - Tooltip uses structured lines and shows the activity multiplier explicitly to avoid "black box" perception.
+ * - Colors reinforce add/remove semantics while keeping the primary target readable in neutral text.
+ */
+
 type ProfileSummary = {
     profile: {
         activity_level: string | null;

@@ -59,3 +59,4 @@ cal-io is a responsive calorie tracker (desktop + mobile web) for users who want
 ## Current Repo Notes (Keep Aligned With Goals)
 - Prisma is configured for Postgres (Prisma schema + migrations live under `backend/prisma/`).
 - Prisma migrations should use ordinal prefixes (e.g., `0001_init`, `0002_...`) for folder names. When running `prisma migrate dev`, pass an ordinal in the `--name` (it will still be timestamp-prefixed by Prisma; rename to the ordinal style before sharing if still local/unapplied).
+- Add concise documentation comments to new components and functions to capture intent, behavior, and rationale (avoid hand-wavy summaries; prefer clear “why/how” notes).
