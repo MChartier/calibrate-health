@@ -77,10 +77,7 @@ const Log: React.FC = () => {
             <CalorieTargetBanner />
 
             <Paper sx={{ p: 2 }}>
-                <Typography variant="h6">Food Log</Typography>
-                <Box sx={{ mt: 2 }}>
-                    <FoodLogMeals logs={foodQuery.data ?? []} />
-                </Box>
+                <FoodLogMeals logs={foodQuery.data ?? []} />
             </Paper>
 
             <SpeedDial

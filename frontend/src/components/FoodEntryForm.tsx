@@ -14,6 +14,13 @@ import {
     Typography
 } from '@mui/material';
 import axios from 'axios';
+import EggAltIcon from '@mui/icons-material/EggAlt';
+import BakeryDiningIcon from '@mui/icons-material/BakeryDining';
+import IcecreamIcon from '@mui/icons-material/Icecream';
+import LunchDiningIcon from '@mui/icons-material/LunchDining';
+import DinnerDiningIcon from '@mui/icons-material/DinnerDining';
+import NightlifeIcon from '@mui/icons-material/Nightlife';
+import { ListItemIcon } from '@mui/material';
 
 type Props = {
     onSuccess?: () => void;
@@ -69,6 +76,15 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
     const [providerName, setProviderName] = useState<string>('');
 
     const entryDate = date ? `${date}T12:00:00` : new Date();
+
+    const mealOptions = [
+        { value: 'Breakfast', label: 'Breakfast', icon: <EggAltIcon htmlColor="#ff9800" /> },
+        { value: 'Morning Snack', label: 'Morning Snack', icon: <BakeryDiningIcon htmlColor="#4caf50" /> },
+        { value: 'Lunch', label: 'Lunch', icon: <LunchDiningIcon htmlColor="#3f51b5" /> },
+        { value: 'Afternoon Snack', label: 'Afternoon Snack', icon: <IcecreamIcon htmlColor="#8bc34a" /> },
+        { value: 'Dinner', label: 'Dinner', icon: <DinnerDiningIcon htmlColor="#9c27b0" /> },
+        { value: 'Evening Snack', label: 'Evening Snack', icon: <NightlifeIcon htmlColor="#e91e63" /> }
+    ];
 
     const selectedItem = useMemo(
         () => searchResults.find((item) => item.id === selectedItemId) || null,
@@ -272,12 +288,12 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
             <FormControl fullWidth>
                 <InputLabel>Meal Period</InputLabel>
                 <Select value={mealPeriod} label="Meal Period" onChange={(e) => setMealPeriod(e.target.value)}>
-                    <MenuItem value="Breakfast">Breakfast</MenuItem>
-                    <MenuItem value="Morning Snack">Morning Snack</MenuItem>
-                    <MenuItem value="Lunch">Lunch</MenuItem>
-                    <MenuItem value="Afternoon Snack">Afternoon Snack</MenuItem>
-                    <MenuItem value="Dinner">Dinner</MenuItem>
-                    <MenuItem value="Evening Snack">Evening Snack</MenuItem>
+                    {mealOptions.map((meal) => (
+                        <MenuItem key={meal.value} value={meal.value}>
+                            <ListItemIcon sx={{ minWidth: 32 }}>{meal.icon}</ListItemIcon>
+                            {meal.label}
+                        </MenuItem>
+                    ))}
                 </Select>
             </FormControl>
 

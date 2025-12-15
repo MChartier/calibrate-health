@@ -1,6 +1,12 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Accordion, AccordionDetails, AccordionSummary, Box, Divider, Stack, Typography } from '@mui/material';
+import { Accordion, AccordionDetails, AccordionSummary, Box, Divider, Stack, Typography, Avatar, IconButton, Tooltip } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import EggAltIcon from '@mui/icons-material/EggAlt';
+import BakeryDiningIcon from '@mui/icons-material/BakeryDining';
+import IcecreamIcon from '@mui/icons-material/Icecream';
+import LunchDiningIcon from '@mui/icons-material/LunchDining';
+import DinnerDiningIcon from '@mui/icons-material/DinnerDining';
+import NightlifeIcon from '@mui/icons-material/Nightlife';
 
 type MealKey =
     | 'Breakfast'
@@ -17,13 +23,13 @@ type FoodLogEntry = {
     calories?: number;
 };
 
-const MEALS: Array<{ key: MealKey; label: string; aliases: string[] }> = [
-    { key: 'Breakfast', label: 'Breakfast', aliases: ['Breakfast'] },
-    { key: 'Morning Snack', label: 'Morning Snack', aliases: ['Morning Snack', 'Morning'] },
-    { key: 'Lunch', label: 'Lunch', aliases: ['Lunch'] },
-    { key: 'Afternoon Snack', label: 'Afternoon Snack', aliases: ['Afternoon Snack', 'Afternoon'] },
-    { key: 'Dinner', label: 'Dinner', aliases: ['Dinner'] },
-    { key: 'Evening Snack', label: 'Evening Snack', aliases: ['Evening Snack', 'Evening'] }
+const MEALS: Array<{ key: MealKey; label: string; aliases: string[]; icon: React.ReactNode }> = [
+    { key: 'Breakfast', label: 'Breakfast', aliases: ['Breakfast'], icon: <EggAltIcon htmlColor="#ff9800" /> },
+    { key: 'Morning Snack', label: 'Morning Snack', aliases: ['Morning Snack', 'Morning'], icon: <BakeryDiningIcon htmlColor="#4caf50" /> },
+    { key: 'Lunch', label: 'Lunch', aliases: ['Lunch'], icon: <LunchDiningIcon htmlColor="#3f51b5" /> },
+    { key: 'Afternoon Snack', label: 'Afternoon Snack', aliases: ['Afternoon Snack', 'Afternoon'], icon: <IcecreamIcon htmlColor="#8bc34a" /> },
+    { key: 'Dinner', label: 'Dinner', aliases: ['Dinner'], icon: <DinnerDiningIcon htmlColor="#9c27b0" /> },
+    { key: 'Evening Snack', label: 'Evening Snack', aliases: ['Evening Snack', 'Evening'], icon: <NightlifeIcon htmlColor="#e91e63" /> }
 ];
 
 function normalizeMealPeriod(value: unknown): MealKey | null {
@@ -101,8 +107,45 @@ const FoodLogMeals: React.FC<{ logs: FoodLogEntry[] }> = ({ logs }) => {
         });
     }, [grouped]);
 
+    const handleExpandAll = () => {
+        setExpanded({
+            Breakfast: true,
+            'Morning Snack': true,
+            Lunch: true,
+            'Afternoon Snack': true,
+            Dinner: true,
+            'Evening Snack': true
+        });
+    };
+
+    const handleCollapseAll = () => {
+        setExpanded({
+            Breakfast: false,
+            'Morning Snack': false,
+            Lunch: false,
+            'Afternoon Snack': false,
+            Dinner: false,
+            'Evening Snack': false
+        });
+    };
+
     return (
         <Stack spacing={2}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Typography variant="h6">Food Log</Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Tooltip title="Collapse all">
+                        <IconButton size="small" onClick={handleCollapseAll}>
+                            <ExpandMoreIcon sx={{ transform: 'rotate(180deg)' }} />
+                        </IconButton>
+                    </Tooltip>
+                    <Tooltip title="Expand all">
+                        <IconButton size="small" onClick={handleExpandAll}>
+                            <ExpandMoreIcon />
+                        </IconButton>
+                    </Tooltip>
+                </Box>
+            </Box>
             {MEALS.map((meal) => {
                 const entries = grouped[meal.key];
                 const total = sumCalories(entries);
@@ -117,7 +160,12 @@ const FoodLogMeals: React.FC<{ logs: FoodLogEntry[] }> = ({ logs }) => {
                         disableGutters
                     >
                         <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                            <Typography sx={{ flexGrow: 1, fontWeight: 'bold' }}>{meal.label}</Typography>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexGrow: 1 }}>
+                                <Avatar sx={{ width: 28, height: 28, bgcolor: 'background.default' }} variant="rounded">
+                                    {meal.icon}
+                                </Avatar>
+                                <Typography sx={{ fontWeight: 'bold' }}>{meal.label}</Typography>
+                            </Box>
                             <Typography color="text.secondary">{total} Calories</Typography>
                         </AccordionSummary>
                         <AccordionDetails>
