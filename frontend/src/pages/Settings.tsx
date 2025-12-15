@@ -11,7 +11,9 @@ const Settings: React.FC = () => {
     const [startWeightInput, setStartWeightInput] = useState<string | null>(null);
     const [targetWeightInput, setTargetWeightInput] = useState<string | null>(null);
     const [dailyDeficitInput, setDailyDeficitInput] = useState<string | null>(null);
-    const [message, setMessage] = useState('');
+    const [goalMode, setGoalMode] = useState<'lose' | 'maintain' | 'gain'>('lose');
+    const [unitMessage, setUnitMessage] = useState('');
+    const [goalMessage, setGoalMessage] = useState('');
     const weightUnitLabel = user?.weight_unit === 'LB' ? 'lb' : 'kg';
     const [profileMessage, setProfileMessage] = useState('');
 
@@ -75,8 +77,17 @@ const Settings: React.FC = () => {
     const dailyDeficit = useMemo(() => {
         if (dailyDeficitInput !== null) return dailyDeficitInput;
         const value = goalQuery.data?.daily_deficit;
-        return typeof value === 'number' ? value.toString() : '500';
+        return typeof value === 'number' ? Math.abs(value).toString() : '500';
     }, [dailyDeficitInput, goalQuery.data?.daily_deficit]);
+
+    React.useEffect(() => {
+        const value = goalQuery.data?.daily_deficit;
+        if (typeof value === 'number') {
+            if (value === 0) setGoalMode('maintain');
+            else if (value > 0) setGoalMode('lose');
+            else setGoalMode('gain');
+        }
+    }, [goalQuery.data?.daily_deficit]);
 
     const dobValue = useMemo(() => {
         if (dateOfBirth !== null) return dateOfBirth;
@@ -124,7 +135,7 @@ const Settings: React.FC = () => {
     const handleWeightUnitChange = async (e: SelectChangeEvent) => {
         const nextUnit = e.target.value;
         if (nextUnit !== 'KG' && nextUnit !== 'LB') {
-            setMessage('Failed to update preferences');
+            setUnitMessage('Failed to update preferences');
             return;
         }
 
@@ -132,28 +143,30 @@ const Settings: React.FC = () => {
             await updateWeightUnit(nextUnit);
             setStartWeightInput(null);
             setTargetWeightInput(null);
-            setMessage('Preferences updated');
+            setUnitMessage('Preferences updated');
             void goalQuery.refetch();
         } catch {
-            setMessage('Failed to update preferences');
+            setUnitMessage('Failed to update preferences');
         }
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
+            const deficitValue = goalMode === 'maintain' ? 0 : parseInt(dailyDeficit || '0', 10);
+            const signedDeficit = goalMode === 'gain' ? -Math.abs(deficitValue) : Math.abs(deficitValue);
             await axios.post('/api/goals', {
                 start_weight: startWeight,
                 target_weight: targetWeight,
-                daily_deficit: dailyDeficit
+                daily_deficit: signedDeficit
             });
-            setMessage('Goal updated successfully');
+            setGoalMessage('Goal updated successfully');
             setStartWeightInput(null);
             setTargetWeightInput(null);
             setDailyDeficitInput(null);
             void goalQuery.refetch();
         } catch {
-            setMessage('Failed to update goal');
+            setGoalMessage('Failed to update goal');
         }
     };
 
@@ -191,7 +204,7 @@ const Settings: React.FC = () => {
 
             <Paper sx={{ p: 2, mb: 3 }}>
                 <Typography variant="h6" gutterBottom>Units & Localization</Typography>
-                {message && <Alert severity="info" sx={{ mb: 2 }}>{message}</Alert>}
+                {unitMessage && <Alert severity="info" sx={{ mb: 2 }}>{unitMessage}</Alert>}
                 <FormControl fullWidth margin="normal">
                     <InputLabel>Weight Unit</InputLabel>
                     <Select
@@ -290,7 +303,7 @@ const Settings: React.FC = () => {
             <Paper sx={{ p: 2 }}>
                 <Typography variant="h6" gutterBottom>Goals</Typography>
                 <Box component="form" onSubmit={handleSubmit}>
-                    {message && <Alert severity="info" sx={{ mb: 2 }}>{message}</Alert>}
+                    {goalMessage && <Alert severity="info" sx={{ mb: 2 }}>{goalMessage}</Alert>}
                     <TextField
                         label={`Start Weight (${weightUnitLabel})`}
                         type="number"
@@ -309,15 +322,36 @@ const Settings: React.FC = () => {
                         onChange={(e) => setTargetWeightInput(e.target.value)}
                         inputProps={{ step: 0.1 }}
                     />
-                    <TextField
-                        label="Daily Calorie Deficit"
-                        type="number"
-                        fullWidth
-                        margin="normal"
-                        value={dailyDeficit}
-                        onChange={(e) => setDailyDeficitInput(e.target.value)}
-                        helperText="Recommended: 250 - 1000"
-                    />
+                    <FormControl fullWidth margin="normal">
+                        <InputLabel>Goal type</InputLabel>
+                        <Select
+                            value={goalMode}
+                            label="Goal type"
+                            onChange={(e) => setGoalMode(e.target.value as 'lose' | 'maintain' | 'gain')}
+                        >
+                            <MenuItem value="lose">Lose weight (calorie deficit)</MenuItem>
+                            <MenuItem value="maintain">Maintain weight</MenuItem>
+                            <MenuItem value="gain">Gain weight (calorie surplus)</MenuItem>
+                        </Select>
+                    </FormControl>
+
+                    {goalMode !== 'maintain' && (
+                        <FormControl fullWidth margin="normal">
+                            <InputLabel>Daily calorie change</InputLabel>
+                            <Select
+                                value={dailyDeficit}
+                                label="Daily calorie change"
+                                onChange={(e) => setDailyDeficitInput(e.target.value)}
+                            >
+                                {['250', '500', '750', '1000'].map((val) => (
+                                    <MenuItem key={val} value={val}>
+                                        {goalMode === 'gain' ? '+' : '-'}
+                                        {val} kcal/day
+                                    </MenuItem>
+                                ))}
+                            </Select>
+                        </FormControl>
+                    )}
                     <Button type="submit" variant="contained" fullWidth sx={{ mt: 2 }}>Save Goal</Button>
                 </Box>
             </Paper>
