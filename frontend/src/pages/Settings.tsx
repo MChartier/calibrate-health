@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Typography, Box, TextField, Button, Alert, FormControl, InputLabel, Select, MenuItem, Divider, Stack } from '@mui/material';
+import { Typography, Box, TextField, Button, Alert, FormControl, InputLabel, Select, MenuItem, Stack, Paper } from '@mui/material';
 import type { SelectChangeEvent } from '@mui/material/Select';
 import axios from 'axios';
 import { useAuth } from '../context/useAuth';
@@ -186,92 +186,11 @@ const Settings: React.FC = () => {
     };
 
     return (
-        <Box sx={{ maxWidth: 700, mx: 'auto', mt: 4 }}>
-            <Typography variant="h4" gutterBottom>Settings & Goals</Typography>
+        <Box sx={{ maxWidth: 720, mx: 'auto', mt: 4 }}>
+            <Typography variant="h4" gutterBottom>Settings</Typography>
 
-            <Typography variant="h6" sx={{ mt: 3 }}>Profile</Typography>
-            {profileMessage && <Alert severity="info" sx={{ mb: 2 }}>{profileMessage}</Alert>}
-            <Stack spacing={2} sx={{ mb: 3 }}>
-                <TextField
-                    label="Date of Birth"
-                    type="date"
-                    InputLabelProps={{ shrink: true }}
-                    value={dobValue}
-                    onChange={(e) => setDateOfBirth(e.target.value)}
-                    fullWidth
-                />
-                <FormControl fullWidth>
-                    <InputLabel>Sex</InputLabel>
-                    <Select value={sexValue} label="Sex" onChange={(e) => setSex(e.target.value)}>
-                        <MenuItem value="MALE">Male</MenuItem>
-                        <MenuItem value="FEMALE">Female</MenuItem>
-                    </Select>
-                </FormControl>
-                <FormControl fullWidth>
-                    <InputLabel>Height Units</InputLabel>
-                    <Select
-                        value={heightUnit}
-                        label="Height Units"
-                        onChange={(e) => setHeightUnit(e.target.value as 'cm' | 'ftin')}
-                    >
-                        <MenuItem value="cm">Centimeters</MenuItem>
-                        <MenuItem value="ftin">Feet / Inches</MenuItem>
-                    </Select>
-                </FormControl>
-                {heightUnit === 'cm' ? (
-                    <TextField
-                        label="Height (cm)"
-                        type="number"
-                        value={heightCmValue}
-                        onChange={(e) => setHeightCm(e.target.value)}
-                        inputProps={{ min: 50, max: 272, step: 0.1 }}
-                        fullWidth
-                    />
-                ) : (
-                    <Box sx={{ display: 'flex', gap: 2 }}>
-                        <TextField
-                            label="Feet"
-                            type="number"
-                            value={heightFeetValue}
-                            onChange={(e) => setHeightFeet(e.target.value)}
-                            inputProps={{ min: 1, max: 8, step: 1 }}
-                            fullWidth
-                        />
-                        <TextField
-                            label="Inches"
-                            type="number"
-                            value={heightInchesValue}
-                            onChange={(e) => setHeightInches(e.target.value)}
-                            inputProps={{ min: 0, max: 11.9, step: 0.1 }}
-                            fullWidth
-                        />
-                    </Box>
-                )}
-                <FormControl fullWidth>
-                    <InputLabel>Activity Level</InputLabel>
-                    <Select value={activityValue} label="Activity Level" onChange={(e) => setActivityLevel(e.target.value)}>
-                        {activityLevelOptions.map((option) => (
-                            <MenuItem key={option.value} value={option.value}>{option.label}</MenuItem>
-                        ))}
-                    </Select>
-                </FormControl>
-                <Box sx={{ display: 'flex', gap: 2 }}>
-                    <Button variant="contained" onClick={() => void handleProfileSave()} disabled={profileQuery.isLoading}>
-                        Save Profile
-                    </Button>
-                </Box>
-                {profileQuery.data?.calorieSummary && (
-                    <Alert severity={profileQuery.data.calorieSummary.dailyCalorieTarget ? 'success' : 'warning'}>
-                        {profileQuery.data.calorieSummary.dailyCalorieTarget
-                            ? `Estimated target: ${profileQuery.data.calorieSummary.dailyCalorieTarget} kcal/day`
-                            : 'Add birthday, sex, height, activity level, weight, and goal to compute a daily target.'}
-                    </Alert>
-                )}
-            </Stack>
-
-            <Divider sx={{ my: 3 }} />
-
-            <Box component="form" onSubmit={handleSubmit}>
+            <Paper sx={{ p: 2, mb: 3 }}>
+                <Typography variant="h6" gutterBottom>Units & Localization</Typography>
                 {message && <Alert severity="info" sx={{ mb: 2 }}>{message}</Alert>}
                 <FormControl fullWidth margin="normal">
                     <InputLabel>Weight Unit</InputLabel>
@@ -284,35 +203,124 @@ const Settings: React.FC = () => {
                         <MenuItem value="LB">Pounds (lb)</MenuItem>
                     </Select>
                 </FormControl>
-                <TextField
-                    label={`Start Weight (${weightUnitLabel})`}
-                    type="number"
-                    fullWidth
-                    margin="normal"
-                    value={startWeight}
-                    onChange={(e) => setStartWeightInput(e.target.value)}
-                    inputProps={{ step: 0.1 }}
-                />
-                <TextField
-                    label={`Target Weight (${weightUnitLabel})`}
-                    type="number"
-                    fullWidth
-                    margin="normal"
-                    value={targetWeight}
-                    onChange={(e) => setTargetWeightInput(e.target.value)}
-                    inputProps={{ step: 0.1 }}
-                />
-                <TextField
-                    label="Daily Calorie Deficit"
-                    type="number"
-                    fullWidth
-                    margin="normal"
-                    value={dailyDeficit}
-                    onChange={(e) => setDailyDeficitInput(e.target.value)}
-                    helperText="Recommended: 250 - 1000"
-                />
-                <Button type="submit" variant="contained" fullWidth sx={{ mt: 2 }}>Save Goal</Button>
-            </Box>
+                <FormControl fullWidth margin="normal">
+                    <InputLabel>Height Units</InputLabel>
+                    <Select
+                        value={heightUnit}
+                        label="Height Units"
+                        onChange={(e) => setHeightUnit(e.target.value as 'cm' | 'ftin')}
+                    >
+                        <MenuItem value="cm">Centimeters</MenuItem>
+                        <MenuItem value="ftin">Feet / Inches</MenuItem>
+                    </Select>
+                </FormControl>
+            </Paper>
+
+            <Paper sx={{ p: 2, mb: 3 }}>
+                <Typography variant="h6" gutterBottom>Profile</Typography>
+                {profileMessage && <Alert severity="info" sx={{ mb: 2 }}>{profileMessage}</Alert>}
+                <Stack spacing={2}>
+                    <TextField
+                        label="Date of Birth"
+                        type="date"
+                        InputLabelProps={{ shrink: true }}
+                        value={dobValue}
+                        onChange={(e) => setDateOfBirth(e.target.value)}
+                        fullWidth
+                    />
+                    <FormControl fullWidth>
+                        <InputLabel>Sex</InputLabel>
+                        <Select value={sexValue} label="Sex" onChange={(e) => setSex(e.target.value)}>
+                            <MenuItem value="MALE">Male</MenuItem>
+                            <MenuItem value="FEMALE">Female</MenuItem>
+                        </Select>
+                    </FormControl>
+                    {heightUnit === 'cm' ? (
+                        <TextField
+                            label="Height (cm)"
+                            type="number"
+                            value={heightCmValue}
+                            onChange={(e) => setHeightCm(e.target.value)}
+                            inputProps={{ min: 50, max: 272, step: 0.1 }}
+                            fullWidth
+                        />
+                    ) : (
+                        <Box sx={{ display: 'flex', gap: 2 }}>
+                            <TextField
+                                label="Feet"
+                                type="number"
+                                value={heightFeetValue}
+                                onChange={(e) => setHeightFeet(e.target.value)}
+                                inputProps={{ min: 1, max: 8, step: 1 }}
+                                fullWidth
+                            />
+                            <TextField
+                                label="Inches"
+                                type="number"
+                                value={heightInchesValue}
+                                onChange={(e) => setHeightInches(e.target.value)}
+                                inputProps={{ min: 0, max: 11.9, step: 0.1 }}
+                                fullWidth
+                            />
+                        </Box>
+                    )}
+                    <FormControl fullWidth>
+                        <InputLabel>Activity Level</InputLabel>
+                        <Select value={activityValue} label="Activity Level" onChange={(e) => setActivityLevel(e.target.value)}>
+                            {activityLevelOptions.map((option) => (
+                                <MenuItem key={option.value} value={option.value}>{option.label}</MenuItem>
+                            ))}
+                        </Select>
+                    </FormControl>
+                    <Box sx={{ display: 'flex', gap: 2 }}>
+                        <Button variant="contained" onClick={() => void handleProfileSave()} disabled={profileQuery.isLoading}>
+                            Save Profile
+                        </Button>
+                    </Box>
+                    {profileQuery.data?.calorieSummary && (
+                        <Alert severity={profileQuery.data.calorieSummary.dailyCalorieTarget ? 'success' : 'warning'}>
+                            {profileQuery.data.calorieSummary.dailyCalorieTarget
+                                ? `Estimated target: ${profileQuery.data.calorieSummary.dailyCalorieTarget} kcal/day`
+                                : 'Add birthday, sex, height, activity level, weight, and goal to compute a daily target.'}
+                        </Alert>
+                    )}
+                </Stack>
+            </Paper>
+
+            <Paper sx={{ p: 2 }}>
+                <Typography variant="h6" gutterBottom>Goals</Typography>
+                <Box component="form" onSubmit={handleSubmit}>
+                    {message && <Alert severity="info" sx={{ mb: 2 }}>{message}</Alert>}
+                    <TextField
+                        label={`Start Weight (${weightUnitLabel})`}
+                        type="number"
+                        fullWidth
+                        margin="normal"
+                        value={startWeight}
+                        onChange={(e) => setStartWeightInput(e.target.value)}
+                        inputProps={{ step: 0.1 }}
+                    />
+                    <TextField
+                        label={`Target Weight (${weightUnitLabel})`}
+                        type="number"
+                        fullWidth
+                        margin="normal"
+                        value={targetWeight}
+                        onChange={(e) => setTargetWeightInput(e.target.value)}
+                        inputProps={{ step: 0.1 }}
+                    />
+                    <TextField
+                        label="Daily Calorie Deficit"
+                        type="number"
+                        fullWidth
+                        margin="normal"
+                        value={dailyDeficit}
+                        onChange={(e) => setDailyDeficitInput(e.target.value)}
+                        helperText="Recommended: 250 - 1000"
+                    />
+                    <Button type="submit" variant="contained" fullWidth sx={{ mt: 2 }}>Save Goal</Button>
+                </Box>
+            </Paper>
         </Box>
     );
 };
