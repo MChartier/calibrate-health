@@ -256,7 +256,7 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
                                 </Typography>
                                 {computed && (
                                     <Typography variant="subtitle1" sx={{ mt: 1 }}>
-                                        {computed.calories} kcal for {computed.grams} g
+                                        {computed.calories} Calories for {computed.grams} g
                                     </Typography>
                                 )}
                             </Box>

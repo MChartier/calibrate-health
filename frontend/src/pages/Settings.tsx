@@ -293,7 +293,7 @@ const Settings: React.FC = () => {
                     {profileQuery.data?.calorieSummary && (
                         <Alert severity={profileQuery.data.calorieSummary.dailyCalorieTarget ? 'success' : 'warning'}>
                             {profileQuery.data.calorieSummary.dailyCalorieTarget
-                                ? `Estimated target: ${profileQuery.data.calorieSummary.dailyCalorieTarget} kcal/day`
+                                ? `Estimated target: ${profileQuery.data.calorieSummary.dailyCalorieTarget} Calories/day`
                                 : 'Add birthday, sex, height, activity level, weight, and goal to compute a daily target.'}
                         </Alert>
                     )}
@@ -346,7 +346,7 @@ const Settings: React.FC = () => {
                                 {['250', '500', '750', '1000'].map((val) => (
                                     <MenuItem key={val} value={val}>
                                         {goalMode === 'gain' ? '+' : '-'}
-                                        {val} kcal/day
+                                        {val} Calories/day
                                     </MenuItem>
                                 ))}
                             </Select>

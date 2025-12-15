@@ -256,7 +256,7 @@ const Onboarding: React.FC = () => {
                                 {['250', '500', '750', '1000'].map((val) => (
                                     <MenuItem key={val} value={val}>
                                         {goalMode === 'gain' ? '+' : '-'}
-                                        {val} kcal/day
+                                        {val} Calories/day
                                     </MenuItem>
                                 ))}
                             </Select>

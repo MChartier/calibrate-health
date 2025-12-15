@@ -98,7 +98,7 @@ const CalorieTargetBanner: React.FC = () => {
                         variant="body2"
                         sx={{ color: (theme) => theme.palette.success.main, textAlign: 'right', minWidth: 96 }}
                     >
-                        {typeof bmr === 'number' ? `+${bmr} kcal` : '—'}
+                        {typeof bmr === 'number' ? `+${bmr} Calories` : '—'}
                     </Typography>
                 </Box>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 1 }}>
@@ -112,7 +112,7 @@ const CalorieTargetBanner: React.FC = () => {
                         variant="body2"
                         sx={{ color: (theme) => theme.palette.success.main, textAlign: 'right', minWidth: 96 }}
                     >
-                        {activityDelta !== undefined ? `+${activityDelta} kcal` : '+ —'}
+                        {activityDelta !== undefined ? `+${activityDelta} Calories` : '+ —'}
                     </Typography>
                 </Box>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 1 }}>
@@ -131,7 +131,7 @@ const CalorieTargetBanner: React.FC = () => {
                         }}
                     >
                         {goalDelta !== undefined
-                            ? `${goalDelta > 0 ? '+' : ''}${goalDelta} kcal`
+                            ? `${goalDelta > 0 ? '+' : ''}${goalDelta} Calories`
                             : '—'}
                     </Typography>
                 </Box>
@@ -140,7 +140,7 @@ const CalorieTargetBanner: React.FC = () => {
                         Daily target
                     </Typography>
                     <Typography variant="body2" fontWeight={600} color="text.primary" sx={{ textAlign: 'right', minWidth: 96 }}>
-                        {dailyTarget !== undefined ? `${Math.round(dailyTarget)} kcal` : '—'}
+                        {dailyTarget !== undefined ? `${Math.round(dailyTarget)} Calories` : '—'}
                     </Typography>
                 </Box>
             </Stack>

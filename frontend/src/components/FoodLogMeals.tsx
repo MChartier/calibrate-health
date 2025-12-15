@@ -118,7 +118,7 @@ const FoodLogMeals: React.FC<{ logs: FoodLogEntry[] }> = ({ logs }) => {
                     >
                         <AccordionSummary expandIcon={<ExpandMoreIcon />}>
                             <Typography sx={{ flexGrow: 1, fontWeight: 'bold' }}>{meal.label}</Typography>
-                            <Typography color="text.secondary">{total} kcal</Typography>
+                            <Typography color="text.secondary">{total} Calories</Typography>
                         </AccordionSummary>
                         <AccordionDetails>
                             {entries.length === 0 ? (
@@ -128,7 +128,7 @@ const FoodLogMeals: React.FC<{ logs: FoodLogEntry[] }> = ({ logs }) => {
                                     {entries.map((entry) => (
                                         <Box key={entry.id} sx={{ display: 'flex', justifyContent: 'space-between' }}>
                                             <Typography>{entry.name}</Typography>
-                                            <Typography color="text.secondary">{entry.calories} kcal</Typography>
+                                            <Typography color="text.secondary">{entry.calories} Calories</Typography>
                                         </Box>
                                     ))}
                                 </Stack>
