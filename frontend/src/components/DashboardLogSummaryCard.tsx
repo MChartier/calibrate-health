@@ -69,7 +69,9 @@ const DashboardLogSummaryCard: React.FC = () => {
                 p: 2,
                 cursor: 'pointer',
                 transition: 'transform 120ms ease',
-                '&:hover': { transform: 'translateY(-2px)' }
+                '&:hover': { transform: 'translateY(-2px)' },
+                height: '100%',
+                width: '100%'
             }}
             onClick={() => navigate('/log')}
         >
