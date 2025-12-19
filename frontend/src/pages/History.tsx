@@ -80,7 +80,7 @@ const History: React.FC = () => {
     }, [targetIsValid, targetWeight, yData]);
 
     return (
-        <Box sx={{ mt: 1 }}>
+        <Box>
             <Typography variant="h4" gutterBottom>
                 History
             </Typography>

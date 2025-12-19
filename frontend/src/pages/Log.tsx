@@ -54,8 +54,8 @@ const Log: React.FC = () => {
     const handleCloseWeightDialog = () => setIsWeightDialogOpen(false);
 
     return (
-        <Box sx={{ mt: 1 }}>
-            <Box sx={{ display: 'flex', alignItems: { xs: 'stretch', sm: 'center' }, gap: 2, flexDirection: { xs: 'column', sm: 'row' } }}>
+        <Box>
+            <Box sx={{ display: 'flex', alignItems: { xs: 'stretch', sm: 'flex-start' }, gap: 2, flexDirection: { xs: 'column', sm: 'row' } }}>
                 <Typography variant="h4" sx={{ flexGrow: 1 }}>
                     Log
                 </Typography>

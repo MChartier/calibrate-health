@@ -9,7 +9,7 @@ const Dashboard: React.FC = () => {
     useAuth(); // ensure auth context is initialized
 
     return (
-        <Box sx={{ mt: 4 }}>
+        <Box>
             <Typography variant="h4" gutterBottom>Dashboard</Typography>
             <CalorieTargetBanner />
 

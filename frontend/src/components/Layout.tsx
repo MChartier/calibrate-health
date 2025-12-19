@@ -58,39 +58,39 @@ const Layout: React.FC = () => {
         <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
             <Toolbar />
 
-                <Box sx={{ flexGrow: 1 }}>
-                    <List>
-                        <ListItemButton
-                            selected={location.pathname.startsWith('/dashboard')}
-                            onClick={() => handleNavigate('/dashboard')}
-                        >
-                            <ListItemIcon>
-                                <DashboardIcon />
-                            </ListItemIcon>
-                            <ListItemText primary="Dashboard" />
-                        </ListItemButton>
+            <Box sx={{ flexGrow: 1 }}>
+                <List>
+                    <ListItemButton
+                        selected={location.pathname.startsWith('/dashboard')}
+                        onClick={() => handleNavigate('/dashboard')}
+                    >
+                        <ListItemIcon>
+                            <DashboardIcon />
+                        </ListItemIcon>
+                        <ListItemText primary="Dashboard" />
+                    </ListItemButton>
 
-                        <ListItemButton
-                            selected={location.pathname.startsWith('/log')}
-                            onClick={() => handleNavigate('/log')}
-                        >
-                            <ListItemIcon>
-                                <ListAltIcon />
-                            </ListItemIcon>
-                            <ListItemText primary="Log" />
-                        </ListItemButton>
+                    <ListItemButton
+                        selected={location.pathname.startsWith('/log')}
+                        onClick={() => handleNavigate('/log')}
+                    >
+                        <ListItemIcon>
+                            <ListAltIcon />
+                        </ListItemIcon>
+                        <ListItemText primary="Log" />
+                    </ListItemButton>
 
-                        <ListItemButton
-                            selected={location.pathname.startsWith('/history')}
-                            onClick={() => handleNavigate('/history')}
-                        >
-                            <ListItemIcon>
-                                <ShowChartIcon />
-                            </ListItemIcon>
-                            <ListItemText primary="History" />
-                        </ListItemButton>
-                    </List>
-                </Box>
+                    <ListItemButton
+                        selected={location.pathname.startsWith('/history')}
+                        onClick={() => handleNavigate('/history')}
+                    >
+                        <ListItemIcon>
+                            <ShowChartIcon />
+                        </ListItemIcon>
+                        <ListItemText primary="History" />
+                    </ListItemButton>
+                </List>
+            </Box>
 
             <Divider />
 
@@ -165,9 +165,11 @@ const Layout: React.FC = () => {
                 </>
             )}
 
-            <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
+            <Box component="main" sx={{ flexGrow: 1, minWidth: 0 }}>
                 <Toolbar />
-                <Outlet />
+                <Box sx={{ p: 3 }}>
+                    <Outlet />
+                </Box>
             </Box>
         </Box>
     );
