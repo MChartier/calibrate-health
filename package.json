@@ -14,6 +14,7 @@
     "db:studio": "npm --prefix backend run db:studio",
     "setup": "npm --prefix backend install && npm run prisma:generate && npm --prefix frontend install",
     "setup:devcontainer": "npm run setup && npm run db:migrate",
+    "worktree:new": "node scripts/worktree.mjs",
     "build": "npm --prefix frontend run build",
     "lint": "npm --prefix frontend run lint",
     "test": "echo \"Error: no test specified\" && exit 1"

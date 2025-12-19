@@ -4,7 +4,7 @@ services:
   app:
     image: mcr.microsoft.com/devcontainers/typescript-node:1-22-bookworm
     volumes:
-      - ..:/workspaces/${WORKSPACE_FOLDER_NAME}:cached
+      - ../..:/workspaces:cached
     ports:
       - "${BACKEND_PORT}:3000"
       - "${FRONTEND_PORT}:${FRONTEND_PORT}"
