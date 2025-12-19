@@ -32,6 +32,9 @@ const Layout: React.FC = () => {
     const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
     const navigate = useNavigate();
     const location = useLocation();
+    const worktreeName = import.meta.env.VITE_WORKTREE_NAME?.trim();
+    const isMainWorktree = import.meta.env.VITE_WORKTREE_IS_MAIN === 'true';
+    const worktreeBadgeLabel = worktreeName && !isMainWorktree ? worktreeName : null;
 
     const hideNav = location.pathname.startsWith('/onboarding');
     const showDrawer = Boolean(user) && !isLoading && !hideNav;
@@ -125,14 +128,34 @@ const Layout: React.FC = () => {
                         </IconButton>
                     )}
 
-                    <Typography
-                        variant="h6"
-                        component={RouterLink}
-                        to="/dashboard"
-                        sx={{ color: 'inherit', textDecoration: 'none' }}
-                    >
-                        cal-io
-                    </Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Typography
+                            variant="h6"
+                            component={RouterLink}
+                            to="/dashboard"
+                            sx={{ color: 'inherit', textDecoration: 'none' }}
+                        >
+                            cal-io
+                        </Typography>
+                        {worktreeBadgeLabel && (
+                            <Box
+                                component="span"
+                                sx={{
+                                    border: '1px solid rgba(255, 255, 255, 0.5)',
+                                    borderRadius: 1,
+                                    px: 1,
+                                    py: 0.25,
+                                    fontSize: '0.7rem',
+                                    fontWeight: 600,
+                                    lineHeight: 1,
+                                    backgroundColor: 'rgba(255, 255, 255, 0.12)',
+                                    letterSpacing: '0.04em'
+                                }}
+                            >
+                                {worktreeBadgeLabel}
+                            </Box>
+                        )}
+                    </Box>
                 </Toolbar>
             </AppBar>
 

@@ -20,12 +20,18 @@ const usePolling =
   process.env.VITE_USE_POLLING === 'true' ||
   process.env.VITE_USE_POLLING === '1' ||
   isRunningInContainer()
+const devServerPortEnv = process.env.VITE_DEV_SERVER_PORT
+const devServerPortValue = devServerPortEnv ? Number.parseInt(devServerPortEnv, 10) : undefined
+const devServerPort =
+  Number.isFinite(devServerPortValue) && devServerPortValue > 0 ? devServerPortValue : undefined
 
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
   server: {
     host: true,
+    port: devServerPort,
+    strictPort: devServerPort !== undefined,
     watch: usePolling ? { usePolling: true, interval: 100 } : undefined,
     proxy: {
       '/auth': 'http://localhost:3000',

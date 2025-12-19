@@ -4,12 +4,22 @@ services:
   app:
     image: mcr.microsoft.com/devcontainers/typescript-node:1-22-bookworm
     volumes:
-      - ..:/workspaces/cal-io:cached
+      - ..:/workspaces/${WORKSPACE_FOLDER_NAME}:cached
+    ports:
+      - "${BACKEND_PORT}:3000"
+      - "${FRONTEND_PORT}:${FRONTEND_PORT}"
     command: sleep infinity
     environment:
       DATABASE_URL: postgresql://user:password@postgres:5432/fitness_app?schema=public
       PORT: 3000
       SESSION_SECRET: development_secret_key
+      WORKTREE_COLOR: ${WORKTREE_COLOR}
+      WORKTREE_IS_MAIN: ${WORKTREE_IS_MAIN}
+      WORKTREE_NAME: ${WORKTREE_NAME}
+      VITE_DEV_SERVER_PORT: ${VITE_DEV_SERVER_PORT}
+      VITE_WORKTREE_COLOR: ${VITE_WORKTREE_COLOR}
+      VITE_WORKTREE_NAME: ${VITE_WORKTREE_NAME}
+      VITE_WORKTREE_IS_MAIN: ${VITE_WORKTREE_IS_MAIN}
     depends_on:
       - postgres
 
