@@ -2,10 +2,9 @@
   "name": "cal-io",
   "dockerComposeFile": "docker-compose.yml",
   "service": "app",
-  "workspaceFolder": "/workspaces/cal-io",
-
-  "forwardPorts": [3000, 5173],
+  "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
+  "initializeCommand": "bash .devcontainer/init-devcontainer-env.sh",
 
   "onCreateCommand": "npm install -g @openai/codex",
-  "postCreateCommand": "npm run setup:devcontainer"
+  "postCreateCommand": "npm run setup:devcontainer && node .devcontainer/update-peacock-settings.mjs"
 }

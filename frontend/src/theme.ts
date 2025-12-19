@@ -1,5 +1,20 @@
 import { createTheme } from '@mui/material/styles';
 
+const worktreeColor = import.meta.env.VITE_WORKTREE_COLOR?.trim();
+const isMainWorktree = import.meta.env.VITE_WORKTREE_IS_MAIN === 'true';
+const appBarColor = !isMainWorktree && worktreeColor ? worktreeColor : undefined;
+const appBarOverrides = appBarColor
+    ? {
+          MuiAppBar: {
+              styleOverrides: {
+                  root: {
+                      backgroundColor: appBarColor
+                  }
+              }
+          }
+      }
+    : {};
+
 const theme = createTheme({
     palette: {
         mode: 'light',
@@ -18,6 +33,7 @@ const theme = createTheme({
         borderRadius: 10
     },
     components: {
+        ...appBarOverrides,
         MuiPaper: {
             defaultProps: {
                 elevation: 2

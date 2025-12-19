@@ -4,3 +4,5 @@ dist
 backend/.env
 .DS_Store
 coverage
+.devcontainer/.env
+.vscode/settings.json
