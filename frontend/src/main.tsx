@@ -9,6 +9,19 @@ import { AuthProvider } from './context/AuthContext.tsx'
 
 const queryClient = new QueryClient()
 
+/**
+ * Build the browser tab title, adding the dev worktree name when available.
+ */
+function getBrowserTitle() {
+  const baseTitle = 'cal.io'
+  if (!import.meta.env.DEV) return baseTitle
+  const worktreeName = __WORKTREE_NAME__?.trim()
+  if (!worktreeName) return baseTitle
+  return `${worktreeName}.cal.io`
+}
+
+document.title = getBrowserTitle()
+
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
