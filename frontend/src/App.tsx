@@ -7,6 +7,7 @@ import Log from './pages/Log';
 import History from './pages/History';
 import Settings from './pages/Settings';
 import Onboarding from './pages/Onboarding';
+import DevDashboard from './pages/DevDashboard';
 
 import ProtectedRoute from './components/ProtectedRoute';
 
@@ -17,6 +18,7 @@ function App() {
         <Route index element={<Navigate to="/dashboard" replace />} />
         <Route path="login" element={<Login />} />
         <Route path="register" element={<Register />} />
+        <Route path="dev" element={<DevDashboard />} />
 
         <Route element={<ProtectedRoute />}>
           <Route path="onboarding" element={<Onboarding />} />

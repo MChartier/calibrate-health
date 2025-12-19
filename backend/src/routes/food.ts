@@ -13,6 +13,25 @@ const isAuthenticated = (req: express.Request, res: express.Response, next: expr
 
 router.use(isAuthenticated);
 
+/**
+ * Prefer an explicit language code, otherwise fall back to the request locale hint.
+ */
+const getLanguageCode = (req: express.Request): string | undefined => {
+    const raw = typeof req.query.lc === 'string' ? req.query.lc.trim().toLowerCase() : undefined;
+    if (raw) {
+        return raw;
+    }
+    const header = req.headers['accept-language'];
+    if (!header || typeof header !== 'string') {
+        return undefined;
+    }
+    const primary = header.split(',')[0]?.trim();
+    if (!primary) {
+        return undefined;
+    }
+    return primary.split('-')[0]?.toLowerCase();
+};
+
 router.get('/search', async (req, res) => {
     const provider = getFoodDataProvider();
     const query = (req.query.q as string) || (req.query.query as string);
@@ -25,6 +44,7 @@ router.get('/search', async (req, res) => {
     const page = req.query.page ? parseInt(req.query.page as string, 10) : undefined;
     const pageSize = req.query.pageSize ? parseInt(req.query.pageSize as string, 10) : undefined;
     const quantityInGrams = req.query.grams ? parseFloat(req.query.grams as string) : undefined;
+    const languageCode = getLanguageCode(req);
 
     try {
         const result = await provider.searchFoods({
@@ -32,7 +52,8 @@ router.get('/search', async (req, res) => {
             barcode,
             page,
             pageSize,
-            quantityInGrams
+            quantityInGrams,
+            languageCode
         });
 
         res.json({

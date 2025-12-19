@@ -7,6 +7,7 @@ type FoodNutrient = {
     nutrientNumber?: string;
     unitName?: string;
     amount?: number;
+    value?: number;
 };
 
 type FoodPortion = {
@@ -78,21 +79,25 @@ class UsdaFoodDataProvider implements FoodDataProvider {
         const data = await response.json();
         const items: NormalizedFoodItem[] = Array.isArray(data.foods)
             ? data.foods
-                  .map((food: UsdaFood) => this.normalizeFood(food, request.quantityInGrams))
+                  .map((food: UsdaFood) => this.normalizeFood(food, request.quantityInGrams, request.includeIncomplete))
                   .filter((item: NormalizedFoodItem | null): item is NormalizedFoodItem => Boolean(item))
             : [];
 
         return { items };
     }
 
-    private normalizeFood(food: UsdaFood, quantityInGrams?: number): NormalizedFoodItem | null {
+    private normalizeFood(
+        food: UsdaFood,
+        quantityInGrams?: number,
+        includeIncomplete?: boolean
+    ): NormalizedFoodItem | null {
         const measures = this.buildMeasures(food);
         const nutrientsPer100g = this.getNutrientsPer100g(food, measures);
-        if (!nutrientsPer100g) {
+        if (!nutrientsPer100g && !includeIncomplete) {
             return null;
         }
 
-        const nutrientsForRequest = quantityInGrams
+        const nutrientsForRequest = nutrientsPer100g && quantityInGrams
             ? {
                   grams: quantityInGrams,
                   nutrients: scaleNutrients(nutrientsPer100g, quantityInGrams / 100)
@@ -165,30 +170,35 @@ class UsdaFoodDataProvider implements FoodDataProvider {
             return undefined;
         }
 
-        const findNutrient = (codes: string[], names: string[]): number | undefined => {
+        const findNutrient = (
+            codes: string[],
+            names: string[],
+            options?: { convertKj?: boolean }
+        ): number | undefined => {
             const nutrient = foodNutrients.find((n) => {
                 const nutrientNumber = n.nutrientNumber || String(n.nutrientId || '');
                 const name = (n.nutrientName || '').toLowerCase();
                 return (nutrientNumber && codes.includes(nutrientNumber)) || names.some((title) => name.includes(title));
             });
 
-            if (!nutrient?.amount) {
+            const amount = nutrient?.amount ?? nutrient?.value;
+            if (amount === undefined || amount === null) {
                 return undefined;
             }
 
-            const unit = (nutrient.unitName || '').toLowerCase();
-            if (codes.includes('1008') && unit === 'kj') {
+            const unit = (nutrient?.unitName || '').toLowerCase();
+            if (options?.convertKj && unit === 'kj') {
                 // Convert kilojoules to kcal if needed.
-                return round(nutrient.amount / 4.184, 1);
+                return round(amount / 4.184, 1);
             }
 
-            return nutrient.amount;
+            return amount;
         };
 
-        const calories = findNutrient(['1008'], ['energy']);
-        const protein = findNutrient(['1003'], ['protein']);
-        const fat = findNutrient(['1004'], ['fat']);
-        const carbs = findNutrient(['1005'], ['carbohydrate', 'carbohydrates']);
+        const calories = findNutrient(['1008', '208'], ['energy'], { convertKj: true });
+        const protein = findNutrient(['1003', '203'], ['protein']);
+        const fat = findNutrient(['1004', '204'], ['fat']);
+        const carbs = findNutrient(['1005', '205'], ['carbohydrate', 'carbohydrates']);
 
         if (calories === undefined && protein === undefined && fat === undefined && carbs === undefined) {
             return undefined;

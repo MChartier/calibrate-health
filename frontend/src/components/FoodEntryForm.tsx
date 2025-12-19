@@ -42,6 +42,7 @@ type NormalizedFoodItem = {
     description: string;
     brand?: string;
     barcode?: string;
+    locale?: string;
     availableMeasures: FoodMeasure[];
     nutrientsPer100g?: {
         calories: number;

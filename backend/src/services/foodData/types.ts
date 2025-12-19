@@ -26,6 +26,7 @@ export interface NormalizedFoodItem {
     description: string;
     brand?: string;
     barcode?: string;
+    locale?: string;
     availableMeasures: FoodMeasure[];
     nutrientsPer100g?: Nutrients;
     nutrientsForRequest?: NutrientsForQuantity;
@@ -37,6 +38,8 @@ export interface FoodSearchRequest {
     page?: number;
     pageSize?: number;
     quantityInGrams?: number;
+    includeIncomplete?: boolean;
+    languageCode?: string;
 }
 
 export interface FoodSearchResult {
