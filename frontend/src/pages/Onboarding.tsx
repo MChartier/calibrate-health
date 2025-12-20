@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
     Alert,
+    Autocomplete,
     Box,
     Button,
     FormControl,
@@ -17,6 +18,7 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { activityLevelOptions } from '../constants/activityLevels';
 import { useQuery } from '@tanstack/react-query';
+import { getBrowserTimeZone, getSupportedTimeZones } from '../utils/timeZone';
 
 const Onboarding: React.FC = () => {
     const { user } = useAuth();
@@ -24,6 +26,12 @@ const Onboarding: React.FC = () => {
 
     const [weightUnit, setWeightUnit] = useState<'KG' | 'LB'>(user?.weight_unit ?? 'KG');
     const weightUnitLabel = weightUnit === 'LB' ? 'lb' : 'kg';
+    const timeZoneOptions = useMemo(() => getSupportedTimeZones(), []);
+    const [timezone, setTimezone] = useState(() => {
+        const browserTz = getBrowserTimeZone();
+        if (!user?.timezone) return browserTz;
+        return user.timezone === 'UTC' ? browserTz : user.timezone;
+    });
 
     const [sex, setSex] = useState('');
     const [dob, setDob] = useState('');
@@ -85,7 +93,7 @@ const Onboarding: React.FC = () => {
 
             await axios.patch('/api/user/profile', profilePayload);
 
-            await axios.patch('/api/user/preferences', { weight_unit: weightUnit });
+            await axios.patch('/api/user/preferences', { weight_unit: weightUnit, timezone });
 
             const deficitValue = goalMode === 'maintain' ? 0 : parseInt(dailyDeficit || '0', 10);
             const signedDeficit = goalMode === 'gain' ? -Math.abs(deficitValue) : Math.abs(deficitValue);
@@ -171,6 +179,26 @@ const Onboarding: React.FC = () => {
                             <MenuItem value="LB">Pounds (lb)</MenuItem>
                         </Select>
                     </FormControl>
+
+                    <Autocomplete
+                        freeSolo
+                        options={timeZoneOptions}
+                        value={timezone}
+                        onChange={(_, nextValue) => {
+                            if (typeof nextValue === 'string') {
+                                setTimezone(nextValue);
+                            }
+                        }}
+                        onInputChange={(_, nextInput) => setTimezone(nextInput)}
+                        renderInput={(params) => (
+                            <TextField
+                                {...params}
+                                label="Time zone"
+                                required
+                                helperText="Used to group your days and daily targets."
+                            />
+                        )}
+                    />
 
                     <FormControl fullWidth required>
                         <InputLabel>Height Units</InputLabel>
@@ -268,6 +296,7 @@ const Onboarding: React.FC = () => {
                         onClick={() => void handleSave()}
                         disabled={
                             isSaving ||
+                            !timezone ||
                             !sex ||
                             !dob ||
                             !activityLevel ||

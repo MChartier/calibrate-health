@@ -39,13 +39,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(null);
     };
 
+    /**
+     * Update the user's preferred IANA time zone identifier for date grouping and "today" calculations.
+     */
+    const updateTimezone = async (timezone: User['timezone']) => {
+        const res = await axios.patch('/api/user/preferences', { timezone });
+        setUser(res.data.user);
+    };
+
     const updateWeightUnit = async (weight_unit: User['weight_unit']) => {
         const res = await axios.patch('/api/user/preferences', { weight_unit });
         setUser(res.data.user);
     };
 
     return (
-        <AuthContext.Provider value={{ user, login, register, logout, updateWeightUnit, isLoading }}>
+        <AuthContext.Provider value={{ user, login, register, logout, updateWeightUnit, updateTimezone, isLoading }}>
             {children}
         </AuthContext.Provider>
     );

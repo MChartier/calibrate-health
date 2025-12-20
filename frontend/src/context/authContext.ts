@@ -6,6 +6,7 @@ export type User = {
     id: number;
     email: string;
     weight_unit: WeightUnit;
+    timezone: string;
     date_of_birth?: string | null;
     sex?: 'MALE' | 'FEMALE' | null;
     height_mm?: number | null;
@@ -18,6 +19,7 @@ export type AuthContextType = {
     register: (email: string, password: string) => Promise<void>;
     logout: () => Promise<void>;
     updateWeightUnit: (weight_unit: User['weight_unit']) => Promise<void>;
+    updateTimezone: (timezone: User['timezone']) => Promise<void>;
     isLoading: boolean;
 };
 

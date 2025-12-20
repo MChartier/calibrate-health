@@ -1,21 +1,25 @@
 import React, { useMemo, useState } from 'react';
-import { Typography, Box, TextField, Button, Alert, FormControl, InputLabel, Select, MenuItem, Stack, Paper } from '@mui/material';
+import { Typography, Box, TextField, Button, Alert, Autocomplete, FormControl, InputLabel, Select, MenuItem, Stack, Paper } from '@mui/material';
 import type { SelectChangeEvent } from '@mui/material/Select';
 import axios from 'axios';
 import { useAuth } from '../context/useAuth';
 import { useQuery } from '@tanstack/react-query';
 import { activityLevelOptions } from '../constants/activityLevels';
+import { getBrowserTimeZone, getSupportedTimeZones } from '../utils/timeZone';
 
 const Settings: React.FC = () => {
-    const { user, updateWeightUnit } = useAuth();
+    const { user, updateWeightUnit, updateTimezone } = useAuth();
     const [startWeightInput, setStartWeightInput] = useState<string | null>(null);
     const [targetWeightInput, setTargetWeightInput] = useState<string | null>(null);
     const [dailyDeficitInput, setDailyDeficitInput] = useState<string | null>(null);
     const [goalMode, setGoalMode] = useState<'lose' | 'maintain' | 'gain'>('lose');
     const [unitMessage, setUnitMessage] = useState('');
+    const [timeZoneMessage, setTimeZoneMessage] = useState('');
+    const [timezoneInput, setTimezoneInput] = useState<string | null>(null);
     const [goalMessage, setGoalMessage] = useState('');
     const weightUnitLabel = user?.weight_unit === 'LB' ? 'lb' : 'kg';
     const [profileMessage, setProfileMessage] = useState('');
+    const timeZoneOptions = useMemo(() => getSupportedTimeZones(), []);
 
     const [dateOfBirth, setDateOfBirth] = useState<string | null>(null);
     const [sex, setSex] = useState<string | null>(null);
@@ -132,6 +136,11 @@ const Settings: React.FC = () => {
         return value ?? '';
     }, [activityLevel, profileQuery.data?.profile.activity_level]);
 
+    const timezoneValue = useMemo(() => {
+        if (timezoneInput !== null) return timezoneInput;
+        return user?.timezone ?? getBrowserTimeZone();
+    }, [timezoneInput, user?.timezone]);
+
     const handleWeightUnitChange = async (e: SelectChangeEvent) => {
         const nextUnit = e.target.value;
         if (nextUnit !== 'KG' && nextUnit !== 'LB') {
@@ -147,6 +156,22 @@ const Settings: React.FC = () => {
             void goalQuery.refetch();
         } catch {
             setUnitMessage('Failed to update preferences');
+        }
+    };
+
+    const handleTimezoneSave = async () => {
+        const nextTimezone = timezoneValue.trim();
+        if (!nextTimezone) {
+            setTimeZoneMessage('Timezone is required');
+            return;
+        }
+
+        try {
+            await updateTimezone(nextTimezone);
+            setTimezoneInput(null);
+            setTimeZoneMessage('Timezone updated');
+        } catch {
+            setTimeZoneMessage('Failed to update timezone');
         }
     };
 
@@ -205,6 +230,7 @@ const Settings: React.FC = () => {
             <Paper sx={{ p: 2, mb: 3 }}>
                 <Typography variant="h6" gutterBottom>Units & Localization</Typography>
                 {unitMessage && <Alert severity="info" sx={{ mb: 2 }}>{unitMessage}</Alert>}
+                {timeZoneMessage && <Alert severity="info" sx={{ mb: 2 }}>{timeZoneMessage}</Alert>}
                 <FormControl fullWidth margin="normal">
                     <InputLabel>Weight Unit</InputLabel>
                     <Select
@@ -216,6 +242,36 @@ const Settings: React.FC = () => {
                         <MenuItem value="LB">Pounds (lb)</MenuItem>
                     </Select>
                 </FormControl>
+
+                <Autocomplete
+                    freeSolo
+                    options={timeZoneOptions}
+                    value={timezoneValue}
+                    onChange={(_, nextValue) => {
+                        if (typeof nextValue === 'string') {
+                            setTimezoneInput(nextValue);
+                        }
+                    }}
+                    onInputChange={(_, nextInput) => setTimezoneInput(nextInput)}
+                    renderInput={(params) => (
+                        <TextField
+                            {...params}
+                            label="Time zone"
+                            margin="normal"
+                            helperText="Used to group your days, logs, and daily targets."
+                            fullWidth
+                        />
+                    )}
+                />
+                <Button
+                    variant="contained"
+                    onClick={() => void handleTimezoneSave()}
+                    disabled={!timezoneValue.trim() || timezoneValue.trim() === (user?.timezone ?? 'UTC')}
+                    sx={{ mt: 1 }}
+                >
+                    Save time zone
+                </Button>
+
                 <FormControl fullWidth margin="normal">
                     <InputLabel>Height Units</InputLabel>
                     <Select
