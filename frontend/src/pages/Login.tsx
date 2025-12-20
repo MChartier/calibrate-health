@@ -14,7 +14,7 @@ const Login: React.FC = () => {
         e.preventDefault();
         try {
             await login(email, password);
-            navigate('/dashboard');
+            navigate('/log');
         } catch {
             setError('Invalid credentials');
         }
