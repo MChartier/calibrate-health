@@ -61,11 +61,40 @@ type NormalizedFoodItem = {
     };
 };
 
+type MealPeriod =
+    | 'Breakfast'
+    | 'Morning Snack'
+    | 'Lunch'
+    | 'Afternoon Snack'
+    | 'Dinner'
+    | 'Evening Snack';
+
+/**
+ * Choose a sensible default meal period based on the current local time.
+ * Thresholds:
+ * - 09:00 => Morning Snack
+ * - 11:30 => Lunch
+ * - 14:00 => Afternoon Snack
+ * - 16:30 => Dinner
+ * - 21:00 => Evening Snack
+ * Anything earlier defaults to Breakfast.
+ */
+function getDefaultMealPeriodForTime(now: Date): MealPeriod {
+    const minutesSinceMidnight = now.getHours() * 60 + now.getMinutes();
+
+    if (minutesSinceMidnight >= 21 * 60) return 'Evening Snack';
+    if (minutesSinceMidnight >= 16 * 60 + 30) return 'Dinner';
+    if (minutesSinceMidnight >= 14 * 60) return 'Afternoon Snack';
+    if (minutesSinceMidnight >= 11 * 60 + 30) return 'Lunch';
+    if (minutesSinceMidnight >= 9 * 60) return 'Morning Snack';
+    return 'Breakfast';
+}
+
 const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
     const [mode, setMode] = useState<'manual' | 'search'>('manual');
     const [foodName, setFoodName] = useState('');
     const [calories, setCalories] = useState('');
-    const [mealPeriod, setMealPeriod] = useState('Breakfast');
+    const [mealPeriod, setMealPeriod] = useState<MealPeriod>(() => getDefaultMealPeriodForTime(new Date()));
 
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState<NormalizedFoodItem[]>([]);
@@ -288,7 +317,11 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
 
             <FormControl fullWidth>
                 <InputLabel>Meal Period</InputLabel>
-                <Select value={mealPeriod} label="Meal Period" onChange={(e) => setMealPeriod(e.target.value)}>
+                <Select
+                    value={mealPeriod}
+                    label="Meal Period"
+                    onChange={(e) => setMealPeriod(e.target.value as MealPeriod)}
+                >
                     {mealOptions.map((meal) => (
                         <MenuItem key={meal.value} value={meal.value}>
                             <ListItemIcon sx={{ minWidth: 32 }}>{meal.icon}</ListItemIcon>
