@@ -1,9 +1,10 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { Box, Paper, Typography } from '@mui/material';
+import React, { useMemo } from 'react';
+import { Alert, Box, Button, Paper, Skeleton, Stack, Typography } from '@mui/material';
 import axios from 'axios';
 import { useAuth } from '../context/useAuth';
 import { LineChart } from '@mui/x-charts/LineChart';
 import { ChartsReferenceLine } from '@mui/x-charts/ChartsReferenceLine';
+import { useQuery } from '@tanstack/react-query';
 
 type Metric = {
     id: number;
@@ -31,26 +32,24 @@ const History: React.FC = () => {
     const { user } = useAuth();
     const unitLabel = user?.weight_unit === 'LB' ? 'lb' : 'kg';
 
-    const [metrics, setMetrics] = useState<Metric[]>([]);
-    const [targetWeight, setTargetWeight] = useState<number | null>(null);
+    const metricsQuery = useQuery({
+        queryKey: ['metrics'],
+        queryFn: async (): Promise<Metric[]> => {
+            const res = await axios.get('/api/metrics');
+            return Array.isArray(res.data) ? res.data : [];
+        }
+    });
 
-    useEffect(() => {
-        const fetchData = async () => {
-            try {
-                const [metricsRes, goalRes] = await Promise.all([
-                    axios.get('/api/metrics'),
-                    axios.get('/api/goals')
-                ]);
+    const goalQuery = useQuery({
+        queryKey: ['goal'],
+        queryFn: async (): Promise<{ target_weight?: number } | null> => {
+            const res = await axios.get('/api/goals');
+            return res.data ?? null;
+        }
+    });
 
-                setMetrics(Array.isArray(metricsRes.data) ? metricsRes.data : []);
-                setTargetWeight(goalRes.data?.target_weight ?? null);
-            } catch (err) {
-                console.error(err);
-            }
-        };
-
-        fetchData();
-    }, []);
+    const metrics = metricsQuery.data ?? [];
+    const targetWeight = goalQuery.data?.target_weight ?? null;
 
     const points = useMemo(() => {
         const parsed: WeightPoint[] = metrics
@@ -90,42 +89,74 @@ const History: React.FC = () => {
                     Weight Over Time
                 </Typography>
 
-                {points.length === 0 ? (
+                {(metricsQuery.isLoading || goalQuery.isLoading) && (
+                    <Stack spacing={2}>
+                        <Skeleton variant="rounded" height={320} />
+                        <Skeleton width="40%" />
+                    </Stack>
+                )}
+
+                {(metricsQuery.isError || goalQuery.isError) && (
+                    <Alert
+                        severity="error"
+                        action={
+                            <Button
+                                color="inherit"
+                                size="small"
+                                onClick={() => {
+                                    void metricsQuery.refetch();
+                                    void goalQuery.refetch();
+                                }}
+                            >
+                                Retry
+                            </Button>
+                        }
+                    >
+                        Unable to load history right now.
+                    </Alert>
+                )}
+
+                {!metricsQuery.isLoading && !goalQuery.isLoading && !metricsQuery.isError && !goalQuery.isError && points.length === 0 ? (
                     <Typography color="text.secondary">No weight entries yet.</Typography>
                 ) : (
-                    <LineChart
-                        xAxis={[
-                            {
-                                data: xData,
-                                scaleType: 'time',
-                                valueFormatter: (value) =>
-                                    new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' }).format(value)
-                            }
-                        ]}
-                        yAxis={[
-                            {
-                                min: yDomain?.min,
-                                max: yDomain?.max,
-                                label: `Weight (${unitLabel})`
-                            }
-                        ]}
-                        series={[
-                            {
-                                data: yData,
-                                label: 'Weight',
-                                showMark: true
-                            }
-                        ]}
-                        height={320}
-                    >
-                        {targetIsValid && (
-                            <ChartsReferenceLine
-                                y={targetWeight}
-                                label={`Target: ${targetWeight.toFixed(1)} ${unitLabel}`}
-                                lineStyle={{ strokeDasharray: '6 6' }}
-                            />
-                        )}
-                    </LineChart>
+                    !metricsQuery.isLoading &&
+                    !goalQuery.isLoading &&
+                    !metricsQuery.isError &&
+                    !goalQuery.isError && (
+                        <LineChart
+                            xAxis={[
+                                {
+                                    data: xData,
+                                    scaleType: 'time',
+                                    valueFormatter: (value) =>
+                                        new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' }).format(value)
+                                }
+                            ]}
+                            yAxis={[
+                                {
+                                    min: yDomain?.min,
+                                    max: yDomain?.max,
+                                    label: `Weight (${unitLabel})`
+                                }
+                            ]}
+                            series={[
+                                {
+                                    data: yData,
+                                    label: 'Weight',
+                                    showMark: true
+                                }
+                            ]}
+                            height={320}
+                        >
+                            {targetIsValid && (
+                                <ChartsReferenceLine
+                                    y={targetWeight}
+                                    label={`Target: ${targetWeight.toFixed(1)} ${unitLabel}`}
+                                    lineStyle={{ strokeDasharray: '6 6' }}
+                                />
+                            )}
+                        </LineChart>
+                    )
                 )}
             </Paper>
         </Box>
