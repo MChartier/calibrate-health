@@ -6,9 +6,11 @@ import { useAuth } from '../context/useAuth';
 import { useQuery } from '@tanstack/react-query';
 import { activityLevelOptions } from '../constants/activityLevels';
 import { getBrowserTimeZone, getSupportedTimeZones } from '../utils/timeZone';
+import { useNavigate } from 'react-router-dom';
 
 const Settings: React.FC = () => {
-    const { user, updateWeightUnit, updateTimezone } = useAuth();
+    const { user, updateWeightUnit, updateTimezone, logout } = useAuth();
+    const navigate = useNavigate();
     const [startWeightInput, setStartWeightInput] = useState<string | null>(null);
     const [targetWeightInput, setTargetWeightInput] = useState<string | null>(null);
     const [dailyDeficitInput, setDailyDeficitInput] = useState<string | null>(null);
@@ -223,6 +225,14 @@ const Settings: React.FC = () => {
         }
     };
 
+    /**
+     * End the user session and return to the login screen.
+     */
+    const handleLogout = async () => {
+        await logout();
+        navigate('/login');
+    };
+
     return (
         <Box sx={{ maxWidth: 720, mx: 'auto' }}>
             <Typography variant="h4" gutterBottom>Settings</Typography>
@@ -410,6 +420,22 @@ const Settings: React.FC = () => {
                     )}
                     <Button type="submit" variant="contained" fullWidth sx={{ mt: 2 }}>Save Goal</Button>
                 </Box>
+            </Paper>
+
+            <Paper sx={{ p: 2, mt: 3 }}>
+                <Typography variant="h6" gutterBottom>
+                    Account
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                    Signed in as <strong>{user?.email ?? '—'}</strong>
+                </Typography>
+                <Button
+                    variant="outlined"
+                    color="error"
+                    onClick={() => void handleLogout()}
+                >
+                    Log out
+                </Button>
             </Paper>
         </Box>
     );
