@@ -32,7 +32,57 @@ worktree_colors=(
   "#6d28d9"
   "#4b5563"
 )
-color_index="$((hash % ${#worktree_colors[@]}))"
+greek_letters=(
+  alpha
+  beta
+  gamma
+  delta
+  epsilon
+  zeta
+  eta
+  theta
+  iota
+  kappa
+  lambda
+  mu
+  nu
+  xi
+  omicron
+  pi
+  rho
+  sigma
+  tau
+  upsilon
+  phi
+  chi
+  psi
+  omega
+)
+
+# Echo the 0-based Greek letter index when the workspace name follows `<base>-<letter>`.
+# Returns an empty string when the name doesn't match the expected pattern.
+get_greek_letter_index() {
+  local name_lower candidate i
+  name_lower="$(printf '%s' "$1" | tr '[:upper:]' '[:lower:]')"
+  candidate="${name_lower##*-}"
+
+  for i in "${!greek_letters[@]}"; do
+    if [ "${greek_letters[$i]}" = "$candidate" ]; then
+      printf '%s' "$i"
+      return 0
+    fi
+  done
+
+  printf ''
+}
+
+greek_letter_index="$(get_greek_letter_index "$workspace_name")"
+if [ -n "$greek_letter_index" ]; then
+  # Use a stable mapping for Greek-letter worktrees so consecutive names don't collide.
+  color_index="$((greek_letter_index % ${#worktree_colors[@]}))"
+else
+  color_index="$((hash % ${#worktree_colors[@]}))"
+fi
 derived_color="${worktree_colors[$color_index]}"
 
 worktree_color="$derived_color"
