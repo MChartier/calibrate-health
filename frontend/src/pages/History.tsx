@@ -5,6 +5,7 @@ import { useAuth } from '../context/useAuth';
 import { LineChart } from '@mui/x-charts/LineChart';
 import { ChartsReferenceLine } from '@mui/x-charts/ChartsReferenceLine';
 import { useQuery } from '@tanstack/react-query';
+import { getTodayIsoDate } from '../utils/date';
 
 type Metric = {
     id: number;
@@ -13,6 +14,7 @@ type Metric = {
 };
 
 type WeightPoint = { date: Date; weight: number };
+type CaloriePoint = { date: Date; calories: number };
 
 function parseDateOnlyToLocalDate(value: string): Date | null {
     const datePart = value.split('T')[0] ?? '';
@@ -31,6 +33,7 @@ function parseDateOnlyToLocalDate(value: string): Date | null {
 const History: React.FC = () => {
     const { user } = useAuth();
     const unitLabel = user?.weight_unit === 'LB' ? 'lb' : 'kg';
+    const todayIso = getTodayIsoDate(user?.timezone);
 
     const metricsQuery = useQuery({
         queryKey: ['metrics'],
@@ -48,8 +51,36 @@ const History: React.FC = () => {
         }
     });
 
+    const profileSummaryQuery = useQuery({
+        queryKey: ['profile-summary'],
+        queryFn: async () => {
+            const res = await axios.get('/api/user/profile');
+            return res.data;
+        }
+    });
+
+    const dailyTarget = profileSummaryQuery.data?.calorieSummary?.dailyCalorieTarget;
+    const hasDailyTarget = typeof dailyTarget === 'number' && Number.isFinite(dailyTarget);
+
     const metrics = metricsQuery.data ?? [];
     const targetWeight = goalQuery.data?.target_weight ?? null;
+
+    const calorieWindow = useMemo(() => {
+        const end = new Date(todayIso);
+        const start = new Date(end);
+        start.setUTCDate(start.getUTCDate() - 29);
+        return { startIso: start.toISOString().slice(0, 10), endIso: todayIso };
+    }, [todayIso]);
+
+    const dailyCaloriesQuery = useQuery({
+        queryKey: ['food-daily', calorieWindow.startIso, calorieWindow.endIso],
+        queryFn: async (): Promise<Array<{ date: string; calories: number }>> => {
+            const res = await axios.get('/api/food/daily', {
+                params: { start: calorieWindow.startIso, end: calorieWindow.endIso }
+            });
+            return Array.isArray(res.data) ? res.data : [];
+        }
+    });
 
     const points = useMemo(() => {
         const parsed: WeightPoint[] = metrics
@@ -77,6 +108,35 @@ const History: React.FC = () => {
         const padding = range * 0.1;
         return { min: min - padding, max: max + padding };
     }, [targetIsValid, targetWeight, yData]);
+
+    const caloriePoints = useMemo(() => {
+        const items = dailyCaloriesQuery.data ?? [];
+        const parsed: CaloriePoint[] = items
+            .filter((item) => typeof item?.calories === 'number' && Number.isFinite(item.calories))
+            .map((item) => {
+                const date = parseDateOnlyToLocalDate(item.date);
+                if (!date) return null;
+                return { date, calories: item.calories };
+            })
+            .filter((value): value is CaloriePoint => value !== null);
+
+        parsed.sort((a, b) => a.date.getTime() - b.date.getTime());
+        return parsed;
+    }, [dailyCaloriesQuery.data]);
+
+    const calorieXData = useMemo(() => caloriePoints.map((point) => point.date), [caloriePoints]);
+    const calorieYData = useMemo(() => caloriePoints.map((point) => point.calories), [caloriePoints]);
+    const calorieYDomain = useMemo(() => {
+        const values = [...calorieYData, ...(hasDailyTarget ? [dailyTarget] : [])].filter(
+            (value): value is number => typeof value === 'number' && Number.isFinite(value)
+        );
+        if (values.length === 0) return null;
+        const min = Math.min(...values);
+        const max = Math.max(...values);
+        const range = Math.max(1, max - min);
+        const padding = range * 0.1;
+        return { min: Math.max(0, min - padding), max: max + padding };
+    }, [calorieYData, dailyTarget, hasDailyTarget]);
 
     return (
         <Box>
@@ -157,6 +217,76 @@ const History: React.FC = () => {
                             )}
                         </LineChart>
                     )
+                )}
+            </Paper>
+
+            <Paper sx={{ p: 2, mt: 3 }}>
+                <Typography variant="h6" gutterBottom>
+                    Calories Over Time
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                    Last 30 days · Daily totals compared to your current target.
+                </Typography>
+
+                {dailyCaloriesQuery.isLoading || profileSummaryQuery.isLoading ? (
+                    <Stack spacing={2}>
+                        <Skeleton variant="rounded" height={320} />
+                        <Skeleton width="40%" />
+                    </Stack>
+                ) : dailyCaloriesQuery.isError || profileSummaryQuery.isError ? (
+                    <Alert
+                        severity="error"
+                        action={
+                            <Button
+                                color="inherit"
+                                size="small"
+                                onClick={() => {
+                                    void dailyCaloriesQuery.refetch();
+                                    void profileSummaryQuery.refetch();
+                                }}
+                            >
+                                Retry
+                            </Button>
+                        }
+                    >
+                        Unable to load calorie history right now.
+                    </Alert>
+                ) : caloriePoints.length === 0 ? (
+                    <Typography color="text.secondary">No food entries yet.</Typography>
+                ) : (
+                    <LineChart
+                        xAxis={[
+                            {
+                                data: calorieXData,
+                                scaleType: 'time',
+                                valueFormatter: (value) =>
+                                    new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' }).format(value)
+                            }
+                        ]}
+                        yAxis={[
+                            {
+                                min: calorieYDomain?.min,
+                                max: calorieYDomain?.max,
+                                label: 'Calories'
+                            }
+                        ]}
+                        series={[
+                            {
+                                data: calorieYData,
+                                label: 'Consumed',
+                                showMark: true
+                            }
+                        ]}
+                        height={320}
+                    >
+                        {hasDailyTarget && (
+                            <ChartsReferenceLine
+                                y={dailyTarget}
+                                label={`Target: ${Math.round(dailyTarget)} kcal`}
+                                lineStyle={{ strokeDasharray: '6 6' }}
+                            />
+                        )}
+                    </LineChart>
                 )}
             </Paper>
         </Box>
