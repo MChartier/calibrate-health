@@ -1,5 +1,24 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Accordion, AccordionDetails, AccordionSummary, Box, Divider, Stack, Typography, Avatar, IconButton, Tooltip } from '@mui/material';
+import {
+    Accordion,
+    AccordionDetails,
+    AccordionSummary,
+    Alert,
+    Box,
+    Button,
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogTitle,
+    IconButton,
+    List,
+    ListItem,
+    ListItemText,
+    Stack,
+    Tooltip,
+    Typography,
+    Avatar
+} from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import EggAltIcon from '@mui/icons-material/EggAlt';
 import BakeryDiningIcon from '@mui/icons-material/BakeryDining';
@@ -7,6 +26,8 @@ import IcecreamIcon from '@mui/icons-material/Icecream';
 import LunchDiningIcon from '@mui/icons-material/LunchDining';
 import DinnerDiningIcon from '@mui/icons-material/DinnerDining';
 import NightlifeIcon from '@mui/icons-material/Nightlife';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import axios from 'axios';
 
 type MealKey =
     | 'Breakfast'
@@ -22,6 +43,8 @@ type FoodLogEntry = {
     name?: string;
     calories?: number;
 };
+
+type DeleteState = { id: number; label: string } | null;
 
 const MEALS: Array<{ key: MealKey; label: string; aliases: string[]; icon: React.ReactNode }> = [
     { key: 'Breakfast', label: 'Breakfast', aliases: ['Breakfast'], icon: <EggAltIcon htmlColor="#ff9800" /> },
@@ -47,7 +70,7 @@ function sumCalories(entries: FoodLogEntry[]): number {
     return entries.reduce((total, entry) => total + (typeof entry.calories === 'number' ? entry.calories : 0), 0);
 }
 
-const FoodLogMeals: React.FC<{ logs: FoodLogEntry[] }> = ({ logs }) => {
+const FoodLogMeals: React.FC<{ logs: FoodLogEntry[]; onChange?: () => void }> = ({ logs, onChange }) => {
     const grouped = useMemo(() => {
         const groups: Record<MealKey, FoodLogEntry[]> = {
             Breakfast: [],
@@ -77,6 +100,9 @@ const FoodLogMeals: React.FC<{ logs: FoodLogEntry[] }> = ({ logs }) => {
     });
 
     const previousCountsRef = useRef<Record<MealKey, number> | null>(null);
+    const [deleteState, setDeleteState] = useState<DeleteState>(null);
+    const [deleteError, setDeleteError] = useState<string | null>(null);
+    const [isDeleting, setIsDeleting] = useState(false);
 
     useEffect(() => {
         const counts: Record<MealKey, number> = {
@@ -129,6 +155,25 @@ const FoodLogMeals: React.FC<{ logs: FoodLogEntry[] }> = ({ logs }) => {
         });
     };
 
+    /**
+     * Delete a single food log entry and refresh the parent list when successful.
+     */
+    const handleConfirmDelete = async () => {
+        if (!deleteState) return;
+        setDeleteError(null);
+        setIsDeleting(true);
+        try {
+            await axios.delete(`/api/food/${deleteState.id}`);
+            setDeleteState(null);
+            onChange?.();
+        } catch (err) {
+            console.error(err);
+            setDeleteError('Unable to delete this entry right now.');
+        } finally {
+            setIsDeleting(false);
+        }
+    };
+
     return (
         <Stack spacing={2}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -172,19 +217,76 @@ const FoodLogMeals: React.FC<{ logs: FoodLogEntry[] }> = ({ logs }) => {
                             {entries.length === 0 ? (
                                 <Typography color="text.secondary">No entries yet.</Typography>
                             ) : (
-                                <Stack divider={<Divider flexItem />} spacing={1}>
-                                    {entries.map((entry) => (
-                                        <Box key={entry.id} sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                                            <Typography>{entry.name}</Typography>
-                                            <Typography color="text.secondary">{entry.calories} Calories</Typography>
-                                        </Box>
-                                    ))}
-                                </Stack>
+                                <List dense disablePadding>
+                                    {entries.map((entry) => {
+                                        const id = typeof entry.id === 'number' ? entry.id : Number(entry.id);
+                                        const label = entry.name?.trim() || 'Food entry';
+
+                                        return (
+                                            <ListItem
+                                                key={entry.id}
+                                                disableGutters
+                                                secondaryAction={
+                                                    <IconButton
+                                                        aria-label={`Delete ${label}`}
+                                                        edge="end"
+                                                        onClick={() => {
+                                                            if (!Number.isInteger(id)) return;
+                                                            setDeleteError(null);
+                                                            setDeleteState({ id, label });
+                                                        }}
+                                                    >
+                                                        <DeleteOutlineIcon fontSize="small" />
+                                                    </IconButton>
+                                                }
+                                            >
+                                                <ListItemText
+                                                    primary={label}
+                                                    secondary={`${typeof entry.calories === 'number' ? entry.calories : 0} kcal`}
+                                                />
+                                            </ListItem>
+                                        );
+                                    })}
+                                </List>
                             )}
                         </AccordionDetails>
                     </Accordion>
                 );
             })}
+
+            <Dialog
+                open={Boolean(deleteState)}
+                onClose={() => {
+                    if (isDeleting) return;
+                    setDeleteState(null);
+                }}
+            >
+                <DialogTitle>Delete entry?</DialogTitle>
+                <DialogContent>
+                    <Stack spacing={2} sx={{ pt: 1 }}>
+                        <Typography>
+                            This will remove <strong>{deleteState?.label}</strong> from your log.
+                        </Typography>
+                        {deleteError && <Alert severity="error">{deleteError}</Alert>}
+                    </Stack>
+                </DialogContent>
+                <DialogActions>
+                    <Button
+                        onClick={() => setDeleteState(null)}
+                        disabled={isDeleting}
+                    >
+                        Cancel
+                    </Button>
+                    <Button
+                        color="error"
+                        variant="contained"
+                        onClick={() => void handleConfirmDelete()}
+                        disabled={isDeleting}
+                    >
+                        {isDeleting ? 'Deleting…' : 'Delete'}
+                    </Button>
+                </DialogActions>
+            </Dialog>
         </Stack>
     );
 };

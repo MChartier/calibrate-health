@@ -73,7 +73,7 @@ const Log: React.FC = () => {
             <CalorieTargetBanner />
 
             <Paper sx={{ p: 2 }}>
-                <FoodLogMeals logs={foodQuery.data ?? []} />
+                <FoodLogMeals logs={foodQuery.data ?? []} onChange={() => void foodQuery.refetch()} />
             </Paper>
 
             <SpeedDial
