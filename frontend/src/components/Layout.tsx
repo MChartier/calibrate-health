@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
     AppBar,
     Box,
+    BottomNavigation,
+    BottomNavigationAction,
     Divider,
     Drawer,
-    IconButton,
     List,
     ListItemButton,
     ListItemIcon,
@@ -14,7 +15,6 @@ import {
     useMediaQuery
 } from '@mui/material';
 import { Outlet, Link as RouterLink, useLocation, useNavigate } from 'react-router-dom';
-import MenuIcon from '@mui/icons-material/Menu';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import ListAltIcon from '@mui/icons-material/ListAlt';
 import ShowChartIcon from '@mui/icons-material/ShowChart';
@@ -29,7 +29,6 @@ const Layout: React.FC = () => {
     const { user, logout, isLoading } = useAuth();
     const theme = useTheme();
     const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
-    const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
     const navigate = useNavigate();
     const location = useLocation();
     const worktreeName = import.meta.env.VITE_WORKTREE_NAME?.trim();
@@ -37,23 +36,10 @@ const Layout: React.FC = () => {
     const worktreeBadgeLabel = worktreeName && !isMainWorktree ? worktreeName : null;
 
     const hideNav = location.pathname.startsWith('/onboarding');
-    const showDrawer = Boolean(user) && !isLoading && !hideNav;
-
-    const handleMenuClick = () => {
-        if (!showDrawer || isDesktop) return;
-        setMobileDrawerOpen((open) => !open);
-    };
-
-    const handleNavigate = (path: string) => {
-        navigate(path);
-        if (!isDesktop) {
-            setMobileDrawerOpen(false);
-        }
-    };
+    const showAppNav = Boolean(user) && !isLoading && !hideNav;
 
     const handleLogout = async () => {
         await logout();
-        setMobileDrawerOpen(false);
         navigate('/login');
     };
 
@@ -65,7 +51,8 @@ const Layout: React.FC = () => {
                 <List>
                     <ListItemButton
                         selected={location.pathname.startsWith('/dashboard')}
-                        onClick={() => handleNavigate('/dashboard')}
+                        component={RouterLink}
+                        to="/dashboard"
                     >
                         <ListItemIcon>
                             <DashboardIcon />
@@ -75,7 +62,8 @@ const Layout: React.FC = () => {
 
                     <ListItemButton
                         selected={location.pathname.startsWith('/log')}
-                        onClick={() => handleNavigate('/log')}
+                        component={RouterLink}
+                        to="/log"
                     >
                         <ListItemIcon>
                             <ListAltIcon />
@@ -85,7 +73,8 @@ const Layout: React.FC = () => {
 
                     <ListItemButton
                         selected={location.pathname.startsWith('/history')}
-                        onClick={() => handleNavigate('/history')}
+                        component={RouterLink}
+                        to="/history"
                     >
                         <ListItemIcon>
                             <ShowChartIcon />
@@ -100,7 +89,8 @@ const Layout: React.FC = () => {
             <List>
                 <ListItemButton
                     selected={location.pathname.startsWith('/settings')}
-                    onClick={() => handleNavigate('/settings')}
+                    component={RouterLink}
+                    to="/settings"
                 >
                     <ListItemIcon>
                         <SettingsIcon />
@@ -122,23 +112,11 @@ const Layout: React.FC = () => {
         <Box sx={{ display: 'flex' }}>
             <AppBar position="fixed" sx={{ zIndex: (t) => t.zIndex.drawer + 1 }}>
                 <Toolbar>
-                    {showDrawer && !isDesktop && (
-                        <IconButton
-                            color="inherit"
-                            edge="start"
-                            aria-label="Open navigation menu"
-                            onClick={handleMenuClick}
-                            sx={{ mr: 2 }}
-                        >
-                            <MenuIcon />
-                        </IconButton>
-                    )}
-
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                         <Typography
                             variant="h6"
                             component={RouterLink}
-                            to="/dashboard"
+                            to="/log"
                             sx={{ color: 'inherit', textDecoration: 'none' }}
                         >
                             cal.io
@@ -165,41 +143,64 @@ const Layout: React.FC = () => {
                 </Toolbar>
             </AppBar>
 
-            {showDrawer && (
-                <>
-                    <Drawer
-                        variant="temporary"
-                        open={mobileDrawerOpen && !isDesktop}
-                        onClose={() => setMobileDrawerOpen(false)}
-                        ModalProps={{ keepMounted: true }}
-                        sx={{
-                            display: { xs: 'block', md: 'none' },
-                            '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth }
-                        }}
-                    >
-                        {drawerContent}
-                    </Drawer>
-
-                    <Drawer
-                        variant="permanent"
-                        sx={{
-                            display: { xs: 'none', md: 'block' },
-                            width: drawerWidth,
-                            flexShrink: 0,
-                            '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth }
-                        }}
-                    >
-                        {drawerContent}
-                    </Drawer>
-                </>
+            {showAppNav && isDesktop && (
+                <Drawer
+                    variant="permanent"
+                    sx={{
+                        width: drawerWidth,
+                        flexShrink: 0,
+                        '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth }
+                    }}
+                >
+                    {drawerContent}
+                </Drawer>
             )}
 
             <Box component="main" sx={{ flexGrow: 1, minWidth: 0 }}>
                 <Toolbar />
-                <Box sx={{ p: 3 }}>
+                <Box sx={{ p: 3, pb: showAppNav && !isDesktop ? 10 : 3 }}>
                     <Outlet />
                 </Box>
             </Box>
+
+            {showAppNav && !isDesktop && (
+                <Box
+                    sx={{
+                        position: 'fixed',
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        borderTop: (t) => `1px solid ${t.palette.divider}`,
+                        bgcolor: 'background.paper',
+                        zIndex: (t) => t.zIndex.appBar
+                    }}
+                >
+                    <BottomNavigation
+                        showLabels
+                        value={
+                            location.pathname.startsWith('/dashboard')
+                                ? '/dashboard'
+                                : location.pathname.startsWith('/log')
+                                  ? '/log'
+                                  : location.pathname.startsWith('/history')
+                                    ? '/history'
+                                    : location.pathname.startsWith('/settings')
+                                      ? '/settings'
+                                      : null
+                        }
+                        onChange={(_, next) => {
+                            if (typeof next === 'string') {
+                                navigate(next);
+                            }
+                        }}
+                    >
+                        <BottomNavigationAction value="/dashboard" label="Dashboard" icon={<DashboardIcon />} />
+                        <BottomNavigationAction value="/log" label="Log" icon={<ListAltIcon />} />
+                        <BottomNavigationAction value="/history" label="History" icon={<ShowChartIcon />} />
+                        <BottomNavigationAction value="/settings" label="Settings" icon={<SettingsIcon />} />
+                    </BottomNavigation>
+                </Box>
+            )}
         </Box>
     );
 };
