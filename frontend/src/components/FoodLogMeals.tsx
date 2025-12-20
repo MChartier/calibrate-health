@@ -182,7 +182,7 @@ const FoodLogMeals: React.FC<{ logs: FoodLogEntry[]; onChange?: () => void }> = 
             await axios.delete(`/api/food/${deleteState.id}`);
             setDeleteState(null);
             onChange?.();
-        } catch (err) {
+        } catch {
             setDeleteError('Unable to delete this entry right now.');
         } finally {
             setIsDeleting(false);
@@ -204,7 +204,7 @@ const FoodLogMeals: React.FC<{ logs: FoodLogEntry[]; onChange?: () => void }> = 
             });
             setEditState(null);
             onChange?.();
-        } catch (err) {
+        } catch {
             setEditError('Unable to save changes right now.');
         } finally {
             setIsSavingEdit(false);

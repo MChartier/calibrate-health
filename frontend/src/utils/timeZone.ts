@@ -11,7 +11,7 @@ export function getBrowserTimeZone(): string {
  * Some browsers do not implement Intl.supportedValuesOf, so we fall back to the resolved time zone.
  */
 export function getSupportedTimeZones(): string[] {
-    const supportedValuesOf = (Intl as any).supportedValuesOf as ((key: string) => unknown) | undefined;
+    const supportedValuesOf = (Intl as unknown as { supportedValuesOf?: (key: string) => unknown }).supportedValuesOf;
     if (typeof supportedValuesOf === 'function') {
         try {
             const zones = supportedValuesOf('timeZone');
@@ -25,4 +25,3 @@ export function getSupportedTimeZones(): string[] {
 
     return [getBrowserTimeZone()];
 }
-

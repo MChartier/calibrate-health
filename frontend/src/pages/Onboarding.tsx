@@ -49,6 +49,15 @@ const Onboarding: React.FC = () => {
     const [success, setSuccess] = useState('');
     const [isSaving, setIsSaving] = useState(false);
 
+    type ProfilePatchPayload = {
+        date_of_birth: string | null;
+        sex: string | null;
+        activity_level: string | null;
+        height_cm?: string | null;
+        height_feet?: string | null;
+        height_inches?: string | null;
+    };
+
     const profileQuery = useQuery({
         queryKey: ['profile'],
         queryFn: async () => {
@@ -80,7 +89,7 @@ const Onboarding: React.FC = () => {
         setSuccess('');
         setIsSaving(true);
         try {
-            const profilePayload: any = {
+            const profilePayload: ProfilePatchPayload = {
                 date_of_birth: dob || null,
                 sex: sex || null,
                 activity_level: activityLevel || null

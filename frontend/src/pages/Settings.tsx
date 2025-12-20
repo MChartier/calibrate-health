@@ -52,6 +52,15 @@ const Settings: React.FC = () => {
         };
     };
 
+    type ProfilePatchPayload = {
+        date_of_birth: string | null;
+        sex: string | null;
+        activity_level: string | null;
+        height_cm?: string | null;
+        height_feet?: string | null;
+        height_inches?: string | null;
+    };
+
     const goalQuery = useQuery({
         queryKey: ['goal'],
         queryFn: async (): Promise<GoalResponse | null> => {
@@ -199,7 +208,7 @@ const Settings: React.FC = () => {
 
     const handleProfileSave = async () => {
         try {
-            const payload: any = {
+            const payload: ProfilePatchPayload = {
                 date_of_birth: dobValue || null,
                 sex: sexValue || null,
                 activity_level: activityValue || null

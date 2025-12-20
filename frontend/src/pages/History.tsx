@@ -62,7 +62,7 @@ const History: React.FC = () => {
     const dailyTarget = profileSummaryQuery.data?.calorieSummary?.dailyCalorieTarget;
     const hasDailyTarget = typeof dailyTarget === 'number' && Number.isFinite(dailyTarget);
 
-    const metrics = metricsQuery.data ?? [];
+    const metrics = useMemo(() => metricsQuery.data ?? [], [metricsQuery.data]);
     const targetWeight = goalQuery.data?.target_weight ?? null;
     const dailyDeficit = goalQuery.data?.daily_deficit ?? null;
     const latestMetric = metrics[0] ?? null;
