@@ -4,7 +4,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import Log from './pages/Log';
-import History from './pages/History';
+import Goals from './pages/Goals';
 import Settings from './pages/Settings';
 import Profile from './pages/Profile';
 import Onboarding from './pages/Onboarding';
@@ -25,7 +25,8 @@ function App() {
           <Route path="onboarding" element={<Onboarding />} />
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="log" element={<Log />} />
-          <Route path="history" element={<History />} />
+          <Route path="goals" element={<Goals />} />
+          <Route path="history" element={<Navigate to="/goals" replace />} />
           <Route path="settings" element={<Settings />} />
           <Route path="profile" element={<Profile />} />
         </Route>

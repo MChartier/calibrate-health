@@ -17,6 +17,7 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { activityLevelOptions } from '../constants/activityLevels';
 import { useQuery } from '@tanstack/react-query';
+import { validateGoalWeights } from '../utils/goalValidation';
 
 const Onboarding: React.FC = () => {
     const { user } = useAuth();
@@ -78,6 +79,19 @@ const Onboarding: React.FC = () => {
     const handleSave = async () => {
         setError('');
         setSuccess('');
+
+        const startWeightNumber = Number(currentWeight);
+        const targetWeightNumber = Number(goalWeight);
+        const goalValidationError = validateGoalWeights({
+            goalMode,
+            startWeight: startWeightNumber,
+            targetWeight: targetWeightNumber
+        });
+        if (goalValidationError) {
+            setError(goalValidationError);
+            return;
+        }
+
         setIsSaving(true);
         try {
             const profilePayload: ProfileUpdatePayload = {
@@ -114,7 +128,16 @@ const Onboarding: React.FC = () => {
             setTimeout(() => navigate('/dashboard'), 600);
         } catch (err) {
             console.error(err);
-            setError('Failed to save your profile. Please check the fields and try again.');
+            if (axios.isAxiosError(err)) {
+                const serverMessage = (err.response?.data as { message?: unknown } | undefined)?.message;
+                if (typeof serverMessage === 'string' && serverMessage.trim().length > 0) {
+                    setError(serverMessage);
+                } else {
+                    setError('Failed to save your profile. Please check the fields and try again.');
+                }
+            } else {
+                setError('Failed to save your profile. Please check the fields and try again.');
+            }
         } finally {
             setIsSaving(false);
         }

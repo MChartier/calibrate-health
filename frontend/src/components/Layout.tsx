@@ -95,13 +95,13 @@ const Layout: React.FC = () => {
                     </ListItemButton>
 
                     <ListItemButton
-                        selected={location.pathname.startsWith('/history')}
-                        onClick={() => handleNavigate('/history')}
+                        selected={location.pathname.startsWith('/goals')}
+                        onClick={() => handleNavigate('/goals')}
                     >
                         <ListItemIcon>
                             <ShowChartIcon />
                         </ListItemIcon>
-                        <ListItemText primary="History" />
+                        <ListItemText primary="Goals" />
                     </ListItemButton>
                 </List>
             </Box>

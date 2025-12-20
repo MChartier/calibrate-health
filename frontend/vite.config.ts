@@ -41,7 +41,9 @@ const usePolling =
 const devServerPortEnv = process.env.VITE_DEV_SERVER_PORT
 const devServerPortValue = devServerPortEnv ? Number.parseInt(devServerPortEnv, 10) : Number.NaN
 const devServerPort =
-  devServerPortValue !== undefined && Number.isFinite(devServerPortValue) && devServerPortValue > 0
+  typeof devServerPortValue === 'number' &&
+  Number.isFinite(devServerPortValue) &&
+  devServerPortValue > 0
     ? devServerPortValue
     : undefined
 

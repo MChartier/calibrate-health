@@ -152,7 +152,7 @@ const Profile: React.FC = () => {
         <Box sx={{ maxWidth: 720, mx: 'auto' }}>
             <Typography variant="h4" gutterBottom>Profile</Typography>
             <Typography color="text.secondary" sx={{ mb: 2 }}>
-                Edit the info used to estimate your daily calorie burn and target.
+                Edit the info used to estimate your daily calorie burn (TDEE) and calorie math inputs.
             </Typography>
 
             <Paper sx={{ p: 2 }}>
@@ -230,14 +230,6 @@ const Profile: React.FC = () => {
                     <Button variant="contained" onClick={() => void handleProfileSave()} disabled={profileQuery.isLoading}>
                         Save Profile
                     </Button>
-
-                    {profileQuery.data?.calorieSummary && (
-                        <Alert severity={profileQuery.data.calorieSummary.dailyCalorieTarget ? 'success' : 'warning'}>
-                            {profileQuery.data.calorieSummary.dailyCalorieTarget
-                                ? `Estimated target: ${profileQuery.data.calorieSummary.dailyCalorieTarget} Calories/day`
-                                : 'Add birthday, sex, height, activity level, weight, and goal to compute a daily target.'}
-                        </Alert>
-                    )}
                 </Stack>
             </Paper>
         </Box>
@@ -245,4 +237,3 @@ const Profile: React.FC = () => {
 };
 
 export default Profile;
-
