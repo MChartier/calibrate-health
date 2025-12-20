@@ -57,6 +57,22 @@ const Log: React.FC = () => {
         }
     });
 
+    type MetricEntry = {
+        id: number;
+        date: string;
+        weight: number;
+    };
+
+    const metricsQuery = useQuery({
+        queryKey: ['metrics', selectedDate],
+        queryFn: async (): Promise<MetricEntry[]> => {
+            const res = await axios.get('/api/metrics', {
+                params: { start: selectedDate, end: selectedDate }
+            });
+            return Array.isArray(res.data) ? res.data : [];
+        }
+    });
+
     const logs = foodQuery.data ?? [];
     const totalCalories = logs.reduce((sum, entry) => sum + entry.calories, 0);
     const dailyTarget = profileSummaryQuery.data?.calorieSummary?.dailyCalorieTarget;
@@ -91,72 +107,105 @@ const Log: React.FC = () => {
 
             <CalorieTargetBanner />
 
-            <Paper sx={{ p: 2, mb: 2 }}>
-                <Typography variant="h6" gutterBottom>
-                    Daily Summary
-                </Typography>
+            <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 2, mb: 2 }}>
+                <Paper sx={{ p: 2, flex: 1 }}>
+                    <Typography variant="h6" gutterBottom>
+                        Daily Summary
+                    </Typography>
 
-                {profileSummaryQuery.isError ? (
-                    <Alert severity="warning">Unable to load your daily target right now.</Alert>
-                ) : profileSummaryQuery.isLoading ? (
-                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                        <Skeleton width="60%" />
-                        <Skeleton variant="rounded" height={10} />
-                    </Box>
-                ) : (
-                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
-                            <Typography variant="body2" color="text.secondary">
-                                Consumed: <strong>{totalCalories}</strong> kcal
-                            </Typography>
-                            <Typography variant="body2" color="text.secondary">
-                                Target: <strong>{hasTarget ? Math.round(dailyTarget) : '—'}</strong> kcal
-                            </Typography>
-                            <Typography
-                                variant="body2"
-                                sx={{
-                                    color: (theme) => (isOver ? theme.palette.error.main : theme.palette.text.secondary)
-                                }}
-                            >
-                                {remainingCalories !== null ? (
-                                    isOver ? (
-                                        <>
-                                            Over: <strong>{Math.abs(remainingCalories)}</strong> kcal
-                                        </>
+                    {profileSummaryQuery.isError ? (
+                        <Alert severity="warning">Unable to load your daily target right now.</Alert>
+                    ) : profileSummaryQuery.isLoading ? (
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                            <Skeleton width="60%" />
+                            <Skeleton variant="rounded" height={10} />
+                        </Box>
+                    ) : (
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
+                                <Typography variant="body2" color="text.secondary">
+                                    Consumed: <strong>{totalCalories}</strong> kcal
+                                </Typography>
+                                <Typography variant="body2" color="text.secondary">
+                                    Target: <strong>{hasTarget ? Math.round(dailyTarget) : '—'}</strong> kcal
+                                </Typography>
+                                <Typography
+                                    variant="body2"
+                                    sx={{
+                                        color: (theme) =>
+                                            isOver ? theme.palette.error.main : theme.palette.text.secondary
+                                    }}
+                                >
+                                    {remainingCalories !== null ? (
+                                        isOver ? (
+                                            <>
+                                                Over: <strong>{Math.abs(remainingCalories)}</strong> kcal
+                                            </>
+                                        ) : (
+                                            <>
+                                                Remaining: <strong>{remainingCalories}</strong> kcal
+                                            </>
+                                        )
                                     ) : (
                                         <>
-                                            Remaining: <strong>{remainingCalories}</strong> kcal
+                                            Remaining: <strong>—</strong>
                                         </>
-                                    )
-                                ) : (
-                                    <>
-                                        Remaining: <strong>—</strong>
-                                    </>
-                                )}
-                            </Typography>
-                        </Box>
+                                    )}
+                                </Typography>
+                            </Box>
 
-                        {hasTarget ? (
-                            <LinearProgress
-                                variant="determinate"
-                                value={progressPercent}
-                                sx={{
-                                    height: 10,
-                                    borderRadius: 6,
-                                    '& .MuiLinearProgress-bar': {
-                                        backgroundColor: (theme) =>
-                                            isOver ? theme.palette.error.main : theme.palette.primary.main
-                                    }
-                                }}
-                            />
-                        ) : (
-                            <Typography variant="body2" color="text.secondary">
-                                Complete your profile and goal to unlock daily targets.
-                            </Typography>
-                        )}
-                    </Box>
-                )}
-            </Paper>
+                            {hasTarget ? (
+                                <LinearProgress
+                                    variant="determinate"
+                                    value={progressPercent}
+                                    sx={{
+                                        height: 10,
+                                        borderRadius: 6,
+                                        '& .MuiLinearProgress-bar': {
+                                            backgroundColor: (theme) =>
+                                                isOver ? theme.palette.error.main : theme.palette.primary.main
+                                        }
+                                    }}
+                                />
+                            ) : (
+                                <Typography variant="body2" color="text.secondary">
+                                    Complete your profile and goal to unlock daily targets.
+                                </Typography>
+                            )}
+                        </Box>
+                    )}
+                </Paper>
+
+                <Paper sx={{ p: 2, flex: 1 }}>
+                    <Typography variant="h6" gutterBottom>
+                        Weight
+                    </Typography>
+
+                    {metricsQuery.isError ? (
+                        <Alert severity="warning">Unable to load your weight entry for this day.</Alert>
+                    ) : metricsQuery.isLoading ? (
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                            <Skeleton width="50%" />
+                            <Skeleton width="30%" />
+                        </Box>
+                    ) : (
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                            {metricsQuery.data?.[0] ? (
+                                <Typography variant="body1">
+                                    <strong>{metricsQuery.data[0].weight}</strong> {user?.weight_unit === 'LB' ? 'lb' : 'kg'}
+                                </Typography>
+                            ) : (
+                                <Typography variant="body2" color="text.secondary">
+                                    No weigh-in yet for this day.
+                                </Typography>
+                            )}
+                            <Button variant="outlined" onClick={() => setIsWeightDialogOpen(true)} sx={{ alignSelf: 'flex-start' }}>
+                                {metricsQuery.data?.[0] ? 'Update weight' : 'Add weight'}
+                            </Button>
+                        </Box>
+                    )}
+                </Paper>
+            </Box>
 
             <Paper sx={{ p: 2 }}>
                 <FoodLogMeals logs={foodQuery.data ?? []} onChange={() => void foodQuery.refetch()} />
@@ -206,7 +255,7 @@ const Log: React.FC = () => {
                         <WeightEntryForm
                             date={selectedDate}
                             onSuccess={() => {
-                                void foodQuery.refetch();
+                                void metricsQuery.refetch();
                                 handleCloseWeightDialog();
                             }}
                         />
