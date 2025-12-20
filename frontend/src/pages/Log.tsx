@@ -8,7 +8,8 @@ import {
     DialogTitle,
     Paper,
     Typography,
-    Button
+    Button,
+    Grid
 } from '@mui/material';
 import SpeedDial from '@mui/material/SpeedDial';
 import SpeedDialAction from '@mui/material/SpeedDialAction';
@@ -21,6 +22,7 @@ import FoodEntryForm from '../components/FoodEntryForm';
 import FoodLogMeals from '../components/FoodLogMeals';
 import { useQuery } from '@tanstack/react-query';
 import CalorieTargetBanner from '../components/CalorieTargetBanner';
+import DashboardLogSummaryCard from '../components/DashboardLogSummaryCard';
 
 function getLocalDateString(date: Date): string {
     const year = date.getFullYear();
@@ -74,11 +76,12 @@ const Log: React.FC = () => {
                 />
             </Box>
 
-            <CalorieTargetBanner />
-
-            <Paper sx={{ p: 2 }}>
-                <FoodLogMeals logs={foodQuery.data ?? []} />
-            </Paper>
+            <Grid size={{ xs: 12, md: 6 }} sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
+                <DashboardLogSummaryCard />
+                <Paper sx={{ p: 2 }}>
+                    <FoodLogMeals logs={foodQuery.data ?? []} />
+                </Paper>
+            </Grid>
 
             <SpeedDial
                 ariaLabel="Add entry"
