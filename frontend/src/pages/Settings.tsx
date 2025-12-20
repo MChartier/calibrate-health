@@ -17,8 +17,6 @@ import type { ThemePreference } from '../context/themeModeContext';
 
 /**
  * Settings is focused on device preferences (theme) and app preferences (units).
- *
- * Goal configuration lives on the Goals route.
  */
 const Settings: React.FC = () => {
     const { user, updateWeightUnit } = useAuth();
@@ -81,4 +79,3 @@ const Settings: React.FC = () => {
 };
 
 export default Settings;
-
