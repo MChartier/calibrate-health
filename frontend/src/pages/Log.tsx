@@ -214,7 +214,12 @@ const Log: React.FC = () => {
             <SpeedDial
                 ariaLabel="Add entry"
                 icon={<AddIcon />}
-                sx={{ position: 'fixed', right: 24, bottom: 24 }}
+                sx={{
+                    position: 'fixed',
+                    right: 24,
+                    bottom: { xs: 88, md: 24 },
+                    zIndex: (t) => t.zIndex.appBar + 1
+                }}
             >
                 <SpeedDialAction
                     key="add-food"
