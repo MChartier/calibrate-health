@@ -84,6 +84,48 @@ router.get('/search', async (req, res) => {
     }
 });
 
+router.get('/daily', async (req, res) => {
+    const user = req.user as any;
+    const start = typeof req.query.start === 'string' ? req.query.start : undefined;
+    const end = typeof req.query.end === 'string' ? req.query.end : undefined;
+
+    let startDate: Date;
+    let endDate: Date;
+    try {
+        endDate = end ? parseDateOnlyInput(end) : normalizeToUtcDateOnly(new Date());
+        startDate = start ? parseDateOnlyInput(start) : new Date(endDate);
+        if (!start) {
+            startDate.setUTCDate(startDate.getUTCDate() - 29);
+        }
+    } catch {
+        return res.status(400).json({ message: 'Invalid date range' });
+    }
+
+    try {
+        const totals = await prisma.foodLog.groupBy({
+            by: ['date'],
+            where: {
+                user_id: user.id,
+                date: {
+                    gte: startDate,
+                    lte: endDate
+                }
+            },
+            _sum: { calories: true },
+            orderBy: { date: 'asc' }
+        });
+
+        res.json(
+            totals.map((row) => ({
+                date: row.date.toISOString().slice(0, 10),
+                calories: row._sum.calories ?? 0
+            }))
+        );
+    } catch {
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
 router.get('/', async (req, res) => {
     const user = req.user as any;
     const { date, start, end } = req.query;
