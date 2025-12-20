@@ -10,12 +10,17 @@ import {
     DialogActions,
     DialogContent,
     DialogTitle,
+    FormControl,
     IconButton,
+    InputLabel,
     List,
     ListItem,
     ListItemText,
+    MenuItem,
+    Select,
     Stack,
     Tooltip,
+    TextField,
     Typography,
     Avatar
 } from '@mui/material';
@@ -27,6 +32,7 @@ import LunchDiningIcon from '@mui/icons-material/LunchDining';
 import DinnerDiningIcon from '@mui/icons-material/DinnerDining';
 import NightlifeIcon from '@mui/icons-material/Nightlife';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import axios from 'axios';
 
 type MealKey =
@@ -45,6 +51,13 @@ type FoodLogEntry = {
 };
 
 type DeleteState = { id: number; label: string } | null;
+
+type EditState = {
+    id: number;
+    name: string;
+    calories: string;
+    mealPeriod: MealKey;
+} | null;
 
 const MEALS: Array<{ key: MealKey; label: string; aliases: string[]; icon: React.ReactNode }> = [
     { key: 'Breakfast', label: 'Breakfast', aliases: ['Breakfast'], icon: <EggAltIcon htmlColor="#ff9800" /> },
@@ -103,6 +116,9 @@ const FoodLogMeals: React.FC<{ logs: FoodLogEntry[]; onChange?: () => void }> = 
     const [deleteState, setDeleteState] = useState<DeleteState>(null);
     const [deleteError, setDeleteError] = useState<string | null>(null);
     const [isDeleting, setIsDeleting] = useState(false);
+    const [editState, setEditState] = useState<EditState>(null);
+    const [editError, setEditError] = useState<string | null>(null);
+    const [isSavingEdit, setIsSavingEdit] = useState(false);
 
     useEffect(() => {
         const counts: Record<MealKey, number> = {
@@ -167,10 +183,31 @@ const FoodLogMeals: React.FC<{ logs: FoodLogEntry[]; onChange?: () => void }> = 
             setDeleteState(null);
             onChange?.();
         } catch (err) {
-            console.error(err);
             setDeleteError('Unable to delete this entry right now.');
         } finally {
             setIsDeleting(false);
+        }
+    };
+
+    /**
+     * Persist edits for a single food log entry and refresh the parent list when successful.
+     */
+    const handleConfirmEdit = async () => {
+        if (!editState) return;
+        setEditError(null);
+        setIsSavingEdit(true);
+        try {
+            await axios.patch(`/api/food/${editState.id}`, {
+                name: editState.name,
+                calories: editState.calories,
+                meal_period: editState.mealPeriod
+            });
+            setEditState(null);
+            onChange?.();
+        } catch (err) {
+            setEditError('Unable to save changes right now.');
+        } finally {
+            setIsSavingEdit(false);
         }
     };
 
@@ -227,17 +264,38 @@ const FoodLogMeals: React.FC<{ logs: FoodLogEntry[]; onChange?: () => void }> = 
                                                 key={entry.id}
                                                 disableGutters
                                                 secondaryAction={
-                                                    <IconButton
-                                                        aria-label={`Delete ${label}`}
-                                                        edge="end"
-                                                        onClick={() => {
-                                                            if (!Number.isInteger(id)) return;
-                                                            setDeleteError(null);
-                                                            setDeleteState({ id, label });
-                                                        }}
-                                                    >
-                                                        <DeleteOutlineIcon fontSize="small" />
-                                                    </IconButton>
+                                                    <Stack direction="row" spacing={0.5}>
+                                                        <IconButton
+                                                            aria-label={`Edit ${label}`}
+                                                            edge="end"
+                                                            onClick={() => {
+                                                                if (!Number.isInteger(id)) return;
+                                                                setEditError(null);
+                                                                setEditState({
+                                                                    id,
+                                                                    name: entry.name?.trim() ?? '',
+                                                                    calories:
+                                                                        typeof entry.calories === 'number'
+                                                                            ? String(entry.calories)
+                                                                            : '',
+                                                                    mealPeriod: meal.key
+                                                                });
+                                                            }}
+                                                        >
+                                                            <EditOutlinedIcon fontSize="small" />
+                                                        </IconButton>
+                                                        <IconButton
+                                                            aria-label={`Delete ${label}`}
+                                                            edge="end"
+                                                            onClick={() => {
+                                                                if (!Number.isInteger(id)) return;
+                                                                setDeleteError(null);
+                                                                setDeleteState({ id, label });
+                                                            }}
+                                                        >
+                                                            <DeleteOutlineIcon fontSize="small" />
+                                                        </IconButton>
+                                                    </Stack>
                                                 }
                                             >
                                                 <ListItemText
@@ -284,6 +342,78 @@ const FoodLogMeals: React.FC<{ logs: FoodLogEntry[]; onChange?: () => void }> = 
                         disabled={isDeleting}
                     >
                         {isDeleting ? 'Deleting…' : 'Delete'}
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+            <Dialog
+                open={Boolean(editState)}
+                onClose={() => {
+                    if (isSavingEdit) return;
+                    setEditState(null);
+                }}
+                fullWidth
+                maxWidth="sm"
+            >
+                <DialogTitle>Edit entry</DialogTitle>
+                <DialogContent>
+                    <Stack spacing={2} sx={{ pt: 1 }}>
+                        <TextField
+                            label="Food name"
+                            value={editState?.name ?? ''}
+                            onChange={(event) => {
+                                const value = event.target.value;
+                                setEditState((prev) => (prev ? { ...prev, name: value } : prev));
+                            }}
+                            fullWidth
+                        />
+                        <TextField
+                            label="Calories"
+                            type="number"
+                            value={editState?.calories ?? ''}
+                            onChange={(event) => {
+                                const value = event.target.value;
+                                setEditState((prev) => (prev ? { ...prev, calories: value } : prev));
+                            }}
+                            inputProps={{ min: 0, step: 1 }}
+                            fullWidth
+                        />
+                        <FormControl fullWidth>
+                            <InputLabel>Meal period</InputLabel>
+                            <Select
+                                value={editState?.mealPeriod ?? 'Breakfast'}
+                                label="Meal period"
+                                onChange={(event) => {
+                                    const value = event.target.value as MealKey;
+                                    setEditState((prev) => (prev ? { ...prev, mealPeriod: value } : prev));
+                                }}
+                            >
+                                {MEALS.map((option) => (
+                                    <MenuItem key={option.key} value={option.key}>
+                                        {option.label}
+                                    </MenuItem>
+                                ))}
+                            </Select>
+                        </FormControl>
+                        {editError && <Alert severity="error">{editError}</Alert>}
+                    </Stack>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setEditState(null)} disabled={isSavingEdit}>
+                        Cancel
+                    </Button>
+                    <Button
+                        variant="contained"
+                        onClick={() => void handleConfirmEdit()}
+                        disabled={
+                            isSavingEdit ||
+                            !editState?.name.trim() ||
+                            editState.calories === '' ||
+                            !Number.isFinite(Number(editState.calories)) ||
+                            Number(editState.calories) < 0
+                        }
+                    >
+                        {isSavingEdit ? 'Saving…' : 'Save'}
                     </Button>
                 </DialogActions>
             </Dialog>
