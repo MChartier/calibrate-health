@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import {
     Alert,
     Box,
@@ -25,44 +25,22 @@ import DinnerDiningIcon from '@mui/icons-material/DinnerDining';
 import NightlifeIcon from '@mui/icons-material/Nightlife';
 import BarcodeReaderIcon from '@mui/icons-material/BarcodeReader';
 import BarcodeScannerDialog from './BarcodeScannerDialog';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import FoodSearchResultsList from './FoodSearchResultsList';
+import type { NormalizedFoodItem } from '../types/food';
 
 type Props = {
     onSuccess?: () => void;
     date?: string;
 };
 
-type FoodDataSource = 'usda' | 'openFoodFacts';
+const SEARCH_PAGE_SIZE = 10;
 
-type FoodMeasure = {
-    label: string;
-    gramWeight?: number;
-    quantity?: number;
-    unit?: string;
-};
+type FoodSearchView = 'results' | 'selected';
 
-type NormalizedFoodItem = {
-    id: string;
-    source: FoodDataSource;
-    description: string;
-    brand?: string;
+type FoodSearchParams = {
+    query?: string;
     barcode?: string;
-    locale?: string;
-    availableMeasures: FoodMeasure[];
-    nutrientsPer100g?: {
-        calories: number;
-        protein?: number;
-        fat?: number;
-        carbs?: number;
-    };
-    nutrientsForRequest?: {
-        grams: number;
-        nutrients: {
-            calories: number;
-            protein?: number;
-            fat?: number;
-            carbs?: number;
-        };
-    };
 };
 
 type MealPeriod =
@@ -94,6 +72,26 @@ function getDefaultMealPeriodForTime(now: Date): MealPeriod {
     return 'Breakfast';
 }
 
+/**
+ * Pick a reasonable default measure label for an item so the measure dropdown is pre-populated after selection.
+ */
+const getDefaultMeasureLabel = (item: NormalizedFoodItem): string | null => {
+    const firstWithWeight = item.availableMeasures.find((measure) => measure.gramWeight);
+    return firstWithWeight?.label ?? null;
+};
+
+/**
+ * Merge paginated results without duplicating items when upstream providers repeat IDs across pages.
+ */
+const mergeUniqueResults = (
+    current: NormalizedFoodItem[],
+    nextPage: NormalizedFoodItem[]
+): NormalizedFoodItem[] => {
+    const nextById = new Map(current.map((item) => [item.id, item]));
+    nextPage.forEach((item) => nextById.set(item.id, item));
+    return Array.from(nextById.values());
+};
+
 const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
     const [mode, setMode] = useState<'manual' | 'search'>('search');
     const [foodName, setFoodName] = useState('');
@@ -105,12 +103,20 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
     const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
     const [selectedMeasureLabel, setSelectedMeasureLabel] = useState<string | null>(null);
     const [quantity, setQuantity] = useState<number>(1);
+    const [searchView, setSearchView] = useState<FoodSearchView>('results');
+    const [searchPage, setSearchPage] = useState<number>(1);
+    const [hasMoreResults, setHasMoreResults] = useState(false);
     const [isSearching, setIsSearching] = useState(false);
+    const [isLoadingMoreResults, setIsLoadingMoreResults] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [providerName, setProviderName] = useState<string>('');
     const [supportsBarcodeLookup, setSupportsBarcodeLookup] = useState<boolean | null>(null);
     const [isScannerOpen, setIsScannerOpen] = useState(false);
     const [hasSearched, setHasSearched] = useState(false);
+    const [activeSearch, setActiveSearch] = useState<FoodSearchParams | null>(null);
+
+    const searchSessionRef = useRef(0);
+    const loadMoreLockRef = useRef(false);
 
     const entryDate = date ? `${date}T12:00:00` : new Date();
 
@@ -127,6 +133,8 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
         () => searchResults.find((item) => item.id === selectedItemId) || null,
         [searchResults, selectedItemId]
     );
+
+    const shouldShowMealPeriod = mode === 'manual' || (mode === 'search' && searchView === 'selected' && !!selectedItem);
 
     const selectedMeasure = useMemo(() => {
         if (!selectedItem) return null;
@@ -148,52 +156,148 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
         };
     }, [selectedItem, selectedMeasure, quantity]);
 
-    const resetSearchSelection = (items: NormalizedFoodItem[]) => {
-        if (items.length === 0) {
-            setSelectedItemId(null);
-            setSelectedMeasureLabel(null);
-            return;
-        }
-        const first = items[0];
-        setSelectedItemId(first.id);
-        const firstMeasure = first.availableMeasures.find((m) => m.gramWeight);
-        setSelectedMeasureLabel(firstMeasure?.label || null);
+    /**
+     * Clear the current selected search result so new searches require an explicit choice.
+     */
+    const clearSelectedSearchItem = useCallback(() => {
+        setSelectedItemId(null);
+        setSelectedMeasureLabel(null);
+        setQuantity(1);
+    }, []);
+
+    /**
+     * Select a search result and prime measure/quantity controls for quick logging.
+     */
+    const selectSearchResult = useCallback((item: NormalizedFoodItem) => {
+        setSelectedItemId(item.id);
+        setSelectedMeasureLabel(getDefaultMeasureLabel(item));
+        setQuantity(1);
+        setSearchView('selected');
+    }, []);
+
+    type FoodSearchResponse = {
+        provider?: string;
+        supportsBarcodeLookup?: boolean;
+        items: NormalizedFoodItem[];
     };
 
     /**
-     * Execute a provider search via the backend, optionally with a UPC barcode lookup.
+     * Fetch a single page of provider results via the backend search endpoint.
      */
-    const performFoodSearch = async (request: { query?: string; barcode?: string }) => {
-        const trimmedQuery = request.query?.trim();
-        const barcode = request.barcode?.trim();
-        if (!trimmedQuery && !barcode) {
+    const fetchFoodSearchPage = useCallback(async (params: FoodSearchParams, page: number): Promise<FoodSearchResponse> => {
+        const response = await axios.get('/api/food/search', {
+            params: {
+                ...(params.query ? { q: params.query } : {}),
+                ...(params.barcode ? { barcode: params.barcode } : {}),
+                page,
+                pageSize: SEARCH_PAGE_SIZE
+            }
+        });
+
+        return {
+            provider: typeof response.data?.provider === 'string' ? response.data.provider : undefined,
+            supportsBarcodeLookup:
+                typeof response.data?.supportsBarcodeLookup === 'boolean' ? response.data.supportsBarcodeLookup : undefined,
+            items: Array.isArray(response.data?.items) ? response.data.items : []
+        };
+    }, []);
+
+    /**
+     * Execute a provider search and reset selection so query searches require an explicit choice.
+     */
+    const performFoodSearch = useCallback(
+        async (request: FoodSearchParams) => {
+            const trimmedQuery = request.query?.trim();
+            const barcode = request.barcode?.trim();
+            if (!trimmedQuery && !barcode) {
+                return;
+            }
+
+            const params: FoodSearchParams = {
+                query: trimmedQuery || undefined,
+                barcode: barcode || undefined
+            };
+
+            searchSessionRef.current += 1;
+            const sessionId = searchSessionRef.current;
+            loadMoreLockRef.current = false;
+
+            setHasSearched(true);
+            setIsSearching(true);
+            setError(null);
+            setSearchResults([]);
+            setSearchPage(1);
+            setHasMoreResults(false);
+            setIsLoadingMoreResults(false);
+            setActiveSearch(params);
+            setSearchView('results');
+            clearSelectedSearchItem();
+
+            try {
+                const firstPage = await fetchFoodSearchPage(params, 1);
+                if (searchSessionRef.current !== sessionId) {
+                    return;
+                }
+
+                setProviderName(firstPage.provider || '');
+                setSupportsBarcodeLookup(
+                    typeof firstPage.supportsBarcodeLookup === 'boolean' ? firstPage.supportsBarcodeLookup : null
+                );
+                setSearchResults(firstPage.items);
+                setHasMoreResults(firstPage.items.length === SEARCH_PAGE_SIZE);
+
+                // Barcode lookups generally return a single exact match; auto-select it for faster logging.
+                if (params.barcode && !params.query && firstPage.items.length === 1) {
+                    selectSearchResult(firstPage.items[0]);
+                }
+            } catch (err) {
+                console.error(err);
+                setError('Search failed. Please try again.');
+            } finally {
+                if (searchSessionRef.current === sessionId) {
+                    setIsSearching(false);
+                }
+            }
+        },
+        [clearSelectedSearchItem, fetchFoodSearchPage, selectSearchResult]
+    );
+
+    /**
+     * Load the next page of search results and append them to the list view.
+     */
+    const loadMoreSearchResults = useCallback(async () => {
+        if (!activeSearch || !hasMoreResults || isSearching || isLoadingMoreResults) {
+            return;
+        }
+        if (loadMoreLockRef.current) {
             return;
         }
 
-        setHasSearched(true);
-        setIsSearching(true);
-        setError(null);
+        loadMoreLockRef.current = true;
+        setIsLoadingMoreResults(true);
+
+        const sessionId = searchSessionRef.current;
+        const nextPageNumber = searchPage + 1;
+
         try {
-            const response = await axios.get('/api/food/search', {
-                params: {
-                    ...(trimmedQuery ? { q: trimmedQuery } : {}),
-                    ...(barcode ? { barcode } : {})
-                }
-            });
-            const items: NormalizedFoodItem[] = Array.isArray(response.data?.items) ? response.data.items : [];
-            setProviderName(response.data?.provider || '');
-            setSupportsBarcodeLookup(
-                typeof response.data?.supportsBarcodeLookup === 'boolean' ? response.data.supportsBarcodeLookup : null
-            );
-            setSearchResults(items);
-            resetSearchSelection(items);
+            const nextPage = await fetchFoodSearchPage(activeSearch, nextPageNumber);
+            if (searchSessionRef.current !== sessionId) {
+                return;
+            }
+
+            setSearchResults((current) => mergeUniqueResults(current, nextPage.items));
+            setSearchPage(nextPageNumber);
+            setHasMoreResults(nextPage.items.length === SEARCH_PAGE_SIZE);
         } catch (err) {
             console.error(err);
-            setError('Search failed. Please try again.');
+            setError('Unable to load more results right now.');
         } finally {
-            setIsSearching(false);
+            if (searchSessionRef.current === sessionId) {
+                setIsLoadingMoreResults(false);
+                loadMoreLockRef.current = false;
+            }
         }
-    };
+    }, [activeSearch, fetchFoodSearchPage, hasMoreResults, isLoadingMoreResults, isSearching, searchPage]);
 
     const handleSearch = async () => {
         await performFoodSearch({ query: searchQuery });
@@ -307,87 +411,127 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
                     />
 
                     {searchResults.length > 0 ? (
-                        <Stack spacing={2}>
-                            <FormControl fullWidth>
-                                <InputLabel>Result</InputLabel>
-                                <Select
-                                    value={selectedItemId || ''}
-                                    label="Result"
-                                    onChange={(e) => setSelectedItemId(e.target.value)}
-                                >
-                                    {searchResults.map((item) => (
-                                        <MenuItem key={item.id} value={item.id}>
-                                            {item.description}
-                                            {item.brand ? ` (${item.brand})` : ''}
-                                        </MenuItem>
-                                    ))}
-                                </Select>
-                            </FormControl>
-
-                            <FormControl fullWidth disabled={!selectedItem}>
-                                <InputLabel>Measure</InputLabel>
-                                <Select
-                                    value={selectedMeasure?.label || ''}
-                                    label="Measure"
-                                    onChange={(e) => setSelectedMeasureLabel(e.target.value)}
-                                >
-                                    {(selectedItem?.availableMeasures || [])
-                                        .filter((m) => m.gramWeight)
-                                        .map((measure) => (
-                                            <MenuItem key={measure.label} value={measure.label}>
-                                                {measure.label} {measure.gramWeight ? `(${measure.gramWeight} g)` : ''}
-                                            </MenuItem>
-                                        ))}
-                                </Select>
-                            </FormControl>
-
-                            <TextField
-                                label="Quantity"
-                                type="number"
-                                value={quantity}
-                                onChange={(e) => setQuantity(parseFloat(e.target.value) || 0)}
-                                disabled={!selectedMeasure}
-                                inputProps={{ min: 0, step: 0.5 }}
-                            />
-
-                            <Box>
-                                <Typography variant="body2" color="text.secondary">
-                                    {selectedItem?.nutrientsPer100g
-                                        ? 'Calories are estimated from nutrients per 100g.'
-                                        : 'Calories unavailable for this item.'}
+                        searchView === 'results' ? (
+                            <Stack spacing={1}>
+                                <Typography variant="subtitle2">Results</Typography>
+                                <FoodSearchResultsList
+                                    items={searchResults}
+                                    selectedItemId={selectedItemId}
+                                    hasMore={hasMoreResults}
+                                    isLoading={isSearching}
+                                    isLoadingMore={isLoadingMoreResults}
+                                    onLoadMore={() => void loadMoreSearchResults()}
+                                    onSelect={selectSearchResult}
+                                />
+                                <Typography variant="caption" color="text.secondary">
+                                    Tap a result to select it.
                                 </Typography>
-                                {computed && (
-                                    <Typography variant="subtitle1" sx={{ mt: 1 }}>
-                                        {computed.calories} Calories for {computed.grams} g
+                            </Stack>
+                        ) : selectedItem ? (
+                            <Stack spacing={2}>
+                                <Box
+                                    sx={{
+                                        display: 'flex',
+                                        justifyContent: 'space-between',
+                                        alignItems: 'flex-start',
+                                        gap: 2,
+                                        border: 1,
+                                        borderColor: 'divider',
+                                        borderRadius: 1,
+                                        p: 1.5
+                                    }}
+                                >
+                                    <Box sx={{ minWidth: 0 }}>
+                                        <Typography variant="subtitle2">Selected</Typography>
+                                        <Typography variant="body2" sx={{ wordBreak: 'break-word' }}>
+                                            {selectedItem.description}
+                                            {selectedItem.brand ? ` (${selectedItem.brand})` : ''}
+                                        </Typography>
+                                    </Box>
+                                    <Button
+                                        variant="text"
+                                        size="small"
+                                        startIcon={<ArrowBackIcon />}
+                                        onClick={() => setSearchView('results')}
+                                    >
+                                        Back to results
+                                    </Button>
+                                </Box>
+
+                                <FormControl fullWidth>
+                                    <InputLabel>Measure</InputLabel>
+                                    <Select
+                                        value={selectedMeasure?.label || ''}
+                                        label="Measure"
+                                        onChange={(e) => setSelectedMeasureLabel(e.target.value)}
+                                    >
+                                        {(selectedItem.availableMeasures || [])
+                                            .filter((m) => m.gramWeight)
+                                            .map((measure) => (
+                                                <MenuItem key={measure.label} value={measure.label}>
+                                                    {measure.label}{' '}
+                                                    {measure.gramWeight ? `(${measure.gramWeight} g)` : ''}
+                                                </MenuItem>
+                                            ))}
+                                    </Select>
+                                </FormControl>
+
+                                <TextField
+                                    label="Quantity"
+                                    type="number"
+                                    value={quantity}
+                                    onChange={(e) => setQuantity(parseFloat(e.target.value) || 0)}
+                                    disabled={!selectedMeasure}
+                                    inputProps={{ min: 0, step: 0.5 }}
+                                />
+
+                                <Box>
+                                    <Typography variant="body2" color="text.secondary">
+                                        {selectedItem.nutrientsPer100g
+                                            ? 'Calories are estimated from nutrients per 100g.'
+                                            : 'Calories unavailable for this item.'}
                                     </Typography>
-                                )}
-                            </Box>
-                        </Stack>
+                                    {computed && (
+                                        <Typography variant="subtitle1" sx={{ mt: 1 }}>
+                                            {computed.calories} Calories for {computed.grams} g
+                                        </Typography>
+                                    )}
+                                </Box>
+                            </Stack>
+                        ) : (
+                            <Typography variant="body2" color="text.secondary">
+                                Select a result to continue.
+                            </Typography>
+                        )
                     ) : (
                         <Typography variant="body2" color="text.secondary">
-                            {hasSearched
-                                ? 'No matches found. Try a different search term or scan again.'
-                                : 'No results yet. Search by name or scan a barcode to see items from the active provider.'}
+                            {isSearching
+                                ? 'Searching...'
+                                : hasSearched
+                                  ? 'No matches found. Try a different search term or scan again.'
+                                  : 'No results yet. Search by name or scan a barcode to see matching items.'}
                         </Typography>
                     )}
                 </Stack>
             )}
 
-            <FormControl fullWidth>
-                <InputLabel>Meal Period</InputLabel>
-                <Select
-                    value={mealPeriod}
-                    label="Meal Period"
-                    onChange={(e) => setMealPeriod(e.target.value as MealPeriod)}
-                >
-                    {mealOptions.map((meal) => (
-                        <MenuItem key={meal.value} value={meal.value}>
-                            <ListItemIcon sx={{ minWidth: 32 }}>{meal.icon}</ListItemIcon>
-                            {meal.label}
-                        </MenuItem>
-                    ))}
-                </Select>
-            </FormControl>
+            {shouldShowMealPeriod && (
+                <FormControl fullWidth>
+                    <InputLabel>Meal Period</InputLabel>
+                    <Select
+                        value={mealPeriod}
+                        label="Meal Period"
+                        onChange={(e) => setMealPeriod(e.target.value as MealPeriod)}
+                    >
+                        {mealOptions.map((meal) => (
+                            <MenuItem key={meal.value} value={meal.value}>
+                                <ListItemIcon sx={{ minWidth: 32 }}>{meal.icon}</ListItemIcon>
+                                {meal.label}
+                            </MenuItem>
+                        ))}
+                    </Select>
+                </FormControl>
+            )}
 
             {mode === 'manual' ? (
                 <Button
@@ -401,7 +545,7 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
                 <Button
                     variant="contained"
                     onClick={() => void handleAddFromSearch()}
-                    disabled={!selectedItem || !computed}
+                    disabled={!selectedItem || !computed || searchView !== 'selected'}
                 >
                     Add Selected Food
                 </Button>
