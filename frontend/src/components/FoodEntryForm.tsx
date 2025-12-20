@@ -21,6 +21,8 @@ import LunchDiningIcon from '@mui/icons-material/LunchDining';
 import DinnerDiningIcon from '@mui/icons-material/DinnerDining';
 import NightlifeIcon from '@mui/icons-material/Nightlife';
 import { ListItemIcon } from '@mui/material';
+import { useAuth } from '../context/useAuth';
+import { getTodayIsoDate } from '../utils/date';
 
 type Props = {
     onSuccess?: () => void;
@@ -62,6 +64,7 @@ type NormalizedFoodItem = {
 };
 
 const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
+    const { user } = useAuth();
     const [mode, setMode] = useState<'manual' | 'search'>('manual');
     const [foodName, setFoodName] = useState('');
     const [calories, setCalories] = useState('');
@@ -76,7 +79,7 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
     const [error, setError] = useState<string | null>(null);
     const [providerName, setProviderName] = useState<string>('');
 
-    const entryDate = date ? `${date}T12:00:00` : new Date();
+    const entryDate = date ?? getTodayIsoDate(user?.timezone);
 
     const mealOptions = [
         { value: 'Breakfast', label: 'Breakfast', icon: <EggAltIcon htmlColor="#ff9800" /> },

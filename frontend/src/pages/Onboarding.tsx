@@ -19,6 +19,7 @@ import { useNavigate } from 'react-router-dom';
 import { activityLevelOptions } from '../constants/activityLevels';
 import { useQuery } from '@tanstack/react-query';
 import { getBrowserTimeZone, getSupportedTimeZones } from '../utils/timeZone';
+import { getTodayIsoDate } from '../utils/date';
 
 const Onboarding: React.FC = () => {
     const { user } = useAuth();
@@ -100,7 +101,7 @@ const Onboarding: React.FC = () => {
 
             await axios.post('/api/metrics', {
                 weight: currentWeight,
-                date: new Date().toISOString().slice(0, 10)
+                date: getTodayIsoDate(timezone)
             });
 
             await axios.post('/api/goals', {
