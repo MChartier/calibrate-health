@@ -35,6 +35,8 @@ model User {
   created_at    DateTime  @default(now())
 
   weight_unit   WeightUnit @default(KG)
+  /// IANA time zone identifier used to compute the user's "day" boundaries.
+  timezone      String     @default("UTC")
   date_of_birth DateTime?
   sex           Sex?
   height_mm     Int?

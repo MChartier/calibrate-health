@@ -3,6 +3,7 @@ import prisma from '../config/database';
 import { isWeightUnit } from '../utils/weight';
 import { ActivityLevel, Sex, WeightUnit } from '@prisma/client';
 import { buildCalorieSummary, isActivityLevel, isSex } from '../utils/profile';
+import { isTimeZone } from '../utils/timeZone';
 
 const router = express.Router();
 
@@ -26,6 +27,7 @@ router.get('/me', (req, res) => {
       id: user.id,
       email: user.email,
       weight_unit: user.weight_unit,
+      timezone: user.timezone,
       date_of_birth: user.date_of_birth,
       sex: user.sex,
       height_mm: user.height_mm,
@@ -36,16 +38,35 @@ router.get('/me', (req, res) => {
 
 router.patch('/preferences', async (req, res) => {
   const user = req.user as any;
-  const { weight_unit } = req.body;
+  const { weight_unit, timezone } = req.body;
 
-  if (!isWeightUnit(weight_unit)) {
-    return res.status(400).json({ message: 'Invalid weight_unit' });
+  const updateData: Partial<{ weight_unit: WeightUnit; timezone: string }> = {};
+
+  if (weight_unit !== undefined) {
+    if (!isWeightUnit(weight_unit)) {
+      return res.status(400).json({ message: 'Invalid weight_unit' });
+    }
+    updateData.weight_unit = weight_unit;
+  }
+
+  if (timezone !== undefined) {
+    if (timezone === null || timezone === '') {
+      updateData.timezone = 'UTC';
+    } else if (isTimeZone(timezone)) {
+      updateData.timezone = timezone.trim();
+    } else {
+      return res.status(400).json({ message: 'Invalid timezone' });
+    }
+  }
+
+  if (Object.keys(updateData).length === 0) {
+    return res.status(400).json({ message: 'No fields to update' });
   }
 
   try {
     const updatedUser = await prisma.user.update({
       where: { id: user.id },
-      data: { weight_unit },
+      data: updateData,
     });
 
     res.json({
@@ -53,6 +74,7 @@ router.patch('/preferences', async (req, res) => {
         id: updatedUser.id,
         email: updatedUser.email,
         weight_unit: updatedUser.weight_unit,
+        timezone: updatedUser.timezone,
         date_of_birth: updatedUser.date_of_birth,
         sex: updatedUser.sex,
         height_mm: updatedUser.height_mm,
