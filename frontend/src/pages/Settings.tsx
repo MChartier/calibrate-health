@@ -1,13 +1,16 @@
 import React, { useMemo, useState } from 'react';
-import { Typography, Box, TextField, Button, Alert, FormControl, InputLabel, Select, MenuItem, Stack, Paper } from '@mui/material';
+import { Typography, Box, TextField, Button, Alert, FormControl, InputLabel, Select, MenuItem, Stack, Paper, FormHelperText } from '@mui/material';
 import type { SelectChangeEvent } from '@mui/material/Select';
 import axios from 'axios';
 import { useAuth } from '../context/useAuth';
 import { useQuery } from '@tanstack/react-query';
 import { activityLevelOptions } from '../constants/activityLevels';
+import { useThemeMode } from '../context/useThemeMode';
+import type { ThemePreference } from '../context/themeModeContext';
 
 const Settings: React.FC = () => {
     const { user, updateWeightUnit } = useAuth();
+    const { preference: themePreference, mode: resolvedThemeMode, setPreference: setThemePreference } = useThemeMode();
     const [startWeightInput, setStartWeightInput] = useState<string | null>(null);
     const [targetWeightInput, setTargetWeightInput] = useState<string | null>(null);
     const [dailyDeficitInput, setDailyDeficitInput] = useState<string | null>(null);
@@ -44,6 +47,15 @@ const Settings: React.FC = () => {
             tdee?: number;
             missing: string[];
         };
+    };
+
+    type ProfileUpdatePayload = {
+        date_of_birth: string | null;
+        sex: string | null;
+        activity_level: string | null;
+        height_cm?: string | null;
+        height_feet?: string | null;
+        height_inches?: string | null;
     };
 
     const goalQuery = useQuery({
@@ -172,7 +184,7 @@ const Settings: React.FC = () => {
 
     const handleProfileSave = async () => {
         try {
-            const payload: any = {
+            const payload: ProfileUpdatePayload = {
                 date_of_birth: dobValue || null,
                 sex: sexValue || null,
                 activity_level: activityValue || null
@@ -226,6 +238,27 @@ const Settings: React.FC = () => {
                         <MenuItem value="cm">Centimeters</MenuItem>
                         <MenuItem value="ftin">Feet / Inches</MenuItem>
                     </Select>
+                </FormControl>
+            </Paper>
+
+            <Paper sx={{ p: 2, mb: 3 }}>
+                <Typography variant="h6" gutterBottom>Appearance</Typography>
+                <FormControl fullWidth margin="normal">
+                    <InputLabel>Theme</InputLabel>
+                    <Select
+                        value={themePreference}
+                        label="Theme"
+                        onChange={(e) => setThemePreference(e.target.value as ThemePreference)}
+                    >
+                        <MenuItem value="system">System</MenuItem>
+                        <MenuItem value="light">Light</MenuItem>
+                        <MenuItem value="dark">Dark</MenuItem>
+                    </Select>
+                    <FormHelperText>
+                        {themePreference === 'system'
+                            ? `Following your device setting (currently ${resolvedThemeMode}).`
+                            : 'Persisted on this device.'}
+                    </FormHelperText>
                 </FormControl>
             </Paper>
 

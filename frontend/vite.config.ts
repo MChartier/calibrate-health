@@ -39,7 +39,7 @@ const usePolling =
   process.env.VITE_USE_POLLING === '1' ||
   isRunningInContainer()
 const devServerPortEnv = process.env.VITE_DEV_SERVER_PORT
-const devServerPortValue = devServerPortEnv ? Number.parseInt(devServerPortEnv, 10) : undefined
+const devServerPortValue = devServerPortEnv ? Number.parseInt(devServerPortEnv, 10) : Number.NaN
 const devServerPort =
   Number.isFinite(devServerPortValue) && devServerPortValue > 0 ? devServerPortValue : undefined
 

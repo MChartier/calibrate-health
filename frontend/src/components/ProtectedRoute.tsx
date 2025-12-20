@@ -10,6 +10,15 @@ const ProtectedRoute: React.FC = () => {
     const location = useLocation();
     const isOnboardingRoute = location.pathname.startsWith('/onboarding');
 
+    const profileQuery = useQuery({
+        queryKey: ['profile'],
+        queryFn: async () => {
+            const res = await axios.get('/api/user/profile');
+            return res.data;
+        },
+        enabled: !!user && !isOnboardingRoute && !isLoading
+    });
+
     if (isLoading) {
         return (
             <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
@@ -22,15 +31,6 @@ const ProtectedRoute: React.FC = () => {
         console.log('Redirecting to login...');
         return <Navigate to="/login" replace />;
     }
-
-    const profileQuery = useQuery({
-        queryKey: ['profile'],
-        queryFn: async () => {
-            const res = await axios.get('/api/user/profile');
-            return res.data;
-        },
-        enabled: !!user && !isOnboardingRoute
-    });
 
     if (!isOnboardingRoute) {
         if (profileQuery.isLoading) {

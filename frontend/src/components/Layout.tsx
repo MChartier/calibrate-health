@@ -135,7 +135,7 @@ const Layout: React.FC = () => {
                             to="/dashboard"
                             sx={{ color: 'inherit', textDecoration: 'none' }}
                         >
-                            cal-io
+                            cal.io
                         </Typography>
                         {worktreeBadgeLabel && (
                             <Box
