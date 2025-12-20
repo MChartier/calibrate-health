@@ -55,8 +55,6 @@ const DashboardLogSummaryCard: React.FC = () => {
             ? totalCalories
             : dailyTarget
         : 1;
-    const valueColor = '#4caf50';
-    const trackColor = isOver ? '#f44336' : '#e0e0e0';
 
     return (
         <Card
@@ -86,10 +84,11 @@ const DashboardLogSummaryCard: React.FC = () => {
                             text={() => ''}
                             sx={{
                                 '& .MuiGauge-referenceArc': {
-                                    fill: trackColor
+                                    fill: (theme) =>
+                                        isOver ? theme.palette.error.main : theme.palette.grey[300]
                                 },
                                 '& .MuiGauge-valueArc': {
-                                    fill: valueColor
+                                    fill: (theme) => theme.palette.primary.main
                                 }
                             }}
                         />

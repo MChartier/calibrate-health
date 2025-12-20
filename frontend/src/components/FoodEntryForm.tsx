@@ -82,12 +82,12 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
     const entryDate = date ?? getTodayIsoDate(user?.timezone);
 
     const mealOptions = [
-        { value: 'Breakfast', label: 'Breakfast', icon: <EggAltIcon htmlColor="#ff9800" /> },
-        { value: 'Morning Snack', label: 'Morning Snack', icon: <BakeryDiningIcon htmlColor="#4caf50" /> },
-        { value: 'Lunch', label: 'Lunch', icon: <LunchDiningIcon htmlColor="#3f51b5" /> },
-        { value: 'Afternoon Snack', label: 'Afternoon Snack', icon: <IcecreamIcon htmlColor="#8bc34a" /> },
-        { value: 'Dinner', label: 'Dinner', icon: <DinnerDiningIcon htmlColor="#9c27b0" /> },
-        { value: 'Evening Snack', label: 'Evening Snack', icon: <NightlifeIcon htmlColor="#e91e63" /> }
+        { value: 'Breakfast', label: 'Breakfast', icon: <EggAltIcon sx={{ color: 'warning.main' }} /> },
+        { value: 'Morning Snack', label: 'Morning Snack', icon: <BakeryDiningIcon sx={{ color: 'success.main' }} /> },
+        { value: 'Lunch', label: 'Lunch', icon: <LunchDiningIcon sx={{ color: 'info.main' }} /> },
+        { value: 'Afternoon Snack', label: 'Afternoon Snack', icon: <IcecreamIcon sx={{ color: 'success.light' }} /> },
+        { value: 'Dinner', label: 'Dinner', icon: <DinnerDiningIcon sx={{ color: 'secondary.main' }} /> },
+        { value: 'Evening Snack', label: 'Evening Snack', icon: <NightlifeIcon sx={{ color: 'error.main' }} /> }
     ];
 
     const selectedItem = useMemo(

@@ -60,12 +60,12 @@ type EditState = {
 } | null;
 
 const MEALS: Array<{ key: MealKey; label: string; aliases: string[]; icon: React.ReactNode }> = [
-    { key: 'Breakfast', label: 'Breakfast', aliases: ['Breakfast'], icon: <EggAltIcon htmlColor="#ff9800" /> },
-    { key: 'Morning Snack', label: 'Morning Snack', aliases: ['Morning Snack', 'Morning'], icon: <BakeryDiningIcon htmlColor="#4caf50" /> },
-    { key: 'Lunch', label: 'Lunch', aliases: ['Lunch'], icon: <LunchDiningIcon htmlColor="#3f51b5" /> },
-    { key: 'Afternoon Snack', label: 'Afternoon Snack', aliases: ['Afternoon Snack', 'Afternoon'], icon: <IcecreamIcon htmlColor="#8bc34a" /> },
-    { key: 'Dinner', label: 'Dinner', aliases: ['Dinner'], icon: <DinnerDiningIcon htmlColor="#9c27b0" /> },
-    { key: 'Evening Snack', label: 'Evening Snack', aliases: ['Evening Snack', 'Evening'], icon: <NightlifeIcon htmlColor="#e91e63" /> }
+    { key: 'Breakfast', label: 'Breakfast', aliases: ['Breakfast'], icon: <EggAltIcon sx={{ color: 'warning.main' }} /> },
+    { key: 'Morning Snack', label: 'Morning Snack', aliases: ['Morning Snack', 'Morning'], icon: <BakeryDiningIcon sx={{ color: 'success.main' }} /> },
+    { key: 'Lunch', label: 'Lunch', aliases: ['Lunch'], icon: <LunchDiningIcon sx={{ color: 'info.main' }} /> },
+    { key: 'Afternoon Snack', label: 'Afternoon Snack', aliases: ['Afternoon Snack', 'Afternoon'], icon: <IcecreamIcon sx={{ color: 'success.light' }} /> },
+    { key: 'Dinner', label: 'Dinner', aliases: ['Dinner'], icon: <DinnerDiningIcon sx={{ color: 'secondary.main' }} /> },
+    { key: 'Evening Snack', label: 'Evening Snack', aliases: ['Evening Snack', 'Evening'], icon: <NightlifeIcon sx={{ color: 'error.main' }} /> }
 ];
 
 function normalizeMealPeriod(value: unknown): MealKey | null {
