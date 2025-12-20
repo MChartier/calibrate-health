@@ -6,6 +6,7 @@ import Dashboard from './pages/Dashboard';
 import Log from './pages/Log';
 import History from './pages/History';
 import Settings from './pages/Settings';
+import Profile from './pages/Profile';
 import Onboarding from './pages/Onboarding';
 import DevDashboard from './pages/DevDashboard';
 
@@ -26,6 +27,7 @@ function App() {
           <Route path="log" element={<Log />} />
           <Route path="history" element={<History />} />
           <Route path="settings" element={<Settings />} />
+          <Route path="profile" element={<Profile />} />
         </Route>
       </Route>
     </Routes>
