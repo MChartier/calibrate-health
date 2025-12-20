@@ -33,6 +33,22 @@ const getLanguageCode = (req: express.Request): string | undefined => {
     return primary.split('-')[0]?.toLowerCase();
 };
 
+/**
+ * Parse query/body inputs into a UTC date-only value (midnight UTC).
+ *
+ * Accepts either `YYYY-MM-DD` or an ISO datetime string (we take the date portion).
+ */
+const parseDateOnlyInput = (input: unknown): Date => {
+    if (typeof input === 'string') {
+        const datePart = input.split('T')[0] ?? '';
+        return normalizeToUtcDateOnly(datePart);
+    }
+    if (input instanceof Date) {
+        return normalizeToUtcDateOnly(input);
+    }
+    throw new Error('Invalid date');
+};
+
 router.get('/search', async (req, res) => {
     const provider = getFoodDataProvider();
     const query = (req.query.q as string) || (req.query.query as string);
@@ -74,22 +90,6 @@ router.get('/', async (req, res) => {
 
     let whereClause: any = { user_id: user.id };
 
-    /**
-     * Parse query/body inputs into a UTC date-only value (midnight UTC).
-     *
-     * Accepts either `YYYY-MM-DD` or an ISO datetime string (we take the date portion).
-     */
-    const parseDateOnlyInput = (input: unknown): Date => {
-        if (typeof input === 'string') {
-            const datePart = input.split('T')[0] ?? '';
-            return normalizeToUtcDateOnly(datePart);
-        }
-        if (input instanceof Date) {
-            return normalizeToUtcDateOnly(input);
-        }
-        throw new Error('Invalid date');
-    };
-
     if (typeof date === 'string' && date) {
         try {
             whereClause.date = parseDateOnlyInput(date);
@@ -123,7 +123,7 @@ router.post('/', async (req, res) => {
     try {
         let logDate: Date;
         try {
-            logDate = date ? normalizeToUtcDateOnly(String(date).split('T')[0]) : normalizeToUtcDateOnly(new Date());
+            logDate = date ? parseDateOnlyInput(date) : normalizeToUtcDateOnly(new Date());
         } catch {
             return res.status(400).json({ message: 'Invalid date' });
         }
@@ -139,6 +139,90 @@ router.post('/', async (req, res) => {
         });
         res.json(log);
     } catch (err) {
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+router.patch('/:id', async (req, res) => {
+    const user = req.user as any;
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id)) {
+        return res.status(400).json({ message: 'Invalid id' });
+    }
+
+    const { name, calories, meal_period, date } = req.body;
+    const data: Partial<{ name: string; calories: number; meal_period: string; date: Date }> = {};
+
+    if (name !== undefined) {
+        if (typeof name !== 'string' || !name.trim()) {
+            return res.status(400).json({ message: 'Invalid name' });
+        }
+        data.name = name.trim();
+    }
+
+    if (calories !== undefined) {
+        const numeric = typeof calories === 'number' ? calories : Number(calories);
+        if (!Number.isFinite(numeric) || numeric < 0) {
+            return res.status(400).json({ message: 'Invalid calories' });
+        }
+        data.calories = Math.round(numeric);
+    }
+
+    if (meal_period !== undefined) {
+        if (typeof meal_period !== 'string' || !meal_period.trim()) {
+            return res.status(400).json({ message: 'Invalid meal_period' });
+        }
+        data.meal_period = meal_period.trim();
+    }
+
+    if (date !== undefined) {
+        try {
+            data.date = parseDateOnlyInput(date);
+        } catch {
+            return res.status(400).json({ message: 'Invalid date' });
+        }
+    }
+
+    if (Object.keys(data).length === 0) {
+        return res.status(400).json({ message: 'No fields to update' });
+    }
+
+    try {
+        const existing = await prisma.foodLog.findFirst({
+            where: { id, user_id: user.id }
+        });
+        if (!existing) {
+            return res.status(404).json({ message: 'Food log not found' });
+        }
+
+        const updated = await prisma.foodLog.update({
+            where: { id },
+            data
+        });
+        res.json(updated);
+    } catch {
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+router.delete('/:id', async (req, res) => {
+    const user = req.user as any;
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id)) {
+        return res.status(400).json({ message: 'Invalid id' });
+    }
+
+    try {
+        const existing = await prisma.foodLog.findFirst({
+            where: { id, user_id: user.id }
+        });
+        if (!existing) {
+            return res.status(404).json({ message: 'Food log not found' });
+        }
+
+        await prisma.foodLog.delete({ where: { id } });
+        res.status(204).send();
+    } catch {
         res.status(500).json({ message: 'Server error' });
     }
 });
