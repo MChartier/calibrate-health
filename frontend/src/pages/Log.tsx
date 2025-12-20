@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import {
+    Alert,
     Box,
+    LinearProgress,
+    Skeleton,
     TextField,
     Dialog,
     DialogActions,
@@ -46,6 +49,22 @@ const Log: React.FC = () => {
         }
     });
 
+    const profileSummaryQuery = useQuery({
+        queryKey: ['profile-summary'],
+        queryFn: async () => {
+            const res = await axios.get('/api/user/profile');
+            return res.data;
+        }
+    });
+
+    const logs = foodQuery.data ?? [];
+    const totalCalories = logs.reduce((sum, entry) => sum + entry.calories, 0);
+    const dailyTarget = profileSummaryQuery.data?.calorieSummary?.dailyCalorieTarget;
+    const hasTarget = typeof dailyTarget === 'number' && Number.isFinite(dailyTarget);
+    const remainingCalories = hasTarget ? Math.round(dailyTarget - totalCalories) : null;
+    const isOver = hasTarget ? totalCalories > dailyTarget : false;
+    const progressPercent = hasTarget ? Math.min((totalCalories / dailyTarget) * 100, 100) : 0;
+
     const handleCloseFoodDialog = () => setIsFoodDialogOpen(false);
     const handleCloseWeightDialog = () => setIsWeightDialogOpen(false);
 
@@ -71,6 +90,73 @@ const Log: React.FC = () => {
             </Box>
 
             <CalorieTargetBanner />
+
+            <Paper sx={{ p: 2, mb: 2 }}>
+                <Typography variant="h6" gutterBottom>
+                    Daily Summary
+                </Typography>
+
+                {profileSummaryQuery.isError ? (
+                    <Alert severity="warning">Unable to load your daily target right now.</Alert>
+                ) : profileSummaryQuery.isLoading ? (
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                        <Skeleton width="60%" />
+                        <Skeleton variant="rounded" height={10} />
+                    </Box>
+                ) : (
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
+                            <Typography variant="body2" color="text.secondary">
+                                Consumed: <strong>{totalCalories}</strong> kcal
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary">
+                                Target: <strong>{hasTarget ? Math.round(dailyTarget) : '—'}</strong> kcal
+                            </Typography>
+                            <Typography
+                                variant="body2"
+                                sx={{
+                                    color: (theme) => (isOver ? theme.palette.error.main : theme.palette.text.secondary)
+                                }}
+                            >
+                                {remainingCalories !== null ? (
+                                    isOver ? (
+                                        <>
+                                            Over: <strong>{Math.abs(remainingCalories)}</strong> kcal
+                                        </>
+                                    ) : (
+                                        <>
+                                            Remaining: <strong>{remainingCalories}</strong> kcal
+                                        </>
+                                    )
+                                ) : (
+                                    <>
+                                        Remaining: <strong>—</strong>
+                                    </>
+                                )}
+                            </Typography>
+                        </Box>
+
+                        {hasTarget ? (
+                            <LinearProgress
+                                variant="determinate"
+                                value={progressPercent}
+                                sx={{
+                                    height: 10,
+                                    borderRadius: 6,
+                                    '& .MuiLinearProgress-bar': {
+                                        backgroundColor: (theme) =>
+                                            isOver ? theme.palette.error.main : theme.palette.primary.main
+                                    }
+                                }}
+                            />
+                        ) : (
+                            <Typography variant="body2" color="text.secondary">
+                                Complete your profile and goal to unlock daily targets.
+                            </Typography>
+                        )}
+                    </Box>
+                )}
+            </Paper>
 
             <Paper sx={{ p: 2 }}>
                 <FoodLogMeals logs={foodQuery.data ?? []} onChange={() => void foodQuery.refetch()} />
