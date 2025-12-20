@@ -4,7 +4,10 @@ import {
     Box,
     Button,
     FormControl,
+    IconButton,
     InputLabel,
+    InputAdornment,
+    ListItemIcon,
     MenuItem,
     Select,
     Stack,
@@ -20,7 +23,8 @@ import IcecreamIcon from '@mui/icons-material/Icecream';
 import LunchDiningIcon from '@mui/icons-material/LunchDining';
 import DinnerDiningIcon from '@mui/icons-material/DinnerDining';
 import NightlifeIcon from '@mui/icons-material/Nightlife';
-import { ListItemIcon } from '@mui/material';
+import BarcodeReaderIcon from '@mui/icons-material/BarcodeReader';
+import BarcodeScannerDialog from './BarcodeScannerDialog';
 
 type Props = {
     onSuccess?: () => void;
@@ -62,7 +66,7 @@ type NormalizedFoodItem = {
 };
 
 const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
-    const [mode, setMode] = useState<'manual' | 'search'>('manual');
+    const [mode, setMode] = useState<'manual' | 'search'>('search');
     const [foodName, setFoodName] = useState('');
     const [calories, setCalories] = useState('');
     const [mealPeriod, setMealPeriod] = useState('Breakfast');
@@ -75,6 +79,9 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
     const [isSearching, setIsSearching] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [providerName, setProviderName] = useState<string>('');
+    const [supportsBarcodeLookup, setSupportsBarcodeLookup] = useState<boolean | null>(null);
+    const [isScannerOpen, setIsScannerOpen] = useState(false);
+    const [hasSearched, setHasSearched] = useState(false);
 
     const entryDate = date ? `${date}T12:00:00` : new Date();
 
@@ -124,16 +131,31 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
         setSelectedMeasureLabel(firstMeasure?.label || null);
     };
 
-    const handleSearch = async () => {
-        if (!searchQuery.trim()) return;
+    /**
+     * Execute a provider search via the backend, optionally with a UPC barcode lookup.
+     */
+    const performFoodSearch = async (request: { query?: string; barcode?: string }) => {
+        const trimmedQuery = request.query?.trim();
+        const barcode = request.barcode?.trim();
+        if (!trimmedQuery && !barcode) {
+            return;
+        }
+
+        setHasSearched(true);
         setIsSearching(true);
         setError(null);
         try {
             const response = await axios.get('/api/food/search', {
-                params: { q: searchQuery.trim() }
+                params: {
+                    ...(trimmedQuery ? { q: trimmedQuery } : {}),
+                    ...(barcode ? { barcode } : {})
+                }
             });
             const items: NormalizedFoodItem[] = Array.isArray(response.data?.items) ? response.data.items : [];
             setProviderName(response.data?.provider || '');
+            setSupportsBarcodeLookup(
+                typeof response.data?.supportsBarcodeLookup === 'boolean' ? response.data.supportsBarcodeLookup : null
+            );
             setSearchResults(items);
             resetSearchSelection(items);
         } catch (err) {
@@ -142,6 +164,10 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
         } finally {
             setIsSearching(false);
         }
+    };
+
+    const handleSearch = async () => {
+        await performFoodSearch({ query: searchQuery });
     };
 
     const handleAddManual = async () => {
@@ -176,8 +202,8 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
                 size="small"
                 color="primary"
             >
-                <ToggleButton value="manual">Manual calories</ToggleButton>
-                <ToggleButton value="search">Search provider</ToggleButton>
+                <ToggleButton value="search">Search</ToggleButton>
+                <ToggleButton value="manual">Manual Entry</ToggleButton>
             </ToggleButtonGroup>
 
             {mode === 'manual' ? (
@@ -210,16 +236,46 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
                                 void handleSearch();
                             }
                         }}
+                        InputProps={{
+                            endAdornment: (
+                                <InputAdornment position="end">
+                                    <IconButton
+                                        aria-label="Scan barcode"
+                                        title="Scan barcode"
+                                        onClick={() => setIsScannerOpen(true)}
+                                        edge="end"
+                                        disabled={isSearching}
+                                    >
+                                        <BarcodeReaderIcon />
+                                    </IconButton>
+                                </InputAdornment>
+                            )
+                        }}
                     />
-                    <Button variant="outlined" onClick={() => void handleSearch()} disabled={isSearching}>
+                    <Button
+                        variant="outlined"
+                        onClick={() => void handleSearch()}
+                        disabled={isSearching || !searchQuery.trim()}
+                        sx={{ width: { xs: '100%', sm: 'auto' } }}
+                    >
                         {isSearching ? 'Searching...' : 'Search'}
                     </Button>
                     {providerName && (
                         <Typography variant="caption" color="text.secondary">
                             Provider: {providerName}
+                            {supportsBarcodeLookup === false ? ' (barcode lookup unavailable)' : ''}
                         </Typography>
                     )}
                     {error && <Alert severity="error">{error}</Alert>}
+
+                    <BarcodeScannerDialog
+                        open={isScannerOpen}
+                        onClose={() => setIsScannerOpen(false)}
+                        onDetected={(barcode) => {
+                            setSearchQuery(barcode);
+                            void performFoodSearch({ barcode });
+                        }}
+                    />
 
                     {searchResults.length > 0 ? (
                         <Stack spacing={2}>
@@ -280,7 +336,9 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
                         </Stack>
                     ) : (
                         <Typography variant="body2" color="text.secondary">
-                            No results yet. Search by name to see items from the active provider.
+                            {hasSearched
+                                ? 'No matches found. Try a different search term or scan again.'
+                                : 'No results yet. Search by name or scan a barcode to see items from the active provider.'}
                         </Typography>
                     )}
                 </Stack>
