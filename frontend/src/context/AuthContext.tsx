@@ -8,16 +8,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const checkAuth = useCallback(async () => {
         try {
-            console.log('Checking auth...');
             const res = await axios.get('/auth/me');
-            console.log('Auth response:', res.data);
             setUser(res.data.user);
         } catch (err) {
-            console.error('Auth check failed:', err);
+            if (import.meta.env.DEV) {
+                console.error('Auth check failed:', err);
+            }
             setUser(null);
         } finally {
             setIsLoading(false);
-            console.log('Auth check complete, isLoading: false');
         }
     }, []);
 
