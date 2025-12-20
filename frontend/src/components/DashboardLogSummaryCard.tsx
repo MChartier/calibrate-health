@@ -1,9 +1,9 @@
 import React from 'react';
-import { Box, Paper, Typography } from '@mui/material';
+import { Box, Card, CardActionArea, CardContent, Typography } from '@mui/material';
 import { Gauge } from '@mui/x-charts/Gauge';
 import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
+import { Link as RouterLink } from 'react-router-dom';
 
 type FoodLogEntry = {
     id: number;
@@ -26,7 +26,6 @@ function getLocalDateString(date: Date): string {
 }
 
 const DashboardLogSummaryCard: React.FC = () => {
-    const navigate = useNavigate();
     const today = getLocalDateString(new Date());
 
     const foodQuery = useQuery({
@@ -64,57 +63,63 @@ const DashboardLogSummaryCard: React.FC = () => {
     const trackColor = isOver ? '#f44336' : '#e0e0e0';
 
     return (
-        <Paper
+        <Card
             sx={{
-                p: 2,
-                cursor: 'pointer',
                 transition: 'transform 120ms ease',
                 '&:hover': { transform: 'translateY(-2px)' },
                 height: '100%',
                 width: '100%'
             }}
-            onClick={() => navigate('/log')}
         >
-            <Typography variant="h6" gutterBottom>Today&apos;s Log</Typography>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                <Gauge
-                    width={200}
-                    height={140}
-                    startAngle={-90}
-                    endAngle={90}
-                    value={gaugeValue}
-                    valueMin={0}
-                    valueMax={gaugeMax}
-                    innerRadius="70%"
-                    outerRadius="90%"
-                    text={() => ''}
-                    sx={{
-                        '& .MuiGauge-referenceArc': {
-                            fill: trackColor
-                        },
-                        '& .MuiGauge-valueArc': {
-                            fill: valueColor
-                        }
-                    }}
-                />
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-                    <Typography variant="subtitle1">
-                        {remainingCalories !== null && remainingCalories < 0 ? 'Calories over budget' : 'Calories remaining'}
+            <CardActionArea component={RouterLink} to="/log" sx={{ height: '100%' }}>
+                <CardContent>
+                    <Typography variant="h6" gutterBottom>
+                        Today&apos;s Log
                     </Typography>
-                    <Typography variant="h5">
-                        {remainingCalories !== null
-                            ? `${remainingCalories < 0 ? Math.abs(remainingCalories) : remainingCalories} Calories`
-                            : '—'}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                        Logged: {totalCalories} Calories {dailyTarget ? `of ${Math.round(dailyTarget)} Calories target` : ''}
-                    </Typography>
-                    <Typography variant="body2" color="primary">
-                        View / edit today&apos;s log
-                    </Typography>
-                </Box>
-            </Box>
-        </Paper>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                        <Gauge
+                            width={200}
+                            height={140}
+                            startAngle={-90}
+                            endAngle={90}
+                            value={gaugeValue}
+                            valueMin={0}
+                            valueMax={gaugeMax}
+                            innerRadius="70%"
+                            outerRadius="90%"
+                            text={() => ''}
+                            sx={{
+                                '& .MuiGauge-referenceArc': {
+                                    fill: trackColor
+                                },
+                                '& .MuiGauge-valueArc': {
+                                    fill: valueColor
+                                }
+                            }}
+                        />
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                            <Typography variant="subtitle1">
+                                {remainingCalories !== null && remainingCalories < 0
+                                    ? 'Calories over budget'
+                                    : 'Calories remaining'}
+                            </Typography>
+                            <Typography variant="h5">
+                                {remainingCalories !== null
+                                    ? `${remainingCalories < 0 ? Math.abs(remainingCalories) : remainingCalories} Calories`
+                                    : '—'}
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary">
+                                Logged: {totalCalories} Calories{' '}
+                                {dailyTarget ? `of ${Math.round(dailyTarget)} Calories target` : ''}
+                            </Typography>
+                            <Typography variant="body2" color="primary">
+                                View / edit today&apos;s log
+                            </Typography>
+                        </Box>
+                    </Box>
+                </CardContent>
+            </CardActionArea>
+        </Card>
     );
 };
 

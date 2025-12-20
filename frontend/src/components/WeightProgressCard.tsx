@@ -1,6 +1,6 @@
 import React from 'react';
-import { Box, Paper, Typography, LinearProgress } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
+import { Box, Card, CardActionArea, CardContent, Typography, LinearProgress } from '@mui/material';
+import { Link as RouterLink } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
 import { useAuth } from '../context/useAuth';
@@ -18,7 +18,6 @@ type MetricEntry = {
 };
 
 const WeightProgressCard: React.FC = () => {
-    const navigate = useNavigate();
     const { user } = useAuth();
     const weightUnitLabel = user?.weight_unit === 'LB' ? 'lb' : 'kg';
 
@@ -53,46 +52,50 @@ const WeightProgressCard: React.FC = () => {
     }
 
     return (
-        <Paper
+        <Card
             sx={{
-                p: 2,
-                cursor: 'pointer',
                 transition: 'transform 120ms ease',
                 '&:hover': { transform: 'translateY(-2px)' },
                 height: '100%',
-                display: 'flex',
-                flexDirection: 'column',
                 width: '100%'
             }}
-            onClick={() => navigate('/history')}
         >
-            <Typography variant="h6" gutterBottom>
-                Weight Progress
-            </Typography>
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                <Typography variant="body2" color="text.secondary">
-                    Start: {startWeight !== null ? `${startWeight} ${weightUnitLabel}` : '—'} · Target: {targetWeight !== null ? `${targetWeight} ${weightUnitLabel}` : '—'}
-                </Typography>
-                <Typography variant="body1">
-                    Current: {currentWeight !== null ? `${currentWeight} ${weightUnitLabel}` : '—'}
-                </Typography>
-                {progressPercent !== null ? (
-                    <>
-                        <LinearProgress variant="determinate" value={Math.min(progressPercent, 100)} sx={{ height: 10, borderRadius: 5 }} />
-                        <Typography variant="caption" color="text.secondary">
-                            {progressPercent.toFixed(0)}% toward goal
-                        </Typography>
-                    </>
-                ) : (
-                    <Typography variant="body2" color="text.secondary">
-                        Add a start weight, target weight, and a current weight to see progress.
+            <CardActionArea component={RouterLink} to="/history" sx={{ height: '100%' }}>
+                <CardContent sx={{ height: '100%' }}>
+                    <Typography variant="h6" gutterBottom>
+                        Weight Progress
                     </Typography>
-                )}
-                <Typography variant="body2" color="primary">
-                    View history and details
-                </Typography>
-            </Box>
-        </Paper>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                        <Typography variant="body2" color="text.secondary">
+                            Start: {startWeight !== null ? `${startWeight} ${weightUnitLabel}` : '—'} · Target:{' '}
+                            {targetWeight !== null ? `${targetWeight} ${weightUnitLabel}` : '—'}
+                        </Typography>
+                        <Typography variant="body1">
+                            Current: {currentWeight !== null ? `${currentWeight} ${weightUnitLabel}` : '—'}
+                        </Typography>
+                        {progressPercent !== null ? (
+                            <>
+                                <LinearProgress
+                                    variant="determinate"
+                                    value={Math.min(progressPercent, 100)}
+                                    sx={{ height: 10, borderRadius: 5 }}
+                                />
+                                <Typography variant="caption" color="text.secondary">
+                                    {progressPercent.toFixed(0)}% toward goal
+                                </Typography>
+                            </>
+                        ) : (
+                            <Typography variant="body2" color="text.secondary">
+                                Add a start weight, target weight, and a current weight to see progress.
+                            </Typography>
+                        )}
+                        <Typography variant="body2" color="primary">
+                            View history and details
+                        </Typography>
+                    </Box>
+                </CardContent>
+            </CardActionArea>
+        </Card>
     );
 };
 
