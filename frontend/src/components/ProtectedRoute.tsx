@@ -16,7 +16,7 @@ const ProtectedRoute: React.FC = () => {
             const res = await axios.get('/api/user/profile');
             return res.data;
         },
-        enabled: !!user && !isOnboardingRoute && !isLoading
+        enabled: Boolean(user) && !isOnboardingRoute && !isLoading
     });
 
     if (isLoading) {
