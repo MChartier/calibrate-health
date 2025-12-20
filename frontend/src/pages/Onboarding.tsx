@@ -126,7 +126,7 @@ const Onboarding: React.FC = () => {
                 Welcome! Let&apos;s set up your targets
             </Typography>
             <Typography color="text.secondary" sx={{ mb: 2 }}>
-                We need a few details to estimate your calories burned and daily target. You can change these later.
+                We need a few details to estimate your calories burned and daily target. You can change these later from your profile.
             </Typography>
 
             <Paper sx={{ p: 3 }}>

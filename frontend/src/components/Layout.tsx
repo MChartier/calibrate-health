@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import {
     AppBar,
+    Avatar,
     Box,
     Divider,
     Drawer,
@@ -10,6 +11,7 @@ import {
     ListItemIcon,
     ListItemText,
     Toolbar,
+    Tooltip,
     Typography,
     useMediaQuery
 } from '@mui/material';
@@ -24,6 +26,15 @@ import { useTheme } from '@mui/material/styles';
 import { useAuth } from '../context/useAuth';
 
 const drawerWidth = 240;
+
+/**
+ * Derive a short, stable label for the user's Avatar when we don't have a profile image.
+ */
+function getAvatarLabel(email?: string) {
+    const trimmed = email?.trim();
+    if (!trimmed) return '?';
+    return trimmed[0].toUpperCase();
+}
 
 const Layout: React.FC = () => {
     const { user, logout, isLoading } = useAuth();
@@ -156,6 +167,31 @@ const Layout: React.FC = () => {
                             </Box>
                         )}
                     </Box>
+
+                    <Box sx={{ flexGrow: 1 }} />
+
+                    {user && !isLoading && (
+                        <Tooltip title="Profile">
+                            <IconButton
+                                color="inherit"
+                                onClick={() => handleNavigate('/profile')}
+                                aria-label="Open profile"
+                                sx={{ ml: 1 }}
+                            >
+                                <Avatar
+                                    sx={{
+                                        width: 32,
+                                        height: 32,
+                                        bgcolor: 'rgba(255, 255, 255, 0.2)',
+                                        color: 'inherit',
+                                        fontWeight: 700
+                                    }}
+                                >
+                                    {getAvatarLabel(user.email)}
+                                </Avatar>
+                            </IconButton>
+                        </Tooltip>
+                    )}
                 </Toolbar>
             </AppBar>
 
