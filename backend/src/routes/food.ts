@@ -1,6 +1,7 @@
 import express from 'express';
 import prisma from '../config/database';
 import { getFoodDataProvider } from '../services/foodData';
+import { normalizeToUtcDateOnly } from '../utils/date';
 
 const router = express.Router();
 
@@ -69,19 +70,40 @@ router.get('/search', async (req, res) => {
 
 router.get('/', async (req, res) => {
     const user = req.user as any;
-    const { date } = req.query;
+    const { date, start, end } = req.query;
 
     let whereClause: any = { user_id: user.id };
-    if (date) {
-        const startOfDay = new Date(date as string);
-        startOfDay.setHours(0, 0, 0, 0);
-        const endOfDay = new Date(date as string);
-        endOfDay.setHours(23, 59, 59, 999);
 
-        whereClause.date = {
-            gte: startOfDay,
-            lte: endOfDay
-        };
+    /**
+     * Parse query/body inputs into a UTC date-only value (midnight UTC).
+     *
+     * Accepts either `YYYY-MM-DD` or an ISO datetime string (we take the date portion).
+     */
+    const parseDateOnlyInput = (input: unknown): Date => {
+        if (typeof input === 'string') {
+            const datePart = input.split('T')[0] ?? '';
+            return normalizeToUtcDateOnly(datePart);
+        }
+        if (input instanceof Date) {
+            return normalizeToUtcDateOnly(input);
+        }
+        throw new Error('Invalid date');
+    };
+
+    if (typeof date === 'string' && date) {
+        try {
+            whereClause.date = parseDateOnlyInput(date);
+        } catch {
+            return res.status(400).json({ message: 'Invalid date' });
+        }
+    } else if (typeof start === 'string' || typeof end === 'string') {
+        whereClause.date = {};
+        try {
+            if (typeof start === 'string' && start) whereClause.date.gte = parseDateOnlyInput(start);
+            if (typeof end === 'string' && end) whereClause.date.lte = parseDateOnlyInput(end);
+        } catch {
+            return res.status(400).json({ message: 'Invalid date range' });
+        }
     }
 
     try {
@@ -99,13 +121,20 @@ router.post('/', async (req, res) => {
     const user = req.user as any;
     const { name, calories, meal_period, date } = req.body;
     try {
+        let logDate: Date;
+        try {
+            logDate = date ? normalizeToUtcDateOnly(String(date).split('T')[0]) : normalizeToUtcDateOnly(new Date());
+        } catch {
+            return res.status(400).json({ message: 'Invalid date' });
+        }
+
         const log = await prisma.foodLog.create({
             data: {
                 user_id: user.id,
                 name,
                 calories: parseInt(calories),
                 meal_period,
-                date: date ? new Date(date) : new Date()
+                date: logDate
             }
         });
         res.json(log);
