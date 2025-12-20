@@ -18,6 +18,21 @@ class OpenFoodFactsProvider implements FoodDataProvider {
     public supportsBarcodeLookup = true;
     private baseUrl = 'https://world.openfoodfacts.org';
     private searchFields = 'product_name,brands,code,nutriments,serving_size,serving_quantity,product_quantity,quantity,lc';
+    private requestTimeoutMs: number;
+    private searchMode: 'auto' | 'v2' | 'legacy';
+
+    constructor() {
+        const configured = process.env.OFF_TIMEOUT_MS;
+        const parsed = configured ? parseInt(configured, 10) : Number.NaN;
+        this.requestTimeoutMs = Number.isFinite(parsed) && parsed >= 0 ? parsed : 8000;
+
+        const mode = (process.env.OFF_SEARCH_MODE || 'auto').toLowerCase();
+        if (mode === 'auto' || mode === 'v2' || mode === 'legacy') {
+            this.searchMode = mode;
+        } else {
+            this.searchMode = 'auto';
+        }
+    }
 
     async searchFoods(request: FoodSearchRequest): Promise<FoodSearchResult> {
         if (request.barcode) {
@@ -35,27 +50,157 @@ class OpenFoodFactsProvider implements FoodDataProvider {
 
         const pageSize = Math.min(request.pageSize ?? 10, 50);
         const page = request.page ?? 1;
-        const response = await this.fetchSearchResponse(query, pageSize, page, request.languageCode);
 
-        if (!response.ok) {
-            const message = await response.text();
-            throw new Error(`Open Food Facts search failed: ${response.status} ${message}`);
+        if (this.searchMode === 'legacy') {
+            const legacyResponse = await this.fetchSearchResponseLegacy(query, pageSize, page, request.languageCode);
+            if (!legacyResponse.ok) {
+                const legacyMessage = await this.describeSearchFailure('legacy', legacyResponse);
+                throw new Error(`Open Food Facts search failed. ${legacyMessage}`);
+            }
+            const legacyItems = await this.parseItemsFromResponse(legacyResponse, request);
+            const filtered = this.filterItemsByQuery(legacyItems, query);
+            return { items: this.rankItems(filtered, query, request.languageCode) };
         }
 
-        const data = await response.json();
-        const items: NormalizedFoodItem[] = Array.isArray(data.products)
-            ? data.products
-                  .map((product: OpenFoodFactsProduct) => this.normalizeProduct(product, request.quantityInGrams, request.includeIncomplete))
-                  .filter((item: NormalizedFoodItem | null): item is NormalizedFoodItem => Boolean(item))
-            : [];
+        let v2Response: Response | null = null;
+        let v2Error: unknown;
+        try {
+            v2Response = await this.fetchSearchResponseV2(query, pageSize, page, request.languageCode);
+        } catch (error) {
+            v2Error = error;
+        }
 
-        return { items: this.rankItems(items, query, request.languageCode) };
+        if (this.searchMode === 'v2') {
+            if (!v2Response?.ok) {
+                const v2Message = await this.describeSearchFailure('v2', v2Response, v2Error);
+                throw new Error(`Open Food Facts search failed. ${v2Message}`);
+            }
+            const v2Items = await this.parseItemsFromResponse(v2Response, request);
+            const filtered = this.filterItemsByQuery(v2Items, query);
+            return { items: this.rankItems(filtered, query, request.languageCode) };
+        }
+
+        let items: NormalizedFoodItem[] = [];
+        if (v2Response?.ok) {
+            items = await this.parseItemsFromResponse(v2Response, request);
+        }
+
+        if (!v2Response?.ok || this.countQueryMatches(items, query) === 0) {
+            const legacyResponse = await this.fetchSearchResponseLegacy(query, pageSize, page, request.languageCode);
+            if (legacyResponse.ok) {
+                items = await this.parseItemsFromResponse(legacyResponse, request);
+            } else if (!v2Response?.ok) {
+                const v2Message = await this.describeSearchFailure('v2', v2Response, v2Error);
+                const legacyMessage = await this.describeSearchFailure('legacy', legacyResponse);
+                throw new Error(`Open Food Facts search failed. ${v2Message}; ${legacyMessage}`);
+            }
+        }
+
+        const filtered = this.filterItemsByQuery(items, query);
+        return { items: this.rankItems(filtered, query, request.languageCode) };
     }
 
     /**
-     * Use the v2 search endpoint first, with a legacy fallback for upstream instability.
+     * Convert API payloads into normalized items for reuse across search modes.
      */
-    private async fetchSearchResponse(
+    private async parseItemsFromResponse(
+        response: Response,
+        request: FoodSearchRequest
+    ): Promise<NormalizedFoodItem[]> {
+        const data = await response.json();
+        return Array.isArray(data.products)
+            ? data.products
+                  .map((product: OpenFoodFactsProduct) =>
+                      this.normalizeProduct(product, request.quantityInGrams, request.includeIncomplete)
+                  )
+                  .filter((item: NormalizedFoodItem | null): item is NormalizedFoodItem => Boolean(item))
+            : [];
+    }
+
+    /**
+     * Cap request time so the dashboard is not blocked by slow upstream calls.
+     */
+    private async fetchWithTimeout(url: string, headers: Record<string, string>): Promise<Response> {
+        if (!this.requestTimeoutMs) {
+            return fetch(url, { headers });
+        }
+
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), this.requestTimeoutMs);
+        try {
+            return await fetch(url, { headers, signal: controller.signal });
+        } finally {
+            clearTimeout(timeoutId);
+        }
+    }
+
+    /**
+     * Remove items that do not include any query tokens in name or brand.
+     */
+    private filterItemsByQuery(items: NormalizedFoodItem[], query: string): NormalizedFoodItem[] {
+        const normalizedQuery = this.normalizeText(query);
+        if (!normalizedQuery) {
+            return items;
+        }
+        const tokens = normalizedQuery.split(' ').filter(Boolean);
+        if (tokens.length === 0) {
+            return items;
+        }
+
+        return items.filter((item) => {
+            const description = this.normalizeText(item.description);
+            const brand = this.normalizeText(item.brand);
+            const haystack = `${description} ${brand}`.trim();
+            return tokens.some((token) => haystack.includes(token));
+        });
+    }
+
+    /**
+     * Count how many items include at least one query token.
+     */
+    private countQueryMatches(items: NormalizedFoodItem[], query: string): number {
+        const normalizedQuery = this.normalizeText(query);
+        if (!normalizedQuery) {
+            return 0;
+        }
+        const tokens = normalizedQuery.split(' ').filter(Boolean);
+        if (tokens.length === 0) {
+            return 0;
+        }
+
+        return items.reduce((count, item) => {
+            const description = this.normalizeText(item.description);
+            const brand = this.normalizeText(item.brand);
+            const haystack = `${description} ${brand}`.trim();
+            return tokens.some((token) => haystack.includes(token)) ? count + 1 : count;
+        }, 0);
+    }
+
+    /**
+     * Provide a consistent error summary for client responses and logs.
+     */
+    private async describeSearchFailure(
+        label: string,
+        response: Response | null,
+        error?: unknown
+    ): Promise<string> {
+        if (response) {
+            const message = await response.text();
+            return `${label} ${response.status} ${message}`.trim();
+        }
+        if (error instanceof Error) {
+            if (error.name === 'AbortError') {
+                return `${label} request timed out after ${this.requestTimeoutMs}ms`;
+            }
+            return `${label} ${error.message}`;
+        }
+        return `${label} request failed`;
+    }
+
+    /**
+     * Use the v2 search endpoint for faster responses.
+     */
+    private async fetchSearchResponseV2(
         query: string,
         pageSize: number,
         page: number,
@@ -66,17 +211,26 @@ class OpenFoodFactsProvider implements FoodDataProvider {
             search_terms: query,
             page_size: String(pageSize),
             page: String(page),
-            fields: this.searchFields
+            fields: this.searchFields,
+            sort_by: 'unique_scans_n'
         });
         if (languageCode) {
             v2Params.set('lc', languageCode);
         }
         const v2Url = `${this.baseUrl}/api/v2/search?${v2Params.toString()}`;
-        const v2Response = await fetch(v2Url, { headers });
-        if (v2Response.ok || (v2Response.status < 500 && v2Response.status !== 404)) {
-            return v2Response;
-        }
+        return this.fetchWithTimeout(v2Url, headers);
+    }
 
+    /**
+     * Use the legacy search endpoint for stronger term matching.
+     */
+    private async fetchSearchResponseLegacy(
+        query: string,
+        pageSize: number,
+        page: number,
+        languageCode?: string
+    ): Promise<Response> {
+        const headers = { 'User-Agent': 'cal-io/food-search' };
         const legacyParams = new URLSearchParams({
             search_terms: query,
             search_simple: '1',
@@ -84,13 +238,14 @@ class OpenFoodFactsProvider implements FoodDataProvider {
             action: 'process',
             page_size: String(pageSize),
             page: String(page),
-            fields: this.searchFields
+            fields: this.searchFields,
+            sort_by: 'unique_scans_n'
         });
         if (languageCode) {
             legacyParams.set('lc', languageCode);
         }
         const legacyUrl = `${this.baseUrl}/cgi/search.pl?${legacyParams.toString()}`;
-        return fetch(legacyUrl, { headers });
+        return this.fetchWithTimeout(legacyUrl, headers);
     }
 
     private async fetchProductByBarcode(barcode: string, languageCode?: string): Promise<OpenFoodFactsProduct | null> {
@@ -100,7 +255,11 @@ class OpenFoodFactsProvider implements FoodDataProvider {
         if (languageCode) {
             params.set('lc', languageCode);
         }
-        const response = await fetch(`${this.baseUrl}/api/v2/product/${encodeURIComponent(barcode)}?${params.toString()}`);
+        const headers = { 'User-Agent': 'cal-io/food-search' };
+        const response = await this.fetchWithTimeout(
+            `${this.baseUrl}/api/v2/product/${encodeURIComponent(barcode)}?${params.toString()}`,
+            headers
+        );
         if (!response.ok) {
             return null;
         }
