@@ -7,6 +7,7 @@ import cors from 'cors';
 import { Strategy as LocalStrategy } from 'passport-local';
 import prisma from './config/database';
 import bcrypt from 'bcryptjs'; // We need to install bcryptjs
+import { autoLoginTestUser } from './utils/devAuth';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -22,6 +23,7 @@ app.use(session({
 }));
 app.use(passport.initialize());
 app.use(passport.session());
+app.use(autoLoginTestUser);
 
 // Passport Config
 passport.use(new LocalStrategy({ usernameField: 'email' }, async (email, password, done) => {

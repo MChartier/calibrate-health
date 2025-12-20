@@ -6,6 +6,7 @@
     "db:migrate": "prisma migrate deploy",
     "db:migrate:dev": "prisma migrate dev",
     "db:reset": "prisma migrate reset",
+    "db:seed": "ts-node prisma/seed.ts",
     "db:studio": "prisma studio",
     "prisma:generate": "prisma generate",
     "test": "echo \"Error: no test specified\" && exit 1",

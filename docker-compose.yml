@@ -22,6 +22,7 @@ services:
       DATABASE_URL: postgresql://user:password@postgres:5432/fitness_app?schema=public
       PORT: 3000
       SESSION_SECRET: development_secret_key
+      AUTO_LOGIN_TEST_USER: "true"
     ports:
       - "3000:3000"
     depends_on:
@@ -31,7 +32,7 @@ services:
       - /app/node_modules
     networks:
       - app-network
-    command: npm run dev
+    command: sh -c "npm run db:migrate && npm run db:seed && npm run dev"
 
   frontend:
     build:
