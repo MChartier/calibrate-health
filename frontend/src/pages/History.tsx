@@ -45,7 +45,7 @@ const History: React.FC = () => {
 
     const goalQuery = useQuery({
         queryKey: ['goal'],
-        queryFn: async (): Promise<{ target_weight?: number } | null> => {
+        queryFn: async (): Promise<{ target_weight?: number; start_weight?: number; daily_deficit?: number } | null> => {
             const res = await axios.get('/api/goals');
             return res.data ?? null;
         }
@@ -64,6 +64,33 @@ const History: React.FC = () => {
 
     const metrics = metricsQuery.data ?? [];
     const targetWeight = goalQuery.data?.target_weight ?? null;
+    const dailyDeficit = goalQuery.data?.daily_deficit ?? null;
+    const latestMetric = metrics[0] ?? null;
+    const currentWeight = latestMetric?.weight ?? null;
+
+    const projection = useMemo(() => {
+        if (!latestMetric) return null;
+        if (typeof currentWeight !== 'number' || !Number.isFinite(currentWeight)) return null;
+        if (typeof targetWeight !== 'number' || !Number.isFinite(targetWeight)) return null;
+        if (typeof dailyDeficit !== 'number' || !Number.isFinite(dailyDeficit) || dailyDeficit === 0) return null;
+
+        const kcalPerUnit = user?.weight_unit === 'LB' ? 3500 : 7700;
+        const ratePerDay = -dailyDeficit / kcalPerUnit; // negative = losing, positive = gaining
+        if (!Number.isFinite(ratePerDay) || ratePerDay === 0) return null;
+
+        const delta = targetWeight - currentWeight;
+        const days = delta / ratePerDay;
+        if (!Number.isFinite(days) || days <= 0) return null;
+
+        const baseDate = parseDateOnlyToLocalDate(latestMetric.date) ?? new Date();
+        const projectedDate = new Date(baseDate);
+        projectedDate.setDate(projectedDate.getDate() + Math.ceil(days));
+
+        return {
+            projectedDate,
+            ratePerWeek: ratePerDay * 7
+        };
+    }, [currentWeight, dailyDeficit, latestMetric, targetWeight, user?.weight_unit]);
 
     const calorieWindow = useMemo(() => {
         const end = new Date(todayIso);
@@ -217,6 +244,18 @@ const History: React.FC = () => {
                             )}
                         </LineChart>
                     )
+                )}
+
+                {!metricsQuery.isLoading && !goalQuery.isLoading && !metricsQuery.isError && !goalQuery.isError && projection && (
+                    <Alert severity="info" sx={{ mt: 2 }}>
+                        Estimated to reach your target around{' '}
+                        <strong>
+                            {new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric', year: 'numeric' }).format(
+                                projection.projectedDate
+                            )}
+                        </strong>{' '}
+                        at a steady {Math.abs(projection.ratePerWeek).toFixed(2)} {unitLabel}/week.
+                    </Alert>
                 )}
             </Paper>
 
