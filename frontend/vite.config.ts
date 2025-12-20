@@ -41,7 +41,9 @@ const usePolling =
 const devServerPortEnv = process.env.VITE_DEV_SERVER_PORT
 const devServerPortValue = devServerPortEnv ? Number.parseInt(devServerPortEnv, 10) : Number.NaN
 const devServerPort =
-  Number.isFinite(devServerPortValue) && devServerPortValue > 0 ? devServerPortValue : undefined
+  devServerPortValue !== undefined && Number.isFinite(devServerPortValue) && devServerPortValue > 0
+    ? devServerPortValue
+    : undefined
 
 // https://vitejs.dev/config/
 export default defineConfig({
