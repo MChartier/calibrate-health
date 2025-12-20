@@ -9,6 +9,17 @@ const ProtectedRoute: React.FC = () => {
     const { user, isLoading } = useAuth();
     const location = useLocation();
     const isOnboardingRoute = location.pathname.startsWith('/onboarding');
+    const shouldCheckProfile = Boolean(user) && !isOnboardingRoute;
+
+    // Always call hooks in the same order; gate the request with `enabled`.
+    const profileQuery = useQuery({
+        queryKey: ['profile'],
+        queryFn: async () => {
+            const res = await axios.get('/api/user/profile');
+            return res.data;
+        },
+        enabled: shouldCheckProfile
+    });
 
     if (isLoading) {
         return (
@@ -19,18 +30,8 @@ const ProtectedRoute: React.FC = () => {
     }
 
     if (!user) {
-        console.log('Redirecting to login...');
         return <Navigate to="/login" replace />;
     }
-
-    const profileQuery = useQuery({
-        queryKey: ['profile'],
-        queryFn: async () => {
-            const res = await axios.get('/api/user/profile');
-            return res.data;
-        },
-        enabled: !!user && !isOnboardingRoute
-    });
 
     if (!isOnboardingRoute) {
         if (profileQuery.isLoading) {
