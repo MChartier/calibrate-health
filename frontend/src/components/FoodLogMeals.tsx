@@ -135,12 +135,12 @@ const FoodLogMeals: React.FC<{ logs: FoodLogEntry[] }> = ({ logs }) => {
                 <Typography variant="h6">Food Log</Typography>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                     <Tooltip title="Collapse all">
-                        <IconButton size="small" onClick={handleCollapseAll}>
+                        <IconButton size="small" aria-label="Collapse all meals" onClick={handleCollapseAll}>
                             <ExpandMoreIcon sx={{ transform: 'rotate(180deg)' }} />
                         </IconButton>
                     </Tooltip>
                     <Tooltip title="Expand all">
-                        <IconButton size="small" onClick={handleExpandAll}>
+                        <IconButton size="small" aria-label="Expand all meals" onClick={handleExpandAll}>
                             <ExpandMoreIcon />
                         </IconButton>
                     </Tooltip>

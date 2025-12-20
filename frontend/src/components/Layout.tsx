@@ -123,7 +123,13 @@ const Layout: React.FC = () => {
             <AppBar position="fixed" sx={{ zIndex: (t) => t.zIndex.drawer + 1 }}>
                 <Toolbar>
                     {showDrawer && !isDesktop && (
-                        <IconButton color="inherit" edge="start" onClick={handleMenuClick} sx={{ mr: 2 }}>
+                        <IconButton
+                            color="inherit"
+                            edge="start"
+                            aria-label="Open navigation menu"
+                            onClick={handleMenuClick}
+                            sx={{ mr: 2 }}
+                        >
                             <MenuIcon />
                         </IconButton>
                     )}
