@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Button, Stack, TextField } from '@mui/material';
+import { Alert, Button, Stack, TextField } from '@mui/material';
 import axios from 'axios';
 import { useAuth } from '../context/useAuth';
 import { getTodayIsoDate } from '../utils/date';
@@ -12,13 +12,23 @@ type Props = {
 const WeightEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
     const { user } = useAuth();
     const [weight, setWeight] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [error, setError] = useState<string | null>(null);
     const weightUnitLabel = user?.weight_unit === 'LB' ? 'lb' : 'kg';
 
     const handleAddWeight = async () => {
         const entryDate = date ?? getTodayIsoDate(user?.timezone);
-        await axios.post('/api/metrics', { weight, date: entryDate });
-        setWeight('');
-        onSuccess?.();
+        setIsSubmitting(true);
+        setError(null);
+        try {
+            await axios.post('/api/metrics', { weight, date: entryDate });
+            setWeight('');
+            onSuccess?.();
+        } catch {
+            setError('Unable to save your weigh-in right now.');
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     return (
@@ -30,10 +40,12 @@ const WeightEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
                 value={weight}
                 onChange={(e) => setWeight(e.target.value)}
                 inputProps={{ step: 0.1 }}
+                required
             />
-            <Button variant="contained" onClick={handleAddWeight} disabled={!weight}>
-                Add Weight
+            <Button variant="contained" onClick={() => void handleAddWeight()} disabled={isSubmitting || !weight}>
+                {isSubmitting ? 'Saving…' : 'Save weight'}
             </Button>
+            {error && <Alert severity="error">{error}</Alert>}
         </Stack>
     );
 };

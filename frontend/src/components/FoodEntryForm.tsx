@@ -69,6 +69,8 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
     const [foodName, setFoodName] = useState('');
     const [calories, setCalories] = useState('');
     const [mealPeriod, setMealPeriod] = useState('Breakfast');
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [submitError, setSubmitError] = useState<string | null>(null);
 
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState<NormalizedFoodItem[]>([]);
@@ -76,7 +78,7 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
     const [selectedMeasureLabel, setSelectedMeasureLabel] = useState<string | null>(null);
     const [quantity, setQuantity] = useState<number>(1);
     const [isSearching, setIsSearching] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+    const [searchError, setSearchError] = useState<string | null>(null);
     const [providerName, setProviderName] = useState<string>('');
 
     const entryDate = date ?? getTodayIsoDate(user?.timezone);
@@ -130,7 +132,7 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
     const handleSearch = async () => {
         if (!searchQuery.trim()) return;
         setIsSearching(true);
-        setError(null);
+        setSearchError(null);
         try {
             const response = await axios.get('/api/food/search', {
                 params: { q: searchQuery.trim() }
@@ -139,35 +141,53 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
             setProviderName(response.data?.provider || '');
             setSearchResults(items);
             resetSearchSelection(items);
-        } catch (err) {
-            console.error(err);
-            setError('Search failed. Please try again.');
+        } catch {
+            setSearchError('Search failed. Please try again.');
         } finally {
             setIsSearching(false);
         }
     };
 
     const handleAddManual = async () => {
-        await axios.post('/api/food', {
-            name: foodName,
-            calories,
-            meal_period: mealPeriod,
-            date: entryDate
-        });
-        setFoodName('');
-        setCalories('');
-        onSuccess?.();
+        const trimmedName = foodName.trim();
+        if (!trimmedName || !calories) return;
+
+        setIsSubmitting(true);
+        setSubmitError(null);
+        try {
+            await axios.post('/api/food', {
+                name: trimmedName,
+                calories,
+                meal_period: mealPeriod,
+                date: entryDate
+            });
+            setFoodName('');
+            setCalories('');
+            onSuccess?.();
+        } catch {
+            setSubmitError('Unable to add this food right now.');
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     const handleAddFromSearch = async () => {
         if (!selectedItem || !computed) return;
-        await axios.post('/api/food', {
-            name: selectedItem.description,
-            calories: computed.calories,
-            meal_period: mealPeriod,
-            date: entryDate
-        });
-        onSuccess?.();
+        setIsSubmitting(true);
+        setSubmitError(null);
+        try {
+            await axios.post('/api/food', {
+                name: selectedItem.description,
+                calories: computed.calories,
+                meal_period: mealPeriod,
+                date: entryDate
+            });
+            onSuccess?.();
+        } catch {
+            setSubmitError('Unable to add this food right now.');
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     return (
@@ -190,6 +210,7 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
                         fullWidth
                         value={foodName}
                         onChange={(e) => setFoodName(e.target.value)}
+                        required
                     />
                     <TextField
                         label="Calories"
@@ -197,6 +218,8 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
                         fullWidth
                         value={calories}
                         onChange={(e) => setCalories(e.target.value)}
+                        inputProps={{ min: 0, step: 1 }}
+                        required
                     />
                 </Stack>
             ) : (
@@ -222,7 +245,7 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
                             Provider: {providerName}
                         </Typography>
                     )}
-                    {error && <Alert severity="error">{error}</Alert>}
+                    {searchError && <Alert severity="error">{searchError}</Alert>}
 
                     {searchResults.length > 0 ? (
                         <Stack spacing={2}>
@@ -305,19 +328,21 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
                 <Button
                     variant="contained"
                     onClick={() => void handleAddManual()}
-                    disabled={!foodName || !calories}
+                    disabled={isSubmitting || !foodName.trim() || !calories}
                 >
-                    Add Food
+                    {isSubmitting ? 'Adding…' : 'Add Food'}
                 </Button>
             ) : (
                 <Button
                     variant="contained"
                     onClick={() => void handleAddFromSearch()}
-                    disabled={!selectedItem || !computed}
+                    disabled={isSubmitting || !selectedItem || !computed}
                 >
-                    Add Selected Food
+                    {isSubmitting ? 'Adding…' : 'Add Selected Food'}
                 </Button>
             )}
+
+            {submitError && <Alert severity="error">{submitError}</Alert>}
         </Stack>
     );
 };
