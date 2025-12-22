@@ -208,7 +208,31 @@ const Log: React.FC = () => {
             </Box>
 
             <Paper sx={{ p: 2 }}>
-                <FoodLogMeals logs={foodQuery.data ?? []} onChange={() => void foodQuery.refetch()} />
+                {foodQuery.isError ? (
+                    <Alert
+                        severity="error"
+                        action={
+                            <Button
+                                color="inherit"
+                                size="small"
+                                onClick={() => void foodQuery.refetch()}
+                            >
+                                Retry
+                            </Button>
+                        }
+                    >
+                        Unable to load your food log for this day.
+                    </Alert>
+                ) : foodQuery.isLoading ? (
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                        <Skeleton width="30%" />
+                        <Skeleton variant="rounded" height={44} />
+                        <Skeleton variant="rounded" height={44} />
+                        <Skeleton variant="rounded" height={44} />
+                    </Box>
+                ) : (
+                    <FoodLogMeals logs={foodQuery.data ?? []} onChange={() => void foodQuery.refetch()} />
+                )}
             </Paper>
 
             <SpeedDial
