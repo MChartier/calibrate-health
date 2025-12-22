@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, Card, CardActionArea, CardContent, Typography, LinearProgress } from '@mui/material';
+import { Box, Card, CardActionArea, CardContent, Skeleton, Typography, LinearProgress } from '@mui/material';
 import { Link as RouterLink } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
@@ -51,6 +51,9 @@ const WeightProgressCard: React.FC = () => {
         progressPercent = totalDelta === 0 ? 100 : Math.max(Math.min((achievedDelta / totalDelta) * 100, 100), 0);
     }
 
+    const isLoading = goalQuery.isLoading || metricsQuery.isLoading;
+    const isError = goalQuery.isError || metricsQuery.isError;
+
     return (
         <Card
             sx={{
@@ -65,34 +68,52 @@ const WeightProgressCard: React.FC = () => {
                     <Typography variant="h6" gutterBottom>
                         Weight Progress
                     </Typography>
-                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                        <Typography variant="body2" color="text.secondary">
-                            Start: {startWeight !== null ? `${startWeight} ${weightUnitLabel}` : '—'} · Target:{' '}
-                            {targetWeight !== null ? `${targetWeight} ${weightUnitLabel}` : '—'}
-                        </Typography>
-                        <Typography variant="body1">
-                            Current: {currentWeight !== null ? `${currentWeight} ${weightUnitLabel}` : '—'}
-                        </Typography>
-                        {progressPercent !== null ? (
-                            <>
-                                <LinearProgress
-                                    variant="determinate"
-                                    value={Math.min(progressPercent, 100)}
-                                    sx={{ height: 10, borderRadius: 5 }}
-                                />
-                                <Typography variant="caption" color="text.secondary">
-                                    {progressPercent.toFixed(0)}% toward goal
-                                </Typography>
-                            </>
-                        ) : (
+                    {isLoading ? (
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                            <Skeleton width="70%" />
+                            <Skeleton width="55%" />
+                            <Skeleton variant="rounded" height={10} />
+                            <Skeleton width="40%" />
+                        </Box>
+                    ) : isError ? (
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
                             <Typography variant="body2" color="text.secondary">
-                                Add a start weight, target weight, and a current weight to see progress.
+                                Unable to load weight progress.
                             </Typography>
-                        )}
-                        <Typography variant="body2" color="primary">
-                            View history and details
-                        </Typography>
-                    </Box>
+                            <Typography variant="body2" color="primary">
+                                View history and details
+                            </Typography>
+                        </Box>
+                    ) : (
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                            <Typography variant="body2" color="text.secondary">
+                                Start: {startWeight !== null ? `${startWeight} ${weightUnitLabel}` : '—'} · Target:{' '}
+                                {targetWeight !== null ? `${targetWeight} ${weightUnitLabel}` : '—'}
+                            </Typography>
+                            <Typography variant="body1">
+                                Current: {currentWeight !== null ? `${currentWeight} ${weightUnitLabel}` : '—'}
+                            </Typography>
+                            {progressPercent !== null ? (
+                                <>
+                                    <LinearProgress
+                                        variant="determinate"
+                                        value={Math.min(progressPercent, 100)}
+                                        sx={{ height: 10, borderRadius: 5 }}
+                                    />
+                                    <Typography variant="caption" color="text.secondary">
+                                        {progressPercent.toFixed(0)}% toward goal
+                                    </Typography>
+                                </>
+                            ) : (
+                                <Typography variant="body2" color="text.secondary">
+                                    Add a start weight, target weight, and a current weight to see progress.
+                                </Typography>
+                            )}
+                            <Typography variant="body2" color="primary">
+                                View history and details
+                            </Typography>
+                        </Box>
+                    )}
                 </CardContent>
             </CardActionArea>
         </Card>
