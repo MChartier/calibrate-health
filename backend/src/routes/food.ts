@@ -163,6 +163,22 @@ router.post('/', async (req, res) => {
     const user = req.user as any;
     const { name, calories, meal_period, date } = req.body;
     try {
+        const trimmedName = typeof name === 'string' ? name.trim() : '';
+        if (!trimmedName) {
+            return res.status(400).json({ message: 'Invalid name' });
+        }
+
+        const numericCalories = typeof calories === 'number' ? calories : Number(calories);
+        if (!Number.isFinite(numericCalories) || numericCalories < 0) {
+            return res.status(400).json({ message: 'Invalid calories' });
+        }
+        const roundedCalories = Math.round(numericCalories);
+
+        const trimmedMealPeriod = typeof meal_period === 'string' ? meal_period.trim() : '';
+        if (!trimmedMealPeriod) {
+            return res.status(400).json({ message: 'Invalid meal_period' });
+        }
+
         let logDate: Date;
         try {
             logDate = date ? parseDateOnlyInput(date) : normalizeToUtcDateOnly(new Date());
@@ -173,9 +189,9 @@ router.post('/', async (req, res) => {
         const log = await prisma.foodLog.create({
             data: {
                 user_id: user.id,
-                name,
-                calories: parseInt(calories),
-                meal_period,
+                name: trimmedName,
+                calories: roundedCalories,
+                meal_period: trimmedMealPeriod,
                 date: logDate
             }
         });
