@@ -4,6 +4,7 @@ import { ActivityLevel, Sex, WeightUnit } from '@prisma/client';
 
 const TEST_USER_EMAIL = 'test@cal.io';
 const TEST_USER_PASSWORD = 'password123';
+const TEST_USER_TIMEZONE = 'America/Los_Angeles';
 
 const TEST_USER_DATE_OF_BIRTH = new Date('1990-01-15T00:00:00');
 const TEST_USER_HEIGHT_MM = 1750;
@@ -71,6 +72,7 @@ const ensureTestUser = async (): Promise<{ id: number }> => {
     create: {
       email: TEST_USER_EMAIL,
       password_hash: passwordHash,
+      timezone: TEST_USER_TIMEZONE,
       weight_unit: WeightUnit.KG,
       date_of_birth: TEST_USER_DATE_OF_BIRTH,
       sex: Sex.MALE,
@@ -81,6 +83,7 @@ const ensureTestUser = async (): Promise<{ id: number }> => {
       // Keep the dev user deterministic so "invalid credentials" doesn't happen
       // if the account already existed with a different password.
       password_hash: passwordHash,
+      timezone: TEST_USER_TIMEZONE,
       weight_unit: WeightUnit.KG,
       date_of_birth: TEST_USER_DATE_OF_BIRTH,
       sex: Sex.MALE,
@@ -205,4 +208,3 @@ export const ensureDevTestData = async (): Promise<void> => {
 
   await seedOncePromise;
 };
-

@@ -18,6 +18,7 @@ import { activityLevelOptions } from '../constants/activityLevels';
 
 type ProfileResponse = {
     profile: {
+        timezone: string | null;
         date_of_birth: string | null;
         sex: 'MALE' | 'FEMALE' | null;
         height_mm: number | null;
@@ -32,6 +33,7 @@ type ProfileResponse = {
 };
 
 type ProfileUpdatePayload = {
+    timezone: string | null;
     date_of_birth: string | null;
     sex: string | null;
     activity_level: string | null;
@@ -63,6 +65,7 @@ function parseHeightFromMillimeters(mm: number): ParsedHeight {
 const Profile: React.FC = () => {
     const [profileMessage, setProfileMessage] = useState('');
 
+    const [timezone, setTimezone] = useState<string | null>(null);
     const [dateOfBirth, setDateOfBirth] = useState<string | null>(null);
     const [sex, setSex] = useState<string | null>(null);
     const [heightCm, setHeightCm] = useState<string | null>(null);
@@ -78,6 +81,13 @@ const Profile: React.FC = () => {
             return res.data;
         }
     });
+
+    const timezoneValue = useMemo(() => {
+        if (timezone !== null) return timezone;
+        const value = profileQuery.data?.profile.timezone;
+        if (value) return value;
+        return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+    }, [profileQuery.data?.profile.timezone, timezone]);
 
     const dobValue = useMemo(() => {
         if (dateOfBirth !== null) return dateOfBirth;
@@ -121,6 +131,7 @@ const Profile: React.FC = () => {
     const handleProfileSave = async () => {
         try {
             const payload: ProfileUpdatePayload = {
+                timezone: timezoneValue || null,
                 date_of_birth: dobValue || null,
                 sex: sexValue || null,
                 activity_level: activityValue || null
@@ -136,6 +147,7 @@ const Profile: React.FC = () => {
             await axios.patch('/api/user/profile', payload);
 
             setProfileMessage('Profile updated');
+            setTimezone(null);
             setDateOfBirth(null);
             setSex(null);
             setHeightCm(null);
@@ -159,6 +171,14 @@ const Profile: React.FC = () => {
                 {profileMessage && <Alert severity="info" sx={{ mb: 2 }}>{profileMessage}</Alert>}
 
                 <Stack spacing={2}>
+                    <TextField
+                        label="Timezone"
+                        helperText="IANA timezone, e.g. America/Los_Angeles"
+                        value={timezoneValue}
+                        onChange={(e) => setTimezone(e.target.value)}
+                        fullWidth
+                    />
+
                     <TextField
                         label="Date of Birth"
                         type="date"

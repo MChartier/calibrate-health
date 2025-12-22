@@ -2,12 +2,14 @@ import React, { useState } from 'react';
 import {
     Alert,
     Box,
+    Button,
     FormControl,
     FormHelperText,
     InputLabel,
     MenuItem,
     Paper,
     Select,
+    TextField,
     Typography
 } from '@mui/material';
 import type { SelectChangeEvent } from '@mui/material/Select';
@@ -19,22 +21,44 @@ import type { ThemePreference } from '../context/themeModeContext';
  * Settings is focused on device preferences (theme) and app preferences (units).
  */
 const Settings: React.FC = () => {
-    const { user, updateWeightUnit } = useAuth();
+    const { user, updateWeightUnit, updateTimezone } = useAuth();
     const { preference: themePreference, mode: resolvedThemeMode, setPreference: setThemePreference } = useThemeMode();
-    const [unitMessage, setUnitMessage] = useState('');
+    const [settingsMessage, setSettingsMessage] = useState('');
+    const [timezoneInput, setTimezoneInput] = useState(() => user?.timezone ?? '');
+
+    React.useEffect(() => {
+        if (timezoneInput.trim().length > 0) return;
+        const detected = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+        setTimezoneInput(user?.timezone ?? detected);
+    }, [timezoneInput, user?.timezone]);
 
     const handleWeightUnitChange = async (e: SelectChangeEvent) => {
         const nextUnit = e.target.value;
         if (nextUnit !== 'KG' && nextUnit !== 'LB') {
-            setUnitMessage('Failed to update preferences');
+            setSettingsMessage('Failed to update preferences');
             return;
         }
 
         try {
             await updateWeightUnit(nextUnit);
-            setUnitMessage('Preferences updated');
+            setSettingsMessage('Preferences updated');
         } catch {
-            setUnitMessage('Failed to update preferences');
+            setSettingsMessage('Failed to update preferences');
+        }
+    };
+
+    const handleTimezoneSave = async () => {
+        const trimmed = timezoneInput.trim();
+        if (!trimmed) {
+            setSettingsMessage('Timezone is required');
+            return;
+        }
+
+        try {
+            await updateTimezone(trimmed);
+            setSettingsMessage('Timezone updated');
+        } catch {
+            setSettingsMessage('Failed to update timezone');
         }
     };
 
@@ -44,7 +68,7 @@ const Settings: React.FC = () => {
 
             <Paper sx={{ p: 2, mb: 3 }}>
                 <Typography variant="h6" gutterBottom>Units & Localization</Typography>
-                {unitMessage && <Alert severity="info" sx={{ mb: 2 }}>{unitMessage}</Alert>}
+                {settingsMessage && <Alert severity="info" sx={{ mb: 2 }}>{settingsMessage}</Alert>}
                 <FormControl fullWidth margin="normal">
                     <InputLabel>Weight Unit</InputLabel>
                     <Select value={user?.weight_unit ?? 'KG'} label="Weight Unit" onChange={handleWeightUnitChange}>
@@ -52,6 +76,18 @@ const Settings: React.FC = () => {
                         <MenuItem value="LB">Pounds (lb)</MenuItem>
                     </Select>
                 </FormControl>
+
+                <TextField
+                    label="Timezone"
+                    helperText="IANA timezone, e.g. America/Los_Angeles"
+                    value={timezoneInput}
+                    onChange={(e) => setTimezoneInput(e.target.value)}
+                    margin="normal"
+                    fullWidth
+                />
+                <Button variant="contained" onClick={() => void handleTimezoneSave()} sx={{ mt: 1 }}>
+                    Save Timezone
+                </Button>
             </Paper>
 
             <Paper sx={{ p: 2, mb: 3 }}>

@@ -19,12 +19,41 @@ import { activityLevelOptions } from '../constants/activityLevels';
 import { useQuery } from '@tanstack/react-query';
 import { validateGoalWeights } from '../utils/goalValidation';
 
+/**
+ * Format a Date into "YYYY-MM-DD" for the supplied IANA time zone.
+ */
+function formatDateToLocalDateString(date: Date, timeZone: string): string {
+    try {
+        const parts = new Intl.DateTimeFormat('en-US', {
+            timeZone,
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit'
+        }).formatToParts(date);
+
+        const year = parts.find((part) => part.type === 'year')?.value;
+        const month = parts.find((part) => part.type === 'month')?.value;
+        const day = parts.find((part) => part.type === 'day')?.value;
+
+        if (!year || !month || !day) {
+            return date.toISOString().slice(0, 10);
+        }
+
+        return `${year}-${month}-${day}`;
+    } catch {
+        return date.toISOString().slice(0, 10);
+    }
+}
+
 const Onboarding: React.FC = () => {
     const { user } = useAuth();
     const navigate = useNavigate();
 
     const [weightUnit, setWeightUnit] = useState<'KG' | 'LB'>(user?.weight_unit ?? 'KG');
     const weightUnitLabel = weightUnit === 'LB' ? 'lb' : 'kg';
+
+    const detectedTimezone = useMemo(() => Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC', []);
+    const [timezone, setTimezone] = useState<string>(user?.timezone ?? detectedTimezone);
 
     const [sex, setSex] = useState('');
     const [dob, setDob] = useState('');
@@ -42,6 +71,7 @@ const Onboarding: React.FC = () => {
     const [isSaving, setIsSaving] = useState(false);
 
     type ProfileUpdatePayload = {
+        timezone: string | null;
         date_of_birth: string | null;
         sex: string | null;
         activity_level: string | null;
@@ -63,7 +93,8 @@ const Onboarding: React.FC = () => {
         if (profileQuery.isSuccess) {
             const missing = profileQuery.data?.calorieSummary?.missing ?? [];
             const hasGoal = profileQuery.data?.goal_daily_deficit !== null && profileQuery.data?.goal_daily_deficit !== undefined;
-            if (missing.length === 0 && hasGoal) {
+            const hasTimezone = typeof profileQuery.data?.profile?.timezone === 'string' && profileQuery.data.profile.timezone.trim().length > 0;
+            if (missing.length === 0 && hasGoal && hasTimezone) {
                 navigate('/settings', { replace: true });
             }
         }
@@ -95,6 +126,7 @@ const Onboarding: React.FC = () => {
         setIsSaving(true);
         try {
             const profilePayload: ProfileUpdatePayload = {
+                timezone: timezone.trim() || null,
                 date_of_birth: dob || null,
                 sex: sex || null,
                 activity_level: activityLevel || null
@@ -115,7 +147,7 @@ const Onboarding: React.FC = () => {
 
             await axios.post('/api/metrics', {
                 weight: currentWeight,
-                date: new Date().toISOString().slice(0, 10)
+                date: formatDateToLocalDateString(new Date(), timezone || detectedTimezone)
             });
 
             await axios.post('/api/goals', {
@@ -191,6 +223,14 @@ const Onboarding: React.FC = () => {
                             Used to estimate daily calorie burn (TDEE). Pick the closest match to your average week.
                         </Typography>
                     </FormControl>
+
+                    <TextField
+                        label="Timezone"
+                        value={timezone}
+                        onChange={(e) => setTimezone(e.target.value)}
+                        helperText="IANA timezone, e.g. America/Los_Angeles"
+                        required
+                    />
 
                     <FormControl fullWidth required>
                         <InputLabel>Weight Unit</InputLabel>
@@ -303,6 +343,7 @@ const Onboarding: React.FC = () => {
                             !sex ||
                             !dob ||
                             !activityLevel ||
+                            !timezone.trim() ||
                             !heightFieldsValid ||
                             !currentWeight ||
                             !goalWeight
