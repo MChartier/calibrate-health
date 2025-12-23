@@ -20,6 +20,7 @@ import { activityLevelOptions } from '../constants/activityLevels';
 import { useQuery } from '@tanstack/react-query';
 import { getBrowserTimeZone, getSupportedTimeZones } from '../utils/timeZone';
 import { getTodayIsoDate } from '../utils/date';
+import { getApiErrorMessage } from '../utils/apiError';
 
 const Onboarding: React.FC = () => {
     const { user } = useAuth();
@@ -122,8 +123,7 @@ const Onboarding: React.FC = () => {
             setSuccess('Profile saved. Redirecting...');
             setTimeout(() => navigate('/log'), 600);
         } catch (err) {
-            console.error(err);
-            setError('Failed to save your profile. Please check the fields and try again.');
+            setError(getApiErrorMessage(err) ?? 'Failed to save your profile. Please check the fields and try again.');
         } finally {
             setIsSaving(false);
         }

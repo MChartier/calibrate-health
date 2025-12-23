@@ -7,6 +7,7 @@ import { useQuery } from '@tanstack/react-query';
 import { activityLevelOptions } from '../constants/activityLevels';
 import { getBrowserTimeZone, getSupportedTimeZones } from '../utils/timeZone';
 import { useNavigate } from 'react-router-dom';
+import { getApiErrorMessage } from '../utils/apiError';
 
 const Settings: React.FC = () => {
     const { user, updateWeightUnit, updateTimezone, logout } = useAuth();
@@ -165,8 +166,8 @@ const Settings: React.FC = () => {
             setTargetWeightInput(null);
             setUnitMessage('Preferences updated');
             void goalQuery.refetch();
-        } catch {
-            setUnitMessage('Failed to update preferences');
+        } catch (err) {
+            setUnitMessage(getApiErrorMessage(err) ?? 'Failed to update preferences');
         }
     };
 
@@ -181,8 +182,8 @@ const Settings: React.FC = () => {
             await updateTimezone(nextTimezone);
             setTimezoneInput(null);
             setTimeZoneMessage('Timezone updated');
-        } catch {
-            setTimeZoneMessage('Failed to update timezone');
+        } catch (err) {
+            setTimeZoneMessage(getApiErrorMessage(err) ?? 'Failed to update timezone');
         }
     };
 
@@ -201,8 +202,8 @@ const Settings: React.FC = () => {
             setTargetWeightInput(null);
             setDailyDeficitInput(null);
             void goalQuery.refetch();
-        } catch {
-            setGoalMessage('Failed to update goal');
+        } catch (err) {
+            setGoalMessage(getApiErrorMessage(err) ?? 'Failed to update goal');
         }
     };
 
@@ -229,8 +230,8 @@ const Settings: React.FC = () => {
             setHeightInches(null);
             setActivityLevel(null);
             void profileQuery.refetch();
-        } catch {
-            setProfileMessage('Failed to update profile');
+        } catch (err) {
+            setProfileMessage(getApiErrorMessage(err) ?? 'Failed to update profile');
         }
     };
 
