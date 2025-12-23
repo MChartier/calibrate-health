@@ -63,7 +63,14 @@ const DashboardLogSummaryCard: React.FC = () => {
                         Today&apos;s Log
                     </Typography>
                     {isLoading ? (
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                        <Box
+                            sx={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 2,
+                                flexDirection: { xs: 'column', sm: 'row' }
+                            }}
+                        >
                             <Skeleton variant="circular" width={140} height={140} />
                             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, flexGrow: 1 }}>
                                 <Skeleton width="60%" />
@@ -81,7 +88,14 @@ const DashboardLogSummaryCard: React.FC = () => {
                             </Typography>
                         </Box>
                     ) : (
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                        <Box
+                            sx={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 2,
+                                flexDirection: { xs: 'column', sm: 'row' }
+                            }}
+                        >
                             <Gauge
                                 width={200}
                                 height={140}
