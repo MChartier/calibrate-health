@@ -158,7 +158,7 @@ const Layout: React.FC = () => {
 
             <Box component="main" sx={{ flexGrow: 1, minWidth: 0 }}>
                 <Toolbar />
-                <Box sx={{ p: 3, pb: showAppNav && !isDesktop ? 10 : 3 }}>
+                <Box sx={{ p: 3, pb: showAppNav && !isDesktop ? 'calc(80px + env(safe-area-inset-bottom))' : 3 }}>
                     <Outlet />
                 </Box>
             </Box>
@@ -172,6 +172,7 @@ const Layout: React.FC = () => {
                         bottom: 0,
                         borderTop: (t) => `1px solid ${t.palette.divider}`,
                         bgcolor: 'background.paper',
+                        pb: 'env(safe-area-inset-bottom)',
                         zIndex: (t) => t.zIndex.appBar
                     }}
                 >

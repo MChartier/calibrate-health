@@ -285,7 +285,7 @@ const Log: React.FC = () => {
                 sx={{
                     position: 'fixed',
                     right: 24,
-                    bottom: { xs: 88, md: 24 },
+                    bottom: { xs: 'calc(88px + env(safe-area-inset-bottom))', md: 24 },
                     zIndex: (t) => t.zIndex.appBar + 1
                 }}
             >

@@ -468,7 +468,7 @@ const FoodLogMeals: React.FC<{ date: string; logs: FoodLogEntry[]; onChange?: ()
                     setLastDeleted(null);
                 }}
                 anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-                sx={{ bottom: { xs: 140, md: 24 } }}
+                sx={{ bottom: { xs: 'calc(140px + env(safe-area-inset-bottom))', md: 24 } }}
             >
                 <Alert
                     onClose={() => {
