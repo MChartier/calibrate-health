@@ -23,7 +23,7 @@ import { getApiErrorMessage } from '../utils/apiError';
 import { useUserProfileQuery } from '../queries/userProfile';
 
 const Onboarding: React.FC = () => {
-    const { user } = useAuth();
+    const { user, updateTimezone, updateWeightUnit } = useAuth();
     const navigate = useNavigate();
 
     const [weightUnit, setWeightUnit] = useState<'KG' | 'LB'>(user?.weight_unit ?? 'KG');
@@ -97,7 +97,9 @@ const Onboarding: React.FC = () => {
 
             await axios.patch('/api/user/profile', profilePayload);
 
-            await axios.patch('/api/user/preferences', { weight_unit: weightUnit, timezone });
+            // Keep AuthContext in sync so dates/units update immediately after onboarding.
+            await updateWeightUnit(weightUnit);
+            await updateTimezone(timezone);
 
             const deficitValue = goalMode === 'maintain' ? 0 : parseInt(dailyDeficit || '0', 10);
             const signedDeficit = goalMode === 'gain' ? -Math.abs(deficitValue) : Math.abs(deficitValue);
