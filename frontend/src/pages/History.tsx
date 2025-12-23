@@ -16,7 +16,12 @@ type Metric = {
 type WeightPoint = { date: Date; weight: number };
 type CaloriePoint = { date: Date; calories: number };
 
-function parseDateOnlyToLocalDate(value: string): Date | null {
+/**
+ * Convert a date-only string (`YYYY-MM-DD` or an ISO datetime string) into a UTC midnight Date.
+ *
+ * We intentionally use UTC so date-only values don't shift when the browser time zone changes.
+ */
+function parseDateOnlyToUtcDate(value: string): Date | null {
     const datePart = value.split('T')[0] ?? '';
     const [yearString, monthString, dayString] = datePart.split('-');
     const year = Number(yearString);
@@ -27,7 +32,7 @@ function parseDateOnlyToLocalDate(value: string): Date | null {
         return null;
     }
 
-    return new Date(year, month - 1, day);
+    return new Date(Date.UTC(year, month - 1, day));
 }
 
 const History: React.FC = () => {
@@ -82,9 +87,9 @@ const History: React.FC = () => {
         const days = delta / ratePerDay;
         if (!Number.isFinite(days) || days <= 0) return null;
 
-        const baseDate = parseDateOnlyToLocalDate(latestMetric.date) ?? new Date();
+        const baseDate = parseDateOnlyToUtcDate(latestMetric.date) ?? new Date();
         const projectedDate = new Date(baseDate);
-        projectedDate.setDate(projectedDate.getDate() + Math.ceil(days));
+        projectedDate.setUTCDate(projectedDate.getUTCDate() + Math.ceil(days));
 
         return {
             projectedDate,
@@ -113,7 +118,7 @@ const History: React.FC = () => {
         const parsed: WeightPoint[] = metrics
             .filter((metric) => typeof metric.weight === 'number' && Number.isFinite(metric.weight))
             .map((metric) => {
-                const date = parseDateOnlyToLocalDate(metric.date);
+                const date = parseDateOnlyToUtcDate(metric.date);
                 if (!date) return null;
                 return { date, weight: metric.weight };
             })
@@ -141,7 +146,7 @@ const History: React.FC = () => {
         const parsed: CaloriePoint[] = items
             .filter((item) => typeof item?.calories === 'number' && Number.isFinite(item.calories))
             .map((item) => {
-                const date = parseDateOnlyToLocalDate(item.date);
+                const date = parseDateOnlyToUtcDate(item.date);
                 if (!date) return null;
                 return { date, calories: item.calories };
             })
@@ -216,7 +221,7 @@ const History: React.FC = () => {
                                     data: xData,
                                     scaleType: 'time',
                                     valueFormatter: (value) =>
-                                        new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' }).format(value)
+                                        new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric', timeZone: 'UTC' }).format(value)
                                 }
                             ]}
                             yAxis={[
@@ -250,7 +255,7 @@ const History: React.FC = () => {
                     <Alert severity="info" sx={{ mt: 2 }}>
                         Estimated to reach your target around{' '}
                         <strong>
-                            {new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric', year: 'numeric' }).format(
+                            {new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' }).format(
                                 projection.projectedDate
                             )}
                         </strong>{' '}
@@ -299,7 +304,7 @@ const History: React.FC = () => {
                                 data: calorieXData,
                                 scaleType: 'time',
                                 valueFormatter: (value) =>
-                                    new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' }).format(value)
+                                    new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric', timeZone: 'UTC' }).format(value)
                             }
                         ]}
                         yAxis={[
