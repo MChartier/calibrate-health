@@ -15,6 +15,7 @@ import {
 import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
 import { activityLevelOptions } from '../constants/activityLevels';
+import TimeZonePicker from '../components/TimeZonePicker';
 
 type ProfileResponse = {
     profile: {
@@ -171,12 +172,10 @@ const Profile: React.FC = () => {
                 {profileMessage && <Alert severity="info" sx={{ mb: 2 }}>{profileMessage}</Alert>}
 
                 <Stack spacing={2}>
-                    <TextField
-                        label="Timezone"
-                        helperText="IANA timezone, e.g. America/Los_Angeles"
+                    <TimeZonePicker
                         value={timezoneValue}
-                        onChange={(e) => setTimezone(e.target.value)}
-                        fullWidth
+                        onChange={(next) => setTimezone(next)}
+                        helperText="Used to define your day boundaries for food and weight logs."
                     />
 
                     <TextField

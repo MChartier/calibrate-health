@@ -2,20 +2,19 @@ import React, { useState } from 'react';
 import {
     Alert,
     Box,
-    Button,
     FormControl,
     FormHelperText,
     InputLabel,
     MenuItem,
     Paper,
     Select,
-    TextField,
     Typography
 } from '@mui/material';
 import type { SelectChangeEvent } from '@mui/material/Select';
 import { useAuth } from '../context/useAuth';
 import { useThemeMode } from '../context/useThemeMode';
 import type { ThemePreference } from '../context/themeModeContext';
+import TimeZonePicker from '../components/TimeZonePicker';
 
 /**
  * Settings is focused on device preferences (theme) and app preferences (units).
@@ -24,13 +23,12 @@ const Settings: React.FC = () => {
     const { user, updateWeightUnit, updateTimezone } = useAuth();
     const { preference: themePreference, mode: resolvedThemeMode, setPreference: setThemePreference } = useThemeMode();
     const [settingsMessage, setSettingsMessage] = useState('');
-    const [timezoneInput, setTimezoneInput] = useState(() => user?.timezone ?? '');
+    const detectedTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+    const [timezoneValue, setTimezoneValue] = useState(() => user?.timezone ?? detectedTimezone);
 
     React.useEffect(() => {
-        if (timezoneInput.trim().length > 0) return;
-        const detected = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
-        setTimezoneInput(user?.timezone ?? detected);
-    }, [timezoneInput, user?.timezone]);
+        setTimezoneValue(user?.timezone ?? detectedTimezone);
+    }, [detectedTimezone, user?.timezone]);
 
     const handleWeightUnitChange = async (e: SelectChangeEvent) => {
         const nextUnit = e.target.value;
@@ -47,15 +45,10 @@ const Settings: React.FC = () => {
         }
     };
 
-    const handleTimezoneSave = async () => {
-        const trimmed = timezoneInput.trim();
-        if (!trimmed) {
-            setSettingsMessage('Timezone is required');
-            return;
-        }
-
+    const handleTimezoneChange = async (nextTimezone: string) => {
+        setTimezoneValue(nextTimezone);
         try {
-            await updateTimezone(trimmed);
+            await updateTimezone(nextTimezone);
             setSettingsMessage('Timezone updated');
         } catch {
             setSettingsMessage('Failed to update timezone');
@@ -77,17 +70,13 @@ const Settings: React.FC = () => {
                     </Select>
                 </FormControl>
 
-                <TextField
-                    label="Timezone"
-                    helperText="IANA timezone, e.g. America/Los_Angeles"
-                    value={timezoneInput}
-                    onChange={(e) => setTimezoneInput(e.target.value)}
-                    margin="normal"
-                    fullWidth
-                />
-                <Button variant="contained" onClick={() => void handleTimezoneSave()} sx={{ mt: 1 }}>
-                    Save Timezone
-                </Button>
+                <Box sx={{ mt: 2 }}>
+                    <TimeZonePicker
+                        value={timezoneValue}
+                        onChange={(next) => void handleTimezoneChange(next)}
+                        helperText="Used to define your day boundaries for food and weight logs."
+                    />
+                </Box>
             </Paper>
 
             <Paper sx={{ p: 2, mb: 3 }}>

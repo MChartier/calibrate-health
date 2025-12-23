@@ -19,6 +19,7 @@ import { activityLevelOptions } from '../constants/activityLevels';
 import { useQuery } from '@tanstack/react-query';
 import { validateGoalWeights } from '../utils/goalValidation';
 import { formatDateToLocalDateString } from '../utils/date';
+import TimeZonePicker from '../components/TimeZonePicker';
 
 const Onboarding: React.FC = () => {
     const { user } = useAuth();
@@ -199,12 +200,10 @@ const Onboarding: React.FC = () => {
                         </Typography>
                     </FormControl>
 
-                    <TextField
-                        label="Timezone"
+                    <TimeZonePicker
                         value={timezone}
-                        onChange={(e) => setTimezone(e.target.value)}
-                        helperText="IANA timezone, e.g. America/Los_Angeles"
-                        required
+                        onChange={setTimezone}
+                        helperText="Used to define your day boundaries for food and weight logs."
                     />
 
                     <FormControl fullWidth required>
