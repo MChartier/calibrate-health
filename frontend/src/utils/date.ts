@@ -41,3 +41,22 @@ export function getTodayIsoDate(timeZone?: string): string {
     }
 }
 
+/**
+ * Add a day offset to an ISO date-only string (`YYYY-MM-DD`) using UTC math.
+ *
+ * This is safe for app-level "day navigation" because it avoids local time zone/DST skew.
+ */
+export function addDaysToIsoDate(dateIso: string, deltaDays: number): string {
+    const [yearString, monthString, dayString] = dateIso.split('-');
+    const year = Number(yearString);
+    const month = Number(monthString);
+    const day = Number(dayString);
+
+    if (!Number.isInteger(year) || !Number.isInteger(month) || !Number.isInteger(day)) {
+        throw new Error('Invalid ISO date');
+    }
+
+    const date = new Date(Date.UTC(year, month - 1, day));
+    date.setUTCDate(date.getUTCDate() + deltaDays);
+    return date.toISOString().slice(0, 10);
+}
