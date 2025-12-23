@@ -34,6 +34,7 @@ import NightlifeIcon from '@mui/icons-material/Nightlife';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import axios from 'axios';
+import { getApiErrorMessage } from '../utils/apiError';
 
 type MealKey =
     | 'Breakfast'
@@ -182,8 +183,8 @@ const FoodLogMeals: React.FC<{ logs: FoodLogEntry[]; onChange?: () => void }> = 
             await axios.delete(`/api/food/${deleteState.id}`);
             setDeleteState(null);
             onChange?.();
-        } catch {
-            setDeleteError('Unable to delete this entry right now.');
+        } catch (err) {
+            setDeleteError(getApiErrorMessage(err) ?? 'Unable to delete this entry right now.');
         } finally {
             setIsDeleting(false);
         }
@@ -204,8 +205,8 @@ const FoodLogMeals: React.FC<{ logs: FoodLogEntry[]; onChange?: () => void }> = 
             });
             setEditState(null);
             onChange?.();
-        } catch {
-            setEditError('Unable to save changes right now.');
+        } catch (err) {
+            setEditError(getApiErrorMessage(err) ?? 'Unable to save changes right now.');
         } finally {
             setIsSavingEdit(false);
         }
