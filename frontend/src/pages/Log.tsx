@@ -21,6 +21,7 @@ import FoodEntryForm from '../components/FoodEntryForm';
 import FoodLogMeals from '../components/FoodLogMeals';
 import { useQuery } from '@tanstack/react-query';
 import CalorieTargetBanner from '../components/CalorieTargetBanner';
+import type { MealPeriod } from '../types/mealPeriod';
 
 function getLocalDateString(date: Date): string {
     const year = date.getFullYear();
@@ -37,7 +38,7 @@ const Log: React.FC = () => {
 
     type FoodLogEntry = {
         id: number;
-        meal_period: string;
+        meal_period: MealPeriod;
         name: string;
         calories: number;
     };

@@ -1,6 +1,7 @@
 import express from 'express';
 import prisma from '../config/database';
 import { getFoodDataProvider } from '../services/foodData';
+import { MealPeriod } from '@prisma/client';
 
 const router = express.Router();
 
@@ -12,6 +13,38 @@ const isAuthenticated = (req: express.Request, res: express.Response, next: expr
 };
 
 router.use(isAuthenticated);
+
+const MEAL_PERIOD_ALIASES: Record<string, MealPeriod> = {
+    breakfast: MealPeriod.BREAKFAST,
+    'morning snack': MealPeriod.MORNING_SNACK,
+    morning: MealPeriod.MORNING_SNACK,
+    morning_snack: MealPeriod.MORNING_SNACK,
+    lunch: MealPeriod.LUNCH,
+    'afternoon snack': MealPeriod.AFTERNOON_SNACK,
+    afternoon: MealPeriod.AFTERNOON_SNACK,
+    afternoon_snack: MealPeriod.AFTERNOON_SNACK,
+    dinner: MealPeriod.DINNER,
+    'evening snack': MealPeriod.EVENING_SNACK,
+    evening: MealPeriod.EVENING_SNACK,
+    evening_snack: MealPeriod.EVENING_SNACK
+};
+
+/**
+ * Parse and validate a meal period identifier coming from API requests.
+ *
+ * `FoodLog.meal_period` is stored as a Prisma/Postgres enum so we validate input
+ * early and return a 400 instead of letting Prisma throw a 500.
+ */
+const parseMealPeriod = (value: unknown): MealPeriod | null => {
+    if (typeof value !== 'string') {
+        return null;
+    }
+    const normalized = value.trim().toLowerCase();
+    if (!normalized) {
+        return null;
+    }
+    return MEAL_PERIOD_ALIASES[normalized] ?? null;
+};
 
 /**
  * Prefer an explicit language code, otherwise fall back to the request locale hint.
@@ -99,12 +132,17 @@ router.post('/', async (req, res) => {
     const user = req.user as any;
     const { name, calories, meal_period, date } = req.body;
     try {
+        const parsedMealPeriod = parseMealPeriod(meal_period);
+        if (!parsedMealPeriod) {
+            return res.status(400).json({ message: 'Invalid meal period' });
+        }
+
         const log = await prisma.foodLog.create({
             data: {
                 user_id: user.id,
                 name,
-                calories: parseInt(calories),
-                meal_period,
+                calories: parseInt(String(calories), 10),
+                meal_period: parsedMealPeriod,
                 date: date ? new Date(date) : new Date()
             }
         });

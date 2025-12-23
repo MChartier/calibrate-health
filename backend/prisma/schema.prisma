@@ -28,6 +28,15 @@ enum ActivityLevel {
   VERY_ACTIVE
 }
 
+enum MealPeriod {
+  BREAKFAST
+  MORNING_SNACK
+  LUNCH
+  AFTERNOON_SNACK
+  DINNER
+  EVENING_SNACK
+}
+
 model User {
   id            Int       @id @default(autoincrement())
   email         String    @unique
@@ -72,7 +81,7 @@ model FoodLog {
   user_id     Int
   user        User     @relation(fields: [user_id], references: [id])
   date        DateTime @default(now())
-  meal_period String   // Breakfast, Morning, Lunch, Afternoon, Dinner, Evening
+  meal_period MealPeriod
   name        String
   calories    Int
   created_at  DateTime @default(now())

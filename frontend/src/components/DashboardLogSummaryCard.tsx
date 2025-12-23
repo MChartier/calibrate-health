@@ -4,10 +4,11 @@ import { Gauge } from '@mui/x-charts/Gauge';
 import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import type { MealPeriod } from '../types/mealPeriod';
 
 type FoodLogEntry = {
     id: number;
-    meal_period: string;
+    meal_period: MealPeriod;
     name: string;
     calories: number;
 };
