@@ -19,7 +19,7 @@ import axios from 'axios';
 import WeightEntryForm from '../components/WeightEntryForm';
 import FoodEntryForm from '../components/FoodEntryForm';
 import FoodLogMeals from '../components/FoodLogMeals';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import CalorieTargetBanner from '../components/CalorieTargetBanner';
 
 function getLocalDateString(date: Date): string {
@@ -30,6 +30,7 @@ function getLocalDateString(date: Date): string {
 }
 
 const Log: React.FC = () => {
+    const queryClient = useQueryClient();
     const today = getLocalDateString(new Date());
     const [selectedDate, setSelectedDate] = useState(today);
     const [isFoodDialogOpen, setIsFoodDialogOpen] = useState(false);
@@ -106,7 +107,7 @@ const Log: React.FC = () => {
                         <FoodEntryForm
                             date={selectedDate}
                             onSuccess={() => {
-                                void foodQuery.refetch();
+                                void queryClient.invalidateQueries({ queryKey: ['food'] });
                                 handleCloseFoodDialog();
                             }}
                         />
@@ -124,7 +125,8 @@ const Log: React.FC = () => {
                         <WeightEntryForm
                             date={selectedDate}
                             onSuccess={() => {
-                                void foodQuery.refetch();
+                                void queryClient.invalidateQueries({ queryKey: ['metrics'] });
+                                void queryClient.invalidateQueries({ queryKey: ['profile-summary'] });
                                 handleCloseWeightDialog();
                             }}
                         />
