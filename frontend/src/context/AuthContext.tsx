@@ -1,10 +1,12 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import axios from 'axios';
+import { useQueryClient } from '@tanstack/react-query';
 import { AuthContext, type User } from './authContext';
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [user, setUser] = useState<User | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const queryClient = useQueryClient();
 
     const checkAuth = useCallback(async () => {
         try {
@@ -45,11 +47,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const updateTimezone = async (timezone: User['timezone']) => {
         const res = await axios.patch('/api/user/preferences', { timezone });
         setUser(res.data.user);
+        void queryClient.invalidateQueries({ queryKey: ['food'] });
+        void queryClient.invalidateQueries({ queryKey: ['user-profile'] });
     };
 
     const updateWeightUnit = async (weight_unit: User['weight_unit']) => {
         const res = await axios.patch('/api/user/preferences', { weight_unit });
         setUser(res.data.user);
+        // Values returned by /api/metrics and /api/goals are converted server-side using the user's weight_unit.
+        // Invalidate cached queries so displayed values and unit labels stay in sync.
+        void queryClient.invalidateQueries({ queryKey: ['metrics'] });
+        void queryClient.invalidateQueries({ queryKey: ['goal'] });
+        void queryClient.invalidateQueries({ queryKey: ['user-profile'] });
     };
 
     return (
