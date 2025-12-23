@@ -14,6 +14,7 @@ const Register: React.FC = () => {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
+            setError('');
             setIsSubmitting(true);
             await register(email, password);
             navigate('/onboarding');
@@ -38,6 +39,7 @@ const Register: React.FC = () => {
                 margin="normal"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                disabled={isSubmitting}
                 required
             />
             <TextField
@@ -48,6 +50,7 @@ const Register: React.FC = () => {
                 margin="normal"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                disabled={isSubmitting}
                 required
             />
             <Button type="submit" variant="contained" fullWidth sx={{ mt: 2 }} disabled={isSubmitting}>
