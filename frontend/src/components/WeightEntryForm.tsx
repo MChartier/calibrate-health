@@ -3,6 +3,7 @@ import { Alert, Button, Stack, TextField } from '@mui/material';
 import axios from 'axios';
 import { useAuth } from '../context/useAuth';
 import { getTodayIsoDate } from '../utils/date';
+import { getApiErrorMessage } from '../utils/apiError';
 
 type Props = {
     onSuccess?: () => void;
@@ -24,8 +25,8 @@ const WeightEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
             await axios.post('/api/metrics', { weight, date: entryDate });
             setWeight('');
             onSuccess?.();
-        } catch {
-            setError('Unable to save your weigh-in right now.');
+        } catch (err) {
+            setError(getApiErrorMessage(err) ?? 'Unable to save your weigh-in right now.');
         } finally {
             setIsSubmitting(false);
         }

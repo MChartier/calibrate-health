@@ -23,6 +23,7 @@ import NightlifeIcon from '@mui/icons-material/Nightlife';
 import { ListItemIcon } from '@mui/material';
 import { useAuth } from '../context/useAuth';
 import { getTodayIsoDate } from '../utils/date';
+import { getApiErrorMessage } from '../utils/apiError';
 
 type Props = {
     onSuccess?: () => void;
@@ -141,8 +142,8 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
             setProviderName(response.data?.provider || '');
             setSearchResults(items);
             resetSearchSelection(items);
-        } catch {
-            setSearchError('Search failed. Please try again.');
+        } catch (err) {
+            setSearchError(getApiErrorMessage(err) ?? 'Search failed. Please try again.');
         } finally {
             setIsSearching(false);
         }
@@ -164,8 +165,8 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
             setFoodName('');
             setCalories('');
             onSuccess?.();
-        } catch {
-            setSubmitError('Unable to add this food right now.');
+        } catch (err) {
+            setSubmitError(getApiErrorMessage(err) ?? 'Unable to add this food right now.');
         } finally {
             setIsSubmitting(false);
         }
@@ -183,8 +184,8 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
                 date: entryDate
             });
             onSuccess?.();
-        } catch {
-            setSubmitError('Unable to add this food right now.');
+        } catch (err) {
+            setSubmitError(getApiErrorMessage(err) ?? 'Unable to add this food right now.');
         } finally {
             setIsSubmitting(false);
         }
