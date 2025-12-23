@@ -41,15 +41,46 @@ router.post('/', async (req, res) => {
     const { start_weight, target_weight, target_date, daily_deficit } = req.body;
     const weightUnit = (user.weight_unit ?? 'KG') as WeightUnit;
     try {
-        const start_weight_grams = parseWeightToGrams(start_weight, weightUnit);
-        const target_weight_grams = parseWeightToGrams(target_weight, weightUnit);
+        let start_weight_grams: number;
+        try {
+            start_weight_grams = parseWeightToGrams(start_weight, weightUnit);
+        } catch {
+            return res.status(400).json({ message: 'Invalid start_weight' });
+        }
+
+        let target_weight_grams: number;
+        try {
+            target_weight_grams = parseWeightToGrams(target_weight, weightUnit);
+        } catch {
+            return res.status(400).json({ message: 'Invalid target_weight' });
+        }
+
+        const deficitNumeric = typeof daily_deficit === 'number' ? daily_deficit : Number(daily_deficit);
+        if (!Number.isFinite(deficitNumeric)) {
+            return res.status(400).json({ message: 'Invalid daily_deficit' });
+        }
+        const deficitInteger = Math.trunc(deficitNumeric);
+        const allowedDeficits = new Set([0, 250, 500, 750, 1000]);
+        if (!allowedDeficits.has(Math.abs(deficitInteger))) {
+            return res.status(400).json({ message: 'daily_deficit must be 0, 250, 500, 750, or 1000' });
+        }
+
+        let parsedTargetDate: Date | null = null;
+        if (target_date !== undefined && target_date !== null && target_date !== '') {
+            const candidate = new Date(target_date);
+            if (Number.isNaN(candidate.getTime())) {
+                return res.status(400).json({ message: 'Invalid target_date' });
+            }
+            parsedTargetDate = candidate;
+        }
+
         const goal = await prisma.goal.create({
             data: {
                 user_id: user.id,
                 start_weight_grams,
                 target_weight_grams,
-                target_date: target_date ? new Date(target_date) : null,
-                daily_deficit: parseInt(daily_deficit)
+                target_date: parsedTargetDate,
+                daily_deficit: deficitInteger
             }
         });
         const { start_weight_grams: createdStartWeightGrams, target_weight_grams: createdTargetWeightGrams, ...createdGoal } = goal;
