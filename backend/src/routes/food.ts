@@ -1,7 +1,7 @@
 import express from 'express';
 import prisma from '../config/database';
 import { getFoodDataProvider } from '../services/foodData';
-import { getSafeUtcTodayDateOnlyInTimeZone, parseLocalDateOnly } from '../utils/localDate';
+import { getSafeUtcTodayDateOnlyInTimeZone, parseLocalDateOnly } from '../utils/date';
 
 const router = express.Router();
 

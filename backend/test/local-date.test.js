@@ -1,7 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
-const { parseLocalDateOnly, getSafeUtcTodayDateOnlyInTimeZone } = require('../src/utils/localDate');
+const { parseLocalDateOnly, getSafeUtcTodayDateOnlyInTimeZone } = require('../src/utils/date');
 
 test('parseLocalDateOnly accepts YYYY-MM-DD and returns a UTC-normalized Date', () => {
   const parsed = parseLocalDateOnly('2025-12-22');
@@ -25,4 +25,3 @@ test('getSafeUtcTodayDateOnlyInTimeZone falls back to UTC for invalid timezone v
   const fallback = getSafeUtcTodayDateOnlyInTimeZone('Not/AZone', now);
   assert.equal(fallback.toISOString(), '2025-01-01T00:00:00.000Z');
 });
-

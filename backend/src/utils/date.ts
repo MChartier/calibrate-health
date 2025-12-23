@@ -51,3 +51,64 @@ export function getUtcTodayDateOnlyInTimeZone(timeZone: string, now: Date = new 
   const localDate = formatDateToLocalDateString(now, timeZone);
   return normalizeToUtcDateOnly(localDate);
 }
+
+const LOCAL_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+
+/**
+ * Parse a date-like input into a UTC-normalized Date suitable for Postgres DATE columns.
+ *
+ * Accepted inputs:
+ * - "YYYY-MM-DD"
+ * - any string starting with "YYYY-MM-DD" (e.g. "YYYY-MM-DDT12:00:00Z")
+ */
+export function parseLocalDateOnly(input: unknown): Date {
+  if (typeof input !== 'string') {
+    throw new Error('Invalid local date');
+  }
+
+  const trimmed = input.trim();
+  if (trimmed.length < 10) {
+    throw new Error('Invalid local date');
+  }
+
+  const datePart = trimmed.slice(0, 10);
+  if (!LOCAL_DATE_PATTERN.test(datePart)) {
+    throw new Error('Invalid local date');
+  }
+
+  return normalizeToUtcDateOnly(datePart);
+}
+
+/**
+ * Compute "today" in the supplied IANA time zone as a UTC-normalized DATE value.
+ *
+ * This is a safe wrapper that falls back to UTC when the user's timezone value is missing/invalid.
+ */
+export function getSafeUtcTodayDateOnlyInTimeZone(timeZone: unknown, now: Date = new Date()): Date {
+  const tz = typeof timeZone === 'string' && timeZone.trim().length > 0 ? timeZone.trim() : 'UTC';
+
+  try {
+    return getUtcTodayDateOnlyInTimeZone(tz, now);
+  } catch {
+    return getUtcTodayDateOnlyInTimeZone('UTC', now);
+  }
+}
+
+/**
+ * Validate an IANA time zone identifier (e.g. "America/Los_Angeles").
+ *
+ * Node's Intl implementation throws a RangeError when an unknown timeZone is provided,
+ * so we can use that as a lightweight runtime validator.
+ */
+export function isValidIanaTimeZone(value: unknown): value is string {
+  if (typeof value !== 'string') return false;
+  const trimmed = value.trim();
+  if (!trimmed) return false;
+
+  try {
+    new Intl.DateTimeFormat('en-US', { timeZone: trimmed }).format(new Date());
+    return true;
+  } catch {
+    return false;
+  }
+}

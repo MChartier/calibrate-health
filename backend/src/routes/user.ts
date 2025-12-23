@@ -3,7 +3,7 @@ import prisma from '../config/database';
 import { isWeightUnit } from '../utils/weight';
 import { ActivityLevel, Sex, WeightUnit } from '@prisma/client';
 import { buildCalorieSummary, isActivityLevel, isSex } from '../utils/profile';
-import { isValidIanaTimeZone } from '../utils/timezone';
+import { isValidIanaTimeZone } from '../utils/date';
 
 const router = express.Router();
 
@@ -125,6 +125,8 @@ router.patch('/profile', async (req, res) => {
     activity_level: ActivityLevel | null;
   }> = {};
 
+  // PATCH semantics: omitted fields are left unchanged. For timezone, a provided null/empty string
+  // explicitly resets to our default ("UTC").
   if (timezone !== undefined) {
     if (timezone === null || timezone === '') {
       updateData.timezone = 'UTC';

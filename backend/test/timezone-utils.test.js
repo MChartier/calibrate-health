@@ -1,8 +1,8 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
-const { isValidIanaTimeZone } = require('../src/utils/timezone');
 const {
+  isValidIanaTimeZone,
   formatDateToLocalDateString,
   getUtcTodayDateOnlyInTimeZone
 } = require('../src/utils/date');
@@ -35,4 +35,3 @@ test('getUtcTodayDateOnlyInTimeZone returns a UTC-normalized date-only value for
   const utcToday = getUtcTodayDateOnlyInTimeZone('UTC', now);
   assert.equal(utcToday.toISOString(), '2025-01-01T00:00:00.000Z');
 });
-
