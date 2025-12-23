@@ -1,8 +1,7 @@
 import React from 'react';
 import { Alert, Box, CircularProgress, IconButton, Paper, Stack, Tooltip, Typography, Divider } from '@mui/material';
-import { useQuery } from '@tanstack/react-query';
-import axios from 'axios';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+import { useUserProfileQuery } from '../queries/userProfile';
 
 /**
  * CalorieTargetBanner
@@ -18,30 +17,8 @@ import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
  * - Colors reinforce add/remove semantics while keeping the primary target readable in neutral text.
  */
 
-type ProfileSummary = {
-    profile: {
-        activity_level: string | null;
-        date_of_birth: string | null;
-        height_mm: number | null;
-        sex: string | null;
-    };
-    calorieSummary: {
-        dailyCalorieTarget?: number;
-        tdee?: number;
-        bmr?: number;
-        missing: string[];
-        deficit?: number | null;
-    };
-};
-
 const CalorieTargetBanner: React.FC = () => {
-    const { data, isLoading, isError } = useQuery({
-        queryKey: ['profile-summary'],
-        queryFn: async (): Promise<ProfileSummary> => {
-            const res = await axios.get('/api/user/profile');
-            return res.data;
-        }
-    });
+    const { data, isLoading, isError } = useUserProfileQuery();
 
     if (isLoading) {
         return (

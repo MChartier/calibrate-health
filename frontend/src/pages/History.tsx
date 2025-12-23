@@ -6,6 +6,7 @@ import { LineChart } from '@mui/x-charts/LineChart';
 import { ChartsReferenceLine } from '@mui/x-charts/ChartsReferenceLine';
 import { useQuery } from '@tanstack/react-query';
 import { getTodayIsoDate } from '../utils/date';
+import { useUserProfileQuery } from '../queries/userProfile';
 
 type Metric = {
     id: number;
@@ -56,15 +57,9 @@ const History: React.FC = () => {
         }
     });
 
-    const profileSummaryQuery = useQuery({
-        queryKey: ['profile-summary'],
-        queryFn: async () => {
-            const res = await axios.get('/api/user/profile');
-            return res.data;
-        }
-    });
+    const profileQuery = useUserProfileQuery();
 
-    const dailyTarget = profileSummaryQuery.data?.calorieSummary?.dailyCalorieTarget;
+    const dailyTarget = profileQuery.data?.calorieSummary?.dailyCalorieTarget;
     const hasDailyTarget = typeof dailyTarget === 'number' && Number.isFinite(dailyTarget);
 
     const metrics = useMemo(() => metricsQuery.data ?? [], [metricsQuery.data]);
@@ -272,12 +267,12 @@ const History: React.FC = () => {
                     Last 30 days · Daily totals compared to your current target.
                 </Typography>
 
-                {dailyCaloriesQuery.isLoading || profileSummaryQuery.isLoading ? (
+                {dailyCaloriesQuery.isLoading || profileQuery.isLoading ? (
                     <Stack spacing={2}>
                         <Skeleton variant="rounded" height={320} />
                         <Skeleton width="40%" />
                     </Stack>
-                ) : dailyCaloriesQuery.isError || profileSummaryQuery.isError ? (
+                ) : dailyCaloriesQuery.isError || profileQuery.isError ? (
                     <Alert
                         severity="error"
                         action={
@@ -286,7 +281,7 @@ const History: React.FC = () => {
                                 size="small"
                                 onClick={() => {
                                     void dailyCaloriesQuery.refetch();
-                                    void profileSummaryQuery.refetch();
+                                    void profileQuery.refetch();
                                 }}
                             >
                                 Retry

@@ -8,6 +8,7 @@ import { activityLevelOptions } from '../constants/activityLevels';
 import { getBrowserTimeZone, getSupportedTimeZones } from '../utils/timeZone';
 import { useNavigate } from 'react-router-dom';
 import { getApiErrorMessage } from '../utils/apiError';
+import { useUserProfileQuery } from '../queries/userProfile';
 
 const Settings: React.FC = () => {
     const { user, updateWeightUnit, updateTimezone, logout } = useAuth();
@@ -38,21 +39,6 @@ const Settings: React.FC = () => {
         daily_deficit: number;
     };
 
-    type ProfileResponse = {
-        profile: {
-            date_of_birth: string | null;
-            sex: 'MALE' | 'FEMALE' | null;
-            height_mm: number | null;
-            activity_level: 'SEDENTARY' | 'LIGHT' | 'MODERATE' | 'ACTIVE' | 'VERY_ACTIVE' | null;
-            weight_unit: 'KG' | 'LB';
-        };
-        calorieSummary: {
-            dailyCalorieTarget?: number;
-            tdee?: number;
-            missing: string[];
-        };
-    };
-
     type ProfilePatchPayload = {
         date_of_birth: string | null;
         sex: string | null;
@@ -70,13 +56,7 @@ const Settings: React.FC = () => {
         }
     });
 
-    const profileQuery = useQuery({
-        queryKey: ['profile'],
-        queryFn: async (): Promise<ProfileResponse> => {
-            const res = await axios.get('/api/user/profile');
-            return res.data;
-        }
-    });
+    const profileQuery = useUserProfileQuery();
 
     const startWeight = useMemo(() => {
         if (startWeightInput !== null) return startWeightInput;

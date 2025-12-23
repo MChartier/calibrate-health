@@ -2,8 +2,7 @@ import React from 'react';
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/useAuth';
 import { CircularProgress, Box, Alert } from '@mui/material';
-import { useQuery } from '@tanstack/react-query';
-import axios from 'axios';
+import { useUserProfileQuery } from '../queries/userProfile';
 
 const ProtectedRoute: React.FC = () => {
     const { user, isLoading } = useAuth();
@@ -12,14 +11,7 @@ const ProtectedRoute: React.FC = () => {
     const shouldCheckProfile = Boolean(user) && !isOnboardingRoute;
 
     // Always call hooks in the same order; gate the request with `enabled`.
-    const profileQuery = useQuery({
-        queryKey: ['profile'],
-        queryFn: async () => {
-            const res = await axios.get('/api/user/profile');
-            return res.data;
-        },
-        enabled: shouldCheckProfile
-    });
+    const profileQuery = useUserProfileQuery({ enabled: shouldCheckProfile });
 
     if (isLoading) {
         return (

@@ -31,6 +31,7 @@ import { useQuery } from '@tanstack/react-query';
 import CalorieTargetBanner from '../components/CalorieTargetBanner';
 import { useAuth } from '../context/useAuth';
 import { addDaysToIsoDate, getTodayIsoDate } from '../utils/date';
+import { useUserProfileQuery } from '../queries/userProfile';
 
 const Log: React.FC = () => {
     const { user } = useAuth();
@@ -54,13 +55,7 @@ const Log: React.FC = () => {
         }
     });
 
-    const profileSummaryQuery = useQuery({
-        queryKey: ['profile-summary'],
-        queryFn: async () => {
-            const res = await axios.get('/api/user/profile');
-            return res.data;
-        }
-    });
+    const profileQuery = useUserProfileQuery();
 
     type MetricEntry = {
         id: number;
@@ -80,7 +75,7 @@ const Log: React.FC = () => {
 
     const logs = foodQuery.data ?? [];
     const totalCalories = logs.reduce((sum, entry) => sum + entry.calories, 0);
-    const dailyTarget = profileSummaryQuery.data?.calorieSummary?.dailyCalorieTarget;
+    const dailyTarget = profileQuery.data?.calorieSummary?.dailyCalorieTarget;
     const hasTarget = typeof dailyTarget === 'number' && Number.isFinite(dailyTarget);
     const remainingCalories = hasTarget ? Math.round(dailyTarget - totalCalories) : null;
     const isOver = hasTarget ? totalCalories > dailyTarget : false;
@@ -162,9 +157,9 @@ const Log: React.FC = () => {
                         Daily Summary
                     </Typography>
 
-                    {profileSummaryQuery.isError ? (
+                    {profileQuery.isError ? (
                         <Alert severity="warning">Unable to load your daily target right now.</Alert>
-                    ) : profileSummaryQuery.isLoading ? (
+                    ) : profileQuery.isLoading ? (
                         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                             <Skeleton width="60%" />
                             <Skeleton variant="rounded" height={10} />

@@ -6,18 +6,13 @@ import axios from 'axios';
 import { Link as RouterLink } from 'react-router-dom';
 import { useAuth } from '../context/useAuth';
 import { getTodayIsoDate } from '../utils/date';
+import { useUserProfileQuery } from '../queries/userProfile';
 
 type FoodLogEntry = {
     id: number;
     meal_period: string;
     name: string;
     calories: number;
-};
-
-type ProfileSummary = {
-    calorieSummary?: {
-        dailyCalorieTarget?: number;
-    };
 };
 
 const DashboardLogSummaryCard: React.FC = () => {
@@ -32,13 +27,7 @@ const DashboardLogSummaryCard: React.FC = () => {
         }
     });
 
-    const profileSummaryQuery = useQuery({
-        queryKey: ['profile-summary'],
-        queryFn: async (): Promise<ProfileSummary> => {
-            const res = await axios.get('/api/user/profile');
-            return res.data;
-        }
-    });
+    const profileSummaryQuery = useUserProfileQuery();
 
     const logs = foodQuery.data ?? [];
     const totalCalories = logs.reduce((acc, log) => acc + log.calories, 0);

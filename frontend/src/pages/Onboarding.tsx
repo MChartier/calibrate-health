@@ -17,10 +17,10 @@ import { useAuth } from '../context/useAuth';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { activityLevelOptions } from '../constants/activityLevels';
-import { useQuery } from '@tanstack/react-query';
 import { getBrowserTimeZone, getSupportedTimeZones } from '../utils/timeZone';
 import { getTodayIsoDate } from '../utils/date';
 import { getApiErrorMessage } from '../utils/apiError';
+import { useUserProfileQuery } from '../queries/userProfile';
 
 const Onboarding: React.FC = () => {
     const { user } = useAuth();
@@ -59,14 +59,7 @@ const Onboarding: React.FC = () => {
         height_inches?: string | null;
     };
 
-    const profileQuery = useQuery({
-        queryKey: ['profile'],
-        queryFn: async () => {
-            const res = await axios.get('/api/user/profile');
-            return res.data;
-        },
-        enabled: !!user
-    });
+    const profileQuery = useUserProfileQuery({ enabled: !!user });
 
     useEffect(() => {
         if (profileQuery.isSuccess) {
