@@ -18,32 +18,7 @@ import { useNavigate } from 'react-router-dom';
 import { activityLevelOptions } from '../constants/activityLevels';
 import { useQuery } from '@tanstack/react-query';
 import { validateGoalWeights } from '../utils/goalValidation';
-
-/**
- * Format a Date into "YYYY-MM-DD" for the supplied IANA time zone.
- */
-function formatDateToLocalDateString(date: Date, timeZone: string): string {
-    try {
-        const parts = new Intl.DateTimeFormat('en-US', {
-            timeZone,
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit'
-        }).formatToParts(date);
-
-        const year = parts.find((part) => part.type === 'year')?.value;
-        const month = parts.find((part) => part.type === 'month')?.value;
-        const day = parts.find((part) => part.type === 'day')?.value;
-
-        if (!year || !month || !day) {
-            return date.toISOString().slice(0, 10);
-        }
-
-        return `${year}-${month}-${day}`;
-    } catch {
-        return date.toISOString().slice(0, 10);
-    }
-}
+import { formatDateToLocalDateString } from '../utils/date';
 
 const Onboarding: React.FC = () => {
     const { user } = useAuth();
