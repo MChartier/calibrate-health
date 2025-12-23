@@ -66,6 +66,7 @@ type NormalizedFoodItem = {
 
 const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
     const { user } = useAuth();
+    const enableProviderSearch = import.meta.env.DEV || import.meta.env.VITE_ENABLE_FOOD_SEARCH === 'true';
     const [mode, setMode] = useState<'manual' | 'search'>('manual');
     const [foodName, setFoodName] = useState('');
     const [calories, setCalories] = useState('');
@@ -193,16 +194,18 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
 
     return (
         <Stack spacing={2}>
-            <ToggleButtonGroup
-                value={mode}
-                exclusive
-                onChange={(_, next) => next && setMode(next)}
-                size="small"
-                color="primary"
-            >
-                <ToggleButton value="manual">Manual calories</ToggleButton>
-                <ToggleButton value="search">Search provider</ToggleButton>
-            </ToggleButtonGroup>
+            {enableProviderSearch && (
+                <ToggleButtonGroup
+                    value={mode}
+                    exclusive
+                    onChange={(_, next) => next && setMode(next)}
+                    size="small"
+                    color="primary"
+                >
+                    <ToggleButton value="manual">Manual calories</ToggleButton>
+                    <ToggleButton value="search">Search provider</ToggleButton>
+                </ToggleButtonGroup>
+            )}
 
             {mode === 'manual' ? (
                 <Stack spacing={2}>
