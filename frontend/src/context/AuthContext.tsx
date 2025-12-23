@@ -8,6 +8,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const [isLoading, setIsLoading] = useState(true);
     const queryClient = useQueryClient();
 
+    useEffect(() => {
+        // Keep the UI from getting "stuck" with a stale user when the session expires.
+        const interceptorId = axios.interceptors.response.use(
+            (response) => response,
+            (error) => {
+                if (axios.isAxiosError(error) && error.response?.status === 401) {
+                    setUser(null);
+                    queryClient.clear();
+                }
+                return Promise.reject(error);
+            }
+        );
+
+        return () => {
+            axios.interceptors.response.eject(interceptorId);
+        };
+    }, [queryClient]);
+
     const checkAuth = useCallback(async () => {
         try {
             const res = await axios.get('/auth/me');
