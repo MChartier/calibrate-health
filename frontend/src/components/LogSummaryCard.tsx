@@ -18,6 +18,19 @@ type ProfileSummary = {
     };
 };
 
+export type LogSummaryCardProps = {
+    /**
+     * When true, the card behaves like the dashboard version: it is clickable (navigates to `/log`)
+     * and includes a call-to-action line.
+     */
+    dashboardMode?: boolean;
+    /**
+     * Local date string (`YYYY-MM-DD`) used to fetch and display the log summary.
+     * Defaults to the user's local "today".
+     */
+    date?: string;
+};
+
 function getLocalDateString(date: Date): string {
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -25,14 +38,17 @@ function getLocalDateString(date: Date): string {
     return `${year}-${month}-${day}`;
 }
 
-const DashboardLogSummaryCard: React.FC = () => {
+const LogSummaryCard: React.FC<LogSummaryCardProps> = ({ dashboardMode = false, date }) => {
     const navigate = useNavigate();
     const today = getLocalDateString(new Date());
+    const activeDate = date ?? today;
+    const isActiveDateToday = activeDate === today;
+    const title = isActiveDateToday ? "Today's Log" : `Log for ${activeDate}`;
 
     const foodQuery = useQuery({
-        queryKey: ['food', today],
+        queryKey: ['food', activeDate],
         queryFn: async (): Promise<FoodLogEntry[]> => {
-            const res = await axios.get('/api/food?date=' + encodeURIComponent(`${today}T12:00:00`));
+            const res = await axios.get('/api/food?date=' + encodeURIComponent(`${activeDate}T12:00:00`));
             return Array.isArray(res.data) ? res.data : [];
         }
     });
@@ -67,15 +83,19 @@ const DashboardLogSummaryCard: React.FC = () => {
         <Paper
             sx={{
                 p: 2,
-                cursor: 'pointer',
-                transition: 'transform 120ms ease',
-                '&:hover': { transform: 'translateY(-2px)' },
                 height: '100%',
-                width: '100%'
+                width: '100%',
+                ...(dashboardMode
+                    ? {
+                        cursor: 'pointer',
+                        transition: 'transform 120ms ease',
+                        '&:hover': { transform: 'translateY(-2px)' }
+                    }
+                    : { cursor: 'default' })
             }}
-            onClick={() => navigate('/log')}
+            onClick={dashboardMode ? () => navigate('/log') : undefined}
         >
-            <Typography variant="h6" gutterBottom>Today&apos;s Log</Typography>
+            <Typography variant="h6" gutterBottom>{title}</Typography>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                 <Gauge
                     width={200}
@@ -109,13 +129,15 @@ const DashboardLogSummaryCard: React.FC = () => {
                     <Typography variant="body2" color="text.secondary">
                         Logged: {totalCalories} Calories {dailyTarget ? `of ${Math.round(dailyTarget)} Calories target` : ''}
                     </Typography>
-                    <Typography variant="body2" color="primary">
-                        View / edit today&apos;s log
-                    </Typography>
+                    {dashboardMode ? (
+                        <Typography variant="body2" color="primary">
+                            View / edit {isActiveDateToday ? "today's log" : 'this log'}
+                        </Typography>
+                    ) : null}
                 </Box>
             </Box>
         </Paper>
     );
 };
 
-export default DashboardLogSummaryCard;
+export default LogSummaryCard;

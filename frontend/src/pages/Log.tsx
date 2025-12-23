@@ -21,8 +21,7 @@ import WeightEntryForm from '../components/WeightEntryForm';
 import FoodEntryForm from '../components/FoodEntryForm';
 import FoodLogMeals from '../components/FoodLogMeals';
 import { useQuery } from '@tanstack/react-query';
-import CalorieTargetBanner from '../components/CalorieTargetBanner';
-import DashboardLogSummaryCard from '../components/DashboardLogSummaryCard';
+import LogSummaryCard from '../components/LogSummaryCard';
 
 function getLocalDateString(date: Date): string {
     const year = date.getFullYear();
@@ -77,7 +76,7 @@ const Log: React.FC = () => {
             </Box>
 
             <Grid size={{ xs: 12, md: 6 }} sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
-                <DashboardLogSummaryCard />
+                <LogSummaryCard date={selectedDate} />
                 <Paper sx={{ p: 2 }}>
                     <FoodLogMeals logs={foodQuery.data ?? []} />
                 </Paper>
