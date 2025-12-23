@@ -56,7 +56,8 @@ const CalorieTargetBanner: React.FC = () => {
         typeof tdee === 'number' && typeof bmr === 'number' ? Math.round((tdee - bmr) * 10) / 10 : undefined;
     const activityMultiplier =
         typeof tdee === 'number' && typeof bmr === 'number' && bmr !== 0 ? Math.round((tdee / bmr) * 1000) / 1000 : undefined;
-    const goalDelta = typeof deficit === 'number' ? -Math.abs(deficit) : undefined;
+    // Daily target is computed as `TDEE - deficit`. A surplus is represented as a negative deficit value.
+    const goalDelta = typeof deficit === 'number' ? -deficit : undefined;
 
     const breakdownContent = hasTarget ? (
         <Box sx={{ maxWidth: 320 }}>
@@ -96,7 +97,7 @@ const CalorieTargetBanner: React.FC = () => {
                     <Box>
                         <Typography variant="body2">Goal adjustment</Typography>
                         <Typography variant="caption" color="text.secondary">
-                            Deficit (negative) or surplus (positive)
+                            Deficit (negative) or surplus (positive) applied to your TDEE
                         </Typography>
                     </Box>
                     <Typography
