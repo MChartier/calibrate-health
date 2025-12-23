@@ -18,6 +18,7 @@ import {
     ListItemText,
     MenuItem,
     Select,
+    Snackbar,
     Stack,
     Tooltip,
     TextField,
@@ -51,7 +52,14 @@ type FoodLogEntry = {
     calories?: number;
 };
 
-type DeleteState = { id: number; label: string } | null;
+type DeleteState = { id: number; label: string; payload: Omit<UndoPayload, 'date'> } | null;
+
+type UndoPayload = {
+    name: string;
+    calories: number;
+    meal_period: MealKey;
+    date: string;
+};
 
 type EditState = {
     id: number;
@@ -84,7 +92,7 @@ function sumCalories(entries: FoodLogEntry[]): number {
     return entries.reduce((total, entry) => total + (typeof entry.calories === 'number' ? entry.calories : 0), 0);
 }
 
-const FoodLogMeals: React.FC<{ logs: FoodLogEntry[]; onChange?: () => void }> = ({ logs, onChange }) => {
+const FoodLogMeals: React.FC<{ date: string; logs: FoodLogEntry[]; onChange?: () => void }> = ({ date, logs, onChange }) => {
     const grouped = useMemo(() => {
         const groups: Record<MealKey, FoodLogEntry[]> = {
             Breakfast: [],
@@ -117,6 +125,9 @@ const FoodLogMeals: React.FC<{ logs: FoodLogEntry[]; onChange?: () => void }> = 
     const [deleteState, setDeleteState] = useState<DeleteState>(null);
     const [deleteError, setDeleteError] = useState<string | null>(null);
     const [isDeleting, setIsDeleting] = useState(false);
+    const [lastDeleted, setLastDeleted] = useState<UndoPayload | null>(null);
+    const [snackbar, setSnackbar] = useState<{ message: string; severity: 'success' | 'info' | 'error' } | null>(null);
+    const [isUndoing, setIsUndoing] = useState(false);
     const [editState, setEditState] = useState<EditState>(null);
     const [editError, setEditError] = useState<string | null>(null);
     const [isSavingEdit, setIsSavingEdit] = useState(false);
@@ -177,16 +188,37 @@ const FoodLogMeals: React.FC<{ logs: FoodLogEntry[]; onChange?: () => void }> = 
      */
     const handleConfirmDelete = async () => {
         if (!deleteState) return;
+        const undoPayload: UndoPayload = { ...deleteState.payload, date };
         setDeleteError(null);
         setIsDeleting(true);
         try {
             await axios.delete(`/api/food/${deleteState.id}`);
             setDeleteState(null);
+            setLastDeleted(undoPayload);
             onChange?.();
+            setSnackbar({ message: `Deleted ${undoPayload.name}`, severity: 'info' });
         } catch (err) {
             setDeleteError(getApiErrorMessage(err) ?? 'Unable to delete this entry right now.');
         } finally {
             setIsDeleting(false);
+        }
+    };
+
+    /**
+     * Restore the most recently deleted entry (best-effort) from local state.
+     */
+    const handleUndoDelete = async () => {
+        if (!lastDeleted) return;
+        setIsUndoing(true);
+        try {
+            await axios.post('/api/food', lastDeleted);
+            setLastDeleted(null);
+            setSnackbar({ message: 'Undo successful', severity: 'success' });
+            onChange?.();
+        } catch (err) {
+            setSnackbar({ message: getApiErrorMessage(err) ?? 'Unable to undo delete right now.', severity: 'error' });
+        } finally {
+            setIsUndoing(false);
         }
     };
 
@@ -259,6 +291,7 @@ const FoodLogMeals: React.FC<{ logs: FoodLogEntry[]; onChange?: () => void }> = 
                                     {entries.map((entry) => {
                                         const id = typeof entry.id === 'number' ? entry.id : Number(entry.id);
                                         const label = entry.name?.trim() || 'Food entry';
+                                        const calories = typeof entry.calories === 'number' ? entry.calories : 0;
 
                                         return (
                                             <ListItem
@@ -291,7 +324,15 @@ const FoodLogMeals: React.FC<{ logs: FoodLogEntry[]; onChange?: () => void }> = 
                                                             onClick={() => {
                                                                 if (!Number.isInteger(id)) return;
                                                                 setDeleteError(null);
-                                                                setDeleteState({ id, label });
+                                                                setDeleteState({
+                                                                    id,
+                                                                    label,
+                                                                    payload: {
+                                                                        name: label,
+                                                                        calories,
+                                                                        meal_period: meal.key
+                                                                    }
+                                                                });
                                                             }}
                                                         >
                                                             <DeleteOutlineIcon fontSize="small" />
@@ -418,6 +459,40 @@ const FoodLogMeals: React.FC<{ logs: FoodLogEntry[]; onChange?: () => void }> = 
                     </Button>
                 </DialogActions>
             </Dialog>
+
+            <Snackbar
+                open={Boolean(snackbar)}
+                autoHideDuration={6000}
+                onClose={() => {
+                    setSnackbar(null);
+                    setLastDeleted(null);
+                }}
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+                sx={{ bottom: { xs: 140, md: 24 } }}
+            >
+                <Alert
+                    onClose={() => {
+                        setSnackbar(null);
+                        setLastDeleted(null);
+                    }}
+                    severity={snackbar?.severity ?? 'info'}
+                    action={
+                        lastDeleted ? (
+                            <Button
+                                color="inherit"
+                                size="small"
+                                onClick={() => void handleUndoDelete()}
+                                disabled={isUndoing}
+                            >
+                                {isUndoing ? 'Undoing…' : 'Undo'}
+                            </Button>
+                        ) : undefined
+                    }
+                    sx={{ width: '100%' }}
+                >
+                    {snackbar?.message}
+                </Alert>
+            </Snackbar>
         </Stack>
     );
 };

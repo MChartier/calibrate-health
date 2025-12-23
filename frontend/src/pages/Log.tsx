@@ -231,7 +231,7 @@ const Log: React.FC = () => {
                         <Skeleton variant="rounded" height={44} />
                     </Box>
                 ) : (
-                    <FoodLogMeals logs={foodQuery.data ?? []} onChange={() => void foodQuery.refetch()} />
+                    <FoodLogMeals date={selectedDate} logs={foodQuery.data ?? []} onChange={() => void foodQuery.refetch()} />
                 )}
             </Paper>
 
