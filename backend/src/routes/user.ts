@@ -1,7 +1,7 @@
 import express from 'express';
 import prisma from '../config/database';
-import { isWeightUnit } from '../utils/weight';
-import { ActivityLevel, Sex, WeightUnit } from '@prisma/client';
+import { isHeightUnit, isWeightUnit } from '../utils/units';
+import { ActivityLevel, HeightUnit, Sex, WeightUnit } from '@prisma/client';
 import { buildCalorieSummary, isActivityLevel, isSex } from '../utils/profile';
 import { isValidIanaTimeZone } from '../utils/date';
 
@@ -27,6 +27,7 @@ router.get('/me', (req, res) => {
       id: user.id,
       email: user.email,
       weight_unit: user.weight_unit,
+      height_unit: user.height_unit,
       timezone: user.timezone,
       date_of_birth: user.date_of_birth,
       sex: user.sex,
@@ -38,16 +39,32 @@ router.get('/me', (req, res) => {
 
 router.patch('/preferences', async (req, res) => {
   const user = req.user as any;
-  const { weight_unit } = req.body;
+  const { weight_unit, height_unit } = req.body as { weight_unit?: unknown; height_unit?: unknown };
 
-  if (!isWeightUnit(weight_unit)) {
-    return res.status(400).json({ message: 'Invalid weight_unit' });
+  if (weight_unit === undefined && height_unit === undefined) {
+    return res.status(400).json({ message: 'No fields to update' });
+  }
+
+  const updateData: Partial<{ weight_unit: WeightUnit; height_unit: HeightUnit }> = {};
+
+  if (weight_unit !== undefined) {
+    if (!isWeightUnit(weight_unit)) {
+      return res.status(400).json({ message: 'Invalid weight_unit' });
+    }
+    updateData.weight_unit = weight_unit as WeightUnit;
+  }
+
+  if (height_unit !== undefined) {
+    if (!isHeightUnit(height_unit)) {
+      return res.status(400).json({ message: 'Invalid height_unit' });
+    }
+    updateData.height_unit = height_unit as HeightUnit;
   }
 
   try {
     const updatedUser = await prisma.user.update({
       where: { id: user.id },
-      data: { weight_unit },
+      data: updateData,
     });
 
     res.json({
@@ -55,6 +72,7 @@ router.patch('/preferences', async (req, res) => {
         id: updatedUser.id,
         email: updatedUser.email,
         weight_unit: updatedUser.weight_unit,
+        height_unit: updatedUser.height_unit,
         timezone: updatedUser.timezone,
         date_of_birth: updatedUser.date_of_birth,
         sex: updatedUser.sex,
@@ -93,7 +111,8 @@ router.get('/profile', async (req, res) => {
       sex: dbUser.sex,
       height_mm: dbUser.height_mm,
       activity_level: dbUser.activity_level,
-      weight_unit: dbUser.weight_unit
+      weight_unit: dbUser.weight_unit,
+      height_unit: dbUser.height_unit
     };
 
     const calorieSummary = buildCalorieSummary({
@@ -213,6 +232,7 @@ router.patch('/profile', async (req, res) => {
         id: updatedUser.id,
         email: updatedUser.email,
         weight_unit: updatedUser.weight_unit,
+        height_unit: updatedUser.height_unit,
         timezone: updatedUser.timezone,
         date_of_birth: updatedUser.date_of_birth,
         sex: updatedUser.sex,
