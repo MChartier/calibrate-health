@@ -19,6 +19,7 @@ import { LineChart } from '@mui/x-charts/LineChart';
 import { ChartsReferenceLine } from '@mui/x-charts/ChartsReferenceLine';
 import { useAuth } from '../context/useAuth';
 import { validateGoalWeights, type GoalMode } from '../utils/goalValidation';
+import { DAILY_DEFICIT_CHOICE_STRINGS, normalizeDailyDeficitChoiceAbsValue } from '../../../shared/goalDeficit';
 
 type MetricEntry = {
     id: number;
@@ -520,6 +521,11 @@ const GoalEditor: React.FC<{
         return getGoalModeFromDailyDeficit(initialDailyDeficit);
     }, [initialDailyDeficit]);
 
+    const normalizedInitialDailyDeficitAbs = useMemo(() => {
+        if (initialGoalMode === 'maintain') return 0;
+        return normalizeDailyDeficitChoiceAbsValue(initialDailyDeficit);
+    }, [initialDailyDeficit, initialGoalMode]);
+
     const [goalMode, setGoalMode] = useState<GoalMode>(initialGoalMode);
 
     const [alert, setAlert] = useState<{ message: string; severity: 'success' | 'error' } | null>(null);
@@ -536,8 +542,7 @@ const GoalEditor: React.FC<{
         targetWeight:
             typeof initialTargetWeight === 'number' && Number.isFinite(initialTargetWeight) ? roundWeight(initialTargetWeight) : null,
         goalMode: initialGoalMode,
-        dailyDeficitAbs:
-            typeof initialDailyDeficit === 'number' && Number.isFinite(initialDailyDeficit) ? Math.abs(initialDailyDeficit) : 500
+        dailyDeficitAbs: normalizedInitialDailyDeficitAbs
     });
 
     const startWeightValue = useMemo(() => {
@@ -552,9 +557,7 @@ const GoalEditor: React.FC<{
 
     const dailyDeficitValue = useMemo(() => {
         if (dailyDeficitInput !== null) return dailyDeficitInput;
-        return typeof initialDailyDeficit === 'number' && Number.isFinite(initialDailyDeficit)
-            ? Math.abs(initialDailyDeficit).toString()
-            : '500';
+        return normalizeDailyDeficitChoiceAbsValue(initialDailyDeficit).toString();
     }, [dailyDeficitInput, initialDailyDeficit]);
 
     const hasChanges = useMemo(() => {
@@ -691,7 +694,7 @@ const GoalEditor: React.FC<{
                                 setAlert(null);
                             }}
                         >
-                            {['250', '500', '750', '1000'].map((val) => (
+                            {DAILY_DEFICIT_CHOICE_STRINGS.map((val) => (
                                 <MenuItem key={val} value={val}>
                                     {goalMode === 'gain' ? '+' : '-'}
                                     {val} Calories/day
