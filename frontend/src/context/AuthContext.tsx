@@ -45,8 +45,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(res.data.user);
     };
 
+    const updateTimezone = async (timezone: string) => {
+        const res = await axios.patch('/api/user/profile', { timezone });
+        setUser(res.data.user);
+    };
+
     return (
-        <AuthContext.Provider value={{ user, login, register, logout, updateWeightUnit, isLoading }}>
+        <AuthContext.Provider value={{ user, login, register, logout, updateWeightUnit, updateTimezone, isLoading }}>
             {children}
         </AuthContext.Provider>
     );

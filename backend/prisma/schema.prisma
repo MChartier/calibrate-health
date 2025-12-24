@@ -35,6 +35,8 @@ model User {
   created_at    DateTime  @default(now())
 
   weight_unit   WeightUnit @default(KG)
+  /// IANA time zone identifier (e.g. "America/Los_Angeles") used to define the user's local day boundary.
+  timezone      String     @default("UTC")
   date_of_birth DateTime?
   sex           Sex?
   height_mm     Int?
@@ -72,8 +74,12 @@ model FoodLog {
   user_id     Int
   user        User     @relation(fields: [user_id], references: [id])
   date        DateTime @default(now())
+  /// Calendar day for grouping logs, derived from the user's timezone at write time.
+  local_date  DateTime @db.Date
   meal_period String   // Breakfast, Morning, Lunch, Afternoon, Dinner, Evening
   name        String
   calories    Int
   created_at  DateTime @default(now())
+
+  @@index([user_id, local_date])
 }

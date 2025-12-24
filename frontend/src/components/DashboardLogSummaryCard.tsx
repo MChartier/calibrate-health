@@ -4,6 +4,8 @@ import { Gauge } from '@mui/x-charts/Gauge';
 import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/useAuth';
+import { formatDateToLocalDateString } from '../utils/date';
 
 type FoodLogEntry = {
     id: number;
@@ -18,21 +20,16 @@ type ProfileSummary = {
     };
 };
 
-function getLocalDateString(date: Date): string {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-}
-
 const DashboardLogSummaryCard: React.FC = () => {
     const navigate = useNavigate();
-    const today = getLocalDateString(new Date());
+    const { user } = useAuth();
+    const timeZone = user?.timezone?.trim() || Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+    const today = formatDateToLocalDateString(new Date(), timeZone);
 
     const foodQuery = useQuery({
         queryKey: ['food', today],
         queryFn: async (): Promise<FoodLogEntry[]> => {
-            const res = await axios.get('/api/food?date=' + encodeURIComponent(`${today}T12:00:00`));
+            const res = await axios.get('/api/food?date=' + encodeURIComponent(today));
             return Array.isArray(res.data) ? res.data : [];
         }
     });

@@ -1,7 +1,7 @@
 import express from 'express';
 import prisma from '../config/database';
 import { gramsToWeight, parseWeightToGrams, type WeightUnit } from '../utils/weight';
-import { getUtcTodayDateOnly, normalizeToUtcDateOnly } from '../utils/date';
+import { getUtcTodayDateOnlyInTimeZone, normalizeToUtcDateOnly } from '../utils/date';
 
 const router = express.Router();
 
@@ -64,7 +64,16 @@ router.post('/', async (req, res) => {
     try {
         let metricDate: Date;
         try {
-            metricDate = date ? normalizeToUtcDateOnly(date) : getUtcTodayDateOnly();
+            const timeZone = typeof user.timezone === 'string' ? user.timezone : 'UTC';
+            metricDate = date
+                ? normalizeToUtcDateOnly(date)
+                : (() => {
+                      try {
+                          return getUtcTodayDateOnlyInTimeZone(timeZone);
+                      } catch {
+                          return getUtcTodayDateOnlyInTimeZone('UTC');
+                      }
+                  })();
         } catch {
             return res.status(400).json({ message: 'Invalid date' });
         }
