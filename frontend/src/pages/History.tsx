@@ -138,18 +138,29 @@ const History: React.FC = () => {
 
     const caloriePoints = useMemo(() => {
         const items = dailyCaloriesQuery.data ?? [];
-        const parsed: CaloriePoint[] = items
-            .filter((item) => typeof item?.calories === 'number' && Number.isFinite(item.calories))
-            .map((item) => {
-                const date = parseDateOnlyToUtcDate(item.date);
-                if (!date) return null;
-                return { date, calories: item.calories };
-            })
-            .filter((value): value is CaloriePoint => value !== null);
+        const caloriesByDate = new Map<string, number>();
 
-        parsed.sort((a, b) => a.date.getTime() - b.date.getTime());
-        return parsed;
-    }, [dailyCaloriesQuery.data]);
+        for (const item of items) {
+            if (typeof item?.calories !== 'number' || !Number.isFinite(item.calories)) continue;
+            const datePart = typeof item?.date === 'string' ? item.date.split('T')[0] ?? '' : '';
+            if (!datePart) continue;
+            caloriesByDate.set(datePart, item.calories);
+        }
+
+        const start = parseDateOnlyToUtcDate(calorieWindow.startIso);
+        const end = parseDateOnlyToUtcDate(calorieWindow.endIso);
+        if (!start || !end) return [];
+
+        const points: CaloriePoint[] = [];
+        const cursor = new Date(start);
+        while (cursor.getTime() <= end.getTime()) {
+            const iso = cursor.toISOString().slice(0, 10);
+            points.push({ date: new Date(cursor), calories: caloriesByDate.get(iso) ?? 0 });
+            cursor.setUTCDate(cursor.getUTCDate() + 1);
+        }
+
+        return points;
+    }, [dailyCaloriesQuery.data, calorieWindow.endIso, calorieWindow.startIso]);
 
     const calorieXData = useMemo(() => caloriePoints.map((point) => point.date), [caloriePoints]);
     const calorieYData = useMemo(() => caloriePoints.map((point) => point.calories), [caloriePoints]);
@@ -290,7 +301,7 @@ const History: React.FC = () => {
                     >
                         Unable to load calorie history right now.
                     </Alert>
-                ) : caloriePoints.length === 0 ? (
+                ) : (dailyCaloriesQuery.data ?? []).length === 0 ? (
                     <Typography color="text.secondary">No food entries yet.</Typography>
                 ) : (
                     <LineChart
