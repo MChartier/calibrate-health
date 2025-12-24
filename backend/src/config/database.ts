@@ -7,8 +7,8 @@ if (!databaseUrl) {
   throw new Error('DATABASE_URL is not set');
 }
 
-const pool = new Pool({ connectionString: databaseUrl });
-const adapter = new PrismaPg(pool);
+export const pgPool = new Pool({ connectionString: databaseUrl });
+const adapter = new PrismaPg(pgPool);
 
 const prisma = new PrismaClient({ adapter });
 

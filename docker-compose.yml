@@ -22,7 +22,10 @@ services:
       DATABASE_URL: postgresql://user:password@postgres:5432/fitness_app?schema=public
       PORT: 3000
       SESSION_SECRET: development_secret_key
-      AUTO_LOGIN_TEST_USER: "true"
+      CORS_ORIGINS: http://localhost:5173
+      AUTO_LOGIN_TEST_USER: "false"
+      SESSION_COOKIE_SECURE: "true"
+      NODE_ENV: production
     ports:
       - "3000:3000"
     depends_on:
