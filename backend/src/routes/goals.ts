@@ -1,10 +1,9 @@
 import express from 'express';
 import prisma from '../config/database';
+import { parseDailyDeficit } from '../utils/goalDeficit';
 import { gramsToWeight, parseWeightToGrams, type WeightUnit } from '../utils/weight';
 
 const router = express.Router();
-
-const ALLOWED_DAILY_DEFICITS = new Set([0, 250, 500, 750, 1000]);
 
 const isAuthenticated = (req: express.Request, res: express.Response, next: express.NextFunction) => {
     if (req.isAuthenticated()) {
@@ -12,30 +11,6 @@ const isAuthenticated = (req: express.Request, res: express.Response, next: expr
     }
     res.status(401).json({ message: 'Not authenticated' });
 };
-
-/**
- * Parse and validate the goal calorie change.
- *
- * Convention:
- * - positive => deficit (lose weight)
- * - zero => maintenance
- * - negative => surplus (gain weight)
- *
- * Only allows standard deficit/surplus magnitudes to keep projections stable.
- */
-function parseDailyDeficit(input: unknown): number | null {
-    const numeric = typeof input === 'number' ? input : typeof input === 'string' ? Number(input) : Number.NaN;
-    if (!Number.isFinite(numeric) || !Number.isInteger(numeric)) {
-        return null;
-    }
-
-    const absValue = Math.abs(numeric);
-    if (!ALLOWED_DAILY_DEFICITS.has(absValue)) {
-        return null;
-    }
-
-    return numeric;
-}
 
 /**
  * Ensure the goal definition is coherent for gain/lose modes.
