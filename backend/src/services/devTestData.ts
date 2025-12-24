@@ -1,6 +1,6 @@
 import bcrypt from 'bcryptjs';
 import prisma from '../config/database';
-import { ActivityLevel, Sex, UnitSystem, WeightUnit } from '@prisma/client';
+import { ActivityLevel, HeightUnit, Sex, WeightUnit } from '@prisma/client';
 import { formatDateToLocalDateString, normalizeToUtcDateOnly } from '../utils/date';
 
 const TEST_USER_EMAIL = 'test@cal.io';
@@ -58,7 +58,7 @@ const ensureTestUser = async (): Promise<{ id: number }> => {
       password_hash: passwordHash,
       timezone: TEST_USER_TIMEZONE,
       weight_unit: WeightUnit.KG,
-      unit_system: UnitSystem.METRIC,
+      height_unit: HeightUnit.CM,
       date_of_birth: TEST_USER_DATE_OF_BIRTH,
       sex: Sex.MALE,
       height_mm: TEST_USER_HEIGHT_MM,
@@ -70,7 +70,7 @@ const ensureTestUser = async (): Promise<{ id: number }> => {
       password_hash: passwordHash,
       timezone: TEST_USER_TIMEZONE,
       weight_unit: WeightUnit.KG,
-      unit_system: UnitSystem.METRIC,
+      height_unit: HeightUnit.CM,
       date_of_birth: TEST_USER_DATE_OF_BIRTH,
       sex: Sex.MALE,
       height_mm: TEST_USER_HEIGHT_MM,

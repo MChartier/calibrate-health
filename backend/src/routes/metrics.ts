@@ -2,10 +2,10 @@ import express from 'express';
 import prisma from '../config/database';
 import {
     gramsToWeight,
+    isWeightUnit,
     parseWeightToGrams,
-    resolveWeightUnit,
     type WeightUnit
-} from '../utils/weight';
+} from '../utils/units';
 import { getUtcTodayDateOnlyInTimeZone, normalizeToUtcDateOnly } from '../utils/date';
 
 const router = express.Router();
@@ -21,7 +21,7 @@ router.use(isAuthenticated);
 
 router.get('/', async (req, res) => {
     const user = req.user as any;
-    const weightUnit = resolveWeightUnit({ weight_unit: user.weight_unit, unit_system: user.unit_system });
+    const weightUnit: WeightUnit = isWeightUnit(user.weight_unit) ? user.weight_unit : 'KG';
     const start = typeof req.query.start === 'string' ? req.query.start : undefined;
     const end = typeof req.query.end === 'string' ? req.query.end : undefined;
     try {
@@ -54,7 +54,7 @@ router.get('/', async (req, res) => {
 router.post('/', async (req, res) => {
     const user = req.user as any;
     const { weight, body_fat_percent, date } = req.body;
-    const weightUnit = resolveWeightUnit({ weight_unit: user.weight_unit, unit_system: user.unit_system });
+    const weightUnit: WeightUnit = isWeightUnit(user.weight_unit) ? user.weight_unit : 'KG';
     try {
         let metricDate: Date;
         try {

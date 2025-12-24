@@ -1,6 +1,6 @@
 import express from 'express';
 import prisma from '../config/database';
-import { gramsToWeight, parseWeightToGrams, type WeightUnit } from '../utils/weight';
+import { gramsToWeight, parseWeightToGrams, type WeightUnit } from '../utils/units';
 
 const router = express.Router();
 

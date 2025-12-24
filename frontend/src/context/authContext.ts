@@ -1,13 +1,13 @@
 import { createContext } from 'react';
 
 export type WeightUnit = 'KG' | 'LB';
-export type UnitSystem = 'METRIC' | 'IMPERIAL';
+export type HeightUnit = 'CM' | 'FT_IN';
 
 export type User = {
     id: number;
     email: string;
     weight_unit: WeightUnit;
-    unit_system: UnitSystem;
+    height_unit: HeightUnit;
     timezone?: string;
     date_of_birth?: string | null;
     sex?: 'MALE' | 'FEMALE' | null;
@@ -15,12 +15,26 @@ export type User = {
     activity_level?: 'SEDENTARY' | 'LIGHT' | 'MODERATE' | 'ACTIVE' | 'VERY_ACTIVE' | null;
 };
 
+export type UserProfilePatchPayload = {
+    timezone?: string | null;
+    date_of_birth?: string | null;
+    sex?: string | null;
+    activity_level?: string | null;
+    height_cm?: string | null;
+    height_mm?: number | string | null;
+    height_feet?: string | null;
+    height_inches?: string | null;
+};
+
 export type AuthContextType = {
     user: User | null;
     login: (email: string, password: string) => Promise<void>;
     register: (email: string, password: string) => Promise<void>;
     logout: () => Promise<void>;
-    updateUnits: (preferences: { unit_system?: UnitSystem; weight_unit?: WeightUnit }) => Promise<void>;
+    updateUnitPreferences: (preferences: { weight_unit?: WeightUnit; height_unit?: HeightUnit }) => Promise<void>;
+    updateWeightUnit: (weight_unit: WeightUnit) => Promise<void>;
+    updateHeightUnit: (height_unit: HeightUnit) => Promise<void>;
+    updateProfile: (profile: UserProfilePatchPayload) => Promise<void>;
     updateTimezone: (timezone: string) => Promise<void>;
     isLoading: boolean;
 };

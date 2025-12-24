@@ -1,9 +1,10 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
     Alert,
     Box,
     Button,
     FormControl,
+    Link,
     InputLabel,
     MenuItem,
     Paper,
@@ -14,8 +15,11 @@ import {
 } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
+import { Link as RouterLink } from 'react-router-dom';
 import { activityLevelOptions } from '../constants/activityLevels';
 import TimeZonePicker from '../components/TimeZonePicker';
+import { useAuth } from '../context/useAuth';
+import { getDefaultHeightUnitForWeightUnit } from '../utils/unitPreferences';
 
 type ProfileResponse = {
     profile: {
@@ -25,7 +29,6 @@ type ProfileResponse = {
         height_mm: number | null;
         activity_level: 'SEDENTARY' | 'LIGHT' | 'MODERATE' | 'ACTIVE' | 'VERY_ACTIVE' | null;
         weight_unit: 'KG' | 'LB';
-        unit_system: 'METRIC' | 'IMPERIAL';
     };
     calorieSummary: {
         dailyCalorieTarget?: number;
@@ -65,6 +68,7 @@ function parseHeightFromMillimeters(mm: number): ParsedHeight {
  * Profile is the dedicated page for editing user-specific profile fields used for calorie math.
  */
 const Profile: React.FC = () => {
+    const { user, updateProfile } = useAuth();
     const [profileMessage, setProfileMessage] = useState('');
 
     const [timezone, setTimezone] = useState<string | null>(null);
@@ -73,7 +77,6 @@ const Profile: React.FC = () => {
     const [heightCm, setHeightCm] = useState<string | null>(null);
     const [heightFeet, setHeightFeet] = useState<string | null>(null);
     const [heightInches, setHeightInches] = useState<string | null>(null);
-    const [unitSystem, setUnitSystem] = useState<'METRIC' | 'IMPERIAL'>('METRIC');
     const [activityLevel, setActivityLevel] = useState<string | null>(null);
 
     const profileQuery = useQuery({
@@ -109,12 +112,11 @@ const Profile: React.FC = () => {
         return parseHeightFromMillimeters(mm);
     }, [profileQuery.data?.profile.height_mm]);
 
-    useEffect(() => {
-        const resolvedUnitSystem =
-            profileQuery.data?.profile.unit_system ??
-            (profileQuery.data?.profile.weight_unit === 'LB' ? 'IMPERIAL' : 'METRIC');
-        setUnitSystem(resolvedUnitSystem);
-    }, [profileQuery.data?.profile.unit_system, profileQuery.data?.profile.weight_unit]);
+    const heightUnit = useMemo(() => {
+        const weightUnit = user?.weight_unit;
+        if (!weightUnit) return 'CM';
+        return user?.height_unit ?? getDefaultHeightUnitForWeightUnit(weightUnit);
+    }, [user?.height_unit, user?.weight_unit]);
 
     const heightCmValue = useMemo(() => {
         if (heightCm !== null) return heightCm;
@@ -146,19 +148,14 @@ const Profile: React.FC = () => {
                 activity_level: activityValue || null
             };
 
-            if (unitSystem === 'METRIC') {
+            if (heightUnit === 'CM') {
                 payload.height_cm = heightCmValue || null;
             } else {
                 payload.height_feet = heightFeetValue || null;
                 payload.height_inches = heightInchesValue || null;
             }
 
-            await axios.patch('/api/user/profile', payload);
-
-            await axios.patch('/api/user/preferences', {
-                unit_system: unitSystem,
-                weight_unit: unitSystem === 'IMPERIAL' ? 'LB' : 'KG'
-            });
+            await updateProfile(payload);
 
             setProfileMessage('Profile updated');
             setTimezone(null);
@@ -208,19 +205,7 @@ const Profile: React.FC = () => {
                         </Select>
                     </FormControl>
 
-                    <FormControl fullWidth>
-                        <InputLabel>Unit System</InputLabel>
-                        <Select
-                            value={unitSystem}
-                            label="Unit System"
-                            onChange={(e) => setUnitSystem(e.target.value as 'METRIC' | 'IMPERIAL')}
-                        >
-                            <MenuItem value="METRIC">Metric (cm, kg)</MenuItem>
-                            <MenuItem value="IMPERIAL">Imperial (ft/in, lb)</MenuItem>
-                        </Select>
-                    </FormControl>
-
-                    {unitSystem === 'METRIC' ? (
+                    {heightUnit === 'CM' ? (
                         <TextField
                             label="Height (cm)"
                             type="number"
@@ -249,6 +234,14 @@ const Profile: React.FC = () => {
                             />
                         </Box>
                     )}
+
+                    <Typography variant="caption" color="text.secondary">
+                        Units are configured in{' '}
+                        <Link component={RouterLink} to="/settings">
+                            Settings
+                        </Link>
+                        .
+                    </Typography>
 
                     <FormControl fullWidth>
                         <InputLabel>Activity Level</InputLabel>

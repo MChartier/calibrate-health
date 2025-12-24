@@ -15,35 +15,47 @@ import { useAuth } from '../context/useAuth';
 import { useThemeMode } from '../context/useThemeMode';
 import type { ThemePreference } from '../context/themeModeContext';
 import TimeZonePicker from '../components/TimeZonePicker';
+import {
+    parseUnitPreferenceKey,
+    resolveUnitPreferenceKey,
+    type UnitPreferenceKey
+} from '../utils/unitPreferences';
 
 /**
  * Settings is focused on device preferences (theme) and app preferences (units).
  */
 const Settings: React.FC = () => {
-    const { user, updateUnits, updateTimezone } = useAuth();
+    const { user, updateUnitPreferences, updateTimezone } = useAuth();
     const { preference: themePreference, mode: resolvedThemeMode, setPreference: setThemePreference } = useThemeMode();
     const [settingsMessage, setSettingsMessage] = useState('');
     const detectedTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
     const [timezoneValue, setTimezoneValue] = useState(() => user?.timezone ?? detectedTimezone);
-    const [unitSystem, setUnitSystem] = useState<'METRIC' | 'IMPERIAL'>(() => user?.unit_system ?? 'METRIC');
+    const [unitPreference, setUnitPreference] = useState<UnitPreferenceKey>(() =>
+        resolveUnitPreferenceKey({ weight_unit: user?.weight_unit, height_unit: user?.height_unit })
+    );
 
     React.useEffect(() => {
         setTimezoneValue(user?.timezone ?? detectedTimezone);
-        setUnitSystem(user?.unit_system ?? 'METRIC');
-    }, [detectedTimezone, user?.timezone, user?.unit_system]);
+        setUnitPreference(resolveUnitPreferenceKey({ weight_unit: user?.weight_unit, height_unit: user?.height_unit }));
+    }, [detectedTimezone, user?.height_unit, user?.timezone, user?.weight_unit]);
 
-    const handleUnitSystemChange = async (e: SelectChangeEvent) => {
-        const nextSystem = e.target.value;
-        if (nextSystem !== 'METRIC' && nextSystem !== 'IMPERIAL') {
+    const handleUnitPreferenceChange = async (e: SelectChangeEvent) => {
+        if (!user) {
             setSettingsMessage('Failed to update preferences');
             return;
         }
-        setUnitSystem(nextSystem);
+
+        const previousPreference = unitPreference;
+        const nextPreference = e.target.value as UnitPreferenceKey;
+        setUnitPreference(nextPreference);
+
+        const { heightUnit, weightUnit } = parseUnitPreferenceKey(nextPreference);
 
         try {
-            await updateUnits({ unit_system: nextSystem, weight_unit: nextSystem === 'IMPERIAL' ? 'LB' : 'KG' });
+            await updateUnitPreferences({ weight_unit: weightUnit, height_unit: heightUnit });
             setSettingsMessage('Preferences updated');
         } catch {
+            setUnitPreference(previousPreference);
             setSettingsMessage('Failed to update preferences');
         }
     };
@@ -66,10 +78,12 @@ const Settings: React.FC = () => {
                 <Typography variant="h6" gutterBottom>Units & Localization</Typography>
                 {settingsMessage && <Alert severity="info" sx={{ mb: 2 }}>{settingsMessage}</Alert>}
                 <FormControl fullWidth margin="normal">
-                    <InputLabel>Unit System</InputLabel>
-                    <Select value={unitSystem} label="Unit System" onChange={handleUnitSystemChange}>
-                        <MenuItem value="METRIC">Metric (cm, kg)</MenuItem>
-                        <MenuItem value="IMPERIAL">Imperial (ft/in, lb)</MenuItem>
+                    <InputLabel>Units</InputLabel>
+                    <Select value={unitPreference} label="Units" onChange={handleUnitPreferenceChange}>
+                        <MenuItem value="CM_KG">Metric (cm, kg)</MenuItem>
+                        <MenuItem value="FTIN_LB">Imperial (ft/in, lb)</MenuItem>
+                        <MenuItem value="CM_LB">Mixed (cm, lb)</MenuItem>
+                        <MenuItem value="FTIN_KG">Mixed (ft/in, kg)</MenuItem>
                     </Select>
                 </FormControl>
 

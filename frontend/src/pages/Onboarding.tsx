@@ -20,18 +20,22 @@ import { useQuery } from '@tanstack/react-query';
 import { validateGoalWeights } from '../utils/goalValidation';
 import { formatDateToLocalDateString } from '../utils/date';
 import TimeZonePicker from '../components/TimeZonePicker';
+import {
+    parseUnitPreferenceKey,
+    resolveUnitPreferenceKey,
+    type UnitPreferenceKey
+} from '../utils/unitPreferences';
 
 const Onboarding: React.FC = () => {
-    const { user } = useAuth();
+    const { user, updateProfile, updateUnitPreferences } = useAuth();
     const navigate = useNavigate();
 
-    const defaultUnitSystem = useMemo(() => {
-        if (user?.unit_system) return user.unit_system;
-        if (user?.weight_unit === 'LB') return 'IMPERIAL';
-        return 'METRIC';
-    }, [user?.unit_system, user?.weight_unit]);
-    const [unitSystem, setUnitSystem] = useState<'METRIC' | 'IMPERIAL'>(defaultUnitSystem);
-    const weightUnitLabel = unitSystem === 'IMPERIAL' ? 'lb' : 'kg';
+    const defaultUnitPreference = useMemo<UnitPreferenceKey>(() => {
+        return resolveUnitPreferenceKey({ weight_unit: user?.weight_unit, height_unit: user?.height_unit });
+    }, [user?.height_unit, user?.weight_unit]);
+    const [unitPreference, setUnitPreference] = useState<UnitPreferenceKey>(defaultUnitPreference);
+    const { heightUnit, weightUnit } = useMemo(() => parseUnitPreferenceKey(unitPreference), [unitPreference]);
+    const weightUnitLabel = weightUnit === 'LB' ? 'lb' : 'kg';
 
     const detectedTimezone = useMemo(() => Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC', []);
     const [timezone, setTimezone] = useState<string>(user?.timezone ?? detectedTimezone);
@@ -51,8 +55,8 @@ const Onboarding: React.FC = () => {
     const [isSaving, setIsSaving] = useState(false);
 
     useEffect(() => {
-        setUnitSystem(defaultUnitSystem);
-    }, [defaultUnitSystem]);
+        setUnitPreference(defaultUnitPreference);
+    }, [defaultUnitPreference]);
 
     type ProfileUpdatePayload = {
         timezone: string | null;
@@ -85,15 +89,19 @@ const Onboarding: React.FC = () => {
     }, [profileQuery.isSuccess, profileQuery.data, navigate]);
 
     const heightFieldsValid = useMemo(() => {
-        if (unitSystem === 'METRIC') {
+        if (heightUnit === 'CM') {
             return !!heightCm;
         }
         return !!heightFeet || !!heightInches;
-    }, [heightCm, heightFeet, heightInches, unitSystem]);
+    }, [heightCm, heightFeet, heightInches, heightUnit]);
 
     const handleSave = async () => {
         setError('');
         setSuccess('');
+        if (!user) {
+            setError('You must be logged in to continue.');
+            return;
+        }
 
         const startWeightNumber = Number(currentWeight);
         const targetWeightNumber = Number(goalWeight);
@@ -115,19 +123,16 @@ const Onboarding: React.FC = () => {
                 sex: sex || null,
                 activity_level: activityLevel || null
             };
-            if (unitSystem === 'METRIC') {
+            if (heightUnit === 'CM') {
                 profilePayload.height_cm = heightCm || null;
             } else {
                 profilePayload.height_feet = heightFeet || null;
                 profilePayload.height_inches = heightInches || null;
             }
 
-            await axios.patch('/api/user/profile', profilePayload);
+            await updateProfile(profilePayload);
 
-            await axios.patch('/api/user/preferences', {
-                unit_system: unitSystem,
-                weight_unit: unitSystem === 'IMPERIAL' ? 'LB' : 'KG'
-            });
+            await updateUnitPreferences({ weight_unit: weightUnit, height_unit: heightUnit });
 
             const deficitValue = goalMode === 'maintain' ? 0 : parseInt(dailyDeficit || '0', 10);
             const signedDeficit = goalMode === 'gain' ? -Math.abs(deficitValue) : Math.abs(deficitValue);
@@ -168,7 +173,7 @@ const Onboarding: React.FC = () => {
                 Welcome! Let&apos;s set up your targets
             </Typography>
             <Typography color="text.secondary" sx={{ mb: 2 }}>
-                We need a few details to estimate your calories burned and daily target. You can change these later from your profile.
+                We need a few details to estimate your calories burned and daily target. You can change these later from your profile and settings.
             </Typography>
 
             <Paper sx={{ p: 3 }}>
@@ -218,18 +223,20 @@ const Onboarding: React.FC = () => {
                     />
 
                     <FormControl fullWidth required>
-                        <InputLabel>Unit System</InputLabel>
+                        <InputLabel>Units</InputLabel>
                         <Select
-                            value={unitSystem}
-                            label="Unit System"
-                            onChange={(e) => setUnitSystem(e.target.value as 'METRIC' | 'IMPERIAL')}
+                            value={unitPreference}
+                            label="Units"
+                            onChange={(e) => setUnitPreference(e.target.value as UnitPreferenceKey)}
                         >
-                            <MenuItem value="METRIC">Metric (cm, kg)</MenuItem>
-                            <MenuItem value="IMPERIAL">Imperial (ft/in, lb)</MenuItem>
+                            <MenuItem value="CM_KG">Metric (cm, kg)</MenuItem>
+                            <MenuItem value="FTIN_LB">Imperial (ft/in, lb)</MenuItem>
+                            <MenuItem value="CM_LB">Mixed (cm, lb)</MenuItem>
+                            <MenuItem value="FTIN_KG">Mixed (ft/in, kg)</MenuItem>
                         </Select>
                     </FormControl>
 
-                    {unitSystem === 'METRIC' ? (
+                    {heightUnit === 'CM' ? (
                         <TextField
                             label="Height (cm)"
                             type="number"
