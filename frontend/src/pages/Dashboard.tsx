@@ -2,7 +2,7 @@ import React from 'react';
 import { Typography, Box, Grid } from '@mui/material';
 import { useAuth } from '../context/useAuth';
 import CalorieTargetBanner from '../components/CalorieTargetBanner';
-import DashboardLogSummaryCard from '../components/DashboardLogSummaryCard';
+import LogSummaryCard from '../components/LogSummaryCard';
 import WeightProgressCard from '../components/WeightProgressCard';
 
 const Dashboard: React.FC = () => {
@@ -15,7 +15,7 @@ const Dashboard: React.FC = () => {
 
             <Grid container spacing={3} alignItems="stretch">
                 <Grid size={{ xs: 12, md: 6 }} sx={{ display: 'flex' }}>
-                    <DashboardLogSummaryCard />
+                    <LogSummaryCard dashboardMode />
                 </Grid>
                 <Grid size={{ xs: 12, md: 6 }} sx={{ display: 'flex' }}>
                     <WeightProgressCard />
