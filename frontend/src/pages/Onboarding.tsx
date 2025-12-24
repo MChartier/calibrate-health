@@ -20,6 +20,11 @@ import { useQuery } from '@tanstack/react-query';
 import { validateGoalWeights } from '../utils/goalValidation';
 import { formatDateToLocalDateString } from '../utils/date';
 import TimeZonePicker from '../components/TimeZonePicker';
+import {
+    DAILY_DEFICIT_CHOICE_STRINGS,
+    DEFAULT_DAILY_DEFICIT_CHOICE_STRING,
+    normalizeDailyDeficitChoiceAbsValue
+} from '../../../shared/goalDeficit';
 
 const Onboarding: React.FC = () => {
     const { user } = useAuth();
@@ -41,7 +46,7 @@ const Onboarding: React.FC = () => {
     const [currentWeight, setCurrentWeight] = useState('');
     const [goalWeight, setGoalWeight] = useState('');
     const [goalMode, setGoalMode] = useState<'lose' | 'maintain' | 'gain'>('lose');
-    const [dailyDeficit, setDailyDeficit] = useState('500');
+    const [dailyDeficit, setDailyDeficit] = useState(DEFAULT_DAILY_DEFICIT_CHOICE_STRING);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
     const [isSaving, setIsSaving] = useState(false);
@@ -118,7 +123,7 @@ const Onboarding: React.FC = () => {
 
             await axios.patch('/api/user/preferences', { weight_unit: weightUnit });
 
-            const deficitValue = goalMode === 'maintain' ? 0 : parseInt(dailyDeficit || '0', 10);
+            const deficitValue = goalMode === 'maintain' ? 0 : normalizeDailyDeficitChoiceAbsValue(dailyDeficit);
             const signedDeficit = goalMode === 'gain' ? -Math.abs(deficitValue) : Math.abs(deficitValue);
 
             await axios.post('/api/metrics', {
@@ -299,7 +304,7 @@ const Onboarding: React.FC = () => {
                                 label="Daily calorie change"
                                 onChange={(e) => setDailyDeficit(e.target.value)}
                             >
-                                {['250', '500', '750', '1000'].map((val) => (
+                                {DAILY_DEFICIT_CHOICE_STRINGS.map((val) => (
                                     <MenuItem key={val} value={val}>
                                         {goalMode === 'gain' ? '+' : '-'}
                                         {val} Calories/day

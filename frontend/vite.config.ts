@@ -54,6 +54,10 @@ export default defineConfig({
     __WORKTREE_NAME__: JSON.stringify(worktreeName),
   },
   server: {
+    fs: {
+      // Allow imports from the monorepo root (e.g. shared utilities used by both client and server).
+      allow: [path.resolve(frontendDir, '..')],
+    },
     host: true,
     port: devServerPort,
     strictPort: devServerPort !== undefined,
