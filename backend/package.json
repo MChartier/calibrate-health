@@ -9,7 +9,7 @@
     "db:seed": "ts-node prisma/seed.ts",
     "db:studio": "prisma studio",
     "prisma:generate": "prisma generate",
-    "test": "node -r ts-node/register --test test/**/*.test.js",
+    "test": "node -r ts-node/register --test",
     "dev": "nodemon --watch src --ext ts,json --exec ts-node src/index.ts"
   },
   "keywords": [],
