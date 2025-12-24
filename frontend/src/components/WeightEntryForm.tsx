@@ -40,6 +40,7 @@ const WeightEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
                 fullWidth
                 value={weight}
                 onChange={(e) => setWeight(e.target.value)}
+                disabled={isSubmitting}
                 inputProps={{ step: 0.1 }}
                 required
             />

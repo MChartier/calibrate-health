@@ -201,6 +201,7 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
                     onChange={(_, next) => next && setMode(next)}
                     size="small"
                     color="primary"
+                    disabled={isSubmitting}
                 >
                     <ToggleButton value="manual">Manual calories</ToggleButton>
                     <ToggleButton value="search">Search provider</ToggleButton>
@@ -214,6 +215,7 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
                         fullWidth
                         value={foodName}
                         onChange={(e) => setFoodName(e.target.value)}
+                        disabled={isSubmitting}
                         required
                     />
                     <TextField
@@ -222,6 +224,7 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
                         fullWidth
                         value={calories}
                         onChange={(e) => setCalories(e.target.value)}
+                        disabled={isSubmitting}
                         inputProps={{ min: 0, step: 1 }}
                         required
                     />
@@ -234,6 +237,7 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
                         fullWidth
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
+                        disabled={isSubmitting}
                         onKeyDown={(e) => {
                             if (e.key === 'Enter') {
                                 e.preventDefault();
@@ -241,7 +245,7 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
                             }
                         }}
                     />
-                    <Button variant="outlined" onClick={() => void handleSearch()} disabled={isSearching}>
+                    <Button variant="outlined" onClick={() => void handleSearch()} disabled={isSearching || isSubmitting}>
                         {isSearching ? 'Searching...' : 'Search'}
                     </Button>
                     {providerName && (
@@ -259,6 +263,7 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
                                     value={selectedItemId || ''}
                                     label="Result"
                                     onChange={(e) => setSelectedItemId(e.target.value)}
+                                    disabled={isSubmitting}
                                 >
                                     {searchResults.map((item) => (
                                         <MenuItem key={item.id} value={item.id}>
@@ -275,6 +280,7 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
                                     value={selectedMeasure?.label || ''}
                                     label="Measure"
                                     onChange={(e) => setSelectedMeasureLabel(e.target.value)}
+                                    disabled={isSubmitting || !selectedItem}
                                 >
                                     {(selectedItem?.availableMeasures || [])
                                         .filter((m) => m.gramWeight)
@@ -291,7 +297,7 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
                                 type="number"
                                 value={quantity}
                                 onChange={(e) => setQuantity(parseFloat(e.target.value) || 0)}
-                                disabled={!selectedMeasure}
+                                disabled={isSubmitting || !selectedMeasure}
                                 inputProps={{ min: 0, step: 0.5 }}
                             />
 
@@ -318,7 +324,12 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
 
             <FormControl fullWidth>
                 <InputLabel>Meal Period</InputLabel>
-                <Select value={mealPeriod} label="Meal Period" onChange={(e) => setMealPeriod(e.target.value)}>
+                <Select
+                    value={mealPeriod}
+                    label="Meal Period"
+                    onChange={(e) => setMealPeriod(e.target.value)}
+                    disabled={isSubmitting}
+                >
                     {mealOptions.map((meal) => (
                         <MenuItem key={meal.value} value={meal.value}>
                             <ListItemIcon sx={{ minWidth: 32 }}>{meal.icon}</ListItemIcon>
