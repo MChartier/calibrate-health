@@ -1,5 +1,5 @@
 import React from 'react';
-import { Alert, Box, CircularProgress, IconButton, Paper, Stack, Tooltip, Typography, Divider } from '@mui/material';
+import { Alert, Box, Button, CircularProgress, IconButton, Paper, Stack, Tooltip, Typography, Divider } from '@mui/material';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { useUserProfileQuery } from '../queries/userProfile';
 
@@ -18,7 +18,7 @@ import { useUserProfileQuery } from '../queries/userProfile';
  */
 
 const CalorieTargetBanner: React.FC = () => {
-    const { data, isLoading, isError } = useUserProfileQuery();
+    const { data, isLoading, isError, refetch } = useUserProfileQuery();
 
     if (isLoading) {
         return (
@@ -33,7 +33,15 @@ const CalorieTargetBanner: React.FC = () => {
 
     if (isError || !data) {
         return (
-            <Alert severity="warning" sx={{ mb: 2 }}>
+            <Alert
+                severity="warning"
+                sx={{ mb: 2 }}
+                action={
+                    <Button color="inherit" size="small" onClick={() => void refetch()}>
+                        Retry
+                    </Button>
+                }
+            >
                 Unable to load daily target right now.
             </Alert>
         );
