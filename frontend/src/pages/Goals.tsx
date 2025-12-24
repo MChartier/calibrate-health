@@ -19,6 +19,7 @@ import { LineChart } from '@mui/x-charts/LineChart';
 import { ChartsReferenceLine } from '@mui/x-charts/ChartsReferenceLine';
 import { useAuth } from '../context/useAuth';
 import { validateGoalWeights, type GoalMode } from '../utils/goalValidation';
+import { DAILY_DEFICIT_CHOICE_STRINGS, normalizeDailyDeficitChoiceAbsValue } from '../../../shared/goalDeficit';
 
 type MetricEntry = {
     id: number;
@@ -37,15 +38,6 @@ type GoalResponse = {
 };
 
 type WeightPoint = { date: Date; weight: number };
-
-const DAILY_DEFICIT_CHOICES = ['250', '500', '750', '1000'] as const;
-const DEFAULT_DAILY_DEFICIT_CHOICE = '500';
-
-function normalizeDailyDeficitChoice(value: number | null | undefined): string {
-    const numeric = typeof value === 'number' && Number.isFinite(value) ? Math.abs(value) : null;
-    const match = DAILY_DEFICIT_CHOICES.find((choice) => Number(choice) === numeric);
-    return match ?? DEFAULT_DAILY_DEFICIT_CHOICE;
-}
 
 /**
  * Parse a Postgres DATE-ish string into a local Date at midnight.
@@ -531,7 +523,7 @@ const GoalEditor: React.FC<{
 
     const normalizedInitialDailyDeficitAbs = useMemo(() => {
         if (initialGoalMode === 'maintain') return 0;
-        return Number(normalizeDailyDeficitChoice(initialDailyDeficit));
+        return normalizeDailyDeficitChoiceAbsValue(initialDailyDeficit);
     }, [initialDailyDeficit, initialGoalMode]);
 
     const [goalMode, setGoalMode] = useState<GoalMode>(initialGoalMode);
@@ -565,7 +557,7 @@ const GoalEditor: React.FC<{
 
     const dailyDeficitValue = useMemo(() => {
         if (dailyDeficitInput !== null) return dailyDeficitInput;
-        return normalizeDailyDeficitChoice(initialDailyDeficit);
+        return normalizeDailyDeficitChoiceAbsValue(initialDailyDeficit).toString();
     }, [dailyDeficitInput, initialDailyDeficit]);
 
     const hasChanges = useMemo(() => {
@@ -702,7 +694,7 @@ const GoalEditor: React.FC<{
                                 setAlert(null);
                             }}
                         >
-                            {DAILY_DEFICIT_CHOICES.map((val) => (
+                            {DAILY_DEFICIT_CHOICE_STRINGS.map((val) => (
                                 <MenuItem key={val} value={val}>
                                     {goalMode === 'gain' ? '+' : '-'}
                                     {val} Calories/day
