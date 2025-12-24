@@ -1,7 +1,7 @@
 import React from 'react';
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/useAuth';
-import { CircularProgress, Box, Alert } from '@mui/material';
+import { CircularProgress, Box, Alert, Button } from '@mui/material';
 import { useUserProfileQuery } from '../queries/userProfile';
 
 const ProtectedRoute: React.FC = () => {
@@ -37,7 +37,16 @@ const ProtectedRoute: React.FC = () => {
         if (profileQuery.isError) {
             return (
                 <Box sx={{ maxWidth: 480, mx: 'auto', mt: 4 }}>
-                    <Alert severity="error">Unable to load profile. Please try again.</Alert>
+                    <Alert
+                        severity="error"
+                        action={
+                            <Button color="inherit" size="small" onClick={() => void profileQuery.refetch()}>
+                                Retry
+                            </Button>
+                        }
+                    >
+                        Unable to load profile. Please try again.
+                    </Alert>
                 </Box>
             );
         }
