@@ -87,7 +87,8 @@ const CalorieTargetBanner: React.FC<Props> = ({ consumedCalories, selectedDateLa
     const deficit = calorieSummary.deficit;
     const dailyTarget = calorieSummary.dailyCalorieTarget;
 
-    const remainingCalories = hasTarget && hasConsumedCalories ? Math.round(dailyTarget - consumedCalories) : null;
+    const remainingCalories =
+        typeof dailyTarget === 'number' && hasConsumedCalories ? Math.round(dailyTarget - consumedCalories) : null;
     const isOverTarget = remainingCalories !== null && remainingCalories < 0;
 
     const activityDelta =

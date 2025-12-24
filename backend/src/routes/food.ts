@@ -5,6 +5,17 @@ import { getSafeUtcTodayDateOnlyInTimeZone, parseLocalDateOnly } from '../utils/
 
 const router = express.Router();
 
+const MEAL_PERIODS = [
+    'Breakfast',
+    'Morning Snack',
+    'Lunch',
+    'Afternoon Snack',
+    'Dinner',
+    'Evening Snack'
+] as const;
+
+type MealPeriod = (typeof MEAL_PERIODS)[number];
+
 const isAuthenticated = (req: express.Request, res: express.Response, next: express.NextFunction) => {
     if (req.isAuthenticated()) {
         return next();
@@ -13,6 +24,39 @@ const isAuthenticated = (req: express.Request, res: express.Response, next: expr
 };
 
 router.use(isAuthenticated);
+
+/**
+ * Return true when a value matches the supported meal period labels.
+ */
+function isMealPeriod(value: unknown): value is MealPeriod {
+    return typeof value === 'string' && MEAL_PERIODS.includes(value as MealPeriod);
+}
+
+/**
+ * Parse an integer ID from a route param.
+ */
+function parseIdParam(value: unknown): number | null {
+    const numeric = typeof value === 'number' ? value : typeof value === 'string' ? Number(value) : Number.NaN;
+    if (!Number.isFinite(numeric) || !Number.isInteger(numeric) || numeric <= 0) {
+        return null;
+    }
+    return numeric;
+}
+
+/**
+ * Parse a calories field into a non-negative integer.
+ */
+function parseCalories(value: unknown): number | null {
+    const numeric = typeof value === 'number' ? value : typeof value === 'string' ? parseInt(value, 10) : Number.NaN;
+    if (!Number.isFinite(numeric)) {
+        return null;
+    }
+    const parsed = Math.trunc(numeric);
+    if (parsed < 0) {
+        return null;
+    }
+    return parsed;
+}
 
 /**
  * Prefer an explicit language code, otherwise fall back to the request locale hint.
@@ -130,6 +174,83 @@ router.post('/', async (req, res) => {
             }
         });
         res.json(log);
+    } catch (err) {
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+router.patch('/:id', async (req, res) => {
+    const user = req.user as any;
+    const id = parseIdParam(req.params.id);
+    if (id === null) {
+        return res.status(400).json({ message: 'Invalid food log id' });
+    }
+
+    const { name, calories, meal_period } = req.body;
+
+    const updateData: Partial<{ name: string; calories: number; meal_period: MealPeriod }> = {};
+
+    if (name !== undefined) {
+        if (typeof name !== 'string' || !name.trim()) {
+            return res.status(400).json({ message: 'Invalid name' });
+        }
+        updateData.name = name.trim();
+    }
+
+    if (calories !== undefined) {
+        const parsedCalories = parseCalories(calories);
+        if (parsedCalories === null) {
+            return res.status(400).json({ message: 'Invalid calories' });
+        }
+        updateData.calories = parsedCalories;
+    }
+
+    if (meal_period !== undefined) {
+        if (!isMealPeriod(meal_period)) {
+            return res.status(400).json({ message: 'Invalid meal_period' });
+        }
+        updateData.meal_period = meal_period;
+    }
+
+    if (Object.keys(updateData).length === 0) {
+        return res.status(400).json({ message: 'No fields to update' });
+    }
+
+    try {
+        const updateResult = await prisma.foodLog.updateMany({
+            where: { id, user_id: user.id },
+            data: updateData
+        });
+
+        if (updateResult.count === 0) {
+            return res.status(404).json({ message: 'Food log not found' });
+        }
+
+        const updated = await prisma.foodLog.findFirst({ where: { id, user_id: user.id } });
+        if (!updated) {
+            return res.status(404).json({ message: 'Food log not found' });
+        }
+
+        res.json(updated);
+    } catch (err) {
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+router.delete('/:id', async (req, res) => {
+    const user = req.user as any;
+    const id = parseIdParam(req.params.id);
+    if (id === null) {
+        return res.status(400).json({ message: 'Invalid food log id' });
+    }
+
+    try {
+        const deleteResult = await prisma.foodLog.deleteMany({ where: { id, user_id: user.id } });
+        if (deleteResult.count === 0) {
+            return res.status(404).json({ message: 'Food log not found' });
+        }
+
+        res.status(204).send();
     } catch (err) {
         res.status(500).json({ message: 'Server error' });
     }

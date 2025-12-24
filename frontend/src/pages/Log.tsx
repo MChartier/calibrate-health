@@ -7,6 +7,7 @@ import {
     DialogActions,
     DialogContent,
     DialogTitle,
+    Grid,
     Paper,
     TextField,
     Typography
@@ -20,12 +21,14 @@ import axios from 'axios';
 import WeightEntryForm from '../components/WeightEntryForm';
 import FoodEntryForm from '../components/FoodEntryForm';
 import FoodLogMeals from '../components/FoodLogMeals';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import CalorieTargetBanner from '../components/CalorieTargetBanner';
+import LogSummaryCard from '../components/LogSummaryCard';
 import { useAuth } from '../context/useAuth';
 import { formatDateToLocalDateString } from '../utils/date';
 
 const Log: React.FC = () => {
+    const queryClient = useQueryClient();
     const { user } = useAuth();
     const timeZone = user?.timezone?.trim() || Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
     const today = useMemo(() => formatDateToLocalDateString(new Date(), timeZone), [timeZone]);
@@ -106,28 +109,35 @@ const Log: React.FC = () => {
 
             <CalorieTargetBanner consumedCalories={totalCalories} selectedDateLabel={selectedDateLabel} />
 
-            {!weightQuery.isLoading && !hasWeighIn && (
-                <Alert
-                    severity="info"
-                    sx={{ mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 2 }}
-                    action={
-                        <Button color="primary" variant="contained" onClick={() => setIsWeightDialogOpen(true)}>
-                            Add weigh-in
-                        </Button>
-                    }
-                >
-                    <Box>
-                        <Typography variant="subtitle1">No weigh-in logged for this day</Typography>
-                        <Typography variant="body2" color="text.secondary">
-                            Add your weight to keep progress and calorie math up to date.
-                        </Typography>
-                    </Box>
-                </Alert>
-            )}
+            <Grid container spacing={3} alignItems="stretch">
+                <Grid size={{ xs: 12, md: 5 }} sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    <LogSummaryCard date={selectedDate} />
+                    {!weightQuery.isLoading && !hasWeighIn ? (
+                        <Alert
+                            severity="info"
+                            sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 2 }}
+                            action={
+                                <Button color="primary" variant="contained" onClick={() => setIsWeightDialogOpen(true)}>
+                                    Add weigh-in
+                                </Button>
+                            }
+                        >
+                            <Box>
+                                <Typography variant="subtitle1">No weigh-in logged for this day</Typography>
+                                <Typography variant="body2" color="text.secondary">
+                                    Add your weight to keep progress and calorie math up to date.
+                                </Typography>
+                            </Box>
+                        </Alert>
+                    ) : null}
+                </Grid>
 
-            <Paper sx={{ p: 2 }}>
-                <FoodLogMeals logs={foodQuery.data ?? []} />
-            </Paper>
+                <Grid size={{ xs: 12, md: 7 }} sx={{ display: 'flex' }}>
+                    <Paper sx={{ p: 2, width: '100%' }}>
+                        <FoodLogMeals logs={foodQuery.data ?? []} />
+                    </Paper>
+                </Grid>
+            </Grid>
 
             <SpeedDial
                 ariaLabel="Add entry"
@@ -155,7 +165,7 @@ const Log: React.FC = () => {
                         <FoodEntryForm
                             date={selectedDate}
                             onSuccess={() => {
-                                void foodQuery.refetch();
+                                void queryClient.invalidateQueries({ queryKey: ['food'] });
                                 handleCloseFoodDialog();
                             }}
                         />
@@ -173,8 +183,8 @@ const Log: React.FC = () => {
                         <WeightEntryForm
                             date={selectedDate}
                             onSuccess={() => {
-                                void foodQuery.refetch();
-                                void weightQuery.refetch();
+                                void queryClient.invalidateQueries({ queryKey: ['metrics'] });
+                                void queryClient.invalidateQueries({ queryKey: ['profile-summary'] });
                                 handleCloseWeightDialog();
                             }}
                         />
