@@ -24,6 +24,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import LogSummaryCard from '../components/LogSummaryCard';
 import { useAuth } from '../context/useAuth';
 import { formatDateToLocalDateString } from '../utils/date';
+import type { MealPeriod } from '../types/mealPeriod';
 
 const Log: React.FC = () => {
     const queryClient = useQueryClient();
@@ -36,7 +37,7 @@ const Log: React.FC = () => {
 
     type FoodLogEntry = {
         id: number;
-        meal_period: string;
+        meal_period: MealPeriod;
         name: string;
         calories: number;
     };

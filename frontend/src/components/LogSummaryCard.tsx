@@ -6,10 +6,11 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/useAuth';
 import { formatDateToLocalDateString } from '../utils/date';
+import type { MealPeriod } from '../types/mealPeriod';
 
 type FoodLogEntry = {
     id: number;
-    meal_period: string;
+    meal_period: MealPeriod;
     name: string;
     calories: number;
 };

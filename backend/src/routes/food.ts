@@ -1,20 +1,10 @@
 import express from 'express';
 import prisma from '../config/database';
 import { getFoodDataProvider } from '../services/foodData';
+import { MealPeriod } from '@prisma/client';
 import { getSafeUtcTodayDateOnlyInTimeZone, parseLocalDateOnly } from '../utils/date';
 
 const router = express.Router();
-
-const MEAL_PERIODS = [
-    'Breakfast',
-    'Morning Snack',
-    'Lunch',
-    'Afternoon Snack',
-    'Dinner',
-    'Evening Snack'
-] as const;
-
-type MealPeriod = (typeof MEAL_PERIODS)[number];
 
 const isAuthenticated = (req: express.Request, res: express.Response, next: express.NextFunction) => {
     if (req.isAuthenticated()) {
@@ -25,12 +15,25 @@ const isAuthenticated = (req: express.Request, res: express.Response, next: expr
 
 router.use(isAuthenticated);
 
+const MEAL_PERIOD_VALUES = new Set<string>(Object.values(MealPeriod));
+
 /**
- * Return true when a value matches the supported meal period labels.
+ * Parse and validate a meal period identifier coming from API requests.
+ *
+ * `FoodLog.meal_period` is stored as a Prisma/Postgres enum. We accept only the
+ * canonical enum identifiers so data stays consistent and the UI doesn't need
+ * to alias/guess.
  */
-function isMealPeriod(value: unknown): value is MealPeriod {
-    return typeof value === 'string' && MEAL_PERIODS.includes(value as MealPeriod);
-}
+const parseMealPeriod = (value: unknown): MealPeriod | null => {
+    if (typeof value !== 'string') {
+        return null;
+    }
+    const trimmed = value.trim();
+    if (!MEAL_PERIOD_VALUES.has(trimmed)) {
+        return null;
+    }
+    return trimmed as MealPeriod;
+};
 
 /**
  * Parse an integer ID from a route param.
@@ -142,6 +145,11 @@ router.post('/', async (req, res) => {
     const user = req.user as any;
     const { name, calories, meal_period, date } = req.body;
     try {
+        const parsedMealPeriod = parseMealPeriod(meal_period);
+        if (!parsedMealPeriod) {
+            return res.status(400).json({ message: 'Invalid meal period' });
+        }
+
         let local_date: Date;
         if (date === undefined || date === null || (typeof date === 'string' && date.trim().length === 0)) {
             local_date = getSafeUtcTodayDateOnlyInTimeZone(user.timezone);
@@ -168,7 +176,7 @@ router.post('/', async (req, res) => {
                 user_id: user.id,
                 name,
                 calories: caloriesValue,
-                meal_period,
+                meal_period: parsedMealPeriod,
                 date: entryTimestamp,
                 local_date
             }
@@ -206,10 +214,11 @@ router.patch('/:id', async (req, res) => {
     }
 
     if (meal_period !== undefined) {
-        if (!isMealPeriod(meal_period)) {
-            return res.status(400).json({ message: 'Invalid meal_period' });
+        const parsedMealPeriod = parseMealPeriod(meal_period);
+        if (!parsedMealPeriod) {
+            return res.status(400).json({ message: 'Invalid meal period' });
         }
-        updateData.meal_period = meal_period;
+        updateData.meal_period = parsedMealPeriod;
     }
 
     if (Object.keys(updateData).length === 0) {

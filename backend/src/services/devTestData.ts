@@ -1,6 +1,6 @@
 import bcrypt from 'bcryptjs';
 import prisma from '../config/database';
-import { ActivityLevel, HeightUnit, Sex, WeightUnit } from '@prisma/client';
+import { ActivityLevel, HeightUnit, MealPeriod, Sex, WeightUnit } from '@prisma/client';
 import { formatDateToLocalDateString, normalizeToUtcDateOnly } from '../utils/date';
 
 const TEST_USER_EMAIL = 'test@cal.io';
@@ -13,19 +13,19 @@ const TEST_USER_WEIGHT_GRAMS = 82000;
 const TEST_GOAL_TARGET_WEIGHT_GRAMS = 76000;
 
 type MealTemplate = {
-  mealPeriod: string;
+  mealPeriod: MealPeriod;
   name: string;
   calories: number;
   hour: number;
 };
 
 const MEAL_TEMPLATES: MealTemplate[] = [
-  { mealPeriod: 'Breakfast', name: 'Spinach omelet', calories: 320, hour: 7 },
-  { mealPeriod: 'Morning Snack', name: 'Apple with peanut butter', calories: 180, hour: 10 },
-  { mealPeriod: 'Lunch', name: 'Turkey sandwich', calories: 520, hour: 13 },
-  { mealPeriod: 'Afternoon Snack', name: 'Protein shake', calories: 210, hour: 16 },
-  { mealPeriod: 'Dinner', name: 'Chicken stir-fry', calories: 650, hour: 19 },
-  { mealPeriod: 'Evening Snack', name: 'Dark chocolate square', calories: 120, hour: 21 },
+  { mealPeriod: MealPeriod.BREAKFAST, name: 'Spinach omelet', calories: 320, hour: 7 },
+  { mealPeriod: MealPeriod.MORNING_SNACK, name: 'Apple with peanut butter', calories: 180, hour: 10 },
+  { mealPeriod: MealPeriod.LUNCH, name: 'Turkey sandwich', calories: 520, hour: 13 },
+  { mealPeriod: MealPeriod.AFTERNOON_SNACK, name: 'Protein shake', calories: 210, hour: 16 },
+  { mealPeriod: MealPeriod.DINNER, name: 'Chicken stir-fry', calories: 650, hour: 19 },
+  { mealPeriod: MealPeriod.EVENING_SNACK, name: 'Dark chocolate square', calories: 120, hour: 21 },
 ];
 
 /**
@@ -129,7 +129,7 @@ const buildMealLogsForDay = (
   user_id: number;
   date: Date;
   local_date: Date;
-  meal_period: string;
+  meal_period: MealPeriod;
   name: string;
   calories: number;
 }> => {

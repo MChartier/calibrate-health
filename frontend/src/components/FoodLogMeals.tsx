@@ -33,40 +33,39 @@ import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import axios from 'axios';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-
-type MealKey =
-    | 'Breakfast'
-    | 'Morning Snack'
-    | 'Lunch'
-    | 'Afternoon Snack'
-    | 'Dinner'
-    | 'Evening Snack';
+import { MEAL_PERIOD_LABELS, MEAL_PERIOD_ORDER, type MealPeriod } from '../types/mealPeriod';
 
 type FoodLogEntry = {
     id: number | string;
-    meal_period?: string;
+    meal_period?: MealPeriod;
     name?: string;
     calories?: number;
 };
 
-const MEALS: Array<{ key: MealKey; label: string; aliases: string[]; icon: React.ReactNode }> = [
-    { key: 'Breakfast', label: 'Breakfast', aliases: ['Breakfast'], icon: <EggAltIcon htmlColor="#ff9800" /> },
-    { key: 'Morning Snack', label: 'Morning Snack', aliases: ['Morning Snack', 'Morning'], icon: <BakeryDiningIcon htmlColor="#4caf50" /> },
-    { key: 'Lunch', label: 'Lunch', aliases: ['Lunch'], icon: <LunchDiningIcon htmlColor="#3f51b5" /> },
-    { key: 'Afternoon Snack', label: 'Afternoon Snack', aliases: ['Afternoon Snack', 'Afternoon'], icon: <IcecreamIcon htmlColor="#8bc34a" /> },
-    { key: 'Dinner', label: 'Dinner', aliases: ['Dinner'], icon: <DinnerDiningIcon htmlColor="#9c27b0" /> },
-    { key: 'Evening Snack', label: 'Evening Snack', aliases: ['Evening Snack', 'Evening'], icon: <NightlifeIcon htmlColor="#e91e63" /> }
-];
+const MEAL_ICONS: Record<MealPeriod, React.ReactNode> = {
+    BREAKFAST: <EggAltIcon htmlColor="#ff9800" />,
+    MORNING_SNACK: <BakeryDiningIcon htmlColor="#4caf50" />,
+    LUNCH: <LunchDiningIcon htmlColor="#3f51b5" />,
+    AFTERNOON_SNACK: <IcecreamIcon htmlColor="#8bc34a" />,
+    DINNER: <DinnerDiningIcon htmlColor="#9c27b0" />,
+    EVENING_SNACK: <NightlifeIcon htmlColor="#e91e63" />
+};
 
-function normalizeMealPeriod(value: unknown): MealKey | null {
+const MEALS: Array<{ key: MealPeriod; label: string; icon: React.ReactNode }> = MEAL_PERIOD_ORDER.map((key) => ({
+    key,
+    label: MEAL_PERIOD_LABELS[key],
+    icon: MEAL_ICONS[key]
+}));
+
+const MEAL_PERIOD_SET = new Set<MealPeriod>(MEAL_PERIOD_ORDER);
+
+/**
+ * Return a validated meal period (or null) so the UI can safely group entries.
+ */
+function normalizeMealPeriod(value: unknown): MealPeriod | null {
     if (typeof value !== 'string') return null;
-    const trimmed = value.trim();
-    for (const meal of MEALS) {
-        if (meal.aliases.includes(trimmed)) {
-            return meal.key;
-        }
-    }
-    return null;
+    const trimmed = value.trim() as MealPeriod;
+    return MEAL_PERIOD_SET.has(trimmed) ? trimmed : null;
 }
 
 function sumCalories(entries: FoodLogEntry[]): number {
@@ -89,13 +88,13 @@ const FoodLogMeals: React.FC<{ logs: FoodLogEntry[] }> = ({ logs }) => {
     const queryClient = useQueryClient();
 
     const grouped = useMemo(() => {
-        const groups: Record<MealKey, FoodLogEntry[]> = {
-            Breakfast: [],
-            'Morning Snack': [],
-            Lunch: [],
-            'Afternoon Snack': [],
-            Dinner: [],
-            'Evening Snack': []
+        const groups: Record<MealPeriod, FoodLogEntry[]> = {
+            BREAKFAST: [],
+            MORNING_SNACK: [],
+            LUNCH: [],
+            AFTERNOON_SNACK: [],
+            DINNER: [],
+            EVENING_SNACK: []
         };
 
         for (const log of Array.isArray(logs) ? logs : []) {
@@ -107,25 +106,25 @@ const FoodLogMeals: React.FC<{ logs: FoodLogEntry[] }> = ({ logs }) => {
         return groups;
     }, [logs]);
 
-    const [expanded, setExpanded] = useState<Record<MealKey, boolean>>({
-        Breakfast: true,
-        'Morning Snack': true,
-        Lunch: true,
-        'Afternoon Snack': true,
-        Dinner: true,
-        'Evening Snack': true
+    const [expanded, setExpanded] = useState<Record<MealPeriod, boolean>>({
+        BREAKFAST: true,
+        MORNING_SNACK: true,
+        LUNCH: true,
+        AFTERNOON_SNACK: true,
+        DINNER: true,
+        EVENING_SNACK: true
     });
 
-    const previousCountsRef = useRef<Record<MealKey, number> | null>(null);
+    const previousCountsRef = useRef<Record<MealPeriod, number> | null>(null);
 
     useEffect(() => {
-        const counts: Record<MealKey, number> = {
-            Breakfast: grouped.Breakfast.length,
-            'Morning Snack': grouped['Morning Snack'].length,
-            Lunch: grouped.Lunch.length,
-            'Afternoon Snack': grouped['Afternoon Snack'].length,
-            Dinner: grouped.Dinner.length,
-            'Evening Snack': grouped['Evening Snack'].length
+        const counts: Record<MealPeriod, number> = {
+            BREAKFAST: grouped.BREAKFAST.length,
+            MORNING_SNACK: grouped.MORNING_SNACK.length,
+            LUNCH: grouped.LUNCH.length,
+            AFTERNOON_SNACK: grouped.AFTERNOON_SNACK.length,
+            DINNER: grouped.DINNER.length,
+            EVENING_SNACK: grouped.EVENING_SNACK.length
         };
 
         const previousCounts = previousCountsRef.current;
@@ -149,37 +148,37 @@ const FoodLogMeals: React.FC<{ logs: FoodLogEntry[] }> = ({ logs }) => {
 
     const handleExpandAll = () => {
         setExpanded({
-            Breakfast: true,
-            'Morning Snack': true,
-            Lunch: true,
-            'Afternoon Snack': true,
-            Dinner: true,
-            'Evening Snack': true
+            BREAKFAST: true,
+            MORNING_SNACK: true,
+            LUNCH: true,
+            AFTERNOON_SNACK: true,
+            DINNER: true,
+            EVENING_SNACK: true
         });
     };
 
     const handleCollapseAll = () => {
         setExpanded({
-            Breakfast: false,
-            'Morning Snack': false,
-            Lunch: false,
-            'Afternoon Snack': false,
-            Dinner: false,
-            'Evening Snack': false
+            BREAKFAST: false,
+            MORNING_SNACK: false,
+            LUNCH: false,
+            AFTERNOON_SNACK: false,
+            DINNER: false,
+            EVENING_SNACK: false
         });
     };
 
     const [editEntry, setEditEntry] = useState<FoodLogEntry | null>(null);
     const [editName, setEditName] = useState('');
     const [editCalories, setEditCalories] = useState('');
-    const [editMealPeriod, setEditMealPeriod] = useState<MealKey>('Breakfast');
+    const [editMealPeriod, setEditMealPeriod] = useState<MealPeriod>('BREAKFAST');
     const [editError, setEditError] = useState<string | null>(null);
 
     const [deleteEntry, setDeleteEntry] = useState<FoodLogEntry | null>(null);
     const [deleteError, setDeleteError] = useState<string | null>(null);
 
     const updateMutation = useMutation({
-        mutationFn: async (vars: { id: number | string; data: { name: string; calories: number; meal_period: MealKey } }) => {
+        mutationFn: async (vars: { id: number | string; data: { name: string; calories: number; meal_period: MealPeriod } }) => {
             const res = await axios.patch(`/api/food/${encodeURIComponent(String(vars.id))}`, vars.data);
             return res.data;
         },
@@ -201,7 +200,7 @@ const FoodLogMeals: React.FC<{ logs: FoodLogEntry[] }> = ({ logs }) => {
         setEditEntry(entry);
         setEditName(typeof entry.name === 'string' ? entry.name : '');
         setEditCalories(typeof entry.calories === 'number' ? String(entry.calories) : '');
-        setEditMealPeriod(normalizeMealPeriod(entry.meal_period) ?? 'Breakfast');
+        setEditMealPeriod(normalizeMealPeriod(entry.meal_period) ?? 'BREAKFAST');
         setEditError(null);
     };
 
@@ -368,7 +367,7 @@ const FoodLogMeals: React.FC<{ logs: FoodLogEntry[] }> = ({ logs }) => {
                                 labelId="food-log-meal-period-label"
                                 label="Meal"
                                 value={editMealPeriod}
-                                onChange={(e) => setEditMealPeriod(e.target.value as MealKey)}
+                                onChange={(e) => setEditMealPeriod(e.target.value as MealPeriod)}
                             >
                                 {MEALS.map((meal) => (
                                     <MenuItem key={meal.key} value={meal.key}>

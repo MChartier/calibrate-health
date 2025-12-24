@@ -28,6 +28,7 @@ import BarcodeScannerDialog from './BarcodeScannerDialog';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import FoodSearchResultsList from './FoodSearchResultsList';
 import type { NormalizedFoodItem } from '../types/food';
+import { MEAL_PERIOD_LABELS, MEAL_PERIOD_ORDER, type MealPeriod } from '../types/mealPeriod';
 
 type Props = {
     onSuccess?: () => void;
@@ -43,14 +44,6 @@ type FoodSearchParams = {
     barcode?: string;
 };
 
-type MealPeriod =
-    | 'Breakfast'
-    | 'Morning Snack'
-    | 'Lunch'
-    | 'Afternoon Snack'
-    | 'Dinner'
-    | 'Evening Snack';
-
 /**
  * Choose a sensible default meal period based on the current local time.
  * Thresholds:
@@ -64,12 +57,12 @@ type MealPeriod =
 function getDefaultMealPeriodForTime(now: Date): MealPeriod {
     const minutesSinceMidnight = now.getHours() * 60 + now.getMinutes();
 
-    if (minutesSinceMidnight >= 21 * 60) return 'Evening Snack';
-    if (minutesSinceMidnight >= 16 * 60 + 30) return 'Dinner';
-    if (minutesSinceMidnight >= 14 * 60) return 'Afternoon Snack';
-    if (minutesSinceMidnight >= 11 * 60 + 30) return 'Lunch';
-    if (minutesSinceMidnight >= 9 * 60) return 'Morning Snack';
-    return 'Breakfast';
+    if (minutesSinceMidnight >= 21 * 60) return 'EVENING_SNACK';
+    if (minutesSinceMidnight >= 16 * 60 + 30) return 'DINNER';
+    if (minutesSinceMidnight >= 14 * 60) return 'AFTERNOON_SNACK';
+    if (minutesSinceMidnight >= 11 * 60 + 30) return 'LUNCH';
+    if (minutesSinceMidnight >= 9 * 60) return 'MORNING_SNACK';
+    return 'BREAKFAST';
 }
 
 /**
@@ -120,14 +113,20 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
 
     const entryLocalDate = typeof date === 'string' && date.trim().length > 0 ? date.trim() : undefined;
 
-    const mealOptions = [
-        { value: 'Breakfast', label: 'Breakfast', icon: <EggAltIcon htmlColor="#ff9800" /> },
-        { value: 'Morning Snack', label: 'Morning Snack', icon: <BakeryDiningIcon htmlColor="#4caf50" /> },
-        { value: 'Lunch', label: 'Lunch', icon: <LunchDiningIcon htmlColor="#3f51b5" /> },
-        { value: 'Afternoon Snack', label: 'Afternoon Snack', icon: <IcecreamIcon htmlColor="#8bc34a" /> },
-        { value: 'Dinner', label: 'Dinner', icon: <DinnerDiningIcon htmlColor="#9c27b0" /> },
-        { value: 'Evening Snack', label: 'Evening Snack', icon: <NightlifeIcon htmlColor="#e91e63" /> }
-    ];
+    const mealIcons: Record<MealPeriod, React.ReactNode> = {
+        BREAKFAST: <EggAltIcon htmlColor="#ff9800" />,
+        MORNING_SNACK: <BakeryDiningIcon htmlColor="#4caf50" />,
+        LUNCH: <LunchDiningIcon htmlColor="#3f51b5" />,
+        AFTERNOON_SNACK: <IcecreamIcon htmlColor="#8bc34a" />,
+        DINNER: <DinnerDiningIcon htmlColor="#9c27b0" />,
+        EVENING_SNACK: <NightlifeIcon htmlColor="#e91e63" />
+    };
+
+    const mealOptions = MEAL_PERIOD_ORDER.map((value) => ({
+        value,
+        label: MEAL_PERIOD_LABELS[value],
+        icon: mealIcons[value]
+    }));
 
     const selectedItem = useMemo(
         () => searchResults.find((item) => item.id === selectedItemId) || null,
