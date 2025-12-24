@@ -21,16 +21,25 @@ import { validateGoalWeights } from '../utils/goalValidation';
 import { formatDateToLocalDateString } from '../utils/date';
 import TimeZonePicker from '../components/TimeZonePicker';
 import {
+    parseUnitPreferenceKey,
+    resolveUnitPreferenceKey,
+    type UnitPreferenceKey
+} from '../utils/unitPreferences';
+import {
     DAILY_DEFICIT_CHOICE_STRINGS,
     DEFAULT_DAILY_DEFICIT_CHOICE_STRING,
     normalizeDailyDeficitChoiceAbsValue
 } from '../../../shared/goalDeficit';
 
 const Onboarding: React.FC = () => {
-    const { user } = useAuth();
+    const { user, updateProfile, updateUnitPreferences } = useAuth();
     const navigate = useNavigate();
 
-    const [weightUnit, setWeightUnit] = useState<'KG' | 'LB'>(user?.weight_unit ?? 'KG');
+    const defaultUnitPreference = useMemo<UnitPreferenceKey>(() => {
+        return resolveUnitPreferenceKey({ weight_unit: user?.weight_unit, height_unit: user?.height_unit });
+    }, [user?.height_unit, user?.weight_unit]);
+    const [unitPreference, setUnitPreference] = useState<UnitPreferenceKey>(defaultUnitPreference);
+    const { heightUnit, weightUnit } = useMemo(() => parseUnitPreferenceKey(unitPreference), [unitPreference]);
     const weightUnitLabel = weightUnit === 'LB' ? 'lb' : 'kg';
 
     const detectedTimezone = useMemo(() => Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC', []);
@@ -39,7 +48,6 @@ const Onboarding: React.FC = () => {
     const [sex, setSex] = useState('');
     const [dob, setDob] = useState('');
     const [activityLevel, setActivityLevel] = useState('');
-    const [heightUnit, setHeightUnit] = useState<'cm' | 'ftin'>('cm');
     const [heightCm, setHeightCm] = useState('');
     const [heightFeet, setHeightFeet] = useState('');
     const [heightInches, setHeightInches] = useState('');
@@ -50,6 +58,10 @@ const Onboarding: React.FC = () => {
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
     const [isSaving, setIsSaving] = useState(false);
+
+    useEffect(() => {
+        setUnitPreference(defaultUnitPreference);
+    }, [defaultUnitPreference]);
 
     type ProfileUpdatePayload = {
         timezone: string | null;
@@ -82,7 +94,7 @@ const Onboarding: React.FC = () => {
     }, [profileQuery.isSuccess, profileQuery.data, navigate]);
 
     const heightFieldsValid = useMemo(() => {
-        if (heightUnit === 'cm') {
+        if (heightUnit === 'CM') {
             return !!heightCm;
         }
         return !!heightFeet || !!heightInches;
@@ -91,6 +103,10 @@ const Onboarding: React.FC = () => {
     const handleSave = async () => {
         setError('');
         setSuccess('');
+        if (!user) {
+            setError('You must be logged in to continue.');
+            return;
+        }
 
         const startWeightNumber = Number(currentWeight);
         const targetWeightNumber = Number(goalWeight);
@@ -112,16 +128,16 @@ const Onboarding: React.FC = () => {
                 sex: sex || null,
                 activity_level: activityLevel || null
             };
-            if (heightUnit === 'cm') {
+            if (heightUnit === 'CM') {
                 profilePayload.height_cm = heightCm || null;
             } else {
                 profilePayload.height_feet = heightFeet || null;
                 profilePayload.height_inches = heightInches || null;
             }
 
-            await axios.patch('/api/user/profile', profilePayload);
+            await updateProfile(profilePayload);
 
-            await axios.patch('/api/user/preferences', { weight_unit: weightUnit });
+            await updateUnitPreferences({ weight_unit: weightUnit, height_unit: heightUnit });
 
             const deficitValue = goalMode === 'maintain' ? 0 : normalizeDailyDeficitChoiceAbsValue(dailyDeficit);
             const signedDeficit = goalMode === 'gain' ? -Math.abs(deficitValue) : Math.abs(deficitValue);
@@ -162,7 +178,7 @@ const Onboarding: React.FC = () => {
                 Welcome! Let&apos;s set up your targets
             </Typography>
             <Typography color="text.secondary" sx={{ mb: 2 }}>
-                We need a few details to estimate your calories burned and daily target. You can change these later from your profile.
+                We need a few details to estimate your calories burned and daily target. You can change these later from your profile and settings.
             </Typography>
 
             <Paper sx={{ p: 3 }}>
@@ -212,30 +228,20 @@ const Onboarding: React.FC = () => {
                     />
 
                     <FormControl fullWidth required>
-                        <InputLabel>Weight Unit</InputLabel>
+                        <InputLabel>Units</InputLabel>
                         <Select
-                            value={weightUnit}
-                            label="Weight Unit"
-                            onChange={(e) => setWeightUnit(e.target.value as 'KG' | 'LB')}
+                            value={unitPreference}
+                            label="Units"
+                            onChange={(e) => setUnitPreference(e.target.value as UnitPreferenceKey)}
                         >
-                            <MenuItem value="KG">Kilograms (kg)</MenuItem>
-                            <MenuItem value="LB">Pounds (lb)</MenuItem>
+                            <MenuItem value="CM_KG">Metric (cm, kg)</MenuItem>
+                            <MenuItem value="FTIN_LB">Imperial (ft/in, lb)</MenuItem>
+                            <MenuItem value="CM_LB">Mixed (cm, lb)</MenuItem>
+                            <MenuItem value="FTIN_KG">Mixed (ft/in, kg)</MenuItem>
                         </Select>
                     </FormControl>
 
-                    <FormControl fullWidth required>
-                        <InputLabel>Height Units</InputLabel>
-                        <Select
-                            value={heightUnit}
-                            label="Height Units"
-                            onChange={(e) => setHeightUnit(e.target.value as 'cm' | 'ftin')}
-                        >
-                            <MenuItem value="cm">Centimeters</MenuItem>
-                            <MenuItem value="ftin">Feet / Inches</MenuItem>
-                        </Select>
-                    </FormControl>
-
-                    {heightUnit === 'cm' ? (
+                    {heightUnit === 'CM' ? (
                         <TextField
                             label="Height (cm)"
                             type="number"

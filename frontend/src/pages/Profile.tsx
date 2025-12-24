@@ -4,6 +4,7 @@ import {
     Box,
     Button,
     FormControl,
+    Link,
     InputLabel,
     MenuItem,
     Paper,
@@ -14,8 +15,11 @@ import {
 } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
+import { Link as RouterLink } from 'react-router-dom';
 import { activityLevelOptions } from '../constants/activityLevels';
 import TimeZonePicker from '../components/TimeZonePicker';
+import { useAuth } from '../context/useAuth';
+import { getDefaultHeightUnitForWeightUnit } from '../utils/unitPreferences';
 
 type ProfileResponse = {
     profile: {
@@ -64,6 +68,7 @@ function parseHeightFromMillimeters(mm: number): ParsedHeight {
  * Profile is the dedicated page for editing user-specific profile fields used for calorie math.
  */
 const Profile: React.FC = () => {
+    const { user, updateProfile } = useAuth();
     const [profileMessage, setProfileMessage] = useState('');
 
     const [timezone, setTimezone] = useState<string | null>(null);
@@ -72,7 +77,6 @@ const Profile: React.FC = () => {
     const [heightCm, setHeightCm] = useState<string | null>(null);
     const [heightFeet, setHeightFeet] = useState<string | null>(null);
     const [heightInches, setHeightInches] = useState<string | null>(null);
-    const [heightUnit, setHeightUnit] = useState<'cm' | 'ftin'>('cm');
     const [activityLevel, setActivityLevel] = useState<string | null>(null);
 
     const profileQuery = useQuery({
@@ -108,6 +112,12 @@ const Profile: React.FC = () => {
         return parseHeightFromMillimeters(mm);
     }, [profileQuery.data?.profile.height_mm]);
 
+    const heightUnit = useMemo(() => {
+        const weightUnit = user?.weight_unit;
+        if (!weightUnit) return 'CM';
+        return user?.height_unit ?? getDefaultHeightUnitForWeightUnit(weightUnit);
+    }, [user?.height_unit, user?.weight_unit]);
+
     const heightCmValue = useMemo(() => {
         if (heightCm !== null) return heightCm;
         return parsedHeight ? parsedHeight.cm.toString() : '';
@@ -138,14 +148,14 @@ const Profile: React.FC = () => {
                 activity_level: activityValue || null
             };
 
-            if (heightUnit === 'cm') {
+            if (heightUnit === 'CM') {
                 payload.height_cm = heightCmValue || null;
             } else {
                 payload.height_feet = heightFeetValue || null;
                 payload.height_inches = heightInchesValue || null;
             }
 
-            await axios.patch('/api/user/profile', payload);
+            await updateProfile(payload);
 
             setProfileMessage('Profile updated');
             setTimezone(null);
@@ -195,19 +205,7 @@ const Profile: React.FC = () => {
                         </Select>
                     </FormControl>
 
-                    <FormControl fullWidth>
-                        <InputLabel>Height Units</InputLabel>
-                        <Select
-                            value={heightUnit}
-                            label="Height Units"
-                            onChange={(e) => setHeightUnit(e.target.value as 'cm' | 'ftin')}
-                        >
-                            <MenuItem value="cm">Centimeters</MenuItem>
-                            <MenuItem value="ftin">Feet / Inches</MenuItem>
-                        </Select>
-                    </FormControl>
-
-                    {heightUnit === 'cm' ? (
+                    {heightUnit === 'CM' ? (
                         <TextField
                             label="Height (cm)"
                             type="number"
@@ -236,6 +234,14 @@ const Profile: React.FC = () => {
                             />
                         </Box>
                     )}
+
+                    <Typography variant="caption" color="text.secondary">
+                        Units are configured in{' '}
+                        <Link component={RouterLink} to="/settings">
+                            Settings
+                        </Link>
+                        .
+                    </Typography>
 
                     <FormControl fullWidth>
                         <InputLabel>Activity Level</InputLabel>
