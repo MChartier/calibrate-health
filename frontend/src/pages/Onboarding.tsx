@@ -66,7 +66,7 @@ const Onboarding: React.FC = () => {
             const missing = profileQuery.data?.calorieSummary?.missing ?? [];
             const hasGoal = profileQuery.data?.goal_daily_deficit !== null && profileQuery.data?.goal_daily_deficit !== undefined;
             if (missing.length === 0 && hasGoal) {
-                navigate('/settings', { replace: true });
+                navigate('/log', { replace: true });
             }
         }
     }, [profileQuery.isSuccess, profileQuery.data, navigate]);
