@@ -20,13 +20,14 @@ import axios from 'axios';
 import WeightEntryForm from '../components/WeightEntryForm';
 import FoodEntryForm from '../components/FoodEntryForm';
 import FoodLogMeals from '../components/FoodLogMeals';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import LogSummaryCard from '../components/LogSummaryCard';
 import { useAuth } from '../context/useAuth';
 import { formatDateToLocalDateString } from '../utils/date';
 import type { MealPeriod } from '../types/mealPeriod';
 
 const Log: React.FC = () => {
+    const queryClient = useQueryClient();
     const { user } = useAuth();
     const timeZone = user?.timezone?.trim() || Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
     const today = useMemo(() => formatDateToLocalDateString(new Date(), timeZone), [timeZone]);
@@ -110,7 +111,7 @@ const Log: React.FC = () => {
                         <FoodEntryForm
                             date={selectedDate}
                             onSuccess={() => {
-                                void foodQuery.refetch();
+                                void queryClient.invalidateQueries({ queryKey: ['food'] });
                                 handleCloseFoodDialog();
                             }}
                         />
@@ -128,7 +129,8 @@ const Log: React.FC = () => {
                         <WeightEntryForm
                             date={selectedDate}
                             onSuccess={() => {
-                                void foodQuery.refetch();
+                                void queryClient.invalidateQueries({ queryKey: ['metrics'] });
+                                void queryClient.invalidateQueries({ queryKey: ['profile-summary'] });
                                 handleCloseWeightDialog();
                             }}
                         />
