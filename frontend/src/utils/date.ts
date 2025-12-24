@@ -1,44 +1,43 @@
 /**
- * Format a Date as `YYYY-MM-DD` using the provided IANA time zone identifier.
+ * Format a Date into "YYYY-MM-DD" for the supplied IANA time zone.
  *
- * This avoids relying on locale-specific formatting and keeps comparisons (string sort) predictable.
+ * This is used for "local day" semantics (e.g. log grouping) where the calendar date
+ * must be stable across DST and independent of the server's timezone.
  */
-export function formatDateToIsoDateInTimeZone(date: Date, timeZone: string): string {
-    const formatter = new Intl.DateTimeFormat('en-US', {
-        timeZone,
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit'
-    });
+export function formatDateToLocalDateString(date: Date, timeZone: string): string {
+    const tz = timeZone.trim();
 
-    const parts = formatter.formatToParts(date);
-    const year = parts.find((part) => part.type === 'year')?.value;
-    const month = parts.find((part) => part.type === 'month')?.value;
-    const day = parts.find((part) => part.type === 'day')?.value;
+    try {
+        const parts = new Intl.DateTimeFormat('en-US', {
+            timeZone: tz,
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit'
+        }).formatToParts(date);
 
-    if (!year || !month || !day) {
-        throw new Error('Unable to format date');
+        const year = parts.find((part) => part.type === 'year')?.value;
+        const month = parts.find((part) => part.type === 'month')?.value;
+        const day = parts.find((part) => part.type === 'day')?.value;
+
+        if (!year || !month || !day) {
+            throw new Error('Missing date parts');
+        }
+
+        return `${year}-${month}-${day}`;
+    } catch {
+        // Fall back to UTC to keep output deterministic if Intl/timeZone formatting fails.
+        return date.toISOString().slice(0, 10);
     }
-
-    return `${year}-${month}-${day}`;
 }
 
 /**
- * Return today's date in `YYYY-MM-DD` format using the provided time zone.
+ * Return today's local date in `YYYY-MM-DD` format using the provided time zone.
  *
  * When no time zone is supplied, the browser's current zone is used with a UTC fallback.
  */
 export function getTodayIsoDate(timeZone?: string): string {
-    const resolved =
-        timeZone?.trim() ||
-        Intl.DateTimeFormat().resolvedOptions().timeZone ||
-        'UTC';
-
-    try {
-        return formatDateToIsoDateInTimeZone(new Date(), resolved);
-    } catch {
-        return formatDateToIsoDateInTimeZone(new Date(), 'UTC');
-    }
+    const resolved = timeZone?.trim() || Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+    return formatDateToLocalDateString(new Date(), resolved);
 }
 
 /**

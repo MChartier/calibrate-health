@@ -41,7 +41,11 @@ const usePolling =
 const devServerPortEnv = process.env.VITE_DEV_SERVER_PORT
 const devServerPortValue = devServerPortEnv ? Number.parseInt(devServerPortEnv, 10) : Number.NaN
 const devServerPort =
-  Number.isFinite(devServerPortValue) && devServerPortValue > 0 ? devServerPortValue : undefined
+  typeof devServerPortValue === 'number' &&
+  Number.isFinite(devServerPortValue) &&
+  devServerPortValue > 0
+    ? devServerPortValue
+    : undefined
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -50,6 +54,10 @@ export default defineConfig({
     __WORKTREE_NAME__: JSON.stringify(worktreeName),
   },
   server: {
+    fs: {
+      // Allow imports from the monorepo root (e.g. shared utilities used by both client and server).
+      allow: [path.resolve(frontendDir, '..')],
+    },
     host: true,
     port: devServerPort,
     strictPort: devServerPort !== undefined,

@@ -1,19 +1,19 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
     Alert,
     Box,
-    LinearProgress,
-    Skeleton,
-    TextField,
+    Button,
     Dialog,
     DialogActions,
     DialogContent,
     DialogTitle,
-    Paper,
-    Typography,
-    Button,
     IconButton,
-    Tooltip
+    LinearProgress,
+    Paper,
+    Skeleton,
+    TextField,
+    Tooltip,
+    Typography
 } from '@mui/material';
 import SpeedDial from '@mui/material/SpeedDial';
 import SpeedDialAction from '@mui/material/SpeedDialAction';
@@ -27,70 +27,71 @@ import axios from 'axios';
 import WeightEntryForm from '../components/WeightEntryForm';
 import FoodEntryForm from '../components/FoodEntryForm';
 import FoodLogMeals from '../components/FoodLogMeals';
-import { useQuery } from '@tanstack/react-query';
-import CalorieTargetBanner from '../components/CalorieTargetBanner';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import LogSummaryCard from '../components/LogSummaryCard';
 import { useAuth } from '../context/useAuth';
 import { addDaysToIsoDate, getTodayIsoDate } from '../utils/date';
-import { useUserProfileQuery } from '../queries/userProfile';
+import type { MealPeriod } from '../types/mealPeriod';
+
+type FoodLogEntry = {
+    id: number;
+    meal_period: MealPeriod;
+    name: string;
+    calories: number;
+};
+
+type MetricEntry = {
+    id: number;
+    date: string;
+    weight: number;
+};
 
 const Log: React.FC = () => {
+    const queryClient = useQueryClient();
     const { user } = useAuth();
-    const today = getTodayIsoDate(user?.timezone);
+    const today = useMemo(() => getTodayIsoDate(user?.timezone), [user?.timezone]);
     const [selectedDate, setSelectedDate] = useState(today);
     const [isFoodDialogOpen, setIsFoodDialogOpen] = useState(false);
     const [isWeightDialogOpen, setIsWeightDialogOpen] = useState(false);
 
-    type FoodLogEntry = {
-        id: number;
-        meal_period: string;
-        name: string;
-        calories: number;
-    };
+    const effectiveDate = selectedDate > today ? today : selectedDate;
 
     const foodQuery = useQuery({
-        queryKey: ['food', selectedDate],
+        queryKey: ['food', effectiveDate],
         queryFn: async (): Promise<FoodLogEntry[]> => {
-            const res = await axios.get('/api/food?date=' + encodeURIComponent(selectedDate));
+            const res = await axios.get('/api/food?date=' + encodeURIComponent(effectiveDate));
             return Array.isArray(res.data) ? res.data : [];
         }
     });
 
-    const profileQuery = useUserProfileQuery();
-
-    type MetricEntry = {
-        id: number;
-        date: string;
-        weight: number;
-    };
-
-    const metricsQuery = useQuery({
-        queryKey: ['metrics', selectedDate],
-        queryFn: async (): Promise<MetricEntry[]> => {
-            const res = await axios.get('/api/metrics', {
-                params: { start: selectedDate, end: selectedDate }
-            });
-            return Array.isArray(res.data) ? res.data : [];
+    const metricQuery = useQuery({
+        queryKey: ['metrics', effectiveDate],
+        queryFn: async (): Promise<MetricEntry | null> => {
+            const res = await axios.get('/api/metrics', { params: { start: effectiveDate, end: effectiveDate } });
+            const metrics = Array.isArray(res.data) ? (res.data as MetricEntry[]) : [];
+            return metrics[0] ?? null;
         }
     });
 
-    const logs = foodQuery.data ?? [];
-    const totalCalories = logs.reduce((sum, entry) => sum + entry.calories, 0);
-    const dailyTarget = profileQuery.data?.calorieSummary?.dailyCalorieTarget;
-    const hasTarget = typeof dailyTarget === 'number' && Number.isFinite(dailyTarget);
-    const remainingCalories = hasTarget ? Math.round(dailyTarget - totalCalories) : null;
-    const isOver = hasTarget ? totalCalories > dailyTarget : false;
-    const progressPercent = hasTarget ? Math.min((totalCalories / dailyTarget) * 100, 100) : 0;
-    const canGoForward = selectedDate < today;
+    const canGoForward = effectiveDate < today;
 
     const handleCloseFoodDialog = () => setIsFoodDialogOpen(false);
     const handleCloseWeightDialog = () => setIsWeightDialogOpen(false);
 
     return (
         <Box>
-            <Box sx={{ display: 'flex', alignItems: { xs: 'stretch', sm: 'center' }, gap: 2, flexDirection: { xs: 'column', sm: 'row' } }}>
+            <Box
+                sx={{
+                    display: 'flex',
+                    alignItems: { xs: 'stretch', sm: 'center' },
+                    gap: 2,
+                    flexDirection: { xs: 'column', sm: 'row' }
+                }}
+            >
                 <Typography variant="h4" sx={{ flexGrow: 1 }}>
                     Log
                 </Typography>
+
                 <Box
                     sx={{
                         display: 'flex',
@@ -103,7 +104,7 @@ const Log: React.FC = () => {
                     <Tooltip title="Previous day">
                         <IconButton
                             aria-label="Previous day"
-                            onClick={() => setSelectedDate(addDaysToIsoDate(selectedDate, -1))}
+                            onClick={() => setSelectedDate(addDaysToIsoDate(effectiveDate, -1))}
                         >
                             <ChevronLeftIcon />
                         </IconButton>
@@ -112,7 +113,7 @@ const Log: React.FC = () => {
                     <TextField
                         label="Date"
                         type="date"
-                        value={selectedDate}
+                        value={effectiveDate}
                         onChange={(e) => {
                             const nextDate = e.target.value;
                             if (!nextDate) return;
@@ -120,15 +121,18 @@ const Log: React.FC = () => {
                         }}
                         InputLabelProps={{ shrink: true }}
                         inputProps={{ max: today }}
-                        sx={{ width: { xs: 160, sm: 200 } }}
+                        sx={{ width: { xs: '100%', sm: 200 } }}
                     />
 
-                    <Tooltip title={canGoForward ? 'Next day' : 'Next day (disabled)'}>
+                    <Tooltip title="Next day">
                         <span>
                             <IconButton
                                 aria-label="Next day"
+                                onClick={() => {
+                                    const next = addDaysToIsoDate(effectiveDate, 1);
+                                    setSelectedDate(next > today ? today : next);
+                                }}
                                 disabled={!canGoForward}
-                                onClick={() => setSelectedDate(addDaysToIsoDate(selectedDate, 1))}
                             >
                                 <ChevronRightIcon />
                             </IconButton>
@@ -139,8 +143,8 @@ const Log: React.FC = () => {
                         <span>
                             <IconButton
                                 aria-label="Jump to today"
-                                disabled={selectedDate === today}
                                 onClick={() => setSelectedDate(today)}
+                                disabled={effectiveDate === today}
                             >
                                 <TodayIcon />
                             </IconButton>
@@ -149,145 +153,76 @@ const Log: React.FC = () => {
                 </Box>
             </Box>
 
-            <CalorieTargetBanner />
+            <Box
+                sx={{
+                    mt: 2,
+                    display: 'grid',
+                    gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' },
+                    gap: 2,
+                    alignItems: 'stretch'
+                }}
+            >
+                <LogSummaryCard date={effectiveDate} />
 
-            <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 2, mb: 2 }}>
-                <Paper sx={{ p: 2, flex: 1 }}>
-                    <Typography variant="h6" gutterBottom>
-                        Daily Summary
-                    </Typography>
-
-                    {profileQuery.isError ? (
-                        <Alert severity="warning">Unable to load your daily target right now.</Alert>
-                    ) : profileQuery.isLoading ? (
-                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                            <Skeleton width="60%" />
-                            <Skeleton variant="rounded" height={10} />
-                        </Box>
-                    ) : (
-                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
-                                <Typography variant="body2" color="text.secondary">
-                                    Consumed: <strong>{totalCalories}</strong> kcal
-                                </Typography>
-                                <Typography variant="body2" color="text.secondary">
-                                    Target: <strong>{hasTarget ? Math.round(dailyTarget) : '—'}</strong> kcal
-                                </Typography>
-                                <Typography
-                                    variant="body2"
-                                    sx={{
-                                        color: (theme) =>
-                                            isOver ? theme.palette.error.main : theme.palette.text.secondary
-                                    }}
-                                >
-                                    {remainingCalories !== null ? (
-                                        isOver ? (
-                                            <>
-                                                Over: <strong>{Math.abs(remainingCalories)}</strong> kcal
-                                            </>
-                                        ) : (
-                                            <>
-                                                Remaining: <strong>{remainingCalories}</strong> kcal
-                                            </>
-                                        )
-                                    ) : (
-                                        <>
-                                            Remaining: <strong>—</strong>
-                                        </>
-                                    )}
-                                </Typography>
-                            </Box>
-
-                            {hasTarget ? (
-                                <LinearProgress
-                                    variant="determinate"
-                                    value={progressPercent}
-                                    sx={{
-                                        height: 10,
-                                        borderRadius: 6,
-                                        '& .MuiLinearProgress-bar': {
-                                            backgroundColor: (theme) =>
-                                                isOver ? theme.palette.error.main : theme.palette.primary.main
-                                        }
-                                    }}
-                                />
-                            ) : (
-                                <Typography variant="body2" color="text.secondary">
-                                    Complete your profile and goal to unlock daily targets.
-                                </Typography>
-                            )}
-                        </Box>
-                    )}
-                </Paper>
-
-                <Paper sx={{ p: 2, flex: 1 }}>
+                <Paper sx={{ p: 2 }}>
                     <Typography variant="h6" gutterBottom>
                         Weight
                     </Typography>
 
-                    {metricsQuery.isError ? (
+                    {metricQuery.isError ? (
                         <Alert severity="warning">Unable to load your weight entry for this day.</Alert>
-                    ) : metricsQuery.isLoading ? (
+                    ) : metricQuery.isLoading ? (
                         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                             <Skeleton width="50%" />
                             <Skeleton width="30%" />
                         </Box>
                     ) : (
                         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                            {metricsQuery.data?.[0] ? (
+                            {metricQuery.data ? (
                                 <Typography variant="body1">
-                                    <strong>{metricsQuery.data[0].weight}</strong> {user?.weight_unit === 'LB' ? 'lb' : 'kg'}
+                                    <strong>{metricQuery.data.weight}</strong> {user?.weight_unit === 'LB' ? 'lb' : 'kg'}
                                 </Typography>
                             ) : (
                                 <Typography variant="body2" color="text.secondary">
                                     No weigh-in yet for this day.
                                 </Typography>
                             )}
-                            <Button variant="outlined" onClick={() => setIsWeightDialogOpen(true)} sx={{ alignSelf: 'flex-start' }}>
-                                {metricsQuery.data?.[0] ? 'Update weight' : 'Add weight'}
+                            <Button
+                                variant="outlined"
+                                onClick={() => setIsWeightDialogOpen(true)}
+                                sx={{ alignSelf: 'flex-start' }}
+                            >
+                                {metricQuery.data ? 'Update weight' : 'Add weight'}
                             </Button>
                         </Box>
                     )}
                 </Paper>
             </Box>
 
-            <Paper sx={{ p: 2 }}>
+            <Paper sx={{ p: 2, mt: 2 }}>
                 {foodQuery.isError ? (
                     <Alert
                         severity="error"
                         action={
-                            <Button
-                                color="inherit"
-                                size="small"
-                                onClick={() => void foodQuery.refetch()}
-                            >
+                            <Button color="inherit" size="small" onClick={() => void foodQuery.refetch()}>
                                 Retry
                             </Button>
                         }
                     >
                         Unable to load your food log for this day.
                     </Alert>
-                ) : foodQuery.isLoading ? (
-                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                        <Skeleton width="30%" />
-                        <Skeleton variant="rounded" height={44} />
-                        <Skeleton variant="rounded" height={44} />
-                        <Skeleton variant="rounded" height={44} />
-                    </Box>
                 ) : (
-                    <FoodLogMeals date={selectedDate} logs={foodQuery.data ?? []} onChange={() => void foodQuery.refetch()} />
+                    <>
+                        {foodQuery.isFetching && <LinearProgress sx={{ mb: 2 }} />}
+                        <FoodLogMeals logs={foodQuery.data ?? []} />
+                    </>
                 )}
             </Paper>
 
             <SpeedDial
                 ariaLabel="Add entry"
                 icon={<AddIcon />}
-                sx={{
-                    position: 'fixed',
-                    right: 24,
-                    bottom: { xs: 'calc(88px + env(safe-area-inset-bottom))', md: 24 },
-                    zIndex: (t) => t.zIndex.appBar + 1
-                }}
+                sx={{ position: 'fixed', right: 24, bottom: { xs: 'calc(88px + env(safe-area-inset-bottom))', md: 24 } }}
             >
                 <SpeedDialAction
                     key="add-food"
@@ -308,9 +243,9 @@ const Log: React.FC = () => {
                 <DialogContent>
                     <Paper sx={{ p: 2, mt: 1 }}>
                         <FoodEntryForm
-                            date={selectedDate}
+                            date={effectiveDate}
                             onSuccess={() => {
-                                void foodQuery.refetch();
+                                void queryClient.invalidateQueries({ queryKey: ['food'] });
                                 handleCloseFoodDialog();
                             }}
                         />
@@ -326,9 +261,11 @@ const Log: React.FC = () => {
                 <DialogContent>
                     <Paper sx={{ p: 2, mt: 1 }}>
                         <WeightEntryForm
-                            date={selectedDate}
+                            date={effectiveDate}
                             onSuccess={() => {
-                                void metricsQuery.refetch();
+                                void queryClient.invalidateQueries({ queryKey: ['metrics'] });
+                                void queryClient.invalidateQueries({ queryKey: ['user-profile'] });
+                                void queryClient.invalidateQueries({ queryKey: ['profile'] });
                                 handleCloseWeightDialog();
                             }}
                         />

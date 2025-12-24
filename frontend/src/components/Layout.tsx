@@ -1,16 +1,19 @@
 import React from 'react';
 import {
     AppBar,
+    Avatar,
     Box,
     BottomNavigation,
     BottomNavigationAction,
     Divider,
     Drawer,
+    IconButton,
     List,
     ListItemButton,
     ListItemIcon,
     ListItemText,
     Toolbar,
+    Tooltip,
     Typography,
     useMediaQuery
 } from '@mui/material';
@@ -25,6 +28,15 @@ import { useAuth } from '../context/useAuth';
 
 const drawerWidth = 240;
 
+/**
+ * Derive a short, stable label for the user's Avatar when we don't have a profile image.
+ */
+function getAvatarLabel(email?: string) {
+    const trimmed = email?.trim();
+    if (!trimmed) return '?';
+    return trimmed[0].toUpperCase();
+}
+
 const Layout: React.FC = () => {
     const { user, logout, isLoading } = useAuth();
     const theme = useTheme();
@@ -37,6 +49,7 @@ const Layout: React.FC = () => {
 
     const hideNav = location.pathname.startsWith('/onboarding');
     const showAppNav = Boolean(user) && !isLoading && !hideNav;
+    const showProfileShortcut = Boolean(user) && !isLoading && !hideNav;
 
     const handleLogout = async () => {
         await logout();
@@ -60,26 +73,18 @@ const Layout: React.FC = () => {
                         <ListItemText primary="Dashboard" />
                     </ListItemButton>
 
-                    <ListItemButton
-                        selected={location.pathname.startsWith('/log')}
-                        component={RouterLink}
-                        to="/log"
-                    >
+                    <ListItemButton selected={location.pathname.startsWith('/log')} component={RouterLink} to="/log">
                         <ListItemIcon>
                             <ListAltIcon />
                         </ListItemIcon>
                         <ListItemText primary="Log" />
                     </ListItemButton>
 
-                    <ListItemButton
-                        selected={location.pathname.startsWith('/history')}
-                        component={RouterLink}
-                        to="/history"
-                    >
+                    <ListItemButton selected={location.pathname.startsWith('/goals')} component={RouterLink} to="/goals">
                         <ListItemIcon>
                             <ShowChartIcon />
                         </ListItemIcon>
-                        <ListItemText primary="History" />
+                        <ListItemText primary="Goals" />
                     </ListItemButton>
                 </List>
             </Box>
@@ -108,6 +113,16 @@ const Layout: React.FC = () => {
         </Box>
     );
 
+    const navigationValue = location.pathname.startsWith('/dashboard')
+        ? '/dashboard'
+        : location.pathname.startsWith('/log')
+          ? '/log'
+          : location.pathname.startsWith('/goals')
+            ? '/goals'
+            : location.pathname.startsWith('/settings')
+              ? '/settings'
+              : null;
+
     return (
         <Box sx={{ display: 'flex' }}>
             <AppBar position="fixed" sx={{ zIndex: (t) => t.zIndex.drawer + 1 }}>
@@ -116,7 +131,7 @@ const Layout: React.FC = () => {
                         <Typography
                             variant="h6"
                             component={RouterLink}
-                            to="/log"
+                            to="/dashboard"
                             sx={{ color: 'inherit', textDecoration: 'none' }}
                         >
                             cal.io
@@ -140,6 +155,31 @@ const Layout: React.FC = () => {
                             </Box>
                         )}
                     </Box>
+
+                    <Box sx={{ flexGrow: 1 }} />
+
+                    {showProfileShortcut && (
+                        <Tooltip title="Profile">
+                            <IconButton
+                                color="inherit"
+                                onClick={() => navigate('/profile')}
+                                aria-label="Open profile"
+                                sx={{ ml: 1 }}
+                            >
+                                <Avatar
+                                    sx={{
+                                        width: 32,
+                                        height: 32,
+                                        bgcolor: 'rgba(255, 255, 255, 0.2)',
+                                        color: 'inherit',
+                                        fontWeight: 700
+                                    }}
+                                >
+                                    {getAvatarLabel(user?.email)}
+                                </Avatar>
+                            </IconButton>
+                        </Tooltip>
+                    )}
                 </Toolbar>
             </AppBar>
 
@@ -178,17 +218,7 @@ const Layout: React.FC = () => {
                 >
                     <BottomNavigation
                         showLabels
-                        value={
-                            location.pathname.startsWith('/dashboard')
-                                ? '/dashboard'
-                                : location.pathname.startsWith('/log')
-                                  ? '/log'
-                                  : location.pathname.startsWith('/history')
-                                    ? '/history'
-                                    : location.pathname.startsWith('/settings')
-                                      ? '/settings'
-                                      : null
-                        }
+                        value={navigationValue}
                         onChange={(_, next) => {
                             if (typeof next === 'string') {
                                 navigate(next);
@@ -197,7 +227,7 @@ const Layout: React.FC = () => {
                     >
                         <BottomNavigationAction value="/dashboard" label="Dashboard" icon={<DashboardIcon />} />
                         <BottomNavigationAction value="/log" label="Log" icon={<ListAltIcon />} />
-                        <BottomNavigationAction value="/history" label="History" icon={<ShowChartIcon />} />
+                        <BottomNavigationAction value="/goals" label="Goals" icon={<ShowChartIcon />} />
                         <BottomNavigationAction value="/settings" label="Settings" icon={<SettingsIcon />} />
                     </BottomNavigation>
                 </Box>

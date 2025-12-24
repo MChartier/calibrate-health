@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
     Alert,
-    Autocomplete,
     Box,
     Button,
     FormControl,
@@ -17,40 +16,55 @@ import { useAuth } from '../context/useAuth';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { activityLevelOptions } from '../constants/activityLevels';
-import { getBrowserTimeZone, getSupportedTimeZones } from '../utils/timeZone';
-import { getTodayIsoDate } from '../utils/date';
-import { getApiErrorMessage } from '../utils/apiError';
-import { useUserProfileQuery } from '../queries/userProfile';
+import { useQuery } from '@tanstack/react-query';
+import { validateGoalWeights } from '../utils/goalValidation';
+import { formatDateToLocalDateString } from '../utils/date';
+import TimeZonePicker from '../components/TimeZonePicker';
+import {
+    parseUnitPreferenceKey,
+    resolveUnitPreferenceKey,
+    type UnitPreferenceKey
+} from '../utils/unitPreferences';
+import {
+    DAILY_DEFICIT_CHOICE_STRINGS,
+    DEFAULT_DAILY_DEFICIT_CHOICE_STRING,
+    normalizeDailyDeficitChoiceAbsValue
+} from '../../../shared/goalDeficit';
 
 const Onboarding: React.FC = () => {
-    const { user, updateTimezone, updateWeightUnit } = useAuth();
+    const { user, updateProfile, updateUnitPreferences } = useAuth();
     const navigate = useNavigate();
 
-    const [weightUnit, setWeightUnit] = useState<'KG' | 'LB'>(user?.weight_unit ?? 'KG');
+    const defaultUnitPreference = useMemo<UnitPreferenceKey>(() => {
+        return resolveUnitPreferenceKey({ weight_unit: user?.weight_unit, height_unit: user?.height_unit });
+    }, [user?.height_unit, user?.weight_unit]);
+    const [unitPreference, setUnitPreference] = useState<UnitPreferenceKey>(defaultUnitPreference);
+    const { heightUnit, weightUnit } = useMemo(() => parseUnitPreferenceKey(unitPreference), [unitPreference]);
     const weightUnitLabel = weightUnit === 'LB' ? 'lb' : 'kg';
-    const timeZoneOptions = useMemo(() => getSupportedTimeZones(), []);
-    const [timezone, setTimezone] = useState(() => {
-        const browserTz = getBrowserTimeZone();
-        if (!user?.timezone) return browserTz;
-        return user.timezone === 'UTC' ? browserTz : user.timezone;
-    });
+
+    const detectedTimezone = useMemo(() => Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC', []);
+    const [timezone, setTimezone] = useState<string>(user?.timezone ?? detectedTimezone);
 
     const [sex, setSex] = useState('');
     const [dob, setDob] = useState('');
     const [activityLevel, setActivityLevel] = useState('');
-    const [heightUnit, setHeightUnit] = useState<'cm' | 'ftin'>('cm');
     const [heightCm, setHeightCm] = useState('');
     const [heightFeet, setHeightFeet] = useState('');
     const [heightInches, setHeightInches] = useState('');
     const [currentWeight, setCurrentWeight] = useState('');
     const [goalWeight, setGoalWeight] = useState('');
     const [goalMode, setGoalMode] = useState<'lose' | 'maintain' | 'gain'>('lose');
-    const [dailyDeficit, setDailyDeficit] = useState('500');
+    const [dailyDeficit, setDailyDeficit] = useState(DEFAULT_DAILY_DEFICIT_CHOICE_STRING);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
     const [isSaving, setIsSaving] = useState(false);
 
-    type ProfilePatchPayload = {
+    useEffect(() => {
+        setUnitPreference(defaultUnitPreference);
+    }, [defaultUnitPreference]);
+
+    type ProfileUpdatePayload = {
+        timezone: string | null;
         date_of_birth: string | null;
         sex: string | null;
         activity_level: string | null;
@@ -59,20 +73,29 @@ const Onboarding: React.FC = () => {
         height_inches?: string | null;
     };
 
-    const profileQuery = useUserProfileQuery({ enabled: !!user });
+    const profileQuery = useQuery({
+        queryKey: ['profile'],
+        queryFn: async () => {
+            const res = await axios.get('/api/user/profile');
+            return res.data;
+        },
+        enabled: !!user
+    });
 
     useEffect(() => {
         if (profileQuery.isSuccess) {
             const missing = profileQuery.data?.calorieSummary?.missing ?? [];
             const hasGoal = profileQuery.data?.goal_daily_deficit !== null && profileQuery.data?.goal_daily_deficit !== undefined;
-            if (missing.length === 0 && hasGoal) {
-                navigate('/log', { replace: true });
+            const hasTimezone =
+                typeof profileQuery.data?.profile?.timezone === 'string' && profileQuery.data.profile.timezone.trim().length > 0;
+            if (missing.length === 0 && hasGoal && hasTimezone) {
+                navigate('/settings', { replace: true });
             }
         }
     }, [profileQuery.isSuccess, profileQuery.data, navigate]);
 
     const heightFieldsValid = useMemo(() => {
-        if (heightUnit === 'cm') {
+        if (heightUnit === 'CM') {
             return !!heightCm;
         }
         return !!heightFeet || !!heightInches;
@@ -81,32 +104,48 @@ const Onboarding: React.FC = () => {
     const handleSave = async () => {
         setError('');
         setSuccess('');
+        if (!user) {
+            setError('You must be logged in to continue.');
+            return;
+        }
+
+        const startWeightNumber = Number(currentWeight);
+        const targetWeightNumber = Number(goalWeight);
+        const goalValidationError = validateGoalWeights({
+            goalMode,
+            startWeight: startWeightNumber,
+            targetWeight: targetWeightNumber
+        });
+        if (goalValidationError) {
+            setError(goalValidationError);
+            return;
+        }
+
         setIsSaving(true);
         try {
-            const profilePayload: ProfilePatchPayload = {
+            const profilePayload: ProfileUpdatePayload = {
+                timezone: timezone.trim() || null,
                 date_of_birth: dob || null,
                 sex: sex || null,
                 activity_level: activityLevel || null
             };
-            if (heightUnit === 'cm') {
+            if (heightUnit === 'CM') {
                 profilePayload.height_cm = heightCm || null;
             } else {
                 profilePayload.height_feet = heightFeet || null;
                 profilePayload.height_inches = heightInches || null;
             }
 
-            await axios.patch('/api/user/profile', profilePayload);
+            await updateProfile(profilePayload);
 
-            // Keep AuthContext in sync so dates/units update immediately after onboarding.
-            await updateWeightUnit(weightUnit);
-            await updateTimezone(timezone);
+            await updateUnitPreferences({ weight_unit: weightUnit, height_unit: heightUnit });
 
-            const deficitValue = goalMode === 'maintain' ? 0 : parseInt(dailyDeficit || '0', 10);
+            const deficitValue = goalMode === 'maintain' ? 0 : normalizeDailyDeficitChoiceAbsValue(dailyDeficit);
             const signedDeficit = goalMode === 'gain' ? -Math.abs(deficitValue) : Math.abs(deficitValue);
 
             await axios.post('/api/metrics', {
                 weight: currentWeight,
-                date: getTodayIsoDate(timezone)
+                date: formatDateToLocalDateString(new Date(), timezone || detectedTimezone)
             });
 
             await axios.post('/api/goals', {
@@ -116,9 +155,19 @@ const Onboarding: React.FC = () => {
             });
 
             setSuccess('Profile saved. Redirecting...');
-            setTimeout(() => navigate('/log'), 600);
+            setTimeout(() => navigate('/dashboard'), 600);
         } catch (err) {
-            setError(getApiErrorMessage(err) ?? 'Failed to save your profile. Please check the fields and try again.');
+            console.error(err);
+            if (axios.isAxiosError(err)) {
+                const serverMessage = (err.response?.data as { message?: unknown } | undefined)?.message;
+                if (typeof serverMessage === 'string' && serverMessage.trim().length > 0) {
+                    setError(serverMessage);
+                } else {
+                    setError('Failed to save your profile. Please check the fields and try again.');
+                }
+            } else {
+                setError('Failed to save your profile. Please check the fields and try again.');
+            }
         } finally {
             setIsSaving(false);
         }
@@ -130,7 +179,7 @@ const Onboarding: React.FC = () => {
                 Welcome! Let&apos;s set up your targets
             </Typography>
             <Typography color="text.secondary" sx={{ mb: 2 }}>
-                We need a few details to estimate your calories burned and daily target. You can change these later.
+                We need a few details to estimate your calories burned and daily target. You can change these later from your profile and settings.
             </Typography>
 
             <Paper sx={{ p: 3 }}>
@@ -157,11 +206,7 @@ const Onboarding: React.FC = () => {
 
                     <FormControl fullWidth required>
                         <InputLabel>Activity Level</InputLabel>
-                        <Select
-                            value={activityLevel}
-                            label="Activity Level"
-                            onChange={(e) => setActivityLevel(e.target.value)}
-                        >
+                        <Select value={activityLevel} label="Activity Level" onChange={(e) => setActivityLevel(e.target.value)}>
                             {activityLevelOptions.map((option) => (
                                 <MenuItem key={option.value} value={option.value}>
                                     {option.label}
@@ -173,51 +218,23 @@ const Onboarding: React.FC = () => {
                         </Typography>
                     </FormControl>
 
-                    <FormControl fullWidth required>
-                        <InputLabel>Weight Unit</InputLabel>
-                        <Select
-                            value={weightUnit}
-                            label="Weight Unit"
-                            onChange={(e) => setWeightUnit(e.target.value as 'KG' | 'LB')}
-                        >
-                            <MenuItem value="KG">Kilograms (kg)</MenuItem>
-                            <MenuItem value="LB">Pounds (lb)</MenuItem>
-                        </Select>
-                    </FormControl>
-
-                    <Autocomplete
-                        freeSolo
-                        options={timeZoneOptions}
+                    <TimeZonePicker
                         value={timezone}
-                        onChange={(_, nextValue) => {
-                            if (typeof nextValue === 'string') {
-                                setTimezone(nextValue);
-                            }
-                        }}
-                        onInputChange={(_, nextInput) => setTimezone(nextInput)}
-                        renderInput={(params) => (
-                            <TextField
-                                {...params}
-                                label="Time zone"
-                                required
-                                helperText="Used to group your days and daily targets."
-                            />
-                        )}
+                        onChange={setTimezone}
+                        helperText="Used to define your day boundaries for food and weight logs."
                     />
 
                     <FormControl fullWidth required>
-                        <InputLabel>Height Units</InputLabel>
-                        <Select
-                            value={heightUnit}
-                            label="Height Units"
-                            onChange={(e) => setHeightUnit(e.target.value as 'cm' | 'ftin')}
-                        >
-                            <MenuItem value="cm">Centimeters</MenuItem>
-                            <MenuItem value="ftin">Feet / Inches</MenuItem>
+                        <InputLabel>Units</InputLabel>
+                        <Select value={unitPreference} label="Units" onChange={(e) => setUnitPreference(e.target.value as UnitPreferenceKey)}>
+                            <MenuItem value="CM_KG">Metric (cm, kg)</MenuItem>
+                            <MenuItem value="FTIN_LB">Imperial (ft/in, lb)</MenuItem>
+                            <MenuItem value="CM_LB">Mixed (cm, lb)</MenuItem>
+                            <MenuItem value="FTIN_KG">Mixed (ft/in, kg)</MenuItem>
                         </Select>
                     </FormControl>
 
-                    {heightUnit === 'cm' ? (
+                    {heightUnit === 'CM' ? (
                         <TextField
                             label="Height (cm)"
                             type="number"
@@ -267,11 +284,7 @@ const Onboarding: React.FC = () => {
 
                     <FormControl fullWidth>
                         <InputLabel>Goal type</InputLabel>
-                        <Select
-                            value={goalMode}
-                            label="Goal type"
-                            onChange={(e) => setGoalMode(e.target.value as 'lose' | 'maintain' | 'gain')}
-                        >
+                        <Select value={goalMode} label="Goal type" onChange={(e) => setGoalMode(e.target.value as 'lose' | 'maintain' | 'gain')}>
                             <MenuItem value="lose">Lose weight (calorie deficit)</MenuItem>
                             <MenuItem value="maintain">Maintain weight</MenuItem>
                             <MenuItem value="gain">Gain weight (calorie surplus)</MenuItem>
@@ -281,12 +294,8 @@ const Onboarding: React.FC = () => {
                     {goalMode !== 'maintain' && (
                         <FormControl fullWidth>
                             <InputLabel>Daily calorie change</InputLabel>
-                            <Select
-                                value={dailyDeficit}
-                                label="Daily calorie change"
-                                onChange={(e) => setDailyDeficit(e.target.value)}
-                            >
-                                {['250', '500', '750', '1000'].map((val) => (
+                            <Select value={dailyDeficit} label="Daily calorie change" onChange={(e) => setDailyDeficit(e.target.value)}>
+                                {DAILY_DEFICIT_CHOICE_STRINGS.map((val) => (
                                     <MenuItem key={val} value={val}>
                                         {goalMode === 'gain' ? '+' : '-'}
                                         {val} Calories/day
@@ -301,10 +310,10 @@ const Onboarding: React.FC = () => {
                         onClick={() => void handleSave()}
                         disabled={
                             isSaving ||
-                            !timezone ||
                             !sex ||
                             !dob ||
                             !activityLevel ||
+                            !timezone.trim() ||
                             !heightFieldsValid ||
                             !currentWeight ||
                             !goalWeight

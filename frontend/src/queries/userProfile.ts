@@ -2,11 +2,13 @@ import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
 
 export type UserProfile = {
+    timezone: string;
     date_of_birth: string | null;
     sex: 'MALE' | 'FEMALE' | null;
     height_mm: number | null;
     activity_level: 'SEDENTARY' | 'LIGHT' | 'MODERATE' | 'ACTIVE' | 'VERY_ACTIVE' | null;
     weight_unit: 'KG' | 'LB';
+    height_unit: 'CM' | 'FT_IN';
 };
 
 export type CalorieSummary = {
@@ -44,4 +46,3 @@ export function useUserProfileQuery(options?: { enabled?: boolean }) {
         enabled: options?.enabled
     });
 }
-

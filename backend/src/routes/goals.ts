@@ -1,6 +1,7 @@
 import express from 'express';
 import prisma from '../config/database';
-import { gramsToWeight, parseWeightToGrams, type WeightUnit } from '../utils/weight';
+import { parseDailyDeficit } from '../utils/goalDeficit';
+import { gramsToWeight, parseWeightToGrams, type WeightUnit } from '../utils/units';
 
 const router = express.Router();
 
@@ -10,6 +11,32 @@ const isAuthenticated = (req: express.Request, res: express.Response, next: expr
     }
     res.status(401).json({ message: 'Not authenticated' });
 };
+
+/**
+ * Ensure the goal definition is coherent for gain/lose modes.
+ *
+ * We infer goal type from dailyDeficit:
+ * - dailyDeficit > 0 => target must be lower than start (weight loss)
+ * - dailyDeficit < 0 => target must be higher than start (weight gain)
+ * - dailyDeficit === 0 => no ordering constraint (maintenance)
+ */
+function validateGoalWeightsForDailyDeficit(opts: {
+    dailyDeficit: number;
+    startWeightGrams: number;
+    targetWeightGrams: number;
+}): string | null {
+    const { dailyDeficit, startWeightGrams, targetWeightGrams } = opts;
+
+    if (dailyDeficit > 0 && startWeightGrams <= targetWeightGrams) {
+        return 'For a weight loss goal, target weight must be less than start weight.';
+    }
+
+    if (dailyDeficit < 0 && startWeightGrams >= targetWeightGrams) {
+        return 'For a weight gain goal, target weight must be greater than start weight.';
+    }
+
+    return null;
+}
 
 router.use(isAuthenticated);
 
@@ -41,32 +68,31 @@ router.post('/', async (req, res) => {
     const { start_weight, target_weight, target_date, daily_deficit } = req.body;
     const weightUnit = (user.weight_unit ?? 'KG') as WeightUnit;
     try {
-        let start_weight_grams: number;
-        try {
-            start_weight_grams = parseWeightToGrams(start_weight, weightUnit);
-        } catch {
-            return res.status(400).json({ message: 'Invalid start_weight' });
+        const parsedDailyDeficit = parseDailyDeficit(daily_deficit);
+        if (parsedDailyDeficit === null) {
+            return res.status(400).json({ message: 'daily_deficit must be one of 0, ±250, ±500, ±750, or ±1000' });
         }
 
+        let start_weight_grams: number;
         let target_weight_grams: number;
         try {
+            start_weight_grams = parseWeightToGrams(start_weight, weightUnit);
             target_weight_grams = parseWeightToGrams(target_weight, weightUnit);
         } catch {
-            return res.status(400).json({ message: 'Invalid target_weight' });
+            return res.status(400).json({ message: 'Invalid start weight or target weight' });
         }
 
-        const deficitNumeric = typeof daily_deficit === 'number' ? daily_deficit : Number(daily_deficit);
-        if (!Number.isFinite(deficitNumeric)) {
-            return res.status(400).json({ message: 'Invalid daily_deficit' });
-        }
-        const deficitInteger = Math.trunc(deficitNumeric);
-        const allowedDeficits = new Set([0, 250, 500, 750, 1000]);
-        if (!allowedDeficits.has(Math.abs(deficitInteger))) {
-            return res.status(400).json({ message: 'daily_deficit must be 0, 250, 500, 750, or 1000' });
+        const coherenceError = validateGoalWeightsForDailyDeficit({
+            dailyDeficit: parsedDailyDeficit,
+            startWeightGrams: start_weight_grams,
+            targetWeightGrams: target_weight_grams
+        });
+        if (coherenceError) {
+            return res.status(400).json({ message: coherenceError });
         }
 
         let parsedTargetDate: Date | null = null;
-        if (target_date !== undefined && target_date !== null && target_date !== '') {
+        if (target_date) {
             const candidate = new Date(target_date);
             if (Number.isNaN(candidate.getTime())) {
                 return res.status(400).json({ message: 'Invalid target_date' });
@@ -80,7 +106,7 @@ router.post('/', async (req, res) => {
                 start_weight_grams,
                 target_weight_grams,
                 target_date: parsedTargetDate,
-                daily_deficit: deficitInteger
+                daily_deficit: parsedDailyDeficit
             }
         });
         const { start_weight_grams: createdStartWeightGrams, target_weight_grams: createdTargetWeightGrams, ...createdGoal } = goal;

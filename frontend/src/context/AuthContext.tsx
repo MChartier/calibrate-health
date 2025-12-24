@@ -1,7 +1,13 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import axios from 'axios';
 import { useQueryClient } from '@tanstack/react-query';
-import { AuthContext, type User } from './authContext';
+import {
+    AuthContext,
+    type HeightUnit,
+    type User,
+    type UserProfilePatchPayload,
+    type WeightUnit
+} from './authContext';
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [user, setUser] = useState<User | null>(null);
@@ -41,7 +47,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }, []);
 
     useEffect(() => {
-        checkAuth();
+        void checkAuth();
     }, [checkAuth]);
 
     const login = async (email: string, password: string) => {
@@ -65,27 +71,67 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     /**
-     * Update the user's preferred IANA time zone identifier for date grouping and "today" calculations.
+     * Patch user preferences (units) and keep the auth context in sync.
      */
-    const updateTimezone = async (timezone: User['timezone']) => {
-        const res = await axios.patch('/api/user/preferences', { timezone });
-        setUser(res.data.user);
-        void queryClient.invalidateQueries({ queryKey: ['food'] });
-        void queryClient.invalidateQueries({ queryKey: ['user-profile'] });
-    };
-
-    const updateWeightUnit = async (weight_unit: User['weight_unit']) => {
-        const res = await axios.patch('/api/user/preferences', { weight_unit });
+    const updateUnitPreferences = async (preferences: { weight_unit?: WeightUnit; height_unit?: HeightUnit }) => {
+        const res = await axios.patch('/api/user/preferences', preferences);
         setUser(res.data.user);
         // Values returned by /api/metrics and /api/goals are converted server-side using the user's weight_unit.
         // Invalidate cached queries so displayed values and unit labels stay in sync.
         void queryClient.invalidateQueries({ queryKey: ['metrics'] });
         void queryClient.invalidateQueries({ queryKey: ['goal'] });
         void queryClient.invalidateQueries({ queryKey: ['user-profile'] });
+        void queryClient.invalidateQueries({ queryKey: ['profile'] });
+    };
+
+    /**
+     * Update the user's preferred weight unit (kg/lb).
+     */
+    const updateWeightUnit = async (weight_unit: WeightUnit) => {
+        await updateUnitPreferences({ weight_unit });
+    };
+
+    /**
+     * Update the user's preferred height unit (cm or ft/in).
+     */
+    const updateHeightUnit = async (height_unit: HeightUnit) => {
+        await updateUnitPreferences({ height_unit });
+    };
+
+    /**
+     * Patch the authenticated user's profile and keep the auth context in sync with the server response.
+     */
+    const updateProfile = async (profile: UserProfilePatchPayload) => {
+        const res = await axios.patch('/api/user/profile', profile);
+        setUser(res.data.user);
+        void queryClient.invalidateQueries({ queryKey: ['food'] });
+        void queryClient.invalidateQueries({ queryKey: ['metrics'] });
+        void queryClient.invalidateQueries({ queryKey: ['user-profile'] });
+        void queryClient.invalidateQueries({ queryKey: ['profile'] });
+    };
+
+    /**
+     * Update the user's preferred IANA time zone identifier for date grouping and "today" calculations.
+     */
+    const updateTimezone = async (timezone: string) => {
+        await updateProfile({ timezone });
     };
 
     return (
-        <AuthContext.Provider value={{ user, login, register, logout, updateWeightUnit, updateTimezone, isLoading }}>
+        <AuthContext.Provider
+            value={{
+                user,
+                login,
+                register,
+                logout,
+                updateUnitPreferences,
+                updateWeightUnit,
+                updateHeightUnit,
+                updateProfile,
+                updateTimezone,
+                isLoading
+            }}
+        >
             {children}
         </AuthContext.Provider>
     );

@@ -15,6 +15,11 @@ enum WeightUnit {
   LB
 }
 
+enum HeightUnit {
+  CM
+  FT_IN
+}
+
 enum Sex {
   MALE
   FEMALE
@@ -28,6 +33,15 @@ enum ActivityLevel {
   VERY_ACTIVE
 }
 
+enum MealPeriod {
+  BREAKFAST
+  MORNING_SNACK
+  LUNCH
+  AFTERNOON_SNACK
+  DINNER
+  EVENING_SNACK
+}
+
 model User {
   id            Int       @id @default(autoincrement())
   email         String    @unique
@@ -35,7 +49,8 @@ model User {
   created_at    DateTime  @default(now())
 
   weight_unit   WeightUnit @default(KG)
-  /// IANA time zone identifier used to compute the user's "day" boundaries.
+  height_unit   HeightUnit @default(CM)
+  /// IANA time zone identifier (e.g. "America/Los_Angeles") used to define the user's local day boundary.
   timezone      String     @default("UTC")
   date_of_birth DateTime?
   sex           Sex?
@@ -73,9 +88,14 @@ model FoodLog {
   id          Int      @id @default(autoincrement())
   user_id     Int
   user        User     @relation(fields: [user_id], references: [id])
-  date        DateTime @default(dbgenerated("CURRENT_DATE")) @db.Date
-  meal_period String   // Breakfast, Morning, Lunch, Afternoon, Dinner, Evening
+  date        DateTime @default(now())
+  /// Calendar day for grouping logs, derived from the user's timezone at write time.
+  local_date  DateTime @db.Date
+  /// Fixed meal period for consistent grouping and UI display.
+  meal_period MealPeriod
   name        String
   calories    Int
   created_at  DateTime @default(now())
+
+  @@index([user_id, local_date])
 }

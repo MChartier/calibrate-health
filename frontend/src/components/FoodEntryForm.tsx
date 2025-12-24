@@ -1,10 +1,13 @@
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import {
     Alert,
     Box,
     Button,
     FormControl,
+    IconButton,
+    InputAdornment,
     InputLabel,
+    ListItemIcon,
     MenuItem,
     Select,
     Stack,
@@ -20,9 +23,12 @@ import IcecreamIcon from '@mui/icons-material/Icecream';
 import LunchDiningIcon from '@mui/icons-material/LunchDining';
 import DinnerDiningIcon from '@mui/icons-material/DinnerDining';
 import NightlifeIcon from '@mui/icons-material/Nightlife';
-import { ListItemIcon } from '@mui/material';
-import { useAuth } from '../context/useAuth';
-import { getTodayIsoDate } from '../utils/date';
+import BarcodeReaderIcon from '@mui/icons-material/BarcodeReader';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import BarcodeScannerDialog from './BarcodeScannerDialog';
+import FoodSearchResultsList from './FoodSearchResultsList';
+import type { NormalizedFoodItem } from '../types/food';
+import { MEAL_PERIOD_LABELS, MEAL_PERIOD_ORDER, type MealPeriod } from '../types/mealPeriod';
 import { getApiErrorMessage } from '../utils/apiError';
 
 type Props = {
@@ -30,74 +36,103 @@ type Props = {
     date?: string;
 };
 
-type FoodDataSource = 'usda' | 'openFoodFacts';
+const SEARCH_PAGE_SIZE = 10;
 
-type FoodMeasure = {
-    label: string;
-    gramWeight?: number;
-    quantity?: number;
-    unit?: string;
+type FoodSearchView = 'results' | 'selected';
+
+type FoodSearchParams = {
+    query?: string;
+    barcode?: string;
 };
 
-type NormalizedFoodItem = {
-    id: string;
-    source: FoodDataSource;
-    description: string;
-    brand?: string;
-    barcode?: string;
-    locale?: string;
-    availableMeasures: FoodMeasure[];
-    nutrientsPer100g?: {
-        calories: number;
-        protein?: number;
-        fat?: number;
-        carbs?: number;
-    };
-    nutrientsForRequest?: {
-        grams: number;
-        nutrients: {
-            calories: number;
-            protein?: number;
-            fat?: number;
-            carbs?: number;
-        };
-    };
+/**
+ * Choose a sensible default meal period based on the current local time.
+ * Thresholds:
+ * - 09:00 => Morning Snack
+ * - 11:30 => Lunch
+ * - 14:00 => Afternoon Snack
+ * - 16:30 => Dinner
+ * - 21:00 => Evening Snack
+ * Anything earlier defaults to Breakfast.
+ */
+function getDefaultMealPeriodForTime(now: Date): MealPeriod {
+    const minutesSinceMidnight = now.getHours() * 60 + now.getMinutes();
+
+    if (minutesSinceMidnight >= 21 * 60) return 'EVENING_SNACK';
+    if (minutesSinceMidnight >= 16 * 60 + 30) return 'DINNER';
+    if (minutesSinceMidnight >= 14 * 60) return 'AFTERNOON_SNACK';
+    if (minutesSinceMidnight >= 11 * 60 + 30) return 'LUNCH';
+    if (minutesSinceMidnight >= 9 * 60) return 'MORNING_SNACK';
+    return 'BREAKFAST';
+}
+
+/**
+ * Pick a reasonable default measure label for an item so the measure dropdown is pre-populated after selection.
+ */
+const getDefaultMeasureLabel = (item: NormalizedFoodItem): string | null => {
+    const firstWithWeight = item.availableMeasures.find((measure) => measure.gramWeight);
+    return firstWithWeight?.label ?? null;
+};
+
+/**
+ * Merge paginated results without duplicating items when upstream providers repeat IDs across pages.
+ */
+const mergeUniqueResults = (current: NormalizedFoodItem[], nextPage: NormalizedFoodItem[]): NormalizedFoodItem[] => {
+    const nextById = new Map(current.map((item) => [item.id, item]));
+    nextPage.forEach((item) => nextById.set(item.id, item));
+    return Array.from(nextById.values());
 };
 
 const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
-    const { user } = useAuth();
-    const enableProviderSearch = import.meta.env.DEV || import.meta.env.VITE_ENABLE_FOOD_SEARCH === 'true';
-    const [mode, setMode] = useState<'manual' | 'search'>('manual');
+    const [mode, setMode] = useState<'manual' | 'search'>('search');
     const [foodName, setFoodName] = useState('');
     const [calories, setCalories] = useState('');
-    const [mealPeriod, setMealPeriod] = useState('Breakfast');
-    const [isSubmitting, setIsSubmitting] = useState(false);
-    const [submitError, setSubmitError] = useState<string | null>(null);
+    const [mealPeriod, setMealPeriod] = useState<MealPeriod>(() => getDefaultMealPeriodForTime(new Date()));
 
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState<NormalizedFoodItem[]>([]);
     const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
     const [selectedMeasureLabel, setSelectedMeasureLabel] = useState<string | null>(null);
     const [quantity, setQuantity] = useState<number>(1);
+    const [searchView, setSearchView] = useState<FoodSearchView>('results');
+    const [searchPage, setSearchPage] = useState<number>(1);
+    const [hasMoreResults, setHasMoreResults] = useState(false);
     const [isSearching, setIsSearching] = useState(false);
-    const [searchError, setSearchError] = useState<string | null>(null);
+    const [isLoadingMoreResults, setIsLoadingMoreResults] = useState(false);
+    const [error, setError] = useState<string | null>(null);
     const [providerName, setProviderName] = useState<string>('');
+    const [supportsBarcodeLookup, setSupportsBarcodeLookup] = useState<boolean | null>(null);
+    const [isScannerOpen, setIsScannerOpen] = useState(false);
+    const [hasSearched, setHasSearched] = useState(false);
+    const [activeSearch, setActiveSearch] = useState<FoodSearchParams | null>(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
-    const entryDate = date ?? getTodayIsoDate(user?.timezone);
+    const searchSessionRef = useRef(0);
+    const loadMoreLockRef = useRef(false);
 
-    const mealOptions = [
-        { value: 'Breakfast', label: 'Breakfast', icon: <EggAltIcon sx={{ color: 'warning.main' }} /> },
-        { value: 'Morning Snack', label: 'Morning Snack', icon: <BakeryDiningIcon sx={{ color: 'success.main' }} /> },
-        { value: 'Lunch', label: 'Lunch', icon: <LunchDiningIcon sx={{ color: 'info.main' }} /> },
-        { value: 'Afternoon Snack', label: 'Afternoon Snack', icon: <IcecreamIcon sx={{ color: 'success.light' }} /> },
-        { value: 'Dinner', label: 'Dinner', icon: <DinnerDiningIcon sx={{ color: 'secondary.main' }} /> },
-        { value: 'Evening Snack', label: 'Evening Snack', icon: <NightlifeIcon sx={{ color: 'error.main' }} /> }
-    ];
+    const entryLocalDate = typeof date === 'string' && date.trim().length > 0 ? date.trim() : undefined;
+
+    const mealIcons: Record<MealPeriod, React.ReactNode> = {
+        BREAKFAST: <EggAltIcon htmlColor="#ff9800" />,
+        MORNING_SNACK: <BakeryDiningIcon htmlColor="#4caf50" />,
+        LUNCH: <LunchDiningIcon htmlColor="#3f51b5" />,
+        AFTERNOON_SNACK: <IcecreamIcon htmlColor="#8bc34a" />,
+        DINNER: <DinnerDiningIcon htmlColor="#9c27b0" />,
+        EVENING_SNACK: <NightlifeIcon htmlColor="#e91e63" />
+    };
+
+    const mealOptions = MEAL_PERIOD_ORDER.map((value) => ({
+        value,
+        label: MEAL_PERIOD_LABELS[value],
+        icon: mealIcons[value]
+    }));
 
     const selectedItem = useMemo(
         () => searchResults.find((item) => item.id === selectedItemId) || null,
         [searchResults, selectedItemId]
     );
+
+    const shouldShowMealPeriod = mode === 'manual' || (mode === 'search' && searchView === 'selected' && !!selectedItem);
 
     const selectedMeasure = useMemo(() => {
         if (!selectedItem) return null;
@@ -119,55 +154,177 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
         };
     }, [selectedItem, selectedMeasure, quantity]);
 
-    const resetSearchSelection = (items: NormalizedFoodItem[]) => {
-        if (items.length === 0) {
-            setSelectedItemId(null);
-            setSelectedMeasureLabel(null);
-            return;
-        }
-        const first = items[0];
-        setSelectedItemId(first.id);
-        const firstMeasure = first.availableMeasures.find((m) => m.gramWeight);
-        setSelectedMeasureLabel(firstMeasure?.label || null);
+    /**
+     * Clear the current selected search result so new searches require an explicit choice.
+     */
+    const clearSelectedSearchItem = useCallback(() => {
+        setSelectedItemId(null);
+        setSelectedMeasureLabel(null);
+        setQuantity(1);
+    }, []);
+
+    /**
+     * Select a search result and prime measure/quantity controls for quick logging.
+     */
+    const selectSearchResult = useCallback(
+        (item: NormalizedFoodItem) => {
+            if (isSubmitting) return;
+            setSelectedItemId(item.id);
+            setSelectedMeasureLabel(getDefaultMeasureLabel(item));
+            setQuantity(1);
+            setSearchView('selected');
+        },
+        [isSubmitting]
+    );
+
+    type FoodSearchResponse = {
+        provider?: string;
+        supportsBarcodeLookup?: boolean;
+        items: NormalizedFoodItem[];
     };
 
-    const handleSearch = async () => {
-        if (!searchQuery.trim()) return;
-        setIsSearching(true);
-        setSearchError(null);
-        try {
-            const response = await axios.get('/api/food/search', {
-                params: { q: searchQuery.trim() }
-            });
-            const items: NormalizedFoodItem[] = Array.isArray(response.data?.items) ? response.data.items : [];
-            setProviderName(response.data?.provider || '');
-            setSearchResults(items);
-            resetSearchSelection(items);
-        } catch (err) {
-            setSearchError(getApiErrorMessage(err) ?? 'Search failed. Please try again.');
-        } finally {
-            setIsSearching(false);
+    /**
+     * Fetch a single page of provider results via the backend search endpoint.
+     */
+    const fetchFoodSearchPage = useCallback(async (params: FoodSearchParams, page: number): Promise<FoodSearchResponse> => {
+        const response = await axios.get('/api/food/search', {
+            params: {
+                ...(params.query ? { q: params.query } : {}),
+                ...(params.barcode ? { barcode: params.barcode } : {}),
+                page,
+                pageSize: SEARCH_PAGE_SIZE
+            }
+        });
+
+        return {
+            provider: typeof response.data?.provider === 'string' ? response.data.provider : undefined,
+            supportsBarcodeLookup:
+                typeof response.data?.supportsBarcodeLookup === 'boolean' ? response.data.supportsBarcodeLookup : undefined,
+            items: Array.isArray(response.data?.items) ? response.data.items : []
+        };
+    }, []);
+
+    /**
+     * Execute a provider search and reset selection so query searches require an explicit choice.
+     */
+    const performFoodSearch = useCallback(
+        async (request: FoodSearchParams) => {
+            if (isSubmitting) return;
+
+            const trimmedQuery = request.query?.trim();
+            const barcode = request.barcode?.trim();
+            if (!trimmedQuery && !barcode) {
+                return;
+            }
+
+            const params: FoodSearchParams = {
+                query: trimmedQuery || undefined,
+                barcode: barcode || undefined
+            };
+
+            searchSessionRef.current += 1;
+            const sessionId = searchSessionRef.current;
+            loadMoreLockRef.current = false;
+
+            setHasSearched(true);
+            setIsSearching(true);
+            setError(null);
+            setSearchResults([]);
+            setSearchPage(1);
+            setHasMoreResults(false);
+            setIsLoadingMoreResults(false);
+            setActiveSearch(params);
+            setSearchView('results');
+            clearSelectedSearchItem();
+
+            try {
+                const firstPage = await fetchFoodSearchPage(params, 1);
+                if (searchSessionRef.current !== sessionId) {
+                    return;
+                }
+
+                setProviderName(firstPage.provider || '');
+                setSupportsBarcodeLookup(
+                    typeof firstPage.supportsBarcodeLookup === 'boolean' ? firstPage.supportsBarcodeLookup : null
+                );
+                setSearchResults(firstPage.items);
+                setHasMoreResults(firstPage.items.length === SEARCH_PAGE_SIZE);
+
+                // Barcode lookups generally return a single exact match; auto-select it for faster logging.
+                if (params.barcode && !params.query && firstPage.items.length === 1) {
+                    selectSearchResult(firstPage.items[0]);
+                }
+            } catch (err) {
+                setError(getApiErrorMessage(err) ?? 'Search failed. Please try again.');
+            } finally {
+                if (searchSessionRef.current === sessionId) {
+                    setIsSearching(false);
+                }
+            }
+        },
+        [clearSelectedSearchItem, fetchFoodSearchPage, isSubmitting, selectSearchResult]
+    );
+
+    /**
+     * Load the next page of search results and append them to the list view.
+     */
+    const loadMoreSearchResults = useCallback(async () => {
+        if (isSubmitting || !activeSearch || !hasMoreResults || isSearching || isLoadingMoreResults) {
+            return;
         }
+        if (loadMoreLockRef.current) {
+            return;
+        }
+
+        loadMoreLockRef.current = true;
+        setIsLoadingMoreResults(true);
+
+        const sessionId = searchSessionRef.current;
+        const nextPageNumber = searchPage + 1;
+
+        try {
+            const nextPage = await fetchFoodSearchPage(activeSearch, nextPageNumber);
+            if (searchSessionRef.current !== sessionId) {
+                return;
+            }
+
+            setSearchResults((current) => mergeUniqueResults(current, nextPage.items));
+            setSearchPage(nextPageNumber);
+            setHasMoreResults(nextPage.items.length === SEARCH_PAGE_SIZE);
+        } catch (err) {
+            setError(getApiErrorMessage(err) ?? 'Unable to load more results right now.');
+        } finally {
+            if (searchSessionRef.current === sessionId) {
+                setIsLoadingMoreResults(false);
+                loadMoreLockRef.current = false;
+            }
+        }
+    }, [activeSearch, fetchFoodSearchPage, hasMoreResults, isLoadingMoreResults, isSearching, isSubmitting, searchPage]);
+
+    const handleSearch = async () => {
+        await performFoodSearch({ query: searchQuery });
     };
 
     const handleAddManual = async () => {
         const trimmedName = foodName.trim();
-        if (!trimmedName || !calories) return;
+        if (!trimmedName || !calories.trim()) {
+            return;
+        }
 
         setIsSubmitting(true);
-        setSubmitError(null);
+        setError(null);
         try {
             await axios.post('/api/food', {
                 name: trimmedName,
                 calories,
                 meal_period: mealPeriod,
-                date: entryDate
+                ...(entryLocalDate ? { date: entryLocalDate } : {})
             });
             setFoodName('');
             setCalories('');
             onSuccess?.();
         } catch (err) {
-            setSubmitError(getApiErrorMessage(err) ?? 'Unable to add this food right now.');
+            setError(getApiErrorMessage(err) ?? 'Unable to add this food right now.');
         } finally {
             setIsSubmitting(false);
         }
@@ -176,17 +333,17 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
     const handleAddFromSearch = async () => {
         if (!selectedItem || !computed) return;
         setIsSubmitting(true);
-        setSubmitError(null);
+        setError(null);
         try {
             await axios.post('/api/food', {
                 name: selectedItem.description,
                 calories: computed.calories,
                 meal_period: mealPeriod,
-                date: entryDate
+                ...(entryLocalDate ? { date: entryLocalDate } : {})
             });
             onSuccess?.();
         } catch (err) {
-            setSubmitError(getApiErrorMessage(err) ?? 'Unable to add this food right now.');
+            setError(getApiErrorMessage(err) ?? 'Unable to add this food right now.');
         } finally {
             setIsSubmitting(false);
         }
@@ -197,28 +354,33 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
      */
     const handleSubmit = (event: React.FormEvent) => {
         event.preventDefault();
+        if (isSubmitting) return;
+
         if (mode === 'manual') {
             void handleAddManual();
             return;
         }
-        void handleAddFromSearch();
+
+        if (searchView === 'selected') {
+            void handleAddFromSearch();
+        }
     };
 
     return (
         <Stack spacing={2} component="form" onSubmit={handleSubmit}>
-            {enableProviderSearch && (
-                <ToggleButtonGroup
-                    value={mode}
-                    exclusive
-                    onChange={(_, next) => next && setMode(next)}
-                    size="small"
-                    color="primary"
-                    disabled={isSubmitting}
-                >
-                    <ToggleButton value="manual">Manual calories</ToggleButton>
-                    <ToggleButton value="search">Search provider</ToggleButton>
-                </ToggleButtonGroup>
-            )}
+            <ToggleButtonGroup
+                value={mode}
+                exclusive
+                onChange={(_, next) => next && setMode(next)}
+                size="small"
+                color="primary"
+                disabled={isSubmitting}
+            >
+                <ToggleButton value="search">Search</ToggleButton>
+                <ToggleButton value="manual">Manual Entry</ToggleButton>
+            </ToggleButtonGroup>
+
+            {error && <Alert severity="error">{error}</Alert>}
 
             {mode === 'manual' ? (
                 <Stack spacing={2}>
@@ -256,125 +418,189 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
                                 void handleSearch();
                             }
                         }}
+                        InputProps={{
+                            endAdornment: (
+                                <InputAdornment position="end">
+                                    <IconButton
+                                        aria-label="Scan barcode"
+                                        title="Scan barcode"
+                                        onClick={() => setIsScannerOpen(true)}
+                                        edge="end"
+                                        disabled={isSearching || isSubmitting}
+                                    >
+                                        <BarcodeReaderIcon />
+                                    </IconButton>
+                                </InputAdornment>
+                            )
+                        }}
                     />
                     <Button
-                        type="button"
                         variant="outlined"
+                        type="button"
                         onClick={() => void handleSearch()}
-                        disabled={isSearching || isSubmitting}
+                        disabled={isSearching || isSubmitting || !searchQuery.trim()}
+                        sx={{ width: { xs: '100%', sm: 'auto' } }}
                     >
                         {isSearching ? 'Searching...' : 'Search'}
                     </Button>
                     {providerName && (
                         <Typography variant="caption" color="text.secondary">
                             Provider: {providerName}
+                            {supportsBarcodeLookup === false ? ' (barcode lookup unavailable)' : ''}
                         </Typography>
                     )}
-                    {searchError && <Alert severity="error">{searchError}</Alert>}
+
+                    <BarcodeScannerDialog
+                        open={isScannerOpen}
+                        onClose={() => setIsScannerOpen(false)}
+                        onDetected={(barcode) => {
+                            setSearchQuery(barcode);
+                            void performFoodSearch({ barcode });
+                        }}
+                    />
 
                     {searchResults.length > 0 ? (
-                        <Stack spacing={2}>
-                            <FormControl fullWidth>
-                                <InputLabel>Result</InputLabel>
-                                <Select
-                                    value={selectedItemId || ''}
-                                    label="Result"
-                                    onChange={(e) => setSelectedItemId(e.target.value)}
-                                    disabled={isSubmitting}
-                                >
-                                    {searchResults.map((item) => (
-                                        <MenuItem key={item.id} value={item.id}>
-                                            {item.description}
-                                            {item.brand ? ` (${item.brand})` : ''}
-                                        </MenuItem>
-                                    ))}
-                                </Select>
-                            </FormControl>
-
-                            <FormControl fullWidth disabled={!selectedItem}>
-                                <InputLabel>Measure</InputLabel>
-                                <Select
-                                    value={selectedMeasure?.label || ''}
-                                    label="Measure"
-                                    onChange={(e) => setSelectedMeasureLabel(e.target.value)}
-                                    disabled={isSubmitting || !selectedItem}
-                                >
-                                    {(selectedItem?.availableMeasures || [])
-                                        .filter((m) => m.gramWeight)
-                                        .map((measure) => (
-                                            <MenuItem key={measure.label} value={measure.label}>
-                                                {measure.label} {measure.gramWeight ? `(${measure.gramWeight} g)` : ''}
-                                            </MenuItem>
-                                        ))}
-                                </Select>
-                            </FormControl>
-
-                            <TextField
-                                label="Quantity"
-                                type="number"
-                                value={quantity}
-                                onChange={(e) => setQuantity(parseFloat(e.target.value) || 0)}
-                                disabled={isSubmitting || !selectedMeasure}
-                                inputProps={{ min: 0, step: 0.5 }}
-                            />
-
-                            <Box>
-                                <Typography variant="body2" color="text.secondary">
-                                    {selectedItem?.nutrientsPer100g
-                                        ? 'Calories are estimated from nutrients per 100g.'
-                                        : 'Calories unavailable for this item.'}
+                        searchView === 'results' ? (
+                            <Stack spacing={1}>
+                                <Typography variant="subtitle2">Results</Typography>
+                                <FoodSearchResultsList
+                                    items={searchResults}
+                                    selectedItemId={selectedItemId}
+                                    hasMore={hasMoreResults}
+                                    isLoading={isSearching}
+                                    isLoadingMore={isLoadingMoreResults}
+                                    onLoadMore={() => void loadMoreSearchResults()}
+                                    onSelect={selectSearchResult}
+                                />
+                                <Typography variant="caption" color="text.secondary">
+                                    Tap a result to select it.
                                 </Typography>
-                                {computed && (
-                                    <Typography variant="subtitle1" sx={{ mt: 1 }}>
-                                        {computed.calories} Calories for {computed.grams} g
+                            </Stack>
+                        ) : selectedItem ? (
+                            <Stack spacing={2}>
+                                <Box
+                                    sx={{
+                                        display: 'flex',
+                                        justifyContent: 'space-between',
+                                        alignItems: 'flex-start',
+                                        gap: 2,
+                                        border: 1,
+                                        borderColor: 'divider',
+                                        borderRadius: 1,
+                                        p: 1.5
+                                    }}
+                                >
+                                    <Box sx={{ minWidth: 0 }}>
+                                        <Typography variant="subtitle2">Selected</Typography>
+                                        <Typography variant="body2" sx={{ wordBreak: 'break-word' }}>
+                                            {selectedItem.description}
+                                            {selectedItem.brand ? ` (${selectedItem.brand})` : ''}
+                                        </Typography>
+                                    </Box>
+                                    <Button
+                                        variant="text"
+                                        type="button"
+                                        size="small"
+                                        startIcon={<ArrowBackIcon />}
+                                        onClick={() => setSearchView('results')}
+                                    >
+                                        Back to results
+                                    </Button>
+                                </Box>
+
+                                <FormControl fullWidth>
+                                    <InputLabel>Measure</InputLabel>
+                                    <Select
+                                        value={selectedMeasure?.label || ''}
+                                        label="Measure"
+                                        onChange={(e) => setSelectedMeasureLabel(e.target.value)}
+                                        disabled={isSubmitting}
+                                    >
+                                        {(selectedItem.availableMeasures || [])
+                                            .filter((m) => m.gramWeight)
+                                            .map((measure) => (
+                                                <MenuItem key={measure.label} value={measure.label}>
+                                                    {measure.label} {measure.gramWeight ? `(${measure.gramWeight} g)` : ''}
+                                                </MenuItem>
+                                            ))}
+                                    </Select>
+                                </FormControl>
+
+                                <TextField
+                                    label="Quantity"
+                                    type="number"
+                                    value={quantity}
+                                    onChange={(e) => setQuantity(parseFloat(e.target.value) || 0)}
+                                    disabled={!selectedMeasure || isSubmitting}
+                                    inputProps={{ min: 0, step: 0.5 }}
+                                />
+
+                                <Box>
+                                    <Typography variant="body2" color="text.secondary">
+                                        {selectedItem.nutrientsPer100g
+                                            ? 'Calories are estimated from nutrients per 100g.'
+                                            : 'Calories unavailable for this item.'}
                                     </Typography>
-                                )}
-                            </Box>
-                        </Stack>
+                                    {computed && (
+                                        <Typography variant="subtitle1" sx={{ mt: 1 }}>
+                                            {computed.calories} Calories for {computed.grams} g
+                                        </Typography>
+                                    )}
+                                </Box>
+                            </Stack>
+                        ) : (
+                            <Typography variant="body2" color="text.secondary">
+                                Select a result to continue.
+                            </Typography>
+                        )
                     ) : (
                         <Typography variant="body2" color="text.secondary">
-                            No results yet. Search by name to see items from the active provider.
+                            {isSearching
+                                ? 'Searching...'
+                                : hasSearched
+                                  ? 'No matches found. Try a different search term or scan again.'
+                                  : 'No results yet. Search by name or scan a barcode to see matching items.'}
                         </Typography>
                     )}
                 </Stack>
             )}
 
-            <FormControl fullWidth>
-                <InputLabel>Meal Period</InputLabel>
-                <Select
-                    value={mealPeriod}
-                    label="Meal Period"
-                    onChange={(e) => setMealPeriod(e.target.value)}
-                    disabled={isSubmitting}
-                >
-                    {mealOptions.map((meal) => (
-                        <MenuItem key={meal.value} value={meal.value}>
-                            <ListItemIcon sx={{ minWidth: 32 }}>{meal.icon}</ListItemIcon>
-                            {meal.label}
-                        </MenuItem>
-                    ))}
-                </Select>
-            </FormControl>
+            {shouldShowMealPeriod && (
+                <FormControl fullWidth>
+                    <InputLabel>Meal Period</InputLabel>
+                    <Select
+                        value={mealPeriod}
+                        label="Meal Period"
+                        onChange={(e) => setMealPeriod(e.target.value as MealPeriod)}
+                        disabled={isSubmitting}
+                    >
+                        {mealOptions.map((meal) => (
+                            <MenuItem key={meal.value} value={meal.value}>
+                                <ListItemIcon sx={{ minWidth: 32 }}>{meal.icon}</ListItemIcon>
+                                {meal.label}
+                            </MenuItem>
+                        ))}
+                    </Select>
+                </FormControl>
+            )}
 
             {mode === 'manual' ? (
                 <Button
-                    type="submit"
                     variant="contained"
-                    disabled={isSubmitting || !foodName.trim() || !calories}
+                    type="submit"
+                    disabled={isSubmitting || !foodName.trim() || !calories.trim()}
                 >
                     {isSubmitting ? 'Adding…' : 'Add Food'}
                 </Button>
             ) : (
                 <Button
-                    type="submit"
                     variant="contained"
-                    disabled={isSubmitting || !selectedItem || !computed}
+                    type="submit"
+                    disabled={isSubmitting || !selectedItem || !computed || searchView !== 'selected'}
                 >
                     {isSubmitting ? 'Adding…' : 'Add Selected Food'}
                 </Button>
             )}
-
-            {submitError && <Alert severity="error">{submitError}</Alert>}
         </Stack>
     );
 };

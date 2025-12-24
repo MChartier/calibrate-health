@@ -8,7 +8,7 @@ const ProtectedRoute: React.FC = () => {
     const { user, isLoading } = useAuth();
     const location = useLocation();
     const isOnboardingRoute = location.pathname.startsWith('/onboarding');
-    const shouldCheckProfile = Boolean(user) && !isOnboardingRoute;
+    const shouldCheckProfile = Boolean(user) && !isLoading && !isOnboardingRoute;
 
     // Always call hooks in the same order; gate the request with `enabled`.
     const profileQuery = useUserProfileQuery({ enabled: shouldCheckProfile });
@@ -53,7 +53,9 @@ const ProtectedRoute: React.FC = () => {
 
         const missing = profileQuery.data?.calorieSummary?.missing ?? [];
         const hasGoal = profileQuery.data?.goal_daily_deficit !== null && profileQuery.data?.goal_daily_deficit !== undefined;
-        const needsOnboarding = missing.length > 0 || !hasGoal;
+        const timezone = profileQuery.data?.profile?.timezone;
+        const hasTimezone = typeof timezone === 'string' && timezone.trim().length > 0;
+        const needsOnboarding = missing.length > 0 || !hasGoal || !hasTimezone;
         if (needsOnboarding) {
             return <Navigate to="/onboarding" replace />;
         }

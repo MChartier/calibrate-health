@@ -4,26 +4,23 @@ import {
     AccordionDetails,
     AccordionSummary,
     Alert,
+    Avatar,
     Box,
     Button,
     Dialog,
     DialogActions,
     DialogContent,
     DialogTitle,
+    Divider,
     FormControl,
     IconButton,
     InputLabel,
-    List,
-    ListItem,
-    ListItemText,
     MenuItem,
     Select,
-    Snackbar,
     Stack,
-    Tooltip,
     TextField,
-    Typography,
-    Avatar
+    Tooltip,
+    Typography
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import EggAltIcon from '@mui/icons-material/EggAlt';
@@ -32,75 +29,72 @@ import IcecreamIcon from '@mui/icons-material/Icecream';
 import LunchDiningIcon from '@mui/icons-material/LunchDining';
 import DinnerDiningIcon from '@mui/icons-material/DinnerDining';
 import NightlifeIcon from '@mui/icons-material/Nightlife';
-import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
-import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
+import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete';
 import axios from 'axios';
-import { getApiErrorMessage } from '../utils/apiError';
-
-type MealKey =
-    | 'Breakfast'
-    | 'Morning Snack'
-    | 'Lunch'
-    | 'Afternoon Snack'
-    | 'Dinner'
-    | 'Evening Snack';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { MEAL_PERIOD_LABELS, MEAL_PERIOD_ORDER, type MealPeriod } from '../types/mealPeriod';
 
 type FoodLogEntry = {
     id: number | string;
-    meal_period?: string;
+    meal_period?: MealPeriod;
     name?: string;
     calories?: number;
 };
 
-type DeleteState = { id: number; label: string; payload: Omit<UndoPayload, 'date'> } | null;
-
-type UndoPayload = {
-    name: string;
-    calories: number;
-    meal_period: MealKey;
-    date: string;
+const MEAL_ICONS: Record<MealPeriod, React.ReactNode> = {
+    BREAKFAST: <EggAltIcon htmlColor="#ff9800" />,
+    MORNING_SNACK: <BakeryDiningIcon htmlColor="#4caf50" />,
+    LUNCH: <LunchDiningIcon htmlColor="#3f51b5" />,
+    AFTERNOON_SNACK: <IcecreamIcon htmlColor="#8bc34a" />,
+    DINNER: <DinnerDiningIcon htmlColor="#9c27b0" />,
+    EVENING_SNACK: <NightlifeIcon htmlColor="#e91e63" />
 };
 
-type EditState = {
-    id: number;
-    name: string;
-    calories: string;
-    mealPeriod: MealKey;
-} | null;
+const MEALS: Array<{ key: MealPeriod; label: string; icon: React.ReactNode }> = MEAL_PERIOD_ORDER.map((key) => ({
+    key,
+    label: MEAL_PERIOD_LABELS[key],
+    icon: MEAL_ICONS[key]
+}));
 
-const MEALS: Array<{ key: MealKey; label: string; aliases: string[]; icon: React.ReactNode }> = [
-    { key: 'Breakfast', label: 'Breakfast', aliases: ['Breakfast'], icon: <EggAltIcon sx={{ color: 'warning.main' }} /> },
-    { key: 'Morning Snack', label: 'Morning Snack', aliases: ['Morning Snack', 'Morning'], icon: <BakeryDiningIcon sx={{ color: 'success.main' }} /> },
-    { key: 'Lunch', label: 'Lunch', aliases: ['Lunch'], icon: <LunchDiningIcon sx={{ color: 'info.main' }} /> },
-    { key: 'Afternoon Snack', label: 'Afternoon Snack', aliases: ['Afternoon Snack', 'Afternoon'], icon: <IcecreamIcon sx={{ color: 'success.light' }} /> },
-    { key: 'Dinner', label: 'Dinner', aliases: ['Dinner'], icon: <DinnerDiningIcon sx={{ color: 'secondary.main' }} /> },
-    { key: 'Evening Snack', label: 'Evening Snack', aliases: ['Evening Snack', 'Evening'], icon: <NightlifeIcon sx={{ color: 'error.main' }} /> }
-];
+const MEAL_PERIOD_SET = new Set<MealPeriod>(MEAL_PERIOD_ORDER);
 
-function normalizeMealPeriod(value: unknown): MealKey | null {
+/**
+ * Return a validated meal period (or null) so the UI can safely group entries.
+ */
+function normalizeMealPeriod(value: unknown): MealPeriod | null {
     if (typeof value !== 'string') return null;
-    const trimmed = value.trim();
-    for (const meal of MEALS) {
-        if (meal.aliases.includes(trimmed)) {
-            return meal.key;
-        }
-    }
-    return null;
+    const trimmed = value.trim() as MealPeriod;
+    return MEAL_PERIOD_SET.has(trimmed) ? trimmed : null;
 }
 
 function sumCalories(entries: FoodLogEntry[]): number {
     return entries.reduce((total, entry) => total + (typeof entry.calories === 'number' ? entry.calories : 0), 0);
 }
 
-const FoodLogMeals: React.FC<{ date: string; logs: FoodLogEntry[]; onChange?: () => void }> = ({ date, logs, onChange }) => {
+/**
+ * Parse a calories input into a non-negative integer, returning null when invalid.
+ */
+function parseCaloriesInput(value: string): number | null {
+    if (!value.trim()) return null;
+    const parsed = Number(value);
+    if (!Number.isFinite(parsed)) return null;
+    const rounded = Math.trunc(parsed);
+    if (rounded < 0) return null;
+    return rounded;
+}
+
+const FoodLogMeals: React.FC<{ logs: FoodLogEntry[] }> = ({ logs }) => {
+    const queryClient = useQueryClient();
+
     const grouped = useMemo(() => {
-        const groups: Record<MealKey, FoodLogEntry[]> = {
-            Breakfast: [],
-            'Morning Snack': [],
-            Lunch: [],
-            'Afternoon Snack': [],
-            Dinner: [],
-            'Evening Snack': []
+        const groups: Record<MealPeriod, FoodLogEntry[]> = {
+            BREAKFAST: [],
+            MORNING_SNACK: [],
+            LUNCH: [],
+            AFTERNOON_SNACK: [],
+            DINNER: [],
+            EVENING_SNACK: []
         };
 
         for (const log of Array.isArray(logs) ? logs : []) {
@@ -112,34 +106,25 @@ const FoodLogMeals: React.FC<{ date: string; logs: FoodLogEntry[]; onChange?: ()
         return groups;
     }, [logs]);
 
-    const [expanded, setExpanded] = useState<Record<MealKey, boolean>>({
-        Breakfast: true,
-        'Morning Snack': true,
-        Lunch: true,
-        'Afternoon Snack': true,
-        Dinner: true,
-        'Evening Snack': true
+    const [expanded, setExpanded] = useState<Record<MealPeriod, boolean>>({
+        BREAKFAST: true,
+        MORNING_SNACK: true,
+        LUNCH: true,
+        AFTERNOON_SNACK: true,
+        DINNER: true,
+        EVENING_SNACK: true
     });
 
-    const previousCountsRef = useRef<Record<MealKey, number> | null>(null);
-    const [deleteState, setDeleteState] = useState<DeleteState>(null);
-    const [deleteError, setDeleteError] = useState<string | null>(null);
-    const [isDeleting, setIsDeleting] = useState(false);
-    const [lastDeleted, setLastDeleted] = useState<UndoPayload | null>(null);
-    const [snackbar, setSnackbar] = useState<{ message: string; severity: 'success' | 'info' | 'error' } | null>(null);
-    const [isUndoing, setIsUndoing] = useState(false);
-    const [editState, setEditState] = useState<EditState>(null);
-    const [editError, setEditError] = useState<string | null>(null);
-    const [isSavingEdit, setIsSavingEdit] = useState(false);
+    const previousCountsRef = useRef<Record<MealPeriod, number> | null>(null);
 
     useEffect(() => {
-        const counts: Record<MealKey, number> = {
-            Breakfast: grouped.Breakfast.length,
-            'Morning Snack': grouped['Morning Snack'].length,
-            Lunch: grouped.Lunch.length,
-            'Afternoon Snack': grouped['Afternoon Snack'].length,
-            Dinner: grouped.Dinner.length,
-            'Evening Snack': grouped['Evening Snack'].length
+        const counts: Record<MealPeriod, number> = {
+            BREAKFAST: grouped.BREAKFAST.length,
+            MORNING_SNACK: grouped.MORNING_SNACK.length,
+            LUNCH: grouped.LUNCH.length,
+            AFTERNOON_SNACK: grouped.AFTERNOON_SNACK.length,
+            DINNER: grouped.DINNER.length,
+            EVENING_SNACK: grouped.EVENING_SNACK.length
         };
 
         const previousCounts = previousCountsRef.current;
@@ -163,84 +148,116 @@ const FoodLogMeals: React.FC<{ date: string; logs: FoodLogEntry[]; onChange?: ()
 
     const handleExpandAll = () => {
         setExpanded({
-            Breakfast: true,
-            'Morning Snack': true,
-            Lunch: true,
-            'Afternoon Snack': true,
-            Dinner: true,
-            'Evening Snack': true
+            BREAKFAST: true,
+            MORNING_SNACK: true,
+            LUNCH: true,
+            AFTERNOON_SNACK: true,
+            DINNER: true,
+            EVENING_SNACK: true
         });
     };
 
     const handleCollapseAll = () => {
         setExpanded({
-            Breakfast: false,
-            'Morning Snack': false,
-            Lunch: false,
-            'Afternoon Snack': false,
-            Dinner: false,
-            'Evening Snack': false
+            BREAKFAST: false,
+            MORNING_SNACK: false,
+            LUNCH: false,
+            AFTERNOON_SNACK: false,
+            DINNER: false,
+            EVENING_SNACK: false
         });
     };
 
-    /**
-     * Delete a single food log entry and refresh the parent list when successful.
-     */
-    const handleConfirmDelete = async () => {
-        if (!deleteState) return;
-        const undoPayload: UndoPayload = { ...deleteState.payload, date };
-        setDeleteError(null);
-        setIsDeleting(true);
-        try {
-            await axios.delete(`/api/food/${deleteState.id}`);
-            setDeleteState(null);
-            setLastDeleted(undoPayload);
-            onChange?.();
-            setSnackbar({ message: `Deleted ${undoPayload.name}`, severity: 'info' });
-        } catch (err) {
-            setDeleteError(getApiErrorMessage(err) ?? 'Unable to delete this entry right now.');
-        } finally {
-            setIsDeleting(false);
-        }
-    };
+    const [editEntry, setEditEntry] = useState<FoodLogEntry | null>(null);
+    const [editName, setEditName] = useState('');
+    const [editCalories, setEditCalories] = useState('');
+    const [editMealPeriod, setEditMealPeriod] = useState<MealPeriod>('BREAKFAST');
+    const [editError, setEditError] = useState<string | null>(null);
 
-    /**
-     * Restore the most recently deleted entry (best-effort) from local state.
-     */
-    const handleUndoDelete = async () => {
-        if (!lastDeleted) return;
-        setIsUndoing(true);
-        try {
-            await axios.post('/api/food', lastDeleted);
-            setLastDeleted(null);
-            setSnackbar({ message: 'Undo successful', severity: 'success' });
-            onChange?.();
-        } catch (err) {
-            setSnackbar({ message: getApiErrorMessage(err) ?? 'Unable to undo delete right now.', severity: 'error' });
-        } finally {
-            setIsUndoing(false);
-        }
-    };
+    const [deleteEntry, setDeleteEntry] = useState<FoodLogEntry | null>(null);
+    const [deleteError, setDeleteError] = useState<string | null>(null);
 
-    /**
-     * Persist edits for a single food log entry and refresh the parent list when successful.
-     */
-    const handleConfirmEdit = async () => {
-        if (!editState) return;
+    const updateMutation = useMutation({
+        mutationFn: async (vars: { id: number | string; data: { name: string; calories: number; meal_period: MealPeriod } }) => {
+            const res = await axios.patch(`/api/food/${encodeURIComponent(String(vars.id))}`, vars.data);
+            return res.data;
+        },
+        onSuccess: async () => {
+            await queryClient.invalidateQueries({ queryKey: ['food'] });
+        }
+    });
+
+    const deleteMutation = useMutation({
+        mutationFn: async (id: number | string) => {
+            await axios.delete(`/api/food/${encodeURIComponent(String(id))}`);
+        },
+        onSuccess: async () => {
+            await queryClient.invalidateQueries({ queryKey: ['food'] });
+        }
+    });
+
+    const handleOpenEdit = (entry: FoodLogEntry) => {
+        setEditEntry(entry);
+        setEditName(typeof entry.name === 'string' ? entry.name : '');
+        setEditCalories(typeof entry.calories === 'number' ? String(entry.calories) : '');
+        setEditMealPeriod(normalizeMealPeriod(entry.meal_period) ?? 'BREAKFAST');
         setEditError(null);
-        setIsSavingEdit(true);
+    };
+
+    const handleCloseEdit = () => {
+        if (updateMutation.isPending) return;
+        setEditEntry(null);
+        setEditError(null);
+    };
+
+    const handleSaveEdit = async () => {
+        if (!editEntry) return;
+        setEditError(null);
+
+        const trimmedName = editName.trim();
+        if (!trimmedName) {
+            setEditError('Name is required.');
+            return;
+        }
+
+        const parsedCalories = parseCaloriesInput(editCalories);
+        if (parsedCalories === null) {
+            setEditError('Calories must be a non-negative number.');
+            return;
+        }
+
         try {
-            await axios.patch(`/api/food/${editState.id}`, {
-                name: editState.name,
-                calories: editState.calories,
-                meal_period: editState.mealPeriod
+            await updateMutation.mutateAsync({
+                id: editEntry.id,
+                data: { name: trimmedName, calories: parsedCalories, meal_period: editMealPeriod }
             });
-            setEditState(null);
-            onChange?.();
+            setEditEntry(null);
         } catch (err) {
-            setEditError(getApiErrorMessage(err) ?? 'Unable to save changes right now.');
-        } finally {
-            setIsSavingEdit(false);
+            console.error(err);
+            setEditError('Unable to save changes right now.');
+        }
+    };
+
+    const handleOpenDelete = (entry: FoodLogEntry) => {
+        setDeleteEntry(entry);
+        setDeleteError(null);
+    };
+
+    const handleCloseDelete = () => {
+        if (deleteMutation.isPending) return;
+        setDeleteEntry(null);
+        setDeleteError(null);
+    };
+
+    const handleConfirmDelete = async () => {
+        if (!deleteEntry) return;
+        setDeleteError(null);
+        try {
+            await deleteMutation.mutateAsync(deleteEntry.id);
+            setDeleteEntry(null);
+        } catch (err) {
+            console.error(err);
+            setDeleteError('Unable to delete this entry right now.');
         }
     };
 
@@ -250,12 +267,12 @@ const FoodLogMeals: React.FC<{ date: string; logs: FoodLogEntry[]; onChange?: ()
                 <Typography variant="h6">Food Log</Typography>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                     <Tooltip title="Collapse all">
-                        <IconButton size="small" aria-label="Collapse all meals" onClick={handleCollapseAll}>
+                        <IconButton size="small" onClick={handleCollapseAll}>
                             <ExpandMoreIcon sx={{ transform: 'rotate(180deg)' }} />
                         </IconButton>
                     </Tooltip>
                     <Tooltip title="Expand all">
-                        <IconButton size="small" aria-label="Expand all meals" onClick={handleExpandAll}>
+                        <IconButton size="small" onClick={handleExpandAll}>
                             <ExpandMoreIcon />
                         </IconButton>
                     </Tooltip>
@@ -287,212 +304,114 @@ const FoodLogMeals: React.FC<{ date: string; logs: FoodLogEntry[]; onChange?: ()
                             {entries.length === 0 ? (
                                 <Typography color="text.secondary">No entries yet.</Typography>
                             ) : (
-                                <List dense disablePadding>
-                                    {entries.map((entry) => {
-                                        const id = typeof entry.id === 'number' ? entry.id : Number(entry.id);
-                                        const label = entry.name?.trim() || 'Food entry';
-                                        const calories = typeof entry.calories === 'number' ? entry.calories : 0;
-
-                                        return (
-                                            <ListItem
-                                                key={entry.id}
-                                                disableGutters
-                                                secondaryAction={
-                                                    <Stack direction="row" spacing={0.5}>
-                                                        <IconButton
-                                                            aria-label={`Edit ${label}`}
-                                                            edge="end"
-                                                            onClick={() => {
-                                                                if (!Number.isInteger(id)) return;
-                                                                setEditError(null);
-                                                                setEditState({
-                                                                    id,
-                                                                    name: entry.name?.trim() ?? '',
-                                                                    calories:
-                                                                        typeof entry.calories === 'number'
-                                                                            ? String(entry.calories)
-                                                                            : '',
-                                                                    mealPeriod: meal.key
-                                                                });
-                                                            }}
-                                                        >
-                                                            <EditOutlinedIcon fontSize="small" />
-                                                        </IconButton>
-                                                        <IconButton
-                                                            aria-label={`Delete ${label}`}
-                                                            edge="end"
-                                                            onClick={() => {
-                                                                if (!Number.isInteger(id)) return;
-                                                                setDeleteError(null);
-                                                                setDeleteState({
-                                                                    id,
-                                                                    label,
-                                                                    payload: {
-                                                                        name: label,
-                                                                        calories,
-                                                                        meal_period: meal.key
-                                                                    }
-                                                                });
-                                                            }}
-                                                        >
-                                                            <DeleteOutlineIcon fontSize="small" />
-                                                        </IconButton>
-                                                    </Stack>
-                                                }
-                                            >
-                                                <ListItemText
-                                                    primary={label}
-                                                    secondary={`${typeof entry.calories === 'number' ? entry.calories : 0} kcal`}
-                                                />
-                                            </ListItem>
-                                        );
-                                    })}
-                                </List>
+                                <Stack divider={<Divider flexItem />} spacing={1}>
+                                    {entries.map((entry) => (
+                                        <Box
+                                            key={entry.id}
+                                            sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1 }}
+                                        >
+                                            <Typography sx={{ flexGrow: 1, minWidth: 0 }} noWrap>
+                                                {entry.name}
+                                            </Typography>
+                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                                <Typography color="text.secondary" sx={{ whiteSpace: 'nowrap' }}>
+                                                    {entry.calories} Calories
+                                                </Typography>
+                                                <Tooltip title="Edit entry">
+                                                    <IconButton size="small" onClick={() => handleOpenEdit(entry)}>
+                                                        <EditIcon fontSize="small" />
+                                                    </IconButton>
+                                                </Tooltip>
+                                                <Tooltip title="Delete entry">
+                                                    <IconButton
+                                                        size="small"
+                                                        onClick={() => handleOpenDelete(entry)}
+                                                        sx={{ color: (theme) => theme.palette.error.main }}
+                                                    >
+                                                        <DeleteIcon fontSize="small" />
+                                                    </IconButton>
+                                                </Tooltip>
+                                            </Box>
+                                        </Box>
+                                    ))}
+                                </Stack>
                             )}
                         </AccordionDetails>
                     </Accordion>
                 );
             })}
 
-            <Dialog
-                open={Boolean(deleteState)}
-                onClose={() => {
-                    if (isDeleting) return;
-                    setDeleteState(null);
-                }}
-            >
-                <DialogTitle>Delete entry?</DialogTitle>
+            <Dialog open={!!editEntry} onClose={handleCloseEdit} fullWidth maxWidth="xs">
+                <DialogTitle>Edit food entry</DialogTitle>
                 <DialogContent>
-                    <Stack spacing={2} sx={{ pt: 1 }}>
-                        <Typography>
-                            This will remove <strong>{deleteState?.label}</strong> from your log.
-                        </Typography>
-                        {deleteError && <Alert severity="error">{deleteError}</Alert>}
-                    </Stack>
-                </DialogContent>
-                <DialogActions>
-                    <Button
-                        onClick={() => setDeleteState(null)}
-                        disabled={isDeleting}
-                    >
-                        Cancel
-                    </Button>
-                    <Button
-                        color="error"
-                        variant="contained"
-                        onClick={() => void handleConfirmDelete()}
-                        disabled={isDeleting}
-                    >
-                        {isDeleting ? 'Deleting…' : 'Delete'}
-                    </Button>
-                </DialogActions>
-            </Dialog>
-
-            <Dialog
-                open={Boolean(editState)}
-                onClose={() => {
-                    if (isSavingEdit) return;
-                    setEditState(null);
-                }}
-                fullWidth
-                maxWidth="sm"
-            >
-                <DialogTitle>Edit entry</DialogTitle>
-                <DialogContent>
-                    <Stack spacing={2} sx={{ pt: 1 }}>
+                    <Stack spacing={2} sx={{ mt: 1 }}>
+                        {editError && <Alert severity="error">{editError}</Alert>}
                         <TextField
-                            label="Food name"
-                            value={editState?.name ?? ''}
-                            onChange={(event) => {
-                                const value = event.target.value;
-                                setEditState((prev) => (prev ? { ...prev, name: value } : prev));
-                            }}
+                            label="Name"
+                            value={editName}
+                            onChange={(e) => setEditName(e.target.value)}
                             fullWidth
+                            autoFocus
                         />
                         <TextField
                             label="Calories"
                             type="number"
-                            value={editState?.calories ?? ''}
-                            onChange={(event) => {
-                                const value = event.target.value;
-                                setEditState((prev) => (prev ? { ...prev, calories: value } : prev));
-                            }}
+                            value={editCalories}
+                            onChange={(e) => setEditCalories(e.target.value)}
                             inputProps={{ min: 0, step: 1 }}
                             fullWidth
                         />
                         <FormControl fullWidth>
-                            <InputLabel>Meal period</InputLabel>
+                            <InputLabel id="food-log-meal-period-label">Meal</InputLabel>
                             <Select
-                                value={editState?.mealPeriod ?? 'Breakfast'}
-                                label="Meal period"
-                                onChange={(event) => {
-                                    const value = event.target.value as MealKey;
-                                    setEditState((prev) => (prev ? { ...prev, mealPeriod: value } : prev));
-                                }}
+                                labelId="food-log-meal-period-label"
+                                label="Meal"
+                                value={editMealPeriod}
+                                onChange={(e) => setEditMealPeriod(e.target.value as MealPeriod)}
                             >
-                                {MEALS.map((option) => (
-                                    <MenuItem key={option.key} value={option.key}>
-                                        {option.label}
+                                {MEALS.map((meal) => (
+                                    <MenuItem key={meal.key} value={meal.key}>
+                                        {meal.label}
                                     </MenuItem>
                                 ))}
                             </Select>
                         </FormControl>
-                        {editError && <Alert severity="error">{editError}</Alert>}
                     </Stack>
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={() => setEditState(null)} disabled={isSavingEdit}>
+                    <Button onClick={handleCloseEdit} disabled={updateMutation.isPending}>
                         Cancel
                     </Button>
-                    <Button
-                        variant="contained"
-                        onClick={() => void handleConfirmEdit()}
-                        disabled={
-                            isSavingEdit ||
-                            !editState?.name.trim() ||
-                            editState.calories === '' ||
-                            !Number.isFinite(Number(editState.calories)) ||
-                            Number(editState.calories) < 0
-                        }
-                    >
-                        {isSavingEdit ? 'Saving…' : 'Save'}
+                    <Button variant="contained" onClick={handleSaveEdit} disabled={updateMutation.isPending}>
+                        Save
                     </Button>
                 </DialogActions>
             </Dialog>
 
-            <Snackbar
-                open={Boolean(snackbar)}
-                autoHideDuration={6000}
-                onClose={() => {
-                    setSnackbar(null);
-                    setLastDeleted(null);
-                }}
-                anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-                sx={{ bottom: { xs: 'calc(140px + env(safe-area-inset-bottom))', md: 24 } }}
-            >
-                <Alert
-                    onClose={() => {
-                        setSnackbar(null);
-                        setLastDeleted(null);
-                    }}
-                    severity={snackbar?.severity ?? 'info'}
-                    action={
-                        lastDeleted ? (
-                            <Button
-                                color="inherit"
-                                size="small"
-                                onClick={() => void handleUndoDelete()}
-                                disabled={isUndoing}
-                            >
-                                {isUndoing ? 'Undoing…' : 'Undo'}
-                            </Button>
-                        ) : undefined
-                    }
-                    sx={{ width: '100%' }}
-                >
-                    {snackbar?.message}
-                </Alert>
-            </Snackbar>
+            <Dialog open={!!deleteEntry} onClose={handleCloseDelete} fullWidth maxWidth="xs">
+                <DialogTitle>Delete food entry?</DialogTitle>
+                <DialogContent>
+                    <Stack spacing={2} sx={{ mt: 1 }}>
+                        {deleteError && <Alert severity="error">{deleteError}</Alert>}
+                        <Typography>
+                            {deleteEntry?.name ? `Delete "${deleteEntry.name}"?` : 'Delete this entry?'}
+                        </Typography>
+                    </Stack>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={handleCloseDelete} disabled={deleteMutation.isPending}>
+                        Cancel
+                    </Button>
+                    <Button
+                        variant="contained"
+                        color="error"
+                        onClick={handleConfirmDelete}
+                        disabled={deleteMutation.isPending}
+                    >
+                        Delete
+                    </Button>
+                </DialogActions>
+            </Dialog>
         </Stack>
     );
 };

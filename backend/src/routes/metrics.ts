@@ -1,7 +1,12 @@
 import express from 'express';
 import prisma from '../config/database';
-import { gramsToWeight, parseWeightToGrams, type WeightUnit } from '../utils/weight';
-import { getUtcTodayDateOnly, normalizeToUtcDateOnly } from '../utils/date';
+import {
+    gramsToWeight,
+    isWeightUnit,
+    parseWeightToGrams,
+    type WeightUnit
+} from '../utils/units';
+import { getUtcTodayDateOnlyInTimeZone, normalizeToUtcDateOnly } from '../utils/date';
 
 const router = express.Router();
 
@@ -14,9 +19,20 @@ const isAuthenticated = (req: express.Request, res: express.Response, next: expr
 
 router.use(isAuthenticated);
 
+/**
+ * Parse an integer ID from a route param.
+ */
+function parseIdParam(value: unknown): number | null {
+    const numeric = typeof value === 'number' ? value : typeof value === 'string' ? Number(value) : Number.NaN;
+    if (!Number.isFinite(numeric) || !Number.isInteger(numeric) || numeric <= 0) {
+        return null;
+    }
+    return numeric;
+}
+
 router.get('/', async (req, res) => {
     const user = req.user as any;
-    const weightUnit = (user.weight_unit ?? 'KG') as WeightUnit;
+    const weightUnit: WeightUnit = isWeightUnit(user.weight_unit) ? user.weight_unit : 'KG';
     const start = typeof req.query.start === 'string' ? req.query.start : undefined;
     const end = typeof req.query.end === 'string' ? req.query.end : undefined;
     try {
@@ -49,11 +65,20 @@ router.get('/', async (req, res) => {
 router.post('/', async (req, res) => {
     const user = req.user as any;
     const { weight, body_fat_percent, date } = req.body;
-    const weightUnit = (user.weight_unit ?? 'KG') as WeightUnit;
+    const weightUnit: WeightUnit = isWeightUnit(user.weight_unit) ? user.weight_unit : 'KG';
     try {
         let metricDate: Date;
         try {
-            metricDate = date ? normalizeToUtcDateOnly(date) : getUtcTodayDateOnly();
+            const timeZone = typeof user.timezone === 'string' ? user.timezone : 'UTC';
+            metricDate = date
+                ? normalizeToUtcDateOnly(date)
+                : (() => {
+                      try {
+                          return getUtcTodayDateOnlyInTimeZone(timeZone);
+                      } catch {
+                          return getUtcTodayDateOnlyInTimeZone('UTC');
+                      }
+                  })();
         } catch {
             return res.status(400).json({ message: 'Invalid date' });
         }
@@ -111,6 +136,25 @@ router.post('/', async (req, res) => {
 
         const { weight_grams: savedWeightGrams, ...savedMetric } = metric;
         res.json({ ...savedMetric, weight: gramsToWeight(savedWeightGrams, weightUnit) });
+    } catch (err) {
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+router.delete('/:id', async (req, res) => {
+    const user = req.user as any;
+    const id = parseIdParam(req.params.id);
+    if (id === null) {
+        return res.status(400).json({ message: 'Invalid metric id' });
+    }
+
+    try {
+        const deleteResult = await prisma.bodyMetric.deleteMany({ where: { id, user_id: user.id } });
+        if (deleteResult.count === 0) {
+            return res.status(404).json({ message: 'Metric not found' });
+        }
+
+        res.status(204).send();
     } catch (err) {
         res.status(500).json({ message: 'Server error' });
     }
