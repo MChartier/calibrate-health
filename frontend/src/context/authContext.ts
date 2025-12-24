@@ -1,11 +1,13 @@
 import { createContext } from 'react';
 
 export type WeightUnit = 'KG' | 'LB';
+export type UnitSystem = 'METRIC' | 'IMPERIAL';
 
 export type User = {
     id: number;
     email: string;
     weight_unit: WeightUnit;
+    unit_system: UnitSystem;
     timezone?: string;
     date_of_birth?: string | null;
     sex?: 'MALE' | 'FEMALE' | null;
@@ -18,7 +20,7 @@ export type AuthContextType = {
     login: (email: string, password: string) => Promise<void>;
     register: (email: string, password: string) => Promise<void>;
     logout: () => Promise<void>;
-    updateWeightUnit: (weight_unit: User['weight_unit']) => Promise<void>;
+    updateUnits: (preferences: { unit_system?: UnitSystem; weight_unit?: WeightUnit }) => Promise<void>;
     updateTimezone: (timezone: string) => Promise<void>;
     isLoading: boolean;
 };

@@ -20,25 +20,28 @@ import TimeZonePicker from '../components/TimeZonePicker';
  * Settings is focused on device preferences (theme) and app preferences (units).
  */
 const Settings: React.FC = () => {
-    const { user, updateWeightUnit, updateTimezone } = useAuth();
+    const { user, updateUnits, updateTimezone } = useAuth();
     const { preference: themePreference, mode: resolvedThemeMode, setPreference: setThemePreference } = useThemeMode();
     const [settingsMessage, setSettingsMessage] = useState('');
     const detectedTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
     const [timezoneValue, setTimezoneValue] = useState(() => user?.timezone ?? detectedTimezone);
+    const [unitSystem, setUnitSystem] = useState<'METRIC' | 'IMPERIAL'>(() => user?.unit_system ?? 'METRIC');
 
     React.useEffect(() => {
         setTimezoneValue(user?.timezone ?? detectedTimezone);
-    }, [detectedTimezone, user?.timezone]);
+        setUnitSystem(user?.unit_system ?? 'METRIC');
+    }, [detectedTimezone, user?.timezone, user?.unit_system]);
 
-    const handleWeightUnitChange = async (e: SelectChangeEvent) => {
-        const nextUnit = e.target.value;
-        if (nextUnit !== 'KG' && nextUnit !== 'LB') {
+    const handleUnitSystemChange = async (e: SelectChangeEvent) => {
+        const nextSystem = e.target.value;
+        if (nextSystem !== 'METRIC' && nextSystem !== 'IMPERIAL') {
             setSettingsMessage('Failed to update preferences');
             return;
         }
+        setUnitSystem(nextSystem);
 
         try {
-            await updateWeightUnit(nextUnit);
+            await updateUnits({ unit_system: nextSystem, weight_unit: nextSystem === 'IMPERIAL' ? 'LB' : 'KG' });
             setSettingsMessage('Preferences updated');
         } catch {
             setSettingsMessage('Failed to update preferences');
@@ -63,10 +66,10 @@ const Settings: React.FC = () => {
                 <Typography variant="h6" gutterBottom>Units & Localization</Typography>
                 {settingsMessage && <Alert severity="info" sx={{ mb: 2 }}>{settingsMessage}</Alert>}
                 <FormControl fullWidth margin="normal">
-                    <InputLabel>Weight Unit</InputLabel>
-                    <Select value={user?.weight_unit ?? 'KG'} label="Weight Unit" onChange={handleWeightUnitChange}>
-                        <MenuItem value="KG">Kilograms (kg)</MenuItem>
-                        <MenuItem value="LB">Pounds (lb)</MenuItem>
+                    <InputLabel>Unit System</InputLabel>
+                    <Select value={unitSystem} label="Unit System" onChange={handleUnitSystemChange}>
+                        <MenuItem value="METRIC">Metric (cm, kg)</MenuItem>
+                        <MenuItem value="IMPERIAL">Imperial (ft/in, lb)</MenuItem>
                     </Select>
                 </FormControl>
 

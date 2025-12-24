@@ -1,7 +1,7 @@
 import express from 'express';
 import prisma from '../config/database';
-import { isWeightUnit } from '../utils/weight';
-import { ActivityLevel, Sex, WeightUnit } from '@prisma/client';
+import { isUnitSystem, isWeightUnit, unitSystemToWeightUnit } from '../utils/weight';
+import { ActivityLevel, Sex, UnitSystem, WeightUnit } from '@prisma/client';
 import { buildCalorieSummary, isActivityLevel, isSex } from '../utils/profile';
 import { isValidIanaTimeZone } from '../utils/date';
 
@@ -27,6 +27,7 @@ router.get('/me', (req, res) => {
       id: user.id,
       email: user.email,
       weight_unit: user.weight_unit,
+      unit_system: user.unit_system,
       timezone: user.timezone,
       date_of_birth: user.date_of_birth,
       sex: user.sex,
@@ -38,16 +39,45 @@ router.get('/me', (req, res) => {
 
 router.patch('/preferences', async (req, res) => {
   const user = req.user as any;
-  const { weight_unit } = req.body;
+  const { weight_unit, unit_system } = req.body as {
+    weight_unit?: unknown;
+    unit_system?: unknown;
+  };
 
-  if (!isWeightUnit(weight_unit)) {
+  if (weight_unit === undefined && unit_system === undefined) {
+    return res.status(400).json({ message: 'No fields to update' });
+  }
+
+  if (weight_unit !== undefined && !isWeightUnit(weight_unit)) {
     return res.status(400).json({ message: 'Invalid weight_unit' });
+  }
+
+  if (unit_system !== undefined && !isUnitSystem(unit_system)) {
+    return res.status(400).json({ message: 'Invalid unit_system' });
+  }
+
+  const resolvedUnitSystem = (unit_system as UnitSystem | undefined) ??
+    (weight_unit ? (weight_unit === 'LB' ? UnitSystem.IMPERIAL : UnitSystem.METRIC) : undefined);
+
+  const resolvedWeightUnit = (weight_unit as WeightUnit | undefined) ??
+    (resolvedUnitSystem ? unitSystemToWeightUnit(resolvedUnitSystem) : undefined);
+
+  if (!resolvedUnitSystem || !resolvedWeightUnit) {
+    return res.status(400).json({ message: 'Invalid unit preference' });
+  }
+
+  if (
+    weight_unit !== undefined &&
+    unit_system !== undefined &&
+    unitSystemToWeightUnit(resolvedUnitSystem) !== resolvedWeightUnit
+  ) {
+    return res.status(400).json({ message: 'unit_system and weight_unit must align' });
   }
 
   try {
     const updatedUser = await prisma.user.update({
       where: { id: user.id },
-      data: { weight_unit },
+      data: { weight_unit: resolvedWeightUnit, unit_system: resolvedUnitSystem },
     });
 
     res.json({
@@ -55,6 +85,7 @@ router.patch('/preferences', async (req, res) => {
         id: updatedUser.id,
         email: updatedUser.email,
         weight_unit: updatedUser.weight_unit,
+        unit_system: updatedUser.unit_system,
         timezone: updatedUser.timezone,
         date_of_birth: updatedUser.date_of_birth,
         sex: updatedUser.sex,
@@ -93,7 +124,8 @@ router.get('/profile', async (req, res) => {
       sex: dbUser.sex,
       height_mm: dbUser.height_mm,
       activity_level: dbUser.activity_level,
-      weight_unit: dbUser.weight_unit
+      weight_unit: dbUser.weight_unit,
+      unit_system: dbUser.unit_system
     };
 
     const calorieSummary = buildCalorieSummary({
@@ -213,6 +245,7 @@ router.patch('/profile', async (req, res) => {
         id: updatedUser.id,
         email: updatedUser.email,
         weight_unit: updatedUser.weight_unit,
+        unit_system: updatedUser.unit_system,
         timezone: updatedUser.timezone,
         date_of_birth: updatedUser.date_of_birth,
         sex: updatedUser.sex,

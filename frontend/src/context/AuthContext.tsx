@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import axios from 'axios';
-import { AuthContext, type User } from './authContext';
+import { AuthContext, type UnitSystem, type User } from './authContext';
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [user, setUser] = useState<User | null>(null);
@@ -40,8 +40,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(null);
     };
 
-    const updateWeightUnit = async (weight_unit: User['weight_unit']) => {
-        const res = await axios.patch('/api/user/preferences', { weight_unit });
+    const updateUnits = async (preferences: { unit_system?: UnitSystem; weight_unit?: User['weight_unit'] }) => {
+        const res = await axios.patch('/api/user/preferences', preferences);
         setUser(res.data.user);
     };
 
@@ -51,7 +51,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     return (
-        <AuthContext.Provider value={{ user, login, register, logout, updateWeightUnit, updateTimezone, isLoading }}>
+        <AuthContext.Provider value={{ user, login, register, logout, updateUnits, updateTimezone, isLoading }}>
             {children}
         </AuthContext.Provider>
     );

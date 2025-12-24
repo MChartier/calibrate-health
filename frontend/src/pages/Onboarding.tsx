@@ -25,8 +25,13 @@ const Onboarding: React.FC = () => {
     const { user } = useAuth();
     const navigate = useNavigate();
 
-    const [weightUnit, setWeightUnit] = useState<'KG' | 'LB'>(user?.weight_unit ?? 'KG');
-    const weightUnitLabel = weightUnit === 'LB' ? 'lb' : 'kg';
+    const defaultUnitSystem = useMemo(() => {
+        if (user?.unit_system) return user.unit_system;
+        if (user?.weight_unit === 'LB') return 'IMPERIAL';
+        return 'METRIC';
+    }, [user?.unit_system, user?.weight_unit]);
+    const [unitSystem, setUnitSystem] = useState<'METRIC' | 'IMPERIAL'>(defaultUnitSystem);
+    const weightUnitLabel = unitSystem === 'IMPERIAL' ? 'lb' : 'kg';
 
     const detectedTimezone = useMemo(() => Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC', []);
     const [timezone, setTimezone] = useState<string>(user?.timezone ?? detectedTimezone);
@@ -34,7 +39,6 @@ const Onboarding: React.FC = () => {
     const [sex, setSex] = useState('');
     const [dob, setDob] = useState('');
     const [activityLevel, setActivityLevel] = useState('');
-    const [heightUnit, setHeightUnit] = useState<'cm' | 'ftin'>('cm');
     const [heightCm, setHeightCm] = useState('');
     const [heightFeet, setHeightFeet] = useState('');
     const [heightInches, setHeightInches] = useState('');
@@ -45,6 +49,10 @@ const Onboarding: React.FC = () => {
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
     const [isSaving, setIsSaving] = useState(false);
+
+    useEffect(() => {
+        setUnitSystem(defaultUnitSystem);
+    }, [defaultUnitSystem]);
 
     type ProfileUpdatePayload = {
         timezone: string | null;
@@ -77,11 +85,11 @@ const Onboarding: React.FC = () => {
     }, [profileQuery.isSuccess, profileQuery.data, navigate]);
 
     const heightFieldsValid = useMemo(() => {
-        if (heightUnit === 'cm') {
+        if (unitSystem === 'METRIC') {
             return !!heightCm;
         }
         return !!heightFeet || !!heightInches;
-    }, [heightCm, heightFeet, heightInches, heightUnit]);
+    }, [heightCm, heightFeet, heightInches, unitSystem]);
 
     const handleSave = async () => {
         setError('');
@@ -107,7 +115,7 @@ const Onboarding: React.FC = () => {
                 sex: sex || null,
                 activity_level: activityLevel || null
             };
-            if (heightUnit === 'cm') {
+            if (unitSystem === 'METRIC') {
                 profilePayload.height_cm = heightCm || null;
             } else {
                 profilePayload.height_feet = heightFeet || null;
@@ -116,7 +124,10 @@ const Onboarding: React.FC = () => {
 
             await axios.patch('/api/user/profile', profilePayload);
 
-            await axios.patch('/api/user/preferences', { weight_unit: weightUnit });
+            await axios.patch('/api/user/preferences', {
+                unit_system: unitSystem,
+                weight_unit: unitSystem === 'IMPERIAL' ? 'LB' : 'KG'
+            });
 
             const deficitValue = goalMode === 'maintain' ? 0 : parseInt(dailyDeficit || '0', 10);
             const signedDeficit = goalMode === 'gain' ? -Math.abs(deficitValue) : Math.abs(deficitValue);
@@ -207,30 +218,18 @@ const Onboarding: React.FC = () => {
                     />
 
                     <FormControl fullWidth required>
-                        <InputLabel>Weight Unit</InputLabel>
+                        <InputLabel>Unit System</InputLabel>
                         <Select
-                            value={weightUnit}
-                            label="Weight Unit"
-                            onChange={(e) => setWeightUnit(e.target.value as 'KG' | 'LB')}
+                            value={unitSystem}
+                            label="Unit System"
+                            onChange={(e) => setUnitSystem(e.target.value as 'METRIC' | 'IMPERIAL')}
                         >
-                            <MenuItem value="KG">Kilograms (kg)</MenuItem>
-                            <MenuItem value="LB">Pounds (lb)</MenuItem>
+                            <MenuItem value="METRIC">Metric (cm, kg)</MenuItem>
+                            <MenuItem value="IMPERIAL">Imperial (ft/in, lb)</MenuItem>
                         </Select>
                     </FormControl>
 
-                    <FormControl fullWidth required>
-                        <InputLabel>Height Units</InputLabel>
-                        <Select
-                            value={heightUnit}
-                            label="Height Units"
-                            onChange={(e) => setHeightUnit(e.target.value as 'cm' | 'ftin')}
-                        >
-                            <MenuItem value="cm">Centimeters</MenuItem>
-                            <MenuItem value="ftin">Feet / Inches</MenuItem>
-                        </Select>
-                    </FormControl>
-
-                    {heightUnit === 'cm' ? (
+                    {unitSystem === 'METRIC' ? (
                         <TextField
                             label="Height (cm)"
                             type="number"

@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
     Alert,
     Box,
@@ -25,6 +25,7 @@ type ProfileResponse = {
         height_mm: number | null;
         activity_level: 'SEDENTARY' | 'LIGHT' | 'MODERATE' | 'ACTIVE' | 'VERY_ACTIVE' | null;
         weight_unit: 'KG' | 'LB';
+        unit_system: 'METRIC' | 'IMPERIAL';
     };
     calorieSummary: {
         dailyCalorieTarget?: number;
@@ -72,7 +73,7 @@ const Profile: React.FC = () => {
     const [heightCm, setHeightCm] = useState<string | null>(null);
     const [heightFeet, setHeightFeet] = useState<string | null>(null);
     const [heightInches, setHeightInches] = useState<string | null>(null);
-    const [heightUnit, setHeightUnit] = useState<'cm' | 'ftin'>('cm');
+    const [unitSystem, setUnitSystem] = useState<'METRIC' | 'IMPERIAL'>('METRIC');
     const [activityLevel, setActivityLevel] = useState<string | null>(null);
 
     const profileQuery = useQuery({
@@ -108,6 +109,13 @@ const Profile: React.FC = () => {
         return parseHeightFromMillimeters(mm);
     }, [profileQuery.data?.profile.height_mm]);
 
+    useEffect(() => {
+        const resolvedUnitSystem =
+            profileQuery.data?.profile.unit_system ??
+            (profileQuery.data?.profile.weight_unit === 'LB' ? 'IMPERIAL' : 'METRIC');
+        setUnitSystem(resolvedUnitSystem);
+    }, [profileQuery.data?.profile.unit_system, profileQuery.data?.profile.weight_unit]);
+
     const heightCmValue = useMemo(() => {
         if (heightCm !== null) return heightCm;
         return parsedHeight ? parsedHeight.cm.toString() : '';
@@ -138,7 +146,7 @@ const Profile: React.FC = () => {
                 activity_level: activityValue || null
             };
 
-            if (heightUnit === 'cm') {
+            if (unitSystem === 'METRIC') {
                 payload.height_cm = heightCmValue || null;
             } else {
                 payload.height_feet = heightFeetValue || null;
@@ -146,6 +154,11 @@ const Profile: React.FC = () => {
             }
 
             await axios.patch('/api/user/profile', payload);
+
+            await axios.patch('/api/user/preferences', {
+                unit_system: unitSystem,
+                weight_unit: unitSystem === 'IMPERIAL' ? 'LB' : 'KG'
+            });
 
             setProfileMessage('Profile updated');
             setTimezone(null);
@@ -196,18 +209,18 @@ const Profile: React.FC = () => {
                     </FormControl>
 
                     <FormControl fullWidth>
-                        <InputLabel>Height Units</InputLabel>
+                        <InputLabel>Unit System</InputLabel>
                         <Select
-                            value={heightUnit}
-                            label="Height Units"
-                            onChange={(e) => setHeightUnit(e.target.value as 'cm' | 'ftin')}
+                            value={unitSystem}
+                            label="Unit System"
+                            onChange={(e) => setUnitSystem(e.target.value as 'METRIC' | 'IMPERIAL')}
                         >
-                            <MenuItem value="cm">Centimeters</MenuItem>
-                            <MenuItem value="ftin">Feet / Inches</MenuItem>
+                            <MenuItem value="METRIC">Metric (cm, kg)</MenuItem>
+                            <MenuItem value="IMPERIAL">Imperial (ft/in, lb)</MenuItem>
                         </Select>
                     </FormControl>
 
-                    {heightUnit === 'cm' ? (
+                    {unitSystem === 'METRIC' ? (
                         <TextField
                             label="Height (cm)"
                             type="number"
