@@ -18,11 +18,15 @@ const Settings: React.FC = () => {
     const [dailyDeficitInput, setDailyDeficitInput] = useState<string | null>(null);
     const [goalMode, setGoalMode] = useState<'lose' | 'maintain' | 'gain'>('lose');
     const [unitMessage, setUnitMessage] = useState('');
+    const [isSavingUnit, setIsSavingUnit] = useState(false);
     const [timeZoneMessage, setTimeZoneMessage] = useState('');
+    const [isSavingTimeZone, setIsSavingTimeZone] = useState(false);
     const [timezoneInput, setTimezoneInput] = useState<string | null>(null);
     const [goalMessage, setGoalMessage] = useState('');
+    const [isSavingGoal, setIsSavingGoal] = useState(false);
     const weightUnitLabel = user?.weight_unit === 'LB' ? 'lb' : 'kg';
     const [profileMessage, setProfileMessage] = useState('');
+    const [isSavingProfile, setIsSavingProfile] = useState(false);
     const timeZoneOptions = useMemo(() => getSupportedTimeZones(), []);
 
     const [dateOfBirth, setDateOfBirth] = useState<string | null>(null);
@@ -140,6 +144,7 @@ const Settings: React.FC = () => {
             return;
         }
 
+        setIsSavingUnit(true);
         try {
             await updateWeightUnit(nextUnit);
             setStartWeightInput(null);
@@ -148,6 +153,8 @@ const Settings: React.FC = () => {
             void goalQuery.refetch();
         } catch (err) {
             setUnitMessage(getApiErrorMessage(err) ?? 'Failed to update preferences');
+        } finally {
+            setIsSavingUnit(false);
         }
     };
 
@@ -158,17 +165,21 @@ const Settings: React.FC = () => {
             return;
         }
 
+        setIsSavingTimeZone(true);
         try {
             await updateTimezone(nextTimezone);
             setTimezoneInput(null);
             setTimeZoneMessage('Timezone updated');
         } catch (err) {
             setTimeZoneMessage(getApiErrorMessage(err) ?? 'Failed to update timezone');
+        } finally {
+            setIsSavingTimeZone(false);
         }
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        setIsSavingGoal(true);
         try {
             const deficitValue = goalMode === 'maintain' ? 0 : parseInt(dailyDeficit || '0', 10);
             const signedDeficit = goalMode === 'gain' ? -Math.abs(deficitValue) : Math.abs(deficitValue);
@@ -184,10 +195,13 @@ const Settings: React.FC = () => {
             void goalQuery.refetch();
         } catch (err) {
             setGoalMessage(getApiErrorMessage(err) ?? 'Failed to update goal');
+        } finally {
+            setIsSavingGoal(false);
         }
     };
 
     const handleProfileSave = async () => {
+        setIsSavingProfile(true);
         try {
             const payload: ProfilePatchPayload = {
                 date_of_birth: dobValue || null,
@@ -212,6 +226,8 @@ const Settings: React.FC = () => {
             void profileQuery.refetch();
         } catch (err) {
             setProfileMessage(getApiErrorMessage(err) ?? 'Failed to update profile');
+        } finally {
+            setIsSavingProfile(false);
         }
     };
 
@@ -237,6 +253,7 @@ const Settings: React.FC = () => {
                         value={user?.weight_unit ?? 'KG'}
                         label="Weight Unit"
                         onChange={handleWeightUnitChange}
+                        disabled={isSavingUnit}
                     >
                         <MenuItem value="KG">Kilograms (kg)</MenuItem>
                         <MenuItem value="LB">Pounds (lb)</MenuItem>
@@ -266,10 +283,10 @@ const Settings: React.FC = () => {
                 <Button
                     variant="contained"
                     onClick={() => void handleTimezoneSave()}
-                    disabled={!timezoneValue.trim() || timezoneValue.trim() === (user?.timezone ?? 'UTC')}
+                    disabled={isSavingTimeZone || !timezoneValue.trim() || timezoneValue.trim() === (user?.timezone ?? 'UTC')}
                     sx={{ mt: 1 }}
                 >
-                    Save time zone
+                    {isSavingTimeZone ? 'Saving…' : 'Save time zone'}
                 </Button>
 
                 <FormControl fullWidth margin="normal">
@@ -342,8 +359,12 @@ const Settings: React.FC = () => {
                         </Select>
                     </FormControl>
                     <Box sx={{ display: 'flex', gap: 2 }}>
-                        <Button variant="contained" onClick={() => void handleProfileSave()} disabled={profileQuery.isLoading}>
-                            Save Profile
+                        <Button
+                            variant="contained"
+                            onClick={() => void handleProfileSave()}
+                            disabled={profileQuery.isLoading || isSavingProfile}
+                        >
+                            {isSavingProfile ? 'Saving…' : 'Save Profile'}
                         </Button>
                     </Box>
                     {profileQuery.data?.calorieSummary && (
@@ -408,7 +429,9 @@ const Settings: React.FC = () => {
                             </Select>
                         </FormControl>
                     )}
-                    <Button type="submit" variant="contained" fullWidth sx={{ mt: 2 }}>Save Goal</Button>
+                    <Button type="submit" variant="contained" fullWidth sx={{ mt: 2 }} disabled={isSavingGoal}>
+                        {isSavingGoal ? 'Saving…' : 'Save Goal'}
+                    </Button>
                 </Box>
             </Paper>
 
