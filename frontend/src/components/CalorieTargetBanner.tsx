@@ -34,7 +34,18 @@ type ProfileSummary = {
     };
 };
 
-const CalorieTargetBanner: React.FC = () => {
+type Props = {
+    /**
+     * Show a quick summary of how the selected day compares to the daily target.
+     */
+    consumedCalories: number;
+    /**
+     * Label for the day being summarized (e.g., "Today" or a formatted date string).
+     */
+    selectedDateLabel: string;
+};
+
+const CalorieTargetBanner: React.FC<Props> = ({ consumedCalories, selectedDateLabel }) => {
     const { data, isLoading, isError } = useQuery({
         queryKey: ['profile-summary'],
         queryFn: async (): Promise<ProfileSummary> => {
@@ -69,11 +80,15 @@ const CalorieTargetBanner: React.FC = () => {
 
     const missing = calorieSummary.missing || [];
     const hasTarget = typeof calorieSummary.dailyCalorieTarget === 'number';
+    const hasConsumedCalories = Number.isFinite(consumedCalories);
 
     const bmr = calorieSummary.bmr;
     const tdee = calorieSummary.tdee;
     const deficit = calorieSummary.deficit;
     const dailyTarget = calorieSummary.dailyCalorieTarget;
+
+    const remainingCalories = hasTarget && hasConsumedCalories ? Math.round(dailyTarget - consumedCalories) : null;
+    const isOverTarget = remainingCalories !== null && remainingCalories < 0;
 
     const activityDelta =
         typeof tdee === 'number' && typeof bmr === 'number' ? Math.round((tdee - bmr) * 10) / 10 : undefined;
@@ -197,6 +212,37 @@ const CalorieTargetBanner: React.FC = () => {
                     <Alert severity="info">
                         Add birthday, sex, height, activity level, latest weight, and a goal deficit to see a daily calorie target.
                     </Alert>
+                )}
+                {hasTarget && hasConsumedCalories && (
+                    <Box
+                        sx={{
+                            mt: 1,
+                            p: 1.5,
+                            borderRadius: 1,
+                            bgcolor: (theme) =>
+                                isOverTarget
+                                    ? theme.palette.error.light + '22'
+                                    : theme.palette.success.light + '22'
+                        }}
+                    >
+                        <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 0.5 }}>
+                            {selectedDateLabel ? `${selectedDateLabel} summary` : 'Daily summary'}
+                        </Typography>
+                        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={0.5} alignItems="baseline">
+                            <Typography variant="h5">{Math.round(consumedCalories)} kcal consumed</Typography>
+                            <Typography
+                                variant="body1"
+                                color={isOverTarget ? 'error.main' : 'success.main'}
+                                sx={{ fontWeight: 600 }}
+                            >
+                                {remainingCalories !== null
+                                    ? isOverTarget
+                                        ? `${Math.abs(remainingCalories)} kcal over target`
+                                        : `${remainingCalories} kcal remaining`
+                                    : '—'}
+                            </Typography>
+                        </Stack>
+                    </Box>
                 )}
                 {!hasTarget && missing.length > 0 && (
                     <Typography variant="body2" color="text.secondary">

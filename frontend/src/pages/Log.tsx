@@ -1,14 +1,15 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
+    Alert,
     Box,
-    TextField,
+    Button,
     Dialog,
     DialogActions,
     DialogContent,
     DialogTitle,
     Paper,
-    Typography,
-    Button
+    TextField,
+    Typography
 } from '@mui/material';
 import SpeedDial from '@mui/material/SpeedDial';
 import SpeedDialAction from '@mui/material/SpeedDialAction';
@@ -39,10 +40,26 @@ const Log: React.FC = () => {
         calories: number;
     };
 
+    type MetricEntry = {
+        id: number;
+        date: string;
+        weight?: number | null;
+    };
+
     const foodQuery = useQuery({
         queryKey: ['food', selectedDate],
         queryFn: async (): Promise<FoodLogEntry[]> => {
             const res = await axios.get('/api/food?date=' + encodeURIComponent(selectedDate));
+            return Array.isArray(res.data) ? res.data : [];
+        }
+    });
+
+    const weightQuery = useQuery({
+        queryKey: ['metrics', selectedDate],
+        queryFn: async (): Promise<MetricEntry[]> => {
+            const res = await axios.get('/api/metrics', {
+                params: { start: selectedDate, end: selectedDate }
+            });
             return Array.isArray(res.data) ? res.data : [];
         }
     });
@@ -53,6 +70,18 @@ const Log: React.FC = () => {
 
     const handleCloseFoodDialog = () => setIsFoodDialogOpen(false);
     const handleCloseWeightDialog = () => setIsWeightDialogOpen(false);
+
+    const totalCalories = useMemo(
+        () =>
+            (foodQuery.data ?? []).reduce(
+                (total, entry) => total + (typeof entry.calories === 'number' ? entry.calories : 0),
+                0
+            ),
+        [foodQuery.data]
+    );
+
+    const selectedDateLabel = selectedDate === today ? 'Today' : selectedDate;
+    const hasWeighIn = (weightQuery.data?.length ?? 0) > 0;
 
     return (
         <Box>
@@ -75,7 +104,26 @@ const Log: React.FC = () => {
                 />
             </Box>
 
-            <CalorieTargetBanner />
+            <CalorieTargetBanner consumedCalories={totalCalories} selectedDateLabel={selectedDateLabel} />
+
+            {!weightQuery.isLoading && !hasWeighIn && (
+                <Alert
+                    severity="info"
+                    sx={{ mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 2 }}
+                    action={
+                        <Button color="primary" variant="contained" onClick={() => setIsWeightDialogOpen(true)}>
+                            Add weigh-in
+                        </Button>
+                    }
+                >
+                    <Box>
+                        <Typography variant="subtitle1">No weigh-in logged for this day</Typography>
+                        <Typography variant="body2" color="text.secondary">
+                            Add your weight to keep progress and calorie math up to date.
+                        </Typography>
+                    </Box>
+                </Alert>
+            )}
 
             <Paper sx={{ p: 2 }}>
                 <FoodLogMeals logs={foodQuery.data ?? []} />
@@ -126,6 +174,7 @@ const Log: React.FC = () => {
                             date={selectedDate}
                             onSuccess={() => {
                                 void foodQuery.refetch();
+                                void weightQuery.refetch();
                                 handleCloseWeightDialog();
                             }}
                         />
