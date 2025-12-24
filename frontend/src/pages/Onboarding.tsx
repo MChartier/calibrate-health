@@ -18,6 +18,8 @@ import { useNavigate } from 'react-router-dom';
 import { activityLevelOptions } from '../constants/activityLevels';
 import { useQuery } from '@tanstack/react-query';
 import { validateGoalWeights } from '../utils/goalValidation';
+import { formatDateToLocalDateString } from '../utils/date';
+import TimeZonePicker from '../components/TimeZonePicker';
 
 const Onboarding: React.FC = () => {
     const { user } = useAuth();
@@ -25,6 +27,9 @@ const Onboarding: React.FC = () => {
 
     const [weightUnit, setWeightUnit] = useState<'KG' | 'LB'>(user?.weight_unit ?? 'KG');
     const weightUnitLabel = weightUnit === 'LB' ? 'lb' : 'kg';
+
+    const detectedTimezone = useMemo(() => Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC', []);
+    const [timezone, setTimezone] = useState<string>(user?.timezone ?? detectedTimezone);
 
     const [sex, setSex] = useState('');
     const [dob, setDob] = useState('');
@@ -42,6 +47,7 @@ const Onboarding: React.FC = () => {
     const [isSaving, setIsSaving] = useState(false);
 
     type ProfileUpdatePayload = {
+        timezone: string | null;
         date_of_birth: string | null;
         sex: string | null;
         activity_level: string | null;
@@ -63,7 +69,8 @@ const Onboarding: React.FC = () => {
         if (profileQuery.isSuccess) {
             const missing = profileQuery.data?.calorieSummary?.missing ?? [];
             const hasGoal = profileQuery.data?.goal_daily_deficit !== null && profileQuery.data?.goal_daily_deficit !== undefined;
-            if (missing.length === 0 && hasGoal) {
+            const hasTimezone = typeof profileQuery.data?.profile?.timezone === 'string' && profileQuery.data.profile.timezone.trim().length > 0;
+            if (missing.length === 0 && hasGoal && hasTimezone) {
                 navigate('/settings', { replace: true });
             }
         }
@@ -95,6 +102,7 @@ const Onboarding: React.FC = () => {
         setIsSaving(true);
         try {
             const profilePayload: ProfileUpdatePayload = {
+                timezone: timezone.trim() || null,
                 date_of_birth: dob || null,
                 sex: sex || null,
                 activity_level: activityLevel || null
@@ -115,7 +123,7 @@ const Onboarding: React.FC = () => {
 
             await axios.post('/api/metrics', {
                 weight: currentWeight,
-                date: new Date().toISOString().slice(0, 10)
+                date: formatDateToLocalDateString(new Date(), timezone || detectedTimezone)
             });
 
             await axios.post('/api/goals', {
@@ -191,6 +199,12 @@ const Onboarding: React.FC = () => {
                             Used to estimate daily calorie burn (TDEE). Pick the closest match to your average week.
                         </Typography>
                     </FormControl>
+
+                    <TimeZonePicker
+                        value={timezone}
+                        onChange={setTimezone}
+                        helperText="Used to define your day boundaries for food and weight logs."
+                    />
 
                     <FormControl fullWidth required>
                         <InputLabel>Weight Unit</InputLabel>
@@ -303,6 +317,7 @@ const Onboarding: React.FC = () => {
                             !sex ||
                             !dob ||
                             !activityLevel ||
+                            !timezone.trim() ||
                             !heightFieldsValid ||
                             !currentWeight ||
                             !goalWeight

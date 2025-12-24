@@ -111,7 +111,7 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
     const searchSessionRef = useRef(0);
     const loadMoreLockRef = useRef(false);
 
-    const entryDate = date ? `${date}T12:00:00` : new Date();
+    const entryLocalDate = typeof date === 'string' && date.trim().length > 0 ? date.trim() : undefined;
 
     const mealIcons: Record<MealPeriod, React.ReactNode> = {
         BREAKFAST: <EggAltIcon htmlColor="#ff9800" />,
@@ -307,7 +307,7 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
             name: foodName,
             calories,
             meal_period: mealPeriod,
-            date: entryDate
+            ...(entryLocalDate ? { date: entryLocalDate } : {})
         });
         setFoodName('');
         setCalories('');
@@ -320,7 +320,7 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
             name: selectedItem.description,
             calories: computed.calories,
             meal_period: mealPeriod,
-            date: entryDate
+            ...(entryLocalDate ? { date: entryLocalDate } : {})
         });
         onSuccess?.();
     };

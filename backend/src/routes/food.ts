@@ -2,6 +2,7 @@ import express from 'express';
 import prisma from '../config/database';
 import { getFoodDataProvider } from '../services/foodData';
 import { MealPeriod } from '@prisma/client';
+import { getSafeUtcTodayDateOnlyInTimeZone, parseLocalDateOnly } from '../utils/date';
 
 const router = express.Router();
 
@@ -102,19 +103,17 @@ router.get('/search', async (req, res) => {
 
 router.get('/', async (req, res) => {
     const user = req.user as any;
-    const { date } = req.query;
+    const dateParam = typeof req.query.date === 'string' ? req.query.date : undefined;
+    const localDateParam = typeof req.query.local_date === 'string' ? req.query.local_date : undefined;
+    const requestedDate = localDateParam ?? dateParam;
 
     let whereClause: any = { user_id: user.id };
-    if (date) {
-        const startOfDay = new Date(date as string);
-        startOfDay.setHours(0, 0, 0, 0);
-        const endOfDay = new Date(date as string);
-        endOfDay.setHours(23, 59, 59, 999);
-
-        whereClause.date = {
-            gte: startOfDay,
-            lte: endOfDay
-        };
+    if (requestedDate !== undefined) {
+        try {
+            whereClause.local_date = parseLocalDateOnly(requestedDate);
+        } catch {
+            return res.status(400).json({ message: 'Invalid date' });
+        }
     }
 
     try {
@@ -137,13 +136,35 @@ router.post('/', async (req, res) => {
             return res.status(400).json({ message: 'Invalid meal period' });
         }
 
+        let local_date: Date;
+        if (date === undefined || date === null || (typeof date === 'string' && date.trim().length === 0)) {
+            local_date = getSafeUtcTodayDateOnlyInTimeZone(user.timezone);
+        } else {
+            try {
+                local_date = parseLocalDateOnly(date);
+            } catch {
+                return res.status(400).json({ message: 'Invalid date' });
+            }
+        }
+
+        const entryTimestamp = date ? new Date(date) : new Date();
+        if (Number.isNaN(entryTimestamp.getTime())) {
+            return res.status(400).json({ message: 'Invalid date' });
+        }
+
+        const caloriesValue = Number.parseInt(String(calories), 10);
+        if (!Number.isFinite(caloriesValue)) {
+            return res.status(400).json({ message: 'Invalid calories' });
+        }
+
         const log = await prisma.foodLog.create({
             data: {
                 user_id: user.id,
                 name,
-                calories: parseInt(String(calories), 10),
+                calories: caloriesValue,
                 meal_period: parsedMealPeriod,
-                date: date ? new Date(date) : new Date()
+                date: entryTimestamp,
+                local_date
             }
         });
         res.json(log);
