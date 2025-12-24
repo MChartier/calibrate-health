@@ -192,8 +192,20 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
         }
     };
 
+    /**
+     * Handle form submission so pressing Enter adds the current food entry.
+     */
+    const handleSubmit = (event: React.FormEvent) => {
+        event.preventDefault();
+        if (mode === 'manual') {
+            void handleAddManual();
+            return;
+        }
+        void handleAddFromSearch();
+    };
+
     return (
-        <Stack spacing={2}>
+        <Stack spacing={2} component="form" onSubmit={handleSubmit}>
             {enableProviderSearch && (
                 <ToggleButtonGroup
                     value={mode}
@@ -245,7 +257,12 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
                             }
                         }}
                     />
-                    <Button variant="outlined" onClick={() => void handleSearch()} disabled={isSearching || isSubmitting}>
+                    <Button
+                        type="button"
+                        variant="outlined"
+                        onClick={() => void handleSearch()}
+                        disabled={isSearching || isSubmitting}
+                    >
                         {isSearching ? 'Searching...' : 'Search'}
                     </Button>
                     {providerName && (
@@ -341,16 +358,16 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
 
             {mode === 'manual' ? (
                 <Button
+                    type="submit"
                     variant="contained"
-                    onClick={() => void handleAddManual()}
                     disabled={isSubmitting || !foodName.trim() || !calories}
                 >
                     {isSubmitting ? 'Adding…' : 'Add Food'}
                 </Button>
             ) : (
                 <Button
+                    type="submit"
                     variant="contained"
-                    onClick={() => void handleAddFromSearch()}
                     disabled={isSubmitting || !selectedItem || !computed}
                 >
                     {isSubmitting ? 'Adding…' : 'Add Selected Food'}

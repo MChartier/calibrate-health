@@ -17,6 +17,14 @@ const WeightEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
     const [error, setError] = useState<string | null>(null);
     const weightUnitLabel = user?.weight_unit === 'LB' ? 'lb' : 'kg';
 
+    /**
+     * Handle form submission so pressing Enter saves the weigh-in.
+     */
+    const handleSubmit = (event: React.FormEvent) => {
+        event.preventDefault();
+        void handleAddWeight();
+    };
+
     const handleAddWeight = async () => {
         const entryDate = date ?? getTodayIsoDate(user?.timezone);
         setIsSubmitting(true);
@@ -33,7 +41,7 @@ const WeightEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
     };
 
     return (
-        <Stack spacing={2}>
+        <Stack spacing={2} component="form" onSubmit={handleSubmit}>
             <TextField
                 label={`Weight (${weightUnitLabel})`}
                 type="number"
@@ -44,7 +52,7 @@ const WeightEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
                 inputProps={{ step: 0.1 }}
                 required
             />
-            <Button variant="contained" onClick={() => void handleAddWeight()} disabled={isSubmitting || !weight}>
+            <Button type="submit" variant="contained" disabled={isSubmitting || !weight}>
                 {isSubmitting ? 'Saving…' : 'Save weight'}
             </Button>
             {error && <Alert severity="error">{error}</Alert>}
