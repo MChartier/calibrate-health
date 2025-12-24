@@ -46,17 +46,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const login = async (email: string, password: string) => {
         const res = await axios.post('/auth/login', { email, password });
+        // Ensure no cross-user cache bleed when switching accounts.
+        queryClient.clear();
         setUser(res.data.user);
     };
 
     const register = async (email: string, password: string) => {
         const res = await axios.post('/auth/register', { email, password });
+        // Ensure no cross-user cache bleed when switching accounts.
+        queryClient.clear();
         setUser(res.data.user);
     };
 
     const logout = async () => {
         await axios.post('/auth/logout');
         setUser(null);
+        queryClient.clear();
     };
 
     /**
