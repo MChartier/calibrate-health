@@ -15,36 +15,24 @@ const isAuthenticated = (req: express.Request, res: express.Response, next: expr
 
 router.use(isAuthenticated);
 
-const MEAL_PERIOD_ALIASES: Record<string, MealPeriod> = {
-    breakfast: MealPeriod.BREAKFAST,
-    'morning snack': MealPeriod.MORNING_SNACK,
-    morning: MealPeriod.MORNING_SNACK,
-    morning_snack: MealPeriod.MORNING_SNACK,
-    lunch: MealPeriod.LUNCH,
-    'afternoon snack': MealPeriod.AFTERNOON_SNACK,
-    afternoon: MealPeriod.AFTERNOON_SNACK,
-    afternoon_snack: MealPeriod.AFTERNOON_SNACK,
-    dinner: MealPeriod.DINNER,
-    'evening snack': MealPeriod.EVENING_SNACK,
-    evening: MealPeriod.EVENING_SNACK,
-    evening_snack: MealPeriod.EVENING_SNACK
-};
+const MEAL_PERIOD_VALUES = new Set<string>(Object.values(MealPeriod));
 
 /**
  * Parse and validate a meal period identifier coming from API requests.
  *
- * `FoodLog.meal_period` is stored as a Prisma/Postgres enum so we validate input
- * early and return a 400 instead of letting Prisma throw a 500.
+ * `FoodLog.meal_period` is stored as a Prisma/Postgres enum. We accept only the
+ * canonical enum identifiers so data stays consistent and the UI doesn't need
+ * to alias/guess.
  */
 const parseMealPeriod = (value: unknown): MealPeriod | null => {
     if (typeof value !== 'string') {
         return null;
     }
-    const normalized = value.trim().toLowerCase();
-    if (!normalized) {
+    const trimmed = value.trim();
+    if (!MEAL_PERIOD_VALUES.has(trimmed)) {
         return null;
     }
-    return MEAL_PERIOD_ALIASES[normalized] ?? null;
+    return trimmed as MealPeriod;
 };
 
 /**
