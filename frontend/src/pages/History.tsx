@@ -93,7 +93,7 @@ const History: React.FC = () => {
     }, [currentWeight, dailyDeficit, latestMetric, targetWeight, user?.weight_unit]);
 
     const calorieWindow = useMemo(() => {
-        const end = new Date(todayIso);
+        const end = parseDateOnlyToUtcDate(todayIso) ?? new Date();
         const start = new Date(end);
         start.setUTCDate(start.getUTCDate() - 29);
         return { startIso: start.toISOString().slice(0, 10), endIso: todayIso };
