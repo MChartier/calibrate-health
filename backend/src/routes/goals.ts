@@ -4,6 +4,8 @@ import { gramsToWeight, parseWeightToGrams, type WeightUnit } from '../utils/wei
 
 const router = express.Router();
 
+const ALLOWED_DAILY_DEFICITS = new Set([0, 250, 500, 750, 1000]);
+
 const isAuthenticated = (req: express.Request, res: express.Response, next: express.NextFunction) => {
     if (req.isAuthenticated()) {
         return next();
@@ -18,12 +20,20 @@ const isAuthenticated = (req: express.Request, res: express.Response, next: expr
  * - positive => deficit (lose weight)
  * - zero => maintenance
  * - negative => surplus (gain weight)
+ *
+ * Only allows standard deficit/surplus magnitudes to keep projections stable.
  */
 function parseDailyDeficit(input: unknown): number | null {
     const numeric = typeof input === 'number' ? input : typeof input === 'string' ? Number(input) : Number.NaN;
     if (!Number.isFinite(numeric) || !Number.isInteger(numeric)) {
         return null;
     }
+
+    const absValue = Math.abs(numeric);
+    if (!ALLOWED_DAILY_DEFICITS.has(absValue)) {
+        return null;
+    }
+
     return numeric;
 }
 
@@ -85,7 +95,7 @@ router.post('/', async (req, res) => {
     try {
         const parsedDailyDeficit = parseDailyDeficit(daily_deficit);
         if (parsedDailyDeficit === null) {
-            return res.status(400).json({ message: 'Invalid daily_deficit' });
+            return res.status(400).json({ message: 'daily_deficit must be one of 0, ±250, ±500, ±750, or ±1000' });
         }
 
         let start_weight_grams: number;

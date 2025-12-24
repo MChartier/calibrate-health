@@ -21,6 +21,16 @@ import { validateGoalWeights } from '../utils/goalValidation';
 import { formatDateToLocalDateString } from '../utils/date';
 import TimeZonePicker from '../components/TimeZonePicker';
 
+const DAILY_DEFICIT_CHOICES = ['250', '500', '750', '1000'] as const;
+const DEFAULT_DAILY_DEFICIT_CHOICE = '500';
+
+function normalizeDailyDeficitChoice(value: string | number): string {
+    const numeric = typeof value === 'number' ? value : Number(value);
+    const absValue = Math.abs(numeric);
+    const match = DAILY_DEFICIT_CHOICES.find((choice) => Number(choice) === absValue);
+    return match ?? DEFAULT_DAILY_DEFICIT_CHOICE;
+}
+
 const Onboarding: React.FC = () => {
     const { user } = useAuth();
     const navigate = useNavigate();
@@ -41,7 +51,7 @@ const Onboarding: React.FC = () => {
     const [currentWeight, setCurrentWeight] = useState('');
     const [goalWeight, setGoalWeight] = useState('');
     const [goalMode, setGoalMode] = useState<'lose' | 'maintain' | 'gain'>('lose');
-    const [dailyDeficit, setDailyDeficit] = useState('500');
+    const [dailyDeficit, setDailyDeficit] = useState(DEFAULT_DAILY_DEFICIT_CHOICE);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
     const [isSaving, setIsSaving] = useState(false);
@@ -118,7 +128,8 @@ const Onboarding: React.FC = () => {
 
             await axios.patch('/api/user/preferences', { weight_unit: weightUnit });
 
-            const deficitValue = goalMode === 'maintain' ? 0 : parseInt(dailyDeficit || '0', 10);
+            const normalizedDailyDeficit = normalizeDailyDeficitChoice(dailyDeficit);
+            const deficitValue = goalMode === 'maintain' ? 0 : parseInt(normalizedDailyDeficit || '0', 10);
             const signedDeficit = goalMode === 'gain' ? -Math.abs(deficitValue) : Math.abs(deficitValue);
 
             await axios.post('/api/metrics', {
@@ -299,7 +310,7 @@ const Onboarding: React.FC = () => {
                                 label="Daily calorie change"
                                 onChange={(e) => setDailyDeficit(e.target.value)}
                             >
-                                {['250', '500', '750', '1000'].map((val) => (
+                                {DAILY_DEFICIT_CHOICES.map((val) => (
                                     <MenuItem key={val} value={val}>
                                         {goalMode === 'gain' ? '+' : '-'}
                                         {val} Calories/day

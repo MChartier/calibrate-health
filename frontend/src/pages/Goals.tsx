@@ -38,6 +38,15 @@ type GoalResponse = {
 
 type WeightPoint = { date: Date; weight: number };
 
+const DAILY_DEFICIT_CHOICES = ['250', '500', '750', '1000'] as const;
+const DEFAULT_DAILY_DEFICIT_CHOICE = '500';
+
+function normalizeDailyDeficitChoice(value: number | null | undefined): string {
+    const numeric = typeof value === 'number' && Number.isFinite(value) ? Math.abs(value) : null;
+    const match = DAILY_DEFICIT_CHOICES.find((choice) => Number(choice) === numeric);
+    return match ?? DEFAULT_DAILY_DEFICIT_CHOICE;
+}
+
 /**
  * Parse a Postgres DATE-ish string into a local Date at midnight.
  *
@@ -520,6 +529,11 @@ const GoalEditor: React.FC<{
         return getGoalModeFromDailyDeficit(initialDailyDeficit);
     }, [initialDailyDeficit]);
 
+    const normalizedInitialDailyDeficitAbs = useMemo(() => {
+        if (initialGoalMode === 'maintain') return 0;
+        return Number(normalizeDailyDeficitChoice(initialDailyDeficit));
+    }, [initialDailyDeficit, initialGoalMode]);
+
     const [goalMode, setGoalMode] = useState<GoalMode>(initialGoalMode);
 
     const [alert, setAlert] = useState<{ message: string; severity: 'success' | 'error' } | null>(null);
@@ -536,8 +550,7 @@ const GoalEditor: React.FC<{
         targetWeight:
             typeof initialTargetWeight === 'number' && Number.isFinite(initialTargetWeight) ? roundWeight(initialTargetWeight) : null,
         goalMode: initialGoalMode,
-        dailyDeficitAbs:
-            typeof initialDailyDeficit === 'number' && Number.isFinite(initialDailyDeficit) ? Math.abs(initialDailyDeficit) : 500
+        dailyDeficitAbs: normalizedInitialDailyDeficitAbs
     });
 
     const startWeightValue = useMemo(() => {
@@ -552,9 +565,7 @@ const GoalEditor: React.FC<{
 
     const dailyDeficitValue = useMemo(() => {
         if (dailyDeficitInput !== null) return dailyDeficitInput;
-        return typeof initialDailyDeficit === 'number' && Number.isFinite(initialDailyDeficit)
-            ? Math.abs(initialDailyDeficit).toString()
-            : '500';
+        return normalizeDailyDeficitChoice(initialDailyDeficit);
     }, [dailyDeficitInput, initialDailyDeficit]);
 
     const hasChanges = useMemo(() => {
@@ -691,7 +702,7 @@ const GoalEditor: React.FC<{
                                 setAlert(null);
                             }}
                         >
-                            {['250', '500', '750', '1000'].map((val) => (
+                            {DAILY_DEFICIT_CHOICES.map((val) => (
                                 <MenuItem key={val} value={val}>
                                     {goalMode === 'gain' ? '+' : '-'}
                                     {val} Calories/day
