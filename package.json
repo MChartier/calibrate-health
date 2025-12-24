@@ -19,7 +19,7 @@
     "worktree:code": "node scripts/worktree-code.mjs",
     "build": "npm --prefix frontend run build",
     "lint": "npm --prefix frontend run lint",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "npm --prefix backend test"
   },
   "keywords": [],
   "author": "",

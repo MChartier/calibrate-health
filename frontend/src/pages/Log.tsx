@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
     Box,
     TextField,
@@ -22,16 +22,13 @@ import FoodEntryForm from '../components/FoodEntryForm';
 import FoodLogMeals from '../components/FoodLogMeals';
 import { useQuery } from '@tanstack/react-query';
 import LogSummaryCard from '../components/LogSummaryCard';
-
-function getLocalDateString(date: Date): string {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-}
+import { useAuth } from '../context/useAuth';
+import { formatDateToLocalDateString } from '../utils/date';
 
 const Log: React.FC = () => {
-    const today = getLocalDateString(new Date());
+    const { user } = useAuth();
+    const timeZone = user?.timezone?.trim() || Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+    const today = useMemo(() => formatDateToLocalDateString(new Date(), timeZone), [timeZone]);
     const [selectedDate, setSelectedDate] = useState(today);
     const [isFoodDialogOpen, setIsFoodDialogOpen] = useState(false);
     const [isWeightDialogOpen, setIsWeightDialogOpen] = useState(false);
@@ -46,10 +43,14 @@ const Log: React.FC = () => {
     const foodQuery = useQuery({
         queryKey: ['food', selectedDate],
         queryFn: async (): Promise<FoodLogEntry[]> => {
-            const res = await axios.get('/api/food?date=' + encodeURIComponent(`${selectedDate}T12:00:00`));
+            const res = await axios.get('/api/food?date=' + encodeURIComponent(selectedDate));
             return Array.isArray(res.data) ? res.data : [];
         }
     });
+
+    useEffect(() => {
+        setSelectedDate((current) => (current > today ? today : current));
+    }, [today]);
 
     const handleCloseFoodDialog = () => setIsFoodDialogOpen(false);
     const handleCloseWeightDialog = () => setIsWeightDialogOpen(false);

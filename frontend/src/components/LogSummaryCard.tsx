@@ -4,6 +4,8 @@ import { Gauge } from '@mui/x-charts/Gauge';
 import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/useAuth';
+import { formatDateToLocalDateString } from '../utils/date';
 
 type FoodLogEntry = {
     id: number;
@@ -26,21 +28,16 @@ export type LogSummaryCardProps = {
     dashboardMode?: boolean;
     /**
      * Local date string (`YYYY-MM-DD`) used to fetch and display the log summary.
-     * Defaults to the user's local "today".
+     * Defaults to the user's local "today" (based on their profile timezone when available).
      */
     date?: string;
 };
 
-function getLocalDateString(date: Date): string {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-}
-
 const LogSummaryCard: React.FC<LogSummaryCardProps> = ({ dashboardMode = false, date }) => {
     const navigate = useNavigate();
-    const today = getLocalDateString(new Date());
+    const { user } = useAuth();
+    const timeZone = user?.timezone?.trim() || Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+    const today = formatDateToLocalDateString(new Date(), timeZone);
     const activeDate = date ?? today;
     const isActiveDateToday = activeDate === today;
     const title = isActiveDateToday ? "Today's Log" : `Log for ${activeDate}`;
@@ -48,7 +45,7 @@ const LogSummaryCard: React.FC<LogSummaryCardProps> = ({ dashboardMode = false, 
     const foodQuery = useQuery({
         queryKey: ['food', activeDate],
         queryFn: async (): Promise<FoodLogEntry[]> => {
-            const res = await axios.get('/api/food?date=' + encodeURIComponent(`${activeDate}T12:00:00`));
+            const res = await axios.get('/api/food?date=' + encodeURIComponent(activeDate));
             return Array.isArray(res.data) ? res.data : [];
         }
     });

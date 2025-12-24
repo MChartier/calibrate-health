@@ -3,6 +3,7 @@ import prisma from '../config/database';
 import { isWeightUnit } from '../utils/weight';
 import { ActivityLevel, Sex, WeightUnit } from '@prisma/client';
 import { buildCalorieSummary, isActivityLevel, isSex } from '../utils/profile';
+import { isValidIanaTimeZone } from '../utils/date';
 
 const router = express.Router();
 
@@ -26,6 +27,7 @@ router.get('/me', (req, res) => {
       id: user.id,
       email: user.email,
       weight_unit: user.weight_unit,
+      timezone: user.timezone,
       date_of_birth: user.date_of_birth,
       sex: user.sex,
       height_mm: user.height_mm,
@@ -53,6 +55,7 @@ router.patch('/preferences', async (req, res) => {
         id: updatedUser.id,
         email: updatedUser.email,
         weight_unit: updatedUser.weight_unit,
+        timezone: updatedUser.timezone,
         date_of_birth: updatedUser.date_of_birth,
         sex: updatedUser.sex,
         height_mm: updatedUser.height_mm,
@@ -85,6 +88,7 @@ router.get('/profile', async (req, res) => {
     });
 
     const profile = {
+      timezone: dbUser.timezone,
       date_of_birth: dbUser.date_of_birth,
       sex: dbUser.sex,
       height_mm: dbUser.height_mm,
@@ -111,14 +115,27 @@ router.get('/profile', async (req, res) => {
 
 router.patch('/profile', async (req, res) => {
   const user = req.user as any;
-  const { date_of_birth, sex, height_cm, height_mm, height_feet, height_inches, activity_level } = req.body;
+  const { timezone, date_of_birth, sex, height_cm, height_mm, height_feet, height_inches, activity_level } = req.body;
 
   const updateData: Partial<{
+    timezone: string;
     date_of_birth: Date | null;
     sex: Sex | null;
     height_mm: number | null;
     activity_level: ActivityLevel | null;
   }> = {};
+
+  // PATCH semantics: omitted fields are left unchanged. For timezone, a provided null/empty string
+  // explicitly resets to our default ("UTC").
+  if (timezone !== undefined) {
+    if (timezone === null || timezone === '') {
+      updateData.timezone = 'UTC';
+    } else if (isValidIanaTimeZone(timezone)) {
+      updateData.timezone = timezone.trim();
+    } else {
+      return res.status(400).json({ message: 'Invalid timezone' });
+    }
+  }
 
   if (date_of_birth !== undefined) {
     const parsedDate = new Date(date_of_birth);
@@ -196,6 +213,7 @@ router.patch('/profile', async (req, res) => {
         id: updatedUser.id,
         email: updatedUser.email,
         weight_unit: updatedUser.weight_unit,
+        timezone: updatedUser.timezone,
         date_of_birth: updatedUser.date_of_birth,
         sex: updatedUser.sex,
         height_mm: updatedUser.height_mm,

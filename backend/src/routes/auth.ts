@@ -30,6 +30,7 @@ router.post('/register', async (req, res) => {
                     id: newUser.id,
                     email: newUser.email,
                     weight_unit: newUser.weight_unit,
+                    timezone: newUser.timezone,
                     date_of_birth: newUser.date_of_birth,
                     sex: newUser.sex,
                     height_mm: newUser.height_mm,
@@ -51,6 +52,7 @@ router.post('/login', passport.authenticate('local'), (req, res) => {
             id: user.id,
             email: user.email,
             weight_unit: user.weight_unit,
+            timezone: user.timezone,
             date_of_birth: user.date_of_birth,
             sex: user.sex,
             height_mm: user.height_mm,
@@ -74,9 +76,10 @@ router.get('/me', (req, res) => {
                 id: user.id,
                 email: user.email,
                 weight_unit: user.weight_unit,
+                timezone: user.timezone,
                 date_of_birth: user.date_of_birth,
                 sex: user.sex,
-                height_cm: user.height_cm,
+                height_mm: user.height_mm,
                 activity_level: user.activity_level
             }
         });
