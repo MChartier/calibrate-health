@@ -37,6 +37,17 @@ function getAvatarLabel(email?: string) {
     return trimmed[0].toUpperCase();
 }
 
+/**
+ * Map the current pathname to a navigation value so nested routes keep the correct tab highlighted.
+ */
+function getActiveNavigationValue(pathname: string): string | null {
+    if (pathname.startsWith('/dashboard')) return '/dashboard';
+    if (pathname.startsWith('/log')) return '/log';
+    if (pathname.startsWith('/goals')) return '/goals';
+    if (pathname.startsWith('/settings')) return '/settings';
+    return null;
+}
+
 const Layout: React.FC = () => {
     const { user, logout, isLoading } = useAuth();
     const theme = useTheme();
@@ -50,6 +61,8 @@ const Layout: React.FC = () => {
     const hideNav = location.pathname.startsWith('/onboarding');
     const showAppNav = Boolean(user) && !isLoading && !hideNav;
     const showProfileShortcut = Boolean(user) && !isLoading && !hideNav;
+    const showDrawer = showAppNav && isDesktop;
+    const showBottomNav = showAppNav && !isDesktop;
 
     const handleLogout = async () => {
         await logout();
@@ -113,15 +126,7 @@ const Layout: React.FC = () => {
         </Box>
     );
 
-    const navigationValue = location.pathname.startsWith('/dashboard')
-        ? '/dashboard'
-        : location.pathname.startsWith('/log')
-          ? '/log'
-          : location.pathname.startsWith('/goals')
-            ? '/goals'
-            : location.pathname.startsWith('/settings')
-              ? '/settings'
-              : null;
+    const navigationValue = getActiveNavigationValue(location.pathname);
 
     return (
         <Box sx={{ display: 'flex' }}>
@@ -183,7 +188,7 @@ const Layout: React.FC = () => {
                 </Toolbar>
             </AppBar>
 
-            {showAppNav && isDesktop && (
+            {showDrawer && (
                 <Drawer
                     variant="permanent"
                     sx={{
@@ -198,12 +203,12 @@ const Layout: React.FC = () => {
 
             <Box component="main" sx={{ flexGrow: 1, minWidth: 0 }}>
                 <Toolbar />
-                <Box sx={{ p: 3, pb: showAppNav && !isDesktop ? 'calc(80px + env(safe-area-inset-bottom))' : 3 }}>
+                <Box sx={{ p: 3, pb: showBottomNav ? 'calc(80px + env(safe-area-inset-bottom))' : 3 }}>
                     <Outlet />
                 </Box>
             </Box>
 
-            {showAppNav && !isDesktop && (
+            {showBottomNav && (
                 <Box
                     sx={{
                         position: 'fixed',

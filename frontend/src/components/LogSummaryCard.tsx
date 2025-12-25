@@ -16,6 +16,15 @@ type FoodLogEntry = {
     calories: number;
 };
 
+const GAUGE_WIDTH = 200;
+const GAUGE_HEIGHT = 140;
+const GAUGE_START_ANGLE = -90;
+const GAUGE_END_ANGLE = 90;
+const GAUGE_INNER_RADIUS = '70%';
+const GAUGE_OUTER_RADIUS = '90%';
+const SUMMARY_SKELETON_SIZE = 140;
+const SUMMARY_SKELETON_VALUE_HEIGHT = 32;
+
 export type LogSummaryCardProps = {
     /**
      * When true, the card behaves like the dashboard version: it is clickable (navigates to `/log`)
@@ -58,31 +67,80 @@ const LogSummaryCard: React.FC<LogSummaryCardProps> = ({ dashboardMode = false, 
     const isLoading = foodQuery.isLoading || profileSummaryQuery.isLoading;
     const isError = foodQuery.isError || profileSummaryQuery.isError;
 
-    const content = (
-        <CardContent>
-            <Typography variant="h6" gutterBottom>
-                {title}
-            </Typography>
-            {isLoading ? (
-                <Box
-                    sx={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 2,
-                        flexDirection: { xs: 'column', sm: 'row' }
-                    }}
-                >
-                    <Skeleton variant="circular" width={140} height={140} />
-                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, flexGrow: 1 }}>
-                        <Skeleton width="60%" />
-                        <Skeleton width="40%" height={32} />
-                        <Skeleton width="80%" />
-                    </Box>
+    // Split conditional branches into named nodes to keep the render tree readable.
+    let cardBody: React.ReactNode;
+    if (isLoading) {
+        cardBody = (
+            <Box
+                sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 2,
+                    flexDirection: { xs: 'column', sm: 'row' }
+                }}
+            >
+                <Skeleton variant="circular" width={SUMMARY_SKELETON_SIZE} height={SUMMARY_SKELETON_SIZE} />
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, flexGrow: 1 }}>
+                    <Skeleton width="60%" />
+                    <Skeleton width="40%" height={SUMMARY_SKELETON_VALUE_HEIGHT} />
+                    <Skeleton width="80%" />
                 </Box>
-            ) : isError ? (
+            </Box>
+        );
+    } else if (isError) {
+        cardBody = (
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                <Typography variant="body2" color="text.secondary">
+                    Unable to load this log summary.
+                </Typography>
+                {dashboardMode && (
+                    <Typography variant="body2" color="primary">
+                        View / edit {isActiveDateToday ? "today's log" : 'this log'}
+                    </Typography>
+                )}
+            </Box>
+        );
+    } else {
+        cardBody = (
+            <Box
+                sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 2,
+                    flexDirection: { xs: 'column', sm: 'row' }
+                }}
+            >
+                <Gauge
+                    width={GAUGE_WIDTH}
+                    height={GAUGE_HEIGHT}
+                    startAngle={GAUGE_START_ANGLE}
+                    endAngle={GAUGE_END_ANGLE}
+                    value={gaugeValue}
+                    valueMin={0}
+                    valueMax={gaugeMax}
+                    innerRadius={GAUGE_INNER_RADIUS}
+                    outerRadius={GAUGE_OUTER_RADIUS}
+                    text={() => ''}
+                    sx={{
+                        '& .MuiGauge-referenceArc': {
+                            fill: (theme) => (isOver ? theme.palette.error.main : theme.palette.grey[300])
+                        },
+                        '& .MuiGauge-valueArc': {
+                            fill: (theme) => theme.palette.primary.main
+                        }
+                    }}
+                />
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                    <Typography variant="subtitle1">
+                        {remainingCalories !== null && remainingCalories < 0 ? 'Calories over budget' : 'Calories remaining'}
+                    </Typography>
+                    <Typography variant="h5">
+                        {remainingCalories !== null
+                            ? `${remainingCalories < 0 ? Math.abs(remainingCalories) : remainingCalories} Calories`
+                            : '—'}
+                    </Typography>
                     <Typography variant="body2" color="text.secondary">
-                        Unable to load this log summary.
+                        Logged: {totalCalories} Calories {dailyTarget ? `of ${Math.round(dailyTarget)} Calories target` : ''}
                     </Typography>
                     {dashboardMode && (
                         <Typography variant="body2" color="primary">
@@ -90,55 +148,16 @@ const LogSummaryCard: React.FC<LogSummaryCardProps> = ({ dashboardMode = false, 
                         </Typography>
                     )}
                 </Box>
-            ) : (
-                <Box
-                    sx={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 2,
-                        flexDirection: { xs: 'column', sm: 'row' }
-                    }}
-                >
-                    <Gauge
-                        width={200}
-                        height={140}
-                        startAngle={-90}
-                        endAngle={90}
-                        value={gaugeValue}
-                        valueMin={0}
-                        valueMax={gaugeMax}
-                        innerRadius="70%"
-                        outerRadius="90%"
-                        text={() => ''}
-                        sx={{
-                            '& .MuiGauge-referenceArc': {
-                                fill: (theme) => (isOver ? theme.palette.error.main : theme.palette.grey[300])
-                            },
-                            '& .MuiGauge-valueArc': {
-                                fill: (theme) => theme.palette.primary.main
-                            }
-                        }}
-                    />
-                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-                        <Typography variant="subtitle1">
-                            {remainingCalories !== null && remainingCalories < 0 ? 'Calories over budget' : 'Calories remaining'}
-                        </Typography>
-                        <Typography variant="h5">
-                            {remainingCalories !== null
-                                ? `${remainingCalories < 0 ? Math.abs(remainingCalories) : remainingCalories} Calories`
-                                : '—'}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                            Logged: {totalCalories} Calories {dailyTarget ? `of ${Math.round(dailyTarget)} Calories target` : ''}
-                        </Typography>
-                        {dashboardMode && (
-                            <Typography variant="body2" color="primary">
-                                View / edit {isActiveDateToday ? "today's log" : 'this log'}
-                            </Typography>
-                        )}
-                    </Box>
-                </Box>
-            )}
+            </Box>
+        );
+    }
+
+    const content = (
+        <CardContent>
+            <Typography variant="h6" gutterBottom>
+                {title}
+            </Typography>
+            {cardBody}
         </CardContent>
     );
 

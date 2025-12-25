@@ -71,6 +71,63 @@ const WeightProgressCard: React.FC = () => {
         }
     }
 
+    // Assign the card body separately so the main JSX stays readable.
+    let cardBody: React.ReactNode;
+    if (isLoading) {
+        cardBody = (
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                <Skeleton width="70%" />
+                <Skeleton width="55%" />
+                <Skeleton variant="rounded" height={10} />
+                <Skeleton width="40%" />
+            </Box>
+        );
+    } else if (isError) {
+        cardBody = (
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                <Typography variant="body2" color="text.secondary">
+                    Unable to load weight progress.
+                </Typography>
+                <Typography variant="body2" color="primary">
+                    View goals and details
+                </Typography>
+            </Box>
+        );
+    } else {
+        cardBody = (
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                <Typography variant="body2" color="text.secondary">
+                    Start: {startWeight !== null ? `${startWeight} ${weightUnitLabel}` : '—'} · Target:{' '}
+                    {targetWeight !== null ? `${targetWeight} ${weightUnitLabel}` : '—'}
+                </Typography>
+                <Typography variant="body1">
+                    Current: {currentWeight !== null ? `${currentWeight} ${weightUnitLabel}` : '—'}
+                </Typography>
+                {progressPercent !== null ? (
+                    <>
+                        <LinearProgress
+                            variant="determinate"
+                            value={Math.min(progressPercent, 100)}
+                            sx={{ height: 10, borderRadius: 5 }}
+                        />
+                        <Typography variant="caption" color="text.secondary">
+                            {isMaintenanceGoal
+                                ? maintenanceDeltaLabel ?? 'Close to target'
+                                : `${progressPercent.toFixed(0)}% toward goal`}
+                        </Typography>
+                    </>
+                ) : (
+                    <Typography variant="body2" color="text.secondary">
+                        Add a start weight, target weight, and a current weight to see progress.
+                    </Typography>
+                )}
+                <Typography variant="body2" color="primary">
+                    View goals and details
+                </Typography>
+            </Box>
+        );
+    }
+
     return (
         <Paper
             sx={{
@@ -88,55 +145,7 @@ const WeightProgressCard: React.FC = () => {
             <Typography variant="h6" gutterBottom>
                 Weight Progress
             </Typography>
-
-            {isLoading ? (
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                    <Skeleton width="70%" />
-                    <Skeleton width="55%" />
-                    <Skeleton variant="rounded" height={10} />
-                    <Skeleton width="40%" />
-                </Box>
-            ) : isError ? (
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-                    <Typography variant="body2" color="text.secondary">
-                        Unable to load weight progress.
-                    </Typography>
-                    <Typography variant="body2" color="primary">
-                        View goals and details
-                    </Typography>
-                </Box>
-            ) : (
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                    <Typography variant="body2" color="text.secondary">
-                        Start: {startWeight !== null ? `${startWeight} ${weightUnitLabel}` : '—'} · Target:{' '}
-                        {targetWeight !== null ? `${targetWeight} ${weightUnitLabel}` : '—'}
-                    </Typography>
-                    <Typography variant="body1">
-                        Current: {currentWeight !== null ? `${currentWeight} ${weightUnitLabel}` : '—'}
-                    </Typography>
-                    {progressPercent !== null ? (
-                        <>
-                            <LinearProgress
-                                variant="determinate"
-                                value={Math.min(progressPercent, 100)}
-                                sx={{ height: 10, borderRadius: 5 }}
-                            />
-                            <Typography variant="caption" color="text.secondary">
-                                {isMaintenanceGoal
-                                    ? maintenanceDeltaLabel ?? 'Close to target'
-                                    : `${progressPercent.toFixed(0)}% toward goal`}
-                            </Typography>
-                        </>
-                    ) : (
-                        <Typography variant="body2" color="text.secondary">
-                            Add a start weight, target weight, and a current weight to see progress.
-                        </Typography>
-                    )}
-                    <Typography variant="body2" color="primary">
-                        View goals and details
-                    </Typography>
-                </Box>
-            )}
+            {cardBody}
         </Paper>
     );
 };
