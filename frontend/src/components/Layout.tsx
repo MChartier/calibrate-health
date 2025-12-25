@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
     AppBar,
     Avatar,
     Box,
+    BottomNavigation,
+    BottomNavigationAction,
     Divider,
     Drawer,
     IconButton,
@@ -16,7 +18,6 @@ import {
     useMediaQuery
 } from '@mui/material';
 import { Outlet, Link as RouterLink, useLocation, useNavigate } from 'react-router-dom';
-import MenuIcon from '@mui/icons-material/Menu';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import ListAltIcon from '@mui/icons-material/ListAlt';
 import ShowChartIcon from '@mui/icons-material/ShowChart';
@@ -36,11 +37,21 @@ function getAvatarLabel(email?: string) {
     return trimmed[0].toUpperCase();
 }
 
+/**
+ * Map the current pathname to a navigation value so nested routes keep the correct tab highlighted.
+ */
+function getActiveNavigationValue(pathname: string): string | null {
+    if (pathname.startsWith('/dashboard')) return '/dashboard';
+    if (pathname.startsWith('/log')) return '/log';
+    if (pathname.startsWith('/goals')) return '/goals';
+    if (pathname.startsWith('/settings')) return '/settings';
+    return null;
+}
+
 const Layout: React.FC = () => {
     const { user, logout, isLoading } = useAuth();
     const theme = useTheme();
     const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
-    const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
     const navigate = useNavigate();
     const location = useLocation();
     const worktreeName = import.meta.env.VITE_WORKTREE_NAME?.trim();
@@ -48,23 +59,13 @@ const Layout: React.FC = () => {
     const worktreeBadgeLabel = worktreeName && !isMainWorktree ? worktreeName : null;
 
     const hideNav = location.pathname.startsWith('/onboarding');
-    const showDrawer = Boolean(user) && !isLoading && !hideNav;
-
-    const handleMenuClick = () => {
-        if (!showDrawer || isDesktop) return;
-        setMobileDrawerOpen((open) => !open);
-    };
-
-    const handleNavigate = (path: string) => {
-        navigate(path);
-        if (!isDesktop) {
-            setMobileDrawerOpen(false);
-        }
-    };
+    const showAppNav = Boolean(user) && !isLoading && !hideNav;
+    const showProfileShortcut = Boolean(user) && !isLoading && !hideNav;
+    const showDrawer = showAppNav && isDesktop;
+    const showBottomNav = showAppNav && !isDesktop;
 
     const handleLogout = async () => {
         await logout();
-        setMobileDrawerOpen(false);
         navigate('/login');
     };
 
@@ -76,7 +77,8 @@ const Layout: React.FC = () => {
                 <List>
                     <ListItemButton
                         selected={location.pathname.startsWith('/dashboard')}
-                        onClick={() => handleNavigate('/dashboard')}
+                        component={RouterLink}
+                        to="/dashboard"
                     >
                         <ListItemIcon>
                             <DashboardIcon />
@@ -84,20 +86,14 @@ const Layout: React.FC = () => {
                         <ListItemText primary="Dashboard" />
                     </ListItemButton>
 
-                    <ListItemButton
-                        selected={location.pathname.startsWith('/log')}
-                        onClick={() => handleNavigate('/log')}
-                    >
+                    <ListItemButton selected={location.pathname.startsWith('/log')} component={RouterLink} to="/log">
                         <ListItemIcon>
                             <ListAltIcon />
                         </ListItemIcon>
                         <ListItemText primary="Log" />
                     </ListItemButton>
 
-                    <ListItemButton
-                        selected={location.pathname.startsWith('/goals')}
-                        onClick={() => handleNavigate('/goals')}
-                    >
+                    <ListItemButton selected={location.pathname.startsWith('/goals')} component={RouterLink} to="/goals">
                         <ListItemIcon>
                             <ShowChartIcon />
                         </ListItemIcon>
@@ -111,7 +107,8 @@ const Layout: React.FC = () => {
             <List>
                 <ListItemButton
                     selected={location.pathname.startsWith('/settings')}
-                    onClick={() => handleNavigate('/settings')}
+                    component={RouterLink}
+                    to="/settings"
                 >
                     <ListItemIcon>
                         <SettingsIcon />
@@ -129,16 +126,12 @@ const Layout: React.FC = () => {
         </Box>
     );
 
+    const navigationValue = getActiveNavigationValue(location.pathname);
+
     return (
         <Box sx={{ display: 'flex' }}>
             <AppBar position="fixed" sx={{ zIndex: (t) => t.zIndex.drawer + 1 }}>
                 <Toolbar>
-                    {showDrawer && !isDesktop && (
-                        <IconButton color="inherit" edge="start" onClick={handleMenuClick} sx={{ mr: 2 }}>
-                            <MenuIcon />
-                        </IconButton>
-                    )}
-
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                         <Typography
                             variant="h6"
@@ -170,11 +163,11 @@ const Layout: React.FC = () => {
 
                     <Box sx={{ flexGrow: 1 }} />
 
-                    {user && !isLoading && (
+                    {showProfileShortcut && (
                         <Tooltip title="Profile">
                             <IconButton
                                 color="inherit"
-                                onClick={() => handleNavigate('/profile')}
+                                onClick={() => navigate('/profile')}
                                 aria-label="Open profile"
                                 sx={{ ml: 1 }}
                             >
@@ -187,7 +180,7 @@ const Layout: React.FC = () => {
                                         fontWeight: 700
                                     }}
                                 >
-                                    {getAvatarLabel(user.email)}
+                                    {getAvatarLabel(user?.email)}
                                 </Avatar>
                             </IconButton>
                         </Tooltip>
@@ -196,40 +189,54 @@ const Layout: React.FC = () => {
             </AppBar>
 
             {showDrawer && (
-                <>
-                    <Drawer
-                        variant="temporary"
-                        open={mobileDrawerOpen && !isDesktop}
-                        onClose={() => setMobileDrawerOpen(false)}
-                        ModalProps={{ keepMounted: true }}
-                        sx={{
-                            display: { xs: 'block', md: 'none' },
-                            '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth }
-                        }}
-                    >
-                        {drawerContent}
-                    </Drawer>
-
-                    <Drawer
-                        variant="permanent"
-                        sx={{
-                            display: { xs: 'none', md: 'block' },
-                            width: drawerWidth,
-                            flexShrink: 0,
-                            '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth }
-                        }}
-                    >
-                        {drawerContent}
-                    </Drawer>
-                </>
+                <Drawer
+                    variant="permanent"
+                    sx={{
+                        width: drawerWidth,
+                        flexShrink: 0,
+                        '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth }
+                    }}
+                >
+                    {drawerContent}
+                </Drawer>
             )}
 
             <Box component="main" sx={{ flexGrow: 1, minWidth: 0 }}>
                 <Toolbar />
-                <Box sx={{ p: 3 }}>
+                <Box sx={{ p: 3, pb: showBottomNav ? 'calc(80px + env(safe-area-inset-bottom))' : 3 }}>
                     <Outlet />
                 </Box>
             </Box>
+
+            {showBottomNav && (
+                <Box
+                    sx={{
+                        position: 'fixed',
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        borderTop: (t) => `1px solid ${t.palette.divider}`,
+                        bgcolor: 'background.paper',
+                        pb: 'env(safe-area-inset-bottom)',
+                        zIndex: (t) => t.zIndex.appBar
+                    }}
+                >
+                    <BottomNavigation
+                        showLabels
+                        value={navigationValue}
+                        onChange={(_, next) => {
+                            if (typeof next === 'string') {
+                                navigate(next);
+                            }
+                        }}
+                    >
+                        <BottomNavigationAction value="/dashboard" label="Dashboard" icon={<DashboardIcon />} />
+                        <BottomNavigationAction value="/log" label="Log" icon={<ListAltIcon />} />
+                        <BottomNavigationAction value="/goals" label="Goals" icon={<ShowChartIcon />} />
+                        <BottomNavigationAction value="/settings" label="Settings" icon={<SettingsIcon />} />
+                    </BottomNavigation>
+                </Box>
+            )}
         </Box>
     );
 };

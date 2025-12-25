@@ -72,11 +72,19 @@ const Settings: React.FC = () => {
 
     return (
         <Box sx={{ maxWidth: 720, mx: 'auto' }}>
-            <Typography variant="h4" gutterBottom>Settings</Typography>
+            <Typography variant="h4" gutterBottom>
+                Settings
+            </Typography>
 
             <Paper sx={{ p: 2, mb: 3 }}>
-                <Typography variant="h6" gutterBottom>Units & Localization</Typography>
-                {settingsMessage && <Alert severity="info" sx={{ mb: 2 }}>{settingsMessage}</Alert>}
+                <Typography variant="h6" gutterBottom>
+                    Units & Localization
+                </Typography>
+                {settingsMessage && (
+                    <Alert severity="info" sx={{ mb: 2 }}>
+                        {settingsMessage}
+                    </Alert>
+                )}
                 <FormControl fullWidth margin="normal">
                     <InputLabel>Units</InputLabel>
                     <Select value={unitPreference} label="Units" onChange={handleUnitPreferenceChange}>
@@ -97,14 +105,12 @@ const Settings: React.FC = () => {
             </Paper>
 
             <Paper sx={{ p: 2, mb: 3 }}>
-                <Typography variant="h6" gutterBottom>Appearance</Typography>
+                <Typography variant="h6" gutterBottom>
+                    Appearance
+                </Typography>
                 <FormControl fullWidth margin="normal">
                     <InputLabel>Theme</InputLabel>
-                    <Select
-                        value={themePreference}
-                        label="Theme"
-                        onChange={(e) => setThemePreference(e.target.value as ThemePreference)}
-                    >
+                    <Select value={themePreference} label="Theme" onChange={(e) => setThemePreference(e.target.value as ThemePreference)}>
                         <MenuItem value="system">System</MenuItem>
                         <MenuItem value="light">Light</MenuItem>
                         <MenuItem value="dark">Dark</MenuItem>

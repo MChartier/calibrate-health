@@ -71,7 +71,11 @@ apiRouter.use('/goals', goalRoutes);
 apiRouter.use('/metrics', metricRoutes);
 apiRouter.use('/food', foodRoutes);
 apiRouter.use('/user', userRoutes);
-apiRouter.use('/dev', devRoutes);
+
+// Keep debug/prototype routes (food provider comparisons, etc.) out of production deployments.
+if (process.env.NODE_ENV !== 'production') {
+    apiRouter.use('/dev', devRoutes);
+}
 
 app.get('/', (req, res) => {
     res.send('Fitness App API');

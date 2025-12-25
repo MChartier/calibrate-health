@@ -3,18 +3,13 @@ import { Alert, Button, Dialog, DialogActions, DialogContent, DialogTitle, Stack
 import axios from 'axios';
 import { useAuth } from '../context/useAuth';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { getTodayIsoDate } from '../utils/date';
+import { getApiErrorMessage } from '../utils/apiError';
 
 type Props = {
     onSuccess?: () => void;
     date?: string;
 };
-
-function getLocalDateString(date: Date): string {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-}
 
 type MetricEntry = {
     id: number;
@@ -65,7 +60,8 @@ const WeightEntryFormContent: React.FC<WeightEntryFormContentProps> = ({
         },
         onSuccess: async () => {
             await queryClient.invalidateQueries({ queryKey: ['metrics'] });
-            await queryClient.invalidateQueries({ queryKey: ['profile-summary'] });
+            await queryClient.invalidateQueries({ queryKey: ['user-profile'] });
+            await queryClient.invalidateQueries({ queryKey: ['profile'] });
         }
     });
 
@@ -75,7 +71,8 @@ const WeightEntryFormContent: React.FC<WeightEntryFormContentProps> = ({
         },
         onSuccess: async () => {
             await queryClient.invalidateQueries({ queryKey: ['metrics'] });
-            await queryClient.invalidateQueries({ queryKey: ['profile-summary'] });
+            await queryClient.invalidateQueries({ queryKey: ['user-profile'] });
+            await queryClient.invalidateQueries({ queryKey: ['profile'] });
         }
     });
 
@@ -86,9 +83,17 @@ const WeightEntryFormContent: React.FC<WeightEntryFormContentProps> = ({
             setWeight('');
             onSuccess?.();
         } catch (err) {
-            console.error(err);
-            setError('Unable to save weight right now.');
+            setError(getApiErrorMessage(err) ?? 'Unable to save weight right now.');
         }
+    };
+
+    /**
+     * Handle form submission so pressing Enter saves the weigh-in.
+     */
+    const handleSubmit = (event: React.FormEvent) => {
+        event.preventDefault();
+        if (saveMutation.isPending || deleteMutation.isPending || isLoadingExistingMetric) return;
+        void handleSave();
     };
 
     const handleConfirmDelete = async () => {
@@ -100,13 +105,12 @@ const WeightEntryFormContent: React.FC<WeightEntryFormContentProps> = ({
             setWeight('');
             onSuccess?.();
         } catch (err) {
-            console.error(err);
-            setError('Unable to delete weight entry right now.');
+            setError(getApiErrorMessage(err) ?? 'Unable to delete weight entry right now.');
         }
     };
 
     return (
-        <Stack spacing={2}>
+        <Stack spacing={2} component="form" onSubmit={handleSubmit}>
             {error && <Alert severity="error">{error}</Alert>}
             {isExistingMetricError && !error && (
                 <Alert severity="warning">Unable to load the existing weight entry for this day.</Alert>
@@ -123,11 +127,13 @@ const WeightEntryFormContent: React.FC<WeightEntryFormContentProps> = ({
                 value={weight}
                 onChange={(e) => setWeight(e.target.value)}
                 inputProps={{ step: 0.1 }}
-                disabled={isLoadingExistingMetric}
+                disabled={isLoadingExistingMetric || saveMutation.isPending || deleteMutation.isPending}
+                required={!existingMetric}
             />
             <Stack direction="row" spacing={1} justifyContent="flex-end">
                 {existingMetric && (
                     <Button
+                        type="button"
                         variant="outlined"
                         color="error"
                         onClick={() => setIsDeleteConfirmOpen(true)}
@@ -137,8 +143,8 @@ const WeightEntryFormContent: React.FC<WeightEntryFormContentProps> = ({
                     </Button>
                 )}
                 <Button
+                    type="submit"
                     variant="contained"
-                    onClick={handleSave}
                     disabled={!weight || deleteMutation.isPending || saveMutation.isPending || isLoadingExistingMetric}
                 >
                     {existingMetric ? 'Save Weight' : 'Add Weight'}
@@ -148,9 +154,7 @@ const WeightEntryFormContent: React.FC<WeightEntryFormContentProps> = ({
             <Dialog open={isDeleteConfirmOpen} onClose={() => setIsDeleteConfirmOpen(false)} fullWidth maxWidth="xs">
                 <DialogTitle>Delete weight entry?</DialogTitle>
                 <DialogContent>
-                    <Typography sx={{ mt: 1 }}>
-                        Delete the weight entry for {entryDate}? This cannot be undone.
-                    </Typography>
+                    <Typography sx={{ mt: 1 }}>Delete the weight entry for {entryDate}? This cannot be undone.</Typography>
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={() => setIsDeleteConfirmOpen(false)} disabled={deleteMutation.isPending}>
@@ -174,7 +178,7 @@ const WeightEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
     const { user } = useAuth();
     const weightUnitLabel = user?.weight_unit === 'LB' ? 'lb' : 'kg';
 
-    const entryDate = date ?? getLocalDateString(new Date());
+    const entryDate = date ?? getTodayIsoDate(user?.timezone);
 
     const metricQuery = useQuery({
         queryKey: ['metrics', entryDate],

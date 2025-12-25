@@ -5,8 +5,8 @@ import {
     Button,
     FormControl,
     IconButton,
-    InputLabel,
     InputAdornment,
+    InputLabel,
     ListItemIcon,
     MenuItem,
     Select,
@@ -24,11 +24,12 @@ import LunchDiningIcon from '@mui/icons-material/LunchDining';
 import DinnerDiningIcon from '@mui/icons-material/DinnerDining';
 import NightlifeIcon from '@mui/icons-material/Nightlife';
 import BarcodeReaderIcon from '@mui/icons-material/BarcodeReader';
-import BarcodeScannerDialog from './BarcodeScannerDialog';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import BarcodeScannerDialog from './BarcodeScannerDialog';
 import FoodSearchResultsList from './FoodSearchResultsList';
 import type { NormalizedFoodItem } from '../types/food';
 import { MEAL_PERIOD_LABELS, MEAL_PERIOD_ORDER, type MealPeriod } from '../types/mealPeriod';
+import { getApiErrorMessage } from '../utils/apiError';
 
 type Props = {
     onSuccess?: () => void;
@@ -76,10 +77,7 @@ const getDefaultMeasureLabel = (item: NormalizedFoodItem): string | null => {
 /**
  * Merge paginated results without duplicating items when upstream providers repeat IDs across pages.
  */
-const mergeUniqueResults = (
-    current: NormalizedFoodItem[],
-    nextPage: NormalizedFoodItem[]
-): NormalizedFoodItem[] => {
+const mergeUniqueResults = (current: NormalizedFoodItem[], nextPage: NormalizedFoodItem[]): NormalizedFoodItem[] => {
     const nextById = new Map(current.map((item) => [item.id, item]));
     nextPage.forEach((item) => nextById.set(item.id, item));
     return Array.from(nextById.values());
@@ -107,6 +105,7 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
     const [isScannerOpen, setIsScannerOpen] = useState(false);
     const [hasSearched, setHasSearched] = useState(false);
     const [activeSearch, setActiveSearch] = useState<FoodSearchParams | null>(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const searchSessionRef = useRef(0);
     const loadMoreLockRef = useRef(false);
@@ -167,12 +166,16 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
     /**
      * Select a search result and prime measure/quantity controls for quick logging.
      */
-    const selectSearchResult = useCallback((item: NormalizedFoodItem) => {
-        setSelectedItemId(item.id);
-        setSelectedMeasureLabel(getDefaultMeasureLabel(item));
-        setQuantity(1);
-        setSearchView('selected');
-    }, []);
+    const selectSearchResult = useCallback(
+        (item: NormalizedFoodItem) => {
+            if (isSubmitting) return;
+            setSelectedItemId(item.id);
+            setSelectedMeasureLabel(getDefaultMeasureLabel(item));
+            setQuantity(1);
+            setSearchView('selected');
+        },
+        [isSubmitting]
+    );
 
     type FoodSearchResponse = {
         provider?: string;
@@ -206,6 +209,8 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
      */
     const performFoodSearch = useCallback(
         async (request: FoodSearchParams) => {
+            if (isSubmitting) return;
+
             const trimmedQuery = request.query?.trim();
             const barcode = request.barcode?.trim();
             if (!trimmedQuery && !barcode) {
@@ -250,22 +255,21 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
                     selectSearchResult(firstPage.items[0]);
                 }
             } catch (err) {
-                console.error(err);
-                setError('Search failed. Please try again.');
+                setError(getApiErrorMessage(err) ?? 'Search failed. Please try again.');
             } finally {
                 if (searchSessionRef.current === sessionId) {
                     setIsSearching(false);
                 }
             }
         },
-        [clearSelectedSearchItem, fetchFoodSearchPage, selectSearchResult]
+        [clearSelectedSearchItem, fetchFoodSearchPage, isSubmitting, selectSearchResult]
     );
 
     /**
      * Load the next page of search results and append them to the list view.
      */
     const loadMoreSearchResults = useCallback(async () => {
-        if (!activeSearch || !hasMoreResults || isSearching || isLoadingMoreResults) {
+        if (isSubmitting || !activeSearch || !hasMoreResults || isSearching || isLoadingMoreResults) {
             return;
         }
         if (loadMoreLockRef.current) {
@@ -288,55 +292,95 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
             setSearchPage(nextPageNumber);
             setHasMoreResults(nextPage.items.length === SEARCH_PAGE_SIZE);
         } catch (err) {
-            console.error(err);
-            setError('Unable to load more results right now.');
+            setError(getApiErrorMessage(err) ?? 'Unable to load more results right now.');
         } finally {
             if (searchSessionRef.current === sessionId) {
                 setIsLoadingMoreResults(false);
                 loadMoreLockRef.current = false;
             }
         }
-    }, [activeSearch, fetchFoodSearchPage, hasMoreResults, isLoadingMoreResults, isSearching, searchPage]);
+    }, [activeSearch, fetchFoodSearchPage, hasMoreResults, isLoadingMoreResults, isSearching, isSubmitting, searchPage]);
 
     const handleSearch = async () => {
         await performFoodSearch({ query: searchQuery });
     };
 
     const handleAddManual = async () => {
-        await axios.post('/api/food', {
-            name: foodName,
-            calories,
-            meal_period: mealPeriod,
-            ...(entryLocalDate ? { date: entryLocalDate } : {})
-        });
-        setFoodName('');
-        setCalories('');
-        onSuccess?.();
+        const trimmedName = foodName.trim();
+        if (!trimmedName || !calories.trim()) {
+            return;
+        }
+
+        setIsSubmitting(true);
+        setError(null);
+        try {
+            await axios.post('/api/food', {
+                name: trimmedName,
+                calories,
+                meal_period: mealPeriod,
+                ...(entryLocalDate ? { date: entryLocalDate } : {})
+            });
+            setFoodName('');
+            setCalories('');
+            onSuccess?.();
+        } catch (err) {
+            setError(getApiErrorMessage(err) ?? 'Unable to add this food right now.');
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     const handleAddFromSearch = async () => {
         if (!selectedItem || !computed) return;
-        await axios.post('/api/food', {
-            name: selectedItem.description,
-            calories: computed.calories,
-            meal_period: mealPeriod,
-            ...(entryLocalDate ? { date: entryLocalDate } : {})
-        });
-        onSuccess?.();
+        setIsSubmitting(true);
+        setError(null);
+        try {
+            await axios.post('/api/food', {
+                name: selectedItem.description,
+                calories: computed.calories,
+                meal_period: mealPeriod,
+                ...(entryLocalDate ? { date: entryLocalDate } : {})
+            });
+            onSuccess?.();
+        } catch (err) {
+            setError(getApiErrorMessage(err) ?? 'Unable to add this food right now.');
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    /**
+     * Handle form submission so pressing Enter adds the current food entry.
+     */
+    const handleSubmit = (event: React.FormEvent) => {
+        event.preventDefault();
+        if (isSubmitting) return;
+
+        if (mode === 'manual') {
+            void handleAddManual();
+            return;
+        }
+
+        if (searchView === 'selected') {
+            void handleAddFromSearch();
+        }
     };
 
     return (
-        <Stack spacing={2}>
+        <Stack spacing={2} component="form" onSubmit={handleSubmit}>
             <ToggleButtonGroup
                 value={mode}
                 exclusive
                 onChange={(_, next) => next && setMode(next)}
                 size="small"
                 color="primary"
+                disabled={isSubmitting}
             >
                 <ToggleButton value="search">Search</ToggleButton>
                 <ToggleButton value="manual">Manual Entry</ToggleButton>
             </ToggleButtonGroup>
+
+            {error && <Alert severity="error">{error}</Alert>}
 
             {mode === 'manual' ? (
                 <Stack spacing={2}>
@@ -345,6 +389,8 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
                         fullWidth
                         value={foodName}
                         onChange={(e) => setFoodName(e.target.value)}
+                        disabled={isSubmitting}
+                        required
                     />
                     <TextField
                         label="Calories"
@@ -352,6 +398,9 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
                         fullWidth
                         value={calories}
                         onChange={(e) => setCalories(e.target.value)}
+                        disabled={isSubmitting}
+                        inputProps={{ min: 0, step: 1 }}
+                        required
                     />
                 </Stack>
             ) : (
@@ -362,6 +411,7 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
                         fullWidth
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
+                        disabled={isSubmitting}
                         onKeyDown={(e) => {
                             if (e.key === 'Enter') {
                                 e.preventDefault();
@@ -376,7 +426,7 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
                                         title="Scan barcode"
                                         onClick={() => setIsScannerOpen(true)}
                                         edge="end"
-                                        disabled={isSearching}
+                                        disabled={isSearching || isSubmitting}
                                     >
                                         <BarcodeReaderIcon />
                                     </IconButton>
@@ -386,8 +436,9 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
                     />
                     <Button
                         variant="outlined"
+                        type="button"
                         onClick={() => void handleSearch()}
-                        disabled={isSearching || !searchQuery.trim()}
+                        disabled={isSearching || isSubmitting || !searchQuery.trim()}
                         sx={{ width: { xs: '100%', sm: 'auto' } }}
                     >
                         {isSearching ? 'Searching...' : 'Search'}
@@ -398,7 +449,6 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
                             {supportsBarcodeLookup === false ? ' (barcode lookup unavailable)' : ''}
                         </Typography>
                     )}
-                    {error && <Alert severity="error">{error}</Alert>}
 
                     <BarcodeScannerDialog
                         open={isScannerOpen}
@@ -449,6 +499,7 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
                                     </Box>
                                     <Button
                                         variant="text"
+                                        type="button"
                                         size="small"
                                         startIcon={<ArrowBackIcon />}
                                         onClick={() => setSearchView('results')}
@@ -463,13 +514,13 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
                                         value={selectedMeasure?.label || ''}
                                         label="Measure"
                                         onChange={(e) => setSelectedMeasureLabel(e.target.value)}
+                                        disabled={isSubmitting}
                                     >
                                         {(selectedItem.availableMeasures || [])
                                             .filter((m) => m.gramWeight)
                                             .map((measure) => (
                                                 <MenuItem key={measure.label} value={measure.label}>
-                                                    {measure.label}{' '}
-                                                    {measure.gramWeight ? `(${measure.gramWeight} g)` : ''}
+                                                    {measure.label} {measure.gramWeight ? `(${measure.gramWeight} g)` : ''}
                                                 </MenuItem>
                                             ))}
                                     </Select>
@@ -480,7 +531,7 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
                                     type="number"
                                     value={quantity}
                                     onChange={(e) => setQuantity(parseFloat(e.target.value) || 0)}
-                                    disabled={!selectedMeasure}
+                                    disabled={!selectedMeasure || isSubmitting}
                                     inputProps={{ min: 0, step: 0.5 }}
                                 />
 
@@ -521,6 +572,7 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
                         value={mealPeriod}
                         label="Meal Period"
                         onChange={(e) => setMealPeriod(e.target.value as MealPeriod)}
+                        disabled={isSubmitting}
                     >
                         {mealOptions.map((meal) => (
                             <MenuItem key={meal.value} value={meal.value}>
@@ -535,18 +587,18 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
             {mode === 'manual' ? (
                 <Button
                     variant="contained"
-                    onClick={() => void handleAddManual()}
-                    disabled={!foodName || !calories}
+                    type="submit"
+                    disabled={isSubmitting || !foodName.trim() || !calories.trim()}
                 >
-                    Add Food
+                    {isSubmitting ? 'Adding…' : 'Add Food'}
                 </Button>
             ) : (
                 <Button
                     variant="contained"
-                    onClick={() => void handleAddFromSearch()}
-                    disabled={!selectedItem || !computed || searchView !== 'selected'}
+                    type="submit"
+                    disabled={isSubmitting || !selectedItem || !computed || searchView !== 'selected'}
                 >
-                    Add Selected Food
+                    {isSubmitting ? 'Adding…' : 'Add Selected Food'}
                 </Button>
             )}
         </Stack>

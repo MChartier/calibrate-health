@@ -8,7 +8,7 @@ export type User = {
     email: string;
     weight_unit: WeightUnit;
     height_unit: HeightUnit;
-    timezone?: string;
+    timezone: string;
     date_of_birth?: string | null;
     sex?: 'MALE' | 'FEMALE' | null;
     height_mm?: number | null;

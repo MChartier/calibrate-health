@@ -1,8 +1,7 @@
 import React from 'react';
-import { Alert, Box, CircularProgress, IconButton, Paper, Stack, Tooltip, Typography, Divider } from '@mui/material';
-import { useQuery } from '@tanstack/react-query';
-import axios from 'axios';
+import { Alert, Box, Button, CircularProgress, IconButton, Paper, Stack, Tooltip, Typography, Divider } from '@mui/material';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+import { useUserProfileQuery } from '../queries/userProfile';
 
 /**
  * CalorieTargetBanner
@@ -18,30 +17,8 @@ import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
  * - Colors reinforce add/remove semantics while keeping the primary target readable in neutral text.
  */
 
-type ProfileSummary = {
-    profile: {
-        activity_level: string | null;
-        date_of_birth: string | null;
-        height_mm: number | null;
-        sex: string | null;
-    };
-    calorieSummary: {
-        dailyCalorieTarget?: number;
-        tdee?: number;
-        bmr?: number;
-        missing: string[];
-        deficit?: number | null;
-    };
-};
-
 const CalorieTargetBanner: React.FC = () => {
-    const { data, isLoading, isError } = useQuery({
-        queryKey: ['profile-summary'],
-        queryFn: async (): Promise<ProfileSummary> => {
-            const res = await axios.get('/api/user/profile');
-            return res.data;
-        }
-    });
+    const { data, isLoading, isError, refetch } = useUserProfileQuery();
 
     if (isLoading) {
         return (
@@ -56,7 +33,15 @@ const CalorieTargetBanner: React.FC = () => {
 
     if (isError || !data) {
         return (
-            <Alert severity="warning" sx={{ mb: 2 }}>
+            <Alert
+                severity="warning"
+                sx={{ mb: 2 }}
+                action={
+                    <Button color="inherit" size="small" onClick={() => void refetch()}>
+                        Retry
+                    </Button>
+                }
+            >
                 Unable to load daily target right now.
             </Alert>
         );
@@ -79,7 +64,8 @@ const CalorieTargetBanner: React.FC = () => {
         typeof tdee === 'number' && typeof bmr === 'number' ? Math.round((tdee - bmr) * 10) / 10 : undefined;
     const activityMultiplier =
         typeof tdee === 'number' && typeof bmr === 'number' && bmr !== 0 ? Math.round((tdee / bmr) * 1000) / 1000 : undefined;
-    const goalDelta = typeof deficit === 'number' ? -Math.abs(deficit) : undefined;
+    // Daily target is computed as `TDEE - deficit`. A surplus is represented as a negative deficit value.
+    const goalDelta = typeof deficit === 'number' ? -deficit : undefined;
 
     const breakdownContent = hasTarget ? (
         <Box sx={{ maxWidth: 320 }}>
@@ -119,7 +105,7 @@ const CalorieTargetBanner: React.FC = () => {
                     <Box>
                         <Typography variant="body2">Goal adjustment</Typography>
                         <Typography variant="caption" color="text.secondary">
-                            Deficit (negative) or surplus (positive)
+                            Deficit (negative) or surplus (positive) applied to your TDEE
                         </Typography>
                     </Box>
                     <Typography

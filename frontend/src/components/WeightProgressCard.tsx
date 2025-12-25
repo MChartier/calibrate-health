@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, Paper, Typography, LinearProgress } from '@mui/material';
+import { Box, LinearProgress, Paper, Skeleton, Typography } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
@@ -46,10 +46,13 @@ const WeightProgressCard: React.FC = () => {
     const targetWeight = goal?.target_weight ?? null;
     const isMaintenanceGoal = goal?.daily_deficit === 0;
 
+    const isLoading = goalQuery.isLoading || metricsQuery.isLoading;
+    const isError = goalQuery.isError || metricsQuery.isError;
+
     let progressPercent: number | null = null;
     let maintenanceDeltaLabel: string | null = null;
 
-    if (startWeight !== null && targetWeight !== null && currentWeight !== null) {
+    if (!isLoading && !isError && startWeight !== null && targetWeight !== null && currentWeight !== null) {
         if (isMaintenanceGoal) {
             const tolerance = weightUnitLabel === 'lb' ? 1 : 0.5;
             const delta = currentWeight - targetWeight;
@@ -66,6 +69,63 @@ const WeightProgressCard: React.FC = () => {
             const achievedDelta = startWeight - currentWeight;
             progressPercent = totalDelta === 0 ? 100 : Math.max(Math.min((achievedDelta / totalDelta) * 100, 100), 0);
         }
+    }
+
+    // Assign the card body separately so the main JSX stays readable.
+    let cardBody: React.ReactNode;
+    if (isLoading) {
+        cardBody = (
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                <Skeleton width="70%" />
+                <Skeleton width="55%" />
+                <Skeleton variant="rounded" height={10} />
+                <Skeleton width="40%" />
+            </Box>
+        );
+    } else if (isError) {
+        cardBody = (
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                <Typography variant="body2" color="text.secondary">
+                    Unable to load weight progress.
+                </Typography>
+                <Typography variant="body2" color="primary">
+                    View goals and details
+                </Typography>
+            </Box>
+        );
+    } else {
+        cardBody = (
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                <Typography variant="body2" color="text.secondary">
+                    Start: {startWeight !== null ? `${startWeight} ${weightUnitLabel}` : '—'} · Target:{' '}
+                    {targetWeight !== null ? `${targetWeight} ${weightUnitLabel}` : '—'}
+                </Typography>
+                <Typography variant="body1">
+                    Current: {currentWeight !== null ? `${currentWeight} ${weightUnitLabel}` : '—'}
+                </Typography>
+                {progressPercent !== null ? (
+                    <>
+                        <LinearProgress
+                            variant="determinate"
+                            value={Math.min(progressPercent, 100)}
+                            sx={{ height: 10, borderRadius: 5 }}
+                        />
+                        <Typography variant="caption" color="text.secondary">
+                            {isMaintenanceGoal
+                                ? maintenanceDeltaLabel ?? 'Close to target'
+                                : `${progressPercent.toFixed(0)}% toward goal`}
+                        </Typography>
+                    </>
+                ) : (
+                    <Typography variant="body2" color="text.secondary">
+                        Add a start weight, target weight, and a current weight to see progress.
+                    </Typography>
+                )}
+                <Typography variant="body2" color="primary">
+                    View goals and details
+                </Typography>
+            </Box>
+        );
     }
 
     return (
@@ -85,32 +145,7 @@ const WeightProgressCard: React.FC = () => {
             <Typography variant="h6" gutterBottom>
                 Weight Progress
             </Typography>
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                <Typography variant="body2" color="text.secondary">
-                    Start: {startWeight !== null ? `${startWeight} ${weightUnitLabel}` : '—'} · Target:{' '}
-                    {targetWeight !== null ? `${targetWeight} ${weightUnitLabel}` : '—'}
-                </Typography>
-                <Typography variant="body1">
-                    Current: {currentWeight !== null ? `${currentWeight} ${weightUnitLabel}` : '—'}
-                </Typography>
-                {progressPercent !== null ? (
-                    <>
-                        <LinearProgress variant="determinate" value={Math.min(progressPercent, 100)} sx={{ height: 10, borderRadius: 5 }} />
-                        <Typography variant="caption" color="text.secondary">
-                            {isMaintenanceGoal
-                                ? maintenanceDeltaLabel ?? 'Close to target'
-                                : `${progressPercent.toFixed(0)}% toward goal`}
-                        </Typography>
-                    </>
-                ) : (
-                    <Typography variant="body2" color="text.secondary">
-                        Add a start weight, target weight, and a current weight to see progress.
-                    </Typography>
-                )}
-                <Typography variant="body2" color="primary">
-                    View goals and details
-                </Typography>
-            </Box>
+            {cardBody}
         </Paper>
     );
 };

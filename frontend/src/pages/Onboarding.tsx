@@ -86,7 +86,8 @@ const Onboarding: React.FC = () => {
         if (profileQuery.isSuccess) {
             const missing = profileQuery.data?.calorieSummary?.missing ?? [];
             const hasGoal = profileQuery.data?.goal_daily_deficit !== null && profileQuery.data?.goal_daily_deficit !== undefined;
-            const hasTimezone = typeof profileQuery.data?.profile?.timezone === 'string' && profileQuery.data.profile.timezone.trim().length > 0;
+            const hasTimezone =
+                typeof profileQuery.data?.profile?.timezone === 'string' && profileQuery.data.profile.timezone.trim().length > 0;
             if (missing.length === 0 && hasGoal && hasTimezone) {
                 navigate('/settings', { replace: true });
             }
@@ -205,11 +206,7 @@ const Onboarding: React.FC = () => {
 
                     <FormControl fullWidth required>
                         <InputLabel>Activity Level</InputLabel>
-                        <Select
-                            value={activityLevel}
-                            label="Activity Level"
-                            onChange={(e) => setActivityLevel(e.target.value)}
-                        >
+                        <Select value={activityLevel} label="Activity Level" onChange={(e) => setActivityLevel(e.target.value)}>
                             {activityLevelOptions.map((option) => (
                                 <MenuItem key={option.value} value={option.value}>
                                     {option.label}
@@ -229,11 +226,7 @@ const Onboarding: React.FC = () => {
 
                     <FormControl fullWidth required>
                         <InputLabel>Units</InputLabel>
-                        <Select
-                            value={unitPreference}
-                            label="Units"
-                            onChange={(e) => setUnitPreference(e.target.value as UnitPreferenceKey)}
-                        >
+                        <Select value={unitPreference} label="Units" onChange={(e) => setUnitPreference(e.target.value as UnitPreferenceKey)}>
                             <MenuItem value="CM_KG">Metric (cm, kg)</MenuItem>
                             <MenuItem value="FTIN_LB">Imperial (ft/in, lb)</MenuItem>
                             <MenuItem value="CM_LB">Mixed (cm, lb)</MenuItem>
@@ -291,11 +284,7 @@ const Onboarding: React.FC = () => {
 
                     <FormControl fullWidth>
                         <InputLabel>Goal type</InputLabel>
-                        <Select
-                            value={goalMode}
-                            label="Goal type"
-                            onChange={(e) => setGoalMode(e.target.value as 'lose' | 'maintain' | 'gain')}
-                        >
+                        <Select value={goalMode} label="Goal type" onChange={(e) => setGoalMode(e.target.value as 'lose' | 'maintain' | 'gain')}>
                             <MenuItem value="lose">Lose weight (calorie deficit)</MenuItem>
                             <MenuItem value="maintain">Maintain weight</MenuItem>
                             <MenuItem value="gain">Gain weight (calorie surplus)</MenuItem>
@@ -305,11 +294,7 @@ const Onboarding: React.FC = () => {
                     {goalMode !== 'maintain' && (
                         <FormControl fullWidth>
                             <InputLabel>Daily calorie change</InputLabel>
-                            <Select
-                                value={dailyDeficit}
-                                label="Daily calorie change"
-                                onChange={(e) => setDailyDeficit(e.target.value)}
-                            >
+                            <Select value={dailyDeficit} label="Daily calorie change" onChange={(e) => setDailyDeficit(e.target.value)}>
                                 {DAILY_DEFICIT_CHOICE_STRINGS.map((val) => (
                                     <MenuItem key={val} value={val}>
                                         {goalMode === 'gain' ? '+' : '-'}

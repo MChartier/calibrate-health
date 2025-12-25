@@ -1,23 +1,17 @@
 import React from 'react';
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/useAuth';
-import { CircularProgress, Box, Alert } from '@mui/material';
-import { useQuery } from '@tanstack/react-query';
-import axios from 'axios';
+import { CircularProgress, Box, Alert, Button } from '@mui/material';
+import { useUserProfileQuery } from '../queries/userProfile';
 
 const ProtectedRoute: React.FC = () => {
     const { user, isLoading } = useAuth();
     const location = useLocation();
     const isOnboardingRoute = location.pathname.startsWith('/onboarding');
+    const shouldCheckProfile = Boolean(user) && !isLoading && !isOnboardingRoute;
 
-    const profileQuery = useQuery({
-        queryKey: ['profile'],
-        queryFn: async () => {
-            const res = await axios.get('/api/user/profile');
-            return res.data;
-        },
-        enabled: Boolean(user) && !isOnboardingRoute && !isLoading
-    });
+    // Always call hooks in the same order; gate the request with `enabled`.
+    const profileQuery = useUserProfileQuery({ enabled: shouldCheckProfile });
 
     if (isLoading) {
         return (
@@ -28,7 +22,6 @@ const ProtectedRoute: React.FC = () => {
     }
 
     if (!user) {
-        console.log('Redirecting to login...');
         return <Navigate to="/login" replace />;
     }
 
@@ -44,7 +37,16 @@ const ProtectedRoute: React.FC = () => {
         if (profileQuery.isError) {
             return (
                 <Box sx={{ maxWidth: 480, mx: 'auto', mt: 4 }}>
-                    <Alert severity="error">Unable to load profile. Please try again.</Alert>
+                    <Alert
+                        severity="error"
+                        action={
+                            <Button color="inherit" size="small" onClick={() => void profileQuery.refetch()}>
+                                Retry
+                            </Button>
+                        }
+                    >
+                        Unable to load profile. Please try again.
+                    </Alert>
                 </Box>
             );
         }

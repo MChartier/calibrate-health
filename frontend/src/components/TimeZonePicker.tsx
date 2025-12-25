@@ -74,7 +74,15 @@ const TimeZonePicker: React.FC<Props> = ({ value, onChange, label = 'Timezone', 
                             borderColor: state.isFocused ? theme.palette.primary.main : theme.palette.text.primary
                         }
                     }),
-                    menu: (base) => ({ ...base, zIndex: 1300 }),
+                    menu: (base) => ({
+                        ...base,
+                        zIndex: 1300,
+                        backgroundColor: theme.palette.background.paper
+                    }),
+                    menuList: (base) => ({
+                        ...base,
+                        backgroundColor: theme.palette.background.paper
+                    }),
                     option: (base, state) => ({
                         ...base,
                         color: theme.palette.text.primary,
@@ -82,7 +90,7 @@ const TimeZonePicker: React.FC<Props> = ({ value, onChange, label = 'Timezone', 
                             ? theme.palette.action.selected
                             : state.isFocused
                                 ? theme.palette.action.hover
-                                : base.backgroundColor
+                                : theme.palette.background.paper
                     }),
                     singleValue: (base) => ({ ...base, color: theme.palette.text.primary }),
                     placeholder: (base) => ({ ...base, color: theme.palette.text.secondary }),
