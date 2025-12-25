@@ -27,7 +27,6 @@ const Login: React.FC = () => {
 
     return (
         <Box component="form" onSubmit={handleSubmit} sx={{ maxWidth: 400, mx: 'auto', mt: 4 }}>
-            <Typography variant="h4" gutterBottom>Login</Typography>
             {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
             <TextField
                 label="Email"

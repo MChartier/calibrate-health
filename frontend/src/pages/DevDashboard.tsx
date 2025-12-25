@@ -166,7 +166,6 @@ const DevDashboard: React.FC = () => {
     return (
         <Box>
             <Stack spacing={1} sx={{ mb: 3 }}>
-                <Typography variant="h4">Food Provider Dev Dashboard</Typography>
                 <Typography variant="body1" color="text.secondary">
                     Compare search output across providers to tune query quality.
                 </Typography>

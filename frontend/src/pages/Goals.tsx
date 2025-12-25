@@ -799,10 +799,6 @@ const Goals: React.FC = () => {
 
     return (
         <Box sx={{ maxWidth: 960, mx: 'auto' }}>
-            <Typography variant="h4" gutterBottom>
-                Goals
-            </Typography>
-
             <Paper sx={{ p: 2, mb: 3 }}>
                 <Typography variant="h6" gutterBottom>
                     Weight Over Time

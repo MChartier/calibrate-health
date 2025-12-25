@@ -173,7 +173,6 @@ const Profile: React.FC = () => {
 
     return (
         <Box sx={{ maxWidth: 720, mx: 'auto' }}>
-            <Typography variant="h4" gutterBottom>Profile</Typography>
             <Typography color="text.secondary" sx={{ mb: 2 }}>
                 Edit the info used to estimate your daily calorie burn (TDEE) and calorie math inputs.
             </Typography>

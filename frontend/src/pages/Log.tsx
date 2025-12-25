@@ -88,15 +88,12 @@ const Log: React.FC = () => {
                     flexDirection: { xs: 'column', sm: 'row' }
                 }}
             >
-                <Typography variant="h4" sx={{ flexGrow: 1 }}>
-                    Log
-                </Typography>
-
                 <Box
                     sx={{
                         display: 'flex',
                         alignItems: 'center',
                         gap: 1,
+                        ml: { sm: 'auto' },
                         width: { xs: '100%', sm: 'auto' },
                         justifyContent: { xs: 'flex-start', sm: 'flex-end' }
                     }}

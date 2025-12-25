@@ -72,10 +72,6 @@ const Settings: React.FC = () => {
 
     return (
         <Box sx={{ maxWidth: 720, mx: 'auto' }}>
-            <Typography variant="h4" gutterBottom>
-                Settings
-            </Typography>
-
             <Paper sx={{ p: 2, mb: 3 }}>
                 <Typography variant="h6" gutterBottom>
                     Units & Localization

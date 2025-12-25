@@ -1,5 +1,5 @@
 import React from 'react';
-import { Typography, Box, Grid } from '@mui/material';
+import { Box, Grid } from '@mui/material';
 import { useAuth } from '../context/useAuth';
 import CalorieTargetBanner from '../components/CalorieTargetBanner';
 import LogSummaryCard from '../components/LogSummaryCard';
@@ -10,7 +10,6 @@ const Dashboard: React.FC = () => {
 
     return (
         <Box>
-            <Typography variant="h4" gutterBottom>Dashboard</Typography>
             <CalorieTargetBanner />
 
             <Grid container spacing={3} alignItems="stretch">
