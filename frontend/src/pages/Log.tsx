@@ -93,9 +93,7 @@ const Log: React.FC = () => {
                         display: 'flex',
                         alignItems: 'center',
                         gap: 1,
-                        ml: { sm: 'auto' },
-                        width: { xs: '100%', sm: 'auto' },
-                        justifyContent: { xs: 'flex-start', sm: 'flex-end' }
+                        width: '100%'
                     }}
                 >
                     <Tooltip title="Previous day">
@@ -118,7 +116,19 @@ const Log: React.FC = () => {
                         }}
                         InputLabelProps={{ shrink: true }}
                         inputProps={{ max: today }}
-                        sx={{ width: { xs: '100%', sm: 200 } }}
+                        sx={{
+                            flexGrow: 1,
+                            minWidth: 0,
+                            '& input': { textAlign: 'center' },
+                            // Native `type="date"` inputs render differently per-browser; these help keep the value visually centered
+                            // in Chrome/Safari without affecting the calendar icon alignment.
+                            '& input::-webkit-datetime-edit': { textAlign: 'center' },
+                            '& input::-webkit-date-and-time-value': { textAlign: 'center' },
+                            '& input::-webkit-datetime-edit-fields-wrapper': {
+                                display: 'flex',
+                                justifyContent: 'center'
+                            }
+                        }}
                     />
 
                     <Tooltip title="Next day">
