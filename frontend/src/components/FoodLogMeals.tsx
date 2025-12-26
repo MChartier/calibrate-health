@@ -267,7 +267,7 @@ const FoodLogMeals: React.FC<{ logs: FoodLogEntry[] }> = ({ logs }) => {
     };
 
     return (
-        <Stack spacing={2}>
+        <Stack spacing={2} useFlexGap>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <Typography variant="h6">Food Log</Typography>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>

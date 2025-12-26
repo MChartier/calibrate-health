@@ -32,6 +32,20 @@ function buildShadowRamp({ shadowColor, intensity }: ShadowRampOptions): Theme['
     return shadows as Theme['shadows'];
 }
 
+type PaletteColorName = 'primary' | 'secondary' | 'error' | 'info' | 'success' | 'warning';
+
+/**
+ * Resolve a palette color to use for "status" components (Alert/Chip) based on the MUI color prop.
+ *
+ * We treat "default" or undefined as a neutral surface instead of forcing an accent.
+ */
+function resolveStatusColor(theme: Theme, color: unknown): string {
+    const name = typeof color === 'string' ? (color as PaletteColorName) : null;
+    if (!name) return theme.palette.text.secondary;
+    if (!(name in theme.palette)) return theme.palette.text.secondary;
+    return theme.palette[name].main;
+}
+
 /**
  * Create the application MUI theme for the given palette mode.
  *
@@ -158,6 +172,285 @@ export function createAppTheme(mode: PaletteMode) {
                         [theme.breakpoints.down('sm')]: {
                             padding: theme.spacing(1.5),
                             '&:last-child': { paddingBottom: theme.spacing(1.5) }
+                        }
+                    })
+                }
+            },
+            MuiDialog: {
+                styleOverrides: {
+                    paper: ({ theme }) => ({
+                        boxShadow: theme.shadows[12],
+                        // Give small screens a bit of breathing room without making dialogs feel "mobile framed".
+                        margin: theme.spacing(1.5),
+                        [theme.breakpoints.up('sm')]: {
+                            margin: theme.spacing(2)
+                        }
+                    })
+                }
+            },
+            MuiDialogTitle: {
+                styleOverrides: {
+                    root: ({ theme }) => ({
+                        padding: theme.spacing(2),
+                        fontWeight: 900,
+                        borderBottom: `1px solid ${theme.palette.divider}`,
+                        [theme.breakpoints.down('sm')]: {
+                            padding: theme.spacing(1.5)
+                        }
+                    })
+                }
+            },
+            MuiDialogContent: {
+                styleOverrides: {
+                    root: ({ theme, ownerState }) => ({
+                        padding: theme.spacing(2),
+                        ...(ownerState.dividers
+                            ? {
+                                borderTop: 'none',
+                                borderBottom: 'none'
+                            }
+                            : null),
+                        [theme.breakpoints.down('sm')]: {
+                            padding: theme.spacing(1.5)
+                        }
+                    })
+                }
+            },
+            MuiDialogActions: {
+                styleOverrides: {
+                    root: ({ theme }) => ({
+                        padding: theme.spacing(1.5, 2, 2),
+                        gap: theme.spacing(1),
+                        borderTop: `1px solid ${theme.palette.divider}`,
+                        [theme.breakpoints.down('sm')]: {
+                            padding: theme.spacing(1.25, 1.5, 1.5)
+                        }
+                    })
+                }
+            },
+            MuiAccordion: {
+                defaultProps: {
+                    disableGutters: true,
+                    elevation: 0
+                },
+                styleOverrides: {
+                    root: ({ theme }) => ({
+                        // Accordions show in stacked lists; keep them crisp and flat.
+                        boxShadow: 'none',
+                        border: `1px solid ${theme.palette.divider}`,
+                        backgroundImage: 'none',
+                        '&:before': { display: 'none' },
+                        '&.Mui-expanded': { margin: 0 },
+                        '&:first-of-type': {
+                            borderTopLeftRadius: theme.shape.borderRadius,
+                            borderTopRightRadius: theme.shape.borderRadius
+                        },
+                        '&:last-of-type': {
+                            borderBottomLeftRadius: theme.shape.borderRadius,
+                            borderBottomRightRadius: theme.shape.borderRadius
+                        }
+                    })
+                }
+            },
+            MuiAccordionSummary: {
+                styleOverrides: {
+                    root: ({ theme }) => ({
+                        minHeight: 52,
+                        paddingLeft: theme.spacing(2),
+                        paddingRight: theme.spacing(2),
+                        '&.Mui-expanded': { minHeight: 52 },
+                        '&:hover': {
+                            backgroundColor: alpha(theme.palette.text.primary, theme.palette.mode === 'dark' ? 0.06 : 0.04)
+                        },
+                        [theme.breakpoints.down('sm')]: {
+                            paddingLeft: theme.spacing(1.5),
+                            paddingRight: theme.spacing(1.5)
+                        }
+                    }),
+                    content: ({ theme }) => ({
+                        margin: theme.spacing(1.25, 0),
+                        '&.Mui-expanded': { margin: theme.spacing(1.25, 0) }
+                    })
+                }
+            },
+            MuiAccordionDetails: {
+                styleOverrides: {
+                    root: ({ theme }) => ({
+                        padding: theme.spacing(2),
+                        paddingTop: theme.spacing(0.5),
+                        [theme.breakpoints.down('sm')]: {
+                            padding: theme.spacing(1.5),
+                            paddingTop: theme.spacing(0.5)
+                        }
+                    })
+                }
+            },
+            MuiAlert: {
+                styleOverrides: {
+                    root: ({ theme, ownerState }) => {
+                        const statusColor = resolveStatusColor(theme, ownerState.severity);
+                        const isFilled = ownerState.variant === 'filled';
+                        return {
+                            borderRadius: theme.shape.borderRadius,
+                            border: `1px solid ${alpha(statusColor, theme.palette.mode === 'dark' ? 0.42 : 0.32)}`,
+                            backgroundColor: alpha(statusColor, isFilled ? 0.22 : theme.palette.mode === 'dark' ? 0.12 : 0.08),
+                            color: theme.palette.text.primary
+                        };
+                    },
+                    icon: ({ theme, ownerState }) => ({
+                        color: resolveStatusColor(theme, ownerState.severity)
+                    }),
+                    message: {
+                        fontWeight: 600
+                    }
+                }
+            },
+            MuiChip: {
+                styleOverrides: {
+                    root: ({ theme, ownerState }) => {
+                        const chipColor = resolveStatusColor(theme, ownerState.color);
+                        const isOutlined = ownerState.variant === 'outlined';
+                        return {
+                            fontWeight: 800,
+                            borderRadius: 999,
+                            ...(isOutlined
+                                ? {
+                                    borderColor: alpha(chipColor, theme.palette.mode === 'dark' ? 0.45 : 0.32),
+                                    backgroundColor: alpha(chipColor, theme.palette.mode === 'dark' ? 0.12 : 0.08)
+                                }
+                                : null)
+                        };
+                    },
+                    label: {
+                        paddingLeft: 10,
+                        paddingRight: 10
+                    }
+                }
+            },
+            MuiTooltip: {
+                styleOverrides: {
+                    tooltip: ({ theme }) => ({
+                        backgroundColor: theme.palette.background.paper,
+                        color: theme.palette.text.primary,
+                        border: `1px solid ${theme.palette.divider}`,
+                        boxShadow: theme.shadows[6],
+                        fontWeight: 700,
+                        fontSize: theme.typography.pxToRem(12),
+                        lineHeight: 1.25,
+                        padding: theme.spacing(0.75, 1)
+                    }),
+                    arrow: ({ theme }) => ({
+                        color: theme.palette.background.paper,
+                        '&:before': {
+                            border: `1px solid ${theme.palette.divider}`
+                        }
+                    })
+                }
+            },
+            MuiMenu: {
+                styleOverrides: {
+                    paper: ({ theme }) => ({
+                        backgroundImage: 'none',
+                        border: `1px solid ${theme.palette.divider}`,
+                        boxShadow: theme.shadows[10]
+                    })
+                }
+            },
+            MuiMenuItem: {
+                styleOverrides: {
+                    root: ({ theme }) => ({
+                        borderRadius: 10,
+                        margin: theme.spacing(0.5),
+                        '&.Mui-selected': {
+                            backgroundColor: alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.2 : 0.12)
+                        },
+                        '&.Mui-selected:hover': {
+                            backgroundColor: alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.26 : 0.16)
+                        }
+                    })
+                }
+            },
+            MuiLinearProgress: {
+                styleOverrides: {
+                    root: ({ theme }) => ({
+                        height: 8,
+                        borderRadius: 999,
+                        backgroundColor: alpha(theme.palette.text.primary, theme.palette.mode === 'dark' ? 0.16 : 0.1)
+                    }),
+                    bar: () => ({
+                        borderRadius: 999
+                    })
+                }
+            },
+            MuiSkeleton: {
+                styleOverrides: {
+                    root: ({ theme }) => ({
+                        backgroundColor: alpha(theme.palette.text.primary, theme.palette.mode === 'dark' ? 0.14 : 0.1),
+                        '&.MuiSkeleton-rounded': {
+                            borderRadius: theme.shape.borderRadius
+                        }
+                    })
+                }
+            },
+            MuiIconButton: {
+                styleOverrides: {
+                    root: ({ theme }) => ({
+                        borderRadius: 12,
+                        transition: 'transform 120ms ease, background-color 120ms ease, box-shadow 120ms ease',
+                        '&:hover': {
+                            backgroundColor: alpha(theme.palette.text.primary, theme.palette.mode === 'dark' ? 0.08 : 0.06)
+                        },
+                        '&:active': { transform: 'translateY(1px)' },
+                        '&.Mui-focusVisible': {
+                            boxShadow: `0 0 0 4px ${alpha(theme.palette.primary.main, 0.22)}`
+                        }
+                    })
+                }
+            },
+            MuiListItemButton: {
+                styleOverrides: {
+                    root: ({ theme }) => ({
+                        borderRadius: 12,
+                        '&:hover': {
+                            backgroundColor: alpha(theme.palette.text.primary, theme.palette.mode === 'dark' ? 0.08 : 0.05)
+                        },
+                        '&.Mui-selected': {
+                            backgroundColor: alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.18 : 0.1)
+                        },
+                        '&.Mui-selected:hover': {
+                            backgroundColor: alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.24 : 0.14)
+                        },
+                        '&.Mui-focusVisible': {
+                            boxShadow: `0 0 0 4px ${alpha(theme.palette.primary.main, 0.18)}`
+                        }
+                    })
+                }
+            },
+            MuiToggleButton: {
+                styleOverrides: {
+                    root: ({ theme }) => ({
+                        fontWeight: 800,
+                        borderRadius: 12,
+                        '&.Mui-selected': {
+                            borderColor: alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.5 : 0.35),
+                            backgroundColor: alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.22 : 0.14),
+                            color: theme.palette.text.primary
+                        },
+                        '&.Mui-selected:hover': {
+                            backgroundColor: alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.28 : 0.18)
+                        }
+                    })
+                }
+            },
+            MuiFab: {
+                styleOverrides: {
+                    root: ({ theme }) => ({
+                        borderRadius: 16,
+                        boxShadow: theme.shadows[8],
+                        transition: 'transform 120ms ease, box-shadow 120ms ease',
+                        '&:active': { transform: 'translateY(1px)' },
+                        '&.Mui-focusVisible': {
+                            boxShadow: `0 0 0 4px ${alpha(theme.palette.primary.main, 0.22)}`
                         }
                     })
                 }
