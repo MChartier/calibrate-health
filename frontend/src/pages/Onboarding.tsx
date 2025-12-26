@@ -182,7 +182,7 @@ const Onboarding: React.FC = () => {
                 We need a few details to estimate your calories burned and daily target. You can change these later from your profile and settings.
             </Typography>
 
-            <Paper sx={{ p: 3 }}>
+            <Paper sx={{ p: { xs: 2, sm: 3 } }}>
                 <Stack spacing={2}>
                     {error && <Alert severity="error">{error}</Alert>}
                     {success && <Alert severity="success">{success}</Alert>}

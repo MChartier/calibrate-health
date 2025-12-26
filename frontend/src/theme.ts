@@ -150,6 +150,18 @@ export function createAppTheme(mode: PaletteMode) {
                     })
                 }
             },
+            MuiCardContent: {
+                styleOverrides: {
+                    root: ({ theme }) => ({
+                        padding: theme.spacing(2),
+                        '&:last-child': { paddingBottom: theme.spacing(2) },
+                        [theme.breakpoints.down('sm')]: {
+                            padding: theme.spacing(1.5),
+                            '&:last-child': { paddingBottom: theme.spacing(1.5) }
+                        }
+                    })
+                }
+            },
             MuiButton: {
                 styleOverrides: {
                     root: ({ theme }) => ({

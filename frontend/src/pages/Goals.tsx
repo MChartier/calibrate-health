@@ -91,7 +91,7 @@ const Goals: React.FC = () => {
                 <GoalTrackerCard />
             </Box>
 
-            <Paper sx={{ p: 2 }}>
+            <Paper sx={{ p: { xs: 1.5, sm: 2 } }}>
                 <Typography variant="h6" gutterBottom>
                     Weight Over Time
                 </Typography>

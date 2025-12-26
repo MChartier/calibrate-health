@@ -158,7 +158,7 @@ const Log: React.FC = () => {
                 <WeightSummaryCard date={effectiveDate} onOpenWeightEntry={() => setIsWeightDialogOpen(true)} />
             </Box>
 
-            <Paper sx={{ p: 2, mt: 2 }}>
+            <Paper sx={{ p: { xs: 1.5, sm: 2 }, mt: 2 }}>
                 {foodQuery.isError ? (
                     <Alert
                         severity="error"
@@ -200,7 +200,7 @@ const Log: React.FC = () => {
             <Dialog open={isFoodDialogOpen} onClose={handleCloseFoodDialog} fullWidth maxWidth="sm">
                 <DialogTitle>Track Food</DialogTitle>
                 <DialogContent>
-                    <Paper sx={{ p: 2, mt: 1 }}>
+                    <Paper sx={{ p: { xs: 1.5, sm: 2 }, mt: 1 }}>
                         <FoodEntryForm
                             date={effectiveDate}
                             onSuccess={() => {
@@ -218,7 +218,7 @@ const Log: React.FC = () => {
             <Dialog open={isWeightDialogOpen} onClose={handleCloseWeightDialog} fullWidth maxWidth="sm">
                 <DialogTitle>Track Weight</DialogTitle>
                 <DialogContent>
-                    <Paper sx={{ p: 2, mt: 1 }}>
+                    <Paper sx={{ p: { xs: 1.5, sm: 2 }, mt: 1 }}>
                         <WeightEntryForm
                             date={effectiveDate}
                             onSuccess={() => {

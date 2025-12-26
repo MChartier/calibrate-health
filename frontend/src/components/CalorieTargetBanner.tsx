@@ -22,7 +22,7 @@ const CalorieTargetBanner: React.FC = () => {
 
     if (isLoading) {
         return (
-            <Paper sx={{ p: 2, mb: 2 }}>
+            <Paper sx={{ p: { xs: 1.5, sm: 2 }, mb: 2 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                     <CircularProgress size={20} />
                     <Typography>Loading targets…</Typography>
@@ -143,7 +143,7 @@ const CalorieTargetBanner: React.FC = () => {
     );
 
     return (
-        <Paper sx={{ p: 2, mb: 2 }}>
+        <Paper sx={{ p: { xs: 1.5, sm: 2 }, mb: 2 }}>
             <Stack spacing={0.5}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                     <Typography variant="h6">Daily Target</Typography>

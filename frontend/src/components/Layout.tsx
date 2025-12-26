@@ -204,7 +204,24 @@ const Layout: React.FC = () => {
 
             <Box component="main" sx={{ flexGrow: 1, minWidth: 0 }}>
                 <Toolbar />
-                <Box sx={{ p: 3, pb: showBottomNav ? 'calc(80px + env(safe-area-inset-bottom))' : 3 }}>
+                <Box
+                    sx={(theme) => ({
+                        // On very small screens, favor "full-bleed" content when the app nav is present so cards
+                        // can use the whole width. Non-nav pages (login/onboarding) keep comfortable gutters.
+                        px: showBottomNav ? { xs: 0, sm: 2, md: 3 } : { xs: 2, sm: 2, md: 3 },
+                        pt: { xs: 2, sm: 3, md: 3 },
+                        pb: showBottomNav ? 'calc(80px + env(safe-area-inset-bottom))' : { xs: 2, sm: 3, md: 3 },
+                        ...(showBottomNav
+                            ? {
+                                [theme.breakpoints.down('sm')]: {
+                                    // When surfaces are flush to the viewport edge, rounded corners look like
+                                    // accidental cut-outs. Square them off for xs while keeping radii elsewhere.
+                                    '& .MuiPaper-root': { borderRadius: 0 }
+                                }
+                            }
+                            : null)
+                    })}
+                >
                     <Outlet />
                 </Box>
             </Box>

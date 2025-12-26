@@ -177,7 +177,7 @@ const Profile: React.FC = () => {
                 Edit the info used to estimate your daily calorie burn (TDEE) and calorie math inputs.
             </Typography>
 
-            <Paper sx={{ p: 2 }}>
+            <Paper sx={{ p: { xs: 1.5, sm: 2 } }}>
                 {profileMessage && <Alert severity="info" sx={{ mb: 2 }}>{profileMessage}</Alert>}
 
                 <Stack spacing={2}>

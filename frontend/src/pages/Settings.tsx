@@ -72,7 +72,7 @@ const Settings: React.FC = () => {
 
     return (
         <Box sx={{ maxWidth: 720, mx: 'auto' }}>
-            <Paper sx={{ p: 2, mb: 3 }}>
+            <Paper sx={{ p: { xs: 1.5, sm: 2 }, mb: 3 }}>
                 <Typography variant="h6" gutterBottom>
                     Units & Localization
                 </Typography>
@@ -100,7 +100,7 @@ const Settings: React.FC = () => {
                 </Box>
             </Paper>
 
-            <Paper sx={{ p: 2, mb: 3 }}>
+            <Paper sx={{ p: { xs: 1.5, sm: 2 }, mb: 3 }}>
                 <Typography variant="h6" gutterBottom>
                     Appearance
                 </Typography>
