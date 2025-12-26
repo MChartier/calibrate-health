@@ -9,12 +9,14 @@ import Settings from './pages/Settings';
 import Profile from './pages/Profile';
 import Onboarding from './pages/Onboarding';
 import DevDashboard from './pages/DevDashboard';
+import DesignLab from './pages/DesignLab';
 
 import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
   return (
     <Routes>
+      {import.meta.env.DEV && <Route path="/design" element={<DesignLab />} />}
       <Route path="/" element={<Layout />}>
         <Route index element={<Navigate to="/log" replace />} />
         <Route path="login" element={<Login />} />

@@ -16,6 +16,7 @@ import {
     Typography
 } from '@mui/material';
 import axios from 'axios';
+import { Link as RouterLink } from 'react-router-dom';
 
 type FoodDataSource = 'usda' | 'openFoodFacts';
 
@@ -169,6 +170,11 @@ const DevDashboard: React.FC = () => {
                 <Typography variant="body1" color="text.secondary">
                     Compare search output across providers to tune query quality.
                 </Typography>
+                <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+                    <Button component={RouterLink} to="/design" variant="outlined">
+                        Open Design Lab
+                    </Button>
+                </Stack>
             </Stack>
 
             <Card variant="outlined" sx={{ mb: 3 }}>
