@@ -10,10 +10,8 @@ import {
     IconButton,
     LinearProgress,
     Paper,
-    Skeleton,
     TextField,
     Tooltip,
-    Typography
 } from '@mui/material';
 import SpeedDial from '@mui/material/SpeedDial';
 import SpeedDialAction from '@mui/material/SpeedDialAction';
@@ -29,6 +27,7 @@ import FoodEntryForm from '../components/FoodEntryForm';
 import FoodLogMeals from '../components/FoodLogMeals';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import LogSummaryCard from '../components/LogSummaryCard';
+import WeightSummaryCard from '../components/WeightSummaryCard';
 import { useAuth } from '../context/useAuth';
 import { addDaysToIsoDate, getTodayIsoDate } from '../utils/date';
 import type { MealPeriod } from '../types/mealPeriod';
@@ -38,12 +37,6 @@ type FoodLogEntry = {
     meal_period: MealPeriod;
     name: string;
     calories: number;
-};
-
-type MetricEntry = {
-    id: number;
-    date: string;
-    weight: number;
 };
 
 const Log: React.FC = () => {
@@ -61,15 +54,6 @@ const Log: React.FC = () => {
         queryFn: async (): Promise<FoodLogEntry[]> => {
             const res = await axios.get('/api/food?date=' + encodeURIComponent(effectiveDate));
             return Array.isArray(res.data) ? res.data : [];
-        }
-    });
-
-    const metricQuery = useQuery({
-        queryKey: ['metrics', effectiveDate],
-        queryFn: async (): Promise<MetricEntry | null> => {
-            const res = await axios.get('/api/metrics', { params: { start: effectiveDate, end: effectiveDate } });
-            const metrics = Array.isArray(res.data) ? (res.data as MetricEntry[]) : [];
-            return metrics[0] ?? null;
         }
     });
 
@@ -171,39 +155,7 @@ const Log: React.FC = () => {
             >
                 <LogSummaryCard date={effectiveDate} />
 
-                <Paper sx={{ p: 2 }}>
-                    <Typography variant="h6" gutterBottom>
-                        Weight
-                    </Typography>
-
-                    {metricQuery.isError ? (
-                        <Alert severity="warning">Unable to load your weight entry for this day.</Alert>
-                    ) : metricQuery.isLoading ? (
-                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                            <Skeleton width="50%" />
-                            <Skeleton width="30%" />
-                        </Box>
-                    ) : (
-                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                            {metricQuery.data ? (
-                                <Typography variant="body1">
-                                    <strong>{metricQuery.data.weight}</strong> {user?.weight_unit === 'LB' ? 'lb' : 'kg'}
-                                </Typography>
-                            ) : (
-                                <Typography variant="body2" color="text.secondary">
-                                    No weigh-in yet for this day.
-                                </Typography>
-                            )}
-                            <Button
-                                variant="outlined"
-                                onClick={() => setIsWeightDialogOpen(true)}
-                                sx={{ alignSelf: 'flex-start' }}
-                            >
-                                {metricQuery.data ? 'Update weight' : 'Add weight'}
-                            </Button>
-                        </Box>
-                    )}
-                </Paper>
+                <WeightSummaryCard date={effectiveDate} onOpenWeightEntry={() => setIsWeightDialogOpen(true)} />
             </Box>
 
             <Paper sx={{ p: 2, mt: 2 }}>
