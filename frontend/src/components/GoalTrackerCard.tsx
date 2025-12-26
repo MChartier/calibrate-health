@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Alert, Box, Button, Card, CardActionArea, CardContent, Dialog, DialogContent, DialogTitle, Skeleton, Stack, Typography } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import { Link as RouterLink } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
@@ -125,7 +126,8 @@ const GoalTrackerBody: React.FC<{
                                     sx={{
                                         height: 10,
                                         borderRadius: 999,
-                                        backgroundColor: (theme) => theme.palette.action.hover,
+                                        backgroundColor: (theme) =>
+                                            alpha(theme.palette.text.primary, theme.palette.mode === 'dark' ? 0.14 : 0.08),
                                         overflow: 'hidden'
                                     }}
                                 />
@@ -138,8 +140,8 @@ const GoalTrackerBody: React.FC<{
                                         left: `${toleranceLeftPercent}%`,
                                         width: `${toleranceWidthPercent}%`,
                                         borderRadius: 999,
-                                        backgroundColor: (theme) => theme.palette.success.light,
-                                        opacity: 0.6
+                                        backgroundColor: (theme) =>
+                                            alpha(theme.palette.secondary.main, theme.palette.mode === 'dark' ? 0.28 : 0.18)
                                     }}
                                     aria-label="On-target range"
                                 />
@@ -247,7 +249,8 @@ const GoalTrackerBody: React.FC<{
                             sx={{
                                 height: 10,
                                 borderRadius: 999,
-                                backgroundColor: (theme) => theme.palette.action.hover,
+                                backgroundColor: (theme) =>
+                                    alpha(theme.palette.text.primary, theme.palette.mode === 'dark' ? 0.14 : 0.08),
                                 overflow: 'hidden'
                             }}
                         >

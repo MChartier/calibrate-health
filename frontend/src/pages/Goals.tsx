@@ -6,6 +6,7 @@ import {
     Skeleton,
     Typography
 } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import axios from 'axios';
 import { useQuery } from '@tanstack/react-query';
 import { LineChart } from '@mui/x-charts/LineChart';
@@ -34,6 +35,7 @@ type WeightPoint = { date: Date; weight: number };
 
 const Goals: React.FC = () => {
     const { user } = useAuth();
+    const theme = useTheme();
     const unitLabel = user?.weight_unit === 'LB' ? 'lb' : 'kg';
 
     const goalQuery = useQuery({
@@ -124,6 +126,7 @@ const Goals: React.FC = () => {
                             {
                                 data: yData,
                                 label: 'Weight',
+                                color: theme.palette.primary.main,
                                 showMark: true
                             }
                         ]}
@@ -133,7 +136,12 @@ const Goals: React.FC = () => {
                             <ChartsReferenceLine
                                 y={goal!.target_weight}
                                 label={`Target: ${goal!.target_weight.toFixed(1)} ${unitLabel}`}
-                                lineStyle={{ strokeDasharray: '6 6' }}
+                                lineStyle={{
+                                    stroke: theme.palette.secondary.main,
+                                    strokeDasharray: '6 6',
+                                    strokeWidth: 2
+                                }}
+                                labelStyle={{ fill: theme.palette.text.secondary, fontWeight: 700 }}
                             />
                         )}
                     </LineChart>

@@ -1,6 +1,7 @@
 import type { PaletteMode } from '@mui/material';
 import { alpha, createTheme, darken } from '@mui/material/styles';
 import type { Theme } from '@mui/material/styles';
+import type {} from '@mui/x-charts/themeAugmentation';
 
 const worktreeColor = import.meta.env.VITE_WORKTREE_COLOR?.trim();
 const isMainWorktree = import.meta.env.VITE_WORKTREE_IS_MAIN === 'true';
@@ -209,6 +210,65 @@ export function createAppTheme(mode: PaletteMode) {
                             borderRadius: 3,
                             backgroundColor: theme.palette.primary.main
                         }
+                    })
+                }
+            },
+            // MUI X-Charts: keep charts crisp and aligned with the "Athletic Data" look.
+            MuiChartsAxis: {
+                styleOverrides: {
+                    root: ({ theme }) => ({
+                        '& .MuiChartsAxis-line': {
+                            stroke: theme.palette.divider
+                        },
+                        '& .MuiChartsAxis-tick': {
+                            stroke: theme.palette.divider
+                        },
+                        '& .MuiChartsAxis-tickLabel': {
+                            fill: theme.palette.text.secondary,
+                            fontWeight: 700
+                        },
+                        '& .MuiChartsAxis-label': {
+                            fill: theme.palette.text.secondary,
+                            fontWeight: 700
+                        }
+                    })
+                }
+            },
+            MuiChartsGrid: {
+                styleOverrides: {
+                    root: ({ theme }) => ({
+                        '& .MuiChartsGrid-line': {
+                            stroke: alpha(theme.palette.text.primary, theme.palette.mode === 'dark' ? 0.12 : 0.08),
+                            strokeDasharray: '4 6'
+                        }
+                    })
+                }
+            },
+            MuiChartsTooltip: {
+                styleOverrides: {
+                    paper: ({ theme }) => ({
+                        backgroundColor: theme.palette.background.paper,
+                        backgroundImage: 'none',
+                        border: `1px solid ${theme.palette.divider}`,
+                        boxShadow: theme.shadows[6]
+                    })
+                }
+            },
+            MuiLineElement: {
+                styleOverrides: {
+                    root: {
+                        strokeWidth: 3,
+                        strokeLinecap: 'round',
+                        strokeLinejoin: 'round'
+                    }
+                }
+            },
+            MuiMarkElement: {
+                styleOverrides: {
+                    root: ({ theme }) => ({
+                        fill: theme.palette.background.paper,
+                        stroke: theme.palette.primary.main,
+                        strokeWidth: 2
                     })
                 }
             }

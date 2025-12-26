@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { Alert, Box, Button, Card, CardContent, Chip, Skeleton, Typography } from '@mui/material';
 import MonitorWeightIcon from '@mui/icons-material/MonitorWeight';
+import { alpha } from '@mui/material/styles';
 import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
 import { useAuth } from '../context/useAuth';
@@ -150,7 +151,9 @@ const WeightSummaryCard: React.FC<WeightSummaryCardProps> = ({ date, onOpenWeigh
                             width: 56,
                             height: 56,
                             borderRadius: 2,
-                            backgroundColor: (theme) => theme.palette.action.hover,
+                            backgroundColor: (theme) =>
+                                alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.18 : 0.08),
+                            border: (theme) => `1px solid ${theme.palette.divider}`,
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center'
