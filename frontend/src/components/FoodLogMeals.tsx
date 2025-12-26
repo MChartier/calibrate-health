@@ -31,9 +31,11 @@ import DinnerDiningIcon from '@mui/icons-material/DinnerDining';
 import NightlifeIcon from '@mui/icons-material/Nightlife';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
+import { alpha, useTheme } from '@mui/material/styles';
 import axios from 'axios';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { MEAL_PERIOD_LABELS, MEAL_PERIOD_ORDER, type MealPeriod } from '../types/mealPeriod';
+import { getMealPeriodAccentColor } from '../utils/mealColors';
 
 type FoodLogEntry = {
     id: number | string;
@@ -42,19 +44,9 @@ type FoodLogEntry = {
     calories?: number;
 };
 
-const MEAL_ICONS: Record<MealPeriod, React.ReactNode> = {
-    BREAKFAST: <EggAltIcon htmlColor="#ff9800" />,
-    MORNING_SNACK: <BakeryDiningIcon htmlColor="#4caf50" />,
-    LUNCH: <LunchDiningIcon htmlColor="#3f51b5" />,
-    AFTERNOON_SNACK: <IcecreamIcon htmlColor="#8bc34a" />,
-    DINNER: <DinnerDiningIcon htmlColor="#9c27b0" />,
-    EVENING_SNACK: <NightlifeIcon htmlColor="#e91e63" />
-};
-
-const MEALS: Array<{ key: MealPeriod; label: string; icon: React.ReactNode }> = MEAL_PERIOD_ORDER.map((key) => ({
+const MEALS: Array<{ key: MealPeriod; label: string }> = MEAL_PERIOD_ORDER.map((key) => ({
     key,
-    label: MEAL_PERIOD_LABELS[key],
-    icon: MEAL_ICONS[key]
+    label: MEAL_PERIOD_LABELS[key]
 }));
 
 const MEAL_PERIOD_SET = new Set<MealPeriod>(MEAL_PERIOD_ORDER);
@@ -86,6 +78,19 @@ function parseCaloriesInput(value: string): number | null {
 
 const FoodLogMeals: React.FC<{ logs: FoodLogEntry[] }> = ({ logs }) => {
     const queryClient = useQueryClient();
+    const theme = useTheme();
+
+    const mealIcons = useMemo<Record<MealPeriod, React.ReactNode>>(
+        () => ({
+            BREAKFAST: <EggAltIcon sx={{ color: getMealPeriodAccentColor(theme, 'BREAKFAST') }} />,
+            MORNING_SNACK: <BakeryDiningIcon sx={{ color: getMealPeriodAccentColor(theme, 'MORNING_SNACK') }} />,
+            LUNCH: <LunchDiningIcon sx={{ color: getMealPeriodAccentColor(theme, 'LUNCH') }} />,
+            AFTERNOON_SNACK: <IcecreamIcon sx={{ color: getMealPeriodAccentColor(theme, 'AFTERNOON_SNACK') }} />,
+            DINNER: <DinnerDiningIcon sx={{ color: getMealPeriodAccentColor(theme, 'DINNER') }} />,
+            EVENING_SNACK: <NightlifeIcon sx={{ color: getMealPeriodAccentColor(theme, 'EVENING_SNACK') }} />
+        }),
+        [theme]
+    );
 
     const grouped = useMemo(() => {
         const groups: Record<MealPeriod, FoodLogEntry[]> = {
@@ -293,8 +298,16 @@ const FoodLogMeals: React.FC<{ logs: FoodLogEntry[] }> = ({ logs }) => {
                     >
                         <AccordionSummary expandIcon={<ExpandMoreIcon />}>
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexGrow: 1 }}>
-                                <Avatar sx={{ width: 28, height: 28, bgcolor: 'background.default' }} variant="rounded">
-                                    {meal.icon}
+                                <Avatar
+                                    sx={{
+                                        width: 28,
+                                        height: 28,
+                                        bgcolor: alpha(getMealPeriodAccentColor(theme, meal.key), theme.palette.mode === 'dark' ? 0.16 : 0.1),
+                                        border: (t) => `1px solid ${t.palette.divider}`
+                                    }}
+                                    variant="rounded"
+                                >
+                                    {mealIcons[meal.key]}
                                 </Avatar>
                                 <Typography sx={{ fontWeight: 'bold' }}>{meal.label}</Typography>
                             </Box>

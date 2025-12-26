@@ -16,6 +16,7 @@ import {
     ToggleButtonGroup,
     Typography
 } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import axios from 'axios';
 import EggAltIcon from '@mui/icons-material/EggAlt';
 import BakeryDiningIcon from '@mui/icons-material/BakeryDining';
@@ -30,6 +31,7 @@ import FoodSearchResultsList from './FoodSearchResultsList';
 import type { NormalizedFoodItem } from '../types/food';
 import { MEAL_PERIOD_LABELS, MEAL_PERIOD_ORDER, type MealPeriod } from '../types/mealPeriod';
 import { getApiErrorMessage } from '../utils/apiError';
+import { getMealPeriodAccentColor } from '../utils/mealColors';
 
 type Props = {
     onSuccess?: () => void;
@@ -84,6 +86,7 @@ const mergeUniqueResults = (current: NormalizedFoodItem[], nextPage: NormalizedF
 };
 
 const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
+    const theme = useTheme();
     const [mode, setMode] = useState<'manual' | 'search'>('search');
     const [foodName, setFoodName] = useState('');
     const [calories, setCalories] = useState('');
@@ -112,14 +115,17 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
 
     const entryLocalDate = typeof date === 'string' && date.trim().length > 0 ? date.trim() : undefined;
 
-    const mealIcons: Record<MealPeriod, React.ReactNode> = {
-        BREAKFAST: <EggAltIcon htmlColor="#ff9800" />,
-        MORNING_SNACK: <BakeryDiningIcon htmlColor="#4caf50" />,
-        LUNCH: <LunchDiningIcon htmlColor="#3f51b5" />,
-        AFTERNOON_SNACK: <IcecreamIcon htmlColor="#8bc34a" />,
-        DINNER: <DinnerDiningIcon htmlColor="#9c27b0" />,
-        EVENING_SNACK: <NightlifeIcon htmlColor="#e91e63" />
-    };
+    const mealIcons = useMemo<Record<MealPeriod, React.ReactNode>>(
+        () => ({
+            BREAKFAST: <EggAltIcon sx={{ color: getMealPeriodAccentColor(theme, 'BREAKFAST') }} />,
+            MORNING_SNACK: <BakeryDiningIcon sx={{ color: getMealPeriodAccentColor(theme, 'MORNING_SNACK') }} />,
+            LUNCH: <LunchDiningIcon sx={{ color: getMealPeriodAccentColor(theme, 'LUNCH') }} />,
+            AFTERNOON_SNACK: <IcecreamIcon sx={{ color: getMealPeriodAccentColor(theme, 'AFTERNOON_SNACK') }} />,
+            DINNER: <DinnerDiningIcon sx={{ color: getMealPeriodAccentColor(theme, 'DINNER') }} />,
+            EVENING_SNACK: <NightlifeIcon sx={{ color: getMealPeriodAccentColor(theme, 'EVENING_SNACK') }} />
+        }),
+        [theme]
+    );
 
     const mealOptions = MEAL_PERIOD_ORDER.map((value) => ({
         value,
