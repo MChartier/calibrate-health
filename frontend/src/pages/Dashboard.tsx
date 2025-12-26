@@ -3,7 +3,7 @@ import { Box, Grid } from '@mui/material';
 import { useAuth } from '../context/useAuth';
 import CalorieTargetBanner from '../components/CalorieTargetBanner';
 import LogSummaryCard from '../components/LogSummaryCard';
-import WeightProgressCard from '../components/WeightProgressCard';
+import GoalTrackerCard from '../components/GoalTrackerCard';
 
 const Dashboard: React.FC = () => {
     useAuth(); // ensure auth context is initialized
@@ -17,7 +17,7 @@ const Dashboard: React.FC = () => {
                     <LogSummaryCard dashboardMode />
                 </Grid>
                 <Grid size={{ xs: 12, md: 6 }} sx={{ display: 'flex' }}>
-                    <WeightProgressCard />
+                    <GoalTrackerCard isDashboard />
                 </Grid>
             </Grid>
         </Box>
