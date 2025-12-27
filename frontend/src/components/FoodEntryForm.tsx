@@ -18,14 +18,14 @@ import {
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import axios from 'axios';
-import EggAltIcon from '@mui/icons-material/EggAlt';
-import BakeryDiningIcon from '@mui/icons-material/BakeryDining';
-import IcecreamIcon from '@mui/icons-material/Icecream';
-import LunchDiningIcon from '@mui/icons-material/LunchDining';
-import DinnerDiningIcon from '@mui/icons-material/DinnerDining';
-import NightlifeIcon from '@mui/icons-material/Nightlife';
-import BarcodeReaderIcon from '@mui/icons-material/BarcodeReader';
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import EggAltIcon from '@mui/icons-material/EggAltRounded';
+import BakeryDiningIcon from '@mui/icons-material/BakeryDiningRounded';
+import IcecreamIcon from '@mui/icons-material/IcecreamRounded';
+import LunchDiningIcon from '@mui/icons-material/LunchDiningRounded';
+import DinnerDiningIcon from '@mui/icons-material/DinnerDiningRounded';
+import NightlifeIcon from '@mui/icons-material/NightlifeRounded';
+import QrCodeScannerIcon from '@mui/icons-material/QrCodeScannerRounded';
+import ArrowBackIcon from '@mui/icons-material/ArrowBackRounded';
 import BarcodeScannerDialog from './BarcodeScannerDialog';
 import FoodSearchResultsList from './FoodSearchResultsList';
 import type { NormalizedFoodItem } from '../types/food';
@@ -431,10 +431,11 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
                                         aria-label="Scan barcode"
                                         title="Scan barcode"
                                         onClick={() => setIsScannerOpen(true)}
+                                        size="small"
                                         edge="end"
                                         disabled={isSearching || isSubmitting}
                                     >
-                                        <BarcodeReaderIcon />
+                                        <QrCodeScannerIcon />
                                     </IconButton>
                                 </InputAdornment>
                             )

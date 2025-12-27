@@ -22,15 +22,15 @@ import {
     Tooltip,
     Typography
 } from '@mui/material';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import EggAltIcon from '@mui/icons-material/EggAlt';
-import BakeryDiningIcon from '@mui/icons-material/BakeryDining';
-import IcecreamIcon from '@mui/icons-material/Icecream';
-import LunchDiningIcon from '@mui/icons-material/LunchDining';
-import DinnerDiningIcon from '@mui/icons-material/DinnerDining';
-import NightlifeIcon from '@mui/icons-material/Nightlife';
-import EditIcon from '@mui/icons-material/Edit';
-import DeleteIcon from '@mui/icons-material/Delete';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMoreRounded';
+import EggAltIcon from '@mui/icons-material/EggAltRounded';
+import BakeryDiningIcon from '@mui/icons-material/BakeryDiningRounded';
+import IcecreamIcon from '@mui/icons-material/IcecreamRounded';
+import LunchDiningIcon from '@mui/icons-material/LunchDiningRounded';
+import DinnerDiningIcon from '@mui/icons-material/DinnerDiningRounded';
+import NightlifeIcon from '@mui/icons-material/NightlifeRounded';
+import EditIcon from '@mui/icons-material/EditRounded';
+import DeleteIcon from '@mui/icons-material/DeleteRounded';
 import { alpha, useTheme } from '@mui/material/styles';
 import axios from 'axios';
 import { useMutation, useQueryClient } from '@tanstack/react-query';

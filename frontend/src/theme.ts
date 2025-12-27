@@ -84,6 +84,7 @@ export function createAppTheme(mode: PaletteMode) {
             h4: { fontWeight: 800, letterSpacing: '-0.015em' },
             h5: { fontWeight: 800 },
             h6: { fontWeight: 800 },
+            subtitle2: { fontWeight: 800, letterSpacing: '0.02em' },
             button: { textTransform: 'none', fontWeight: 800 }
         },
         custom: {
@@ -101,6 +102,14 @@ export function createAppTheme(mode: PaletteMode) {
                         dense: { xs: 1.25, sm: 1.5 }
                     }
                 }
+            },
+            icon: {
+                size: {
+                    nav: 22,
+                    action: { small: 20, medium: 22, large: 24 },
+                    avatar: 20,
+                    fab: 22
+                }
             }
         },
         components: {
@@ -116,6 +125,7 @@ export function createAppTheme(mode: PaletteMode) {
                         },
                         body: {
                             minHeight: '100vh',
+                            fontVariantNumeric: 'tabular-nums',
                             // Digital-feeling "glow" instead of a physical grid/paper texture.
                             backgroundImage: `radial-gradient(1000px 560px at 20% -10%, ${accentA}, transparent 60%),
                                 radial-gradient(920px 520px at 110% 0%, ${accentB}, transparent 55%),
@@ -132,6 +142,22 @@ export function createAppTheme(mode: PaletteMode) {
                     root: {
                         fontVariantNumeric: 'tabular-nums'
                     }
+                }
+            },
+            MuiInputBase: {
+                styleOverrides: {
+                    input: {
+                        fontVariantNumeric: 'tabular-nums'
+                    }
+                }
+            },
+            MuiInputLabel: {
+                styleOverrides: {
+                    root: ({ theme }) => ({
+                        fontWeight: 800,
+                        letterSpacing: '0.02em',
+                        color: theme.palette.text.secondary
+                    })
                 }
             },
             MuiAppBar: {
@@ -285,6 +311,11 @@ export function createAppTheme(mode: PaletteMode) {
                             paddingRight: theme.spacing(1.5)
                         }
                     }),
+                    expandIconWrapper: ({ theme }) => ({
+                        '& .MuiSvgIcon-root': {
+                            fontSize: theme.custom.icon.size.action.medium
+                        }
+                    }),
                     content: ({ theme }) => ({
                         margin: theme.spacing(1.25, 0),
                         '&.Mui-expanded': { margin: theme.spacing(1.25, 0) }
@@ -365,6 +396,13 @@ export function createAppTheme(mode: PaletteMode) {
                     })
                 }
             },
+            MuiAvatar: {
+                styleOverrides: {
+                    root: ({ theme }) => ({
+                        '& .MuiSvgIcon-root': { fontSize: theme.custom.icon.size.avatar }
+                    })
+                }
+            },
             MuiMenu: {
                 styleOverrides: {
                     paper: ({ theme }) => ({
@@ -415,6 +453,15 @@ export function createAppTheme(mode: PaletteMode) {
                     root: ({ theme }) => ({
                         borderRadius: 12,
                         transition: 'transform 120ms ease, background-color 120ms ease, box-shadow 120ms ease',
+                        '&.MuiIconButton-sizeSmall .MuiSvgIcon-root': {
+                            fontSize: theme.custom.icon.size.action.small
+                        },
+                        '&.MuiIconButton-sizeMedium .MuiSvgIcon-root': {
+                            fontSize: theme.custom.icon.size.action.medium
+                        },
+                        '&.MuiIconButton-sizeLarge .MuiSvgIcon-root': {
+                            fontSize: theme.custom.icon.size.action.large
+                        },
                         '&:hover': {
                             backgroundColor: alpha(theme.palette.text.primary, theme.palette.mode === 'dark' ? 0.08 : 0.06)
                         },
@@ -466,6 +513,7 @@ export function createAppTheme(mode: PaletteMode) {
                         borderRadius: 16,
                         boxShadow: theme.shadows[8],
                         transition: 'transform 120ms ease, box-shadow 120ms ease',
+                        '& .MuiSvgIcon-root': { fontSize: theme.custom.icon.size.fab },
                         '&:active': { transform: 'translateY(1px)' },
                         '&.Mui-focusVisible': {
                             boxShadow: `0 0 0 4px ${alpha(theme.palette.primary.main, 0.22)}`
@@ -517,6 +565,7 @@ export function createAppTheme(mode: PaletteMode) {
                         position: 'relative',
                         paddingTop: theme.spacing(1),
                         paddingBottom: theme.spacing(1.25),
+                        '& .MuiSvgIcon-root': { fontSize: theme.custom.icon.size.nav },
                         '&.Mui-selected': {
                             color: theme.palette.primary.main
                         },

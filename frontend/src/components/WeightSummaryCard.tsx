@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { Alert, Box, Button, Card, CardContent, Chip, Skeleton, Typography } from '@mui/material';
-import MonitorWeightIcon from '@mui/icons-material/MonitorWeight';
+import MonitorWeightIcon from '@mui/icons-material/MonitorWeightRounded';
 import { alpha } from '@mui/material/styles';
 import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';

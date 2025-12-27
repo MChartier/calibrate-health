@@ -18,11 +18,11 @@ import {
     useMediaQuery
 } from '@mui/material';
 import { Outlet, Link as RouterLink, useLocation, useNavigate } from 'react-router-dom';
-import DashboardIcon from '@mui/icons-material/Dashboard';
-import ListAltIcon from '@mui/icons-material/ListAlt';
-import ShowChartIcon from '@mui/icons-material/ShowChart';
-import SettingsIcon from '@mui/icons-material/Settings';
-import LogoutIcon from '@mui/icons-material/Logout';
+import DashboardIcon from '@mui/icons-material/DashboardRounded';
+import ListAltIcon from '@mui/icons-material/ListAltRounded';
+import ShowChartIcon from '@mui/icons-material/ShowChartRounded';
+import SettingsIcon from '@mui/icons-material/SettingsRounded';
+import LogoutIcon from '@mui/icons-material/LogoutRounded';
 import { alpha, useTheme } from '@mui/material/styles';
 import { useAuth } from '../context/useAuth';
 import AppPage from '../ui/AppPage';

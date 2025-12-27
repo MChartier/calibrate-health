@@ -32,6 +32,18 @@ declare module '@mui/material/styles' {
                     };
                 };
             };
+            icon: {
+                size: {
+                    /** Icon size used for primary navigation (drawer + bottom nav). */
+                    nav: number;
+                    /** Icon sizes used for IconButton actions. */
+                    action: { small: number; medium: number; large: number };
+                    /** Icon size used when rendering icons inside compact Avatars. */
+                    avatar: number;
+                    /** Icon size used inside Fabs (SpeedDial). */
+                    fab: number;
+                };
+            };
         };
     }
 

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Alert, Box, Button, CircularProgress, Divider, IconButton, Stack, Tooltip, Typography } from '@mui/material';
-import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+import InfoIcon from '@mui/icons-material/InfoRounded';
 import { useUserProfileQuery } from '../queries/userProfile';
 import AppCard from '../ui/AppCard';
 
@@ -154,7 +154,7 @@ const CalorieTargetBanner: React.FC = () => {
                         enterTouchDelay={0}
                     >
                         <IconButton size="small" aria-label="How is this calculated?">
-                            <InfoOutlinedIcon fontSize="small" />
+                            <InfoIcon fontSize="small" />
                         </IconButton>
                     </Tooltip>
                 </Box>

@@ -14,12 +14,12 @@ import {
 } from '@mui/material';
 import SpeedDial from '@mui/material/SpeedDial';
 import SpeedDialAction from '@mui/material/SpeedDialAction';
-import AddIcon from '@mui/icons-material/Add';
-import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
-import ChevronRightIcon from '@mui/icons-material/ChevronRight';
-import TodayIcon from '@mui/icons-material/Today';
-import RestaurantIcon from '@mui/icons-material/Restaurant';
-import MonitorWeightIcon from '@mui/icons-material/MonitorWeight';
+import AddIcon from '@mui/icons-material/AddRounded';
+import ChevronLeftIcon from '@mui/icons-material/ChevronLeftRounded';
+import ChevronRightIcon from '@mui/icons-material/ChevronRightRounded';
+import TodayIcon from '@mui/icons-material/TodayRounded';
+import RestaurantIcon from '@mui/icons-material/RestaurantRounded';
+import MonitorWeightIcon from '@mui/icons-material/MonitorWeightRounded';
 import axios from 'axios';
 import WeightEntryForm from '../components/WeightEntryForm';
 import FoodEntryForm from '../components/FoodEntryForm';
