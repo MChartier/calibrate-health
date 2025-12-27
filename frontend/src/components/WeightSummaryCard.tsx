@@ -7,6 +7,7 @@ import axios from 'axios';
 import { useAuth } from '../context/useAuth';
 import { getTodayIsoDate } from '../utils/date';
 import { parseDateOnlyToLocalDate } from '../utils/goalTracking';
+import SectionHeader from '../ui/SectionHeader';
 
 const EM_DASH = '\u2014';
 
@@ -185,26 +186,20 @@ const WeightSummaryCard: React.FC<WeightSummaryCardProps> = ({ date, onOpenWeigh
     return (
         <Card sx={{ height: '100%', width: '100%' }}>
             <CardContent>
-                <Box
-                    sx={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        gap: 2,
-                        flexWrap: 'wrap'
-                    }}
-                >
-                    <Typography variant="h6">Weight</Typography>
-
-                    {isToday && !metricsQuery.isLoading && !metricsQuery.isError && (
-                        <Chip
-                            size="small"
-                            color={metricForSelectedDate ? 'success' : 'warning'}
-                            variant="outlined"
-                            label={metricForSelectedDate ? 'Done for today' : 'Due today'}
-                        />
-                    )}
-                </Box>
+                <SectionHeader
+                    title="Weight"
+                    align="center"
+                    actions={
+                        isToday && !metricsQuery.isLoading && !metricsQuery.isError ? (
+                            <Chip
+                                size="small"
+                                color={metricForSelectedDate ? 'success' : 'warning'}
+                                variant="outlined"
+                                label={metricForSelectedDate ? 'Done for today' : 'Due today'}
+                            />
+                        ) : null
+                    }
+                />
 
                 <Box sx={{ mt: 1.5 }}>{cardBody}</Box>
             </CardContent>

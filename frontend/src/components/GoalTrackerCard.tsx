@@ -6,6 +6,7 @@ import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
 import { useAuth } from '../context/useAuth';
 import GoalEditor from './GoalEditor';
+import SectionHeader from '../ui/SectionHeader';
 import type { GoalMode } from '../utils/goalValidation';
 import {
     computeGoalProgress,
@@ -428,23 +429,17 @@ const GoalTrackerCard: React.FC<GoalTrackerCardProps> = ({ isDashboard = false }
 
     const content = (
         <CardContent>
-            <Box
-                sx={{
-                    display: 'flex',
-                    alignItems: 'baseline',
-                    justifyContent: 'space-between',
-                    gap: 2,
-                    flexWrap: 'wrap',
-                    mb: 1.5
-                }}
-            >
-                <Typography variant="h6">Goal tracker</Typography>
-                {!isDashboard && (
-                    <Button variant="outlined" size="small" onClick={handleOpenGoalEditor} disabled={isLoading}>
-                        {goalEditorCtaLabel}
-                    </Button>
-                )}
-            </Box>
+            <SectionHeader
+                title="Goal tracker"
+                actions={
+                    !isDashboard ? (
+                        <Button variant="outlined" size="small" onClick={handleOpenGoalEditor} disabled={isLoading}>
+                            {goalEditorCtaLabel}
+                        </Button>
+                    ) : null
+                }
+                sx={{ mb: 1.5 }}
+            />
             {cardBody}
         </CardContent>
     );

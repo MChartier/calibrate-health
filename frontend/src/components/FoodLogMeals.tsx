@@ -36,6 +36,7 @@ import axios from 'axios';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { MEAL_PERIOD_LABELS, MEAL_PERIOD_ORDER, type MealPeriod } from '../types/mealPeriod';
 import { getMealPeriodAccentColor } from '../utils/mealColors';
+import SectionHeader from '../ui/SectionHeader';
 
 type FoodLogEntry = {
     id: number | string;
@@ -268,21 +269,24 @@ const FoodLogMeals: React.FC<{ logs: FoodLogEntry[] }> = ({ logs }) => {
 
     return (
         <Stack spacing={2} useFlexGap>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Typography variant="h6">Food Log</Typography>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Tooltip title="Collapse all">
-                        <IconButton size="small" onClick={handleCollapseAll}>
-                            <ExpandMoreIcon sx={{ transform: 'rotate(180deg)' }} />
-                        </IconButton>
-                    </Tooltip>
-                    <Tooltip title="Expand all">
-                        <IconButton size="small" onClick={handleExpandAll}>
-                            <ExpandMoreIcon />
-                        </IconButton>
-                    </Tooltip>
-                </Box>
-            </Box>
+            <SectionHeader
+                title="Food Log"
+                align="center"
+                actions={
+                    <>
+                        <Tooltip title="Collapse all">
+                            <IconButton size="small" onClick={handleCollapseAll}>
+                                <ExpandMoreIcon sx={{ transform: 'rotate(180deg)' }} />
+                            </IconButton>
+                        </Tooltip>
+                        <Tooltip title="Expand all">
+                            <IconButton size="small" onClick={handleExpandAll}>
+                                <ExpandMoreIcon />
+                            </IconButton>
+                        </Tooltip>
+                    </>
+                }
+            />
             {MEALS.map((meal) => {
                 const entries = grouped[meal.key];
                 const total = sumCalories(entries);

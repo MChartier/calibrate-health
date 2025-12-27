@@ -2,8 +2,8 @@ import React, { useMemo } from 'react';
 import {
     Alert,
     Box,
-    Paper,
     Skeleton,
+    Stack,
     Typography
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
@@ -14,6 +14,9 @@ import { ChartsReferenceLine } from '@mui/x-charts/ChartsReferenceLine';
 import GoalTrackerCard from '../components/GoalTrackerCard';
 import { useAuth } from '../context/useAuth';
 import { parseDateOnlyToLocalDate } from '../utils/goalTracking';
+import AppPage from '../ui/AppPage';
+import AppSurface from '../ui/AppSurface';
+import SectionHeader from '../ui/SectionHeader';
 
 type MetricEntry = {
     id: number;
@@ -86,68 +89,66 @@ const Goals: React.FC = () => {
     }, [goal, targetIsValid, yData]);
 
     return (
-        <Box sx={{ maxWidth: 960, mx: 'auto' }}>
-            <Box sx={{ mb: 3 }}>
+        <AppPage maxWidth={960}>
+            <Stack spacing={2} useFlexGap>
                 <GoalTrackerCard />
-            </Box>
 
-            <Paper sx={{ p: { xs: 1.5, sm: 2 } }}>
-                <Typography variant="h6" gutterBottom>
-                    Weight Over Time
-                </Typography>
+                <AppSurface>
+                    <SectionHeader title="Weight Over Time" sx={{ mb: 1.5 }} />
 
-                {metricsQuery.isError ? (
-                    <Alert severity="warning">Unable to load weight history.</Alert>
-                ) : metricsQuery.isLoading ? (
-                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                        <Skeleton width="40%" />
-                        <Skeleton variant="rounded" height={320} />
-                    </Box>
-                ) : points.length === 0 ? (
-                    <Typography color="text.secondary">No weight entries yet.</Typography>
-                ) : (
-                    <LineChart
-                        xAxis={[
-                            {
-                                data: xData,
-                                scaleType: 'time',
-                                valueFormatter: (value) =>
-                                    new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' }).format(value)
-                            }
-                        ]}
-                        yAxis={[
-                            {
-                                min: yDomain?.min,
-                                max: yDomain?.max,
-                                label: `Weight (${unitLabel})`
-                            }
-                        ]}
-                        series={[
-                            {
-                                data: yData,
-                                label: 'Weight',
-                                color: theme.palette.primary.main,
-                                showMark: true
-                            }
-                        ]}
-                        height={320}
-                    >
-                        {targetIsValid && (
-                            <ChartsReferenceLine
-                                y={goal!.target_weight}
-                                label={`Target: ${goal!.target_weight.toFixed(1)} ${unitLabel}`}
-                                lineStyle={{
-                                    stroke: theme.palette.secondary.main,
-                                    strokeDasharray: '6 6',
-                                    strokeWidth: 2
-                                }}
-                                labelStyle={{ fill: theme.palette.text.secondary, fontWeight: 700 }}
-                            />
-                        )}
-                    </LineChart>
-                )}
-            </Paper>
-        </Box>
+                    {metricsQuery.isError ? (
+                        <Alert severity="warning">Unable to load weight history.</Alert>
+                    ) : metricsQuery.isLoading ? (
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                            <Skeleton width="40%" />
+                            <Skeleton variant="rounded" height={320} />
+                        </Box>
+                    ) : points.length === 0 ? (
+                        <Typography color="text.secondary">No weight entries yet.</Typography>
+                    ) : (
+                        <LineChart
+                            xAxis={[
+                                {
+                                    data: xData,
+                                    scaleType: 'time',
+                                    valueFormatter: (value) =>
+                                        new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' }).format(value)
+                                }
+                            ]}
+                            yAxis={[
+                                {
+                                    min: yDomain?.min,
+                                    max: yDomain?.max,
+                                    label: `Weight (${unitLabel})`
+                                }
+                            ]}
+                            series={[
+                                {
+                                    data: yData,
+                                    label: 'Weight',
+                                    color: theme.palette.primary.main,
+                                    showMark: true
+                                }
+                            ]}
+                            height={320}
+                        >
+                            {targetIsValid && (
+                                <ChartsReferenceLine
+                                    y={goal!.target_weight}
+                                    label={`Target: ${goal!.target_weight.toFixed(1)} ${unitLabel}`}
+                                    lineStyle={{
+                                        stroke: theme.palette.secondary.main,
+                                        strokeDasharray: '6 6',
+                                        strokeWidth: 2
+                                    }}
+                                    labelStyle={{ fill: theme.palette.text.secondary, fontWeight: 700 }}
+                                />
+                            )}
+                        </LineChart>
+                    )}
+                </AppSurface>
+            </Stack>
+        </AppPage>
     );
 };
 

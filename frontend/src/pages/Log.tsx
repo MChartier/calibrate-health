@@ -9,7 +9,6 @@ import {
     DialogTitle,
     IconButton,
     LinearProgress,
-    Paper,
     TextField,
     Tooltip,
 } from '@mui/material';
@@ -31,6 +30,7 @@ import WeightSummaryCard from '../components/WeightSummaryCard';
 import { useAuth } from '../context/useAuth';
 import { addDaysToIsoDate, getTodayIsoDate } from '../utils/date';
 import type { MealPeriod } from '../types/mealPeriod';
+import AppSurface from '../ui/AppSurface';
 
 type FoodLogEntry = {
     id: number;
@@ -158,7 +158,7 @@ const Log: React.FC = () => {
                 <WeightSummaryCard date={effectiveDate} onOpenWeightEntry={() => setIsWeightDialogOpen(true)} />
             </Box>
 
-            <Paper sx={{ p: { xs: 1.5, sm: 2 }, mt: 2 }}>
+            <AppSurface sx={{ mt: 2 }}>
                 {foodQuery.isError ? (
                     <Alert
                         severity="error"
@@ -176,7 +176,7 @@ const Log: React.FC = () => {
                         <FoodLogMeals logs={foodQuery.data ?? []} />
                     </>
                 )}
-            </Paper>
+            </AppSurface>
 
             <SpeedDial
                 ariaLabel="Add entry"
@@ -200,7 +200,7 @@ const Log: React.FC = () => {
             <Dialog open={isFoodDialogOpen} onClose={handleCloseFoodDialog} fullWidth maxWidth="sm">
                 <DialogTitle>Track Food</DialogTitle>
                 <DialogContent>
-                    <Paper sx={{ p: { xs: 1.5, sm: 2 }, mt: 1 }}>
+                    <AppSurface sx={{ mt: 1 }}>
                         <FoodEntryForm
                             date={effectiveDate}
                             onSuccess={() => {
@@ -208,7 +208,7 @@ const Log: React.FC = () => {
                                 handleCloseFoodDialog();
                             }}
                         />
-                    </Paper>
+                    </AppSurface>
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={handleCloseFoodDialog}>Close</Button>
@@ -218,7 +218,7 @@ const Log: React.FC = () => {
             <Dialog open={isWeightDialogOpen} onClose={handleCloseWeightDialog} fullWidth maxWidth="sm">
                 <DialogTitle>Track Weight</DialogTitle>
                 <DialogContent>
-                    <Paper sx={{ p: { xs: 1.5, sm: 2 }, mt: 1 }}>
+                    <AppSurface sx={{ mt: 1 }}>
                         <WeightEntryForm
                             date={effectiveDate}
                             onSuccess={() => {
@@ -228,7 +228,7 @@ const Log: React.FC = () => {
                                 handleCloseWeightDialog();
                             }}
                         />
-                    </Paper>
+                    </AppSurface>
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={handleCloseWeightDialog}>Close</Button>
