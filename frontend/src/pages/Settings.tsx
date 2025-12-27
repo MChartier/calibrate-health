@@ -16,7 +16,7 @@ import { useThemeMode } from '../context/useThemeMode';
 import type { ThemePreference } from '../context/themeModeContext';
 import TimeZonePicker from '../components/TimeZonePicker';
 import AppPage from '../ui/AppPage';
-import AppSurface from '../ui/AppSurface';
+import AppCard from '../ui/AppCard';
 import SectionHeader from '../ui/SectionHeader';
 import {
     parseUnitPreferenceKey,
@@ -78,7 +78,7 @@ const Settings: React.FC = () => {
     return (
         <AppPage maxWidth={720}>
             <Stack spacing={sectionGap} useFlexGap>
-                <AppSurface>
+                <AppCard>
                     <SectionHeader title="Units & Localization" sx={{ mb: 1.5 }} />
 
                     {settingsMessage && (
@@ -104,9 +104,9 @@ const Settings: React.FC = () => {
                             helperText="Used to define your day boundaries for food and weight logs."
                         />
                     </Box>
-                </AppSurface>
+                </AppCard>
 
-                <AppSurface>
+                <AppCard>
                     <SectionHeader title="Appearance" sx={{ mb: 1.5 }} />
 
                     <FormControl fullWidth margin="normal">
@@ -126,7 +126,7 @@ const Settings: React.FC = () => {
                                 : 'Persisted on this device.'}
                         </FormHelperText>
                     </FormControl>
-                </AppSurface>
+                </AppCard>
             </Stack>
         </AppPage>
     );

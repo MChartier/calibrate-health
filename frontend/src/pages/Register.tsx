@@ -3,7 +3,7 @@ import { Alert, Box, Button, Link, Stack, TextField, Typography } from '@mui/mat
 import { useAuth } from '../context/useAuth';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import AppPage from '../ui/AppPage';
-import AppSurface from '../ui/AppSurface';
+import AppCard from '../ui/AppCard';
 import SectionHeader from '../ui/SectionHeader';
 
 const Register: React.FC = () => {
@@ -30,7 +30,7 @@ const Register: React.FC = () => {
 
     return (
         <AppPage maxWidth={420}>
-            <AppSurface>
+            <AppCard>
                 <Stack component="form" spacing={2} onSubmit={handleSubmit}>
                     <SectionHeader title="Create account" />
 
@@ -74,7 +74,7 @@ const Register: React.FC = () => {
                         </Typography>
                     </Box>
                 </Stack>
-            </AppSurface>
+            </AppCard>
         </AppPage>
     );
 };

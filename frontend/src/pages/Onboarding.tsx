@@ -21,7 +21,7 @@ import { validateGoalWeights } from '../utils/goalValidation';
 import { formatDateToLocalDateString } from '../utils/date';
 import TimeZonePicker from '../components/TimeZonePicker';
 import AppPage from '../ui/AppPage';
-import AppSurface from '../ui/AppSurface';
+import AppCard from '../ui/AppCard';
 import {
     parseUnitPreferenceKey,
     resolveUnitPreferenceKey,
@@ -189,7 +189,7 @@ const Onboarding: React.FC = () => {
                     </Typography>
                 </Box>
 
-                <AppSurface>
+                <AppCard>
                     <Stack spacing={2}>
                         {error && <Alert severity="error">{error}</Alert>}
                         {success && <Alert severity="success">{success}</Alert>}
@@ -337,7 +337,7 @@ const Onboarding: React.FC = () => {
                             {isSaving ? 'Saving…' : 'Save and continue'}
                         </Button>
                     </Stack>
-                </AppSurface>
+                </AppCard>
             </Stack>
         </AppPage>
     );

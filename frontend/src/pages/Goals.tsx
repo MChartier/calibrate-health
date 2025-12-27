@@ -15,7 +15,7 @@ import GoalTrackerCard from '../components/GoalTrackerCard';
 import { useAuth } from '../context/useAuth';
 import { parseDateOnlyToLocalDate } from '../utils/goalTracking';
 import AppPage from '../ui/AppPage';
-import AppSurface from '../ui/AppSurface';
+import AppCard from '../ui/AppCard';
 import SectionHeader from '../ui/SectionHeader';
 
 type MetricEntry = {
@@ -94,7 +94,7 @@ const Goals: React.FC = () => {
             <Stack spacing={sectionGap} useFlexGap>
                 <GoalTrackerCard />
 
-                <AppSurface>
+                <AppCard>
                     <SectionHeader title="Weight Over Time" sx={{ mb: 1.5 }} />
 
                     {metricsQuery.isError ? (
@@ -147,7 +147,7 @@ const Goals: React.FC = () => {
                             )}
                         </LineChart>
                     )}
-                </AppSurface>
+                </AppCard>
             </Stack>
         </AppPage>
     );

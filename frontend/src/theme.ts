@@ -165,7 +165,8 @@ export function createAppTheme(mode: PaletteMode) {
                     root: ({ theme }) => ({
                         border: `1px solid ${theme.palette.divider}`,
                         backgroundImage: 'none',
-                        boxShadow: theme.palette.mode === 'dark' ? theme.shadows[6] : theme.shadows[3]
+                        // Paper is the "structural" surface: keep it flat by default.
+                        boxShadow: 'none'
                     })
                 }
             },

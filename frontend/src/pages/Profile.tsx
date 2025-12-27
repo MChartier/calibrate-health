@@ -20,7 +20,7 @@ import { activityLevelOptions } from '../constants/activityLevels';
 import TimeZonePicker from '../components/TimeZonePicker';
 import { useAuth } from '../context/useAuth';
 import AppPage from '../ui/AppPage';
-import AppSurface from '../ui/AppSurface';
+import AppCard from '../ui/AppCard';
 import { getDefaultHeightUnitForWeightUnit } from '../utils/unitPreferences';
 
 type ProfileResponse = {
@@ -182,7 +182,7 @@ const Profile: React.FC = () => {
                     Edit the info used to estimate your daily calorie burn (TDEE) and calorie math inputs.
                 </Typography>
 
-                <AppSurface>
+                <AppCard>
                     {profileMessage && (
                         <Alert severity="info" sx={{ mb: 2 }}>
                             {profileMessage}
@@ -266,7 +266,7 @@ const Profile: React.FC = () => {
                             Save Profile
                         </Button>
                     </Stack>
-                </AppSurface>
+                </AppCard>
             </Stack>
         </AppPage>
     );
