@@ -65,11 +65,11 @@ const AppPage: React.FC<AppPageProps> = ({
         <AppPageNestingContext.Provider value={true}>
             <Box
                 sx={(theme) => ({
-                    px: fullBleedOnXs ? { xs: 0, sm: 2, md: 3 } : { xs: 2, sm: 2, md: 3 },
-                    pt: { xs: 2, sm: 3, md: 3 },
+                    px: fullBleedOnXs ? { ...theme.custom.layout.page.gutterX, xs: 0 } : theme.custom.layout.page.gutterX,
+                    pt: theme.custom.layout.page.paddingTop,
                     pb: reserveBottomNavSpace
-                        ? 'calc(80px + env(safe-area-inset-bottom))'
-                        : { xs: 2, sm: 3, md: 3 },
+                        ? theme.custom.layout.page.paddingBottomWithBottomNav
+                        : theme.custom.layout.page.paddingBottom,
                     ...(fullBleedOnXs
                         ? {
                             [theme.breakpoints.down('sm')]: {
@@ -86,4 +86,3 @@ const AppPage: React.FC<AppPageProps> = ({
 };
 
 export default AppPage;
-

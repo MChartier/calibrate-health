@@ -25,10 +25,10 @@ function getSurfacePadding(density: AppSurfaceDensity): SxProps<Theme> {
         case 'none':
             return { p: 0 };
         case 'dense':
-            return { p: { xs: 1.25, sm: 1.5 } };
+            return (theme) => ({ p: theme.custom.layout.surface.padding.dense });
         case 'normal':
         default:
-            return { p: { xs: 1.5, sm: 2 } };
+            return (theme) => ({ p: theme.custom.layout.surface.padding.normal });
     }
 }
 
@@ -50,4 +50,3 @@ const AppSurface: React.FC<AppSurfaceProps> = ({ density = 'normal', sx, childre
 };
 
 export default AppSurface;
-

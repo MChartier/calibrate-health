@@ -39,6 +39,7 @@ type WeightPoint = { date: Date; weight: number };
 const Goals: React.FC = () => {
     const { user } = useAuth();
     const theme = useTheme();
+    const sectionGap = theme.custom.layout.page.sectionGap;
     const unitLabel = user?.weight_unit === 'LB' ? 'lb' : 'kg';
 
     const goalQuery = useQuery({
@@ -90,7 +91,7 @@ const Goals: React.FC = () => {
 
     return (
         <AppPage maxWidth={960}>
-            <Stack spacing={2} useFlexGap>
+            <Stack spacing={sectionGap} useFlexGap>
                 <GoalTrackerCard />
 
                 <AppSurface>

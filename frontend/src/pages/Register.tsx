@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
-import { Typography, Box, TextField, Button, Alert, Link } from '@mui/material';
+import { Alert, Box, Button, Link, Stack, TextField, Typography } from '@mui/material';
 import { useAuth } from '../context/useAuth';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
+import AppPage from '../ui/AppPage';
+import AppSurface from '../ui/AppSurface';
+import SectionHeader from '../ui/SectionHeader';
 
 const Register: React.FC = () => {
     const [email, setEmail] = useState('');
@@ -26,42 +29,53 @@ const Register: React.FC = () => {
     };
 
     return (
-        <Box component="form" onSubmit={handleSubmit} sx={{ maxWidth: 400, mx: 'auto', mt: 4 }}>
-            {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-            <TextField
-                label="Email"
-                type="email"
-                autoComplete="email"
-                inputMode="email"
-                autoFocus
-                fullWidth
-                margin="normal"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                disabled={isSubmitting}
-                required
-            />
-            <TextField
-                label="Password"
-                type="password"
-                autoComplete="new-password"
-                fullWidth
-                margin="normal"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                disabled={isSubmitting}
-                required
-            />
-            <Button type="submit" variant="contained" fullWidth sx={{ mt: 2 }} disabled={isSubmitting}>
-                {isSubmitting ? 'Creating…' : 'Register'}
-            </Button>
-            <Typography variant="body2" sx={{ mt: 2 }}>
-                Already have an account?{' '}
-                <Link component={RouterLink} to="/login">
-                    Login
-                </Link>
-            </Typography>
-        </Box>
+        <AppPage maxWidth={420}>
+            <AppSurface>
+                <Stack component="form" spacing={2} onSubmit={handleSubmit}>
+                    <SectionHeader title="Create account" />
+
+                    {error && (
+                        <Alert severity="error">
+                            {error}
+                        </Alert>
+                    )}
+
+                    <TextField
+                        label="Email"
+                        type="email"
+                        autoComplete="email"
+                        inputMode="email"
+                        autoFocus
+                        fullWidth
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        disabled={isSubmitting}
+                        required
+                    />
+                    <TextField
+                        label="Password"
+                        type="password"
+                        autoComplete="new-password"
+                        fullWidth
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        disabled={isSubmitting}
+                        required
+                    />
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                        <Button type="submit" variant="contained" fullWidth disabled={isSubmitting}>
+                            {isSubmitting ? 'Creating…' : 'Register'}
+                        </Button>
+                        <Typography variant="body2">
+                            Already have an account?{' '}
+                            <Link component={RouterLink} to="/login">
+                                Login
+                            </Link>
+                        </Typography>
+                    </Box>
+                </Stack>
+            </AppSurface>
+        </AppPage>
     );
 };
 

@@ -86,6 +86,23 @@ export function createAppTheme(mode: PaletteMode) {
             h6: { fontWeight: 800 },
             button: { textTransform: 'none', fontWeight: 800 }
         },
+        custom: {
+            layout: {
+                page: {
+                    gutterX: { xs: 2, sm: 2, md: 3 },
+                    paddingTop: { xs: 2, sm: 3, md: 3 },
+                    paddingBottom: { xs: 2, sm: 3, md: 3 },
+                    paddingBottomWithBottomNav: 'calc(80px + env(safe-area-inset-bottom))',
+                    sectionGap: 2
+                },
+                surface: {
+                    padding: {
+                        normal: { xs: 1.5, sm: 2 },
+                        dense: { xs: 1.25, sm: 1.5 }
+                    }
+                }
+            }
+        },
         components: {
             MuiCssBaseline: {
                 styleOverrides: (theme) => {
@@ -167,11 +184,11 @@ export function createAppTheme(mode: PaletteMode) {
             MuiCardContent: {
                 styleOverrides: {
                     root: ({ theme }) => ({
-                        padding: theme.spacing(2),
-                        '&:last-child': { paddingBottom: theme.spacing(2) },
+                        padding: theme.spacing(theme.custom.layout.surface.padding.normal.sm),
+                        '&:last-child': { paddingBottom: theme.spacing(theme.custom.layout.surface.padding.normal.sm) },
                         [theme.breakpoints.down('sm')]: {
-                            padding: theme.spacing(1.5),
-                            '&:last-child': { paddingBottom: theme.spacing(1.5) }
+                            padding: theme.spacing(theme.custom.layout.surface.padding.normal.xs),
+                            '&:last-child': { paddingBottom: theme.spacing(theme.custom.layout.surface.padding.normal.xs) }
                         }
                     })
                 }

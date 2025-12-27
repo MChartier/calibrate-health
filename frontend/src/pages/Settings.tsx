@@ -6,15 +6,18 @@ import {
     FormHelperText,
     InputLabel,
     MenuItem,
-    Paper,
     Select,
-    Typography
+    Stack
 } from '@mui/material';
 import type { SelectChangeEvent } from '@mui/material/Select';
+import { useTheme } from '@mui/material/styles';
 import { useAuth } from '../context/useAuth';
 import { useThemeMode } from '../context/useThemeMode';
 import type { ThemePreference } from '../context/themeModeContext';
 import TimeZonePicker from '../components/TimeZonePicker';
+import AppPage from '../ui/AppPage';
+import AppSurface from '../ui/AppSurface';
+import SectionHeader from '../ui/SectionHeader';
 import {
     parseUnitPreferenceKey,
     resolveUnitPreferenceKey,
@@ -25,8 +28,10 @@ import {
  * Settings is focused on device preferences (theme) and app preferences (units).
  */
 const Settings: React.FC = () => {
+    const theme = useTheme();
     const { user, updateUnitPreferences, updateTimezone } = useAuth();
     const { preference: themePreference, mode: resolvedThemeMode, setPreference: setThemePreference } = useThemeMode();
+    const sectionGap = theme.custom.layout.page.sectionGap;
     const [settingsMessage, setSettingsMessage] = useState('');
     const detectedTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
     const [timezoneValue, setTimezoneValue] = useState(() => user?.timezone ?? detectedTimezone);
@@ -71,54 +76,59 @@ const Settings: React.FC = () => {
     };
 
     return (
-        <Box sx={{ maxWidth: 720, mx: 'auto' }}>
-            <Paper sx={{ p: { xs: 1.5, sm: 2 }, mb: 3 }}>
-                <Typography variant="h6" gutterBottom>
-                    Units & Localization
-                </Typography>
-                {settingsMessage && (
-                    <Alert severity="info" sx={{ mb: 2 }}>
-                        {settingsMessage}
-                    </Alert>
-                )}
-                <FormControl fullWidth margin="normal">
-                    <InputLabel>Units</InputLabel>
-                    <Select value={unitPreference} label="Units" onChange={handleUnitPreferenceChange}>
-                        <MenuItem value="CM_KG">Metric (cm, kg)</MenuItem>
-                        <MenuItem value="FTIN_LB">Imperial (ft/in, lb)</MenuItem>
-                        <MenuItem value="CM_LB">Mixed (cm, lb)</MenuItem>
-                        <MenuItem value="FTIN_KG">Mixed (ft/in, kg)</MenuItem>
-                    </Select>
-                </FormControl>
+        <AppPage maxWidth={720}>
+            <Stack spacing={sectionGap} useFlexGap>
+                <AppSurface>
+                    <SectionHeader title="Units & Localization" sx={{ mb: 1.5 }} />
 
-                <Box sx={{ mt: 2 }}>
-                    <TimeZonePicker
-                        value={timezoneValue}
-                        onChange={(next) => void handleTimezoneChange(next)}
-                        helperText="Used to define your day boundaries for food and weight logs."
-                    />
-                </Box>
-            </Paper>
+                    {settingsMessage && (
+                        <Alert severity="info" sx={{ mb: 2 }}>
+                            {settingsMessage}
+                        </Alert>
+                    )}
 
-            <Paper sx={{ p: { xs: 1.5, sm: 2 }, mb: 3 }}>
-                <Typography variant="h6" gutterBottom>
-                    Appearance
-                </Typography>
-                <FormControl fullWidth margin="normal">
-                    <InputLabel>Theme</InputLabel>
-                    <Select value={themePreference} label="Theme" onChange={(e) => setThemePreference(e.target.value as ThemePreference)}>
-                        <MenuItem value="system">System</MenuItem>
-                        <MenuItem value="light">Light</MenuItem>
-                        <MenuItem value="dark">Dark</MenuItem>
-                    </Select>
-                    <FormHelperText>
-                        {themePreference === 'system'
-                            ? `Following your device setting (currently ${resolvedThemeMode}).`
-                            : 'Persisted on this device.'}
-                    </FormHelperText>
-                </FormControl>
-            </Paper>
-        </Box>
+                    <FormControl fullWidth margin="normal">
+                        <InputLabel>Units</InputLabel>
+                        <Select value={unitPreference} label="Units" onChange={handleUnitPreferenceChange}>
+                            <MenuItem value="CM_KG">Metric (cm, kg)</MenuItem>
+                            <MenuItem value="FTIN_LB">Imperial (ft/in, lb)</MenuItem>
+                            <MenuItem value="CM_LB">Mixed (cm, lb)</MenuItem>
+                            <MenuItem value="FTIN_KG">Mixed (ft/in, kg)</MenuItem>
+                        </Select>
+                    </FormControl>
+
+                    <Box sx={{ mt: 2 }}>
+                        <TimeZonePicker
+                            value={timezoneValue}
+                            onChange={(next) => void handleTimezoneChange(next)}
+                            helperText="Used to define your day boundaries for food and weight logs."
+                        />
+                    </Box>
+                </AppSurface>
+
+                <AppSurface>
+                    <SectionHeader title="Appearance" sx={{ mb: 1.5 }} />
+
+                    <FormControl fullWidth margin="normal">
+                        <InputLabel>Theme</InputLabel>
+                        <Select
+                            value={themePreference}
+                            label="Theme"
+                            onChange={(e) => setThemePreference(e.target.value as ThemePreference)}
+                        >
+                            <MenuItem value="system">System</MenuItem>
+                            <MenuItem value="light">Light</MenuItem>
+                            <MenuItem value="dark">Dark</MenuItem>
+                        </Select>
+                        <FormHelperText>
+                            {themePreference === 'system'
+                                ? `Following your device setting (currently ${resolvedThemeMode}).`
+                                : 'Persisted on this device.'}
+                        </FormHelperText>
+                    </FormControl>
+                </AppSurface>
+            </Stack>
+        </AppPage>
     );
 };
 

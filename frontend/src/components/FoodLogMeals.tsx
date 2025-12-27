@@ -80,6 +80,7 @@ function parseCaloriesInput(value: string): number | null {
 const FoodLogMeals: React.FC<{ logs: FoodLogEntry[] }> = ({ logs }) => {
     const queryClient = useQueryClient();
     const theme = useTheme();
+    const sectionGap = theme.custom.layout.page.sectionGap;
 
     const mealIcons = useMemo<Record<MealPeriod, React.ReactNode>>(
         () => ({
@@ -268,7 +269,7 @@ const FoodLogMeals: React.FC<{ logs: FoodLogEntry[] }> = ({ logs }) => {
     };
 
     return (
-        <Stack spacing={2} useFlexGap>
+        <Stack spacing={sectionGap} useFlexGap>
             <SectionHeader
                 title="Food Log"
                 align="center"
