@@ -1,0 +1,27 @@
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  width="512"
+  height="512"
+  viewBox="0 0 512 512"
+  role="img"
+  aria-label="cal.io"
+>
+  <defs>
+    <linearGradient id="ring" x1="96" y1="416" x2="416" y2="96" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#22c55e" />
+      <stop offset="1" stop-color="#38bdf8" />
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="104" fill="#111827" />
+  <circle
+    cx="256"
+    cy="256"
+    r="150"
+    fill="none"
+    stroke="url(#ring)"
+    stroke-width="56"
+    stroke-linecap="round"
+  />
+  <circle cx="365" cy="165" r="18" fill="#22c55e" />
+</svg>
+
