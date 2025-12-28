@@ -94,3 +94,182 @@ test('UsdaFoodDataProvider normalizes search results (measures + nutrients per 1
   }
 });
 
+test('UsdaFoodDataProvider returns empty results when neither query nor barcode is provided', async () => {
+  const provider = new UsdaFoodDataProvider('test-key');
+  const originalFetch = globalThis.fetch;
+
+  globalThis.fetch = async () => {
+    throw new Error('fetch should not be called');
+  };
+
+  try {
+    const result = await provider.searchFoods({});
+    assert.deepEqual(result, { items: [] });
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test('UsdaFoodDataProvider throws a detailed error for non-OK search responses', async () => {
+  const provider = new UsdaFoodDataProvider('test-key');
+  const originalFetch = globalThis.fetch;
+
+  globalThis.fetch = async () => createJsonResponse('bad gateway', { ok: false, status: 502 });
+
+  try {
+    await assert.rejects(() => provider.searchFoods({ query: 'apple' }), /USDA search failed: 502 bad gateway/);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test('UsdaFoodDataProvider prefers foodNutrients and converts kJ energy to kcal', async () => {
+  const provider = new UsdaFoodDataProvider('test-key');
+  const originalFetch = globalThis.fetch;
+
+  globalThis.fetch = async () =>
+    createJsonResponse({
+      foods: [
+        {
+          fdcId: 99,
+          description: 'Food Nutrients Example',
+          brandName: 'BrandCo',
+          gtinUpc: '999',
+          // labelNutrients should be ignored once foodNutrients includes energy.
+          householdServingFullText: '100 g',
+          servingSize: 100,
+          servingSizeUnit: 'g',
+          labelNutrients: {
+            calories: { value: 999 },
+            protein: { value: 999 },
+            fat: { value: 999 },
+            carbohydrates: { value: 999 }
+          },
+          foodNutrients: [
+            { nutrientNumber: '1008', nutrientName: 'Energy', unitName: 'kJ', amount: 418.4 },
+            { nutrientNumber: '1003', nutrientName: 'Protein', unitName: 'g', value: 1.5 },
+            { nutrientId: 1004, nutrientName: 'Total lipid (fat)', unitName: 'g', amount: 2 },
+            { nutrientName: 'Carbohydrate, by difference', unitName: 'g', amount: 3 }
+          ]
+        }
+      ]
+    });
+
+  try {
+    const result = await provider.searchFoods({ query: 'test', includeIncomplete: false, quantityInGrams: 50 });
+    assert.equal(result.items.length, 1);
+
+    const item = result.items[0];
+    assert.equal(item.source, 'usda');
+    assert.equal(item.id, '99');
+    assert.equal(item.description, 'Food Nutrients Example');
+    assert.equal(item.brand, 'BrandCo');
+    assert.equal(item.barcode, '999');
+
+    assert.deepEqual(item.nutrientsPer100g, {
+      calories: 100,
+      protein: 1.5,
+      fat: 2,
+      carbs: 3
+    });
+
+    assert.equal(item.nutrientsForRequest.grams, 50);
+    assert.equal(item.nutrientsForRequest.nutrients.calories, 50);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test('UsdaFoodDataProvider omits foods without usable nutrients when includeIncomplete=false', async () => {
+  const provider = new UsdaFoodDataProvider('test-key');
+  const originalFetch = globalThis.fetch;
+
+  globalThis.fetch = async () =>
+    createJsonResponse({
+      foods: [
+        {
+          fdcId: 123,
+          description: 'No convertible serving size',
+          householdServingFullText: '1 cup',
+          servingSize: 1,
+          servingSizeUnit: 'cup',
+          labelNutrients: { calories: { value: 100 } }
+        }
+      ]
+    });
+
+  try {
+    const result = await provider.searchFoods({ query: 'test', includeIncomplete: false });
+    assert.deepEqual(result, { items: [] });
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test('UsdaFoodDataProvider includes incomplete foods when includeIncomplete=true', async () => {
+  const provider = new UsdaFoodDataProvider('test-key');
+  const originalFetch = globalThis.fetch;
+
+  globalThis.fetch = async () =>
+    createJsonResponse({
+      foods: [
+        {
+          fdcId: 456,
+          description: 'No convertible serving size',
+          householdServingFullText: '1 cup',
+          servingSize: 1,
+          servingSizeUnit: 'cup',
+          labelNutrients: { calories: { value: 100 } }
+        }
+      ]
+    });
+
+  try {
+    const result = await provider.searchFoods({ query: 'test', includeIncomplete: true });
+    assert.equal(result.items.length, 1);
+    assert.equal(result.items[0].id, '456');
+    assert.equal(result.items[0].nutrientsPer100g, undefined);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test('UsdaFoodDataProvider converts kilogram serving sizes to gram weights', async () => {
+  const provider = new UsdaFoodDataProvider('test-key');
+  const originalFetch = globalThis.fetch;
+
+  globalThis.fetch = async () =>
+    createJsonResponse({
+      foods: [
+        {
+          fdcId: 777,
+          description: 'Kilogram serving',
+          householdServingFullText: '0.1 kg',
+          servingSize: 0.1,
+          servingSizeUnit: 'kg',
+          labelNutrients: {
+            calories: { value: 200 },
+            protein: { value: 10 }
+          }
+        }
+      ]
+    });
+
+  try {
+    const result = await provider.searchFoods({ query: 'kg', includeIncomplete: false });
+    assert.equal(result.items.length, 1);
+
+    // 0.1kg -> 100g, so nutrients should already be per 100g.
+    assert.deepEqual(result.items[0].nutrientsPer100g, {
+      calories: 200,
+      protein: 10,
+      fat: undefined,
+      carbs: undefined
+    });
+
+    const servingMeasure = result.items[0].availableMeasures.find((m) => m.label === '0.1 kg');
+    assert.equal(servingMeasure?.gramWeight, 100);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
