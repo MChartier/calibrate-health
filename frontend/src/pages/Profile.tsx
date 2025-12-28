@@ -18,6 +18,7 @@ import axios from 'axios';
 import { Link as RouterLink } from 'react-router-dom';
 import { activityLevelOptions } from '../constants/activityLevels';
 import TimeZonePicker from '../components/TimeZonePicker';
+import ProfilePhotoCard from '../components/ProfilePhotoCard';
 import { useAuth } from '../context/useAuth';
 import AppPage from '../ui/AppPage';
 import AppCard from '../ui/AppCard';
@@ -181,6 +182,8 @@ const Profile: React.FC = () => {
                 <Typography color="text.secondary">
                     Edit the info used to estimate your daily calorie burn (TDEE) and calorie math inputs.
                 </Typography>
+
+                <ProfilePhotoCard description="Used for your avatar in the app bar." />
 
                 <AppCard>
                     {profileMessage && (

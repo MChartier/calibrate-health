@@ -111,6 +111,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     /**
+     * Set (or clear) the authenticated user's processed profile photo.
+     */
+    const updateProfileImage = async (dataUrl: string | null) => {
+        const res = dataUrl
+            ? await axios.put('/api/user/profile-image', { data_url: dataUrl })
+            : await axios.delete('/api/user/profile-image');
+        setUser(res.data.user);
+    };
+
+    /**
      * Update the user's preferred IANA time zone identifier for date grouping and "today" calculations.
      */
     const updateTimezone = async (timezone: string) => {
@@ -128,6 +138,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 updateWeightUnit,
                 updateHeightUnit,
                 updateProfile,
+                updateProfileImage,
                 updateTimezone,
                 isLoading
             }}
