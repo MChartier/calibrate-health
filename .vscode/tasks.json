@@ -1,0 +1,27 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Dev Container: dev:test (auto)",
+            "type": "shell",
+            "command": "bash",
+            "args": [
+                "-lc",
+                "if [ -f /.dockerenv ]; then npm run dev:test; else echo \"Skipping auto dev:test (not running in a dev container).\"; fi"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "isBackground": true,
+            "problemMatcher": [],
+            "runOptions": {
+                "runOn": "folderOpen"
+            },
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated",
+                "focus": false
+            }
+        }
+    ]
+}
