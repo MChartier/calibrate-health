@@ -3,7 +3,7 @@ import { Box, Card, CardActionArea, CardContent, Skeleton, Typography } from '@m
 import { Gauge } from '@mui/x-charts/Gauge';
 import { Link as RouterLink } from 'react-router-dom';
 import { useAuth } from '../context/useAuth';
-import { formatDateToLocalDateString } from '../utils/date';
+import { formatDateToLocalDateString, formatIsoDateForDisplay, getHolidayEmojiForIsoDate } from '../utils/date';
 import { usePrefersReducedMotion } from '../hooks/usePrefersReducedMotion';
 import { useTweenedNumber } from '../hooks/useTweenedNumber';
 import { useUserProfileQuery } from '../queries/userProfile';
@@ -73,7 +73,10 @@ const LogSummaryCard: React.FC<LogSummaryCardProps> = ({ dashboardMode = false, 
     const today = formatDateToLocalDateString(new Date(), timeZone);
     const activeDate = date ?? today;
     const isActiveDateToday = activeDate === today;
-    const title = isActiveDateToday ? "Today's Log" : `Log for ${activeDate}`;
+    const holidayEmoji = getHolidayEmojiForIsoDate(activeDate);
+    const title = isActiveDateToday
+        ? `Today's Log${holidayEmoji ? ` ${holidayEmoji}` : ''}`
+        : `Log for ${formatIsoDateForDisplay(activeDate)}${holidayEmoji ? ` ${holidayEmoji}` : ''}`;
 
     const foodQuery = useFoodLogQuery(activeDate);
 
