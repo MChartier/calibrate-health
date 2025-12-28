@@ -1,4 +1,6 @@
 import bcrypt from 'bcryptjs';
+import fs from 'node:fs/promises';
+import path from 'node:path';
 import prisma from '../config/database';
 import { ActivityLevel, HeightUnit, MealPeriod, Sex, WeightUnit } from '@prisma/client';
 import { formatDateToLocalDateString, normalizeToUtcDateOnly } from '../utils/date';
@@ -7,10 +9,15 @@ const TEST_USER_EMAIL = 'test@cal.io';
 const TEST_USER_PASSWORD = 'password123';
 const TEST_USER_TIMEZONE = 'America/Los_Angeles';
 
+const TEST_ONBOARDING_USER_EMAIL = 'test-onboarding@cal.io';
+
 const TEST_USER_DATE_OF_BIRTH = new Date('1990-01-15T00:00:00');
 const TEST_USER_HEIGHT_MM = 1750;
 const TEST_USER_WEIGHT_GRAMS = 82000;
 const TEST_GOAL_TARGET_WEIGHT_GRAMS = 76000;
+
+const PROFILE_PLACEHOLDER_IMAGE_PATH = path.resolve(__dirname, '../../prisma/assets/profile-placeholder.png');
+const PROFILE_PLACEHOLDER_IMAGE_MIME_TYPE = 'image/png';
 
 type MealTemplate = {
   mealPeriod: MealPeriod;
@@ -27,6 +34,35 @@ const MEAL_TEMPLATES: MealTemplate[] = [
   { mealPeriod: MealPeriod.DINNER, name: 'Chicken stir-fry', calories: 650, hour: 19 },
   { mealPeriod: MealPeriod.EVENING_SNACK, name: 'Dark chocolate square', calories: 120, hour: 21 },
 ];
+
+type SeedProfileImage = {
+  mimeType: string;
+  bytes: Uint8Array<ArrayBuffer>;
+};
+
+let cachedProfilePlaceholderImage: SeedProfileImage | null | undefined;
+
+/**
+ * Load (and memoize) the placeholder avatar used for deterministic dev accounts.
+ */
+const loadProfilePlaceholderImage = async (): Promise<SeedProfileImage | null> => {
+  if (cachedProfilePlaceholderImage !== undefined) {
+    return cachedProfilePlaceholderImage;
+  }
+
+  try {
+    const buffer = await fs.readFile(PROFILE_PLACEHOLDER_IMAGE_PATH);
+    // Prisma `Bytes` columns are typed as Uint8Array; normalize eagerly for type safety.
+    const bytes = new Uint8Array(buffer.length);
+    bytes.set(buffer);
+    cachedProfilePlaceholderImage = { bytes, mimeType: PROFILE_PLACEHOLDER_IMAGE_MIME_TYPE };
+  } catch (error) {
+    cachedProfilePlaceholderImage = null;
+    console.warn('Dev seed: unable to load profile placeholder image:', error);
+  }
+
+  return cachedProfilePlaceholderImage;
+};
 
 /**
  * Build a new date-only value by adding the provided day offset (UTC, no DST surprises).
@@ -51,6 +87,11 @@ const getPastWeekDates = (timeZone: string, now: Date = new Date()): Date[] => {
  */
 const ensureTestUser = async (): Promise<{ id: number }> => {
   const passwordHash = await bcrypt.hash(TEST_USER_PASSWORD, 10);
+  const placeholderImage = await loadProfilePlaceholderImage();
+  const placeholderImageData = placeholderImage
+    ? { profile_image: placeholderImage.bytes, profile_image_mime_type: placeholderImage.mimeType }
+    : {};
+
   return prisma.user.upsert({
     where: { email: TEST_USER_EMAIL },
     create: {
@@ -63,6 +104,7 @@ const ensureTestUser = async (): Promise<{ id: number }> => {
       sex: Sex.MALE,
       height_mm: TEST_USER_HEIGHT_MM,
       activity_level: ActivityLevel.MODERATE,
+      ...placeholderImageData,
     },
     update: {
       // Keep the dev user deterministic so "invalid credentials" doesn't happen
@@ -75,9 +117,60 @@ const ensureTestUser = async (): Promise<{ id: number }> => {
       sex: Sex.MALE,
       height_mm: TEST_USER_HEIGHT_MM,
       activity_level: ActivityLevel.MODERATE,
+      ...placeholderImageData,
     },
     select: { id: true },
   });
+};
+
+/**
+ * Ensure a deterministic onboarding test user exists.
+ *
+ * This account is intentionally kept incomplete so developers can repeatedly test
+ * the onboarding flow without needing a full DB reset.
+ */
+const ensureOnboardingTestUser = async (): Promise<{ id: number }> => {
+  const passwordHash = await bcrypt.hash(TEST_USER_PASSWORD, 10);
+
+  return prisma.user.upsert({
+    where: { email: TEST_ONBOARDING_USER_EMAIL },
+    create: {
+      email: TEST_ONBOARDING_USER_EMAIL,
+      password_hash: passwordHash,
+      timezone: TEST_USER_TIMEZONE,
+      weight_unit: WeightUnit.KG,
+      height_unit: HeightUnit.CM,
+      date_of_birth: null,
+      sex: null,
+      height_mm: null,
+      activity_level: null,
+      profile_image: null,
+      profile_image_mime_type: null,
+    },
+    update: {
+      // Keep this user perpetually in a pre-onboarding state.
+      password_hash: passwordHash,
+      timezone: TEST_USER_TIMEZONE,
+      weight_unit: WeightUnit.KG,
+      height_unit: HeightUnit.CM,
+      date_of_birth: null,
+      sex: null,
+      height_mm: null,
+      activity_level: null,
+      profile_image: null,
+      profile_image_mime_type: null,
+    },
+    select: { id: true },
+  });
+};
+
+/**
+ * Remove any associated data so the onboarding test user always lands in onboarding.
+ */
+const resetOnboardingTestUserData = async (userId: number): Promise<void> => {
+  await prisma.goal.deleteMany({ where: { user_id: userId } });
+  await prisma.bodyMetric.deleteMany({ where: { user_id: userId } });
+  await prisma.foodLog.deleteMany({ where: { user_id: userId } });
 };
 
 /**
@@ -171,11 +264,14 @@ const ensureFoodLogs = async (userId: number, days: Date[]): Promise<void> => {
  */
 export const seedDevTestData = async (): Promise<void> => {
   const user = await ensureTestUser();
+  const onboardingUser = await ensureOnboardingTestUser();
   const days = getPastWeekDates(TEST_USER_TIMEZONE);
 
   await ensureTestGoal(user.id);
   await ensureBodyMetrics(user.id, days);
   await ensureFoodLogs(user.id, days);
+
+  await resetOnboardingTestUserData(onboardingUser.id);
 };
 
 let seedOncePromise: Promise<void> | null = null;
