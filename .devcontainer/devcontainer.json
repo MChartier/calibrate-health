@@ -4,6 +4,14 @@
   "service": "app",
   "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
   "initializeCommand": "bash .devcontainer/init-devcontainer-env.sh",
+  "waitFor": "postStartCommand",
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "task.allowAutomaticTasks": "on"
+      }
+    }
+  },
 
   "onCreateCommand": "npm install -g @openai/codex",
   "postCreateCommand": "npm run setup && node .devcontainer/update-peacock-settings.mjs",
