@@ -41,6 +41,9 @@ const Goals: React.FC = () => {
     const theme = useTheme();
     const sectionGap = theme.custom.layout.page.sectionGap;
     const unitLabel = user?.weight_unit === 'LB' ? 'lb' : 'kg';
+    const weightSeriesLabel = `Weight (${unitLabel})`;
+    const legendSwatchSizePx = 12;
+    const weightChartHeightPx = 320;
 
     const goalQuery = useQuery({
         queryKey: ['goal'],
@@ -97,52 +100,70 @@ const Goals: React.FC = () => {
         weightHistoryContent = (
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                 <Skeleton width="40%" />
-                <Skeleton variant="rounded" height={320} />
+                <Skeleton variant="rounded" height={weightChartHeightPx} />
             </Box>
         );
     } else if (points.length === 0) {
         weightHistoryContent = <Typography color="text.secondary">No weight entries yet.</Typography>;
     } else {
         weightHistoryContent = (
-            <LineChart
-                xAxis={[
-                    {
-                        data: xData,
-                        scaleType: 'time',
-                        valueFormatter: (value) =>
-                            new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' }).format(value)
-                    }
-                ]}
-                yAxis={[
-                    {
-                        min: yDomain?.min,
-                        max: yDomain?.max,
-                        label: `Weight (${unitLabel})`
-                    }
-                ]}
-                series={[
-                    {
-                        data: yData,
-                        label: 'Weight',
-                        color: theme.palette.primary.main,
-                        showMark: true
-                    }
-                ]}
-                height={320}
-            >
-                {targetIsValid && (
-                    <ChartsReferenceLine
-                        y={goal!.target_weight}
-                        label={`Target: ${goal!.target_weight.toFixed(1)} ${unitLabel}`}
-                        lineStyle={{
-                            stroke: theme.palette.secondary.main,
-                            strokeDasharray: '6 6',
-                            strokeWidth: 2
+            <Stack spacing={1.5}>
+                <LineChart
+                    xAxis={[
+                        {
+                            data: xData,
+                            scaleType: 'time',
+                            valueFormatter: (value) =>
+                                new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' }).format(value)
+                        }
+                    ]}
+                    yAxis={[
+                        {
+                            min: yDomain?.min,
+                            max: yDomain?.max,
+                            label: weightSeriesLabel
+                        }
+                    ]}
+                    series={[
+                        {
+                            data: yData,
+                            label: weightSeriesLabel,
+                            color: theme.palette.primary.main,
+                            showMark: true
+                        }
+                    ]}
+                    height={weightChartHeightPx}
+                    slotProps={{ legend: { hidden: true } }}
+                >
+                    {targetIsValid && (
+                        <ChartsReferenceLine
+                            y={goal!.target_weight}
+                            label={`Target: ${goal!.target_weight.toFixed(1)} ${unitLabel}`}
+                            lineStyle={{
+                                stroke: theme.palette.secondary.main,
+                                strokeDasharray: '6 6',
+                                strokeWidth: 2
+                            }}
+                            labelStyle={{ fill: theme.palette.text.secondary, fontWeight: 700 }}
+                        />
+                    )}
+                </LineChart>
+
+                <Box sx={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: 1.25, alignItems: 'center' }}>
+                    <Box
+                        aria-hidden
+                        sx={{
+                            width: legendSwatchSizePx,
+                            height: legendSwatchSizePx,
+                            borderRadius: '50%',
+                            backgroundColor: theme.palette.primary.main
                         }}
-                        labelStyle={{ fill: theme.palette.text.secondary, fontWeight: 700 }}
                     />
-                )}
-            </LineChart>
+                    <Typography variant="body2" color="text.secondary">
+                        {weightSeriesLabel}
+                    </Typography>
+                </Box>
+            </Stack>
         );
     }
 
@@ -152,7 +173,7 @@ const Goals: React.FC = () => {
                 <GoalTrackerCard />
 
                 <AppCard>
-                    <SectionHeader title="Weight Over Time" sx={{ mb: 1.5 }} />
+                    <SectionHeader title="Weight History" sx={{ mb: 1.5 }} />
                     {weightHistoryContent}
                 </AppCard>
             </Stack>
