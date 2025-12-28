@@ -3,6 +3,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import { VitePWA, type VitePWAOptions } from 'vite-plugin-pwa'
 
 function isRunningInContainer() {
   if (fs.existsSync('/.dockerenv')) return true
@@ -30,6 +31,58 @@ function getWorktreeNameFromRepoRoot(repoRootName: string) {
   return repoRootName.length > 0 ? repoRootName : null
 }
 
+/**
+ * Configure PWA behavior (manifest + service worker) for installability on mobile/desktop.
+ */
+function getPwaOptions(): Partial<VitePWAOptions> {
+  return {
+    registerType: 'autoUpdate',
+    // Ensure icons referenced by the manifest are copied through to the build output.
+    includeAssets: [
+      'icon.svg',
+      'apple-touch-icon.png',
+      'pwa-192x192.png',
+      'pwa-512x512.png',
+    ],
+    manifest: {
+      name: 'cal.io',
+      short_name: 'cal.io',
+      description: 'A responsive calorie tracker.',
+      theme_color: '#111827',
+      background_color: '#111827',
+      display: 'standalone',
+      start_url: '/',
+      scope: '/',
+      icons: [
+        {
+          src: 'pwa-192x192.png',
+          sizes: '192x192',
+          type: 'image/png',
+        },
+        {
+          src: 'pwa-512x512.png',
+          sizes: '512x512',
+          type: 'image/png',
+        },
+        {
+          src: 'pwa-512x512.png',
+          sizes: '512x512',
+          type: 'image/png',
+          purpose: 'maskable',
+        },
+      ],
+    },
+    workbox: {
+      // Workbox's default service worker bundling uses @rollup/plugin-terser in production mode.
+      // In constrained/dev environments this can occasionally fail, and minification isn't critical here.
+      mode: 'development',
+      disableDevLogs: true,
+      // SPA navigation fallback should not hijack backend endpoints.
+      navigateFallbackDenylist: [/^\/api\//, /^\/auth\//],
+    },
+  }
+}
+
 const frontendDir = path.dirname(fileURLToPath(import.meta.url))
 const repoRootName = path.basename(path.resolve(frontendDir, '..'))
 const worktreeName = getWorktreeNameFromRepoRoot(repoRootName)
@@ -49,7 +102,7 @@ const devServerPort =
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), VitePWA(getPwaOptions())],
   define: {
     __WORKTREE_NAME__: JSON.stringify(worktreeName),
   },
