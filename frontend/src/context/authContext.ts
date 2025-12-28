@@ -33,6 +33,8 @@ export type AuthContextType = {
     login: (email: string, password: string) => Promise<void>;
     register: (email: string, password: string) => Promise<void>;
     logout: () => Promise<void>;
+    /** Update the authenticated user's password (current password required). */
+    changePassword: (currentPassword: string, newPassword: string) => Promise<void>;
     updateUnitPreferences: (preferences: { weight_unit?: WeightUnit; height_unit?: HeightUnit }) => Promise<void>;
     updateWeightUnit: (weight_unit: WeightUnit) => Promise<void>;
     updateHeightUnit: (height_unit: HeightUnit) => Promise<void>;
