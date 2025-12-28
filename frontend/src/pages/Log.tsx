@@ -39,6 +39,15 @@ type FoodLogEntry = {
     calories: number;
 };
 
+const LOG_FAB_DIAMETER_SPACING = 7; // Default MUI "large" Fab is 56px (7 * 8).
+const LOG_FAB_CONTENT_CLEARANCE_SPACING = 2; // Extra room so bottom-row actions aren't tight against the FAB.
+const LOG_FAB_BOTTOM_NAV_GAP_SPACING = 1; // Our FAB sits 8px above the reserved bottom-nav space on mobile.
+
+const LOG_PAGE_BOTTOM_PADDING = {
+    xs: LOG_FAB_DIAMETER_SPACING + LOG_FAB_CONTENT_CLEARANCE_SPACING + LOG_FAB_BOTTOM_NAV_GAP_SPACING,
+    md: LOG_FAB_DIAMETER_SPACING + LOG_FAB_CONTENT_CLEARANCE_SPACING
+} as const;
+
 const Log: React.FC = () => {
     const queryClient = useQueryClient();
     const { user } = useAuth();
@@ -63,7 +72,7 @@ const Log: React.FC = () => {
     const handleCloseWeightDialog = () => setIsWeightDialogOpen(false);
 
     return (
-        <Box>
+        <Box sx={{ pb: LOG_PAGE_BOTTOM_PADDING }}>
             <Box
                 sx={{
                     display: 'flex',
