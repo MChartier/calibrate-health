@@ -71,6 +71,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     /**
+     * Change the authenticated user's password (server validates the current password).
+     */
+    const changePassword = async (currentPassword: string, newPassword: string) => {
+        await axios.patch('/api/user/password', {
+            current_password: currentPassword,
+            new_password: newPassword
+        });
+    };
+
+    /**
      * Patch user preferences (units) and keep the auth context in sync.
      */
     const updateUnitPreferences = async (preferences: { weight_unit?: WeightUnit; height_unit?: HeightUnit }) => {
@@ -124,6 +134,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 login,
                 register,
                 logout,
+                changePassword,
                 updateUnitPreferences,
                 updateWeightUnit,
                 updateHeightUnit,

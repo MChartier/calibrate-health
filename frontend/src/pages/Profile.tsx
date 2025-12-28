@@ -3,6 +3,10 @@ import {
     Alert,
     Box,
     Button,
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogTitle,
     FormControl,
     Link,
     InputLabel,
@@ -21,7 +25,11 @@ import TimeZonePicker from '../components/TimeZonePicker';
 import { useAuth } from '../context/useAuth';
 import AppPage from '../ui/AppPage';
 import AppCard from '../ui/AppCard';
+import SectionHeader from '../ui/SectionHeader';
+import { getApiErrorMessage } from '../utils/apiError';
 import { getDefaultHeightUnitForWeightUnit } from '../utils/unitPreferences';
+
+const MIN_PASSWORD_LENGTH = 8;
 
 type ProfileResponse = {
     profile: {
@@ -71,9 +79,17 @@ function parseHeightFromMillimeters(mm: number): ParsedHeight {
  */
 const Profile: React.FC = () => {
     const theme = useTheme();
-    const { user, updateProfile } = useAuth();
+    const { user, updateProfile, changePassword } = useAuth();
     const sectionGap = theme.custom.layout.page.sectionGap;
     const [profileMessage, setProfileMessage] = useState('');
+    const [accountSuccess, setAccountSuccess] = useState('');
+    const [passwordError, setPasswordError] = useState('');
+    const [isChangingPassword, setIsChangingPassword] = useState(false);
+    const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
+
+    const [currentPassword, setCurrentPassword] = useState('');
+    const [newPassword, setNewPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
 
     const [timezone, setTimezone] = useState<string | null>(null);
     const [dateOfBirth, setDateOfBirth] = useState<string | null>(null);
@@ -175,6 +191,88 @@ const Profile: React.FC = () => {
         }
     };
 
+    /**
+     * Open the change-password dialog and clear any prior error state.
+     */
+    const handlePasswordDialogOpen = () => {
+        setAccountSuccess('');
+        resetPasswordDialogFields();
+        setIsPasswordDialogOpen(true);
+    };
+
+    /**
+     * Clear sensitive input values used by the password dialog.
+     */
+    const resetPasswordDialogFields = () => {
+        setPasswordError('');
+        setCurrentPassword('');
+        setNewPassword('');
+        setConfirmPassword('');
+    };
+
+    /**
+     * Close the change-password dialog and clear sensitive input values.
+     */
+    const closePasswordDialog = () => {
+        setIsPasswordDialogOpen(false);
+        resetPasswordDialogFields();
+    };
+
+    /**
+     * Close the change-password dialog (unless a request is in-flight).
+     */
+    const handlePasswordDialogClose = () => {
+        if (isChangingPassword) return;
+        closePasswordDialog();
+    };
+
+    /**
+     * Change the current user's password after validating basic client-side constraints.
+     */
+    const handlePasswordChange = async () => {
+        setAccountSuccess('');
+        setPasswordError('');
+
+        if (!currentPassword) {
+            setPasswordError('Please enter your current password.');
+            return;
+        }
+
+        if (newPassword.length < MIN_PASSWORD_LENGTH) {
+            setPasswordError(`New password must be at least ${MIN_PASSWORD_LENGTH} characters.`);
+            return;
+        }
+
+        if (newPassword !== confirmPassword) {
+            setPasswordError('New passwords do not match.');
+            return;
+        }
+
+        if (currentPassword === newPassword) {
+            setPasswordError('New password must be different from your current password.');
+            return;
+        }
+
+        setIsChangingPassword(true);
+        try {
+            await changePassword(currentPassword, newPassword);
+            setAccountSuccess('Password updated.');
+            closePasswordDialog();
+        } catch (err) {
+            setPasswordError(getApiErrorMessage(err) ?? 'Failed to update password.');
+        } finally {
+            setIsChangingPassword(false);
+        }
+    };
+
+    /**
+     * Keep the password form accessible by handling Enter-to-submit and preventing full-page reloads.
+     */
+    const handlePasswordSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        void handlePasswordChange();
+    };
+
     return (
         <AppPage maxWidth="content">
             <Stack spacing={sectionGap} useFlexGap>
@@ -183,6 +281,8 @@ const Profile: React.FC = () => {
                 </Typography>
 
                 <AppCard>
+                    <SectionHeader title="Profile" sx={{ mb: 1.5 }} />
+
                     {profileMessage && (
                         <Alert severity="info" sx={{ mb: 2 }}>
                             {profileMessage}
@@ -267,6 +367,108 @@ const Profile: React.FC = () => {
                         </Button>
                     </Stack>
                 </AppCard>
+
+                <AppCard>
+                    <SectionHeader
+                        title="Account"
+                        subtitle="View your email address and update your password."
+                        actions={
+                            <Button variant="outlined" onClick={handlePasswordDialogOpen}>
+                                Change Password
+                            </Button>
+                        }
+                        sx={{ mb: 1.5 }}
+                    />
+
+                    <Stack spacing={1.5}>
+                        {accountSuccess && <Alert severity="success">{accountSuccess}</Alert>}
+
+                        <Typography variant="body2" color="text.secondary">
+                            Email
+                        </Typography>
+                        <Box
+                            sx={{
+                                px: 2,
+                                py: 1.5,
+                                border: '1px solid',
+                                borderColor: 'divider',
+                                borderRadius: 1,
+                                backgroundColor: 'action.hover'
+                            }}
+                        >
+                            <Typography sx={{ wordBreak: 'break-word' }}>{user?.email ?? ''}</Typography>
+                        </Box>
+                    </Stack>
+                </AppCard>
+
+                <Dialog
+                    open={isPasswordDialogOpen}
+                    onClose={handlePasswordDialogClose}
+                    fullWidth
+                    maxWidth="xs"
+                >
+                    <DialogTitle>Change password</DialogTitle>
+                    <DialogContent>
+                        <Stack
+                            spacing={2}
+                            component="form"
+                            id="change-password-form"
+                            onSubmit={handlePasswordSubmit}
+                            sx={{ pt: 1 }}
+                        >
+                            {passwordError && <Alert severity="error">{passwordError}</Alert>}
+
+                            <TextField
+                                label="Current Password"
+                                type="password"
+                                autoComplete="current-password"
+                                value={currentPassword}
+                                onChange={(e) => setCurrentPassword(e.target.value)}
+                                disabled={isChangingPassword}
+                                required
+                                fullWidth
+                            />
+
+                            <TextField
+                                label="New Password"
+                                type="password"
+                                autoComplete="new-password"
+                                value={newPassword}
+                                onChange={(e) => setNewPassword(e.target.value)}
+                                helperText={`At least ${MIN_PASSWORD_LENGTH} characters.`}
+                                disabled={isChangingPassword}
+                                inputProps={{ minLength: MIN_PASSWORD_LENGTH }}
+                                required
+                                fullWidth
+                            />
+
+                            <TextField
+                                label="Confirm New Password"
+                                type="password"
+                                autoComplete="new-password"
+                                value={confirmPassword}
+                                onChange={(e) => setConfirmPassword(e.target.value)}
+                                disabled={isChangingPassword}
+                                inputProps={{ minLength: MIN_PASSWORD_LENGTH }}
+                                required
+                                fullWidth
+                            />
+                        </Stack>
+                    </DialogContent>
+                    <DialogActions sx={{ px: 3, pb: 2 }}>
+                        <Button onClick={handlePasswordDialogClose} disabled={isChangingPassword}>
+                            Cancel
+                        </Button>
+                        <Button
+                            type="submit"
+                            form="change-password-form"
+                            variant="contained"
+                            disabled={isChangingPassword}
+                        >
+                            {isChangingPassword ? 'Updating...' : 'Update Password'}
+                        </Button>
+                    </DialogActions>
+                </Dialog>
             </Stack>
         </AppPage>
     );

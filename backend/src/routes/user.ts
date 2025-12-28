@@ -1,11 +1,54 @@
 import express from 'express';
 import prisma from '../config/database';
+import bcrypt from 'bcryptjs';
 import { isHeightUnit, isWeightUnit } from '../utils/units';
 import { ActivityLevel, HeightUnit, Sex, WeightUnit } from '@prisma/client';
 import { buildCalorieSummary, isActivityLevel, isSex } from '../utils/profile';
 import { isValidIanaTimeZone } from '../utils/date';
 
 const router = express.Router();
+
+const MIN_PASSWORD_LENGTH = 8;
+// bcrypt truncates long passwords; keep a conservative cap to avoid surprises.
+const MAX_PASSWORD_LENGTH = 72;
+
+type PasswordChangeParseResult =
+  | { ok: true; currentPassword: string; newPassword: string }
+  | { ok: false; message: string };
+
+/**
+ * Validate and normalize the password change request payload.
+ *
+ * This performs lightweight shape/length checks; the current password is verified
+ * against the stored hash in the route handler.
+ */
+const parsePasswordChangePayload = (body: unknown): PasswordChangeParseResult => {
+  if (!body || typeof body !== 'object') {
+    return { ok: false, message: 'Invalid request body' };
+  }
+
+  const record = body as Record<string, unknown>;
+  const currentPassword = record.current_password;
+  const newPassword = record.new_password;
+
+  if (typeof currentPassword !== 'string' || currentPassword.length === 0) {
+    return { ok: false, message: 'Current password is required' };
+  }
+
+  if (typeof newPassword !== 'string' || newPassword.length === 0) {
+    return { ok: false, message: 'New password is required' };
+  }
+
+  if (newPassword.length < MIN_PASSWORD_LENGTH) {
+    return { ok: false, message: `New password must be at least ${MIN_PASSWORD_LENGTH} characters` };
+  }
+
+  if (newPassword.length > MAX_PASSWORD_LENGTH) {
+    return { ok: false, message: `New password must be at most ${MAX_PASSWORD_LENGTH} characters` };
+  }
+
+  return { ok: true, currentPassword, newPassword };
+};
 
 const isAuthenticated = (
   req: express.Request,
@@ -35,6 +78,43 @@ router.get('/me', (req, res) => {
       activity_level: user.activity_level
     }
   });
+});
+
+router.patch('/password', async (req, res) => {
+  const user = req.user as any;
+  const parsed = parsePasswordChangePayload(req.body);
+  if (!parsed.ok) {
+    return res.status(400).json({ message: parsed.message });
+  }
+
+  if (parsed.currentPassword === parsed.newPassword) {
+    return res.status(400).json({ message: 'New password must be different from current password' });
+  }
+
+  try {
+    const dbUser = await prisma.user.findUnique({
+      where: { id: user.id },
+      select: { id: true, password_hash: true }
+    });
+    if (!dbUser) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const isMatch = await bcrypt.compare(parsed.currentPassword, dbUser.password_hash);
+    if (!isMatch) {
+      return res.status(400).json({ message: 'Current password is incorrect' });
+    }
+
+    const password_hash = await bcrypt.hash(parsed.newPassword, 10);
+    await prisma.user.update({
+      where: { id: dbUser.id },
+      data: { password_hash }
+    });
+
+    res.json({ message: 'Password updated' });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
 });
 
 router.patch('/preferences', async (req, res) => {
