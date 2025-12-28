@@ -59,3 +59,14 @@ export function addDaysToIsoDate(dateIso: string, deltaDays: number): string {
     date.setUTCDate(date.getUTCDate() + deltaDays);
     return date.toISOString().slice(0, 10);
 }
+
+/**
+ * Clamp a date-only ISO string (`YYYY-MM-DD`) to an inclusive [min, max] range.
+ *
+ * Lexicographic comparison is safe for this format.
+ */
+export function clampIsoDate(dateIso: string, bounds: { min: string; max: string }): string {
+    if (dateIso < bounds.min) return bounds.min;
+    if (dateIso > bounds.max) return bounds.max;
+    return dateIso;
+}
