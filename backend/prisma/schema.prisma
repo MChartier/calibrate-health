@@ -56,6 +56,10 @@ model User {
   sex           Sex?
   height_mm     Int?
   activity_level ActivityLevel?
+  /// Optional, processed profile photo (small square) used for in-app avatars.
+  profile_image Bytes?
+  /// MIME type for the stored profile_image bytes (e.g. "image/jpeg").
+  profile_image_mime_type String?
   
   goals         Goal[]
   metrics       BodyMetric[]

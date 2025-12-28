@@ -1,0 +1,12 @@
+/* CropperJS is global CSS-driven; scope our avatar tweaks to this component. */
+.profilePhotoCropperRoot .cropper-view-box,
+.profilePhotoCropperRoot .cropper-face {
+    border-radius: 50%;
+}
+
+/* Avatar crops are "move + zoom" focused. Hide resize handles so the crop circle stays stable. */
+.profilePhotoCropperRoot .cropper-point,
+.profilePhotoCropperRoot .cropper-line {
+    display: none;
+}
+

@@ -2,7 +2,7 @@ import express from 'express';
 import passport from 'passport';
 import bcrypt from 'bcryptjs';
 import prisma from '../config/database';
-import { serializeUserForClient } from '../utils/serializeUser';
+import { serializeUserForClient, USER_CLIENT_SELECT } from '../utils/userSerialization';
 
 const router = express.Router();
 
@@ -21,7 +21,8 @@ router.post('/register', async (req, res) => {
             data: {
                 email,
                 password_hash
-            }
+            },
+            select: USER_CLIENT_SELECT
         });
 
         req.login(newUser, (err) => {
@@ -51,12 +52,19 @@ router.post('/logout', (req, res, next) => {
     });
 });
 
-router.get('/me', (req, res) => {
+router.get('/me', async (req, res) => {
     if (req.isAuthenticated()) {
         const user = req.user as any;
-        res.json({
-            user: serializeUserForClient(user)
-        });
+        try {
+            const dbUser = await prisma.user.findUnique({ where: { id: user.id }, select: USER_CLIENT_SELECT });
+            if (!dbUser) {
+                return res.status(401).json({ message: 'Not authenticated' });
+            }
+
+            res.json({ user: serializeUserForClient(dbUser) });
+        } catch (err) {
+            res.status(500).json({ message: 'Server error' });
+        }
     } else {
         res.status(401).json({ message: 'Not authenticated' });
     }
