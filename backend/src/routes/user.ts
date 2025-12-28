@@ -5,6 +5,8 @@ import { isHeightUnit, isWeightUnit } from '../utils/units';
 import { ActivityLevel, HeightUnit, Sex, WeightUnit } from '@prisma/client';
 import { buildCalorieSummary, isActivityLevel, isSex } from '../utils/profile';
 import { isValidIanaTimeZone } from '../utils/date';
+import { MAX_PROFILE_IMAGE_BYTES, parseBase64DataUrl } from '../utils/profileImage';
+import { serializeUserForClient, USER_CLIENT_SELECT } from '../utils/userSerialization';
 
 const router = express.Router();
 
@@ -63,21 +65,70 @@ const isAuthenticated = (
 
 router.use(isAuthenticated);
 
-router.get('/me', (req, res) => {
+router.get('/me', async (req, res) => {
   const user = req.user as any;
-  res.json({
-    user: {
-      id: user.id,
-      email: user.email,
-      weight_unit: user.weight_unit,
-      height_unit: user.height_unit,
-      timezone: user.timezone,
-      date_of_birth: user.date_of_birth,
-      sex: user.sex,
-      height_mm: user.height_mm,
-      activity_level: user.activity_level
+  try {
+    const dbUser = await prisma.user.findUnique({ where: { id: user.id }, select: USER_CLIENT_SELECT });
+    if (!dbUser) {
+      return res.status(404).json({ message: 'User not found' });
     }
-  });
+
+    res.json({ user: serializeUserForClient(dbUser) });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+router.put('/profile-image', async (req, res) => {
+  const user = req.user as any;
+  const dataUrl = (req.body as { data_url?: unknown } | undefined)?.data_url;
+
+  if (typeof dataUrl !== 'string' || dataUrl.trim().length === 0) {
+    return res.status(400).json({ message: 'Missing data_url' });
+  }
+
+  const parsed = parseBase64DataUrl(dataUrl);
+  if (!parsed) {
+    return res.status(400).json({ message: 'Invalid profile image payload' });
+  }
+
+  if (parsed.bytes.byteLength > MAX_PROFILE_IMAGE_BYTES) {
+    return res.status(413).json({ message: 'Profile image is too large' });
+  }
+
+  try {
+    const updatedUser = await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        profile_image: parsed.bytes,
+        profile_image_mime_type: parsed.mimeType
+      },
+      select: USER_CLIENT_SELECT
+    });
+
+    res.json({ user: serializeUserForClient(updatedUser) });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+router.delete('/profile-image', async (req, res) => {
+  const user = req.user as any;
+
+  try {
+    const updatedUser = await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        profile_image: null,
+        profile_image_mime_type: null
+      },
+      select: USER_CLIENT_SELECT
+    });
+
+    res.json({ user: serializeUserForClient(updatedUser) });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
 });
 
 router.patch('/password', async (req, res) => {
@@ -145,20 +196,11 @@ router.patch('/preferences', async (req, res) => {
     const updatedUser = await prisma.user.update({
       where: { id: user.id },
       data: updateData,
+      select: USER_CLIENT_SELECT
     });
 
     res.json({
-      user: {
-        id: updatedUser.id,
-        email: updatedUser.email,
-        weight_unit: updatedUser.weight_unit,
-        height_unit: updatedUser.height_unit,
-        timezone: updatedUser.timezone,
-        date_of_birth: updatedUser.date_of_birth,
-        sex: updatedUser.sex,
-        height_mm: updatedUser.height_mm,
-        activity_level: updatedUser.activity_level
-      },
+      user: serializeUserForClient(updatedUser)
     });
   } catch (err) {
     res.status(500).json({ message: 'Server error' });
@@ -308,21 +350,12 @@ router.patch('/profile', async (req, res) => {
   try {
     const updatedUser = await prisma.user.update({
       where: { id: user.id },
-      data: updateData
+      data: updateData,
+      select: USER_CLIENT_SELECT
     });
 
     res.json({
-      user: {
-        id: updatedUser.id,
-        email: updatedUser.email,
-        weight_unit: updatedUser.weight_unit,
-        height_unit: updatedUser.height_unit,
-        timezone: updatedUser.timezone,
-        date_of_birth: updatedUser.date_of_birth,
-        sex: updatedUser.sex,
-        height_mm: updatedUser.height_mm,
-        activity_level: updatedUser.activity_level
-      }
+      user: serializeUserForClient(updatedUser)
     });
   } catch (err) {
     res.status(500).json({ message: 'Server error' });
