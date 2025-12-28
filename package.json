@@ -17,6 +17,7 @@
     "setup": "npm --prefix backend install && npm run prisma:generate && npm --prefix frontend install",
     "worktree:new": "node scripts/worktree.mjs",
     "worktree:code": "node scripts/worktree-code.mjs",
+    "worktree:reset": "node scripts/worktree-reset.mjs",
     "build": "npm --prefix frontend run build",
     "lint": "npm --prefix frontend run lint",
     "test": "npm --prefix backend test"
