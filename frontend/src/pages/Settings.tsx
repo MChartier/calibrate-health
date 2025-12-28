@@ -7,17 +7,20 @@ import {
     FormHelperText,
     InputLabel,
     MenuItem,
-    Paper,
     Select,
-    Typography
+    Stack
 } from '@mui/material';
 import type { SelectChangeEvent } from '@mui/material/Select';
-import LogoutIcon from '@mui/icons-material/Logout';
+import LogoutIcon from '@mui/icons-material/LogoutRounded';
+import { useTheme } from '@mui/material/styles';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/useAuth';
 import { useThemeMode } from '../context/useThemeMode';
 import type { ThemePreference } from '../context/themeModeContext';
 import TimeZonePicker from '../components/TimeZonePicker';
+import AppPage from '../ui/AppPage';
+import AppCard from '../ui/AppCard';
+import SectionHeader from '../ui/SectionHeader';
 import {
     parseUnitPreferenceKey,
     resolveUnitPreferenceKey,
@@ -28,6 +31,8 @@ import {
  * Settings is focused on device preferences (theme) and app preferences (units).
  */
 const Settings: React.FC = () => {
+    const theme = useTheme();
+    const sectionGap = theme.custom.layout.page.sectionGap;
     const { user, logout, updateUnitPreferences, updateTimezone } = useAuth();
     const { preference: themePreference, mode: resolvedThemeMode, setPreference: setThemePreference } = useThemeMode();
     const navigate = useNavigate();
@@ -89,74 +94,79 @@ const Settings: React.FC = () => {
     };
 
     return (
-        <Box sx={{ maxWidth: 720, mx: 'auto' }}>
-            <Paper sx={{ p: 2, mb: 3 }}>
-                <Typography variant="h6" gutterBottom>
-                    Units & Localization
-                </Typography>
-                {settingsMessage && (
-                    <Alert severity="info" sx={{ mb: 2 }}>
-                        {settingsMessage}
-                    </Alert>
-                )}
-                <FormControl fullWidth margin="normal">
-                    <InputLabel>Units</InputLabel>
-                    <Select value={unitPreference} label="Units" onChange={handleUnitPreferenceChange}>
-                        <MenuItem value="CM_KG">Metric (cm, kg)</MenuItem>
-                        <MenuItem value="FTIN_LB">Imperial (ft/in, lb)</MenuItem>
-                        <MenuItem value="CM_LB">Mixed (cm, lb)</MenuItem>
-                        <MenuItem value="FTIN_KG">Mixed (ft/in, kg)</MenuItem>
-                    </Select>
-                </FormControl>
+        <AppPage maxWidth="content">
+            <Stack spacing={sectionGap} useFlexGap>
+                <AppCard>
+                    <SectionHeader title="Units & Localization" sx={{ mb: 1.5 }} />
 
-                <Box sx={{ mt: 2 }}>
-                    <TimeZonePicker
-                        value={timezoneValue}
-                        onChange={(next) => void handleTimezoneChange(next)}
-                        helperText="Used to define your day boundaries for food and weight logs."
-                    />
-                </Box>
-            </Paper>
+                    {settingsMessage && (
+                        <Alert severity="info" sx={{ mb: 2 }}>
+                            {settingsMessage}
+                        </Alert>
+                    )}
 
-            <Paper sx={{ p: 2, mb: 3 }}>
-                <Typography variant="h6" gutterBottom>
-                    Appearance
-                </Typography>
-                <FormControl fullWidth margin="normal">
-                    <InputLabel>Theme</InputLabel>
-                    <Select value={themePreference} label="Theme" onChange={(e) => setThemePreference(e.target.value as ThemePreference)}>
-                        <MenuItem value="system">System</MenuItem>
-                        <MenuItem value="light">Light</MenuItem>
-                        <MenuItem value="dark">Dark</MenuItem>
-                    </Select>
-                    <FormHelperText>
-                        {themePreference === 'system'
-                            ? `Following your device setting (currently ${resolvedThemeMode}).`
-                            : 'Persisted on this device.'}
-                    </FormHelperText>
-                </FormControl>
-            </Paper>
+                    <FormControl fullWidth margin="normal">
+                        <InputLabel>Units</InputLabel>
+                        <Select value={unitPreference} label="Units" onChange={handleUnitPreferenceChange}>
+                            <MenuItem value="CM_KG">Metric (cm, kg)</MenuItem>
+                            <MenuItem value="FTIN_LB">Imperial (ft/in, lb)</MenuItem>
+                            <MenuItem value="CM_LB">Mixed (cm, lb)</MenuItem>
+                            <MenuItem value="FTIN_KG">Mixed (ft/in, kg)</MenuItem>
+                        </Select>
+                    </FormControl>
 
-            <Paper sx={{ p: 2 }}>
-                <Typography variant="h6" gutterBottom>
-                    Account
-                </Typography>
-                {accountMessage && (
-                    <Alert severity="error" sx={{ mb: 2 }}>
-                        {accountMessage}
-                    </Alert>
-                )}
-                <Button
-                    variant="outlined"
-                    color="error"
-                    startIcon={<LogoutIcon />}
-                    onClick={() => void handleLogout()}
-                    fullWidth
-                >
-                    Log out
-                </Button>
-            </Paper>
-        </Box>
+                    <Box sx={{ mt: 2 }}>
+                        <TimeZonePicker
+                            value={timezoneValue}
+                            onChange={(next) => void handleTimezoneChange(next)}
+                            helperText="Used to define your day boundaries for food and weight logs."
+                        />
+                    </Box>
+                </AppCard>
+
+                <AppCard>
+                    <SectionHeader title="Appearance" sx={{ mb: 1.5 }} />
+
+                    <FormControl fullWidth margin="normal">
+                        <InputLabel>Theme</InputLabel>
+                        <Select
+                            value={themePreference}
+                            label="Theme"
+                            onChange={(e) => setThemePreference(e.target.value as ThemePreference)}
+                        >
+                            <MenuItem value="system">System</MenuItem>
+                            <MenuItem value="light">Light</MenuItem>
+                            <MenuItem value="dark">Dark</MenuItem>
+                        </Select>
+                        <FormHelperText>
+                            {themePreference === 'system'
+                                ? `Following your device setting (currently ${resolvedThemeMode}).`
+                                : 'Persisted on this device.'}
+                        </FormHelperText>
+                    </FormControl>
+                </AppCard>
+
+                <AppCard>
+                    <SectionHeader title="Account" sx={{ mb: 1.5 }} />
+
+                    {accountMessage && (
+                        <Alert severity="error" sx={{ mb: 2 }}>
+                            {accountMessage}
+                        </Alert>
+                    )}
+
+                    <Button
+                        variant="outlined"
+                        color="error"
+                        startIcon={<LogoutIcon />}
+                        onClick={() => void handleLogout()}
+                        fullWidth
+                    >
+                        Log out
+                    </Button>
+                </AppCard>
+            </Stack>
+        </AppPage>
     );
 };
 

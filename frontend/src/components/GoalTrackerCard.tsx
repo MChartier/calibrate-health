@@ -1,10 +1,12 @@
 import React, { useMemo, useState } from 'react';
 import { Alert, Box, Button, Card, CardActionArea, CardContent, Dialog, DialogContent, DialogTitle, Skeleton, Stack, Typography } from '@mui/material';
+import { alpha, type Theme } from '@mui/material/styles';
 import { Link as RouterLink } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
 import { useAuth } from '../context/useAuth';
 import GoalEditor from './GoalEditor';
+import SectionHeader from '../ui/SectionHeader';
 import type { GoalMode } from '../utils/goalValidation';
 import {
     computeGoalProgress,
@@ -15,6 +17,18 @@ import {
 } from '../utils/goalTracking';
 
 const EM_DASH = '\u2014';
+
+type ModeAlpha = { light: number; dark: number };
+
+const PROGRESS_TRACK_ALPHA: ModeAlpha = { dark: 0.14, light: 0.08 };
+const MAINTENANCE_TOLERANCE_ALPHA: ModeAlpha = { dark: 0.28, light: 0.18 };
+
+/**
+ * Resolve a mode-specific alpha value so translucent surfaces stay consistent in light/dark mode.
+ */
+function resolveModeAlpha(theme: Theme, alphaByMode: ModeAlpha): number {
+    return theme.palette.mode === 'dark' ? alphaByMode.dark : alphaByMode.light;
+}
 
 type GoalResponse = {
     start_weight: number;
@@ -125,7 +139,8 @@ const GoalTrackerBody: React.FC<{
                                     sx={{
                                         height: 10,
                                         borderRadius: 999,
-                                        backgroundColor: (theme) => theme.palette.action.hover,
+                                        backgroundColor: (theme) =>
+                                            alpha(theme.palette.text.primary, resolveModeAlpha(theme, PROGRESS_TRACK_ALPHA)),
                                         overflow: 'hidden'
                                     }}
                                 />
@@ -138,8 +153,8 @@ const GoalTrackerBody: React.FC<{
                                         left: `${toleranceLeftPercent}%`,
                                         width: `${toleranceWidthPercent}%`,
                                         borderRadius: 999,
-                                        backgroundColor: (theme) => theme.palette.success.light,
-                                        opacity: 0.6
+                                        backgroundColor: (theme) =>
+                                            alpha(theme.palette.secondary.main, resolveModeAlpha(theme, MAINTENANCE_TOLERANCE_ALPHA))
                                     }}
                                     aria-label="On-target range"
                                 />
@@ -247,7 +262,8 @@ const GoalTrackerBody: React.FC<{
                             sx={{
                                 height: 10,
                                 borderRadius: 999,
-                                backgroundColor: (theme) => theme.palette.action.hover,
+                                backgroundColor: (theme) =>
+                                    alpha(theme.palette.text.primary, resolveModeAlpha(theme, PROGRESS_TRACK_ALPHA)),
                                 overflow: 'hidden'
                             }}
                         >
@@ -425,23 +441,17 @@ const GoalTrackerCard: React.FC<GoalTrackerCardProps> = ({ isDashboard = false }
 
     const content = (
         <CardContent>
-            <Box
-                sx={{
-                    display: 'flex',
-                    alignItems: 'baseline',
-                    justifyContent: 'space-between',
-                    gap: 2,
-                    flexWrap: 'wrap',
-                    mb: 1.5
-                }}
-            >
-                <Typography variant="h6">Goal tracker</Typography>
-                {!isDashboard && (
-                    <Button variant="outlined" size="small" onClick={handleOpenGoalEditor} disabled={isLoading}>
-                        {goalEditorCtaLabel}
-                    </Button>
-                )}
-            </Box>
+            <SectionHeader
+                title="Goal tracker"
+                actions={
+                    !isDashboard ? (
+                        <Button variant="outlined" size="small" onClick={handleOpenGoalEditor} disabled={isLoading}>
+                            {goalEditorCtaLabel}
+                        </Button>
+                    ) : null
+                }
+                sx={{ mb: 1.5 }}
+            />
             {cardBody}
         </CardContent>
     );

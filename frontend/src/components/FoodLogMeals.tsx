@@ -22,18 +22,16 @@ import {
     Tooltip,
     Typography
 } from '@mui/material';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import EggAltIcon from '@mui/icons-material/EggAlt';
-import BakeryDiningIcon from '@mui/icons-material/BakeryDining';
-import IcecreamIcon from '@mui/icons-material/Icecream';
-import LunchDiningIcon from '@mui/icons-material/LunchDining';
-import DinnerDiningIcon from '@mui/icons-material/DinnerDining';
-import NightlifeIcon from '@mui/icons-material/Nightlife';
-import EditIcon from '@mui/icons-material/Edit';
-import DeleteIcon from '@mui/icons-material/Delete';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMoreRounded';
+import EditIcon from '@mui/icons-material/EditRounded';
+import DeleteIcon from '@mui/icons-material/DeleteRounded';
+import { alpha, useTheme } from '@mui/material/styles';
 import axios from 'axios';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { MEAL_PERIOD_LABELS, MEAL_PERIOD_ORDER, type MealPeriod } from '../types/mealPeriod';
+import { getMealPeriodAccentColor } from '../utils/mealColors';
+import SectionHeader from '../ui/SectionHeader';
+import MealPeriodIcon from './MealPeriodIcon';
 
 type FoodLogEntry = {
     id: number | string;
@@ -42,22 +40,22 @@ type FoodLogEntry = {
     calories?: number;
 };
 
-const MEAL_ICONS: Record<MealPeriod, React.ReactNode> = {
-    BREAKFAST: <EggAltIcon htmlColor="#ff9800" />,
-    MORNING_SNACK: <BakeryDiningIcon htmlColor="#4caf50" />,
-    LUNCH: <LunchDiningIcon htmlColor="#3f51b5" />,
-    AFTERNOON_SNACK: <IcecreamIcon htmlColor="#8bc34a" />,
-    DINNER: <DinnerDiningIcon htmlColor="#9c27b0" />,
-    EVENING_SNACK: <NightlifeIcon htmlColor="#e91e63" />
-};
-
-const MEALS: Array<{ key: MealPeriod; label: string; icon: React.ReactNode }> = MEAL_PERIOD_ORDER.map((key) => ({
+const MEALS: Array<{ key: MealPeriod; label: string }> = MEAL_PERIOD_ORDER.map((key) => ({
     key,
-    label: MEAL_PERIOD_LABELS[key],
-    icon: MEAL_ICONS[key]
+    label: MEAL_PERIOD_LABELS[key]
 }));
 
 const MEAL_PERIOD_SET = new Set<MealPeriod>(MEAL_PERIOD_ORDER);
+
+/**
+ * Build a Record keyed by MealPeriod using the canonical MEAL_PERIOD_ORDER sequence.
+ */
+function createMealPeriodRecord<T>(createValue: (mealPeriod: MealPeriod) => T): Record<MealPeriod, T> {
+    return MEAL_PERIOD_ORDER.reduce((record, mealPeriod) => {
+        record[mealPeriod] = createValue(mealPeriod);
+        return record;
+    }, {} as Record<MealPeriod, T>);
+}
 
 /**
  * Return a validated meal period (or null) so the UI can safely group entries.
@@ -86,16 +84,11 @@ function parseCaloriesInput(value: string): number | null {
 
 const FoodLogMeals: React.FC<{ logs: FoodLogEntry[] }> = ({ logs }) => {
     const queryClient = useQueryClient();
+    const theme = useTheme();
+    const sectionGap = theme.custom.layout.page.sectionGap;
 
     const grouped = useMemo(() => {
-        const groups: Record<MealPeriod, FoodLogEntry[]> = {
-            BREAKFAST: [],
-            MORNING_SNACK: [],
-            LUNCH: [],
-            AFTERNOON_SNACK: [],
-            DINNER: [],
-            EVENING_SNACK: []
-        };
+        const groups = createMealPeriodRecord<FoodLogEntry[]>(() => []);
 
         for (const log of Array.isArray(logs) ? logs : []) {
             const meal = normalizeMealPeriod(log.meal_period);
@@ -106,26 +99,12 @@ const FoodLogMeals: React.FC<{ logs: FoodLogEntry[] }> = ({ logs }) => {
         return groups;
     }, [logs]);
 
-    const [expanded, setExpanded] = useState<Record<MealPeriod, boolean>>({
-        BREAKFAST: true,
-        MORNING_SNACK: true,
-        LUNCH: true,
-        AFTERNOON_SNACK: true,
-        DINNER: true,
-        EVENING_SNACK: true
-    });
+    const [expanded, setExpanded] = useState<Record<MealPeriod, boolean>>(() => createMealPeriodRecord(() => true));
 
     const previousCountsRef = useRef<Record<MealPeriod, number> | null>(null);
 
     useEffect(() => {
-        const counts: Record<MealPeriod, number> = {
-            BREAKFAST: grouped.BREAKFAST.length,
-            MORNING_SNACK: grouped.MORNING_SNACK.length,
-            LUNCH: grouped.LUNCH.length,
-            AFTERNOON_SNACK: grouped.AFTERNOON_SNACK.length,
-            DINNER: grouped.DINNER.length,
-            EVENING_SNACK: grouped.EVENING_SNACK.length
-        };
+        const counts = createMealPeriodRecord((mealPeriod) => grouped[mealPeriod].length);
 
         const previousCounts = previousCountsRef.current;
         previousCountsRef.current = counts;
@@ -147,25 +126,11 @@ const FoodLogMeals: React.FC<{ logs: FoodLogEntry[] }> = ({ logs }) => {
     }, [grouped]);
 
     const handleExpandAll = () => {
-        setExpanded({
-            BREAKFAST: true,
-            MORNING_SNACK: true,
-            LUNCH: true,
-            AFTERNOON_SNACK: true,
-            DINNER: true,
-            EVENING_SNACK: true
-        });
+        setExpanded(createMealPeriodRecord(() => true));
     };
 
     const handleCollapseAll = () => {
-        setExpanded({
-            BREAKFAST: false,
-            MORNING_SNACK: false,
-            LUNCH: false,
-            AFTERNOON_SNACK: false,
-            DINNER: false,
-            EVENING_SNACK: false
-        });
+        setExpanded(createMealPeriodRecord(() => false));
     };
 
     const [editEntry, setEditEntry] = useState<FoodLogEntry | null>(null);
@@ -262,26 +227,31 @@ const FoodLogMeals: React.FC<{ logs: FoodLogEntry[] }> = ({ logs }) => {
     };
 
     return (
-        <Stack spacing={2}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Typography variant="h6">Food Log</Typography>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Tooltip title="Collapse all">
-                        <IconButton size="small" onClick={handleCollapseAll}>
-                            <ExpandMoreIcon sx={{ transform: 'rotate(180deg)' }} />
-                        </IconButton>
-                    </Tooltip>
-                    <Tooltip title="Expand all">
-                        <IconButton size="small" onClick={handleExpandAll}>
-                            <ExpandMoreIcon />
-                        </IconButton>
-                    </Tooltip>
-                </Box>
-            </Box>
+        <Stack spacing={sectionGap} useFlexGap>
+            <SectionHeader
+                title="Food Log"
+                align="center"
+                actions={
+                    <>
+                        <Tooltip title="Collapse all">
+                            <IconButton size="small" onClick={handleCollapseAll}>
+                                <ExpandMoreIcon sx={{ transform: 'rotate(180deg)' }} />
+                            </IconButton>
+                        </Tooltip>
+                        <Tooltip title="Expand all">
+                            <IconButton size="small" onClick={handleExpandAll}>
+                                <ExpandMoreIcon />
+                            </IconButton>
+                        </Tooltip>
+                    </>
+                }
+            />
             {MEALS.map((meal) => {
                 const entries = grouped[meal.key];
                 const total = sumCalories(entries);
                 const isExpanded = expanded[meal.key];
+                const accentColor = getMealPeriodAccentColor(theme, meal.key);
+                const avatarBg = alpha(accentColor, theme.palette.mode === 'dark' ? 0.16 : 0.1);
 
                 return (
                     <Accordion
@@ -293,8 +263,16 @@ const FoodLogMeals: React.FC<{ logs: FoodLogEntry[] }> = ({ logs }) => {
                     >
                         <AccordionSummary expandIcon={<ExpandMoreIcon />}>
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexGrow: 1 }}>
-                                <Avatar sx={{ width: 28, height: 28, bgcolor: 'background.default' }} variant="rounded">
-                                    {meal.icon}
+                                <Avatar
+                                    sx={{
+                                        width: 28,
+                                        height: 28,
+                                        bgcolor: avatarBg,
+                                        border: (t) => `1px solid ${t.palette.divider}`
+                                    }}
+                                    variant="rounded"
+                                >
+                                    <MealPeriodIcon mealPeriod={meal.key} />
                                 </Avatar>
                                 <Typography sx={{ fontWeight: 'bold' }}>{meal.label}</Typography>
                             </Box>

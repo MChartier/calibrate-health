@@ -18,13 +18,14 @@ import {
     useMediaQuery
 } from '@mui/material';
 import { Outlet, Link as RouterLink, useLocation, useNavigate } from 'react-router-dom';
-import DashboardIcon from '@mui/icons-material/Dashboard';
-import ListAltIcon from '@mui/icons-material/ListAlt';
-import ShowChartIcon from '@mui/icons-material/ShowChart';
-import SettingsIcon from '@mui/icons-material/Settings';
-import LogoutIcon from '@mui/icons-material/Logout';
-import { useTheme } from '@mui/material/styles';
+import DashboardIcon from '@mui/icons-material/DashboardRounded';
+import ListAltIcon from '@mui/icons-material/ListAltRounded';
+import ShowChartIcon from '@mui/icons-material/ShowChartRounded';
+import SettingsIcon from '@mui/icons-material/SettingsRounded';
+import LogoutIcon from '@mui/icons-material/LogoutRounded';
+import { alpha, useTheme } from '@mui/material/styles';
 import { useAuth } from '../context/useAuth';
+import AppPage from '../ui/AppPage';
 
 const drawerWidth = 240;
 
@@ -129,7 +130,7 @@ const Layout: React.FC = () => {
     const navigationValue = getActiveNavigationValue(location.pathname);
 
     return (
-        <Box sx={{ display: 'flex' }}>
+        <Box sx={{ display: 'flex', minHeight: '100vh', width: '100%' }}>
             <AppBar position="fixed" sx={{ zIndex: (t) => t.zIndex.drawer + 1 }}>
                 <Toolbar>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -145,15 +146,16 @@ const Layout: React.FC = () => {
                             <Box
                                 component="span"
                                 sx={{
-                                    border: '1px solid rgba(255, 255, 255, 0.5)',
-                                    borderRadius: 1,
+                                    border: (t) => `1px solid ${alpha(t.palette.text.primary, t.palette.mode === 'dark' ? 0.22 : 0.18)}`,
+                                    borderRadius: 999,
                                     px: 1,
                                     py: 0.25,
                                     fontSize: '0.7rem',
-                                    fontWeight: 600,
+                                    fontWeight: 800,
                                     lineHeight: 1,
-                                    backgroundColor: 'rgba(255, 255, 255, 0.12)',
-                                    letterSpacing: '0.04em'
+                                    backgroundColor: (t) => alpha(t.palette.primary.main, t.palette.mode === 'dark' ? 0.18 : 0.12),
+                                    letterSpacing: '0.06em',
+                                    textTransform: 'uppercase'
                                 }}
                             >
                                 {worktreeBadgeLabel}
@@ -175,9 +177,9 @@ const Layout: React.FC = () => {
                                     sx={{
                                         width: 32,
                                         height: 32,
-                                        bgcolor: 'rgba(255, 255, 255, 0.2)',
-                                        color: 'inherit',
-                                        fontWeight: 700
+                                        bgcolor: (t) => alpha(t.palette.primary.main, t.palette.mode === 'dark' ? 0.18 : 0.12),
+                                        color: 'text.primary',
+                                        fontWeight: 900
                                     }}
                                 >
                                     {getAvatarLabel(user?.email)}
@@ -203,9 +205,9 @@ const Layout: React.FC = () => {
 
             <Box component="main" sx={{ flexGrow: 1, minWidth: 0 }}>
                 <Toolbar />
-                <Box sx={{ p: 3, pb: showBottomNav ? 'calc(80px + env(safe-area-inset-bottom))' : 3 }}>
+                <AppPage fullBleedOnXs={showBottomNav} reserveBottomNavSpace={showBottomNav}>
                     <Outlet />
-                </Box>
+                </AppPage>
             </Box>
 
             {showBottomNav && (

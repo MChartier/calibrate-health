@@ -9,18 +9,17 @@ import {
     DialogTitle,
     IconButton,
     LinearProgress,
-    Paper,
     TextField,
     Tooltip,
 } from '@mui/material';
 import SpeedDial from '@mui/material/SpeedDial';
 import SpeedDialAction from '@mui/material/SpeedDialAction';
-import AddIcon from '@mui/icons-material/Add';
-import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
-import ChevronRightIcon from '@mui/icons-material/ChevronRight';
-import TodayIcon from '@mui/icons-material/Today';
-import RestaurantIcon from '@mui/icons-material/Restaurant';
-import MonitorWeightIcon from '@mui/icons-material/MonitorWeight';
+import AddIcon from '@mui/icons-material/AddRounded';
+import ChevronLeftIcon from '@mui/icons-material/ChevronLeftRounded';
+import ChevronRightIcon from '@mui/icons-material/ChevronRightRounded';
+import TodayIcon from '@mui/icons-material/TodayRounded';
+import RestaurantIcon from '@mui/icons-material/RestaurantRounded';
+import MonitorWeightIcon from '@mui/icons-material/MonitorWeightRounded';
 import axios from 'axios';
 import WeightEntryForm from '../components/WeightEntryForm';
 import FoodEntryForm from '../components/FoodEntryForm';
@@ -31,6 +30,7 @@ import WeightSummaryCard from '../components/WeightSummaryCard';
 import { useAuth } from '../context/useAuth';
 import { addDaysToIsoDate, getTodayIsoDate } from '../utils/date';
 import type { MealPeriod } from '../types/mealPeriod';
+import AppCard from '../ui/AppCard';
 
 type FoodLogEntry = {
     id: number;
@@ -158,7 +158,7 @@ const Log: React.FC = () => {
                 <WeightSummaryCard date={effectiveDate} onOpenWeightEntry={() => setIsWeightDialogOpen(true)} />
             </Box>
 
-            <Paper sx={{ p: 2, mt: 2 }}>
+            <AppCard sx={{ mt: 2 }}>
                 {foodQuery.isError ? (
                     <Alert
                         severity="error"
@@ -176,7 +176,7 @@ const Log: React.FC = () => {
                         <FoodLogMeals logs={foodQuery.data ?? []} />
                     </>
                 )}
-            </Paper>
+            </AppCard>
 
             <SpeedDial
                 ariaLabel="Add entry"
@@ -200,7 +200,7 @@ const Log: React.FC = () => {
             <Dialog open={isFoodDialogOpen} onClose={handleCloseFoodDialog} fullWidth maxWidth="sm">
                 <DialogTitle>Track Food</DialogTitle>
                 <DialogContent>
-                    <Paper sx={{ p: 2, mt: 1 }}>
+                    <Box sx={{ mt: 1 }}>
                         <FoodEntryForm
                             date={effectiveDate}
                             onSuccess={() => {
@@ -208,7 +208,7 @@ const Log: React.FC = () => {
                                 handleCloseFoodDialog();
                             }}
                         />
-                    </Paper>
+                    </Box>
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={handleCloseFoodDialog}>Close</Button>
@@ -218,7 +218,7 @@ const Log: React.FC = () => {
             <Dialog open={isWeightDialogOpen} onClose={handleCloseWeightDialog} fullWidth maxWidth="sm">
                 <DialogTitle>Track Weight</DialogTitle>
                 <DialogContent>
-                    <Paper sx={{ p: 2, mt: 1 }}>
+                    <Box sx={{ mt: 1 }}>
                         <WeightEntryForm
                             date={effectiveDate}
                             onSuccess={() => {
@@ -228,7 +228,7 @@ const Log: React.FC = () => {
                                 handleCloseWeightDialog();
                             }}
                         />
-                    </Paper>
+                    </Box>
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={handleCloseWeightDialog}>Close</Button>

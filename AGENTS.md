@@ -60,3 +60,10 @@ cal-io is a responsive calorie tracker (desktop + mobile web) for users who want
 - Prisma is configured for Postgres (Prisma schema + migrations live under `backend/prisma/`).
 - Prisma migrations should use ordinal prefixes (e.g., `0001_init`, `0002_...`) for folder names. When running `prisma migrate dev`, pass an ordinal in the `--name` (it will still be timestamp-prefixed by Prisma; rename to the ordinal style before sharing if still local/unapplied).
 - Add concise documentation comments to new components and functions to capture intent, behavior, and rationale (avoid hand-wavy summaries; prefer clear “why/how” notes).
+
+## Code Review Preferences (UI / Frontend)
+- Avoid magic numbers for layout/styling (e.g., widths, opacities); prefer named constants, theme tokens, or wrapper presets.
+- Keep JSX readable: avoid long chained ternaries and heavy inline `sx` logic; assign to well-named variables or small documented helpers.
+- Deduplicate repeated UI mappings (e.g., enums -> icons/labels) into shared utilities/components when used in multiple places.
+- Keep abstractions lean: if a wrapper/prop/type isn't used, remove it rather than carrying extra API surface "just in case".
+- Keep `ui/` focused on generic primitives/wrappers; place feature-specific components under `components/` (or feature folders).

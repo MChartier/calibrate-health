@@ -1,7 +1,8 @@
 import React from 'react';
-import { Alert, Box, Button, CircularProgress, IconButton, Paper, Stack, Tooltip, Typography, Divider } from '@mui/material';
-import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+import { Alert, Box, Button, CircularProgress, Divider, IconButton, Stack, Tooltip, Typography } from '@mui/material';
+import InfoIcon from '@mui/icons-material/InfoRounded';
 import { useUserProfileQuery } from '../queries/userProfile';
+import AppCard from '../ui/AppCard';
 
 /**
  * CalorieTargetBanner
@@ -22,12 +23,12 @@ const CalorieTargetBanner: React.FC = () => {
 
     if (isLoading) {
         return (
-            <Paper sx={{ p: 2, mb: 2 }}>
+            <AppCard sx={{ mb: 2 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                     <CircularProgress size={20} />
                     <Typography>Loading targets…</Typography>
                 </Box>
-            </Paper>
+            </AppCard>
         );
     }
 
@@ -143,7 +144,7 @@ const CalorieTargetBanner: React.FC = () => {
     );
 
     return (
-        <Paper sx={{ p: 2, mb: 2 }}>
+        <AppCard sx={{ mb: 2 }}>
             <Stack spacing={0.5}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                     <Typography variant="h6">Daily Target</Typography>
@@ -151,22 +152,9 @@ const CalorieTargetBanner: React.FC = () => {
                         title={breakdownContent}
                         arrow
                         enterTouchDelay={0}
-                        slotProps={{
-                            tooltip: {
-                                sx: {
-                                    bgcolor: 'background.paper',
-                                    color: 'text.primary',
-                                    boxShadow: (theme) => theme.shadows[4],
-                                    border: (theme) => `1px solid ${theme.palette.divider}`
-                                }
-                            },
-                            arrow: {
-                                sx: { color: 'background.paper' }
-                            }
-                        }}
                     >
                         <IconButton size="small" aria-label="How is this calculated?">
-                            <InfoOutlinedIcon fontSize="small" />
+                            <InfoIcon fontSize="small" />
                         </IconButton>
                     </Tooltip>
                 </Box>
@@ -190,7 +178,7 @@ const CalorieTargetBanner: React.FC = () => {
                     </Typography>
                 )}
             </Stack>
-        </Paper>
+        </AppCard>
     );
 };
 

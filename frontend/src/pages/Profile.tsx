@@ -7,18 +7,20 @@ import {
     Link,
     InputLabel,
     MenuItem,
-    Paper,
     Select,
     Stack,
     TextField,
     Typography
 } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
 import { Link as RouterLink } from 'react-router-dom';
 import { activityLevelOptions } from '../constants/activityLevels';
 import TimeZonePicker from '../components/TimeZonePicker';
 import { useAuth } from '../context/useAuth';
+import AppPage from '../ui/AppPage';
+import AppCard from '../ui/AppCard';
 import { getDefaultHeightUnitForWeightUnit } from '../utils/unitPreferences';
 
 type ProfileResponse = {
@@ -68,7 +70,9 @@ function parseHeightFromMillimeters(mm: number): ParsedHeight {
  * Profile is the dedicated page for editing user-specific profile fields used for calorie math.
  */
 const Profile: React.FC = () => {
+    const theme = useTheme();
     const { user, updateProfile } = useAuth();
+    const sectionGap = theme.custom.layout.page.sectionGap;
     const [profileMessage, setProfileMessage] = useState('');
 
     const [timezone, setTimezone] = useState<string | null>(null);
@@ -172,91 +176,99 @@ const Profile: React.FC = () => {
     };
 
     return (
-        <Box sx={{ maxWidth: 720, mx: 'auto' }}>
-            <Typography color="text.secondary" sx={{ mb: 2 }}>
-                Edit the info used to estimate your daily calorie burn (TDEE) and calorie math inputs.
-            </Typography>
+        <AppPage maxWidth="content">
+            <Stack spacing={sectionGap} useFlexGap>
+                <Typography color="text.secondary">
+                    Edit the info used to estimate your daily calorie burn (TDEE) and calorie math inputs.
+                </Typography>
 
-            <Paper sx={{ p: 2 }}>
-                {profileMessage && <Alert severity="info" sx={{ mb: 2 }}>{profileMessage}</Alert>}
-
-                <Stack spacing={2}>
-                    <TimeZonePicker
-                        value={timezoneValue}
-                        onChange={(next) => setTimezone(next)}
-                        helperText="Used to define your day boundaries for food and weight logs."
-                    />
-
-                    <TextField
-                        label="Date of Birth"
-                        type="date"
-                        InputLabelProps={{ shrink: true }}
-                        value={dobValue}
-                        onChange={(e) => setDateOfBirth(e.target.value)}
-                        fullWidth
-                    />
-
-                    <FormControl fullWidth>
-                        <InputLabel>Sex</InputLabel>
-                        <Select value={sexValue} label="Sex" onChange={(e) => setSex(e.target.value)}>
-                            <MenuItem value="MALE">Male</MenuItem>
-                            <MenuItem value="FEMALE">Female</MenuItem>
-                        </Select>
-                    </FormControl>
-
-                    {heightUnit === 'CM' ? (
-                        <TextField
-                            label="Height (cm)"
-                            type="number"
-                            value={heightCmValue}
-                            onChange={(e) => setHeightCm(e.target.value)}
-                            inputProps={{ min: 50, max: 272, step: 0.1 }}
-                            fullWidth
-                        />
-                    ) : (
-                        <Box sx={{ display: 'flex', gap: 2 }}>
-                            <TextField
-                                label="Feet"
-                                type="number"
-                                value={heightFeetValue}
-                                onChange={(e) => setHeightFeet(e.target.value)}
-                                inputProps={{ min: 1, max: 8, step: 1 }}
-                                fullWidth
-                            />
-                            <TextField
-                                label="Inches"
-                                type="number"
-                                value={heightInchesValue}
-                                onChange={(e) => setHeightInches(e.target.value)}
-                                inputProps={{ min: 0, max: 11.9, step: 0.1 }}
-                                fullWidth
-                            />
-                        </Box>
+                <AppCard>
+                    {profileMessage && (
+                        <Alert severity="info" sx={{ mb: 2 }}>
+                            {profileMessage}
+                        </Alert>
                     )}
 
-                    <Typography variant="caption" color="text.secondary">
-                        Units are configured in{' '}
-                        <Link component={RouterLink} to="/settings">
-                            Settings
-                        </Link>
-                        .
-                    </Typography>
+                    <Stack spacing={2}>
+                        <TimeZonePicker
+                            value={timezoneValue}
+                            onChange={(next) => setTimezone(next)}
+                            helperText="Used to define your day boundaries for food and weight logs."
+                        />
 
-                    <FormControl fullWidth>
-                        <InputLabel>Activity Level</InputLabel>
-                        <Select value={activityValue} label="Activity Level" onChange={(e) => setActivityLevel(e.target.value)}>
-                            {activityLevelOptions.map((option) => (
-                                <MenuItem key={option.value} value={option.value}>{option.label}</MenuItem>
-                            ))}
-                        </Select>
-                    </FormControl>
+                        <TextField
+                            label="Date of Birth"
+                            type="date"
+                            InputLabelProps={{ shrink: true }}
+                            value={dobValue}
+                            onChange={(e) => setDateOfBirth(e.target.value)}
+                            fullWidth
+                        />
 
-                    <Button variant="contained" onClick={() => void handleProfileSave()} disabled={profileQuery.isLoading}>
-                        Save Profile
-                    </Button>
-                </Stack>
-            </Paper>
-        </Box>
+                        <FormControl fullWidth>
+                            <InputLabel>Sex</InputLabel>
+                            <Select value={sexValue} label="Sex" onChange={(e) => setSex(e.target.value)}>
+                                <MenuItem value="MALE">Male</MenuItem>
+                                <MenuItem value="FEMALE">Female</MenuItem>
+                            </Select>
+                        </FormControl>
+
+                        {heightUnit === 'CM' ? (
+                            <TextField
+                                label="Height (cm)"
+                                type="number"
+                                value={heightCmValue}
+                                onChange={(e) => setHeightCm(e.target.value)}
+                                inputProps={{ min: 50, max: 272, step: 0.1 }}
+                                fullWidth
+                            />
+                        ) : (
+                            <Box sx={{ display: 'flex', gap: 2 }}>
+                                <TextField
+                                    label="Feet"
+                                    type="number"
+                                    value={heightFeetValue}
+                                    onChange={(e) => setHeightFeet(e.target.value)}
+                                    inputProps={{ min: 1, max: 8, step: 1 }}
+                                    fullWidth
+                                />
+                                <TextField
+                                    label="Inches"
+                                    type="number"
+                                    value={heightInchesValue}
+                                    onChange={(e) => setHeightInches(e.target.value)}
+                                    inputProps={{ min: 0, max: 11.9, step: 0.1 }}
+                                    fullWidth
+                                />
+                            </Box>
+                        )}
+
+                        <Typography variant="caption" color="text.secondary">
+                            Units are configured in{' '}
+                            <Link component={RouterLink} to="/settings">
+                                Settings
+                            </Link>
+                            .
+                        </Typography>
+
+                        <FormControl fullWidth>
+                            <InputLabel>Activity Level</InputLabel>
+                            <Select value={activityValue} label="Activity Level" onChange={(e) => setActivityLevel(e.target.value)}>
+                                {activityLevelOptions.map((option) => (
+                                    <MenuItem key={option.value} value={option.value}>
+                                        {option.label}
+                                    </MenuItem>
+                                ))}
+                            </Select>
+                        </FormControl>
+
+                        <Button variant="contained" onClick={() => void handleProfileSave()} disabled={profileQuery.isLoading}>
+                            Save Profile
+                        </Button>
+                    </Stack>
+                </AppCard>
+            </Stack>
+        </AppPage>
     );
 };
 
