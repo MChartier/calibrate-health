@@ -20,7 +20,8 @@
     "worktree:reset": "node scripts/worktree-reset.mjs",
     "build": "npm --prefix frontend run build",
     "lint": "npm --prefix frontend run lint",
-    "test": "npm --prefix backend test"
+    "test": "npm --prefix backend test",
+    "test:coverage": "npm --prefix backend run test:coverage"
   },
   "keywords": [],
   "author": "",

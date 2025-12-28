@@ -59,7 +59,8 @@ The frontend is configured as a Progressive Web App (PWA), so it can be installe
 
 ### Tests
 
-- `npm test`: currently a placeholder (no automated tests wired up yet).
+- `npm test`: runs backend unit tests (Node.js test runner).
+- `npm run test:coverage`: runs tests + prints a coverage summary (line + branch coverage) and writes an HTML report to `backend/coverage/index.html`.
 
 ## Docker compose (optional)
 
