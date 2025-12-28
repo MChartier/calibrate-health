@@ -5,6 +5,7 @@ import { isHeightUnit, isWeightUnit } from '../utils/units';
 import { ActivityLevel, HeightUnit, Sex, WeightUnit } from '@prisma/client';
 import { buildCalorieSummary, isActivityLevel, isSex } from '../utils/profile';
 import { isValidIanaTimeZone } from '../utils/date';
+import { resolveHeightMmUpdate } from '../utils/height';
 import { MAX_PROFILE_IMAGE_BYTES, parseBase64DataUrl } from '../utils/profileImage';
 import { serializeUserForClient, USER_CLIENT_SELECT } from '../utils/userSerialization';
 
@@ -300,32 +301,7 @@ router.patch('/profile', async (req, res) => {
     }
   }
 
-  const resolveHeightMm = (): { provided: boolean; value: number | null; valid: boolean } => {
-    if (height_mm !== undefined) {
-      if (height_mm === null || height_mm === '') return { provided: true, value: null, valid: true };
-      const parsed = Number(height_mm);
-      if (!Number.isFinite(parsed) || parsed <= 0) return { provided: true, value: null, valid: false };
-      return { provided: true, value: Math.round(parsed), valid: true };
-    }
-    if (height_cm !== undefined) {
-      if (height_cm === null || height_cm === '') return { provided: true, value: null, valid: true };
-      const parsed = Number(height_cm);
-      if (!Number.isFinite(parsed) || parsed <= 0) return { provided: true, value: null, valid: false };
-      return { provided: true, value: Math.round(parsed * 10), valid: true };
-    }
-    if (height_feet !== undefined || height_inches !== undefined) {
-      const feetNum = height_feet === undefined || height_feet === '' ? 0 : Number(height_feet);
-      const inchesNum = height_inches === undefined || height_inches === '' ? 0 : Number(height_inches);
-      if (!Number.isFinite(feetNum) || !Number.isFinite(inchesNum)) return { provided: true, value: null, valid: false };
-      const totalInches = feetNum * 12 + inchesNum;
-      if (totalInches <= 0) return { provided: true, value: null, valid: false };
-      const mm = totalInches * 25.4;
-      return { provided: true, value: Math.round(mm), valid: true };
-    }
-    return { provided: false, value: null, valid: true };
-  };
-
-  const resolvedHeight = resolveHeightMm();
+  const resolvedHeight = resolveHeightMmUpdate({ height_mm, height_cm, height_feet, height_inches });
   if (resolvedHeight.provided) {
     if (!resolvedHeight.valid) {
       return res.status(400).json({ message: 'Invalid height' });

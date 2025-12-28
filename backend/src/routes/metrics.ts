@@ -7,6 +7,7 @@ import {
     type WeightUnit
 } from '../utils/units';
 import { getUtcTodayDateOnlyInTimeZone, normalizeToUtcDateOnly } from '../utils/date';
+import { parsePositiveInteger } from '../utils/requestParsing';
 
 const router = express.Router();
 
@@ -18,17 +19,6 @@ const isAuthenticated = (req: express.Request, res: express.Response, next: expr
 };
 
 router.use(isAuthenticated);
-
-/**
- * Parse an integer ID from a route param.
- */
-function parseIdParam(value: unknown): number | null {
-    const numeric = typeof value === 'number' ? value : typeof value === 'string' ? Number(value) : Number.NaN;
-    if (!Number.isFinite(numeric) || !Number.isInteger(numeric) || numeric <= 0) {
-        return null;
-    }
-    return numeric;
-}
 
 router.get('/', async (req, res) => {
     const user = req.user as any;
@@ -143,7 +133,7 @@ router.post('/', async (req, res) => {
 
 router.delete('/:id', async (req, res) => {
     const user = req.user as any;
-    const id = parseIdParam(req.params.id);
+    const id = parsePositiveInteger(req.params.id);
     if (id === null) {
         return res.status(400).json({ message: 'Invalid metric id' });
     }

@@ -24,8 +24,12 @@ export const isActivityLevel = (value: unknown): value is ActivityLevel =>
     value === 'ACTIVE' ||
     value === 'VERY_ACTIVE';
 
-export const calculateAge = (dateOfBirth: Date): number => {
-    const now = new Date();
+/**
+ * Calculate age in whole years using calendar math (year/month/day comparisons).
+ *
+ * Accepts an optional `now` value so callers/tests can keep behavior deterministic.
+ */
+export const calculateAge = (dateOfBirth: Date, now: Date = new Date()): number => {
     let age = now.getFullYear() - dateOfBirth.getFullYear();
     const monthDiff = now.getMonth() - dateOfBirth.getMonth();
     const dayDiff = now.getDate() - dateOfBirth.getDate();
@@ -57,6 +61,7 @@ export const buildCalorieSummary = (opts: {
     weight_grams?: number | null;
     profile: ProfileInput;
     daily_deficit?: number | null;
+    now?: Date;
 }): CalorieSummary => {
     const missing: string[] = [];
     const { weight_grams, profile, daily_deficit } = opts;
@@ -72,7 +77,8 @@ export const buildCalorieSummary = (opts: {
         return { missing };
     }
 
-    const age = calculateAge(date_of_birth!);
+    const now = opts.now ?? new Date();
+    const age = calculateAge(date_of_birth!, now);
     const weightKg = gramsToKg(weight_grams!);
     const bmr = calculateBmr(sex!, weightKg, height_mm! / 10, age);
     const tdee = Math.round(bmr * activityMultiplier(activity_level!) * 10) / 10;

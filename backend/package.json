@@ -9,7 +9,10 @@
     "db:seed": "ts-node prisma/seed.ts",
     "db:studio": "prisma studio",
     "prisma:generate": "prisma generate",
+    "pretest": "npm run prisma:generate",
     "test": "node -r ts-node/register --test",
+    "pretest:coverage": "npm run prisma:generate",
+    "test:coverage": "c8 node -r ts-node/register --test",
     "dev": "nodemon --watch src --ext ts,json --exec ts-node src/index.ts"
   },
   "keywords": [],
@@ -37,9 +40,29 @@
     "@types/passport": "^1.0.17",
     "@types/passport-local": "^1.0.38",
     "@types/pg": "^8.15.4",
+    "c8": "^10.1.3",
     "nodemon": "^3.1.11",
     "prisma": "^7.1.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3"
+  },
+  "c8": {
+    "all": true,
+    "reporter": [
+      "text-summary",
+      "html"
+    ],
+    "reports-dir": "coverage",
+    "src": [
+      "src",
+      "../shared"
+    ],
+    "include": [
+      "**/*.ts"
+    ],
+    "extension": [
+      ".ts"
+    ],
+    "exclude-after-remap": true
   }
 }

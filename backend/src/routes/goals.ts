@@ -2,6 +2,7 @@ import express from 'express';
 import prisma from '../config/database';
 import { parseDailyDeficit } from '../utils/goalDeficit';
 import { gramsToWeight, parseWeightToGrams, type WeightUnit } from '../utils/units';
+import { validateGoalWeightsForDailyDeficit } from '../utils/goalValidation';
 
 const router = express.Router();
 
@@ -11,32 +12,6 @@ const isAuthenticated = (req: express.Request, res: express.Response, next: expr
     }
     res.status(401).json({ message: 'Not authenticated' });
 };
-
-/**
- * Ensure the goal definition is coherent for gain/lose modes.
- *
- * We infer goal type from dailyDeficit:
- * - dailyDeficit > 0 => target must be lower than start (weight loss)
- * - dailyDeficit < 0 => target must be higher than start (weight gain)
- * - dailyDeficit === 0 => no ordering constraint (maintenance)
- */
-function validateGoalWeightsForDailyDeficit(opts: {
-    dailyDeficit: number;
-    startWeightGrams: number;
-    targetWeightGrams: number;
-}): string | null {
-    const { dailyDeficit, startWeightGrams, targetWeightGrams } = opts;
-
-    if (dailyDeficit > 0 && startWeightGrams <= targetWeightGrams) {
-        return 'For a weight loss goal, target weight must be less than start weight.';
-    }
-
-    if (dailyDeficit < 0 && startWeightGrams >= targetWeightGrams) {
-        return 'For a weight gain goal, target weight must be greater than start weight.';
-    }
-
-    return null;
-}
 
 router.use(isAuthenticated);
 

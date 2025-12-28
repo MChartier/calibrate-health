@@ -4,5 +4,7 @@ dist
 backend/.env
 .DS_Store
 coverage
+.nyc_output
+.c8_output
 .devcontainer/.env
 .vscode/settings.json
