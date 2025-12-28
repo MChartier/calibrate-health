@@ -31,6 +31,26 @@ export function formatDateToLocalDateString(date: Date, timeZone: string): strin
 }
 
 /**
+ * Parse an ISO date-only string (`YYYY-MM-DD`) into numeric parts.
+ *
+ * Returns null for invalid inputs. We treat the input as a calendar date (not a moment in time),
+ * so the parsing intentionally ignores timezone semantics.
+ */
+function parseIsoDateParts(dateIso: string): { year: number; month: number; day: number } | null {
+    const datePart = dateIso.split('T')[0] ?? '';
+    const [yearString, monthString, dayString] = datePart.split('-');
+    const year = Number(yearString);
+    const month = Number(monthString);
+    const day = Number(dayString);
+
+    if (!Number.isInteger(year) || !Number.isInteger(month) || !Number.isInteger(day)) {
+        return null;
+    }
+
+    return { year, month, day };
+}
+
+/**
  * Return today's local date in `YYYY-MM-DD` format using the provided time zone.
  *
  * When no time zone is supplied, the browser's current zone is used with a UTC fallback.
@@ -69,4 +89,74 @@ export function clampIsoDate(dateIso: string, bounds: { min: string; max: string
     if (dateIso < bounds.min) return bounds.min;
     if (dateIso > bounds.max) return bounds.max;
     return dateIso;
+}
+
+/**
+ * Format an ISO date-only string (`YYYY-MM-DD`) into a user-friendly label like
+ * "Saturday, December 27, 2025".
+ *
+ * We treat the input as a plain calendar date (not a moment in time) and format it in UTC
+ * to avoid off-by-one day issues when the browser's local timezone differs from the user's log timezone.
+ */
+export function formatIsoDateForDisplay(dateIso: string): string {
+    const parts = parseIsoDateParts(dateIso);
+    if (!parts) return dateIso;
+
+    const date = new Date(Date.UTC(parts.year, parts.month - 1, parts.day));
+    if (Number.isNaN(date.getTime())) return dateIso;
+
+    return new Intl.DateTimeFormat(undefined, {
+        timeZone: 'UTC',
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+    }).format(date);
+}
+
+/**
+ * Returns true when the provided date is US Thanksgiving (fourth Thursday in November).
+ */
+function isUsThanksgivingDate(parts: { year: number; month: number; day: number }): boolean {
+    if (parts.month !== 11) return false;
+
+    // Find the first Thursday in November, then add 3 weeks.
+    const nov1 = new Date(Date.UTC(parts.year, 10, 1));
+    const nov1Weekday = nov1.getUTCDay(); // 0=Sun ... 4=Thu
+    const thursdayIndex = 4;
+    const firstThursday = 1 + ((thursdayIndex - nov1Weekday + 7) % 7);
+    const thanksgivingDay = firstThursday + 21;
+
+    return parts.day === thanksgivingDay;
+}
+
+/**
+ * Return an optional holiday emoji to decorate a given local-date string (`YYYY-MM-DD`).
+ *
+ * The input is treated as a pure calendar date (not a moment in time), so we match on month/day
+ * without doing any timezone conversions.
+ */
+export function getHolidayEmojiForIsoDate(dateIso: string): string | null {
+    const parts = parseIsoDateParts(dateIso);
+    if (!parts) return null;
+
+    // Christmas Day.
+    if (parts.month === 12 && parts.day === 25) return '\u{1F384}';
+
+    // Halloween.
+    if (parts.month === 10 && parts.day === 31) return '\u{1F383}';
+
+    // Valentine's Day.
+    if (parts.month === 2 && parts.day === 14) return '\u2764\uFE0F';
+
+    // New Year's Eve.
+    if (parts.month === 12 && parts.day === 31) return '\u{1F386}';
+
+    // New Year's Day.
+    if (parts.month === 1 && parts.day === 1) return '\u{1F389}';
+
+    // Thanksgiving (US - fourth Thursday in November).
+    if (isUsThanksgivingDate(parts)) return '\u{1F983}';
+
+    return null;
 }
