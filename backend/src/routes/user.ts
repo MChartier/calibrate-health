@@ -1,12 +1,57 @@
 import express from 'express';
 import prisma from '../config/database';
+import bcrypt from 'bcryptjs';
 import { isHeightUnit, isWeightUnit } from '../utils/units';
 import { ActivityLevel, HeightUnit, Sex, WeightUnit } from '@prisma/client';
 import { buildCalorieSummary, isActivityLevel, isSex } from '../utils/profile';
 import { isValidIanaTimeZone } from '../utils/date';
 import { resolveHeightMmUpdate } from '../utils/height';
+import { MAX_PROFILE_IMAGE_BYTES, parseBase64DataUrl } from '../utils/profileImage';
+import { serializeUserForClient, USER_CLIENT_SELECT } from '../utils/userSerialization';
 
 const router = express.Router();
+
+const MIN_PASSWORD_LENGTH = 8;
+// bcrypt truncates long passwords; keep a conservative cap to avoid surprises.
+const MAX_PASSWORD_LENGTH = 72;
+
+type PasswordChangeParseResult =
+  | { ok: true; currentPassword: string; newPassword: string }
+  | { ok: false; message: string };
+
+/**
+ * Validate and normalize the password change request payload.
+ *
+ * This performs lightweight shape/length checks; the current password is verified
+ * against the stored hash in the route handler.
+ */
+const parsePasswordChangePayload = (body: unknown): PasswordChangeParseResult => {
+  if (!body || typeof body !== 'object') {
+    return { ok: false, message: 'Invalid request body' };
+  }
+
+  const record = body as Record<string, unknown>;
+  const currentPassword = record.current_password;
+  const newPassword = record.new_password;
+
+  if (typeof currentPassword !== 'string' || currentPassword.length === 0) {
+    return { ok: false, message: 'Current password is required' };
+  }
+
+  if (typeof newPassword !== 'string' || newPassword.length === 0) {
+    return { ok: false, message: 'New password is required' };
+  }
+
+  if (newPassword.length < MIN_PASSWORD_LENGTH) {
+    return { ok: false, message: `New password must be at least ${MIN_PASSWORD_LENGTH} characters` };
+  }
+
+  if (newPassword.length > MAX_PASSWORD_LENGTH) {
+    return { ok: false, message: `New password must be at most ${MAX_PASSWORD_LENGTH} characters` };
+  }
+
+  return { ok: true, currentPassword, newPassword };
+};
 
 const isAuthenticated = (
   req: express.Request,
@@ -21,21 +66,107 @@ const isAuthenticated = (
 
 router.use(isAuthenticated);
 
-router.get('/me', (req, res) => {
+router.get('/me', async (req, res) => {
   const user = req.user as any;
-  res.json({
-    user: {
-      id: user.id,
-      email: user.email,
-      weight_unit: user.weight_unit,
-      height_unit: user.height_unit,
-      timezone: user.timezone,
-      date_of_birth: user.date_of_birth,
-      sex: user.sex,
-      height_mm: user.height_mm,
-      activity_level: user.activity_level
+  try {
+    const dbUser = await prisma.user.findUnique({ where: { id: user.id }, select: USER_CLIENT_SELECT });
+    if (!dbUser) {
+      return res.status(404).json({ message: 'User not found' });
     }
-  });
+
+    res.json({ user: serializeUserForClient(dbUser) });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+router.put('/profile-image', async (req, res) => {
+  const user = req.user as any;
+  const dataUrl = (req.body as { data_url?: unknown } | undefined)?.data_url;
+
+  if (typeof dataUrl !== 'string' || dataUrl.trim().length === 0) {
+    return res.status(400).json({ message: 'Missing data_url' });
+  }
+
+  const parsed = parseBase64DataUrl(dataUrl);
+  if (!parsed) {
+    return res.status(400).json({ message: 'Invalid profile image payload' });
+  }
+
+  if (parsed.bytes.byteLength > MAX_PROFILE_IMAGE_BYTES) {
+    return res.status(413).json({ message: 'Profile image is too large' });
+  }
+
+  try {
+    const updatedUser = await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        profile_image: parsed.bytes,
+        profile_image_mime_type: parsed.mimeType
+      },
+      select: USER_CLIENT_SELECT
+    });
+
+    res.json({ user: serializeUserForClient(updatedUser) });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+router.delete('/profile-image', async (req, res) => {
+  const user = req.user as any;
+
+  try {
+    const updatedUser = await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        profile_image: null,
+        profile_image_mime_type: null
+      },
+      select: USER_CLIENT_SELECT
+    });
+
+    res.json({ user: serializeUserForClient(updatedUser) });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+router.patch('/password', async (req, res) => {
+  const user = req.user as any;
+  const parsed = parsePasswordChangePayload(req.body);
+  if (!parsed.ok) {
+    return res.status(400).json({ message: parsed.message });
+  }
+
+  if (parsed.currentPassword === parsed.newPassword) {
+    return res.status(400).json({ message: 'New password must be different from current password' });
+  }
+
+  try {
+    const dbUser = await prisma.user.findUnique({
+      where: { id: user.id },
+      select: { id: true, password_hash: true }
+    });
+    if (!dbUser) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const isMatch = await bcrypt.compare(parsed.currentPassword, dbUser.password_hash);
+    if (!isMatch) {
+      return res.status(400).json({ message: 'Current password is incorrect' });
+    }
+
+    const password_hash = await bcrypt.hash(parsed.newPassword, 10);
+    await prisma.user.update({
+      where: { id: dbUser.id },
+      data: { password_hash }
+    });
+
+    res.json({ message: 'Password updated' });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
 });
 
 router.patch('/preferences', async (req, res) => {
@@ -66,20 +197,11 @@ router.patch('/preferences', async (req, res) => {
     const updatedUser = await prisma.user.update({
       where: { id: user.id },
       data: updateData,
+      select: USER_CLIENT_SELECT
     });
 
     res.json({
-      user: {
-        id: updatedUser.id,
-        email: updatedUser.email,
-        weight_unit: updatedUser.weight_unit,
-        height_unit: updatedUser.height_unit,
-        timezone: updatedUser.timezone,
-        date_of_birth: updatedUser.date_of_birth,
-        sex: updatedUser.sex,
-        height_mm: updatedUser.height_mm,
-        activity_level: updatedUser.activity_level
-      },
+      user: serializeUserForClient(updatedUser)
     });
   } catch (err) {
     res.status(500).json({ message: 'Server error' });
@@ -158,11 +280,15 @@ router.patch('/profile', async (req, res) => {
   }
 
   if (date_of_birth !== undefined) {
-    const parsedDate = new Date(date_of_birth);
-    if (Number.isNaN(parsedDate.getTime())) {
-      return res.status(400).json({ message: 'Invalid date_of_birth' });
+    if (date_of_birth === null || date_of_birth === '') {
+      updateData.date_of_birth = null;
+    } else {
+      const parsedDate = new Date(date_of_birth);
+      if (Number.isNaN(parsedDate.getTime())) {
+        return res.status(400).json({ message: 'Invalid date_of_birth' });
+      }
+      updateData.date_of_birth = parsedDate;
     }
-    updateData.date_of_birth = parsedDate;
   }
 
   if (sex !== undefined) {
@@ -200,21 +326,12 @@ router.patch('/profile', async (req, res) => {
   try {
     const updatedUser = await prisma.user.update({
       where: { id: user.id },
-      data: updateData
+      data: updateData,
+      select: USER_CLIENT_SELECT
     });
 
     res.json({
-      user: {
-        id: updatedUser.id,
-        email: updatedUser.email,
-        weight_unit: updatedUser.weight_unit,
-        height_unit: updatedUser.height_unit,
-        timezone: updatedUser.timezone,
-        date_of_birth: updatedUser.date_of_birth,
-        sex: updatedUser.sex,
-        height_mm: updatedUser.height_mm,
-        activity_level: updatedUser.activity_level
-      }
+      user: serializeUserForClient(updatedUser)
     });
   } catch (err) {
     res.status(500).json({ message: 'Server error' });

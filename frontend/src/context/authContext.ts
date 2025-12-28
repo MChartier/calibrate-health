@@ -13,6 +13,8 @@ export type User = {
     sex?: 'MALE' | 'FEMALE' | null;
     height_mm?: number | null;
     activity_level?: 'SEDENTARY' | 'LIGHT' | 'MODERATE' | 'ACTIVE' | 'VERY_ACTIVE' | null;
+    /** Optional inline avatar payload returned by the API (data URL). */
+    profile_image_url?: string | null;
 };
 
 export type UserProfilePatchPayload = {
@@ -31,10 +33,13 @@ export type AuthContextType = {
     login: (email: string, password: string) => Promise<void>;
     register: (email: string, password: string) => Promise<void>;
     logout: () => Promise<void>;
+    /** Update the authenticated user's password (current password required). */
+    changePassword: (currentPassword: string, newPassword: string) => Promise<void>;
     updateUnitPreferences: (preferences: { weight_unit?: WeightUnit; height_unit?: HeightUnit }) => Promise<void>;
     updateWeightUnit: (weight_unit: WeightUnit) => Promise<void>;
     updateHeightUnit: (height_unit: HeightUnit) => Promise<void>;
     updateProfile: (profile: UserProfilePatchPayload) => Promise<void>;
+    updateProfileImage: (dataUrl: string | null) => Promise<void>;
     updateTimezone: (timezone: string) => Promise<void>;
     isLoading: boolean;
 };

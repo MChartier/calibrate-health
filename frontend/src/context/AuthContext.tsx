@@ -71,6 +71,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     /**
+     * Change the authenticated user's password (server validates the current password).
+     */
+    const changePassword = async (currentPassword: string, newPassword: string) => {
+        await axios.patch('/api/user/password', {
+            current_password: currentPassword,
+            new_password: newPassword
+        });
+    };
+
+    /**
      * Patch user preferences (units) and keep the auth context in sync.
      */
     const updateUnitPreferences = async (preferences: { weight_unit?: WeightUnit; height_unit?: HeightUnit }) => {
@@ -111,6 +121,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     /**
+     * Set (or clear) the authenticated user's processed profile photo.
+     */
+    const updateProfileImage = async (dataUrl: string | null) => {
+        const res = dataUrl
+            ? await axios.put('/api/user/profile-image', { data_url: dataUrl })
+            : await axios.delete('/api/user/profile-image');
+        setUser(res.data.user);
+    };
+
+    /**
      * Update the user's preferred IANA time zone identifier for date grouping and "today" calculations.
      */
     const updateTimezone = async (timezone: string) => {
@@ -124,10 +144,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 login,
                 register,
                 logout,
+                changePassword,
                 updateUnitPreferences,
                 updateWeightUnit,
                 updateHeightUnit,
                 updateProfile,
+                updateProfileImage,
                 updateTimezone,
                 isLoading
             }}
