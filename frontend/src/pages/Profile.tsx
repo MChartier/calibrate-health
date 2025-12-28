@@ -20,11 +20,13 @@ import { useTheme } from '@mui/material/styles';
 import { Link as RouterLink } from 'react-router-dom';
 import CalorieTargetBanner from '../components/CalorieTargetBanner';
 import { activityLevelOptions } from '../constants/activityLevels';
+import { useTransientStatus } from '../hooks/useTransientStatus';
 import type { UserProfilePatchPayload } from '../context/authContext';
 import { useAuth } from '../context/useAuth';
 import { useUserProfileQuery } from '../queries/userProfile';
 import AppPage from '../ui/AppPage';
 import AppCard from '../ui/AppCard';
+import InlineStatusLine from '../ui/InlineStatusLine';
 import SectionHeader from '../ui/SectionHeader';
 import { getApiErrorMessage } from '../utils/apiError';
 import { getDefaultHeightUnitForWeightUnit } from '../utils/unitPreferences';
@@ -85,7 +87,7 @@ const Profile: React.FC = () => {
     const theme = useTheme();
     const { user, updateProfile, changePassword } = useAuth();
     const sectionGap = theme.custom.layout.page.sectionGap;
-    const [accountSuccess, setAccountSuccess] = useState('');
+    const { status: accountStatus, showStatus: showAccountStatus, clearStatus: clearAccountStatus } = useTransientStatus();
     const [passwordError, setPasswordError] = useState('');
     const [isChangingPassword, setIsChangingPassword] = useState(false);
     const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
@@ -169,6 +171,13 @@ const Profile: React.FC = () => {
         return value ?? '';
     }, [activityLevel, profileQuery.data?.profile.activity_level]);
 
+    const autosaveStatusLine = useMemo(() => {
+        if (autosaveError) return { text: autosaveError, tone: 'error' as const };
+        if (autosaveStatus === 'saving') return { text: 'Saving...', tone: 'neutral' as const };
+        if (autosaveStatus === 'saved') return { text: 'Saved', tone: 'success' as const };
+        return null;
+    }, [autosaveError, autosaveStatus]);
+
     /**
      * Flush any queued changes to the backend.
      *
@@ -241,7 +250,7 @@ const Profile: React.FC = () => {
      * Open the change-password dialog and clear any prior error state.
      */
     const handlePasswordDialogOpen = () => {
-        setAccountSuccess('');
+        clearAccountStatus();
         resetPasswordDialogFields();
         setIsPasswordDialogOpen(true);
     };
@@ -276,7 +285,7 @@ const Profile: React.FC = () => {
      * Change the current user's password after validating basic client-side constraints.
      */
     const handlePasswordChange = async () => {
-        setAccountSuccess('');
+        clearAccountStatus();
         setPasswordError('');
 
         if (!currentPassword) {
@@ -302,7 +311,7 @@ const Profile: React.FC = () => {
         setIsChangingPassword(true);
         try {
             await changePassword(currentPassword, newPassword);
-            setAccountSuccess('Password updated.');
+            showAccountStatus('Password updated.', 'success');
             closePasswordDialog();
         } catch (err) {
             setPasswordError(getApiErrorMessage(err) ?? 'Failed to update password.');
@@ -329,25 +338,7 @@ const Profile: React.FC = () => {
                 </Typography>
 
                 <AppCard>
-                    {autosaveError && (
-                        <Alert severity="error" sx={{ mb: 2 }}>
-                            {autosaveError}
-                        </Alert>
-                    )}
-
-                    {autosaveStatus === 'saving' && !autosaveError && (
-                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
-                            Saving…
-                        </Typography>
-                    )}
-                    {autosaveStatus === 'saved' && !autosaveError && (
-                        <Typography
-                            variant="caption"
-                            sx={{ display: 'block', mb: 1, color: (theme) => theme.palette.success.main }}
-                        >
-                            Saved
-                        </Typography>
-                    )}
+                    <InlineStatusLine status={autosaveStatusLine} sx={{ mb: 1 }} ariaLive="off" />
 
                     <Stack spacing={2}>
                         <TextField
@@ -455,12 +446,12 @@ const Profile: React.FC = () => {
                                 Change Password
                             </Button>
                         }
-                        sx={{ mb: 1.5 }}
+                        sx={{ mb: 0.5 }}
                     />
 
-                    <Stack spacing={1.5}>
-                        {accountSuccess && <Alert severity="success">{accountSuccess}</Alert>}
+                    <InlineStatusLine status={accountStatus} sx={{ mb: 1 }} />
 
+                    <Stack spacing={1.5}>
                         <Typography variant="body2" color="text.secondary">
                             Email
                         </Typography>
