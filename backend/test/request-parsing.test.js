@@ -35,6 +35,7 @@ test('requestParsing: parseNonNegativeInteger accepts finite integers >= 0 (trun
   assert.equal(parseNonNegativeInteger('-1'), null);
   assert.equal(parseNonNegativeInteger(''), null);
   assert.equal(parseNonNegativeInteger('not-a-number'), null);
+  assert.equal(parseNonNegativeInteger({}), null);
   assert.equal(parseNonNegativeInteger(Number.NaN), null);
   assert.equal(parseNonNegativeInteger(Number.POSITIVE_INFINITY), null);
 });
@@ -52,8 +53,8 @@ test('requestParsing: resolveLanguageCode prefers explicit query params over hea
 test('requestParsing: resolveLanguageCode falls back to Accept-Language primary tag', () => {
   assert.equal(resolveLanguageCode({ acceptLanguageHeader: 'en-US,en;q=0.9' }), 'en');
   assert.equal(resolveLanguageCode({ acceptLanguageHeader: ' fr-CA ,fr;q=0.9' }), 'fr');
+  assert.equal(resolveLanguageCode({ queryLanguageCode: 123, acceptLanguageHeader: 'en-US,en;q=0.9' }), 'en');
 
   assert.equal(resolveLanguageCode({ acceptLanguageHeader: '' }), undefined);
   assert.equal(resolveLanguageCode({ acceptLanguageHeader: 123 }), undefined);
 });
-

@@ -49,6 +49,7 @@ test('parseWeightToGrams converts pounds to grams (rounded to 0.1 lb)', () => {
 test('parseWeightToGrams rejects invalid weights', () => {
   assert.throws(() => parseWeightToGrams('', 'KG'), /Weight must be positive/);
   assert.throws(() => parseWeightToGrams('not-a-number', 'KG'), /Invalid weight/);
+  assert.throws(() => parseWeightToGrams({}, 'KG'), /Invalid weight/);
   assert.throws(() => parseWeightToGrams(0, 'KG'), /Weight must be positive/);
   assert.throws(() => parseWeightToGrams(-1, 'KG'), /Weight must be positive/);
 });

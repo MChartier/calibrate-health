@@ -4,7 +4,9 @@ const assert = require('node:assert/strict');
 const {
   isValidIanaTimeZone,
   formatDateToLocalDateString,
-  getUtcTodayDateOnlyInTimeZone
+  getUtcTodayDateOnly,
+  getUtcTodayDateOnlyInTimeZone,
+  normalizeToUtcDateOnly
 } = require('../src/utils/date');
 
 test('isValidIanaTimeZone validates common IANA time zones', () => {
@@ -15,6 +17,7 @@ test('isValidIanaTimeZone validates common IANA time zones', () => {
   assert.equal(isValidIanaTimeZone(''), false);
   assert.equal(isValidIanaTimeZone('   '), false);
   assert.equal(isValidIanaTimeZone('Not/AZone'), false);
+  assert.equal(isValidIanaTimeZone(null), false);
 });
 
 test('formatDateToLocalDateString returns the calendar day for the supplied time zone', () => {
@@ -27,6 +30,11 @@ test('formatDateToLocalDateString returns the calendar day for the supplied time
   assert.equal(formatDateToLocalDateString(now, 'UTC'), '2025-01-01');
 });
 
+test('formatDateToLocalDateString throws for invalid IANA time zone identifiers', () => {
+  const now = new Date('2025-01-01T05:00:00.000Z');
+  assert.throws(() => formatDateToLocalDateString(now, 'Not/AZone'), RangeError);
+});
+
 test('getUtcTodayDateOnlyInTimeZone returns a UTC-normalized date-only value for the local day', () => {
   const now = new Date('2025-01-01T05:00:00.000Z');
   const laToday = getUtcTodayDateOnlyInTimeZone('America/Los_Angeles', now);
@@ -34,4 +42,22 @@ test('getUtcTodayDateOnlyInTimeZone returns a UTC-normalized date-only value for
 
   const utcToday = getUtcTodayDateOnlyInTimeZone('UTC', now);
   assert.equal(utcToday.toISOString(), '2025-01-01T00:00:00.000Z');
+});
+
+test('normalizeToUtcDateOnly accepts Date and timestamp inputs', () => {
+  assert.equal(normalizeToUtcDateOnly(new Date('2025-01-01T23:59:59.000Z')).toISOString(), '2025-01-01T00:00:00.000Z');
+  assert.equal(normalizeToUtcDateOnly(Date.parse('2025-01-02T05:00:00.000Z')).toISOString(), '2025-01-02T00:00:00.000Z');
+});
+
+test('normalizeToUtcDateOnly rejects invalid inputs', () => {
+  assert.throws(() => normalizeToUtcDateOnly('not-a-date'), /Invalid date/);
+  assert.throws(() => normalizeToUtcDateOnly({}), /Invalid date/);
+});
+
+test('getUtcTodayDateOnly returns a UTC-normalized date-only value', () => {
+  const today = getUtcTodayDateOnly();
+  assert.equal(today.getUTCHours(), 0);
+  assert.equal(today.getUTCMinutes(), 0);
+  assert.equal(today.getUTCSeconds(), 0);
+  assert.equal(today.getUTCMilliseconds(), 0);
 });

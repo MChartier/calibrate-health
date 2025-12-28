@@ -18,10 +18,20 @@ test('parseLocalDateOnly rejects invalid inputs', () => {
   assert.throws(() => parseLocalDateOnly('2025-12'), /Invalid local date/);
   assert.throws(() => parseLocalDateOnly('not-a-date'), /Invalid local date/);
   assert.throws(() => parseLocalDateOnly('2025-99-99'), /Invalid date/);
+
+  assert.throws(() => parseLocalDateOnly(null), /Invalid local date/);
+  assert.throws(() => parseLocalDateOnly(123), /Invalid local date/);
+  assert.throws(() => parseLocalDateOnly({}), /Invalid local date/);
 });
 
 test('getSafeUtcTodayDateOnlyInTimeZone falls back to UTC for invalid timezone values', () => {
   const now = new Date('2025-01-01T05:00:00.000Z');
   const fallback = getSafeUtcTodayDateOnlyInTimeZone('Not/AZone', now);
   assert.equal(fallback.toISOString(), '2025-01-01T00:00:00.000Z');
+});
+
+test('getSafeUtcTodayDateOnlyInTimeZone falls back to UTC for missing timezone values', () => {
+  const now = new Date('2025-01-01T05:00:00.000Z');
+  assert.equal(getSafeUtcTodayDateOnlyInTimeZone('', now).toISOString(), '2025-01-01T00:00:00.000Z');
+  assert.equal(getSafeUtcTodayDateOnlyInTimeZone(null, now).toISOString(), '2025-01-01T00:00:00.000Z');
 });

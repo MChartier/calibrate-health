@@ -132,3 +132,21 @@ test('profile utils: buildCalorieSummary clamps negative calorie targets to 0', 
   assert.equal(summary.dailyCalorieTarget, 0);
 });
 
+test('profile utils: buildCalorieSummary supports defaulting to the current date', () => {
+  const summary = buildCalorieSummary({
+    weight_grams: 82000,
+    profile: {
+      sex: 'MALE',
+      date_of_birth: new Date(1990, 0, 15),
+      height_mm: 1750,
+      activity_level: 'MODERATE'
+    },
+    daily_deficit: 500
+  });
+
+  assert.equal(Array.isArray(summary.missing), true);
+  assert.equal(summary.missing.length, 0);
+  assert.equal(Number.isFinite(summary.bmr), true);
+  assert.equal(Number.isFinite(summary.tdee), true);
+  assert.equal(Number.isFinite(summary.dailyCalorieTarget), true);
+});
