@@ -175,8 +175,8 @@ const Log: React.FC = () => {
                     <Tooltip title="Next day">
                         <span>
                             <IconButton
-                            aria-label="Next day"
-                            onClick={() => {
+                                aria-label="Next day"
+                                onClick={() => {
                                     const next = addDaysToIsoDate(effectiveDate, 1);
                                     setSelectedDate(clampIsoDate(next, dateBounds));
                                 }}
@@ -190,13 +190,13 @@ const Log: React.FC = () => {
                     <Tooltip title="Jump to today">
                         <span>
                             <IconButton
-                            aria-label="Jump to today"
-                            onClick={() => setSelectedDate(dateBounds.max)}
-                            disabled={effectiveDate === dateBounds.max}
-                        >
-                            <TodayIcon />
-                        </IconButton>
-                    </span>
+                                aria-label="Jump to today"
+                                onClick={() => setSelectedDate(dateBounds.max)}
+                                disabled={effectiveDate === dateBounds.max}
+                            >
+                                <TodayIcon />
+                            </IconButton>
+                        </span>
                     </Tooltip>
                 </Box>
             </Box>

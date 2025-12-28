@@ -55,6 +55,8 @@ const FOOD_LOG_SKELETON_TOTAL_WIDTH_PX = 88; // Approx width of the "{N} Calorie
 const FOOD_LOG_SKELETON_TOTAL_HEIGHT_PX = 24; // Keeps the placeholder aligned with Typography metrics.
 const FOOD_LOG_SKELETON_ROW_HEIGHT_PX = 22; // Height for each placeholder row in AccordionDetails.
 const FOOD_LOG_SKELETON_ROW_CALORIES_WIDTH_PX = 76; // Approx width of a "{N} Calories" entry label.
+const FOOD_LOG_SKELETON_ROW_NAME_WIDTH_BASE_PERCENT = 58; // Base width for the entry name skeleton (varied per row).
+const FOOD_LOG_SKELETON_ROW_NAME_WIDTH_STEP_PERCENT = 10; // Step size for varying each skeleton row width.
 
 /**
  * Build a Record keyed by MealPeriod using the canonical MEAL_PERIOD_ORDER sequence.
@@ -252,26 +254,24 @@ const FoodLogMeals: React.FC<FoodLogMealsProps> = ({ logs, isLoading = false }) 
                 title="Food Log"
                 align="center"
                 actions={
-                    isLoading ? null : (
-                        <>
-                            <Tooltip title="Collapse all">
-                                <IconButton size="small" onClick={handleCollapseAll}>
-                                    <ExpandMoreIcon sx={{ transform: 'rotate(180deg)' }} />
-                                </IconButton>
-                            </Tooltip>
-                            <Tooltip title="Expand all">
-                                <IconButton size="small" onClick={handleExpandAll}>
-                                    <ExpandMoreIcon />
-                                </IconButton>
-                            </Tooltip>
-                        </>
-                    )
+                    <>
+                        <Tooltip title="Collapse all">
+                            <IconButton size="small" onClick={handleCollapseAll}>
+                                <ExpandMoreIcon sx={{ transform: 'rotate(180deg)' }} />
+                            </IconButton>
+                        </Tooltip>
+                        <Tooltip title="Expand all">
+                            <IconButton size="small" onClick={handleExpandAll}>
+                                <ExpandMoreIcon />
+                            </IconButton>
+                        </Tooltip>
+                    </>
                 }
             />
             {MEALS.map((meal) => {
                 const entries = grouped[meal.key];
                 const total = sumCalories(entries);
-                const isExpanded = isLoading ? true : expanded[meal.key];
+                const isExpanded = expanded[meal.key];
                 const accentColor = getMealPeriodAccentColor(theme, meal.key);
                 const avatarBg = alpha(accentColor, theme.palette.mode === 'dark' ? 0.16 : 0.1);
 
@@ -279,15 +279,12 @@ const FoodLogMeals: React.FC<FoodLogMealsProps> = ({ logs, isLoading = false }) 
                     <Accordion
                         key={meal.key}
                         expanded={isExpanded}
-                        onChange={
-                            isLoading ? undefined : (_, nextExpanded) => setExpanded((prev) => ({ ...prev, [meal.key]: nextExpanded }))
-                        }
+                        onChange={(_, nextExpanded) => setExpanded((prev) => ({ ...prev, [meal.key]: nextExpanded }))}
                         variant="outlined"
                         disableGutters
-                        disabled={isLoading}
                     >
                         <AccordionSummary
-                            expandIcon={<ExpandMoreIcon sx={isLoading ? { opacity: 0.35 } : undefined} />}
+                            expandIcon={<ExpandMoreIcon />}
                         >
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexGrow: 1 }}>
                                 <Avatar
@@ -322,7 +319,10 @@ const FoodLogMeals: React.FC<FoodLogMealsProps> = ({ logs, isLoading = false }) 
                                                 gap: 1
                                             }}
                                         >
-                                            <Skeleton width={`${58 + idx * 10}%`} height={FOOD_LOG_SKELETON_ROW_HEIGHT_PX} />
+                                            <Skeleton
+                                                width={`${FOOD_LOG_SKELETON_ROW_NAME_WIDTH_BASE_PERCENT + idx * FOOD_LOG_SKELETON_ROW_NAME_WIDTH_STEP_PERCENT}%`}
+                                                height={FOOD_LOG_SKELETON_ROW_HEIGHT_PX}
+                                            />
                                             <Skeleton
                                                 width={FOOD_LOG_SKELETON_ROW_CALORIES_WIDTH_PX}
                                                 height={FOOD_LOG_SKELETON_ROW_HEIGHT_PX}
