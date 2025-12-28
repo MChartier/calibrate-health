@@ -1,65 +1,75 @@
 import React from 'react';
-import { Alert, Box, Button, CircularProgress, Divider, IconButton, Stack, Tooltip, Typography } from '@mui/material';
+import {
+    Accordion,
+    AccordionDetails,
+    AccordionSummary,
+    Alert,
+    Box,
+    Button,
+    Card,
+    CardActionArea,
+    CardContent,
+    CircularProgress,
+    Divider,
+    IconButton,
+    Link,
+    Stack,
+    Tooltip,
+    Typography
+} from '@mui/material';
 import InfoIcon from '@mui/icons-material/InfoRounded';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMoreRounded';
+import { Link as RouterLink } from 'react-router-dom';
 import { useUserProfileQuery } from '../queries/userProfile';
-import AppCard from '../ui/AppCard';
 
 /**
  * CalorieTargetBanner
  *
  * Intent:
- * - Surface the daily calorie target prominently on dashboard/log.
+ * - Surface the user's calorie target prominently on dashboard/profile.
  * - Make the math transparent: BMR (sex/age/height/weight) -> activity multiplier -> goal adjustment -> target.
  * - Use an "invoice" style breakdown: green positives (energy available), red negatives (deficit), right-aligned numbers, clear total.
  *
  * UX rationale:
  * - If data is missing, explain which inputs are needed.
- * - Tooltip uses structured lines and shows the activity multiplier explicitly to avoid "black box" perception.
+ * - Dashboard keeps details behind a tooltip to stay "at a glance"; Profile inlines the same breakdown in a collapsible section.
  * - Colors reinforce add/remove semantics while keeping the primary target readable in neutral text.
  */
 
-const CalorieTargetBanner: React.FC = () => {
+export type CalorieTargetBannerProps = {
+    /**
+     * When true, renders the dashboard variant (clickable CardActionArea linking to `/profile`).
+     */
+    isDashboard?: boolean;
+};
+
+const TOOLTIP_MAX_WIDTH_PX = 320;
+const INLINE_DETAILS_MAX_WIDTH_PX = 520;
+const INLINE_ACCORDION_SUMMARY_MIN_HEIGHT_PX = 48;
+const INLINE_ACCORDION_SUMMARY_CONTENT_MARGIN_Y = 1.5;
+
+/**
+ * Stop nested controls (tooltip icon, retry button) from triggering the surrounding dashboard CardActionArea navigation.
+ */
+function stopDashboardCardNavigation(event: React.SyntheticEvent) {
+    event.stopPropagation();
+}
+
+const CalorieTargetBanner: React.FC<CalorieTargetBannerProps> = ({ isDashboard = false }) => {
     const { data, isLoading, isError, refetch } = useUserProfileQuery();
 
-    if (isLoading) {
-        return (
-            <AppCard sx={{ mb: 2 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <CircularProgress size={20} />
-                    <Typography>Loading targets…</Typography>
-                </Box>
-            </AppCard>
-        );
-    }
+    const calorieSummary = data?.calorieSummary;
 
-    if (isError || !data) {
-        return (
-            <Alert
-                severity="warning"
-                sx={{ mb: 2 }}
-                action={
-                    <Button color="inherit" size="small" onClick={() => void refetch()}>
-                        Retry
-                    </Button>
-                }
-            >
-                Unable to load daily target right now.
-            </Alert>
-        );
-    }
+    const missing = calorieSummary?.missing || [];
+    const hasTarget = typeof calorieSummary?.dailyCalorieTarget === 'number';
 
-    const { calorieSummary } = data;
-    if (!calorieSummary) {
-        return null;
-    }
+    const bmr = calorieSummary?.bmr;
+    const tdee = calorieSummary?.tdee;
+    const goalDailyDeficit = data?.goal_daily_deficit ?? null;
+    const deficit = calorieSummary?.deficit ?? goalDailyDeficit;
+    const dailyTarget = calorieSummary?.dailyCalorieTarget;
 
-    const missing = calorieSummary.missing || [];
-    const hasTarget = typeof calorieSummary.dailyCalorieTarget === 'number';
-
-    const bmr = calorieSummary.bmr;
-    const tdee = calorieSummary.tdee;
-    const deficit = calorieSummary.deficit;
-    const dailyTarget = calorieSummary.dailyCalorieTarget;
+    const hasGoalDeficit = typeof goalDailyDeficit === 'number';
 
     const activityDelta =
         typeof tdee === 'number' && typeof bmr === 'number' ? Math.round((tdee - bmr) * 10) / 10 : undefined;
@@ -68,117 +78,263 @@ const CalorieTargetBanner: React.FC = () => {
     // Daily target is computed as `TDEE - deficit`. A surplus is represented as a negative deficit value.
     const goalDelta = typeof deficit === 'number' ? -deficit : undefined;
 
-    const breakdownContent = hasTarget ? (
-        <Box sx={{ maxWidth: 320 }}>
-            <Typography variant="subtitle2" sx={{ mb: 1 }}>
-                How we calculate your daily target
-            </Typography>
-            <Stack spacing={1} divider={<Divider />}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 1 }}>
-                    <Box>
-                        <Typography variant="body2">Basal Metabolic Rate (BMR)</Typography>
-                        <Typography variant="caption" color="text.secondary">
-                            From sex, age, height, weight (Mifflin–St Jeor)
-                        </Typography>
-                    </Box>
-                    <Typography
-                        variant="body2"
-                        sx={{ color: (theme) => theme.palette.success.main, textAlign: 'right', minWidth: 96 }}
-                    >
-                        {typeof bmr === 'number' ? `+${bmr} Calories` : '—'}
+    const breakdownDetails = hasTarget ? (
+        <Stack spacing={1} divider={<Divider />}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 1 }}>
+                <Box>
+                    <Typography variant="body2">Basal Metabolic Rate (BMR)</Typography>
+                    <Typography variant="caption" color="text.secondary">
+                        From sex, age, height, weight (Mifflin–St Jeor)
                     </Typography>
                 </Box>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 1 }}>
-                    <Box>
-                        <Typography variant="body2">Activity adjustment</Typography>
-                        <Typography variant="caption" color="text.secondary">
-                            Daily movement/exercise level ({data.profile.activity_level ?? '—'}) · Multiplier {activityMultiplier ?? '—'}x
-                        </Typography>
-                    </Box>
-                    <Typography
-                        variant="body2"
-                        sx={{ color: (theme) => theme.palette.success.main, textAlign: 'right', minWidth: 96 }}
-                    >
-                        {activityDelta !== undefined ? `+${activityDelta} Calories` : '+ —'}
+                <Typography
+                    variant="body2"
+                    sx={{ color: (theme) => theme.palette.success.main, textAlign: 'right', minWidth: 96 }}
+                >
+                    {typeof bmr === 'number' ? `+${bmr} Calories` : '—'}
+                </Typography>
+            </Box>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 1 }}>
+                <Box>
+                    <Typography variant="body2">Activity adjustment</Typography>
+                    <Typography variant="caption" color="text.secondary">
+                        Daily movement/exercise level ({data?.profile.activity_level ?? '—'}) · Multiplier {activityMultiplier ?? '—'}x
                     </Typography>
                 </Box>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 1 }}>
-                    <Box>
-                        <Typography variant="body2">Goal adjustment</Typography>
-                        <Typography variant="caption" color="text.secondary">
-                            Deficit (negative) or surplus (positive) applied to your TDEE
-                        </Typography>
-                    </Box>
-                    <Typography
-                        variant="body2"
-                        sx={{
-                            color: (theme) => (goalDelta !== undefined && goalDelta < 0 ? theme.palette.error.main : theme.palette.success.main),
-                            textAlign: 'right',
-                            minWidth: 96
-                        }}
-                    >
-                        {goalDelta !== undefined
-                            ? `${goalDelta > 0 ? '+' : ''}${goalDelta} Calories`
-                            : '—'}
+                <Typography
+                    variant="body2"
+                    sx={{ color: (theme) => theme.palette.success.main, textAlign: 'right', minWidth: 96 }}
+                >
+                    {activityDelta !== undefined ? `+${activityDelta} Calories` : '+ —'}
+                </Typography>
+            </Box>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 1 }}>
+                <Box>
+                    <Typography variant="body2">Goal adjustment</Typography>
+                    <Typography variant="caption" color="text.secondary">
+                        Deficit (negative) or surplus (positive) applied to your TDEE
                     </Typography>
                 </Box>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 1 }}>
-                    <Typography variant="body2" fontWeight={600}>
-                        Daily target
-                    </Typography>
-                    <Typography variant="body2" fontWeight={600} color="text.primary" sx={{ textAlign: 'right', minWidth: 96 }}>
-                        {dailyTarget !== undefined ? `${Math.round(dailyTarget)} Calories` : '—'}
-                    </Typography>
-                </Box>
-            </Stack>
-        </Box>
+                <Typography
+                    variant="body2"
+                    sx={{
+                        color: (theme) =>
+                            goalDelta !== undefined && goalDelta < 0 ? theme.palette.error.main : theme.palette.success.main,
+                        textAlign: 'right',
+                        minWidth: 96
+                    }}
+                >
+                    {goalDelta !== undefined ? `${goalDelta > 0 ? '+' : ''}${goalDelta} Calories` : '—'}
+                </Typography>
+            </Box>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 1 }}>
+                <Typography variant="body2" fontWeight={600}>
+                    Calorie target
+                </Typography>
+                <Typography variant="body2" fontWeight={600} color="text.primary" sx={{ textAlign: 'right', minWidth: 96 }}>
+                    {dailyTarget !== undefined ? `${Math.round(dailyTarget)} Calories` : '—'}
+                </Typography>
+            </Box>
+        </Stack>
     ) : (
-        <Box sx={{ maxWidth: 320 }}>
-            <Typography variant="subtitle2" sx={{ mb: 1 }}>
-                Missing info
-            </Typography>
+        <Box>
             <Typography variant="body2">
-                Provide birthday, sex, height, activity level, latest weight, and a goal deficit/surplus to compute a target.
+                Provide birthday, sex, height, activity level, and a recent weigh-in to compute your baseline burn (TDEE).
             </Typography>
+            <Typography variant="body2" sx={{ mt: 1 }}>
+                Then set a goal deficit/surplus to turn that into a daily calorie target.
+            </Typography>
+            {!isDashboard && (
+                <Stack spacing={0.5} sx={{ mt: 1 }}>
+                    {missing.includes('latest_weight') && (
+                        <Typography variant="body2">
+                            <Link component={RouterLink} to="/log">
+                                Add a weigh-in in Log
+                            </Link>
+                        </Typography>
+                    )}
+                    {!hasGoalDeficit && (
+                        <Typography variant="body2">
+                            <Link component={RouterLink} to="/goals">
+                                Set your deficit in Goals
+                            </Link>
+                        </Typography>
+                    )}
+                    {missing.some((field) => field !== 'latest_weight') && (
+                        <Typography variant="body2" color="text.secondary">
+                            Fill out the profile fields below to recalculate.
+                        </Typography>
+                    )}
+                </Stack>
+            )}
         </Box>
     );
 
-    return (
-        <AppCard sx={{ mb: 2 }}>
-            <Stack spacing={0.5}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Typography variant="h6">Daily Target</Typography>
-                    <Tooltip
-                        title={breakdownContent}
-                        arrow
-                        enterTouchDelay={0}
-                    >
-                        <IconButton size="small" aria-label="How is this calculated?">
-                            <InfoIcon fontSize="small" />
-                        </IconButton>
-                    </Tooltip>
-                </Box>
-                {hasTarget ? (
+    const tooltipContent = (
+        <Box sx={{ maxWidth: TOOLTIP_MAX_WIDTH_PX }}>
+            <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                How we calculate your calorie target
+            </Typography>
+            {breakdownDetails}
+        </Box>
+    );
+
+    let cardBody: React.ReactNode;
+    if (isLoading) {
+        cardBody = (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <CircularProgress size={20} />
+                <Typography>Loading targets…</Typography>
+            </Box>
+        );
+    } else if (isError || !data || !calorieSummary) {
+        cardBody = (
+            <Alert
+                severity="warning"
+                action={
+                    <Button color="inherit" size="small" onClick={(event) => { stopDashboardCardNavigation(event); void refetch(); }}>
+                        Retry
+                    </Button>
+                }
+            >
+                Unable to load calorie target right now.
+            </Alert>
+        );
+    } else if (hasTarget) {
+        cardBody = (
+            <>
+                <Typography variant="h4" color="primary">
+                    {Math.round(dailyTarget!)} kcal/day
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                    TDEE: {tdee ?? '—'} kcal · Deficit: {deficit ?? '—'} kcal/day
+                    {!isDashboard && (
+                        <>
+                            {' '}
+                            <Link component={RouterLink} to="/goals">
+                                Change deficit
+                            </Link>
+                        </>
+                    )}
+                </Typography>
+            </>
+        );
+    } else {
+        cardBody = (
+            <Alert severity="info">
+                Add birthday, sex, height, activity level, a recent weigh-in, and a goal deficit to see a daily calorie target.
+                {!isDashboard && (
                     <>
-                        <Typography variant="h4" color="primary">
-                            {Math.round(calorieSummary.dailyCalorieTarget!)} kcal/day
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                            TDEE: {calorieSummary.tdee ?? '—'} kcal · Deficit: {calorieSummary.deficit ?? '—'} kcal/day
-                        </Typography>
+                        {' '}
+                        <Link component={RouterLink} to="/goals">
+                            Set deficit in Goals
+                        </Link>
+                        .
                     </>
-                ) : (
-                    <Alert severity="info">
-                        Add birthday, sex, height, activity level, latest weight, and a goal deficit to see a daily calorie target.
-                    </Alert>
                 )}
-                {!hasTarget && missing.length > 0 && (
+            </Alert>
+        );
+    }
+
+    const inlineDetails = !isDashboard && !isLoading && !isError && calorieSummary ? (
+        <Box sx={{ mt: 1 }}>
+            <Accordion
+                disableGutters
+                elevation={0}
+                sx={{
+                    // MUI adds an expanded-state margin; remove it so the accordion top edge stays locked in place.
+                    '&&': { margin: 0 },
+                    '&&.Mui-expanded': { margin: 0 },
+                    '&& .MuiAccordionSummary-root': {
+                        minHeight: INLINE_ACCORDION_SUMMARY_MIN_HEIGHT_PX,
+                        '&.Mui-expanded': { minHeight: INLINE_ACCORDION_SUMMARY_MIN_HEIGHT_PX }
+                    },
+                    '&& .MuiAccordionSummary-content': {
+                        my: INLINE_ACCORDION_SUMMARY_CONTENT_MARGIN_Y,
+                        '&.Mui-expanded': { my: INLINE_ACCORDION_SUMMARY_CONTENT_MARGIN_Y }
+                    },
+                    '&&::before': { display: 'none' }
+                }}
+            >
+                <AccordionSummary
+                    expandIcon={<ExpandMoreIcon />}
+                    aria-controls="calorie-target-details"
+                    id="calorie-target-details-header"
+                >
+                    <Typography variant="subtitle2">Calculation details</Typography>
+                </AccordionSummary>
+                <AccordionDetails>
+                    <Box sx={{ maxWidth: INLINE_DETAILS_MAX_WIDTH_PX }}>
+                        <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                            These values come from your profile inputs, latest weigh-in, and your goal deficit/surplus.
+                        </Typography>
+                        {breakdownDetails}
+                    </Box>
+                </AccordionDetails>
+            </Accordion>
+        </Box>
+    ) : null;
+
+    const ctaLine = isDashboard ? (
+        <Typography variant="body2" color="primary" sx={{ mt: 1 }}>
+            View / edit profile inputs
+        </Typography>
+    ) : null;
+
+    const content = (
+        <CardContent>
+            <Stack spacing={0.5}>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1 }}>
+                    <Typography variant="h6">Calorie Target</Typography>
+                    {isDashboard && (
+                        <Tooltip title={tooltipContent} arrow enterTouchDelay={0}>
+                            <IconButton
+                                size="small"
+                                aria-label="How is this calculated?"
+                                onClick={stopDashboardCardNavigation}
+                                onMouseDown={stopDashboardCardNavigation}
+                            >
+                                <InfoIcon fontSize="small" />
+                            </IconButton>
+                        </Tooltip>
+                    )}
+                </Box>
+
+                {cardBody}
+
+                {!hasTarget && !isLoading && !isError && missing.length > 0 && (
                     <Typography variant="body2" color="text.secondary">
                         Missing: {missing.join(', ')}
                     </Typography>
                 )}
+
+                {ctaLine}
+                {inlineDetails}
             </Stack>
-        </AppCard>
+        </CardContent>
+    );
+
+    return (
+        <Card
+            sx={{
+                mb: 2,
+                width: '100%',
+                ...(isDashboard
+                    ? {
+                        transition: 'transform 120ms ease',
+                        '&:hover': { transform: 'translateY(-2px)' }
+                    }
+                    : null)
+            }}
+        >
+            {isDashboard ? (
+                <CardActionArea component={RouterLink} to="/profile">
+                    {content}
+                </CardActionArea>
+            ) : (
+                content
+            )}
+        </Card>
     );
 };
 
