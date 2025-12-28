@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import {
     Alert,
     Box,
+    Button,
     FormControl,
     FormHelperText,
     InputLabel,
@@ -10,7 +11,9 @@ import {
     Stack
 } from '@mui/material';
 import type { SelectChangeEvent } from '@mui/material/Select';
+import LogoutIcon from '@mui/icons-material/LogoutRounded';
 import { useTheme } from '@mui/material/styles';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/useAuth';
 import { useThemeMode } from '../context/useThemeMode';
 import type { ThemePreference } from '../context/themeModeContext';
@@ -29,10 +32,12 @@ import {
  */
 const Settings: React.FC = () => {
     const theme = useTheme();
-    const { user, updateUnitPreferences, updateTimezone } = useAuth();
-    const { preference: themePreference, mode: resolvedThemeMode, setPreference: setThemePreference } = useThemeMode();
     const sectionGap = theme.custom.layout.page.sectionGap;
+    const { user, logout, updateUnitPreferences, updateTimezone } = useAuth();
+    const { preference: themePreference, mode: resolvedThemeMode, setPreference: setThemePreference } = useThemeMode();
+    const navigate = useNavigate();
     const [settingsMessage, setSettingsMessage] = useState('');
+    const [accountMessage, setAccountMessage] = useState('');
     const detectedTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
     const [timezoneValue, setTimezoneValue] = useState(() => user?.timezone ?? detectedTimezone);
     const [unitPreference, setUnitPreference] = useState<UnitPreferenceKey>(() =>
@@ -72,6 +77,19 @@ const Settings: React.FC = () => {
             setSettingsMessage('Timezone updated');
         } catch {
             setSettingsMessage('Failed to update timezone');
+        }
+    };
+
+    /**
+     * Clear the current session and return the user to the login screen.
+     */
+    const handleLogout = async () => {
+        setAccountMessage('');
+        try {
+            await logout();
+            navigate('/login');
+        } catch {
+            setAccountMessage('Failed to log out');
         }
     };
 
@@ -126,6 +144,26 @@ const Settings: React.FC = () => {
                                 : 'Persisted on this device.'}
                         </FormHelperText>
                     </FormControl>
+                </AppCard>
+
+                <AppCard>
+                    <SectionHeader title="Account" sx={{ mb: 1.5 }} />
+
+                    {accountMessage && (
+                        <Alert severity="error" sx={{ mb: 2 }}>
+                            {accountMessage}
+                        </Alert>
+                    )}
+
+                    <Button
+                        variant="outlined"
+                        color="error"
+                        startIcon={<LogoutIcon />}
+                        onClick={() => void handleLogout()}
+                        fullWidth
+                    >
+                        Log out
+                    </Button>
                 </AppCard>
             </Stack>
         </AppPage>

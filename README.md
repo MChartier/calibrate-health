@@ -50,6 +50,13 @@ If you see Prisma errors like “The table `public.User` does not exist”, you 
 - `npm run build`: builds the frontend.
 - `npm run lint`: lints the frontend.
 
+## PWA (installable)
+
+The frontend is configured as a Progressive Web App (PWA), so it can be installed on desktop/mobile and added to a home screen.
+
+- Test locally: `npm --prefix frontend run build && npm --prefix frontend run preview` then open `http://localhost:4173` and use the browser install UI.
+- iOS: open the app in Safari and use Share -> Add to Home Screen.
+
 ### Tests
 
 - `npm test`: currently a placeholder (no automated tests wired up yet).
