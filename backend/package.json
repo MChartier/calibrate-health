@@ -51,8 +51,12 @@
       "html"
     ],
     "reports-dir": "coverage",
+    "src": [
+      "src",
+      "../shared"
+    ],
     "include": [
-      "src/**/*.ts"
+      "**/*.ts"
     ],
     "extension": [
       ".ts"

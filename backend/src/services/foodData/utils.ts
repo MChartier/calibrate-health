@@ -15,12 +15,12 @@ export const scaleNutrients = (nutrients: Nutrients, factor: number): Nutrients 
 };
 
 export const parseNumber = (value: unknown): number | undefined => {
-    if (typeof value === 'number' && !Number.isNaN(value)) {
+    if (typeof value === 'number' && Number.isFinite(value)) {
         return value;
     }
     if (typeof value === 'string') {
         const parsed = parseFloat(value);
-        if (!Number.isNaN(parsed)) {
+        if (Number.isFinite(parsed)) {
             return parsed;
         }
     }
