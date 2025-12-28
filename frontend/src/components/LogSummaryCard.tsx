@@ -1,20 +1,13 @@
 import React from 'react';
 import { Box, Card, CardActionArea, CardContent, Skeleton, Typography } from '@mui/material';
 import { Gauge } from '@mui/x-charts/Gauge';
-import { useQuery } from '@tanstack/react-query';
-import axios from 'axios';
 import { Link as RouterLink } from 'react-router-dom';
 import { useAuth } from '../context/useAuth';
 import { formatDateToLocalDateString } from '../utils/date';
+import { usePrefersReducedMotion } from '../hooks/usePrefersReducedMotion';
+import { useTweenedNumber } from '../hooks/useTweenedNumber';
 import { useUserProfileQuery } from '../queries/userProfile';
-import type { MealPeriod } from '../types/mealPeriod';
-
-type FoodLogEntry = {
-    id: number;
-    meal_period: MealPeriod;
-    name: string;
-    calories: number;
-};
+import { useFoodLogQuery } from '../queries/foodLog';
 
 const GAUGE_WIDTH = 200;
 const GAUGE_HEIGHT = 140;
@@ -22,7 +15,6 @@ const GAUGE_START_ANGLE = -90;
 const GAUGE_END_ANGLE = 90;
 const GAUGE_INNER_RADIUS = '70%';
 const GAUGE_OUTER_RADIUS = '90%';
-const SUMMARY_SKELETON_SIZE = 140;
 const SUMMARY_SKELETON_VALUE_HEIGHT = 32;
 
 export type LogSummaryCardProps = {
@@ -46,13 +38,7 @@ const LogSummaryCard: React.FC<LogSummaryCardProps> = ({ dashboardMode = false, 
     const isActiveDateToday = activeDate === today;
     const title = isActiveDateToday ? "Today's Log" : `Log for ${activeDate}`;
 
-    const foodQuery = useQuery({
-        queryKey: ['food', activeDate],
-        queryFn: async (): Promise<FoodLogEntry[]> => {
-            const res = await axios.get('/api/food?date=' + encodeURIComponent(activeDate));
-            return Array.isArray(res.data) ? res.data : [];
-        }
-    });
+    const foodQuery = useFoodLogQuery(activeDate);
 
     const profileSummaryQuery = useUserProfileQuery();
 
@@ -63,9 +49,23 @@ const LogSummaryCard: React.FC<LogSummaryCardProps> = ({ dashboardMode = false, 
     const isOver = dailyTarget !== undefined && dailyTarget !== null && totalCalories > dailyTarget;
     const gaugeValue = dailyTarget ? (isOver ? dailyTarget : Math.max(totalCalories, 0)) : 0;
     const gaugeMax = dailyTarget ? (isOver ? totalCalories : dailyTarget) : 1;
+    const gaugePercent = gaugeMax > 0 ? gaugeValue / gaugeMax : 0;
 
     const isLoading = foodQuery.isLoading || profileSummaryQuery.isLoading;
     const isError = foodQuery.isError || profileSummaryQuery.isError;
+
+    const prefersReducedMotion = usePrefersReducedMotion();
+
+    const animatedGaugePercent = useTweenedNumber(gaugePercent, {
+        durationMs: 520,
+        disabled: prefersReducedMotion || isLoading || isError
+    });
+
+    const remainingDisplayValue = remainingCalories !== null ? Math.abs(remainingCalories) : 0;
+    const animatedRemainingDisplayValue = useTweenedNumber(remainingDisplayValue, {
+        durationMs: 520,
+        disabled: prefersReducedMotion || isLoading || isError || remainingCalories === null
+    });
 
     // Split conditional branches into named nodes to keep the render tree readable.
     let cardBody: React.ReactNode;
@@ -79,11 +79,40 @@ const LogSummaryCard: React.FC<LogSummaryCardProps> = ({ dashboardMode = false, 
                     flexDirection: { xs: 'column', sm: 'row' }
                 }}
             >
-                <Skeleton variant="circular" width={SUMMARY_SKELETON_SIZE} height={SUMMARY_SKELETON_SIZE} />
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, flexGrow: 1 }}>
-                    <Skeleton width="60%" />
+                <Gauge
+                    width={GAUGE_WIDTH}
+                    height={GAUGE_HEIGHT}
+                    startAngle={GAUGE_START_ANGLE}
+                    endAngle={GAUGE_END_ANGLE}
+                    value={0}
+                    valueMin={0}
+                    valueMax={1}
+                    innerRadius={GAUGE_INNER_RADIUS}
+                    outerRadius={GAUGE_OUTER_RADIUS}
+                    text={() => ''}
+                    sx={{
+                        '& .MuiGauge-referenceArc': {
+                            fill: (theme) => theme.palette.grey[300]
+                        },
+                        '& .MuiGauge-valueArc': {
+                            fill: (theme) => theme.palette.grey[200]
+                        }
+                    }}
+                />
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, flexGrow: 1 }}>
+                    <Typography variant="subtitle1">Calories remaining</Typography>
                     <Skeleton width="40%" height={SUMMARY_SKELETON_VALUE_HEIGHT} />
-                    <Skeleton width="80%" />
+                    <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1 }}>
+                        <Typography variant="body2" color="text.secondary">
+                            Logged:
+                        </Typography>
+                        <Skeleton width="55%" height={20} />
+                    </Box>
+                    {dashboardMode && (
+                        <Typography variant="body2" color="primary">
+                            View / edit {isActiveDateToday ? "today's log" : 'this log'}
+                        </Typography>
+                    )}
                 </Box>
             </Box>
         );
@@ -101,6 +130,9 @@ const LogSummaryCard: React.FC<LogSummaryCardProps> = ({ dashboardMode = false, 
             </Box>
         );
     } else {
+        const gaugeValueForRender = Math.max(0, Math.min(animatedGaugePercent, 1)) * gaugeMax;
+        const remainingDisplayLabel = Math.round(Math.max(animatedRemainingDisplayValue, 0));
+
         cardBody = (
             <Box
                 sx={{
@@ -115,7 +147,7 @@ const LogSummaryCard: React.FC<LogSummaryCardProps> = ({ dashboardMode = false, 
                     height={GAUGE_HEIGHT}
                     startAngle={GAUGE_START_ANGLE}
                     endAngle={GAUGE_END_ANGLE}
-                    value={gaugeValue}
+                    value={gaugeValueForRender}
                     valueMin={0}
                     valueMax={gaugeMax}
                     innerRadius={GAUGE_INNER_RADIUS}
@@ -136,7 +168,7 @@ const LogSummaryCard: React.FC<LogSummaryCardProps> = ({ dashboardMode = false, 
                     </Typography>
                     <Typography variant="h5">
                         {remainingCalories !== null
-                            ? `${remainingCalories < 0 ? Math.abs(remainingCalories) : remainingCalories} Calories`
+                            ? `${remainingDisplayLabel} Calories`
                             : '—'}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">

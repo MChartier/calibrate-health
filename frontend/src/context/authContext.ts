@@ -6,6 +6,12 @@ export type HeightUnit = 'CM' | 'FT_IN';
 export type User = {
     id: number;
     email: string;
+    /**
+     * Account creation timestamp (ISO string).
+     *
+     * Used for UX bounds (e.g. earliest selectable day on /log).
+     */
+    created_at: string;
     weight_unit: WeightUnit;
     height_unit: HeightUnit;
     timezone: string;

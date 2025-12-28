@@ -4,6 +4,7 @@ import { isHeightUnit, isWeightUnit } from '../utils/units';
 import { ActivityLevel, HeightUnit, Sex, WeightUnit } from '@prisma/client';
 import { buildCalorieSummary, isActivityLevel, isSex } from '../utils/profile';
 import { isValidIanaTimeZone } from '../utils/date';
+import { serializeUserForClient } from '../utils/serializeUser';
 
 const router = express.Router();
 
@@ -23,17 +24,7 @@ router.use(isAuthenticated);
 router.get('/me', (req, res) => {
   const user = req.user as any;
   res.json({
-    user: {
-      id: user.id,
-      email: user.email,
-      weight_unit: user.weight_unit,
-      height_unit: user.height_unit,
-      timezone: user.timezone,
-      date_of_birth: user.date_of_birth,
-      sex: user.sex,
-      height_mm: user.height_mm,
-      activity_level: user.activity_level
-    }
+    user: serializeUserForClient(user)
   });
 });
 
@@ -68,17 +59,7 @@ router.patch('/preferences', async (req, res) => {
     });
 
     res.json({
-      user: {
-        id: updatedUser.id,
-        email: updatedUser.email,
-        weight_unit: updatedUser.weight_unit,
-        height_unit: updatedUser.height_unit,
-        timezone: updatedUser.timezone,
-        date_of_birth: updatedUser.date_of_birth,
-        sex: updatedUser.sex,
-        height_mm: updatedUser.height_mm,
-        activity_level: updatedUser.activity_level
-      },
+      user: serializeUserForClient(updatedUser),
     });
   } catch (err) {
     res.status(500).json({ message: 'Server error' });
@@ -228,17 +209,7 @@ router.patch('/profile', async (req, res) => {
     });
 
     res.json({
-      user: {
-        id: updatedUser.id,
-        email: updatedUser.email,
-        weight_unit: updatedUser.weight_unit,
-        height_unit: updatedUser.height_unit,
-        timezone: updatedUser.timezone,
-        date_of_birth: updatedUser.date_of_birth,
-        sex: updatedUser.sex,
-        height_mm: updatedUser.height_mm,
-        activity_level: updatedUser.activity_level
-      }
+      user: serializeUserForClient(updatedUser)
     });
   } catch (err) {
     res.status(500).json({ message: 'Server error' });
