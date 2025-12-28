@@ -178,7 +178,7 @@ const Onboarding: React.FC = () => {
     };
 
     return (
-        <AppPage maxWidth={720}>
+        <AppPage maxWidth="content">
             <Stack spacing={sectionGap} useFlexGap>
                 <Box>
                     <Typography variant="h4" gutterBottom>

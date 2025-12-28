@@ -16,22 +16,15 @@ import {
     ToggleButtonGroup,
     Typography
 } from '@mui/material';
-import { useTheme } from '@mui/material/styles';
 import axios from 'axios';
-import EggAltIcon from '@mui/icons-material/EggAltRounded';
-import BakeryDiningIcon from '@mui/icons-material/BakeryDiningRounded';
-import IcecreamIcon from '@mui/icons-material/IcecreamRounded';
-import LunchDiningIcon from '@mui/icons-material/LunchDiningRounded';
-import DinnerDiningIcon from '@mui/icons-material/DinnerDiningRounded';
-import NightlifeIcon from '@mui/icons-material/NightlifeRounded';
 import QrCodeScannerIcon from '@mui/icons-material/QrCodeScannerRounded';
 import ArrowBackIcon from '@mui/icons-material/ArrowBackRounded';
 import BarcodeScannerDialog from './BarcodeScannerDialog';
 import FoodSearchResultsList from './FoodSearchResultsList';
+import MealPeriodIcon from './MealPeriodIcon';
 import type { NormalizedFoodItem } from '../types/food';
 import { MEAL_PERIOD_LABELS, MEAL_PERIOD_ORDER, type MealPeriod } from '../types/mealPeriod';
 import { getApiErrorMessage } from '../utils/apiError';
-import { getMealPeriodAccentColor } from '../utils/mealColors';
 
 type Props = {
     onSuccess?: () => void;
@@ -86,7 +79,6 @@ const mergeUniqueResults = (current: NormalizedFoodItem[], nextPage: NormalizedF
 };
 
 const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
-    const theme = useTheme();
     const [mode, setMode] = useState<'manual' | 'search'>('search');
     const [foodName, setFoodName] = useState('');
     const [calories, setCalories] = useState('');
@@ -115,22 +107,10 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
 
     const entryLocalDate = typeof date === 'string' && date.trim().length > 0 ? date.trim() : undefined;
 
-    const mealIcons = useMemo<Record<MealPeriod, React.ReactNode>>(
-        () => ({
-            BREAKFAST: <EggAltIcon sx={{ color: getMealPeriodAccentColor(theme, 'BREAKFAST') }} />,
-            MORNING_SNACK: <BakeryDiningIcon sx={{ color: getMealPeriodAccentColor(theme, 'MORNING_SNACK') }} />,
-            LUNCH: <LunchDiningIcon sx={{ color: getMealPeriodAccentColor(theme, 'LUNCH') }} />,
-            AFTERNOON_SNACK: <IcecreamIcon sx={{ color: getMealPeriodAccentColor(theme, 'AFTERNOON_SNACK') }} />,
-            DINNER: <DinnerDiningIcon sx={{ color: getMealPeriodAccentColor(theme, 'DINNER') }} />,
-            EVENING_SNACK: <NightlifeIcon sx={{ color: getMealPeriodAccentColor(theme, 'EVENING_SNACK') }} />
-        }),
-        [theme]
-    );
-
     const mealOptions = MEAL_PERIOD_ORDER.map((value) => ({
         value,
         label: MEAL_PERIOD_LABELS[value],
-        icon: mealIcons[value]
+        icon: <MealPeriodIcon mealPeriod={value} />
     }));
 
     const selectedItem = useMemo(
@@ -372,6 +352,125 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
         }
     };
 
+    const providerLookupNote = supportsBarcodeLookup === false ? ' (barcode lookup unavailable)' : '';
+    const searchButtonLabel = isSearching ? 'Searching...' : 'Search';
+
+    // Compute the search panel body outside JSX so the layout stays readable.
+    let searchResultsContent: React.ReactNode;
+
+    if (searchResults.length === 0) {
+        let emptyMessage = 'No results yet. Search by name or scan a barcode to see matching items.';
+        if (isSearching) {
+            emptyMessage = 'Searching...';
+        } else if (hasSearched) {
+            emptyMessage = 'No matches found. Try a different search term or scan again.';
+        }
+
+        searchResultsContent = (
+            <Typography variant="body2" color="text.secondary">
+                {emptyMessage}
+            </Typography>
+        );
+    } else if (searchView === 'results') {
+        searchResultsContent = (
+            <Stack spacing={1}>
+                <Typography variant="subtitle2">Results</Typography>
+                <FoodSearchResultsList
+                    items={searchResults}
+                    selectedItemId={selectedItemId}
+                    hasMore={hasMoreResults}
+                    isLoading={isSearching}
+                    isLoadingMore={isLoadingMoreResults}
+                    onLoadMore={() => void loadMoreSearchResults()}
+                    onSelect={selectSearchResult}
+                />
+                <Typography variant="caption" color="text.secondary">
+                    Tap a result to select it.
+                </Typography>
+            </Stack>
+        );
+    } else if (selectedItem) {
+        searchResultsContent = (
+            <Stack spacing={2}>
+                <Box
+                    sx={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'flex-start',
+                        gap: 2,
+                        border: 1,
+                        borderColor: 'divider',
+                        borderRadius: 1,
+                        p: 1.5
+                    }}
+                >
+                    <Box sx={{ minWidth: 0 }}>
+                        <Typography variant="subtitle2">Selected</Typography>
+                        <Typography variant="body2" sx={{ wordBreak: 'break-word' }}>
+                            {selectedItem.description}
+                            {selectedItem.brand ? ` (${selectedItem.brand})` : ''}
+                        </Typography>
+                    </Box>
+                    <Button
+                        variant="text"
+                        type="button"
+                        size="small"
+                        startIcon={<ArrowBackIcon />}
+                        onClick={() => setSearchView('results')}
+                    >
+                        Back to results
+                    </Button>
+                </Box>
+
+                <FormControl fullWidth>
+                    <InputLabel>Measure</InputLabel>
+                    <Select
+                        value={selectedMeasure?.label || ''}
+                        label="Measure"
+                        onChange={(e) => setSelectedMeasureLabel(e.target.value)}
+                        disabled={isSubmitting}
+                    >
+                        {(selectedItem.availableMeasures || [])
+                            .filter((m) => m.gramWeight)
+                            .map((measure) => (
+                                <MenuItem key={measure.label} value={measure.label}>
+                                    {measure.label} {measure.gramWeight ? `(${measure.gramWeight} g)` : ''}
+                                </MenuItem>
+                            ))}
+                    </Select>
+                </FormControl>
+
+                <TextField
+                    label="Quantity"
+                    type="number"
+                    value={quantity}
+                    onChange={(e) => setQuantity(parseFloat(e.target.value) || 0)}
+                    disabled={!selectedMeasure || isSubmitting}
+                    inputProps={{ min: 0, step: 0.5 }}
+                />
+
+                <Box>
+                    <Typography variant="body2" color="text.secondary">
+                        {selectedItem.nutrientsPer100g
+                            ? 'Calories are estimated from nutrients per 100g.'
+                            : 'Calories unavailable for this item.'}
+                    </Typography>
+                    {computed && (
+                        <Typography variant="subtitle1" sx={{ mt: 1 }}>
+                            {computed.calories} Calories for {computed.grams} g
+                        </Typography>
+                    )}
+                </Box>
+            </Stack>
+        );
+    } else {
+        searchResultsContent = (
+            <Typography variant="body2" color="text.secondary">
+                Select a result to continue.
+            </Typography>
+        );
+    }
+
     return (
         <Stack spacing={2} component="form" onSubmit={handleSubmit}>
             <ToggleButtonGroup
@@ -448,12 +547,12 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
                         disabled={isSearching || isSubmitting || !searchQuery.trim()}
                         sx={{ width: { xs: '100%', sm: 'auto' } }}
                     >
-                        {isSearching ? 'Searching...' : 'Search'}
+                        {searchButtonLabel}
                     </Button>
                     {providerName && (
                         <Typography variant="caption" color="text.secondary">
                             Provider: {providerName}
-                            {supportsBarcodeLookup === false ? ' (barcode lookup unavailable)' : ''}
+                            {providerLookupNote}
                         </Typography>
                     )}
 
@@ -466,109 +565,7 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
                         }}
                     />
 
-                    {searchResults.length > 0 ? (
-                        searchView === 'results' ? (
-                            <Stack spacing={1}>
-                                <Typography variant="subtitle2">Results</Typography>
-                                <FoodSearchResultsList
-                                    items={searchResults}
-                                    selectedItemId={selectedItemId}
-                                    hasMore={hasMoreResults}
-                                    isLoading={isSearching}
-                                    isLoadingMore={isLoadingMoreResults}
-                                    onLoadMore={() => void loadMoreSearchResults()}
-                                    onSelect={selectSearchResult}
-                                />
-                                <Typography variant="caption" color="text.secondary">
-                                    Tap a result to select it.
-                                </Typography>
-                            </Stack>
-                        ) : selectedItem ? (
-                            <Stack spacing={2}>
-                                <Box
-                                    sx={{
-                                        display: 'flex',
-                                        justifyContent: 'space-between',
-                                        alignItems: 'flex-start',
-                                        gap: 2,
-                                        border: 1,
-                                        borderColor: 'divider',
-                                        borderRadius: 1,
-                                        p: 1.5
-                                    }}
-                                >
-                                    <Box sx={{ minWidth: 0 }}>
-                                        <Typography variant="subtitle2">Selected</Typography>
-                                        <Typography variant="body2" sx={{ wordBreak: 'break-word' }}>
-                                            {selectedItem.description}
-                                            {selectedItem.brand ? ` (${selectedItem.brand})` : ''}
-                                        </Typography>
-                                    </Box>
-                                    <Button
-                                        variant="text"
-                                        type="button"
-                                        size="small"
-                                        startIcon={<ArrowBackIcon />}
-                                        onClick={() => setSearchView('results')}
-                                    >
-                                        Back to results
-                                    </Button>
-                                </Box>
-
-                                <FormControl fullWidth>
-                                    <InputLabel>Measure</InputLabel>
-                                    <Select
-                                        value={selectedMeasure?.label || ''}
-                                        label="Measure"
-                                        onChange={(e) => setSelectedMeasureLabel(e.target.value)}
-                                        disabled={isSubmitting}
-                                    >
-                                        {(selectedItem.availableMeasures || [])
-                                            .filter((m) => m.gramWeight)
-                                            .map((measure) => (
-                                                <MenuItem key={measure.label} value={measure.label}>
-                                                    {measure.label} {measure.gramWeight ? `(${measure.gramWeight} g)` : ''}
-                                                </MenuItem>
-                                            ))}
-                                    </Select>
-                                </FormControl>
-
-                                <TextField
-                                    label="Quantity"
-                                    type="number"
-                                    value={quantity}
-                                    onChange={(e) => setQuantity(parseFloat(e.target.value) || 0)}
-                                    disabled={!selectedMeasure || isSubmitting}
-                                    inputProps={{ min: 0, step: 0.5 }}
-                                />
-
-                                <Box>
-                                    <Typography variant="body2" color="text.secondary">
-                                        {selectedItem.nutrientsPer100g
-                                            ? 'Calories are estimated from nutrients per 100g.'
-                                            : 'Calories unavailable for this item.'}
-                                    </Typography>
-                                    {computed && (
-                                        <Typography variant="subtitle1" sx={{ mt: 1 }}>
-                                            {computed.calories} Calories for {computed.grams} g
-                                        </Typography>
-                                    )}
-                                </Box>
-                            </Stack>
-                        ) : (
-                            <Typography variant="body2" color="text.secondary">
-                                Select a result to continue.
-                            </Typography>
-                        )
-                    ) : (
-                        <Typography variant="body2" color="text.secondary">
-                            {isSearching
-                                ? 'Searching...'
-                                : hasSearched
-                                  ? 'No matches found. Try a different search term or scan again.'
-                                  : 'No results yet. Search by name or scan a barcode to see matching items.'}
-                        </Typography>
-                    )}
+                    {searchResultsContent}
                 </Stack>
             )}
 

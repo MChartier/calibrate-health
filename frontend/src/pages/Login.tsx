@@ -29,7 +29,7 @@ const Login: React.FC = () => {
     };
 
     return (
-        <AppPage maxWidth={420}>
+        <AppPage maxWidth="form">
             <AppCard>
                 <Stack component="form" spacing={2} onSubmit={handleSubmit}>
                     <SectionHeader title="Login" />

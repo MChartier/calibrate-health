@@ -76,7 +76,7 @@ const Settings: React.FC = () => {
     };
 
     return (
-        <AppPage maxWidth={720}>
+        <AppPage maxWidth="content">
             <Stack spacing={sectionGap} useFlexGap>
                 <AppCard>
                     <SectionHeader title="Units & Localization" sx={{ mb: 1.5 }} />

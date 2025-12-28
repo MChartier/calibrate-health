@@ -89,64 +89,71 @@ const Goals: React.FC = () => {
         return { min: min - padding, max: max + padding };
     }, [goal, targetIsValid, yData]);
 
+    let weightHistoryContent: React.ReactNode;
+
+    if (metricsQuery.isError) {
+        weightHistoryContent = <Alert severity="warning">Unable to load weight history.</Alert>;
+    } else if (metricsQuery.isLoading) {
+        weightHistoryContent = (
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                <Skeleton width="40%" />
+                <Skeleton variant="rounded" height={320} />
+            </Box>
+        );
+    } else if (points.length === 0) {
+        weightHistoryContent = <Typography color="text.secondary">No weight entries yet.</Typography>;
+    } else {
+        weightHistoryContent = (
+            <LineChart
+                xAxis={[
+                    {
+                        data: xData,
+                        scaleType: 'time',
+                        valueFormatter: (value) =>
+                            new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' }).format(value)
+                    }
+                ]}
+                yAxis={[
+                    {
+                        min: yDomain?.min,
+                        max: yDomain?.max,
+                        label: `Weight (${unitLabel})`
+                    }
+                ]}
+                series={[
+                    {
+                        data: yData,
+                        label: 'Weight',
+                        color: theme.palette.primary.main,
+                        showMark: true
+                    }
+                ]}
+                height={320}
+            >
+                {targetIsValid && (
+                    <ChartsReferenceLine
+                        y={goal!.target_weight}
+                        label={`Target: ${goal!.target_weight.toFixed(1)} ${unitLabel}`}
+                        lineStyle={{
+                            stroke: theme.palette.secondary.main,
+                            strokeDasharray: '6 6',
+                            strokeWidth: 2
+                        }}
+                        labelStyle={{ fill: theme.palette.text.secondary, fontWeight: 700 }}
+                    />
+                )}
+            </LineChart>
+        );
+    }
+
     return (
-        <AppPage maxWidth={960}>
+        <AppPage maxWidth="wide">
             <Stack spacing={sectionGap} useFlexGap>
                 <GoalTrackerCard />
 
                 <AppCard>
                     <SectionHeader title="Weight Over Time" sx={{ mb: 1.5 }} />
-
-                    {metricsQuery.isError ? (
-                        <Alert severity="warning">Unable to load weight history.</Alert>
-                    ) : metricsQuery.isLoading ? (
-                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                            <Skeleton width="40%" />
-                            <Skeleton variant="rounded" height={320} />
-                        </Box>
-                    ) : points.length === 0 ? (
-                        <Typography color="text.secondary">No weight entries yet.</Typography>
-                    ) : (
-                        <LineChart
-                            xAxis={[
-                                {
-                                    data: xData,
-                                    scaleType: 'time',
-                                    valueFormatter: (value) =>
-                                        new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' }).format(value)
-                                }
-                            ]}
-                            yAxis={[
-                                {
-                                    min: yDomain?.min,
-                                    max: yDomain?.max,
-                                    label: `Weight (${unitLabel})`
-                                }
-                            ]}
-                            series={[
-                                {
-                                    data: yData,
-                                    label: 'Weight',
-                                    color: theme.palette.primary.main,
-                                    showMark: true
-                                }
-                            ]}
-                            height={320}
-                        >
-                            {targetIsValid && (
-                                <ChartsReferenceLine
-                                    y={goal!.target_weight}
-                                    label={`Target: ${goal!.target_weight.toFixed(1)} ${unitLabel}`}
-                                    lineStyle={{
-                                        stroke: theme.palette.secondary.main,
-                                        strokeDasharray: '6 6',
-                                        strokeWidth: 2
-                                    }}
-                                    labelStyle={{ fill: theme.palette.text.secondary, fontWeight: 700 }}
-                                />
-                            )}
-                        </LineChart>
-                    )}
+                    {weightHistoryContent}
                 </AppCard>
             </Stack>
         </AppPage>

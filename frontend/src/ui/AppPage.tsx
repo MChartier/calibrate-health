@@ -5,10 +5,11 @@ import type { SxProps, Theme } from '@mui/material/styles';
 type AppPageProps = {
     children: React.ReactNode;
     /**
-     * Maximum width for the page content in pixels.
-     * Use `false` for full-width layouts.
+     * Maximum width for the page content.
+     * Use a named preset to avoid magic numbers, provide a pixel value for one-offs,
+     * or pass `false` for full-width layouts.
      */
-    maxWidth?: number | false;
+    maxWidth?: AppPageMaxWidth | number | false;
     /**
      * When true, remove horizontal gutters on extra-small screens and square surface corners.
      *
@@ -28,6 +29,24 @@ type AppPageProps = {
 
 const AppPageNestingContext = createContext(false);
 
+export type AppPageMaxWidth = 'form' | 'content' | 'wide';
+
+const APP_PAGE_MAX_WIDTH: Record<AppPageMaxWidth, number> = {
+    form: 420,
+    content: 720,
+    wide: 960
+};
+
+/**
+ * Resolve AppPage max-width presets into pixel values.
+ */
+function resolveAppPageMaxWidth(maxWidth: AppPageProps['maxWidth']): number | false {
+    if (maxWidth === false) return false;
+    if (typeof maxWidth === 'number') return maxWidth;
+    if (typeof maxWidth === 'string') return APP_PAGE_MAX_WIDTH[maxWidth];
+    return false;
+}
+
 /**
  * AppPage
  *
@@ -46,11 +65,12 @@ const AppPage: React.FC<AppPageProps> = ({
     sx
 }) => {
     const isNested = useContext(AppPageNestingContext);
+    const resolvedMaxWidth = resolveAppPageMaxWidth(maxWidth);
 
     const contentSx: SxProps<Theme> = [
         {
             width: '100%',
-            ...(maxWidth ? { maxWidth, mx: 'auto' } : null)
+            ...(resolvedMaxWidth ? { maxWidth: resolvedMaxWidth, mx: 'auto' } : null)
         },
         ...(Array.isArray(sx) ? sx : sx ? [sx] : [])
     ];

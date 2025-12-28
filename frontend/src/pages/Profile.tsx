@@ -176,7 +176,7 @@ const Profile: React.FC = () => {
     };
 
     return (
-        <AppPage maxWidth={720}>
+        <AppPage maxWidth="content">
             <Stack spacing={sectionGap} useFlexGap>
                 <Typography color="text.secondary">
                     Edit the info used to estimate your daily calorie burn (TDEE) and calorie math inputs.
