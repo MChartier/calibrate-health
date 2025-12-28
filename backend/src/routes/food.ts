@@ -1,8 +1,10 @@
 import express from 'express';
 import prisma from '../config/database';
 import { getFoodDataProvider } from '../services/foodData';
-import { MealPeriod } from '@prisma/client';
+import type { MealPeriod } from '@prisma/client';
 import { getSafeUtcTodayDateOnlyInTimeZone, parseLocalDateOnly } from '../utils/date';
+import { parseMealPeriod } from '../utils/mealPeriod';
+import { parseNonNegativeInteger, parsePositiveInteger, resolveLanguageCode } from '../utils/requestParsing';
 
 const router = express.Router();
 
@@ -14,71 +16,6 @@ const isAuthenticated = (req: express.Request, res: express.Response, next: expr
 };
 
 router.use(isAuthenticated);
-
-const MEAL_PERIOD_VALUES = new Set<string>(Object.values(MealPeriod));
-
-/**
- * Parse and validate a meal period identifier coming from API requests.
- *
- * `FoodLog.meal_period` is stored as a Prisma/Postgres enum. We accept only the
- * canonical enum identifiers so data stays consistent and the UI doesn't need
- * to alias/guess.
- */
-const parseMealPeriod = (value: unknown): MealPeriod | null => {
-    if (typeof value !== 'string') {
-        return null;
-    }
-    const trimmed = value.trim();
-    if (!MEAL_PERIOD_VALUES.has(trimmed)) {
-        return null;
-    }
-    return trimmed as MealPeriod;
-};
-
-/**
- * Parse an integer ID from a route param.
- */
-function parseIdParam(value: unknown): number | null {
-    const numeric = typeof value === 'number' ? value : typeof value === 'string' ? Number(value) : Number.NaN;
-    if (!Number.isFinite(numeric) || !Number.isInteger(numeric) || numeric <= 0) {
-        return null;
-    }
-    return numeric;
-}
-
-/**
- * Parse a calories field into a non-negative integer.
- */
-function parseCalories(value: unknown): number | null {
-    const numeric = typeof value === 'number' ? value : typeof value === 'string' ? parseInt(value, 10) : Number.NaN;
-    if (!Number.isFinite(numeric)) {
-        return null;
-    }
-    const parsed = Math.trunc(numeric);
-    if (parsed < 0) {
-        return null;
-    }
-    return parsed;
-}
-
-/**
- * Prefer an explicit language code, otherwise fall back to the request locale hint.
- */
-const getLanguageCode = (req: express.Request): string | undefined => {
-    const raw = typeof req.query.lc === 'string' ? req.query.lc.trim().toLowerCase() : undefined;
-    if (raw) {
-        return raw;
-    }
-    const header = req.headers['accept-language'];
-    if (!header || typeof header !== 'string') {
-        return undefined;
-    }
-    const primary = header.split(',')[0]?.trim();
-    if (!primary) {
-        return undefined;
-    }
-    return primary.split('-')[0]?.toLowerCase();
-};
 
 router.get('/search', async (req, res) => {
     const provider = getFoodDataProvider();
@@ -92,7 +29,10 @@ router.get('/search', async (req, res) => {
     const page = req.query.page ? parseInt(req.query.page as string, 10) : undefined;
     const pageSize = req.query.pageSize ? parseInt(req.query.pageSize as string, 10) : undefined;
     const quantityInGrams = req.query.grams ? parseFloat(req.query.grams as string) : undefined;
-    const languageCode = getLanguageCode(req);
+    const languageCode = resolveLanguageCode({
+        queryLanguageCode: req.query.lc,
+        acceptLanguageHeader: req.headers['accept-language']
+    });
 
     try {
         const result = await provider.searchFoods({
@@ -171,7 +111,7 @@ router.post('/', async (req, res) => {
             return res.status(400).json({ message: 'Invalid date' });
         }
 
-        const caloriesValue = parseCalories(calories);
+        const caloriesValue = parseNonNegativeInteger(calories);
         if (caloriesValue === null) {
             return res.status(400).json({ message: 'Invalid calories' });
         }
@@ -194,7 +134,7 @@ router.post('/', async (req, res) => {
 
 router.patch('/:id', async (req, res) => {
     const user = req.user as any;
-    const id = parseIdParam(req.params.id);
+    const id = parsePositiveInteger(req.params.id);
     if (id === null) {
         return res.status(400).json({ message: 'Invalid food log id' });
     }
@@ -211,7 +151,7 @@ router.patch('/:id', async (req, res) => {
     }
 
     if (calories !== undefined) {
-        const parsedCalories = parseCalories(calories);
+        const parsedCalories = parseNonNegativeInteger(calories);
         if (parsedCalories === null) {
             return res.status(400).json({ message: 'Invalid calories' });
         }
@@ -253,7 +193,7 @@ router.patch('/:id', async (req, res) => {
 
 router.delete('/:id', async (req, res) => {
     const user = req.user as any;
-    const id = parseIdParam(req.params.id);
+    const id = parsePositiveInteger(req.params.id);
     if (id === null) {
         return res.status(400).json({ message: 'Invalid food log id' });
     }
