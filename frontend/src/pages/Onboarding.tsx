@@ -13,6 +13,7 @@ import {
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { useAuth } from '../context/useAuth';
+import type { HeightUnit, WeightUnit } from '../context/authContext';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { activityLevelOptions } from '../constants/activityLevels';
@@ -21,13 +22,10 @@ import { validateGoalWeights } from '../utils/goalValidation';
 import { formatDateToLocalDateString } from '../utils/date';
 import TimeZonePicker from '../components/TimeZonePicker';
 import ProfilePhotoCard from '../components/ProfilePhotoCard';
+import UnitPreferenceToggles from '../components/UnitPreferenceToggles';
 import AppPage from '../ui/AppPage';
 import AppCard from '../ui/AppCard';
-import {
-    parseUnitPreferenceKey,
-    resolveUnitPreferenceKey,
-    type UnitPreferenceKey
-} from '../utils/unitPreferences';
+import { getDefaultUnitPreferencesForLocale } from '../utils/unitPreferences';
 import {
     DAILY_DEFICIT_CHOICE_STRINGS,
     DEFAULT_DAILY_DEFICIT_CHOICE_STRING,
@@ -40,11 +38,26 @@ const Onboarding: React.FC = () => {
     const { user, updateProfile, updateUnitPreferences } = useAuth();
     const navigate = useNavigate();
 
-    const defaultUnitPreference = useMemo<UnitPreferenceKey>(() => {
-        return resolveUnitPreferenceKey({ weight_unit: user?.weight_unit, height_unit: user?.height_unit });
-    }, [user?.height_unit, user?.weight_unit]);
-    const [unitPreference, setUnitPreference] = useState<UnitPreferenceKey>(defaultUnitPreference);
-    const { heightUnit, weightUnit } = useMemo(() => parseUnitPreferenceKey(unitPreference), [unitPreference]);
+    const detectedLocale = useMemo(() => {
+        if (typeof navigator === 'undefined') return '';
+        return navigator.language || navigator.languages?.[0] || '';
+    }, []);
+
+    const localeUnitDefaults = useMemo(() => getDefaultUnitPreferencesForLocale(detectedLocale), [detectedLocale]);
+
+    const userWeightUnit = user?.weight_unit;
+    const userHeightUnit = user?.height_unit;
+    const defaultUnits = useMemo(() => {
+        // New accounts default to KG/CM in the DB. During onboarding, prefer a locale-based guess unless
+        // the user has already chosen a non-default pairing.
+        if (userWeightUnit && userHeightUnit && (userWeightUnit !== 'KG' || userHeightUnit !== 'CM')) {
+            return { weightUnit: userWeightUnit, heightUnit: userHeightUnit };
+        }
+        return localeUnitDefaults;
+    }, [localeUnitDefaults, userHeightUnit, userWeightUnit]);
+
+    const [weightUnit, setWeightUnit] = useState<WeightUnit>(defaultUnits.weightUnit);
+    const [heightUnit, setHeightUnit] = useState<HeightUnit>(defaultUnits.heightUnit);
     const weightUnitLabel = weightUnit === 'LB' ? 'lb' : 'kg';
 
     const detectedTimezone = useMemo(() => Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC', []);
@@ -65,8 +78,9 @@ const Onboarding: React.FC = () => {
     const [isSaving, setIsSaving] = useState(false);
 
     useEffect(() => {
-        setUnitPreference(defaultUnitPreference);
-    }, [defaultUnitPreference]);
+        setWeightUnit(defaultUnits.weightUnit);
+        setHeightUnit(defaultUnits.heightUnit);
+    }, [defaultUnits.heightUnit, defaultUnits.weightUnit]);
 
     type ProfileUpdatePayload = {
         timezone: string | null;
@@ -230,15 +244,16 @@ const Onboarding: React.FC = () => {
                             helperText="Used to define your day boundaries for food and weight logs."
                         />
 
-                        <FormControl fullWidth required>
-                            <InputLabel>Units</InputLabel>
-                            <Select value={unitPreference} label="Units" onChange={(e) => setUnitPreference(e.target.value as UnitPreferenceKey)}>
-                                <MenuItem value="CM_KG">Metric (cm, kg)</MenuItem>
-                                <MenuItem value="FTIN_LB">Imperial (ft/in, lb)</MenuItem>
-                                <MenuItem value="CM_LB">Mixed (cm, lb)</MenuItem>
-                                <MenuItem value="FTIN_KG">Mixed (ft/in, kg)</MenuItem>
-                            </Select>
-                        </FormControl>
+                        <UnitPreferenceToggles
+                            weightUnit={weightUnit}
+                            heightUnit={heightUnit}
+                            onWeightUnitChange={setWeightUnit}
+                            onHeightUnitChange={setHeightUnit}
+                            disabled={isSaving}
+                        />
+                        <Typography variant="caption" color="text.secondary">
+                            We picked a default based on your device locale ({detectedLocale || 'unknown'}). You can change this anytime.
+                        </Typography>
 
                         {heightUnit === 'CM' ? (
                             <TextField

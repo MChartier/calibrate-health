@@ -1,6 +1,5 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
-    Alert,
     Box,
     Button,
     FormControl,
@@ -10,22 +9,20 @@ import {
     Select,
     Stack
 } from '@mui/material';
-import type { SelectChangeEvent } from '@mui/material/Select';
 import LogoutIcon from '@mui/icons-material/LogoutRounded';
 import { useTheme } from '@mui/material/styles';
 import { useNavigate } from 'react-router-dom';
+import { useTransientStatus } from '../hooks/useTransientStatus';
 import { useAuth } from '../context/useAuth';
+import type { HeightUnit, WeightUnit } from '../context/authContext';
 import { useThemeMode } from '../context/useThemeMode';
 import type { ThemePreference } from '../context/themeModeContext';
 import TimeZonePicker from '../components/TimeZonePicker';
+import UnitPreferenceToggles from '../components/UnitPreferenceToggles';
 import AppPage from '../ui/AppPage';
 import AppCard from '../ui/AppCard';
+import InlineStatusLine from '../ui/InlineStatusLine';
 import SectionHeader from '../ui/SectionHeader';
-import {
-    parseUnitPreferenceKey,
-    resolveUnitPreferenceKey,
-    type UnitPreferenceKey
-} from '../utils/unitPreferences';
 
 /**
  * Settings is focused on device preferences (theme) and app preferences (units).
@@ -36,37 +33,54 @@ const Settings: React.FC = () => {
     const { user, logout, updateUnitPreferences, updateTimezone } = useAuth();
     const { preference: themePreference, mode: resolvedThemeMode, setPreference: setThemePreference } = useThemeMode();
     const navigate = useNavigate();
-    const [settingsMessage, setSettingsMessage] = useState('');
-    const [accountMessage, setAccountMessage] = useState('');
+
+    const { status: unitsStatus, showStatus: showUnitsStatus } = useTransientStatus();
+    const { status: accountStatus, showStatus: showAccountStatus } = useTransientStatus();
+
     const detectedTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
     const [timezoneValue, setTimezoneValue] = useState(() => user?.timezone ?? detectedTimezone);
-    const [unitPreference, setUnitPreference] = useState<UnitPreferenceKey>(() =>
-        resolveUnitPreferenceKey({ weight_unit: user?.weight_unit, height_unit: user?.height_unit })
-    );
+    const [weightUnit, setWeightUnit] = useState<WeightUnit>(() => user?.weight_unit ?? 'KG');
+    const [heightUnit, setHeightUnit] = useState<HeightUnit>(() => user?.height_unit ?? 'CM');
 
-    React.useEffect(() => {
+    useEffect(() => {
         setTimezoneValue(user?.timezone ?? detectedTimezone);
-        setUnitPreference(resolveUnitPreferenceKey({ weight_unit: user?.weight_unit, height_unit: user?.height_unit }));
+        setWeightUnit(user?.weight_unit ?? 'KG');
+        setHeightUnit(user?.height_unit ?? 'CM');
     }, [detectedTimezone, user?.height_unit, user?.timezone, user?.weight_unit]);
 
-    const handleUnitPreferenceChange = async (e: SelectChangeEvent) => {
+    const handleWeightUnitChange = async (next: WeightUnit) => {
         if (!user) {
-            setSettingsMessage('Failed to update preferences');
+            showUnitsStatus('Failed to save changes', 'error');
             return;
         }
 
-        const previousPreference = unitPreference;
-        const nextPreference = e.target.value as UnitPreferenceKey;
-        setUnitPreference(nextPreference);
-
-        const { heightUnit, weightUnit } = parseUnitPreferenceKey(nextPreference);
+        const previous = weightUnit;
+        setWeightUnit(next);
 
         try {
-            await updateUnitPreferences({ weight_unit: weightUnit, height_unit: heightUnit });
-            setSettingsMessage('Preferences updated');
+            await updateUnitPreferences({ weight_unit: next });
+            showUnitsStatus('Changes saved', 'success');
         } catch {
-            setUnitPreference(previousPreference);
-            setSettingsMessage('Failed to update preferences');
+            setWeightUnit(previous);
+            showUnitsStatus('Failed to save changes', 'error');
+        }
+    };
+
+    const handleHeightUnitChange = async (next: HeightUnit) => {
+        if (!user) {
+            showUnitsStatus('Failed to save changes', 'error');
+            return;
+        }
+
+        const previous = heightUnit;
+        setHeightUnit(next);
+
+        try {
+            await updateUnitPreferences({ height_unit: next });
+            showUnitsStatus('Changes saved', 'success');
+        } catch {
+            setHeightUnit(previous);
+            showUnitsStatus('Failed to save changes', 'error');
         }
     };
 
@@ -74,9 +88,9 @@ const Settings: React.FC = () => {
         setTimezoneValue(nextTimezone);
         try {
             await updateTimezone(nextTimezone);
-            setSettingsMessage('Timezone updated');
+            showUnitsStatus('Changes saved', 'success');
         } catch {
-            setSettingsMessage('Failed to update timezone');
+            showUnitsStatus('Failed to save changes', 'error');
         }
     };
 
@@ -84,12 +98,11 @@ const Settings: React.FC = () => {
      * Clear the current session and return the user to the login screen.
      */
     const handleLogout = async () => {
-        setAccountMessage('');
         try {
             await logout();
             navigate('/login');
         } catch {
-            setAccountMessage('Failed to log out');
+            showAccountStatus('Failed to log out', 'error');
         }
     };
 
@@ -97,23 +110,18 @@ const Settings: React.FC = () => {
         <AppPage maxWidth="content">
             <Stack spacing={sectionGap} useFlexGap>
                 <AppCard>
-                    <SectionHeader title="Units & Localization" sx={{ mb: 1.5 }} />
+                    <SectionHeader title="Units & Localization" sx={{ mb: 0.5 }} />
 
-                    {settingsMessage && (
-                        <Alert severity="info" sx={{ mb: 2 }}>
-                            {settingsMessage}
-                        </Alert>
-                    )}
+                    <InlineStatusLine status={unitsStatus} sx={{ mb: 1 }} />
 
-                    <FormControl fullWidth margin="normal">
-                        <InputLabel>Units</InputLabel>
-                        <Select value={unitPreference} label="Units" onChange={handleUnitPreferenceChange}>
-                            <MenuItem value="CM_KG">Metric (cm, kg)</MenuItem>
-                            <MenuItem value="FTIN_LB">Imperial (ft/in, lb)</MenuItem>
-                            <MenuItem value="CM_LB">Mixed (cm, lb)</MenuItem>
-                            <MenuItem value="FTIN_KG">Mixed (ft/in, kg)</MenuItem>
-                        </Select>
-                    </FormControl>
+                    <Box sx={{ mt: 1 }}>
+                        <UnitPreferenceToggles
+                            weightUnit={weightUnit}
+                            heightUnit={heightUnit}
+                            onWeightUnitChange={(next) => void handleWeightUnitChange(next)}
+                            onHeightUnitChange={(next) => void handleHeightUnitChange(next)}
+                        />
+                    </Box>
 
                     <Box sx={{ mt: 2 }}>
                         <TimeZonePicker
@@ -147,13 +155,8 @@ const Settings: React.FC = () => {
                 </AppCard>
 
                 <AppCard>
-                    <SectionHeader title="Account" sx={{ mb: 1.5 }} />
-
-                    {accountMessage && (
-                        <Alert severity="error" sx={{ mb: 2 }}>
-                            {accountMessage}
-                        </Alert>
-                    )}
+                    <SectionHeader title="Account" sx={{ mb: 0.5 }} />
+                    <InlineStatusLine status={accountStatus} sx={{ mb: 1 }} />
 
                     <Button
                         variant="outlined"

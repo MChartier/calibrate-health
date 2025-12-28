@@ -1,31 +1,53 @@
 import type { HeightUnit, WeightUnit } from '../context/authContext';
 
-export type UnitPreferenceKey = 'CM_KG' | 'FTIN_LB' | 'CM_LB' | 'FTIN_KG';
+const IMPERIAL_REGION_CODES = new Set(['US', 'LR', 'MM']);
 
 /**
- * Return a deterministic "combined unit preference" key for a height + weight unit pairing.
+ * Best-effort extraction of a region subtag (e.g. "US") from a BCP 47 locale string.
+ *
+ * Uses Intl.Locale when available, otherwise falls back to parsing common forms like "en-US" or "en_US".
  */
-export function getUnitPreferenceKey(heightUnit: HeightUnit, weightUnit: WeightUnit): UnitPreferenceKey {
-    if (heightUnit === 'CM' && weightUnit === 'KG') return 'CM_KG';
-    if (heightUnit === 'FT_IN' && weightUnit === 'LB') return 'FTIN_LB';
-    if (heightUnit === 'CM' && weightUnit === 'LB') return 'CM_LB';
-    return 'FTIN_KG';
+function getRegionFromLocale(locale: string | null | undefined): string | null {
+    if (!locale) return null;
+    const trimmed = locale.trim();
+    if (!trimmed) return null;
+
+    // Prefer the standards-based parser when the runtime supports it.
+    try {
+        const maybeLocaleCtor = (Intl as unknown as { Locale?: new (tag: string) => { region?: string } }).Locale;
+        if (maybeLocaleCtor) {
+            const region = new maybeLocaleCtor(trimmed).region;
+            if (typeof region === 'string' && region.trim().length > 0) {
+                return region.toUpperCase();
+            }
+        }
+    } catch {
+        // Fall through to the best-effort parser.
+    }
+
+    const parts = trimmed.replace(/_/g, '-').split('-').filter(Boolean);
+    // The region is commonly the second subtag, but can be third if a script is present (e.g. "zh-Hans-CN").
+    for (const part of parts.slice(1)) {
+        if (/^[A-Za-z]{2}$/.test(part)) return part.toUpperCase();
+        if (/^[0-9]{3}$/.test(part)) return part;
+    }
+
+    return null;
 }
 
 /**
- * Decode a combined unit preference key into its height + weight unit parts.
+ * Choose a reasonable default unit preference from a user's locale string.
+ *
+ * This is intentionally a simple heuristic: a small set of regions are treated as "imperial leaning",
+ * and everything else defaults to metric.
  */
-export function parseUnitPreferenceKey(key: UnitPreferenceKey): { heightUnit: HeightUnit; weightUnit: WeightUnit } {
-    switch (key) {
-        case 'CM_KG':
-            return { heightUnit: 'CM', weightUnit: 'KG' };
-        case 'FTIN_LB':
-            return { heightUnit: 'FT_IN', weightUnit: 'LB' };
-        case 'CM_LB':
-            return { heightUnit: 'CM', weightUnit: 'LB' };
-        case 'FTIN_KG':
-            return { heightUnit: 'FT_IN', weightUnit: 'KG' };
-    }
+export function getDefaultUnitPreferencesForLocale(
+    locale: string | null | undefined
+): { weightUnit: WeightUnit; heightUnit: HeightUnit } {
+    const region = getRegionFromLocale(locale);
+    const prefersImperial = region ? IMPERIAL_REGION_CODES.has(region) : false;
+
+    return prefersImperial ? { weightUnit: 'LB', heightUnit: 'FT_IN' } : { weightUnit: 'KG', heightUnit: 'CM' };
 }
 
 /**
@@ -34,16 +56,4 @@ export function parseUnitPreferenceKey(key: UnitPreferenceKey): { heightUnit: He
  */
 export function getDefaultHeightUnitForWeightUnit(weightUnit: WeightUnit): HeightUnit {
     return weightUnit === 'LB' ? 'FT_IN' : 'CM';
-}
-
-/**
- * Resolve a combined unit preference key from stored (or partially missing) unit preferences.
- */
-export function resolveUnitPreferenceKey(preferences: {
-    weight_unit?: WeightUnit | null;
-    height_unit?: HeightUnit | null;
-}): UnitPreferenceKey {
-    const weightUnit: WeightUnit = preferences.weight_unit ?? 'KG';
-    const heightUnit: HeightUnit = preferences.height_unit ?? getDefaultHeightUnitForWeightUnit(weightUnit);
-    return getUnitPreferenceKey(heightUnit, weightUnit);
 }
