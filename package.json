@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "node scripts/dev.mjs",
     "dev:test": "AUTO_LOGIN_TEST_USER=true node scripts/dev.mjs",
+    "dev:test-onboarding": "AUTO_LOGIN_TEST_USER=true AUTO_LOGIN_TEST_USER_EMAIL=test-onboarding@cal.io node scripts/dev.mjs",
     "dev:backend": "npm --prefix backend run dev",
     "dev:frontend": "npm --prefix frontend run dev",
     "prisma:generate": "npm --prefix backend run prisma:generate",

@@ -2,7 +2,21 @@ import type { NextFunction, Request, Response } from 'express';
 import prisma from '../config/database';
 import { ensureDevTestData } from '../services/devTestData';
 
-const TEST_USER_EMAIL = 'test@cal.io';
+const DEFAULT_TEST_USER_EMAIL = 'test@cal.io';
+
+/**
+ * Resolve which deterministic dev user should be used for auto-login.
+ *
+ * This allows scripts (e.g. onboarding flows) to choose between multiple seeded accounts
+ * without changing code.
+ */
+const getAutoLoginTestUserEmail = (): string => {
+  const override = process.env.AUTO_LOGIN_TEST_USER_EMAIL;
+  if (typeof override === 'string' && override.trim().length > 0) {
+    return override.trim();
+  }
+  return DEFAULT_TEST_USER_EMAIL;
+};
 
 /**
  * Decide whether the current request should auto-login the local test user.
@@ -36,7 +50,8 @@ export const autoLoginTestUser = async (
     console.warn('Dev auto-login: unable to ensure seed data:', error);
   }
 
-  const user = await prisma.user.findUnique({ where: { email: TEST_USER_EMAIL } });
+  const userEmail = getAutoLoginTestUserEmail();
+  const user = await prisma.user.findUnique({ where: { email: userEmail } });
   if (!user) {
     next();
     return;
