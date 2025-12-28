@@ -21,6 +21,7 @@ import { useUserProfileQuery } from '../queries/userProfile';
 import { validateGoalWeights } from '../utils/goalValidation';
 import { formatDateToLocalDateString } from '../utils/date';
 import TimeZonePicker from '../components/TimeZonePicker';
+import ProfilePhotoCard from '../components/ProfilePhotoCard';
 import UnitPreferenceToggles from '../components/UnitPreferenceToggles';
 import AppPage from '../ui/AppPage';
 import AppCard from '../ui/AppCard';
@@ -195,6 +196,11 @@ const Onboarding: React.FC = () => {
                         We need a few details to estimate your calories burned and daily target. You can change these later from your profile and settings.
                     </Typography>
                 </Box>
+
+                <ProfilePhotoCard
+                    title="Profile photo (optional)"
+                    description="Shown in the app bar and on your profile."
+                />
 
                 <AppCard>
                     <Stack spacing={2}>

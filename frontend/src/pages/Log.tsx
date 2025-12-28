@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
     Alert,
     Box,
@@ -8,7 +8,6 @@ import {
     DialogContent,
     DialogTitle,
     IconButton,
-    LinearProgress,
     TextField,
     Tooltip,
 } from '@mui/material';
@@ -20,24 +19,16 @@ import ChevronRightIcon from '@mui/icons-material/ChevronRightRounded';
 import TodayIcon from '@mui/icons-material/TodayRounded';
 import RestaurantIcon from '@mui/icons-material/RestaurantRounded';
 import MonitorWeightIcon from '@mui/icons-material/MonitorWeightRounded';
-import axios from 'axios';
 import WeightEntryForm from '../components/WeightEntryForm';
 import FoodEntryForm from '../components/FoodEntryForm';
 import FoodLogMeals from '../components/FoodLogMeals';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import LogSummaryCard from '../components/LogSummaryCard';
 import WeightSummaryCard from '../components/WeightSummaryCard';
 import { useAuth } from '../context/useAuth';
-import { addDaysToIsoDate, getTodayIsoDate } from '../utils/date';
-import type { MealPeriod } from '../types/mealPeriod';
+import { addDaysToIsoDate, clampIsoDate, formatDateToLocalDateString, getTodayIsoDate } from '../utils/date';
+import { fetchFoodLog, foodLogQueryKey, useFoodLogQuery } from '../queries/foodLog';
 import AppCard from '../ui/AppCard';
-
-type FoodLogEntry = {
-    id: number;
-    meal_period: MealPeriod;
-    name: string;
-    calories: number;
-};
 
 const LOG_FAB_DIAMETER_SPACING = 7; // Default MUI "large" Fab is 56px (7 * 8).
 const LOG_FAB_CONTENT_CLEARANCE_SPACING = 2; // Extra room so bottom-row actions aren't tight against the FAB.
@@ -48,25 +39,77 @@ const LOG_PAGE_BOTTOM_PADDING = {
     md: LOG_FAB_DIAMETER_SPACING + LOG_FAB_CONTENT_CLEARANCE_SPACING
 } as const;
 
+type LogDateBounds = { min: string; max: string };
+
+/**
+ * Compute inclusive local-day bounds for /log date navigation.
+ *
+ * Lower bound: the user's account creation day (prevents absurd date ranges like year 0001).
+ * Upper bound: today in the user's timezone (no future days).
+ */
+function getLogDateBounds(args: { todayIso: string; createdAtIso?: string; timeZone: string }): LogDateBounds {
+    const max = args.todayIso;
+    const createdAt = args.createdAtIso;
+    if (!createdAt) return { min: max, max };
+
+    const createdAtDate = new Date(createdAt);
+    if (Number.isNaN(createdAtDate.getTime())) return { min: max, max };
+
+    const minRaw = formatDateToLocalDateString(createdAtDate, args.timeZone);
+    // Defensive: if clocks are skewed, ensure bounds stay sane.
+    const min = minRaw > max ? max : minRaw;
+    return { min, max };
+}
+
 const Log: React.FC = () => {
     const queryClient = useQueryClient();
     const { user } = useAuth();
-    const today = useMemo(() => getTodayIsoDate(user?.timezone), [user?.timezone]);
-    const [selectedDate, setSelectedDate] = useState(today);
+    const timeZone = useMemo(
+        () => user?.timezone?.trim() || Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
+        [user?.timezone]
+    );
+    const today = useMemo(() => getTodayIsoDate(timeZone), [timeZone]);
+
+    const dateBounds = useMemo(() => {
+        return getLogDateBounds({ todayIso: today, createdAtIso: user?.created_at, timeZone });
+    }, [today, timeZone, user?.created_at]);
+
+    const [selectedDate, setSelectedDate] = useState(() => today);
     const [isFoodDialogOpen, setIsFoodDialogOpen] = useState(false);
     const [isWeightDialogOpen, setIsWeightDialogOpen] = useState(false);
 
-    const effectiveDate = selectedDate > today ? today : selectedDate;
+    // Clamp selection when the bounds change (e.g. user profile loads, timezone changes).
+    useEffect(() => {
+        setSelectedDate((prev) => {
+            const clamped = clampIsoDate(prev, dateBounds);
+            return clamped === prev ? prev : clamped;
+        });
+    }, [dateBounds]);
 
-    const foodQuery = useQuery({
-        queryKey: ['food', effectiveDate],
-        queryFn: async (): Promise<FoodLogEntry[]> => {
-            const res = await axios.get('/api/food?date=' + encodeURIComponent(effectiveDate));
-            return Array.isArray(res.data) ? res.data : [];
+    const effectiveDate = clampIsoDate(selectedDate, dateBounds);
+
+    const foodQuery = useFoodLogQuery(effectiveDate);
+
+    useEffect(() => {
+        const prevDate = addDaysToIsoDate(effectiveDate, -1);
+        if (prevDate >= dateBounds.min) {
+            void queryClient.prefetchQuery({
+                queryKey: foodLogQueryKey(prevDate),
+                queryFn: () => fetchFoodLog(prevDate)
+            });
         }
-    });
 
-    const canGoForward = effectiveDate < today;
+        const nextDate = addDaysToIsoDate(effectiveDate, 1);
+        if (nextDate <= dateBounds.max) {
+            void queryClient.prefetchQuery({
+                queryKey: foodLogQueryKey(nextDate),
+                queryFn: () => fetchFoodLog(nextDate)
+            });
+        }
+    }, [dateBounds.max, dateBounds.min, effectiveDate, queryClient]);
+
+    const canGoBack = effectiveDate > dateBounds.min;
+    const canGoForward = effectiveDate < dateBounds.max;
 
     const handleCloseFoodDialog = () => setIsFoodDialogOpen(false);
     const handleCloseWeightDialog = () => setIsWeightDialogOpen(false);
@@ -90,12 +133,17 @@ const Log: React.FC = () => {
                     }}
                 >
                     <Tooltip title="Previous day">
-                        <IconButton
-                            aria-label="Previous day"
-                            onClick={() => setSelectedDate(addDaysToIsoDate(effectiveDate, -1))}
-                        >
-                            <ChevronLeftIcon />
-                        </IconButton>
+                        <span>
+                            <IconButton
+                                aria-label="Previous day"
+                                onClick={() =>
+                                    setSelectedDate(clampIsoDate(addDaysToIsoDate(effectiveDate, -1), dateBounds))
+                                }
+                                disabled={!canGoBack}
+                            >
+                                <ChevronLeftIcon />
+                            </IconButton>
+                        </span>
                     </Tooltip>
 
                     <TextField
@@ -105,10 +153,10 @@ const Log: React.FC = () => {
                         onChange={(e) => {
                             const nextDate = e.target.value;
                             if (!nextDate) return;
-                            setSelectedDate(nextDate > today ? today : nextDate);
+                            setSelectedDate(clampIsoDate(nextDate, dateBounds));
                         }}
                         InputLabelProps={{ shrink: true }}
-                        inputProps={{ max: today }}
+                        inputProps={{ min: dateBounds.min, max: dateBounds.max }}
                         sx={{
                             flexGrow: 1,
                             minWidth: 0,
@@ -130,7 +178,7 @@ const Log: React.FC = () => {
                                 aria-label="Next day"
                                 onClick={() => {
                                     const next = addDaysToIsoDate(effectiveDate, 1);
-                                    setSelectedDate(next > today ? today : next);
+                                    setSelectedDate(clampIsoDate(next, dateBounds));
                                 }}
                                 disabled={!canGoForward}
                             >
@@ -143,8 +191,8 @@ const Log: React.FC = () => {
                         <span>
                             <IconButton
                                 aria-label="Jump to today"
-                                onClick={() => setSelectedDate(today)}
-                                disabled={effectiveDate === today}
+                                onClick={() => setSelectedDate(dateBounds.max)}
+                                disabled={effectiveDate === dateBounds.max}
                             >
                                 <TodayIcon />
                             </IconButton>
@@ -180,10 +228,7 @@ const Log: React.FC = () => {
                         Unable to load your food log for this day.
                     </Alert>
                 ) : (
-                    <>
-                        {foodQuery.isFetching && <LinearProgress sx={{ mb: 2 }} />}
-                        <FoodLogMeals logs={foodQuery.data ?? []} />
-                    </>
+                    <FoodLogMeals logs={foodQuery.data ?? []} isLoading={foodQuery.isLoading} />
                 )}
             </AppCard>
 

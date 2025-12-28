@@ -7,9 +7,15 @@ import axios from 'axios';
 import { useAuth } from '../context/useAuth';
 import { getTodayIsoDate } from '../utils/date';
 import { parseDateOnlyToLocalDate } from '../utils/goalTracking';
+import { usePrefersReducedMotion } from '../hooks/usePrefersReducedMotion';
+import { useTweenedNumber } from '../hooks/useTweenedNumber';
 import SectionHeader from '../ui/SectionHeader';
 
 const EM_DASH = '\u2014';
+// Duration used for "date switch" value transitions.
+const WEIGHT_SUMMARY_TWEEN_DURATION_MS = 520;
+// Icon tile size for the weight card (kept consistent between loading + loaded UI).
+const WEIGHT_ICON_TILE_SIZE_PX = 56;
 
 type MetricEntry = {
     id: number;
@@ -96,6 +102,13 @@ const WeightSummaryCard: React.FC<WeightSummaryCardProps> = ({ date, onOpenWeigh
         return findMetricOnOrBeforeDate(metrics, date);
     }, [date, metricForSelectedDate, metrics]);
 
+    const prefersReducedMotion = usePrefersReducedMotion();
+    const displayedWeight = displayedMetric?.weight ?? null;
+    const animatedWeight = useTweenedNumber(displayedWeight ?? 0, {
+        durationMs: WEIGHT_SUMMARY_TWEEN_DURATION_MS,
+        disabled: prefersReducedMotion || metricsQuery.isLoading || metricsQuery.isError || displayedWeight === null
+    });
+
     const ctaLabel = useMemo(() => {
         if (isToday) {
             return metricForSelectedDate ? "Edit today's weight" : "Log today's weight";
@@ -103,25 +116,51 @@ const WeightSummaryCard: React.FC<WeightSummaryCardProps> = ({ date, onOpenWeigh
         return metricForSelectedDate ? 'Edit weight' : 'Log weight';
     }, [isToday, metricForSelectedDate]);
 
-    const displayedWeightLabel = displayedMetric ? `${displayedMetric.weight.toFixed(1)} ${unitLabel}` : EM_DASH;
+    const displayedWeightLabel = displayedWeight !== null ? `${animatedWeight.toFixed(1)} ${unitLabel}` : EM_DASH;
     const asOfLabel = formatMetricDateLabel(displayedMetric?.date ?? null);
 
     let cardBody: React.ReactNode;
     if (metricsQuery.isLoading) {
         cardBody = (
-            <Box
-                sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 2,
-                    flexDirection: { xs: 'column', sm: 'row' }
-                }}
-            >
-                <Skeleton variant="rounded" width={56} height={56} />
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, flexGrow: 1 }}>
-                    <Skeleton width="40%" height={32} />
-                    <Skeleton width="55%" />
-                    <Skeleton width="35%" />
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                <Box
+                    sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 2,
+                        flexDirection: { xs: 'column', sm: 'row' }
+                    }}
+                >
+                    <Box
+                        sx={{
+                            width: WEIGHT_ICON_TILE_SIZE_PX,
+                            height: WEIGHT_ICON_TILE_SIZE_PX,
+                            borderRadius: 2,
+                            backgroundColor: (theme) =>
+                                alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.18 : 0.08),
+                            border: (theme) => `1px solid ${theme.palette.divider}`,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                        }}
+                        aria-hidden
+                    >
+                        <MonitorWeightIcon color="primary" />
+                    </Box>
+
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.25, flexGrow: 1, minWidth: 0 }}>
+                        <Skeleton width="40%" height={32} />
+                        <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 0.75 }}>
+                            <Typography variant="body2" color="text.secondary">
+                                As of
+                            </Typography>
+                            <Skeleton width="35%" height={20} />
+                        </Box>
+                    </Box>
+                </Box>
+
+                <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                    <Skeleton variant="rounded" height={36} width={156} />
                 </Box>
             </Box>
         );
@@ -149,8 +188,8 @@ const WeightSummaryCard: React.FC<WeightSummaryCardProps> = ({ date, onOpenWeigh
                 >
                     <Box
                         sx={{
-                            width: 56,
-                            height: 56,
+                            width: WEIGHT_ICON_TILE_SIZE_PX,
+                            height: WEIGHT_ICON_TILE_SIZE_PX,
                             borderRadius: 2,
                             backgroundColor: (theme) =>
                                 alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.18 : 0.08),

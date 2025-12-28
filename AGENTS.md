@@ -63,7 +63,13 @@ cal-io is a responsive calorie tracker (desktop + mobile web) for users who want
 
 ## Code Review Preferences (UI / Frontend)
 - Avoid magic numbers for layout/styling (e.g., widths, opacities); prefer named constants, theme tokens, or wrapper presets.
+- When introducing new constants (layout or motion), include a short comment describing what the constant controls.
 - Keep JSX readable: avoid long chained ternaries and heavy inline `sx` logic; assign to well-named variables or small documented helpers.
 - Deduplicate repeated UI mappings (e.g., enums -> icons/labels) into shared utilities/components when used in multiple places.
+- Prefer shaped loading placeholders that keep stable UI chrome rendered; avoid duplicating entire feature layouts in separate "Skeleton" components unless there is a clear justification.
+- For animations/transitions, encapsulate math/state in small hooks/helpers and include comments describing the intended UX effect (respect `prefers-reduced-motion`).
 - Keep abstractions lean: if a wrapper/prop/type isn't used, remove it rather than carrying extra API surface "just in case".
 - Keep `ui/` focused on generic primitives/wrappers; place feature-specific components under `components/` (or feature folders).
+
+## Code Review Preferences (Backend / API)
+- When adding new API serialization helpers, prefer explicit input/output types that describe the wire shape (especially for Date fields).

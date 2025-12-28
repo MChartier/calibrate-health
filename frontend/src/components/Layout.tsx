@@ -26,17 +26,9 @@ import LogoutIcon from '@mui/icons-material/LogoutRounded';
 import { alpha, useTheme } from '@mui/material/styles';
 import { useAuth } from '../context/useAuth';
 import AppPage from '../ui/AppPage';
+import { getAvatarLabel } from '../utils/avatarLabel';
 
 const drawerWidth = 240;
-
-/**
- * Derive a short, stable label for the user's Avatar when we don't have a profile image.
- */
-function getAvatarLabel(email?: string) {
-    const trimmed = email?.trim();
-    if (!trimmed) return '?';
-    return trimmed[0].toUpperCase();
-}
 
 /**
  * Map the current pathname to a navigation value so nested routes keep the correct tab highlighted.
@@ -174,6 +166,7 @@ const Layout: React.FC = () => {
                                 sx={{ ml: 1 }}
                             >
                                 <Avatar
+                                    src={user?.profile_image_url ?? undefined}
                                     sx={{
                                         width: 32,
                                         height: 32,

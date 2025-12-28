@@ -20,6 +20,7 @@ import { useTheme } from '@mui/material/styles';
 import { Link as RouterLink } from 'react-router-dom';
 import CalorieTargetBanner from '../components/CalorieTargetBanner';
 import { activityLevelOptions } from '../constants/activityLevels';
+import ProfilePhotoCard from '../components/ProfilePhotoCard';
 import { useTransientStatus } from '../hooks/useTransientStatus';
 import type { UserProfilePatchPayload } from '../context/authContext';
 import { useAuth } from '../context/useAuth';
@@ -336,6 +337,8 @@ const Profile: React.FC = () => {
                 <Typography color="text.secondary">
                     Changes save automatically. Update the inputs below to recalculate your calorie target (TDEE +/- goal deficit).
                 </Typography>
+
+                <ProfilePhotoCard description="Used for your avatar in the app bar." />
 
                 <AppCard>
                     <InlineStatusLine status={autosaveStatusLine} sx={{ mb: 1 }} ariaLive="off" />

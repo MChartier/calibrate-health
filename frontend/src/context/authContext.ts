@@ -6,6 +6,12 @@ export type HeightUnit = 'CM' | 'FT_IN';
 export type User = {
     id: number;
     email: string;
+    /**
+     * Account creation timestamp (ISO string).
+     *
+     * Used for UX bounds (e.g. earliest selectable day on /log).
+     */
+    created_at: string;
     weight_unit: WeightUnit;
     height_unit: HeightUnit;
     timezone: string;
@@ -13,6 +19,8 @@ export type User = {
     sex?: 'MALE' | 'FEMALE' | null;
     height_mm?: number | null;
     activity_level?: 'SEDENTARY' | 'LIGHT' | 'MODERATE' | 'ACTIVE' | 'VERY_ACTIVE' | null;
+    /** Optional inline avatar payload returned by the API (data URL). */
+    profile_image_url?: string | null;
 };
 
 export type UserProfilePatchPayload = {
@@ -37,6 +45,7 @@ export type AuthContextType = {
     updateWeightUnit: (weight_unit: WeightUnit) => Promise<void>;
     updateHeightUnit: (height_unit: HeightUnit) => Promise<void>;
     updateProfile: (profile: UserProfilePatchPayload) => Promise<void>;
+    updateProfileImage: (dataUrl: string | null) => Promise<void>;
     updateTimezone: (timezone: string) => Promise<void>;
     isLoading: boolean;
 };
