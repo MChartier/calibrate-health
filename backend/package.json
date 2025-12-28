@@ -9,7 +9,9 @@
     "db:seed": "ts-node prisma/seed.ts",
     "db:studio": "prisma studio",
     "prisma:generate": "prisma generate",
+    "pretest": "npm run prisma:generate",
     "test": "node -r ts-node/register --test",
+    "pretest:coverage": "npm run prisma:generate",
     "test:coverage": "c8 node -r ts-node/register --test",
     "dev": "nodemon --watch src --ext ts,json --exec ts-node src/index.ts"
   },
