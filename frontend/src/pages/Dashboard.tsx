@@ -10,7 +10,7 @@ const Dashboard: React.FC = () => {
 
     return (
         <Box>
-            <CalorieTargetBanner />
+            <CalorieTargetBanner isDashboard />
 
             <Grid container spacing={3} alignItems="stretch">
                 <Grid size={{ xs: 12, md: 6 }} sx={{ display: 'flex' }}>

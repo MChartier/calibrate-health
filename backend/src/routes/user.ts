@@ -237,11 +237,15 @@ router.patch('/profile', async (req, res) => {
   }
 
   if (date_of_birth !== undefined) {
-    const parsedDate = new Date(date_of_birth);
-    if (Number.isNaN(parsedDate.getTime())) {
-      return res.status(400).json({ message: 'Invalid date_of_birth' });
+    if (date_of_birth === null || date_of_birth === '') {
+      updateData.date_of_birth = null;
+    } else {
+      const parsedDate = new Date(date_of_birth);
+      if (Number.isNaN(parsedDate.getTime())) {
+        return res.status(400).json({ message: 'Invalid date_of_birth' });
+      }
+      updateData.date_of_birth = parsedDate;
     }
-    updateData.date_of_birth = parsedDate;
   }
 
   if (sex !== undefined) {
