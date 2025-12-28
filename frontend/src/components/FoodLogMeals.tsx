@@ -17,6 +17,7 @@ import {
     InputLabel,
     MenuItem,
     Select,
+    Skeleton,
     Stack,
     TextField,
     Tooltip,
@@ -46,6 +47,14 @@ const MEALS: Array<{ key: MealPeriod; label: string }> = MEAL_PERIOD_ORDER.map((
 }));
 
 const MEAL_PERIOD_SET = new Set<MealPeriod>(MEAL_PERIOD_ORDER);
+
+// Number of placeholder entry rows shown per meal while switching dates with no cached food data yet.
+const FOOD_LOG_SKELETON_ROW_COUNT = 2;
+// Placeholder size knobs for the shaped loading UI.
+const FOOD_LOG_SKELETON_TOTAL_WIDTH_PX = 88; // Approx width of the "{N} Calories" summary text.
+const FOOD_LOG_SKELETON_TOTAL_HEIGHT_PX = 24; // Keeps the placeholder aligned with Typography metrics.
+const FOOD_LOG_SKELETON_ROW_HEIGHT_PX = 22; // Height for each placeholder row in AccordionDetails.
+const FOOD_LOG_SKELETON_ROW_CALORIES_WIDTH_PX = 76; // Approx width of a "{N} Calories" entry label.
 
 /**
  * Build a Record keyed by MealPeriod using the canonical MEAL_PERIOD_ORDER sequence.
@@ -82,7 +91,18 @@ function parseCaloriesInput(value: string): number | null {
     return rounded;
 }
 
-const FoodLogMeals: React.FC<{ logs: FoodLogEntry[] }> = ({ logs }) => {
+export type FoodLogMealsProps = {
+    logs: FoodLogEntry[];
+    /**
+     * When true, render shaped skeleton placeholders in place of dynamic totals/entries.
+     *
+     * This prevents the UI from flashing misleading empty states (e.g. "No entries yet") while
+     * switching dates and waiting for the new day's data to load.
+     */
+    isLoading?: boolean;
+};
+
+const FoodLogMeals: React.FC<FoodLogMealsProps> = ({ logs, isLoading = false }) => {
     const queryClient = useQueryClient();
     const theme = useTheme();
     const sectionGap = theme.custom.layout.page.sectionGap;
@@ -232,24 +252,26 @@ const FoodLogMeals: React.FC<{ logs: FoodLogEntry[] }> = ({ logs }) => {
                 title="Food Log"
                 align="center"
                 actions={
-                    <>
-                        <Tooltip title="Collapse all">
-                            <IconButton size="small" onClick={handleCollapseAll}>
-                                <ExpandMoreIcon sx={{ transform: 'rotate(180deg)' }} />
-                            </IconButton>
-                        </Tooltip>
-                        <Tooltip title="Expand all">
-                            <IconButton size="small" onClick={handleExpandAll}>
-                                <ExpandMoreIcon />
-                            </IconButton>
-                        </Tooltip>
-                    </>
+                    isLoading ? null : (
+                        <>
+                            <Tooltip title="Collapse all">
+                                <IconButton size="small" onClick={handleCollapseAll}>
+                                    <ExpandMoreIcon sx={{ transform: 'rotate(180deg)' }} />
+                                </IconButton>
+                            </Tooltip>
+                            <Tooltip title="Expand all">
+                                <IconButton size="small" onClick={handleExpandAll}>
+                                    <ExpandMoreIcon />
+                                </IconButton>
+                            </Tooltip>
+                        </>
+                    )
                 }
             />
             {MEALS.map((meal) => {
                 const entries = grouped[meal.key];
                 const total = sumCalories(entries);
-                const isExpanded = expanded[meal.key];
+                const isExpanded = isLoading ? true : expanded[meal.key];
                 const accentColor = getMealPeriodAccentColor(theme, meal.key);
                 const avatarBg = alpha(accentColor, theme.palette.mode === 'dark' ? 0.16 : 0.1);
 
@@ -257,11 +279,16 @@ const FoodLogMeals: React.FC<{ logs: FoodLogEntry[] }> = ({ logs }) => {
                     <Accordion
                         key={meal.key}
                         expanded={isExpanded}
-                        onChange={(_, nextExpanded) => setExpanded((prev) => ({ ...prev, [meal.key]: nextExpanded }))}
+                        onChange={
+                            isLoading ? undefined : (_, nextExpanded) => setExpanded((prev) => ({ ...prev, [meal.key]: nextExpanded }))
+                        }
                         variant="outlined"
                         disableGutters
+                        disabled={isLoading}
                     >
-                        <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                        <AccordionSummary
+                            expandIcon={<ExpandMoreIcon sx={isLoading ? { opacity: 0.35 } : undefined} />}
+                        >
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexGrow: 1 }}>
                                 <Avatar
                                     sx={{
@@ -276,10 +303,34 @@ const FoodLogMeals: React.FC<{ logs: FoodLogEntry[] }> = ({ logs }) => {
                                 </Avatar>
                                 <Typography sx={{ fontWeight: 'bold' }}>{meal.label}</Typography>
                             </Box>
-                            <Typography color="text.secondary">{total} Calories</Typography>
+                            {isLoading ? (
+                                <Skeleton width={FOOD_LOG_SKELETON_TOTAL_WIDTH_PX} height={FOOD_LOG_SKELETON_TOTAL_HEIGHT_PX} />
+                            ) : (
+                                <Typography color="text.secondary">{total} Calories</Typography>
+                            )}
                         </AccordionSummary>
                         <AccordionDetails>
-                            {entries.length === 0 ? (
+                            {isLoading ? (
+                                <Stack divider={<Divider flexItem />} spacing={1}>
+                                    {Array.from({ length: FOOD_LOG_SKELETON_ROW_COUNT }).map((_, idx) => (
+                                        <Box
+                                            key={idx}
+                                            sx={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'space-between',
+                                                gap: 1
+                                            }}
+                                        >
+                                            <Skeleton width={`${58 + idx * 10}%`} height={FOOD_LOG_SKELETON_ROW_HEIGHT_PX} />
+                                            <Skeleton
+                                                width={FOOD_LOG_SKELETON_ROW_CALORIES_WIDTH_PX}
+                                                height={FOOD_LOG_SKELETON_ROW_HEIGHT_PX}
+                                            />
+                                        </Box>
+                                    ))}
+                                </Stack>
+                            ) : entries.length === 0 ? (
                                 <Typography color="text.secondary">No entries yet.</Typography>
                             ) : (
                                 <Stack divider={<Divider flexItem />} spacing={1}>

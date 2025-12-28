@@ -16,6 +16,43 @@ const GAUGE_END_ANGLE = 90;
 const GAUGE_INNER_RADIUS = '70%';
 const GAUGE_OUTER_RADIUS = '90%';
 const SUMMARY_SKELETON_VALUE_HEIGHT = 32;
+// Duration used for "date switch" value transitions (gauge fill + numbers).
+const LOG_SUMMARY_TWEEN_DURATION_MS = 520;
+
+type AnimatedLogSummaryValues = {
+    gaugeValue: number;
+    remainingCaloriesLabel: number | null;
+};
+
+/**
+ * Animate the summary gauge + remaining calorie value when switching between dates with data.
+ *
+ * We animate as a percentage (value/max) so the gauge still transitions smoothly when the max changes
+ * (e.g. if a day flips from "under target" to "over target" and the gaugeMax becomes totalCalories).
+ */
+function useAnimatedLogSummaryValues(args: {
+    gaugeValue: number;
+    gaugeMax: number;
+    remainingCalories: number | null;
+    disabled: boolean;
+}): AnimatedLogSummaryValues {
+    const gaugePercent = args.gaugeMax > 0 ? args.gaugeValue / args.gaugeMax : 0;
+    const animatedGaugePercent = useTweenedNumber(gaugePercent, {
+        durationMs: LOG_SUMMARY_TWEEN_DURATION_MS,
+        disabled: args.disabled
+    });
+
+    const remainingAbs = args.remainingCalories !== null ? Math.abs(args.remainingCalories) : null;
+    const animatedRemainingAbs = useTweenedNumber(remainingAbs ?? 0, {
+        durationMs: LOG_SUMMARY_TWEEN_DURATION_MS,
+        disabled: args.disabled || remainingAbs === null
+    });
+
+    return {
+        gaugeValue: Math.max(0, Math.min(animatedGaugePercent, 1)) * args.gaugeMax,
+        remainingCaloriesLabel: remainingAbs === null ? null : Math.round(Math.max(animatedRemainingAbs, 0))
+    };
+}
 
 export type LogSummaryCardProps = {
     /**
@@ -49,22 +86,18 @@ const LogSummaryCard: React.FC<LogSummaryCardProps> = ({ dashboardMode = false, 
     const isOver = dailyTarget !== undefined && dailyTarget !== null && totalCalories > dailyTarget;
     const gaugeValue = dailyTarget ? (isOver ? dailyTarget : Math.max(totalCalories, 0)) : 0;
     const gaugeMax = dailyTarget ? (isOver ? totalCalories : dailyTarget) : 1;
-    const gaugePercent = gaugeMax > 0 ? gaugeValue / gaugeMax : 0;
 
     const isLoading = foodQuery.isLoading || profileSummaryQuery.isLoading;
     const isError = foodQuery.isError || profileSummaryQuery.isError;
 
     const prefersReducedMotion = usePrefersReducedMotion();
+    const animationsDisabled = prefersReducedMotion || isLoading || isError;
 
-    const animatedGaugePercent = useTweenedNumber(gaugePercent, {
-        durationMs: 520,
-        disabled: prefersReducedMotion || isLoading || isError
-    });
-
-    const remainingDisplayValue = remainingCalories !== null ? Math.abs(remainingCalories) : 0;
-    const animatedRemainingDisplayValue = useTweenedNumber(remainingDisplayValue, {
-        durationMs: 520,
-        disabled: prefersReducedMotion || isLoading || isError || remainingCalories === null
+    const animatedValues = useAnimatedLogSummaryValues({
+        gaugeValue,
+        gaugeMax,
+        remainingCalories,
+        disabled: animationsDisabled
     });
 
     // Split conditional branches into named nodes to keep the render tree readable.
@@ -130,9 +163,6 @@ const LogSummaryCard: React.FC<LogSummaryCardProps> = ({ dashboardMode = false, 
             </Box>
         );
     } else {
-        const gaugeValueForRender = Math.max(0, Math.min(animatedGaugePercent, 1)) * gaugeMax;
-        const remainingDisplayLabel = Math.round(Math.max(animatedRemainingDisplayValue, 0));
-
         cardBody = (
             <Box
                 sx={{
@@ -147,7 +177,7 @@ const LogSummaryCard: React.FC<LogSummaryCardProps> = ({ dashboardMode = false, 
                     height={GAUGE_HEIGHT}
                     startAngle={GAUGE_START_ANGLE}
                     endAngle={GAUGE_END_ANGLE}
-                    value={gaugeValueForRender}
+                    value={animatedValues.gaugeValue}
                     valueMin={0}
                     valueMax={gaugeMax}
                     innerRadius={GAUGE_INNER_RADIUS}
@@ -168,7 +198,7 @@ const LogSummaryCard: React.FC<LogSummaryCardProps> = ({ dashboardMode = false, 
                     </Typography>
                     <Typography variant="h5">
                         {remainingCalories !== null
-                            ? `${remainingDisplayLabel} Calories`
+                            ? `${animatedValues.remainingCaloriesLabel ?? 0} Calories`
                             : '—'}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">

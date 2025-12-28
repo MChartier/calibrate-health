@@ -22,7 +22,6 @@ import MonitorWeightIcon from '@mui/icons-material/MonitorWeightRounded';
 import WeightEntryForm from '../components/WeightEntryForm';
 import FoodEntryForm from '../components/FoodEntryForm';
 import FoodLogMeals from '../components/FoodLogMeals';
-import FoodLogMealsSkeleton from '../components/FoodLogMealsSkeleton';
 import { useQueryClient } from '@tanstack/react-query';
 import LogSummaryCard from '../components/LogSummaryCard';
 import WeightSummaryCard from '../components/WeightSummaryCard';
@@ -40,6 +39,28 @@ const LOG_PAGE_BOTTOM_PADDING = {
     md: LOG_FAB_DIAMETER_SPACING + LOG_FAB_CONTENT_CLEARANCE_SPACING
 } as const;
 
+type LogDateBounds = { min: string; max: string };
+
+/**
+ * Compute inclusive local-day bounds for /log date navigation.
+ *
+ * Lower bound: the user's account creation day (prevents absurd date ranges like year 0001).
+ * Upper bound: today in the user's timezone (no future days).
+ */
+function getLogDateBounds(args: { todayIso: string; createdAtIso?: string; timeZone: string }): LogDateBounds {
+    const max = args.todayIso;
+    const createdAt = args.createdAtIso;
+    if (!createdAt) return { min: max, max };
+
+    const createdAtDate = new Date(createdAt);
+    if (Number.isNaN(createdAtDate.getTime())) return { min: max, max };
+
+    const minRaw = formatDateToLocalDateString(createdAtDate, args.timeZone);
+    // Defensive: if clocks are skewed, ensure bounds stay sane.
+    const min = minRaw > max ? max : minRaw;
+    return { min, max };
+}
+
 const Log: React.FC = () => {
     const queryClient = useQueryClient();
     const { user } = useAuth();
@@ -50,21 +71,14 @@ const Log: React.FC = () => {
     const today = useMemo(() => getTodayIsoDate(timeZone), [timeZone]);
 
     const dateBounds = useMemo(() => {
-        const max = today;
-        const createdAt = user?.created_at;
-        if (!createdAt) return { min: max, max };
-        const createdAtDate = new Date(createdAt);
-        if (Number.isNaN(createdAtDate.getTime())) return { min: max, max };
-        const minRaw = formatDateToLocalDateString(createdAtDate, timeZone);
-        // Defensive: if clocks are skewed, ensure bounds stay sane.
-        const min = minRaw > max ? max : minRaw;
-        return { min, max };
+        return getLogDateBounds({ todayIso: today, createdAtIso: user?.created_at, timeZone });
     }, [today, timeZone, user?.created_at]);
 
     const [selectedDate, setSelectedDate] = useState(() => today);
     const [isFoodDialogOpen, setIsFoodDialogOpen] = useState(false);
     const [isWeightDialogOpen, setIsWeightDialogOpen] = useState(false);
 
+    // Clamp selection when the bounds change (e.g. user profile loads, timezone changes).
     useEffect(() => {
         setSelectedDate((prev) => {
             const clamped = clampIsoDate(prev, dateBounds);
@@ -213,10 +227,8 @@ const Log: React.FC = () => {
                     >
                         Unable to load your food log for this day.
                     </Alert>
-                ) : foodQuery.isLoading ? (
-                    <FoodLogMealsSkeleton />
                 ) : (
-                    <FoodLogMeals logs={foodQuery.data ?? []} />
+                    <FoodLogMeals logs={foodQuery.data ?? []} isLoading={foodQuery.isLoading} />
                 )}
             </AppCard>
 

@@ -12,6 +12,10 @@ import { useTweenedNumber } from '../hooks/useTweenedNumber';
 import SectionHeader from '../ui/SectionHeader';
 
 const EM_DASH = '\u2014';
+// Duration used for "date switch" value transitions.
+const WEIGHT_SUMMARY_TWEEN_DURATION_MS = 520;
+// Icon tile size for the weight card (kept consistent between loading + loaded UI).
+const WEIGHT_ICON_TILE_SIZE_PX = 56;
 
 type MetricEntry = {
     id: number;
@@ -101,7 +105,7 @@ const WeightSummaryCard: React.FC<WeightSummaryCardProps> = ({ date, onOpenWeigh
     const prefersReducedMotion = usePrefersReducedMotion();
     const displayedWeight = displayedMetric?.weight ?? null;
     const animatedWeight = useTweenedNumber(displayedWeight ?? 0, {
-        durationMs: 520,
+        durationMs: WEIGHT_SUMMARY_TWEEN_DURATION_MS,
         disabled: prefersReducedMotion || metricsQuery.isLoading || metricsQuery.isError || displayedWeight === null
     });
 
@@ -129,8 +133,8 @@ const WeightSummaryCard: React.FC<WeightSummaryCardProps> = ({ date, onOpenWeigh
                 >
                     <Box
                         sx={{
-                            width: 56,
-                            height: 56,
+                            width: WEIGHT_ICON_TILE_SIZE_PX,
+                            height: WEIGHT_ICON_TILE_SIZE_PX,
                             borderRadius: 2,
                             backgroundColor: (theme) =>
                                 alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.18 : 0.08),
@@ -184,8 +188,8 @@ const WeightSummaryCard: React.FC<WeightSummaryCardProps> = ({ date, onOpenWeigh
                 >
                     <Box
                         sx={{
-                            width: 56,
-                            height: 56,
+                            width: WEIGHT_ICON_TILE_SIZE_PX,
+                            height: WEIGHT_ICON_TILE_SIZE_PX,
                             borderRadius: 2,
                             backgroundColor: (theme) =>
                                 alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.18 : 0.08),
