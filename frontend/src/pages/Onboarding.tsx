@@ -199,7 +199,7 @@ const Onboarding: React.FC = () => {
 
                 <ProfilePhotoCard
                     title="Profile photo (optional)"
-                    description="Shown in the app bar and on your profile."
+                    description="Shown in the app bar and in your settings."
                 />
 
                 <AppCard>
