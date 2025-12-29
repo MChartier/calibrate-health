@@ -10,12 +10,14 @@ import {
     IconButton,
     TextField,
     Tooltip,
+    Typography,
 } from '@mui/material';
 import SpeedDial from '@mui/material/SpeedDial';
 import SpeedDialAction from '@mui/material/SpeedDialAction';
 import AddIcon from '@mui/icons-material/AddRounded';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeftRounded';
 import ChevronRightIcon from '@mui/icons-material/ChevronRightRounded';
+import CloseIcon from '@mui/icons-material/CloseRounded';
 import TodayIcon from '@mui/icons-material/TodayRounded';
 import RestaurantIcon from '@mui/icons-material/RestaurantRounded';
 import MonitorWeightIcon from '@mui/icons-material/MonitorWeightRounded';
@@ -26,7 +28,13 @@ import { useQueryClient } from '@tanstack/react-query';
 import LogSummaryCard from '../components/LogSummaryCard';
 import WeightSummaryCard from '../components/WeightSummaryCard';
 import { useAuth } from '../context/useAuth';
-import { addDaysToIsoDate, clampIsoDate, formatDateToLocalDateString, getTodayIsoDate } from '../utils/date';
+import {
+    addDaysToIsoDate,
+    clampIsoDate,
+    formatDateToLocalDateString,
+    formatIsoDateForDisplay,
+    getTodayIsoDate
+} from '../utils/date';
 import { fetchFoodLog, foodLogQueryKey, useFoodLogQuery } from '../queries/foodLog';
 import AppCard from '../ui/AppCard';
 
@@ -115,6 +123,7 @@ const Log: React.FC = () => {
     }, [dateBounds]);
 
     const effectiveDate = clampIsoDate(selectedDate, dateBounds);
+    const effectiveDateLabel = useMemo(() => formatIsoDateForDisplay(effectiveDate), [effectiveDate]);
 
     const foodQuery = useFoodLogQuery(effectiveDate);
 
@@ -354,23 +363,33 @@ const Log: React.FC = () => {
             </Dialog>
 
             <Dialog open={isWeightDialogOpen} onClose={handleCloseWeightDialog} fullWidth maxWidth="sm">
-                <DialogTitle>Track Weight</DialogTitle>
-                <DialogContent>
-                    <Box sx={{ mt: 1 }}>
-                        <WeightEntryForm
-                            date={effectiveDate}
-                            onSuccess={() => {
-                                void queryClient.invalidateQueries({ queryKey: ['metrics'] });
-                                void queryClient.invalidateQueries({ queryKey: ['user-profile'] });
-                                void queryClient.invalidateQueries({ queryKey: ['profile'] });
-                                handleCloseWeightDialog();
-                            }}
-                        />
+                <DialogTitle sx={{ position: 'relative', pr: 6 }}>
+                    <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                        <Box component="span">Track Weight</Box>
+                        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25 }}>
+                            For {effectiveDateLabel} (the day you're viewing)
+                        </Typography>
                     </Box>
-                </DialogContent>
-                <DialogActions>
-                    <Button onClick={handleCloseWeightDialog}>Close</Button>
-                </DialogActions>
+
+                    <Tooltip title="Close">
+                        <IconButton
+                            aria-label="Close"
+                            onClick={handleCloseWeightDialog}
+                            sx={{ position: 'absolute', right: 8, top: 8 }}
+                        >
+                            <CloseIcon />
+                        </IconButton>
+                    </Tooltip>
+                </DialogTitle>
+                <WeightEntryForm
+                    date={effectiveDate}
+                    onSuccess={() => {
+                        void queryClient.invalidateQueries({ queryKey: ['metrics'] });
+                        void queryClient.invalidateQueries({ queryKey: ['user-profile'] });
+                        void queryClient.invalidateQueries({ queryKey: ['profile'] });
+                        handleCloseWeightDialog();
+                    }}
+                />
             </Dialog>
         </Box>
     );
