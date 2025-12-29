@@ -1,15 +1,16 @@
 import React from 'react';
-import { Box, Button, Chip, Divider, Grid, LinearProgress, Stack, Typography } from '@mui/material';
+import { Box, Button, Chip, Grid, Stack, Typography } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import DevicesIcon from '@mui/icons-material/DevicesRounded';
-import EditNoteIcon from '@mui/icons-material/EditNoteRounded';
 import MoneyOffIcon from '@mui/icons-material/MoneyOffRounded';
 import MonitorWeightIcon from '@mui/icons-material/MonitorWeightRounded';
 import QrCodeScannerIcon from '@mui/icons-material/QrCodeScannerRounded';
+import ShowChartIcon from '@mui/icons-material/ShowChartRounded';
 import StorageIcon from '@mui/icons-material/StorageRounded';
 import { Link as RouterLink } from 'react-router-dom';
 import AppCard from '../ui/AppCard';
 import AppPage from '../ui/AppPage';
+import LandingAppPreview from '../components/landing/LandingAppPreview';
 import { usePrefersReducedMotion } from '../hooks/usePrefersReducedMotion';
 
 const HERO_BLOB_ANIMATION_DURATION_MS = 14000; // Slow drift for hero background blobs (disabled with prefers-reduced-motion).
@@ -22,7 +23,25 @@ type LandingFeature = {
     icon: React.ReactElement;
 };
 
-const LANDING_FEATURES: LandingFeature[] = [
+const LANDING_GOAL_FEATURES: LandingFeature[] = [
+    {
+        title: 'Daily weigh-ins',
+        description: 'Log weight regularly and see your progress over time (not just the last number).',
+        icon: <MonitorWeightIcon />
+    },
+    {
+        title: 'Food tracking',
+        description: 'Add custom food items, or scan barcodes when you have something packaged.',
+        icon: <QrCodeScannerIcon />
+    },
+    {
+        title: 'Smart goal projection',
+        description: 'See an estimated target date based on your goal deficit and steady-rate projection model.',
+        icon: <ShowChartIcon />
+    }
+];
+
+const LANDING_VALUE_FEATURES: LandingFeature[] = [
     {
         title: 'Free and ad-free',
         description: 'A clean tracker without ads competing for your attention.',
@@ -37,23 +56,10 @@ const LANDING_FEATURES: LandingFeature[] = [
         title: 'First-class mobile + desktop',
         description: 'Designed to feel great on your phone, tablet, and laptop.',
         icon: <DevicesIcon />
-    },
-    {
-        title: 'QR / barcode scanning',
-        description: 'Use your camera to speed up food entry when you have a code to scan.',
-        icon: <QrCodeScannerIcon />
-    },
-    {
-        title: 'Custom food items',
-        description: 'Add anything with a name and calories - perfect for home cooking and meals out.',
-        icon: <EditNoteIcon />
-    },
-    {
-        title: 'Daily weigh-ins + trends',
-        description: 'Record weight regularly and watch your trend line over time.',
-        icon: <MonitorWeightIcon />
     }
 ];
+
+const LANDING_PILLS = ['Free + Ad-Free', 'Self-hostable', 'Mobile + Desktop'] as const;
 
 /**
  * LandingFeatureCard
@@ -88,62 +94,6 @@ function LandingFeatureCard({ feature }: { feature: LandingFeature }) {
                     <Typography variant="body2" color="text.secondary">
                         {feature.description}
                     </Typography>
-                </Box>
-            </Stack>
-        </AppCard>
-    );
-}
-
-/**
- * LandingPreviewCard
- *
- * A tiny, stylized "this is what the app feels like" panel for the hero section.
- * It's intentionally not a screenshot so it stays resilient to UI changes.
- */
-function LandingPreviewCard() {
-    return (
-        <AppCard
-            sx={(theme) => ({
-                position: 'relative',
-                overflow: 'hidden',
-                borderColor: alpha(theme.palette.text.primary, theme.palette.mode === 'dark' ? 0.18 : 0.12),
-                backgroundImage: `linear-gradient(180deg, ${alpha(theme.palette.text.primary, theme.palette.mode === 'dark' ? 0.06 : 0.03)}, transparent 60%)`
-            })}
-        >
-            <Stack spacing={1.5}>
-                <Typography variant="subtitle2" sx={{ letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-                    Today
-                </Typography>
-
-                <Box sx={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 2 }}>
-                    <Box sx={{ minWidth: 0 }}>
-                        <Typography variant="h4" sx={{ lineHeight: 1.1 }}>
-                            1,420
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                            calories consumed
-                        </Typography>
-                    </Box>
-                    <Box sx={{ textAlign: 'right' }}>
-                        <Typography variant="subtitle1">/ 1,900</Typography>
-                        <Typography variant="body2" color="text.secondary">
-                            target
-                        </Typography>
-                    </Box>
-                </Box>
-
-                <LinearProgress variant="determinate" value={74} />
-
-                <Divider />
-
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 2 }}>
-                    <Box sx={{ minWidth: 0 }}>
-                        <Typography variant="subtitle1">176.4</Typography>
-                        <Typography variant="body2" color="text.secondary">
-                            weight (trend)
-                        </Typography>
-                    </Box>
-                    <Chip label="Projected goal date" size="small" variant="outlined" />
                 </Box>
             </Stack>
         </AppCard>
@@ -222,24 +172,23 @@ const Landing: React.FC = () => {
                                             color: 'text.secondary'
                                         }}
                                     >
-                                        Free, self-hostable food + weight tracking
+                                        Fitness tracking without the paywall
                                     </Typography>
 
                                     <Typography variant="h2" component="h1" sx={{ lineHeight: 1.05 }}>
-                                        Get and stay fit.
+                                        Get fit. Stay fit. Own your data.
                                     </Typography>
 
                                     <Typography variant="h6" color="text.secondary" sx={{ maxWidth: '56ch' }}>
-                                        cal.io is the free, self-hostable solution for food and weight tracking.
+                                        cal.io is the free, self-hostable health and fitness tracker. No subscription, no ads,
+                                        no nonsense.
                                     </Typography>
                                 </Stack>
 
                                 <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
-                                    <Chip label="Free + ad-free" size="small" variant="outlined" />
-                                    <Chip label="Self-hostable" size="small" variant="outlined" />
-                                    <Chip label="Mobile + desktop" size="small" variant="outlined" />
-                                    <Chip label="Scan codes" size="small" variant="outlined" />
-                                    <Chip label="Custom foods" size="small" variant="outlined" />
+                                    {LANDING_PILLS.map((pill) => (
+                                        <Chip key={pill} label={pill} size="small" variant="outlined" />
+                                    ))}
                                 </Stack>
 
                                 <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.25} sx={{ alignItems: 'stretch' }}>
@@ -248,53 +197,75 @@ const Landing: React.FC = () => {
                                         to="/register"
                                         variant="contained"
                                         size="large"
-                                        sx={{ minWidth: { sm: 200 } }}
+                                        sx={{ flex: 1, minWidth: 0 }}
                                     >
-                                        Create your account
+                                        Create account
                                     </Button>
                                     <Button
                                         component={RouterLink}
                                         to="/login"
                                         variant="outlined"
                                         size="large"
-                                        sx={{ minWidth: { sm: 160 } }}
+                                        sx={{ flex: 1, minWidth: 0 }}
                                     >
                                         Sign in
                                     </Button>
                                 </Stack>
 
                                 <Typography variant="body2" color="text.secondary" sx={{ maxWidth: '68ch' }}>
-                                    Built for daily use: fast logging, clear targets, and an interface that stays out of
-                                    your way.
+                                    Built for daily use: fast logging, goal math you can trust, and an interface that stays
+                                    out of your way.
                                 </Typography>
                             </Stack>
                         </Grid>
 
                         <Grid size={{ xs: 12, md: 5 }} sx={{ display: 'flex', alignItems: 'center' }}>
                             <Box sx={{ width: '100%' }}>
-                                <LandingPreviewCard />
+                                <LandingAppPreview />
                             </Box>
                         </Grid>
                     </Grid>
                 </AppCard>
 
-                <Stack spacing={1.25}>
-                    <Typography variant="h4" component="h2">
-                        Built for daily consistency
-                    </Typography>
-                    <Typography variant="body1" color="text.secondary" sx={{ maxWidth: '80ch' }}>
-                        You&apos;re trying to build a habit. cal.io is intentionally opinionated: simple inputs, clear outputs,
-                        and a dashboard that answers the only question that matters today.
-                    </Typography>
-                </Stack>
+                <Box>
+                    <Stack spacing={1.25} sx={{ mb: 2 }}>
+                        <Typography variant="h4" component="h2">
+                            Set and hit your goals
+                        </Typography>
+                        <Typography variant="body1" color="text.secondary" sx={{ maxWidth: '80ch' }}>
+                            Daily inputs should produce actionable outputs. Track what you eat, log your weight, and let the
+                            dashboard do the math - targets, trends, and projections.
+                        </Typography>
+                    </Stack>
 
-                <Grid container spacing={2} alignItems="stretch">
-                    {LANDING_FEATURES.map((feature) => (
-                        <Grid key={feature.title} size={{ xs: 12, sm: 6, md: 4 }} sx={{ display: 'flex' }}>
-                            <LandingFeatureCard feature={feature} />
-                        </Grid>
-                    ))}
-                </Grid>
+                    <Grid container spacing={2} alignItems="stretch">
+                        {LANDING_GOAL_FEATURES.map((feature) => (
+                            <Grid key={feature.title} size={{ xs: 12, sm: 6, md: 4 }} sx={{ display: 'flex' }}>
+                                <LandingFeatureCard feature={feature} />
+                            </Grid>
+                        ))}
+                    </Grid>
+                </Box>
+
+                <Box>
+                    <Stack spacing={1.25} sx={{ mb: 2 }}>
+                        <Typography variant="h4" component="h2">
+                            Losing weight shouldn&apos;t cost an arm and a leg
+                        </Typography>
+                        <Typography variant="body1" color="text.secondary" sx={{ maxWidth: '80ch' }}>
+                            cal.io is built to be available to everybody - free to use, clean and ad-free, and self-hostable so
+                            you can run it on your own terms. No catch.
+                        </Typography>
+                    </Stack>
+
+                    <Grid container spacing={2} alignItems="stretch">
+                        {LANDING_VALUE_FEATURES.map((feature) => (
+                            <Grid key={feature.title} size={{ xs: 12, sm: 6, md: 4 }} sx={{ display: 'flex' }}>
+                                <LandingFeatureCard feature={feature} />
+                            </Grid>
+                        ))}
+                    </Grid>
+                </Box>
 
                 <AppCard
                     sx={(theme) => ({
