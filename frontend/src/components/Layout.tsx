@@ -22,6 +22,7 @@ import { Outlet, Link as RouterLink, useLocation, useNavigate } from 'react-rout
 import DashboardIcon from '@mui/icons-material/DashboardRounded';
 import ListAltIcon from '@mui/icons-material/ListAltRounded';
 import ShowChartIcon from '@mui/icons-material/ShowChartRounded';
+import PersonIcon from '@mui/icons-material/PersonRounded';
 import SettingsIcon from '@mui/icons-material/SettingsRounded';
 import LogoutIcon from '@mui/icons-material/LogoutRounded';
 import GitHubIcon from '@mui/icons-material/GitHub';
@@ -40,7 +41,7 @@ function getActiveNavigationValue(pathname: string): string | null {
     if (pathname.startsWith('/dashboard')) return '/dashboard';
     if (pathname.startsWith('/log')) return '/log';
     if (pathname.startsWith('/goals')) return '/goals';
-    if (pathname.startsWith('/settings')) return '/settings';
+    if (pathname.startsWith('/profile')) return '/profile';
     return null;
 }
 
@@ -56,12 +57,12 @@ const Layout: React.FC = () => {
 
     const hideNav = location.pathname.startsWith('/onboarding');
     const showAppNav = Boolean(user) && !isLoading && !hideNav;
-    const showProfileShortcut = Boolean(user) && !isLoading && !hideNav;
     const showAuthActions = !user && !isLoading;
     const isLoginRoute = location.pathname.startsWith('/login');
     const isRegisterRoute = location.pathname.startsWith('/register');
     const showLoginCta = showAuthActions && !isLoginRoute;
     const showRegisterCta = showAuthActions && !isRegisterRoute;
+    const showSettingsShortcut = Boolean(user) && !isLoading && !hideNav;
     const showDrawer = showAppNav && isDesktop;
     const showBottomNav = showAppNav && !isDesktop;
     const authCtaSize = isDesktop ? 'medium' : 'small';
@@ -101,6 +102,17 @@ const Layout: React.FC = () => {
                             <ShowChartIcon />
                         </ListItemIcon>
                         <ListItemText primary="Goals" />
+                    </ListItemButton>
+
+                    <ListItemButton
+                        selected={location.pathname.startsWith('/profile')}
+                        component={RouterLink}
+                        to="/profile"
+                    >
+                        <ListItemIcon>
+                            <PersonIcon />
+                        </ListItemIcon>
+                        <ListItemText primary="Profile" />
                     </ListItemButton>
                 </List>
             </Box>
@@ -201,12 +213,12 @@ const Layout: React.FC = () => {
                         </Box>
                     )}
 
-                    {showProfileShortcut && (
-                        <Tooltip title="Profile">
+                    {showSettingsShortcut && (
+                        <Tooltip title="Settings">
                             <IconButton
                                 color="inherit"
-                                onClick={() => navigate('/profile')}
-                                aria-label="Open profile"
+                                onClick={() => navigate('/settings')}
+                                aria-label="Open settings"
                                 sx={{ ml: 1 }}
                             >
                                 <Avatar
@@ -272,7 +284,7 @@ const Layout: React.FC = () => {
                         <BottomNavigationAction value="/dashboard" label="Dashboard" icon={<DashboardIcon />} />
                         <BottomNavigationAction value="/log" label="Log" icon={<ListAltIcon />} />
                         <BottomNavigationAction value="/goals" label="Goals" icon={<ShowChartIcon />} />
-                        <BottomNavigationAction value="/settings" label="Settings" icon={<SettingsIcon />} />
+                        <BottomNavigationAction value="/profile" label="Profile" icon={<PersonIcon />} />
                     </BottomNavigation>
                 </Box>
             )}
