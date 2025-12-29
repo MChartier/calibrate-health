@@ -56,6 +56,11 @@ type ProviderSearchResult = FoodProviderInfo & {
     elapsedMs?: number;
 };
 
+type ResetTestUserOnboardingResponse = {
+    ok: boolean;
+    user: { email?: string } | null;
+};
+
 /**
  * Dev-only dashboard to compare food search results side-by-side across providers.
  */
@@ -67,6 +72,10 @@ const DevDashboard: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
     const [isLoadingProviders, setIsLoadingProviders] = useState(false);
     const [isSearching, setIsSearching] = useState(false);
+
+    const [resetError, setResetError] = useState<string | null>(null);
+    const [resetSuccess, setResetSuccess] = useState<string | null>(null);
+    const [isResettingTestUser, setIsResettingTestUser] = useState(false);
 
     /**
      * Fetch provider metadata so the UI reflects current backend configuration.
@@ -131,6 +140,29 @@ const DevDashboard: React.FC = () => {
     };
 
     /**
+     * Reset the deterministic dev test user back to a pre-onboarding state.
+     */
+    const handleResetTestUserOnboarding = useCallback(async () => {
+        setResetError(null);
+        setResetSuccess(null);
+        setIsResettingTestUser(true);
+
+        try {
+            const response = await axios.post<ResetTestUserOnboardingResponse>('/dev/test/reset-test-user-onboarding');
+            const email = response.data?.user?.email ?? 'test@cal.io';
+            setResetSuccess(`Reset complete for ${email}. Navigate to /onboarding (or refresh a protected page) to re-test onboarding.`);
+        } catch (err) {
+            console.error(err);
+            const serverMessage = axios.isAxiosError(err)
+                ? (err.response?.data as { message?: unknown } | undefined)?.message
+                : null;
+            setResetError(typeof serverMessage === 'string' && serverMessage.trim().length > 0 ? serverMessage : 'Reset failed.');
+        } finally {
+            setIsResettingTestUser(false);
+        }
+    }, []);
+
+    /**
      * Execute a query against the selected providers for easy side-by-side comparison.
      */
     const handleSearch = async () => {
@@ -170,6 +202,46 @@ const DevDashboard: React.FC = () => {
                     Compare search output across providers to tune query quality.
                 </Typography>
             </Stack>
+
+            <Card variant="outlined" sx={{ mb: 3 }}>
+                <CardContent>
+                    <Stack spacing={2}>
+                        <Box>
+                            <Typography variant="subtitle1" gutterBottom>
+                                Test user tools
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary">
+                                Reset the seeded dev account back to a pre-onboarding state (clears profile fields, goals,
+                                metrics, and food logs) without changing your session.
+                            </Typography>
+                        </Box>
+
+                        {resetError && <Alert severity="error">{resetError}</Alert>}
+                        {resetSuccess && <Alert severity="success">{resetSuccess}</Alert>}
+
+                        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+                            <Button
+                                variant="contained"
+                                color="warning"
+                                onClick={() => void handleResetTestUserOnboarding()}
+                                disabled={isResettingTestUser}
+                            >
+                                {isResettingTestUser ? 'Resetting…' : 'Reset onboarding state'}
+                            </Button>
+                            <Button
+                                variant="outlined"
+                                onClick={() => {
+                                    setResetError(null);
+                                    setResetSuccess(null);
+                                }}
+                                disabled={isResettingTestUser}
+                            >
+                                Clear message
+                            </Button>
+                        </Stack>
+                    </Stack>
+                </CardContent>
+            </Card>
 
             <Card variant="outlined" sx={{ mb: 3 }}>
                 <CardContent>
