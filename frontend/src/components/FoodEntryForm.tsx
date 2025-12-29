@@ -1,13 +1,18 @@
-import React, { useCallback, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
     Alert,
     Box,
     Button,
+    CircularProgress,
+    Divider,
     FormControl,
     IconButton,
     InputAdornment,
     InputLabel,
+    List,
     ListItemIcon,
+    ListItemButton,
+    ListItemText,
     MenuItem,
     Select,
     Stack,
@@ -17,14 +22,19 @@ import {
     Typography
 } from '@mui/material';
 import axios from 'axios';
+import { useQueryClient } from '@tanstack/react-query';
 import QrCodeScannerIcon from '@mui/icons-material/QrCodeScannerRounded';
 import ArrowBackIcon from '@mui/icons-material/ArrowBackRounded';
 import BarcodeScannerDialog from './BarcodeScannerDialog';
 import FoodSearchResultsList from './FoodSearchResultsList';
 import MealPeriodIcon from './MealPeriodIcon';
+import NewMyFoodDialog from './NewMyFoodDialog';
+import NewRecipeDialog from './NewRecipeDialog';
 import type { NormalizedFoodItem } from '../types/food';
 import { MEAL_PERIOD_LABELS, MEAL_PERIOD_ORDER, type MealPeriod } from '../types/mealPeriod';
+import { useMyFoodsQuery } from '../queries/myFoods';
 import { getApiErrorMessage } from '../utils/apiError';
+import { useDebouncedValue } from '../hooks/useDebouncedValue';
 
 type Props = {
     onSuccess?: () => void;
@@ -32,6 +42,7 @@ type Props = {
 };
 
 const SEARCH_PAGE_SIZE = 10;
+const MY_FOODS_LIST_HEIGHT = { xs: 220, sm: 260 } as const; // Keeps the list usable inside the dialog without pushing actions off-screen.
 
 type FoodSearchView = 'results' | 'selected';
 
@@ -79,9 +90,12 @@ const mergeUniqueResults = (current: NormalizedFoodItem[], nextPage: NormalizedF
 };
 
 const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
-    const [mode, setMode] = useState<'manual' | 'search'>('search');
-    const [foodName, setFoodName] = useState('');
-    const [calories, setCalories] = useState('');
+    const queryClient = useQueryClient();
+
+    const [mode, setMode] = useState<'myFoods' | 'myRecipes' | 'search'>('search');
+
+    const [quickEntryName, setQuickEntryName] = useState('');
+    const [quickEntryCalories, setQuickEntryCalories] = useState('');
     const [mealPeriod, setMealPeriod] = useState<MealPeriod>(() => getDefaultMealPeriodForTime(new Date()));
 
     const [searchQuery, setSearchQuery] = useState('');
@@ -102,10 +116,20 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
     const [activeSearch, setActiveSearch] = useState<FoodSearchParams | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
+    const [isNewFoodDialogOpen, setIsNewFoodDialogOpen] = useState(false);
+    const [isNewRecipeDialogOpen, setIsNewRecipeDialogOpen] = useState(false);
+
+    const [myFoodsQueryText, setMyFoodsQueryText] = useState('');
+    const [selectedMyFoodId, setSelectedMyFoodId] = useState<number | null>(null);
+    const [myFoodServingsConsumed, setMyFoodServingsConsumed] = useState<string>('1');
+
     const searchSessionRef = useRef(0);
     const loadMoreLockRef = useRef(false);
 
     const entryLocalDate = typeof date === 'string' && date.trim().length > 0 ? date.trim() : undefined;
+
+    const debouncedSearchQuery = useDebouncedValue(searchQuery, 350);
+    const debouncedMyFoodsQueryText = useDebouncedValue(myFoodsQueryText, 250);
 
     const mealOptions = MEAL_PERIOD_ORDER.map((value) => ({
         value,
@@ -118,7 +142,33 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
         [searchResults, selectedItemId]
     );
 
-    const shouldShowMealPeriod = mode === 'manual' || (mode === 'search' && searchView === 'selected' && !!selectedItem);
+    const myFoodsTypeForMode = mode === 'myFoods' ? 'FOOD' : mode === 'myRecipes' ? 'RECIPE' : 'ALL';
+    const myFoodsQuery = useMyFoodsQuery(
+        { q: debouncedMyFoodsQueryText, type: myFoodsTypeForMode },
+        { enabled: mode !== 'search' }
+    );
+
+    const myFoods = myFoodsQuery.data ?? [];
+
+    const selectedMyFood = useMemo(() => {
+        if (selectedMyFoodId === null) return null;
+        return myFoods.find((food) => food.id === selectedMyFoodId) ?? null;
+    }, [myFoods, selectedMyFoodId]);
+
+    const myFoodCaloriesPreview = useMemo(() => {
+        if (!selectedMyFood) return null;
+        const servings = Number(myFoodServingsConsumed);
+        if (!Number.isFinite(servings) || servings <= 0) return null;
+        return Math.round(servings * selectedMyFood.calories_per_serving);
+    }, [myFoodServingsConsumed, selectedMyFood]);
+
+    const shouldShowMealPeriod = mode !== 'search' || (mode === 'search' && searchView === 'selected' && !!selectedItem);
+
+    // Avoid stale selections if users switch between "My Foods" and "My Recipes".
+    useEffect(() => {
+        setSelectedMyFoodId(null);
+        setMyFoodServingsConsumed('1');
+    }, [mode]);
 
     const selectedMeasure = useMemo(() => {
         if (!selectedItem) return null;
@@ -251,6 +301,47 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
         [clearSelectedSearchItem, fetchFoodSearchPage, isSubmitting, selectSearchResult]
     );
 
+    // Trigger provider searches automatically while typing, and keep the Search tab stable when the input is cleared.
+    useEffect(() => {
+        if (mode !== 'search') {
+            return;
+        }
+
+        const query = debouncedSearchQuery.trim();
+        if (!query) {
+            // Cancel any in-flight search session and return to the "no results yet" state.
+            searchSessionRef.current += 1;
+            loadMoreLockRef.current = false;
+            setError(null);
+            setHasSearched(false);
+            setSearchResults([]);
+            setSelectedItemId(null);
+            setSelectedMeasureLabel(null);
+            setQuantity(1);
+            setSearchView('results');
+            setSearchPage(1);
+            setHasMoreResults(false);
+            setIsSearching(false);
+            setIsLoadingMoreResults(false);
+            setProviderName('');
+            setSupportsBarcodeLookup(null);
+            setActiveSearch(null);
+            return;
+        }
+
+        // If the current active search already matches the debounced query, don't re-run it.
+        if (activeSearch?.query === query && !activeSearch.barcode) {
+            return;
+        }
+
+        // Avoid re-running barcode lookups as "query" searches when a scanner just populated the field.
+        if (activeSearch?.barcode && !activeSearch.query && activeSearch.barcode === query) {
+            return;
+        }
+
+        void performFoodSearch({ query });
+    }, [activeSearch, debouncedSearchQuery, mode, performFoodSearch]);
+
     /**
      * Load the next page of search results and append them to the list view.
      */
@@ -287,13 +378,9 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
         }
     }, [activeSearch, fetchFoodSearchPage, hasMoreResults, isLoadingMoreResults, isSearching, isSubmitting, searchPage]);
 
-    const handleSearch = async () => {
-        await performFoodSearch({ query: searchQuery });
-    };
-
-    const handleAddManual = async () => {
-        const trimmedName = foodName.trim();
-        if (!trimmedName || !calories.trim()) {
+    const handleAddQuickEntry = async () => {
+        const trimmedName = quickEntryName.trim();
+        if (!trimmedName || !quickEntryCalories.trim()) {
             return;
         }
 
@@ -302,12 +389,37 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
         try {
             await axios.post('/api/food', {
                 name: trimmedName,
-                calories,
+                calories: quickEntryCalories,
                 meal_period: mealPeriod,
                 ...(entryLocalDate ? { date: entryLocalDate } : {})
             });
-            setFoodName('');
-            setCalories('');
+            setQuickEntryName('');
+            setQuickEntryCalories('');
+            onSuccess?.();
+        } catch (err) {
+            setError(getApiErrorMessage(err) ?? 'Unable to add this food right now.');
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const handleAddFromMyFoods = async () => {
+        if (!selectedMyFood) return;
+        const servings = Number(myFoodServingsConsumed);
+        if (!Number.isFinite(servings) || servings <= 0) return;
+
+        setIsSubmitting(true);
+        setError(null);
+        try {
+            await axios.post('/api/food', {
+                my_food_id: selectedMyFood.id,
+                servings_consumed: servings,
+                meal_period: mealPeriod,
+                ...(entryLocalDate ? { date: entryLocalDate } : {})
+            });
+
+            // Keep selection around for multi-add workflows, but reset servings to a sensible default.
+            setMyFoodServingsConsumed('1');
             onSuccess?.();
         } catch (err) {
             setError(getApiErrorMessage(err) ?? 'Unable to add this food right now.');
@@ -342,24 +454,36 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
         event.preventDefault();
         if (isSubmitting) return;
 
-        if (mode === 'manual') {
-            void handleAddManual();
+        if (mode === 'myFoods') {
+            if (selectedMyFood && myFoodCaloriesPreview !== null) {
+                void handleAddFromMyFoods();
+                return;
+            }
+            if (quickEntryName.trim() && quickEntryCalories.trim()) {
+                void handleAddQuickEntry();
+            }
             return;
         }
 
-        if (searchView === 'selected') {
+        if (mode === 'myRecipes') {
+            if (selectedMyFood && myFoodCaloriesPreview !== null) {
+                void handleAddFromMyFoods();
+            }
+            return;
+        }
+
+        if (mode === 'search' && searchView === 'selected') {
             void handleAddFromSearch();
         }
     };
 
     const providerLookupNote = supportsBarcodeLookup === false ? ' (barcode lookup unavailable)' : '';
-    const searchButtonLabel = isSearching ? 'Searching...' : 'Search';
 
     // Compute the search panel body outside JSX so the layout stays readable.
     let searchResultsContent: React.ReactNode;
 
     if (searchResults.length === 0) {
-        let emptyMessage = 'No results yet. Search by name or scan a barcode to see matching items.';
+        let emptyMessage = 'Start typing to search by name, or scan a barcode to see matching items.';
         if (isSearching) {
             emptyMessage = 'Searching...';
         } else if (hasSearched) {
@@ -480,35 +604,19 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
                 size="small"
                 color="primary"
                 disabled={isSubmitting}
+                sx={{
+                    width: '100%',
+                    '& .MuiToggleButton-root': { flex: 1 }
+                }}
             >
                 <ToggleButton value="search">Search</ToggleButton>
-                <ToggleButton value="manual">Manual Entry</ToggleButton>
+                <ToggleButton value="myFoods">My Foods</ToggleButton>
+                <ToggleButton value="myRecipes">My Recipes</ToggleButton>
             </ToggleButtonGroup>
 
             {error && <Alert severity="error">{error}</Alert>}
 
-            {mode === 'manual' ? (
-                <Stack spacing={2}>
-                    <TextField
-                        label="Food Name"
-                        fullWidth
-                        value={foodName}
-                        onChange={(e) => setFoodName(e.target.value)}
-                        disabled={isSubmitting}
-                        required
-                    />
-                    <TextField
-                        label="Calories"
-                        type="number"
-                        fullWidth
-                        value={calories}
-                        onChange={(e) => setCalories(e.target.value)}
-                        disabled={isSubmitting}
-                        inputProps={{ min: 0, step: 1 }}
-                        required
-                    />
-                </Stack>
-            ) : (
+            {mode === 'search' ? (
                 <Stack spacing={2}>
                     <TextField
                         label="Search foods"
@@ -520,7 +628,7 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
                         onKeyDown={(e) => {
                             if (e.key === 'Enter') {
                                 e.preventDefault();
-                                void handleSearch();
+                                void performFoodSearch({ query: searchQuery });
                             }
                         }}
                         InputProps={{
@@ -540,15 +648,6 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
                             )
                         }}
                     />
-                    <Button
-                        variant="outlined"
-                        type="button"
-                        onClick={() => void handleSearch()}
-                        disabled={isSearching || isSubmitting || !searchQuery.trim()}
-                        sx={{ width: { xs: '100%', sm: 'auto' } }}
-                    >
-                        {searchButtonLabel}
-                    </Button>
                     {providerName && (
                         <Typography variant="caption" color="text.secondary">
                             Provider: {providerName}
@@ -566,6 +665,276 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
                     />
 
                     {searchResultsContent}
+                </Stack>
+            ) : mode === 'myFoods' ? (
+                <Stack spacing={2}>
+                    <Stack
+                        direction={{ xs: 'column', sm: 'row' }}
+                        spacing={1}
+                        alignItems={{ xs: 'stretch', sm: 'center' }}
+                    >
+                        <Button
+                            variant="outlined"
+                            type="button"
+                            onClick={() => setIsNewFoodDialogOpen(true)}
+                            disabled={isSubmitting}
+                        >
+                            New Food
+                        </Button>
+                    </Stack>
+
+                    <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems={{ sm: 'flex-end' }}>
+                        <TextField
+                            label="Search My Foods"
+                            placeholder="e.g. oatmeal, chili"
+                            fullWidth
+                            value={myFoodsQueryText}
+                            onChange={(e) => setMyFoodsQueryText(e.target.value)}
+                            disabled={isSubmitting}
+                        />
+                    </Stack>
+
+                    {myFoodsQuery.isLoading ? (
+                        <Stack direction="row" spacing={1} alignItems="center">
+                            <CircularProgress size={18} />
+                            <Typography variant="body2" color="text.secondary">
+                                Loading...
+                            </Typography>
+                        </Stack>
+                    ) : myFoodsQuery.isError ? (
+                        <Typography variant="body2" color="text.secondary">
+                            Unable to load your saved foods right now.
+                        </Typography>
+                    ) : myFoods.length === 0 ? (
+                        <Typography variant="body2" color="text.secondary">
+                            No saved foods yet. Create one with "New Food" to reuse it later.
+                        </Typography>
+                    ) : (
+                        <Box
+                            sx={{
+                                border: 1,
+                                borderColor: 'divider',
+                                borderRadius: 1,
+                                overflow: 'hidden',
+                                maxHeight: MY_FOODS_LIST_HEIGHT,
+                                overflowY: 'auto'
+                            }}
+                        >
+                            <List dense disablePadding>
+                                {myFoods.map((food) => {
+                                    const secondary = `${Math.round(food.calories_per_serving)} kcal per ${food.serving_size_quantity} ${food.serving_unit_label}`;
+                                    return (
+                                        <ListItemButton
+                                            key={food.id}
+                                            selected={food.id === selectedMyFoodId}
+                                            onClick={() => setSelectedMyFoodId(food.id)}
+                                            disabled={isSubmitting}
+                                        >
+                                            <ListItemText
+                                                primary={food.name}
+                                                secondary={secondary}
+                                                primaryTypographyProps={{ variant: 'body2' }}
+                                                secondaryTypographyProps={{ variant: 'caption', color: 'text.secondary' }}
+                                            />
+                                        </ListItemButton>
+                                    );
+                                })}
+                            </List>
+                        </Box>
+                    )}
+
+                    {selectedMyFood && (
+                        <Stack spacing={1.5}>
+                            {(() => {
+                                const servingDescriptor = `${selectedMyFood.serving_size_quantity} ${selectedMyFood.serving_unit_label}`;
+                                return (
+                            <TextField
+                                label={`Servings consumed (${servingDescriptor})`}
+                                type="number"
+                                value={myFoodServingsConsumed}
+                                onChange={(e) => setMyFoodServingsConsumed(e.target.value)}
+                                disabled={isSubmitting}
+                                inputProps={{ min: 0, step: 0.1 }}
+                            />
+                                );
+                            })()}
+                            {myFoodCaloriesPreview !== null && (
+                                <Typography variant="body2" color="text.secondary">
+                                    {myFoodCaloriesPreview} calories
+                                </Typography>
+                            )}
+                            <Button
+                                variant="contained"
+                                type="button"
+                                onClick={() => void handleAddFromMyFoods()}
+                                disabled={isSubmitting || myFoodCaloriesPreview === null}
+                            >
+                                {isSubmitting ? 'Adding…' : 'Add to Log'}
+                            </Button>
+                        </Stack>
+                    )}
+
+                    <Divider />
+
+                    <Typography variant="subtitle2">Quick entry (not saved)</Typography>
+                    <Stack spacing={2}>
+                        <TextField
+                            label="Food Name"
+                            fullWidth
+                            value={quickEntryName}
+                            onChange={(e) => setQuickEntryName(e.target.value)}
+                            disabled={isSubmitting}
+                        />
+                        <TextField
+                            label="Calories"
+                            type="number"
+                            fullWidth
+                            value={quickEntryCalories}
+                            onChange={(e) => setQuickEntryCalories(e.target.value)}
+                            disabled={isSubmitting}
+                            inputProps={{ min: 0, step: 1 }}
+                        />
+                        <Button
+                            variant="outlined"
+                            type="button"
+                            onClick={() => void handleAddQuickEntry()}
+                            disabled={isSubmitting || !quickEntryName.trim() || !quickEntryCalories.trim()}
+                        >
+                            {isSubmitting ? 'Adding…' : 'Add Once'}
+                        </Button>
+                    </Stack>
+
+                    <NewMyFoodDialog
+                        open={isNewFoodDialogOpen}
+                        date={entryLocalDate}
+                        mealPeriod={mealPeriod}
+                        onClose={() => setIsNewFoodDialogOpen(false)}
+                        onSaved={(created) => {
+                            void queryClient.invalidateQueries({ queryKey: ['my-foods'] });
+                            setSelectedMyFoodId(created.id);
+                        }}
+                        onLogged={() => {
+                            void queryClient.invalidateQueries({ queryKey: ['food'] });
+                            onSuccess?.();
+                        }}
+                    />
+                </Stack>
+            ) : (
+                <Stack spacing={2}>
+                    <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems={{ xs: 'stretch', sm: 'center' }}>
+                        <Button
+                            variant="outlined"
+                            type="button"
+                            onClick={() => setIsNewRecipeDialogOpen(true)}
+                            disabled={isSubmitting}
+                        >
+                            New Recipe
+                        </Button>
+                    </Stack>
+
+                    <TextField
+                        label="Search My Recipes"
+                        placeholder="e.g. chili, overnight oats"
+                        fullWidth
+                        value={myFoodsQueryText}
+                        onChange={(e) => setMyFoodsQueryText(e.target.value)}
+                        disabled={isSubmitting}
+                    />
+
+                    {myFoodsQuery.isLoading ? (
+                        <Stack direction="row" spacing={1} alignItems="center">
+                            <CircularProgress size={18} />
+                            <Typography variant="body2" color="text.secondary">
+                                Loading...
+                            </Typography>
+                        </Stack>
+                    ) : myFoodsQuery.isError ? (
+                        <Typography variant="body2" color="text.secondary">
+                            Unable to load your saved recipes right now.
+                        </Typography>
+                    ) : myFoods.length === 0 ? (
+                        <Typography variant="body2" color="text.secondary">
+                            No saved recipes yet. Create one with "New Recipe" to reuse it later.
+                        </Typography>
+                    ) : (
+                        <Box
+                            sx={{
+                                border: 1,
+                                borderColor: 'divider',
+                                borderRadius: 1,
+                                overflow: 'hidden',
+                                maxHeight: MY_FOODS_LIST_HEIGHT,
+                                overflowY: 'auto'
+                            }}
+                        >
+                            <List dense disablePadding>
+                                {myFoods.map((recipe) => {
+                                    const secondary = `${Math.round(recipe.calories_per_serving)} kcal per ${recipe.serving_size_quantity} ${recipe.serving_unit_label}`;
+                                    return (
+                                        <ListItemButton
+                                            key={recipe.id}
+                                            selected={recipe.id === selectedMyFoodId}
+                                            onClick={() => setSelectedMyFoodId(recipe.id)}
+                                            disabled={isSubmitting}
+                                        >
+                                            <ListItemText
+                                                primary={recipe.name}
+                                                secondary={secondary}
+                                                primaryTypographyProps={{ variant: 'body2' }}
+                                                secondaryTypographyProps={{ variant: 'caption', color: 'text.secondary' }}
+                                            />
+                                        </ListItemButton>
+                                    );
+                                })}
+                            </List>
+                        </Box>
+                    )}
+
+                    {selectedMyFood && (
+                        <Stack spacing={1.5}>
+                            {(() => {
+                                const servingDescriptor = `${selectedMyFood.serving_size_quantity} ${selectedMyFood.serving_unit_label}`;
+                                return (
+                                    <TextField
+                                        label={`Servings consumed (${servingDescriptor})`}
+                                        type="number"
+                                        value={myFoodServingsConsumed}
+                                        onChange={(e) => setMyFoodServingsConsumed(e.target.value)}
+                                        disabled={isSubmitting}
+                                        inputProps={{ min: 0, step: 0.1 }}
+                                    />
+                                );
+                            })()}
+                            {myFoodCaloriesPreview !== null && (
+                                <Typography variant="body2" color="text.secondary">
+                                    {myFoodCaloriesPreview} calories
+                                </Typography>
+                            )}
+                            <Button
+                                variant="contained"
+                                type="button"
+                                onClick={() => void handleAddFromMyFoods()}
+                                disabled={isSubmitting || myFoodCaloriesPreview === null}
+                            >
+                                {isSubmitting ? 'Adding…' : 'Add to Log'}
+                            </Button>
+                        </Stack>
+                    )}
+
+                    <NewRecipeDialog
+                        open={isNewRecipeDialogOpen}
+                        date={entryLocalDate}
+                        mealPeriod={mealPeriod}
+                        onClose={() => setIsNewRecipeDialogOpen(false)}
+                        onSaved={(created) => {
+                            void queryClient.invalidateQueries({ queryKey: ['my-foods'] });
+                            setSelectedMyFoodId(created.id);
+                        }}
+                        onLogged={() => {
+                            void queryClient.invalidateQueries({ queryKey: ['food'] });
+                            onSuccess?.();
+                        }}
+                    />
                 </Stack>
             )}
 
@@ -588,15 +957,7 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
                 </FormControl>
             )}
 
-            {mode === 'manual' ? (
-                <Button
-                    variant="contained"
-                    type="submit"
-                    disabled={isSubmitting || !foodName.trim() || !calories.trim()}
-                >
-                    {isSubmitting ? 'Adding…' : 'Add Food'}
-                </Button>
-            ) : (
+            {mode === 'search' && (
                 <Button
                     variant="contained"
                     type="submit"

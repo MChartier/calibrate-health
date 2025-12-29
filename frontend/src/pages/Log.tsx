@@ -10,6 +10,8 @@ import {
     IconButton,
     TextField,
     Tooltip,
+    useMediaQuery,
+    useTheme,
 } from '@mui/material';
 import SpeedDial from '@mui/material/SpeedDial';
 import SpeedDialAction from '@mui/material/SpeedDialAction';
@@ -89,6 +91,8 @@ function showNativeDatePicker(input: HTMLInputElement | null) {
 
 const Log: React.FC = () => {
     const queryClient = useQueryClient();
+    const theme = useTheme();
+    const isFoodDialogFullScreen = useMediaQuery(theme.breakpoints.down('sm'));
     const { user } = useAuth();
     const timeZone = useMemo(
         () => user?.timezone?.trim() || Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
@@ -335,9 +339,26 @@ const Log: React.FC = () => {
                 />
             </SpeedDial>
 
-            <Dialog open={isFoodDialogOpen} onClose={handleCloseFoodDialog} fullWidth maxWidth="sm">
+            <Dialog
+                open={isFoodDialogOpen}
+                onClose={handleCloseFoodDialog}
+                fullScreen={isFoodDialogFullScreen}
+                fullWidth={!isFoodDialogFullScreen}
+                maxWidth={isFoodDialogFullScreen ? false : 'sm'}
+                scroll="paper"
+                PaperProps={{
+                    sx: {
+                        height: isFoodDialogFullScreen ? '100dvh' : 'min(90dvh, 860px)',
+                        maxHeight: isFoodDialogFullScreen ? '100dvh' : 'min(90dvh, 860px)',
+                        m: isFoodDialogFullScreen ? 0 : 2,
+                        borderRadius: isFoodDialogFullScreen ? 0 : 2,
+                        display: 'flex',
+                        flexDirection: 'column'
+                    }
+                }}
+            >
                 <DialogTitle>Track Food</DialogTitle>
-                <DialogContent>
+                <DialogContent sx={{ flex: 1, overflowY: 'auto' }}>
                     <Box sx={{ mt: 1 }}>
                         <FoodEntryForm
                             date={effectiveDate}

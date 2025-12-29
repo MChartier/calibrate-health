@@ -33,6 +33,44 @@ export function parseNonNegativeInteger(value: unknown): number | null {
 }
 
 /**
+ * Parse a value into a non-negative number (>= 0), allowing decimals.
+ *
+ * Intended for payloads like servings or calories-per-serving where fractional values are meaningful.
+ * Returns `null` for invalid inputs rather than throwing so callers can map to 400s.
+ */
+export function parseNonNegativeNumber(value: unknown): number | null {
+  if (typeof value === 'string' && value.trim().length === 0) {
+    return null;
+  }
+
+  const numeric = typeof value === 'number' ? value : typeof value === 'string' ? Number(value) : Number.NaN;
+  if (!Number.isFinite(numeric) || numeric < 0) {
+    return null;
+  }
+
+  return numeric;
+}
+
+/**
+ * Parse a value into a positive number (> 0), allowing decimals.
+ *
+ * Intended for values like serving size quantities and servings consumed.
+ * Returns `null` for invalid inputs rather than throwing so callers can map to 400s.
+ */
+export function parsePositiveNumber(value: unknown): number | null {
+  if (typeof value === 'string' && value.trim().length === 0) {
+    return null;
+  }
+
+  const numeric = typeof value === 'number' ? value : typeof value === 'string' ? Number(value) : Number.NaN;
+  if (!Number.isFinite(numeric) || numeric <= 0) {
+    return null;
+  }
+
+  return numeric;
+}
+
+/**
  * Resolve a best-effort language code (e.g. "en") from request hints.
  *
  * Preference order:
@@ -60,4 +98,3 @@ export function resolveLanguageCode(opts: {
 
   return primary.split('-')[0]?.toLowerCase();
 }
-
