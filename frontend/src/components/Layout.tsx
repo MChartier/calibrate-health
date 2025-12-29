@@ -24,12 +24,14 @@ import ListAltIcon from '@mui/icons-material/ListAltRounded';
 import ShowChartIcon from '@mui/icons-material/ShowChartRounded';
 import SettingsIcon from '@mui/icons-material/SettingsRounded';
 import LogoutIcon from '@mui/icons-material/LogoutRounded';
+import GitHubIcon from '@mui/icons-material/GitHub';
 import { alpha, useTheme } from '@mui/material/styles';
 import { useAuth } from '../context/useAuth';
 import AppPage from '../ui/AppPage';
 import { getAvatarLabel } from '../utils/avatarLabel';
 
 const drawerWidth = 240;
+const GITHUB_REPO_URL = 'https://github.com/MChartier/cal-io';
 
 /**
  * Map the current pathname to a navigation value so nested routes keep the correct tab highlighted.
@@ -164,6 +166,19 @@ const Layout: React.FC = () => {
                     </Box>
 
                     <Box sx={{ flexGrow: 1 }} />
+
+                    <Tooltip title="GitHub">
+                        <IconButton
+                            component="a"
+                            href={GITHUB_REPO_URL}
+                            target="_blank"
+                            rel="noreferrer"
+                            color="inherit"
+                            aria-label="Open the cal.io GitHub repository"
+                        >
+                            <GitHubIcon />
+                        </IconButton>
+                    </Tooltip>
 
                     {(showLoginCta || showRegisterCta) && (
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
