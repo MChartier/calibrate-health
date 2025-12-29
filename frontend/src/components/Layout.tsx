@@ -5,6 +5,7 @@ import {
     Box,
     BottomNavigation,
     BottomNavigationAction,
+    Button,
     Divider,
     Drawer,
     IconButton,
@@ -54,12 +55,19 @@ const Layout: React.FC = () => {
     const hideNav = location.pathname.startsWith('/onboarding');
     const showAppNav = Boolean(user) && !isLoading && !hideNav;
     const showProfileShortcut = Boolean(user) && !isLoading && !hideNav;
+    const showAuthActions = !user && !isLoading;
+    const isLoginRoute = location.pathname.startsWith('/login');
+    const isRegisterRoute = location.pathname.startsWith('/register');
+    const showLoginCta = showAuthActions && !isLoginRoute;
+    const showRegisterCta = showAuthActions && !isRegisterRoute;
     const showDrawer = showAppNav && isDesktop;
     const showBottomNav = showAppNav && !isDesktop;
+    const authCtaSize = isDesktop ? 'medium' : 'small';
+    const registerCtaLabel = isDesktop ? 'Create account' : 'Register';
 
     const handleLogout = async () => {
         await logout();
-        navigate('/login');
+        navigate('/');
     };
 
     const drawerContent = (
@@ -129,7 +137,7 @@ const Layout: React.FC = () => {
                         <Typography
                             variant="h6"
                             component={RouterLink}
-                            to="/dashboard"
+                            to={user ? '/dashboard' : '/'}
                             sx={{ color: 'inherit', textDecoration: 'none' }}
                         >
                             cal.io
@@ -156,6 +164,27 @@ const Layout: React.FC = () => {
                     </Box>
 
                     <Box sx={{ flexGrow: 1 }} />
+
+                    {(showLoginCta || showRegisterCta) && (
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            {showLoginCta && (
+                                <Button
+                                    component={RouterLink}
+                                    to="/login"
+                                    color="inherit"
+                                    variant="text"
+                                    size={authCtaSize}
+                                >
+                                    Sign in
+                                </Button>
+                            )}
+                            {showRegisterCta && (
+                                <Button component={RouterLink} to="/register" variant="contained" size={authCtaSize}>
+                                    {registerCtaLabel}
+                                </Button>
+                            )}
+                        </Box>
+                    )}
 
                     {showProfileShortcut && (
                         <Tooltip title="Profile">
