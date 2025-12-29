@@ -180,8 +180,7 @@ const Landing: React.FC = () => {
                                     </Typography>
 
                                     <Typography variant="h6" color="text.secondary" sx={{ maxWidth: '56ch' }}>
-                                        cal.io is the free, self-hostable health and fitness tracker. No subscription, no ads,
-                                        no nonsense.
+                                        cal.io is the free, self-hostable health and fitness tracker. No subscription, no ads, no nonsense.
                                     </Typography>
                                 </Stack>
 

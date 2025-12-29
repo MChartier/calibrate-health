@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, Card, CardContent, Chip, Stack, Typography } from '@mui/material';
+import { Box, Card, CardContent, Stack, Typography } from '@mui/material';
 import { alpha, type Theme } from '@mui/material/styles';
 import { Gauge } from '@mui/x-charts/Gauge';
 import SectionHeader from '../../ui/SectionHeader';
@@ -98,12 +98,7 @@ function LandingMockGoalTrackerCard() {
     return (
         <Card sx={{ width: '100%' }}>
             <CardContent>
-                <SectionHeader
-                    title="Goal tracker"
-                    align="center"
-                    actions={<Chip size="small" variant="outlined" label="Projected: Oct 18" />}
-                    sx={{ mb: 1.5 }}
-                />
+                <SectionHeader title="Goal tracker" sx={{ mb: 1.5 }} />
 
                 <Box>
                     <Stack spacing={0.5} sx={{ mb: 1 }}>
@@ -169,6 +164,10 @@ function LandingMockGoalTrackerCard() {
                             {progressPercent}% toward goal
                         </Typography>
                     </Box>
+
+                    <Typography variant="body2" color="primary" sx={{ mt: 1.25 }}>
+                        View goals and details
+                    </Typography>
                 </Box>
             </CardContent>
         </Card>
@@ -190,4 +189,3 @@ const LandingAppPreview: React.FC = () => {
 };
 
 export default LandingAppPreview;
-
