@@ -7,6 +7,11 @@ export type FoodLogEntry = {
     meal_period: MealPeriod;
     name: string;
     calories: number;
+    my_food_id?: number | null;
+    servings_consumed?: number | null;
+    serving_size_quantity_snapshot?: number | null;
+    serving_unit_label_snapshot?: string | null;
+    calories_per_serving_snapshot?: number | null;
 };
 
 /**
@@ -36,4 +41,3 @@ export function useFoodLogQuery(dateIso: string, options?: { enabled?: boolean }
         enabled: options?.enabled
     });
 }
-

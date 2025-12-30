@@ -42,6 +42,16 @@ enum MealPeriod {
   EVENING_SNACK
 }
 
+enum MyFoodType {
+  FOOD
+  RECIPE
+}
+
+enum RecipeIngredientSource {
+  MY_FOOD
+  EXTERNAL
+}
+
 model User {
   id            Int       @id @default(autoincrement())
   email         String    @unique
@@ -64,6 +74,8 @@ model User {
   goals         Goal[]
   metrics       BodyMetric[]
   food_logs     FoodLog[]
+  /// User-owned library of reusable foods and recipes for quick logging.
+  my_foods      MyFood[]
 }
 
 model Goal {
@@ -92,6 +104,10 @@ model FoodLog {
   id          Int      @id @default(autoincrement())
   user_id     Int
   user        User     @relation(fields: [user_id], references: [id])
+  /// Optional link to a MyFood item (food/recipe) used to create this entry.
+  /// This is informational only; the log remains a snapshot even if the MyFood changes later.
+  my_food_id  Int?
+  my_food     MyFood?  @relation(fields: [my_food_id], references: [id], onDelete: SetNull)
   date        DateTime @default(now())
   /// Calendar day for grouping logs, derived from the user's timezone at write time.
   local_date  DateTime @db.Date
@@ -99,7 +115,85 @@ model FoodLog {
   meal_period MealPeriod
   name        String
   calories    Int
+  /// Number of servings consumed for this entry (can be fractional).
+  servings_consumed Float?
+  /// Snapshot of the serving size (e.g. 1 "slice", 30 "g") used when logging.
+  serving_size_quantity_snapshot Float?
+  /// Snapshot of the serving unit label (free-form, e.g. "slice", "g", "ml") used when logging.
+  serving_unit_label_snapshot String?
+  /// Snapshot of calories per serving used when logging (so edits to MyFood do not mutate history).
+  calories_per_serving_snapshot Float?
   created_at  DateTime @default(now())
 
   @@index([user_id, local_date])
+}
+
+model MyFood {
+  id          Int       @id @default(autoincrement())
+  user_id     Int
+  user        User      @relation(fields: [user_id], references: [id])
+  /// Indicates whether this item is a simple food (manual definition) or a composed recipe.
+  type        MyFoodType
+  name        String
+  /// Serving size quantity for one serving unit (e.g. 1 "slice", 30 "g").
+  serving_size_quantity Float
+  /// Free-form serving unit label (e.g. "slice", "g", "ml").
+  serving_unit_label String
+  /// Calories per serving. For recipes, this is computed from ingredient snapshots and yield.
+  calories_per_serving Float
+  /// For recipes: total calories across all ingredient snapshots.
+  recipe_total_calories Float?
+  /// For recipes: number of servings yielded by the recipe (can be fractional).
+  yield_servings Float?
+  created_at  DateTime  @default(now())
+  updated_at  DateTime  @updatedAt
+
+  /// Ingredients belonging to this recipe (only meaningful when type=RECIPE).
+  recipe_ingredients RecipeIngredient[] @relation("RecipeToIngredients")
+  /// Recipe ingredients that referenced this item at creation time (traceability only; recipes store snapshots).
+  used_in_recipe_ingredients RecipeIngredient[] @relation("RecipeIngredientSourceFood")
+  food_logs   FoodLog[]
+
+  @@index([user_id, name])
+}
+
+model RecipeIngredient {
+  id          Int       @id @default(autoincrement())
+  recipe_id   Int
+  recipe      MyFood    @relation("RecipeToIngredients", fields: [recipe_id], references: [id], onDelete: Cascade)
+  /// Stable ordering of ingredients within a recipe.
+  sort_order  Int       @default(0)
+  source      RecipeIngredientSource
+
+  /// Snapshot display name for this ingredient.
+  name_snapshot String
+  /// Snapshot total calories contributed by this ingredient within the recipe.
+  calories_total_snapshot Float
+
+  /// If source=MY_FOOD, optional link back to the referenced MyFood for traceability only.
+  source_my_food_id Int?
+  source_my_food    MyFood? @relation("RecipeIngredientSourceFood", fields: [source_my_food_id], references: [id], onDelete: SetNull)
+  /// If source=MY_FOOD, number of ingredient servings used in the recipe (can be fractional).
+  quantity_servings Float?
+  /// If source=MY_FOOD, snapshot of the ingredient's serving size.
+  serving_size_quantity_snapshot Float?
+  serving_unit_label_snapshot    String?
+  calories_per_serving_snapshot  Float?
+
+  /// If source=EXTERNAL, optional identifiers for the third-party item used to create the snapshot.
+  external_source String?
+  external_id     String?
+  brand_snapshot  String?
+  locale_snapshot String?
+  barcode_snapshot String?
+
+  /// If source=EXTERNAL, snapshot of the selected measure used to compute calories.
+  measure_label_snapshot       String?
+  grams_per_measure_snapshot   Float?
+  measure_quantity_snapshot    Float?
+  grams_total_snapshot         Float?
+
+  created_at  DateTime  @default(now())
+
+  @@index([recipe_id])
 }

@@ -31,6 +31,7 @@ import axios from 'axios';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { MEAL_PERIOD_LABELS, MEAL_PERIOD_ORDER, type MealPeriod } from '../types/mealPeriod';
 import { getMealPeriodAccentColor } from '../utils/mealColors';
+import { formatServingSnapshotLabel } from '../utils/servingDisplay';
 import SectionHeader from '../ui/SectionHeader';
 import MealPeriodIcon from './MealPeriodIcon';
 
@@ -39,6 +40,10 @@ type FoodLogEntry = {
     meal_period?: MealPeriod;
     name?: string;
     calories?: number;
+    servings_consumed?: number | null;
+    serving_size_quantity_snapshot?: number | null;
+    serving_unit_label_snapshot?: string | null;
+    calories_per_serving_snapshot?: number | null;
 };
 
 const MEALS: Array<{ key: MealPeriod; label: string }> = MEAL_PERIOD_ORDER.map((key) => ({
@@ -91,6 +96,16 @@ function parseCaloriesInput(value: string): number | null {
     const rounded = Math.trunc(parsed);
     if (rounded < 0) return null;
     return rounded;
+}
+
+/**
+ * Parse a servings input into a positive number, returning null when invalid.
+ */
+function parseServingsInput(value: string): number | null {
+    if (!value.trim()) return null;
+    const parsed = Number(value);
+    if (!Number.isFinite(parsed) || parsed <= 0) return null;
+    return parsed;
 }
 
 export type FoodLogMealsProps = {
@@ -159,13 +174,17 @@ const FoodLogMeals: React.FC<FoodLogMealsProps> = ({ logs, isLoading = false }) 
     const [editName, setEditName] = useState('');
     const [editCalories, setEditCalories] = useState('');
     const [editMealPeriod, setEditMealPeriod] = useState<MealPeriod>('BREAKFAST');
+    const [editServingsConsumed, setEditServingsConsumed] = useState('');
     const [editError, setEditError] = useState<string | null>(null);
 
     const [deleteEntry, setDeleteEntry] = useState<FoodLogEntry | null>(null);
     const [deleteError, setDeleteError] = useState<string | null>(null);
 
     const updateMutation = useMutation({
-        mutationFn: async (vars: { id: number | string; data: { name: string; calories: number; meal_period: MealPeriod } }) => {
+        mutationFn: async (vars: {
+            id: number | string;
+            data: { name: string; calories: number; meal_period: MealPeriod; servings_consumed?: number };
+        }) => {
             const res = await axios.patch(`/api/food/${encodeURIComponent(String(vars.id))}`, vars.data);
             return res.data;
         },
@@ -188,6 +207,11 @@ const FoodLogMeals: React.FC<FoodLogMealsProps> = ({ logs, isLoading = false }) 
         setEditName(typeof entry.name === 'string' ? entry.name : '');
         setEditCalories(typeof entry.calories === 'number' ? String(entry.calories) : '');
         setEditMealPeriod(normalizeMealPeriod(entry.meal_period) ?? 'BREAKFAST');
+        setEditServingsConsumed(
+            typeof entry.servings_consumed === 'number' && Number.isFinite(entry.servings_consumed)
+                ? String(entry.servings_consumed)
+                : ''
+        );
         setEditError(null);
     };
 
@@ -213,10 +237,23 @@ const FoodLogMeals: React.FC<FoodLogMealsProps> = ({ logs, isLoading = false }) 
             return;
         }
 
+        const hasServingSnapshot = Boolean(editEntry.serving_unit_label_snapshot);
+        const servingsValueRaw = editServingsConsumed.trim();
+        const servingsValue = servingsValueRaw ? parseServingsInput(servingsValueRaw) : null;
+        if (hasServingSnapshot && servingsValueRaw && servingsValue === null) {
+            setEditError('Servings must be a positive number.');
+            return;
+        }
+
         try {
             await updateMutation.mutateAsync({
                 id: editEntry.id,
-                data: { name: trimmedName, calories: parsedCalories, meal_period: editMealPeriod }
+                data: {
+                    name: trimmedName,
+                    calories: parsedCalories,
+                    meal_period: editMealPeriod,
+                    ...(servingsValue !== null ? { servings_consumed: servingsValue } : {})
+                }
             });
             setEditEntry(null);
         } catch (err) {
@@ -339,9 +376,22 @@ const FoodLogMeals: React.FC<FoodLogMealsProps> = ({ logs, isLoading = false }) 
                                             key={entry.id}
                                             sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1 }}
                                         >
-                                            <Typography sx={{ flexGrow: 1, minWidth: 0 }} noWrap>
-                                                {entry.name}
-                                            </Typography>
+                                            <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+                                                <Typography noWrap>{entry.name}</Typography>
+                                                {(() => {
+                                                    const servingLabel = formatServingSnapshotLabel({
+                                                        servingsConsumed: entry.servings_consumed ?? null,
+                                                        servingSizeQuantity: entry.serving_size_quantity_snapshot ?? null,
+                                                        servingUnitLabel: entry.serving_unit_label_snapshot ?? null
+                                                    });
+                                                    if (!servingLabel) return null;
+                                                    return (
+                                                        <Typography variant="caption" color="text.secondary" noWrap>
+                                                            {servingLabel}
+                                                        </Typography>
+                                                    );
+                                                })()}
+                                            </Box>
                                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                                                 <Typography color="text.secondary" sx={{ whiteSpace: 'nowrap' }}>
                                                     {entry.calories} Calories
@@ -390,6 +440,16 @@ const FoodLogMeals: React.FC<FoodLogMealsProps> = ({ logs, isLoading = false }) 
                             inputProps={{ min: 0, step: 1 }}
                             fullWidth
                         />
+                        {editEntry?.serving_unit_label_snapshot && (
+                            <TextField
+                                label={`Servings consumed (${editEntry.serving_unit_label_snapshot})`}
+                                type="number"
+                                value={editServingsConsumed}
+                                onChange={(e) => setEditServingsConsumed(e.target.value)}
+                                inputProps={{ min: 0, step: 0.1 }}
+                                fullWidth
+                            />
+                        )}
                         <FormControl fullWidth>
                             <InputLabel id="food-log-meal-period-label">Meal</InputLabel>
                             <Select

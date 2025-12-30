@@ -73,6 +73,7 @@ import authRoutes from './routes/auth';
 import goalRoutes from './routes/goals';
 import metricRoutes from './routes/metrics';
 import foodRoutes from './routes/food';
+import myFoodsRoutes from './routes/myFoods';
 import userRoutes from './routes/user';
 import devRoutes from './routes/dev';
 
@@ -84,6 +85,7 @@ app.use('/api', apiRouter);
 apiRouter.use('/goals', goalRoutes);
 apiRouter.use('/metrics', metricRoutes);
 apiRouter.use('/food', foodRoutes);
+apiRouter.use('/my-foods', myFoodsRoutes);
 apiRouter.use('/user', userRoutes);
 
 // Keep debug/prototype routes (food provider comparisons, etc.) out of production deployments.
