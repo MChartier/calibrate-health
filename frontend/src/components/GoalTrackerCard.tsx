@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Alert, Box, Button, Card, CardActionArea, CardContent, Dialog, DialogContent, DialogTitle, Skeleton, Stack, Typography } from '@mui/material';
+import { Alert, Box, Button, Card, CardActionArea, CardContent, Dialog, DialogContent, DialogTitle, Skeleton, Typography } from '@mui/material';
 import { alpha, type Theme } from '@mui/material/styles';
 import { Link as RouterLink } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -11,7 +11,6 @@ import type { GoalMode } from '../utils/goalValidation';
 import {
     computeGoalProgress,
     computeGoalProjection,
-    formatDateLabel,
     getGoalModeFromDailyDeficit,
     getMaintenanceTolerance
 } from '../utils/goalTracking';
@@ -23,6 +22,11 @@ type ModeAlpha = { light: number; dark: number };
 const PROGRESS_TRACK_ALPHA: ModeAlpha = { dark: 0.14, light: 0.08 };
 const MAINTENANCE_TOLERANCE_ALPHA: ModeAlpha = { dark: 0.28, light: 0.18 };
 
+// Shared progress-bar sizing so markers stay vertically centered on the track.
+const PROGRESS_BAR_HEIGHT_PX = 10;
+const PROGRESS_MARKER_SIZE_PX = 14;
+const PROGRESS_MARKER_TOP_PX = (PROGRESS_BAR_HEIGHT_PX - PROGRESS_MARKER_SIZE_PX) / 2;
+
 /**
  * Resolve a mode-specific alpha value so translucent surfaces stay consistent in light/dark mode.
  */
@@ -33,6 +37,7 @@ function resolveModeAlpha(theme: Theme, alphaByMode: ModeAlpha): number {
 type GoalResponse = {
     start_weight: number;
     target_weight: number;
+    target_date: string | null;
     daily_deficit: number;
     created_at: string | null;
 };
@@ -67,7 +72,6 @@ const GoalTrackerBody: React.FC<{
     dailyDeficit: number;
     currentWeightDate: string | null;
 }> = ({ startWeight, targetWeight, currentWeight, unitLabel, goalMode, goalCreatedAt, dailyDeficit, currentWeightDate }) => {
-    const startDateLabel = formatDateLabel(goalCreatedAt);
     const projection = computeGoalProjection({
         goalMode,
         unitLabel,
@@ -92,117 +96,94 @@ const GoalTrackerBody: React.FC<{
         const toleranceWidthPercent = (tolerance / range) * 100;
         const toleranceLeftPercent = 50 - toleranceWidthPercent / 2;
 
-        const proximityLabel = (() => {
-            if (delta === null) return null;
-            if (absDelta === null) return null;
+        const currentWeightLabel =
+            typeof currentWeight === 'number' && Number.isFinite(currentWeight) ? `${currentWeight.toFixed(1)} ${unitLabel}` : EM_DASH;
 
-            const deltaLabel =
-                absDelta < 0.05
-                    ? `0.0 ${unitLabel} from target`
-                    : `${absDelta.toFixed(1)} ${unitLabel} ${delta > 0 ? 'above' : 'below'} target`;
-
-            return isOnTarget ? `${deltaLabel} (on target)` : deltaLabel;
+        const statusLabel = (() => {
+            if (delta === null) return 'Log a weigh-in';
+            if (absDelta === null) return 'Log a weigh-in';
+            if (isOnTarget) return 'On target';
+            return `${absDelta.toFixed(1)} ${unitLabel} ${delta > 0 ? 'above' : 'below'}`;
         })();
 
         return (
             <Box>
-                <Stack spacing={0.5} sx={{ mb: 1 }}>
-                    <Typography variant="body2" color="text.secondary">
-                        Started: {startDateLabel}
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', mb: 0.5, gap: 1 }}>
+                    <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 600 }}>
+                        Target {targetWeight.toFixed(1)} {unitLabel}
                     </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                        Projected target date: {projection.projectedDateLabel}
+                    <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 600 }}>
+                        ±{tolerance.toFixed(1)} {unitLabel}
                     </Typography>
-                    {projection.detail && (
-                        <Typography variant="caption" color="text.secondary">
-                            {projection.detail}
-                        </Typography>
-                    )}
-                </Stack>
+                </Box>
 
-                <Typography variant="body2" color="text.secondary">
-                    Start: {startWeight.toFixed(1)} {unitLabel} · Target: {targetWeight.toFixed(1)} {unitLabel}
-                </Typography>
-                <Typography variant="body1" sx={{ mt: 0.5 }}>
-                    Current: {typeof currentWeight === 'number' ? `${currentWeight.toFixed(1)} ${unitLabel}` : EM_DASH}
-                </Typography>
+                <Box sx={{ position: 'relative' }}>
+                    <Box
+                        sx={{
+                            height: PROGRESS_BAR_HEIGHT_PX,
+                            borderRadius: 999,
+                            backgroundColor: (theme) =>
+                                alpha(theme.palette.text.primary, resolveModeAlpha(theme, PROGRESS_TRACK_ALPHA)),
+                            overflow: 'hidden'
+                        }}
+                    />
 
-                {proximityLabel ? (
-                    <>
-                        <Typography variant="h6" sx={{ mt: 1.25 }}>
-                            {proximityLabel}
-                        </Typography>
+                    <Box
+                        sx={{
+                            position: 'absolute',
+                            top: 0,
+                            height: PROGRESS_BAR_HEIGHT_PX,
+                            left: `${toleranceLeftPercent}%`,
+                            width: `${toleranceWidthPercent}%`,
+                            borderRadius: 999,
+                            backgroundColor: (theme) =>
+                                alpha(theme.palette.secondary.main, resolveModeAlpha(theme, MAINTENANCE_TOLERANCE_ALPHA))
+                        }}
+                        aria-label="On-target range"
+                    />
 
-                        <Box sx={{ mt: 1.25 }}>
-                            <Box sx={{ position: 'relative' }}>
-                                <Box
-                                    sx={{
-                                        height: 10,
-                                        borderRadius: 999,
-                                        backgroundColor: (theme) =>
-                                            alpha(theme.palette.text.primary, resolveModeAlpha(theme, PROGRESS_TRACK_ALPHA)),
-                                        overflow: 'hidden'
-                                    }}
-                                />
+                    <Box
+                        sx={{
+                            position: 'absolute',
+                            left: '50%',
+                            top: PROGRESS_MARKER_TOP_PX,
+                            width: 2,
+                            height: PROGRESS_MARKER_SIZE_PX,
+                            backgroundColor: 'divider',
+                            transform: 'translateX(-50%)'
+                        }}
+                        aria-label="Target marker"
+                    />
 
-                                <Box
-                                    sx={{
-                                        position: 'absolute',
-                                        top: 0,
-                                        height: 10,
-                                        left: `${toleranceLeftPercent}%`,
-                                        width: `${toleranceWidthPercent}%`,
-                                        borderRadius: 999,
-                                        backgroundColor: (theme) =>
-                                            alpha(theme.palette.secondary.main, resolveModeAlpha(theme, MAINTENANCE_TOLERANCE_ALPHA))
-                                    }}
-                                    aria-label="On-target range"
-                                />
-
-                                <Box
-                                    sx={{
-                                        position: 'absolute',
-                                        left: '50%',
-                                        top: -2,
-                                        width: 2,
-                                        height: 14,
-                                        backgroundColor: 'divider',
-                                        transform: 'translateX(-50%)'
-                                    }}
-                                    aria-label="Target marker"
-                                />
-
-                                <Box
-                                    sx={{
-                                        position: 'absolute',
-                                        left: `${markerPercent}%`,
-                                        top: -6,
-                                        transform: 'translateX(-50%)'
-                                    }}
-                                >
-                                    <Box
-                                        sx={{
-                                            width: 14,
-                                            height: 14,
-                                            borderRadius: '50%',
-                                            backgroundColor: 'background.paper',
-                                            border: (theme) => `2px solid ${theme.palette.primary.main}`
-                                        }}
-                                        aria-label="Current weight marker"
-                                    />
-                                </Box>
-                            </Box>
-
-                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.75 }}>
-                                Aim to stay within ±{tolerance.toFixed(1)} {unitLabel} of your target.
-                            </Typography>
+                    {delta !== null && (
+                        <Box
+                            sx={{
+                                position: 'absolute',
+                                left: `${markerPercent}%`,
+                                top: PROGRESS_MARKER_TOP_PX,
+                                transform: 'translateX(-50%)'
+                            }}
+                        >
+                            <Box
+                                sx={{
+                                    width: PROGRESS_MARKER_SIZE_PX,
+                                    height: PROGRESS_MARKER_SIZE_PX,
+                                    borderRadius: '50%',
+                                    backgroundColor: 'background.paper',
+                                    border: (theme) => `2px solid ${theme.palette.primary.main}`
+                                }}
+                                aria-label="Current weight marker"
+                            />
                         </Box>
-                    </>
-                ) : (
-                    <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                        Log a weight entry to see how close you are to your target.
+                    )}
+                </Box>
+
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', mt: 1, gap: 1 }}>
+                    <Typography variant="body2">Current {currentWeightLabel}</Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 600 }}>
+                        {statusLabel}
                     </Typography>
-                )}
+                </Box>
             </Box>
         );
     }
@@ -212,80 +193,86 @@ const GoalTrackerBody: React.FC<{
             ? computeGoalProgress({ startWeight, targetWeight, currentWeight })
             : null;
 
+    const projectedLabel =
+        projection.projectedDateLabel === EM_DASH ? 'Projected: \u2014' : `Projected: ${projection.projectedDateLabel}`;
+    const currentWeightLabel =
+        typeof currentWeight === 'number' && Number.isFinite(currentWeight) ? `${currentWeight.toFixed(1)} ${unitLabel}` : EM_DASH;
+
     return (
         <Box>
-            <Stack spacing={0.5} sx={{ mb: 1 }}>
-                <Typography variant="body2" color="text.secondary">
-                    Started: {startDateLabel}
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', mb: 0.5, gap: 1 }}>
+                <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 600 }}>
+                    Start {startWeight.toFixed(1)} {unitLabel}
                 </Typography>
-                <Typography variant="body2" color="text.secondary">
-                    Projected target date: {projection.projectedDateLabel}
+                <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 600 }}>
+                    Goal {targetWeight.toFixed(1)} {unitLabel}
                 </Typography>
-                {projection.detail && (
-                    <Typography variant="caption" color="text.secondary">
-                        {projection.detail}
+            </Box>
+
+            <Box sx={{ position: 'relative' }}>
+                {progress && (
+                    <Box
+                        sx={{
+                            position: 'absolute',
+                            left: `${progress.percent}%`,
+                            top: PROGRESS_MARKER_TOP_PX,
+                            transform: 'translateX(-50%)'
+                        }}
+                    >
+                        <Box
+                            sx={{
+                                width: PROGRESS_MARKER_SIZE_PX,
+                                height: PROGRESS_MARKER_SIZE_PX,
+                                borderRadius: '50%',
+                                backgroundColor: 'background.paper',
+                                border: (theme) => `2px solid ${theme.palette.primary.main}`
+                            }}
+                            aria-label="Current progress marker"
+                        />
+                    </Box>
+                )}
+
+                <Box
+                    sx={{
+                        height: PROGRESS_BAR_HEIGHT_PX,
+                        borderRadius: 999,
+                        backgroundColor: (theme) =>
+                            alpha(theme.palette.text.primary, resolveModeAlpha(theme, PROGRESS_TRACK_ALPHA)),
+                        overflow: 'hidden'
+                    }}
+                >
+                    {progress && (
+                        <Box
+                            sx={{
+                                height: '100%',
+                                width: `${progress.percent}%`,
+                                backgroundColor: 'primary.main'
+                            }}
+                        />
+                    )}
+                </Box>
+            </Box>
+
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', mt: 1, gap: 1 }}>
+                <Typography variant="body2">Current {currentWeightLabel}</Typography>
+                {progress ? (
+                    <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 600 }} aria-label="Percent progress toward goal">
+                        {progress.percent.toFixed(0)}%
+                    </Typography>
+                ) : (
+                    <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 600 }}>
+                        Log a weigh-in
                     </Typography>
                 )}
-            </Stack>
+            </Box>
 
-            <Typography variant="body2" color="text.secondary">
-                Start: {startWeight.toFixed(1)} {unitLabel} · Target: {targetWeight.toFixed(1)} {unitLabel}
+            <Typography
+                variant="subtitle2"
+                sx={{ fontWeight: 800, mt: 1 }}
+                title={projection.detail ?? undefined}
+            >
+                {projectedLabel}
             </Typography>
-
-            <Typography variant="body1" sx={{ mt: 0.5 }}>
-                Current: {typeof currentWeight === 'number' ? `${currentWeight.toFixed(1)} ${unitLabel}` : EM_DASH}
-            </Typography>
-
-            {progress ? (
-                <Box sx={{ mt: 1.5 }}>
-                    <Box sx={{ position: 'relative' }}>
-                        <Box
-                            sx={{
-                                position: 'absolute',
-                                left: `${progress.percent}%`,
-                                top: -6,
-                                transform: 'translateX(-50%)'
-                            }}
-                        >
-                            <Box
-                                sx={{
-                                    width: 14,
-                                    height: 14,
-                                    borderRadius: '50%',
-                                    backgroundColor: 'background.paper',
-                                    border: (theme) => `2px solid ${theme.palette.primary.main}`
-                                }}
-                                aria-label="Current progress marker"
-                            />
-                        </Box>
-                        <Box
-                            sx={{
-                                height: 10,
-                                borderRadius: 999,
-                                backgroundColor: (theme) =>
-                                    alpha(theme.palette.text.primary, resolveModeAlpha(theme, PROGRESS_TRACK_ALPHA)),
-                                overflow: 'hidden'
-                            }}
-                        >
-                            <Box
-                                sx={{
-                                    height: '100%',
-                                    width: `${progress.percent}%`,
-                                    backgroundColor: 'primary.main'
-                                }}
-                            />
-                        </Box>
-                    </Box>
-
-                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.75 }}>
-                        {progress.percent.toFixed(0)}% toward goal
-                    </Typography>
-                </Box>
-            ) : (
-                <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                    Log a weight entry to see progress toward this goal.
-                </Typography>
-            )}
         </Box>
     );
 };
@@ -372,11 +359,16 @@ const GoalTrackerCard: React.FC<GoalTrackerCardProps> = ({ isDashboard = false }
     if (isLoading) {
         cardBody = (
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 1 }}>
+                    <Skeleton width="35%" />
+                    <Skeleton width="35%" />
+                </Box>
+                <Skeleton variant="rounded" height={PROGRESS_BAR_HEIGHT_PX} />
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 1 }}>
+                    <Skeleton width="45%" />
+                    <Skeleton width="15%" />
+                </Box>
                 <Skeleton width="55%" />
-                <Skeleton width="75%" />
-                <Skeleton width="65%" />
-                <Skeleton variant="rounded" height={10} />
-                <Skeleton width="40%" />
             </Box>
         );
     } else if (isError) {
