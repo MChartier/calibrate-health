@@ -3,6 +3,32 @@ import { createContext } from 'react';
 export type WeightUnit = 'KG' | 'LB';
 export type HeightUnit = 'CM' | 'FT_IN';
 
+/**
+ * Runtime constants for unit values.
+ *
+ * These mirror the `WeightUnit` / `HeightUnit` string union types and give us a single source of truth
+ * for comparisons and <Select /> values without sprinkling raw string literals throughout the UI.
+ */
+export const WEIGHT_UNITS = {
+    KG: 'KG',
+    LB: 'LB'
+} as const satisfies Record<string, WeightUnit>;
+
+export const HEIGHT_UNITS = {
+    CM: 'CM',
+    FT_IN: 'FT_IN'
+} as const satisfies Record<string, HeightUnit>;
+
+/**
+ * Runtime constants for `User.sex` values returned by the API.
+ */
+export const SEX_VALUES = {
+    MALE: 'MALE',
+    FEMALE: 'FEMALE'
+} as const;
+
+export type SexValue = (typeof SEX_VALUES)[keyof typeof SEX_VALUES];
+
 export type User = {
     id: number;
     email: string;
@@ -16,7 +42,7 @@ export type User = {
     height_unit: HeightUnit;
     timezone: string;
     date_of_birth?: string | null;
-    sex?: 'MALE' | 'FEMALE' | null;
+    sex?: SexValue | null;
     height_mm?: number | null;
     activity_level?: 'SEDENTARY' | 'LIGHT' | 'MODERATE' | 'ACTIVE' | 'VERY_ACTIVE' | null;
     /** Optional inline avatar payload returned by the API (data URL). */

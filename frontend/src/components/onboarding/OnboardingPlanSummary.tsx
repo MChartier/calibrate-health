@@ -1,5 +1,6 @@
 import React from 'react';
 import { Box, Divider, Stack, Typography } from '@mui/material';
+import type { Theme } from '@mui/material/styles';
 import { activityLevelOptions } from '../../constants/activityLevels';
 import { computeGoalProjection, formatDateValue, getGoalModeFromDailyDeficit, roundWeight, startOfLocalDay } from '../../utils/goalTracking';
 
@@ -56,6 +57,28 @@ function getGoalAdjustmentInfo(deficit: number): { label: string; deltaKcal: num
         deltaKcal: abs,
         caption: 'Surplus applied to your estimated burn to support weight gain'
     };
+}
+
+/**
+ * Pick a semantic color for the goal adjustment delta in the breakdown table.
+ *
+ * We show deficit (negative delta) as "warning/error" and surplus (positive delta) as "success".
+ */
+function getGoalDeltaColor(theme: Theme, goalDelta: number | undefined): string {
+    if (goalDelta === undefined) return theme.palette.text.secondary;
+    if (goalDelta < 0) return theme.palette.error.main;
+    if (goalDelta > 0) return theme.palette.success.main;
+    return theme.palette.text.secondary;
+}
+
+/**
+ * Format a goal adjustment delta (kcal) as a signed label for the breakdown table.
+ */
+function formatGoalDeltaLabel(goalDelta: number | undefined): string {
+    if (goalDelta === undefined) return '—';
+    const rounded = Math.round(goalDelta);
+    const sign = rounded > 0 ? '+' : '';
+    return `${sign}${rounded} kcal`;
 }
 
 /**
@@ -132,6 +155,7 @@ const OnboardingPlanSummary: React.FC<OnboardingPlanSummaryProps> = ({
 
     const goalInfo = typeof deficit === 'number' ? getGoalAdjustmentInfo(deficit) : null;
     const goalDelta = goalInfo ? goalInfo.deltaKcal : undefined;
+    const goalDeltaLabel = formatGoalDeltaLabel(goalDelta);
 
     const primaryTargetText = hasNumbers ? `${Math.round(dailyTarget!)} kcal/day` : 'Calorie target';
     const activityLevelTitle = formatActivityLevelTitle(activityLevel);
@@ -212,19 +236,12 @@ const OnboardingPlanSummary: React.FC<OnboardingPlanSummaryProps> = ({
                         <Typography
                             variant="body2"
                             sx={(theme) => ({
-                                color:
-                                    goalDelta === undefined
-                                        ? theme.palette.text.secondary
-                                        : goalDelta < 0
-                                            ? theme.palette.error.main
-                                            : goalDelta > 0
-                                                ? theme.palette.success.main
-                                                : theme.palette.text.secondary,
+                                color: getGoalDeltaColor(theme, goalDelta),
                                 textAlign: 'right',
                                 minWidth: BREAKDOWN_NUMBER_MIN_WIDTH_PX
                             })}
                         >
-                            {goalDelta !== undefined ? `${goalDelta > 0 ? '+' : ''}${Math.round(goalDelta)} kcal` : '—'}
+                            {goalDeltaLabel}
                         </Typography>
                     </Box>
 

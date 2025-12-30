@@ -1,6 +1,6 @@
 import React from 'react';
 import { Box, Collapse, Stack, Typography } from '@mui/material';
-import type { HeightUnit } from '../../context/authContext';
+import { HEIGHT_UNITS, SEX_VALUES, type HeightUnit } from '../../context/authContext';
 import { activityLevelOptions } from '../../constants/activityLevels';
 import { ONBOARDING_CARD_CONTENT_SPACING, ONBOARDING_FIELD_SPACING } from './layout';
 import type { AboutQuestionKey } from './types';
@@ -24,6 +24,36 @@ function formatDobForSummary(value: string): string {
     return new Intl.DateTimeFormat(undefined, { year: 'numeric', month: 'short', day: 'numeric' }).format(date);
 }
 
+/**
+ * Format a height input (cm or ft/in) into a concise, readable summary label.
+ */
+function formatHeightForSummary(opts: {
+    heightUnit: HeightUnit;
+    heightCm: string;
+    heightFeet: string;
+    heightInches: string;
+}): string {
+    if (opts.heightUnit === HEIGHT_UNITS.CM) {
+        const cm = opts.heightCm.trim();
+        return cm ? `${cm} cm` : '';
+    }
+
+    const feet = opts.heightFeet.trim();
+    if (!feet) return '';
+
+    const inches = opts.heightInches.trim();
+    return inches ? `${feet} ft ${inches} in` : `${feet} ft`;
+}
+
+/**
+ * Format the sex-at-birth value stored in the profile into a UI label.
+ */
+function formatSexForSummary(value: string): string {
+    if (value === SEX_VALUES.MALE) return 'Male';
+    if (value === SEX_VALUES.FEMALE) return 'Female';
+    return '';
+}
+
 export type AboutYouStepProps = {
     heightUnit: HeightUnit;
     dob: string;
@@ -44,17 +74,15 @@ export type AboutYouStepProps = {
  * Inputs live in the fixed footer so users can answer one question at a time and stay focused.
  */
 const AboutYouStep: React.FC<AboutYouStepProps> = (props) => {
-    const heightValue =
-        props.heightUnit === 'CM'
-            ? props.heightCm.trim()
-                ? `${props.heightCm.trim()} cm`
-                : ''
-            : props.heightFeet.trim()
-                ? `${props.heightFeet.trim()} ft${props.heightInches.trim() ? ` ${props.heightInches.trim()} in` : ''}`
-                : '';
+    const heightValue = formatHeightForSummary({
+        heightUnit: props.heightUnit,
+        heightCm: props.heightCm,
+        heightFeet: props.heightFeet,
+        heightInches: props.heightInches
+    });
 
     const activityTitle = activityLevelOptions.find((option) => option.value === props.activityLevel)?.title ?? '';
-    const sexLabel = props.sex === 'MALE' ? 'Male' : props.sex === 'FEMALE' ? 'Female' : '';
+    const sexLabel = formatSexForSummary(props.sex);
 
     const hasAnySummary = props.completedKeys.length > 0;
     const formattedDob = props.dob.trim() ? formatDobForSummary(props.dob) : '';

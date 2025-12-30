@@ -12,7 +12,7 @@ import {
     ToggleButtonGroup,
     Typography
 } from '@mui/material';
-import type { WeightUnit } from '../../context/authContext';
+import { WEIGHT_UNITS, type WeightUnit } from '../../context/authContext';
 import { DAILY_DEFICIT_CHOICE_STRINGS, normalizeDailyDeficitChoiceAbsValue } from '../../../../shared/goalDeficit';
 import type { GoalsQuestionKey } from './types';
 import { formatWeeklyWeightChange, inferGoalModeFromWeights, parseFiniteNumber } from '../../utils/onboardingConversions';
@@ -35,37 +35,55 @@ export type GoalsQuestionFooterProps = {
 };
 
 /**
+ * Build the conversational prompt shown above the active "Goal" question input.
+ */
+function getPromptForGoalsQuestion(opts: {
+    questionKey: GoalsQuestionKey;
+    inferredGoalMode: ReturnType<typeof inferGoalModeFromWeights>;
+}): string {
+    switch (opts.questionKey) {
+        case 'currentWeight':
+            return "What's your current weight right now?";
+        case 'targetWeight':
+            return 'What is your target weight?';
+        case 'pace':
+            if (opts.inferredGoalMode === 'gain') return 'How fast do you want to gain weight?';
+            return 'How fast do you want to lose weight?';
+        default:
+            return "What's next?";
+    }
+}
+
+/**
  * GoalsQuestionFooter renders the active "Goal" onboarding question in the fixed footer area.
  *
  * The parent controls which question is active and advances only on explicit confirmation,
  * avoiding jarring "next field appears while typing" behavior.
  */
 const GoalsQuestionFooter: React.FC<GoalsQuestionFooterProps> = (props) => {
-    const weightUnitLabel = props.weightUnit === 'LB' ? 'lb' : 'kg';
+    const weightUnitLabel = props.weightUnit === WEIGHT_UNITS.LB ? 'lb' : 'kg';
 
     const currentWeightNumber = parseFiniteNumber(props.currentWeight);
     const hasCurrentWeight = currentWeightNumber !== null && currentWeightNumber > 0;
     const currentWeightIsBlank = props.currentWeight.trim().length === 0;
     const currentWeightIsInvalid = !currentWeightIsBlank && !hasCurrentWeight;
-    const currentWeightErrorText = currentWeightIsBlank
-        ? props.showErrors
-            ? 'Required.'
-            : undefined
-        : currentWeightIsInvalid
-            ? 'Must be a positive number.'
-            : undefined;
+    let currentWeightErrorText: string | undefined;
+    if (currentWeightIsBlank) {
+        currentWeightErrorText = props.showErrors ? 'Required.' : undefined;
+    } else if (currentWeightIsInvalid) {
+        currentWeightErrorText = 'Must be a positive number.';
+    }
 
     const targetWeightNumber = parseFiniteNumber(props.targetWeight);
     const hasTargetWeight = targetWeightNumber !== null && targetWeightNumber > 0;
     const targetWeightIsBlank = props.targetWeight.trim().length === 0;
     const targetWeightIsInvalid = !targetWeightIsBlank && !hasTargetWeight;
-    const targetWeightErrorText = targetWeightIsBlank
-        ? props.showErrors
-            ? 'Required.'
-            : undefined
-        : targetWeightIsInvalid
-            ? 'Must be a positive number.'
-            : undefined;
+    let targetWeightErrorText: string | undefined;
+    if (targetWeightIsBlank) {
+        targetWeightErrorText = props.showErrors ? 'Required.' : undefined;
+    } else if (targetWeightIsInvalid) {
+        targetWeightErrorText = 'Must be a positive number.';
+    }
 
     const inferredGoalMode = inferGoalModeFromWeights(currentWeightNumber, targetWeightNumber);
     const paceGoalMode = inferredGoalMode === 'lose' || inferredGoalMode === 'gain' ? inferredGoalMode : null;
@@ -79,14 +97,7 @@ const GoalsQuestionFooter: React.FC<GoalsQuestionFooterProps> = (props) => {
         : null;
     const paceCaloriesLabel = paceGoalMode ? `${paceGoalMode === 'gain' ? '+' : '-'}${props.dailyDeficit} kcal/day` : null;
 
-    const prompt =
-        props.questionKey === 'currentWeight'
-            ? "What's your current weight right now?"
-            : props.questionKey === 'targetWeight'
-                ? 'What is your target weight?'
-                : inferredGoalMode === 'gain'
-                    ? 'How fast do you want to gain weight?'
-                    : 'How fast do you want to lose weight?';
+    const prompt = getPromptForGoalsQuestion({ questionKey: props.questionKey, inferredGoalMode });
 
     const handleEnterToSubmit: React.KeyboardEventHandler<HTMLInputElement> = (e) => {
         if (e.key !== 'Enter') return;
@@ -134,10 +145,10 @@ const GoalsQuestionFooter: React.FC<GoalsQuestionFooterProps> = (props) => {
                             aria-label="Weight unit"
                             disabled={props.disabled}
                         >
-                            <ToggleButton value="LB" aria-label="Pounds">
+                            <ToggleButton value={WEIGHT_UNITS.LB} aria-label="Pounds">
                                 lb
                             </ToggleButton>
-                            <ToggleButton value="KG" aria-label="Kilograms">
+                            <ToggleButton value={WEIGHT_UNITS.KG} aria-label="Kilograms">
                                 kg
                             </ToggleButton>
                         </ToggleButtonGroup>
@@ -178,10 +189,10 @@ const GoalsQuestionFooter: React.FC<GoalsQuestionFooterProps> = (props) => {
                             aria-label="Weight unit"
                             disabled={props.disabled}
                         >
-                            <ToggleButton value="LB" aria-label="Pounds">
+                            <ToggleButton value={WEIGHT_UNITS.LB} aria-label="Pounds">
                                 lb
                             </ToggleButton>
-                            <ToggleButton value="KG" aria-label="Kilograms">
+                            <ToggleButton value={WEIGHT_UNITS.KG} aria-label="Kilograms">
                                 kg
                             </ToggleButton>
                         </ToggleButtonGroup>
