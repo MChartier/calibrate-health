@@ -11,7 +11,7 @@ import {
 } from '@mui/material';
 import { useTheme, type Theme } from '@mui/material/styles';
 import { useAuth } from '../context/useAuth';
-import type { HeightUnit, WeightUnit } from '../context/authContext';
+import { HEIGHT_UNITS, WEIGHT_UNITS, type HeightUnit, type WeightUnit } from '../context/authContext';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { useUserProfileQuery } from '../queries/userProfile';
@@ -69,6 +69,20 @@ function getOnboardingCardMinHeight(theme: Theme): { xs: string; sm: string; md:
     };
 }
 
+/**
+ * Convert a goal mode and deficit magnitude into the signed deficit value expected by the backend.
+ *
+ * Notes:
+ * - positive values => weight loss deficit
+ * - negative values => weight gain surplus
+ */
+function getSignedDailyDeficit(goalMode: GoalMode | null, deficitAbs: number): number | null {
+    if (!goalMode) return null;
+    if (goalMode === 'maintain') return 0;
+    if (goalMode === 'gain') return -Math.abs(deficitAbs);
+    return Math.abs(deficitAbs);
+}
+
 type ProfileUpdatePayload = {
     timezone: string | null;
     date_of_birth: string | null;
@@ -122,7 +136,7 @@ function buildProfilePayload(opts: {
         activity_level: opts.activityLevel || null
     };
 
-    if (opts.heightUnit === 'CM') {
+    if (opts.heightUnit === HEIGHT_UNITS.CM) {
         payload.height_cm = opts.heightCm || null;
         return payload;
     }
@@ -210,7 +224,11 @@ const Onboarding: React.FC = () => {
     const userHeightUnit = user?.height_unit;
     const inferredUnits = useMemo(() => {
         // Prefer locale inference unless the user has already picked a non-default unit pairing.
-        if (userWeightUnit && userHeightUnit && (userWeightUnit !== 'KG' || userHeightUnit !== 'CM')) {
+        if (
+            userWeightUnit &&
+            userHeightUnit &&
+            (userWeightUnit !== WEIGHT_UNITS.KG || userHeightUnit !== HEIGHT_UNITS.CM)
+        ) {
             return { weightUnit: userWeightUnit, heightUnit: userHeightUnit };
         }
         return localeUnitDefaults;
@@ -269,7 +287,7 @@ const Onboarding: React.FC = () => {
     }, [navigate, profileQuery.data, profileQuery.isSuccess, stage]);
 
     const heightFieldsValid = useMemo(() => {
-        if (heightUnit === 'CM') {
+        if (heightUnit === HEIGHT_UNITS.CM) {
             return Boolean(heightCm);
         }
         return Boolean(heightFeet);
@@ -396,16 +414,16 @@ const Onboarding: React.FC = () => {
             if (nextUnit === heightUnit) return;
             setHasCustomizedUnits(true);
 
-            if (nextUnit === 'FT_IN') {
+            if (nextUnit === HEIGHT_UNITS.FT_IN) {
                 const converted = convertHeightCmStringToFeetInches(heightCm);
                 setHeightFeet(converted.feet);
                 setHeightInches(converted.inches);
-                setHeightUnit('FT_IN');
+                setHeightUnit(HEIGHT_UNITS.FT_IN);
                 return;
             }
 
             setHeightCm(convertHeightFeetInchesStringsToCm(heightFeet, heightInches));
-            setHeightUnit('CM');
+            setHeightUnit(HEIGHT_UNITS.CM);
         },
         [heightCm, heightFeet, heightInches, heightUnit]
     );
@@ -421,12 +439,12 @@ const Onboarding: React.FC = () => {
 
             setAttemptedGoalsQuestions((current) => ({ ...current, [goalsQuestionKey]: true }));
 
-            const isValid =
-                goalsQuestionKey === 'currentWeight'
-                    ? hasCurrentWeight
-                    : goalsQuestionKey === 'targetWeight'
-                        ? hasTargetWeight
-                        : true;
+            let isValid = true;
+            if (goalsQuestionKey === 'currentWeight') {
+                isValid = hasCurrentWeight;
+            } else if (goalsQuestionKey === 'targetWeight') {
+                isValid = hasTargetWeight;
+            }
             if (!isValid) return;
 
             setGoalsHighlightKey(goalsQuestionKey);
@@ -447,14 +465,16 @@ const Onboarding: React.FC = () => {
 
         setAttemptedAboutQuestions((current) => ({ ...current, [aboutQuestionKey]: true }));
 
-        const isValid =
-            aboutQuestionKey === 'dob'
-                ? Boolean(dob)
-                : aboutQuestionKey === 'sex'
-                    ? Boolean(sex)
-                    : aboutQuestionKey === 'activityLevel'
-                        ? Boolean(activityLevel)
-                        : heightFieldsValid;
+        let isValid = true;
+        if (aboutQuestionKey === 'dob') {
+            isValid = Boolean(dob);
+        } else if (aboutQuestionKey === 'sex') {
+            isValid = Boolean(sex);
+        } else if (aboutQuestionKey === 'activityLevel') {
+            isValid = Boolean(activityLevel);
+        } else if (aboutQuestionKey === 'height') {
+            isValid = heightFieldsValid;
+        }
         if (!isValid) return;
 
         setAboutHighlightKey(aboutQuestionKey);
@@ -560,9 +580,12 @@ const Onboarding: React.FC = () => {
                 await updateUnitPreferences({ weight_unit: weightUnit, height_unit: heightUnit });
             }
 
-            const deficitValue = inferredGoalMode === 'maintain' ? 0 : normalizeDailyDeficitChoiceAbsValue(dailyDeficit);
-            const signedDeficit =
-                inferredGoalMode === 'gain' ? -Math.abs(deficitValue) : inferredGoalMode === 'lose' ? Math.abs(deficitValue) : 0;
+            const deficitAbs = inferredGoalMode === 'maintain' ? 0 : normalizeDailyDeficitChoiceAbsValue(dailyDeficit);
+            const signedDeficit = getSignedDailyDeficit(inferredGoalMode, deficitAbs);
+            if (signedDeficit === null) {
+                setError('Please confirm your goal weights before continuing.');
+                return;
+            }
 
             await axios.post('/api/metrics', {
                 weight: currentWeight,
@@ -611,14 +634,16 @@ const Onboarding: React.FC = () => {
     const isLastAboutQuestion =
         activeStep.key === 'about' && aboutQuestionKey !== null && aboutQuestionIndex === ABOUT_QUESTION_SEQUENCE.length - 1;
 
-    const isCurrentGoalsQuestionValid =
-        activeStep.key === 'goals' && goalsQuestionKey !== null
-            ? goalsQuestionKey === 'currentWeight'
-                ? hasCurrentWeight
-                : goalsQuestionKey === 'targetWeight'
-                    ? hasTargetWeight
-                    : true
-            : false;
+    let isCurrentGoalsQuestionValid = false;
+    if (activeStep.key === 'goals' && goalsQuestionKey !== null) {
+        if (goalsQuestionKey === 'currentWeight') {
+            isCurrentGoalsQuestionValid = hasCurrentWeight;
+        } else if (goalsQuestionKey === 'targetWeight') {
+            isCurrentGoalsQuestionValid = hasTargetWeight;
+        } else {
+            isCurrentGoalsQuestionValid = true;
+        }
+    }
 
     const willAdvanceToCalorieBurn =
         activeStep.key === 'goals' &&
@@ -637,20 +662,16 @@ const Onboarding: React.FC = () => {
     }, [aboutQuestionIndex]);
 
     const signedDeficitFromState = useMemo(() => {
-        if (inferredGoalMode === null) return null;
-        if (inferredGoalMode === 'maintain') return 0;
-        const deficitValue = normalizeDailyDeficitChoiceAbsValue(dailyDeficit);
-        return inferredGoalMode === 'gain' ? -Math.abs(deficitValue) : Math.abs(deficitValue);
+        const deficitAbs = normalizeDailyDeficitChoiceAbsValue(dailyDeficit);
+        return getSignedDailyDeficit(inferredGoalMode, deficitAbs);
     }, [dailyDeficit, inferredGoalMode]);
 
-    const primaryCtaLabel =
-        activeStep.key === 'about' && isLastAboutQuestion
-            ? isSaving
-                ? 'Saving…'
-                : 'See my plan'
-            : willAdvanceToCalorieBurn
-                ? 'Next: Calorie burn'
-                : 'Continue';
+    let primaryCtaLabel = 'Continue';
+    if (activeStep.key === 'about' && isLastAboutQuestion) {
+        primaryCtaLabel = isSaving ? 'Saving...' : 'See my plan';
+    } else if (willAdvanceToCalorieBurn) {
+        primaryCtaLabel = 'Next: Calorie burn';
+    }
 
     const isWizardPrimaryDisabled = useMemo(() => {
         if (isSaving) return true;
@@ -681,6 +702,175 @@ const Onboarding: React.FC = () => {
         stage
     ]);
 
+    let stepDotsActiveIndex = 0;
+    if (stage === 'wizard') {
+        stepDotsActiveIndex = activeStepIndex;
+    } else if (stage === 'summary') {
+        stepDotsActiveIndex = steps.length;
+    }
+
+    // Determine which footer question control to show in wizard stage (goal vs about-you).
+    // Computing this outside JSX keeps the layout readable and avoids nested conditional rendering.
+    let footerQuestionControl: React.ReactNode = null;
+    if (stage === 'wizard') {
+        if (activeStep.key === 'about') {
+            footerQuestionControl = aboutQuestionKey ? (
+                <AboutYouQuestionFooter
+                    questionKey={aboutQuestionKey}
+                    progressLabel={aboutProgressLabel}
+                    heightUnit={heightUnit}
+                    onSetHeightUnit={setHeightUnitPreference}
+                    dob={dob}
+                    onDobChange={setDob}
+                    sex={sex}
+                    onSexChange={setSex}
+                    activityLevel={activityLevel}
+                    onActivityLevelChange={setActivityLevel}
+                    heightCm={heightCm}
+                    onHeightCmChange={setHeightCm}
+                    heightFeet={heightFeet}
+                    onHeightFeetChange={setHeightFeet}
+                    heightInches={heightInches}
+                    onHeightInchesChange={setHeightInches}
+                    showErrors={Boolean(aboutQuestionKey && attemptedAboutQuestions[aboutQuestionKey])}
+                    disabled={isSaving}
+                    onSubmit={goContinue}
+                />
+            ) : null;
+        } else {
+            footerQuestionControl = goalsQuestionKey ? (
+                <GoalsQuestionFooter
+                    questionKey={goalsQuestionKey}
+                    progressLabel={goalsProgressLabel}
+                    weightUnit={weightUnit}
+                    onSetWeightUnit={setWeightUnitPreference}
+                    currentWeight={currentWeight}
+                    onCurrentWeightChange={setCurrentWeight}
+                    targetWeight={targetWeight}
+                    onTargetWeightChange={setTargetWeight}
+                    dailyDeficit={dailyDeficit}
+                    onDailyDeficitChange={setDailyDeficit}
+                    showErrors={Boolean(goalsQuestionKey && attemptedGoalsQuestions[goalsQuestionKey])}
+                    disabled={isSaving}
+                    onSubmit={goContinue}
+                />
+            ) : null;
+        }
+    }
+
+    let cardBodyContent: React.ReactNode = null;
+    if (stage === 'intro') {
+        cardBodyContent = (
+            <Box>
+                <Typography variant="h4" gutterBottom>
+                    Welcome to cal.io
+                </Typography>
+                <Typography color="text.secondary">
+                    Let&apos;s set a daily calorie target that helps you reach your weight goal.
+                </Typography>
+                <Typography color="text.secondary" sx={{ mt: 1 }}>
+                    Two quick steps: set your target weight, then we&apos;ll estimate your calorie burn (TDEE).
+                </Typography>
+            </Box>
+        );
+    } else if (stage === 'summary') {
+        cardBodyContent = (
+            <OnboardingPlanSummary
+                dailyTarget={profileQuery.data?.calorieSummary?.dailyCalorieTarget}
+                tdee={profileQuery.data?.calorieSummary?.tdee}
+                bmr={profileQuery.data?.calorieSummary?.bmr}
+                deficit={profileQuery.data?.calorieSummary?.deficit ?? profileQuery.data?.goal_daily_deficit ?? signedDeficitFromState}
+                activityLevel={profileQuery.data?.profile?.activity_level ?? null}
+                startWeight={currentWeightNumber}
+                targetWeight={targetWeightNumber}
+                unitLabel={weightUnit === WEIGHT_UNITS.LB ? 'lb' : 'kg'}
+            />
+        );
+    } else {
+        cardBodyContent = (
+            <Box
+                // Key forces a clean re-mount between steps so the transition feels intentional.
+                key={activeStep.key}
+            >
+                <Fade in key={activeStep.key} timeout={prefersReducedMotion ? 0 : 180}>
+                    {/*
+                      MUI transitions require a single child that can hold a ref.
+                      Wrapping our step components in a Box avoids null ref crashes.
+                    */}
+                    <Box>
+                        {activeStep.key === 'about' ? (
+                            <AboutYouStep
+                                heightUnit={heightUnit}
+                                dob={dob}
+                                sex={sex}
+                                activityLevel={activityLevel}
+                                heightCm={heightCm}
+                                heightFeet={heightFeet}
+                                heightInches={heightInches}
+                                completedKeys={aboutCompletedKeys}
+                                onEditQuestion={editAboutQuestion}
+                                prefersReducedMotion={prefersReducedMotion}
+                                highlightKey={aboutHighlightKey}
+                            />
+                        ) : (
+                            <GoalsStep
+                                weightUnit={weightUnit}
+                                currentWeight={currentWeight}
+                                targetWeight={targetWeight}
+                                dailyDeficit={dailyDeficit}
+                                completedKeys={goalsCompletedKeys}
+                                onEditQuestion={editGoalsQuestion}
+                                prefersReducedMotion={prefersReducedMotion}
+                                highlightKey={goalsHighlightKey}
+                            />
+                        )}
+                    </Box>
+                </Fade>
+            </Box>
+        );
+    }
+
+    let cardFooterContent: React.ReactNode = null;
+    if (stage === 'intro') {
+        cardFooterContent = (
+            <Box sx={{ pt: 2 }}>
+                <Button variant="contained" onClick={enterWizard} fullWidth>
+                    Let&apos;s get started
+                </Button>
+            </Box>
+        );
+    } else if (stage === 'summary') {
+        cardFooterContent = (
+            <Stack direction="row" spacing={2} justifyContent="space-between" alignItems="center" sx={{ pt: 2 }}>
+                <Button variant="text" onClick={editSetupFromSummary} disabled={isSaving}>
+                    Edit setup
+                </Button>
+                <Button variant="contained" onClick={goToLog} disabled={isSaving}>
+                    Start logging
+                </Button>
+            </Stack>
+        );
+    } else {
+        cardFooterContent = (
+            <Stack spacing={ONBOARDING_FOOTER_SPACING} sx={{ pt: 2 }}>
+                <Fade in key={footerFadeKey} timeout={prefersReducedMotion ? 0 : 160}>
+                    {/* MUI transitions require a single child that can hold a ref. */}
+                    <Box>{footerQuestionControl}</Box>
+                </Fade>
+
+                <Stack direction="row" spacing={2} justifyContent="space-between" alignItems="center">
+                    <Button variant="text" onClick={goBack} disabled={isSaving}>
+                        Back
+                    </Button>
+
+                    <Button variant="contained" onClick={goContinue} disabled={isWizardPrimaryDisabled}>
+                        {primaryCtaLabel}
+                    </Button>
+                </Stack>
+            </Stack>
+        );
+    }
+
     return (
         <AppPage
             maxWidth="content"
@@ -693,7 +883,7 @@ const Onboarding: React.FC = () => {
             <Box sx={{ mb: 2 }}>
                 <OnboardingStepDots
                     steps={steps}
-                    activeStepIndex={stage === 'summary' ? steps.length : stage === 'wizard' ? activeStepIndex : 0}
+                    activeStepIndex={stepDotsActiveIndex}
                 />
             </Box>
 
@@ -712,158 +902,13 @@ const Onboarding: React.FC = () => {
             >
                 <Box ref={scrollContainerRef} sx={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
                     <Stack spacing={ONBOARDING_CARD_CONTENT_SPACING}>
-                        {stage === 'intro' ? (
-                            <Box>
-                                <Typography variant="h4" gutterBottom>
-                                    Welcome to cal.io
-                                </Typography>
-                                <Typography color="text.secondary">
-                                    Let&apos;s set a daily calorie target that helps you reach your weight goal.
-                                </Typography>
-                                <Typography color="text.secondary" sx={{ mt: 1 }}>
-                                    Two quick steps: set your target weight, then we&apos;ll estimate your calorie burn (TDEE).
-                                </Typography>
-                            </Box>
-                        ) : stage === 'summary' ? (
-                            <OnboardingPlanSummary
-                                dailyTarget={profileQuery.data?.calorieSummary?.dailyCalorieTarget}
-                                tdee={profileQuery.data?.calorieSummary?.tdee}
-                                bmr={profileQuery.data?.calorieSummary?.bmr}
-                                deficit={
-                                    profileQuery.data?.calorieSummary?.deficit ??
-                                    profileQuery.data?.goal_daily_deficit ??
-                                    signedDeficitFromState
-                                }
-                                activityLevel={profileQuery.data?.profile?.activity_level ?? null}
-                                startWeight={currentWeightNumber}
-                                targetWeight={targetWeightNumber}
-                                unitLabel={weightUnit === 'LB' ? 'lb' : 'kg'}
-                            />
-                        ) : (
-                            <Stack spacing={ONBOARDING_CARD_CONTENT_SPACING}>
-                                <Box
-                                    // Key forces a clean re-mount between steps so the transition feels intentional.
-                                    key={activeStep.key}
-                                >
-                                    <Fade in key={activeStep.key} timeout={prefersReducedMotion ? 0 : 180}>
-                                        {/*
-                                          MUI transitions require a single child that can hold a ref.
-                                          Wrapping our step components in a Box avoids null ref crashes.
-                                        */}
-                                        <Box>
-                                            {activeStep.key === 'about' ? (
-                                                <AboutYouStep
-                                                    heightUnit={heightUnit}
-                                                    dob={dob}
-                                                    sex={sex}
-                                                    activityLevel={activityLevel}
-                                                    heightCm={heightCm}
-                                                    heightFeet={heightFeet}
-                                                    heightInches={heightInches}
-                                                    completedKeys={aboutCompletedKeys}
-                                                    onEditQuestion={editAboutQuestion}
-                                                    prefersReducedMotion={prefersReducedMotion}
-                                                    highlightKey={aboutHighlightKey}
-                                                />
-                                            ) : (
-                                                <GoalsStep
-                                                    weightUnit={weightUnit}
-                                                    currentWeight={currentWeight}
-                                                    targetWeight={targetWeight}
-                                                    dailyDeficit={dailyDeficit}
-                                                    completedKeys={goalsCompletedKeys}
-                                                    onEditQuestion={editGoalsQuestion}
-                                                    prefersReducedMotion={prefersReducedMotion}
-                                                    highlightKey={goalsHighlightKey}
-                                                />
-                                            )}
-                                        </Box>
-                                    </Fade>
-                                </Box>
-                            </Stack>
-                        )}
+                        {cardBodyContent}
                     </Stack>
                 </Box>
 
                 <Divider sx={{ mt: 2 }} />
 
-                {stage === 'intro' ? (
-                    <Box sx={{ pt: 2 }}>
-                        <Button variant="contained" onClick={enterWizard} fullWidth>
-                            Let&apos;s get started
-                        </Button>
-                    </Box>
-                ) : stage === 'summary' ? (
-                    <Stack direction="row" spacing={2} justifyContent="space-between" alignItems="center" sx={{ pt: 2 }}>
-                        <Button variant="text" onClick={editSetupFromSummary} disabled={isSaving}>
-                            Edit setup
-                        </Button>
-                        <Button variant="contained" onClick={goToLog} disabled={isSaving}>
-                            Start logging
-                        </Button>
-                    </Stack>
-                ) : (
-                    <Stack spacing={ONBOARDING_FOOTER_SPACING} sx={{ pt: 2 }}>
-                        <Fade in key={footerFadeKey} timeout={prefersReducedMotion ? 0 : 160}>
-                            {/* MUI transitions require a single child that can hold a ref. */}
-                            <Box>
-                                {activeStep.key === 'about' ? (
-                                    aboutQuestionKey && (
-                                        <AboutYouQuestionFooter
-                                            questionKey={aboutQuestionKey}
-                                            progressLabel={aboutProgressLabel}
-                                            heightUnit={heightUnit}
-                                            onSetHeightUnit={setHeightUnitPreference}
-                                            dob={dob}
-                                            onDobChange={setDob}
-                                            sex={sex}
-                                            onSexChange={setSex}
-                                            activityLevel={activityLevel}
-                                            onActivityLevelChange={setActivityLevel}
-                                            heightCm={heightCm}
-                                            onHeightCmChange={setHeightCm}
-                                            heightFeet={heightFeet}
-                                            onHeightFeetChange={setHeightFeet}
-                                            heightInches={heightInches}
-                                            onHeightInchesChange={setHeightInches}
-                                            showErrors={Boolean(aboutQuestionKey && attemptedAboutQuestions[aboutQuestionKey])}
-                                            disabled={isSaving}
-                                            onSubmit={goContinue}
-                                        />
-                                    )
-                                ) : (
-                                    goalsQuestionKey && (
-                                        <GoalsQuestionFooter
-                                            questionKey={goalsQuestionKey}
-                                            progressLabel={goalsProgressLabel}
-                                            weightUnit={weightUnit}
-                                            onSetWeightUnit={setWeightUnitPreference}
-                                            currentWeight={currentWeight}
-                                            onCurrentWeightChange={setCurrentWeight}
-                                            targetWeight={targetWeight}
-                                            onTargetWeightChange={setTargetWeight}
-                                            dailyDeficit={dailyDeficit}
-                                            onDailyDeficitChange={setDailyDeficit}
-                                            showErrors={Boolean(goalsQuestionKey && attemptedGoalsQuestions[goalsQuestionKey])}
-                                            disabled={isSaving}
-                                            onSubmit={goContinue}
-                                        />
-                                    )
-                                )}
-                            </Box>
-                        </Fade>
-
-                        <Stack direction="row" spacing={2} justifyContent="space-between" alignItems="center">
-                            <Button variant="text" onClick={goBack} disabled={isSaving}>
-                                Back
-                            </Button>
-
-                            <Button variant="contained" onClick={goContinue} disabled={isWizardPrimaryDisabled}>
-                                {primaryCtaLabel}
-                            </Button>
-                        </Stack>
-                    </Stack>
-                )}
+                {cardFooterContent}
             </AppCard>
 
             <Snackbar

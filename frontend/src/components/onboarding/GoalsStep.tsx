@@ -1,6 +1,6 @@
 import React from 'react';
 import { Box, Collapse, Stack, Typography } from '@mui/material';
-import type { WeightUnit } from '../../context/authContext';
+import { WEIGHT_UNITS, type WeightUnit } from '../../context/authContext';
 import { normalizeDailyDeficitChoiceAbsValue } from '../../../../shared/goalDeficit';
 import { ONBOARDING_CARD_CONTENT_SPACING, ONBOARDING_FIELD_SPACING } from './layout';
 import type { GoalsQuestionKey } from './types';
@@ -25,7 +25,7 @@ export type GoalsStepProps = {
  * one question at a time, confirm, then see the result accumulate here.
  */
 const GoalsStep: React.FC<GoalsStepProps> = (props) => {
-    const weightUnitLabel = props.weightUnit === 'LB' ? 'lb' : 'kg';
+    const weightUnitLabel = props.weightUnit === WEIGHT_UNITS.LB ? 'lb' : 'kg';
 
     const currentWeightNumber = parseFiniteNumber(props.currentWeight);
     const targetWeightNumber = parseFiniteNumber(props.targetWeight);

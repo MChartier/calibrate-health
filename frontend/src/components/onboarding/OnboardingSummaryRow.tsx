@@ -13,7 +13,7 @@ export type OnboardingSummaryRowProps = {
 const SUMMARY_ROW_PADDING_X = 2; // Horizontal padding for each completed-answer row.
 const SUMMARY_ROW_PADDING_Y = 1; // Vertical padding for each completed-answer row.
 const SUMMARY_ROW_LABEL_LETTER_SPACING = 0.4; // Keeps labels readable without feeling shouty.
-const SUMMARY_ROW_BORDER_RADIUS_PX = 6; // Smaller than the app default so these don't read as chips/pills.
+const SUMMARY_ROW_BORDER_RADIUS_PX = 4; // Standard-ish MUI radius so these read as rows, not chips/pills.
 
 /**
  * OnboardingSummaryRow renders a compact, readable "completed answer" line item.
@@ -25,31 +25,20 @@ const OnboardingSummaryRow: React.FC<OnboardingSummaryRowProps> = ({ label, valu
     return (
         <Paper
             variant="outlined"
-            sx={(theme) => {
-                const baseRadius =
-                    typeof theme.shape.borderRadius === 'number'
-                        ? theme.shape.borderRadius
-                        : Number.parseFloat(String(theme.shape.borderRadius));
-
-                const rowRadius = Number.isFinite(baseRadius) ? Math.min(baseRadius, SUMMARY_ROW_BORDER_RADIUS_PX) : SUMMARY_ROW_BORDER_RADIUS_PX;
-
-                return {
-                    display: 'flex',
-                    alignItems: 'flex-start',
-                    justifyContent: 'space-between',
-                    gap: 2,
-                    px: SUMMARY_ROW_PADDING_X,
-                    py: SUMMARY_ROW_PADDING_Y,
-                    borderRadius: rowRadius,
-                    borderColor: highlight
-                        ? alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.55 : 0.35)
-                        : theme.palette.divider,
-                    backgroundColor: highlight ? alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.16 : 0.08) : undefined,
-                    transition: theme.transitions.create(['background-color', 'border-color'], {
-                        duration: theme.transitions.duration.short
-                    })
-                };
-            }}
+            sx={(theme) => ({
+                display: 'flex',
+                alignItems: 'flex-start',
+                justifyContent: 'space-between',
+                gap: 2,
+                px: SUMMARY_ROW_PADDING_X,
+                py: SUMMARY_ROW_PADDING_Y,
+                borderRadius: SUMMARY_ROW_BORDER_RADIUS_PX,
+                borderColor: highlight ? alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.55 : 0.35) : theme.palette.divider,
+                backgroundColor: highlight ? alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.16 : 0.08) : undefined,
+                transition: theme.transitions.create(['background-color', 'border-color'], {
+                    duration: theme.transitions.duration.short
+                })
+            })}
         >
             <Box sx={{ minWidth: 0 }}>
                 <Typography

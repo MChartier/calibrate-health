@@ -200,7 +200,7 @@ const OnboardingPlanSummary: React.FC<OnboardingPlanSummaryProps> = ({
                         <Box sx={{ minWidth: 0 }}>
                             <Typography variant="body2">Basal Metabolic Rate (BMR)</Typography>
                             <Typography variant="caption" color="text.secondary">
-                                From sex, age, height, weight (Mifflin–St Jeor)
+                                From sex, age, height, weight (Mifflin-St Jeor)
                             </Typography>
                         </Box>
                         <Typography

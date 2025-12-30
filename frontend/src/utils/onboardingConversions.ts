@@ -1,4 +1,4 @@
-import type { WeightUnit } from '../context/authContext';
+import { WEIGHT_UNITS, type WeightUnit } from '../context/authContext';
 import type { GoalMode } from './goalValidation';
 
 /**
@@ -54,7 +54,7 @@ export function convertWeight(value: number, from: WeightUnit, to: WeightUnit): 
     if (from === to) return value;
 
     const KG_TO_LB = 2.2046226218;
-    const converted = from === 'KG' ? value * KG_TO_LB : value / KG_TO_LB;
+    const converted = from === WEIGHT_UNITS.KG ? value * KG_TO_LB : value / KG_TO_LB;
     return Math.round(converted * 10) / 10;
 }
 
@@ -108,10 +108,10 @@ export function formatWeeklyWeightChange(opts: {
     dailyCaloriesAbs: number;
     weightUnit: WeightUnit;
 }): string {
-    const caloriesPerUnit = opts.weightUnit === 'LB' ? 3500 : 7700;
+    const caloriesPerUnit = opts.weightUnit === WEIGHT_UNITS.LB ? 3500 : 7700;
     const perWeek = (opts.dailyCaloriesAbs * 7) / caloriesPerUnit;
-    const decimals = opts.weightUnit === 'LB' ? 1 : 2;
-    const unitLabel = opts.weightUnit === 'LB' ? 'lb' : 'kg';
+    const decimals = opts.weightUnit === WEIGHT_UNITS.LB ? 1 : 2;
+    const unitLabel = opts.weightUnit === WEIGHT_UNITS.LB ? 'lb' : 'kg';
     const formatted = formatNumber(perWeek, decimals);
 
     if (opts.goalMode === 'gain') {

@@ -7,9 +7,8 @@ export type OnboardingStepDotsProps = {
     activeStepIndex: number;
 };
 
-const DOT_SIZE_ACTIVE_PX = 14; // Controls the active step dot size (kept readable on small phones).
-const DOT_SIZE_INACTIVE_PX = 12; // Controls inactive/complete dot size.
-const CONNECTOR_WIDTH_SPACING = 2; // Controls the visual gap between steps via theme.spacing().
+const DOT_SIZE_ACTIVE_PX = 16; // Controls the active step dot size (kept readable on small phones).
+const DOT_SIZE_INACTIVE_PX = 14; // Controls inactive/complete dot size.
 
 /**
  * Compact "two dots" progress indicator for onboarding.
@@ -51,18 +50,6 @@ const OnboardingStepDots: React.FC<OnboardingStepDotsProps> = ({ steps, activeSt
                                 {step.label}
                             </Typography>
                         </Box>
-
-                        {index < steps.length - 1 && (
-                            <Box
-                                sx={(theme) => ({
-                                    width: theme.spacing(CONNECTOR_WIDTH_SPACING),
-                                    height: 2,
-                                    borderRadius: 999,
-                                    backgroundColor: index < activeStepIndex ? theme.palette.primary.main : theme.palette.divider,
-                                    opacity: index < activeStepIndex ? 0.9 : 0.6
-                                })}
-                            />
-                        )}
                     </React.Fragment>
                 );
             })}
