@@ -110,6 +110,113 @@ test('UsdaFoodDataProvider returns empty results when neither query nor barcode 
   }
 });
 
+test('UsdaFoodDataProvider barcode searches prefer exact gtinUpc matches', async () => {
+  const provider = new UsdaFoodDataProvider('test-key');
+  const originalFetch = globalThis.fetch;
+
+  const calls = [];
+  globalThis.fetch = async (_url, options) => {
+    const body = JSON.parse(options?.body ?? '{}');
+    calls.push(body);
+
+    return createJsonResponse({
+      foods: [
+        {
+          fdcId: 1,
+          description: 'Not the requested barcode',
+          gtinUpc: '999',
+          householdServingFullText: '100 g',
+          servingSize: 100,
+          servingSizeUnit: 'g',
+          labelNutrients: { calories: { value: 50 } }
+        },
+        {
+          fdcId: 2,
+          description: 'Exact match',
+          gtinUpc: '012345678905',
+          householdServingFullText: '100 g',
+          servingSize: 100,
+          servingSizeUnit: 'g',
+          labelNutrients: { calories: { value: 100 } }
+        }
+      ]
+    });
+  };
+
+  try {
+    const result = await provider.searchFoods({
+      barcode: '01234 567-8905',
+      includeIncomplete: false,
+      pageSize: 10
+    });
+
+    assert.equal(calls.length, 1);
+    assert.equal(calls[0].query, '012345678905');
+    // Barcode lookups intentionally fetch more upstream candidates for exact-match filtering.
+    assert.equal(calls[0].pageSize, 200);
+
+    assert.equal(result.items.length, 1);
+    assert.equal(result.items[0].id, '2');
+    assert.equal(result.items[0].barcode, '012345678905');
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test('UsdaFoodDataProvider requires all words for multi-term queries and falls back when strict results are empty', async () => {
+  const provider = new UsdaFoodDataProvider('test-key');
+  const originalFetch = globalThis.fetch;
+
+  const calls = [];
+  globalThis.fetch = async (_url, options) => {
+    const body = JSON.parse(options?.body ?? '{}');
+    calls.push(body);
+
+    if (calls.length === 1) {
+      // Strict query yields no hits -> provider should retry without requireAllWords.
+      return createJsonResponse({ foods: [] });
+    }
+
+    return createJsonResponse({
+      foods: [{ fdcId: 1, description: 'TRADER JOE HOT DOGS' }]
+    });
+  };
+
+  try {
+    const result = await provider.searchFoods({ query: 'chicken hot dog', includeIncomplete: true });
+
+    assert.equal(calls.length, 2);
+    assert.equal(calls[0].requireAllWords, true);
+    assert.equal(calls[1].requireAllWords, undefined);
+
+    assert.equal(result.items.length, 1);
+    assert.equal(result.items[0].id, '1');
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("UsdaFoodDataProvider ranking prefers product matches over brand-only matches for possessive brand queries", async () => {
+  const provider = new UsdaFoodDataProvider('test-key');
+  const originalFetch = globalThis.fetch;
+
+  globalThis.fetch = async () =>
+    createJsonResponse({
+      foods: [
+        { fdcId: 1, description: "TRADER JOE'S, HABANERO HOT SAUCE", brandOwner: "TRADER JOE'S" },
+        { fdcId: 2, description: 'Hot dog, turkey' }
+      ]
+    });
+
+  try {
+    const result = await provider.searchFoods({ query: "trader joe's hot dog", includeIncomplete: true });
+    assert.equal(result.items.length, 2);
+    assert.equal(result.items[0].description, 'Hot dog, turkey');
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
 test('UsdaFoodDataProvider throws a detailed error for non-OK search responses', async () => {
   const provider = new UsdaFoodDataProvider('test-key');
   const originalFetch = globalThis.fetch;

@@ -4,6 +4,7 @@ import { parseNumber, round, scaleNutrients } from './utils';
 type OpenFoodFactsProduct = {
     code?: string;
     product_name?: string;
+    generic_name?: string;
     brands?: string;
     nutriments?: Record<string, unknown>;
     serving_size?: string;
@@ -13,14 +14,40 @@ type OpenFoodFactsProduct = {
     lc?: string;
 };
 
+type OpenFoodFactsQueryTokens = {
+    normalizedQuery: string;
+    normalizedBrandQuery?: string;
+    normalizedProductQuery: string;
+    brandTokens: string[];
+    productTokens: string[];
+};
+
+// Pull more candidates for local relevance ranking without issuing multiple upstream pages.
+const OFF_MAX_UPSTREAM_PAGE_SIZE = 50;
+const OFF_UPSTREAM_PAGE_SIZE_BOOST = 25;
+// Prevent tiny tokens like "'s" -> "s" from matching almost everything.
+const OFF_MIN_TOKEN_LENGTH = 2;
+// Require strong product matches for possessive brand queries so token collisions ("hot sauce" vs "hot dog") are filtered out.
+const OFF_MIN_PRODUCT_SCORE_FOR_POSSESSIVE_QUERY = 20;
+
+const OFF_STOP_WORDS = new Set(['the', 'and', 'or', 'with', 'for', 'from', 'of', 'to', 'in', 'on']);
+
 class OpenFoodFactsProvider implements FoodDataProvider {
     public name = 'openFoodFacts' as const;
     public supportsBarcodeLookup = true;
     private baseUrl = 'https://world.openfoodfacts.org';
-    private searchFields = 'product_name,brands,code,nutriments,serving_size,serving_quantity,product_quantity,quantity,lc';
+    private searchFields =
+        'product_name,generic_name,brands,code,nutriments,serving_size,serving_quantity,product_quantity,quantity,lc';
     private requestTimeoutMs: number;
     private searchMode: 'auto' | 'v2' | 'legacy';
 
+    /**
+     * Construct an Open Food Facts provider instance.
+     *
+     * Env tuning:
+     * - `OFF_TIMEOUT_MS`: request timeout (ms); set to `0` to disable.
+     * - `OFF_SEARCH_MODE`: `auto` (default), `v2`, or `legacy`.
+     */
     constructor() {
         const configured = process.env.OFF_TIMEOUT_MS;
         const parsed = configured ? parseInt(configured, 10) : Number.NaN;
@@ -48,24 +75,44 @@ class OpenFoodFactsProvider implements FoodDataProvider {
             return { items: [] };
         }
 
-        const pageSize = Math.min(request.pageSize ?? 10, 50);
+        const pageSize = Math.min(request.pageSize ?? 10, OFF_MAX_UPSTREAM_PAGE_SIZE);
         const page = request.page ?? 1;
+        const queryTokens = this.splitQueryTokens(query);
+        const upstreamQuery = this.buildQueryFromTokens(
+            [...queryTokens.brandTokens, ...queryTokens.productTokens],
+            queryTokens.normalizedQuery || query
+        );
+        const upstreamPageSize = this.resolveUpstreamPageSize(pageSize, queryTokens);
 
         if (this.searchMode === 'legacy') {
-            const legacyResponse = await this.fetchSearchResponseLegacy(query, pageSize, page, request.languageCode);
+            const legacyResponse = await this.fetchSearchResponseLegacy(
+                upstreamQuery,
+                upstreamPageSize,
+                page,
+                request.languageCode
+            );
             if (!legacyResponse.ok) {
                 const legacyMessage = await this.describeSearchFailure('legacy', legacyResponse);
                 throw new Error(`Open Food Facts search failed. ${legacyMessage}`);
             }
-            const legacyItems = await this.parseItemsFromResponse(legacyResponse, request);
-            const filtered = this.filterItemsByQuery(legacyItems, query);
-            return { items: this.rankItems(filtered, query, request.languageCode) };
+
+            let legacyItems = await this.parseItemsFromResponse(legacyResponse, request);
+            legacyItems = await this.maybeMergeBrandScopedLegacyResults(
+                legacyItems,
+                queryTokens,
+                upstreamPageSize,
+                page,
+                request.languageCode,
+                request
+            );
+
+            return this.buildSearchResult(legacyItems, queryTokens, pageSize, request.languageCode);
         }
 
         let v2Response: Response | null = null;
         let v2Error: unknown;
         try {
-            v2Response = await this.fetchSearchResponseV2(query, pageSize, page, request.languageCode);
+            v2Response = await this.fetchSearchResponseV2(upstreamQuery, upstreamPageSize, page, request.languageCode);
         } catch (error) {
             v2Error = error;
         }
@@ -75,9 +122,9 @@ class OpenFoodFactsProvider implements FoodDataProvider {
                 const v2Message = await this.describeSearchFailure('v2', v2Response, v2Error);
                 throw new Error(`Open Food Facts search failed. ${v2Message}`);
             }
+
             const v2Items = await this.parseItemsFromResponse(v2Response, request);
-            const filtered = this.filterItemsByQuery(v2Items, query);
-            return { items: this.rankItems(filtered, query, request.languageCode) };
+            return this.buildSearchResult(v2Items, queryTokens, pageSize, request.languageCode);
         }
 
         let items: NormalizedFoodItem[] = [];
@@ -85,8 +132,13 @@ class OpenFoodFactsProvider implements FoodDataProvider {
             items = await this.parseItemsFromResponse(v2Response, request);
         }
 
-        if (!v2Response?.ok || this.countQueryMatches(items, query) === 0) {
-            const legacyResponse = await this.fetchSearchResponseLegacy(query, pageSize, page, request.languageCode);
+        if (!v2Response?.ok || this.countQueryMatches(items, queryTokens) === 0) {
+            const legacyResponse = await this.fetchSearchResponseLegacy(
+                upstreamQuery,
+                upstreamPageSize,
+                page,
+                request.languageCode
+            );
             if (legacyResponse.ok) {
                 items = await this.parseItemsFromResponse(legacyResponse, request);
             } else if (!v2Response?.ok) {
@@ -96,8 +148,16 @@ class OpenFoodFactsProvider implements FoodDataProvider {
             }
         }
 
-        const filtered = this.filterItemsByQuery(items, query);
-        return { items: this.rankItems(filtered, query, request.languageCode) };
+        items = await this.maybeMergeBrandScopedLegacyResults(
+            items,
+            queryTokens,
+            upstreamPageSize,
+            page,
+            request.languageCode,
+            request
+        );
+
+        return this.buildSearchResult(items, queryTokens, pageSize, request.languageCode);
     }
 
     /**
@@ -132,48 +192,6 @@ class OpenFoodFactsProvider implements FoodDataProvider {
         } finally {
             clearTimeout(timeoutId);
         }
-    }
-
-    /**
-     * Remove items that do not include any query tokens in name or brand.
-     */
-    private filterItemsByQuery(items: NormalizedFoodItem[], query: string): NormalizedFoodItem[] {
-        const normalizedQuery = this.normalizeText(query);
-        if (!normalizedQuery) {
-            return items;
-        }
-        const tokens = normalizedQuery.split(' ').filter(Boolean);
-        if (tokens.length === 0) {
-            return items;
-        }
-
-        return items.filter((item) => {
-            const description = this.normalizeText(item.description);
-            const brand = this.normalizeText(item.brand);
-            const haystack = `${description} ${brand}`.trim();
-            return tokens.some((token) => haystack.includes(token));
-        });
-    }
-
-    /**
-     * Count how many items include at least one query token.
-     */
-    private countQueryMatches(items: NormalizedFoodItem[], query: string): number {
-        const normalizedQuery = this.normalizeText(query);
-        if (!normalizedQuery) {
-            return 0;
-        }
-        const tokens = normalizedQuery.split(' ').filter(Boolean);
-        if (tokens.length === 0) {
-            return 0;
-        }
-
-        return items.reduce((count, item) => {
-            const description = this.normalizeText(item.description);
-            const brand = this.normalizeText(item.brand);
-            const haystack = `${description} ${brand}`.trim();
-            return tokens.some((token) => haystack.includes(token)) ? count + 1 : count;
-        }, 0);
     }
 
     /**
@@ -228,7 +246,8 @@ class OpenFoodFactsProvider implements FoodDataProvider {
         query: string,
         pageSize: number,
         page: number,
-        languageCode?: string
+        languageCode?: string,
+        options?: { brandTag?: string }
     ): Promise<Response> {
         const headers = { 'User-Agent': 'cal-io/food-search' };
         const legacyParams = new URLSearchParams({
@@ -244,13 +263,21 @@ class OpenFoodFactsProvider implements FoodDataProvider {
         if (languageCode) {
             legacyParams.set('lc', languageCode);
         }
+        if (options?.brandTag) {
+            legacyParams.set('tagtype_0', 'brands');
+            legacyParams.set('tag_contains_0', 'contains');
+            legacyParams.set('tag_0', options.brandTag);
+        }
         const legacyUrl = `${this.baseUrl}/cgi/search.pl?${legacyParams.toString()}`;
         return this.fetchWithTimeout(legacyUrl, headers);
     }
 
+    /**
+     * Look up a single product by UPC/EAN barcode using the Open Food Facts product endpoint.
+     */
     private async fetchProductByBarcode(barcode: string, languageCode?: string): Promise<OpenFoodFactsProduct | null> {
         const params = new URLSearchParams({
-            fields: 'product_name,brands,code,nutriments,serving_size,serving_quantity,product_quantity,quantity,lc'
+            fields: this.searchFields
         });
         if (languageCode) {
             params.set('lc', languageCode);
@@ -272,6 +299,9 @@ class OpenFoodFactsProvider implements FoodDataProvider {
         return null;
     }
 
+    /**
+     * Convert an Open Food Facts product payload into the normalized app item shape.
+     */
     private normalizeProduct(
         product: OpenFoodFactsProduct,
         quantityInGrams?: number,
@@ -283,6 +313,7 @@ class OpenFoodFactsProvider implements FoodDataProvider {
             return null;
         }
 
+        const description = product.product_name || product.generic_name || 'Unknown food';
         const measures = this.buildMeasures(product);
         const nutrientsForRequest =
             nutrientsPer100g && quantityInGrams && quantityInGrams > 0
@@ -293,9 +324,9 @@ class OpenFoodFactsProvider implements FoodDataProvider {
                 : undefined;
 
         return {
-            id: product.code || product.product_name || 'openfoodfacts-item',
+            id: product.code || product.product_name || product.generic_name || 'openfoodfacts-item',
             source: 'openFoodFacts',
-            description: product.product_name || 'Unknown food',
+            description,
             brand: product.brands,
             barcode: product.code,
             locale: product.lc,
@@ -306,25 +337,192 @@ class OpenFoodFactsProvider implements FoodDataProvider {
     }
 
     /**
+     * Apply local filtering + ranking and enforce the requested page size.
+     */
+    private buildSearchResult(
+        items: NormalizedFoodItem[],
+        tokens: OpenFoodFactsQueryTokens,
+        pageSize: number,
+        languageCode?: string
+    ): FoodSearchResult {
+        const filtered = this.filterItemsByQuery(items, tokens);
+        const ranked = this.rankItems(filtered, tokens, languageCode);
+        return { items: ranked.slice(0, pageSize) };
+    }
+
+    /**
+     * Fetch extra candidates for multi-term searches so local ranking has enough signal to work with.
+     */
+    private resolveUpstreamPageSize(requested: number, tokens: OpenFoodFactsQueryTokens): number {
+        const tokenCount = tokens.brandTokens.length + tokens.productTokens.length;
+        if (tokenCount >= 3) {
+            return OFF_MAX_UPSTREAM_PAGE_SIZE;
+        }
+
+        if (tokenCount === 2) {
+            return Math.min(Math.max(requested, OFF_UPSTREAM_PAGE_SIZE_BOOST), OFF_MAX_UPSTREAM_PAGE_SIZE);
+        }
+
+        return requested;
+    }
+
+    /**
+     * Attempt a brand-scoped legacy search for possessive queries ("Trader Joe's hot dog") to surface branded matches
+     * when the upstream full-text search returns only generic product hits.
+     */
+    private async maybeMergeBrandScopedLegacyResults(
+        items: NormalizedFoodItem[],
+        tokens: OpenFoodFactsQueryTokens,
+        upstreamPageSize: number,
+        page: number,
+        languageCode: string | undefined,
+        request: FoodSearchRequest
+    ): Promise<NormalizedFoodItem[]> {
+        if (this.searchMode === 'v2') {
+            return items;
+        }
+
+        if (tokens.brandTokens.length === 0 || tokens.productTokens.length === 0) {
+            return items;
+        }
+
+        const filtered = this.filterItemsByQuery(items, tokens);
+        if (filtered.length > 0 && this.hasAnyTokenMatch(filtered, tokens.brandTokens)) {
+            return items;
+        }
+
+        const brandTag = this.buildBrandTag(tokens);
+        if (!brandTag) {
+            return items;
+        }
+
+        const productQuery = this.buildQueryFromTokens(tokens.productTokens, tokens.normalizedProductQuery);
+        if (!productQuery) {
+            return items;
+        }
+
+        try {
+            const response = await this.fetchSearchResponseLegacy(productQuery, upstreamPageSize, page, languageCode, {
+                brandTag
+            });
+            if (!response.ok) {
+                return items;
+            }
+
+            const brandItems = await this.parseItemsFromResponse(response, request);
+            if (brandItems.length === 0) {
+                return items;
+            }
+
+            return this.mergeUniqueItems(items, brandItems);
+        } catch (error) {
+            console.warn('Open Food Facts brand-scoped search failed; continuing with unscoped results.', error);
+            return items;
+        }
+    }
+
+    /**
+     * Merge items from multiple upstream responses while deduplicating by `id`.
+     */
+    private mergeUniqueItems(base: NormalizedFoodItem[], next: NormalizedFoodItem[]): NormalizedFoodItem[] {
+        const merged = new Map<string, NormalizedFoodItem>();
+        base.forEach((item) => merged.set(item.id, item));
+        next.forEach((item) => merged.set(item.id, item));
+        return [...merged.values()];
+    }
+
+    /**
+     * Convert a brand phrase into the slug-style tags Open Food Facts uses for `brands` filters.
+     */
+    private buildBrandTag(tokens: OpenFoodFactsQueryTokens): string | null {
+        const normalized = tokens.normalizedBrandQuery?.trim();
+        if (!normalized) {
+            return null;
+        }
+
+        const slug = normalized
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/^-+/, '')
+            .replace(/-+$/, '');
+
+        return slug ? slug : null;
+    }
+
+    /**
+     * Check whether any of the supplied tokens appear in the normalized haystack for at least one item.
+     */
+    private hasAnyTokenMatch(items: NormalizedFoodItem[], tokens: string[]): boolean {
+        if (tokens.length === 0) {
+            return false;
+        }
+
+        return items.some((item) => {
+            const description = this.normalizeText(item.description);
+            const brand = this.normalizeText(item.brand);
+            const haystack = `${description} ${brand}`.trim();
+            const haystackTokens = new Set(this.tokenizeQuery(haystack));
+            return this.countTokenMatches(haystackTokens, tokens) > 0;
+        });
+    }
+
+    /**
      * Apply lightweight relevance scoring so product name matches bubble up.
      */
-    private rankItems(items: NormalizedFoodItem[], query: string, languageCode?: string): NormalizedFoodItem[] {
-        const normalizedQuery = this.normalizeText(query);
-        if (!normalizedQuery) {
+    private rankItems(items: NormalizedFoodItem[], tokens: OpenFoodFactsQueryTokens, languageCode?: string): NormalizedFoodItem[] {
+        if (!tokens.normalizedQuery) {
             return items;
         }
-        const tokens = normalizedQuery.split(' ').filter(Boolean);
-        if (tokens.length === 0) {
+
+        const hasQueryTokens = tokens.brandTokens.length > 0 || tokens.productTokens.length > 0;
+        if (!hasQueryTokens) {
             return items;
         }
+
+        const productTokenGroups = this.buildProductTokenGroups(tokens.productTokens);
 
         const scored = items.map((item, index) => {
             const description = this.normalizeText(item.description);
             const brand = this.normalizeText(item.brand);
-            let score = this.scoreMatch(description, brand, normalizedQuery, tokens, item.locale, languageCode);
+            const haystack = `${description} ${brand}`.trim();
+            const haystackTokens = new Set(this.tokenizeQuery(haystack));
+
+            const productScore = this.scoreProductTokenGroups(haystackTokens, productTokenGroups);
+            const brandMatches = this.countTokenMatches(haystackTokens, tokens.brandTokens);
+            const brandScore = this.scoreTokenMatches(brandMatches, tokens.brandTokens.length, 50, 10);
+
+            // Weight product matching higher than brand matching so "hot dog" outranks "hot sauce".
+            let score = productScore + brandScore;
+
+            if (description === tokens.normalizedQuery) {
+                score += 40;
+            } else if (description.startsWith(tokens.normalizedQuery)) {
+                score += 25;
+            } else if (description.includes(tokens.normalizedQuery)) {
+                score += 10;
+            }
+
+            if (tokens.normalizedProductQuery && tokens.normalizedProductQuery !== tokens.normalizedQuery) {
+                if (description.includes(tokens.normalizedProductQuery)) {
+                    score += 10;
+                }
+            }
+
+            if (tokens.normalizedBrandQuery && brand.includes(tokens.normalizedBrandQuery)) {
+                score += 10;
+            }
+
             if (item.nutrientsPer100g?.calories !== undefined) {
                 score += 5;
             }
+
+            if (languageCode && item.locale && item.locale === languageCode) {
+                score += 10;
+            }
+
+            if (item.brand || item.barcode) {
+                score += 2;
+            }
+
             return { item, score, index };
         });
 
@@ -348,49 +546,98 @@ class OpenFoodFactsProvider implements FoodDataProvider {
             .toLowerCase()
             .normalize('NFKD')
             .replace(/[\u0300-\u036f]/g, '')
+            // Drop possessive suffixes so "joe's" matches "joe".
+            .replace(/['\u2019]s\b/g, '')
             .replace(/[^a-z0-9]+/g, ' ')
             .trim();
     }
 
     /**
-     * Score relevance based on name/brand similarity and optional locale match.
+     * Apply very small stemming so plural query forms ("dogs") match singular descriptions ("dog").
      */
-    private scoreMatch(
-        description: string,
-        brand: string,
-        query: string,
-        tokens: string[],
-        locale?: string,
-        languageCode?: string
-    ): number {
-        let score = 0;
-
-        if (description === query) {
-            score += 120;
-        } else if (description.startsWith(query)) {
-            score += 100;
-        } else if (description.includes(query)) {
-            score += 80;
+    private stemToken(token: string): string {
+        if (!token) {
+            return '';
         }
 
-        if (brand && brand.includes(query)) {
-            score += 35;
+        if (token.length > 4 && token.endsWith('ies')) {
+            return `${token.slice(0, -3)}y`;
         }
 
-        const tokenMatches = tokens.filter((token) => description.includes(token)).length;
-        if (tokenMatches === tokens.length) {
-            score += 45;
-        } else if (tokenMatches > 0) {
-            score += 15;
+        if (token.length > 3 && token.endsWith('s') && !token.endsWith('ss')) {
+            return token.slice(0, -1);
         }
 
-        if (languageCode && locale && locale === languageCode) {
-            score += 10;
-        }
-
-        return score;
+        return token;
     }
 
+    /**
+     * Normalize user queries into stable, stemmed tokens for relevance scoring.
+     */
+    private tokenizeQuery(query: string): string[] {
+        const normalized = this.normalizeText(query);
+        if (!normalized) {
+            return [];
+        }
+
+        const tokens = normalized
+            .split(' ')
+            .filter(Boolean)
+            .map((token) => this.stemToken(token))
+            .filter((token) => token.length >= OFF_MIN_TOKEN_LENGTH)
+            .filter((token) => !OFF_STOP_WORDS.has(token));
+
+        return Array.from(new Set(tokens));
+    }
+
+    /**
+     * Split a query into brand vs product tokens using a possessive heuristic ("trader joe's ...").
+     */
+    private splitQueryTokens(query: string): OpenFoodFactsQueryTokens {
+        const normalizedQuery = this.normalizeText(query);
+        const lower = query.toLowerCase();
+        const straightIndex = lower.indexOf("'s");
+        const curlyIndex = lower.indexOf('\u2019s');
+        const possessiveIndexCandidates = [straightIndex, curlyIndex].filter((idx) => idx >= 0);
+        const possessiveIndex = possessiveIndexCandidates.length > 0 ? Math.min(...possessiveIndexCandidates) : -1;
+
+        if (possessiveIndex >= 0) {
+            const brandPart = query.slice(0, possessiveIndex);
+            const productPart = query.slice(possessiveIndex + 2);
+            const brandTokens = this.tokenizeQuery(brandPart);
+            const productTokens = this.tokenizeQuery(productPart);
+
+            if (brandTokens.length > 0 && productTokens.length > 0) {
+                return {
+                    normalizedQuery,
+                    normalizedBrandQuery: this.normalizeText(brandPart),
+                    normalizedProductQuery: this.normalizeText(productPart) || normalizedQuery,
+                    brandTokens,
+                    productTokens
+                };
+            }
+        }
+
+        const productTokens = this.tokenizeQuery(query);
+        return {
+            normalizedQuery,
+            normalizedProductQuery: normalizedQuery,
+            brandTokens: [],
+            productTokens
+        };
+    }
+
+    /**
+     * Build an upstream query string from tokens so stemming choices ("dogs" -> "dog") carry through to the API search.
+     */
+    private buildQueryFromTokens(tokens: string[], fallback: string): string {
+        const joined = tokens.join(' ').trim();
+        return joined || fallback;
+    }
+
+    /**
+     * Extract calorie + macro nutrients in 100g units, returning null when calories are missing.
+     */
     private extractNutrientsPer100g(nutriments: Record<string, unknown>): Nutrients | null {
         const calories =
             parseNumber(nutriments['energy-kcal_100g']) ??
@@ -412,6 +659,9 @@ class OpenFoodFactsProvider implements FoodDataProvider {
         };
     }
 
+    /**
+     * Build a measure list for calorie scaling, preferring explicit per-serving and per-package amounts when present.
+     */
     private buildMeasures(product: OpenFoodFactsProduct): FoodMeasure[] {
         const measures: FoodMeasure[] = [{ label: 'per 100g', gramWeight: 100 }];
         const servingGramWeight = this.getServingGramWeight(product);
@@ -434,6 +684,9 @@ class OpenFoodFactsProvider implements FoodDataProvider {
         return measures;
     }
 
+    /**
+     * Resolve a serving size gram weight from `serving_quantity` or a parsed `serving_size` string.
+     */
     private getServingGramWeight(product: OpenFoodFactsProduct): number | undefined {
         const servingQuantity = parseNumber(product.serving_quantity);
         if (servingQuantity) {
@@ -465,6 +718,114 @@ class OpenFoodFactsProvider implements FoodDataProvider {
         }
 
         return undefined;
+    }
+
+    /**
+     * Remove items that do not include any meaningful query tokens.
+     */
+    private filterItemsByQuery(items: NormalizedFoodItem[], tokens: OpenFoodFactsQueryTokens): NormalizedFoodItem[] {
+        const queryTokens = [...tokens.brandTokens, ...tokens.productTokens];
+        if (queryTokens.length === 0) {
+            return items;
+        }
+
+        const productTokenGroups = this.buildProductTokenGroups(tokens.productTokens);
+        const requireStrongProductMatch = tokens.brandTokens.length > 0 && tokens.productTokens.length > 0;
+
+        return items.filter((item) => {
+            const description = this.normalizeText(item.description);
+            const brand = this.normalizeText(item.brand);
+            const haystack = `${description} ${brand}`.trim();
+            if (!haystack) {
+                return false;
+            }
+
+            const haystackTokens = new Set(this.tokenizeQuery(haystack));
+
+            if (requireStrongProductMatch) {
+                // Require at least two product token hits (or a synonym group) so "hot sauce" does not match "hot dog".
+                const productScore = this.scoreProductTokenGroups(haystackTokens, productTokenGroups);
+                return productScore >= OFF_MIN_PRODUCT_SCORE_FOR_POSSESSIVE_QUERY;
+            }
+
+            return queryTokens.some((token) => this.haystackIncludesToken(haystackTokens, haystack, token));
+        });
+    }
+
+    /**
+     * Count how many items survive local token filtering (used to decide when to fall back from v2 to legacy search).
+     */
+    private countQueryMatches(items: NormalizedFoodItem[], tokens: OpenFoodFactsQueryTokens): number {
+        return this.filterItemsByQuery(items, tokens).length;
+    }
+
+    /**
+     * Match a token by word (preferred) and optionally by substring for longer tokens ("burger" in "hamburger").
+     */
+    private haystackIncludesToken(haystackTokens: ReadonlySet<string>, haystack: string, token: string): boolean {
+        if (haystackTokens.has(token)) {
+            return true;
+        }
+
+        return token.length >= 4 && haystack.includes(token);
+    }
+
+    /**
+     * Build alternative token groups for product matching (e.g., "hot dog" ~= "frank").
+     */
+    private buildProductTokenGroups(productTokens: string[]): string[][] {
+        const groups: string[][] = [];
+        if (productTokens.length > 0) {
+            groups.push(productTokens);
+        }
+
+        const tokenSet = new Set(productTokens);
+        if (tokenSet.has('hot') && tokenSet.has('dog')) {
+            groups.push(['frank']);
+            groups.push(['frankfurter']);
+            groups.push(['wiener']);
+        }
+
+        return groups.map((group) => group.map((token) => this.stemToken(token)).filter(Boolean));
+    }
+
+    /**
+     * Score the best-matching product token group for the given haystack.
+     */
+    private scoreProductTokenGroups(haystack: ReadonlySet<string>, groups: string[][]): number {
+        let best = 0;
+
+        for (const group of groups) {
+            const matches = this.countTokenMatches(haystack, group);
+            const score = this.scoreTokenMatches(matches, group.length, 100, 10);
+            if (score > best) {
+                best = score;
+            }
+        }
+
+        return best;
+    }
+
+    /**
+     * Count how many query tokens are present in a normalized haystack set.
+     */
+    private countTokenMatches(haystack: ReadonlySet<string>, tokens: string[]): number {
+        return tokens.reduce((count, token) => (haystack.has(token) ? count + 1 : count), 0);
+    }
+
+    /**
+     * Convert token match counts into a score, rewarding complete matches and down-weighting partial ones.
+     */
+    private scoreTokenMatches(matchCount: number, tokenCount: number, fullMatchScore: number, partialMatchWeight: number): number {
+        if (tokenCount === 0) {
+            return 0;
+        }
+
+        if (matchCount >= tokenCount) {
+            return fullMatchScore;
+        }
+
+        return matchCount * partialMatchWeight;
     }
 }
 
