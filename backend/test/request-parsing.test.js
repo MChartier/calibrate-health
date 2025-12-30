@@ -3,7 +3,9 @@ const assert = require('node:assert/strict');
 
 const {
   parseNonNegativeInteger,
+  parseNonNegativeNumber,
   parsePositiveInteger,
+  parsePositiveNumber,
   resolveLanguageCode
 } = require('../src/utils/requestParsing');
 
@@ -38,6 +40,40 @@ test('requestParsing: parseNonNegativeInteger accepts finite integers >= 0 (trun
   assert.equal(parseNonNegativeInteger({}), null);
   assert.equal(parseNonNegativeInteger(Number.NaN), null);
   assert.equal(parseNonNegativeInteger(Number.POSITIVE_INFINITY), null);
+});
+
+test('requestParsing: parseNonNegativeNumber accepts finite numbers >= 0 (including decimals)', () => {
+  assert.equal(parseNonNegativeNumber(0), 0);
+  assert.equal(parseNonNegativeNumber('0'), 0);
+  assert.equal(parseNonNegativeNumber(10), 10);
+  assert.equal(parseNonNegativeNumber('10'), 10);
+  assert.equal(parseNonNegativeNumber(10.5), 10.5);
+  assert.equal(parseNonNegativeNumber('10.5'), 10.5);
+
+  assert.equal(parseNonNegativeNumber(-1), null);
+  assert.equal(parseNonNegativeNumber('-1'), null);
+  assert.equal(parseNonNegativeNumber(''), null);
+  assert.equal(parseNonNegativeNumber('not-a-number'), null);
+  assert.equal(parseNonNegativeNumber({}), null);
+  assert.equal(parseNonNegativeNumber(Number.NaN), null);
+  assert.equal(parseNonNegativeNumber(Number.POSITIVE_INFINITY), null);
+});
+
+test('requestParsing: parsePositiveNumber accepts only finite numbers > 0 (including decimals)', () => {
+  assert.equal(parsePositiveNumber(1), 1);
+  assert.equal(parsePositiveNumber('2'), 2);
+  assert.equal(parsePositiveNumber(0.5), 0.5);
+  assert.equal(parsePositiveNumber('0.5'), 0.5);
+
+  assert.equal(parsePositiveNumber(0), null);
+  assert.equal(parsePositiveNumber('0'), null);
+  assert.equal(parsePositiveNumber(-1), null);
+  assert.equal(parsePositiveNumber(''), null);
+  assert.equal(parsePositiveNumber('not-a-number'), null);
+  assert.equal(parsePositiveNumber(null), null);
+  assert.equal(parsePositiveNumber(undefined), null);
+  assert.equal(parsePositiveNumber(Number.NEGATIVE_INFINITY), null);
+  assert.equal(parsePositiveNumber(Number.POSITIVE_INFINITY), null);
 });
 
 test('requestParsing: resolveLanguageCode prefers explicit query params over headers', () => {

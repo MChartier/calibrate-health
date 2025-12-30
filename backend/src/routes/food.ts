@@ -4,7 +4,13 @@ import { getFoodDataProvider } from '../services/foodData';
 import type { MealPeriod } from '@prisma/client';
 import { getSafeUtcTodayDateOnlyInTimeZone, parseLocalDateOnly } from '../utils/date';
 import { parseMealPeriod } from '../utils/mealPeriod';
-import { parseNonNegativeInteger, parsePositiveInteger, resolveLanguageCode } from '../utils/requestParsing';
+import {
+    parseNonNegativeInteger,
+    parseNonNegativeNumber,
+    parsePositiveInteger,
+    parsePositiveNumber,
+    resolveLanguageCode
+} from '../utils/requestParsing';
 
 const router = express.Router();
 
@@ -83,13 +89,8 @@ router.get('/', async (req, res) => {
 
 router.post('/', async (req, res) => {
     const user = req.user as any;
-    const { name, calories, meal_period, date } = req.body;
+    const { name, calories, meal_period, date, my_food_id, servings_consumed } = req.body;
     try {
-        const trimmedName = typeof name === 'string' ? name.trim() : '';
-        if (!trimmedName) {
-            return res.status(400).json({ message: 'Invalid name' });
-        }
-
         const parsedMealPeriod = parseMealPeriod(meal_period);
         if (!parsedMealPeriod) {
             return res.status(400).json({ message: 'Invalid meal period' });
@@ -111,10 +112,60 @@ router.post('/', async (req, res) => {
             return res.status(400).json({ message: 'Invalid date' });
         }
 
-        const caloriesValue = parseNonNegativeInteger(calories);
-        if (caloriesValue === null) {
+        const wantsMyFood = my_food_id !== undefined && my_food_id !== null && String(my_food_id).trim().length > 0;
+        const wantsManual = name !== undefined || calories !== undefined;
+        if (wantsMyFood && wantsManual) {
+            return res.status(400).json({ message: 'Provide either my_food_id+servings_consumed or name+calories, not both.' });
+        }
+
+        if (wantsMyFood) {
+            const myFoodId = parsePositiveInteger(my_food_id);
+            if (myFoodId === null) {
+                return res.status(400).json({ message: 'Invalid my food id' });
+            }
+
+            const servings = parsePositiveNumber(servings_consumed);
+            if (servings === null) {
+                return res.status(400).json({ message: 'Invalid servings consumed' });
+            }
+
+            const myFood = await prisma.myFood.findFirst({
+                where: { id: myFoodId, user_id: user.id }
+            });
+            if (!myFood) {
+                return res.status(404).json({ message: 'My food not found' });
+            }
+
+            const caloriesTotal = Math.round(servings * myFood.calories_per_serving);
+
+            const log = await prisma.foodLog.create({
+                data: {
+                    user_id: user.id,
+                    my_food_id: myFood.id,
+                    name: myFood.name,
+                    calories: caloriesTotal,
+                    meal_period: parsedMealPeriod,
+                    date: entryTimestamp,
+                    local_date,
+                    servings_consumed: servings,
+                    serving_size_quantity_snapshot: myFood.serving_size_quantity,
+                    serving_unit_label_snapshot: myFood.serving_unit_label,
+                    calories_per_serving_snapshot: myFood.calories_per_serving
+                }
+            });
+            return res.json(log);
+        }
+
+        const trimmedName = typeof name === 'string' ? name.trim() : '';
+        if (!trimmedName) {
+            return res.status(400).json({ message: 'Invalid name' });
+        }
+
+        const caloriesNumber = parseNonNegativeNumber(calories);
+        if (caloriesNumber === null) {
             return res.status(400).json({ message: 'Invalid calories' });
         }
+        const caloriesValue = Math.round(caloriesNumber);
 
         const log = await prisma.foodLog.create({
             data: {
@@ -126,7 +177,7 @@ router.post('/', async (req, res) => {
                 local_date
             }
         });
-        res.json(log);
+        return res.json(log);
     } catch (err) {
         res.status(500).json({ message: 'Server error' });
     }
@@ -139,9 +190,20 @@ router.patch('/:id', async (req, res) => {
         return res.status(400).json({ message: 'Invalid food log id' });
     }
 
-    const { name, calories, meal_period } = req.body;
+    const { name, calories, meal_period, servings_consumed } = req.body;
 
-    const updateData: Partial<{ name: string; calories: number; meal_period: MealPeriod }> = {};
+    const existing = await prisma.foodLog.findFirst({ where: { id, user_id: user.id } });
+    if (!existing) {
+        return res.status(404).json({ message: 'Food log not found' });
+    }
+
+    const updateData: Partial<{
+        name: string;
+        calories: number;
+        meal_period: MealPeriod;
+        servings_consumed: number | null;
+        calories_per_serving_snapshot: number | null;
+    }> = {};
 
     if (name !== undefined) {
         if (typeof name !== 'string' || !name.trim()) {
@@ -151,11 +213,11 @@ router.patch('/:id', async (req, res) => {
     }
 
     if (calories !== undefined) {
-        const parsedCalories = parseNonNegativeInteger(calories);
+        const parsedCalories = parseNonNegativeNumber(calories);
         if (parsedCalories === null) {
             return res.status(400).json({ message: 'Invalid calories' });
         }
-        updateData.calories = parsedCalories;
+        updateData.calories = Math.round(parsedCalories);
     }
 
     if (meal_period !== undefined) {
@@ -166,24 +228,44 @@ router.patch('/:id', async (req, res) => {
         updateData.meal_period = parsedMealPeriod;
     }
 
+    if (servings_consumed !== undefined) {
+        const parsedServings = parsePositiveNumber(servings_consumed);
+        if (parsedServings === null) {
+            return res.status(400).json({ message: 'Invalid servings consumed' });
+        }
+
+        if (existing.calories_per_serving_snapshot === null || existing.calories_per_serving_snapshot === undefined) {
+            return res.status(400).json({ message: 'This entry does not include serving info.' });
+        }
+
+        updateData.servings_consumed = parsedServings;
+
+        if (updateData.calories === undefined) {
+            updateData.calories = Math.round(parsedServings * existing.calories_per_serving_snapshot);
+        }
+    }
+
+    // If the caller supplied calories for an entry that has serving data, keep the snapshot consistent by
+    // deriving calories-per-serving from the (possibly updated) servings count.
+    if (updateData.calories !== undefined) {
+        const servings =
+            updateData.servings_consumed ??
+            (existing.servings_consumed !== null && existing.servings_consumed !== undefined ? existing.servings_consumed : null);
+
+        if (servings && servings > 0) {
+            updateData.calories_per_serving_snapshot = updateData.calories / servings;
+        }
+    }
+
     if (Object.keys(updateData).length === 0) {
         return res.status(400).json({ message: 'No fields to update' });
     }
 
     try {
-        const updateResult = await prisma.foodLog.updateMany({
-            where: { id, user_id: user.id },
+        const updated = await prisma.foodLog.update({
+            where: { id },
             data: updateData
         });
-
-        if (updateResult.count === 0) {
-            return res.status(404).json({ message: 'Food log not found' });
-        }
-
-        const updated = await prisma.foodLog.findFirst({ where: { id, user_id: user.id } });
-        if (!updated) {
-            return res.status(404).json({ message: 'Food log not found' });
-        }
 
         res.json(updated);
     } catch (err) {

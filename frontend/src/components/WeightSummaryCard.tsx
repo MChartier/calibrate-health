@@ -2,26 +2,19 @@ import React, { useMemo } from 'react';
 import { Alert, Box, Button, Card, CardContent, Chip, Skeleton, Typography } from '@mui/material';
 import MonitorWeightIcon from '@mui/icons-material/MonitorWeightRounded';
 import { alpha } from '@mui/material/styles';
-import { useQuery } from '@tanstack/react-query';
-import axios from 'axios';
 import { useAuth } from '../context/useAuth';
 import { getTodayIsoDate } from '../utils/date';
 import { parseDateOnlyToLocalDate } from '../utils/goalTracking';
 import { usePrefersReducedMotion } from '../hooks/usePrefersReducedMotion';
 import { useTweenedNumber } from '../hooks/useTweenedNumber';
 import SectionHeader from '../ui/SectionHeader';
+import { findMetricOnOrBeforeDate, toDatePart, useMetricsQuery } from '../queries/metrics';
 
 const EM_DASH = '\u2014';
 // Duration used for "date switch" value transitions.
 const WEIGHT_SUMMARY_TWEEN_DURATION_MS = 520;
 // Icon tile size for the weight card (kept consistent between loading + loaded UI).
 const WEIGHT_ICON_TILE_SIZE_PX = 56;
-
-type MetricEntry = {
-    id: number;
-    date: string;
-    weight: number;
-};
 
 export type WeightSummaryCardProps = {
     /**
@@ -39,13 +32,6 @@ export type WeightSummaryCardProps = {
 };
 
 /**
- * Extract the date-only portion of a timestamp-like string (e.g. "YYYY-MM-DD" or "YYYY-MM-DDTHH:MM:SSZ").
- */
-function toDatePart(value: string): string {
-    return value.split('T')[0] ?? value;
-}
-
-/**
  * Format a Postgres DATE-ish string for display, falling back to an em dash for invalid inputs.
  */
 function formatMetricDateLabel(value: string | null): string {
@@ -53,20 +39,6 @@ function formatMetricDateLabel(value: string | null): string {
     const parsed = parseDateOnlyToLocalDate(value);
     if (!parsed || Number.isNaN(parsed.getTime())) return EM_DASH;
     return new Intl.DateTimeFormat(undefined, { year: 'numeric', month: 'short', day: 'numeric' }).format(parsed);
-}
-
-/**
- * Return the most recent metric on-or-before a given local date string (`YYYY-MM-DD`).
- *
- * This prevents "future" weights from showing when reviewing past logs, while still keeping
- * the card informative when there is no exact weigh-in for the selected day.
- */
-function findMetricOnOrBeforeDate(metrics: MetricEntry[], targetDate: string): MetricEntry | null {
-    for (const metric of metrics) {
-        const metricDate = toDatePart(metric.date);
-        if (metricDate <= targetDate) return metric;
-    }
-    return null;
 }
 
 /**
@@ -83,13 +55,7 @@ const WeightSummaryCard: React.FC<WeightSummaryCardProps> = ({ date, onOpenWeigh
     const today = useMemo(() => getTodayIsoDate(user?.timezone), [user?.timezone]);
     const isToday = date === today;
 
-    const metricsQuery = useQuery({
-        queryKey: ['metrics'],
-        queryFn: async (): Promise<MetricEntry[]> => {
-            const res = await axios.get('/api/metrics');
-            return Array.isArray(res.data) ? (res.data as MetricEntry[]) : [];
-        }
-    });
+    const metricsQuery = useMetricsQuery();
 
     const metrics = useMemo(() => metricsQuery.data ?? [], [metricsQuery.data]);
 

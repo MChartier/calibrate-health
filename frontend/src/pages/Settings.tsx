@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import {
     Box,
-    Button,
     FormControl,
     FormHelperText,
     InputLabel,
@@ -9,14 +8,14 @@ import {
     Select,
     Stack
 } from '@mui/material';
-import LogoutIcon from '@mui/icons-material/LogoutRounded';
 import { useTheme } from '@mui/material/styles';
-import { useNavigate } from 'react-router-dom';
 import { useTransientStatus } from '../hooks/useTransientStatus';
 import { useAuth } from '../context/useAuth';
 import type { HeightUnit, WeightUnit } from '../context/authContext';
 import { useThemeMode } from '../context/useThemeMode';
 import type { ThemePreference } from '../context/themeModeContext';
+import AccountSecurityCard from '../components/AccountSecurityCard';
+import ProfilePhotoCard from '../components/ProfilePhotoCard';
 import TimeZonePicker from '../components/TimeZonePicker';
 import UnitPreferenceToggles from '../components/UnitPreferenceToggles';
 import AppPage from '../ui/AppPage';
@@ -25,17 +24,15 @@ import InlineStatusLine from '../ui/InlineStatusLine';
 import SectionHeader from '../ui/SectionHeader';
 
 /**
- * Settings is focused on device preferences (theme) and app preferences (units).
+ * Settings is focused on account management (photo/password) and app preferences (units/theme).
  */
 const Settings: React.FC = () => {
     const theme = useTheme();
     const sectionGap = theme.custom.layout.page.sectionGap;
-    const { user, logout, updateUnitPreferences, updateTimezone } = useAuth();
+    const { user, updateUnitPreferences, updateTimezone } = useAuth();
     const { preference: themePreference, mode: resolvedThemeMode, setPreference: setThemePreference } = useThemeMode();
-    const navigate = useNavigate();
 
     const { status: unitsStatus, showStatus: showUnitsStatus } = useTransientStatus();
-    const { status: accountStatus, showStatus: showAccountStatus } = useTransientStatus();
 
     const detectedTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
     const [timezoneValue, setTimezoneValue] = useState(() => user?.timezone ?? detectedTimezone);
@@ -94,21 +91,13 @@ const Settings: React.FC = () => {
         }
     };
 
-    /**
-     * Clear the current session and return the user to the login screen.
-     */
-    const handleLogout = async () => {
-        try {
-            await logout();
-            navigate('/login');
-        } catch {
-            showAccountStatus('Failed to log out', 'error');
-        }
-    };
-
     return (
         <AppPage maxWidth="content">
             <Stack spacing={sectionGap} useFlexGap>
+                <ProfilePhotoCard description="Used for your avatar in the app bar." />
+
+                <AccountSecurityCard />
+
                 <AppCard>
                     <SectionHeader title="Units & Localization" sx={{ mb: 0.5 }} />
 
@@ -152,21 +141,6 @@ const Settings: React.FC = () => {
                                 : 'Persisted on this device.'}
                         </FormHelperText>
                     </FormControl>
-                </AppCard>
-
-                <AppCard>
-                    <SectionHeader title="Account" sx={{ mb: 0.5 }} />
-                    <InlineStatusLine status={accountStatus} sx={{ mb: 1 }} />
-
-                    <Button
-                        variant="outlined"
-                        color="error"
-                        startIcon={<LogoutIcon />}
-                        onClick={() => void handleLogout()}
-                        fullWidth
-                    >
-                        Log out
-                    </Button>
                 </AppCard>
             </Stack>
         </AppPage>

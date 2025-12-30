@@ -1,21 +1,23 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
     Alert,
     Box,
     Button,
     Dialog,
-    DialogActions,
-    DialogContent,
     DialogTitle,
     IconButton,
     TextField,
     Tooltip,
+    Typography,
+    useMediaQuery,
+    useTheme,
 } from '@mui/material';
 import SpeedDial from '@mui/material/SpeedDial';
 import SpeedDialAction from '@mui/material/SpeedDialAction';
 import AddIcon from '@mui/icons-material/AddRounded';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeftRounded';
 import ChevronRightIcon from '@mui/icons-material/ChevronRightRounded';
+import CloseIcon from '@mui/icons-material/CloseRounded';
 import TodayIcon from '@mui/icons-material/TodayRounded';
 import RestaurantIcon from '@mui/icons-material/RestaurantRounded';
 import MonitorWeightIcon from '@mui/icons-material/MonitorWeightRounded';
@@ -26,13 +28,21 @@ import { useQueryClient } from '@tanstack/react-query';
 import LogSummaryCard from '../components/LogSummaryCard';
 import WeightSummaryCard from '../components/WeightSummaryCard';
 import { useAuth } from '../context/useAuth';
-import { addDaysToIsoDate, clampIsoDate, formatDateToLocalDateString, getTodayIsoDate } from '../utils/date';
+import {
+    addDaysToIsoDate,
+    clampIsoDate,
+    formatDateToLocalDateString,
+    formatIsoDateForDisplay,
+    getTodayIsoDate
+} from '../utils/date';
 import { fetchFoodLog, foodLogQueryKey, useFoodLogQuery } from '../queries/foodLog';
 import AppCard from '../ui/AppCard';
 
 const LOG_FAB_DIAMETER_SPACING = 7; // Default MUI "large" Fab is 56px (7 * 8).
 const LOG_FAB_CONTENT_CLEARANCE_SPACING = 2; // Extra room so bottom-row actions aren't tight against the FAB.
 const LOG_FAB_BOTTOM_NAV_GAP_SPACING = 1; // Our FAB sits 8px above the reserved bottom-nav space on mobile.
+const LOG_DATE_PICKER_OVERLAY_FOCUS_OUTLINE_PX = 2; // Thickness of the keyboard focus ring on the date control overlay.
+const LOG_DATE_PICKER_OVERLAY_FOCUS_OUTLINE_OFFSET_PX = 2; // Gap between the overlay outline and the field chrome.
 
 const LOG_PAGE_BOTTOM_PADDING = {
     xs: LOG_FAB_DIAMETER_SPACING + LOG_FAB_CONTENT_CLEARANCE_SPACING + LOG_FAB_BOTTOM_NAV_GAP_SPACING,
@@ -61,8 +71,34 @@ function getLogDateBounds(args: { todayIso: string; createdAtIso?: string; timeZ
     return { min, max };
 }
 
+/**
+ * Open a native browser date picker for an `<input type="date">` when supported.
+ *
+ * Chrome/Edge expose `HTMLInputElement.showPicker()` which lets us make the entire control open the picker (not just
+ * the calendar icon), avoiding the fiddly "edit month/day/year segments" interaction.
+ */
+function showNativeDatePicker(input: HTMLInputElement | null) {
+    if (!input) return;
+
+    try {
+        const maybeShowPicker = (input as HTMLInputElement & { showPicker?: () => void }).showPicker;
+        if (typeof maybeShowPicker === 'function') {
+            maybeShowPicker.call(input);
+            return;
+        }
+    } catch {
+        // Ignore - some browsers throw when attempting to show a picker programmatically.
+    }
+
+    // Fallbacks: try click() first (often opens the picker); if that fails, focus the hidden input.
+    input.click();
+    input.focus();
+}
+
 const Log: React.FC = () => {
     const queryClient = useQueryClient();
+    const theme = useTheme();
+    const isFoodDialogFullScreen = useMediaQuery(theme.breakpoints.down('sm'));
     const { user } = useAuth();
     const timeZone = useMemo(
         () => user?.timezone?.trim() || Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
@@ -77,6 +113,8 @@ const Log: React.FC = () => {
     const [selectedDate, setSelectedDate] = useState(() => today);
     const [isFoodDialogOpen, setIsFoodDialogOpen] = useState(false);
     const [isWeightDialogOpen, setIsWeightDialogOpen] = useState(false);
+    const dateOverlayButtonRef = useRef<HTMLButtonElement | null>(null);
+    const datePickerInputRef = useRef<HTMLInputElement | null>(null);
 
     // Clamp selection when the bounds change (e.g. user profile loads, timezone changes).
     useEffect(() => {
@@ -87,6 +125,7 @@ const Log: React.FC = () => {
     }, [dateBounds]);
 
     const effectiveDate = clampIsoDate(selectedDate, dateBounds);
+    const effectiveDateLabel = useMemo(() => formatIsoDateForDisplay(effectiveDate), [effectiveDate]);
 
     const foodQuery = useFoodLogQuery(effectiveDate);
 
@@ -146,31 +185,87 @@ const Log: React.FC = () => {
                         </span>
                     </Tooltip>
 
-                    <TextField
-                        label="Date"
-                        type="date"
-                        value={effectiveDate}
-                        onChange={(e) => {
-                            const nextDate = e.target.value;
-                            if (!nextDate) return;
-                            setSelectedDate(clampIsoDate(nextDate, dateBounds));
-                        }}
-                        InputLabelProps={{ shrink: true }}
-                        inputProps={{ min: dateBounds.min, max: dateBounds.max }}
-                        sx={{
-                            flexGrow: 1,
-                            minWidth: 0,
-                            '& input': { textAlign: 'center' },
-                            // Native `type="date"` inputs render differently per-browser; these help keep the value visually centered
-                            // in Chrome/Safari without affecting the calendar icon alignment.
-                            '& input::-webkit-datetime-edit': { textAlign: 'center' },
-                            '& input::-webkit-date-and-time-value': { textAlign: 'center' },
-                            '& input::-webkit-datetime-edit-fields-wrapper': {
-                                display: 'flex',
-                                justifyContent: 'center'
-                            }
-                        }}
-                    />
+                    <Box sx={{ position: 'relative', flexGrow: 1, minWidth: 0 }}>
+                        <TextField
+                            label="Date"
+                            type="date"
+                            value={effectiveDate}
+                            InputLabelProps={{ shrink: true }}
+                            inputProps={{
+                                min: dateBounds.min,
+                                max: dateBounds.max,
+                                readOnly: true,
+                                tabIndex: -1
+                            }}
+                            sx={{
+                                width: '100%',
+                                '& input': { textAlign: 'center' },
+                                // Native `type="date"` inputs render differently per-browser; these help keep the value visually centered
+                                // in Chrome/Safari without affecting the calendar icon alignment.
+                                '& input::-webkit-datetime-edit': { textAlign: 'center' },
+                                '& input::-webkit-date-and-time-value': { textAlign: 'center' },
+                                '& input::-webkit-datetime-edit-fields-wrapper': {
+                                    display: 'flex',
+                                    justifyContent: 'center'
+                                }
+                            }}
+                        />
+
+                        {/* Hidden input used solely for the browser's native date picker UI. */}
+                        <Box
+                            component="input"
+                            type="date"
+                            ref={datePickerInputRef}
+                            value={effectiveDate}
+                            min={dateBounds.min}
+                            max={dateBounds.max}
+                            tabIndex={-1}
+                            aria-hidden="true"
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                                const nextDate = e.target.value;
+                                if (!nextDate) return;
+                                setSelectedDate(clampIsoDate(nextDate, dateBounds));
+                                dateOverlayButtonRef.current?.focus({ preventScroll: true });
+                            }}
+                            sx={{
+                                position: 'absolute',
+                                inset: 0,
+                                opacity: 0,
+                                pointerEvents: 'none'
+                            }}
+                        />
+
+                        {/*
+                            Overlay button: makes the whole field open the date picker without focusing the visible
+                            input's "month/day/year" segments (which feels fiddly on mobile).
+                            The overlay itself is the focus target for keyboard navigation.
+                        */}
+                        <Box
+                            component="button"
+                            type="button"
+                            ref={dateOverlayButtonRef}
+                            aria-label={`Date: ${effectiveDate}. Activate to choose a different day.`}
+                            onClick={() => showNativeDatePicker(datePickerInputRef.current)}
+                            sx={(theme) => ({
+                                position: 'absolute',
+                                inset: 0,
+                                zIndex: 1,
+                                cursor: 'pointer',
+                                borderRadius: theme.shape.borderRadius,
+                                WebkitTapHighlightColor: 'transparent',
+                                background: 'transparent',
+                                border: 0,
+                                padding: 0,
+                                margin: 0,
+                                outline: 'none',
+                                '&:active': { backgroundColor: theme.palette.action.hover },
+                                '&:focus-visible': {
+                                    outline: `${LOG_DATE_PICKER_OVERLAY_FOCUS_OUTLINE_PX}px solid ${theme.palette.primary.main}`,
+                                    outlineOffset: `${LOG_DATE_PICKER_OVERLAY_FOCUS_OUTLINE_OFFSET_PX}px`
+                                }
+                            })}
+                        />
+                    </Box>
 
                     <Tooltip title="Next day">
                         <span>
@@ -251,42 +346,73 @@ const Log: React.FC = () => {
                 />
             </SpeedDial>
 
-            <Dialog open={isFoodDialogOpen} onClose={handleCloseFoodDialog} fullWidth maxWidth="sm">
-                <DialogTitle>Track Food</DialogTitle>
-                <DialogContent>
-                    <Box sx={{ mt: 1 }}>
-                        <FoodEntryForm
-                            date={effectiveDate}
-                            onSuccess={() => {
-                                void queryClient.invalidateQueries({ queryKey: ['food'] });
-                                handleCloseFoodDialog();
-                            }}
-                        />
-                    </Box>
-                </DialogContent>
-                <DialogActions>
-                    <Button onClick={handleCloseFoodDialog}>Close</Button>
-                </DialogActions>
+            <Dialog
+                open={isFoodDialogOpen}
+                onClose={handleCloseFoodDialog}
+                fullScreen={isFoodDialogFullScreen}
+                fullWidth={!isFoodDialogFullScreen}
+                maxWidth={isFoodDialogFullScreen ? false : 'sm'}
+                scroll="paper"
+                PaperProps={{
+                    sx: {
+                        height: isFoodDialogFullScreen ? '100dvh' : 'min(90dvh, 860px)',
+                        maxHeight: isFoodDialogFullScreen ? '100dvh' : 'min(90dvh, 860px)',
+                        m: isFoodDialogFullScreen ? 0 : 2,
+                        borderRadius: isFoodDialogFullScreen ? 0 : 2,
+                        display: 'flex',
+                        flexDirection: 'column'
+                    }
+                }}
+            >
+                <DialogTitle sx={{ position: 'relative', pr: 6 }}>
+                    Track Food
+                    <Tooltip title="Close">
+                        <IconButton
+                            aria-label="Close"
+                            onClick={handleCloseFoodDialog}
+                            sx={{ position: 'absolute', right: 8, top: 8 }}
+                        >
+                            <CloseIcon />
+                        </IconButton>
+                    </Tooltip>
+                </DialogTitle>
+                <FoodEntryForm
+                    date={effectiveDate}
+                    onSuccess={() => {
+                        void queryClient.invalidateQueries({ queryKey: ['food'] });
+                        handleCloseFoodDialog();
+                    }}
+                />
             </Dialog>
 
             <Dialog open={isWeightDialogOpen} onClose={handleCloseWeightDialog} fullWidth maxWidth="sm">
-                <DialogTitle>Track Weight</DialogTitle>
-                <DialogContent>
-                    <Box sx={{ mt: 1 }}>
-                        <WeightEntryForm
-                            date={effectiveDate}
-                            onSuccess={() => {
-                                void queryClient.invalidateQueries({ queryKey: ['metrics'] });
-                                void queryClient.invalidateQueries({ queryKey: ['user-profile'] });
-                                void queryClient.invalidateQueries({ queryKey: ['profile'] });
-                                handleCloseWeightDialog();
-                            }}
-                        />
+                <DialogTitle sx={{ position: 'relative', pr: 6 }}>
+                    <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                        <Box component="span">Track Weight</Box>
+                        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25 }}>
+                            For {effectiveDateLabel} (the day you're viewing)
+                        </Typography>
                     </Box>
-                </DialogContent>
-                <DialogActions>
-                    <Button onClick={handleCloseWeightDialog}>Close</Button>
-                </DialogActions>
+
+                    <Tooltip title="Close">
+                        <IconButton
+                            aria-label="Close"
+                            onClick={handleCloseWeightDialog}
+                            sx={{ position: 'absolute', right: 8, top: 8 }}
+                        >
+                            <CloseIcon />
+                        </IconButton>
+                    </Tooltip>
+                </DialogTitle>
+                <WeightEntryForm
+                    date={effectiveDate}
+                    onSuccess={() => {
+                        void queryClient.invalidateQueries({ queryKey: ['metrics'] });
+                        void queryClient.invalidateQueries({ queryKey: ['user-profile'] });
+                        void queryClient.invalidateQueries({ queryKey: ['profile'] });
+                        handleCloseWeightDialog();
+                    }}
+                />
             </Dialog>
         </Box>
     );

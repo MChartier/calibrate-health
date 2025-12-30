@@ -46,6 +46,14 @@ test('profile utils: calculateBmr matches Mifflin-St Jeor and rounds to 0.1', ()
   assert.equal(calculateBmr('FEMALE', 82, 175, 35), 1577.8);
 });
 
+test('profile utils: calculateBmr clamps ages outside 19-79 to avoid unrealistic extrapolation', () => {
+  assert.equal(calculateBmr('MALE', 82, 175, 18), calculateBmr('MALE', 82, 175, 19));
+  assert.equal(calculateBmr('MALE', 82, 175, -5), calculateBmr('MALE', 82, 175, 19));
+
+  assert.equal(calculateBmr('FEMALE', 82, 175, 80), calculateBmr('FEMALE', 82, 175, 79));
+  assert.equal(calculateBmr('FEMALE', 82, 175, 150), calculateBmr('FEMALE', 82, 175, 79));
+});
+
 test('profile utils: activityMultiplier matches the configured mapping', () => {
   assert.equal(activityMultiplier('SEDENTARY'), 1.2);
   assert.equal(activityMultiplier('LIGHT'), 1.375);
