@@ -28,7 +28,39 @@ function registerServiceWorker() {
   registerSW({ immediate: true })
 }
 
+/**
+ * In dev, aggressively unregister any service workers on this origin.
+ *
+ * It's easy to end up with a stale PWA service worker controlling localhost, which can make UI
+ * updates appear "stuck" even while Vite HMR is running.
+ */
+async function unregisterServiceWorkersInDev() {
+  if (!import.meta.env.DEV) return
+  if (!('serviceWorker' in navigator)) return
+
+  try {
+    const registrations = await navigator.serviceWorker.getRegistrations()
+    if (registrations.length === 0) return
+
+    const results = await Promise.all(registrations.map((registration) => registration.unregister()))
+    const didUnregister = results.some(Boolean)
+
+    if ('caches' in window) {
+      const cacheKeys = await caches.keys()
+      await Promise.all(cacheKeys.map((key) => caches.delete(key)))
+    }
+
+    // If we successfully unregistered something, reload once to ensure the page is no longer controlled.
+    if (didUnregister) {
+      window.location.reload()
+    }
+  } catch {
+    // Best-effort cleanup only; dev should continue working even if unregister fails.
+  }
+}
+
 document.title = getBrowserTitle()
+void unregisterServiceWorkersInDev()
 registerServiceWorker()
 
 ReactDOM.createRoot(document.getElementById('root')!).render(

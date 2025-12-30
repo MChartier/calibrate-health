@@ -5,6 +5,8 @@ import type { SxProps, Theme } from '@mui/material/styles';
 
 export type AppCardProps = Omit<CardProps, 'children'> & {
     children: React.ReactNode;
+    /** Optional styles applied to the CardContent wrapper (useful for full-height/scrollable layouts). */
+    contentSx?: SxProps<Theme>;
 };
 
 /**
@@ -13,7 +15,7 @@ export type AppCardProps = Omit<CardProps, 'children'> & {
  * Default wrapper for "content tiles" (dashboards, charts, forms, summaries).
  * This centralizes Card vs Paper usage and keeps padding consistent across the app.
  */
-const AppCard: React.FC<AppCardProps> = ({ sx, children, ...cardProps }) => {
+const AppCard: React.FC<AppCardProps> = ({ sx, contentSx, children, ...cardProps }) => {
     const mergedCardSx: SxProps<Theme> = [
         { width: '100%' },
         ...(Array.isArray(sx) ? sx : sx ? [sx] : [])
@@ -21,7 +23,7 @@ const AppCard: React.FC<AppCardProps> = ({ sx, children, ...cardProps }) => {
 
     return (
         <Card {...cardProps} sx={mergedCardSx}>
-            <CardContent>{children}</CardContent>
+            <CardContent sx={contentSx}>{children}</CardContent>
         </Card>
     );
 };
