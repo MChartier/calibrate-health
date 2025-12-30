@@ -160,7 +160,7 @@ const OnboardingPlanSummary: React.FC<OnboardingPlanSummaryProps> = ({
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
                     Estimated burn (TDEE): {typeof tdee === 'number' ? Math.round(tdee) : '—'} kcal/day
-                    {goalInfo ? ` \u00b7 ${goalInfo.label}` : ''}
+                    {goalInfo ? ` | ${goalInfo.label}` : ''}
                 </Typography>
             </Box>
 
@@ -191,7 +191,7 @@ const OnboardingPlanSummary: React.FC<OnboardingPlanSummaryProps> = ({
                         <Box sx={{ minWidth: 0 }}>
                             <Typography variant="body2">Activity adjustment</Typography>
                             <Typography variant="caption" color="text.secondary">
-                                Level: {activityLevelTitle || '—'} \u00b7 Multiplier {activityMultiplier ?? '—'}x
+                                Level: {activityLevelTitle || '—'} | Multiplier {activityMultiplier ?? '—'}x
                             </Typography>
                         </Box>
                         <Typography
