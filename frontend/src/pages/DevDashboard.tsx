@@ -11,11 +11,15 @@ import {
     FormControlLabel,
     FormGroup,
     Grid,
+    IconButton,
+    InputAdornment,
     Stack,
     TextField,
     Typography
 } from '@mui/material';
+import QrCodeScannerIcon from '@mui/icons-material/QrCodeScannerRounded';
 import axios from 'axios';
+import BarcodeScannerDialog from '../components/BarcodeScannerDialog';
 
 type FoodDataSource = 'usda' | 'openFoodFacts';
 
@@ -67,6 +71,7 @@ const DevDashboard: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
     const [isLoadingProviders, setIsLoadingProviders] = useState(false);
     const [isSearching, setIsSearching] = useState(false);
+    const [isScannerOpen, setIsScannerOpen] = useState(false);
 
     /**
      * Fetch provider metadata so the UI reflects current backend configuration.
@@ -131,36 +136,52 @@ const DevDashboard: React.FC = () => {
     };
 
     /**
+     * Run a search against the selected providers using either a free-text query or a UPC/EAN barcode.
+     */
+    const runSearch = useCallback(
+        async (params: { q?: string; barcode?: string }) => {
+            if (!params.q && !params.barcode) {
+                setError('Enter a search query or scan a barcode.');
+                return;
+            }
+
+            if (selectedProviders.length === 0) {
+                setError('Select at least one provider.');
+                return;
+            }
+
+            setIsSearching(true);
+            setError(null);
+            try {
+                const response = await axios.get('/api/dev/food/search', {
+                    params: {
+                        ...params,
+                        providers: selectedProviders.join(',')
+                    }
+                });
+                const fetched: ProviderSearchResult[] = Array.isArray(response.data?.results) ? response.data.results : [];
+                setResults(fetched);
+            } catch (err) {
+                console.error(err);
+                setError('Search failed. Please try again.');
+            } finally {
+                setIsSearching(false);
+            }
+        },
+        [selectedProviders]
+    );
+
+    /**
      * Execute a query against the selected providers for easy side-by-side comparison.
      */
     const handleSearch = async () => {
         const trimmedQuery = query.trim();
         if (!trimmedQuery) {
-            setError('Enter a search query to compare providers.');
-            return;
-        }
-        if (selectedProviders.length === 0) {
-            setError('Select at least one provider.');
+            setError('Enter a search query to compare providers, or scan a barcode.');
             return;
         }
 
-        setIsSearching(true);
-        setError(null);
-        try {
-            const response = await axios.get('/api/dev/food/search', {
-                params: {
-                    q: trimmedQuery,
-                    providers: selectedProviders.join(',')
-                }
-            });
-            const fetched: ProviderSearchResult[] = Array.isArray(response.data?.results) ? response.data.results : [];
-            setResults(fetched);
-        } catch (err) {
-            console.error(err);
-            setError('Search failed. Please try again.');
-        } finally {
-            setIsSearching(false);
-        }
+        await runSearch({ q: trimmedQuery });
     };
 
     return (
@@ -220,7 +241,7 @@ const DevDashboard: React.FC = () => {
 
                         <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} alignItems="flex-start">
                             <TextField
-                                label="Search query"
+                                label="Search foods"
                                 placeholder="e.g. greek yogurt, oat milk, chicken breast"
                                 fullWidth
                                 value={query}
@@ -230,6 +251,22 @@ const DevDashboard: React.FC = () => {
                                         event.preventDefault();
                                         void handleSearch();
                                     }
+                                }}
+                                InputProps={{
+                                    endAdornment: (
+                                        <InputAdornment position="end">
+                                            <IconButton
+                                                aria-label="Scan barcode"
+                                                title="Scan barcode"
+                                                onClick={() => setIsScannerOpen(true)}
+                                                size="small"
+                                                edge="end"
+                                                disabled={isSearching || isLoadingProviders}
+                                            >
+                                                <QrCodeScannerIcon />
+                                            </IconButton>
+                                        </InputAdornment>
+                                    )
                                 }}
                             />
                             <Stack direction="row" spacing={2}>
@@ -251,6 +288,19 @@ const DevDashboard: React.FC = () => {
                                 </Button>
                             </Stack>
                         </Stack>
+
+                        <BarcodeScannerDialog
+                            open={isScannerOpen}
+                            onClose={() => setIsScannerOpen(false)}
+                            onDetected={(detectedBarcode) => {
+                                setQuery(detectedBarcode);
+                                void runSearch({ barcode: detectedBarcode });
+                            }}
+                        />
+
+                        <Typography variant="caption" color="text.secondary">
+                            Tip: Use the barcode scan button to test UPC/EAN lookups (camera or manual entry).
+                        </Typography>
 
                         {error && <Alert severity="error">{error}</Alert>}
                     </Stack>
