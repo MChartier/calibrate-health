@@ -9,15 +9,12 @@ export function useDebouncedValue<T>(value: T, delayMs: number): T {
     const [debounced, setDebounced] = useState<T>(value);
 
     useEffect(() => {
-        if (delayMs <= 0) {
-            setDebounced(value);
-            return;
-        }
+        if (delayMs <= 0) return;
 
         const timeoutId = setTimeout(() => setDebounced(value), delayMs);
         return () => clearTimeout(timeoutId);
     }, [delayMs, value]);
 
-    return debounced;
+    // If debouncing is disabled, return the raw value directly to avoid a redundant state update.
+    return delayMs <= 0 ? value : debounced;
 }
-

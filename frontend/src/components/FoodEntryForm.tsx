@@ -4,6 +4,8 @@ import {
     Box,
     Button,
     CircularProgress,
+    DialogActions,
+    DialogContent,
     Divider,
     FormControl,
     IconButton,
@@ -148,7 +150,7 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
         { enabled: mode !== 'search' }
     );
 
-    const myFoods = myFoodsQuery.data ?? [];
+    const myFoods = useMemo(() => myFoodsQuery.data ?? [], [myFoodsQuery.data]);
 
     const selectedMyFood = useMemo(() => {
         if (selectedMyFoodId === null) return null;
@@ -447,36 +449,6 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
         }
     };
 
-    /**
-     * Handle form submission so pressing Enter adds the current food entry.
-     */
-    const handleSubmit = (event: React.FormEvent) => {
-        event.preventDefault();
-        if (isSubmitting) return;
-
-        if (mode === 'myFoods') {
-            if (selectedMyFood && myFoodCaloriesPreview !== null) {
-                void handleAddFromMyFoods();
-                return;
-            }
-            if (quickEntryName.trim() && quickEntryCalories.trim()) {
-                void handleAddQuickEntry();
-            }
-            return;
-        }
-
-        if (mode === 'myRecipes') {
-            if (selectedMyFood && myFoodCaloriesPreview !== null) {
-                void handleAddFromMyFoods();
-            }
-            return;
-        }
-
-        if (mode === 'search' && searchView === 'selected') {
-            void handleAddFromSearch();
-        }
-    };
-
     const providerLookupNote = supportsBarcodeLookup === false ? ' (barcode lookup unavailable)' : '';
 
     // Compute the search panel body outside JSX so the layout stays readable.
@@ -595,378 +567,394 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
         );
     }
 
+    const canAddSelectedSearch = Boolean(selectedItem) && Boolean(computed) && searchView === 'selected';
+    const canAddSelectedMyFood = Boolean(selectedMyFood) && myFoodCaloriesPreview !== null;
+    const canAddQuickEntry = Boolean(quickEntryName.trim()) && Boolean(quickEntryCalories.trim());
+
     return (
-        <Stack spacing={2} component="form" onSubmit={handleSubmit}>
-            <ToggleButtonGroup
-                value={mode}
-                exclusive
-                onChange={(_, next) => next && setMode(next)}
-                size="small"
-                color="primary"
-                disabled={isSubmitting}
-                sx={{
-                    width: '100%',
-                    '& .MuiToggleButton-root': { flex: 1 }
-                }}
-            >
-                <ToggleButton value="search">Search</ToggleButton>
-                <ToggleButton value="myFoods">My Foods</ToggleButton>
-                <ToggleButton value="myRecipes">My Recipes</ToggleButton>
-            </ToggleButtonGroup>
-
-            {error && <Alert severity="error">{error}</Alert>}
-
-            {mode === 'search' ? (
-                <Stack spacing={2}>
-                    <TextField
-                        label="Search foods"
-                        placeholder="e.g. apple, chicken breast"
-                        fullWidth
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
+        <>
+            <DialogContent sx={{ flex: 1, overflowY: 'auto' }}>
+                <Stack spacing={2} sx={{ mt: 1 }}>
+                    <ToggleButtonGroup
+                        value={mode}
+                        exclusive
+                        onChange={(_, next) => next && setMode(next)}
+                        size="small"
+                        color="primary"
                         disabled={isSubmitting}
-                        onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
-                                e.preventDefault();
-                                void performFoodSearch({ query: searchQuery });
-                            }
+                        sx={{
+                            width: '100%',
+                            '& .MuiToggleButton-root': { flex: 1 }
                         }}
-                        InputProps={{
-                            endAdornment: (
-                                <InputAdornment position="end">
-                                    <IconButton
-                                        aria-label="Scan barcode"
-                                        title="Scan barcode"
-                                        onClick={() => setIsScannerOpen(true)}
-                                        size="small"
-                                        edge="end"
-                                        disabled={isSearching || isSubmitting}
-                                    >
-                                        <QrCodeScannerIcon />
-                                    </IconButton>
-                                </InputAdornment>
-                            )
-                        }}
-                    />
-                    {providerName && (
-                        <Typography variant="caption" color="text.secondary">
-                            Provider: {providerName}
-                            {providerLookupNote}
-                        </Typography>
-                    )}
-
-                    <BarcodeScannerDialog
-                        open={isScannerOpen}
-                        onClose={() => setIsScannerOpen(false)}
-                        onDetected={(barcode) => {
-                            setSearchQuery(barcode);
-                            void performFoodSearch({ barcode });
-                        }}
-                    />
-
-                    {searchResultsContent}
-                </Stack>
-            ) : mode === 'myFoods' ? (
-                <Stack spacing={2}>
-                    <Stack
-                        direction={{ xs: 'column', sm: 'row' }}
-                        spacing={1}
-                        alignItems={{ xs: 'stretch', sm: 'center' }}
                     >
-                        <Button
-                            variant="outlined"
-                            type="button"
-                            onClick={() => setIsNewFoodDialogOpen(true)}
-                            disabled={isSubmitting}
-                        >
-                            New Food
-                        </Button>
-                    </Stack>
+                        <ToggleButton value="search">Search</ToggleButton>
+                        <ToggleButton value="myFoods">My Foods</ToggleButton>
+                        <ToggleButton value="myRecipes">My Recipes</ToggleButton>
+                    </ToggleButtonGroup>
 
-                    <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems={{ sm: 'flex-end' }}>
-                        <TextField
-                            label="Search My Foods"
-                            placeholder="e.g. oatmeal, chili"
-                            fullWidth
-                            value={myFoodsQueryText}
-                            onChange={(e) => setMyFoodsQueryText(e.target.value)}
-                            disabled={isSubmitting}
-                        />
-                    </Stack>
+                    {error && <Alert severity="error">{error}</Alert>}
 
-                    {myFoodsQuery.isLoading ? (
-                        <Stack direction="row" spacing={1} alignItems="center">
-                            <CircularProgress size={18} />
-                            <Typography variant="body2" color="text.secondary">
-                                Loading...
-                            </Typography>
-                        </Stack>
-                    ) : myFoodsQuery.isError ? (
-                        <Typography variant="body2" color="text.secondary">
-                            Unable to load your saved foods right now.
-                        </Typography>
-                    ) : myFoods.length === 0 ? (
-                        <Typography variant="body2" color="text.secondary">
-                            No saved foods yet. Create one with "New Food" to reuse it later.
-                        </Typography>
-                    ) : (
-                        <Box
-                            sx={{
-                                border: 1,
-                                borderColor: 'divider',
-                                borderRadius: 1,
-                                overflow: 'hidden',
-                                maxHeight: MY_FOODS_LIST_HEIGHT,
-                                overflowY: 'auto'
-                            }}
-                        >
-                            <List dense disablePadding>
-                                {myFoods.map((food) => {
-                                    const secondary = `${Math.round(food.calories_per_serving)} kcal per ${food.serving_size_quantity} ${food.serving_unit_label}`;
-                                    return (
-                                        <ListItemButton
-                                            key={food.id}
-                                            selected={food.id === selectedMyFoodId}
-                                            onClick={() => setSelectedMyFoodId(food.id)}
-                                            disabled={isSubmitting}
-                                        >
-                                            <ListItemText
-                                                primary={food.name}
-                                                secondary={secondary}
-                                                primaryTypographyProps={{ variant: 'body2' }}
-                                                secondaryTypographyProps={{ variant: 'caption', color: 'text.secondary' }}
-                                            />
-                                        </ListItemButton>
-                                    );
-                                })}
-                            </List>
-                        </Box>
-                    )}
-
-                    {selectedMyFood && (
-                        <Stack spacing={1.5}>
-                            {(() => {
-                                const servingDescriptor = `${selectedMyFood.serving_size_quantity} ${selectedMyFood.serving_unit_label}`;
-                                return (
+                    {mode === 'search' ? (
+                        <Stack spacing={2}>
                             <TextField
-                                label={`Servings consumed (${servingDescriptor})`}
-                                type="number"
-                                value={myFoodServingsConsumed}
-                                onChange={(e) => setMyFoodServingsConsumed(e.target.value)}
+                                label="Search foods"
+                                placeholder="e.g. apple, chicken breast"
+                                fullWidth
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
                                 disabled={isSubmitting}
-                                inputProps={{ min: 0, step: 0.1 }}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter') {
+                                        e.preventDefault();
+                                        void performFoodSearch({ query: searchQuery });
+                                    }
+                                }}
+                                InputProps={{
+                                    endAdornment: (
+                                        <InputAdornment position="end">
+                                            <IconButton
+                                                aria-label="Scan barcode"
+                                                title="Scan barcode"
+                                                onClick={() => setIsScannerOpen(true)}
+                                                size="small"
+                                                edge="end"
+                                                disabled={isSearching || isSubmitting}
+                                            >
+                                                <QrCodeScannerIcon />
+                                            </IconButton>
+                                        </InputAdornment>
+                                    )
+                                }}
                             />
-                                );
-                            })()}
-                            {myFoodCaloriesPreview !== null && (
-                                <Typography variant="body2" color="text.secondary">
-                                    {myFoodCaloriesPreview} calories
+                            {providerName && (
+                                <Typography variant="caption" color="text.secondary">
+                                    Provider: {providerName}
+                                    {providerLookupNote}
                                 </Typography>
                             )}
-                            <Button
-                                variant="contained"
-                                type="button"
-                                onClick={() => void handleAddFromMyFoods()}
-                                disabled={isSubmitting || myFoodCaloriesPreview === null}
+
+                            <BarcodeScannerDialog
+                                open={isScannerOpen}
+                                onClose={() => setIsScannerOpen(false)}
+                                onDetected={(barcode) => {
+                                    setSearchQuery(barcode);
+                                    void performFoodSearch({ barcode });
+                                }}
+                            />
+
+                            {searchResultsContent}
+                        </Stack>
+                    ) : mode === 'myFoods' ? (
+                        <Stack spacing={2}>
+                            <Stack
+                                direction={{ xs: 'column', sm: 'row' }}
+                                spacing={1}
+                                alignItems={{ xs: 'stretch', sm: 'center' }}
                             >
-                                {isSubmitting ? 'Adding…' : 'Add to Log'}
-                            </Button>
-                        </Stack>
-                    )}
+                                <Button
+                                    variant="outlined"
+                                    type="button"
+                                    onClick={() => setIsNewFoodDialogOpen(true)}
+                                    disabled={isSubmitting}
+                                >
+                                    New Food
+                                </Button>
+                            </Stack>
 
-                    <Divider />
+                            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems={{ sm: 'flex-end' }}>
+                                <TextField
+                                    label="Search My Foods"
+                                    placeholder="e.g. oatmeal, chili"
+                                    fullWidth
+                                    value={myFoodsQueryText}
+                                    onChange={(e) => setMyFoodsQueryText(e.target.value)}
+                                    disabled={isSubmitting}
+                                />
+                            </Stack>
 
-                    <Typography variant="subtitle2">Quick entry (not saved)</Typography>
-                    <Stack spacing={2}>
-                        <TextField
-                            label="Food Name"
-                            fullWidth
-                            value={quickEntryName}
-                            onChange={(e) => setQuickEntryName(e.target.value)}
-                            disabled={isSubmitting}
-                        />
-                        <TextField
-                            label="Calories"
-                            type="number"
-                            fullWidth
-                            value={quickEntryCalories}
-                            onChange={(e) => setQuickEntryCalories(e.target.value)}
-                            disabled={isSubmitting}
-                            inputProps={{ min: 0, step: 1 }}
-                        />
-                        <Button
-                            variant="outlined"
-                            type="button"
-                            onClick={() => void handleAddQuickEntry()}
-                            disabled={isSubmitting || !quickEntryName.trim() || !quickEntryCalories.trim()}
-                        >
-                            {isSubmitting ? 'Adding…' : 'Add Once'}
-                        </Button>
-                    </Stack>
+                            {myFoodsQuery.isLoading ? (
+                                <Stack direction="row" spacing={1} alignItems="center">
+                                    <CircularProgress size={18} />
+                                    <Typography variant="body2" color="text.secondary">
+                                        Loading...
+                                    </Typography>
+                                </Stack>
+                            ) : myFoodsQuery.isError ? (
+                                <Typography variant="body2" color="text.secondary">
+                                    Unable to load your saved foods right now.
+                                </Typography>
+                            ) : myFoods.length === 0 ? (
+                                <Typography variant="body2" color="text.secondary">
+                                    No saved foods yet. Create one with "New Food" to reuse it later.
+                                </Typography>
+                            ) : (
+                                <Box
+                                    sx={{
+                                        border: 1,
+                                        borderColor: 'divider',
+                                        borderRadius: 1,
+                                        overflow: 'hidden',
+                                        maxHeight: MY_FOODS_LIST_HEIGHT,
+                                        overflowY: 'auto'
+                                    }}
+                                >
+                                    <List dense disablePadding>
+                                        {myFoods.map((food) => {
+                                            const secondary = `${Math.round(food.calories_per_serving)} kcal per ${food.serving_size_quantity} ${food.serving_unit_label}`;
+                                            return (
+                                                <ListItemButton
+                                                    key={food.id}
+                                                    selected={food.id === selectedMyFoodId}
+                                                    onClick={() => setSelectedMyFoodId(food.id)}
+                                                    disabled={isSubmitting}
+                                                >
+                                                    <ListItemText
+                                                        primary={food.name}
+                                                        secondary={secondary}
+                                                        primaryTypographyProps={{ variant: 'body2' }}
+                                                        secondaryTypographyProps={{ variant: 'caption', color: 'text.secondary' }}
+                                                    />
+                                                </ListItemButton>
+                                            );
+                                        })}
+                                    </List>
+                                </Box>
+                            )}
 
-                    <NewMyFoodDialog
-                        open={isNewFoodDialogOpen}
-                        date={entryLocalDate}
-                        mealPeriod={mealPeriod}
-                        onClose={() => setIsNewFoodDialogOpen(false)}
-                        onSaved={(created) => {
-                            void queryClient.invalidateQueries({ queryKey: ['my-foods'] });
-                            setSelectedMyFoodId(created.id);
-                        }}
-                        onLogged={() => {
-                            void queryClient.invalidateQueries({ queryKey: ['food'] });
-                            onSuccess?.();
-                        }}
-                    />
-                </Stack>
-            ) : (
-                <Stack spacing={2}>
-                    <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems={{ xs: 'stretch', sm: 'center' }}>
-                        <Button
-                            variant="outlined"
-                            type="button"
-                            onClick={() => setIsNewRecipeDialogOpen(true)}
-                            disabled={isSubmitting}
-                        >
-                            New Recipe
-                        </Button>
-                    </Stack>
-
-                    <TextField
-                        label="Search My Recipes"
-                        placeholder="e.g. chili, overnight oats"
-                        fullWidth
-                        value={myFoodsQueryText}
-                        onChange={(e) => setMyFoodsQueryText(e.target.value)}
-                        disabled={isSubmitting}
-                    />
-
-                    {myFoodsQuery.isLoading ? (
-                        <Stack direction="row" spacing={1} alignItems="center">
-                            <CircularProgress size={18} />
-                            <Typography variant="body2" color="text.secondary">
-                                Loading...
-                            </Typography>
-                        </Stack>
-                    ) : myFoodsQuery.isError ? (
-                        <Typography variant="body2" color="text.secondary">
-                            Unable to load your saved recipes right now.
-                        </Typography>
-                    ) : myFoods.length === 0 ? (
-                        <Typography variant="body2" color="text.secondary">
-                            No saved recipes yet. Create one with "New Recipe" to reuse it later.
-                        </Typography>
-                    ) : (
-                        <Box
-                            sx={{
-                                border: 1,
-                                borderColor: 'divider',
-                                borderRadius: 1,
-                                overflow: 'hidden',
-                                maxHeight: MY_FOODS_LIST_HEIGHT,
-                                overflowY: 'auto'
-                            }}
-                        >
-                            <List dense disablePadding>
-                                {myFoods.map((recipe) => {
-                                    const secondary = `${Math.round(recipe.calories_per_serving)} kcal per ${recipe.serving_size_quantity} ${recipe.serving_unit_label}`;
-                                    return (
-                                        <ListItemButton
-                                            key={recipe.id}
-                                            selected={recipe.id === selectedMyFoodId}
-                                            onClick={() => setSelectedMyFoodId(recipe.id)}
-                                            disabled={isSubmitting}
-                                        >
-                                            <ListItemText
-                                                primary={recipe.name}
-                                                secondary={secondary}
-                                                primaryTypographyProps={{ variant: 'body2' }}
-                                                secondaryTypographyProps={{ variant: 'caption', color: 'text.secondary' }}
+                            {selectedMyFood && (
+                                <Stack spacing={1.5}>
+                                    {(() => {
+                                        const servingDescriptor = `${selectedMyFood.serving_size_quantity} ${selectedMyFood.serving_unit_label}`;
+                                        return (
+                                            <TextField
+                                                label={`Servings consumed (${servingDescriptor})`}
+                                                type="number"
+                                                value={myFoodServingsConsumed}
+                                                onChange={(e) => setMyFoodServingsConsumed(e.target.value)}
+                                                disabled={isSubmitting}
+                                                inputProps={{ min: 0, step: 0.1 }}
                                             />
-                                        </ListItemButton>
-                                    );
-                                })}
-                            </List>
-                        </Box>
-                    )}
-
-                    {selectedMyFood && (
-                        <Stack spacing={1.5}>
-                            {(() => {
-                                const servingDescriptor = `${selectedMyFood.serving_size_quantity} ${selectedMyFood.serving_unit_label}`;
-                                return (
-                                    <TextField
-                                        label={`Servings consumed (${servingDescriptor})`}
-                                        type="number"
-                                        value={myFoodServingsConsumed}
-                                        onChange={(e) => setMyFoodServingsConsumed(e.target.value)}
-                                        disabled={isSubmitting}
-                                        inputProps={{ min: 0, step: 0.1 }}
-                                    />
-                                );
-                            })()}
-                            {myFoodCaloriesPreview !== null && (
-                                <Typography variant="body2" color="text.secondary">
-                                    {myFoodCaloriesPreview} calories
-                                </Typography>
+                                        );
+                                    })()}
+                                    {myFoodCaloriesPreview !== null && (
+                                        <Typography variant="body2" color="text.secondary">
+                                            {myFoodCaloriesPreview} calories
+                                        </Typography>
+                                    )}
+                                </Stack>
                             )}
-                            <Button
-                                variant="contained"
-                                type="button"
-                                onClick={() => void handleAddFromMyFoods()}
-                                disabled={isSubmitting || myFoodCaloriesPreview === null}
+
+                            <NewMyFoodDialog
+                                open={isNewFoodDialogOpen}
+                                date={entryLocalDate}
+                                mealPeriod={mealPeriod}
+                                onClose={() => setIsNewFoodDialogOpen(false)}
+                                onSaved={(created) => {
+                                    void queryClient.invalidateQueries({ queryKey: ['my-foods'] });
+                                    setSelectedMyFoodId(created.id);
+                                }}
+                                onLogged={() => {
+                                    void queryClient.invalidateQueries({ queryKey: ['food'] });
+                                    onSuccess?.();
+                                }}
+                            />
+                        </Stack>
+                    ) : (
+                        <Stack spacing={2}>
+                            <Stack
+                                direction={{ xs: 'column', sm: 'row' }}
+                                spacing={1}
+                                alignItems={{ xs: 'stretch', sm: 'center' }}
                             >
-                                {isSubmitting ? 'Adding…' : 'Add to Log'}
-                            </Button>
+                                <Button
+                                    variant="outlined"
+                                    type="button"
+                                    onClick={() => setIsNewRecipeDialogOpen(true)}
+                                    disabled={isSubmitting}
+                                >
+                                    New Recipe
+                                </Button>
+                            </Stack>
+
+                            <TextField
+                                label="Search My Recipes"
+                                placeholder="e.g. chili, overnight oats"
+                                fullWidth
+                                value={myFoodsQueryText}
+                                onChange={(e) => setMyFoodsQueryText(e.target.value)}
+                                disabled={isSubmitting}
+                            />
+
+                            {myFoodsQuery.isLoading ? (
+                                <Stack direction="row" spacing={1} alignItems="center">
+                                    <CircularProgress size={18} />
+                                    <Typography variant="body2" color="text.secondary">
+                                        Loading...
+                                    </Typography>
+                                </Stack>
+                            ) : myFoodsQuery.isError ? (
+                                <Typography variant="body2" color="text.secondary">
+                                    Unable to load your saved recipes right now.
+                                </Typography>
+                            ) : myFoods.length === 0 ? (
+                                <Typography variant="body2" color="text.secondary">
+                                    No saved recipes yet. Create one with "New Recipe" to reuse it later.
+                                </Typography>
+                            ) : (
+                                <Box
+                                    sx={{
+                                        border: 1,
+                                        borderColor: 'divider',
+                                        borderRadius: 1,
+                                        overflow: 'hidden',
+                                        maxHeight: MY_FOODS_LIST_HEIGHT,
+                                        overflowY: 'auto'
+                                    }}
+                                >
+                                    <List dense disablePadding>
+                                        {myFoods.map((recipe) => {
+                                            const secondary = `${Math.round(recipe.calories_per_serving)} kcal per ${recipe.serving_size_quantity} ${recipe.serving_unit_label}`;
+                                            return (
+                                                <ListItemButton
+                                                    key={recipe.id}
+                                                    selected={recipe.id === selectedMyFoodId}
+                                                    onClick={() => setSelectedMyFoodId(recipe.id)}
+                                                    disabled={isSubmitting}
+                                                >
+                                                    <ListItemText
+                                                        primary={recipe.name}
+                                                        secondary={secondary}
+                                                        primaryTypographyProps={{ variant: 'body2' }}
+                                                        secondaryTypographyProps={{ variant: 'caption', color: 'text.secondary' }}
+                                                    />
+                                                </ListItemButton>
+                                            );
+                                        })}
+                                    </List>
+                                </Box>
+                            )}
+
+                            {selectedMyFood && (
+                                <Stack spacing={1.5}>
+                                    {(() => {
+                                        const servingDescriptor = `${selectedMyFood.serving_size_quantity} ${selectedMyFood.serving_unit_label}`;
+                                        return (
+                                            <TextField
+                                                label={`Servings consumed (${servingDescriptor})`}
+                                                type="number"
+                                                value={myFoodServingsConsumed}
+                                                onChange={(e) => setMyFoodServingsConsumed(e.target.value)}
+                                                disabled={isSubmitting}
+                                                inputProps={{ min: 0, step: 0.1 }}
+                                            />
+                                        );
+                                    })()}
+                                    {myFoodCaloriesPreview !== null && (
+                                        <Typography variant="body2" color="text.secondary">
+                                            {myFoodCaloriesPreview} calories
+                                        </Typography>
+                                    )}
+                                </Stack>
+                            )}
+
+                            <NewRecipeDialog
+                                open={isNewRecipeDialogOpen}
+                                date={entryLocalDate}
+                                mealPeriod={mealPeriod}
+                                onClose={() => setIsNewRecipeDialogOpen(false)}
+                                onSaved={(created) => {
+                                    void queryClient.invalidateQueries({ queryKey: ['my-foods'] });
+                                    setSelectedMyFoodId(created.id);
+                                }}
+                                onLogged={() => {
+                                    void queryClient.invalidateQueries({ queryKey: ['food'] });
+                                    onSuccess?.();
+                                }}
+                            />
                         </Stack>
                     )}
 
-                    <NewRecipeDialog
-                        open={isNewRecipeDialogOpen}
-                        date={entryLocalDate}
-                        mealPeriod={mealPeriod}
-                        onClose={() => setIsNewRecipeDialogOpen(false)}
-                        onSaved={(created) => {
-                            void queryClient.invalidateQueries({ queryKey: ['my-foods'] });
-                            setSelectedMyFoodId(created.id);
-                        }}
-                        onLogged={() => {
-                            void queryClient.invalidateQueries({ queryKey: ['food'] });
-                            onSuccess?.();
-                        }}
-                    />
+                    {shouldShowMealPeriod && (
+                        <FormControl fullWidth>
+                            <InputLabel>Meal Period</InputLabel>
+                            <Select
+                                value={mealPeriod}
+                                label="Meal Period"
+                                onChange={(e) => setMealPeriod(e.target.value as MealPeriod)}
+                                disabled={isSubmitting}
+                            >
+                                {mealOptions.map((meal) => (
+                                    <MenuItem key={meal.value} value={meal.value}>
+                                        <ListItemIcon sx={{ minWidth: 32 }}>{meal.icon}</ListItemIcon>
+                                        {meal.label}
+                                    </MenuItem>
+                                ))}
+                            </Select>
+                        </FormControl>
+                    )}
+
+                    {mode === 'myFoods' && (
+                        <>
+                            <Divider />
+
+                            <Typography variant="subtitle2">Quick entry (not saved)</Typography>
+
+                            <Stack spacing={2}>
+                                <TextField
+                                    label="Food Name"
+                                    fullWidth
+                                    value={quickEntryName}
+                                    onChange={(e) => setQuickEntryName(e.target.value)}
+                                    disabled={isSubmitting}
+                                />
+                                <TextField
+                                    label="Calories"
+                                    type="number"
+                                    fullWidth
+                                    value={quickEntryCalories}
+                                    onChange={(e) => setQuickEntryCalories(e.target.value)}
+                                    disabled={isSubmitting}
+                                    inputProps={{ min: 0, step: 1 }}
+                                />
+                            </Stack>
+                        </>
+                    )}
                 </Stack>
-            )}
+            </DialogContent>
 
-            {shouldShowMealPeriod && (
-                <FormControl fullWidth>
-                    <InputLabel>Meal Period</InputLabel>
-                    <Select
-                        value={mealPeriod}
-                        label="Meal Period"
-                        onChange={(e) => setMealPeriod(e.target.value as MealPeriod)}
-                        disabled={isSubmitting}
+            <DialogActions>
+                {mode === 'myFoods' && (
+                    <Button
+                        variant="outlined"
+                        type="button"
+                        onClick={() => void handleAddQuickEntry()}
+                        disabled={isSubmitting || !canAddQuickEntry}
                     >
-                        {mealOptions.map((meal) => (
-                            <MenuItem key={meal.value} value={meal.value}>
-                                <ListItemIcon sx={{ minWidth: 32 }}>{meal.icon}</ListItemIcon>
-                                {meal.label}
-                            </MenuItem>
-                        ))}
-                    </Select>
-                </FormControl>
-            )}
+                        {isSubmitting ? 'Adding…' : 'Add Once'}
+                    </Button>
+                )}
 
-            {mode === 'search' && (
-                <Button
-                    variant="contained"
-                    type="submit"
-                    disabled={isSubmitting || !selectedItem || !computed || searchView !== 'selected'}
-                >
-                    {isSubmitting ? 'Adding…' : 'Add Selected Food'}
-                </Button>
-            )}
-        </Stack>
+                {mode === 'search' ? (
+                    <Button
+                        variant="contained"
+                        type="button"
+                        onClick={() => void handleAddFromSearch()}
+                        disabled={isSubmitting || !canAddSelectedSearch}
+                    >
+                        {isSubmitting ? 'Adding…' : 'Add Selected Food'}
+                    </Button>
+                ) : (
+                    <Button
+                        variant="contained"
+                        type="button"
+                        onClick={() => void handleAddFromMyFoods()}
+                        disabled={isSubmitting || !canAddSelectedMyFood}
+                    >
+                        {isSubmitting ? 'Adding…' : 'Add to Log'}
+                    </Button>
+                )}
+            </DialogActions>
+        </>
     );
 };
 

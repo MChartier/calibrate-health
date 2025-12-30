@@ -4,8 +4,6 @@ import {
     Box,
     Button,
     Dialog,
-    DialogActions,
-    DialogContent,
     DialogTitle,
     IconButton,
     TextField,
@@ -366,21 +364,25 @@ const Log: React.FC = () => {
                     }
                 }}
             >
-                <DialogTitle>Track Food</DialogTitle>
-                <DialogContent sx={{ flex: 1, overflowY: 'auto' }}>
-                    <Box sx={{ mt: 1 }}>
-                        <FoodEntryForm
-                            date={effectiveDate}
-                            onSuccess={() => {
-                                void queryClient.invalidateQueries({ queryKey: ['food'] });
-                                handleCloseFoodDialog();
-                            }}
-                        />
-                    </Box>
-                </DialogContent>
-                <DialogActions>
-                    <Button onClick={handleCloseFoodDialog}>Close</Button>
-                </DialogActions>
+                <DialogTitle sx={{ position: 'relative', pr: 6 }}>
+                    Track Food
+                    <Tooltip title="Close">
+                        <IconButton
+                            aria-label="Close"
+                            onClick={handleCloseFoodDialog}
+                            sx={{ position: 'absolute', right: 8, top: 8 }}
+                        >
+                            <CloseIcon />
+                        </IconButton>
+                    </Tooltip>
+                </DialogTitle>
+                <FoodEntryForm
+                    date={effectiveDate}
+                    onSuccess={() => {
+                        void queryClient.invalidateQueries({ queryKey: ['food'] });
+                        handleCloseFoodDialog();
+                    }}
+                />
             </Dialog>
 
             <Dialog open={isWeightDialogOpen} onClose={handleCloseWeightDialog} fullWidth maxWidth="sm">
