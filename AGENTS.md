@@ -65,6 +65,10 @@ cal-io is a responsive calorie tracker (desktop + mobile web) for users who want
 - Avoid magic numbers for layout/styling (e.g., widths, opacities); prefer named constants, theme tokens, or wrapper presets.
 - When introducing new constants (layout or motion), include a short comment describing what the constant controls.
 - Keep JSX readable: avoid long chained ternaries and heavy inline `sx` logic; assign to well-named variables or small documented helpers.
+- Avoid nested ternary operators; prefer `switch`/`if` with a brief comment when mapping state -> UI text or UI variants.
+- For mutually exclusive render branches (one-of-N), compute the active sub-tree in a named variable/helper above the JSX and render it once.
+- For domain string unions used in comparisons or `<Select />` values (units, sex, etc.), prefer shared exported constants/enums over repeating raw string literals.
+- Prefer ASCII punctuation in UI strings (avoid `\\u00b7`, `\\u2026`, etc.) to prevent rendering/copy-paste issues; use `|`, `-`, or `...` instead.
 - Deduplicate repeated UI mappings (e.g., enums -> icons/labels) into shared utilities/components when used in multiple places.
 - Prefer shaped loading placeholders that keep stable UI chrome rendered; avoid duplicating entire feature layouts in separate "Skeleton" components unless there is a clear justification.
 - For animations/transitions, encapsulate math/state in small hooks/helpers and include comments describing the intended UX effect (respect `prefers-reduced-motion`).

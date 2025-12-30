@@ -8,6 +8,7 @@ import { Strategy as LocalStrategy } from 'passport-local';
 import prisma from './config/database';
 import bcrypt from 'bcryptjs'; // We need to install bcryptjs
 import { autoLoginTestUser } from './utils/devAuth';
+import devTestRoutes from './routes/devTest';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -91,6 +92,7 @@ apiRouter.use('/user', userRoutes);
 // Keep debug/prototype routes (food provider comparisons, etc.) out of production deployments.
 if (process.env.NODE_ENV !== 'production') {
     apiRouter.use('/dev', devRoutes);
+    app.use('/dev/test', devTestRoutes);
 }
 
 app.get('/', (req, res) => {

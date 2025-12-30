@@ -78,7 +78,7 @@ function getPwaOptions(): Partial<VitePWAOptions> {
       mode: 'development',
       disableDevLogs: true,
       // SPA navigation fallback should not hijack backend endpoints.
-      navigateFallbackDenylist: [/^\/api\//, /^\/auth\//],
+      navigateFallbackDenylist: [/^\/api\//, /^\/auth\//, /^\/dev\/test\//],
     },
   }
 }
@@ -118,6 +118,7 @@ export default defineConfig({
     proxy: {
       '/auth': 'http://localhost:3000',
       '/api': 'http://localhost:3000',
+      '/dev/test': 'http://localhost:3000',
     }
   }
 })
