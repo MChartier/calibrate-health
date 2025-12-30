@@ -39,8 +39,23 @@ export const calculateAge = (dateOfBirth: Date, now: Date = new Date()): number 
     return age;
 };
 
+const MIFFLIN_ST_JEOR_VALID_AGE_YEARS = {
+    min: 19,
+    max: 79
+} as const;
+
+/**
+ * Clamp an age (in years) to the validation range for the Mifflin-St Jeor equation.
+ *
+ * The equation is intended for adults; extrapolating outside 19-79 years quickly
+ * yields unrealistic BMR/TDEE outputs, so we cap to the nearest bound.
+ */
+const clampAgeForMifflinStJeor = (ageYears: number): number =>
+    Math.min(MIFFLIN_ST_JEOR_VALID_AGE_YEARS.max, Math.max(MIFFLIN_ST_JEOR_VALID_AGE_YEARS.min, ageYears));
+
 export const calculateBmr = (sex: Sex, weightKg: number, heightCm: number, ageYears: number): number => {
-    const base = 10 * weightKg + 6.25 * heightCm - 5 * ageYears;
+    const clampedAgeYears = clampAgeForMifflinStJeor(ageYears);
+    const base = 10 * weightKg + 6.25 * heightCm - 5 * clampedAgeYears;
     return Math.round((sex === 'MALE' ? base + 5 : base - 161) * 10) / 10;
 };
 
