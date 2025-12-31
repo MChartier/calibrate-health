@@ -16,6 +16,12 @@ variable "github_repo" {
   default     = "MChartier/cal-io"
 }
 
+variable "github_default_branch" {
+  description = "Default branch name allowed to assume CI/deploy roles via GitHub OIDC."
+  type        = string
+  default     = "master"
+}
+
 variable "ecr_repository_name" {
   description = "ECR repository name for the app image."
   type        = string

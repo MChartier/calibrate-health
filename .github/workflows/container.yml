@@ -3,7 +3,6 @@ name: Build + Deploy (Staging)
 on:
   push:
     branches:
-      - main
       - master
     tags:
       - "v*"
@@ -64,8 +63,8 @@ jobs:
           TAGS+=("${GHCR_IMAGE}:sha-${GITHUB_SHA}")
           TAGS+=("${ECR_IMAGE}:sha-${GITHUB_SHA}")
 
-          if [[ "${GITHUB_REF}" == "refs/heads/main" || "${GITHUB_REF}" == "refs/heads/master" ]]; then
-            # Tag a human-friendly branch alias for convenience (main/master only).
+          if [[ "${GITHUB_REF}" == "refs/heads/master" ]]; then
+            # Tag a human-friendly branch alias for convenience.
             TAGS+=("${GHCR_IMAGE}:${GITHUB_REF_NAME}")
             TAGS+=("${ECR_IMAGE}:staging")
           fi
@@ -96,7 +95,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     needs: build_and_push
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    if: github.ref == 'refs/heads/master'
 
     steps:
       - name: Configure AWS credentials (staging deploy)
