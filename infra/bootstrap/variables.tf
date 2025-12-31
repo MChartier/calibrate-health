@@ -13,7 +13,7 @@ variable "domain_name" {
 variable "github_repo" {
   description = "GitHub repo in OWNER/REPO form allowed to assume deployment roles."
   type        = string
-  default     = "mchartier/cal-io"
+  default     = "MChartier/cal-io"
 }
 
 variable "ecr_repository_name" {
@@ -21,4 +21,3 @@ variable "ecr_repository_name" {
   type        = string
   default     = "calibratehealth"
 }
-
