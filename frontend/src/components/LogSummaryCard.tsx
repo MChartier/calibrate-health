@@ -3,7 +3,12 @@ import { Box, Card, CardActionArea, CardContent, Skeleton, Typography } from '@m
 import { Gauge } from '@mui/x-charts/Gauge';
 import { Link as RouterLink } from 'react-router-dom';
 import { useAuth } from '../context/useAuth';
-import { formatDateToLocalDateString, formatIsoDateForDisplay, getHolidayEmojiForIsoDate } from '../utils/date';
+import {
+    formatDateToLocalDateString,
+    formatIsoDateForDisplay,
+    getBirthdayEmojiForIsoDate,
+    getHolidayEmojiForIsoDate
+} from '../utils/date';
 import { usePrefersReducedMotion } from '../hooks/usePrefersReducedMotion';
 import { useTweenedNumber } from '../hooks/useTweenedNumber';
 import { useUserProfileQuery } from '../queries/userProfile';
@@ -73,10 +78,13 @@ const LogSummaryCard: React.FC<LogSummaryCardProps> = ({ dashboardMode = false, 
     const today = formatDateToLocalDateString(new Date(), timeZone);
     const activeDate = date ?? today;
     const isActiveDateToday = activeDate === today;
+    const birthdayEmoji = getBirthdayEmojiForIsoDate(activeDate, user?.date_of_birth);
     const holidayEmoji = getHolidayEmojiForIsoDate(activeDate);
+    const titleEmojis = [birthdayEmoji, holidayEmoji].filter(Boolean).join(' ');
+    const titleEmojiSuffix = titleEmojis ? ` ${titleEmojis}` : '';
     const title = isActiveDateToday
-        ? `Today's Log${holidayEmoji ? ` ${holidayEmoji}` : ''}`
-        : `Log for ${formatIsoDateForDisplay(activeDate)}${holidayEmoji ? ` ${holidayEmoji}` : ''}`;
+        ? `Today's Log${titleEmojiSuffix}`
+        : `Log for ${formatIsoDateForDisplay(activeDate)}${titleEmojiSuffix}`;
 
     const foodQuery = useFoodLogQuery(activeDate);
 
