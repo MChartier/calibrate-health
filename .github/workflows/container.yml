@@ -57,7 +57,8 @@ jobs:
           set -euo pipefail
 
           ECR_IMAGE="${{ steps.ecr.outputs.registry }}/${IMAGE_NAME}"
-          GHCR_IMAGE="${GHCR_IMAGE}"
+          # Docker image refs require lowercase repository names (GH owner can be mixed-case).
+          GHCR_IMAGE="${GHCR_IMAGE,,}"
 
           TAGS=()
           TAGS+=("${GHCR_IMAGE}:sha-${GITHUB_SHA}")
