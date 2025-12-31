@@ -232,6 +232,12 @@ data "aws_iam_policy_document" "github_deploy_staging_policy" {
   }
 
   statement {
+    effect    = "Allow"
+    actions   = ["rds:DescribeDBInstances"]
+    resources = ["*"]
+  }
+
+  statement {
     effect  = "Allow"
     actions = ["ssm:SendCommand"]
     resources = [
@@ -282,6 +288,12 @@ data "aws_iam_policy_document" "github_deploy_prod_policy" {
   statement {
     effect    = "Allow"
     actions   = ["ec2:DescribeInstances"]
+    resources = ["*"]
+  }
+
+  statement {
+    effect    = "Allow"
+    actions   = ["rds:DescribeDBInstances"]
     resources = ["*"]
   }
 

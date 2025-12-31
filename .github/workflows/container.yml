@@ -138,16 +138,67 @@ jobs:
           INSTANCE_ID="${{ steps.instance.outputs.instance_id }}"
           APP_DIR="/opt/${IMAGE_NAME}"
 
+          ENVIRONMENT="staging"
+          DB_INSTANCE_IDENTIFIER="${IMAGE_NAME}-${ENVIRONMENT}-postgres"
+
+          require_value() {
+            # Fail fast (and cheaply) before dispatching an SSM command with missing config.
+            local name="$1"
+            local value="$2"
+            if [[ -z "${value}" || "${value}" == "None" || "${value}" == "null" ]]; then
+              echo "Unable to resolve required value: ${name}" >&2
+              exit 1
+            fi
+          }
+
+          RDS_INFO_JSON="$(aws rds describe-db-instances \
+            --db-instance-identifier "${DB_INSTANCE_IDENTIFIER}" \
+            --query 'DBInstances[0]' \
+            --output json)"
+
+          RDS_ADDRESS="$(echo "${RDS_INFO_JSON}" | jq -r '.Endpoint.Address // empty')"
+          RDS_PORT="$(echo "${RDS_INFO_JSON}" | jq -r '.Endpoint.Port // empty')"
+          RDS_DB_NAME="$(echo "${RDS_INFO_JSON}" | jq -r '.DBName // empty')"
+          RDS_SECRET_ARN="$(echo "${RDS_INFO_JSON}" | jq -r '.MasterUserSecret.SecretArn // empty')"
+          ACCOUNT_ID="$(aws sts get-caller-identity --query Account --output text)"
+
+          require_value "RDS_ADDRESS" "${RDS_ADDRESS}"
+          require_value "RDS_PORT" "${RDS_PORT}"
+          require_value "RDS_DB_NAME" "${RDS_DB_NAME}"
+          require_value "RDS_SECRET_ARN" "${RDS_SECRET_ARN}"
+          require_value "ACCOUNT_ID" "${ACCOUNT_ID}"
+
+          APP_SECRET_ID="${IMAGE_NAME}/${ENVIRONMENT}/app"
+          ECR_REPOSITORY_URL="${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${IMAGE_NAME}"
+          DEPLOY_TAG="${ENVIRONMENT}"
+
           # Keep the host's deploy artifacts in sync with the repo so we don't rely on
-          # instance bootstrap (user_data) having run recently.
-          # Keep chunks comfortably under common SSM per-command limits.
+          # instance bootstrap (user_data) having run recently. Keep chunks comfortably under
+          # common SSM per-command limits.
           B64_CHUNK_WIDTH=900
 
           SSM_COMMANDS=(
             "set -euo pipefail"
             "APP_DIR=${APP_DIR}"
             "mkdir -p \"$APP_DIR\""
-            "test -f \"$APP_DIR/config.env\" || { echo \"Missing config file: $APP_DIR/config.env\" >&2; exit 1; }"
+            "cat > \"$APP_DIR/config.env\" <<'EOF'"
+            "AWS_REGION=${AWS_REGION}"
+            "APP_NAME=${IMAGE_NAME}"
+            "ENVIRONMENT=${ENVIRONMENT}"
+            "APP_DIR=${APP_DIR}"
+            "APP_SECRET_ARN=${APP_SECRET_ID}"
+            "RDS_SECRET_ARN=${RDS_SECRET_ARN}"
+            "RDS_ADDRESS=${RDS_ADDRESS}"
+            "RDS_PORT=${RDS_PORT}"
+            "RDS_DB_NAME=${RDS_DB_NAME}"
+            "ECR_REPOSITORY_URL=${ECR_REPOSITORY_URL}"
+            "DEPLOY_TAG=${DEPLOY_TAG}"
+            "EOF"
+            "chmod 600 \"$APP_DIR/config.env\""
+            "command -v aws >/dev/null 2>&1 || (dnf -y install awscli2 || dnf -y install awscli)"
+            "command -v jq >/dev/null 2>&1 || dnf -y install jq"
+            "command -v docker >/dev/null 2>&1 || dnf -y install docker docker-compose-plugin"
+            "command -v systemctl >/dev/null 2>&1 && systemctl enable --now docker"
           )
 
           SSM_COMMANDS+=("rm -f \"$APP_DIR/docker-compose.yml.b64\"")
