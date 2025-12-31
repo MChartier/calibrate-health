@@ -71,3 +71,22 @@ The frontend is configured as a Progressive Web App (PWA), so it can be installe
 On first run you still need to apply migrations once:
 
 `docker compose exec backend npm run db:migrate`
+
+## Production / staging (single origin)
+
+Production is hosted at `https://calibratehealth.app` and staging is hosted at `https://staging.calibratehealth.app`.
+
+This app is configured for a "single origin" deployment where the frontend and backend share the same host. In that
+setup you do not need CORS, and cookies should remain host-scoped.
+
+Recommended backend env vars:
+
+- `NODE_ENV=production` (or `staging` for staging)
+- `DATABASE_URL=...`
+- `SESSION_SECRET=...` (use a different value for staging vs prod)
+
+Notes:
+
+- Leave `CORS_ORIGINS` unset for single-origin prod/staging deployments.
+- Leave `SESSION_COOKIE_DOMAIN` unset so prod and staging sessions do not collide in the same browser.
+- `SESSION_COOKIE_SECURE` defaults to `true` in production-like envs (production + staging); override only if you are intentionally serving over plain HTTP.
