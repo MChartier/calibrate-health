@@ -1,4 +1,5 @@
 import type { NextFunction, Request, Response } from 'express';
+import { isProductionLikeNodeEnv } from '../config/environment';
 import prisma from '../config/database';
 import { ensureDevTestData } from '../services/devTestData';
 
@@ -9,9 +10,9 @@ const TEST_USER_EMAIL = 'test@calibratehealth.app';
  */
 const shouldAutoLogin = (req: Request): boolean => {
   const enabled = process.env.AUTO_LOGIN_TEST_USER === 'true';
-  const isProduction = process.env.NODE_ENV === 'production';
+  const isProductionLike = isProductionLikeNodeEnv(process.env.NODE_ENV);
   const isLoggingOut = req.path.startsWith('/auth/logout');
-  return enabled && !isProduction && !isLoggingOut && !req.isAuthenticated();
+  return enabled && !isProductionLike && !isLoggingOut && !req.isAuthenticated();
 };
 
 /**

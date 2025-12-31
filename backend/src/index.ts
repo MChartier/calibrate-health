@@ -7,6 +7,7 @@ import session from 'express-session';
 import passport from 'passport';
 import { Strategy as LocalStrategy } from 'passport-local';
 import prisma, { pgPool } from './config/database';
+import { isProductionLikeNodeEnv } from './config/environment';
 import authRoutes from './routes/auth';
 import devRoutes from './routes/dev';
 import devTestRoutes from './routes/devTest';
@@ -70,20 +71,20 @@ const parseSameSite = (value: string | undefined): SameSiteSetting => {
 const bootstrap = async (): Promise<void> => {
   const app = express();
   const PORT = process.env.PORT || 3000;
-  const inProduction = process.env.NODE_ENV === 'production';
+  const isProductionLike = isProductionLikeNodeEnv(process.env.NODE_ENV);
 
   // Reduce fingerprinting surface; this app is API-only in production.
   app.disable('x-powered-by');
 
   const secureCookieEnv = process.env.SESSION_COOKIE_SECURE;
-  const useSecureCookies = secureCookieEnv ? secureCookieEnv === 'true' : inProduction;
+  const useSecureCookies = secureCookieEnv ? secureCookieEnv === 'true' : isProductionLike;
   const sameSite = parseSameSite(process.env.SESSION_COOKIE_SAMESITE);
 
   if (useSecureCookies) {
     app.set('trust proxy', 1);
   }
 
-  const allowedOrigins = parseAllowedOrigins(process.env.CORS_ORIGINS, inProduction)
+  const allowedOrigins = parseAllowedOrigins(process.env.CORS_ORIGINS, isProductionLike)
     .map(normalizeOrigin)
     .filter((origin): origin is string => origin !== null);
   const allowedOriginSet = new Set(allowedOrigins);
@@ -207,7 +208,7 @@ const bootstrap = async (): Promise<void> => {
   apiRouter.use('/user', userRoutes);
 
   // Keep debug/prototype routes (food provider comparisons, etc.) out of production deployments.
-  if (!inProduction) {
+  if (!isProductionLike) {
     apiRouter.use('/dev', devRoutes);
     app.use('/dev/test', devTestRoutes);
   }

@@ -1,4 +1,5 @@
 import express from 'express';
+import { isProductionLikeNodeEnv } from '../config/environment';
 import prisma from '../config/database';
 import { resetDevTestUserToPreOnboardingState } from '../services/devTestData';
 import { serializeUserForClient, USER_CLIENT_SELECT } from '../utils/userSerialization';
@@ -16,7 +17,7 @@ const requireNonProduction = (
   res: express.Response,
   next: express.NextFunction
 ) => {
-  if (process.env.NODE_ENV === 'production') {
+  if (isProductionLikeNodeEnv(process.env.NODE_ENV)) {
     res.status(404).json({ message: 'Not found' });
     return;
   }
@@ -51,4 +52,3 @@ router.post('/reset-test-user-onboarding', async (_req, res) => {
 });
 
 export default router;
-
