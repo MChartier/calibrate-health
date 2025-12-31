@@ -48,6 +48,9 @@ const parseSameSite = (value: string | undefined): SameSiteSetting => {
   return 'lax';
 };
 
+/**
+ * Initialize Express middleware (CORS, sessions, Passport) and start the HTTP server.
+ */
 const bootstrap = async (): Promise<void> => {
   const app = express();
   const PORT = process.env.PORT || 3000;
