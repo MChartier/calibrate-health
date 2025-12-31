@@ -16,10 +16,10 @@ variable "domain_name" {
   default     = "calibratehealth.app"
 }
 
-variable "instance_type" {
-  description = "EC2 instance type for the app host."
-  type        = string
-  default     = "t4g.micro"
+variable "alb_allowed_cidrs" {
+  description = "CIDR blocks allowed to reach the staging ALB (80/443)."
+  type        = list(string)
+  default     = ["0.0.0.0/0"]
 }
 
 variable "db_instance_class" {
@@ -27,4 +27,3 @@ variable "db_instance_class" {
   type        = string
   default     = "db.t4g.micro"
 }
-

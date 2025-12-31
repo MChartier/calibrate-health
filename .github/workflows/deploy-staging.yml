@@ -13,194 +13,30 @@ env:
 
 jobs:
   deploy:
-    name: Deploy Staging via SSM
+    name: Deploy Staging (ECS)
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
       - name: Configure AWS credentials (staging deploy)
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN_DEPLOY_STAGING }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Resolve staging instance ID
-        id: instance
+      - name: Force new deployment (ECS)
         shell: bash
         run: |
           set -euo pipefail
-
-          INSTANCE_ID="$(aws ec2 describe-instances \
-            --filters \
-              "Name=tag:App,Values=${IMAGE_NAME}" \
-              "Name=tag:Environment,Values=staging" \
-              "Name=instance-state-name,Values=running" \
-            --query "Reservations[0].Instances[0].InstanceId" \
-            --output text)"
-
-          if [[ -z "${INSTANCE_ID}" || "${INSTANCE_ID}" == "None" ]]; then
-            echo "Unable to find a running staging instance (tag App=${IMAGE_NAME}, Environment=staging)." >&2
-            exit 1
-          fi
-
-          echo "instance_id=${INSTANCE_ID}" >> "$GITHUB_OUTPUT"
-
-      - name: Run deploy command
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          INSTANCE_ID="${{ steps.instance.outputs.instance_id }}"
-          APP_DIR="/opt/${IMAGE_NAME}"
 
           ENVIRONMENT="staging"
-          DB_INSTANCE_IDENTIFIER="${IMAGE_NAME}-${ENVIRONMENT}-postgres"
+          ECS_CLUSTER="${IMAGE_NAME}-${ENVIRONMENT}-cluster"
+          ECS_SERVICE="${IMAGE_NAME}-${ENVIRONMENT}-service"
 
-          require_value() {
-            # Fail fast (and cheaply) before dispatching an SSM command with missing config.
-            local name="$1"
-            local value="$2"
-            if [[ -z "${value}" || "${value}" == "None" || "${value}" == "null" ]]; then
-              echo "Unable to resolve required value: ${name}" >&2
-              exit 1
-            fi
-          }
+          aws ecs update-service \
+            --cluster "${ECS_CLUSTER}" \
+            --service "${ECS_SERVICE}" \
+            --force-new-deployment \
+            >/dev/null
 
-          RDS_INFO_JSON="$(aws rds describe-db-instances \
-            --db-instance-identifier "${DB_INSTANCE_IDENTIFIER}" \
-            --query 'DBInstances[0]' \
-            --output json)"
-
-          RDS_ADDRESS="$(echo "${RDS_INFO_JSON}" | jq -r '.Endpoint.Address // empty')"
-          RDS_PORT="$(echo "${RDS_INFO_JSON}" | jq -r '.Endpoint.Port // empty')"
-          RDS_DB_NAME="$(echo "${RDS_INFO_JSON}" | jq -r '.DBName // empty')"
-          RDS_SECRET_ARN="$(echo "${RDS_INFO_JSON}" | jq -r '.MasterUserSecret.SecretArn // empty')"
-          ACCOUNT_ID="$(aws sts get-caller-identity --query Account --output text)"
-
-          require_value "RDS_ADDRESS" "${RDS_ADDRESS}"
-          require_value "RDS_PORT" "${RDS_PORT}"
-          require_value "RDS_DB_NAME" "${RDS_DB_NAME}"
-          require_value "RDS_SECRET_ARN" "${RDS_SECRET_ARN}"
-          require_value "ACCOUNT_ID" "${ACCOUNT_ID}"
-
-          APP_SECRET_ID="${IMAGE_NAME}/${ENVIRONMENT}/app"
-          ECR_REPOSITORY_URL="${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${IMAGE_NAME}"
-          DEPLOY_TAG="${ENVIRONMENT}"
-
-          # Keep the host's deploy artifacts in sync with the repo so we don't rely on
-          # instance bootstrap (user_data) having run recently. Keep chunks comfortably under
-          # common SSM per-command limits.
-          B64_CHUNK_WIDTH=900
-
-          SSM_COMMANDS=(
-            "set -euo pipefail"
-            "APP_DIR=${APP_DIR}"
-            "mkdir -p \"$APP_DIR\""
-            "cat > \"$APP_DIR/config.env\" <<'EOF'"
-            "AWS_REGION=${AWS_REGION}"
-            "APP_NAME=${IMAGE_NAME}"
-            "ENVIRONMENT=${ENVIRONMENT}"
-            "APP_DIR=${APP_DIR}"
-            "APP_SECRET_ARN=${APP_SECRET_ID}"
-            "RDS_SECRET_ARN=${RDS_SECRET_ARN}"
-            "RDS_ADDRESS=${RDS_ADDRESS}"
-            "RDS_PORT=${RDS_PORT}"
-            "RDS_DB_NAME=${RDS_DB_NAME}"
-            "ECR_REPOSITORY_URL=${ECR_REPOSITORY_URL}"
-            "DEPLOY_TAG=${DEPLOY_TAG}"
-            "EOF"
-            "chmod 600 \"$APP_DIR/config.env\""
-            "command -v aws >/dev/null 2>&1 || (dnf -y install awscli2 || dnf -y install awscli)"
-            "command -v jq >/dev/null 2>&1 || dnf -y install jq"
-            "command -v docker >/dev/null 2>&1 || dnf -y install docker"
-            "command -v systemctl >/dev/null 2>&1 && systemctl enable --now docker"
-            "if ! docker compose version >/dev/null 2>&1; then dnf -y install docker-compose-plugin || true; fi"
-            "if ! docker compose version >/dev/null 2>&1 && ! command -v docker-compose >/dev/null 2>&1; then dnf -y install docker-compose; fi"
-            "if ! docker compose version >/dev/null 2>&1 && ! command -v docker-compose >/dev/null 2>&1; then echo 'Missing Docker Compose (docker compose or docker-compose)' >&2; exit 1; fi"
-          )
-
-          SSM_COMMANDS+=("rm -f \"$APP_DIR/docker-compose.yml.b64\"")
-          while IFS= read -r chunk || [[ -n "${chunk}" ]]; do
-            SSM_COMMANDS+=("printf '%s\\n' '${chunk}' >> \"$APP_DIR/docker-compose.yml.b64\"")
-          done < <(base64 -w0 deploy/docker-compose.yml | fold -w "${B64_CHUNK_WIDTH}")
-          SSM_COMMANDS+=("base64 -d \"$APP_DIR/docker-compose.yml.b64\" > \"$APP_DIR/docker-compose.yml\"")
-          SSM_COMMANDS+=("rm -f \"$APP_DIR/docker-compose.yml.b64\"")
-
-          SSM_COMMANDS+=("rm -f \"$APP_DIR/Caddyfile.b64\"")
-          while IFS= read -r chunk || [[ -n "${chunk}" ]]; do
-            SSM_COMMANDS+=("printf '%s\\n' '${chunk}' >> \"$APP_DIR/Caddyfile.b64\"")
-          done < <(base64 -w0 deploy/Caddyfile.staging | fold -w "${B64_CHUNK_WIDTH}")
-          SSM_COMMANDS+=("base64 -d \"$APP_DIR/Caddyfile.b64\" > \"$APP_DIR/Caddyfile\"")
-          SSM_COMMANDS+=("rm -f \"$APP_DIR/Caddyfile.b64\"")
-
-          SSM_COMMANDS+=("rm -f \"$APP_DIR/deploy.sh.b64\"")
-          while IFS= read -r chunk || [[ -n "${chunk}" ]]; do
-            SSM_COMMANDS+=("printf '%s\\n' '${chunk}' >> \"$APP_DIR/deploy.sh.b64\"")
-          done < <(base64 -w0 infra/scripts/deploy.sh | fold -w "${B64_CHUNK_WIDTH}")
-          SSM_COMMANDS+=("base64 -d \"$APP_DIR/deploy.sh.b64\" > \"$APP_DIR/deploy.sh\"")
-          SSM_COMMANDS+=("rm -f \"$APP_DIR/deploy.sh.b64\"")
-
-          SSM_COMMANDS+=("chmod +x \"$APP_DIR/deploy.sh\"")
-          SSM_COMMANDS+=("\"$APP_DIR/deploy.sh\"")
-
-          SSM_COMMANDS_JSON="$(printf '%s\n' "${SSM_COMMANDS[@]}" | jq -R . | jq -s .)"
-
-          SEND_COMMAND_PAYLOAD="$(jq -nc \
-            --arg instance_id "${INSTANCE_ID}" \
-            --arg comment "Deploy staging (workflow_dispatch)" \
-            --argjson commands "${SSM_COMMANDS_JSON}" \
-            '{
-              InstanceIds: [$instance_id],
-              DocumentName: "AWS-RunShellScript",
-              Comment: $comment,
-              Parameters: { commands: $commands }
-            }')"
-
-          COMMAND_ID="$(aws ssm send-command \
-            --cli-input-json "${SEND_COMMAND_PAYLOAD}" \
-            --query "Command.CommandId" \
-            --output text)"
-
-          echo "SSM deploy command id: ${COMMAND_ID} (instance: ${INSTANCE_ID})"
-
-          # The waiter exits non-zero on Failed/TimedOut/Cancelled, which prevents us from
-          # fetching stdout/stderr. Always fetch the invocation output and fail explicitly.
-          aws ssm wait command-executed --command-id "${COMMAND_ID}" --instance-id "${INSTANCE_ID}" || true
-
-          STATUS="$(aws ssm get-command-invocation \
-            --command-id "${COMMAND_ID}" \
-            --instance-id "${INSTANCE_ID}" \
-            --query 'Status' \
-            --output text)"
-
-          RESPONSE_CODE="$(aws ssm get-command-invocation \
-            --command-id "${COMMAND_ID}" \
-            --instance-id "${INSTANCE_ID}" \
-            --query 'ResponseCode' \
-            --output text)"
-
-          echo "SSM status: ${STATUS} (response_code: ${RESPONSE_CODE})"
-
-          echo "::group::SSM stdout"
-          aws ssm get-command-invocation \
-            --command-id "${COMMAND_ID}" \
-            --instance-id "${INSTANCE_ID}" \
-            --query 'StandardOutputContent' \
-            --output text
-          echo "::endgroup::"
-
-          echo "::group::SSM stderr"
-          aws ssm get-command-invocation \
-            --command-id "${COMMAND_ID}" \
-            --instance-id "${INSTANCE_ID}" \
-            --query 'StandardErrorContent' \
-            --output text
-          echo "::endgroup::"
-
-          if [[ "${STATUS}" != "Success" ]]; then
-            echo "SSM deploy failed with status: ${STATUS}" >&2
-            exit 1
-          fi
+          aws ecs wait services-stable --cluster "${ECS_CLUSTER}" --services "${ECS_SERVICE}"

@@ -38,10 +38,13 @@ COPY --from=build /app/backend/node_modules /app/backend/node_modules
 COPY --from=build /app/backend/dist /app/backend/dist
 COPY --from=build /app/backend/prisma /app/backend/prisma
 COPY --from=build /app/backend/prisma.config.ts /app/backend/prisma.config.ts
+COPY --from=build /app/backend/scripts /app/backend/scripts
 
 COPY --from=build /app/frontend/dist /app/frontend/dist
 
 WORKDIR /app/backend
 EXPOSE 3000
 
-CMD ["npm", "run", "start"]
+RUN chmod +x /app/backend/scripts/start-prod.sh
+
+CMD ["npm", "run", "start:prod"]

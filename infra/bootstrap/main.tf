@@ -226,53 +226,11 @@ resource "aws_iam_role" "github_deploy_prod" {
 
 data "aws_iam_policy_document" "github_deploy_staging_policy" {
   statement {
-    effect    = "Allow"
-    actions   = ["ec2:DescribeInstances"]
-    resources = ["*"]
-  }
-
-  statement {
-    effect    = "Allow"
-    actions   = ["rds:DescribeDBInstances"]
-    resources = ["*"]
-  }
-
-  statement {
-    effect  = "Allow"
-    actions = ["ssm:SendCommand"]
-    resources = [
-      "arn:aws:ssm:${var.aws_region}::document/AWS-RunShellScript",
-      "arn:aws:ssm:${var.aws_region}:${data.aws_caller_identity.current.account_id}:document/AWS-RunShellScript"
-    ]
-  }
-
-  statement {
-    effect  = "Allow"
-    actions = ["ssm:SendCommand"]
-    resources = [
-      "arn:aws:ec2:${var.aws_region}:${data.aws_caller_identity.current.account_id}:instance/*"
-    ]
-
-    # Restrict commands to tagged app hosts.
-    condition {
-      test     = "StringEquals"
-      variable = "aws:ResourceTag/App"
-      values   = ["calibratehealth"]
-    }
-
-    condition {
-      test     = "StringEquals"
-      variable = "aws:ResourceTag/Environment"
-      values   = ["staging"]
-    }
-  }
-
-  statement {
     effect = "Allow"
     actions = [
-      "ssm:GetCommandInvocation",
-      "ssm:ListCommandInvocations",
-      "ssm:ListCommands"
+      "ecs:DescribeClusters",
+      "ecs:DescribeServices",
+      "ecs:UpdateService"
     ]
     resources = ["*"]
   }
@@ -286,52 +244,11 @@ resource "aws_iam_role_policy" "github_deploy_staging" {
 
 data "aws_iam_policy_document" "github_deploy_prod_policy" {
   statement {
-    effect    = "Allow"
-    actions   = ["ec2:DescribeInstances"]
-    resources = ["*"]
-  }
-
-  statement {
-    effect    = "Allow"
-    actions   = ["rds:DescribeDBInstances"]
-    resources = ["*"]
-  }
-
-  statement {
-    effect  = "Allow"
-    actions = ["ssm:SendCommand"]
-    resources = [
-      "arn:aws:ssm:${var.aws_region}::document/AWS-RunShellScript",
-      "arn:aws:ssm:${var.aws_region}:${data.aws_caller_identity.current.account_id}:document/AWS-RunShellScript"
-    ]
-  }
-
-  statement {
-    effect  = "Allow"
-    actions = ["ssm:SendCommand"]
-    resources = [
-      "arn:aws:ec2:${var.aws_region}:${data.aws_caller_identity.current.account_id}:instance/*"
-    ]
-
-    condition {
-      test     = "StringEquals"
-      variable = "aws:ResourceTag/App"
-      values   = ["calibratehealth"]
-    }
-
-    condition {
-      test     = "StringEquals"
-      variable = "aws:ResourceTag/Environment"
-      values   = ["prod"]
-    }
-  }
-
-  statement {
     effect = "Allow"
     actions = [
-      "ssm:GetCommandInvocation",
-      "ssm:ListCommandInvocations",
-      "ssm:ListCommands"
+      "ecs:DescribeClusters",
+      "ecs:DescribeServices",
+      "ecs:UpdateService"
     ]
     resources = ["*"]
   }
