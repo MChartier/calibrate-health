@@ -325,6 +325,10 @@ const Profile: React.FC = () => {
                             <Select
                                 value={activityValue}
                                 label="Activity Level"
+                                renderValue={(selected) => {
+                                    const value = typeof selected === 'string' ? selected : '';
+                                    return activityLevelOptions.find((option) => option.value === value)?.title ?? '';
+                                }}
                                 onChange={(e) => {
                                     const next = String(e.target.value);
                                     setActivityLevel(next);
@@ -332,8 +336,23 @@ const Profile: React.FC = () => {
                                 }}
                             >
                                 {activityLevelOptions.map((option) => (
-                                    <MenuItem key={option.value} value={option.value}>
-                                        {option.label}
+                                    <MenuItem
+                                        key={option.value}
+                                        value={option.value}
+                                        sx={{
+                                            alignItems: 'flex-start',
+                                            whiteSpace: 'normal',
+                                            py: 1
+                                        }}
+                                    >
+                                        <Box>
+                                            <Typography variant="body2" fontWeight={800}>
+                                                {option.title}
+                                            </Typography>
+                                            <Typography variant="caption" color="text.secondary">
+                                                {option.description}
+                                            </Typography>
+                                        </Box>
                                     </MenuItem>
                                 ))}
                             </Select>

@@ -14,11 +14,22 @@ function getRegionFromLocale(locale: string | null | undefined): string | null {
 
     // Prefer the standards-based parser when the runtime supports it.
     try {
-        const maybeLocaleCtor = (Intl as unknown as { Locale?: new (tag: string) => { region?: string } }).Locale;
+        const maybeLocaleCtor = (Intl as unknown as { Locale?: new (tag: string) => unknown }).Locale;
         if (maybeLocaleCtor) {
-            const region = new maybeLocaleCtor(trimmed).region;
+            const localeObj = new maybeLocaleCtor(trimmed) as { region?: unknown; maximize?: () => unknown };
+            const region = localeObj.region;
             if (typeof region === 'string' && region.trim().length > 0) {
                 return region.toUpperCase();
+            }
+
+            // Some environments provide language-only locales (e.g. "en"). Maximize it (when supported)
+            // to infer a likely region ("en" -> "en-Latn-US") and improve unit defaults.
+            if (typeof localeObj.maximize === 'function') {
+                const maximized = localeObj.maximize() as { region?: unknown } | null | undefined;
+                const maximizedRegion = maximized?.region;
+                if (typeof maximizedRegion === 'string' && maximizedRegion.trim().length > 0) {
+                    return maximizedRegion.toUpperCase();
+                }
             }
         }
     } catch {
