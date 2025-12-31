@@ -13,6 +13,7 @@ coverage
 .terraform/
 *.tfstate
 *.tfstate.*
+infra/**/backend.hcl
 crash.log
 crash.*.log
 override.tf

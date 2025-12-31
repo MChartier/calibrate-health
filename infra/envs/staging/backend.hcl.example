@@ -1,0 +1,10 @@
+# Copy to `backend.hcl` (gitignored) and adjust values.
+#
+# Bucket/table should match the `infra/bootstrap` outputs:
+# - terraform_state_bucket_name
+# - terraform_lock_table_name
+bucket         = "calibratehealth-tfstate-CHANGEME"
+key            = "envs/staging/terraform.tfstate"
+region         = "us-west-2"
+dynamodb_table = "calibratehealth-terraform-locks"
+encrypt        = true
