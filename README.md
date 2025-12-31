@@ -6,11 +6,26 @@ Official domain: calibratehealth.app
 
 ## Quickstart (devcontainer)
 
-The devcontainer runs `npm run setup:devcontainer` automatically (installs deps, generates Prisma client, applies migrations).
+The devcontainer runs `npm run setup` automatically (installs deps + generates the Prisma client). On start it also runs `npm run db:migrate` and `npm run db:seed`.
 
 1. Start the app: `npm run dev`
 2. Frontend: `http://localhost:5173` (proxies `/auth` and `/api` to the backend)
 3. Backend/API: `http://localhost:3000`
+4. Dev dashboard (dev-only): `http://localhost:5173/dev` (compare providers + test barcode scanning)
+
+### USDA FoodData Central provider (devcontainer)
+
+The backend supports multiple food search providers. The devcontainer is configured to use the USDA FoodData Central provider (`FOOD_DATA_PROVIDER=usda`).
+
+To make this work, you must have `USDA_API_KEY` set in your *host* environment before the devcontainer is created/rebuilt. During devcontainer initialization we copy `USDA_API_KEY` into `.devcontainer/.env` (gitignored), and `docker compose` uses it to pass the key into the container.
+
+Example (host machine):
+
+```sh
+export USDA_API_KEY="your-usda-key"
+```
+
+If you add/change the key, rebuild the devcontainer so the generated `.devcontainer/.env` is refreshed.
 
 ## Quickstart (local)
 
@@ -20,6 +35,8 @@ Prereqs: Node.js + npm, and a Postgres database.
    - `DATABASE_URL=postgresql://user:password@localhost:5432/fitness_app?schema=public`
    - `SESSION_SECRET=some-secret`
    - `PORT=3000` (optional)
+   - `FOOD_DATA_PROVIDER=usda` (optional; defaults to Open Food Facts)
+   - `USDA_API_KEY=your-usda-key` (required when `FOOD_DATA_PROVIDER=usda`)
 2. Install deps + generate Prisma client: `npm run setup`
 3. Create tables (apply migrations): `npm run db:migrate`
 4. Start the app: `npm run dev`
@@ -37,7 +54,7 @@ If you see Prisma errors like “The table `public.User` does not exist”, you 
 ### Setup
 
 - `npm run setup`: installs deps in `backend/` and `frontend/` and runs `prisma generate` (does not modify the database).
-- `npm run setup:devcontainer`: `setup` + `db:migrate` (used by the devcontainer).
+- Devcontainer note: the devcontainer runs `npm run setup` on create, and `npm run db:migrate && npm run db:seed` on start.
 
 ### Database / Prisma
 
@@ -71,3 +88,7 @@ The frontend is configured as a Progressive Web App (PWA), so it can be installe
 On first run you still need to apply migrations once:
 
 `docker compose exec backend npm run db:migrate`
+
+## AWS deployment (staging + prod)
+
+See `infra/README.md` for the Terraform + GitHub Actions deployment flow used for `calibratehealth.app`.

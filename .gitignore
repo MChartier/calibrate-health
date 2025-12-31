@@ -8,3 +8,6 @@ coverage
 .c8_output
 .devcontainer/.env
 .vscode/settings.json
+.terraform
+*.tfstate
+*.tfstate.*

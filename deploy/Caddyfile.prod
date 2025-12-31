@@ -1,0 +1,13 @@
+{
+  email {$CADDY_EMAIL}
+}
+
+www.calibratehealth.app {
+  redir https://calibratehealth.app{uri} permanent
+}
+
+calibratehealth.app {
+  encode gzip zstd
+  reverse_proxy app:3000
+}
+
