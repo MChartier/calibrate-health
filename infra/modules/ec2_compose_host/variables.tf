@@ -41,9 +41,9 @@ variable "instance_type" {
 }
 
 variable "root_volume_size_gb" {
-  description = "Root EBS volume size in GB."
+  description = "Optional root EBS volume size in GB; when null, use the AMI snapshot default."
   type        = number
-  default     = 20
+  default     = null
 }
 
 variable "app_secret_arn" {
@@ -95,4 +95,3 @@ variable "deploy_script" {
   description = "Deploy script content written to the instance and executed via SSM."
   type        = string
 }
-

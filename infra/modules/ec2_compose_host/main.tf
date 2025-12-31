@@ -91,9 +91,21 @@ resource "aws_instance" "this" {
   iam_instance_profile        = aws_iam_instance_profile.this.name
   associate_public_ip_address = true
 
-  root_block_device {
-    volume_type = "gp3"
-    volume_size = var.root_volume_size_gb
+  # When the root volume size isn't specified, let the AMI snapshot decide the minimum size.
+  # (Some AL2023 AMIs require >=30GB; hard-coding a smaller size causes a RunInstances error.)
+  dynamic "root_block_device" {
+    for_each = var.root_volume_size_gb == null ? [1] : []
+    content {
+      volume_type = "gp3"
+    }
+  }
+
+  dynamic "root_block_device" {
+    for_each = var.root_volume_size_gb == null ? [] : [1]
+    content {
+      volume_type = "gp3"
+      volume_size = var.root_volume_size_gb
+    }
   }
 
   user_data = templatefile("${path.module}/user_data.sh.tftpl", {
@@ -124,4 +136,3 @@ resource "aws_eip_association" "this" {
   instance_id   = aws_instance.this.id
   allocation_id = aws_eip.this.id
 }
-
