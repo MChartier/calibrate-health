@@ -7,7 +7,10 @@ set -euo pipefail
 # latest image tag (staging/prod), runs Prisma migrations against RDS, and
 # restarts the app with a freshly-rendered `.env` file sourced from Secrets Manager.
 
-CONFIG_PATH="/opt/calibratehealth/config.env"
+# Resolve config relative to the deploy script so the host bootstrap only needs
+# to keep deploy.sh + config.env together.
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+CONFIG_PATH="${CONFIG_PATH:-${SCRIPT_DIR}/config.env}"
 
 require_cmd() {
   # Print a clear error if a required binary is missing (SSM output is the main debugging surface).
