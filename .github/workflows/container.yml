@@ -151,21 +151,21 @@ jobs:
           )
 
           SSM_COMMANDS+=("rm -f \"$APP_DIR/docker-compose.yml.b64\"")
-          while IFS= read -r chunk; do
+          while IFS= read -r chunk || [[ -n "${chunk}" ]]; do
             SSM_COMMANDS+=("printf '%s\\n' '${chunk}' >> \"$APP_DIR/docker-compose.yml.b64\"")
           done < <(base64 -w0 deploy/docker-compose.yml | fold -w "${B64_CHUNK_WIDTH}")
           SSM_COMMANDS+=("base64 -d \"$APP_DIR/docker-compose.yml.b64\" > \"$APP_DIR/docker-compose.yml\"")
           SSM_COMMANDS+=("rm -f \"$APP_DIR/docker-compose.yml.b64\"")
 
           SSM_COMMANDS+=("rm -f \"$APP_DIR/Caddyfile.b64\"")
-          while IFS= read -r chunk; do
+          while IFS= read -r chunk || [[ -n "${chunk}" ]]; do
             SSM_COMMANDS+=("printf '%s\\n' '${chunk}' >> \"$APP_DIR/Caddyfile.b64\"")
           done < <(base64 -w0 deploy/Caddyfile.staging | fold -w "${B64_CHUNK_WIDTH}")
           SSM_COMMANDS+=("base64 -d \"$APP_DIR/Caddyfile.b64\" > \"$APP_DIR/Caddyfile\"")
           SSM_COMMANDS+=("rm -f \"$APP_DIR/Caddyfile.b64\"")
 
           SSM_COMMANDS+=("rm -f \"$APP_DIR/deploy.sh.b64\"")
-          while IFS= read -r chunk; do
+          while IFS= read -r chunk || [[ -n "${chunk}" ]]; do
             SSM_COMMANDS+=("printf '%s\\n' '${chunk}' >> \"$APP_DIR/deploy.sh.b64\"")
           done < <(base64 -w0 infra/scripts/deploy.sh | fold -w "${B64_CHUNK_WIDTH}")
           SSM_COMMANDS+=("base64 -d \"$APP_DIR/deploy.sh.b64\" > \"$APP_DIR/deploy.sh\"")
