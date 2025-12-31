@@ -1,5 +1,7 @@
 import 'dotenv/config';
 
+import fs from 'node:fs';
+import path from 'node:path';
 import express from 'express';
 import session from 'express-session';
 import passport from 'passport';
@@ -12,15 +14,60 @@ import devTestRoutes from './routes/devTest';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const isProduction = process.env.NODE_ENV === 'production';
+
+/**
+ * Serve the built frontend SPA from disk in production deployments.
+ *
+ * We only fall back to `index.html` for non-API routes so deep links work without
+ * intercepting JSON endpoints like `/api/*` and `/auth/*`.
+ */
+function configureSpaStaticAssets(app: express.Express): void {
+    if (!isProduction) return;
+
+    const distDir = process.env.FRONTEND_DIST_DIR;
+    if (!distDir) {
+        console.warn('FRONTEND_DIST_DIR is not set; skipping SPA static serving.');
+        return;
+    }
+
+    const indexHtmlPath = path.join(distDir, 'index.html');
+    if (!fs.existsSync(indexHtmlPath)) {
+        console.warn(`FRONTEND_DIST_DIR does not contain index.html (${indexHtmlPath}); skipping SPA static serving.`);
+        return;
+    }
+
+    app.use(express.static(distDir));
+
+    // SPA fallback should not hijack backend endpoints.
+    const spaFallbackRoute = /^\/(?!api(?:\/|$)|auth(?:\/|$)|dev(?:\/|$)).*/;
+    app.get(spaFallbackRoute, (_req, res) => {
+        res.sendFile(indexHtmlPath);
+    });
+}
 
 // Middleware
-app.use(cors());
+if (isProduction) {
+    // Ensure secure cookies work behind a TLS-terminating reverse proxy (Caddy/ALB/etc).
+    app.set('trust proxy', 1);
+} else {
+    // Local dev can use a Vite proxy, but enabling CORS keeps ad-hoc tooling convenient.
+    app.use(cors());
+}
+
 app.use(express.json({ limit: '2mb' }));
 app.use(express.urlencoded({ extended: true, limit: '2mb' }));
 app.use(session({
     secret: process.env.SESSION_SECRET || 'secret',
     resave: false,
-    saveUninitialized: false
+    saveUninitialized: false,
+    proxy: isProduction,
+    name: 'calibratehealth.sid',
+    cookie: {
+        httpOnly: true,
+        sameSite: 'lax',
+        secure: isProduction
+    }
 }));
 app.use(passport.initialize());
 app.use(passport.session());
@@ -83,6 +130,10 @@ app.use('/auth', authRoutes);
 const apiRouter = express.Router();
 app.use('/api', apiRouter);
 
+apiRouter.get('/healthz', (_req, res) => {
+    res.json({ ok: true });
+});
+
 apiRouter.use('/goals', goalRoutes);
 apiRouter.use('/metrics', metricRoutes);
 apiRouter.use('/food', foodRoutes);
@@ -95,9 +146,7 @@ if (process.env.NODE_ENV !== 'production') {
     app.use('/dev/test', devTestRoutes);
 }
 
-app.get('/', (req, res) => {
-    res.send('Fitness App API');
-});
+configureSpaStaticAssets(app);
 
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);

@@ -1,0 +1,116 @@
+name: Deploy Prod
+
+on:
+  workflow_dispatch:
+    inputs:
+      git_sha:
+        description: "Commit SHA to deploy (defaults to the workflow ref SHA)"
+        required: false
+        type: string
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  AWS_REGION: us-west-2
+  IMAGE_NAME: calibratehealth
+
+jobs:
+  deploy:
+    name: Deploy Prod via SSM
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: production
+
+    steps:
+      - name: Configure AWS credentials (prod deploy)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN_DEPLOY_PROD }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Resolve deploy SHA
+        id: sha
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          DEPLOY_SHA="${{ inputs.git_sha }}"
+          if [[ -z "${DEPLOY_SHA}" ]]; then
+            DEPLOY_SHA="${GITHUB_SHA}"
+          fi
+
+          echo "deploy_sha=${DEPLOY_SHA}" >> "$GITHUB_OUTPUT"
+
+      - name: Retag ECR image (sha-* -> prod)
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          DEPLOY_SHA="${{ steps.sha.outputs.deploy_sha }}"
+          SOURCE_TAG="sha-${DEPLOY_SHA}"
+
+          MANIFEST="$(aws ecr batch-get-image \
+            --repository-name "${IMAGE_NAME}" \
+            --image-ids imageTag="${SOURCE_TAG}" \
+            --query 'images[0].imageManifest' \
+            --output text)"
+
+          if [[ -z "${MANIFEST}" || "${MANIFEST}" == "None" ]]; then
+            echo "Image tag ${SOURCE_TAG} not found in ECR repo ${IMAGE_NAME}." >&2
+            echo "Ensure the image has been built/pushed (push to main runs the build pipeline)." >&2
+            exit 1
+          fi
+
+          aws ecr put-image \
+            --repository-name "${IMAGE_NAME}" \
+            --image-tag "prod" \
+            --image-manifest "${MANIFEST}" \
+            >/dev/null
+
+      - name: Resolve prod instance ID
+        id: instance
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          INSTANCE_ID="$(aws ec2 describe-instances \
+            --filters \
+              "Name=tag:App,Values=${IMAGE_NAME}" \
+              "Name=tag:Environment,Values=prod" \
+              "Name=instance-state-name,Values=running" \
+            --query "Reservations[0].Instances[0].InstanceId" \
+            --output text)"
+
+          if [[ -z "${INSTANCE_ID}" || "${INSTANCE_ID}" == "None" ]]; then
+            echo "Unable to find a running prod instance (tag App=${IMAGE_NAME}, Environment=prod)." >&2
+            exit 1
+          fi
+
+          echo "instance_id=${INSTANCE_ID}" >> "$GITHUB_OUTPUT"
+
+      - name: Run deploy command
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          DEPLOY_SHA="${{ steps.sha.outputs.deploy_sha }}"
+          INSTANCE_ID="${{ steps.instance.outputs.instance_id }}"
+
+          COMMAND_ID="$(aws ssm send-command \
+            --instance-ids "${INSTANCE_ID}" \
+            --document-name "AWS-RunShellScript" \
+            --comment "Deploy prod (${DEPLOY_SHA})" \
+            --parameters commands=["/opt/calibratehealth/deploy.sh"] \
+            --query "Command.CommandId" \
+            --output text)"
+
+          aws ssm wait command-executed --command-id "${COMMAND_ID}" --instance-id "${INSTANCE_ID}"
+
+          aws ssm get-command-invocation \
+            --command-id "${COMMAND_ID}" \
+            --instance-id "${INSTANCE_ID}" \
+            --query '{Status:Status,Stdout:StandardOutputContent,Stderr:StandardErrorContent}' \
+            --output json
+

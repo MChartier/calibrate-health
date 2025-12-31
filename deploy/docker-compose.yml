@@ -1,0 +1,41 @@
+version: "3.8"
+
+services:
+  caddy:
+    image: caddy:2.8-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      CADDY_EMAIL: ${CADDY_EMAIL:-}
+      BASIC_AUTH_USER: ${BASIC_AUTH_USER:-}
+      BASIC_AUTH_HASH: ${BASIC_AUTH_HASH:-}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - app
+
+  app:
+    # Full image reference, e.g.:
+    # - ECR: 123456789012.dkr.ecr.us-west-2.amazonaws.com/calibratehealth:staging
+    # - GHCR: ghcr.io/mchartier/calibratehealth:main
+    image: ${APP_IMAGE}
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      FRONTEND_DIST_DIR: /app/frontend/dist
+
+      DATABASE_URL: ${DATABASE_URL}
+      SESSION_SECRET: ${SESSION_SECRET}
+      AUTO_LOGIN_TEST_USER: "false"
+    expose:
+      - "3000"
+
+volumes:
+  caddy_data:
+  caddy_config:
+
