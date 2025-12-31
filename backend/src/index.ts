@@ -102,6 +102,13 @@ const bootstrap = async (): Promise<void> => {
       return;
     }
 
+    // For single-origin deployments (typical prod/staging), we don't need CORS at all. If no allowlist is
+    // configured, disable CORS headers and let the browser enforce same-origin policy.
+    if (allowedOriginSet.size === 0 && isProductionLike) {
+      callback(null, { origin: false });
+      return;
+    }
+
     const normalizedOrigin = normalizeOrigin(requestOrigin);
     if (!normalizedOrigin) {
       callback(new Error('Not allowed by CORS'));
