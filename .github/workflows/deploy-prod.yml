@@ -59,7 +59,7 @@ jobs:
 
           if [[ -z "${MANIFEST}" || "${MANIFEST}" == "None" ]]; then
             echo "Image tag ${SOURCE_TAG} not found in ECR repo ${IMAGE_NAME}." >&2
-            echo "Ensure the image has been built/pushed (push to main runs the build pipeline)." >&2
+            echo "Ensure the image has been built/pushed (push to main/master runs the build pipeline, or push a v* tag)." >&2
             exit 1
           fi
 
@@ -113,4 +113,3 @@ jobs:
             --instance-id "${INSTANCE_ID}" \
             --query '{Status:Status,Stdout:StandardOutputContent,Stderr:StandardErrorContent}' \
             --output json
-

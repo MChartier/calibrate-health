@@ -114,6 +114,5 @@ Also create a GitHub Environment named `production` and require reviewers.
 
 ## Deploying
 
-- Staging: push to `main` (builds multi-arch image, pushes to GHCR+ECR, deploys to staging via SSM).
+- Staging: push to `main` or `master` (builds multi-arch image, pushes to GHCR+ECR, deploys to staging via SSM).
 - Prod: run the "Deploy Prod" workflow (retags the chosen `sha-*` image to `prod` in ECR, then deploys via SSM).
-

@@ -126,6 +126,7 @@ data "aws_iam_policy_document" "github_build_assume_role" {
       variable = "token.actions.githubusercontent.com:sub"
       values = [
         "repo:${var.github_repo}:ref:refs/heads/main",
+        "repo:${var.github_repo}:ref:refs/heads/master",
         "repo:${var.github_repo}:ref:refs/tags/v*"
       ]
     }
@@ -184,7 +185,10 @@ data "aws_iam_policy_document" "github_deploy_staging_assume_role" {
     condition {
       test     = "StringEquals"
       variable = "token.actions.githubusercontent.com:sub"
-      values   = ["repo:${var.github_repo}:ref:refs/heads/main"]
+      values = [
+        "repo:${var.github_repo}:ref:refs/heads/main",
+        "repo:${var.github_repo}:ref:refs/heads/master"
+      ]
     }
   }
 }
