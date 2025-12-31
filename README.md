@@ -88,3 +88,7 @@ The frontend is configured as a Progressive Web App (PWA), so it can be installe
 On first run you still need to apply migrations once:
 
 `docker compose exec backend npm run db:migrate`
+
+## AWS deployment (staging + prod)
+
+See `infra/README.md` for the Terraform + GitHub Actions deployment flow used for `calibratehealth.app`.

@@ -1,0 +1,11 @@
+# Keep Docker build contexts small and deterministic.
+**/node_modules
+**/dist
+.git
+.github
+.vscode
+.devcontainer
+infra
+coverage
+**/*.log
+

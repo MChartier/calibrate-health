@@ -1,0 +1,52 @@
+#!/bin/bash
+set -euo pipefail
+
+APP_DIR="/opt/${app_name}"
+
+# Base packages. Keep this minimal; the instance mostly just runs Docker containers.
+dnf -y update
+dnf -y install docker docker-compose-plugin jq
+dnf -y install awscli2 || dnf -y install awscli
+
+systemctl enable --now docker
+systemctl enable --now amazon-ssm-agent || true
+
+# Convenience for interactive debugging (SSM Session Manager).
+usermod -aG docker ec2-user || true
+
+mkdir -p "$APP_DIR"
+chmod 755 "$APP_DIR"
+
+cat > "$APP_DIR/docker-compose.yml" <<'COMPOSE'
+${compose_yaml}
+COMPOSE
+
+cat > "$APP_DIR/Caddyfile" <<'CADDY'
+${caddyfile}
+CADDY
+
+cat > "$APP_DIR/deploy.sh" <<'DEPLOY'
+${deploy_script}
+DEPLOY
+chmod +x "$APP_DIR/deploy.sh"
+
+cat > "$APP_DIR/config.env" <<EOF
+AWS_REGION=${aws_region}
+APP_NAME=${app_name}
+ENVIRONMENT=${environment}
+APP_DIR=$APP_DIR
+APP_SECRET_ARN=${app_secret_arn}
+RDS_SECRET_ARN=${rds_secret_arn}
+RDS_ADDRESS=${rds_address}
+RDS_PORT=${rds_port}
+RDS_DB_NAME=${rds_db_name}
+ECR_REPOSITORY_URL=${ecr_repository_url}
+DEPLOY_TAG=${deploy_tag}
+EOF
+chmod 600 "$APP_DIR/config.env"
+
+# This is re-rendered by deploy.sh each deploy, but creating it keeps `docker compose`
+# happy if a human runs it before the first deploy.
+touch "$APP_DIR/.env"
+chmod 600 "$APP_DIR/.env"
+
