@@ -180,7 +180,7 @@ const Landing: React.FC = () => {
                                     </Typography>
 
                                     <Typography variant="h6" color="text.secondary" sx={{ maxWidth: '56ch' }}>
-                                        cal.io is the free, self-hostable health and fitness tracker. No subscription, no ads, no nonsense.
+                                        calibrate is the free, self-hostable health and fitness tracker. No subscription, no ads, no nonsense.
                                     </Typography>
                                 </Stack>
 
@@ -252,7 +252,7 @@ const Landing: React.FC = () => {
                             Losing weight shouldn&apos;t cost an arm and a leg
                         </Typography>
                         <Typography variant="body1" color="text.secondary" sx={{ maxWidth: '80ch' }}>
-                            cal.io is built to be available to everybody - free to use, clean and ad-free, and self-hostable so
+                            calibrate is built to be available to everybody - free to use, clean and ad-free, and self-hostable so
                             you can run it on your own terms. No catch.
                         </Typography>
                     </Stack>

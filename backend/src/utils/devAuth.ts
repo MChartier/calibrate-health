@@ -2,7 +2,7 @@ import type { NextFunction, Request, Response } from 'express';
 import prisma from '../config/database';
 import { ensureDevTestData } from '../services/devTestData';
 
-const TEST_USER_EMAIL = 'test@cal.io';
+const TEST_USER_EMAIL = 'test@calibratehealth.app';
 
 /**
  * Decide whether the current request should auto-login the local test user.

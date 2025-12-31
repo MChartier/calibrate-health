@@ -1,7 +1,7 @@
-# cal-io — Intent, Goals, and Design Requirements
+# calibrate — Intent, Goals, and Design Requirements
 
 ## Product Intent
-cal-io is a responsive calorie tracker (desktop + mobile web) for users who want to lose (or manage) weight by monitoring calorie intake vs. expected calorie expenditure.
+calibrate is a responsive calorie tracker (desktop + mobile web) for users who want to lose (or manage) weight by monitoring calorie intake vs. expected calorie expenditure.
 
 ## Target Stack
 - Frontend: React + TypeScript + Vite (UI via MUI)

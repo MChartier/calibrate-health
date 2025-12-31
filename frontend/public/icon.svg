@@ -4,7 +4,7 @@
   height="512"
   viewBox="0 0 512 512"
   role="img"
-  aria-label="cal.io"
+  aria-label="calibrate"
 >
   <defs>
     <linearGradient id="ring" x1="96" y1="416" x2="416" y2="96" gradientUnits="userSpaceOnUse">
@@ -24,4 +24,3 @@
   />
   <circle cx="365" cy="165" r="18" fill="#22c55e" />
 </svg>
-

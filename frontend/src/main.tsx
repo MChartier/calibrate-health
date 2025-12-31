@@ -13,11 +13,11 @@ const queryClient = new QueryClient()
  * Build the browser tab title, adding the dev worktree name when available.
  */
 function getBrowserTitle() {
-  const baseTitle = 'cal.io'
+  const baseTitle = 'calibrate'
   if (!import.meta.env.DEV) return baseTitle
   const worktreeName = __WORKTREE_NAME__?.trim()
   if (!worktreeName) return baseTitle
-  return `${worktreeName}.cal.io`
+  return `${worktreeName}.calibrate`
 }
 
 /**
