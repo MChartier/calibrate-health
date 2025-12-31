@@ -1,7 +1,7 @@
 import 'dotenv/config';
 
 import bcrypt from 'bcryptjs';
-import cors, { type CorsOptions } from 'cors';
+import cors, { type CorsOptionsDelegate } from 'cors';
 import express from 'express';
 import session from 'express-session';
 import passport from 'passport';
@@ -21,17 +21,33 @@ import { USER_CLIENT_SELECT } from './utils/userSerialization';
 
 const SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 7; // 7 days
 
-const DEFAULT_ALLOWED_ORIGINS = 'http://localhost:5173';
+const DEFAULT_ALLOWED_ORIGINS_DEV = 'http://localhost:5173';
 
 /**
  * Parse a comma-delimited list of origins from CORS_ORIGINS.
- * Defaults to allowing the local Vite dev server origin.
+ * Defaults to allowing the local Vite dev server origin in development.
  */
-const parseAllowedOrigins = (value: string | undefined): string[] =>
-  (value ?? DEFAULT_ALLOWED_ORIGINS)
-    .split(',')
-    .map((origin) => origin.trim())
-    .filter(Boolean);
+const parseAllowedOrigins = (value: string | undefined, inProduction: boolean): string[] => {
+  if (value && value.trim().length > 0) {
+    return value
+      .split(',')
+      .map((origin) => origin.trim())
+      .filter(Boolean);
+  }
+
+  return inProduction ? [] : [DEFAULT_ALLOWED_ORIGINS_DEV];
+};
+
+/**
+ * Normalize an Origin header or CORS allowlist entry for comparison.
+ */
+const normalizeOrigin = (origin: string): string | null => {
+  try {
+    return new URL(origin).origin;
+  } catch {
+    return null;
+  }
+};
 
 type SameSiteSetting = 'lax' | 'none' | 'strict';
 
@@ -59,32 +75,6 @@ const bootstrap = async (): Promise<void> => {
   // Reduce fingerprinting surface; this app is API-only in production.
   app.disable('x-powered-by');
 
-  const allowedOrigins = parseAllowedOrigins(process.env.CORS_ORIGINS);
-
-  const corsOptions: CorsOptions = {
-    origin(origin, callback) {
-      if (!origin) {
-        callback(null, true);
-        return;
-      }
-
-      if (allowedOrigins.includes(origin)) {
-        callback(null, true);
-        return;
-      }
-
-      callback(new Error('Not allowed by CORS'));
-    },
-    credentials: true,
-  };
-
-  app.use(cors(corsOptions));
-  app.use(express.json({ limit: '2mb' }));
-  app.use(express.urlencoded({ extended: true, limit: '2mb' }));
-
-  const sessionStore = new PostgresSessionStore(pgPool, SESSION_TTL_MS);
-  await sessionStore.initialize();
-
   const secureCookieEnv = process.env.SESSION_COOKIE_SECURE;
   const useSecureCookies = secureCookieEnv ? secureCookieEnv === 'true' : inProduction;
   const sameSite = parseSameSite(process.env.SESSION_COOKIE_SAMESITE);
@@ -92,6 +82,49 @@ const bootstrap = async (): Promise<void> => {
   if (useSecureCookies) {
     app.set('trust proxy', 1);
   }
+
+  const allowedOrigins = parseAllowedOrigins(process.env.CORS_ORIGINS, inProduction)
+    .map(normalizeOrigin)
+    .filter((origin): origin is string => origin !== null);
+  const allowedOriginSet = new Set(allowedOrigins);
+
+  /**
+   * Allow requests from:
+   * - The same origin as the API host (covers prod + staging deployments where the SPA and API share a domain).
+   * - Explicitly configured origins (CORS_ORIGINS), for split frontend/backend deployments.
+   */
+  const corsDelegate: CorsOptionsDelegate = (req, callback) => {
+    const requestOrigin = req.header('Origin');
+    if (!requestOrigin) {
+      // Non-browser requests (curl, health checks, etc.).
+      callback(null, { origin: false });
+      return;
+    }
+
+    const normalizedOrigin = normalizeOrigin(requestOrigin);
+    if (!normalizedOrigin) {
+      callback(new Error('Not allowed by CORS'));
+      return;
+    }
+
+    const host = req.get('host');
+    const normalizedRequestOrigin = host ? normalizeOrigin(`${req.protocol}://${host}`) : null;
+    const isSameOrigin = normalizedRequestOrigin !== null && normalizedOrigin === normalizedRequestOrigin;
+
+    if (!isSameOrigin && !allowedOriginSet.has(normalizedOrigin)) {
+      callback(new Error('Not allowed by CORS'));
+      return;
+    }
+
+    callback(null, { origin: true, credentials: true });
+  };
+
+  app.use(cors(corsDelegate));
+  app.use(express.json({ limit: '2mb' }));
+  app.use(express.urlencoded({ extended: true, limit: '2mb' }));
+
+  const sessionStore = new PostgresSessionStore(pgPool, SESSION_TTL_MS);
+  await sessionStore.initialize();
 
   app.use(
     session({
