@@ -21,7 +21,6 @@ COPY backend ./backend
 COPY frontend ./frontend
 COPY shared ./shared
 
-RUN cd backend && npm run prisma:generate
 RUN cd backend && npm run build
 RUN cd frontend && npm run build
 
@@ -46,4 +45,3 @@ WORKDIR /app/backend
 EXPOSE 3000
 
 CMD ["npm", "run", "start"]
-
