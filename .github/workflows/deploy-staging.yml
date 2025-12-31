@@ -115,8 +115,11 @@ jobs:
             "chmod 600 \"$APP_DIR/config.env\""
             "command -v aws >/dev/null 2>&1 || (dnf -y install awscli2 || dnf -y install awscli)"
             "command -v jq >/dev/null 2>&1 || dnf -y install jq"
-            "command -v docker >/dev/null 2>&1 || dnf -y install docker docker-compose-plugin"
+            "command -v docker >/dev/null 2>&1 || dnf -y install docker"
             "command -v systemctl >/dev/null 2>&1 && systemctl enable --now docker"
+            "if ! docker compose version >/dev/null 2>&1; then dnf -y install docker-compose-plugin || true; fi"
+            "if ! docker compose version >/dev/null 2>&1 && ! command -v docker-compose >/dev/null 2>&1; then dnf -y install docker-compose; fi"
+            "if ! docker compose version >/dev/null 2>&1 && ! command -v docker-compose >/dev/null 2>&1; then echo 'Missing Docker Compose (docker compose or docker-compose)' >&2; exit 1; fi"
           )
 
           SSM_COMMANDS+=("rm -f \"$APP_DIR/docker-compose.yml.b64\"")
@@ -201,4 +204,3 @@ jobs:
             echo "SSM deploy failed with status: ${STATUS}" >&2
             exit 1
           fi
-

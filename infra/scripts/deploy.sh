@@ -31,6 +31,24 @@ require_env() {
   fi
 }
 
+resolve_compose_argv() {
+  # Print the Compose invocation as newline-separated argv.
+  # Prefer the Docker CLI plugin (`docker compose`), but fall back to legacy `docker-compose`
+  # when the plugin isn't installed on the host.
+  if docker compose version >/dev/null 2>&1; then
+    printf "%s\n" docker compose
+    return 0
+  fi
+
+  if command -v docker-compose >/dev/null 2>&1; then
+    printf "%s\n" docker-compose
+    return 0
+  fi
+
+  echo "Missing Docker Compose (expected 'docker compose' plugin or 'docker-compose' binary)." >&2
+  exit 1
+}
+
 if [[ ! -f "$CONFIG_PATH" ]]; then
   echo "Missing config file: $CONFIG_PATH" >&2
   exit 1
@@ -42,6 +60,9 @@ source "$CONFIG_PATH"
 require_cmd aws
 require_cmd jq
 require_cmd docker
+
+# Ensure we can run Compose before doing any deploy work.
+mapfile -t COMPOSE < <(resolve_compose_argv)
 
 require_env AWS_REGION
 require_env APP_DIR
@@ -110,11 +131,11 @@ cd "$APP_DIR"
 
 aws ecr get-login-password --region "$AWS_REGION" | docker login --username AWS --password-stdin "$ECR_REGISTRY"
 
-docker compose pull app
+"${COMPOSE[@]}" pull app
 
 # Run migrations before swapping the running container to minimize deploy-time downtime.
-docker compose run --rm app npm run db:migrate
+"${COMPOSE[@]}" run --rm app npm run db:migrate
 
-docker compose up -d --remove-orphans
+"${COMPOSE[@]}" up -d --remove-orphans
 
-docker compose ps
+"${COMPOSE[@]}" ps

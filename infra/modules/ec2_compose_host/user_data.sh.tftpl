@@ -5,7 +5,10 @@ APP_DIR="/opt/${app_name}"
 
 # Base packages. Keep this minimal; the instance mostly just runs Docker containers.
 dnf -y update
-dnf -y install docker docker-compose-plugin jq
+dnf -y install docker jq
+# Prefer the Docker CLI compose plugin (`docker compose`). Fall back to legacy `docker-compose`
+# if the plugin package isn't available in the AMI repos.
+dnf -y install docker-compose-plugin || dnf -y install docker-compose
 dnf -y install awscli2 || dnf -y install awscli
 
 systemctl enable --now docker
@@ -49,4 +52,3 @@ chmod 600 "$APP_DIR/config.env"
 # happy if a human runs it before the first deploy.
 touch "$APP_DIR/.env"
 chmod 600 "$APP_DIR/.env"
-
