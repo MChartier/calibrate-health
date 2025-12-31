@@ -45,8 +45,8 @@ function getPwaOptions(): Partial<VitePWAOptions> {
       'pwa-512x512.png',
     ],
     manifest: {
-      name: 'cal.io',
-      short_name: 'cal.io',
+      name: 'calibrate',
+      short_name: 'calibrate',
       description: 'A responsive calorie tracker.',
       theme_color: '#111827',
       background_color: '#111827',

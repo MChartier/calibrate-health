@@ -149,7 +149,7 @@ const DevDashboard: React.FC = () => {
 
         try {
             const response = await axios.post<ResetTestUserOnboardingResponse>('/dev/test/reset-test-user-onboarding');
-            const email = response.data?.user?.email ?? 'test@cal.io';
+            const email = response.data?.user?.email ?? 'test@calibratehealth.app';
             setResetSuccess(`Reset complete for ${email}. Navigate to /onboarding (or refresh a protected page) to re-test onboarding.`);
         } catch (err) {
             console.error(err);

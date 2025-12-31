@@ -763,7 +763,7 @@ const Onboarding: React.FC = () => {
         cardBodyContent = (
             <Box>
                 <Typography variant="h4" gutterBottom>
-                    Welcome to cal.io
+                    Welcome to calibrate
                 </Typography>
                 <Typography color="text.secondary">
                     Let&apos;s set a daily calorie target that helps you reach your weight goal.

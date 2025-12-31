@@ -5,7 +5,7 @@ import prisma from '../config/database';
 import { ActivityLevel, HeightUnit, MealPeriod, Sex, WeightUnit } from '@prisma/client';
 import { formatDateToLocalDateString, normalizeToUtcDateOnly } from '../utils/date';
 
-const TEST_USER_EMAIL = 'test@cal.io';
+const TEST_USER_EMAIL = 'test@calibratehealth.app';
 const TEST_USER_PASSWORD = 'password123';
 const TEST_USER_TIMEZONE = 'America/Los_Angeles';
 

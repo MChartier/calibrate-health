@@ -154,7 +154,7 @@ const Layout: React.FC = () => {
                             to={user ? '/dashboard' : '/'}
                             sx={{ color: 'inherit', textDecoration: 'none' }}
                         >
-                            cal.io
+                            calibrate
                         </Typography>
                         {worktreeBadgeLabel && (
                             <Box
@@ -186,7 +186,7 @@ const Layout: React.FC = () => {
                             target="_blank"
                             rel="noreferrer"
                             color="inherit"
-                            aria-label="Open the cal.io GitHub repository"
+                            aria-label="Open the source repository on GitHub"
                         >
                             <GitHubIcon />
                         </IconButton>

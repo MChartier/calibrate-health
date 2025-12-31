@@ -4,7 +4,8 @@ import { CssBaseline, ThemeProvider, useMediaQuery } from '@mui/material';
 import { createAppTheme } from '../theme';
 import { ThemeModeContext, type ThemeModeContextValue, type ThemePreference } from './themeModeContext';
 
-const THEME_PREFERENCE_STORAGE_KEY = 'calio.themePreference';
+const THEME_PREFERENCE_STORAGE_KEY = 'calibrate.themePreference';
+const LEGACY_THEME_PREFERENCE_STORAGE_KEY = 'calio.themePreference';
 
 /**
  * Type guard for values we allow to be stored/used as theme preferences.
@@ -19,7 +20,17 @@ function isThemePreference(value: unknown): value is ThemePreference {
 function readStoredThemePreference(): ThemePreference | null {
     try {
         const stored = window.localStorage.getItem(THEME_PREFERENCE_STORAGE_KEY);
-        return isThemePreference(stored) ? stored : null;
+        if (isThemePreference(stored)) return stored;
+
+        const legacyStored = window.localStorage.getItem(LEGACY_THEME_PREFERENCE_STORAGE_KEY);
+        if (isThemePreference(legacyStored)) {
+            // Best-effort migrate legacy cal-io branding to calibrate without losing user preference.
+            window.localStorage.setItem(THEME_PREFERENCE_STORAGE_KEY, legacyStored);
+            window.localStorage.removeItem(LEGACY_THEME_PREFERENCE_STORAGE_KEY);
+            return legacyStored;
+        }
+
+        return null;
     } catch {
         return null;
     }

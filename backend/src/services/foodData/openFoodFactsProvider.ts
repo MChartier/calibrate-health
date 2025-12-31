@@ -206,7 +206,7 @@ class OpenFoodFactsProvider implements FoodDataProvider {
         page: number,
         languageCode?: string
     ): Promise<Response> {
-        const headers = { 'User-Agent': 'cal-io/food-search' };
+        const headers = { 'User-Agent': 'calibrate/food-search' };
         const v2Params = new URLSearchParams({
             search_terms: query,
             page_size: String(pageSize),
@@ -230,7 +230,7 @@ class OpenFoodFactsProvider implements FoodDataProvider {
         page: number,
         languageCode?: string
     ): Promise<Response> {
-        const headers = { 'User-Agent': 'cal-io/food-search' };
+        const headers = { 'User-Agent': 'calibrate/food-search' };
         const legacyParams = new URLSearchParams({
             search_terms: query,
             search_simple: '1',
@@ -255,7 +255,7 @@ class OpenFoodFactsProvider implements FoodDataProvider {
         if (languageCode) {
             params.set('lc', languageCode);
         }
-        const headers = { 'User-Agent': 'cal-io/food-search' };
+        const headers = { 'User-Agent': 'calibrate/food-search' };
         const response = await this.fetchWithTimeout(
             `${this.baseUrl}/api/v2/product/${encodeURIComponent(barcode)}?${params.toString()}`,
             headers

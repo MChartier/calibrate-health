@@ -1,6 +1,8 @@
-# cal-io
+# calibrate
 
 Responsive calorie tracker (React + Vite frontend, Node/Express backend, Postgres + Prisma).
+
+Official domain: calibratehealth.app
 
 ## Quickstart (devcontainer)
 
