@@ -172,15 +172,17 @@ const Landing: React.FC = () => {
                                             color: 'text.secondary'
                                         }}
                                     >
-                                        Fitness tracking without the paywall
+                                        Fitness tracking on your terms
                                     </Typography>
 
                                     <Typography variant="h2" component="h1" sx={{ lineHeight: 1.05 }}>
-                                        Get fit. Stay fit. Own your data.
+                                        Get and stay fit. Own your data.
                                     </Typography>
 
                                     <Typography variant="h6" color="text.secondary" sx={{ maxWidth: '56ch' }}>
-                                        calibrate is the free, self-hostable health and fitness tracker. No subscription, no ads, no nonsense.
+                                        calibrate is the free, self-hostable fitness tracker for managing body weight. 
+                                        <br/>
+                                        No subscription, no ads, no catch.
                                     </Typography>
                                 </Stack>
 
@@ -252,8 +254,7 @@ const Landing: React.FC = () => {
                             Losing weight shouldn&apos;t cost an arm and a leg
                         </Typography>
                         <Typography variant="body1" color="text.secondary" sx={{ maxWidth: '80ch' }}>
-                            calibrate is built to be available to everybody - free to use, clean and ad-free, and self-hostable so
-                            you can run it on your own terms. No catch.
+                            calibrate is built to make fitness tracking available to everybody. Use it for free on the web without ads, or self-host on your own hardware.
                         </Typography>
                     </Stack>
 
