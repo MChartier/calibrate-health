@@ -1,0 +1,1 @@
+{"Modules":[{"Key":"","Source":"","Dir":"."},{"Key":"host","Source":"../../modules/ec2_compose_host","Dir":"../../modules/ec2_compose_host"},{"Key":"network","Source":"../../modules/network","Dir":"../../modules/network"},{"Key":"rds","Source":"../../modules/rds","Dir":"../../modules/rds"}]}
