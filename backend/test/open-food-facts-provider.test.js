@@ -250,6 +250,66 @@ test('OpenFoodFactsProvider (legacy mode) filters and ranks search results by qu
   }
 });
 
+test("OpenFoodFactsProvider (legacy mode) prefers brand+product matches for possessive queries and drops weak product matches", async () => {
+  const originalFetch = globalThis.fetch;
+
+  const previousTimeout = process.env.OFF_TIMEOUT_MS;
+  const previousMode = process.env.OFF_SEARCH_MODE;
+  process.env.OFF_TIMEOUT_MS = '0';
+  process.env.OFF_SEARCH_MODE = 'legacy';
+  const provider = new OpenFoodFactsProvider();
+  if (previousTimeout === undefined) delete process.env.OFF_TIMEOUT_MS;
+  else process.env.OFF_TIMEOUT_MS = previousTimeout;
+  if (previousMode === undefined) delete process.env.OFF_SEARCH_MODE;
+  else process.env.OFF_SEARCH_MODE = previousMode;
+
+  const calls = [];
+  globalThis.fetch = async (url) => {
+    calls.push(String(url));
+
+    return createJsonResponse({
+      products: [
+        {
+          code: '111',
+          product_name: "TRADER JOE'S, HABANERO HOT SAUCE",
+          brands: "TRADER JOE'S",
+          lc: 'en',
+          nutriments: { 'energy-kcal_100g': 0 }
+        },
+        {
+          code: '222',
+          product_name: 'Hot dog, turkey',
+          brands: 'GenericCo',
+          lc: 'en',
+          nutriments: { 'energy-kcal_100g': 200 }
+        },
+        {
+          code: '333',
+          product_name: "Trader Joe's Chicken Hot Dog",
+          brands: "Trader Joe's",
+          lc: 'en',
+          nutriments: { 'energy-kcal_100g': 220 }
+        }
+      ]
+    });
+  };
+
+  try {
+    const result = await provider.searchFoods({
+      query: "trader joe's hot dog",
+      includeIncomplete: false,
+      languageCode: 'en'
+    });
+
+    assert.equal(calls.length, 1);
+    assert.equal(result.items.length, 2);
+    assert.equal(result.items[0].description, "Trader Joe's Chicken Hot Dog");
+    assert.equal(result.items[1].description, 'Hot dog, turkey');
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
 test('OpenFoodFactsProvider (legacy mode) throws a detailed error for non-OK search responses', async () => {
   const originalFetch = globalThis.fetch;
 
@@ -270,6 +330,75 @@ test('OpenFoodFactsProvider (legacy mode) throws a detailed error for non-OK sea
       () => provider.searchFoods({ query: 'apple', includeIncomplete: false }),
       /legacy 503 maintenance/
     );
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("OpenFoodFactsProvider (auto mode) attempts a brand-scoped legacy search when v2 returns only generic product matches", async () => {
+  const originalFetch = globalThis.fetch;
+
+  const previousTimeout = process.env.OFF_TIMEOUT_MS;
+  const previousMode = process.env.OFF_SEARCH_MODE;
+  process.env.OFF_TIMEOUT_MS = '0';
+  process.env.OFF_SEARCH_MODE = 'auto';
+  const provider = new OpenFoodFactsProvider();
+  if (previousTimeout === undefined) delete process.env.OFF_TIMEOUT_MS;
+  else process.env.OFF_TIMEOUT_MS = previousTimeout;
+  if (previousMode === undefined) delete process.env.OFF_SEARCH_MODE;
+  else process.env.OFF_SEARCH_MODE = previousMode;
+
+  const calls = [];
+  globalThis.fetch = async (url) => {
+    const href = String(url);
+    calls.push(href);
+
+    if (href.includes('/api/v2/search')) {
+      return createJsonResponse({
+        products: [
+          {
+            code: '222',
+            product_name: 'Hot dog, turkey',
+            brands: 'GenericCo',
+            lc: 'en',
+            nutriments: { 'energy-kcal_100g': 200 }
+          }
+        ]
+      });
+    }
+
+    if (href.includes('/cgi/search.pl')) {
+      // This call should include a brand tag filter for "trader joe's".
+      return createJsonResponse({
+        products: [
+          {
+            code: '333',
+            product_name: "Trader Joe's Chicken Hot Dog",
+            brands: "Trader Joe's",
+            lc: 'en',
+            nutriments: { 'energy-kcal_100g': 220 }
+          }
+        ]
+      });
+    }
+
+    throw new Error(`Unexpected URL: ${href}`);
+  };
+
+  try {
+    const result = await provider.searchFoods({ query: "trader joe's hot dog", includeIncomplete: false, languageCode: 'en' });
+
+    assert.equal(calls.length, 2);
+    assert.equal(calls[0].includes('/api/v2/search'), true);
+    assert.equal(calls[1].includes('/cgi/search.pl'), true);
+    assert.equal(calls[1].includes('tagtype_0=brands'), true);
+    assert.equal(calls[1].includes('tag_contains_0=contains'), true);
+    assert.equal(calls[1].includes('tag_0=trader-joe'), true);
+    assert.equal(calls[1].includes('search_terms=hot+dog'), true);
+
+    assert.equal(result.items.length, 2);
+    assert.equal(result.items[0].description, "Trader Joe's Chicken Hot Dog");
+    assert.equal(result.items[1].description, 'Hot dog, turkey');
   } finally {
     globalThis.fetch = originalFetch;
   }

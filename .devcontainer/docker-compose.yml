@@ -11,8 +11,10 @@ services:
     command: sleep infinity
     environment:
       DATABASE_URL: postgresql://user:password@postgres:5432/fitness_app?schema=public
+      FOOD_DATA_PROVIDER: usda
       PORT: 3000
       SESSION_SECRET: development_secret_key
+      USDA_API_KEY: ${USDA_API_KEY}
       WORKTREE_COLOR: ${WORKTREE_COLOR}
       WORKTREE_IS_MAIN: ${WORKTREE_IS_MAIN}
       WORKTREE_NAME: ${WORKTREE_NAME}
