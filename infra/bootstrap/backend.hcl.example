@@ -1,0 +1,9 @@
+# Copy to `backend.hcl` (gitignored) and adjust values.
+#
+# Bucket should match the Terraform resource name created by `infra/bootstrap`, which is
+# `calibratehealth-tfstate-<aws_account_id>` (see `terraform_state_bucket_name` output).
+bucket         = "calibratehealth-tfstate-CHANGEME"
+key            = "bootstrap/terraform.tfstate"
+region         = "us-west-2"
+dynamodb_table = "calibratehealth-terraform-locks"
+encrypt        = true

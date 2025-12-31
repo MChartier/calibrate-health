@@ -25,11 +25,41 @@ This repo deploys `calibratehealth.app` using:
 
 ## One-Time Setup
 
+### Terraform state (recommended)
+
+Terraform state is NOT committed to git. For portability across machines/worktrees, we store state in:
+
+- S3 (state)
+- DynamoDB (state locking)
+
+This repo uses local, gitignored `backend.hcl` files (copied from `backend.hcl.example`) to hold the backend
+configuration values without hard-coding them into the repo.
+
 ### 1) Bootstrap shared resources
 
 ```sh
 cd infra/bootstrap
-terraform init
+# Create a local backend config (gitignored).
+# Bucket name is derived from your AWS account ID.
+AWS_ACCOUNT_ID="$(aws sts get-caller-identity --query Account --output text)"
+TFSTATE_BUCKET="calibratehealth-tfstate-${AWS_ACCOUNT_ID}"
+
+cp backend.hcl.example backend.hcl
+# Edit backend.hcl and set `bucket = "${TFSTATE_BUCKET}"`
+
+# First-time bootstrap: the state bucket/lock table do not exist yet, so run with local state.
+terraform init -backend=false
+terraform apply
+
+# Then migrate bootstrap state into the S3 backend for future applies (recommended).
+terraform init -backend-config=backend.hcl -migrate-state
+```
+
+Re-running bootstrap later (new machine/worktree):
+
+```sh
+cd infra/bootstrap
+terraform init -backend-config=backend.hcl -reconfigure
 terraform apply
 ```
 
@@ -45,17 +75,18 @@ Propagation can take a bit; Route 53 records will start working after delegation
 
 ### 3) Initialize remote state for each env
 
-The `backend.tf` files under `infra/envs/*` contain placeholder bucket names.
-Either edit them, or override via `-backend-config`:
+Each environment has a committed `backend.hcl.example`. Copy it to `backend.hcl` (gitignored) and set the bucket/table
+to the bootstrap outputs (`terraform_state_bucket_name` and `terraform_lock_table_name`).
 
 ```sh
 cd infra/envs/staging
-terraform init \
-  -backend-config="bucket=<terraform_state_bucket_name>" \
-  -backend-config="dynamodb_table=<terraform_lock_table_name>"
-```
+cp backend.hcl.example backend.hcl
+terraform init -backend-config=backend.hcl -reconfigure
 
-Repeat for `infra/envs/prod` (key differs).
+cd ../prod
+cp backend.hcl.example backend.hcl
+terraform init -backend-config=backend.hcl -reconfigure
+```
 
 ### 4) Apply staging + prod infra
 
