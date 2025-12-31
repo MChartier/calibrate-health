@@ -2,6 +2,7 @@ import session from 'express-session';
 import type { Pool } from 'pg';
 
 const DEFAULT_TTL_MS = 1000 * 60 * 60 * 24 * 7; // 7 days
+const POSTGRES_UNDEFINED_TABLE_CODE = '42P01';
 
 /**
  * Lightweight Postgres-backed session store to avoid in-memory session loss
@@ -19,16 +20,14 @@ export class PostgresSessionStore extends session.Store {
     this.ttlMs = ttlMs;
   }
 
+  /**
+   * Verify the backing session table exists so deployments fail fast with a clear
+   * error message instead of a runtime SQL failure during the first request.
+   *
+   * Table creation belongs in migrations (see backend/prisma/migrations).
+   */
   async initialize(): Promise<void> {
-    await this.pool.query(`
-      CREATE TABLE IF NOT EXISTS session_store (
-        sid TEXT PRIMARY KEY,
-        sess JSONB NOT NULL,
-        expire TIMESTAMPTZ NOT NULL
-      );
-
-      CREATE INDEX IF NOT EXISTS session_store_expire_idx ON session_store (expire);
-    `);
+    await this.assertSessionStoreSchema();
   }
 
   async get(sid: string, callback: (err: any, session?: session.SessionData | null) => void): Promise<void> {
@@ -101,5 +100,33 @@ export class PostgresSessionStore extends session.Store {
 
     const maxAge = sess.cookie?.maxAge ?? this.ttlMs;
     return new Date(Date.now() + maxAge);
+  }
+
+  /**
+   * Confirm the session_store table exists; throws a human-friendly error when
+   * migrations have not been applied.
+   */
+  private async assertSessionStoreSchema(): Promise<void> {
+    try {
+      await this.pool.query('SELECT 1 FROM session_store LIMIT 1');
+    } catch (error) {
+      if (this.isUndefinedTableError(error)) {
+        throw new Error(
+          'Session store table is missing. Apply database migrations (npm run db:migrate) and restart the server.'
+        );
+      }
+
+      throw error;
+    }
+  }
+
+  /**
+   * Detect the Postgres "undefined_table" error across pg driver versions.
+   */
+  private isUndefinedTableError(error: unknown): boolean {
+    if (!error || typeof error !== 'object') return false;
+
+    const code = (error as { code?: unknown }).code;
+    return code === POSTGRES_UNDEFINED_TABLE_CODE;
   }
 }
