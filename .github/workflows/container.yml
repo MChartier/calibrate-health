@@ -94,7 +94,7 @@ jobs:
   deploy_staging:
     name: Deploy Staging (ECS)
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 25
     needs: build_and_push
     if: github.ref == 'refs/heads/master'
 
@@ -120,4 +120,26 @@ jobs:
             --force-new-deployment \
             >/dev/null
 
-          aws ecs wait services-stable --cluster "${ECS_CLUSTER}" --services "${ECS_SERVICE}"
+          wait_for_stable() {
+            # awscli's `ecs wait services-stable` hard-codes a 10-minute deadline (40x15s).
+            # ECS deployments can take longer (cold starts, image pulls, migrations, etc.), so
+            # retry once before failing the workflow.
+            local attempt
+            for attempt in 1 2; do
+              if aws ecs wait services-stable --cluster "${ECS_CLUSTER}" --services "${ECS_SERVICE}"; then
+                return 0
+              fi
+
+              echo "Timed out waiting for ECS to become stable (attempt ${attempt}/2). Recent service events:" >&2
+              aws ecs describe-services \
+                --cluster "${ECS_CLUSTER}" \
+                --services "${ECS_SERVICE}" \
+                --query 'services[0].events[0:10].[createdAt,message]' \
+                --output table \
+                || true
+            done
+
+            return 1
+          }
+
+          wait_for_stable
