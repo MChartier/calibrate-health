@@ -47,6 +47,70 @@ const databaseUrl = resolveDatabaseUrl();
 
 type PgSslConfig = PoolConfig['ssl'];
 
+type PgConnectionConfig = Pick<PoolConfig, 'host' | 'port' | 'database' | 'user' | 'password'>;
+
+/**
+ * Resolve the Prisma schema name for the current connection.
+ *
+ * Prisma models live in a specific Postgres schema selected via the `schema` query param
+ * (or DB_SCHEMA when we compose DATABASE_URL). When using driver adapters we need to pass
+ * the schema explicitly to the adapter; it is not derived from the pg Pool config.
+ */
+function resolvePrismaSchema(databaseUrl: string, env: NodeJS.ProcessEnv = process.env): string | undefined {
+  const envSchemaRaw = env.DB_SCHEMA?.trim();
+  const envSchema = envSchemaRaw ? envSchemaRaw : undefined;
+
+  let urlSchema: string | undefined;
+  try {
+    urlSchema = new URL(databaseUrl).searchParams.get('schema')?.trim() || undefined;
+  } catch {
+    urlSchema = undefined;
+  }
+
+  if (urlSchema && envSchema && urlSchema !== envSchema) {
+    console.warn(
+      `DATABASE_URL schema (${urlSchema}) does not match DB_SCHEMA (${envSchema}); using DATABASE_URL value.`
+    );
+  }
+
+  return urlSchema ?? envSchema;
+}
+
+/**
+ * Parse a Postgres connection string into discrete node-postgres connection fields.
+ *
+ * We intentionally avoid passing `connectionString` to node-postgres because query params like
+ * `sslmode=require` overwrite the explicit `ssl` config we need for RDS compatibility.
+ *
+ * Note: Query params are not forwarded to pg (except via explicit config elsewhere). For Prisma,
+ * the `schema` param is handled separately via the adapter options (see resolvePrismaSchema).
+ */
+function parseDatabaseUrlToPgConfig(databaseUrl: string): PgConnectionConfig {
+  let url: URL;
+  try {
+    url = new URL(databaseUrl);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    throw new Error(`DATABASE_URL is not a valid URL (${message}).`);
+  }
+
+  if (url.protocol !== 'postgres:' && url.protocol !== 'postgresql:') {
+    throw new Error(`DATABASE_URL must use the postgres protocol (received "${url.protocol}").`);
+  }
+
+  const host = url.hostname;
+  const port = url.port ? Number.parseInt(url.port, 10) : undefined;
+  const databasePath = url.pathname.replace(/^\/+/, '');
+
+  return {
+    host: host || undefined,
+    port: port && Number.isFinite(port) ? port : undefined,
+    database: databasePath ? decodeURIComponent(databasePath) : undefined,
+    user: url.username ? decodeURIComponent(url.username) : undefined,
+    password: url.password ? decodeURIComponent(url.password) : undefined
+  };
+}
+
 /**
  * Translate Postgres `sslmode` values into node-postgres SSL options.
  *
@@ -78,8 +142,8 @@ function resolvePgSslConfig(databaseUrl: string, env: NodeJS.ProcessEnv = proces
   return true;
 }
 
-const pool = new Pool({ connectionString: databaseUrl, ssl: resolvePgSslConfig(databaseUrl) });
-const adapter = new PrismaPg(pool);
+const pool = new Pool({ ...parseDatabaseUrlToPgConfig(databaseUrl), ssl: resolvePgSslConfig(databaseUrl) });
+const adapter = new PrismaPg(pool, { schema: resolvePrismaSchema(databaseUrl) });
 
 const prisma = new PrismaClient({ adapter });
 
