@@ -86,6 +86,56 @@ const describeCameraError = (error: unknown): string => {
     return 'Unable to access the camera for scanning.';
 };
 
+/**
+ * Resolve a deep-imported ZXing ESM module export that may be exposed as either a default export,
+ * a named export, or (depending on bundler interop) wrapped under `module.a.default`.
+ */
+const resolveZxingModuleExport = <T,>(
+    moduleNamespace: Record<string, unknown>,
+    namedExportKey: string
+): T | null => {
+    const maybeDefault = moduleNamespace.default;
+    if (maybeDefault) {
+        return maybeDefault as T;
+    }
+
+    const maybeNamed = moduleNamespace[namedExportKey];
+    if (maybeNamed) {
+        return maybeNamed as T;
+    }
+
+    const maybeInteropWrapper = (moduleNamespace as { a?: { default?: unknown } }).a?.default;
+    if (maybeInteropWrapper) {
+        return maybeInteropWrapper as T;
+    }
+
+    return null;
+};
+
+/**
+ * ZXing reports "no barcode in frame" as a NotFoundException; treat that as a normal scan miss.
+ */
+const isZxingNotFoundError = (error: unknown): boolean => {
+    if (!error || typeof error !== 'object') {
+        return false;
+    }
+
+    const maybeError = error as { name?: unknown; getKind?: unknown };
+    if (maybeError.name === 'NotFoundException') {
+        return true;
+    }
+
+    if (typeof maybeError.getKind === 'function') {
+        try {
+            return (maybeError.getKind as () => unknown)() === 'NotFoundException';
+        } catch {
+            return false;
+        }
+    }
+
+    return false;
+};
+
 type Props = {
     open: boolean;
     onClose: () => void;
@@ -249,29 +299,33 @@ const BarcodeScannerDialog: React.FC<Props> = ({ open, onClose, onDetected }) =>
 
                 // Firefox (and other non-Chromium browsers) often lack BarcodeDetector. Use ZXing (1D reader) as a JS fallback.
                 // We deep-import only the pieces we need so we don't pull the full multi-format bundle into the async chunk.
-                const [
-                    { BrowserBarcodeReader },
-                    { default: BarcodeFormatEnum },
-                    { default: DecodeHintTypeEnum },
-                    { default: NotFoundException }
-                ] = await Promise.all([
+                const [{ BrowserBarcodeReader }, barcodeFormatModule, decodeHintTypeModule] = await Promise.all([
                     import('@zxing/library/esm/browser/BrowserBarcodeReader'),
                     import('@zxing/library/esm/core/BarcodeFormat'),
-                    import('@zxing/library/esm/core/DecodeHintType'),
-                    import('@zxing/library/esm/core/NotFoundException')
+                    import('@zxing/library/esm/core/DecodeHintType')
                 ]);
                 if (cancelled) {
                     return;
                 }
 
+                const BarcodeFormatEnum = resolveZxingModuleExport<Record<string, unknown>>(barcodeFormatModule, 'BarcodeFormat');
+                const DecodeHintTypeEnum = resolveZxingModuleExport<Record<string, unknown>>(
+                    decodeHintTypeModule,
+                    'DecodeHintType'
+                );
+
+                if (!BarcodeFormatEnum || !DecodeHintTypeEnum) {
+                    throw new Error('Barcode scanner fallback failed to load in this browser.');
+                }
+
                 const hints = new Map<DecodeHintType, any>([
                     [
-                        DecodeHintTypeEnum.POSSIBLE_FORMATS,
+                        DecodeHintTypeEnum.POSSIBLE_FORMATS as DecodeHintType,
                         [
-                            BarcodeFormatEnum.UPC_A,
-                            BarcodeFormatEnum.UPC_E,
-                            BarcodeFormatEnum.EAN_13,
-                            BarcodeFormatEnum.EAN_8
+                            BarcodeFormatEnum.UPC_A as number,
+                            BarcodeFormatEnum.UPC_E as number,
+                            BarcodeFormatEnum.EAN_13 as number,
+                            BarcodeFormatEnum.EAN_8 as number
                         ]
                     ]
                 ]);
@@ -294,7 +348,7 @@ const BarcodeScannerDialog: React.FC<Props> = ({ open, onClose, onDetected }) =>
                         return;
                     }
 
-                    if (scanError && !(scanError instanceof NotFoundException)) {
+                    if (scanError && !isZxingNotFoundError(scanError)) {
                         console.warn('Barcode scan failed.', scanError);
                     }
                 });
