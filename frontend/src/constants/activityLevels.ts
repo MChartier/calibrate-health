@@ -1,3 +1,6 @@
+import type { Translate } from '../i18n/i18nContext';
+import type { TranslationKey } from '../i18n/resources';
+
 export type ActivityLevelValue = 'SEDENTARY' | 'LIGHT' | 'MODERATE' | 'ACTIVE' | 'VERY_ACTIVE';
 
 export type ActivityLevelOption = {
@@ -10,41 +13,59 @@ export type ActivityLevelOption = {
     label: string;
 };
 
+type ActivityLevelOptionTemplate = {
+    value: ActivityLevelValue;
+    titleKey: TranslationKey;
+    descriptionKey: TranslationKey;
+};
+
 /**
  * Activity level options used to estimate TDEE (BMR * activity multiplier).
  *
  * Keep titles short for the input field, and push detail into `description` so the dropdown
  * remains readable on narrow screens.
  */
-export const activityLevelOptions: ActivityLevelOption[] = [
+const activityLevelOptionTemplates: ActivityLevelOptionTemplate[] = [
     {
         value: 'SEDENTARY',
-        title: 'Sedentary',
-        description: 'Mostly seated, <5k steps/day, little structured exercise',
-        label: 'Sedentary — mostly seated, <5k steps/day, little structured exercise'
+        titleKey: 'activityLevel.SEDENTARY.title',
+        descriptionKey: 'activityLevel.SEDENTARY.description'
     },
     {
         value: 'LIGHT',
-        title: 'Light',
-        description: 'Light exercise 1–3x/week or ~5–7.5k steps/day',
-        label: 'Light — light exercise 1–3x/week or ~5–7.5k steps/day'
+        titleKey: 'activityLevel.LIGHT.title',
+        descriptionKey: 'activityLevel.LIGHT.description'
     },
     {
         value: 'MODERATE',
-        title: 'Moderate',
-        description: 'Exercise 3–5x/week or ~7.5–10k steps/day',
-        label: 'Moderate — exercise 3–5x/week or ~7.5–10k steps/day'
+        titleKey: 'activityLevel.MODERATE.title',
+        descriptionKey: 'activityLevel.MODERATE.description'
     },
     {
         value: 'ACTIVE',
-        title: 'Active',
-        description: 'Hard exercise 6–7x/week or >10k steps/day',
-        label: 'Active — hard exercise 6–7x/week or >10k steps/day'
+        titleKey: 'activityLevel.ACTIVE.title',
+        descriptionKey: 'activityLevel.ACTIVE.description'
     },
     {
         value: 'VERY_ACTIVE',
-        title: 'Very active',
-        description: 'Physical job plus frequent hard exercise',
-        label: 'Very Active — physical job plus frequent hard exercise'
+        titleKey: 'activityLevel.VERY_ACTIVE.title',
+        descriptionKey: 'activityLevel.VERY_ACTIVE.description'
     }
 ];
+
+/**
+ * Build translated activity level options for UI selects.
+ */
+export function getActivityLevelOptions(t: Translate): ActivityLevelOption[] {
+    return activityLevelOptionTemplates.map((template) => {
+        const title = t(template.titleKey);
+        const description = t(template.descriptionKey);
+
+        return {
+            value: template.value,
+            title,
+            description,
+            label: `${title} - ${description}`
+        };
+    });
+}

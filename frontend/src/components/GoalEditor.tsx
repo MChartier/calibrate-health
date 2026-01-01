@@ -5,6 +5,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { validateGoalWeights, type GoalMode } from '../utils/goalValidation';
 import { DAILY_DEFICIT_CHOICE_STRINGS, normalizeDailyDeficitChoiceAbsValue } from '../../../shared/goalDeficit';
 import { getGoalModeFromDailyDeficit, roundWeight } from '../utils/goalTracking';
+import { useI18n } from '../i18n/useI18n';
 
 export type GoalEditorProps = {
     weightUnitLabel: string;
@@ -32,6 +33,7 @@ const GoalEditor: React.FC<GoalEditorProps> = ({
     onCancel
 }) => {
     const queryClient = useQueryClient();
+    const { t } = useI18n();
 
     const [startWeightInput, setStartWeightInput] = useState<string | null>(null);
     const [targetWeightInput, setTargetWeightInput] = useState<string | null>(null);
@@ -131,7 +133,7 @@ const GoalEditor: React.FC<GoalEditorProps> = ({
                 daily_deficit: signedDeficit
             });
 
-            setAlert({ message: 'Goal saved', severity: 'success' });
+            setAlert({ message: t('goalEditor.success.saved'), severity: 'success' });
             setStartWeightInput(null);
             setTargetWeightInput(null);
             setDailyDeficitInput(null);
@@ -149,10 +151,10 @@ const GoalEditor: React.FC<GoalEditorProps> = ({
                 if (typeof serverMessage === 'string' && serverMessage.trim().length > 0) {
                     setAlert({ message: serverMessage, severity: 'error' });
                 } else {
-                    setAlert({ message: 'Failed to save goal', severity: 'error' });
+                    setAlert({ message: t('goalEditor.error.saveFailed'), severity: 'error' });
                 }
             } else {
-                setAlert({ message: 'Failed to save goal', severity: 'error' });
+                setAlert({ message: t('goalEditor.error.saveFailed'), severity: 'error' });
             }
         } finally {
             setIsSaving(false);
@@ -163,7 +165,7 @@ const GoalEditor: React.FC<GoalEditorProps> = ({
         <Box component="form" onSubmit={(e) => void handleSubmit(e)}>
             <Stack spacing={2}>
                 <TextField
-                    label={`Start Weight (${weightUnitLabel})`}
+                    label={t('goalEditor.startWeightLabel', { unit: weightUnitLabel })}
                     type="number"
                     value={startWeightValue}
                     onChange={(e) => {
@@ -175,7 +177,7 @@ const GoalEditor: React.FC<GoalEditorProps> = ({
                     fullWidth
                 />
                 <TextField
-                    label={`Target Weight (${weightUnitLabel})`}
+                    label={t('goalEditor.targetWeightLabel', { unit: weightUnitLabel })}
                     type="number"
                     value={targetWeightValue}
                     onChange={(e) => {
@@ -188,27 +190,27 @@ const GoalEditor: React.FC<GoalEditorProps> = ({
                 />
 
                 <FormControl fullWidth>
-                    <InputLabel>Goal type</InputLabel>
+                    <InputLabel>{t('goalEditor.goalType')}</InputLabel>
                     <Select
                         value={goalMode}
-                        label="Goal type"
+                        label={t('goalEditor.goalType')}
                         onChange={(e) => {
                             setGoalMode(e.target.value as GoalMode);
                             setAlert(null);
                         }}
                     >
-                        <MenuItem value="lose">Lose weight (calorie deficit)</MenuItem>
-                        <MenuItem value="maintain">Maintain weight</MenuItem>
-                        <MenuItem value="gain">Gain weight (calorie surplus)</MenuItem>
+                        <MenuItem value="lose">{t('goalEditor.goalType.lose')}</MenuItem>
+                        <MenuItem value="maintain">{t('goalEditor.goalType.maintain')}</MenuItem>
+                        <MenuItem value="gain">{t('goalEditor.goalType.gain')}</MenuItem>
                     </Select>
                 </FormControl>
 
                 {goalMode !== 'maintain' && (
                     <FormControl fullWidth>
-                        <InputLabel>Daily calorie change</InputLabel>
+                        <InputLabel>{t('goalEditor.dailyCalorieChange')}</InputLabel>
                         <Select
                             value={dailyDeficitValue}
-                            label="Daily calorie change"
+                            label={t('goalEditor.dailyCalorieChange')}
                             onChange={(e) => {
                                 setDailyDeficitInput(e.target.value);
                                 setAlert(null);
@@ -216,8 +218,10 @@ const GoalEditor: React.FC<GoalEditorProps> = ({
                         >
                             {DAILY_DEFICIT_CHOICE_STRINGS.map((val) => (
                                 <MenuItem key={val} value={val}>
-                                    {goalMode === 'gain' ? '+' : '-'}
-                                    {val} Calories/day
+                                    {t('goalEditor.dailyChangeOption', {
+                                        sign: goalMode === 'gain' ? '+' : '-',
+                                        value: val
+                                    })}
                                 </MenuItem>
                             ))}
                         </Select>
@@ -227,11 +231,11 @@ const GoalEditor: React.FC<GoalEditorProps> = ({
                 <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
                     {onCancel && (
                         <Button variant="text" onClick={onCancel} disabled={isSaving}>
-                            Cancel
+                            {t('common.cancel')}
                         </Button>
                     )}
                     <Button type="submit" variant="contained" disabled={isSaving || !hasChanges}>
-                        {isSaving ? 'Saving…' : submitLabel}
+                        {isSaving ? t('common.saving') : submitLabel}
                     </Button>
                 </Box>
             </Stack>
@@ -246,4 +250,3 @@ const GoalEditor: React.FC<GoalEditorProps> = ({
 };
 
 export default GoalEditor;
-

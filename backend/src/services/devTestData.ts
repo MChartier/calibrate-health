@@ -2,6 +2,7 @@ import bcrypt from 'bcryptjs';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import prisma from '../config/database';
+import { SUPPORTED_LANGUAGES } from '../utils/language';
 import { ActivityLevel, HeightUnit, Sex, WeightUnit } from '@prisma/client';
 import { buildMealLogsForDay, getPastWeekDates, getSeedUserCreatedAt } from './devTestDataUtils';
 
@@ -63,6 +64,7 @@ const ensureTestUser = async (createdAt: Date): Promise<{ id: number }> => {
       password_hash: passwordHash,
       created_at: createdAt,
       timezone: TEST_USER_TIMEZONE,
+      language: SUPPORTED_LANGUAGES.EN,
       weight_unit: WeightUnit.KG,
       height_unit: HeightUnit.CM,
       date_of_birth: TEST_USER_DATE_OF_BIRTH,
@@ -77,6 +79,7 @@ const ensureTestUser = async (createdAt: Date): Promise<{ id: number }> => {
       password_hash: passwordHash,
       created_at: createdAt,
       timezone: TEST_USER_TIMEZONE,
+      language: SUPPORTED_LANGUAGES.EN,
       weight_unit: WeightUnit.KG,
       height_unit: HeightUnit.CM,
       date_of_birth: TEST_USER_DATE_OF_BIRTH,

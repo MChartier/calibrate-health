@@ -22,6 +22,8 @@ import AppPage from '../ui/AppPage';
 import AppCard from '../ui/AppCard';
 import InlineStatusLine from '../ui/InlineStatusLine';
 import SectionHeader from '../ui/SectionHeader';
+import { APP_LANGUAGES, DEFAULT_APP_LANGUAGE, type AppLanguage } from '../i18n/languages';
+import { useI18n } from '../i18n/useI18n';
 
 /**
  * Settings is focused on account management (photo/password) and app preferences (units/theme).
@@ -29,7 +31,8 @@ import SectionHeader from '../ui/SectionHeader';
 const Settings: React.FC = () => {
     const theme = useTheme();
     const sectionGap = theme.custom.layout.page.sectionGap;
-    const { user, updateUnitPreferences, updateTimezone } = useAuth();
+    const { t } = useI18n();
+    const { user, updateUnitPreferences, updateTimezone, updateLanguage } = useAuth();
     const { preference: themePreference, mode: resolvedThemeMode, setPreference: setThemePreference } = useThemeMode();
 
     const { status: unitsStatus, showStatus: showUnitsStatus } = useTransientStatus();
@@ -38,16 +41,18 @@ const Settings: React.FC = () => {
     const [timezoneValue, setTimezoneValue] = useState(() => user?.timezone ?? detectedTimezone);
     const [weightUnit, setWeightUnit] = useState<WeightUnit>(() => user?.weight_unit ?? 'KG');
     const [heightUnit, setHeightUnit] = useState<HeightUnit>(() => user?.height_unit ?? 'CM');
+    const [languageValue, setLanguageValue] = useState<AppLanguage>(() => user?.language ?? DEFAULT_APP_LANGUAGE);
 
     useEffect(() => {
         setTimezoneValue(user?.timezone ?? detectedTimezone);
         setWeightUnit(user?.weight_unit ?? 'KG');
         setHeightUnit(user?.height_unit ?? 'CM');
-    }, [detectedTimezone, user?.height_unit, user?.timezone, user?.weight_unit]);
+        setLanguageValue(user?.language ?? DEFAULT_APP_LANGUAGE);
+    }, [detectedTimezone, user?.height_unit, user?.language, user?.timezone, user?.weight_unit]);
 
     const handleWeightUnitChange = async (next: WeightUnit) => {
         if (!user) {
-            showUnitsStatus('Failed to save changes', 'error');
+            showUnitsStatus(t('status.failedToSaveChanges'), 'error');
             return;
         }
 
@@ -56,16 +61,16 @@ const Settings: React.FC = () => {
 
         try {
             await updateUnitPreferences({ weight_unit: next });
-            showUnitsStatus('Changes saved', 'success');
+            showUnitsStatus(t('status.changesSaved'), 'success');
         } catch {
             setWeightUnit(previous);
-            showUnitsStatus('Failed to save changes', 'error');
+            showUnitsStatus(t('status.failedToSaveChanges'), 'error');
         }
     };
 
     const handleHeightUnitChange = async (next: HeightUnit) => {
         if (!user) {
-            showUnitsStatus('Failed to save changes', 'error');
+            showUnitsStatus(t('status.failedToSaveChanges'), 'error');
             return;
         }
 
@@ -74,10 +79,10 @@ const Settings: React.FC = () => {
 
         try {
             await updateUnitPreferences({ height_unit: next });
-            showUnitsStatus('Changes saved', 'success');
+            showUnitsStatus(t('status.changesSaved'), 'success');
         } catch {
             setHeightUnit(previous);
-            showUnitsStatus('Failed to save changes', 'error');
+            showUnitsStatus(t('status.failedToSaveChanges'), 'error');
         }
     };
 
@@ -85,21 +90,41 @@ const Settings: React.FC = () => {
         setTimezoneValue(nextTimezone);
         try {
             await updateTimezone(nextTimezone);
-            showUnitsStatus('Changes saved', 'success');
+            showUnitsStatus(t('status.changesSaved'), 'success');
         } catch {
-            showUnitsStatus('Failed to save changes', 'error');
+            showUnitsStatus(t('status.failedToSaveChanges'), 'error');
         }
     };
+
+    const handleLanguageChange = async (nextLanguage: AppLanguage) => {
+        if (!user) {
+            showUnitsStatus(t('status.failedToSaveChanges'), 'error');
+            return;
+        }
+
+        const previous = languageValue;
+        setLanguageValue(nextLanguage);
+
+        try {
+            await updateLanguage(nextLanguage);
+            showUnitsStatus(t('status.changesSaved'), 'success');
+        } catch {
+            setLanguageValue(previous);
+            showUnitsStatus(t('status.failedToSaveChanges'), 'error');
+        }
+    };
+
+    const resolvedThemeModeLabel = resolvedThemeMode === 'dark' ? t('themeMode.dark') : t('themeMode.light');
 
     return (
         <AppPage maxWidth="content">
             <Stack spacing={sectionGap} useFlexGap>
-                <ProfilePhotoCard description="Used for your avatar in the app bar." />
+                <ProfilePhotoCard description={t('settings.profilePhotoDescription')} />
 
                 <AccountSecurityCard />
 
                 <AppCard>
-                    <SectionHeader title="Units & Localization" sx={{ mb: 0.5 }} />
+                    <SectionHeader title={t('settings.unitsAndLocalization')} sx={{ mb: 0.5 }} />
 
                     <InlineStatusLine status={unitsStatus} sx={{ mb: 1 }} />
 
@@ -113,32 +138,48 @@ const Settings: React.FC = () => {
                     </Box>
 
                     <Box sx={{ mt: 2 }}>
+                        <FormControl fullWidth margin="normal">
+                            <InputLabel>{t('settings.language')}</InputLabel>
+                            <Select
+                                value={languageValue}
+                                label={t('settings.language')}
+                                onChange={(e) => void handleLanguageChange(e.target.value as AppLanguage)}
+                            >
+                                <MenuItem value={APP_LANGUAGES.EN}>{t('language.en')}</MenuItem>
+                                <MenuItem value={APP_LANGUAGES.ES}>{t('language.es')}</MenuItem>
+                                <MenuItem value={APP_LANGUAGES.FR}>{t('language.fr')}</MenuItem>
+                                <MenuItem value={APP_LANGUAGES.RU}>{t('language.ru')}</MenuItem>
+                            </Select>
+                        </FormControl>
+                    </Box>
+
+                    <Box sx={{ mt: 2 }}>
                         <TimeZonePicker
                             value={timezoneValue}
                             onChange={(next) => void handleTimezoneChange(next)}
-                            helperText="Used to define your day boundaries for food and weight logs."
+                            helperText={t('settings.timezoneHelper')}
                         />
                     </Box>
                 </AppCard>
 
                 <AppCard>
-                    <SectionHeader title="Appearance" sx={{ mb: 1.5 }} />
+                    <SectionHeader title={t('settings.appearance')} sx={{ mb: 1.5 }} />
 
                     <FormControl fullWidth margin="normal">
-                        <InputLabel>Theme</InputLabel>
+                        <InputLabel>{t('settings.theme')}</InputLabel>
                         <Select
                             value={themePreference}
-                            label="Theme"
+                            label={t('settings.theme')}
                             onChange={(e) => setThemePreference(e.target.value as ThemePreference)}
                         >
-                            <MenuItem value="system">System</MenuItem>
-                            <MenuItem value="light">Light</MenuItem>
-                            <MenuItem value="dark">Dark</MenuItem>
+                            <MenuItem value="system">{t('themePreference.system')}</MenuItem>
+                            <MenuItem value="light">{t('themePreference.light')}</MenuItem>
+                            <MenuItem value="dark">{t('themePreference.dark')}</MenuItem>
                         </Select>
                         <FormHelperText>
                             {themePreference === 'system'
-                                ? `Following your device setting (currently ${resolvedThemeMode}).`
-                                : 'Persisted on this device.'}
+                                ? t('settings.themeHelper.system', { mode: resolvedThemeModeLabel })
+                                : t('settings.themeHelper.persisted')}
                         </FormHelperText>
                     </FormControl>
                 </AppCard>

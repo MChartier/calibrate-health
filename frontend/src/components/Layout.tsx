@@ -30,6 +30,7 @@ import { alpha, useTheme } from '@mui/material/styles';
 import { useAuth } from '../context/useAuth';
 import AppPage from '../ui/AppPage';
 import { getAvatarLabel } from '../utils/avatarLabel';
+import { useI18n } from '../i18n/useI18n';
 
 const drawerWidth = 240;
 const GITHUB_REPO_URL = 'https://github.com/mchartier/calibrate-health';
@@ -47,6 +48,7 @@ function getActiveNavigationValue(pathname: string): string | null {
 
 const Layout: React.FC = () => {
     const { user, logout, isLoading } = useAuth();
+    const { t } = useI18n();
     const theme = useTheme();
     const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
     const navigate = useNavigate();
@@ -66,7 +68,7 @@ const Layout: React.FC = () => {
     const showDrawer = showAppNav && isDesktop;
     const showBottomNav = showAppNav && !isDesktop;
     const authCtaSize = isDesktop ? 'medium' : 'small';
-    const registerCtaLabel = isDesktop ? 'Create account' : 'Register';
+    const registerCtaLabel = isDesktop ? t('auth.createAccount') : t('auth.register');
 
     const handleLogout = async () => {
         await logout();
@@ -87,21 +89,21 @@ const Layout: React.FC = () => {
                         <ListItemIcon>
                             <DashboardIcon />
                         </ListItemIcon>
-                        <ListItemText primary="Dashboard" />
+                        <ListItemText primary={t('nav.dashboard')} />
                     </ListItemButton>
 
                     <ListItemButton selected={location.pathname.startsWith('/log')} component={RouterLink} to="/log">
                         <ListItemIcon>
                             <ListAltIcon />
                         </ListItemIcon>
-                        <ListItemText primary="Log" />
+                        <ListItemText primary={t('nav.log')} />
                     </ListItemButton>
 
                     <ListItemButton selected={location.pathname.startsWith('/goals')} component={RouterLink} to="/goals">
                         <ListItemIcon>
                             <ShowChartIcon />
                         </ListItemIcon>
-                        <ListItemText primary="Goals" />
+                        <ListItemText primary={t('nav.goals')} />
                     </ListItemButton>
 
                     <ListItemButton
@@ -112,7 +114,7 @@ const Layout: React.FC = () => {
                         <ListItemIcon>
                             <PersonIcon />
                         </ListItemIcon>
-                        <ListItemText primary="Profile" />
+                        <ListItemText primary={t('nav.profile')} />
                     </ListItemButton>
                 </List>
             </Box>
@@ -128,14 +130,14 @@ const Layout: React.FC = () => {
                     <ListItemIcon>
                         <SettingsIcon />
                     </ListItemIcon>
-                    <ListItemText primary="Settings" />
+                    <ListItemText primary={t('nav.settings')} />
                 </ListItemButton>
 
                 <ListItemButton onClick={handleLogout}>
                     <ListItemIcon>
                         <LogoutIcon />
                     </ListItemIcon>
-                    <ListItemText primary="Log out" />
+                    <ListItemText primary={t('nav.logOut')} />
                 </ListItemButton>
             </List>
         </Box>
@@ -154,7 +156,7 @@ const Layout: React.FC = () => {
                             to={user ? '/dashboard' : '/'}
                             sx={{ color: 'inherit', textDecoration: 'none' }}
                         >
-                            calibrate
+                            {t('app.brand')}
                         </Typography>
                         {worktreeBadgeLabel && (
                             <Box
@@ -179,14 +181,14 @@ const Layout: React.FC = () => {
 
                     <Box sx={{ flexGrow: 1 }} />
 
-                    <Tooltip title="GitHub">
+                    <Tooltip title={t('nav.github')}>
                         <IconButton
                             component="a"
                             href={GITHUB_REPO_URL}
                             target="_blank"
                             rel="noreferrer"
                             color="inherit"
-                            aria-label="Open the source repository on GitHub"
+                            aria-label={t('nav.openRepoAria')}
                         >
                             <GitHubIcon />
                         </IconButton>
@@ -202,7 +204,7 @@ const Layout: React.FC = () => {
                                     variant="text"
                                     size={authCtaSize}
                                 >
-                                    Sign in
+                                    {t('auth.signIn')}
                                 </Button>
                             )}
                             {showRegisterCta && (
@@ -214,11 +216,11 @@ const Layout: React.FC = () => {
                     )}
 
                     {showSettingsShortcut && (
-                        <Tooltip title="Settings">
+                        <Tooltip title={t('nav.settings')}>
                             <IconButton
                                 color="inherit"
                                 onClick={() => navigate('/settings')}
-                                aria-label="Open settings"
+                                aria-label={t('nav.openSettingsAria')}
                                 sx={{ ml: 1 }}
                             >
                                 <Avatar
@@ -281,10 +283,10 @@ const Layout: React.FC = () => {
                             }
                         }}
                     >
-                        <BottomNavigationAction value="/dashboard" label="Dashboard" icon={<DashboardIcon />} />
-                        <BottomNavigationAction value="/log" label="Log" icon={<ListAltIcon />} />
-                        <BottomNavigationAction value="/goals" label="Goals" icon={<ShowChartIcon />} />
-                        <BottomNavigationAction value="/profile" label="Profile" icon={<PersonIcon />} />
+                        <BottomNavigationAction value="/dashboard" label={t('nav.dashboard')} icon={<DashboardIcon />} />
+                        <BottomNavigationAction value="/log" label={t('nav.log')} icon={<ListAltIcon />} />
+                        <BottomNavigationAction value="/goals" label={t('nav.goals')} icon={<ShowChartIcon />} />
+                        <BottomNavigationAction value="/profile" label={t('nav.profile')} icon={<PersonIcon />} />
                     </BottomNavigation>
                 </Box>
             )}

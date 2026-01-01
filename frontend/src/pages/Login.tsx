@@ -5,8 +5,10 @@ import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import AppPage from '../ui/AppPage';
 import AppCard from '../ui/AppCard';
 import SectionHeader from '../ui/SectionHeader';
+import { useI18n } from '../i18n/useI18n';
 
 const Login: React.FC = () => {
+    const { t } = useI18n();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
@@ -22,7 +24,7 @@ const Login: React.FC = () => {
             await login(email, password);
             navigate('/log');
         } catch {
-            setError('Invalid credentials');
+            setError(t('auth.invalidCredentials'));
         } finally {
             setIsSubmitting(false);
         }
@@ -32,7 +34,7 @@ const Login: React.FC = () => {
         <AppPage maxWidth="form">
             <AppCard>
                 <Stack component="form" spacing={2} onSubmit={handleSubmit}>
-                    <SectionHeader title="Login" />
+                    <SectionHeader title={t('auth.login')} />
 
                     {error && (
                         <Alert severity="error">
@@ -41,7 +43,7 @@ const Login: React.FC = () => {
                     )}
 
                     <TextField
-                        label="Email"
+                        label={t('auth.email')}
                         type="email"
                         autoComplete="email"
                         inputMode="email"
@@ -53,7 +55,7 @@ const Login: React.FC = () => {
                         required
                     />
                     <TextField
-                        label="Password"
+                        label={t('auth.password')}
                         type="password"
                         autoComplete="current-password"
                         fullWidth
@@ -64,12 +66,12 @@ const Login: React.FC = () => {
                     />
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                         <Button type="submit" variant="contained" fullWidth disabled={isSubmitting}>
-                            {isSubmitting ? 'Logging in…' : 'Login'}
+                            {isSubmitting ? t('auth.loggingIn') : t('auth.login')}
                         </Button>
                         <Typography variant="body2">
-                            Don&apos;t have an account?{' '}
+                            {t('auth.noAccountPrompt')}{' '}
                             <Link component={RouterLink} to="/register">
-                                Register
+                                {t('auth.register')}
                             </Link>
                         </Typography>
                     </Box>

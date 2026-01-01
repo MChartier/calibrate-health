@@ -8,6 +8,7 @@ import {
     type UserProfilePatchPayload,
     type WeightUnit
 } from './authContext';
+import type { AppLanguage } from '../i18n/languages';
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [user, setUser] = useState<User | null>(null);
@@ -109,6 +110,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     /**
+     * Update the user's preferred UI language (persisted server-side).
+     */
+    const updateLanguage = async (language: AppLanguage) => {
+        if (!user) {
+            throw new Error('Not authenticated');
+        }
+
+        const previousUser = user;
+        setUser({ ...user, language });
+
+        try {
+            const res = await axios.patch('/api/user/preferences', { language });
+            setUser(res.data.user);
+        } catch (err) {
+            setUser(previousUser);
+            throw err;
+        }
+    };
+
+    /**
      * Patch the authenticated user's profile and keep the auth context in sync with the server response.
      */
     const updateProfile = async (profile: UserProfilePatchPayload) => {
@@ -148,6 +169,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 updateUnitPreferences,
                 updateWeightUnit,
                 updateHeightUnit,
+                updateLanguage,
                 updateProfile,
                 updateProfileImage,
                 updateTimezone,
