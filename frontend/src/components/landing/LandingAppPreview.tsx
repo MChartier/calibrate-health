@@ -33,7 +33,15 @@ function LandingMockLogSummaryCard() {
     const remaining = dailyTarget - totalCalories;
 
     return (
-        <Card sx={{ width: '100%' }}>
+        <Card
+            sx={{
+                width: '100%',
+                // Promote the preview cards into their own composited layers so mobile browsers can scroll past them
+                // without re-rasterizing their shadows and SVG content every frame.
+                transform: 'translateZ(0)',
+                willChange: 'transform'
+            }}
+        >
             <CardContent>
                 <Typography variant="h6" gutterBottom>
                     Today&apos;s Log
@@ -57,8 +65,12 @@ function LandingMockLogSummaryCard() {
                         valueMax={dailyTarget}
                         innerRadius={GAUGE_INNER_RADIUS}
                         outerRadius={GAUGE_OUTER_RADIUS}
-                        text={() => ''}
+                        text={() => null}
                         sx={{
+                            // Keep the landing page preview smooth on mobile scroll by isolating gauge painting.
+                            contain: 'paint',
+                            willChange: 'transform',
+                            transform: 'translateZ(0)',
                             '& .MuiGauge-referenceArc': {
                                 fill: (theme) => theme.palette.grey[300]
                             },
@@ -96,7 +108,14 @@ function LandingMockGoalTrackerCard() {
     const progressPercent = 71;
 
     return (
-        <Card sx={{ width: '100%' }}>
+        <Card
+            sx={{
+                width: '100%',
+                // Keep the preview stack consistent: promote to its own layer for smoother mobile scrolling.
+                transform: 'translateZ(0)',
+                willChange: 'transform'
+            }}
+        >
             <CardContent>
                 <SectionHeader title="Goal tracker" sx={{ mb: 1.5 }} />
 
