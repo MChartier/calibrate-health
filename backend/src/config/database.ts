@@ -1,6 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
-import { Pool } from 'pg';
+import { Pool, type PoolConfig } from 'pg';
 
 /**
  * Resolve the Prisma/pg connection string for the current runtime.
@@ -45,7 +45,40 @@ function resolveDatabaseUrl(): string {
 
 const databaseUrl = resolveDatabaseUrl();
 
-const pool = new Pool({ connectionString: databaseUrl });
+type PgSslConfig = PoolConfig['ssl'];
+
+/**
+ * Translate Postgres `sslmode` values into node-postgres SSL options.
+ *
+ * libpq treats `sslmode=require` as "encrypt the connection, but do not verify
+ * certificates". node-postgres verifies by default when SSL is enabled, which
+ * can fail against RDS unless you provide the RDS CA bundle. For `require` we
+ * intentionally disable verification to match libpq semantics.
+ */
+function resolvePgSslConfig(databaseUrl: string, env: NodeJS.ProcessEnv = process.env): PgSslConfig | undefined {
+  const sslmodeRaw =
+    env.DB_SSLMODE ?? (() => {
+      try {
+        return new URL(databaseUrl).searchParams.get('sslmode') ?? undefined;
+      } catch {
+        return undefined;
+      }
+    })();
+
+  if (!sslmodeRaw) return undefined;
+
+  const sslmode = String(sslmodeRaw).trim().toLowerCase();
+  if (!sslmode || sslmode === 'disable') return false;
+
+  if (sslmode === 'require') {
+    return { rejectUnauthorized: false };
+  }
+
+  // For verify-ca/verify-full/etc, fall back to pg's default verification behavior.
+  return true;
+}
+
+const pool = new Pool({ connectionString: databaseUrl, ssl: resolvePgSslConfig(databaseUrl) });
 const adapter = new PrismaPg(pool);
 
 const prisma = new PrismaClient({ adapter });
