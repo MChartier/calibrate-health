@@ -113,6 +113,15 @@ export function createAppTheme(mode: PaletteMode) {
             }
         },
         components: {
+            MuiChartsSurface: {
+                styleOverrides: {
+                    root: {
+                        // MUI X Charts defaults to `touch-action: none` on the root SVG, which prevents
+                        // native page scrolling when a swipe starts on top of a chart/gauge on mobile.
+                        touchAction: 'pan-y'
+                    }
+                }
+            },
             MuiCssBaseline: {
                 styleOverrides: (theme) => {
                     const accentA = alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.14 : 0.1);
