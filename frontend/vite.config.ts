@@ -39,7 +39,7 @@ function getPwaOptions(): Partial<VitePWAOptions> {
     registerType: 'autoUpdate',
     // Ensure icons referenced by the manifest are copied through to the build output.
     includeAssets: [
-      'icon.svg',
+      'icon.png',
       'apple-touch-icon.png',
       'pwa-192x192.png',
       'pwa-512x512.png',
