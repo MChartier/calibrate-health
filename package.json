@@ -22,7 +22,13 @@
     "build": "npm --prefix frontend run build",
     "lint": "npm --prefix frontend run lint",
     "test": "npm --prefix backend test",
-    "test:coverage": "npm --prefix backend run test:coverage"
+    "test:coverage": "npm --prefix backend run test:coverage",
+    "terraform:bootstrap:plan": "node scripts/terraform.mjs bootstrap plan",
+    "terraform:bootstrap:apply": "node scripts/terraform.mjs bootstrap apply",
+    "terraform:staging:plan": "node scripts/terraform.mjs staging plan",
+    "terraform:staging:apply": "node scripts/terraform.mjs staging apply",
+    "terraform:prod:plan": "node scripts/terraform.mjs prod plan",
+    "terraform:prod:apply": "node scripts/terraform.mjs prod apply"
   },
   "keywords": [],
   "author": "",
