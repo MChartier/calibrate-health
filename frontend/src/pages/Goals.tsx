@@ -17,6 +17,7 @@ import { parseDateOnlyToLocalDate } from '../utils/goalTracking';
 import AppPage from '../ui/AppPage';
 import AppCard from '../ui/AppCard';
 import SectionHeader from '../ui/SectionHeader';
+import { useI18n } from '../i18n/useI18n';
 
 type MetricEntry = {
     id: number;
@@ -38,10 +39,11 @@ type WeightPoint = { date: Date; weight: number };
 
 const Goals: React.FC = () => {
     const { user } = useAuth();
+    const { t } = useI18n();
     const theme = useTheme();
     const sectionGap = theme.custom.layout.page.sectionGap;
     const unitLabel = user?.weight_unit === 'LB' ? 'lb' : 'kg';
-    const weightSeriesLabel = `Weight (${unitLabel})`;
+    const weightSeriesLabel = t('goals.weightSeriesLabel', { unit: unitLabel });
     const legendSwatchSizePx = 12;
     const weightChartHeightPx = 320;
 
@@ -95,7 +97,7 @@ const Goals: React.FC = () => {
     let weightHistoryContent: React.ReactNode;
 
     if (metricsQuery.isError) {
-        weightHistoryContent = <Alert severity="warning">Unable to load weight history.</Alert>;
+        weightHistoryContent = <Alert severity="warning">{t('goals.weightHistoryLoadError')}</Alert>;
     } else if (metricsQuery.isLoading) {
         weightHistoryContent = (
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
@@ -104,7 +106,7 @@ const Goals: React.FC = () => {
             </Box>
         );
     } else if (points.length === 0) {
-        weightHistoryContent = <Typography color="text.secondary">No weight entries yet.</Typography>;
+        weightHistoryContent = <Typography color="text.secondary">{t('goals.noWeightEntries')}</Typography>;
     } else {
         weightHistoryContent = (
             <Stack spacing={1.5}>
@@ -138,7 +140,10 @@ const Goals: React.FC = () => {
                     {targetIsValid && (
                         <ChartsReferenceLine
                             y={goal!.target_weight}
-                            label={`Target: ${goal!.target_weight.toFixed(1)} ${unitLabel}`}
+                            label={t('goals.targetLineLabel', {
+                                value: goal!.target_weight.toFixed(1),
+                                unit: unitLabel
+                            })}
                             lineStyle={{
                                 stroke: theme.palette.secondary.main,
                                 strokeDasharray: '6 6',
@@ -173,7 +178,7 @@ const Goals: React.FC = () => {
                 <GoalTrackerCard />
 
                 <AppCard>
-                    <SectionHeader title="Weight History" sx={{ mb: 1.5 }} />
+                    <SectionHeader title={t('goals.weightHistoryTitle')} sx={{ mb: 1.5 }} />
                     {weightHistoryContent}
                 </AppCard>
             </Stack>

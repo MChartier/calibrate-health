@@ -129,6 +129,7 @@ test('auth route: POST /register creates a user and logs them in', async () => {
       weight_unit: createdUser.weight_unit,
       height_unit: createdUser.height_unit,
       timezone: createdUser.timezone,
+      language: 'en',
       date_of_birth: createdUser.date_of_birth,
       sex: createdUser.sex,
       height_mm: createdUser.height_mm,
@@ -220,4 +221,3 @@ test('auth route: GET /me returns 401 when not authenticated', async () => {
   assert.equal(res.statusCode, 401);
   assert.deepEqual(res.body, { message: 'Not authenticated' });
 });
-

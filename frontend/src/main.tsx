@@ -6,6 +6,7 @@ import { BrowserRouter } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext.tsx'
 import { ThemeModeProvider } from './context/ThemeModeContext.tsx'
 import { registerSW } from 'virtual:pwa-register'
+import { I18nFromAuth } from './i18n/I18nFromAuth.tsx'
 
 const queryClient = new QueryClient()
 
@@ -68,9 +69,11 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     <QueryClientProvider client={queryClient}>
       <ThemeModeProvider>
         <AuthProvider>
-          <BrowserRouter>
-            <App />
-          </BrowserRouter>
+          <I18nFromAuth>
+            <BrowserRouter>
+              <App />
+            </BrowserRouter>
+          </I18nFromAuth>
         </AuthProvider>
       </ThemeModeProvider>
     </QueryClientProvider>

@@ -1,4 +1,5 @@
 import type { ActivityLevel, HeightUnit, Prisma, Sex, WeightUnit } from '@prisma/client';
+import { isSupportedLanguage, SUPPORTED_LANGUAGES, type SupportedLanguage } from './language';
 import { buildBase64DataUrl } from './profileImage';
 
 export type UserClientPayload = {
@@ -8,6 +9,7 @@ export type UserClientPayload = {
   weight_unit: WeightUnit;
   height_unit: HeightUnit;
   timezone: string;
+  language: SupportedLanguage;
   date_of_birth: Date | null;
   sex: Sex | null;
   height_mm: number | null;
@@ -26,6 +28,7 @@ export const USER_CLIENT_SELECT = {
   weight_unit: true,
   height_unit: true,
   timezone: true,
+  language: true,
   date_of_birth: true,
   sex: true,
   height_mm: true,
@@ -34,7 +37,9 @@ export const USER_CLIENT_SELECT = {
   profile_image_mime_type: true
 } satisfies Prisma.UserSelect;
 
-type UserForClient = Omit<UserClientPayload, 'profile_image_url'> & {
+type UserForClient = Omit<UserClientPayload, 'profile_image_url' | 'language'> & {
+  // `User.language` is stored as a string (not a Prisma enum), so validate it before returning to the client.
+  language: string;
   profile_image?: Uint8Array | null;
   profile_image_mime_type?: string | null;
 };
@@ -53,6 +58,7 @@ export const serializeUserForClient = (user: UserForClient): UserClientPayload =
     weight_unit: user.weight_unit,
     height_unit: user.height_unit,
     timezone: user.timezone,
+    language: isSupportedLanguage(user.language) ? user.language : SUPPORTED_LANGUAGES.EN,
     date_of_birth: user.date_of_birth,
     sex: user.sex,
     height_mm: user.height_mm,

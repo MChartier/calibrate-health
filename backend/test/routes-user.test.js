@@ -141,6 +141,7 @@ test('user route: GET /me returns serialized user data', async () => {
       weight_unit: dbUser.weight_unit,
       height_unit: dbUser.height_unit,
       timezone: dbUser.timezone,
+      language: 'en',
       date_of_birth: dbUser.date_of_birth,
       sex: dbUser.sex,
       height_mm: dbUser.height_mm,
@@ -269,4 +270,3 @@ test('user route: PATCH /password updates password when current password matches
   assert.equal(res.statusCode, 200);
   assert.deepEqual(res.body, { message: 'Password updated' });
 });
-

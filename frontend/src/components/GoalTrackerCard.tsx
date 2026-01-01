@@ -8,6 +8,8 @@ import { useAuth } from '../context/useAuth';
 import GoalEditor from './GoalEditor';
 import SectionHeader from '../ui/SectionHeader';
 import type { GoalMode } from '../utils/goalValidation';
+import { useI18n } from '../i18n/useI18n';
+import type { TranslationKey } from '../i18n/resources';
 import {
     computeGoalProgress,
     computeGoalProjection,
@@ -72,6 +74,7 @@ const GoalTrackerBody: React.FC<{
     dailyDeficit: number;
     currentWeightDate: string | null;
 }> = ({ startWeight, targetWeight, currentWeight, unitLabel, goalMode, goalCreatedAt, dailyDeficit, currentWeightDate }) => {
+    const { t } = useI18n();
     const projection = computeGoalProjection({
         goalMode,
         unitLabel,
@@ -100,20 +103,21 @@ const GoalTrackerBody: React.FC<{
             typeof currentWeight === 'number' && Number.isFinite(currentWeight) ? `${currentWeight.toFixed(1)} ${unitLabel}` : EM_DASH;
 
         const statusLabel = (() => {
-            if (delta === null) return 'Log a weigh-in';
-            if (absDelta === null) return 'Log a weigh-in';
-            if (isOnTarget) return 'On target';
-            return `${absDelta.toFixed(1)} ${unitLabel} ${delta > 0 ? 'above' : 'below'}`;
+            if (delta === null) return t('goalTracker.status.logWeighIn');
+            if (absDelta === null) return t('goalTracker.status.logWeighIn');
+            if (isOnTarget) return t('goalTracker.status.onTarget');
+            const direction = delta > 0 ? t('goalTracker.status.above') : t('goalTracker.status.below');
+            return `${absDelta.toFixed(1)} ${unitLabel} ${direction}`;
         })();
 
         return (
             <Box>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', mb: 0.5, gap: 1 }}>
                     <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 600 }}>
-                        Target {targetWeight.toFixed(1)} {unitLabel}
+                        {t('goalTracker.label.target', { value: targetWeight.toFixed(1), unit: unitLabel })}
                     </Typography>
                     <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 600 }}>
-                        ±{tolerance.toFixed(1)} {unitLabel}
+                        {t('goalTracker.label.tolerance', { value: tolerance.toFixed(1), unit: unitLabel })}
                     </Typography>
                 </Box>
 
@@ -139,7 +143,7 @@ const GoalTrackerBody: React.FC<{
                             backgroundColor: (theme) =>
                                 alpha(theme.palette.secondary.main, resolveModeAlpha(theme, MAINTENANCE_TOLERANCE_ALPHA))
                         }}
-                        aria-label="On-target range"
+                        aria-label={t('goalTracker.aria.onTargetRange')}
                     />
 
                     <Box
@@ -152,7 +156,7 @@ const GoalTrackerBody: React.FC<{
                             backgroundColor: 'divider',
                             transform: 'translateX(-50%)'
                         }}
-                        aria-label="Target marker"
+                        aria-label={t('goalTracker.aria.targetMarker')}
                     />
 
                     {delta !== null && (
@@ -172,14 +176,14 @@ const GoalTrackerBody: React.FC<{
                                     backgroundColor: 'background.paper',
                                     border: (theme) => `2px solid ${theme.palette.primary.main}`
                                 }}
-                                aria-label="Current weight marker"
+                                aria-label={t('goalTracker.aria.currentWeightMarker')}
                             />
                         </Box>
                     )}
                 </Box>
 
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', mt: 1, gap: 1 }}>
-                    <Typography variant="body2">Current {currentWeightLabel}</Typography>
+                    <Typography variant="body2">{t('goalTracker.label.current', { weight: currentWeightLabel })}</Typography>
                     <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 600 }}>
                         {statusLabel}
                     </Typography>
@@ -194,7 +198,9 @@ const GoalTrackerBody: React.FC<{
             : null;
 
     const projectedLabel =
-        projection.projectedDateLabel === EM_DASH ? 'Projected: \u2014' : `Projected: ${projection.projectedDateLabel}`;
+        projection.projectedDateLabel === EM_DASH
+            ? t('goalTracker.label.projectedMissing')
+            : t('goalTracker.label.projected', { date: projection.projectedDateLabel });
     const currentWeightLabel =
         typeof currentWeight === 'number' && Number.isFinite(currentWeight) ? `${currentWeight.toFixed(1)} ${unitLabel}` : EM_DASH;
 
@@ -202,10 +208,10 @@ const GoalTrackerBody: React.FC<{
         <Box>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', mb: 0.5, gap: 1 }}>
                 <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 600 }}>
-                    Start {startWeight.toFixed(1)} {unitLabel}
+                    {t('goalTracker.label.start', { value: startWeight.toFixed(1), unit: unitLabel })}
                 </Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 600 }}>
-                    Goal {targetWeight.toFixed(1)} {unitLabel}
+                    {t('goalTracker.label.goal', { value: targetWeight.toFixed(1), unit: unitLabel })}
                 </Typography>
             </Box>
 
@@ -227,7 +233,7 @@ const GoalTrackerBody: React.FC<{
                                 backgroundColor: 'background.paper',
                                 border: (theme) => `2px solid ${theme.palette.primary.main}`
                             }}
-                            aria-label="Current progress marker"
+                            aria-label={t('goalTracker.aria.currentProgressMarker')}
                         />
                     </Box>
                 )}
@@ -254,14 +260,19 @@ const GoalTrackerBody: React.FC<{
             </Box>
 
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', mt: 1, gap: 1 }}>
-                <Typography variant="body2">Current {currentWeightLabel}</Typography>
+                <Typography variant="body2">{t('goalTracker.label.current', { weight: currentWeightLabel })}</Typography>
                 {progress ? (
-                    <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 600 }} aria-label="Percent progress toward goal">
+                    <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        sx={{ fontWeight: 600 }}
+                        aria-label={t('goalTracker.aria.progressPercent')}
+                    >
                         {progress.percent.toFixed(0)}%
                     </Typography>
                 ) : (
                     <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 600 }}>
-                        Log a weigh-in
+                        {t('goalTracker.status.logWeighIn')}
                     </Typography>
                 )}
             </Box>
@@ -285,11 +296,12 @@ const GoalTrackerBody: React.FC<{
  */
 const GoalTrackerCard: React.FC<GoalTrackerCardProps> = ({ isDashboard = false }) => {
     const { user } = useAuth();
+    const { t } = useI18n();
     const unitLabel = user?.weight_unit === 'LB' ? 'lb' : 'kg';
     const [goalEditorDialog, setGoalEditorDialog] = useState<
         | {
-            title: string;
-            submitLabel: string;
+            titleKey: TranslationKey;
+            submitLabelKey: TranslationKey;
             initialStartWeight: number | null;
             initialTargetWeight: number | null;
             initialDailyDeficit: number | null;
@@ -338,7 +350,7 @@ const GoalTrackerCard: React.FC<GoalTrackerCardProps> = ({ isDashboard = false }
     const isLoading = goalQuery.isLoading || metricsQuery.isLoading;
     const isError = goalQuery.isError || metricsQuery.isError;
 
-    const goalEditorCtaLabel = goal ? 'Set a new goal' : 'Set a goal';
+    const goalEditorCtaLabel = goal ? t('goalTracker.cta.setNewGoal') : t('goalTracker.cta.setGoal');
 
     const handleOpenGoalEditor = () => {
         const initialStartWeight = typeof currentWeight === 'number' && Number.isFinite(currentWeight) ? currentWeight : goal?.start_weight ?? null;
@@ -346,8 +358,8 @@ const GoalTrackerCard: React.FC<GoalTrackerCardProps> = ({ isDashboard = false }
         const initialDailyDeficit = goal?.daily_deficit ?? 500;
 
         setGoalEditorDialog({
-            title: goal ? 'Set a new goal' : 'Set your first goal',
-            submitLabel: goal ? 'Save new goal' : 'Save goal',
+            titleKey: goal ? 'goalTracker.dialog.title.newGoal' : 'goalTracker.dialog.title.firstGoal',
+            submitLabelKey: goal ? 'goalTracker.dialog.submit.newGoal' : 'goalTracker.dialog.submit.saveGoal',
             initialStartWeight,
             initialTargetWeight,
             initialDailyDeficit
@@ -375,11 +387,11 @@ const GoalTrackerCard: React.FC<GoalTrackerCardProps> = ({ isDashboard = false }
         cardBody = (
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
                 <Typography variant="body2" color="text.secondary">
-                    Unable to load goal progress.
+                    {t('goalTracker.error.unableToLoad')}
                 </Typography>
                 {isDashboard && (
                     <Typography variant="body2" color="primary">
-                        View goals and details
+                        {t('goalTracker.cta.viewGoalsDetails')}
                     </Typography>
                 )}
             </Box>
@@ -388,14 +400,14 @@ const GoalTrackerCard: React.FC<GoalTrackerCardProps> = ({ isDashboard = false }
         cardBody = (
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
                 <Typography variant="body2" color="text.secondary">
-                    No goal set yet.
+                    {t('goalTracker.empty.noGoal')}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                    Set a target weight to start tracking progress.
+                    {t('goalTracker.empty.setTargetHint')}
                 </Typography>
                 {isDashboard && (
                     <Typography variant="body2" color="primary">
-                        Set a goal
+                        {t('goalTracker.cta.setGoal')}
                     </Typography>
                 )}
             </Box>
@@ -406,8 +418,8 @@ const GoalTrackerCard: React.FC<GoalTrackerCardProps> = ({ isDashboard = false }
                 {completion && (
                     <Alert severity="success">
                         {goalMode === 'maintain'
-                            ? `Nice work! You're on target for ${goal.target_weight.toFixed(1)} ${unitLabel}.`
-                            : `Congratulations! You've met or exceeded your goal of ${goal.target_weight.toFixed(1)} ${unitLabel}.`}
+                            ? t('goalTracker.success.maintain', { target: goal.target_weight.toFixed(1), unit: unitLabel })
+                            : t('goalTracker.success.other', { target: goal.target_weight.toFixed(1), unit: unitLabel })}
                     </Alert>
                 )}
 
@@ -424,7 +436,7 @@ const GoalTrackerCard: React.FC<GoalTrackerCardProps> = ({ isDashboard = false }
 
                 {isDashboard && (
                     <Typography variant="body2" color="primary">
-                        View goals and details
+                        {t('goalTracker.cta.viewGoalsDetails')}
                     </Typography>
                 )}
             </Box>
@@ -434,7 +446,7 @@ const GoalTrackerCard: React.FC<GoalTrackerCardProps> = ({ isDashboard = false }
     const content = (
         <CardContent>
             <SectionHeader
-                title="Goal tracker"
+                title={t('goalTracker.title')}
                 actions={
                     !isDashboard ? (
                         <Button variant="outlined" size="small" onClick={handleOpenGoalEditor} disabled={isLoading}>
@@ -477,7 +489,9 @@ const GoalTrackerCard: React.FC<GoalTrackerCardProps> = ({ isDashboard = false }
                 fullWidth
                 maxWidth="sm"
             >
-                <DialogTitle>{goalEditorDialog?.title ?? 'Edit goal'}</DialogTitle>
+                <DialogTitle>
+                    {goalEditorDialog ? t(goalEditorDialog.titleKey) : t('goalTracker.dialog.title.editGoalFallback')}
+                </DialogTitle>
                 <DialogContent dividers>
                     {goalEditorDialog && (
                         <GoalEditor
@@ -485,7 +499,7 @@ const GoalTrackerCard: React.FC<GoalTrackerCardProps> = ({ isDashboard = false }
                             initialStartWeight={goalEditorDialog.initialStartWeight}
                             initialTargetWeight={goalEditorDialog.initialTargetWeight}
                             initialDailyDeficit={goalEditorDialog.initialDailyDeficit}
-                            submitLabel={goalEditorDialog.submitLabel}
+                            submitLabel={t(goalEditorDialog.submitLabelKey)}
                             onSaved={() => setGoalEditorDialog(null)}
                             onCancel={() => setGoalEditorDialog(null)}
                         />

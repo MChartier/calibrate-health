@@ -28,6 +28,7 @@ import {
     toDatePart,
     useMetricsQuery
 } from '../queries/metrics';
+import { useI18n } from '../i18n/useI18n';
 
 type Props = {
     onSuccess?: () => void;
@@ -82,6 +83,7 @@ const WeightEntryFormContent: React.FC<WeightEntryFormContentProps> = ({
     onSuccess
 }) => {
     const queryClient = useQueryClient();
+    const { t } = useI18n();
     const [weight, setWeight] = useState(() => (prefillMetric ? String(prefillMetric.weight) : ''));
     const [error, setError] = useState<string | null>(null);
     const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
@@ -94,11 +96,13 @@ const WeightEntryFormContent: React.FC<WeightEntryFormContentProps> = ({
     }, [prefillMetric]);
     const weightFieldError = useMemo(() => {
         if (!weight.trim()) return null;
-        if (parsedWeight === null) return 'Enter a valid number.';
-        if (parsedWeight <= 0) return 'Weight must be positive.';
-        if (parsedWeight < WEIGHT_ENTRY_MIN) return `Weight must be at least ${WEIGHT_ENTRY_MIN} ${weightUnitLabel}.`;
+        if (parsedWeight === null) return t('weightEntry.validation.invalidNumber');
+        if (parsedWeight <= 0) return t('weightEntry.validation.mustBePositive');
+        if (parsedWeight < WEIGHT_ENTRY_MIN) {
+            return t('weightEntry.validation.min', { min: WEIGHT_ENTRY_MIN, unit: weightUnitLabel });
+        }
         return null;
-    }, [parsedWeight, weight, weightUnitLabel]);
+    }, [parsedWeight, t, weight, weightUnitLabel]);
 
     const saveMutation = useMutation({
         mutationFn: async () => {
@@ -129,7 +133,7 @@ const WeightEntryFormContent: React.FC<WeightEntryFormContentProps> = ({
             setWeight('');
             onSuccess?.();
         } catch (err) {
-            setError(getApiErrorMessage(err) ?? 'Unable to save weight right now.');
+            setError(getApiErrorMessage(err) ?? t('weightEntry.error.saveFailed'));
         }
     };
 
@@ -152,7 +156,7 @@ const WeightEntryFormContent: React.FC<WeightEntryFormContentProps> = ({
             setWeight('');
             onSuccess?.();
         } catch (err) {
-            setError(getApiErrorMessage(err) ?? 'Unable to delete weight entry right now.');
+            setError(getApiErrorMessage(err) ?? t('weightEntry.error.deleteFailed'));
         }
     };
 
@@ -174,7 +178,7 @@ const WeightEntryFormContent: React.FC<WeightEntryFormContentProps> = ({
 
     const isBusy = isLoadingExistingMetric || saveMutation.isPending || deleteMutation.isPending;
     const canSubmit = !isBusy && !!weight.trim() && !weightFieldError;
-    const submitLabel = existingMetric ? 'Save Weight' : 'Add Weight';
+    const submitLabel = existingMetric ? t('weightEntry.submit.save') : t('weightEntry.submit.add');
 
     return (
         <>
@@ -182,21 +186,23 @@ const WeightEntryFormContent: React.FC<WeightEntryFormContentProps> = ({
                 <Stack spacing={2} component="form" id={formId} onSubmit={handleSubmit} sx={{ mt: 1 }}>
                     {error && <Alert severity="error">{error}</Alert>}
                     {isExistingMetricError && !error && (
-                        <Alert severity="warning">Unable to load the existing weight entry for this day.</Alert>
+                        <Alert severity="warning">{t('weightEntry.error.loadExistingFailed')}</Alert>
                     )}
                     {existingMetric && (
                         <Typography variant="body2" color="text.secondary">
-                            Existing entry found for {entryDateLabel}. Saving will overwrite it.
+                            {t('weightEntry.existingEntryNotice', { date: entryDateLabel })}
                         </Typography>
                     )}
 
                     {!existingMetric && prefillMetric && (
                         <Typography variant="body2" color="text.secondary">
-                            Prefilled from your last weigh-in ({prefillDateLabel ?? toDatePart(prefillMetric.date)}).
+                            {t('weightEntry.prefilledNotice', {
+                                date: prefillDateLabel ?? toDatePart(prefillMetric.date)
+                            })}
                         </Typography>
                     )}
                     <TextField
-                        label={`Weight (${weightUnitLabel})`}
+                        label={t('weightEntry.weightLabel', { unit: weightUnitLabel })}
                         type="number"
                         fullWidth
                         value={weight}
@@ -207,7 +213,10 @@ const WeightEntryFormContent: React.FC<WeightEntryFormContentProps> = ({
                             endAdornment: (
                                 <InputAdornment position="end">
                                     <IconButton
-                                        aria-label={`Decrease weight by ${WEIGHT_ENTRY_STEP} ${weightUnitLabel}`}
+                                        aria-label={t('weightEntry.stepper.decrease', {
+                                            step: WEIGHT_ENTRY_STEP,
+                                            unit: weightUnitLabel
+                                        })}
                                         size="small"
                                         edge="end"
                                         onClick={() => handleStepWeight(-WEIGHT_ENTRY_STEP)}
@@ -216,7 +225,10 @@ const WeightEntryFormContent: React.FC<WeightEntryFormContentProps> = ({
                                         <RemoveIcon fontSize="small" />
                                     </IconButton>
                                     <IconButton
-                                        aria-label={`Increase weight by ${WEIGHT_ENTRY_STEP} ${weightUnitLabel}`}
+                                        aria-label={t('weightEntry.stepper.increase', {
+                                            step: WEIGHT_ENTRY_STEP,
+                                            unit: weightUnitLabel
+                                        })}
                                         size="small"
                                         edge="end"
                                         onClick={() => handleStepWeight(WEIGHT_ENTRY_STEP)}
@@ -234,11 +246,11 @@ const WeightEntryFormContent: React.FC<WeightEntryFormContentProps> = ({
                     />
 
                     <Typography variant="caption" color="text.secondary">
-                        Want to change units? Update them in{' '}
+                        {t('weightEntry.unitsHint.prefix')}{' '}
                         <Link component={RouterLink} to="/settings">
-                            Settings
+                            {t('nav.settings')}
                         </Link>
-                        .
+                        {t('weightEntry.unitsHint.suffix')}
                     </Typography>
                 </Stack>
             </DialogContent>
@@ -252,7 +264,7 @@ const WeightEntryFormContent: React.FC<WeightEntryFormContentProps> = ({
                         onClick={() => setIsDeleteConfirmOpen(true)}
                         disabled={deleteMutation.isPending || saveMutation.isPending}
                     >
-                        Delete
+                        {t('common.delete')}
                     </Button>
                 )}
                 <Button
@@ -266,15 +278,15 @@ const WeightEntryFormContent: React.FC<WeightEntryFormContentProps> = ({
             </DialogActions>
 
             <Dialog open={isDeleteConfirmOpen} onClose={() => setIsDeleteConfirmOpen(false)} fullWidth maxWidth="xs">
-                <DialogTitle>Delete weight entry?</DialogTitle>
+                <DialogTitle>{t('weightEntry.deleteDialog.title')}</DialogTitle>
                 <DialogContent>
                     <Typography sx={{ mt: 1 }}>
-                        Delete the weight entry for {entryDateLabel}? This cannot be undone.
+                        {t('weightEntry.deleteDialog.body', { date: entryDateLabel })}
                     </Typography>
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={() => setIsDeleteConfirmOpen(false)} disabled={deleteMutation.isPending}>
-                        Cancel
+                        {t('common.cancel')}
                     </Button>
                     <Button
                         variant="contained"
@@ -282,7 +294,7 @@ const WeightEntryFormContent: React.FC<WeightEntryFormContentProps> = ({
                         onClick={handleConfirmDelete}
                         disabled={deleteMutation.isPending}
                     >
-                        Delete
+                        {t('common.delete')}
                     </Button>
                 </DialogActions>
             </Dialog>

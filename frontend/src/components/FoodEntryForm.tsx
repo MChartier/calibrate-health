@@ -33,10 +33,11 @@ import MealPeriodIcon from './MealPeriodIcon';
 import NewMyFoodDialog from './NewMyFoodDialog';
 import NewRecipeDialog from './NewRecipeDialog';
 import type { NormalizedFoodItem } from '../types/food';
-import { MEAL_PERIOD_LABELS, MEAL_PERIOD_ORDER, type MealPeriod } from '../types/mealPeriod';
+import { getMealPeriodLabel, MEAL_PERIOD_ORDER, type MealPeriod } from '../types/mealPeriod';
 import { useMyFoodsQuery } from '../queries/myFoods';
 import { getApiErrorMessage } from '../utils/apiError';
 import { useDebouncedValue } from '../hooks/useDebouncedValue';
+import { useI18n } from '../i18n/useI18n';
 
 type Props = {
     onSuccess?: () => void;
@@ -93,6 +94,7 @@ const mergeUniqueResults = (current: NormalizedFoodItem[], nextPage: NormalizedF
 
 const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
     const queryClient = useQueryClient();
+    const { t } = useI18n();
 
     const [mode, setMode] = useState<'myFoods' | 'myRecipes' | 'search'>('search');
 
@@ -133,11 +135,13 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
     const debouncedSearchQuery = useDebouncedValue(searchQuery, 350);
     const debouncedMyFoodsQueryText = useDebouncedValue(myFoodsQueryText, 250);
 
-    const mealOptions = MEAL_PERIOD_ORDER.map((value) => ({
-        value,
-        label: MEAL_PERIOD_LABELS[value],
-        icon: <MealPeriodIcon mealPeriod={value} />
-    }));
+    const mealOptions = useMemo(() => {
+        return MEAL_PERIOD_ORDER.map((value) => ({
+            value,
+            label: getMealPeriodLabel(value, t),
+            icon: <MealPeriodIcon mealPeriod={value} />
+        }));
+    }, [t]);
 
     const selectedItem = useMemo(
         () => searchResults.find((item) => item.id === selectedItemId) || null,
@@ -293,14 +297,14 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
                     selectSearchResult(firstPage.items[0]);
                 }
             } catch (err) {
-                setError(getApiErrorMessage(err) ?? 'Search failed. Please try again.');
+                setError(getApiErrorMessage(err) ?? t('foodEntry.search.error.searchFailed'));
             } finally {
                 if (searchSessionRef.current === sessionId) {
                     setIsSearching(false);
                 }
             }
         },
-        [clearSelectedSearchItem, fetchFoodSearchPage, isSubmitting, selectSearchResult]
+        [clearSelectedSearchItem, fetchFoodSearchPage, isSubmitting, selectSearchResult, t]
     );
 
     // Trigger provider searches automatically while typing, and keep the Search tab stable when the input is cleared.
@@ -371,14 +375,14 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
             setSearchPage(nextPageNumber);
             setHasMoreResults(nextPage.items.length === SEARCH_PAGE_SIZE);
         } catch (err) {
-            setError(getApiErrorMessage(err) ?? 'Unable to load more results right now.');
+            setError(getApiErrorMessage(err) ?? t('foodEntry.search.error.loadMoreFailed'));
         } finally {
             if (searchSessionRef.current === sessionId) {
                 setIsLoadingMoreResults(false);
                 loadMoreLockRef.current = false;
             }
         }
-    }, [activeSearch, fetchFoodSearchPage, hasMoreResults, isLoadingMoreResults, isSearching, isSubmitting, searchPage]);
+    }, [activeSearch, fetchFoodSearchPage, hasMoreResults, isLoadingMoreResults, isSearching, isSubmitting, searchPage, t]);
 
     const handleAddQuickEntry = async () => {
         const trimmedName = quickEntryName.trim();
@@ -399,7 +403,7 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
             setQuickEntryCalories('');
             onSuccess?.();
         } catch (err) {
-            setError(getApiErrorMessage(err) ?? 'Unable to add this food right now.');
+            setError(getApiErrorMessage(err) ?? t('foodEntry.error.unableToAdd'));
         } finally {
             setIsSubmitting(false);
         }
@@ -424,7 +428,7 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
             setMyFoodServingsConsumed('1');
             onSuccess?.();
         } catch (err) {
-            setError(getApiErrorMessage(err) ?? 'Unable to add this food right now.');
+            setError(getApiErrorMessage(err) ?? t('foodEntry.error.unableToAdd'));
         } finally {
             setIsSubmitting(false);
         }
@@ -443,23 +447,23 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
             });
             onSuccess?.();
         } catch (err) {
-            setError(getApiErrorMessage(err) ?? 'Unable to add this food right now.');
+            setError(getApiErrorMessage(err) ?? t('foodEntry.error.unableToAdd'));
         } finally {
             setIsSubmitting(false);
         }
     };
 
-    const providerLookupNote = supportsBarcodeLookup === false ? ' (barcode lookup unavailable)' : '';
+    const providerLookupNote = supportsBarcodeLookup === false ? ` ${t('foodEntry.search.barcodeUnavailable')}` : '';
 
     // Compute the search panel body outside JSX so the layout stays readable.
     let searchResultsContent: React.ReactNode;
 
     if (searchResults.length === 0) {
-        let emptyMessage = 'Start typing to search by name, or scan a barcode to see matching items.';
+        let emptyMessage = t('foodEntry.search.empty.start');
         if (isSearching) {
-            emptyMessage = 'Searching...';
+            emptyMessage = t('foodEntry.search.empty.searching');
         } else if (hasSearched) {
-            emptyMessage = 'No matches found. Try a different search term or scan again.';
+            emptyMessage = t('foodEntry.search.empty.noMatches');
         }
 
         searchResultsContent = (
@@ -470,7 +474,7 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
     } else if (searchView === 'results') {
         searchResultsContent = (
             <Stack spacing={1}>
-                <Typography variant="subtitle2">Results</Typography>
+                <Typography variant="subtitle2">{t('foodEntry.search.results.title')}</Typography>
                 <FoodSearchResultsList
                     items={searchResults}
                     selectedItemId={selectedItemId}
@@ -481,7 +485,7 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
                     onSelect={selectSearchResult}
                 />
                 <Typography variant="caption" color="text.secondary">
-                    Tap a result to select it.
+                    {t('foodEntry.search.results.tapHint')}
                 </Typography>
             </Stack>
         );
@@ -501,7 +505,7 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
                     }}
                 >
                     <Box sx={{ minWidth: 0 }}>
-                        <Typography variant="subtitle2">Selected</Typography>
+                        <Typography variant="subtitle2">{t('foodEntry.search.selected.title')}</Typography>
                         <Typography variant="body2" sx={{ wordBreak: 'break-word' }}>
                             {selectedItem.description}
                             {selectedItem.brand ? ` (${selectedItem.brand})` : ''}
@@ -514,15 +518,15 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
                         startIcon={<ArrowBackIcon />}
                         onClick={() => setSearchView('results')}
                     >
-                        Back to results
+                        {t('foodEntry.search.selected.back')}
                     </Button>
                 </Box>
 
                 <FormControl fullWidth>
-                    <InputLabel>Measure</InputLabel>
+                    <InputLabel>{t('foodEntry.search.measure')}</InputLabel>
                     <Select
                         value={selectedMeasure?.label || ''}
-                        label="Measure"
+                        label={t('foodEntry.search.measure')}
                         onChange={(e) => setSelectedMeasureLabel(e.target.value)}
                         disabled={isSubmitting}
                     >
@@ -537,7 +541,7 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
                 </FormControl>
 
                 <TextField
-                    label="Quantity"
+                    label={t('foodEntry.search.quantity')}
                     type="number"
                     value={quantity}
                     onChange={(e) => setQuantity(parseFloat(e.target.value) || 0)}
@@ -548,12 +552,12 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
                 <Box>
                     <Typography variant="body2" color="text.secondary">
                         {selectedItem.nutrientsPer100g
-                            ? 'Calories are estimated from nutrients per 100g.'
-                            : 'Calories unavailable for this item.'}
+                            ? t('foodEntry.search.caloriesEstimated')
+                            : t('foodEntry.search.caloriesUnavailable')}
                     </Typography>
                     {computed && (
                         <Typography variant="subtitle1" sx={{ mt: 1 }}>
-                            {computed.calories} Calories for {computed.grams} g
+                            {t('foodEntry.search.computedSummary', { calories: computed.calories, grams: computed.grams })}
                         </Typography>
                     )}
                 </Box>
@@ -562,7 +566,7 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
     } else {
         searchResultsContent = (
             <Typography variant="body2" color="text.secondary">
-                Select a result to continue.
+                {t('foodEntry.search.selectToContinue')}
             </Typography>
         );
     }
@@ -587,9 +591,9 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
                             '& .MuiToggleButton-root': { flex: 1 }
                         }}
                     >
-                        <ToggleButton value="search">Search</ToggleButton>
-                        <ToggleButton value="myFoods">My Foods</ToggleButton>
-                        <ToggleButton value="myRecipes">My Recipes</ToggleButton>
+                        <ToggleButton value="search">{t('foodEntry.mode.search')}</ToggleButton>
+                        <ToggleButton value="myFoods">{t('foodEntry.mode.myFoods')}</ToggleButton>
+                        <ToggleButton value="myRecipes">{t('foodEntry.mode.myRecipes')}</ToggleButton>
                     </ToggleButtonGroup>
 
                     {error && <Alert severity="error">{error}</Alert>}
@@ -597,8 +601,8 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
                     {mode === 'search' ? (
                         <Stack spacing={2}>
                             <TextField
-                                label="Search foods"
-                                placeholder="e.g. apple, chicken breast"
+                                label={t('foodEntry.search.label')}
+                                placeholder={t('foodEntry.search.placeholder')}
                                 fullWidth
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -613,8 +617,8 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
                                     endAdornment: (
                                         <InputAdornment position="end">
                                             <IconButton
-                                                aria-label="Scan barcode"
-                                                title="Scan barcode"
+                                                aria-label={t('foodEntry.search.scanBarcode')}
+                                                title={t('foodEntry.search.scanBarcode')}
                                                 onClick={() => setIsScannerOpen(true)}
                                                 size="small"
                                                 edge="end"
@@ -628,7 +632,7 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
                             />
                             {providerName && (
                                 <Typography variant="caption" color="text.secondary">
-                                    Provider: {providerName}
+                                    {t('foodEntry.search.providerLabel', { provider: providerName })}
                                     {providerLookupNote}
                                 </Typography>
                             )}
@@ -657,14 +661,14 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
                                     onClick={() => setIsNewFoodDialogOpen(true)}
                                     disabled={isSubmitting}
                                 >
-                                    New Food
+                                    {t('foodEntry.myFoods.newFood')}
                                 </Button>
                             </Stack>
 
                             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems={{ sm: 'flex-end' }}>
                                 <TextField
-                                    label="Search My Foods"
-                                    placeholder="e.g. oatmeal, chili"
+                                    label={t('foodEntry.myFoods.searchLabel')}
+                                    placeholder={t('foodEntry.myFoods.searchPlaceholder')}
                                     fullWidth
                                     value={myFoodsQueryText}
                                     onChange={(e) => setMyFoodsQueryText(e.target.value)}
@@ -676,16 +680,16 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
                                 <Stack direction="row" spacing={1} alignItems="center">
                                     <CircularProgress size={18} />
                                     <Typography variant="body2" color="text.secondary">
-                                        Loading...
+                                        {t('common.loading')}
                                     </Typography>
                                 </Stack>
                             ) : myFoodsQuery.isError ? (
                                 <Typography variant="body2" color="text.secondary">
-                                    Unable to load your saved foods right now.
+                                    {t('foodEntry.myFoods.error.unableToLoad')}
                                 </Typography>
                             ) : myFoods.length === 0 ? (
                                 <Typography variant="body2" color="text.secondary">
-                                    No saved foods yet. Create one with "New Food" to reuse it later.
+                                    {t('foodEntry.myFoods.empty', { newFood: t('foodEntry.myFoods.newFood') })}
                                 </Typography>
                             ) : (
                                 <Box
@@ -727,7 +731,7 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
                                         const servingDescriptor = `${selectedMyFood.serving_size_quantity} ${selectedMyFood.serving_unit_label}`;
                                         return (
                                             <TextField
-                                                label={`Servings consumed (${servingDescriptor})`}
+                                                label={t('foodEntry.myFoods.servingsConsumed', { serving: servingDescriptor })}
                                                 type="number"
                                                 value={myFoodServingsConsumed}
                                                 onChange={(e) => setMyFoodServingsConsumed(e.target.value)}
@@ -738,7 +742,7 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
                                     })()}
                                     {myFoodCaloriesPreview !== null && (
                                         <Typography variant="body2" color="text.secondary">
-                                            {myFoodCaloriesPreview} calories
+                                            {t('foodEntry.myFoods.caloriesPreview', { calories: myFoodCaloriesPreview })}
                                         </Typography>
                                     )}
                                 </Stack>
@@ -772,13 +776,13 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
                                     onClick={() => setIsNewRecipeDialogOpen(true)}
                                     disabled={isSubmitting}
                                 >
-                                    New Recipe
+                                    {t('foodEntry.myRecipes.newRecipe')}
                                 </Button>
                             </Stack>
 
                             <TextField
-                                label="Search My Recipes"
-                                placeholder="e.g. chili, overnight oats"
+                                label={t('foodEntry.myRecipes.searchLabel')}
+                                placeholder={t('foodEntry.myRecipes.searchPlaceholder')}
                                 fullWidth
                                 value={myFoodsQueryText}
                                 onChange={(e) => setMyFoodsQueryText(e.target.value)}
@@ -789,16 +793,16 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
                                 <Stack direction="row" spacing={1} alignItems="center">
                                     <CircularProgress size={18} />
                                     <Typography variant="body2" color="text.secondary">
-                                        Loading...
+                                        {t('common.loading')}
                                     </Typography>
                                 </Stack>
                             ) : myFoodsQuery.isError ? (
                                 <Typography variant="body2" color="text.secondary">
-                                    Unable to load your saved recipes right now.
+                                    {t('foodEntry.myRecipes.error.unableToLoad')}
                                 </Typography>
                             ) : myFoods.length === 0 ? (
                                 <Typography variant="body2" color="text.secondary">
-                                    No saved recipes yet. Create one with "New Recipe" to reuse it later.
+                                    {t('foodEntry.myRecipes.empty', { newRecipe: t('foodEntry.myRecipes.newRecipe') })}
                                 </Typography>
                             ) : (
                                 <Box
@@ -840,7 +844,7 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
                                         const servingDescriptor = `${selectedMyFood.serving_size_quantity} ${selectedMyFood.serving_unit_label}`;
                                         return (
                                             <TextField
-                                                label={`Servings consumed (${servingDescriptor})`}
+                                                label={t('foodEntry.myFoods.servingsConsumed', { serving: servingDescriptor })}
                                                 type="number"
                                                 value={myFoodServingsConsumed}
                                                 onChange={(e) => setMyFoodServingsConsumed(e.target.value)}
@@ -851,7 +855,7 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
                                     })()}
                                     {myFoodCaloriesPreview !== null && (
                                         <Typography variant="body2" color="text.secondary">
-                                            {myFoodCaloriesPreview} calories
+                                            {t('foodEntry.myFoods.caloriesPreview', { calories: myFoodCaloriesPreview })}
                                         </Typography>
                                     )}
                                 </Stack>
@@ -876,10 +880,10 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
 
                     {shouldShowMealPeriod && (
                         <FormControl fullWidth>
-                            <InputLabel>Meal Period</InputLabel>
+                            <InputLabel>{t('foodEntry.mealPeriod.label')}</InputLabel>
                             <Select
                                 value={mealPeriod}
-                                label="Meal Period"
+                                label={t('foodEntry.mealPeriod.label')}
                                 onChange={(e) => setMealPeriod(e.target.value as MealPeriod)}
                                 disabled={isSubmitting}
                             >
@@ -897,18 +901,18 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
                         <>
                             <Divider />
 
-                            <Typography variant="subtitle2">Quick entry (not saved)</Typography>
+                            <Typography variant="subtitle2">{t('foodEntry.quickEntry.title')}</Typography>
 
                             <Stack spacing={2}>
                                 <TextField
-                                    label="Food Name"
+                                    label={t('foodEntry.quickEntry.foodName')}
                                     fullWidth
                                     value={quickEntryName}
                                     onChange={(e) => setQuickEntryName(e.target.value)}
                                     disabled={isSubmitting}
                                 />
                                 <TextField
-                                    label="Calories"
+                                    label={t('foodEntry.quickEntry.calories')}
                                     type="number"
                                     fullWidth
                                     value={quickEntryCalories}
@@ -930,7 +934,7 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
                         onClick={() => void handleAddQuickEntry()}
                         disabled={isSubmitting || !canAddQuickEntry}
                     >
-                        {isSubmitting ? 'Adding…' : 'Add Once'}
+                        {isSubmitting ? t('common.adding') : t('foodEntry.quickEntry.addOnce')}
                     </Button>
                 )}
 
@@ -941,7 +945,7 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
                         onClick={() => void handleAddFromSearch()}
                         disabled={isSubmitting || !canAddSelectedSearch}
                     >
-                        {isSubmitting ? 'Adding…' : 'Add Selected Food'}
+                        {isSubmitting ? t('common.adding') : t('foodEntry.actions.addSelected')}
                     </Button>
                 ) : (
                     <Button
@@ -950,7 +954,7 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
                         onClick={() => void handleAddFromMyFoods()}
                         disabled={isSubmitting || !canAddSelectedMyFood}
                     >
-                        {isSubmitting ? 'Adding…' : 'Add to Log'}
+                        {isSubmitting ? t('common.adding') : t('foodEntry.actions.addToLog')}
                     </Button>
                 )}
             </DialogActions>

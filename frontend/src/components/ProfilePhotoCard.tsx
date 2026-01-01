@@ -5,6 +5,7 @@ import { useAuth } from '../context/useAuth';
 import AppCard from '../ui/AppCard';
 import { getAvatarLabel } from '../utils/avatarLabel';
 import ProfilePhotoCropDialog from './ProfilePhotoCropDialog';
+import { useI18n } from '../i18n/useI18n';
 
 const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
 
@@ -20,12 +21,16 @@ type Props = {
  * The actual bytes we store are processed client-side (cropped + resized) before upload.
  */
 const ProfilePhotoCard: React.FC<Props> = ({
-    title = 'Profile photo',
-    description = 'Optional. Used for your avatar in the app.'
+    title,
+    description
 }) => {
     const theme = useTheme();
+    const { t } = useI18n();
     const { user, updateProfileImage } = useAuth();
     const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+    const resolvedTitle = title ?? t('profilePhoto.title');
+    const resolvedDescription = description ?? t('profilePhoto.description');
 
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
@@ -48,11 +53,11 @@ const ProfilePhotoCard: React.FC<Props> = ({
 
         if (!file) return;
         if (!file.type.startsWith('image/')) {
-            setError('Please choose an image file.');
+            setError(t('profilePhoto.error.chooseImage'));
             return;
         }
         if (file.size > MAX_UPLOAD_BYTES) {
-            setError('That photo is too large. Please choose one under 10MB.');
+            setError(t('profilePhoto.error.tooLarge'));
             return;
         }
 
@@ -67,12 +72,12 @@ const ProfilePhotoCard: React.FC<Props> = ({
         setIsRemoving(true);
         try {
             await updateProfileImage(null);
-            setSuccess('Profile photo removed.');
+            setSuccess(t('profilePhoto.success.removed'));
         } catch (err) {
             if (import.meta.env.DEV) {
                 console.error(err);
             }
-            setError('Unable to remove profile photo.');
+            setError(t('profilePhoto.error.removeFailed'));
         } finally {
             setIsRemoving(false);
         }
@@ -83,9 +88,9 @@ const ProfilePhotoCard: React.FC<Props> = ({
             <AppCard>
                 <Stack spacing={2}>
                     <Box>
-                        <Typography variant="h6">{title}</Typography>
+                        <Typography variant="h6">{resolvedTitle}</Typography>
                         <Typography variant="body2" color="text.secondary">
-                            {description}
+                            {resolvedDescription}
                         </Typography>
                     </Box>
 
@@ -112,7 +117,7 @@ const ProfilePhotoCard: React.FC<Props> = ({
                                 component="label"
                                 disabled={!user}
                             >
-                                {hasPhoto ? 'Change photo' : 'Add photo'}
+                                {hasPhoto ? t('profilePhoto.changePhoto') : t('profilePhoto.addPhoto')}
                                 <input
                                     ref={fileInputRef}
                                     type="file"
@@ -134,7 +139,7 @@ const ProfilePhotoCard: React.FC<Props> = ({
                                     onClick={() => void handleRemove()}
                                     disabled={isRemoving}
                                 >
-                                    Remove
+                                    {t('profilePhoto.remove')}
                                 </Button>
                             )}
                         </Stack>
@@ -153,7 +158,7 @@ const ProfilePhotoCard: React.FC<Props> = ({
                     setError('');
                     setSuccess('');
                     await updateProfileImage(dataUrl);
-                    setSuccess('Profile photo updated.');
+                    setSuccess(t('profilePhoto.success.updated'));
                     setCropOpen(false);
                     setSelectedImageUrl(null);
                 }}
@@ -163,4 +168,3 @@ const ProfilePhotoCard: React.FC<Props> = ({
 };
 
 export default ProfilePhotoCard;
-

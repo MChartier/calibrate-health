@@ -9,6 +9,7 @@ import { usePrefersReducedMotion } from '../hooks/usePrefersReducedMotion';
 import { useTweenedNumber } from '../hooks/useTweenedNumber';
 import SectionHeader from '../ui/SectionHeader';
 import { findMetricOnOrBeforeDate, toDatePart, useMetricsQuery } from '../queries/metrics';
+import { useI18n } from '../i18n/useI18n';
 
 const EM_DASH = '\u2014';
 // Duration used for "date switch" value transitions.
@@ -51,6 +52,7 @@ function formatMetricDateLabel(value: string | null): string {
  */
 const WeightSummaryCard: React.FC<WeightSummaryCardProps> = ({ date, onOpenWeightEntry }) => {
     const { user } = useAuth();
+    const { t } = useI18n();
     const unitLabel = user?.weight_unit === 'LB' ? 'lb' : 'kg';
     const today = useMemo(() => getTodayIsoDate(user?.timezone), [user?.timezone]);
     const isToday = date === today;
@@ -77,10 +79,10 @@ const WeightSummaryCard: React.FC<WeightSummaryCardProps> = ({ date, onOpenWeigh
 
     const ctaLabel = useMemo(() => {
         if (isToday) {
-            return metricForSelectedDate ? "Edit today's weight" : "Log today's weight";
+            return metricForSelectedDate ? t('weightSummary.cta.editToday') : t('weightSummary.cta.logToday');
         }
-        return metricForSelectedDate ? 'Edit weight' : 'Log weight';
-    }, [isToday, metricForSelectedDate]);
+        return metricForSelectedDate ? t('weightSummary.cta.edit') : t('weightSummary.cta.log');
+    }, [isToday, metricForSelectedDate, t]);
 
     const displayedWeightLabel = displayedWeight !== null ? `${animatedWeight.toFixed(1)} ${unitLabel}` : EM_DASH;
     const asOfLabel = formatMetricDateLabel(displayedMetric?.date ?? null);
@@ -118,7 +120,7 @@ const WeightSummaryCard: React.FC<WeightSummaryCardProps> = ({ date, onOpenWeigh
                         <Skeleton width="40%" height={32} />
                         <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 0.75 }}>
                             <Typography variant="body2" color="text.secondary">
-                                As of
+                                {t('weightSummary.asOf')}
                             </Typography>
                             <Skeleton width="35%" height={20} />
                         </Box>
@@ -133,7 +135,7 @@ const WeightSummaryCard: React.FC<WeightSummaryCardProps> = ({ date, onOpenWeigh
     } else if (metricsQuery.isError) {
         cardBody = (
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                <Alert severity="warning">Unable to load your weight history right now.</Alert>
+                <Alert severity="warning">{t('weightSummary.error.unableToLoad')}</Alert>
                 <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
                     <Button variant="outlined" onClick={onOpenWeightEntry}>
                         {ctaLabel}
@@ -174,7 +176,7 @@ const WeightSummaryCard: React.FC<WeightSummaryCardProps> = ({ date, onOpenWeigh
                             {displayedWeightLabel}
                         </Typography>
                         <Typography variant="body2" color="text.secondary">
-                            As of {asOfLabel}
+                            {t('weightSummary.asOfWithDate', { date: asOfLabel })}
                         </Typography>
                     </Box>
                 </Box>
@@ -192,7 +194,7 @@ const WeightSummaryCard: React.FC<WeightSummaryCardProps> = ({ date, onOpenWeigh
         <Card sx={{ height: '100%', width: '100%' }}>
             <CardContent>
                 <SectionHeader
-                    title="Weight"
+                    title={t('weightSummary.title')}
                     align="center"
                     actions={
                         isToday && !metricsQuery.isLoading && !metricsQuery.isError ? (
@@ -200,7 +202,11 @@ const WeightSummaryCard: React.FC<WeightSummaryCardProps> = ({ date, onOpenWeigh
                                 size="small"
                                 color={metricForSelectedDate ? 'success' : 'warning'}
                                 variant="outlined"
-                                label={metricForSelectedDate ? 'Done for today' : 'Due today'}
+                                label={
+                                    metricForSelectedDate
+                                        ? t('weightSummary.chip.doneToday')
+                                        : t('weightSummary.chip.dueToday')
+                                }
                             />
                         ) : null
                     }

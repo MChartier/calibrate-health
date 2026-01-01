@@ -29,11 +29,12 @@ import DeleteIcon from '@mui/icons-material/DeleteRounded';
 import { alpha, useTheme } from '@mui/material/styles';
 import axios from 'axios';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { MEAL_PERIOD_LABELS, MEAL_PERIOD_ORDER, type MealPeriod } from '../types/mealPeriod';
+import { getMealPeriodLabel, MEAL_PERIOD_ORDER, type MealPeriod } from '../types/mealPeriod';
 import { getMealPeriodAccentColor } from '../utils/mealColors';
 import { formatServingSnapshotLabel } from '../utils/servingDisplay';
 import SectionHeader from '../ui/SectionHeader';
 import MealPeriodIcon from './MealPeriodIcon';
+import { useI18n } from '../i18n/useI18n';
 
 type FoodLogEntry = {
     id: number | string;
@@ -45,11 +46,6 @@ type FoodLogEntry = {
     serving_unit_label_snapshot?: string | null;
     calories_per_serving_snapshot?: number | null;
 };
-
-const MEALS: Array<{ key: MealPeriod; label: string }> = MEAL_PERIOD_ORDER.map((key) => ({
-    key,
-    label: MEAL_PERIOD_LABELS[key]
-}));
 
 const MEAL_PERIOD_SET = new Set<MealPeriod>(MEAL_PERIOD_ORDER);
 
@@ -122,7 +118,15 @@ export type FoodLogMealsProps = {
 const FoodLogMeals: React.FC<FoodLogMealsProps> = ({ logs, isLoading = false }) => {
     const queryClient = useQueryClient();
     const theme = useTheme();
+    const { t } = useI18n();
     const sectionGap = theme.custom.layout.page.sectionGap;
+
+    const meals = useMemo(() => {
+        return MEAL_PERIOD_ORDER.map((key) => ({
+            key,
+            label: getMealPeriodLabel(key, t)
+        }));
+    }, [t]);
 
     const grouped = useMemo(() => {
         const groups = createMealPeriodRecord<FoodLogEntry[]>(() => []);
@@ -150,10 +154,9 @@ const FoodLogMeals: React.FC<FoodLogMealsProps> = ({ logs, isLoading = false }) 
         setExpanded((prev) => {
             let changed = false;
             const next = { ...prev };
-            for (const meal of MEALS) {
-                const key = meal.key;
-                if (previousCounts[key] === 0 && counts[key] > 0) {
-                    next[key] = true;
+            for (const mealPeriod of MEAL_PERIOD_ORDER) {
+                if (previousCounts[mealPeriod] === 0 && counts[mealPeriod] > 0) {
+                    next[mealPeriod] = true;
                     changed = true;
                 }
             }
@@ -227,13 +230,13 @@ const FoodLogMeals: React.FC<FoodLogMealsProps> = ({ logs, isLoading = false }) 
 
         const trimmedName = editName.trim();
         if (!trimmedName) {
-            setEditError('Name is required.');
+            setEditError(t('foodLog.validation.nameRequired'));
             return;
         }
 
         const parsedCalories = parseCaloriesInput(editCalories);
         if (parsedCalories === null) {
-            setEditError('Calories must be a non-negative number.');
+            setEditError(t('foodLog.validation.caloriesNonNegative'));
             return;
         }
 
@@ -241,7 +244,7 @@ const FoodLogMeals: React.FC<FoodLogMealsProps> = ({ logs, isLoading = false }) 
         const servingsValueRaw = editServingsConsumed.trim();
         const servingsValue = servingsValueRaw ? parseServingsInput(servingsValueRaw) : null;
         if (hasServingSnapshot && servingsValueRaw && servingsValue === null) {
-            setEditError('Servings must be a positive number.');
+            setEditError(t('foodLog.validation.servingsPositive'));
             return;
         }
 
@@ -258,7 +261,7 @@ const FoodLogMeals: React.FC<FoodLogMealsProps> = ({ logs, isLoading = false }) 
             setEditEntry(null);
         } catch (err) {
             console.error(err);
-            setEditError('Unable to save changes right now.');
+            setEditError(t('foodLog.error.saveFailed'));
         }
     };
 
@@ -281,23 +284,23 @@ const FoodLogMeals: React.FC<FoodLogMealsProps> = ({ logs, isLoading = false }) 
             setDeleteEntry(null);
         } catch (err) {
             console.error(err);
-            setDeleteError('Unable to delete this entry right now.');
+            setDeleteError(t('foodLog.error.deleteFailed'));
         }
     };
 
     return (
         <Stack spacing={sectionGap} useFlexGap>
             <SectionHeader
-                title="Food Log"
+                title={t('foodLog.title')}
                 align="center"
                 actions={
                     <>
-                        <Tooltip title="Collapse all">
+                        <Tooltip title={t('foodLog.collapseAll')}>
                             <IconButton size="small" onClick={handleCollapseAll}>
                                 <ExpandMoreIcon sx={{ transform: 'rotate(180deg)' }} />
                             </IconButton>
                         </Tooltip>
-                        <Tooltip title="Expand all">
+                        <Tooltip title={t('foodLog.expandAll')}>
                             <IconButton size="small" onClick={handleExpandAll}>
                                 <ExpandMoreIcon />
                             </IconButton>
@@ -305,7 +308,7 @@ const FoodLogMeals: React.FC<FoodLogMealsProps> = ({ logs, isLoading = false }) 
                     </>
                 }
             />
-            {MEALS.map((meal) => {
+            {meals.map((meal) => {
                 const entries = grouped[meal.key];
                 const total = sumCalories(entries);
                 const isExpanded = expanded[meal.key];
@@ -340,7 +343,9 @@ const FoodLogMeals: React.FC<FoodLogMealsProps> = ({ logs, isLoading = false }) 
                             {isLoading ? (
                                 <Skeleton width={FOOD_LOG_SKELETON_TOTAL_WIDTH_PX} height={FOOD_LOG_SKELETON_TOTAL_HEIGHT_PX} />
                             ) : (
-                                <Typography color="text.secondary">{total} Calories</Typography>
+                                <Typography color="text.secondary">
+                                    {t('foodLog.totalCalories', { calories: total })}
+                                </Typography>
                             )}
                         </AccordionSummary>
                         <AccordionDetails>
@@ -368,7 +373,7 @@ const FoodLogMeals: React.FC<FoodLogMealsProps> = ({ logs, isLoading = false }) 
                                     ))}
                                 </Stack>
                             ) : entries.length === 0 ? (
-                                <Typography color="text.secondary">No entries yet.</Typography>
+                                <Typography color="text.secondary">{t('foodLog.noEntries')}</Typography>
                             ) : (
                                 <Stack divider={<Divider flexItem />} spacing={1}>
                                     {entries.map((entry) => (
@@ -394,14 +399,16 @@ const FoodLogMeals: React.FC<FoodLogMealsProps> = ({ logs, isLoading = false }) 
                                             </Box>
                                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                                                 <Typography color="text.secondary" sx={{ whiteSpace: 'nowrap' }}>
-                                                    {entry.calories} Calories
+                                                    {t('foodLog.entryCalories', {
+                                                        calories: typeof entry.calories === 'number' ? entry.calories : '-'
+                                                    })}
                                                 </Typography>
-                                                <Tooltip title="Edit entry">
+                                                <Tooltip title={t('foodLog.editEntry')}>
                                                     <IconButton size="small" onClick={() => handleOpenEdit(entry)}>
                                                         <EditIcon fontSize="small" />
                                                     </IconButton>
                                                 </Tooltip>
-                                                <Tooltip title="Delete entry">
+                                                <Tooltip title={t('foodLog.deleteEntry')}>
                                                     <IconButton
                                                         size="small"
                                                         onClick={() => handleOpenDelete(entry)}
@@ -421,19 +428,19 @@ const FoodLogMeals: React.FC<FoodLogMealsProps> = ({ logs, isLoading = false }) 
             })}
 
             <Dialog open={!!editEntry} onClose={handleCloseEdit} fullWidth maxWidth="xs">
-                <DialogTitle>Edit food entry</DialogTitle>
+                <DialogTitle>{t('foodLog.editDialog.title')}</DialogTitle>
                 <DialogContent>
                     <Stack spacing={2} sx={{ mt: 1 }}>
                         {editError && <Alert severity="error">{editError}</Alert>}
                         <TextField
-                            label="Name"
+                            label={t('foodLog.field.name')}
                             value={editName}
                             onChange={(e) => setEditName(e.target.value)}
                             fullWidth
                             autoFocus
                         />
                         <TextField
-                            label="Calories"
+                            label={t('foodLog.field.calories')}
                             type="number"
                             value={editCalories}
                             onChange={(e) => setEditCalories(e.target.value)}
@@ -442,7 +449,7 @@ const FoodLogMeals: React.FC<FoodLogMealsProps> = ({ logs, isLoading = false }) 
                         />
                         {editEntry?.serving_unit_label_snapshot && (
                             <TextField
-                                label={`Servings consumed (${editEntry.serving_unit_label_snapshot})`}
+                                label={t('foodLog.field.servingsConsumed', { unit: editEntry.serving_unit_label_snapshot })}
                                 type="number"
                                 value={editServingsConsumed}
                                 onChange={(e) => setEditServingsConsumed(e.target.value)}
@@ -451,14 +458,14 @@ const FoodLogMeals: React.FC<FoodLogMealsProps> = ({ logs, isLoading = false }) 
                             />
                         )}
                         <FormControl fullWidth>
-                            <InputLabel id="food-log-meal-period-label">Meal</InputLabel>
+                            <InputLabel id="food-log-meal-period-label">{t('foodLog.field.meal')}</InputLabel>
                             <Select
                                 labelId="food-log-meal-period-label"
-                                label="Meal"
+                                label={t('foodLog.field.meal')}
                                 value={editMealPeriod}
                                 onChange={(e) => setEditMealPeriod(e.target.value as MealPeriod)}
                             >
-                                {MEALS.map((meal) => (
+                                {meals.map((meal) => (
                                     <MenuItem key={meal.key} value={meal.key}>
                                         {meal.label}
                                     </MenuItem>
@@ -469,27 +476,29 @@ const FoodLogMeals: React.FC<FoodLogMealsProps> = ({ logs, isLoading = false }) 
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={handleCloseEdit} disabled={updateMutation.isPending}>
-                        Cancel
+                        {t('common.cancel')}
                     </Button>
                     <Button variant="contained" onClick={handleSaveEdit} disabled={updateMutation.isPending}>
-                        Save
+                        {t('common.save')}
                     </Button>
                 </DialogActions>
             </Dialog>
 
             <Dialog open={!!deleteEntry} onClose={handleCloseDelete} fullWidth maxWidth="xs">
-                <DialogTitle>Delete food entry?</DialogTitle>
+                <DialogTitle>{t('foodLog.deleteDialog.title')}</DialogTitle>
                 <DialogContent>
                     <Stack spacing={2} sx={{ mt: 1 }}>
                         {deleteError && <Alert severity="error">{deleteError}</Alert>}
                         <Typography>
-                            {deleteEntry?.name ? `Delete "${deleteEntry.name}"?` : 'Delete this entry?'}
+                            {deleteEntry?.name
+                                ? t('foodLog.deleteDialog.confirmNamed', { name: deleteEntry.name })
+                                : t('foodLog.deleteDialog.confirmGeneric')}
                         </Typography>
                     </Stack>
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={handleCloseDelete} disabled={deleteMutation.isPending}>
-                        Cancel
+                        {t('common.cancel')}
                     </Button>
                     <Button
                         variant="contained"
@@ -497,7 +506,7 @@ const FoodLogMeals: React.FC<FoodLogMealsProps> = ({ logs, isLoading = false }) 
                         onClick={handleConfirmDelete}
                         disabled={deleteMutation.isPending}
                     >
-                        Delete
+                        {t('common.delete')}
                     </Button>
                 </DialogActions>
             </Dialog>

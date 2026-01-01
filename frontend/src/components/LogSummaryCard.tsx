@@ -12,6 +12,7 @@ import {
 import { usePrefersReducedMotion } from '../hooks/usePrefersReducedMotion';
 import { useUserProfileQuery } from '../queries/userProfile';
 import { useFoodLogQuery } from '../queries/foodLog';
+import { useI18n } from '../i18n/useI18n';
 
 const GAUGE_WIDTH = 200;
 const GAUGE_HEIGHT = 140;
@@ -150,6 +151,7 @@ export type LogSummaryCardProps = {
 
 const LogSummaryCard: React.FC<LogSummaryCardProps> = ({ dashboardMode = false, date }) => {
     const { user } = useAuth();
+    const { t } = useI18n();
     const timeZone = React.useMemo(() => {
         return user?.timezone?.trim() || Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
     }, [user?.timezone]);
@@ -162,10 +164,12 @@ const LogSummaryCard: React.FC<LogSummaryCardProps> = ({ dashboardMode = false, 
         const titleEmojis = [birthdayEmoji, holidayEmoji].filter(Boolean).join(' ');
         const titleEmojiSuffix = titleEmojis ? ` ${titleEmojis}` : '';
 
-        return isActiveDateToday
-            ? `Today's Log${titleEmojiSuffix}`
-            : `Log for ${formatIsoDateForDisplay(activeDate)}${titleEmojiSuffix}`;
-    }, [activeDate, isActiveDateToday, user?.date_of_birth]);
+        const baseTitle = isActiveDateToday
+            ? t('logSummary.title.today')
+            : t('logSummary.title.forDate', { date: formatIsoDateForDisplay(activeDate) });
+
+        return `${baseTitle}${titleEmojiSuffix}`;
+    }, [activeDate, isActiveDateToday, t, user?.date_of_birth]);
 
     const foodQuery = useFoodLogQuery(activeDate);
 
@@ -242,17 +246,17 @@ const LogSummaryCard: React.FC<LogSummaryCardProps> = ({ dashboardMode = false, 
                     }}
                 />
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, flexGrow: 1 }}>
-                    <Typography variant="subtitle1">Calories remaining</Typography>
+                    <Typography variant="subtitle1">{t('logSummary.caloriesRemaining')}</Typography>
                     <Skeleton width="40%" height={SUMMARY_SKELETON_VALUE_HEIGHT} />
                     <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1 }}>
                         <Typography variant="body2" color="text.secondary">
-                            Logged:
+                            {t('logSummary.loggedLabel')}
                         </Typography>
                         <Skeleton width="55%" height={20} />
                     </Box>
                     {dashboardMode && (
                         <Typography variant="body2" color="primary">
-                            View / edit {isActiveDateToday ? "today's log" : 'this log'}
+                            {isActiveDateToday ? t('logSummary.cta.viewEditToday') : t('logSummary.cta.viewEditThis')}
                         </Typography>
                     )}
                 </Box>
@@ -262,16 +266,20 @@ const LogSummaryCard: React.FC<LogSummaryCardProps> = ({ dashboardMode = false, 
         cardBody = (
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
                 <Typography variant="body2" color="text.secondary">
-                    Unable to load this log summary.
+                    {t('logSummary.error.unableToLoad')}
                 </Typography>
                 {dashboardMode && (
                     <Typography variant="body2" color="primary">
-                        View / edit {isActiveDateToday ? "today's log" : 'this log'}
+                        {isActiveDateToday ? t('logSummary.cta.viewEditToday') : t('logSummary.cta.viewEditThis')}
                     </Typography>
                 )}
             </Box>
         );
     } else {
+        const loggedLine = dailyTarget
+            ? t('logSummary.loggedLine.ofTarget', { total: totalCalories, target: Math.round(dailyTarget) })
+            : t('logSummary.loggedLine', { total: totalCalories });
+
         cardBody = (
             <Box
                 sx={{
@@ -308,17 +316,21 @@ const LogSummaryCard: React.FC<LogSummaryCardProps> = ({ dashboardMode = false, 
                 />
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
                     <Typography variant="subtitle1">
-                        {remainingCalories !== null && remainingCalories < 0 ? 'Calories over budget' : 'Calories remaining'}
+                        {remainingCalories !== null && remainingCalories < 0
+                            ? t('logSummary.caloriesOverBudget')
+                            : t('logSummary.caloriesRemaining')}
                     </Typography>
                     <Typography variant="h5">
-                        {displayedRemainingCaloriesLabel !== null ? `${displayedRemainingCaloriesLabel} Calories` : '—'}
+                        {displayedRemainingCaloriesLabel !== null
+                            ? t('logSummary.caloriesValue', { value: displayedRemainingCaloriesLabel })
+                            : '—'}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                        Logged: {totalCalories} Calories {dailyTarget ? `of ${Math.round(dailyTarget)} Calories target` : ''}
+                        {loggedLine}
                     </Typography>
                     {dashboardMode && (
                         <Typography variant="body2" color="primary">
-                            View / edit {isActiveDateToday ? "today's log" : 'this log'}
+                            {isActiveDateToday ? t('logSummary.cta.viewEditToday') : t('logSummary.cta.viewEditThis')}
                         </Typography>
                     )}
                 </Box>

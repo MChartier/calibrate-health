@@ -65,6 +65,7 @@ test('userSerialization: serializeUserForClient builds a base64 data URL when im
       weight_unit: user.weight_unit,
       height_unit: user.height_unit,
       timezone: user.timezone,
+      language: 'en',
       date_of_birth: user.date_of_birth,
       sex: user.sex,
       height_mm: user.height_mm,
@@ -73,4 +74,3 @@ test('userSerialization: serializeUserForClient builds a base64 data URL when im
     }
   );
 });
-

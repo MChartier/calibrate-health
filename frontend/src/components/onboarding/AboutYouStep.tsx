@@ -1,10 +1,11 @@
 import React from 'react';
 import { Box, Collapse, Stack, Typography } from '@mui/material';
 import { HEIGHT_UNITS, SEX_VALUES, type HeightUnit } from '../../context/authContext';
-import { activityLevelOptions } from '../../constants/activityLevels';
+import { getActivityLevelOptions } from '../../constants/activityLevels';
 import { ONBOARDING_CARD_CONTENT_SPACING, ONBOARDING_FIELD_SPACING } from './layout';
 import type { AboutQuestionKey } from './types';
 import OnboardingSummaryRow from './OnboardingSummaryRow';
+import { useI18n } from '../../i18n/useI18n';
 
 /**
  * Format a YYYY-MM-DD date string into a friendly, locale-aware label without timezone shifting.
@@ -74,6 +75,8 @@ export type AboutYouStepProps = {
  * Inputs live in the fixed footer so users can answer one question at a time and stay focused.
  */
 const AboutYouStep: React.FC<AboutYouStepProps> = (props) => {
+    const { t } = useI18n();
+
     const heightValue = formatHeightForSummary({
         heightUnit: props.heightUnit,
         heightCm: props.heightCm,
@@ -81,8 +84,15 @@ const AboutYouStep: React.FC<AboutYouStepProps> = (props) => {
         heightInches: props.heightInches
     });
 
+    const activityLevelOptions = React.useMemo(() => getActivityLevelOptions(t), [t]);
     const activityTitle = activityLevelOptions.find((option) => option.value === props.activityLevel)?.title ?? '';
-    const sexLabel = formatSexForSummary(props.sex);
+
+    let sexLabel = formatSexForSummary(props.sex);
+    if (props.sex === SEX_VALUES.MALE) {
+        sexLabel = t('profile.sex.male');
+    } else if (props.sex === SEX_VALUES.FEMALE) {
+        sexLabel = t('profile.sex.female');
+    }
 
     const hasAnySummary = props.completedKeys.length > 0;
     const formattedDob = props.dob.trim() ? formatDobForSummary(props.dob) : '';

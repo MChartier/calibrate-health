@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Autocomplete, TextField } from '@mui/material';
 import { useTimezoneSelect, type ITimezoneOption } from 'react-timezone-select';
+import { useI18n } from '../i18n/useI18n';
 
 type Props = {
     /** Current IANA timezone identifier (e.g. "America/Los_Angeles"). */
@@ -33,10 +34,10 @@ function getCurrentTimeLabel(timeZone: string, now: Date): string | null {
 /**
  * Concatenate a user-provided helper message with a "current time there" suffix.
  */
-function buildHelperLine(helperText: string | undefined, currentTimeLabel: string | null): string | undefined {
+function buildHelperLine(helperText: string | undefined, currentTimeSuffix: string | null): string | undefined {
     const parts = [];
     if (helperText) parts.push(helperText);
-    if (currentTimeLabel) parts.push(`Current time there: ${currentTimeLabel}`);
+    if (currentTimeSuffix) parts.push(currentTimeSuffix);
     return parts.length > 0 ? parts.join(' ') : undefined;
 }
 
@@ -46,7 +47,8 @@ function buildHelperLine(helperText: string | undefined, currentTimeLabel: strin
  * Uses `react-timezone-select` for a sane timezone list + labels, but renders with MUI so it
  * looks/behaves like the rest of our form controls (portal dropdown, consistent theming).
  */
-const TimeZonePicker: React.FC<Props> = ({ value, onChange, label = 'Timezone', helperText, disabled }) => {
+const TimeZonePicker: React.FC<Props> = ({ value, onChange, label, helperText, disabled }) => {
+    const { t } = useI18n();
     const [now, setNow] = useState<Date>(() => new Date());
     const { options } = useTimezoneSelect({ labelStyle: 'original', displayValue: 'UTC' });
 
@@ -56,7 +58,12 @@ const TimeZonePicker: React.FC<Props> = ({ value, onChange, label = 'Timezone', 
     }, []);
 
     const currentTimeLabel = useMemo(() => getCurrentTimeLabel(value, now), [now, value]);
-    const helperLine = useMemo(() => buildHelperLine(helperText, currentTimeLabel), [currentTimeLabel, helperText]);
+    const resolvedLabel = label ?? t('timezone.label');
+    const currentTimeSuffix = useMemo(() => {
+        if (!currentTimeLabel) return null;
+        return t('timezone.currentTimeThere', { time: currentTimeLabel });
+    }, [currentTimeLabel, t]);
+    const helperLine = useMemo(() => buildHelperLine(helperText, currentTimeSuffix), [currentTimeSuffix, helperText]);
 
     const selectedOption = useMemo<ITimezoneOption | undefined>(() => {
         const trimmed = value.trim();
@@ -83,7 +90,7 @@ const TimeZonePicker: React.FC<Props> = ({ value, onChange, label = 'Timezone', 
                 '& .MuiInputBase-root input': { cursor: 'pointer' },
                 '& .MuiAutocomplete-endAdornment': { cursor: 'pointer' }
             }}
-            renderInput={(params) => <TextField {...params} label={label} helperText={helperLine} />}
+            renderInput={(params) => <TextField {...params} label={resolvedLabel} helperText={helperLine} />}
         />
     );
 };

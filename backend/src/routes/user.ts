@@ -6,6 +6,7 @@ import { ActivityLevel, HeightUnit, Sex, WeightUnit } from '@prisma/client';
 import { buildCalorieSummary, isActivityLevel, isSex } from '../utils/profile';
 import { isValidIanaTimeZone } from '../utils/date';
 import { resolveHeightMmUpdate } from '../utils/height';
+import { isSupportedLanguage, type SupportedLanguage } from '../utils/language';
 import { MAX_PROFILE_IMAGE_BYTES, parseBase64DataUrl } from '../utils/profileImage';
 import { serializeUserForClient, USER_CLIENT_SELECT } from '../utils/userSerialization';
 
@@ -171,13 +172,17 @@ router.patch('/password', async (req, res) => {
 
 router.patch('/preferences', async (req, res) => {
   const user = req.user as any;
-  const { weight_unit, height_unit } = req.body as { weight_unit?: unknown; height_unit?: unknown };
+  const { weight_unit, height_unit, language } = req.body as {
+    weight_unit?: unknown;
+    height_unit?: unknown;
+    language?: unknown;
+  };
 
-  if (weight_unit === undefined && height_unit === undefined) {
+  if (weight_unit === undefined && height_unit === undefined && language === undefined) {
     return res.status(400).json({ message: 'No fields to update' });
   }
 
-  const updateData: Partial<{ weight_unit: WeightUnit; height_unit: HeightUnit }> = {};
+  const updateData: Partial<{ weight_unit: WeightUnit; height_unit: HeightUnit; language: SupportedLanguage }> = {};
 
   if (weight_unit !== undefined) {
     if (!isWeightUnit(weight_unit)) {
@@ -191,6 +196,13 @@ router.patch('/preferences', async (req, res) => {
       return res.status(400).json({ message: 'Invalid height_unit' });
     }
     updateData.height_unit = height_unit as HeightUnit;
+  }
+
+  if (language !== undefined) {
+    if (!isSupportedLanguage(language)) {
+      return res.status(400).json({ message: 'Invalid language' });
+    }
+    updateData.language = language;
   }
 
   try {
