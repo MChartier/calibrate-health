@@ -195,6 +195,33 @@ jobs:
 
           wait_for_stable
 
+  staging_smoke:
+    name: Staging Smoke Tests (E2E)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: deploy_staging
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Health check /api/healthz
+        shell: bash
+        env:
+          # Configure as a GitHub Actions variable, e.g. https://staging.calibratehealth.app
+          E2E_BASE_URL: ${{ vars.STAGING_BASE_URL }}
+          E2E_POLL_TIMEOUT_MS: "300000"
+          E2E_POLL_INTERVAL_MS: "5000"
+          E2E_REQUEST_TIMEOUT_MS: "10000"
+        run: node scripts/e2e/healthcheck.mjs
+
   deploy_prod:
     name: Deploy Prod (ECS)
     runs-on: ubuntu-latest
@@ -202,6 +229,7 @@ jobs:
     needs:
       - build_and_push
       - validate_release_tag
+      - staging_smoke
     # Allow strict SemVer tag releases, or manual runs from the default branch (still approval-gated).
     if: needs.validate_release_tag.outputs.is_release_tag == 'true' || (github.event_name == 'workflow_dispatch' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch))
     environment: production
