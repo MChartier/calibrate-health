@@ -98,10 +98,16 @@ jobs:
           TAGS+=("${GHCR_IMAGE}:sha-${SOURCE_SHA}")
           TAGS+=("${ECR_IMAGE}:sha-${SOURCE_SHA}")
 
+          SHOULD_TAG_STAGING=false
+          if [[ "${GITHUB_EVENT_NAME}" == "workflow_dispatch" ]]; then
+            # Manual runs are used for staging rebuild/deploys; ensure ECS pulls the freshly-built image.
+            SHOULD_TAG_STAGING=true
+          fi
+
           if [[ "${GITHUB_REF}" == "refs/heads/master" ]]; then
             # Tag a human-friendly branch alias for convenience.
             TAGS+=("${GHCR_IMAGE}:${GITHUB_REF_NAME}")
-            TAGS+=("${ECR_IMAGE}:staging")
+            SHOULD_TAG_STAGING=true
           fi
 
           if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
@@ -109,10 +115,14 @@ jobs:
               TAGS+=("${GHCR_IMAGE}:${GITHUB_REF_NAME}")
               TAGS+=("${ECR_IMAGE}:${GITHUB_REF_NAME}")
               # Ensure a release build can also roll forward staging (ECS uses the `staging` tag).
-              TAGS+=("${ECR_IMAGE}:staging")
+              SHOULD_TAG_STAGING=true
             else
               echo "Tag ${GITHUB_REF_NAME} is not a strict SemVer release tag; skipping version image tags."
             fi
+          fi
+
+          if [[ "${SHOULD_TAG_STAGING}" == "true" ]]; then
+            TAGS+=("${ECR_IMAGE}:staging")
           fi
 
           {
