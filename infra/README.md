@@ -129,8 +129,8 @@ Also create a GitHub Environment named `production` and require reviewers.
 
 ## Deploying
 
-- Staging: push to `master` (builds multi-arch image, pushes to GHCR+ECR, forces a new ECS deployment of the `staging` tag).
-- Prod (recommended): run the "Cut Release Tag" workflow to create a `vMAJOR.MINOR.PATCH` tag and trigger the build workflow. The prod deploy job will appear in the run gated behind the `production` Environment approval.
+- Release (staging + prod): run the "Cut Release Tag" workflow to create a `vMAJOR.MINOR.PATCH` tag and trigger "Build and Deploy Release". The prod deploy job will appear in the run gated behind the `production` Environment approval.
+- Staging (manual rebuild/deploy): run the "Build and Deploy Release" workflow via `workflow_dispatch` to rebuild and deploy the `staging` image tag without cutting a release.
 - Prod (emergency/rollback): run the "Deploy Prod" workflow to retag a specific `sha-*` image to `prod` in ECR, then force a new ECS deployment.
 
 Tip: To enforce monotonically increasing releases, protect `v*` tags (GitHub ruleset/tag protection) so they can only be created via GitHub Actions (or a small maintainer set).

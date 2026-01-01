@@ -1,11 +1,10 @@
-name: Build + Deploy (Staging)
+name: Build and Deploy Release
 
 on:
   push:
-    branches:
-      - master
     tags:
-      - "v*"
+      # Match "vMAJOR.MINOR.PATCH" style tags (glob isn't strict; we validate in-workflow too).
+      - "v[0-9]*.[0-9]*.[0-9]*"
   workflow_dispatch:
 
 permissions:
@@ -109,6 +108,8 @@ jobs:
             if [[ "${GITHUB_REF_NAME}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
               TAGS+=("${GHCR_IMAGE}:${GITHUB_REF_NAME}")
               TAGS+=("${ECR_IMAGE}:${GITHUB_REF_NAME}")
+              # Ensure a release build can also roll forward staging (ECS uses the `staging` tag).
+              TAGS+=("${ECR_IMAGE}:staging")
             else
               echo "Tag ${GITHUB_REF_NAME} is not a strict SemVer release tag; skipping version image tags."
             fi
@@ -137,7 +138,6 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 25
     needs: build_and_push
-    if: github.ref == 'refs/heads/master'
 
     steps:
       - name: Configure AWS credentials (staging deploy)
@@ -192,8 +192,8 @@ jobs:
     needs:
       - build_and_push
       - validate_release_tag
-    # Prod releases are only allowed for strict SemVer tags (vMAJOR.MINOR.PATCH).
-    if: needs.validate_release_tag.outputs.is_release_tag == 'true'
+    # Allow manual runs (with approval) and strict SemVer tag releases.
+    if: github.event_name == 'workflow_dispatch' || needs.validate_release_tag.outputs.is_release_tag == 'true'
     environment: production
 
     steps:
