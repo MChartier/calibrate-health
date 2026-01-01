@@ -14,8 +14,16 @@ import {
     useMediaQuery,
     useTheme
 } from '@mui/material';
+import type { BrowserBarcodeReader, DecodeHintType } from '@zxing/library';
 
 const UPC_BARCODE_FORMATS: BarcodeFormat[] = ['upc_a', 'upc_e', 'ean_13', 'ean_8'];
+
+// Controls how frequently we attempt a native BarcodeDetector scan against the live video element.
+const NATIVE_SCAN_INTERVAL_MS = 200;
+
+// Controls how aggressively ZXing retries decoding frames when running as a fallback on browsers
+// without BarcodeDetector (e.g. Firefox mobile). Keep this throttled to avoid pegging the CPU.
+const ZXING_DECODE_ATTEMPT_INTERVAL_MS = 200;
 
 /**
  * Normalize scan results so they are safe to send to provider lookup endpoints.
@@ -33,6 +41,10 @@ const stopMediaStream = (stream: MediaStream | null): void => {
  * Pick UPC/EAN formats that are supported by the host browser, falling back to the full list.
  */
 const resolveDetectorFormats = async (): Promise<BarcodeFormat[] | undefined> => {
+    if (typeof BarcodeDetector === 'undefined') {
+        return undefined;
+    }
+
     if (typeof BarcodeDetector.getSupportedFormats !== 'function') {
         return UPC_BARCODE_FORMATS;
     }
@@ -93,12 +105,13 @@ const BarcodeScannerDialog: React.FC<Props> = ({ open, onClose, onDetected }) =>
 
     const videoRef = useRef<HTMLVideoElement | null>(null);
     const detectorRef = useRef<BarcodeDetector | null>(null);
+    const zxingReaderRef = useRef<BrowserBarcodeReader | null>(null);
     const streamRef = useRef<MediaStream | null>(null);
     const scanTimeoutRef = useRef<number | null>(null);
     const hasHandledResultRef = useRef(false);
 
     const canAttemptCameraScan = useMemo(() => {
-        return typeof BarcodeDetector !== 'undefined' && Boolean(navigator.mediaDevices?.getUserMedia);
+        return Boolean(navigator.mediaDevices?.getUserMedia);
     }, []);
 
     const stopCamera = useCallback(() => {
@@ -108,6 +121,11 @@ const BarcodeScannerDialog: React.FC<Props> = ({ open, onClose, onDetected }) =>
         }
 
         detectorRef.current = null;
+        if (zxingReaderRef.current) {
+            // ZXing manages its own stream; reset stops decoding + releases the camera promptly.
+            zxingReaderRef.current.reset();
+            zxingReaderRef.current = null;
+        }
         stopMediaStream(streamRef.current);
         streamRef.current = null;
 
@@ -162,66 +180,124 @@ const BarcodeScannerDialog: React.FC<Props> = ({ open, onClose, onDetected }) =>
         const start = async () => {
             setIsStartingCamera(true);
             try {
-                const formats = await resolveDetectorFormats();
-                detectorRef.current = new BarcodeDetector(formats ? { formats } : undefined);
-
-                const stream = await navigator.mediaDevices.getUserMedia({
-                    audio: false,
-                    video: {
-                        facingMode: { ideal: 'environment' },
-                        width: { ideal: 1280 },
-                        height: { ideal: 720 }
-                    }
-                });
-
-                if (cancelled) {
-                    stopMediaStream(stream);
-                    return;
-                }
-
-                streamRef.current = stream;
-
                 const video = videoRef.current;
                 if (!video) {
                     throw new Error('Camera preview failed to initialize.');
                 }
 
-                video.srcObject = stream;
-                await video.play();
+                const videoConstraints: MediaTrackConstraints = {
+                    facingMode: { ideal: 'environment' },
+                    // Cap resolution to keep scanning responsive on mobile devices.
+                    width: { ideal: 1280, max: 1280 },
+                    height: { ideal: 720, max: 720 }
+                };
 
-                const scanOnce = async () => {
+                if (typeof BarcodeDetector !== 'undefined') {
+                    const formats = await resolveDetectorFormats();
+                    detectorRef.current = new BarcodeDetector(formats ? { formats } : undefined);
+
+                    const stream = await navigator.mediaDevices.getUserMedia({
+                        audio: false,
+                        video: videoConstraints
+                    });
+
+                    if (cancelled) {
+                        stopMediaStream(stream);
+                        return;
+                    }
+
+                    streamRef.current = stream;
+
+                    video.srcObject = stream;
+                    await video.play();
+
+                    const scanOnce = async () => {
+                        if (cancelled || hasHandledResultRef.current) {
+                            return;
+                        }
+
+                        const activeVideo = videoRef.current;
+                        const detector = detectorRef.current;
+                        if (!activeVideo || !detector) {
+                            return;
+                        }
+
+                        if (activeVideo.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) {
+                            scanTimeoutRef.current = window.setTimeout(() => void scanOnce(), NATIVE_SCAN_INTERVAL_MS);
+                            return;
+                        }
+
+                        try {
+                            const detections = await detector.detect(activeVideo);
+                            const rawValue = detections.find((detected) => Boolean(detected.rawValue))?.rawValue;
+                            const normalized = rawValue ? normalizeBarcodeValue(rawValue) : '';
+                            if (normalized) {
+                                navigator.vibrate?.(80);
+                                submitBarcode(normalized);
+                                return;
+                            }
+                        } catch (scanError) {
+                            console.warn('Barcode scan failed.', scanError);
+                        }
+
+                        scanTimeoutRef.current = window.setTimeout(() => void scanOnce(), NATIVE_SCAN_INTERVAL_MS);
+                    };
+
+                    scanTimeoutRef.current = window.setTimeout(() => void scanOnce(), NATIVE_SCAN_INTERVAL_MS);
+                    return;
+                }
+
+                // Firefox (and other non-Chromium browsers) often lack BarcodeDetector. Use ZXing (1D reader) as a JS fallback.
+                // We deep-import only the pieces we need so we don't pull the full multi-format bundle into the async chunk.
+                const [
+                    { BrowserBarcodeReader },
+                    { default: BarcodeFormatEnum },
+                    { default: DecodeHintTypeEnum },
+                    { default: NotFoundException }
+                ] = await Promise.all([
+                    import('@zxing/library/esm/browser/BrowserBarcodeReader'),
+                    import('@zxing/library/esm/core/BarcodeFormat'),
+                    import('@zxing/library/esm/core/DecodeHintType'),
+                    import('@zxing/library/esm/core/NotFoundException')
+                ]);
+                if (cancelled) {
+                    return;
+                }
+
+                const hints = new Map<DecodeHintType, any>([
+                    [
+                        DecodeHintTypeEnum.POSSIBLE_FORMATS,
+                        [
+                            BarcodeFormatEnum.UPC_A,
+                            BarcodeFormatEnum.UPC_E,
+                            BarcodeFormatEnum.EAN_13,
+                            BarcodeFormatEnum.EAN_8
+                        ]
+                    ]
+                ]);
+
+                const reader = new BrowserBarcodeReader(undefined, hints);
+                reader.timeBetweenDecodingAttempts = ZXING_DECODE_ATTEMPT_INTERVAL_MS;
+                zxingReaderRef.current = reader;
+
+                await reader.decodeFromConstraints({ audio: false, video: videoConstraints }, video, (result, scanError) => {
                     if (cancelled || hasHandledResultRef.current) {
                         return;
                     }
 
-                    const activeVideo = videoRef.current;
-                    const detector = detectorRef.current;
-                    if (!activeVideo || !detector) {
-                        return;
-                    }
-
-                    if (activeVideo.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) {
-                        scanTimeoutRef.current = window.setTimeout(() => void scanOnce(), 200);
-                        return;
-                    }
-
-                    try {
-                        const detections = await detector.detect(activeVideo);
-                        const rawValue = detections.find((detected) => Boolean(detected.rawValue))?.rawValue;
-                        const normalized = rawValue ? normalizeBarcodeValue(rawValue) : '';
+                    if (result) {
+                        const normalized = normalizeBarcodeValue(result.getText());
                         if (normalized) {
                             navigator.vibrate?.(80);
                             submitBarcode(normalized);
-                            return;
                         }
-                    } catch (scanError) {
-                        console.warn('Barcode scan failed.', scanError);
+                        return;
                     }
 
-                    scanTimeoutRef.current = window.setTimeout(() => void scanOnce(), 200);
-                };
-
-                scanTimeoutRef.current = window.setTimeout(() => void scanOnce(), 200);
+                    if (scanError && !(scanError instanceof NotFoundException)) {
+                        console.warn('Barcode scan failed.', scanError);
+                    }
+                });
             } catch (cameraError) {
                 if (cancelled) {
                     return;
