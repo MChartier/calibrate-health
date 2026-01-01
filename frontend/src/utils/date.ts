@@ -131,6 +131,13 @@ function isUsThanksgivingDate(parts: { year: number; month: number; day: number 
 }
 
 /**
+ * Returns true when `year` is a leap year (Gregorian calendar).
+ */
+function isLeapYear(year: number): boolean {
+    return year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
+}
+
+/**
  * Return an optional holiday emoji to decorate a given local-date string (`YYYY-MM-DD`).
  *
  * The input is treated as a pure calendar date (not a moment in time), so we match on month/day
@@ -157,6 +164,35 @@ export function getHolidayEmojiForIsoDate(dateIso: string): string | null {
 
     // Thanksgiving (US - fourth Thursday in November).
     if (isUsThanksgivingDate(parts)) return '\u{1F983}';
+
+    return null;
+}
+
+/**
+ * Return an optional birthday emoji when the provided date matches the user's birthday.
+ *
+ * We compare only the calendar month/day (ignoring the birth year), and treat both inputs as plain
+ * dates (not moments in time) so we can safely accept ISO strings with or without a time portion.
+ *
+ * For users born on Feb 29, we treat Feb 28 as their birthday on non-leap years so they still get
+ * the "birthday" decoration most years.
+ */
+export function getBirthdayEmojiForIsoDate(dateIso: string, dateOfBirthIso?: string | null): string | null {
+    if (!dateOfBirthIso) return null;
+
+    const dateParts = parseIsoDateParts(dateIso);
+    const dobParts = parseIsoDateParts(dateOfBirthIso);
+    if (!dateParts || !dobParts) return null;
+
+    // Leap day handling: users born on Feb 29 see the birthday emoji on Feb 29 when it exists,
+    // otherwise we show it on Feb 28.
+    if (dobParts.month === 2 && dobParts.day === 29) {
+        if (dateParts.month === 2 && dateParts.day === 29) return '\u{1F382}';
+        if (!isLeapYear(dateParts.year) && dateParts.month === 2 && dateParts.day === 28) return '\u{1F382}';
+        return null;
+    }
+
+    if (dateParts.month === dobParts.month && dateParts.day === dobParts.day) return '\u{1F382}';
 
     return null;
 }
