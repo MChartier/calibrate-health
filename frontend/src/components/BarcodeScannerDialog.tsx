@@ -318,7 +318,7 @@ const BarcodeScannerDialog: React.FC<Props> = ({ open, onClose, onDetected }) =>
                     throw new Error('Barcode scanner fallback failed to load in this browser.');
                 }
 
-                const hints = new Map<DecodeHintType, any>([
+                const hints = new Map<DecodeHintType, number[]>([
                     [
                         DecodeHintTypeEnum.POSSIBLE_FORMATS as DecodeHintType,
                         [
