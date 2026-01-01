@@ -202,8 +202,8 @@ jobs:
     needs:
       - build_and_push
       - validate_release_tag
-    # Allow manual runs (with approval) and strict SemVer tag releases.
-    if: github.event_name == 'workflow_dispatch' || needs.validate_release_tag.outputs.is_release_tag == 'true'
+    # Allow strict SemVer tag releases, or manual runs from the default branch (still approval-gated).
+    if: needs.validate_release_tag.outputs.is_release_tag == 'true' || (github.event_name == 'workflow_dispatch' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch))
     environment: production
 
     steps:

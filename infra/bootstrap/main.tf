@@ -125,7 +125,8 @@ data "aws_iam_policy_document" "github_build_assume_role" {
       test     = "StringLike"
       variable = "token.actions.githubusercontent.com:sub"
       values = [
-        "repo:${var.github_repo}:ref:refs/heads/${var.github_default_branch}",
+        # Allow manual rebuilds from any branch and release builds from version tags.
+        "repo:${var.github_repo}:ref:refs/heads/*",
         "repo:${var.github_repo}:ref:refs/tags/v*"
       ]
     }
@@ -182,9 +183,13 @@ data "aws_iam_policy_document" "github_deploy_staging_assume_role" {
     }
 
     condition {
-      test     = "StringEquals"
+      # Staging deploys can be triggered from any branch (manual runs) or from release tags.
+      test     = "StringLike"
       variable = "token.actions.githubusercontent.com:sub"
-      values   = ["repo:${var.github_repo}:ref:refs/heads/${var.github_default_branch}"]
+      values = [
+        "repo:${var.github_repo}:ref:refs/heads/*",
+        "repo:${var.github_repo}:ref:refs/tags/v*"
+      ]
     }
   }
 }
