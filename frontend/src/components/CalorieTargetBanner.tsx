@@ -21,6 +21,8 @@ import InfoIcon from '@mui/icons-material/InfoRounded';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMoreRounded';
 import { Link as RouterLink } from 'react-router-dom';
 import { useUserProfileQuery } from '../queries/userProfile';
+import { useI18n } from '../i18n/useI18n';
+import { getActivityLevelOptions } from '../constants/activityLevels';
 
 /**
  * CalorieTargetBanner
@@ -56,6 +58,7 @@ function stopDashboardCardNavigation(event: React.SyntheticEvent) {
 }
 
 const CalorieTargetBanner: React.FC<CalorieTargetBannerProps> = ({ isDashboard = false }) => {
+    const { t } = useI18n();
     const { data, isLoading, isError, refetch } = useUserProfileQuery();
 
     const calorieSummary = data?.calorieSummary;
@@ -78,41 +81,51 @@ const CalorieTargetBanner: React.FC<CalorieTargetBannerProps> = ({ isDashboard =
     // Daily target is computed as `TDEE - deficit`. A surplus is represented as a negative deficit value.
     const goalDelta = typeof deficit === 'number' ? -deficit : undefined;
 
+    const activityLevelOptions = React.useMemo(() => getActivityLevelOptions(t), [t]);
+    const activityLevelTitle = React.useMemo(() => {
+        const activityLevel = data?.profile.activity_level;
+        if (!activityLevel) return null;
+        return activityLevelOptions.find((option) => option.value === activityLevel)?.title ?? activityLevel;
+    }, [activityLevelOptions, data?.profile.activity_level]);
+
     const breakdownDetails = hasTarget ? (
         <Stack spacing={1} divider={<Divider />}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 1 }}>
                 <Box>
-                    <Typography variant="body2">Basal Metabolic Rate (BMR)</Typography>
+                    <Typography variant="body2">{t('calorieTarget.breakdown.bmr.title')}</Typography>
                     <Typography variant="caption" color="text.secondary">
-                        From sex, age, height, weight (Mifflin–St Jeor)
+                        {t('calorieTarget.breakdown.bmr.caption')}
                     </Typography>
                 </Box>
                 <Typography
                     variant="body2"
                     sx={{ color: (theme) => theme.palette.success.main, textAlign: 'right', minWidth: 96 }}
                 >
-                    {typeof bmr === 'number' ? `+${bmr} Calories` : '—'}
+                    {typeof bmr === 'number' ? `+${bmr} kcal` : '—'}
                 </Typography>
             </Box>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 1 }}>
                 <Box>
-                    <Typography variant="body2">Activity adjustment</Typography>
+                    <Typography variant="body2">{t('calorieTarget.breakdown.activity.title')}</Typography>
                     <Typography variant="caption" color="text.secondary">
-                        Daily movement/exercise level ({data?.profile.activity_level ?? '—'}) · Multiplier {activityMultiplier ?? '—'}x
+                        {t('calorieTarget.breakdown.activity.caption', {
+                            level: activityLevelTitle ?? '—',
+                            multiplier: activityMultiplier ?? '—'
+                        })}
                     </Typography>
                 </Box>
                 <Typography
                     variant="body2"
                     sx={{ color: (theme) => theme.palette.success.main, textAlign: 'right', minWidth: 96 }}
                 >
-                    {activityDelta !== undefined ? `+${activityDelta} Calories` : '+ —'}
+                    {activityDelta !== undefined ? `+${activityDelta} kcal` : '+ —'}
                 </Typography>
             </Box>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 1 }}>
                 <Box>
-                    <Typography variant="body2">Goal adjustment</Typography>
+                    <Typography variant="body2">{t('calorieTarget.breakdown.goal.title')}</Typography>
                     <Typography variant="caption" color="text.secondary">
-                        Deficit (negative) or surplus (positive) applied to your TDEE
+                        {t('calorieTarget.breakdown.goal.caption')}
                     </Typography>
                 </Box>
                 <Typography
@@ -124,45 +137,45 @@ const CalorieTargetBanner: React.FC<CalorieTargetBannerProps> = ({ isDashboard =
                         minWidth: 96
                     }}
                 >
-                    {goalDelta !== undefined ? `${goalDelta > 0 ? '+' : ''}${goalDelta} Calories` : '—'}
+                    {goalDelta !== undefined ? `${goalDelta > 0 ? '+' : ''}${goalDelta} kcal` : '—'}
                 </Typography>
             </Box>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 1 }}>
                 <Typography variant="body2" fontWeight={600}>
-                    Calorie target
+                    {t('calorieTarget.breakdown.target.title')}
                 </Typography>
                 <Typography variant="body2" fontWeight={600} color="text.primary" sx={{ textAlign: 'right', minWidth: 96 }}>
-                    {dailyTarget !== undefined ? `${Math.round(dailyTarget)} Calories` : '—'}
+                    {dailyTarget !== undefined ? `${Math.round(dailyTarget)} kcal` : '—'}
                 </Typography>
             </Box>
         </Stack>
     ) : (
         <Box>
             <Typography variant="body2">
-                Provide birthday, sex, height, activity level, and a recent weigh-in to compute your baseline burn (TDEE).
+                {t('calorieTarget.missing.intro1')}
             </Typography>
             <Typography variant="body2" sx={{ mt: 1 }}>
-                Then set a goal deficit/surplus to turn that into a daily calorie target.
+                {t('calorieTarget.missing.intro2')}
             </Typography>
             {!isDashboard && (
                 <Stack spacing={0.5} sx={{ mt: 1 }}>
                     {missing.includes('latest_weight') && (
                         <Typography variant="body2">
                             <Link component={RouterLink} to="/log">
-                                Add a weigh-in in Log
+                                {t('calorieTarget.missing.addWeighInLink', { log: t('nav.log') })}
                             </Link>
                         </Typography>
                     )}
                     {!hasGoalDeficit && (
                         <Typography variant="body2">
                             <Link component={RouterLink} to="/goals">
-                                Set your deficit in Goals
+                                {t('calorieTarget.missing.setDeficitLink', { goals: t('nav.goals') })}
                             </Link>
                         </Typography>
                     )}
                     {missing.some((field) => field !== 'latest_weight') && (
                         <Typography variant="body2" color="text.secondary">
-                            Fill out the profile fields below to recalculate.
+                            {t('calorieTarget.missing.fillProfileHint')}
                         </Typography>
                     )}
                 </Stack>
@@ -173,7 +186,7 @@ const CalorieTargetBanner: React.FC<CalorieTargetBannerProps> = ({ isDashboard =
     const tooltipContent = (
         <Box sx={{ maxWidth: TOOLTIP_MAX_WIDTH_PX }}>
             <Typography variant="subtitle2" sx={{ mb: 1 }}>
-                How we calculate your calorie target
+                {t('calorieTarget.tooltipTitle')}
             </Typography>
             {breakdownDetails}
         </Box>
@@ -184,7 +197,7 @@ const CalorieTargetBanner: React.FC<CalorieTargetBannerProps> = ({ isDashboard =
         cardBody = (
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <CircularProgress size={20} />
-                <Typography>Loading targets…</Typography>
+                <Typography>{t('calorieTarget.loadingTargets')}</Typography>
             </Box>
         );
     } else if (isError || !data || !calorieSummary) {
@@ -193,11 +206,11 @@ const CalorieTargetBanner: React.FC<CalorieTargetBannerProps> = ({ isDashboard =
                 severity="warning"
                 action={
                     <Button color="inherit" size="small" onClick={(event) => { stopDashboardCardNavigation(event); void refetch(); }}>
-                        Retry
+                        {t('calorieTarget.retry')}
                     </Button>
                 }
             >
-                Unable to load calorie target right now.
+                {t('calorieTarget.error.unableToLoad')}
             </Alert>
         );
     } else if (hasTarget) {
@@ -207,12 +220,12 @@ const CalorieTargetBanner: React.FC<CalorieTargetBannerProps> = ({ isDashboard =
                     {Math.round(dailyTarget!)} kcal/day
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                    TDEE: {tdee ?? '—'} kcal · Deficit: {deficit ?? '—'} kcal/day
+                    {t('calorieTarget.summaryLine', { tdee: tdee ?? '—', deficit: deficit ?? '—' })}
                     {!isDashboard && (
                         <>
                             {' '}
                             <Link component={RouterLink} to="/goals">
-                                Change deficit
+                                {t('calorieTarget.changeDeficit')}
                             </Link>
                         </>
                     )}
@@ -222,12 +235,12 @@ const CalorieTargetBanner: React.FC<CalorieTargetBannerProps> = ({ isDashboard =
     } else {
         cardBody = (
             <Alert severity="info">
-                Add birthday, sex, height, activity level, a recent weigh-in, and a goal deficit to see a daily calorie target.
+                {t('calorieTarget.infoMissing')}
                 {!isDashboard && (
                     <>
                         {' '}
                         <Link component={RouterLink} to="/goals">
-                            Set deficit in Goals
+                            {t('calorieTarget.missing.setDeficitLink', { goals: t('nav.goals') })}
                         </Link>
                         .
                     </>
@@ -261,12 +274,12 @@ const CalorieTargetBanner: React.FC<CalorieTargetBannerProps> = ({ isDashboard =
                     aria-controls="calorie-target-details"
                     id="calorie-target-details-header"
                 >
-                    <Typography variant="subtitle2">Calculation details</Typography>
+                    <Typography variant="subtitle2">{t('calorieTarget.details.accordionTitle')}</Typography>
                 </AccordionSummary>
                 <AccordionDetails>
                     <Box sx={{ maxWidth: INLINE_DETAILS_MAX_WIDTH_PX }}>
                         <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                            These values come from your profile inputs, latest weigh-in, and your goal deficit/surplus.
+                            {t('calorieTarget.details.accordionCaption')}
                         </Typography>
                         {breakdownDetails}
                     </Box>
@@ -277,7 +290,7 @@ const CalorieTargetBanner: React.FC<CalorieTargetBannerProps> = ({ isDashboard =
 
     const ctaLine = isDashboard ? (
         <Typography variant="body2" color="primary" sx={{ mt: 1 }}>
-            View / edit profile inputs
+            {t('calorieTarget.cta.editProfile')}
         </Typography>
     ) : null;
 
@@ -285,12 +298,12 @@ const CalorieTargetBanner: React.FC<CalorieTargetBannerProps> = ({ isDashboard =
         <CardContent>
             <Stack spacing={0.5}>
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1 }}>
-                    <Typography variant="h6">Calorie Target</Typography>
+                    <Typography variant="h6">{t('calorieTarget.cardTitle')}</Typography>
                     {isDashboard && (
                         <Tooltip title={tooltipContent} arrow enterTouchDelay={0}>
                             <IconButton
                                 size="small"
-                                aria-label="How is this calculated?"
+                                aria-label={t('calorieTarget.tooltipAria')}
                                 onClick={stopDashboardCardNavigation}
                                 onMouseDown={stopDashboardCardNavigation}
                             >
@@ -304,7 +317,7 @@ const CalorieTargetBanner: React.FC<CalorieTargetBannerProps> = ({ isDashboard =
 
                 {!hasTarget && !isLoading && !isError && missing.length > 0 && (
                     <Typography variant="body2" color="text.secondary">
-                        Missing: {missing.join(', ')}
+                        {t('calorieTarget.missingFieldsLine', { fields: missing.join(', ') })}
                     </Typography>
                 )}
 

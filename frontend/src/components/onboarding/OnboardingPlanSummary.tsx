@@ -1,8 +1,9 @@
 import React from 'react';
 import { Box, Divider, Stack, Typography } from '@mui/material';
 import type { Theme } from '@mui/material/styles';
-import { activityLevelOptions } from '../../constants/activityLevels';
+import { getActivityLevelOptions } from '../../constants/activityLevels';
 import { computeGoalProjection, formatDateValue, getGoalModeFromDailyDeficit, roundWeight, startOfLocalDay } from '../../utils/goalTracking';
+import { useI18n } from '../../i18n/useI18n';
 
 const SUMMARY_NUMBER_FONT_WEIGHT = 900; // Makes the primary target feel like a "result", not just another form value.
 const BREAKDOWN_NUMBER_MIN_WIDTH_PX = 110; // Aligns right-hand numbers for scan-friendly math.
@@ -24,9 +25,9 @@ export type OnboardingPlanSummaryProps = {
 /**
  * Map an activity level enum to a short, user-friendly title.
  */
-function formatActivityLevelTitle(value: string | null | undefined): string {
+function formatActivityLevelTitle(value: string | null | undefined, options: ReturnType<typeof getActivityLevelOptions>): string {
     if (!value) return '';
-    return activityLevelOptions.find((option) => option.value === value)?.title ?? value;
+    return options.find((option) => option.value === value)?.title ?? value;
 }
 
 /**
@@ -147,6 +148,9 @@ const OnboardingPlanSummary: React.FC<OnboardingPlanSummaryProps> = ({
     targetWeight,
     unitLabel
 }) => {
+    const { t } = useI18n();
+    const activityLevelOptions = React.useMemo(() => getActivityLevelOptions(t), [t]);
+
     const hasNumbers = typeof dailyTarget === 'number' && typeof tdee === 'number';
 
     const activityDelta = typeof tdee === 'number' && typeof bmr === 'number' ? Math.round((tdee - bmr) * 10) / 10 : undefined;
@@ -158,7 +162,7 @@ const OnboardingPlanSummary: React.FC<OnboardingPlanSummaryProps> = ({
     const goalDeltaLabel = formatGoalDeltaLabel(goalDelta);
 
     const primaryTargetText = hasNumbers ? `${Math.round(dailyTarget!)} kcal/day` : 'Calorie target';
-    const activityLevelTitle = formatActivityLevelTitle(activityLevel);
+    const activityLevelTitle = formatActivityLevelTitle(activityLevel, activityLevelOptions);
     const projectedTargetDate = getProjectedTargetDateLabel({
         startWeight,
         targetWeight,

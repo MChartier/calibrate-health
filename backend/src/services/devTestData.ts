@@ -4,6 +4,7 @@ import path from 'node:path';
 import prisma from '../config/database';
 import { ActivityLevel, HeightUnit, MealPeriod, Sex, WeightUnit } from '@prisma/client';
 import { formatDateToLocalDateString, normalizeToUtcDateOnly } from '../utils/date';
+import { SUPPORTED_LANGUAGES } from '../utils/language';
 
 const TEST_USER_EMAIL = 'test@calibratehealth.app';
 const TEST_USER_PASSWORD = 'password123';
@@ -220,6 +221,7 @@ const ensureTestUser = async (createdAt: Date): Promise<{ id: number }> => {
       password_hash: passwordHash,
       created_at: createdAt,
       timezone: TEST_USER_TIMEZONE,
+      language: SUPPORTED_LANGUAGES.EN,
       weight_unit: WeightUnit.KG,
       height_unit: HeightUnit.CM,
       date_of_birth: TEST_USER_DATE_OF_BIRTH,
@@ -234,6 +236,7 @@ const ensureTestUser = async (createdAt: Date): Promise<{ id: number }> => {
       password_hash: passwordHash,
       created_at: createdAt,
       timezone: TEST_USER_TIMEZONE,
+      language: SUPPORTED_LANGUAGES.EN,
       weight_unit: WeightUnit.KG,
       height_unit: HeightUnit.CM,
       date_of_birth: TEST_USER_DATE_OF_BIRTH,

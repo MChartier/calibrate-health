@@ -1,4 +1,5 @@
 import { createContext } from 'react';
+import type { AppLanguage } from '../i18n/languages';
 
 export type WeightUnit = 'KG' | 'LB';
 export type HeightUnit = 'CM' | 'FT_IN';
@@ -41,6 +42,7 @@ export type User = {
     weight_unit: WeightUnit;
     height_unit: HeightUnit;
     timezone: string;
+    language: AppLanguage;
     date_of_birth?: string | null;
     sex?: SexValue | null;
     height_mm?: number | null;
@@ -70,6 +72,7 @@ export type AuthContextType = {
     updateUnitPreferences: (preferences: { weight_unit?: WeightUnit; height_unit?: HeightUnit }) => Promise<void>;
     updateWeightUnit: (weight_unit: WeightUnit) => Promise<void>;
     updateHeightUnit: (height_unit: HeightUnit) => Promise<void>;
+    updateLanguage: (language: AppLanguage) => Promise<void>;
     updateProfile: (profile: UserProfilePatchPayload) => Promise<void>;
     updateProfileImage: (dataUrl: string | null) => Promise<void>;
     updateTimezone: (timezone: string) => Promise<void>;

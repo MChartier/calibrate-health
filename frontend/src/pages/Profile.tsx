@@ -13,7 +13,7 @@ import {
 import { useTheme } from '@mui/material/styles';
 import { Link as RouterLink } from 'react-router-dom';
 import CalorieTargetBanner from '../components/CalorieTargetBanner';
-import { activityLevelOptions } from '../constants/activityLevels';
+import { getActivityLevelOptions } from '../constants/activityLevels';
 import type { UserProfilePatchPayload } from '../context/authContext';
 import { useAuth } from '../context/useAuth';
 import { useUserProfileQuery } from '../queries/userProfile';
@@ -22,6 +22,7 @@ import AppCard from '../ui/AppCard';
 import InlineStatusLine from '../ui/InlineStatusLine';
 import SectionHeader from '../ui/SectionHeader';
 import { getDefaultHeightUnitForWeightUnit } from '../utils/unitPreferences';
+import { useI18n } from '../i18n/useI18n';
 
 const AUTOSAVE_DELAY_MS = 450;
 
@@ -77,6 +78,7 @@ function buildFeetInchesHeightPatch(feet: string, inches: string): UserProfilePa
  */
 const Profile: React.FC = () => {
     const theme = useTheme();
+    const { t } = useI18n();
     const { user, updateProfile } = useAuth();
     const sectionGap = theme.custom.layout.page.sectionGap;
 
@@ -94,6 +96,8 @@ const Profile: React.FC = () => {
     const [heightFeet, setHeightFeet] = useState<string | null>(null);
     const [heightInches, setHeightInches] = useState<string | null>(null);
     const [activityLevel, setActivityLevel] = useState<string | null>(null);
+
+    const activityLevelOptions = useMemo(() => getActivityLevelOptions(t), [t]);
 
     const profileQuery = useUserProfileQuery();
 
@@ -157,10 +161,10 @@ const Profile: React.FC = () => {
 
     const autosaveStatusLine = useMemo(() => {
         if (autosaveError) return { text: autosaveError, tone: 'error' as const };
-        if (autosaveStatus === 'saving') return { text: 'Saving...', tone: 'neutral' as const };
-        if (autosaveStatus === 'saved') return { text: 'Saved', tone: 'success' as const };
+        if (autosaveStatus === 'saving') return { text: t('autosave.saving'), tone: 'neutral' as const };
+        if (autosaveStatus === 'saved') return { text: t('autosave.saved'), tone: 'success' as const };
         return null;
-    }, [autosaveError, autosaveStatus]);
+    }, [autosaveError, autosaveStatus, t]);
 
     /**
      * Flush any queued changes to the backend.
@@ -190,7 +194,7 @@ const Profile: React.FC = () => {
             // Merge the failed patch back so a subsequent edit retries with the latest values.
             pendingPatchRef.current = { ...patch, ...pendingPatchRef.current };
             setAutosaveStatus('error');
-            setAutosaveError('Failed to save profile changes.');
+            setAutosaveError(t('profile.saveFailed'));
         } finally {
             isSavingRef.current = false;
             if (Object.keys(pendingPatchRef.current).length > 0) {
@@ -199,7 +203,7 @@ const Profile: React.FC = () => {
                 autosaveTimeoutRef.current = setTimeout(() => void flushAutosave(), 0);
             }
         }
-    }, [updateProfile]);
+    }, [t, updateProfile]);
 
     /**
      * Queue a profile patch and debounce writes so typing doesn't spam the API.
@@ -237,8 +241,8 @@ const Profile: React.FC = () => {
 
                 <AppCard>
                     <SectionHeader
-                        title="Body profile"
-                        subtitle="Changes save automatically. Update these inputs to recalculate your estimated baseline burn (TDEE)."
+                        title={t('profile.bodyProfile.title')}
+                        subtitle={t('profile.bodyProfile.subtitle')}
                         sx={{ mb: 0.5 }}
                     />
 
@@ -246,7 +250,7 @@ const Profile: React.FC = () => {
 
                     <Stack spacing={2}>
                         <TextField
-                            label="Date of Birth"
+                            label={t('profile.dateOfBirth')}
                             type="date"
                             InputLabelProps={{ shrink: true }}
                             value={dobValue}
@@ -259,24 +263,24 @@ const Profile: React.FC = () => {
                         />
 
                         <FormControl fullWidth>
-                            <InputLabel>Sex</InputLabel>
+                            <InputLabel>{t('profile.sex')}</InputLabel>
                             <Select
                                 value={sexValue}
-                                label="Sex"
+                                label={t('profile.sex')}
                                 onChange={(e) => {
                                     const next = String(e.target.value);
                                     setSex(next);
                                     queueAutosave({ sex: normalizePatchString(next) });
                                 }}
                             >
-                                <MenuItem value="MALE">Male</MenuItem>
-                                <MenuItem value="FEMALE">Female</MenuItem>
+                                <MenuItem value="MALE">{t('profile.sex.male')}</MenuItem>
+                                <MenuItem value="FEMALE">{t('profile.sex.female')}</MenuItem>
                             </Select>
                         </FormControl>
 
                         {heightUnit === 'CM' ? (
                             <TextField
-                                label="Height (cm)"
+                                label={t('profile.heightCm')}
                                 type="number"
                                 value={heightCmValue}
                                 onChange={(e) => {
@@ -290,7 +294,7 @@ const Profile: React.FC = () => {
                         ) : (
                             <Box sx={{ display: 'flex', gap: 2 }}>
                                 <TextField
-                                    label="Feet"
+                                    label={t('profile.feet')}
                                     type="number"
                                     value={heightFeetValue}
                                     onChange={(e) => {
@@ -302,7 +306,7 @@ const Profile: React.FC = () => {
                                     fullWidth
                                 />
                                 <TextField
-                                    label="Inches"
+                                    label={t('profile.inches')}
                                     type="number"
                                     value={heightInchesValue}
                                     onChange={(e) => {
@@ -317,14 +321,18 @@ const Profile: React.FC = () => {
                         )}
 
                         <Typography variant="caption" color="text.secondary">
-                            Units and timezone are configured in <Link component={RouterLink} to="/settings">Settings</Link>.
+                            {t('profile.unitsTimezoneHint.prefix')}{' '}
+                            <Link component={RouterLink} to="/settings">
+                                {t('nav.settings')}
+                            </Link>
+                            {t('profile.unitsTimezoneHint.suffix')}
                         </Typography>
 
                         <FormControl fullWidth>
-                            <InputLabel>Activity Level</InputLabel>
+                            <InputLabel>{t('profile.activityLevel')}</InputLabel>
                             <Select
                                 value={activityValue}
-                                label="Activity Level"
+                                label={t('profile.activityLevel')}
                                 renderValue={(selected) => {
                                     const value = typeof selected === 'string' ? selected : '';
                                     return activityLevelOptions.find((option) => option.value === value)?.title ?? '';

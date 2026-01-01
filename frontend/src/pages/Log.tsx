@@ -37,6 +37,7 @@ import {
 } from '../utils/date';
 import { fetchFoodLog, foodLogQueryKey, useFoodLogQuery } from '../queries/foodLog';
 import AppCard from '../ui/AppCard';
+import { useI18n } from '../i18n/useI18n';
 
 const LOG_FAB_DIAMETER_SPACING = 7; // Default MUI "large" Fab is 56px (7 * 8).
 const LOG_FAB_CONTENT_CLEARANCE_SPACING = 2; // Extra room so bottom-row actions aren't tight against the FAB.
@@ -98,6 +99,7 @@ function showNativeDatePicker(input: HTMLInputElement | null) {
 const Log: React.FC = () => {
     const queryClient = useQueryClient();
     const theme = useTheme();
+    const { t } = useI18n();
     const isFoodDialogFullScreen = useMediaQuery(theme.breakpoints.down('sm'));
     const { user } = useAuth();
     const timeZone = useMemo(
@@ -171,10 +173,10 @@ const Log: React.FC = () => {
                         width: '100%'
                     }}
                 >
-                    <Tooltip title="Previous day">
+                    <Tooltip title={t('log.nav.prevDay')}>
                         <span>
                             <IconButton
-                                aria-label="Previous day"
+                                aria-label={t('log.nav.prevDay')}
                                 onClick={() =>
                                     setSelectedDate(clampIsoDate(addDaysToIsoDate(effectiveDate, -1), dateBounds))
                                 }
@@ -187,7 +189,7 @@ const Log: React.FC = () => {
 
                     <Box sx={{ position: 'relative', flexGrow: 1, minWidth: 0 }}>
                         <TextField
-                            label="Date"
+                            label={t('log.date.label')}
                             type="date"
                             value={effectiveDate}
                             InputLabelProps={{ shrink: true }}
@@ -244,7 +246,7 @@ const Log: React.FC = () => {
                             component="button"
                             type="button"
                             ref={dateOverlayButtonRef}
-                            aria-label={`Date: ${effectiveDate}. Activate to choose a different day.`}
+                            aria-label={t('log.datePicker.aria', { date: effectiveDateLabel })}
                             onClick={() => showNativeDatePicker(datePickerInputRef.current)}
                             sx={(theme) => ({
                                 position: 'absolute',
@@ -267,10 +269,10 @@ const Log: React.FC = () => {
                         />
                     </Box>
 
-                    <Tooltip title="Next day">
+                    <Tooltip title={t('log.nav.nextDay')}>
                         <span>
                             <IconButton
-                                aria-label="Next day"
+                                aria-label={t('log.nav.nextDay')}
                                 onClick={() => {
                                     const next = addDaysToIsoDate(effectiveDate, 1);
                                     setSelectedDate(clampIsoDate(next, dateBounds));
@@ -282,10 +284,10 @@ const Log: React.FC = () => {
                         </span>
                     </Tooltip>
 
-                    <Tooltip title="Jump to today">
+                    <Tooltip title={t('log.nav.jumpToToday')}>
                         <span>
                             <IconButton
-                                aria-label="Jump to today"
+                                aria-label={t('log.nav.jumpToToday')}
                                 onClick={() => setSelectedDate(dateBounds.max)}
                                 disabled={effectiveDate === dateBounds.max}
                             >
@@ -316,11 +318,11 @@ const Log: React.FC = () => {
                         severity="error"
                         action={
                             <Button color="inherit" size="small" onClick={() => void foodQuery.refetch()}>
-                                Retry
+                                {t('common.retry')}
                             </Button>
                         }
                     >
-                        Unable to load your food log for this day.
+                        {t('log.foodLog.error')}
                     </Alert>
                 ) : (
                     <FoodLogMeals logs={foodQuery.data ?? []} isLoading={foodQuery.isLoading} />
@@ -328,20 +330,20 @@ const Log: React.FC = () => {
             </AppCard>
 
             <SpeedDial
-                ariaLabel="Add entry"
+                ariaLabel={t('log.speedDial.aria')}
                 icon={<AddIcon />}
                 sx={{ position: 'fixed', right: 24, bottom: { xs: 'calc(88px + env(safe-area-inset-bottom))', md: 24 } }}
             >
                 <SpeedDialAction
                     key="add-food"
                     icon={<RestaurantIcon />}
-                    tooltipTitle="Add Food"
+                    tooltipTitle={t('log.speedDial.addFood')}
                     onClick={() => setIsFoodDialogOpen(true)}
                 />
                 <SpeedDialAction
                     key="add-weight"
                     icon={<MonitorWeightIcon />}
-                    tooltipTitle="Add Weight"
+                    tooltipTitle={t('log.speedDial.addWeight')}
                     onClick={() => setIsWeightDialogOpen(true)}
                 />
             </SpeedDial>
@@ -365,10 +367,10 @@ const Log: React.FC = () => {
                 }}
             >
                 <DialogTitle sx={{ position: 'relative', pr: 6 }}>
-                    Track Food
-                    <Tooltip title="Close">
+                    {t('log.dialog.trackFood')}
+                    <Tooltip title={t('common.close')}>
                         <IconButton
-                            aria-label="Close"
+                            aria-label={t('common.close')}
                             onClick={handleCloseFoodDialog}
                             sx={{ position: 'absolute', right: 8, top: 8 }}
                         >
@@ -388,15 +390,15 @@ const Log: React.FC = () => {
             <Dialog open={isWeightDialogOpen} onClose={handleCloseWeightDialog} fullWidth maxWidth="sm">
                 <DialogTitle sx={{ position: 'relative', pr: 6 }}>
                     <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-                        <Box component="span">Track Weight</Box>
+                        <Box component="span">{t('log.dialog.trackWeight')}</Box>
                         <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25 }}>
-                            For {effectiveDateLabel} (the day you're viewing)
+                            {t('log.dialog.trackWeight.subtitle', { date: effectiveDateLabel })}
                         </Typography>
                     </Box>
 
-                    <Tooltip title="Close">
+                    <Tooltip title={t('common.close')}>
                         <IconButton
-                            aria-label="Close"
+                            aria-label={t('common.close')}
                             onClick={handleCloseWeightDialog}
                             sx={{ position: 'absolute', right: 8, top: 8 }}
                         >
