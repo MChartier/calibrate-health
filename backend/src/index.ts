@@ -16,6 +16,10 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const isProduction = process.env.NODE_ENV === 'production';
 
+// Use a persistent session cookie so installed PWAs (notably Firefox on Android)
+// keep the login session when the app/browser process is closed and reopened.
+const SESSION_COOKIE_MAX_AGE_MS = 1000 * 60 * 60 * 24 * 30; // 30 days
+
 /**
  * Serve the built frontend SPA from disk in production deployments.
  *
@@ -66,7 +70,8 @@ app.use(session({
     cookie: {
         httpOnly: true,
         sameSite: 'lax',
-        secure: isProduction
+        secure: isProduction,
+        maxAge: SESSION_COOKIE_MAX_AGE_MS
     }
 }));
 app.use(passport.initialize());
