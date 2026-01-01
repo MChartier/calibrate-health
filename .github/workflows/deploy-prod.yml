@@ -106,3 +106,30 @@ jobs:
           }
 
           wait_for_stable
+
+  prod_smoke:
+    name: Prod Smoke Tests (E2E)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: deploy
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Health check /api/healthz
+        shell: bash
+        env:
+          # Configure as a GitHub Actions variable, e.g. https://calibratehealth.app
+          E2E_BASE_URL: ${{ vars.PROD_BASE_URL }}
+          E2E_POLL_TIMEOUT_MS: "300000"
+          E2E_POLL_INTERVAL_MS: "5000"
+          E2E_REQUEST_TIMEOUT_MS: "10000"
+        run: node scripts/e2e/healthcheck.mjs
