@@ -47,6 +47,40 @@ const databaseUrl = resolveDatabaseUrl();
 
 type PgSslConfig = PoolConfig['ssl'];
 
+type PgConnectionConfig = Pick<PoolConfig, 'host' | 'port' | 'database' | 'user' | 'password'>;
+
+/**
+ * Parse a Postgres connection string into discrete node-postgres connection fields.
+ *
+ * We intentionally avoid passing `connectionString` to node-postgres because query params like
+ * `sslmode=require` overwrite the explicit `ssl` config we need for RDS compatibility.
+ */
+function parseDatabaseUrlToPgConfig(databaseUrl: string): PgConnectionConfig {
+  let url: URL;
+  try {
+    url = new URL(databaseUrl);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    throw new Error(`DATABASE_URL is not a valid URL (${message}).`);
+  }
+
+  if (url.protocol !== 'postgres:' && url.protocol !== 'postgresql:') {
+    throw new Error(`DATABASE_URL must use the postgres protocol (received "${url.protocol}").`);
+  }
+
+  const host = url.hostname;
+  const port = url.port ? Number.parseInt(url.port, 10) : undefined;
+  const databasePath = url.pathname.replace(/^\/+/, '');
+
+  return {
+    host: host || undefined,
+    port: port && Number.isFinite(port) ? port : undefined,
+    database: databasePath ? decodeURIComponent(databasePath) : undefined,
+    user: url.username ? decodeURIComponent(url.username) : undefined,
+    password: url.password ? decodeURIComponent(url.password) : undefined
+  };
+}
+
 /**
  * Translate Postgres `sslmode` values into node-postgres SSL options.
  *
@@ -78,7 +112,7 @@ function resolvePgSslConfig(databaseUrl: string, env: NodeJS.ProcessEnv = proces
   return true;
 }
 
-const pool = new Pool({ connectionString: databaseUrl, ssl: resolvePgSslConfig(databaseUrl) });
+const pool = new Pool({ ...parseDatabaseUrlToPgConfig(databaseUrl), ssl: resolvePgSslConfig(databaseUrl) });
 const adapter = new PrismaPg(pool);
 
 const prisma = new PrismaClient({ adapter });
