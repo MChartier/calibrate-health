@@ -166,6 +166,12 @@ const Landing: React.FC = () => {
                                 ? 'none'
                                 : `heroBlobDrift ${Math.round(HERO_BLOB_ANIMATION_DURATION_MS * 1.15)}ms ease-in-out infinite alternate-reverse`,
                             pointerEvents: 'none'
+                        },
+                        // Mobile perf: large animated blur filters can force expensive repaints during scroll.
+                        // Keep the base gradients, but drop the drifting blob overlays on small screens.
+                        [theme.breakpoints.down('sm')]: {
+                            '&::before': { display: 'none' },
+                            '&::after': { display: 'none' }
                         }
                     })}
                 >
