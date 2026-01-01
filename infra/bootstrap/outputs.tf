@@ -39,11 +39,11 @@ output "github_build_role_arn" {
 }
 
 output "github_deploy_staging_role_arn" {
-  description = "IAM role ARN assumed by GitHub Actions to deploy to staging via SSM."
+  description = "IAM role ARN assumed by GitHub Actions to deploy to staging (ECS)."
   value       = aws_iam_role.github_deploy_staging.arn
 }
 
 output "github_deploy_prod_role_arn" {
-  description = "IAM role ARN assumed by GitHub Actions to deploy to prod via SSM."
+  description = "IAM role ARN assumed by GitHub Actions to deploy to prod (ECS)."
   value       = aws_iam_role.github_deploy_prod.arn
 }

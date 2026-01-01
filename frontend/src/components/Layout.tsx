@@ -33,7 +33,7 @@ import { getAvatarLabel } from '../utils/avatarLabel';
 import { useI18n } from '../i18n/useI18n';
 
 const drawerWidth = 240;
-const GITHUB_REPO_URL = 'https://github.com/MChartier/cal-io';
+const GITHUB_REPO_URL = 'https://github.com/mchartier/calibrate-health';
 
 /**
  * Map the current pathname to a navigation value so nested routes keep the correct tab highlighted.

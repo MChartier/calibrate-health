@@ -13,7 +13,7 @@ variable "domain_name" {
 variable "github_repo" {
   description = "GitHub repo in OWNER/REPO form allowed to assume deployment roles."
   type        = string
-  default     = "MChartier/cal-io"
+  default     = "MChartier/calibrate-health"
 }
 
 variable "github_default_branch" {

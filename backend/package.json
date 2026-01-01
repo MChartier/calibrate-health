@@ -12,6 +12,7 @@
     "db:studio": "prisma studio",
     "prisma:generate": "prisma generate",
     "start": "node dist/backend/src/index.js",
+    "start:prod": "bash scripts/start-prod.sh",
     "pretest": "npm run prisma:generate",
     "test": "node -r ts-node/register --test",
     "pretest:coverage": "npm run prisma:generate",

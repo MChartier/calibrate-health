@@ -1,12 +1,12 @@
-# AWS Deployment (Terraform + EC2 + RDS)
+# AWS Deployment (Terraform + ECS Fargate + RDS)
 
 This repo deploys `calibratehealth.app` using:
 
-- EC2 (ARM/Graviton) running `docker compose`
-- RDS Postgres (one per environment)
-- Route 53 for DNS
-- Caddy for HTTPS (Let's Encrypt) and staging basic auth
-- GitHub Actions for CI/CD (multi-arch images to GHCR + ECR; deploy via SSM)
+- ECS Fargate (one service per environment) pulling the app image from ECR
+- Application Load Balancer (ALB) + ACM for HTTPS
+- RDS Postgres (one per environment, in private subnets)
+- Route 53 for DNS (+ ACM DNS validation records)
+- GitHub Actions for CI/CD (builds multi-arch images to GHCR + ECR; deploys by forcing a new ECS service deployment)
 
 ## High-Level Flow
 
@@ -17,10 +17,10 @@ This repo deploys `calibratehealth.app` using:
    - GitHub OIDC provider + IAM roles for CI/CD
 
 2) `infra/envs/staging` + `infra/envs/prod` create per-environment resources:
-   - VPC + subnets
-   - EC2 instance + Elastic IP + SSM
+   - VPC + subnets (public + private)
+   - ALB + ACM certificate (DNS validated) + Route 53 alias records
+   - ECS cluster + task definition + service (Fargate)
    - RDS Postgres (private)
-   - Route 53 records pointing to the Elastic IP
    - Secrets Manager secret placeholders for app runtime config
 
 ## One-Time Setup
@@ -105,33 +105,17 @@ Each environment creates an empty secret:
 - `calibratehealth/staging/app`
 - `calibratehealth/prod/app`
 
-Populate them in AWS Secrets Manager as JSON:
-
-Production (`calibratehealth/prod/app`):
+Populate them in AWS Secrets Manager as JSON. At minimum, the backend requires:
 
 ```json
 {
-  "session_secret": "replace-with-random",
-  "caddy_email": "you@example.com"
+  "session_secret": "replace-with-random"
 }
 ```
 
-Staging (`calibratehealth/staging/app`):
-
-```json
-{
-  "session_secret": "replace-with-random",
-  "caddy_email": "you@example.com",
-  "basic_auth_user": "staging",
-  "basic_auth_hash": "$2a$..."
-}
-```
-
-To generate `basic_auth_hash`:
-
-```sh
-docker run --rm caddy:2.8-alpine caddy hash-password --plaintext 'your-password'
-```
+Notes:
+- ECS injects `SESSION_SECRET` from this secret.
+- DB credentials come from the RDS-managed secret (`manage_master_user_password = true`); ECS injects `DB_USER` and `DB_PASSWORD` from that secret.
 
 ## GitHub Actions configuration
 
@@ -145,5 +129,12 @@ Also create a GitHub Environment named `production` and require reviewers.
 
 ## Deploying
 
-- Staging: push to `master` (builds multi-arch image, pushes to GHCR+ECR, deploys to staging via SSM).
-- Prod: run the "Deploy Prod" workflow (retags the chosen `sha-*` image to `prod` in ECR, then deploys via SSM).
+- Staging: push to `master` (builds multi-arch image, pushes to GHCR+ECR, forces a new ECS deployment of the `staging` tag).
+- Prod (recommended): run the "Cut Release Tag" workflow to create a `vMAJOR.MINOR.PATCH` tag and trigger the build workflow. The prod deploy job will appear in the run gated behind the `production` Environment approval.
+- Prod (emergency/rollback): run the "Deploy Prod" workflow to retag a specific `sha-*` image to `prod` in ECR, then force a new ECS deployment.
+
+Tip: To enforce monotonically increasing releases, protect `v*` tags (GitHub ruleset/tag protection) so they can only be created via GitHub Actions (or a small maintainer set).
+
+## Staging Access Control (Optional)
+
+`infra/envs/staging` exposes `alb_allowed_cidrs` to restrict who can reach the staging ALB (80/443). The default is open (`0.0.0.0/0`).

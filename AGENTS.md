@@ -77,3 +77,4 @@ calibrate is a responsive calorie tracker (desktop + mobile web) for users who w
 
 ## Code Review Preferences (Backend / API)
 - When adding new API serialization helpers, prefer explicit input/output types that describe the wire shape (especially for Date fields).
+- When refactoring DB connection plumbing (DATABASE_URL/DB_* parsing), preserve Prisma datasource query params like `schema` (or pass an explicit equivalent) so non-public schema deployments don't regress silently.

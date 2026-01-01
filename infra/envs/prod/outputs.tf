@@ -8,14 +8,19 @@ output "www_domain" {
   value       = aws_route53_record.www.fqdn
 }
 
-output "host_instance_id" {
-  description = "EC2 instance ID for prod."
-  value       = module.host.instance_id
+output "alb_dns_name" {
+  description = "Public ALB DNS name for prod."
+  value       = module.service.load_balancer_dns_name
 }
 
-output "host_public_ip" {
-  description = "Elastic IP for prod."
-  value       = module.host.eip_public_ip
+output "ecs_cluster_name" {
+  description = "ECS cluster name for prod."
+  value       = module.service.cluster_name
+}
+
+output "ecs_service_name" {
+  description = "ECS service name for prod."
+  value       = module.service.service_name
 }
 
 output "rds_address" {
@@ -32,4 +37,3 @@ output "app_secret_arn" {
   description = "Secrets Manager ARN holding the prod app config JSON."
   value       = aws_secretsmanager_secret.app.arn
 }
-
