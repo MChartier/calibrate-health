@@ -1,7 +1,7 @@
 import session from 'express-session';
 import type { Pool } from 'pg';
 
-const DEFAULT_TTL_MS = 1000 * 60 * 60 * 24 * 7; // 7 days
+export const DEFAULT_SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 7; // 7 days
 const POSTGRES_UNDEFINED_TABLE_CODE = '42P01';
 
 /**
@@ -14,7 +14,7 @@ export class PostgresSessionStore extends session.Store {
 
   private readonly ttlMs: number;
 
-  constructor(pool: Pool, ttlMs: number = DEFAULT_TTL_MS) {
+  constructor(pool: Pool, ttlMs: number = DEFAULT_SESSION_TTL_MS) {
     super();
     this.pool = pool;
     this.ttlMs = ttlMs;

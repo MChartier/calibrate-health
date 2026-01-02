@@ -10,7 +10,7 @@ import session from 'express-session';
 import passport from 'passport';
 import { Strategy as LocalStrategy } from 'passport-local';
 import prisma, { pgPool } from './config/database';
-import { isProductionLikeNodeEnv } from './config/environment';
+import { isProductionOrStagingEnv } from './config/environment';
 import authRoutes from './routes/auth';
 import devRoutes from './routes/dev';
 import devTestRoutes from './routes/devTest';
@@ -20,33 +20,40 @@ import metricRoutes from './routes/metrics';
 import myFoodsRoutes from './routes/myFoods';
 import userRoutes from './routes/user';
 import { autoLoginTestUser } from './utils/devAuth';
-import { PostgresSessionStore } from './utils/postgresSessionStore';
+import { DEFAULT_SESSION_TTL_MS, PostgresSessionStore } from './utils/postgresSessionStore';
 import { USER_CLIENT_SELECT } from './utils/userSerialization';
 
-const SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 7; // 7 days
+const SESSION_TTL_MS = DEFAULT_SESSION_TTL_MS;
 
 const DEFAULT_ALLOWED_ORIGINS_DEV = 'http://localhost:5173';
 
 /**
- * Serve the built frontend SPA from disk in production-like deployments.
+ * Serve the built frontend SPA from disk in deployed environments (NODE_ENV=production|staging).
+ *
+ * In development we typically run the Vite dev server (HMR) separately and proxy `/api/*` and `/auth/*`
+ * to the backend, so serving `dist/` from Express would be redundant and can hide misconfiguration.
  *
  * We only fall back to `index.html` for non-API routes so deep links work without
  * intercepting JSON endpoints like `/api/*` and `/auth/*`.
  */
-function configureSpaStaticAssets(app: express.Express, isProductionLike: boolean): void {
-  if (!isProductionLike) return;
+function configureSpaStaticAssets(app: express.Express, isProductionOrStaging: boolean): void {
+  if (!isProductionOrStaging) return;
 
-  const distDir = process.env.FRONTEND_DIST_DIR;
-  if (!distDir) {
-    console.warn('FRONTEND_DIST_DIR is not set; skipping SPA static serving.');
-    return;
-  }
+	  const distDir = process.env.FRONTEND_DIST_DIR;
+	  if (!distDir) {
+	    console.warn(
+	      'FRONTEND_DIST_DIR is not set; backend will not serve the built frontend (expected when frontend is hosted separately). Set FRONTEND_DIST_DIR to the Vite dist directory for a single-origin deployment.'
+	    );
+	    return;
+	  }
 
-  const indexHtmlPath = path.join(distDir, 'index.html');
-  if (!fs.existsSync(indexHtmlPath)) {
-    console.warn(`FRONTEND_DIST_DIR does not contain index.html (${indexHtmlPath}); skipping SPA static serving.`);
-    return;
-  }
+	  const indexHtmlPath = path.join(distDir, 'index.html');
+	  if (!fs.existsSync(indexHtmlPath)) {
+	    console.warn(
+	      `FRONTEND_DIST_DIR does not contain index.html (${indexHtmlPath}); backend will not serve the built frontend. Ensure the frontend build output is present and FRONTEND_DIST_DIR points to it.`
+	    );
+	    return;
+	  }
 
   app.use(express.static(distDir));
 
@@ -61,7 +68,7 @@ function configureSpaStaticAssets(app: express.Express, isProductionLike: boolea
  * Parse a comma-delimited list of origins from CORS_ORIGINS.
  * Defaults to allowing the local Vite dev server origin in development.
  */
-const parseAllowedOrigins = (value: string | undefined, inProduction: boolean): string[] => {
+const parseAllowedOrigins = (value: string | undefined, inDeployedEnv: boolean): string[] => {
   if (value && value.trim().length > 0) {
     return value
       .split(',')
@@ -69,7 +76,7 @@ const parseAllowedOrigins = (value: string | undefined, inProduction: boolean): 
       .filter(Boolean);
   }
 
-  return inProduction ? [] : [DEFAULT_ALLOWED_ORIGINS_DEV];
+  return inDeployedEnv ? [] : [DEFAULT_ALLOWED_ORIGINS_DEV];
 };
 
 /**
@@ -116,20 +123,20 @@ const parseSameSite = (value: string | undefined): SameSiteSetting => {
 const bootstrap = async (): Promise<void> => {
   const app = express();
   const PORT = process.env.PORT || 3000;
-  const isProductionLike = isProductionLikeNodeEnv(process.env.NODE_ENV);
+  const isProductionOrStaging = isProductionOrStagingEnv(process.env.NODE_ENV);
 
   // Reduce fingerprinting surface for minimal Express signature.
   app.disable('x-powered-by');
 
   const secureCookieEnv = process.env.SESSION_COOKIE_SECURE;
-  const useSecureCookies = secureCookieEnv ? secureCookieEnv === 'true' : isProductionLike;
+  const useSecureCookies = secureCookieEnv ? secureCookieEnv === 'true' : isProductionOrStaging;
   const sameSite = parseSameSite(process.env.SESSION_COOKIE_SAMESITE);
 
   if (useSecureCookies) {
     app.set('trust proxy', 1);
   }
 
-  const allowedOrigins = parseAllowedOrigins(process.env.CORS_ORIGINS, isProductionLike)
+  const allowedOrigins = parseAllowedOrigins(process.env.CORS_ORIGINS, isProductionOrStaging)
     .map(normalizeOrigin)
     .filter((origin): origin is string => origin !== null);
   const allowedOriginSet = new Set(allowedOrigins);
@@ -149,7 +156,7 @@ const bootstrap = async (): Promise<void> => {
 
     // For single-origin deployments (typical prod/staging), we do not need CORS at all. If no allowlist is
     // configured, disable CORS headers and let the browser enforce same-origin policy.
-    if (allowedOriginSet.size === 0 && isProductionLike) {
+    if (allowedOriginSet.size === 0 && isProductionOrStaging) {
       callback(null, { origin: false });
       return;
     }
@@ -267,12 +274,12 @@ const bootstrap = async (): Promise<void> => {
   apiRouter.use('/user', userRoutes);
 
   // Keep debug/prototype routes (food provider comparisons, etc.) out of production deployments.
-  if (!isProductionLike) {
+  if (!isProductionOrStaging) {
     apiRouter.use('/dev', devRoutes);
     app.use('/dev/test', devTestRoutes);
   }
 
-  configureSpaStaticAssets(app, isProductionLike);
+  configureSpaStaticAssets(app, isProductionOrStaging);
 
   app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
