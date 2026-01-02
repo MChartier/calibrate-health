@@ -188,4 +188,5 @@ Notes:
 
 - Leave `CORS_ORIGINS` unset for single-origin prod/staging deployments.
 - Leave `SESSION_COOKIE_DOMAIN` unset so prod and staging sessions do not collide in the same browser.
-- `SESSION_COOKIE_SECURE` defaults to `true` in production-like envs (production + staging); override only if you are intentionally serving over plain HTTP.
+- Keep `SESSION_SECRET` stable within an environment so sessions remain valid across deploys.
+- `SESSION_COOKIE_SECURE` defaults to `true` in production and staging; override only if you are intentionally serving over plain HTTP.

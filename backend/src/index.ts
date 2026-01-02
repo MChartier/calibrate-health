@@ -25,7 +25,31 @@ import { USER_CLIENT_SELECT } from './utils/userSerialization';
 
 const SESSION_TTL_MS = DEFAULT_SESSION_TTL_MS;
 
-const DEFAULT_ALLOWED_ORIGINS_DEV = 'http://localhost:5173';
+const DEFAULT_VITE_DEV_SERVER_PORT = 5173; // Fallback port for the Vite dev server when VITE_DEV_SERVER_PORT isn't set.
+
+/**
+ * Parse an environment variable as a positive integer.
+ */
+function parsePositiveInteger(value: string | undefined): number | null {
+  if (!value) return null;
+  const parsed = Number.parseInt(value, 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+}
+
+/**
+ * Default CORS allowlist for local development when CORS_ORIGINS is unset.
+ *
+ * We use the Vite dev server port (VITE_DEV_SERVER_PORT/FRONTEND_PORT) when present so worktrees
+ * and devcontainers that customize ports keep working without extra config.
+ */
+function getDefaultAllowedOriginsDev(env: NodeJS.ProcessEnv = process.env): string[] {
+  const port =
+    parsePositiveInteger(env.VITE_DEV_SERVER_PORT) ??
+    parsePositiveInteger(env.FRONTEND_PORT) ??
+    DEFAULT_VITE_DEV_SERVER_PORT;
+
+  return [`http://localhost:${port}`, `http://127.0.0.1:${port}`];
+}
 
 /**
  * Serve the built frontend SPA from disk in deployed environments (NODE_ENV=production|staging).
@@ -39,21 +63,21 @@ const DEFAULT_ALLOWED_ORIGINS_DEV = 'http://localhost:5173';
 function configureSpaStaticAssets(app: express.Express, isProductionOrStaging: boolean): void {
   if (!isProductionOrStaging) return;
 
-	  const distDir = process.env.FRONTEND_DIST_DIR;
-	  if (!distDir) {
-	    console.warn(
-	      'FRONTEND_DIST_DIR is not set; backend will not serve the built frontend (expected when frontend is hosted separately). Set FRONTEND_DIST_DIR to the Vite dist directory for a single-origin deployment.'
-	    );
-	    return;
-	  }
+  const distDir = process.env.FRONTEND_DIST_DIR;
+  if (!distDir) {
+    console.warn(
+      'FRONTEND_DIST_DIR is not set; backend will not serve the built frontend (expected when frontend is hosted separately). Set FRONTEND_DIST_DIR to the Vite dist directory for a single-origin deployment.'
+    );
+    return;
+  }
 
-	  const indexHtmlPath = path.join(distDir, 'index.html');
-	  if (!fs.existsSync(indexHtmlPath)) {
-	    console.warn(
-	      `FRONTEND_DIST_DIR does not contain index.html (${indexHtmlPath}); backend will not serve the built frontend. Ensure the frontend build output is present and FRONTEND_DIST_DIR points to it.`
-	    );
-	    return;
-	  }
+  const indexHtmlPath = path.join(distDir, 'index.html');
+  if (!fs.existsSync(indexHtmlPath)) {
+    console.warn(
+      `FRONTEND_DIST_DIR does not contain index.html (${indexHtmlPath}); backend will not serve the built frontend. Ensure the frontend build output is present and FRONTEND_DIST_DIR points to it.`
+    );
+    return;
+  }
 
   app.use(express.static(distDir));
 
@@ -76,7 +100,7 @@ const parseAllowedOrigins = (value: string | undefined, inDeployedEnv: boolean):
       .filter(Boolean);
   }
 
-  return inDeployedEnv ? [] : [DEFAULT_ALLOWED_ORIGINS_DEV];
+  return inDeployedEnv ? [] : getDefaultAllowedOriginsDev();
 };
 
 /**
@@ -118,6 +142,27 @@ const parseSameSite = (value: string | undefined): SameSiteSetting => {
 };
 
 /**
+ * Resolve the express-session signing secret for cookie/session integrity.
+ *
+ * In production/staging we fail fast because a missing secret weakens session security and will
+ * silently invalidate cookies across deploys. In development we allow a fixed default to keep
+ * local setups lightweight.
+ */
+function resolveSessionSecret(isProductionOrStaging: boolean, env: NodeJS.ProcessEnv = process.env): string {
+  const secret = env.SESSION_SECRET?.trim();
+  if (secret) return secret;
+
+  if (isProductionOrStaging) {
+    throw new Error('SESSION_SECRET is required in production/staging (set it to a long random string).');
+  }
+
+  console.warn(
+    'SESSION_SECRET is not set; using development default. Set SESSION_SECRET to keep sessions stable across restarts.'
+  );
+  return 'development_secret_key';
+}
+
+/**
  * Initialize Express middleware (CORS, sessions, Passport) and start the HTTP server.
  */
 const bootstrap = async (): Promise<void> => {
@@ -131,6 +176,7 @@ const bootstrap = async (): Promise<void> => {
   const secureCookieEnv = process.env.SESSION_COOKIE_SECURE;
   const useSecureCookies = secureCookieEnv ? secureCookieEnv === 'true' : isProductionOrStaging;
   const sameSite = parseSameSite(process.env.SESSION_COOKIE_SAMESITE);
+  const sessionSecret = resolveSessionSecret(isProductionOrStaging);
 
   if (useSecureCookies) {
     app.set('trust proxy', 1);
@@ -191,7 +237,7 @@ const bootstrap = async (): Promise<void> => {
   app.use(
     session({
       store: sessionStore,
-      secret: process.env.SESSION_SECRET || 'development_secret_key',
+      secret: sessionSecret,
       resave: false,
       saveUninitialized: false,
       proxy: useSecureCookies,

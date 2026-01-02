@@ -14,7 +14,7 @@ test('devAutoLoginPolicy: shouldAutoLoginTestUser returns false when not explici
   assert.equal(shouldAutoLoginTestUser(req, { AUTO_LOGIN_TEST_USER: 'false' }), false);
 });
 
-test('devAutoLoginPolicy: shouldAutoLoginTestUser blocks auto-login in production-like envs', () => {
+test('devAutoLoginPolicy: shouldAutoLoginTestUser blocks auto-login in production/staging envs', () => {
   const req = buildReq({ isAuthenticated: false });
   assert.equal(shouldAutoLoginTestUser(req, { AUTO_LOGIN_TEST_USER: 'true', NODE_ENV: 'production' }), false);
   assert.equal(shouldAutoLoginTestUser(req, { AUTO_LOGIN_TEST_USER: 'true', NODE_ENV: 'staging' }), false);
