@@ -170,3 +170,23 @@ screen.
 - Test locally: `npm --prefix frontend run build && npm --prefix frontend run preview` then open
   `http://localhost:4173` and use the browser install UI.
 - iOS: open the app in Safari and use Share -> Add to Home Screen.
+
+## Production / staging (single origin)
+
+Production is hosted at `https://calibratehealth.app` and staging is hosted at `https://staging.calibratehealth.app`.
+
+This app is configured for a "single origin" deployment where the frontend and backend share the same host. In that
+setup you do not need CORS, and cookies should remain host-scoped.
+
+Recommended backend env vars:
+
+- `NODE_ENV=production` (or `staging` for staging)
+- `DATABASE_URL=...`
+- `SESSION_SECRET=...` (use a different value for staging vs prod)
+
+Notes:
+
+- Leave `CORS_ORIGINS` unset for single-origin prod/staging deployments.
+- Leave `SESSION_COOKIE_DOMAIN` unset so prod and staging sessions do not collide in the same browser.
+- Keep `SESSION_SECRET` stable within an environment so sessions remain valid across deploys.
+- `SESSION_COOKIE_SECURE` defaults to `true` in production and staging; override only if you are intentionally serving over plain HTTP.

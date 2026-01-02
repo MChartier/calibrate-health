@@ -1,5 +1,7 @@
 import type { Request } from 'express';
 
+import { isProductionOrStagingEnv } from '../config/environment';
+
 export type AutoLoginRequestLike = Pick<Request, 'path' | 'isAuthenticated'>;
 
 /**
@@ -13,8 +15,7 @@ export function shouldAutoLoginTestUser(
   env: NodeJS.ProcessEnv = process.env
 ): boolean {
   const enabled = env.AUTO_LOGIN_TEST_USER === 'true';
-  const isProduction = env.NODE_ENV === 'production';
+  const isProductionOrStaging = isProductionOrStagingEnv(env.NODE_ENV);
   const isLoggingOut = req.path.startsWith('/auth/logout');
-  return enabled && !isProduction && !isLoggingOut && !req.isAuthenticated();
+  return enabled && !isProductionOrStaging && !isLoggingOut && !req.isAuthenticated();
 }
-

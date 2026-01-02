@@ -78,3 +78,6 @@ calibrate is a responsive calorie tracker (desktop + mobile web) for users who w
 ## Code Review Preferences (Backend / API)
 - When adding new API serialization helpers, prefer explicit input/output types that describe the wire shape (especially for Date fields).
 - When refactoring DB connection plumbing (DATABASE_URL/DB_* parsing), preserve Prisma datasource query params like `schema` (or pass an explicit equivalent) so non-public schema deployments don't regress silently.
+- Prefer explicit environment helper naming (e.g. production/staging) over ambiguous "production-like" terms, and include a short "why" comment when behavior intentionally differs between deployed envs and local dev; consider self-hosting workflows when choosing defaults.
+- Make warnings actionable: include the consequence and the next step (what env var / config to set) when emitting `console.warn` messages.
+- Avoid duplicating time math constants like `1000 * 60 * 60 * 24`; prefer shared exported constants for common durations (day/week/session TTL).

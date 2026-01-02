@@ -76,6 +76,27 @@ function resolvePrismaSchema(databaseUrl: string, env: NodeJS.ProcessEnv = proce
   return urlSchema ?? envSchema;
 }
 
+const PG_IDENTIFIER_PATTERN = /^[a-zA-Z_][a-zA-Z0-9_]*$/;
+
+/**
+ * Quote a Postgres identifier for use in settings like search_path.
+ */
+function quotePgIdentifier(identifier: string): string {
+  if (PG_IDENTIFIER_PATTERN.test(identifier)) return identifier;
+  return `"${identifier.replace(/"/g, '""')}"`;
+}
+
+/**
+ * Configure node-postgres so raw SQL helpers (e.g. session store) resolve tables in the same schema as Prisma.
+ */
+function buildPgOptionsForSchema(schema: string | undefined): Pick<PoolConfig, 'options'> {
+  if (!schema) return {};
+
+  const primarySchema = quotePgIdentifier(schema);
+  const searchPath = schema === 'public' ? 'public' : `${primarySchema},public`;
+  return { options: `-c search_path=${searchPath}` };
+}
+
 /**
  * Parse a Postgres connection string into discrete node-postgres connection fields.
  *
@@ -83,7 +104,8 @@ function resolvePrismaSchema(databaseUrl: string, env: NodeJS.ProcessEnv = proce
  * `sslmode=require` overwrite the explicit `ssl` config we need for RDS compatibility.
  *
  * Note: Query params are not forwarded to pg (except via explicit config elsewhere). For Prisma,
- * the `schema` param is handled separately via the adapter options (see resolvePrismaSchema).
+ * the `schema` param is handled separately via the adapter options (see resolvePrismaSchema) and
+ * by setting pg search_path for raw SQL helpers (see buildPgOptionsForSchema).
  */
 function parseDatabaseUrlToPgConfig(databaseUrl: string): PgConnectionConfig {
   let url: URL;
@@ -142,8 +164,14 @@ function resolvePgSslConfig(databaseUrl: string, env: NodeJS.ProcessEnv = proces
   return true;
 }
 
-const pool = new Pool({ ...parseDatabaseUrlToPgConfig(databaseUrl), ssl: resolvePgSslConfig(databaseUrl) });
-const adapter = new PrismaPg(pool, { schema: resolvePrismaSchema(databaseUrl) });
+const prismaSchema = resolvePrismaSchema(databaseUrl);
+
+export const pgPool = new Pool({
+  ...parseDatabaseUrlToPgConfig(databaseUrl),
+  ssl: resolvePgSslConfig(databaseUrl),
+  ...buildPgOptionsForSchema(prismaSchema),
+});
+const adapter = new PrismaPg(pgPool, { schema: prismaSchema });
 
 const prisma = new PrismaClient({ adapter });
 

@@ -1,4 +1,5 @@
 import express from 'express';
+import { isProductionOrStagingEnv } from '../config/environment';
 import prisma from '../config/database';
 import { resetDevTestUserToPreOnboardingState } from '../services/devTestData';
 import { serializeUserForClient, USER_CLIENT_SELECT } from '../utils/userSerialization';
@@ -6,7 +7,7 @@ import { serializeUserForClient, USER_CLIENT_SELECT } from '../utils/userSeriali
 const router = express.Router();
 
 /**
- * Ensure a request is only handled in non-production environments.
+ * Ensure a request is only handled in non-deployed environments (i.e. not production/staging).
  *
  * We mount these routes only in dev, but keeping a runtime guard makes the intent explicit
  * and prevents accidental exposure if routing changes in the future.
@@ -16,7 +17,7 @@ const requireNonProduction = (
   res: express.Response,
   next: express.NextFunction
 ) => {
-  if (process.env.NODE_ENV === 'production') {
+  if (isProductionOrStagingEnv(process.env.NODE_ENV)) {
     res.status(404).json({ message: 'Not found' });
     return;
   }
@@ -51,4 +52,3 @@ router.post('/reset-test-user-onboarding', async (_req, res) => {
 });
 
 export default router;
-
