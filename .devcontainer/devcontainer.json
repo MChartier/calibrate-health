@@ -15,5 +15,5 @@
 
   "onCreateCommand": "npm install -g @openai/codex",
   "postCreateCommand": "npm run setup && node .devcontainer/update-peacock-settings.mjs",
-  "postStartCommand": "npm run db:migrate && npm run db:seed"
+  "postStartCommand": "npm run db:reset --force && npm run db:seed"
 }
