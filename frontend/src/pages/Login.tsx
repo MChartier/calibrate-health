@@ -22,7 +22,8 @@ const Login: React.FC = () => {
             setError('');
             setIsSubmitting(true);
             await login(email, password);
-            navigate('/log');
+            // Replace so mobile/PWA back navigation can't return to the login form after signing in.
+            navigate('/log', { replace: true });
         } catch {
             setError(t('auth.invalidCredentials'));
         } finally {

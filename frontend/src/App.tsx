@@ -12,14 +12,17 @@ import Onboarding from './pages/Onboarding';
 import DevDashboard from './pages/DevDashboard';
 
 import ProtectedRoute from './components/ProtectedRoute';
+import PublicRoute from './components/PublicRoute';
 
 function App() {
   return (
     <Routes>
       <Route path="/" element={<Layout />}>
         <Route index element={<Home />} />
-        <Route path="login" element={<Login />} />
-        <Route path="register" element={<Register />} />
+        <Route element={<PublicRoute />}>
+          <Route path="login" element={<Login />} />
+          <Route path="register" element={<Register />} />
+        </Route>
         {import.meta.env.DEV && <Route path="dev" element={<DevDashboard />} />}
 
         <Route element={<ProtectedRoute />}>

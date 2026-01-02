@@ -618,7 +618,8 @@ const Onboarding: React.FC = () => {
     };
 
     const goToLog = useCallback(() => {
-        navigate('/log');
+        // Replace so the onboarding summary doesn't stay in the back-stack once setup is complete.
+        navigate('/log', { replace: true });
     }, [navigate]);
 
     const editSetupFromSummary = useCallback(() => {

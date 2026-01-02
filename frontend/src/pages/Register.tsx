@@ -22,7 +22,8 @@ const Register: React.FC = () => {
             setError('');
             setIsSubmitting(true);
             await register(email, password);
-            navigate('/onboarding');
+            // Replace so mobile/PWA back navigation can't return to registration after the account is created.
+            navigate('/onboarding', { replace: true });
         } catch {
             setError(t('auth.registrationFailed'));
         } finally {
