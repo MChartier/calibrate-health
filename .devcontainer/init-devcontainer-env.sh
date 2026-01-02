@@ -108,6 +108,8 @@ WORKTREE_COLOR=${worktree_color}
 VITE_WORKTREE_COLOR=${vite_worktree_color}
 VITE_WORKTREE_NAME=${workspace_name}
 VITE_WORKTREE_IS_MAIN=${is_main_worktree}
+# Sourced from the host environment during devcontainer init so Docker can pass it into the container.
+USDA_API_KEY=${USDA_API_KEY:-}
 EOF
 
 if [ -f "$env_path" ] && cmp -s "$tmp_path" "$env_path"; then

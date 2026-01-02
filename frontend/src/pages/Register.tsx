@@ -5,8 +5,10 @@ import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import AppPage from '../ui/AppPage';
 import AppCard from '../ui/AppCard';
 import SectionHeader from '../ui/SectionHeader';
+import { useI18n } from '../i18n/useI18n';
 
 const Register: React.FC = () => {
+    const { t } = useI18n();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
@@ -22,7 +24,7 @@ const Register: React.FC = () => {
             await register(email, password);
             navigate('/onboarding');
         } catch {
-            setError('Registration failed');
+            setError(t('auth.registrationFailed'));
         } finally {
             setIsSubmitting(false);
         }
@@ -32,7 +34,7 @@ const Register: React.FC = () => {
         <AppPage maxWidth="form">
             <AppCard>
                 <Stack component="form" spacing={2} onSubmit={handleSubmit}>
-                    <SectionHeader title="Create account" />
+                    <SectionHeader title={t('auth.createAccount')} />
 
                     {error && (
                         <Alert severity="error">
@@ -41,7 +43,7 @@ const Register: React.FC = () => {
                     )}
 
                     <TextField
-                        label="Email"
+                        label={t('auth.email')}
                         type="email"
                         autoComplete="email"
                         inputMode="email"
@@ -53,7 +55,7 @@ const Register: React.FC = () => {
                         required
                     />
                     <TextField
-                        label="Password"
+                        label={t('auth.password')}
                         type="password"
                         autoComplete="new-password"
                         fullWidth
@@ -64,12 +66,12 @@ const Register: React.FC = () => {
                     />
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                         <Button type="submit" variant="contained" fullWidth disabled={isSubmitting}>
-                            {isSubmitting ? 'Creating…' : 'Register'}
+                            {isSubmitting ? t('auth.creatingAccount') : t('auth.register')}
                         </Button>
                         <Typography variant="body2">
-                            Already have an account?{' '}
+                            {t('auth.haveAccountPrompt')}{' '}
                             <Link component={RouterLink} to="/login">
-                                Login
+                                {t('auth.login')}
                             </Link>
                         </Typography>
                     </Box>

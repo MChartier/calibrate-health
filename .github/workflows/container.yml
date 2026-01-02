@@ -1,0 +1,333 @@
+name: Build and Deploy Release
+
+on:
+  push:
+    tags:
+      # Match "vMAJOR.MINOR.PATCH" style tags (glob isn't strict; we validate in-workflow too).
+      - "v[0-9]*.[0-9]*.[0-9]*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+  id-token: write
+
+env:
+  AWS_REGION: us-west-2
+  IMAGE_NAME: calibratehealth
+  GHCR_IMAGE: ghcr.io/${{ github.repository_owner }}/calibratehealth
+
+jobs:
+  validate_release_tag:
+    name: Validate Release Tag
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    outputs:
+      is_release_tag: ${{ steps.check.outputs.is_release_tag }}
+      release_tag: ${{ steps.check.outputs.release_tag }}
+
+    steps:
+      - name: Check strict SemVer tag (vMAJOR.MINOR.PATCH)
+        id: check
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [[ "${GITHUB_REF}" != refs/tags/* ]]; then
+            echo "is_release_tag=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          REF_NAME="${GITHUB_REF_NAME}"
+          if [[ "${REF_NAME}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "is_release_tag=true" >> "$GITHUB_OUTPUT"
+            echo "release_tag=${REF_NAME}" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "is_release_tag=false" >> "$GITHUB_OUTPUT"
+
+  build_and_push:
+    name: Build and Push Image (GHCR + ECR)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    outputs:
+      source_sha: ${{ steps.meta.outputs.source_sha }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure AWS credentials (ECR push)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN_BUILD }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to ECR
+        id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Compute tags
+        id: meta
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          # `HEAD` is always the checked-out commit, even when the workflow runs on an annotated tag.
+          SOURCE_SHA="$(git rev-parse HEAD)"
+
+          ECR_IMAGE="${{ steps.ecr.outputs.registry }}/${IMAGE_NAME}"
+          # Docker image refs require lowercase repository names (GH owner can be mixed-case).
+          GHCR_IMAGE="${GHCR_IMAGE,,}"
+
+          TAGS=()
+          TAGS+=("${GHCR_IMAGE}:sha-${SOURCE_SHA}")
+          TAGS+=("${ECR_IMAGE}:sha-${SOURCE_SHA}")
+
+          SHOULD_TAG_STAGING=false
+          if [[ "${GITHUB_EVENT_NAME}" == "workflow_dispatch" ]]; then
+            # Manual runs are used for staging rebuild/deploys; ensure ECS pulls the freshly-built image.
+            SHOULD_TAG_STAGING=true
+          fi
+
+          if [[ "${GITHUB_REF}" == "refs/heads/master" ]]; then
+            # Tag a human-friendly branch alias for convenience.
+            TAGS+=("${GHCR_IMAGE}:${GITHUB_REF_NAME}")
+            SHOULD_TAG_STAGING=true
+          fi
+
+          if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
+            if [[ "${GITHUB_REF_NAME}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+              TAGS+=("${GHCR_IMAGE}:${GITHUB_REF_NAME}")
+              TAGS+=("${ECR_IMAGE}:${GITHUB_REF_NAME}")
+              # Ensure a release build can also roll forward staging (ECS uses the `staging` tag).
+              SHOULD_TAG_STAGING=true
+            else
+              echo "Tag ${GITHUB_REF_NAME} is not a strict SemVer release tag; skipping version image tags."
+            fi
+          fi
+
+          if [[ "${SHOULD_TAG_STAGING}" == "true" ]]; then
+            TAGS+=("${ECR_IMAGE}:staging")
+          fi
+
+          {
+            echo "source_sha=${SOURCE_SHA}"
+            echo "ecr_image=${ECR_IMAGE}"
+            echo "ghcr_image=${GHCR_IMAGE}"
+            echo "tags<<EOF"
+            printf "%s\n" "${TAGS[@]}"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Build and push (multi-arch)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile.app
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+
+  deploy_staging:
+    name: Deploy Staging (ECS)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    needs: build_and_push
+
+    steps:
+      - name: Configure AWS credentials (staging deploy)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN_DEPLOY_STAGING }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Force new deployment (ECS)
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          ENVIRONMENT="staging"
+          ECS_CLUSTER="${IMAGE_NAME}-${ENVIRONMENT}-cluster"
+          ECS_SERVICE="${IMAGE_NAME}-${ENVIRONMENT}-service"
+
+          aws ecs update-service \
+            --cluster "${ECS_CLUSTER}" \
+            --service "${ECS_SERVICE}" \
+            --force-new-deployment \
+            >/dev/null
+
+          wait_for_stable() {
+            # awscli's `ecs wait services-stable` hard-codes a 10-minute deadline (40x15s).
+            # ECS deployments can take longer (cold starts, image pulls, migrations, etc.), so
+            # retry once before failing the workflow.
+            local attempt
+            for attempt in 1 2; do
+              if aws ecs wait services-stable --cluster "${ECS_CLUSTER}" --services "${ECS_SERVICE}"; then
+                return 0
+              fi
+
+              echo "Timed out waiting for ECS to become stable (attempt ${attempt}/2). Recent service events:" >&2
+              aws ecs describe-services \
+                --cluster "${ECS_CLUSTER}" \
+                --services "${ECS_SERVICE}" \
+                --query 'services[0].events[0:10].[createdAt,message]' \
+                --output table \
+                || true
+            done
+
+            return 1
+          }
+
+          wait_for_stable
+
+  staging_smoke:
+    name: Staging Smoke Tests (E2E)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: deploy_staging
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Health check /api/healthz
+        shell: bash
+        env:
+          # Configure as a GitHub Actions variable, e.g. https://staging.calibratehealth.app
+          E2E_BASE_URL: ${{ vars.STAGING_BASE_URL }}
+          E2E_POLL_TIMEOUT_MS: "300000"
+          E2E_POLL_INTERVAL_MS: "5000"
+          E2E_REQUEST_TIMEOUT_MS: "10000"
+        run: node scripts/e2e/healthcheck.mjs
+
+  deploy_prod:
+    name: Deploy Prod (ECS)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs:
+      - build_and_push
+      - validate_release_tag
+      - staging_smoke
+    # Allow strict SemVer tag releases, or manual runs from the default branch (still approval-gated).
+    if: needs.validate_release_tag.outputs.is_release_tag == 'true' || (github.event_name == 'workflow_dispatch' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch))
+    environment: production
+
+    steps:
+      - name: Configure AWS credentials (prod deploy)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN_DEPLOY_PROD }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Retag ECR image (sha-* -> prod)
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          SOURCE_TAG="sha-${{ needs.build_and_push.outputs.source_sha }}"
+
+          MANIFEST="$(aws ecr batch-get-image \
+            --repository-name "${IMAGE_NAME}" \
+            --image-ids imageTag="${SOURCE_TAG}" \
+            --query 'images[0].imageManifest' \
+            --output text)"
+
+          if [[ -z "${MANIFEST}" || "${MANIFEST}" == "None" ]]; then
+            echo "Image tag ${SOURCE_TAG} not found in ECR repo ${IMAGE_NAME}." >&2
+            echo "Ensure the image has been built/pushed before deploying to prod." >&2
+            exit 1
+          fi
+
+          aws ecr put-image \
+            --repository-name "${IMAGE_NAME}" \
+            --image-tag "prod" \
+            --image-manifest "${MANIFEST}" \
+            >/dev/null
+
+      - name: Force new deployment (ECS)
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          ENVIRONMENT="prod"
+          ECS_CLUSTER="${IMAGE_NAME}-${ENVIRONMENT}-cluster"
+          ECS_SERVICE="${IMAGE_NAME}-${ENVIRONMENT}-service"
+
+          aws ecs update-service \
+            --cluster "${ECS_CLUSTER}" \
+            --service "${ECS_SERVICE}" \
+            --force-new-deployment \
+            >/dev/null
+
+          wait_for_stable() {
+            # awscli's `ecs wait services-stable` hard-codes a 10-minute deadline (40x15s).
+            # ECS deployments can take longer (cold starts, image pulls, migrations, etc.), so
+            # retry once before failing the workflow.
+            local attempt
+            for attempt in 1 2; do
+              if aws ecs wait services-stable --cluster "${ECS_CLUSTER}" --services "${ECS_SERVICE}"; then
+                return 0
+              fi
+
+              echo "Timed out waiting for ECS to become stable (attempt ${attempt}/2). Recent service events:" >&2
+              aws ecs describe-services \
+                --cluster "${ECS_CLUSTER}" \
+                --services "${ECS_SERVICE}" \
+                --query 'services[0].events[0:10].[createdAt,message]' \
+                --output table \
+                || true
+            done
+
+            return 1
+          }
+
+          wait_for_stable
+
+  prod_smoke:
+    name: Prod Smoke Tests (E2E)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: deploy_prod
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Health check /api/healthz
+        shell: bash
+        env:
+          # Configure as a GitHub Actions variable, e.g. https://calibratehealth.app
+          E2E_BASE_URL: ${{ vars.PROD_BASE_URL }}
+          E2E_POLL_TIMEOUT_MS: "300000"
+          E2E_POLL_INTERVAL_MS: "5000"
+          E2E_REQUEST_TIMEOUT_MS: "10000"
+        run: node scripts/e2e/healthcheck.mjs

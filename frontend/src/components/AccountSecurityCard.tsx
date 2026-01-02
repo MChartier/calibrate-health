@@ -19,6 +19,7 @@ import AppCard from '../ui/AppCard';
 import InlineStatusLine from '../ui/InlineStatusLine';
 import SectionHeader from '../ui/SectionHeader';
 import { getApiErrorMessage } from '../utils/apiError';
+import { useI18n } from '../i18n/useI18n';
 
 const MIN_PASSWORD_LENGTH = 8;
 
@@ -34,11 +35,14 @@ type Props = {
  * This keeps "account" concerns colocated on Settings, separate from the body/TDEE profile page.
  */
 const AccountSecurityCard: React.FC<Props> = ({
-    subtitle = 'View your email address, update your password, or log out.'
+    subtitle
 }) => {
     const navigate = useNavigate();
     const { user, logout, changePassword } = useAuth();
     const { status, showStatus, clearStatus } = useTransientStatus();
+    const { t } = useI18n();
+
+    const resolvedSubtitle = subtitle ?? t('account.subtitle');
 
     const [passwordError, setPasswordError] = useState('');
     const [isChangingPassword, setIsChangingPassword] = useState(false);
@@ -91,32 +95,32 @@ const AccountSecurityCard: React.FC<Props> = ({
         setPasswordError('');
 
         if (!currentPassword) {
-            setPasswordError('Please enter your current password.');
+            setPasswordError(t('account.validation.enterCurrentPassword'));
             return;
         }
 
         if (newPassword.length < MIN_PASSWORD_LENGTH) {
-            setPasswordError(`New password must be at least ${MIN_PASSWORD_LENGTH} characters.`);
+            setPasswordError(t('account.validation.passwordMinLength', { min: MIN_PASSWORD_LENGTH }));
             return;
         }
 
         if (newPassword !== confirmPassword) {
-            setPasswordError('New passwords do not match.');
+            setPasswordError(t('account.validation.passwordsDoNotMatch'));
             return;
         }
 
         if (currentPassword === newPassword) {
-            setPasswordError('New password must be different from your current password.');
+            setPasswordError(t('account.validation.passwordDifferent'));
             return;
         }
 
         setIsChangingPassword(true);
         try {
             await changePassword(currentPassword, newPassword);
-            showStatus('Password updated.', 'success');
+            showStatus(t('account.passwordUpdated'), 'success');
             closePasswordDialog();
         } catch (err) {
-            setPasswordError(getApiErrorMessage(err) ?? 'Failed to update password.');
+            setPasswordError(getApiErrorMessage(err) ?? t('account.failedToUpdatePassword'));
         } finally {
             setIsChangingPassword(false);
         }
@@ -139,7 +143,7 @@ const AccountSecurityCard: React.FC<Props> = ({
             await logout();
             navigate('/login');
         } catch {
-            showStatus('Failed to log out', 'error');
+            showStatus(t('account.failedToLogOut'), 'error');
         }
     };
 
@@ -147,11 +151,11 @@ const AccountSecurityCard: React.FC<Props> = ({
         <>
             <AppCard>
                 <SectionHeader
-                    title="Account"
-                    subtitle={subtitle}
+                    title={t('account.title')}
+                    subtitle={resolvedSubtitle}
                     actions={
                         <Button variant="outlined" onClick={handlePasswordDialogOpen}>
-                            Change Password
+                            {t('account.changePassword')}
                         </Button>
                     }
                     sx={{ mb: 0.5 }}
@@ -162,7 +166,7 @@ const AccountSecurityCard: React.FC<Props> = ({
                 <Stack spacing={2}>
                     <Stack spacing={1.5}>
                         <Typography variant="body2" color="text.secondary">
-                            Email
+                            {t('account.email')}
                         </Typography>
                         <Box
                             sx={{
@@ -185,7 +189,7 @@ const AccountSecurityCard: React.FC<Props> = ({
                         onClick={() => void handleLogout()}
                         fullWidth
                     >
-                        Log out
+                        {t('nav.logOut')}
                     </Button>
                 </Stack>
             </AppCard>
@@ -196,7 +200,7 @@ const AccountSecurityCard: React.FC<Props> = ({
                 fullWidth
                 maxWidth="xs"
             >
-                <DialogTitle>Change password</DialogTitle>
+                <DialogTitle>{t('account.changePasswordDialogTitle')}</DialogTitle>
                 <DialogContent>
                     <Stack
                         spacing={2}
@@ -208,7 +212,7 @@ const AccountSecurityCard: React.FC<Props> = ({
                         {passwordError && <Alert severity="error">{passwordError}</Alert>}
 
                         <TextField
-                            label="Current Password"
+                            label={t('account.currentPassword')}
                             type="password"
                             autoComplete="current-password"
                             value={currentPassword}
@@ -219,12 +223,12 @@ const AccountSecurityCard: React.FC<Props> = ({
                         />
 
                         <TextField
-                            label="New Password"
+                            label={t('account.newPassword')}
                             type="password"
                             autoComplete="new-password"
                             value={newPassword}
                             onChange={(e) => setNewPassword(e.target.value)}
-                            helperText={`At least ${MIN_PASSWORD_LENGTH} characters.`}
+                            helperText={t('account.passwordHint', { min: MIN_PASSWORD_LENGTH })}
                             disabled={isChangingPassword}
                             inputProps={{ minLength: MIN_PASSWORD_LENGTH }}
                             required
@@ -232,7 +236,7 @@ const AccountSecurityCard: React.FC<Props> = ({
                         />
 
                         <TextField
-                            label="Confirm New Password"
+                            label={t('account.confirmNewPassword')}
                             type="password"
                             autoComplete="new-password"
                             value={confirmPassword}
@@ -246,7 +250,7 @@ const AccountSecurityCard: React.FC<Props> = ({
                 </DialogContent>
                 <DialogActions sx={{ px: 3, pb: 2 }}>
                     <Button onClick={handlePasswordDialogClose} disabled={isChangingPassword}>
-                        Cancel
+                        {t('common.cancel')}
                     </Button>
                     <Button
                         type="submit"
@@ -254,7 +258,7 @@ const AccountSecurityCard: React.FC<Props> = ({
                         variant="contained"
                         disabled={isChangingPassword}
                     >
-                        {isChangingPassword ? 'Updating...' : 'Update Password'}
+                        {isChangingPassword ? t('common.updating') : t('account.updatePassword')}
                     </Button>
                 </DialogActions>
             </Dialog>
@@ -263,4 +267,3 @@ const AccountSecurityCard: React.FC<Props> = ({
 };
 
 export default AccountSecurityCard;
-

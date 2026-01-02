@@ -1,6 +1,8 @@
 import express from 'express';
 import prisma from '../config/database';
 import { parseNonNegativeNumber, parsePositiveInteger, parsePositiveNumber } from '../utils/requestParsing';
+import { buildExternalIngredientSnapshotRow, parseMyFoodIngredientInput } from './myFoodsRecipeUtils';
+import { createHttpError, isHttpError, normalizeMyFoodName, normalizeServingUnitLabel } from './myFoodsUtils';
 
 const router = express.Router();
 
@@ -12,45 +14,6 @@ const isAuthenticated = (req: express.Request, res: express.Response, next: expr
 };
 
 router.use(isAuthenticated);
-
-const SERVING_UNIT_LABEL_MAX_LENGTH = 48;
-const MY_FOOD_NAME_MAX_LENGTH = 120;
-
-/**
- * Normalize a free-form serving unit label for storage and validation.
- *
- * We avoid enforcing an enum so users can type locale-appropriate units ("g", "ml", "fl oz", "slice", etc.).
- */
-function normalizeServingUnitLabel(value: unknown): string | null {
-    if (typeof value !== 'string') return null;
-    const trimmed = value.trim().replace(/\s+/g, ' ');
-    if (!trimmed) return null;
-    if (trimmed.length > SERVING_UNIT_LABEL_MAX_LENGTH) return null;
-    return trimmed;
-}
-
-/**
- * Normalize a user-defined food/recipe name for storage.
- */
-function normalizeMyFoodName(value: unknown): string | null {
-    if (typeof value !== 'string') return null;
-    const trimmed = value.trim().replace(/\s+/g, ' ');
-    if (!trimmed) return null;
-    if (trimmed.length > MY_FOOD_NAME_MAX_LENGTH) return null;
-    return trimmed;
-}
-
-type HttpError = Error & { statusCode: number };
-
-/**
- * Create a typed HTTP error so route handlers can map validation failures to status codes
- * without leaking stack traces or turning everything into a 500.
- */
-function createHttpError(statusCode: number, message: string): HttpError {
-    const err = new Error(message) as HttpError;
-    err.statusCode = statusCode;
-    return err;
-}
 
 router.get('/', async (req, res) => {
     const user = req.user as any;
@@ -232,24 +195,19 @@ router.post('/recipes', async (req, res) => {
                 }
 
                 if (source === 'MY_FOOD') {
-                    const myFoodId = parsePositiveInteger((ingredient as any).my_food_id);
-                    if (myFoodId === null) {
-                        throw createHttpError(400, 'Invalid ingredient my_food_id');
-                    }
-
-                    const quantityServings = parsePositiveNumber((ingredient as any).quantity_servings);
-                    if (quantityServings === null) {
-                        throw createHttpError(400, 'Invalid ingredient quantity_servings');
+                    const parsedIngredient = parseMyFoodIngredientInput(ingredient);
+                    if (!parsedIngredient.ok) {
+                        throw parsedIngredient.error;
                     }
 
                     const sourceFood = await tx.myFood.findFirst({
-                        where: { id: myFoodId, user_id: user.id, type: 'FOOD' }
+                        where: { id: parsedIngredient.value.myFoodId, user_id: user.id, type: 'FOOD' }
                     });
                     if (!sourceFood) {
                         throw createHttpError(404, 'Ingredient my food not found');
                     }
 
-                    const caloriesTotal = quantityServings * sourceFood.calories_per_serving;
+                    const caloriesTotal = parsedIngredient.value.quantityServings * sourceFood.calories_per_serving;
 
                     ingredientRows.push({
                         sort_order: sortOrder,
@@ -257,7 +215,7 @@ router.post('/recipes', async (req, res) => {
                         name_snapshot: sourceFood.name,
                         calories_total_snapshot: caloriesTotal,
                         source_my_food_id: sourceFood.id,
-                        quantity_servings: quantityServings,
+                        quantity_servings: parsedIngredient.value.quantityServings,
                         serving_size_quantity_snapshot: sourceFood.serving_size_quantity,
                         serving_unit_label_snapshot: sourceFood.serving_unit_label,
                         calories_per_serving_snapshot: sourceFood.calories_per_serving
@@ -265,32 +223,14 @@ router.post('/recipes', async (req, res) => {
                     continue;
                 }
 
-                const externalName = normalizeMyFoodName((ingredient as any).name);
-                if (!externalName) {
-                    throw createHttpError(400, 'Invalid external ingredient name');
+                const externalSnapshot = buildExternalIngredientSnapshotRow(ingredient, sortOrder);
+                if (!externalSnapshot.ok) {
+                    throw externalSnapshot.error;
                 }
-
-                const caloriesTotal = parseNonNegativeNumber((ingredient as any).calories_total);
-                if (caloriesTotal === null) {
-                    throw createHttpError(400, 'Invalid external ingredient calories_total');
-                }
-
-                const maybeString = (v: unknown) => (typeof v === 'string' && v.trim() ? v.trim() : null);
 
                 ingredientRows.push({
-                    sort_order: sortOrder,
-                    source,
-                    name_snapshot: externalName,
-                    calories_total_snapshot: caloriesTotal,
-                    external_source: maybeString((ingredient as any).external_source),
-                    external_id: maybeString((ingredient as any).external_id),
-                    brand_snapshot: maybeString((ingredient as any).brand),
-                    locale_snapshot: maybeString((ingredient as any).locale),
-                    barcode_snapshot: maybeString((ingredient as any).barcode),
-                    measure_label_snapshot: maybeString((ingredient as any).measure_label),
-                    grams_per_measure_snapshot: parsePositiveNumber((ingredient as any).grams_per_measure),
-                    measure_quantity_snapshot: parsePositiveNumber((ingredient as any).measure_quantity),
-                    grams_total_snapshot: parsePositiveNumber((ingredient as any).grams_total)
+                    ...externalSnapshot.value,
+                    source
                 });
             }
 
@@ -340,8 +280,8 @@ router.post('/recipes', async (req, res) => {
         res.json(created);
     } catch (err) {
         console.error(err);
-        if (err && typeof err === 'object' && 'statusCode' in err && typeof (err as any).statusCode === 'number') {
-            return res.status((err as any).statusCode).json({ message: (err as any).message || 'Request failed' });
+        if (isHttpError(err)) {
+            return res.status(err.statusCode).json({ message: err.message || 'Request failed' });
         }
         return res.status(500).json({ message: 'Server error' });
     }

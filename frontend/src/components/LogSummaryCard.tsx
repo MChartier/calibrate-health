@@ -3,11 +3,16 @@ import { Box, Card, CardActionArea, CardContent, Skeleton, Typography } from '@m
 import { Gauge } from '@mui/x-charts/Gauge';
 import { Link as RouterLink } from 'react-router-dom';
 import { useAuth } from '../context/useAuth';
-import { formatDateToLocalDateString, formatIsoDateForDisplay, getHolidayEmojiForIsoDate } from '../utils/date';
+import {
+    formatDateToLocalDateString,
+    formatIsoDateForDisplay,
+    getBirthdayEmojiForIsoDate,
+    getHolidayEmojiForIsoDate
+} from '../utils/date';
 import { usePrefersReducedMotion } from '../hooks/usePrefersReducedMotion';
-import { useTweenedNumber } from '../hooks/useTweenedNumber';
 import { useUserProfileQuery } from '../queries/userProfile';
 import { useFoodLogQuery } from '../queries/foodLog';
+import { useI18n } from '../i18n/useI18n';
 
 const GAUGE_WIDTH = 200;
 const GAUGE_HEIGHT = 140;
@@ -36,21 +41,98 @@ function useAnimatedLogSummaryValues(args: {
     remainingCalories: number | null;
     disabled: boolean;
 }): AnimatedLogSummaryValues {
-    const gaugePercent = args.gaugeMax > 0 ? args.gaugeValue / args.gaugeMax : 0;
-    const animatedGaugePercent = useTweenedNumber(gaugePercent, {
-        durationMs: LOG_SUMMARY_TWEEN_DURATION_MS,
-        disabled: args.disabled
-    });
+    const gaugePercentTarget = args.gaugeMax > 0 ? args.gaugeValue / args.gaugeMax : 0;
+    const remainingAbsTarget = args.remainingCalories !== null ? Math.abs(args.remainingCalories) : null;
 
-    const remainingAbs = args.remainingCalories !== null ? Math.abs(args.remainingCalories) : null;
-    const animatedRemainingAbs = useTweenedNumber(remainingAbs ?? 0, {
-        durationMs: LOG_SUMMARY_TWEEN_DURATION_MS,
-        disabled: args.disabled || remainingAbs === null
+    const rafRef = React.useRef<number | null>(null);
+    const valueRef = React.useRef({
+        gaugePercent: gaugePercentTarget,
+        remainingAbs: remainingAbsTarget ?? 0
     });
+    const [animated, setAnimated] = React.useState(() => ({
+        gaugePercent: gaugePercentTarget,
+        remainingAbs: remainingAbsTarget ?? 0
+    }));
+
+    React.useEffect(() => {
+        valueRef.current = animated;
+    }, [animated]);
+
+    React.useEffect(() => {
+        if (rafRef.current !== null) {
+            cancelAnimationFrame(rafRef.current);
+            rafRef.current = null;
+        }
+
+        const targetRemainingAbs = remainingAbsTarget ?? 0;
+        const targetGaugePercent = Number.isFinite(gaugePercentTarget) ? gaugePercentTarget : 0;
+
+        if (args.disabled || LOG_SUMMARY_TWEEN_DURATION_MS <= 0) {
+            if (
+                valueRef.current.gaugePercent === targetGaugePercent &&
+                valueRef.current.remainingAbs === targetRemainingAbs
+            ) {
+                return () => {};
+            }
+
+            const next = { gaugePercent: targetGaugePercent, remainingAbs: targetRemainingAbs };
+            valueRef.current = next;
+
+            // Avoid calling setState synchronously inside an effect body (eslint rule).
+            rafRef.current = requestAnimationFrame(() => {
+                setAnimated(next);
+                rafRef.current = null;
+            });
+
+            return () => {
+                if (rafRef.current !== null) {
+                    cancelAnimationFrame(rafRef.current);
+                    rafRef.current = null;
+                }
+            };
+        }
+
+        const from = valueRef.current;
+        const to = { gaugePercent: targetGaugePercent, remainingAbs: targetRemainingAbs };
+        if (from.gaugePercent === to.gaugePercent && from.remainingAbs === to.remainingAbs) {
+            return () => {};
+        }
+
+        const start = performance.now();
+
+        const tick = (now: number) => {
+            const elapsed = now - start;
+            const t = Math.min(1, elapsed / LOG_SUMMARY_TWEEN_DURATION_MS);
+            const eased = 1 - Math.pow(1 - t, 3);
+
+            const next = {
+                gaugePercent: from.gaugePercent + (to.gaugePercent - from.gaugePercent) * eased,
+                remainingAbs: from.remainingAbs + (to.remainingAbs - from.remainingAbs) * eased
+            };
+
+            valueRef.current = next;
+            setAnimated(next);
+
+            if (t < 1) {
+                rafRef.current = requestAnimationFrame(tick);
+            } else {
+                rafRef.current = null;
+            }
+        };
+
+        rafRef.current = requestAnimationFrame(tick);
+
+        return () => {
+            if (rafRef.current !== null) {
+                cancelAnimationFrame(rafRef.current);
+                rafRef.current = null;
+            }
+        };
+    }, [args.disabled, gaugePercentTarget, remainingAbsTarget]);
 
     return {
-        gaugeValue: Math.max(0, Math.min(animatedGaugePercent, 1)) * args.gaugeMax,
-        remainingCaloriesLabel: remainingAbs === null ? null : Math.round(Math.max(animatedRemainingAbs, 0))
+        gaugeValue: Math.max(0, Math.min(animated.gaugePercent, 1)) * args.gaugeMax,
+        remainingCaloriesLabel: remainingAbsTarget === null ? null : Math.round(Math.max(animated.remainingAbs, 0))
     };
 }
 
@@ -69,21 +151,34 @@ export type LogSummaryCardProps = {
 
 const LogSummaryCard: React.FC<LogSummaryCardProps> = ({ dashboardMode = false, date }) => {
     const { user } = useAuth();
-    const timeZone = user?.timezone?.trim() || Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
-    const today = formatDateToLocalDateString(new Date(), timeZone);
+    const { t } = useI18n();
+    const timeZone = React.useMemo(() => {
+        return user?.timezone?.trim() || Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+    }, [user?.timezone]);
+    const today = React.useMemo(() => formatDateToLocalDateString(new Date(), timeZone), [timeZone]);
     const activeDate = date ?? today;
     const isActiveDateToday = activeDate === today;
-    const holidayEmoji = getHolidayEmojiForIsoDate(activeDate);
-    const title = isActiveDateToday
-        ? `Today's Log${holidayEmoji ? ` ${holidayEmoji}` : ''}`
-        : `Log for ${formatIsoDateForDisplay(activeDate)}${holidayEmoji ? ` ${holidayEmoji}` : ''}`;
+    const title = React.useMemo(() => {
+        const birthdayEmoji = getBirthdayEmojiForIsoDate(activeDate, user?.date_of_birth);
+        const holidayEmoji = getHolidayEmojiForIsoDate(activeDate);
+        const titleEmojis = [birthdayEmoji, holidayEmoji].filter(Boolean).join(' ');
+        const titleEmojiSuffix = titleEmojis ? ` ${titleEmojis}` : '';
+
+        const baseTitle = isActiveDateToday
+            ? t('logSummary.title.today')
+            : t('logSummary.title.forDate', { date: formatIsoDateForDisplay(activeDate) });
+
+        return `${baseTitle}${titleEmojiSuffix}`;
+    }, [activeDate, isActiveDateToday, t, user?.date_of_birth]);
 
     const foodQuery = useFoodLogQuery(activeDate);
 
     const profileSummaryQuery = useUserProfileQuery();
 
-    const logs = foodQuery.data ?? [];
-    const totalCalories = logs.reduce((acc, log) => acc + log.calories, 0);
+    const logs = foodQuery.data;
+    const totalCalories = React.useMemo(() => {
+        return (logs ?? []).reduce((acc, log) => acc + log.calories, 0);
+    }, [logs]);
     const dailyTarget = profileSummaryQuery.data?.calorieSummary?.dailyCalorieTarget;
     const remainingCalories = typeof dailyTarget === 'number' ? Math.round(dailyTarget - totalCalories) : null;
     const isOver = dailyTarget !== undefined && dailyTarget !== null && totalCalories > dailyTarget;
@@ -94,7 +189,9 @@ const LogSummaryCard: React.FC<LogSummaryCardProps> = ({ dashboardMode = false, 
     const isError = foodQuery.isError || profileSummaryQuery.isError;
 
     const prefersReducedMotion = usePrefersReducedMotion();
-    const animationsDisabled = prefersReducedMotion || isLoading || isError;
+    // The dashboard card is visible on the landing page where scroll smoothness matters most,
+    // especially on lower-powered mobile devices. Keep it static; reserve the tween for /log date navigation.
+    const animationsDisabled = prefersReducedMotion || isLoading || isError || dashboardMode;
 
     const animatedValues = useAnimatedLogSummaryValues({
         gaugeValue,
@@ -102,6 +199,14 @@ const LogSummaryCard: React.FC<LogSummaryCardProps> = ({ dashboardMode = false, 
         remainingCalories,
         disabled: animationsDisabled
     });
+
+    const displayedGaugeValue = animationsDisabled ? gaugeValue : animatedValues.gaugeValue;
+    let displayedRemainingCaloriesLabel: number | null = null;
+    if (remainingCalories !== null) {
+        displayedRemainingCaloriesLabel = animationsDisabled
+            ? Math.abs(remainingCalories)
+            : (animatedValues.remainingCaloriesLabel ?? 0);
+    }
 
     // Split conditional branches into named nodes to keep the render tree readable.
     let cardBody: React.ReactNode;
@@ -125,8 +230,13 @@ const LogSummaryCard: React.FC<LogSummaryCardProps> = ({ dashboardMode = false, 
                     valueMax={1}
                     innerRadius={GAUGE_INNER_RADIUS}
                     outerRadius={GAUGE_OUTER_RADIUS}
-                    text={() => ''}
+                    text={() => null}
                     sx={{
+                        // Hint the browser to treat the gauge as an isolated paint region to keep scroll smooth on mobile.
+                        // `transform` promotes the gauge into its own composited layer in many browsers, avoiding repaints while scrolling.
+                        contain: 'paint',
+                        willChange: 'transform',
+                        transform: 'translateZ(0)',
                         '& .MuiGauge-referenceArc': {
                             fill: (theme) => theme.palette.grey[300]
                         },
@@ -136,17 +246,17 @@ const LogSummaryCard: React.FC<LogSummaryCardProps> = ({ dashboardMode = false, 
                     }}
                 />
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, flexGrow: 1 }}>
-                    <Typography variant="subtitle1">Calories remaining</Typography>
+                    <Typography variant="subtitle1">{t('logSummary.caloriesRemaining')}</Typography>
                     <Skeleton width="40%" height={SUMMARY_SKELETON_VALUE_HEIGHT} />
                     <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1 }}>
                         <Typography variant="body2" color="text.secondary">
-                            Logged:
+                            {t('logSummary.loggedLabel')}
                         </Typography>
                         <Skeleton width="55%" height={20} />
                     </Box>
                     {dashboardMode && (
                         <Typography variant="body2" color="primary">
-                            View / edit {isActiveDateToday ? "today's log" : 'this log'}
+                            {isActiveDateToday ? t('logSummary.cta.viewEditToday') : t('logSummary.cta.viewEditThis')}
                         </Typography>
                     )}
                 </Box>
@@ -156,16 +266,20 @@ const LogSummaryCard: React.FC<LogSummaryCardProps> = ({ dashboardMode = false, 
         cardBody = (
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
                 <Typography variant="body2" color="text.secondary">
-                    Unable to load this log summary.
+                    {t('logSummary.error.unableToLoad')}
                 </Typography>
                 {dashboardMode && (
                     <Typography variant="body2" color="primary">
-                        View / edit {isActiveDateToday ? "today's log" : 'this log'}
+                        {isActiveDateToday ? t('logSummary.cta.viewEditToday') : t('logSummary.cta.viewEditThis')}
                     </Typography>
                 )}
             </Box>
         );
     } else {
+        const loggedLine = dailyTarget
+            ? t('logSummary.loggedLine.ofTarget', { total: totalCalories, target: Math.round(dailyTarget) })
+            : t('logSummary.loggedLine', { total: totalCalories });
+
         cardBody = (
             <Box
                 sx={{
@@ -180,13 +294,18 @@ const LogSummaryCard: React.FC<LogSummaryCardProps> = ({ dashboardMode = false, 
                     height={GAUGE_HEIGHT}
                     startAngle={GAUGE_START_ANGLE}
                     endAngle={GAUGE_END_ANGLE}
-                    value={animatedValues.gaugeValue}
+                    value={displayedGaugeValue}
                     valueMin={0}
                     valueMax={gaugeMax}
                     innerRadius={GAUGE_INNER_RADIUS}
                     outerRadius={GAUGE_OUTER_RADIUS}
-                    text={() => ''}
+                    text={() => null}
                     sx={{
+                        // Hint the browser to treat the gauge as an isolated paint region to keep scroll smooth on mobile.
+                        // `transform` promotes the gauge into its own composited layer in many browsers, avoiding repaints while scrolling.
+                        contain: 'paint',
+                        willChange: 'transform',
+                        transform: 'translateZ(0)',
                         '& .MuiGauge-referenceArc': {
                             fill: (theme) => (isOver ? theme.palette.error.main : theme.palette.grey[300])
                         },
@@ -197,19 +316,21 @@ const LogSummaryCard: React.FC<LogSummaryCardProps> = ({ dashboardMode = false, 
                 />
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
                     <Typography variant="subtitle1">
-                        {remainingCalories !== null && remainingCalories < 0 ? 'Calories over budget' : 'Calories remaining'}
+                        {remainingCalories !== null && remainingCalories < 0
+                            ? t('logSummary.caloriesOverBudget')
+                            : t('logSummary.caloriesRemaining')}
                     </Typography>
                     <Typography variant="h5">
-                        {remainingCalories !== null
-                            ? `${animatedValues.remainingCaloriesLabel ?? 0} Calories`
+                        {displayedRemainingCaloriesLabel !== null
+                            ? t('logSummary.caloriesValue', { value: displayedRemainingCaloriesLabel })
                             : '—'}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                        Logged: {totalCalories} Calories {dailyTarget ? `of ${Math.round(dailyTarget)} Calories target` : ''}
+                        {loggedLine}
                     </Typography>
                     {dashboardMode && (
                         <Typography variant="body2" color="primary">
-                            View / edit {isActiveDateToday ? "today's log" : 'this log'}
+                            {isActiveDateToday ? t('logSummary.cta.viewEditToday') : t('logSummary.cta.viewEditThis')}
                         </Typography>
                     )}
                 </Box>

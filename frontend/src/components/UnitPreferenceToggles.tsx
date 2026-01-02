@@ -1,6 +1,7 @@
 import React from 'react';
 import { FormControl, FormLabel, Stack, ToggleButton, ToggleButtonGroup } from '@mui/material';
 import type { HeightUnit, WeightUnit } from '../context/authContext';
+import { useI18n } from '../i18n/useI18n';
 
 type UnitPreferenceTogglesProps = {
     /** User-preferred weight unit used across the app (kg/lb). */
@@ -27,10 +28,12 @@ const UnitPreferenceToggles: React.FC<UnitPreferenceTogglesProps> = ({
     onHeightUnitChange,
     disabled = false
 }) => {
+    const { t } = useI18n();
+
     return (
         <Stack spacing={2}>
             <FormControl component="fieldset" disabled={disabled}>
-                <FormLabel component="legend">Weight units</FormLabel>
+                <FormLabel component="legend">{t('units.weightUnits')}</FormLabel>
                 <ToggleButtonGroup
                     value={weightUnit}
                     exclusive
@@ -38,20 +41,20 @@ const UnitPreferenceToggles: React.FC<UnitPreferenceTogglesProps> = ({
                     size="small"
                     color="primary"
                     disabled={disabled}
-                    aria-label="Weight units"
+                    aria-label={t('units.weightUnits')}
                     sx={{ width: '100%' }}
                 >
-                    <ToggleButton value="KG" aria-label="Kilograms" sx={{ flex: 1 }}>
+                    <ToggleButton value="KG" aria-label={t('units.kgAria')} sx={{ flex: 1 }}>
                         kg
                     </ToggleButton>
-                    <ToggleButton value="LB" aria-label="Pounds" sx={{ flex: 1 }}>
+                    <ToggleButton value="LB" aria-label={t('units.lbAria')} sx={{ flex: 1 }}>
                         lb
                     </ToggleButton>
                 </ToggleButtonGroup>
             </FormControl>
 
             <FormControl component="fieldset" disabled={disabled}>
-                <FormLabel component="legend">Height units</FormLabel>
+                <FormLabel component="legend">{t('units.heightUnits')}</FormLabel>
                 <ToggleButtonGroup
                     value={heightUnit}
                     exclusive
@@ -59,13 +62,13 @@ const UnitPreferenceToggles: React.FC<UnitPreferenceTogglesProps> = ({
                     size="small"
                     color="primary"
                     disabled={disabled}
-                    aria-label="Height units"
+                    aria-label={t('units.heightUnits')}
                     sx={{ width: '100%' }}
                 >
-                    <ToggleButton value="CM" aria-label="Centimeters" sx={{ flex: 1 }}>
+                    <ToggleButton value="CM" aria-label={t('units.cmAria')} sx={{ flex: 1 }}>
                         cm
                     </ToggleButton>
-                    <ToggleButton value="FT_IN" aria-label="Feet and inches" sx={{ flex: 1 }}>
+                    <ToggleButton value="FT_IN" aria-label={t('units.ftInAria')} sx={{ flex: 1 }}>
                         ft / in
                     </ToggleButton>
                 </ToggleButtonGroup>
@@ -75,4 +78,3 @@ const UnitPreferenceToggles: React.FC<UnitPreferenceTogglesProps> = ({
 };
 
 export default UnitPreferenceToggles;
-

@@ -12,54 +12,60 @@ import AppCard from '../ui/AppCard';
 import AppPage from '../ui/AppPage';
 import LandingAppPreview from '../components/landing/LandingAppPreview';
 import { usePrefersReducedMotion } from '../hooks/usePrefersReducedMotion';
+import { useI18n } from '../i18n/useI18n';
+import type { TranslationKey } from '../i18n/resources';
 
 const HERO_BLOB_ANIMATION_DURATION_MS = 14000; // Slow drift for hero background blobs (disabled with prefers-reduced-motion).
 const HERO_BLOB_BLUR_PX = 46; // Keeps hero blobs "glowy" instead of drawing attention with sharp edges.
 const FEATURE_ICON_SIZE_PX = 44; // Consistent icon block size so the feature grid feels aligned.
 
 type LandingFeature = {
-    title: string;
-    description: string;
+    titleKey: TranslationKey;
+    descriptionKey: TranslationKey;
     icon: React.ReactElement;
 };
 
 const LANDING_GOAL_FEATURES: LandingFeature[] = [
     {
-        title: 'Daily weigh-ins',
-        description: 'Log weight regularly and see your progress over time (not just the last number).',
+        titleKey: 'landing.feature.weighIns.title',
+        descriptionKey: 'landing.feature.weighIns.body',
         icon: <MonitorWeightIcon />
     },
     {
-        title: 'Food tracking',
-        description: 'Add custom food items, or scan barcodes when you have something packaged.',
+        titleKey: 'landing.feature.foodTracking.title',
+        descriptionKey: 'landing.feature.foodTracking.body',
         icon: <QrCodeScannerIcon />
     },
     {
-        title: 'Smart goal projection',
-        description: 'See an estimated target date based on your goal deficit and steady-rate projection model.',
+        titleKey: 'landing.feature.projection.title',
+        descriptionKey: 'landing.feature.projection.body',
         icon: <ShowChartIcon />
     }
 ];
 
 const LANDING_VALUE_FEATURES: LandingFeature[] = [
     {
-        title: 'Free and ad-free',
-        description: 'A clean tracker without ads competing for your attention.',
+        titleKey: 'landing.feature.freeAdFree.title',
+        descriptionKey: 'landing.feature.freeAdFree.body',
         icon: <MoneyOffIcon />
     },
     {
-        title: 'Self-hostable',
-        description: 'Run it yourself with Docker and keep your data under your control.',
+        titleKey: 'landing.feature.selfHostable.title',
+        descriptionKey: 'landing.feature.selfHostable.body',
         icon: <StorageIcon />
     },
     {
-        title: 'First-class mobile + desktop',
-        description: 'Designed to feel great on your phone, tablet, and laptop.',
+        titleKey: 'landing.feature.mobileDesktop.title',
+        descriptionKey: 'landing.feature.mobileDesktop.body',
         icon: <DevicesIcon />
     }
 ];
 
-const LANDING_PILLS = ['Free + Ad-Free', 'Self-hostable', 'Mobile + Desktop'] as const;
+const LANDING_PILL_KEYS = [
+    'landing.hero.pill.freeAdFree',
+    'landing.hero.pill.selfHostable',
+    'landing.hero.pill.mobileDesktop'
+] as const satisfies readonly TranslationKey[];
 
 /**
  * LandingFeatureCard
@@ -67,6 +73,8 @@ const LANDING_PILLS = ['Free + Ad-Free', 'Self-hostable', 'Mobile + Desktop'] as
  * Small marketing tile used to outline a single app capability.
  */
 function LandingFeatureCard({ feature }: { feature: LandingFeature }) {
+    const { t } = useI18n();
+
     return (
         <AppCard sx={{ height: '100%' }}>
             <Stack spacing={1.25}>
@@ -90,9 +98,9 @@ function LandingFeatureCard({ feature }: { feature: LandingFeature }) {
                 </Box>
 
                 <Box sx={{ minWidth: 0 }}>
-                    <Typography variant="subtitle1">{feature.title}</Typography>
+                    <Typography variant="subtitle1">{t(feature.titleKey)}</Typography>
                     <Typography variant="body2" color="text.secondary">
-                        {feature.description}
+                        {t(feature.descriptionKey)}
                     </Typography>
                 </Box>
             </Stack>
@@ -106,6 +114,7 @@ function LandingFeatureCard({ feature }: { feature: LandingFeature }) {
  * Marketing landing page shown to unauthenticated visitors.
  */
 const Landing: React.FC = () => {
+    const { t } = useI18n();
     const prefersReducedMotion = usePrefersReducedMotion();
 
     return (
@@ -157,6 +166,12 @@ const Landing: React.FC = () => {
                                 ? 'none'
                                 : `heroBlobDrift ${Math.round(HERO_BLOB_ANIMATION_DURATION_MS * 1.15)}ms ease-in-out infinite alternate-reverse`,
                             pointerEvents: 'none'
+                        },
+                        // Mobile perf: large animated blur filters can force expensive repaints during scroll.
+                        // Keep the base gradients, but drop the drifting blob overlays on small screens.
+                        [theme.breakpoints.down('sm')]: {
+                            '&::before': { display: 'none' },
+                            '&::after': { display: 'none' }
                         }
                     })}
                 >
@@ -172,23 +187,23 @@ const Landing: React.FC = () => {
                                             color: 'text.secondary'
                                         }}
                                     >
-                                        Fitness tracking on your terms
+                                        {t('landing.hero.overline')}
                                     </Typography>
 
                                     <Typography variant="h2" component="h1" sx={{ lineHeight: 1.05 }}>
-                                        Get and stay fit. Own your data.
+                                        {t('landing.hero.title')}
                                     </Typography>
 
                                     <Typography variant="h6" color="text.secondary" sx={{ maxWidth: '56ch' }}>
-                                        calibrate is the free, self-hostable fitness tracker for managing body weight. 
-                                        <br/>
-                                        No subscription, no ads, no catch.
+                                        {t('landing.hero.subtitleLine1')}
+                                        <br />
+                                        {t('landing.hero.subtitleLine2')}
                                     </Typography>
                                 </Stack>
 
                                 <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
-                                    {LANDING_PILLS.map((pill) => (
-                                        <Chip key={pill} label={pill} size="small" variant="outlined" />
+                                    {LANDING_PILL_KEYS.map((pillKey) => (
+                                        <Chip key={pillKey} label={t(pillKey)} size="small" variant="outlined" />
                                     ))}
                                 </Stack>
 
@@ -200,7 +215,7 @@ const Landing: React.FC = () => {
                                         size="large"
                                         sx={{ flex: 1, minWidth: 0 }}
                                     >
-                                        Create account
+                                        {t('auth.createAccount')}
                                     </Button>
                                     <Button
                                         component={RouterLink}
@@ -209,13 +224,12 @@ const Landing: React.FC = () => {
                                         size="large"
                                         sx={{ flex: 1, minWidth: 0 }}
                                     >
-                                        Sign in
+                                        {t('auth.signIn')}
                                     </Button>
                                 </Stack>
 
                                 <Typography variant="body2" color="text.secondary" sx={{ maxWidth: '68ch' }}>
-                                    Built for daily use: fast logging, goal math you can trust, and an interface that stays
-                                    out of your way.
+                                    {t('landing.hero.body')}
                                 </Typography>
                             </Stack>
                         </Grid>
@@ -231,17 +245,16 @@ const Landing: React.FC = () => {
                 <Box>
                     <Stack spacing={1.25} sx={{ mb: 2 }}>
                         <Typography variant="h4" component="h2">
-                            Set and hit your goals
+                            {t('landing.section.goals.title')}
                         </Typography>
                         <Typography variant="body1" color="text.secondary" sx={{ maxWidth: '80ch' }}>
-                            Daily inputs should produce actionable outputs. Track what you eat, log your weight, and let the
-                            dashboard do the math - targets, trends, and projections.
+                            {t('landing.section.goals.body')}
                         </Typography>
                     </Stack>
 
                     <Grid container spacing={2} alignItems="stretch">
                         {LANDING_GOAL_FEATURES.map((feature) => (
-                            <Grid key={feature.title} size={{ xs: 12, sm: 6, md: 4 }} sx={{ display: 'flex' }}>
+                            <Grid key={feature.titleKey} size={{ xs: 12, sm: 6, md: 4 }} sx={{ display: 'flex' }}>
                                 <LandingFeatureCard feature={feature} />
                             </Grid>
                         ))}
@@ -251,16 +264,16 @@ const Landing: React.FC = () => {
                 <Box>
                     <Stack spacing={1.25} sx={{ mb: 2 }}>
                         <Typography variant="h4" component="h2">
-                            Losing weight shouldn&apos;t cost an arm and a leg
+                            {t('landing.section.value.title')}
                         </Typography>
                         <Typography variant="body1" color="text.secondary" sx={{ maxWidth: '80ch' }}>
-                            calibrate is built to make fitness tracking available to everybody. Use it for free on the web without ads, or self-host on your own hardware.
+                            {t('landing.section.value.body')}
                         </Typography>
                     </Stack>
 
                     <Grid container spacing={2} alignItems="stretch">
                         {LANDING_VALUE_FEATURES.map((feature) => (
-                            <Grid key={feature.title} size={{ xs: 12, sm: 6, md: 4 }} sx={{ display: 'flex' }}>
+                            <Grid key={feature.titleKey} size={{ xs: 12, sm: 6, md: 4 }} sx={{ display: 'flex' }}>
                                 <LandingFeatureCard feature={feature} />
                             </Grid>
                         ))}
@@ -277,21 +290,20 @@ const Landing: React.FC = () => {
                         <Grid size={{ xs: 12, md: 8 }}>
                             <Stack spacing={0.75}>
                                 <Typography variant="h5" component="h3">
-                                    Ready to start tracking?
+                                    {t('landing.cta.title')}
                                 </Typography>
                                 <Typography variant="body1" color="text.secondary">
-                                    Create an account, set your goal deficit, and log your first day. You can always tune
-                                    the target later.
+                                    {t('landing.cta.body')}
                                 </Typography>
                             </Stack>
                         </Grid>
                         <Grid size={{ xs: 12, md: 4 }}>
                             <Stack direction={{ xs: 'column', sm: 'row', md: 'column' }} spacing={1} sx={{ justifyContent: 'flex-end' }}>
                                 <Button component={RouterLink} to="/register" variant="contained" size="large">
-                                    Create account
+                                    {t('auth.createAccount')}
                                 </Button>
                                 <Button component={RouterLink} to="/login" variant="text" size="large">
-                                    I already have one
+                                    {t('landing.cta.haveAccountButton')}
                                 </Button>
                             </Stack>
                         </Grid>

@@ -1,19 +1,9 @@
 import type { NextFunction, Request, Response } from 'express';
-import { isProductionLikeNodeEnv } from '../config/environment';
 import prisma from '../config/database';
 import { ensureDevTestData } from '../services/devTestData';
+import { shouldAutoLoginTestUser } from './devAutoLoginPolicy';
 
 const TEST_USER_EMAIL = 'test@calibratehealth.app';
-
-/**
- * Decide whether the current request should auto-login the local test user.
- */
-const shouldAutoLogin = (req: Request): boolean => {
-  const enabled = process.env.AUTO_LOGIN_TEST_USER === 'true';
-  const isProductionLike = isProductionLikeNodeEnv(process.env.NODE_ENV);
-  const isLoggingOut = req.path.startsWith('/auth/logout');
-  return enabled && !isProductionLike && !isLoggingOut && !req.isAuthenticated();
-};
 
 /**
  * Attach the test user to the session for local development convenience.
@@ -23,7 +13,7 @@ export const autoLoginTestUser = async (
   _res: Response,
   next: NextFunction
 ): Promise<void> => {
-  if (!shouldAutoLogin(req)) {
+  if (!shouldAutoLoginTestUser(req)) {
     next();
     return;
   }

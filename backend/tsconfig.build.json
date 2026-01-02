@@ -1,0 +1,12 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    // Build a production JS bundle that includes shared utilities imported from the monorepo root.
+    "rootDir": "..",
+    "outDir": "./dist",
+    "noEmitOnError": true
+  },
+  "include": ["src/**/*", "../shared/**/*"],
+  "exclude": ["node_modules", "dist", "test"]
+}
+

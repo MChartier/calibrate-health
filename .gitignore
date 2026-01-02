@@ -8,3 +8,17 @@ coverage
 .c8_output
 .devcontainer/.env
 .vscode/settings.json
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+infra/**/backend.hcl
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraformrc
+terraform.rc

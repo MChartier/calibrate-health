@@ -62,6 +62,8 @@ model User {
   height_unit   HeightUnit @default(CM)
   /// IANA time zone identifier (e.g. "America/Los_Angeles") used to define the user's local day boundary.
   timezone      String     @default("UTC")
+  /// Preferred UI language (short code like "en", "es", "fr", "ru").
+  language      String     @default("en")
   date_of_birth DateTime?
   sex           Sex?
   height_mm     Int?

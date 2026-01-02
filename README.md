@@ -1,18 +1,124 @@
 # calibrate
 
-Responsive calorie tracker (React + Vite frontend, Node/Express backend, Postgres + Prisma).
+calibrate is a responsive calorie tracker (desktop + mobile web) for people who want to lose (or maintain) weight by
+logging food and weight, then comparing daily intake against an estimated target based on their profile.
+If you self-host, your data stays in your own database.
 
-Official domain: calibratehealth.app
+- Hosted instance: https://calibratehealth.app
+- Stack: React + TypeScript + Vite (MUI), Node.js + TypeScript + Express, Postgres (Prisma)
+- Installable PWA: add it to your home screen / desktop like an app
 
-## Quickstart (devcontainer)
+Note: calibrate is not medical advice.
 
-The devcontainer runs `npm run setup:devcontainer` automatically (installs deps, generates Prisma client, applies migrations).
+## Features (MVP)
+
+- Multi-user accounts (email/password)
+- Profile-driven calorie math (Mifflin-St Jeor BMR, activity-based TDEE, fixed daily deficit targets)
+- Daily food logging with fixed meal categories
+- Weight logging + trend visualization
+- Goal projection from a steady deficit
+
+## Self-hosting
+
+Two supported paths:
+
+### Option A: Docker Compose (single machine)
+
+For a production-oriented Compose stack (Caddy for HTTPS + reverse proxy, plus the app container), use the files in
+`deploy/`.
+
+Quick start:
+
+1. Build the production image:
+
+   ```sh
+   docker build -f Dockerfile.app -t calibrate:local .
+   ```
+
+2. Create `deploy/Caddyfile` and `deploy/.env`:
+
+   - Start from a template Caddyfile:
+     - `deploy/Caddyfile.prod` (production)
+     - `deploy/Caddyfile.staging` (basic auth, handy for private/staging installs)
+   - Copy it to `deploy/Caddyfile` and edit the site address (replace `calibratehealth.app` with your domain).
+   - Create a `.env` file with your image + database + session secret:
+
+     ```dotenv
+     APP_IMAGE=calibrate:local
+     DATABASE_URL=postgresql://USER:PASSWORD@HOST:5432/DB?schema=public
+     # Generate with: openssl rand -base64 32
+     SESSION_SECRET=replace-with-random
+     # Optional (recommended): CADDY_EMAIL=you@example.com
+     ```
+
+3. Start the stack:
+
+   ```sh
+   cd deploy
+   docker compose up -d
+   ```
+
+4. Apply DB migrations once (first deploy, or after pulling changes with new migrations):
+
+   ```sh
+   docker compose exec app npm run db:migrate
+   ```
+
+Notes:
+
+- Caddy needs ports 80/443 reachable from the internet (and DNS pointing at the machine) to get HTTPS certificates.
+- This stack expects you to provide a Postgres database (managed or self-hosted).
+- If you want Postgres in Docker on the same machine, use a managed DB or adapt the Postgres service in
+  `docker-compose.yml`.
+
+See [deploy/README.md](deploy/README.md) for required env vars, staging options, and notes.
+
+### Option B: AWS (Terraform)
+
+The `infra/` folder contains the Terraform + GitHub Actions workflow used to deploy `calibratehealth.app`
+(EC2 running Docker Compose, RDS Postgres, Route 53, and deploys via SSM).
+It is a good starting point for deploying to your own AWS account, but it is opinionated and you'll likely want to
+customize names/domains to match your setup.
+
+High-level steps:
+
+1. Install prereqs: Terraform + AWS CLI (and an AWS account to deploy into).
+2. Run `terraform apply` in `infra/bootstrap` once to create shared resources (state, IAM/OIDC, ECR, Route 53).
+3. Run `terraform apply` in `infra/envs/staging` and/or `infra/envs/prod` to create the app environment(s).
+4. Populate the required Secrets Manager JSON and configure the GitHub Actions secrets for CI/CD.
+
+Full guide (including required secrets and exact commands): [infra/README.md](infra/README.md)
+
+## Development
+
+### Quickstart (devcontainer)
+
+The devcontainer runs `npm run setup` automatically (installs deps + generates the Prisma client). On start it also runs
+`npm run db:migrate` and `npm run db:seed`.
 
 1. Start the app: `npm run dev`
 2. Frontend: `http://localhost:5173` (proxies `/auth` and `/api` to the backend)
 3. Backend/API: `http://localhost:3000`
+4. Dev dashboard (dev-only): `http://localhost:5173/dev` (compare providers + test barcode scanning)
 
-## Quickstart (local)
+#### USDA FoodData Central provider (devcontainer)
+
+The backend supports multiple food search providers. The devcontainer is configured to use the USDA FoodData Central
+provider (`FOOD_DATA_PROVIDER=usda`).
+
+To make this work, you must have `USDA_API_KEY` set in your host environment before the devcontainer is created/rebuilt.
+During devcontainer initialization we copy `USDA_API_KEY` into `.devcontainer/.env` (gitignored), and `docker compose`
+uses it to pass the key into the container.
+
+Example (host machine):
+
+```sh
+export USDA_API_KEY="your-usda-key"
+```
+
+If you add/change the key, rebuild the devcontainer so the generated `.devcontainer/.env` is refreshed.
+
+### Quickstart (local)
 
 Prereqs: Node.js + npm, and a Postgres database.
 
@@ -20,57 +126,50 @@ Prereqs: Node.js + npm, and a Postgres database.
    - `DATABASE_URL=postgresql://user:password@localhost:5432/fitness_app?schema=public`
    - `SESSION_SECRET=some-secret`
    - `PORT=3000` (optional)
+   - `FOOD_DATA_PROVIDER=usda` (optional; defaults to Open Food Facts)
+   - `USDA_API_KEY=your-usda-key` (required when `FOOD_DATA_PROVIDER=usda`)
 2. Install deps + generate Prisma client: `npm run setup`
 3. Create tables (apply migrations): `npm run db:migrate`
 4. Start the app: `npm run dev`
 
-If you see Prisma errors like “The table `public.User` does not exist”, you haven’t applied migrations yet—run `npm run db:migrate`.
+If you see Prisma errors like "The table `public.User` does not exist", you haven't applied migrations yet - run
+`npm run db:migrate`.
 
-## Scripts
-
-### Development
+### Common scripts
 
 - `npm run dev`: runs backend + frontend together (`backend/` + `frontend/`).
 - `npm run dev:backend`: runs only the backend (`http://localhost:3000`).
 - `npm run dev:frontend`: runs only the frontend (`http://localhost:5173`).
+- `npm run setup`: installs deps in `backend/` and `frontend/` and runs `prisma generate` (does not modify the DB).
+- `npm run db:migrate`: applies committed migrations (use for fresh DBs, CI, and prod).
+- `npm test`: runs backend unit tests (Node.js test runner).
 
-### Setup
+More:
 
-- `npm run setup`: installs deps in `backend/` and `frontend/` and runs `prisma generate` (does not modify the database).
-- `npm run setup:devcontainer`: `setup` + `db:migrate` (used by the devcontainer).
+- `npm run db:migrate:dev`: create/apply new migrations during local development.
+- `npm run db:reset`: destructive reset (drops data and recreates schema).
+- `npm run db:studio`: Prisma Studio (DB browser).
+- `npm run build`: build the frontend.
+- `npm run lint`: lint the frontend.
+- `npm run test:coverage`: print coverage + write `backend/coverage/index.html`.
 
-### Database / Prisma
+### Docker Compose (dev stack)
 
-- `npm run prisma:generate`: regenerates the Prisma client (use after changing `backend/prisma/schema.prisma`).
-- `npm run db:migrate`: runs `prisma migrate deploy` to apply committed migrations (use for fresh DBs, CI, and prod).
-- `npm run db:migrate:dev`: runs `prisma migrate dev` to create/apply migrations during local development (use when you changed the schema and need a new migration).
-- `npm run db:reset`: runs `prisma migrate reset` (destructive; drops data and recreates the schema).
-- `npm run db:studio`: runs `prisma studio` (Prisma’s DB browser).
+The repo root `docker-compose.yml` is a development stack that starts `postgres`, `backend`, and `frontend` with live
+reload and dev-only defaults.
 
-### Frontend build / lint
-
-- `npm run build`: builds the frontend.
-- `npm run lint`: lints the frontend.
+```sh
+docker compose up --build
+```
 
 ## PWA (installable)
 
-The frontend is configured as a Progressive Web App (PWA), so it can be installed on desktop/mobile and added to a home screen.
+The frontend is configured as a Progressive Web App (PWA), so it can be installed on desktop/mobile and added to a home
+screen.
 
-- Test locally: `npm --prefix frontend run build && npm --prefix frontend run preview` then open `http://localhost:4173` and use the browser install UI.
+- Test locally: `npm --prefix frontend run build && npm --prefix frontend run preview` then open
+  `http://localhost:4173` and use the browser install UI.
 - iOS: open the app in Safari and use Share -> Add to Home Screen.
-
-### Tests
-
-- `npm test`: runs backend unit tests (Node.js test runner).
-- `npm run test:coverage`: runs tests + prints a coverage summary (line + branch coverage) and writes an HTML report to `backend/coverage/index.html`.
-
-## Docker compose (optional)
-
-`docker compose up --build` starts `postgres`, `backend`, and `frontend`.
-
-On first run you still need to apply migrations once:
-
-`docker compose exec backend npm run db:migrate`
 
 ## Production / staging (single origin)
 

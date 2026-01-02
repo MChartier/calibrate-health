@@ -1,0 +1,12 @@
+{
+  email {$CADDY_EMAIL}
+}
+
+staging.calibratehealth.app {
+  basicauth {
+    {$BASIC_AUTH_USER} {$BASIC_AUTH_HASH}
+  }
+  encode gzip zstd
+  reverse_proxy app:3000
+}
+

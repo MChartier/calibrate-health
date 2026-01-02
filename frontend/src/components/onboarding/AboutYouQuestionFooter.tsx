@@ -14,9 +14,10 @@ import {
     Typography
 } from '@mui/material';
 import { HEIGHT_UNITS, SEX_VALUES, type HeightUnit } from '../../context/authContext';
-import { activityLevelOptions } from '../../constants/activityLevels';
+import { getActivityLevelOptions } from '../../constants/activityLevels';
 import type { AboutQuestionKey } from './types';
 import OnboardingQuestionHeader from './OnboardingQuestionHeader';
+import { useI18n } from '../../i18n/useI18n';
 
 export type AboutYouQuestionFooterProps = {
     questionKey: AboutQuestionKey;
@@ -65,6 +66,9 @@ function getPromptForAboutQuestion(key: AboutQuestionKey): string {
  * see their completed answers accumulate in the main content area.
  */
 const AboutYouQuestionFooter: React.FC<AboutYouQuestionFooterProps> = (props) => {
+    const { t } = useI18n();
+    const activityLevelOptions = React.useMemo(() => getActivityLevelOptions(t), [t]);
+
     const prompt = getPromptForAboutQuestion(props.questionKey);
 
     const heightFieldsValid =
@@ -83,7 +87,7 @@ const AboutYouQuestionFooter: React.FC<AboutYouQuestionFooterProps> = (props) =>
     if (props.questionKey === 'dob') {
         activeQuestionControl = (
             <TextField
-                label="Date of birth"
+                label={t('profile.dateOfBirth')}
                 type="date"
                 value={props.dob}
                 onChange={(e) => props.onDobChange(e.target.value)}
@@ -101,16 +105,16 @@ const AboutYouQuestionFooter: React.FC<AboutYouQuestionFooterProps> = (props) =>
     } else if (props.questionKey === 'sex') {
         activeQuestionControl = (
             <FormControl fullWidth required disabled={props.disabled} error={props.showErrors && !props.sex} size="small">
-                <InputLabel>Sex</InputLabel>
+                <InputLabel>{t('profile.sex')}</InputLabel>
                 <Select
                     value={props.sex}
-                    label="Sex"
+                    label={t('profile.sex')}
                     onChange={(e) => props.onSexChange(e.target.value)}
                     size="small"
                     autoFocus
                 >
-                    <MenuItem value={SEX_VALUES.MALE}>Male</MenuItem>
-                    <MenuItem value={SEX_VALUES.FEMALE}>Female</MenuItem>
+                    <MenuItem value={SEX_VALUES.MALE}>{t('profile.sex.male')}</MenuItem>
+                    <MenuItem value={SEX_VALUES.FEMALE}>{t('profile.sex.female')}</MenuItem>
                 </Select>
                 {props.showErrors && !props.sex && <FormHelperText>Required.</FormHelperText>}
             </FormControl>
@@ -118,10 +122,10 @@ const AboutYouQuestionFooter: React.FC<AboutYouQuestionFooterProps> = (props) =>
     } else if (props.questionKey === 'activityLevel') {
         activeQuestionControl = (
             <FormControl fullWidth required disabled={props.disabled} error={props.showErrors && !props.activityLevel} size="small">
-                <InputLabel>Activity level</InputLabel>
+                <InputLabel>{t('profile.activityLevel')}</InputLabel>
                 <Select
                     value={props.activityLevel}
-                    label="Activity level"
+                    label={t('profile.activityLevel')}
                     onChange={(e) => props.onActivityLevelChange(e.target.value)}
                     size="small"
                     autoFocus
@@ -224,10 +228,10 @@ const AboutYouQuestionFooter: React.FC<AboutYouQuestionFooterProps> = (props) =>
                         aria-label="Height unit"
                         disabled={props.disabled}
                     >
-                        <ToggleButton value={HEIGHT_UNITS.CM} aria-label="Centimeters">
+                        <ToggleButton value={HEIGHT_UNITS.CM} aria-label={t('units.cmAria')}>
                             cm
                         </ToggleButton>
-                        <ToggleButton value={HEIGHT_UNITS.FT_IN} aria-label="Feet and inches">
+                        <ToggleButton value={HEIGHT_UNITS.FT_IN} aria-label={t('units.ftInAria')}>
                             ft/in
                         </ToggleButton>
                     </ToggleButtonGroup>

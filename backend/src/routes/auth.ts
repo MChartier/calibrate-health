@@ -26,12 +26,17 @@ router.post('/register', async (req, res) => {
         });
 
         req.login(newUser, (err) => {
-            if (err) throw err;
+            if (err) {
+                console.error('Auth register: unable to establish session:', err);
+                res.status(500).json({ message: 'Server error' });
+                return;
+            }
             res.json({
                 user: serializeUserForClient(newUser)
             });
         });
     } catch (err) {
+        console.error('Auth register failed:', err);
         res.status(500).json({ message: 'Server error' });
     }
 });
@@ -63,6 +68,7 @@ router.get('/me', async (req, res) => {
 
             res.json({ user: serializeUserForClient(dbUser) });
         } catch (err) {
+            console.error('Auth me failed:', err);
             res.status(500).json({ message: 'Server error' });
         }
     } else {

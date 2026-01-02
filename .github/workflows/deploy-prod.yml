@@ -1,0 +1,135 @@
+name: Deploy Prod
+
+on:
+  workflow_dispatch:
+    inputs:
+      git_sha:
+        description: "Commit SHA to deploy (defaults to the workflow ref SHA)"
+        required: false
+        type: string
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  AWS_REGION: us-west-2
+  IMAGE_NAME: calibratehealth
+
+jobs:
+  deploy:
+    name: Deploy Prod (ECS)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: production
+
+    steps:
+      - name: Configure AWS credentials (prod deploy)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN_DEPLOY_PROD }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Resolve deploy SHA
+        id: sha
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          DEPLOY_SHA="${{ inputs.git_sha }}"
+          if [[ -z "${DEPLOY_SHA}" ]]; then
+            DEPLOY_SHA="${GITHUB_SHA}"
+          fi
+
+          echo "deploy_sha=${DEPLOY_SHA}" >> "$GITHUB_OUTPUT"
+
+      - name: Retag ECR image (sha-* -> prod)
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          DEPLOY_SHA="${{ steps.sha.outputs.deploy_sha }}"
+          SOURCE_TAG="sha-${DEPLOY_SHA}"
+
+          MANIFEST="$(aws ecr batch-get-image \
+            --repository-name "${IMAGE_NAME}" \
+            --image-ids imageTag="${SOURCE_TAG}" \
+            --query 'images[0].imageManifest' \
+            --output text)"
+
+          if [[ -z "${MANIFEST}" || "${MANIFEST}" == "None" ]]; then
+            echo "Image tag ${SOURCE_TAG} not found in ECR repo ${IMAGE_NAME}." >&2
+            echo "Ensure the image has been built/pushed (run the Build and Deploy Release workflow, or push a vMAJOR.MINOR.PATCH tag)." >&2
+            exit 1
+          fi
+
+          aws ecr put-image \
+            --repository-name "${IMAGE_NAME}" \
+            --image-tag "prod" \
+            --image-manifest "${MANIFEST}" \
+            >/dev/null
+      - name: Force new deployment (ECS)
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          ENVIRONMENT="prod"
+          ECS_CLUSTER="${IMAGE_NAME}-${ENVIRONMENT}-cluster"
+          ECS_SERVICE="${IMAGE_NAME}-${ENVIRONMENT}-service"
+
+          aws ecs update-service \
+            --cluster "${ECS_CLUSTER}" \
+            --service "${ECS_SERVICE}" \
+            --force-new-deployment \
+            >/dev/null
+
+          wait_for_stable() {
+            # awscli's `ecs wait services-stable` hard-codes a 10-minute deadline (40x15s).
+            # ECS deployments can take longer (cold starts, image pulls, migrations, etc.), so
+            # retry once before failing the workflow.
+            local attempt
+            for attempt in 1 2; do
+              if aws ecs wait services-stable --cluster "${ECS_CLUSTER}" --services "${ECS_SERVICE}"; then
+                return 0
+              fi
+
+              echo "Timed out waiting for ECS to become stable (attempt ${attempt}/2). Recent service events:" >&2
+              aws ecs describe-services \
+                --cluster "${ECS_CLUSTER}" \
+                --services "${ECS_SERVICE}" \
+                --query 'services[0].events[0:10].[createdAt,message]' \
+                --output table \
+                || true
+            done
+
+            return 1
+          }
+
+          wait_for_stable
+
+  prod_smoke:
+    name: Prod Smoke Tests (E2E)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: deploy
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Health check /api/healthz
+        shell: bash
+        env:
+          # Configure as a GitHub Actions variable, e.g. https://calibratehealth.app
+          E2E_BASE_URL: ${{ vars.PROD_BASE_URL }}
+          E2E_POLL_TIMEOUT_MS: "300000"
+          E2E_POLL_INTERVAL_MS: "5000"
+          E2E_REQUEST_TIMEOUT_MS: "10000"
+        run: node scripts/e2e/healthcheck.mjs
