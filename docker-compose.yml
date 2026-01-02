@@ -24,8 +24,8 @@ services:
       SESSION_SECRET: development_secret_key
       CORS_ORIGINS: http://localhost:5173
       AUTO_LOGIN_TEST_USER: "false"
-      SESSION_COOKIE_SECURE: "true"
-      NODE_ENV: production
+      SESSION_COOKIE_SECURE: "false"
+      NODE_ENV: development
     ports:
       - "3000:3000"
     depends_on:
