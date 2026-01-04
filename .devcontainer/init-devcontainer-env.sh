@@ -93,6 +93,9 @@ if [ "$is_main_worktree" = "true" ]; then
   vite_worktree_color=""
 fi
 
+# Allow the host to provide either OPENAI_API_KEY or CODEX_API_KEY for Codex auth.
+codex_api_key="${CODEX_API_KEY:-${OPENAI_API_KEY:-}}"
+
 env_path=".devcontainer/.env"
 tmp_path="${env_path}.tmp"
 
@@ -110,6 +113,7 @@ VITE_WORKTREE_NAME=${workspace_name}
 VITE_WORKTREE_IS_MAIN=${is_main_worktree}
 # Sourced from the host environment during devcontainer init so Docker can pass it into the container.
 USDA_API_KEY=${USDA_API_KEY:-}
+CODEX_API_KEY=${codex_api_key}
 EOF
 
 if [ -f "$env_path" ] && cmp -s "$tmp_path" "$env_path"; then
