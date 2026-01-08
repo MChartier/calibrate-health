@@ -96,6 +96,10 @@ Full guide (including required secrets and exact commands): [infra/README.md](in
 The devcontainer runs `npm run setup` automatically (installs deps + generates the Prisma client). On start it also runs
 `npm run db:migrate` and `npm run db:seed`.
 
+This repo supports a repo-local `.env` file (gitignored) for devcontainer secrets. Start by copying `.env.example` to
+`.env`, then rebuild the devcontainer so `.devcontainer/.env` is regenerated and Docker can pass the values into the
+container.
+
 1. Start the app: `npm run dev`
 2. Frontend: `http://localhost:5173` (proxies `/auth` and `/api` to the backend)
 3. Backend/API: `http://localhost:3000`
@@ -106,7 +110,8 @@ The devcontainer runs `npm run setup` automatically (installs deps + generates t
 The backend supports multiple food search providers. The devcontainer is configured to use the USDA FoodData Central
 provider (`FOOD_DATA_PROVIDER=usda`).
 
-To make this work, you must have `USDA_API_KEY` set in your host environment before the devcontainer is created/rebuilt.
+To make this work, you must have `USDA_API_KEY` set (either in the host environment or in the repo-local `.env`) before
+the devcontainer is created/rebuilt.
 During devcontainer initialization we copy `USDA_API_KEY` into `.devcontainer/.env` (gitignored), and `docker compose`
 uses it to pass the key into the container.
 
@@ -117,6 +122,16 @@ export USDA_API_KEY="your-usda-key"
 ```
 
 If you add/change the key, rebuild the devcontainer so the generated `.devcontainer/.env` is refreshed.
+
+#### GitHub CLI auth (devcontainer)
+
+To let Codex (and you) run non-interactive GitHub operations like pushing branches and creating PRs, set a fine-grained
+PAT in `.env` as `GITHUB_TOKEN` before the devcontainer is created/rebuilt.
+
+The devcontainer installs `gh`, passes the token into the container (as `GH_TOKEN` and `GITHUB_TOKEN`), and configures:
+
+- `gh` to use the token without prompting.
+- `git push` to use an HTTPS *push* URL for `origin` (fetch stays as-is) with credentials supplied by `gh`.
 
 ### Quickstart (local)
 
