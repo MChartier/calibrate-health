@@ -10,6 +10,49 @@ if [ -d "${workspace_root}/.git" ]; then
   is_main_worktree="true"
 fi
 
+repo_dotenv_path="${workspace_root}/.env"
+
+# Best-effort parse of a single `KEY=value` from a repo-local `.env` file (without executing it).
+read_repo_dotenv_value() {
+  local key line value
+  key="$1"
+
+  if [ ! -f "$repo_dotenv_path" ]; then
+    printf ''
+    return 0
+  fi
+
+  while IFS= read -r line || [ -n "$line" ]; do
+    line="${line#"${line%%[![:space:]]*}"}"
+    if [ -z "$line" ] || [ "${line:0:1}" = "#" ]; then
+      continue
+    fi
+
+    if [[ "$line" == export\ * ]]; then
+      line="${line#export }"
+      line="${line#"${line%%[![:space:]]*}"}"
+    fi
+
+    if [[ "$line" != "${key}="* ]]; then
+      continue
+    fi
+
+    value="${line#${key}=}"
+    value="${value#"${value%%[![:space:]]*}"}"
+
+    if [[ "$value" == \"*\" && "$value" == *\" ]]; then
+      value="${value:1:${#value}-2}"
+    elif [[ "$value" == \'*\' && "$value" == *\' ]]; then
+      value="${value:1:${#value}-2}"
+    fi
+
+    printf '%s' "$value"
+    return 0
+  done < "$repo_dotenv_path"
+
+  printf ''
+}
+
 if [ -z "$project_slug" ]; then
   project_slug="cal-io"
 fi
@@ -94,7 +137,16 @@ if [ "$is_main_worktree" = "true" ]; then
 fi
 
 # Allow the host to provide either OPENAI_API_KEY or CODEX_API_KEY for Codex auth.
-codex_api_key="${CODEX_API_KEY:-${OPENAI_API_KEY:-}}"
+repo_codex_api_key="$(read_repo_dotenv_value "CODEX_API_KEY")"
+repo_openai_api_key="$(read_repo_dotenv_value "OPENAI_API_KEY")"
+codex_api_key="${CODEX_API_KEY:-${OPENAI_API_KEY:-${repo_codex_api_key:-${repo_openai_api_key:-}}}}"
+
+repo_usda_api_key="$(read_repo_dotenv_value "USDA_API_KEY")"
+usda_api_key="${USDA_API_KEY:-${repo_usda_api_key:-}}"
+
+repo_github_token="$(read_repo_dotenv_value "GITHUB_TOKEN")"
+repo_gh_token="$(read_repo_dotenv_value "GH_TOKEN")"
+github_token="${GITHUB_TOKEN:-${GH_TOKEN:-${repo_github_token:-${repo_gh_token:-}}}}"
 
 env_path=".devcontainer/.env"
 tmp_path="${env_path}.tmp"
@@ -111,9 +163,11 @@ WORKTREE_COLOR=${worktree_color}
 VITE_WORKTREE_COLOR=${vite_worktree_color}
 VITE_WORKTREE_NAME=${workspace_name}
 VITE_WORKTREE_IS_MAIN=${is_main_worktree}
-# Sourced from the host environment during devcontainer init so Docker can pass it into the container.
-USDA_API_KEY=${USDA_API_KEY:-}
+# Sourced from the host environment or repo-local `.env` during devcontainer init so Docker can pass it into the container.
+USDA_API_KEY=${usda_api_key}
 CODEX_API_KEY=${codex_api_key}
+GITHUB_TOKEN=${github_token}
+GH_TOKEN=${github_token}
 EOF
 
 if [ -f "$env_path" ] && cmp -s "$tmp_path" "$env_path"; then
