@@ -125,6 +125,16 @@ module "service" {
   ]
 }
 
+module "db_secret_redeploy" {
+  source = "../../modules/ecs_redeploy_on_secret_rotation"
+
+  name_prefix  = local.name_prefix
+  cluster_name = module.service.cluster_name
+  service_name = module.service.service_name
+  service_arn  = module.service.service_id
+  secret_arn   = module.rds.master_user_secret_arn
+}
+
 resource "aws_security_group_rule" "rds_from_service" {
   type                     = "ingress"
   from_port                = 5432

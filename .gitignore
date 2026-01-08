@@ -22,3 +22,4 @@ override.tf.json
 *_override.tf.json
 .terraformrc
 terraform.rc
+infra/modules/ecs_redeploy_on_secret_rotation/lambda.zip
