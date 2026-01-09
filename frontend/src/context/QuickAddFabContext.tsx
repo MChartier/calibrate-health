@@ -1,13 +1,6 @@
-import React, { createContext, useMemo, useState } from 'react';
-import { useQuickAddDialogs, type QuickAddDialogs } from '../hooks/useQuickAddDialogs';
-
-export type QuickAddFabContextValue = {
-    dialogs: QuickAddDialogs;
-    logDateOverride: string | null;
-    setLogDateOverride: (date: string | null) => void;
-};
-
-export const QuickAddFabContext = createContext<QuickAddFabContextValue | undefined>(undefined);
+import React, { useMemo, useState } from 'react';
+import { useQuickAddDialogs } from '../hooks/useQuickAddDialogs';
+import { QuickAddFabContext, type QuickAddFabContextValue } from './quickAddFabState';
 
 /**
  * QuickAddFabProvider

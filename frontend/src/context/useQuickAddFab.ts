@@ -1,5 +1,5 @@
 import { useContext } from 'react';
-import { QuickAddFabContext, type QuickAddFabContextValue } from './QuickAddFabContext';
+import { QuickAddFabContext, type QuickAddFabContextValue } from './quickAddFabState';
 
 /**
  * Access the shared quick-add FAB controls and log date override.
