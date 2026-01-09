@@ -20,6 +20,7 @@ const Dashboard: React.FC = () => {
                     <GoalTrackerCard isDashboard />
                 </Grid>
             </Grid>
+
         </Box>
     );
 };
