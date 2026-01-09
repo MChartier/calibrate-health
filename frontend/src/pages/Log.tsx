@@ -133,6 +133,12 @@ const Log: React.FC = () => {
         setLogDateOverride(effectiveDate);
     }, [effectiveDate, setLogDateOverride]);
 
+    useEffect(() => {
+        return () => {
+            setLogDateOverride(null);
+        };
+    }, [setLogDateOverride]);
+
     return (
         <Box>
             <Box
