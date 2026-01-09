@@ -7,7 +7,7 @@
             "command": "bash",
             "args": [
                 "-lc",
-                "if [ -f /.dockerenv ]; then npm run dev:test; else echo \"Skipping auto dev:test (not running in a dev container).\"; fi"
+                "if [ -f /.dockerenv ]; then npm run dev:test; else echo \"Skipping auto dev:test - not running in a dev container.\"; fi"
             ],
             "options": {
                 "cwd": "${workspaceFolder}"

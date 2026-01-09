@@ -116,6 +116,7 @@ Populate them in AWS Secrets Manager as JSON. At minimum, the backend requires:
 Notes:
 - ECS injects `SESSION_SECRET` from this secret.
 - DB credentials come from the RDS-managed secret (`manage_master_user_password = true`); ECS injects `DB_USER` and `DB_PASSWORD` from that secret.
+- Secret rotations trigger an ECS redeploy so tasks refresh DB credentials (requires Secrets Manager events via CloudTrail management events).
 
 ## GitHub Actions configuration
 
