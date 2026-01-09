@@ -152,6 +152,7 @@ const BarcodeScannerDialog: React.FC<Props> = ({ open, onClose, onDetected }) =>
     const [error, setError] = useState<string | null>(null);
     const [manualBarcode, setManualBarcode] = useState('');
     const [isStartingCamera, setIsStartingCamera] = useState(false);
+    const [videoElement, setVideoElement] = useState<HTMLVideoElement | null>(null);
 
     const videoRef = useRef<HTMLVideoElement | null>(null);
     const detectorRef = useRef<BarcodeDetector | null>(null);
@@ -159,6 +160,11 @@ const BarcodeScannerDialog: React.FC<Props> = ({ open, onClose, onDetected }) =>
     const streamRef = useRef<MediaStream | null>(null);
     const scanTimeoutRef = useRef<number | null>(null);
     const hasHandledResultRef = useRef(false);
+
+    const handleVideoRef = useCallback((node: HTMLVideoElement | null) => {
+        videoRef.current = node;
+        setVideoElement(node);
+    }, []);
 
     const canAttemptCameraScan = useMemo(() => {
         return Boolean(navigator.mediaDevices?.getUserMedia);
@@ -222,6 +228,11 @@ const BarcodeScannerDialog: React.FC<Props> = ({ open, onClose, onDetected }) =>
             setError(
                 'Barcode scanning is not supported in this browser or camera access is unavailable. You can still enter a UPC manually.'
             );
+        }
+    }, [canAttemptCameraScan, open]);
+
+    useEffect(() => {
+        if (!open || !canAttemptCameraScan || !videoElement) {
             return;
         }
 
@@ -230,10 +241,7 @@ const BarcodeScannerDialog: React.FC<Props> = ({ open, onClose, onDetected }) =>
         const start = async () => {
             setIsStartingCamera(true);
             try {
-                const video = videoRef.current;
-                if (!video) {
-                    throw new Error('Camera preview failed to initialize.');
-                }
+                const video = videoElement;
 
                 const videoConstraints: MediaTrackConstraints = {
                     facingMode: { ideal: 'environment' },
@@ -374,7 +382,7 @@ const BarcodeScannerDialog: React.FC<Props> = ({ open, onClose, onDetected }) =>
             stopCamera();
             setIsStartingCamera(false);
         };
-    }, [canAttemptCameraScan, open, stopCamera, submitBarcode]);
+    }, [canAttemptCameraScan, open, stopCamera, submitBarcode, videoElement]);
 
     return (
         <Dialog open={open} onClose={handleClose} fullScreen={fullScreen} fullWidth maxWidth="sm">
@@ -401,7 +409,7 @@ const BarcodeScannerDialog: React.FC<Props> = ({ open, onClose, onDetected }) =>
                             }}
                         >
                             <video
-                                ref={videoRef}
+                                ref={handleVideoRef}
                                 muted
                                 playsInline
                                 style={{
