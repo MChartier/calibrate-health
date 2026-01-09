@@ -6,52 +6,65 @@ locals {
 data "archive_file" "lambda_zip" {
   type = "zip"
   source_content = <<-EOT
-  const AWS = require('aws-sdk');
+  import os
+  import boto3
 
-  const ecs = new AWS.ECS();
+  ecs = boto3.client("ecs")
 
-  exports.handler = async (event) => {
-    // Force a new ECS deployment after DB secret rotation so tasks refresh credentials.
-    const cluster = process.env.CLUSTER_NAME;
-    const service = process.env.SERVICE_NAME;
-    const secretArn = process.env.SECRET_ARN;
+  def handler(event, _context):
+    # Force a new ECS deployment after DB secret rotation so tasks refresh credentials.
+    cluster = os.environ.get("CLUSTER_NAME")
+    service = os.environ.get("SERVICE_NAME")
+    secret_arn = os.environ.get("SECRET_ARN")
 
-    if (!cluster || !service) {
-      throw new Error('CLUSTER_NAME and SERVICE_NAME must be set.');
-    }
+    if not cluster or not service:
+      raise RuntimeError("CLUSTER_NAME and SERVICE_NAME must be set.")
 
-    const eventSecret = event?.detail?.requestParameters?.secretId
-      ?? (Array.isArray(event?.resources) ? event.resources[0] : undefined);
-    const secretName = secretArn ? secretArn.split(':secret:')[1] : undefined;
-    const matchesSecret = !secretArn
-      || !eventSecret
-      || eventSecret === secretArn
-      || (secretName && eventSecret === secretName);
+    detail = event.get("detail") if isinstance(event, dict) else None
+    event_secret = None
+    if isinstance(detail, dict):
+      params = detail.get("requestParameters")
+      if isinstance(params, dict):
+        event_secret = params.get("secretId")
 
-    if (!matchesSecret) {
-      console.log('Skipping event for unrelated secret:', eventSecret);
-      return { skipped: true };
-    }
+    if not event_secret:
+      resources = event.get("resources") if isinstance(event, dict) else None
+      if isinstance(resources, list) and resources:
+        event_secret = resources[0]
 
-    const versionStage = event?.detail?.requestParameters?.versionStage;
-    const stagingLabels = event?.detail?.requestParameters?.stagingLabels;
+    secret_name = secret_arn.split(":secret:")[1] if secret_arn and ":secret:" in secret_arn else None
+    matches_secret = (
+      not secret_arn
+      or not event_secret
+      or event_secret == secret_arn
+      or (secret_name and event_secret == secret_name)
+    )
 
-    if (versionStage && versionStage !== 'AWSCURRENT') {
-      console.log('Skipping rotation stage:', versionStage);
-      return { skipped: true };
-    }
+    if not matches_secret:
+      print("Skipping event for unrelated secret:", event_secret)
+      return {"skipped": True}
 
-    if (Array.isArray(stagingLabels) && !stagingLabels.includes('AWSCURRENT')) {
-      console.log('Skipping rotation without AWSCURRENT stage.');
-      return { skipped: true };
-    }
+    version_stage = None
+    staging_labels = None
+    if isinstance(detail, dict):
+      params = detail.get("requestParameters")
+      if isinstance(params, dict):
+        version_stage = params.get("versionStage")
+        staging_labels = params.get("stagingLabels")
 
-    await ecs.updateService({ cluster, service, forceNewDeployment: true }).promise();
-    console.log('Forced new deployment for service:', service);
-    return { updated: true };
-  };
+    if version_stage and version_stage != "AWSCURRENT":
+      print("Skipping rotation stage:", version_stage)
+      return {"skipped": True}
+
+    if isinstance(staging_labels, list) and "AWSCURRENT" not in staging_labels:
+      print("Skipping rotation without AWSCURRENT stage.")
+      return {"skipped": True}
+
+    ecs.update_service(cluster=cluster, service=service, forceNewDeployment=True)
+    print("Forced new deployment for service:", service)
+    return {"updated": True}
   EOT
-  source_content_filename = "index.js"
+  source_content_filename = "index.py"
   output_path             = "${path.module}/lambda.zip"
 }
 
@@ -94,7 +107,7 @@ resource "aws_lambda_function" "this" {
   function_name    = local.lambda_name
   role             = aws_iam_role.this.arn
   handler          = "index.handler"
-  runtime          = "nodejs18.x"
+  runtime          = "python3.11"
   filename         = data.archive_file.lambda_zip.output_path
   source_code_hash = data.archive_file.lambda_zip.output_base64sha256
   timeout          = 30
