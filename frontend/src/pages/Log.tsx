@@ -80,7 +80,7 @@ const Log: React.FC = () => {
     const queryClient = useQueryClient();
     const { t } = useI18n();
     const { user } = useAuth();
-    const { dialogs, setLogDateOverride } = useQuickAddFab();
+    const { dialogs, openWeightDialogForLogDate, setLogDateOverride } = useQuickAddFab();
     const timeZone = useMemo(
         () => user?.timezone?.trim() || Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
         [user?.timezone]
@@ -293,7 +293,7 @@ const Log: React.FC = () => {
             >
                 <LogSummaryCard date={effectiveDate} />
 
-                <WeightSummaryCard date={effectiveDate} onOpenWeightEntry={dialogs.openWeightDialog} />
+                <WeightSummaryCard date={effectiveDate} onOpenWeightEntry={openWeightDialogForLogDate} />
             </Box>
 
             <AppCard sx={{ mt: 2 }}>
