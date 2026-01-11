@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useMemo } from 'react';
 import {
     AppBar,
     Avatar,
@@ -28,9 +28,14 @@ import LogoutIcon from '@mui/icons-material/LogoutRounded';
 import GitHubIcon from '@mui/icons-material/GitHub';
 import { alpha, useTheme } from '@mui/material/styles';
 import { useAuth } from '../context/useAuth';
+import { QuickAddFabProvider } from '../context/QuickAddFabContext';
+import { useQuickAddFab } from '../context/useQuickAddFab';
 import AppPage from '../ui/AppPage';
 import { getAvatarLabel } from '../utils/avatarLabel';
+import { getTodayIsoDate } from '../utils/date';
 import { useI18n } from '../i18n/useI18n';
+import { QUICK_ADD_FAB_PAGE_BOTTOM_PADDING } from '../constants/quickAddFab';
+import LogQuickAddFab from './LogQuickAddFab';
 
 const drawerWidth = 240;
 const GITHUB_REPO_URL = 'https://github.com/mchartier/calibrate-health';
@@ -46,8 +51,9 @@ function getActiveNavigationValue(pathname: string): string | null {
     return null;
 }
 
-const Layout: React.FC = () => {
+const LayoutShell: React.FC = () => {
     const { user, logout, isLoading } = useAuth();
+    const { dialogs, logDateOverride } = useQuickAddFab();
     const { t } = useI18n();
     const theme = useTheme();
     const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
@@ -69,6 +75,7 @@ const Layout: React.FC = () => {
     const showBottomNav = showAppNav && !isDesktop;
     const authCtaSize = isDesktop ? 'medium' : 'small';
     const registerCtaLabel = isDesktop ? t('auth.createAccount') : t('auth.register');
+    const today = useMemo(() => getTodayIsoDate(user?.timezone), [user?.timezone]);
 
     const handleLogout = async () => {
         await logout();
@@ -144,6 +151,15 @@ const Layout: React.FC = () => {
     );
 
     const navigationValue = getActiveNavigationValue(location.pathname);
+    const showQuickAdd = showAppNav && Boolean(navigationValue);
+    const isLogRoute = location.pathname.startsWith('/log');
+    const fabDate = isLogRoute && logDateOverride ? logDateOverride : today;
+    const { closeFoodDialog, closeWeightDialog } = dialogs;
+
+    useEffect(() => {
+        closeFoodDialog();
+        closeWeightDialog();
+    }, [closeFoodDialog, closeWeightDialog, location.pathname]);
 
     return (
         <Box sx={{ display: 'flex', minHeight: '100vh', width: '100%' }}>
@@ -256,9 +272,11 @@ const Layout: React.FC = () => {
 
             <Box component="main" sx={{ flexGrow: 1, minWidth: 0 }}>
                 <Toolbar />
-                <AppPage fullBleedOnXs={showBottomNav} reserveBottomNavSpace={showBottomNav}>
-                    <Outlet />
-                </AppPage>
+                <Box sx={showQuickAdd ? { pb: QUICK_ADD_FAB_PAGE_BOTTOM_PADDING } : undefined}>
+                    <AppPage fullBleedOnXs={showBottomNav} reserveBottomNavSpace={showBottomNav}>
+                        <Outlet />
+                    </AppPage>
+                </Box>
             </Box>
 
             {showBottomNav && (
@@ -290,8 +308,16 @@ const Layout: React.FC = () => {
                     </BottomNavigation>
                 </Box>
             )}
+
+            {showQuickAdd && <LogQuickAddFab date={fabDate} />}
         </Box>
     );
 };
+
+const Layout: React.FC = () => (
+    <QuickAddFabProvider>
+        <LayoutShell />
+    </QuickAddFabProvider>
+);
 
 export default Layout;

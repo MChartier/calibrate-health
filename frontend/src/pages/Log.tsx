@@ -3,31 +3,19 @@ import {
     Alert,
     Box,
     Button,
-    Dialog,
-    DialogTitle,
     IconButton,
     TextField,
-    Tooltip,
-    Typography,
-    useMediaQuery,
-    useTheme,
+    Tooltip
 } from '@mui/material';
-import SpeedDial from '@mui/material/SpeedDial';
-import SpeedDialAction from '@mui/material/SpeedDialAction';
-import AddIcon from '@mui/icons-material/AddRounded';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeftRounded';
 import ChevronRightIcon from '@mui/icons-material/ChevronRightRounded';
-import CloseIcon from '@mui/icons-material/CloseRounded';
 import TodayIcon from '@mui/icons-material/TodayRounded';
-import RestaurantIcon from '@mui/icons-material/RestaurantRounded';
-import MonitorWeightIcon from '@mui/icons-material/MonitorWeightRounded';
-import WeightEntryForm from '../components/WeightEntryForm';
-import FoodEntryForm from '../components/FoodEntryForm';
 import FoodLogMeals from '../components/FoodLogMeals';
 import { useQueryClient } from '@tanstack/react-query';
 import LogSummaryCard from '../components/LogSummaryCard';
 import WeightSummaryCard from '../components/WeightSummaryCard';
 import { useAuth } from '../context/useAuth';
+import { useQuickAddFab } from '../context/useQuickAddFab';
 import {
     addDaysToIsoDate,
     clampIsoDate,
@@ -39,16 +27,8 @@ import { fetchFoodLog, foodLogQueryKey, useFoodLogQuery } from '../queries/foodL
 import AppCard from '../ui/AppCard';
 import { useI18n } from '../i18n/useI18n';
 
-const LOG_FAB_DIAMETER_SPACING = 7; // Default MUI "large" Fab is 56px (7 * 8).
-const LOG_FAB_CONTENT_CLEARANCE_SPACING = 2; // Extra room so bottom-row actions aren't tight against the FAB.
-const LOG_FAB_BOTTOM_NAV_GAP_SPACING = 1; // Our FAB sits 8px above the reserved bottom-nav space on mobile.
 const LOG_DATE_PICKER_OVERLAY_FOCUS_OUTLINE_PX = 2; // Thickness of the keyboard focus ring on the date control overlay.
 const LOG_DATE_PICKER_OVERLAY_FOCUS_OUTLINE_OFFSET_PX = 2; // Gap between the overlay outline and the field chrome.
-
-const LOG_PAGE_BOTTOM_PADDING = {
-    xs: LOG_FAB_DIAMETER_SPACING + LOG_FAB_CONTENT_CLEARANCE_SPACING + LOG_FAB_BOTTOM_NAV_GAP_SPACING,
-    md: LOG_FAB_DIAMETER_SPACING + LOG_FAB_CONTENT_CLEARANCE_SPACING
-} as const;
 
 type LogDateBounds = { min: string; max: string };
 
@@ -98,10 +78,9 @@ function showNativeDatePicker(input: HTMLInputElement | null) {
 
 const Log: React.FC = () => {
     const queryClient = useQueryClient();
-    const theme = useTheme();
     const { t } = useI18n();
-    const isFoodDialogFullScreen = useMediaQuery(theme.breakpoints.down('sm'));
     const { user } = useAuth();
+    const { openWeightDialogForLogDate, setLogDateOverride } = useQuickAddFab();
     const timeZone = useMemo(
         () => user?.timezone?.trim() || Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
         [user?.timezone]
@@ -113,8 +92,6 @@ const Log: React.FC = () => {
     }, [today, timeZone, user?.created_at]);
 
     const [selectedDate, setSelectedDate] = useState(() => today);
-    const [isFoodDialogOpen, setIsFoodDialogOpen] = useState(false);
-    const [isWeightDialogOpen, setIsWeightDialogOpen] = useState(false);
     const dateOverlayButtonRef = useRef<HTMLButtonElement | null>(null);
     const datePickerInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -152,11 +129,18 @@ const Log: React.FC = () => {
     const canGoBack = effectiveDate > dateBounds.min;
     const canGoForward = effectiveDate < dateBounds.max;
 
-    const handleCloseFoodDialog = () => setIsFoodDialogOpen(false);
-    const handleCloseWeightDialog = () => setIsWeightDialogOpen(false);
+    useEffect(() => {
+        setLogDateOverride(effectiveDate);
+    }, [effectiveDate, setLogDateOverride]);
+
+    useEffect(() => {
+        return () => {
+            setLogDateOverride(null);
+        };
+    }, [setLogDateOverride]);
 
     return (
-        <Box sx={{ pb: LOG_PAGE_BOTTOM_PADDING }}>
+        <Box>
             <Box
                 sx={{
                     display: 'flex',
@@ -309,7 +293,7 @@ const Log: React.FC = () => {
             >
                 <LogSummaryCard date={effectiveDate} />
 
-                <WeightSummaryCard date={effectiveDate} onOpenWeightEntry={() => setIsWeightDialogOpen(true)} />
+                <WeightSummaryCard date={effectiveDate} onOpenWeightEntry={openWeightDialogForLogDate} />
             </Box>
 
             <AppCard sx={{ mt: 2 }}>
@@ -328,94 +312,6 @@ const Log: React.FC = () => {
                     <FoodLogMeals logs={foodQuery.data ?? []} isLoading={foodQuery.isLoading} />
                 )}
             </AppCard>
-
-            <SpeedDial
-                ariaLabel={t('log.speedDial.aria')}
-                icon={<AddIcon />}
-                sx={{ position: 'fixed', right: 24, bottom: { xs: 'calc(88px + env(safe-area-inset-bottom))', md: 24 } }}
-            >
-                <SpeedDialAction
-                    key="add-food"
-                    icon={<RestaurantIcon />}
-                    tooltipTitle={t('log.speedDial.addFood')}
-                    onClick={() => setIsFoodDialogOpen(true)}
-                />
-                <SpeedDialAction
-                    key="add-weight"
-                    icon={<MonitorWeightIcon />}
-                    tooltipTitle={t('log.speedDial.addWeight')}
-                    onClick={() => setIsWeightDialogOpen(true)}
-                />
-            </SpeedDial>
-
-            <Dialog
-                open={isFoodDialogOpen}
-                onClose={handleCloseFoodDialog}
-                fullScreen={isFoodDialogFullScreen}
-                fullWidth={!isFoodDialogFullScreen}
-                maxWidth={isFoodDialogFullScreen ? false : 'sm'}
-                scroll="paper"
-                PaperProps={{
-                    sx: {
-                        height: isFoodDialogFullScreen ? '100dvh' : 'min(90dvh, 860px)',
-                        maxHeight: isFoodDialogFullScreen ? '100dvh' : 'min(90dvh, 860px)',
-                        m: isFoodDialogFullScreen ? 0 : 2,
-                        borderRadius: isFoodDialogFullScreen ? 0 : 2,
-                        display: 'flex',
-                        flexDirection: 'column'
-                    }
-                }}
-            >
-                <DialogTitle sx={{ position: 'relative', pr: 6 }}>
-                    {t('log.dialog.trackFood')}
-                    <Tooltip title={t('common.close')}>
-                        <IconButton
-                            aria-label={t('common.close')}
-                            onClick={handleCloseFoodDialog}
-                            sx={{ position: 'absolute', right: 8, top: 8 }}
-                        >
-                            <CloseIcon />
-                        </IconButton>
-                    </Tooltip>
-                </DialogTitle>
-                <FoodEntryForm
-                    date={effectiveDate}
-                    onSuccess={() => {
-                        void queryClient.invalidateQueries({ queryKey: ['food'] });
-                        handleCloseFoodDialog();
-                    }}
-                />
-            </Dialog>
-
-            <Dialog open={isWeightDialogOpen} onClose={handleCloseWeightDialog} fullWidth maxWidth="sm">
-                <DialogTitle sx={{ position: 'relative', pr: 6 }}>
-                    <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-                        <Box component="span">{t('log.dialog.trackWeight')}</Box>
-                        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25 }}>
-                            {t('log.dialog.trackWeight.subtitle', { date: effectiveDateLabel })}
-                        </Typography>
-                    </Box>
-
-                    <Tooltip title={t('common.close')}>
-                        <IconButton
-                            aria-label={t('common.close')}
-                            onClick={handleCloseWeightDialog}
-                            sx={{ position: 'absolute', right: 8, top: 8 }}
-                        >
-                            <CloseIcon />
-                        </IconButton>
-                    </Tooltip>
-                </DialogTitle>
-                <WeightEntryForm
-                    date={effectiveDate}
-                    onSuccess={() => {
-                        void queryClient.invalidateQueries({ queryKey: ['metrics'] });
-                        void queryClient.invalidateQueries({ queryKey: ['user-profile'] });
-                        void queryClient.invalidateQueries({ queryKey: ['profile'] });
-                        handleCloseWeightDialog();
-                    }}
-                />
-            </Dialog>
         </Box>
     );
 };
