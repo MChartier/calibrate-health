@@ -80,7 +80,7 @@ const Log: React.FC = () => {
     const queryClient = useQueryClient();
     const { t } = useI18n();
     const { user } = useAuth();
-    const { dialogs, openWeightDialogForLogDate, setLogDateOverride } = useQuickAddFab();
+    const { openWeightDialogForLogDate, setLogDateOverride } = useQuickAddFab();
     const timeZone = useMemo(
         () => user?.timezone?.trim() || Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
         [user?.timezone]
