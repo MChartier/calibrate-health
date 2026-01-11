@@ -309,7 +309,7 @@ const LayoutShell: React.FC = () => {
                 </Box>
             )}
 
-            {showQuickAdd && <LogQuickAddFab date={fabDate} dialogs={dialogs} />}
+            {showQuickAdd && <LogQuickAddFab date={fabDate} />}
         </Box>
     );
 };
