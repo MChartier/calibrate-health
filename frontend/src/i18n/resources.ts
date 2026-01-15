@@ -113,6 +113,11 @@ export const en = {
     'goals.noWeightEntries': 'No weight entries yet.',
     'goals.weightSeriesLabel': 'Weight ({unit})',
     'goals.targetLineLabel': 'Target: {value} {unit}',
+    'goals.weightHistoryRangeLabel': 'Weight history range',
+    'goals.weightHistoryRangeWeek': 'Week',
+    'goals.weightHistoryRangeMonth': 'Month',
+    'goals.weightHistoryRangeYear': 'Year',
+    'goals.weightHistoryRangeAll': 'All',
 
     'activityLevel.SEDENTARY.title': 'Sedentary',
     'activityLevel.SEDENTARY.description': 'Mostly seated, <5k steps/day, little structured exercise',

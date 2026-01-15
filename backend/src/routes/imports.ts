@@ -153,6 +153,9 @@ router.post('/loseit/execute', upload.single('file'), async (req, res) => {
 
 export default router;
 
+/**
+ * Validate and normalize the import options payload from a multipart form.
+ */
 function parseImportOptions(body: Record<string, unknown> | undefined):
   | { ok: true; value: LoseItImportOptions }
   | { ok: false; message: string } {
@@ -189,6 +192,9 @@ function parseImportOptions(body: Record<string, unknown> | undefined):
   };
 }
 
+/**
+ * Count how many imported food days already have logs for the user.
+ */
 async function countExistingFoodDays(userId: number, importDates: Set<string>): Promise<number> {
   const { minDate, maxDate } = computeDateRangeAsDates(importDates);
   if (!minDate || !maxDate) return 0;
@@ -209,6 +215,9 @@ async function countExistingFoodDays(userId: number, importDates: Set<string>): 
   return count;
 }
 
+/**
+ * Count how many imported weight days already have metrics for the user.
+ */
 async function countExistingWeightDays(userId: number, importDates: Set<string>): Promise<number> {
   const { minDate, maxDate } = computeDateRangeAsDates(importDates);
   if (!minDate || !maxDate) return 0;
@@ -229,6 +238,9 @@ async function countExistingWeightDays(userId: number, importDates: Set<string>)
   return count;
 }
 
+/**
+ * Apply conflict rules and return only the food log rows we should insert.
+ */
 async function resolveFoodLogsToInsert(opts: {
   userId: number;
   imports: LoseItFoodLogImport[];
@@ -296,6 +308,9 @@ async function resolveFoodLogsToInsert(opts: {
   return { rows, skippedCount };
 }
 
+/**
+ * Build a map of existing food log fingerprints per day to support merge/dedupe.
+ */
 async function buildExistingFoodFingerprintMap(opts: {
   userId: number;
   dateValues: Date[];
@@ -346,6 +361,9 @@ async function buildExistingFoodFingerprintMap(opts: {
   return result;
 }
 
+/**
+ * Derive a stable fingerprint for deduping food log entries.
+ */
 function buildFoodFingerprint(entry: LoseItFoodLogImport): string {
   const normalizedName = entry.name.trim().toLowerCase();
   const servingsKey = entry.servingsConsumed !== null ? roundForFingerprint(entry.servingsConsumed) : '';
@@ -353,6 +371,9 @@ function buildFoodFingerprint(entry: LoseItFoodLogImport): string {
   return `${entry.localDate}|${entry.mealPeriod}|${normalizedName}|${entry.calories}|${servingsKey}|${unitKey}`;
 }
 
+/**
+ * Import weight entries using the requested conflict behavior.
+ */
 async function applyWeightImports(opts: {
   userId: number;
   imports: LoseItWeightImport[];
@@ -475,6 +496,9 @@ async function applyWeightImports(opts: {
   return { imported, updated, skipped, bodyFatUpdated };
 }
 
+/**
+ * Compute the min/max date from an array of date strings.
+ */
 function computeDateRange(dates: string[]): { startDate: string | null; endDate: string | null } {
   if (dates.length === 0) return { startDate: null, endDate: null };
   let startDate = dates[0];
@@ -486,6 +510,9 @@ function computeDateRange(dates: string[]): { startDate: string | null; endDate:
   return { startDate, endDate };
 }
 
+/**
+ * Convert date strings to Date values and compute the min/max range.
+ */
 function computeDateRangeAsDates(dates: Set<string>): { minDate: Date | null; maxDate: Date | null } {
   if (dates.size === 0) return { minDate: null, maxDate: null };
   const values = Array.from(dates).map((date) => parseLocalDateOnly(date));
@@ -494,14 +521,23 @@ function computeDateRangeAsDates(dates: Set<string>): { minDate: Date | null; ma
   return { minDate, maxDate };
 }
 
+/**
+ * Format a UTC-normalized Date into a YYYY-MM-DD key string.
+ */
 function formatUtcDateKey(date: Date): string {
   return date.toISOString().slice(0, 10);
 }
 
+/**
+ * Round numeric values to limit noise in dedupe fingerprints.
+ */
 function roundForFingerprint(value: number): string {
   return String(Math.round(value * 1000) / 1000);
 }
 
+/**
+ * Chunk an array into fixed-size batches.
+ */
 function chunkArray<T>(items: T[], size: number): T[][] {
   const result: T[][] = [];
   for (let idx = 0; idx < items.length; idx += size) {
