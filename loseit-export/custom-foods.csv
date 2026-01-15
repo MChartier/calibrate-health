@@ -1,9 +1,0 @@
-Name,UniqueId,Brand,Image,Quantity,Measure,Calories,Fat (g),Protein (g),Carbohydrates (g),Saturated Fat (g),Sugars (g),Fiber (g),Cholesterol (mg),Sodium (mg)
-Chicken Enchilada,a971a91bd0c645b8a7fd922a4eca8586,Microsoft Cafe,Enchilada,1.0,Serving,600.0,n/a,n/a,n/a,n/a,n/a,n/a,n/a,n/a
-Salmon Bowl,5a4b1c334ee5484e830faf43f19a9eb9,,Default,1.0,Serving,800.0,n/a,n/a,n/a,n/a,n/a,n/a,n/a,n/a
-Spicy Boneless Chicken Wyngz,1934407b0b4846a99c96632f25f38310,Kroger,Default,1.0,Serving,240.0,10,16,21,1.50,0,19,40,1050
-Spicy Chicken Breast Sandwich,df893ddd781e467b8a9901f3475331f2,Microsoft Grill,Sandwich,1.0,Serving,350.0,n/a,n/a,n/a,n/a,n/a,n/a,n/a,n/a
-Spicy Chicken with Basil,73998120b0de4fac8020127fd24da4ff,Bo's Thai Bistro,Chicken,1.0,Serving,310.0,n/a,n/a,n/a,n/a,n/a,n/a,n/a,n/a
-Spicy Lemongrass Chicken,8d1ebfbdf80b4917953763ba8705ceb5,Thoa's,Chicken,1.0,Serving,750.0,n/a,n/a,n/a,n/a,n/a,n/a,n/a,n/a
-Steamed Brown Rice,5c9166bde7ea4a958bd4fc0d08d261dd,Bo's Thai Bistro,Rice,1.0,Serving,130.0,n/a,n/a,n/a,n/a,n/a,n/a,n/a,n/a
-Uncured Dry Rubbed Sliced Bacon,3b38ffaa6d584fdbb8ff29d8770debc4,Trader Joe's,Bacon,2.0,Slices,60.0,3,4,0,1.50,0,0,10,220
