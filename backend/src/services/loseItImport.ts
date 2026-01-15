@@ -5,6 +5,7 @@ import { parseLocalDateOnly } from '../utils/date';
 
 const MAX_WARNING_COUNT = 20; // Cap warning output to keep responses readable.
 const IMPORT_ENTRY_HOUR_UTC = 12; // Midday UTC keeps date-only entries stable across time zones.
+const MAX_ZIP_ENTRY_BYTES = 5 * 1024 * 1024; // Guardrail for maximum uncompressed CSV entry size.
 
 const LOSE_IT_DATE_PATTERN = /^(?<month>\d{1,2})\/(?<day>\d{1,2})\/(?<year>\d{4})$/;
 
@@ -124,7 +125,17 @@ function findZipEntryText(entries: AdmZip.IZipEntry[], filename: string): string
   const target = filename.toLowerCase();
   const entry = entries.find((candidate) => path.posix.basename(candidate.entryName).toLowerCase() === target);
   if (!entry) return null;
-  return entry.getData().toString('utf8');
+  const declaredSize = entry.header?.size;
+  if (typeof declaredSize === 'number' && declaredSize > MAX_ZIP_ENTRY_BYTES) {
+    throw new Error(`Export entry ${filename} exceeds the ${MAX_ZIP_ENTRY_BYTES} byte limit.`);
+  }
+
+  const data = entry.getData();
+  if (data.length > MAX_ZIP_ENTRY_BYTES) {
+    throw new Error(`Export entry ${filename} exceeds the ${MAX_ZIP_ENTRY_BYTES} byte limit.`);
+  }
+
+  return data.toString('utf8');
 }
 
 function parseFoodLogs(csv: string, warnings: string[]): LoseItFoodLogImport[] {
