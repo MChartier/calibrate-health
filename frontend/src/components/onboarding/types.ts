@@ -1,4 +1,4 @@
-export type OnboardingStepKey = 'goals' | 'about';
+export type OnboardingStepKey = 'goals' | 'about' | 'import';
 
 export type OnboardingStep = {
     key: OnboardingStepKey;

@@ -11,9 +11,9 @@ const DOT_SIZE_ACTIVE_PX = 16; // Controls the active step dot size (kept readab
 const DOT_SIZE_INACTIVE_PX = 14; // Controls inactive/complete dot size.
 
 /**
- * Compact "two dots" progress indicator for onboarding.
+ * Compact progress indicator for onboarding.
  *
- * This keeps expectations clear (only two steps) without the height of a full Stepper.
+ * This keeps expectations clear without the height of a full Stepper.
  */
 const OnboardingStepDots: React.FC<OnboardingStepDotsProps> = ({ steps, activeStepIndex }) => {
     return (

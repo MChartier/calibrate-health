@@ -22,12 +22,14 @@ import AppPage from '../ui/AppPage';
 import AppCard from '../ui/AppCard';
 import AboutYouStep from '../components/onboarding/AboutYouStep';
 import GoalsStep from '../components/onboarding/GoalsStep';
+import ImportStep from '../components/onboarding/ImportStep';
 import AboutYouQuestionFooter from '../components/onboarding/AboutYouQuestionFooter';
 import GoalsQuestionFooter from '../components/onboarding/GoalsQuestionFooter';
 import OnboardingStepDots from '../components/onboarding/OnboardingStepDots';
 import OnboardingPlanSummary from '../components/onboarding/OnboardingPlanSummary';
 import { ONBOARDING_CARD_CONTENT_SPACING, ONBOARDING_FOOTER_SPACING } from '../components/onboarding/layout';
 import type { AboutQuestionKey, GoalsQuestionKey, OnboardingStep } from '../components/onboarding/types';
+import LoseItImportDialog, { type LoseItImportSummary } from '../components/imports/LoseItImportDialog';
 import { getDefaultUnitPreferencesForLocale } from '../utils/unitPreferences';
 import {
     DEFAULT_DAILY_DEFICIT_CHOICE_STRING,
@@ -198,6 +200,10 @@ const Onboarding: React.FC = () => {
             {
                 key: 'about',
                 label: 'Calorie burn'
+            },
+            {
+                key: 'import',
+                label: 'Import'
             }
         ],
         []
@@ -268,8 +274,8 @@ const Onboarding: React.FC = () => {
 
     const [goalsHighlightKey, setGoalsHighlightKey] = useState<GoalsQuestionKey | null>(null);
     const [aboutHighlightKey, setAboutHighlightKey] = useState<AboutQuestionKey | null>(null);
-
-
+    const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
+    const [importSummary, setImportSummary] = useState<LoseItImportSummary | null>(null);
 
     const profileQuery = useUserProfileQuery({ enabled: !!user });
 
@@ -394,6 +400,8 @@ const Onboarding: React.FC = () => {
         setAboutQuestionIndex(0);
         setAttemptedGoalsQuestions({ ...INITIAL_ATTEMPTED_GOALS_QUESTIONS });
         setAttemptedAboutQuestions({ ...INITIAL_ATTEMPTED_ABOUT_QUESTIONS });
+        setImportSummary(null);
+        setIsImportDialogOpen(false);
         setError('');
     }, []);
 
@@ -458,8 +466,13 @@ const Onboarding: React.FC = () => {
             return;
         }
 
-        if (!aboutQuestionKey) {
+        if (activeStep.key === 'import') {
             void handleFinish();
+            return;
+        }
+
+        if (!aboutQuestionKey) {
+            setActiveStepIndex(2);
             return;
         }
 
@@ -481,7 +494,7 @@ const Onboarding: React.FC = () => {
 
         const nextIndex = aboutQuestionIndex + 1;
         if (nextIndex >= ABOUT_QUESTION_SEQUENCE.length) {
-            void handleFinish();
+            setActiveStepIndex(2);
             return;
         }
 
@@ -502,6 +515,12 @@ const Onboarding: React.FC = () => {
                 return;
             }
             setGoalsQuestionIndex((current) => Math.max(current - 1, 0));
+            return;
+        }
+
+        if (activeStep.key === 'import') {
+            setActiveStepIndex(1);
+            setAboutQuestionIndex(Math.max(ABOUT_QUESTION_SEQUENCE.length - 1, 0));
             return;
         }
 
@@ -630,7 +649,11 @@ const Onboarding: React.FC = () => {
     }, []);
 
     const footerFadeKey =
-        activeStep.key === 'goals' ? `goals-${goalsQuestionKey ?? 'done'}` : `about-${aboutQuestionKey ?? 'done'}`;
+        activeStep.key === 'goals'
+            ? `goals-${goalsQuestionKey ?? 'done'}`
+            : activeStep.key === 'about'
+                ? `about-${aboutQuestionKey ?? 'done'}`
+                : 'import';
 
     const isLastAboutQuestion =
         activeStep.key === 'about' && aboutQuestionKey !== null && aboutQuestionIndex === ABOUT_QUESTION_SEQUENCE.length - 1;
@@ -668,8 +691,10 @@ const Onboarding: React.FC = () => {
     }, [dailyDeficit, inferredGoalMode]);
 
     let primaryCtaLabel = 'Continue';
-    if (activeStep.key === 'about' && isLastAboutQuestion) {
+    if (activeStep.key === 'import') {
         primaryCtaLabel = isSaving ? 'Saving...' : 'See my plan';
+    } else if (activeStep.key === 'about' && isLastAboutQuestion) {
+        primaryCtaLabel = 'Next: Import';
     } else if (willAdvanceToCalorieBurn) {
         primaryCtaLabel = 'Next: Calorie burn';
     }
@@ -684,10 +709,12 @@ const Onboarding: React.FC = () => {
             return false;
         }
 
-        if (aboutQuestionKey === 'dob') return !dob;
-        if (aboutQuestionKey === 'sex') return !sex;
-        if (aboutQuestionKey === 'activityLevel') return !activityLevel;
-        if (aboutQuestionKey === 'height') return !heightFieldsValid;
+        if (activeStep.key === 'about') {
+            if (aboutQuestionKey === 'dob') return !dob;
+            if (aboutQuestionKey === 'sex') return !sex;
+            if (aboutQuestionKey === 'activityLevel') return !activityLevel;
+            if (aboutQuestionKey === 'height') return !heightFieldsValid;
+        }
         return false;
     }, [
         aboutQuestionKey,
@@ -738,7 +765,7 @@ const Onboarding: React.FC = () => {
                     onSubmit={goContinue}
                 />
             ) : null;
-        } else {
+        } else if (activeStep.key === 'goals') {
             footerQuestionControl = goalsQuestionKey ? (
                 <GoalsQuestionFooter
                     questionKey={goalsQuestionKey}
@@ -770,7 +797,7 @@ const Onboarding: React.FC = () => {
                     Let&apos;s set a daily calorie target that helps you reach your weight goal.
                 </Typography>
                 <Typography color="text.secondary" sx={{ mt: 1 }}>
-                    Two quick steps: set your target weight, then we&apos;ll estimate your calorie burn (TDEE).
+                    Three quick steps: set your target weight, estimate calorie burn, and optionally import history.
                 </Typography>
             </Box>
         );
@@ -812,6 +839,11 @@ const Onboarding: React.FC = () => {
                                 onEditQuestion={editAboutQuestion}
                                 prefersReducedMotion={prefersReducedMotion}
                                 highlightKey={aboutHighlightKey}
+                            />
+                        ) : activeStep.key === 'import' ? (
+                            <ImportStep
+                                onOpenImport={() => setIsImportDialogOpen(true)}
+                                summary={importSummary}
                             />
                         ) : (
                             <GoalsStep
@@ -911,6 +943,13 @@ const Onboarding: React.FC = () => {
 
                 {cardFooterContent}
             </AppCard>
+
+            <LoseItImportDialog
+                open={isImportDialogOpen}
+                onClose={() => setIsImportDialogOpen(false)}
+                onComplete={(summary) => setImportSummary(summary)}
+                defaultWeightUnit={weightUnit}
+            />
 
             <Snackbar
                 open={Boolean(error)}
