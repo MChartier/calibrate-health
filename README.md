@@ -94,7 +94,7 @@ Full guide (including required secrets and exact commands): [infra/README.md](in
 ### Quickstart (devcontainer)
 
 The devcontainer runs `npm run setup` automatically (installs deps + generates the Prisma client). On start it also runs
-`npm run db:migrate` and `npm run db:seed`.
+`npm run db:push:reset` and `npm run db:seed`.
 
 This repo supports a repo-local `.env` file (gitignored) for devcontainer secrets. Start by copying `.env.example` to
 `.env`, then rebuild the devcontainer so `.devcontainer/.env` is regenerated and Docker can pass the values into the
@@ -163,6 +163,7 @@ More:
 
 - `npm run db:migrate:dev`: create/apply new migrations during local development.
 - `npm run db:reset`: destructive reset (drops data and recreates schema).
+- `npm run db:push:reset`: dev-only schema reset using `prisma db push` (fast, skips migrations).
 - `npm run db:studio`: Prisma Studio (DB browser).
 - `npm run build`: build the frontend.
 - `npm run lint`: lint the frontend.
