@@ -230,8 +230,16 @@ function parseWeights(csv: string, warnings: string[]): LoseItWeightImport[] {
     }
 
     const existing = weightMap.get(localDate);
-    if (existing && existing.lastUpdated && lastUpdated && existing.lastUpdated >= lastUpdated) {
-      continue;
+    if (existing) {
+      if (existing.lastUpdated && !lastUpdated) {
+        continue;
+      }
+      if (existing.lastUpdated && lastUpdated && existing.lastUpdated >= lastUpdated) {
+        continue;
+      }
+      if (!existing.lastUpdated && !lastUpdated) {
+        continue;
+      }
     }
 
     weightMap.set(localDate, {
