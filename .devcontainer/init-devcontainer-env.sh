@@ -151,6 +151,7 @@ github_token="${GITHUB_TOKEN:-${GH_TOKEN:-${repo_github_token:-${repo_gh_token:-
 env_path=".devcontainer/.env"
 tmp_path="${env_path}.tmp"
 
+
 cat > "$tmp_path" <<EOF
 COMPOSE_PROJECT_NAME=${project_slug}
 WORKSPACE_FOLDER_NAME=${workspace_name}

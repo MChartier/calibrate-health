@@ -15,6 +15,7 @@ import type { HeightUnit, WeightUnit } from '../context/authContext';
 import { useThemeMode } from '../context/useThemeMode';
 import type { ThemePreference } from '../context/themeModeContext';
 import AccountSecurityCard from '../components/AccountSecurityCard';
+import LoseItImportCard from '../components/imports/LoseItImportCard';
 import ProfilePhotoCard from '../components/ProfilePhotoCard';
 import TimeZonePicker from '../components/TimeZonePicker';
 import UnitPreferenceToggles from '../components/UnitPreferenceToggles';
@@ -122,6 +123,8 @@ const Settings: React.FC = () => {
                 <ProfilePhotoCard description={t('settings.profilePhotoDescription')} />
 
                 <AccountSecurityCard />
+
+                <LoseItImportCard />
 
                 <AppCard>
                     <SectionHeader title={t('settings.unitsAndLocalization')} sx={{ mb: 0.5 }} />

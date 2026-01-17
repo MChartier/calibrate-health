@@ -16,6 +16,7 @@ import devRoutes from './routes/dev';
 import devTestRoutes from './routes/devTest';
 import foodRoutes from './routes/food';
 import goalRoutes from './routes/goals';
+import importRoutes from './routes/imports';
 import metricRoutes from './routes/metrics';
 import myFoodsRoutes from './routes/myFoods';
 import userRoutes from './routes/user';
@@ -317,6 +318,7 @@ const bootstrap = async (): Promise<void> => {
   apiRouter.use('/metrics', metricRoutes);
   apiRouter.use('/food', foodRoutes);
   apiRouter.use('/my-foods', myFoodsRoutes);
+  apiRouter.use('/imports', importRoutes);
   apiRouter.use('/user', userRoutes);
 
   // Keep debug/prototype routes (food provider comparisons, etc.) out of production deployments.
