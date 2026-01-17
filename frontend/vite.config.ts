@@ -4,6 +4,11 @@ import { fileURLToPath } from 'node:url'
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA, type VitePWAOptions } from 'vite-plugin-pwa'
+import {
+  QUICK_ADD_SHORTCUT_ACTIONS,
+  QUICK_ADD_SHORTCUT_QUERY_PARAM,
+  type QuickAddShortcutAction
+} from './src/constants/pwaShortcuts'
 
 function isRunningInContainer() {
   if (fs.existsSync('/.dockerenv')) return true
@@ -17,6 +22,16 @@ function isRunningInContainer() {
   } catch {
     return false
   }
+}
+
+const QUICK_ADD_SHORTCUT_ICON = 'pwa-192x192.png' // Icon used for quick-add PWA shortcuts.
+const QUICK_ADD_SHORTCUT_BASE_PATH = '/log' // Base route for quick-add shortcuts.
+
+/**
+ * Build a log-route URL that triggers a quick-add dialog when opened from a PWA shortcut.
+ */
+function buildQuickAddShortcutUrl(action: QuickAddShortcutAction): string {
+  return `${QUICK_ADD_SHORTCUT_BASE_PATH}?${QUICK_ADD_SHORTCUT_QUERY_PARAM}=${action}`
 }
 
 /**
@@ -69,6 +84,34 @@ function getPwaOptions(): Partial<VitePWAOptions> {
           sizes: '512x512',
           type: 'image/png',
           purpose: 'maskable',
+        },
+      ],
+      shortcuts: [
+        {
+          name: 'Log Weight',
+          short_name: 'Log Weight',
+          description: 'Record a weigh-in for today.',
+          url: buildQuickAddShortcutUrl(QUICK_ADD_SHORTCUT_ACTIONS.weight),
+          icons: [
+            {
+              src: QUICK_ADD_SHORTCUT_ICON,
+              sizes: '192x192',
+              type: 'image/png',
+            },
+          ],
+        },
+        {
+          name: 'Log Food',
+          short_name: 'Log Food',
+          description: 'Add food to today.',
+          url: buildQuickAddShortcutUrl(QUICK_ADD_SHORTCUT_ACTIONS.food),
+          icons: [
+            {
+              src: QUICK_ADD_SHORTCUT_ICON,
+              sizes: '192x192',
+              type: 'image/png',
+            },
+          ],
         },
       ],
     },

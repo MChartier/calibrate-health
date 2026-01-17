@@ -249,6 +249,7 @@ export const en = {
     'log.dialog.trackFood': 'Track Food',
     'log.dialog.trackWeight': 'Track Weight',
     'log.dialog.trackWeight.subtitle': 'For {date} (the day you are viewing)',
+    'log.dialog.trackWeight.subtitleToday': 'For today ({date})',
 
     'mealPeriod.BREAKFAST': 'Breakfast',
     'mealPeriod.MORNING_SNACK': 'Morning Snack',
@@ -662,6 +663,7 @@ export const es: Record<TranslationKey, string> = {
     'log.dialog.trackFood': 'Registrar comida',
     'log.dialog.trackWeight': 'Registrar peso',
     'log.dialog.trackWeight.subtitle': 'Para {date} (el día que estás viendo)',
+    'log.dialog.trackWeight.subtitleToday': 'Para hoy ({date})',
 
     'mealPeriod.BREAKFAST': 'Desayuno',
     'mealPeriod.MORNING_SNACK': 'Snack de la mañana',
@@ -1073,6 +1075,7 @@ export const fr: Record<TranslationKey, string> = {
     'log.dialog.trackFood': 'Enregistrer un aliment',
     'log.dialog.trackWeight': 'Enregistrer une pesée',
     'log.dialog.trackWeight.subtitle': 'Pour {date} (le jour que vous consultez)',
+    'log.dialog.trackWeight.subtitleToday': "Pour aujourd'hui ({date})",
 
     'mealPeriod.BREAKFAST': 'Petit déjeuner',
     'mealPeriod.MORNING_SNACK': 'Collation du matin',
@@ -1484,6 +1487,7 @@ export const ru: Record<TranslationKey, string> = {
     'log.dialog.trackFood': 'Записать еду',
     'log.dialog.trackWeight': 'Записать вес',
     'log.dialog.trackWeight.subtitle': 'Для {date} (день, который вы просматриваете)',
+    'log.dialog.trackWeight.subtitleToday': 'За сегодня ({date})',
 
     'mealPeriod.BREAKFAST': 'Завтрак',
     'mealPeriod.MORNING_SNACK': 'Утренний перекус',
