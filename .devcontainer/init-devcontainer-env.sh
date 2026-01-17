@@ -62,18 +62,18 @@ offset="$((hash % 1000))"
 
 backend_port="$((3000 + offset))"
 frontend_port="$((5173 + offset))"
-base_peacock_color="#007fff"
+# Keep in sync with the frontend default primary color.
+base_peacock_color="#0077ff"
+# Distinct hues with consistent saturation/brightness so adjacent worktrees pop.
 worktree_colors=(
-  "#0f766e"
-  "#0e7490"
-  "#2f855a"
-  "#4d7c0f"
-  "#b45309"
-  "#c2410c"
-  "#b91c1c"
-  "#a21caf"
-  "#6d28d9"
-  "#4b5563"
+  "#ca2b2b"
+  "#2bca2b"
+  "#2b7aca"
+  "#ca7a2b"
+  "#7a2bca"
+  "#2bcaa2"
+  "#a2ca2b"
+  "#ca2b7a"
 )
 greek_letters=(
   alpha
