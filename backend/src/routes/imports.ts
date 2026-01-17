@@ -1,7 +1,8 @@
 import express from 'express';
 import multer from 'multer';
+import type { Prisma } from '@prisma/client';
 import prisma from '../config/database';
-import { parseWeightToGrams, isWeightUnit } from '../utils/units';
+import { parseWeightToGrams, isWeightUnit, type WeightUnit } from '../utils/units';
 import { parseLocalDateOnly } from '../utils/date';
 import {
   buildImportTimestamp,
@@ -27,7 +28,7 @@ type FoodConflictMode = 'MERGE' | 'REPLACE' | 'SKIP';
 type WeightConflictMode = 'KEEP' | 'OVERWRITE';
 
 type LoseItImportOptions = {
-  weightUnit: 'KG' | 'LB';
+  weightUnit: WeightUnit;
   foodConflictMode: FoodConflictMode;
   weightConflictMode: WeightConflictMode;
   includeBodyFat: boolean;
@@ -232,7 +233,7 @@ async function resolveFoodLogsToInsert(opts: {
   userId: number;
   imports: LoseItFoodLogImport[];
   conflictMode: FoodConflictMode;
-}): Promise<{ rows: Array<Record<string, unknown>>; skippedCount: number }> {
+}): Promise<{ rows: Prisma.FoodLogCreateManyInput[]; skippedCount: number }> {
   if (opts.imports.length === 0) {
     return { rows: [], skippedCount: 0 };
   }
@@ -256,7 +257,7 @@ async function resolveFoodLogsToInsert(opts: {
     includeFingerprints: opts.conflictMode === 'MERGE',
   });
 
-  const rows: Array<Record<string, unknown>> = [];
+  const rows: Prisma.FoodLogCreateManyInput[] = [];
   let skippedCount = 0;
 
   for (const entry of opts.imports) {
@@ -356,7 +357,7 @@ async function applyWeightImports(opts: {
   userId: number;
   imports: LoseItWeightImport[];
   bodyFatByDate: Map<string, number>;
-  weightUnit: WeightUnitGuess['unit'];
+  weightUnit: WeightUnit;
   conflictMode: WeightConflictMode;
   includeBodyFat: boolean;
 }): Promise<{ imported: number; updated: number; skipped: number; bodyFatUpdated: number }> {
