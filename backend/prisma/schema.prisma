@@ -199,3 +199,13 @@ model RecipeIngredient {
 
   @@index([recipe_id])
 }
+
+model SessionStore {
+  /// Backing table for express-session; kept in the Prisma schema so db push and migrations create it.
+  sid    String   @id @db.Text
+  sess   Json
+  expire DateTime @db.Timestamptz(6)
+
+  @@map("session_store")
+  @@index([expire], map: "session_store_expire_idx")
+}
