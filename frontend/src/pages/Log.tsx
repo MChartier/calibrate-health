@@ -10,12 +10,18 @@ import {
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeftRounded';
 import ChevronRightIcon from '@mui/icons-material/ChevronRightRounded';
 import TodayIcon from '@mui/icons-material/TodayRounded';
+import { useSearchParams } from 'react-router-dom';
 import FoodLogMeals from '../components/FoodLogMeals';
 import { useQueryClient } from '@tanstack/react-query';
 import LogSummaryCard from '../components/LogSummaryCard';
 import WeightSummaryCard from '../components/WeightSummaryCard';
 import { useAuth } from '../context/useAuth';
 import { useQuickAddFab } from '../context/useQuickAddFab';
+import {
+    QUICK_ADD_SHORTCUT_ACTIONS,
+    QUICK_ADD_SHORTCUT_QUERY_PARAM,
+    type QuickAddShortcutAction
+} from '../constants/pwaShortcuts';
 import {
     addDaysToIsoDate,
     clampIsoDate,
@@ -76,11 +82,23 @@ function showNativeDatePicker(input: HTMLInputElement | null) {
     input.focus();
 }
 
+/**
+ * Resolve a valid quick-add action from the URL query string (used by PWA shortcuts).
+ */
+function getQuickAddAction(searchParams: URLSearchParams): QuickAddShortcutAction | null {
+    const action = searchParams.get(QUICK_ADD_SHORTCUT_QUERY_PARAM);
+    if (action === QUICK_ADD_SHORTCUT_ACTIONS.food) return QUICK_ADD_SHORTCUT_ACTIONS.food;
+    if (action === QUICK_ADD_SHORTCUT_ACTIONS.weight) return QUICK_ADD_SHORTCUT_ACTIONS.weight;
+    return null;
+}
+
 const Log: React.FC = () => {
     const queryClient = useQueryClient();
     const { t } = useI18n();
     const { user } = useAuth();
-    const { openWeightDialogForLogDate, setLogDateOverride } = useQuickAddFab();
+    const { dialogs, openWeightDialogForLogDate, openWeightDialogFromFab, setLogDateOverride } = useQuickAddFab();
+    const { openFoodDialog } = dialogs;
+    const [searchParams, setSearchParams] = useSearchParams();
     const timeZone = useMemo(
         () => user?.timezone?.trim() || Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
         [user?.timezone]
@@ -138,6 +156,42 @@ const Log: React.FC = () => {
             setLogDateOverride(null);
         };
     }, [setLogDateOverride]);
+
+    const quickAddAction = getQuickAddAction(searchParams);
+
+    useEffect(() => {
+        if (!quickAddAction) return;
+
+        const quickAddDate = dateBounds.max;
+        if (selectedDate !== quickAddDate) {
+            setSelectedDate(quickAddDate);
+        }
+
+        switch (quickAddAction) {
+            case QUICK_ADD_SHORTCUT_ACTIONS.food:
+                openFoodDialog();
+                break;
+            case QUICK_ADD_SHORTCUT_ACTIONS.weight:
+                openWeightDialogFromFab();
+                break;
+            default:
+                break;
+        }
+
+        if (searchParams.has(QUICK_ADD_SHORTCUT_QUERY_PARAM)) {
+            const nextParams = new URLSearchParams(searchParams);
+            nextParams.delete(QUICK_ADD_SHORTCUT_QUERY_PARAM);
+            setSearchParams(nextParams, { replace: true });
+        }
+    }, [
+        dateBounds.max,
+        openFoodDialog,
+        openWeightDialogFromFab,
+        quickAddAction,
+        searchParams,
+        selectedDate,
+        setSearchParams
+    ]);
 
     return (
         <Box>
