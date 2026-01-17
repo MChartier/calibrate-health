@@ -648,12 +648,12 @@ const Onboarding: React.FC = () => {
         setAboutQuestionIndex(Math.max(ABOUT_QUESTION_SEQUENCE.length - 1, 0));
     }, []);
 
-    const footerFadeKey =
-        activeStep.key === 'goals'
-            ? `goals-${goalsQuestionKey ?? 'done'}`
-            : activeStep.key === 'about'
-                ? `about-${aboutQuestionKey ?? 'done'}`
-                : 'import';
+    let footerFadeKey = 'import';
+    if (activeStep.key === 'goals') {
+        footerFadeKey = `goals-${goalsQuestionKey ?? 'done'}`;
+    } else if (activeStep.key === 'about') {
+        footerFadeKey = `about-${aboutQuestionKey ?? 'done'}`;
+    }
 
     const isLastAboutQuestion =
         activeStep.key === 'about' && aboutQuestionKey !== null && aboutQuestionIndex === ABOUT_QUESTION_SEQUENCE.length - 1;
@@ -815,6 +815,45 @@ const Onboarding: React.FC = () => {
             />
         );
     } else {
+        let wizardStepContent: React.ReactNode = null;
+        if (activeStep.key === 'about') {
+            wizardStepContent = (
+                <AboutYouStep
+                    heightUnit={heightUnit}
+                    dob={dob}
+                    sex={sex}
+                    activityLevel={activityLevel}
+                    heightCm={heightCm}
+                    heightFeet={heightFeet}
+                    heightInches={heightInches}
+                    completedKeys={aboutCompletedKeys}
+                    onEditQuestion={editAboutQuestion}
+                    prefersReducedMotion={prefersReducedMotion}
+                    highlightKey={aboutHighlightKey}
+                />
+            );
+        } else if (activeStep.key === 'import') {
+            wizardStepContent = (
+                <ImportStep
+                    onOpenImport={() => setIsImportDialogOpen(true)}
+                    summary={importSummary}
+                />
+            );
+        } else {
+            wizardStepContent = (
+                <GoalsStep
+                    weightUnit={weightUnit}
+                    currentWeight={currentWeight}
+                    targetWeight={targetWeight}
+                    dailyDeficit={dailyDeficit}
+                    completedKeys={goalsCompletedKeys}
+                    onEditQuestion={editGoalsQuestion}
+                    prefersReducedMotion={prefersReducedMotion}
+                    highlightKey={goalsHighlightKey}
+                />
+            );
+        }
+
         cardBodyContent = (
             <Box
                 // Key forces a clean re-mount between steps so the transition feels intentional.
@@ -825,39 +864,7 @@ const Onboarding: React.FC = () => {
                       MUI transitions require a single child that can hold a ref.
                       Wrapping our step components in a Box avoids null ref crashes.
                     */}
-                    <Box>
-                        {activeStep.key === 'about' ? (
-                            <AboutYouStep
-                                heightUnit={heightUnit}
-                                dob={dob}
-                                sex={sex}
-                                activityLevel={activityLevel}
-                                heightCm={heightCm}
-                                heightFeet={heightFeet}
-                                heightInches={heightInches}
-                                completedKeys={aboutCompletedKeys}
-                                onEditQuestion={editAboutQuestion}
-                                prefersReducedMotion={prefersReducedMotion}
-                                highlightKey={aboutHighlightKey}
-                            />
-                        ) : activeStep.key === 'import' ? (
-                            <ImportStep
-                                onOpenImport={() => setIsImportDialogOpen(true)}
-                                summary={importSummary}
-                            />
-                        ) : (
-                            <GoalsStep
-                                weightUnit={weightUnit}
-                                currentWeight={currentWeight}
-                                targetWeight={targetWeight}
-                                dailyDeficit={dailyDeficit}
-                                completedKeys={goalsCompletedKeys}
-                                onEditQuestion={editGoalsQuestion}
-                                prefersReducedMotion={prefersReducedMotion}
-                                highlightKey={goalsHighlightKey}
-                            />
-                        )}
-                    </Box>
+                    <Box>{wizardStepContent}</Box>
                 </Fade>
             </Box>
         );
