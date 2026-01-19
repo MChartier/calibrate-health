@@ -64,6 +64,8 @@ export type LoseItExportParseResult = {
 
 /**
  * Parse a Lose It export zip buffer into structured rows for import.
+ *
+ * Throws when the export is missing the core CSVs.
  */
 export function parseLoseItExport(zipBuffer: Buffer): LoseItExportParseResult {
   const warnings: string[] = [];
@@ -117,6 +119,8 @@ export function inferLoseItWeightUnit(profile: Record<string, string>, fallback:
 
 /**
  * Convert a date-only string into a stable UTC timestamp used for imported log entries.
+ *
+ * We choose midday UTC to keep date-only logs consistent across time zones.
  */
 export function buildImportTimestamp(localDateValue: Date): Date {
   const timestamp = new Date(localDateValue);
@@ -125,7 +129,7 @@ export function buildImportTimestamp(localDateValue: Date): Date {
 }
 
 /**
- * Find a specific CSV entry in the Lose It export and read it as UTF-8 text.
+ * Read a CSV file from the zip by basename, returning UTF-8 text when present.
  */
 function findZipEntryText(entries: AdmZip.IZipEntry[], filename: string): string | null {
   const target = filename.toLowerCase();
@@ -147,7 +151,7 @@ function findZipEntryText(entries: AdmZip.IZipEntry[], filename: string): string
 }
 
 /**
- * Parse food log rows into structured entries for import.
+ * Normalize Lose It food log rows, skipping deleted or invalid entries.
  */
 function parseFoodLogs(csv: string, warnings: string[]): LoseItFoodLogImport[] {
   const rows = parseCsvRows(csv, warnings);
@@ -208,7 +212,7 @@ function parseFoodLogs(csv: string, warnings: string[]): LoseItFoodLogImport[] {
 }
 
 /**
- * Parse weight log rows and keep the most recently updated entry per date.
+ * Normalize Lose It weight rows and keep only the latest entry per day.
  */
 function parseWeights(csv: string, warnings: string[]): LoseItWeightImport[] {
   const rows = parseCsvRows(csv, warnings);
@@ -257,7 +261,7 @@ function parseWeights(csv: string, warnings: string[]): LoseItWeightImport[] {
 }
 
 /**
- * Parse body fat measurements and keep the last value per date.
+ * Normalize Lose It body-fat rows, ignoring missing or invalid values.
  */
 function parseBodyFat(csv: string, warnings: string[]): LoseItBodyFatImport[] {
   const rows = parseCsvRows(csv, warnings);
@@ -277,7 +281,7 @@ function parseBodyFat(csv: string, warnings: string[]): LoseItBodyFatImport[] {
 }
 
 /**
- * Parse the profile CSV into a key-value map for unit inference.
+ * Parse the profile key/value CSV into a string map for unit inference.
  */
 function parseProfile(csv: string): Record<string, string> {
   const rows = parseCsvRows(csv, []);
@@ -293,7 +297,7 @@ function parseProfile(csv: string): Record<string, string> {
 }
 
 /**
- * Map a Lose It meal label to the Calibrate meal period enum.
+ * Map Lose It meal names to Calibrate meal periods, warning on unknown values.
  */
 function parseMealPeriod(raw: string | undefined, warnings: string[]): MealPeriod | null {
   if (!raw) return null;
@@ -307,7 +311,7 @@ function parseMealPeriod(raw: string | undefined, warnings: string[]): MealPerio
 }
 
 /**
- * Parse Lose It date values into YYYY-MM-DD strings.
+ * Convert "MM/DD/YYYY" into "YYYY-MM-DD", warning when malformed.
  */
 function parseLoseItDate(raw: string | undefined, warnings: string[]): string | null {
   if (!raw) return null;
@@ -326,7 +330,7 @@ function parseLoseItDate(raw: string | undefined, warnings: string[]): string | 
 }
 
 /**
- * Convert a local date string into a Date while capturing invalid input as warnings.
+ * Parse a local date string into a UTC-normalized Date for storage.
  */
 function parseLocalDateValue(localDate: string, warnings: string[]): Date | null {
   try {
@@ -338,7 +342,7 @@ function parseLocalDateValue(localDate: string, warnings: string[]): Date | null
 }
 
 /**
- * Parse a Lose It timestamp field into a Date, returning null for invalid inputs.
+ * Parse an ISO-ish timestamp string into a Date (or null when invalid).
  */
 function parseLoseItTimestamp(raw: string | undefined): Date | null {
   if (!raw) return null;
@@ -349,7 +353,7 @@ function parseLoseItTimestamp(raw: string | undefined): Date | null {
 }
 
 /**
- * Determine whether a Lose It row is marked as deleted.
+ * Interpret Lose It "Deleted" flags with a forgiving boolean mapping.
  */
 function parseLoseItDeleted(raw: string | undefined): boolean {
   if (!raw) return false;
@@ -359,6 +363,8 @@ function parseLoseItDeleted(raw: string | undefined): boolean {
 
 /**
  * Parse a CSV document into string-valued rows keyed by header.
+ *
+ * This is a minimal parser tailored to Lose It exports (quoted values + commas).
  */
 function parseCsvRows(csv: string, warnings: string[]): Array<Record<string, string>> {
   const lines = csv.split(/\r?\n/).filter((line) => line.trim().length > 0);
@@ -421,7 +427,7 @@ function parseCsvLine(line: string): string[] {
 }
 
 /**
- * Parse a numeric field, accepting N/A or blank values as null.
+ * Parse numeric input while ignoring blanks or "n/a".
  */
 function parseMaybeNumber(raw: string | undefined): number | null {
   if (typeof raw !== 'string') return null;
@@ -432,7 +438,7 @@ function parseMaybeNumber(raw: string | undefined): number | null {
 }
 
 /**
- * Add a warning message while keeping output capped.
+ * Append a warning while enforcing a fixed maximum count.
  */
 function addWarning(warnings: string[], message: string): void {
   if (warnings.length >= MAX_WARNING_COUNT) return;

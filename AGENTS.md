@@ -8,14 +8,14 @@ calibrate is a responsive calorie tracker (desktop + mobile web) for users who w
 - Backend: Node.js + TypeScript + Express
 - Auth: Email/password (Passport Local + cookie session)
 - Persistence: Postgres (Prisma ORM)
-- Deploy: Web-hosted and self-hostable via Docker (docker-compose with a DB service)
+- Deploy: Web-hosted and self-hostable via Docker (docker-compose app + proxy; Postgres external or separate service)
 
 ## MVP Scope (Required)
 - Authentication and multi-user support (self-hosted instances should support multiple accounts).
 - User profile required for calorie math:
   - Age (prefer storing date of birth), sex, height, current weight, timezone, unit preference (imperial/metric), activity level.
   - Target deficit selection: one of `250`, `500`, `750`, `1000` kcal/day.
-- Daily food logging (manual entry):
+- Daily food logging (manual entry required):
   - Food name, calories, meal category, and the user’s “day” (based on user timezone).
   - Fixed meal categories:
     - `Breakfast`, `Morning Snack`, `Lunch`, `Afternoon Snack`, `Dinner`, `Evening Snack`
@@ -26,6 +26,11 @@ calibrate is a responsive calorie tracker (desktop + mobile web) for users who w
   - Daily calories consumed vs. daily target.
   - Weight trend over time.
   - Goal projection (estimated date to reach target weight based on steady deficit).
+
+## Current Additions (Implemented)
+- External food search providers (Open Food Facts default; USDA optional with API key), including barcode lookups.
+- My Foods library + recipe builder with ingredient snapshots for reuse.
+- Lose It CSV import for food logs + weights (onboarding + settings).
 
 ## Calorie/Weight Math (Initial Approach)
 - BMR: Mifflin–St Jeor.
@@ -46,11 +51,10 @@ calibrate is a responsive calorie tracker (desktop + mobile web) for users who w
   - Prefer storing timestamps in UTC and computing “local day” using the user’s timezone, or store a `local_date` (DATE) alongside events to avoid DST edge cases.
 
 ## Self-Hosting and Dev Workflow Requirements
-- Self-hosting: docker-compose with Postgres as a separate service.
+- Self-hosting: deploy with docker-compose; the `deploy/` stack expects an external Postgres unless you add one.
 - Local development (devcontainer): run services directly (e.g., `npm run dev` at repo root, or `npm run dev` in `backend/` and `frontend/`); avoid docker-in-docker workflows for development.
 
 ## Non-Goals (for MVP)
-- No external food database/search integration (manual entry only).
 - No native mobile app (web client only; keep the API shape amenable to future mobile).
 - No automatic activity import (steps/exercise) in MVP.
 - No “smart” deficit adjustments to hit a specific target date.
@@ -60,6 +64,9 @@ calibrate is a responsive calorie tracker (desktop + mobile web) for users who w
 - Prisma is configured for Postgres (Prisma schema + migrations live under `backend/prisma/`).
 - Prisma migrations should use ordinal prefixes (e.g., `0001_init`, `0002_...`) for folder names. When running `prisma migrate dev`, pass an ordinal in the `--name` (it will still be timestamp-prefixed by Prisma; rename to the ordinal style before sharing if still local/unapplied).
 - Add concise documentation comments to new components and functions to capture intent, behavior, and rationale (avoid hand-wavy summaries; prefer clear “why/how” notes).
+- Local-day grouping is stored as date-only fields (`FoodLog.local_date`, `BodyMetric.date`) derived from `User.timezone`; keep timezone math consistent in logging + imports.
+- Food data providers live in `backend/src/services/foodData`; `FOOD_DATA_PROVIDER` selects the provider (`openfoodfacts` default, `usda` requires `USDA_API_KEY`).
+- Dev seed data creates `test@calibratehealth.app`; `AUTO_LOGIN_TEST_USER=true` auto-logs in locally, and `/dev/test/reset-test-user-onboarding` (or `npm run dev:reset-test-user-onboarding`) resets onboarding.
 
 ## Code Review Preferences (UI / Frontend)
 - Avoid magic numbers for layout/styling (e.g., widths, opacities); prefer named constants, theme tokens, or wrapper presets.

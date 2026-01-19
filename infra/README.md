@@ -8,6 +8,9 @@ This repo deploys `calibratehealth.app` using:
 - Route 53 for DNS (+ ACM DNS validation records)
 - GitHub Actions for CI/CD (builds multi-arch images to GHCR + ECR; deploys by forcing a new ECS service deployment)
 
+Note: this configuration is tailored for `calibratehealth.app`. If you reuse it, update `app_name`/`domain_name` (via
+tfvars or CLI args) and the GitHub Actions env values (`IMAGE_NAME`, `AWS_REGION`) to match your setup.
+
 ## High-Level Flow
 
 1) `infra/bootstrap` creates shared/global resources:
@@ -64,13 +67,13 @@ terraform apply
 ```
 
 Important outputs:
-- `route53_nameservers` (set these at Porkbun)
+- `route53_nameservers` (set these at your domain registrar)
 - `terraform_state_bucket_name` + `terraform_lock_table_name` (used for env state)
 - `github_*_role_arn` (set as GitHub Actions secrets)
 
-### 2) Delegate DNS from Porkbun -> Route 53
+### 2) Delegate DNS from your registrar -> Route 53
 
-In Porkbun for `calibratehealth.app`, set the nameservers to the `route53_nameservers` output.
+In your domain registrar, set the nameservers to the `route53_nameservers` output.
 Propagation can take a bit; Route 53 records will start working after delegation is live.
 
 ### 3) Initialize remote state for each env
@@ -117,6 +120,12 @@ Notes:
 - ECS injects `SESSION_SECRET` from this secret.
 - DB credentials come from the RDS-managed secret (`manage_master_user_password = true`); ECS injects `DB_USER` and `DB_PASSWORD` from that secret.
 - Secret rotations trigger an ECS redeploy so tasks refresh DB credentials (requires Secrets Manager events via CloudTrail management events).
+- To add more runtime secrets (e.g., `USDA_API_KEY`), extend the app secret JSON and map the key in `module.service.secrets`.
+
+## App runtime configuration
+
+Non-secret config goes in the `environment` map for each env (`infra/envs/*/main.tf`). Secrets belong in the app secret
+JSON and must be mapped in `module.service.secrets` so ECS injects them.
 
 ## GitHub Actions configuration
 
@@ -128,10 +137,16 @@ In the GitHub repo settings, add secrets:
 
 Also create a GitHub Environment named `production` and require reviewers.
 
+Set GitHub Actions variables for smoke tests:
+
+- `STAGING_BASE_URL` (e.g., https://staging.your-domain.com)
+- `PROD_BASE_URL` (e.g., https://your-domain.com)
+
 ## Deploying
 
 - Release (staging + prod): run the "Cut Release Tag" workflow to create a `vMAJOR.MINOR.PATCH` tag and trigger "Build and Deploy Release". The prod deploy job will appear in the run gated behind the `production` Environment approval.
 - Staging (manual rebuild/deploy): run the "Build and Deploy Release" workflow via `workflow_dispatch` to rebuild and deploy the `staging` image tag without cutting a release.
+- Staging (force redeploy): run the "Deploy Staging" workflow to restart ECS using the existing `staging` tag.
 - Prod (emergency/rollback): run the "Deploy Prod" workflow to retag a specific `sha-*` image to `prod` in ECR, then force a new ECS deployment.
 
 Tip: To enforce monotonically increasing releases, protect `v*` tags (GitHub ruleset/tag protection) so they can only be created via GitHub Actions (or a small maintainer set).
