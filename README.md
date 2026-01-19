@@ -10,13 +10,22 @@ If you self-host, your data stays in your own database.
 
 Note: calibrate is not medical advice.
 
-## Features (MVP)
+## Features
 
 - Multi-user accounts (email/password)
 - Profile-driven calorie math (Mifflin-St Jeor BMR, activity-based TDEE, fixed daily deficit targets)
-- Daily food logging with fixed meal categories
+- Daily food logging with fixed meal categories (manual entry + food database search)
+- Food search + barcode scanning (Open Food Facts default; USDA optional with API key)
+- My Foods library + recipe builder for reusable entries
+- Lose It CSV import (food logs + weigh-ins)
 - Weight logging + trend visualization
 - Goal projection from a steady deficit
+
+## Docs
+
+- Deployment (Compose self-hosting): `deploy/README.md`
+- AWS infra (ECS Fargate): `infra/README.md`
+- Frontend dev/build/PWA: `frontend/README.md`
 
 ## Self-hosting
 
@@ -58,7 +67,8 @@ Quick start:
    docker compose up -d
    ```
 
-4. Apply DB migrations once (first deploy, or after pulling changes with new migrations):
+4. Optional: apply DB migrations explicitly (first deploy, or after pulling changes with new migrations). The production
+   image runs `npm run db:migrate` on startup, but running it manually lets you control timing:
 
    ```sh
    docker compose exec app npm run db:migrate
@@ -68,15 +78,15 @@ Notes:
 
 - Caddy needs ports 80/443 reachable from the internet (and DNS pointing at the machine) to get HTTPS certificates.
 - This stack expects you to provide a Postgres database (managed or self-hosted).
-- If you want Postgres in Docker on the same machine, use a managed DB or adapt the Postgres service in
-  `docker-compose.yml`.
+- If you want Postgres in Docker on the same machine, add a Postgres service to `deploy/docker-compose.yml`
+  (see the repo root `docker-compose.yml` for a dev example).
 
 See [deploy/README.md](deploy/README.md) for required env vars, staging options, and notes.
 
 ### Option B: AWS (Terraform)
 
 The `infra/` folder contains the Terraform + GitHub Actions workflow used to deploy `calibratehealth.app`
-(EC2 running Docker Compose, RDS Postgres, Route 53, and deploys via SSM).
+(ECS Fargate + ALB, RDS Postgres, Route 53, and deploys via GitHub Actions).
 It is a good starting point for deploying to your own AWS account, but it is opinionated and you'll likely want to
 customize names/domains to match your setup.
 
@@ -94,7 +104,7 @@ Full guide (including required secrets and exact commands): [infra/README.md](in
 ### Quickstart (devcontainer)
 
 The devcontainer runs `npm run setup` automatically (installs deps + generates the Prisma client). On start it also runs
-`npm run db:push:reset` and `npm run db:seed`.
+`npm --prefix backend run db:push:reset` and `npm --prefix backend run db:seed`.
 
 This repo supports a repo-local `.env` file (gitignored) for devcontainer secrets. Start by copying `.env.example` to
 `.env`, then rebuild the devcontainer so `.devcontainer/.env` is regenerated and Docker can pass the values into the
@@ -133,6 +143,14 @@ The devcontainer installs `gh`, passes the token into the container (as `GH_TOKE
 - `gh` to use the token without prompting.
 - `git push` to use an HTTPS *push* URL for `origin` (fetch stays as-is) with credentials supplied by `gh`.
 
+#### Dev test user (optional)
+
+The seed script creates a deterministic local test account (`test@calibratehealth.app`). To speed up onboarding
+iterations you can auto-login this user and reset its onboarding state:
+
+- Start with auto-login enabled: `npm run dev:test` (sets `AUTO_LOGIN_TEST_USER=true`)
+- Reset the test user onboarding state: `npm run dev:reset-test-user-onboarding`
+
 ### Quickstart (local)
 
 Prereqs: Node.js + npm, and a Postgres database.
@@ -153,6 +171,8 @@ If you see Prisma errors like "The table `public.User` does not exist", you have
 ### Common scripts
 
 - `npm run dev`: runs backend + frontend together (`backend/` + `frontend/`).
+- `npm run dev:test`: same as `npm run dev`, but auto-logs in the seeded dev user.
+- `npm run dev:reset-test-user-onboarding`: reset the dev test user to pre-onboarding.
 - `npm run dev:backend`: runs only the backend (`http://localhost:3000`).
 - `npm run dev:frontend`: runs only the frontend (`http://localhost:5173`).
 - `npm run setup`: installs deps in `backend/` and `frontend/` and runs `prisma generate` (does not modify the DB).
@@ -163,7 +183,8 @@ More:
 
 - `npm run db:migrate:dev`: create/apply new migrations during local development.
 - `npm run db:reset`: destructive reset (drops data and recreates schema).
-- `npm run db:push:reset`: dev-only schema reset using `prisma db push` (fast, skips migrations).
+- `npm run db:seed`: seed deterministic dev data (test user + sample logs).
+- `npm --prefix backend run db:push:reset`: dev-only schema reset using `prisma db push` (fast, skips migrations).
 - `npm run db:studio`: Prisma Studio (DB browser).
 - `npm run build`: build the frontend.
 - `npm run lint`: lint the frontend.
@@ -199,6 +220,7 @@ Recommended backend env vars:
 - `NODE_ENV=production` (or `staging` for staging)
 - `DATABASE_URL=...`
 - `SESSION_SECRET=...` (use a different value for staging vs prod)
+- `FRONTEND_DIST_DIR=...` when the backend should serve the built SPA (the production Docker image sets this already)
 
 Notes:
 
