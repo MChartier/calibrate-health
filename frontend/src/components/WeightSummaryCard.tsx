@@ -11,6 +11,9 @@ import SectionHeader from '../ui/SectionHeader';
 import { findMetricOnOrBeforeDate, toDatePart, useMetricsQuery } from '../queries/metrics';
 import { useI18n } from '../i18n/useI18n';
 
+/**
+ * Log weight summary card with "as of" context and quick entry CTA.
+ */
 const EM_DASH = '\u2014';
 // Duration used for "date switch" value transitions.
 const WEIGHT_SUMMARY_TWEEN_DURATION_MS = 520;

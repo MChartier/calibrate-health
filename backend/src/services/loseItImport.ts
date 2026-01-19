@@ -3,6 +3,9 @@ import AdmZip from 'adm-zip';
 import { MealPeriod, type WeightUnit } from '@prisma/client';
 import { parseLocalDateOnly } from '../utils/date';
 
+/**
+ * Parse Lose It exports into normalized food/weight/body-fat records.
+ */
 const MAX_WARNING_COUNT = 20; // Cap warning output to keep responses readable.
 const IMPORT_ENTRY_HOUR_UTC = 12; // Midday UTC keeps date-only entries stable across time zones.
 const MAX_ZIP_ENTRY_BYTES = 5 * 1024 * 1024; // Guardrail for maximum uncompressed CSV entry size.

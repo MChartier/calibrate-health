@@ -1,3 +1,6 @@
+/**
+ * Shared food data provider types used by provider implementations and routes.
+ */
 export type FoodDataSource = 'usda' | 'openFoodFacts';
 
 export interface Nutrients {

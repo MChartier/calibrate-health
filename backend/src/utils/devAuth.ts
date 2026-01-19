@@ -3,6 +3,9 @@ import prisma from '../config/database';
 import { ensureDevTestData } from '../services/devTestData';
 import { shouldAutoLoginTestUser } from './devAutoLoginPolicy';
 
+/**
+ * Dev-only auto-login middleware for the deterministic test user.
+ */
 const TEST_USER_EMAIL = 'test@calibratehealth.app';
 
 /**

@@ -24,6 +24,9 @@ import SectionHeader from '../ui/SectionHeader';
 import { getDefaultHeightUnitForWeightUnit } from '../utils/unitPreferences';
 import { useI18n } from '../i18n/useI18n';
 
+/**
+ * Profile page helpers and autosaved form logic for BMR/TDEE inputs.
+ */
 const AUTOSAVE_DELAY_MS = 450;
 
 type ParsedHeight = {
@@ -73,8 +76,7 @@ function buildFeetInchesHeightPatch(feet: string, inches: string): UserProfilePa
 }
 
 /**
- * Profile is focused on body-profile inputs used for calorie math (BMR/TDEE).
- * Account settings (photo/password) live in Settings.
+ * Profile editor for body profile details with autosave.
  */
 const Profile: React.FC = () => {
     const theme = useTheme();

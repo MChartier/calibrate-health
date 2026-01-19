@@ -1,5 +1,10 @@
 import type { GoalMode } from './goalValidation';
 
+/**
+ * Goal tracking helpers for projections, date formatting, and progress math.
+ *
+ * Keeps UI math and display rules consistent across goal-related components.
+ */
 const EM_DASH = '\u2014';
 
 export type GoalProjection = {
@@ -227,4 +232,3 @@ export function computeGoalProjection(opts: {
         detail: `Based on ${paceLabel} ${baselineLabel}.`
     };
 }
-

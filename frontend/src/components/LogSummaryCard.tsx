@@ -14,6 +14,11 @@ import { useUserProfileQuery } from '../queries/userProfile';
 import { useFoodLogQuery } from '../queries/foodLog';
 import { useI18n } from '../i18n/useI18n';
 
+/**
+ * Log summary card UI for daily calories vs target.
+ *
+ * Handles local-date math, gauge animation, and dashboard vs /log presentation.
+ */
 const GAUGE_WIDTH = 200;
 const GAUGE_HEIGHT = 140;
 const GAUGE_START_ANGLE = -90;
@@ -149,6 +154,9 @@ export type LogSummaryCardProps = {
     date?: string;
 };
 
+/**
+ * LogSummaryCard shows the daily calorie balance with optional dashboard CTA behavior.
+ */
 const LogSummaryCard: React.FC<LogSummaryCardProps> = ({ dashboardMode = false, date }) => {
     const { user } = useAuth();
     const { t } = useI18n();

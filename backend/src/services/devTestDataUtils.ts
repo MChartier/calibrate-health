@@ -131,11 +131,7 @@ export function getPastWeekDates(timeZone: string, now: Date = new Date()): Date
 }
 
 /**
- * Choose a deterministic created_at timestamp that matches the earliest seeded local day.
- *
- * The /log page clamps its minimum selectable day to the user's account creation local day.
- * We set created_at to land on the earliest seeded local_date (when formatted in the user's
- * timezone), so all generated seed days remain selectable without widening bounds globally.
+ * Choose a deterministic created_at timestamp that keeps seeded days within /log bounds.
  */
 export function getSeedUserCreatedAt(seedDays: Date[], timeZone: string): Date {
   const earliestSeedDay = seedDays[0];

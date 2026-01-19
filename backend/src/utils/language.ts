@@ -1,3 +1,6 @@
+/**
+ * Supported language codes for UI preferences.
+ */
 export const SUPPORTED_LANGUAGES = {
   EN: 'en',
   ES: 'es',
@@ -18,4 +21,3 @@ export function isSupportedLanguage(value: unknown): value is SupportedLanguage 
     value === SUPPORTED_LANGUAGES.RU
   );
 }
-

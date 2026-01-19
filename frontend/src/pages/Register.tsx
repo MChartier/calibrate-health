@@ -7,6 +7,9 @@ import AppCard from '../ui/AppCard';
 import SectionHeader from '../ui/SectionHeader';
 import { useI18n } from '../i18n/useI18n';
 
+/**
+ * Registration page that creates a session and routes into onboarding.
+ */
 const Register: React.FC = () => {
     const { t } = useI18n();
     const [email, setEmail] = useState('');

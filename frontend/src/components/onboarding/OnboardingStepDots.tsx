@@ -2,6 +2,9 @@ import React from 'react';
 import { Box, Typography } from '@mui/material';
 import type { OnboardingStep } from './types';
 
+/**
+ * Compact onboarding progress indicator (dots + labels).
+ */
 export type OnboardingStepDotsProps = {
     steps: OnboardingStep[];
     activeStepIndex: number;

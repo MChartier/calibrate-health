@@ -39,6 +39,11 @@ import { getApiErrorMessage } from '../utils/apiError';
 import { useDebouncedValue } from '../hooks/useDebouncedValue';
 import { useI18n } from '../i18n/useI18n';
 
+/**
+ * Food entry form used in the log dialog.
+ *
+ * Supports manual entries, "My Foods"/recipes, and provider search in one flow.
+ */
 type Props = {
     onSuccess?: () => void;
     date?: string;
@@ -92,6 +97,9 @@ const mergeUniqueResults = (current: NormalizedFoodItem[], nextPage: NormalizedF
     return Array.from(nextById.values());
 };
 
+/**
+ * FoodEntryForm orchestrates search, selection, and submission for a single log entry.
+ */
 const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
     const queryClient = useQueryClient();
     const { t } = useI18n();

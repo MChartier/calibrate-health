@@ -16,6 +16,9 @@ import {
 } from '@mui/material';
 import type { BrowserBarcodeReader, DecodeHintType } from '@zxing/library';
 
+/**
+ * Barcode scanning dialog with native BarcodeDetector support and ZXing fallback.
+ */
 const UPC_BARCODE_FORMATS: BarcodeFormat[] = ['upc_a', 'upc_e', 'ean_13', 'ean_8'];
 
 // Controls how frequently we attempt a native BarcodeDetector scan against the live video element.

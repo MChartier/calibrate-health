@@ -9,8 +9,16 @@ import {
 import { getUtcTodayDateOnlyInTimeZone, normalizeToUtcDateOnly } from '../utils/date';
 import { parsePositiveInteger } from '../utils/requestParsing';
 
+/**
+ * Weight and body metric log endpoints.
+ *
+ * We store metrics as date-only values and convert weights using the user's unit preference.
+ */
 const router = express.Router();
 
+/**
+ * Ensure the session is authenticated before accessing metrics.
+ */
 const isAuthenticated = (req: express.Request, res: express.Response, next: express.NextFunction) => {
     if (req.isAuthenticated()) {
         return next();
@@ -60,6 +68,7 @@ router.post('/', async (req, res) => {
         let metricDate: Date;
         try {
             const timeZone = typeof user.timezone === 'string' ? user.timezone : 'UTC';
+            // Store date-only values in UTC, derived from the user's local day.
             metricDate = date
                 ? normalizeToUtcDateOnly(date)
                 : (() => {

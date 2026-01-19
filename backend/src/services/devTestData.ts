@@ -6,6 +6,9 @@ import { SUPPORTED_LANGUAGES } from '../utils/language';
 import { ActivityLevel, HeightUnit, Sex, WeightUnit } from '@prisma/client';
 import { buildMealLogsForDay, getPastWeekDates, getSeedUserCreatedAt } from './devTestDataUtils';
 
+/**
+ * Deterministic dev seed data helpers (test user, goals, metrics, food logs).
+ */
 const TEST_USER_EMAIL = 'test@calibratehealth.app';
 const TEST_USER_PASSWORD = 'password123';
 const TEST_USER_TIMEZONE = 'America/Los_Angeles';

@@ -4,8 +4,16 @@ import { parseDailyDeficit } from '../utils/goalDeficit';
 import { gramsToWeight, parseWeightToGrams, type WeightUnit } from '../utils/units';
 import { validateGoalWeightsForDailyDeficit } from '../utils/goalValidation';
 
+/**
+ * Goal endpoints for creating and fetching the current goal.
+ *
+ * We store weights in grams and always return the latest goal, converted to the user's unit preference.
+ */
 const router = express.Router();
 
+/**
+ * Ensure the session is authenticated before accessing goal data.
+ */
 const isAuthenticated = (req: express.Request, res: express.Response, next: express.NextFunction) => {
     if (req.isAuthenticated()) {
         return next();
@@ -19,6 +27,7 @@ router.get('/', async (req, res) => {
     const user = req.user as any;
     const weightUnit = (user.weight_unit ?? 'KG') as WeightUnit;
     try {
+        // Goals are append-only; the latest row is treated as the active goal.
         const goal = await prisma.goal.findFirst({
             where: { user_id: user.id },
             orderBy: { created_at: 'desc' }
@@ -43,6 +52,7 @@ router.post('/', async (req, res) => {
     const { start_weight, target_weight, target_date, daily_deficit } = req.body;
     const weightUnit = (user.weight_unit ?? 'KG') as WeightUnit;
     try {
+        // Validate allowed deficit choices to keep projections and targets consistent with the UI.
         const parsedDailyDeficit = parseDailyDeficit(daily_deficit);
         if (parsedDailyDeficit === null) {
             return res.status(400).json({ message: 'daily_deficit must be one of 0, ±250, ±500, ±750, or ±1000' });
@@ -57,6 +67,7 @@ router.post('/', async (req, res) => {
             return res.status(400).json({ message: 'Invalid start weight or target weight' });
         }
 
+        // Ensure the weight direction matches the deficit sign (loss vs gain vs maintain).
         const coherenceError = validateGoalWeightsForDailyDeficit({
             dailyDeficit: parsedDailyDeficit,
             startWeightGrams: start_weight_grams,

@@ -43,6 +43,11 @@ import {
     parseFiniteNumber
 } from '../utils/onboardingConversions';
 
+/**
+ * Onboarding wizard page that collects goal + profile details and computes a plan summary.
+ *
+ * The flow is split into guided steps with a fixed footer for question-by-question inputs.
+ */
 type OnboardingStage = 'intro' | 'wizard' | 'summary';
 
 /**
@@ -182,6 +187,9 @@ const INITIAL_ATTEMPTED_ABOUT_QUESTIONS: Record<AboutQuestionKey, boolean> = {
     height: false
 };
 
+/**
+ * Onboarding orchestrates the multi-step setup flow and persists profile/goal data.
+ */
 const Onboarding: React.FC = () => {
     const theme = useTheme();
     const { user, updateProfile, updateUnitPreferences } = useAuth();

@@ -1,3 +1,6 @@
+/**
+ * Serving-size display helpers for food log snapshots.
+ */
 const NON_PLURALIZABLE_UNITS = new Set(
     [
         'g',
@@ -105,4 +108,3 @@ export function formatServingSnapshotLabel(args: {
 
     return `${servingsText} x ${formatQuantity(servingSizeQuantity)} ${pluralizeUnitLabel(unitLabel, servings)}`;
 }
-

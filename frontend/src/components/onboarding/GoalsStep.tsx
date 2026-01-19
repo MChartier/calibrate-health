@@ -7,6 +7,9 @@ import type { GoalsQuestionKey } from './types';
 import { formatWeeklyWeightChange, inferGoalModeFromWeights, parseFiniteNumber } from '../../utils/onboardingConversions';
 import OnboardingSummaryRow from './OnboardingSummaryRow';
 
+/**
+ * Onboarding "Goals" step summary display.
+ */
 export type GoalsStepProps = {
     weightUnit: WeightUnit;
     currentWeight: string;

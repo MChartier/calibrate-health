@@ -5,11 +5,7 @@ import { useAuth } from '../context/useAuth';
 import Landing from './Landing';
 
 /**
- * Home
- *
- * The public index route:
- * - unauthenticated visitors see the marketing landing page
- * - authenticated users are routed directly into the app
+ * Public index route that routes signed-in users to /log and shows landing for guests.
  */
 const Home: React.FC = () => {
     const { user, isLoading } = useAuth();
@@ -30,4 +26,3 @@ const Home: React.FC = () => {
 };
 
 export default Home;
-

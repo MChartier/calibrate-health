@@ -9,11 +9,11 @@ import InlineStatusLine from '../../ui/InlineStatusLine';
 import SectionHeader from '../../ui/SectionHeader';
 import LoseItImportDialog, { type LoseItImportSummary } from './LoseItImportDialog';
 
+/**
+ * Settings card that launches the Lose It import flow.
+ */
 const CARD_CONTENT_SPACING = 1.5; // Keeps description and CTA grouped without crowding.
 
-/**
- * Settings card that launches the Lose It import dialog.
- */
 const LoseItImportCard: React.FC = () => {
     const { t } = useI18n();
     const { user } = useAuth();

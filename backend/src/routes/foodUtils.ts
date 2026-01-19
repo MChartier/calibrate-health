@@ -8,6 +8,11 @@ import {
   resolveLanguageCode,
 } from '../utils/requestParsing';
 
+/**
+ * Parsing/validation helpers for food search and food log endpoints.
+ *
+ * These stay Prisma-free so they can be unit tested without database setup.
+ */
 export type FoodSearchParams = {
   query: string | undefined;
   barcode: string | undefined;

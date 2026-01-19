@@ -10,6 +10,11 @@ import {
 } from './authContext';
 import type { AppLanguage } from '../i18n/languages';
 
+/**
+ * AuthProvider bootstraps session state and exposes auth/profile mutations.
+ *
+ * It also keeps React Query caches in sync when the active user changes.
+ */
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [user, setUser] = useState<User | null>(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -33,6 +38,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         };
     }, [queryClient]);
 
+    /**
+     * Fetch the current session user (best-effort) to hydrate the app shell.
+     */
     const checkAuth = useCallback(async () => {
         try {
             const res = await axios.get('/auth/me');

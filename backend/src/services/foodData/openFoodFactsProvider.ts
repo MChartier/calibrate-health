@@ -1,6 +1,9 @@
 import { FoodDataProvider, FoodMeasure, FoodSearchRequest, FoodSearchResult, NormalizedFoodItem, Nutrients } from './types';
 import { parseNumber, round, scaleNutrients } from './utils';
 
+/**
+ * Open Food Facts provider implementation with local relevance ranking.
+ */
 type OpenFoodFactsProduct = {
     code?: string;
     product_name?: string;
@@ -32,6 +35,9 @@ const OFF_MIN_PRODUCT_SCORE_FOR_POSSESSIVE_QUERY = 20;
 
 const OFF_STOP_WORDS = new Set(['the', 'and', 'or', 'with', 'for', 'from', 'of', 'to', 'in', 'on']);
 
+/**
+ * Food data provider backed by Open Food Facts search and product endpoints.
+ */
 class OpenFoodFactsProvider implements FoodDataProvider {
     public name = 'openFoodFacts' as const;
     public supportsBarcodeLookup = true;

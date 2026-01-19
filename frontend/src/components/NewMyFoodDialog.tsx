@@ -15,6 +15,9 @@ import type { MealPeriod } from '../types/mealPeriod';
 import type { MyFood } from '../types/myFoods';
 import { getApiErrorMessage } from '../utils/apiError';
 
+/**
+ * Dialog for creating a new My Food entry (name, serving size, calories).
+ */
 const COMMON_SERVING_UNIT_LABELS = [
     'serving',
     'g',
@@ -48,9 +51,6 @@ type Props = {
     onLogged?: () => void;
 };
 
-/**
- * Dialog for creating a user-owned My Food definition (name + serving size + calories).
- */
 const NewMyFoodDialog: React.FC<Props> = ({ open, date, mealPeriod, onClose, onSaved, onLogged }) => {
     const [name, setName] = useState('');
     const [servingSizeQuantity, setServingSizeQuantity] = useState('1');
@@ -206,4 +206,3 @@ const NewMyFoodDialog: React.FC<Props> = ({ open, date, mealPeriod, onClose, onS
 };
 
 export default NewMyFoodDialog;
-

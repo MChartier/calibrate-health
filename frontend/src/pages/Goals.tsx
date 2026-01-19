@@ -19,6 +19,9 @@ import AppCard from '../ui/AppCard';
 import SectionHeader from '../ui/SectionHeader';
 import { useI18n } from '../i18n/useI18n';
 
+/**
+ * Goals page with progress card and weight history chart.
+ */
 type MetricEntry = {
     id: number;
     date: string;
