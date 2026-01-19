@@ -13,7 +13,7 @@ const isAuthenticated = (req: express.Request, res: express.Response, next: expr
     res.status(401).json({ message: 'Not authenticated' });
 };
 
-router.use(isAuthenticated);
+router.use(isAuthenticated);  
 
 router.get('/', async (req, res) => {
     const user = req.user as any;

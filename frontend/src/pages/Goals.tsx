@@ -1,9 +1,11 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
     Alert,
     Box,
     Skeleton,
     Stack,
+    ToggleButton,
+    ToggleButtonGroup,
     Typography
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
@@ -13,7 +15,8 @@ import { LineChart } from '@mui/x-charts/LineChart';
 import { ChartsReferenceLine } from '@mui/x-charts/ChartsReferenceLine';
 import GoalTrackerCard from '../components/GoalTrackerCard';
 import { useAuth } from '../context/useAuth';
-import { parseDateOnlyToLocalDate } from '../utils/goalTracking';
+import { addDays, parseDateOnlyToLocalDate, startOfLocalDay } from '../utils/goalTracking';
+import { MS_PER_DAY } from '../utils/date';
 import AppPage from '../ui/AppPage';
 import AppCard from '../ui/AppCard';
 import SectionHeader from '../ui/SectionHeader';
@@ -36,6 +39,49 @@ type GoalResponse = {
 };
 
 type WeightPoint = { date: Date; weight: number };
+
+const WEIGHT_HISTORY_RANGES = {
+    WEEK: 'WEEK',
+    MONTH: 'MONTH',
+    YEAR: 'YEAR',
+    ALL: 'ALL'
+} as const;
+
+type WeightHistoryRange = (typeof WEIGHT_HISTORY_RANGES)[keyof typeof WEIGHT_HISTORY_RANGES];
+
+const RANGE_DAYS_BY_KEY: Record<Exclude<WeightHistoryRange, 'ALL'>, number> = {
+    WEEK: 7,
+    MONTH: 30,
+    YEAR: 365
+};
+
+const RANGE_CONTROL_MIN_POINTS = 45; // Minimum number of points before showing the range control.
+const RANGE_CONTROL_MIN_DAYS = 45; // Minimum span (in days) before showing the range control.
+
+/**
+ * Compute the local-day start date for a range window ending at the latest weight entry.
+ */
+function getRangeStartDate(endDate: Date, range: WeightHistoryRange): Date | null {
+    if (range === WEIGHT_HISTORY_RANGES.ALL) return null;
+    const days = RANGE_DAYS_BY_KEY[range];
+    return addDays(startOfLocalDay(endDate), -(days - 1));
+}
+
+/**
+ * Choose x-axis date label granularity based on the displayed span.
+ */
+function getAxisLabelOptions(spanDays: number): Intl.DateTimeFormatOptions {
+    if (spanDays <= 14) {
+        return { weekday: 'short', month: 'short', day: 'numeric' };
+    }
+    if (spanDays <= 120) {
+        return { month: 'short', day: 'numeric' };
+    }
+    if (spanDays <= 370) {
+        return { month: 'short' };
+    }
+    return { month: 'short', year: 'numeric' };
+}
 
 const Goals: React.FC = () => {
     const { user } = useAuth();
@@ -66,6 +112,8 @@ const Goals: React.FC = () => {
     const metrics = useMemo(() => metricsQuery.data ?? [], [metricsQuery.data]);
     const goal = goalQuery.data;
 
+    const [selectedRange, setSelectedRange] = useState<WeightHistoryRange | null>(null);
+
     const points = useMemo(() => {
         const parsed: WeightPoint[] = metrics
             .filter((metric) => typeof metric.weight === 'number' && Number.isFinite(metric.weight))
@@ -80,8 +128,47 @@ const Goals: React.FC = () => {
         return parsed;
     }, [metrics]);
 
-    const xData = useMemo(() => points.map((point) => point.date), [points]);
-    const yData = useMemo(() => points.map((point) => point.weight), [points]);
+    const spanDays = useMemo(() => {
+        if (points.length === 0) return 0;
+        const start = startOfLocalDay(points[0].date);
+        const end = startOfLocalDay(points[points.length - 1].date);
+        const diffDays = Math.round((end.getTime() - start.getTime()) / MS_PER_DAY);
+        return Math.max(1, diffDays + 1);
+    }, [points]);
+
+    const defaultRange = useMemo<WeightHistoryRange>(() => {
+        if (spanDays >= RANGE_DAYS_BY_KEY.YEAR) return WEIGHT_HISTORY_RANGES.YEAR;
+        if (spanDays >= RANGE_DAYS_BY_KEY.MONTH) return WEIGHT_HISTORY_RANGES.MONTH;
+        return WEIGHT_HISTORY_RANGES.ALL;
+    }, [spanDays]);
+
+    const activeRange = selectedRange ?? defaultRange;
+
+    const filteredPoints = useMemo(() => {
+        if (points.length === 0) return [];
+        const endDate = points[points.length - 1].date;
+        const startDate = getRangeStartDate(endDate, activeRange);
+        if (!startDate) return points;
+        return points.filter((point) => point.date >= startDate);
+    }, [activeRange, points]);
+
+    const activeSpanDays = useMemo(() => {
+        if (filteredPoints.length === 0) return 0;
+        const start = startOfLocalDay(filteredPoints[0].date);
+        const end = startOfLocalDay(filteredPoints[filteredPoints.length - 1].date);
+        const diffDays = Math.round((end.getTime() - start.getTime()) / MS_PER_DAY);
+        return Math.max(1, diffDays + 1);
+    }, [filteredPoints]);
+
+    const xAxisLabelOptions = useMemo(() => getAxisLabelOptions(activeSpanDays), [activeSpanDays]);
+    const xAxisFormatter = useMemo(() => new Intl.DateTimeFormat(undefined, xAxisLabelOptions), [xAxisLabelOptions]);
+    const tooltipDateFormatter = useMemo(
+        () => new Intl.DateTimeFormat(undefined, { year: 'numeric', month: 'short', day: 'numeric' }),
+        []
+    );
+
+    const xData = useMemo(() => filteredPoints.map((point) => point.date), [filteredPoints]);
+    const yData = useMemo(() => filteredPoints.map((point) => point.weight), [filteredPoints]);
 
     const targetIsValid = typeof goal?.target_weight === 'number' && Number.isFinite(goal.target_weight);
     const yDomain = useMemo(() => {
@@ -93,6 +180,25 @@ const Goals: React.FC = () => {
         const padding = range * 0.1;
         return { min: min - padding, max: max + padding };
     }, [goal, targetIsValid, yData]);
+
+    const showRangeControl = spanDays >= RANGE_CONTROL_MIN_DAYS || points.length >= RANGE_CONTROL_MIN_POINTS;
+    const rangeControl = showRangeControl ? (
+        <ToggleButtonGroup
+            color="primary"
+            exclusive
+            size="small"
+            value={activeRange}
+            onChange={(_event, next) => {
+                if (next) setSelectedRange(next);
+            }}
+            aria-label={t('goals.weightHistoryRangeLabel')}
+        >
+            <ToggleButton value={WEIGHT_HISTORY_RANGES.WEEK}>{t('goals.weightHistoryRangeWeek')}</ToggleButton>
+            <ToggleButton value={WEIGHT_HISTORY_RANGES.MONTH}>{t('goals.weightHistoryRangeMonth')}</ToggleButton>
+            <ToggleButton value={WEIGHT_HISTORY_RANGES.YEAR}>{t('goals.weightHistoryRangeYear')}</ToggleButton>
+            <ToggleButton value={WEIGHT_HISTORY_RANGES.ALL}>{t('goals.weightHistoryRangeAll')}</ToggleButton>
+        </ToggleButtonGroup>
+    ) : null;
 
     let weightHistoryContent: React.ReactNode;
 
@@ -110,13 +216,16 @@ const Goals: React.FC = () => {
     } else {
         weightHistoryContent = (
             <Stack spacing={1.5}>
+                {rangeControl && <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>{rangeControl}</Box>}
                 <LineChart
                     xAxis={[
                         {
                             data: xData,
                             scaleType: 'time',
-                            valueFormatter: (value) =>
-                                new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' }).format(value)
+                            valueFormatter: (value, context) =>
+                                context?.location === 'tooltip'
+                                    ? tooltipDateFormatter.format(value)
+                                    : xAxisFormatter.format(value)
                         }
                     ]}
                     yAxis={[

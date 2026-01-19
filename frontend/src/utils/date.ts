@@ -4,6 +4,8 @@
  * This is used for "local day" semantics (e.g. log grouping) where the calendar date
  * must be stable across DST and independent of the server's timezone.
  */
+export const MS_PER_DAY = 24 * 60 * 60 * 1000; // Duration constant for day-based UI math.
+
 export function formatDateToLocalDateString(date: Date, timeZone: string): string {
     const tz = timeZone.trim();
 
