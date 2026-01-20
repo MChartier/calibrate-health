@@ -7,6 +7,9 @@ import AppCard from '../ui/AppCard';
 import SectionHeader from '../ui/SectionHeader';
 import { useI18n } from '../i18n/useI18n';
 
+/**
+ * Login page that establishes a session and routes to the log view.
+ */
 const Login: React.FC = () => {
     const { t } = useI18n();
     const [email, setEmail] = useState('');

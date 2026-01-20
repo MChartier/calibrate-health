@@ -37,6 +37,9 @@ import { useI18n } from '../i18n/useI18n';
 import { QUICK_ADD_FAB_PAGE_BOTTOM_PADDING } from '../constants/quickAddFab';
 import LogQuickAddFab from './LogQuickAddFab';
 
+/**
+ * App shell layout with navigation chrome and quick-add entry points.
+ */
 const drawerWidth = 240;
 const GITHUB_REPO_URL = 'https://github.com/mchartier/calibrate-health';
 

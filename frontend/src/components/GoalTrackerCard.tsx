@@ -17,6 +17,11 @@ import {
     getMaintenanceTolerance
 } from '../utils/goalTracking';
 
+/**
+ * Goal tracker card UI shared by the dashboard and goals page.
+ *
+ * Encapsulates progress visualization and goal projection messaging.
+ */
 const EM_DASH = '\u2014';
 
 type ModeAlpha = { light: number; dark: number };

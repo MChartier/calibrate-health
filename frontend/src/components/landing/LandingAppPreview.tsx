@@ -4,6 +4,9 @@ import { alpha, type Theme } from '@mui/material/styles';
 import { Gauge } from '@mui/x-charts/Gauge';
 import SectionHeader from '../../ui/SectionHeader';
 
+/**
+ * Mocked preview of core app cards for the marketing landing page.
+ */
 const GAUGE_WIDTH_PX = 200; // Matches the in-app log summary gauge for a familiar silhouette.
 const GAUGE_HEIGHT_PX = 140; // Matches the in-app log summary gauge for a familiar silhouette.
 const GAUGE_START_ANGLE = -90;

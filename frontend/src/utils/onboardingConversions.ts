@@ -2,6 +2,9 @@ import { WEIGHT_UNITS, type WeightUnit } from '../context/authContext';
 import type { GoalMode } from './goalValidation';
 
 /**
+ * Unit conversion helpers used in onboarding forms.
+ */
+/**
  * Parse a user-entered numeric string into a finite number.
  *
  * Returns null for empty/invalid inputs so callers can safely skip conversions.

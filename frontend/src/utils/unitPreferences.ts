@@ -1,5 +1,8 @@
 import type { HeightUnit, WeightUnit } from '../context/authContext';
 
+/**
+ * Locale-driven unit preference helpers (imperial vs metric defaults).
+ */
 const IMPERIAL_REGION_CODES = new Set(['US', 'LR', 'MM']);
 
 /**

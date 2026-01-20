@@ -25,17 +25,9 @@ import { useI18n } from '../i18n/useI18n';
 import { getActivityLevelOptions } from '../constants/activityLevels';
 
 /**
- * CalorieTargetBanner
+ * CalorieTargetBanner shows the daily target and a brief breakdown of how it was computed.
  *
- * Intent:
- * - Surface the user's calorie target prominently on dashboard/profile.
- * - Make the math transparent: BMR (sex/age/height/weight) -> activity multiplier -> goal adjustment -> target.
- * - Use an "invoice" style breakdown: green positives (energy available), red negatives (deficit), right-aligned numbers, clear total.
- *
- * UX rationale:
- * - If data is missing, explain which inputs are needed.
- * - Dashboard keeps details behind a tooltip to stay "at a glance"; Profile inlines the same breakdown in a collapsible section.
- * - Colors reinforce add/remove semantics while keeping the primary target readable in neutral text.
+ * Dashboard keeps details in a tooltip; Profile shows the full breakdown inline.
  */
 
 export type CalorieTargetBannerProps = {

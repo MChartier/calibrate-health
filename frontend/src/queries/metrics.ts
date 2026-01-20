@@ -1,6 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
 
+/**
+ * React Query helpers for weight metrics.
+ */
 export type MetricEntry = {
     id: number;
     date: string;
@@ -54,4 +57,3 @@ export function findMetricOnOrBeforeDate(metrics: MetricEntry[], targetDate: str
     }
     return null;
 }
-

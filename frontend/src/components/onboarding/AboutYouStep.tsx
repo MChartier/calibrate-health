@@ -8,6 +8,9 @@ import OnboardingSummaryRow from './OnboardingSummaryRow';
 import { useI18n } from '../../i18n/useI18n';
 
 /**
+ * Onboarding "About you" step summary display.
+ */
+/**
  * Format a YYYY-MM-DD date string into a friendly, locale-aware label without timezone shifting.
  */
 function formatDobForSummary(value: string): string {

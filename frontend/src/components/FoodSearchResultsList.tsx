@@ -11,6 +11,9 @@ import {
 } from '@mui/material';
 import type { NormalizedFoodItem } from '../types/food';
 
+/**
+ * Scrollable search results list with optional infinite scroll.
+ */
 type Props = {
     items: NormalizedFoodItem[];
     selectedItemId: string | null;
@@ -148,4 +151,3 @@ const FoodSearchResultsList: React.FC<Props> = ({
 };
 
 export default FoodSearchResultsList;
-

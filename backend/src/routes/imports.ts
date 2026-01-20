@@ -12,6 +12,9 @@ import {
   type LoseItWeightImport,
 } from '../services/loseItImport';
 
+/**
+ * Import endpoints for Lose It zip exports (preview + execute).
+ */
 const router = express.Router();
 
 const MAX_LOSE_IT_ZIP_BYTES = 25 * 1024 * 1024; // Protects memory usage for zip parsing.
@@ -34,6 +37,9 @@ type LoseItImportOptions = {
   includeBodyFat: boolean;
 };
 
+/**
+ * Ensure the session is authenticated before importing data.
+ */
 const isAuthenticated = (req: express.Request, res: express.Response, next: express.NextFunction) => {
   if (req.isAuthenticated()) {
     return next();
@@ -154,7 +160,7 @@ router.post('/loseit/execute', upload.single('file'), async (req, res) => {
 export default router;
 
 /**
- * Validate and normalize the import options payload from a multipart form.
+ * Parse the import options payload and validate conflict modes.
  */
 function parseImportOptions(body: Record<string, unknown> | undefined):
   | { ok: true; value: LoseItImportOptions }
@@ -193,7 +199,7 @@ function parseImportOptions(body: Record<string, unknown> | undefined):
 }
 
 /**
- * Count how many imported food days already have logs for the user.
+ * Count the number of import food log days that already exist for the user.
  */
 async function countExistingFoodDays(userId: number, importDates: Set<string>): Promise<number> {
   const { minDate, maxDate } = computeDateRangeAsDates(importDates);
@@ -216,7 +222,7 @@ async function countExistingFoodDays(userId: number, importDates: Set<string>): 
 }
 
 /**
- * Count how many imported weight days already have metrics for the user.
+ * Count the number of import weight days that already exist for the user.
  */
 async function countExistingWeightDays(userId: number, importDates: Set<string>): Promise<number> {
   const { minDate, maxDate } = computeDateRangeAsDates(importDates);
@@ -239,7 +245,7 @@ async function countExistingWeightDays(userId: number, importDates: Set<string>)
 }
 
 /**
- * Apply conflict rules and return only the food log rows we should insert.
+ * Build createMany rows for food logs, respecting conflict mode semantics.
  */
 async function resolveFoodLogsToInsert(opts: {
   userId: number;
@@ -309,7 +315,7 @@ async function resolveFoodLogsToInsert(opts: {
 }
 
 /**
- * Build a map of existing food log fingerprints per day to support merge/dedupe.
+ * Build a map of existing food log fingerprints by local date for merge deduping.
  */
 async function buildExistingFoodFingerprintMap(opts: {
   userId: number;
@@ -362,7 +368,7 @@ async function buildExistingFoodFingerprintMap(opts: {
 }
 
 /**
- * Derive a stable fingerprint for deduping food log entries.
+ * Create a deterministic key for comparing food log rows during merge.
  */
 function buildFoodFingerprint(entry: LoseItFoodLogImport): string {
   const normalizedName = entry.name.trim().toLowerCase();
@@ -372,7 +378,7 @@ function buildFoodFingerprint(entry: LoseItFoodLogImport): string {
 }
 
 /**
- * Import weight entries using the requested conflict behavior.
+ * Apply weight imports, honoring KEEP/OVERWRITE behavior and optional body fat updates.
  */
 async function applyWeightImports(opts: {
   userId: number;
@@ -497,7 +503,7 @@ async function applyWeightImports(opts: {
 }
 
 /**
- * Compute the min/max date from an array of date strings.
+ * Compute min/max ISO date strings for an ordered range.
  */
 function computeDateRange(dates: string[]): { startDate: string | null; endDate: string | null } {
   if (dates.length === 0) return { startDate: null, endDate: null };
@@ -511,7 +517,7 @@ function computeDateRange(dates: string[]): { startDate: string | null; endDate:
 }
 
 /**
- * Convert date strings to Date values and compute the min/max range.
+ * Compute min/max Date values from a set of ISO date strings.
  */
 function computeDateRangeAsDates(dates: Set<string>): { minDate: Date | null; maxDate: Date | null } {
   if (dates.size === 0) return { minDate: null, maxDate: null };
@@ -522,21 +528,21 @@ function computeDateRangeAsDates(dates: Set<string>): { minDate: Date | null; ma
 }
 
 /**
- * Format a UTC-normalized Date into a YYYY-MM-DD key string.
+ * Convert a Date to a stable YYYY-MM-DD key (UTC).
  */
 function formatUtcDateKey(date: Date): string {
   return date.toISOString().slice(0, 10);
 }
 
 /**
- * Round numeric values to limit noise in dedupe fingerprints.
+ * Round to a fixed precision for fingerprint comparisons.
  */
 function roundForFingerprint(value: number): string {
   return String(Math.round(value * 1000) / 1000);
 }
 
 /**
- * Chunk an array into fixed-size batches.
+ * Split an array into fixed-size batches.
  */
 function chunkArray<T>(items: T[], size: number): T[][] {
   const result: T[][] = [];

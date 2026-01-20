@@ -1,6 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
 
+/**
+ * React Query helpers for user profile + calorie summary data.
+ */
 export type UserProfile = {
     timezone: string;
     date_of_birth: string | null;

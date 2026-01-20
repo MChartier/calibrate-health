@@ -4,13 +4,13 @@ import prisma from '../config/database';
 import { resetDevTestUserToPreOnboardingState } from '../services/devTestData';
 import { serializeUserForClient, USER_CLIENT_SELECT } from '../utils/userSerialization';
 
+/**
+ * Dev-only test utilities (resetting deterministic accounts, etc.).
+ */
 const router = express.Router();
 
 /**
- * Ensure a request is only handled in non-deployed environments (i.e. not production/staging).
- *
- * We mount these routes only in dev, but keeping a runtime guard makes the intent explicit
- * and prevents accidental exposure if routing changes in the future.
+ * Guard dev routes even if they are accidentally mounted in production/staging.
  */
 const requireNonProduction = (
   _req: express.Request,

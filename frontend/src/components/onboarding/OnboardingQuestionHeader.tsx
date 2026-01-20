@@ -1,6 +1,9 @@
 import React from 'react';
 import { Box, Typography } from '@mui/material';
 
+/**
+ * Footer header used in the onboarding question area.
+ */
 export type OnboardingQuestionHeaderProps = {
     prompt: string;
     progressLabel: string;

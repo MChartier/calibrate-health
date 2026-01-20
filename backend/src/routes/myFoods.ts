@@ -4,8 +4,16 @@ import { parseNonNegativeNumber, parsePositiveInteger, parsePositiveNumber } fro
 import { buildExternalIngredientSnapshotRow, parseMyFoodIngredientInput } from './myFoodsRecipeUtils';
 import { createHttpError, isHttpError, normalizeMyFoodName, normalizeServingUnitLabel } from './myFoodsUtils';
 
+/**
+ * "My Foods" endpoints for user-defined foods and immutable recipe snapshots.
+ *
+ * Recipes store ingredient snapshots so future edits to source foods do not rewrite history.
+ */
 const router = express.Router();
 
+/**
+ * Ensure the session is authenticated before accessing "My Foods".
+ */
 const isAuthenticated = (req: express.Request, res: express.Response, next: express.NextFunction) => {
     if (req.isAuthenticated()) {
         return next();
@@ -89,6 +97,7 @@ router.post('/foods', async (req, res) => {
     }
 
     try {
+        // Store as a reusable per-serving item that can be referenced in logs or recipes.
         const created = await prisma.myFood.create({
             data: {
                 user_id: user.id,
@@ -162,6 +171,7 @@ router.post('/recipes', async (req, res) => {
     const ingredients = ingredientsRaw as CreateRecipeIngredientInput[];
 
     try {
+        // Snapshot ingredient data + recipe totals in a single transaction to keep them consistent.
         const created = await prisma.$transaction(async (tx) => {
             const ingredientRows: Array<{
                 sort_order: number;

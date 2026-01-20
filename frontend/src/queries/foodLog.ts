@@ -2,6 +2,9 @@ import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
 import type { MealPeriod } from '../types/mealPeriod';
 
+/**
+ * React Query helpers for daily food log data.
+ */
 export type FoodLogEntry = {
     id: number;
     meal_period: MealPeriod;

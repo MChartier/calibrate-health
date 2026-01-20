@@ -36,6 +36,11 @@ import SectionHeader from '../ui/SectionHeader';
 import MealPeriodIcon from './MealPeriodIcon';
 import { useI18n } from '../i18n/useI18n';
 
+/**
+ * Food log UI grouped by meal period with edit/delete controls.
+ *
+ * Handles shaped loading placeholders to keep layout stable between day switches.
+ */
 type FoodLogEntry = {
     id: number | string;
     meal_period?: MealPeriod;
@@ -115,6 +120,9 @@ export type FoodLogMealsProps = {
     isLoading?: boolean;
 };
 
+/**
+ * FoodLogMeals renders the day log grouped by meal and supports inline edits/deletes.
+ */
 const FoodLogMeals: React.FC<FoodLogMealsProps> = ({ logs, isLoading = false }) => {
     const queryClient = useQueryClient();
     const theme = useTheme();
@@ -145,6 +153,7 @@ const FoodLogMeals: React.FC<FoodLogMealsProps> = ({ logs, isLoading = false }) 
     const previousCountsRef = useRef<Record<MealPeriod, number> | null>(null);
 
     useEffect(() => {
+        // Auto-expand meal sections when a previously empty meal gains entries.
         const counts = createMealPeriodRecord((mealPeriod) => grouped[mealPeriod].length);
 
         const previousCounts = previousCountsRef.current;

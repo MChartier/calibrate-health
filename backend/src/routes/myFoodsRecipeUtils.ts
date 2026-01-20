@@ -1,6 +1,11 @@
 import { parseNonNegativeNumber, parsePositiveInteger, parsePositiveNumber } from '../utils/requestParsing';
 import { createHttpError, normalizeMyFoodName, normalizeOptionalString, type HttpError } from './myFoodsUtils';
 
+/**
+ * Parsing helpers for recipe ingredient payloads.
+ *
+ * These functions produce immutable snapshot rows for "My Foods" recipes.
+ */
 export type ExternalIngredientSnapshotRow = {
   sort_order: number;
   source: 'EXTERNAL';
@@ -77,4 +82,3 @@ export function buildExternalIngredientSnapshotRow(
     },
   };
 }
-

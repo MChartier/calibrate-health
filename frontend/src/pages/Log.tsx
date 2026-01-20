@@ -33,6 +33,11 @@ import { fetchFoodLog, foodLogQueryKey, useFoodLogQuery } from '../queries/foodL
 import AppCard from '../ui/AppCard';
 import { useI18n } from '../i18n/useI18n';
 
+/**
+ * Daily food log page with date navigation and quick-add shortcuts.
+ *
+ * Manages local-day bounds and keeps quick-add dialogs in sync with URL actions.
+ */
 const LOG_DATE_PICKER_OVERLAY_FOCUS_OUTLINE_PX = 2; // Thickness of the keyboard focus ring on the date control overlay.
 const LOG_DATE_PICKER_OVERLAY_FOCUS_OUTLINE_OFFSET_PX = 2; // Gap between the overlay outline and the field chrome.
 

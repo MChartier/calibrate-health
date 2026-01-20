@@ -7,6 +7,9 @@ import { DAILY_DEFICIT_CHOICE_STRINGS, normalizeDailyDeficitChoiceAbsValue } fro
 import { getGoalModeFromDailyDeficit, roundWeight } from '../utils/goalTracking';
 import { useI18n } from '../i18n/useI18n';
 
+/**
+ * Goal editor form for creating or replacing a goal.
+ */
 export type GoalEditorProps = {
     weightUnitLabel: string;
     initialStartWeight: number | null;

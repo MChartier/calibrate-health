@@ -10,6 +10,11 @@ import { isSupportedLanguage, type SupportedLanguage } from '../utils/language';
 import { MAX_PROFILE_IMAGE_BYTES, parseBase64DataUrl } from '../utils/profileImage';
 import { serializeUserForClient, USER_CLIENT_SELECT } from '../utils/userSerialization';
 
+/**
+ * Authenticated user account routes (profile, preferences, password, avatar).
+ *
+ * These endpoints keep the session user payload aligned with the latest stored profile fields.
+ */
 const router = express.Router();
 
 const MIN_PASSWORD_LENGTH = 8;
@@ -54,6 +59,9 @@ const parsePasswordChangePayload = (body: unknown): PasswordChangeParseResult =>
   return { ok: true, currentPassword, newPassword };
 };
 
+/**
+ * Ensure the session is authenticated before accessing user settings.
+ */
 const isAuthenticated = (
   req: express.Request,
   res: express.Response,
@@ -240,6 +248,7 @@ router.get('/profile', async (req, res) => {
       select: { weight_grams: true }
     });
 
+    // Shape the profile subset used by the settings UI and calorie math.
     const profile = {
       timezone: dbUser.timezone,
       date_of_birth: dbUser.date_of_birth,
@@ -250,6 +259,7 @@ router.get('/profile', async (req, res) => {
       height_unit: dbUser.height_unit
     };
 
+    // Summarize calorie targets using the freshest weight and goal on record.
     const calorieSummary = buildCalorieSummary({
       weight_grams: latestMetric?.weight_grams ?? null,
       profile,

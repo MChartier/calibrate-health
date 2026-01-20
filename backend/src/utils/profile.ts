@@ -1,5 +1,10 @@
 import { ActivityLevel, Sex } from '@prisma/client';
 
+/**
+ * Profile-based calorie math helpers (BMR/TDEE/targets) plus type guards.
+ *
+ * Centralizes the equations and rounding rules used by routes and services.
+ */
 export type ProfileInput = {
     date_of_birth?: Date | null;
     sex?: Sex | null;
@@ -7,6 +12,7 @@ export type ProfileInput = {
     activity_level?: ActivityLevel | null;
 };
 
+// Activity multipliers used to convert BMR -> TDEE.
 const activityMultipliers: Record<ActivityLevel, number> = {
     SEDENTARY: 1.2,
     LIGHT: 1.375,
@@ -15,8 +21,14 @@ const activityMultipliers: Record<ActivityLevel, number> = {
     VERY_ACTIVE: 1.9
 };
 
+/**
+ * Type guard for supported sex values stored by Prisma.
+ */
 export const isSex = (value: unknown): value is Sex => value === 'MALE' || value === 'FEMALE';
 
+/**
+ * Type guard for supported activity levels stored by Prisma.
+ */
 export const isActivityLevel = (value: unknown): value is ActivityLevel =>
     value === 'SEDENTARY' ||
     value === 'LIGHT' ||
@@ -53,14 +65,25 @@ const MIFFLIN_ST_JEOR_VALID_AGE_YEARS = {
 const clampAgeForMifflinStJeor = (ageYears: number): number =>
     Math.min(MIFFLIN_ST_JEOR_VALID_AGE_YEARS.max, Math.max(MIFFLIN_ST_JEOR_VALID_AGE_YEARS.min, ageYears));
 
+/**
+ * Compute BMR (Basal Metabolic Rate) using the Mifflin-St Jeor equation.
+ *
+ * Input values are expected in kg/cm/years; age is clamped to the validated range.
+ */
 export const calculateBmr = (sex: Sex, weightKg: number, heightCm: number, ageYears: number): number => {
     const clampedAgeYears = clampAgeForMifflinStJeor(ageYears);
     const base = 10 * weightKg + 6.25 * heightCm - 5 * clampedAgeYears;
     return Math.round((sex === 'MALE' ? base + 5 : base - 161) * 10) / 10;
 };
 
+/**
+ * Resolve the activity multiplier for TDEE calculations.
+ */
 export const activityMultiplier = (activityLevel: ActivityLevel): number => activityMultipliers[activityLevel];
 
+/**
+ * Convert stored grams into kilograms (rounded to 2 decimals for display/math).
+ */
 export const gramsToKg = (grams: number): number => Math.round((grams / 1000) * 100) / 100;
 
 export type CalorieSummary = {
@@ -72,6 +95,11 @@ export type CalorieSummary = {
     deficit?: number | null;
 };
 
+/**
+ * Build a calorie summary from the user's profile, latest weight, and chosen deficit.
+ *
+ * Returns the set of missing prerequisites so the UI can explain why targets are unavailable.
+ */
 export const buildCalorieSummary = (opts: {
     weight_grams?: number | null;
     profile: ProfileInput;

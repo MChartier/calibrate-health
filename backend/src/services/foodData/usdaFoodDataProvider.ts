@@ -1,6 +1,9 @@
 import { FoodDataProvider, FoodMeasure, FoodSearchRequest, FoodSearchResult, NormalizedFoodItem, Nutrients } from './types';
 import { parseNumber, round, scaleNutrients } from './utils';
 
+/**
+ * USDA FoodData Central provider implementation with local ranking.
+ */
 type FoodNutrient = {
     nutrientId?: number;
     nutrientName?: string;
@@ -66,6 +69,9 @@ const USDA_BRANDED_DATA_TYPES = ['Branded'];
 // Fetch extra candidates so local relevance ranking can surface strong matches even when the upstream scoring is noisy.
 const USDA_MAX_UPSTREAM_PAGE_SIZE = 200;
 
+/**
+ * Food data provider backed by USDA FoodData Central search endpoints.
+ */
 class UsdaFoodDataProvider implements FoodDataProvider {
     public name = 'usda' as const;
     public supportsBarcodeLookup = true;

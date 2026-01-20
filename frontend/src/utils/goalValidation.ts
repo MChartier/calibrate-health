@@ -1,3 +1,6 @@
+/**
+ * Client-side goal validation aligned with backend rules.
+ */
 export type GoalMode = 'lose' | 'maintain' | 'gain';
 
 /**
