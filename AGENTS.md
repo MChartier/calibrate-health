@@ -28,7 +28,7 @@ calibrate is a responsive calorie tracker (desktop + mobile web) for users who w
   - Goal projection (estimated date to reach target weight based on steady deficit).
 
 ## Current Additions (Implemented)
-- External food search providers (Open Food Facts default; USDA optional with API key), including barcode lookups.
+- External food search providers (FatSecret default; USDA optional with API key; Open Food Facts fallback), including barcode lookups.
 - My Foods library + recipe builder with ingredient snapshots for reuse.
 - Lose It CSV import for food logs + weights (onboarding + settings).
 
@@ -65,7 +65,7 @@ calibrate is a responsive calorie tracker (desktop + mobile web) for users who w
 - Prisma migrations should use ordinal prefixes (e.g., `0001_init`, `0002_...`) for folder names. When running `prisma migrate dev`, pass an ordinal in the `--name` (it will still be timestamp-prefixed by Prisma; rename to the ordinal style before sharing if still local/unapplied).
 - Add concise documentation comments to new components and functions to capture intent, behavior, and rationale (avoid hand-wavy summaries; prefer clear “why/how” notes).
 - Local-day grouping is stored as date-only fields (`FoodLog.local_date`, `BodyMetric.date`) derived from `User.timezone`; keep timezone math consistent in logging + imports.
-- Food data providers live in `backend/src/services/foodData`; `FOOD_DATA_PROVIDER` selects the provider (`openfoodfacts` default, `usda` requires `USDA_API_KEY`).
+- Food data providers live in `backend/src/services/foodData`; `FOOD_DATA_PROVIDER` selects the provider (`fatsecret` default; FatSecret requires `FATSECRET_CLIENT_ID` + `FATSECRET_CLIENT_SECRET`; USDA requires `USDA_API_KEY`).
 - Dev seed data creates `test@calibratehealth.app`; `AUTO_LOGIN_TEST_USER=true` auto-logs in locally, and `/dev/test/reset-test-user-onboarding` (or `npm run dev:reset-test-user-onboarding`) resets onboarding.
 
 ## Code Review Preferences (UI / Frontend)

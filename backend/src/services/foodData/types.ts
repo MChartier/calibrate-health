@@ -1,4 +1,4 @@
-export type FoodDataSource = 'usda' | 'openFoodFacts';
+export type FoodDataSource = 'fatsecret' | 'usda' | 'openFoodFacts';
 
 export interface Nutrients {
     calories: number;

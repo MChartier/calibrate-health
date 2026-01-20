@@ -141,6 +141,12 @@ repo_codex_api_key="$(read_repo_dotenv_value "CODEX_API_KEY")"
 repo_openai_api_key="$(read_repo_dotenv_value "OPENAI_API_KEY")"
 codex_api_key="${CODEX_API_KEY:-${OPENAI_API_KEY:-${repo_codex_api_key:-${repo_openai_api_key:-}}}}"
 
+repo_fatsecret_client_id="$(read_repo_dotenv_value "FATSECRET_CLIENT_ID")"
+fatsecret_client_id="${FATSECRET_CLIENT_ID:-${repo_fatsecret_client_id:-}}"
+
+repo_fatsecret_client_secret="$(read_repo_dotenv_value "FATSECRET_CLIENT_SECRET")"
+fatsecret_client_secret="${FATSECRET_CLIENT_SECRET:-${repo_fatsecret_client_secret:-}}"
+
 repo_usda_api_key="$(read_repo_dotenv_value "USDA_API_KEY")"
 usda_api_key="${USDA_API_KEY:-${repo_usda_api_key:-}}"
 
@@ -165,6 +171,8 @@ VITE_WORKTREE_COLOR=${vite_worktree_color}
 VITE_WORKTREE_NAME=${workspace_name}
 VITE_WORKTREE_IS_MAIN=${is_main_worktree}
 # Sourced from the host environment or repo-local `.env` during devcontainer init so Docker can pass it into the container.
+FATSECRET_CLIENT_ID=${fatsecret_client_id}
+FATSECRET_CLIENT_SECRET=${fatsecret_client_secret}
 USDA_API_KEY=${usda_api_key}
 CODEX_API_KEY=${codex_api_key}
 GITHUB_TOKEN=${github_token}

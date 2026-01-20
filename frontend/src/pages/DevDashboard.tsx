@@ -21,7 +21,7 @@ import QrCodeScannerIcon from '@mui/icons-material/QrCodeScannerRounded';
 import axios from 'axios';
 import BarcodeScannerDialog from '../components/BarcodeScannerDialog';
 
-type FoodDataSource = 'usda' | 'openFoodFacts';
+type FoodDataSource = 'fatsecret' | 'usda' | 'openFoodFacts';
 
 type FoodMeasure = {
     label: string;

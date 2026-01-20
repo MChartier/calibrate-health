@@ -1,4 +1,4 @@
-export type FoodDataSource = 'usda' | 'openFoodFacts';
+export type FoodDataSource = 'fatsecret' | 'usda' | 'openFoodFacts';
 
 export type Nutrients = {
     calories: number;
@@ -31,4 +31,3 @@ export type NormalizedFoodItem = {
     nutrientsPer100g?: Nutrients;
     nutrientsForRequest?: NutrientsForQuantity;
 };
-

@@ -10,6 +10,7 @@ import {
     Typography
 } from '@mui/material';
 import type { NormalizedFoodItem } from '../types/food';
+import { formatMeasureLabelForDisplay, getMeasureCalories, getPreferredMeasure } from '../utils/foodMeasure';
 
 type Props = {
     items: NormalizedFoodItem[];
@@ -29,7 +30,12 @@ const buildSecondaryText = (item: NormalizedFoodItem): string => {
     if (item.brand) {
         parts.push(item.brand);
     }
-    if (item.nutrientsPer100g?.calories !== undefined) {
+    const preferredMeasure = getPreferredMeasure(item);
+    const measureCalories = preferredMeasure ? getMeasureCalories(item, preferredMeasure, 1) : null;
+    if (preferredMeasure && measureCalories) {
+        const measureLabel = formatMeasureLabelForDisplay(preferredMeasure.label);
+        parts.push(`${measureCalories.calories} kcal per ${measureLabel}`);
+    } else if (item.nutrientsPer100g?.calories !== undefined) {
         parts.push(`${item.nutrientsPer100g.calories} kcal/100g`);
     }
     return parts.join(' | ');
@@ -148,4 +154,3 @@ const FoodSearchResultsList: React.FC<Props> = ({
 };
 
 export default FoodSearchResultsList;
-
