@@ -5,6 +5,9 @@
 # - Includes Prisma CLI + migrations so deployments can run `prisma migrate deploy` inside the container.
 
 FROM node:20-bookworm-slim AS base
+RUN apt-get update -y \
+    && apt-get install -y --no-install-recommends openssl ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 
 FROM base AS deps
