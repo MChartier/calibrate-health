@@ -13,6 +13,17 @@ export function normalizeToUtcDateOnly(input: unknown): Date {
   return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
 }
 
+/**
+ * Add calendar days to a UTC-normalized date without mutating the input.
+ *
+ * This keeps date math aligned with Postgres DATE semantics and avoids DST skew.
+ */
+export function addUtcDays(date: Date, deltaDays: number): Date {
+  const normalized = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+  normalized.setUTCDate(normalized.getUTCDate() + deltaDays);
+  return normalized;
+}
+
 export function getUtcTodayDateOnly(): Date {
   return normalizeToUtcDateOnly(new Date());
 }

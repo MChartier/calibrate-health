@@ -2,8 +2,10 @@ import React, { useMemo, useState } from 'react';
 import {
     Alert,
     Box,
+    FormControlLabel,
     Skeleton,
     Stack,
+    Switch,
     ToggleButton,
     ToggleButtonGroup,
     Typography
@@ -17,6 +19,7 @@ import GoalTrackerCard from '../components/GoalTrackerCard';
 import { useAuth } from '../context/useAuth';
 import { addDays, parseDateOnlyToLocalDate, startOfLocalDay } from '../utils/goalTracking';
 import { MS_PER_DAY } from '../utils/date';
+import { type MetricEntry, useMetricsQuery } from '../queries/metrics';
 import AppPage from '../ui/AppPage';
 import AppCard from '../ui/AppCard';
 import SectionHeader from '../ui/SectionHeader';
@@ -25,12 +28,6 @@ import { useI18n } from '../i18n/useI18n';
 /**
  * Goals page with progress card and weight history chart.
  */
-type MetricEntry = {
-    id: number;
-    date: string;
-    weight: number;
-};
-
 type GoalResponse = {
     id: number;
     user_id: number;
@@ -60,6 +57,9 @@ const RANGE_DAYS_BY_KEY: Record<Exclude<WeightHistoryRange, 'ALL'>, number> = {
 
 const RANGE_CONTROL_MIN_POINTS = 45; // Minimum number of points before showing the range control.
 const RANGE_CONTROL_MIN_DAYS = 45; // Minimum span (in days) before showing the range control.
+const SMOOTHING_WINDOW_DAYS = 7; // Rolling window length for weight history smoothing.
+const SMOOTHING_QUERY_VALUE = `${SMOOTHING_WINDOW_DAYS}d`;
+const CONTROLS_ROW_GAP = 1.5; // Spacing between weight history controls when wrapping.
 
 /**
  * Compute the local-day start date for a range window ending at the latest weight entry.
@@ -92,9 +92,17 @@ const Goals: React.FC = () => {
     const theme = useTheme();
     const sectionGap = theme.custom.layout.page.sectionGap;
     const unitLabel = user?.weight_unit === 'LB' ? 'lb' : 'kg';
-    const weightSeriesLabel = t('goals.weightSeriesLabel', { unit: unitLabel });
+    const rawWeightSeriesLabel = t('goals.weightSeriesLabel', { unit: unitLabel });
+    const smoothedWeightSeriesLabel = t('goals.weightSeriesLabelSmoothed', {
+        unit: unitLabel,
+        days: SMOOTHING_WINDOW_DAYS
+    });
     const legendSwatchSizePx = 12;
     const weightChartHeightPx = 320;
+    const smoothingLabel = t('goals.weightHistorySmoothingLabel', { days: SMOOTHING_WINDOW_DAYS });
+
+    const [isSmoothed, setIsSmoothed] = useState(false);
+    const [selectedRange, setSelectedRange] = useState<WeightHistoryRange | null>(null);
 
     const goalQuery = useQuery({
         queryKey: ['goal'],
@@ -104,18 +112,23 @@ const Goals: React.FC = () => {
         }
     });
 
-    const metricsQuery = useQuery({
-        queryKey: ['metrics'],
+    const rawMetricsQuery = useMetricsQuery();
+    const smoothedMetricsQuery = useQuery({
+        queryKey: ['metrics', 'history', SMOOTHING_QUERY_VALUE],
         queryFn: async (): Promise<MetricEntry[]> => {
-            const res = await axios.get('/api/metrics');
+            const res = await axios.get('/api/metrics', {
+                params: { smoothing: SMOOTHING_QUERY_VALUE }
+            });
             return Array.isArray(res.data) ? res.data : [];
-        }
+        },
+        enabled: isSmoothed
     });
 
+    const metricsQuery = isSmoothed ? smoothedMetricsQuery : rawMetricsQuery;
     const metrics = useMemo(() => metricsQuery.data ?? [], [metricsQuery.data]);
     const goal = goalQuery.data;
 
-    const [selectedRange, setSelectedRange] = useState<WeightHistoryRange | null>(null);
+    const weightSeriesLabel = isSmoothed ? smoothedWeightSeriesLabel : rawWeightSeriesLabel;
 
     const points = useMemo(() => {
         const parsed: WeightPoint[] = metrics
@@ -203,6 +216,35 @@ const Goals: React.FC = () => {
         </ToggleButtonGroup>
     ) : null;
 
+    const smoothingControl = (
+        <FormControlLabel
+            control={
+                <Switch
+                    checked={isSmoothed}
+                    onChange={(event) => setIsSmoothed(event.target.checked)}
+                    color="primary"
+                    size="small"
+                />
+            }
+            label={smoothingLabel}
+        />
+    );
+
+    const controlsRow = (
+        <Box
+            sx={{
+                display: 'flex',
+                flexWrap: 'wrap',
+                gap: CONTROLS_ROW_GAP,
+                alignItems: 'center',
+                justifyContent: showRangeControl ? 'space-between' : 'flex-end'
+            }}
+        >
+            {smoothingControl}
+            {rangeControl}
+        </Box>
+    );
+
     let weightHistoryContent: React.ReactNode;
 
     if (metricsQuery.isError) {
@@ -219,7 +261,7 @@ const Goals: React.FC = () => {
     } else {
         weightHistoryContent = (
             <Stack spacing={1.5}>
-                {rangeControl && <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>{rangeControl}</Box>}
+                {controlsRow}
                 <LineChart
                     xAxis={[
                         {
