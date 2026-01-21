@@ -7,6 +7,9 @@ import {
     type FoodSearchRequest
 } from '../services/foodData';
 
+/**
+ * Dev-only endpoints for food provider diagnostics and comparisons.
+ */
 const router = express.Router();
 
 /**

@@ -34,6 +34,9 @@ import { getApiErrorMessage } from '../utils/apiError';
 import { useDebouncedValue } from '../hooks/useDebouncedValue';
 import { getMeasureCalories, getPreferredMeasure, getPreferredMeasureLabel } from '../utils/foodMeasure';
 
+/**
+ * Dialog for creating a recipe from ingredient snapshots.
+ */
 const SEARCH_PAGE_SIZE = 10;
 
 const COMMON_SERVING_UNIT_LABELS = [
@@ -90,9 +93,6 @@ type Props = {
     onLogged?: () => void;
 };
 
-/**
- * Dialog for creating a recipe (a composed My Food) from ingredient snapshots.
- */
 const NewRecipeDialog: React.FC<Props> = ({ open, date, mealPeriod, onClose, onSaved, onLogged }) => {
     const [name, setName] = useState('');
     const [servingSizeQuantity, setServingSizeQuantity] = useState('1');

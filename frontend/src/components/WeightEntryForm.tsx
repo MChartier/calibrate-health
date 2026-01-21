@@ -30,6 +30,9 @@ import {
 } from '../queries/metrics';
 import { useI18n } from '../i18n/useI18n';
 
+/**
+ * Weight entry dialog content for logging or editing daily weigh-ins.
+ */
 type Props = {
     onSuccess?: () => void;
     date?: string;

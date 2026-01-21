@@ -4,6 +4,9 @@ import { useAuth } from '../context/useAuth';
 import { CircularProgress, Box, Alert, Button } from '@mui/material';
 import { useUserProfileQuery } from '../queries/userProfile';
 
+/**
+ * Authenticated route guard that redirects to onboarding when profile data is incomplete.
+ */
 const ProtectedRoute: React.FC = () => {
     const { user, isLoading } = useAuth();
     const location = useLocation();

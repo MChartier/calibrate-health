@@ -5,8 +5,11 @@ import CalorieTargetBanner from '../components/CalorieTargetBanner';
 import LogSummaryCard from '../components/LogSummaryCard';
 import GoalTrackerCard from '../components/GoalTrackerCard';
 
+/**
+ * Dashboard landing page for signed-in users.
+ */
 const Dashboard: React.FC = () => {
-    useAuth(); // ensure auth context is initialized
+    useAuth();
 
     return (
         <Box>

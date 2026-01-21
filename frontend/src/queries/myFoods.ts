@@ -2,6 +2,9 @@ import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
 import type { MyFood, MyFoodType } from '../types/myFoods';
 
+/**
+ * React Query helpers for the user's My Foods library.
+ */
 export type MyFoodsQueryArgs = {
     q?: string;
     type?: MyFoodType | 'ALL';
@@ -40,4 +43,3 @@ export function useMyFoodsQuery(args: MyFoodsQueryArgs, options?: { enabled?: bo
         enabled: options?.enabled
     });
 }
-

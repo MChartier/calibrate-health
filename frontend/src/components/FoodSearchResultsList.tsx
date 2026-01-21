@@ -12,6 +12,9 @@ import {
 import type { NormalizedFoodItem } from '../types/food';
 import { formatMeasureLabelForDisplay, getMeasureCalories, getPreferredMeasure } from '../utils/foodMeasure';
 
+/**
+ * Scrollable search results list with optional infinite scroll.
+ */
 type Props = {
     items: NormalizedFoodItem[];
     selectedItemId: string | null;

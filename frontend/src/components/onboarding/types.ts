@@ -1,3 +1,6 @@
+/**
+ * Shared onboarding step and question type aliases.
+ */
 export type OnboardingStepKey = 'goals' | 'about' | 'import';
 
 export type OnboardingStep = {

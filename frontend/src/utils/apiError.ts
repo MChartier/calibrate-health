@@ -1,6 +1,9 @@
 import axios from 'axios';
 
 /**
+ * Extract user-facing messages from API errors.
+ */
+/**
  * Extract a concise, user-facing message from an Axios error response.
  *
  * Backend routes typically respond with `{ message: string }` on validation failures.
@@ -16,4 +19,3 @@ export function getApiErrorMessage(error: unknown): string | null {
     const trimmed = message.trim();
     return trimmed.length > 0 ? trimmed : null;
 }
-

@@ -1,4 +1,7 @@
 /**
+ * Layout constants for onboarding step spacing and footer rhythm.
+ */
+/**
  * Controls vertical spacing within the onboarding card while keeping the UI compact on iPhone SE-class screens.
  */
 export const ONBOARDING_CARD_CONTENT_SPACING = 1.75;

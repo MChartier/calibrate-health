@@ -1,5 +1,8 @@
 import { MealPeriod } from '@prisma/client';
 
+/**
+ * Meal period parsing helpers for API payloads.
+ */
 const MEAL_PERIOD_VALUES = new Set<string>(Object.values(MealPeriod));
 
 /**
@@ -19,4 +22,3 @@ export function parseMealPeriod(value: unknown): MealPeriod | null {
   }
   return trimmed as MealPeriod;
 }
-

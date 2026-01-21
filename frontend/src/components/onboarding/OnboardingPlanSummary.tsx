@@ -5,6 +5,9 @@ import { getActivityLevelOptions } from '../../constants/activityLevels';
 import { computeGoalProjection, formatDateValue, getGoalModeFromDailyDeficit, roundWeight, startOfLocalDay } from '../../utils/goalTracking';
 import { useI18n } from '../../i18n/useI18n';
 
+/**
+ * Plan summary panel shown at the end of onboarding.
+ */
 const SUMMARY_NUMBER_FONT_WEIGHT = 900; // Makes the primary target feel like a "result", not just another form value.
 const BREAKDOWN_NUMBER_MIN_WIDTH_PX = 110; // Aligns right-hand numbers for scan-friendly math.
 const TARGET_DATE_LABEL_LETTER_SPACING = 0.5; // Keeps the label crisp and "badge-like" without feeling shouty.

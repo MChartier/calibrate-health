@@ -3,6 +3,9 @@ import OpenFoodFactsProvider from './openFoodFactsProvider';
 import UsdaFoodDataProvider from './usdaFoodDataProvider';
 import { FoodDataProvider, FoodDataSource } from './types';
 
+/**
+ * Food data provider registry and resolver helpers.
+ */
 type FoodDataProviderConfig = {
     label: string;
     supportsBarcodeLookup: boolean;
@@ -139,6 +142,9 @@ export const listFoodDataProviders = (): FoodDataProviderInfo[] => {
     });
 };
 
+/**
+ * Resolve the configured primary food data provider with a safe fallback.
+ */
 export const getFoodDataProvider = (): FoodDataProvider => {
     if (providerInstance) {
         return providerInstance;

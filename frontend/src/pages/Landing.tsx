@@ -16,6 +16,9 @@ import { usePrefersReducedMotion } from '../hooks/usePrefersReducedMotion';
 import { useI18n } from '../i18n/useI18n';
 import type { TranslationKey } from '../i18n/resources';
 
+/**
+ * Marketing landing page content for unauthenticated visitors.
+ */
 const HERO_BLOB_ANIMATION_DURATION_MS = 14000; // Slow drift for hero background blobs (disabled with prefers-reduced-motion).
 const HERO_BLOB_BLUR_PX = 46; // Keeps hero blobs "glowy" instead of drawing attention with sharp edges.
 const FEATURE_ICON_SIZE_PX = 44; // Consistent icon block size so the feature grid feels aligned.

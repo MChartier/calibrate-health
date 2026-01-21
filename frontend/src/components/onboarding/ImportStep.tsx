@@ -3,6 +3,9 @@ import { Alert, Box, Button, Chip, Stack, Typography } from '@mui/material';
 import { useI18n } from '../../i18n/useI18n';
 import type { LoseItImportSummary } from '../imports/LoseItImportDialog';
 
+/**
+ * Onboarding step that introduces optional import flows.
+ */
 const IMPORT_STEP_SPACING = 2; // Controls vertical rhythm in the import step content.
 const IMPORT_BADGE_GAP = 1; // Keeps the optional badge aligned with the title.
 

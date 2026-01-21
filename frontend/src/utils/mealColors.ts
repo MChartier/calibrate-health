@@ -3,6 +3,9 @@ import { darken, lighten } from '@mui/material/styles';
 import type { MealPeriod } from '../types/mealPeriod';
 
 /**
+ * Theme-aware accent colors for meal period UI.
+ */
+/**
  * Return an accent color for a meal period derived from the active theme.
  *
  * We keep the palette cohesive with the current app theme (light/dark + future tweaks) while still

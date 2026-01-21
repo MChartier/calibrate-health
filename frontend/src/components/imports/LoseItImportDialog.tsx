@@ -25,6 +25,9 @@ import { WEIGHT_UNITS, type WeightUnit } from '../../context/authContext';
 import { useI18n } from '../../i18n/useI18n';
 import { getApiErrorMessage } from '../../utils/apiError';
 
+/**
+ * Lose It import dialog with preview + execute steps.
+ */
 const DIALOG_CONTENT_SPACING = 2; // Controls vertical spacing between import wizard sections.
 const SUMMARY_ROW_SPACING = 0.75; // Keeps preview counts visually grouped but compact.
 const OPTIONS_SECTION_SPACING = 1.5; // Separates option controls without overwhelming the dialog.

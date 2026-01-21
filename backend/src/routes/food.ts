@@ -5,8 +5,16 @@ import { parseLocalDateOnly } from '../utils/date';
 import { parsePositiveInteger } from '../utils/requestParsing';
 import { parseFoodLogCreateBody, parseFoodLogUpdateBody, parseFoodSearchParams } from './foodUtils';
 
+/**
+ * Food log and food search endpoints.
+ *
+ * Logs are stored with a local-date column so day grouping respects the user's timezone.
+ */
 const router = express.Router();
 
+/**
+ * Ensure the session is authenticated before accessing food data.
+ */
 const isAuthenticated = (req: express.Request, res: express.Response, next: express.NextFunction) => {
     if (req.isAuthenticated()) {
         return next();
@@ -17,6 +25,7 @@ const isAuthenticated = (req: express.Request, res: express.Response, next: expr
 router.use(isAuthenticated);
 
 router.get('/search', async (req, res) => {
+    // Parse query params once so providers can remain agnostic to Express and raw query types.
     const parsed = parseFoodSearchParams({
         query: req.query as Record<string, unknown>,
         acceptLanguageHeader: req.headers['accept-language']
@@ -29,6 +38,7 @@ router.get('/search', async (req, res) => {
     const provider = getFoodDataProvider();
 
     try {
+        // Providers return normalized items so the frontend can show a consistent search UI.
         const result = await provider.searchFoods(parsed.params);
 
         res.json({
@@ -51,6 +61,7 @@ router.get('/', async (req, res) => {
     let whereClause: any = { user_id: user.id };
     if (requestedDate !== undefined) {
         try {
+            // Treat date strings as local-date values (no timezone math).
             whereClause.local_date = parseLocalDateOnly(requestedDate);
         } catch {
             return res.status(400).json({ message: 'Invalid date' });
@@ -71,6 +82,7 @@ router.get('/', async (req, res) => {
 router.post('/', async (req, res) => {
     const user = req.user as any;
     try {
+        // Supports either manual entries or a "my food" reference with servings.
         const parsedBody = parseFoodLogCreateBody({
             body: req.body,
             userTimeZone: user.timezone
@@ -81,6 +93,7 @@ router.post('/', async (req, res) => {
         }
 
         if (parsedBody.kind === 'MY_FOOD') {
+            // Snapshot serving details so later edits to "my foods" do not mutate historical logs.
             const myFood = await prisma.myFood.findFirst({
                 where: { id: parsedBody.myFoodId, user_id: user.id }
             });
