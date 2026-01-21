@@ -9,6 +9,7 @@
     "dev:reset-test-user-onboarding": "node scripts/reset-test-user-onboarding.mjs",
       "dev:backend": "npm --prefix backend run dev",
       "dev:frontend": "npm --prefix frontend run dev",
+      "preview": "node scripts/preview.mjs",
       "prisma:generate": "npm --prefix backend run prisma:generate",
       "db:migrate": "npm --prefix backend run db:migrate",
     "db:migrate:dev": "npm --prefix backend run db:migrate:dev",

@@ -26,6 +26,10 @@ function isRunningInContainer() {
 
 const QUICK_ADD_SHORTCUT_ICON = 'pwa-192x192.png' // Icon used for quick-add PWA shortcuts.
 const QUICK_ADD_SHORTCUT_BASE_PATH = '/log' // Base route for quick-add shortcuts.
+// Reuse an existing app window so PWA shortcuts navigate instead of spawning a new instance.
+const PWA_LAUNCH_HANDLER = {
+  client_mode: 'navigate-existing',
+} as const
 
 /**
  * Build a log-route URL that triggers a quick-add dialog when opened from a PWA shortcut.
@@ -66,6 +70,7 @@ function getPwaOptions(): Partial<VitePWAOptions> {
       theme_color: '#111827',
       background_color: '#111827',
       display: 'standalone',
+      launch_handler: PWA_LAUNCH_HANDLER,
       start_url: '/',
       scope: '/',
       icons: [
@@ -142,6 +147,12 @@ const devServerPort =
   devServerPortValue > 0
     ? devServerPortValue
     : undefined
+const backendProxyTarget = 'http://localhost:3000' // Local backend origin for dev/preview proxies.
+const backendProxy = {
+  '/auth': backendProxyTarget,
+  '/api': backendProxyTarget,
+  '/dev/test': backendProxyTarget,
+}
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -158,10 +169,9 @@ export default defineConfig({
     port: devServerPort,
     strictPort: devServerPort !== undefined,
     watch: usePolling ? { usePolling: true, interval: 100 } : undefined,
-    proxy: {
-      '/auth': 'http://localhost:3000',
-      '/api': 'http://localhost:3000',
-      '/dev/test': 'http://localhost:3000',
-    }
-  }
+    proxy: backendProxy,
+  },
+  preview: {
+    proxy: backendProxy,
+  },
 })
