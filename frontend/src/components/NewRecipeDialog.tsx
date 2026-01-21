@@ -32,6 +32,7 @@ import FoodSearchResultsList from './FoodSearchResultsList';
 import { useMyFoodsQuery } from '../queries/myFoods';
 import { getApiErrorMessage } from '../utils/apiError';
 import { useDebouncedValue } from '../hooks/useDebouncedValue';
+import { getMeasureCalories, getPreferredMeasure, getPreferredMeasureLabel } from '../utils/foodMeasure';
 
 /**
  * Dialog for creating a recipe from ingredient snapshots.
@@ -191,19 +192,14 @@ const NewRecipeDialog: React.FC<Props> = ({ open, date, mealPeriod, onClose, onS
         if (!selectedItem) return null;
         const byLabel = selectedItem.availableMeasures.find((m) => m.label === selectedMeasureLabel);
         if (byLabel) return byLabel;
-        return selectedItem.availableMeasures.find((m) => m.gramWeight) ?? null;
+        return getPreferredMeasure(selectedItem);
     }, [selectedItem, selectedMeasureLabel]);
 
     const computedExternal = useMemo(() => {
-        if (!selectedItem || !selectedMeasure?.gramWeight || !selectedItem.nutrientsPer100g) {
+        if (!selectedItem || !selectedMeasure) {
             return null;
         }
-        const grams = selectedMeasure.gramWeight * (measureQuantity || 0);
-        const caloriesTotal = (selectedItem.nutrientsPer100g.calories * grams) / 100;
-        return {
-            grams,
-            calories: Math.round(caloriesTotal * 10) / 10
-        };
+        return getMeasureCalories(selectedItem, selectedMeasure, measureQuantity);
     }, [measureQuantity, selectedItem, selectedMeasure]);
 
     /**
@@ -219,8 +215,7 @@ const NewRecipeDialog: React.FC<Props> = ({ open, date, mealPeriod, onClose, onS
      * Pick a reasonable default measure label so the dropdown is pre-populated after selection.
      */
     const getDefaultMeasureLabel = useCallback((item: NormalizedFoodItem): string | null => {
-        const firstWithWeight = item.availableMeasures.find((measure) => measure.gramWeight);
-        return firstWithWeight?.label ?? null;
+        return getPreferredMeasureLabel(item);
     }, []);
 
     const fetchFoodSearchPage = useCallback(async (query: string, page: number) => {

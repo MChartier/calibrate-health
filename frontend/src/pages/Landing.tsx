@@ -10,6 +10,7 @@ import StorageIcon from '@mui/icons-material/StorageRounded';
 import { Link as RouterLink } from 'react-router-dom';
 import AppCard from '../ui/AppCard';
 import AppPage from '../ui/AppPage';
+import FatSecretAttributionLink from '../components/FatSecretAttributionLink';
 import LandingAppPreview from '../components/landing/LandingAppPreview';
 import { usePrefersReducedMotion } from '../hooks/usePrefersReducedMotion';
 import { useI18n } from '../i18n/useI18n';
@@ -312,6 +313,19 @@ const Landing: React.FC = () => {
                         </Grid>
                     </Grid>
                 </AppCard>
+
+                <Box
+                    sx={(theme) => ({
+                        borderTop: 1,
+                        borderColor: 'divider',
+                        pt: 2,
+                        fontSize: theme.typography.caption.fontSize
+                    })}
+                >
+                    <Stack direction="row" justifyContent="center">
+                        <FatSecretAttributionLink />
+                    </Stack>
+                </Box>
             </Stack>
         </AppPage>
     );

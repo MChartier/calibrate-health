@@ -1,7 +1,7 @@
 /**
  * Shared food data provider types used by provider implementations and routes.
  */
-export type FoodDataSource = 'usda' | 'openFoodFacts';
+export type FoodDataSource = 'fatsecret' | 'usda' | 'openFoodFacts';
 
 export interface Nutrients {
     calories: number;

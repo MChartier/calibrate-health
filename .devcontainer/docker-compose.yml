@@ -11,9 +11,11 @@ services:
     command: sleep infinity
     environment:
       DATABASE_URL: postgresql://user:password@postgres:5432/fitness_app?schema=public
-      FOOD_DATA_PROVIDER: usda
+      FOOD_DATA_PROVIDER: fatsecret
       PORT: 3000
       SESSION_SECRET: development_secret_key
+      FATSECRET_CLIENT_ID: ${FATSECRET_CLIENT_ID}
+      FATSECRET_CLIENT_SECRET: ${FATSECRET_CLIENT_SECRET}
       USDA_API_KEY: ${USDA_API_KEY}
       CODEX_API_KEY: ${CODEX_API_KEY}
       OPENAI_API_KEY: ${CODEX_API_KEY}

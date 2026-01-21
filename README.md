@@ -15,11 +15,18 @@ Note: calibrate is not medical advice.
 - Multi-user accounts (email/password)
 - Profile-driven calorie math (Mifflin-St Jeor BMR, activity-based TDEE, fixed daily deficit targets)
 - Daily food logging with fixed meal categories (manual entry + food database search)
-- Food search + barcode scanning (Open Food Facts default; USDA optional with API key)
+- Food search + barcode scanning (FatSecret default; USDA optional with API key; Open Food Facts fallback)
 - My Foods library + recipe builder for reusable entries
 - Lose It CSV import (food logs + weigh-ins)
 - Weight logging + trend visualization
 - Goal projection from a steady deficit
+
+#### FatSecret terms + attribution
+
+If you enable the FatSecret provider, you must comply with the FatSecret Platform API Terms of Use and Attribution Policy.
+The app includes the required "Powered by fatsecret" link on the landing page and above food search results when
+FatSecret is the active provider; keep that link intact. Review the FatSecret platform docs for the latest terms and
+attribution requirements: https://platform.fatsecret.com/docs/guides
 
 ## Docs
 
@@ -115,23 +122,25 @@ container.
 3. Backend/API: `http://localhost:3000`
 4. Dev dashboard (dev-only): `http://localhost:5173/dev` (compare providers + test barcode scanning)
 
-#### USDA FoodData Central provider (devcontainer)
+#### FatSecret provider (devcontainer)
 
-The backend supports multiple food search providers. The devcontainer is configured to use the USDA FoodData Central
-provider (`FOOD_DATA_PROVIDER=usda`).
+The backend supports multiple food search providers. The devcontainer defaults to the FatSecret provider
+(`FOOD_DATA_PROVIDER=fatsecret`).
 
-To make this work, you must have `USDA_API_KEY` set (either in the host environment or in the repo-local `.env`) before
-the devcontainer is created/rebuilt.
-During devcontainer initialization we copy `USDA_API_KEY` into `.devcontainer/.env` (gitignored), and `docker compose`
-uses it to pass the key into the container.
+To make this work, you must have `FATSECRET_CLIENT_ID` and `FATSECRET_CLIENT_SECRET` set (either in the host environment
+or in the repo-local `.env`) before the devcontainer is created/rebuilt. During devcontainer initialization we copy the
+credentials into `.devcontainer/.env` (gitignored), and `docker compose` uses them to pass the values into the container.
 
 Example (host machine):
 
 ```sh
-export USDA_API_KEY="your-usda-key"
+export FATSECRET_CLIENT_ID="your-client-id"
+export FATSECRET_CLIENT_SECRET="your-client-secret"
 ```
 
-If you add/change the key, rebuild the devcontainer so the generated `.devcontainer/.env` is refreshed.
+If you add/change the credentials, rebuild the devcontainer so the generated `.devcontainer/.env` is refreshed.
+
+To use USDA instead, set `FOOD_DATA_PROVIDER=usda` and supply `USDA_API_KEY` before rebuilding the devcontainer.
 
 #### GitHub CLI auth (devcontainer)
 
@@ -159,7 +168,9 @@ Prereqs: Node.js + npm, and a Postgres database.
    - `DATABASE_URL=postgresql://user:password@localhost:5432/fitness_app?schema=public`
    - `SESSION_SECRET=some-secret`
    - `PORT=3000` (optional)
-   - `FOOD_DATA_PROVIDER=usda` (optional; defaults to Open Food Facts)
+   - `FOOD_DATA_PROVIDER=fatsecret` (optional; defaults to FatSecret)
+   - `FATSECRET_CLIENT_ID=your-client-id` (required when `FOOD_DATA_PROVIDER=fatsecret`)
+   - `FATSECRET_CLIENT_SECRET=your-client-secret` (required when `FOOD_DATA_PROVIDER=fatsecret`)
    - `USDA_API_KEY=your-usda-key` (required when `FOOD_DATA_PROVIDER=usda`)
 2. Install deps + generate Prisma client: `npm run setup`
 3. Create tables (apply migrations): `npm run db:migrate`

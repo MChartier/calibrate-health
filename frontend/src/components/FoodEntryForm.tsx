@@ -28,6 +28,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import QrCodeScannerIcon from '@mui/icons-material/QrCodeScannerRounded';
 import ArrowBackIcon from '@mui/icons-material/ArrowBackRounded';
 import BarcodeScannerDialog from './BarcodeScannerDialog';
+import FatSecretAttributionLink from './FatSecretAttributionLink';
 import FoodSearchResultsList from './FoodSearchResultsList';
 import MealPeriodIcon from './MealPeriodIcon';
 import NewMyFoodDialog from './NewMyFoodDialog';
@@ -36,6 +37,12 @@ import type { NormalizedFoodItem } from '../types/food';
 import { getMealPeriodLabel, MEAL_PERIOD_ORDER, type MealPeriod } from '../types/mealPeriod';
 import { useMyFoodsQuery } from '../queries/myFoods';
 import { getApiErrorMessage } from '../utils/apiError';
+import {
+    formatMeasureLabelWithQuantity,
+    getMeasureCalories,
+    getPreferredMeasure,
+    getPreferredMeasureLabel
+} from '../utils/foodMeasure';
 import { useDebouncedValue } from '../hooks/useDebouncedValue';
 import { useI18n } from '../i18n/useI18n';
 
@@ -79,14 +86,6 @@ function getDefaultMealPeriodForTime(now: Date): MealPeriod {
     if (minutesSinceMidnight >= 9 * 60) return 'MORNING_SNACK';
     return 'BREAKFAST';
 }
-
-/**
- * Pick a reasonable default measure label for an item so the measure dropdown is pre-populated after selection.
- */
-const getDefaultMeasureLabel = (item: NormalizedFoodItem): string | null => {
-    const firstWithWeight = item.availableMeasures.find((measure) => measure.gramWeight);
-    return firstWithWeight?.label ?? null;
-};
 
 /**
  * Merge paginated results without duplicating items when upstream providers repeat IDs across pages.
@@ -188,21 +187,22 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
         if (!selectedItem) return null;
         const byLabel = selectedItem.availableMeasures.find((m) => m.label === selectedMeasureLabel);
         if (byLabel) return byLabel;
-        const firstWithWeight = selectedItem.availableMeasures.find((m) => m.gramWeight);
-        return firstWithWeight ?? null;
+        return getPreferredMeasure(selectedItem);
     }, [selectedItem, selectedMeasureLabel]);
 
     const computed = useMemo(() => {
-        if (!selectedItem || !selectedMeasure?.gramWeight || !selectedItem.nutrientsPer100g) {
+        if (!selectedItem || !selectedMeasure) {
             return null;
         }
-        const grams = selectedMeasure.gramWeight * (quantity || 0);
-        const caloriesTotal = (selectedItem.nutrientsPer100g.calories * grams) / 100;
-        return {
-            grams,
-            calories: Math.round(caloriesTotal * 10) / 10
-        };
+        return getMeasureCalories(selectedItem, selectedMeasure, quantity);
     }, [selectedItem, selectedMeasure, quantity]);
+
+    const computedMeasureLabel = useMemo(() => {
+        if (!selectedMeasure) {
+            return '';
+        }
+        return formatMeasureLabelWithQuantity(selectedMeasure.label, quantity);
+    }, [selectedMeasure, quantity]);
 
     /**
      * Clear the current selected search result so new searches require an explicit choice.
@@ -220,7 +220,7 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
         (item: NormalizedFoodItem) => {
             if (isSubmitting) return;
             setSelectedItemId(item.id);
-            setSelectedMeasureLabel(getDefaultMeasureLabel(item));
+            setSelectedMeasureLabel(getPreferredMeasureLabel(item));
             setQuantity(1);
             setSearchView('selected');
         },
@@ -462,6 +462,8 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
     };
 
     const providerLookupNote = supportsBarcodeLookup === false ? ` ${t('foodEntry.search.barcodeUnavailable')}` : '';
+    // FatSecret terms require attribution wherever FatSecret content is displayed.
+    const showFatSecretAttribution = providerName.trim().toLowerCase() === 'fatsecret';
 
     // Compute the search panel body outside JSX so the layout stays readable.
     let searchResultsContent: React.ReactNode;
@@ -565,7 +567,10 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
                     </Typography>
                     {computed && (
                         <Typography variant="subtitle1" sx={{ mt: 1 }}>
-                            {t('foodEntry.search.computedSummary', { calories: computed.calories, grams: computed.grams })}
+                            {t('foodEntry.search.computedSummary', {
+                                calories: computed.calories,
+                                measureLabel: computedMeasureLabel
+                            })}
                         </Typography>
                     )}
                 </Box>
@@ -643,6 +648,16 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
                                     {t('foodEntry.search.providerLabel', { provider: providerName })}
                                     {providerLookupNote}
                                 </Typography>
+                            )}
+                            {showFatSecretAttribution && (
+                                <Box
+                                    sx={(theme) => ({
+                                        mt: 0.5,
+                                        fontSize: theme.typography.caption.fontSize
+                                    })}
+                                >
+                                    <FatSecretAttributionLink />
+                                </Box>
                             )}
 
                             <BarcodeScannerDialog
