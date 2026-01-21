@@ -102,18 +102,21 @@ module "service" {
   desired_count     = 1
 
   environment = {
-    NODE_ENV   = "production"
-    PORT       = tostring(local.container_port)
-    DB_HOST    = module.rds.address
-    DB_PORT    = tostring(module.rds.port)
-    DB_NAME    = module.rds.db_name
-    DB_SSLMODE = "require"
+    NODE_ENV           = "production"
+    PORT               = tostring(local.container_port)
+    DB_HOST            = module.rds.address
+    DB_PORT            = tostring(module.rds.port)
+    DB_NAME            = module.rds.db_name
+    DB_SSLMODE         = "require"
+    FOOD_DATA_PROVIDER = "fatsecret"
   }
 
   secrets = {
-    SESSION_SECRET = "${aws_secretsmanager_secret.app.arn}:session_secret::"
-    DB_USER        = "${module.rds.master_user_secret_arn}:username::"
-    DB_PASSWORD    = "${module.rds.master_user_secret_arn}:password::"
+    SESSION_SECRET          = "${aws_secretsmanager_secret.app.arn}:session_secret::"
+    DB_USER                 = "${module.rds.master_user_secret_arn}:username::"
+    DB_PASSWORD             = "${module.rds.master_user_secret_arn}:password::"
+    FATSECRET_CLIENT_ID     = "${aws_secretsmanager_secret.app.arn}:fatsecret_client_id::"
+    FATSECRET_CLIENT_SECRET = "${aws_secretsmanager_secret.app.arn}:fatsecret_client_secret::"
   }
 
   secret_arns = [
