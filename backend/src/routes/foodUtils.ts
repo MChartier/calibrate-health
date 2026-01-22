@@ -26,6 +26,18 @@ export type FoodSearchParamsParseResult =
   | { ok: true; params: FoodSearchParams }
   | { ok: false; statusCode: number; message: string };
 
+const normalizeBarcodeDigits = (value: string | undefined): string | undefined => {
+  if (!value) return undefined;
+  const digits = value.replace(/\D/g, '').trim();
+  return digits.length > 0 ? digits : undefined;
+};
+
+const isBarcodeCandidate = (value: string): boolean => {
+  const digits = normalizeBarcodeDigits(value);
+  if (!digits) return false;
+  return digits.length === 8 || digits.length === 12 || digits.length === 13 || digits.length === 14;
+};
+
 /**
  * Parse and validate `/api/food/search` query params.
  *
@@ -41,9 +53,17 @@ export function parseFoodSearchParams(opts: {
       : typeof opts.query.query === 'string'
         ? opts.query.query
         : undefined;
-  const barcode = typeof opts.query.barcode === 'string' ? opts.query.barcode : undefined;
+  const rawBarcode = typeof opts.query.barcode === 'string' ? opts.query.barcode : undefined;
+  const barcode = normalizeBarcodeDigits(rawBarcode);
+  let resolvedQuery = queryParam;
+  let resolvedBarcode = barcode;
 
-  if (!queryParam && !barcode) {
+  if (!resolvedBarcode && queryParam && isBarcodeCandidate(queryParam)) {
+    resolvedBarcode = normalizeBarcodeDigits(queryParam);
+    resolvedQuery = undefined;
+  }
+
+  if (!resolvedQuery && !resolvedBarcode) {
     return { ok: false, statusCode: 400, message: 'Provide a search query or barcode.' };
   }
 
@@ -64,8 +84,8 @@ export function parseFoodSearchParams(opts: {
   return {
     ok: true,
     params: {
-      query: queryParam || undefined,
-      barcode,
+      query: resolvedQuery || undefined,
+      barcode: resolvedBarcode,
       page,
       pageSize,
       quantityInGrams,

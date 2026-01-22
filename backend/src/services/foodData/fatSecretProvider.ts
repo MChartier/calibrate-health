@@ -58,6 +58,7 @@ type FatSecretServing = {
 
 type FatSecretBarcodeLookupResponse = {
     food_id?: string | number | { value?: string | number } | null;
+    food?: FatSecretFoodDetail | FatSecretFoodSummary | null;
 };
 
 type FatSecretErrorResponse = {
@@ -75,6 +76,17 @@ type DescriptionNutrients = {
 const FATSECRET_MAX_UPSTREAM_PAGE_SIZE = 50;
 const FATSECRET_ACCESS_TOKEN_BUFFER_MS = 60_000;
 const FATSECRET_GTIN_LENGTH = 13; // FatSecret barcode lookups require GTIN-13 digits.
+const FATSECRET_BARCODE_SCOPE_ERROR_CODE = 14;
+const FATSECRET_BARCODE_NOT_FOUND_CODE = 211;
+
+class FatSecretApiError extends Error {
+    public code?: string | number;
+
+    constructor(message: string, code?: string | number) {
+        super(message);
+        this.code = code;
+    }
+}
 class FatSecretFoodDataProvider implements FoodDataProvider {
     public name = 'fatsecret' as const;
     public supportsBarcodeLookup = true;
@@ -85,6 +97,7 @@ class FatSecretFoodDataProvider implements FoodDataProvider {
     private accessToken: string | null = null;
     private accessTokenExpiresAt = 0;
     private accessTokenPromise: Promise<string> | null = null;
+    private hasLoggedBarcodeScopeWarning = false;
 
     /**
      * Construct a FatSecret provider instance using OAuth client credentials.
@@ -391,16 +404,29 @@ class FatSecretFoodDataProvider implements FoodDataProvider {
         });
 
         const payload = await response.json();
+        const apiError = this.parseApiError(payload);
+
         if (!response.ok) {
+            if (apiError) {
+                throw new FatSecretApiError(
+                    `FatSecret API error${apiError.code !== undefined ? ` (${apiError.code})` : ''}: ${
+                        apiError.message || 'Unknown error'
+                    }`,
+                    apiError.code
+                );
+            }
+
             const message = typeof payload === 'object' && payload ? JSON.stringify(payload) : String(payload);
             throw new Error(`FatSecret request failed: ${response.status} ${message}`.trim());
         }
 
-        const apiError = this.parseApiError(payload);
         if (apiError) {
-            const code = apiError.code !== undefined ? ` (${apiError.code})` : '';
-            const message = apiError.message || 'Unknown error';
-            throw new Error(`FatSecret API error${code}: ${message}`);
+            throw new FatSecretApiError(
+                `FatSecret API error${apiError.code !== undefined ? ` (${apiError.code})` : ''}: ${
+                    apiError.message || 'Unknown error'
+                }`,
+                apiError.code
+            );
         }
 
         return payload as T;
@@ -410,10 +436,23 @@ class FatSecretFoodDataProvider implements FoodDataProvider {
      * Use the barcode endpoint to resolve a FatSecret food id.
      */
     private async findFoodIdForBarcode(barcode: string): Promise<string | null> {
-        const response = await this.executeApiRequest<FatSecretBarcodeLookupResponse>({
-            method: 'food.find_id_for_barcode',
-            barcode
-        });
+        let response: FatSecretBarcodeLookupResponse;
+        try {
+            response = await this.executeApiRequest<FatSecretBarcodeLookupResponse>({
+                method: 'food.find_id_for_barcode.v2',
+                barcode
+            });
+        } catch (error) {
+            if (this.shouldDisableBarcodeLookup(error)) {
+                this.supportsBarcodeLookup = false;
+                this.warnMissingBarcodeScope(error);
+                return null;
+            }
+            if (this.isBarcodeNotFoundError(error)) {
+                return null;
+            }
+            throw error;
+        }
 
         const candidateSources = [
             response?.food_id,
@@ -434,6 +473,43 @@ class FatSecretFoodDataProvider implements FoodDataProvider {
         }
 
         return null;
+    }
+
+    private shouldDisableBarcodeLookup(error: unknown): boolean {
+        if (!(error instanceof FatSecretApiError)) {
+            return false;
+        }
+
+        if (error.code === FATSECRET_BARCODE_SCOPE_ERROR_CODE) {
+            return true;
+        }
+
+        return /scope/i.test(error.message);
+    }
+
+    private isBarcodeNotFoundError(error: unknown): boolean {
+        if (!(error instanceof FatSecretApiError)) {
+            return false;
+        }
+
+        return error.code === FATSECRET_BARCODE_NOT_FOUND_CODE;
+    }
+
+    private warnMissingBarcodeScope(error: unknown): void {
+        if (this.hasLoggedBarcodeScopeWarning) {
+            return;
+        }
+        this.hasLoggedBarcodeScopeWarning = true;
+
+        const message =
+            error instanceof Error && error.message
+                ? error.message
+                : 'FatSecret barcode lookup failed due to a missing scope.';
+
+        console.warn(
+            `${message} Barcode lookup is disabled. ` +
+                'Enable the FatSecret barcode scope or remove barcode scanning from the UI.'
+        );
     }
 
     /**
