@@ -462,6 +462,7 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
     };
 
     const providerLookupNote = supportsBarcodeLookup === false ? ` ${t('foodEntry.search.barcodeUnavailable')}` : '';
+    const canUseBarcodeScanner = supportsBarcodeLookup !== false;
     // FatSecret terms require attribution wherever FatSecret content is displayed.
     const showFatSecretAttribution = providerName.trim().toLowerCase() === 'fatsecret';
 
@@ -627,7 +628,7 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
                                     }
                                 }}
                                 InputProps={{
-                                    endAdornment: (
+                                    endAdornment: canUseBarcodeScanner ? (
                                         <InputAdornment position="end">
                                             <IconButton
                                                 aria-label={t('foodEntry.search.scanBarcode')}
@@ -640,7 +641,7 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
                                                 <QrCodeScannerIcon />
                                             </IconButton>
                                         </InputAdornment>
-                                    )
+                                    ) : undefined
                                 }}
                             />
                             {providerName && (

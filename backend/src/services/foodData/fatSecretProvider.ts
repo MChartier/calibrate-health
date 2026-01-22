@@ -5,6 +5,8 @@ type FatSecretAuthResponse = {
     access_token?: string;
     token_type?: string;
     expires_in?: number | string;
+    scope?: string;
+    scopes?: string | string[];
 };
 
 type FatSecretFoodsSearchResponse = {
@@ -72,8 +74,7 @@ type DescriptionNutrients = {
 
 const FATSECRET_MAX_UPSTREAM_PAGE_SIZE = 50;
 const FATSECRET_ACCESS_TOKEN_BUFFER_MS = 60_000;
-const FATSECRET_OAUTH_SCOPES = 'premier barcode';
-
+const FATSECRET_GTIN_LENGTH = 13; // FatSecret barcode lookups require GTIN-13 digits.
 class FatSecretFoodDataProvider implements FoodDataProvider {
     public name = 'fatsecret' as const;
     public supportsBarcodeLookup = true;
@@ -95,14 +96,18 @@ class FatSecretFoodDataProvider implements FoodDataProvider {
 
     async searchFoods(request: FoodSearchRequest): Promise<FoodSearchResult> {
         const trimmedBarcode = request.barcode?.trim();
+        const normalizedBarcode = trimmedBarcode ? this.normalizeBarcodeForLookup(trimmedBarcode) : null;
         if (trimmedBarcode) {
-            const barcodeItem = await this.lookupFoodByBarcode(trimmedBarcode, request);
-            if (barcodeItem) {
-                return { items: [barcodeItem] };
+            await this.getAccessToken();
+            if (this.supportsBarcodeLookup && normalizedBarcode) {
+                const barcodeItem = await this.lookupFoodByBarcode(normalizedBarcode, request);
+                if (barcodeItem) {
+                    return { items: [barcodeItem] };
+                }
             }
         }
 
-        const query = (request.query || request.barcode)?.trim();
+        const query = (request.query || normalizedBarcode || trimmedBarcode)?.trim();
         if (!query) {
             return { items: [] };
         }
@@ -194,8 +199,7 @@ class FatSecretFoodDataProvider implements FoodDataProvider {
                 'Content-Type': 'application/x-www-form-urlencoded'
             },
             body: new URLSearchParams({
-                grant_type: 'client_credentials',
-                scope: FATSECRET_OAUTH_SCOPES
+                grant_type: 'client_credentials'
             })
         });
 
@@ -209,6 +213,8 @@ class FatSecretFoodDataProvider implements FoodDataProvider {
             throw new Error('FatSecret auth failed: access_token is missing.');
         }
 
+        this.updateSupportedScopes(data.scope ?? data.scopes);
+
         const expiresInSeconds = parseNumber(data.expires_in) ?? 3600;
         const expiresAt = Date.now() + expiresInSeconds * 1000 - FATSECRET_ACCESS_TOKEN_BUFFER_MS;
 
@@ -216,6 +222,153 @@ class FatSecretFoodDataProvider implements FoodDataProvider {
         this.accessTokenExpiresAt = Math.max(Date.now(), expiresAt);
 
         return data.access_token;
+    }
+
+    /**
+     * Record OAuth scopes so the UI can reflect whether barcode lookups are available.
+     */
+    private updateSupportedScopes(scopeValue: unknown): void {
+        if (!scopeValue) {
+            return;
+        }
+
+        const scopeString = Array.isArray(scopeValue) ? scopeValue.join(' ') : String(scopeValue);
+        const scopes = scopeString
+            .split(/\s+/)
+            .map((scope) => scope.trim().toLowerCase())
+            .filter(Boolean);
+
+        if (scopes.length === 0) {
+            return;
+        }
+
+        const scopeSet = new Set(scopes);
+        this.supportsBarcodeLookup = scopeSet.has('barcode');
+    }
+
+    /**
+     * Normalize UPC/EAN inputs into GTIN-13 digits for FatSecret barcode lookup.
+     */
+    private normalizeBarcodeForLookup(rawBarcode: string): string | null {
+        const digits = rawBarcode.replace(/\D/g, '');
+        if (!digits) {
+            return null;
+        }
+
+        if (digits.length === FATSECRET_GTIN_LENGTH) {
+            return digits;
+        }
+
+        const upcA = this.expandUpcEToUpcA(digits);
+        if (upcA) {
+            return upcA.padStart(FATSECRET_GTIN_LENGTH, '0');
+        }
+
+        if (digits.length < FATSECRET_GTIN_LENGTH) {
+            return digits.padStart(FATSECRET_GTIN_LENGTH, '0');
+        }
+
+        if (digits.length === FATSECRET_GTIN_LENGTH + 1 && digits.startsWith('0')) {
+            return digits.slice(1);
+        }
+
+        return null;
+    }
+
+    /**
+     * Convert UPC-E digits into their UPC-A equivalent when possible.
+     */
+    private expandUpcEToUpcA(rawDigits: string): string | null {
+        if (!rawDigits) {
+            return null;
+        }
+
+        let numberSystem = '0';
+        let upceBody = '';
+        let checkDigit: string | null = null;
+
+        if (rawDigits.length === 6) {
+            upceBody = rawDigits;
+        } else if (rawDigits.length === 7) {
+            numberSystem = rawDigits[0] ?? '0';
+            upceBody = rawDigits.slice(1);
+        } else if (rawDigits.length === 8) {
+            numberSystem = rawDigits[0] ?? '0';
+            upceBody = rawDigits.slice(1, 7);
+            checkDigit = rawDigits[7] ?? null;
+        } else {
+            return null;
+        }
+
+        if (!/^\d{6}$/.test(upceBody)) {
+            return null;
+        }
+
+        if (numberSystem !== '0' && numberSystem !== '1') {
+            return null;
+        }
+
+        const digits = upceBody.split('');
+        const d1 = digits[0];
+        const d2 = digits[1];
+        const d3 = digits[2];
+        const d4 = digits[3];
+        const d5 = digits[4];
+        const d6 = digits[5];
+
+        let upcAWithoutCheck = '';
+        if (d6 === '0' || d6 === '1' || d6 === '2') {
+            upcAWithoutCheck = `${numberSystem}${d1}${d2}${d6}0000${d3}${d4}${d5}`;
+        } else if (d6 === '3') {
+            upcAWithoutCheck = `${numberSystem}${d1}${d2}${d3}00000${d4}${d5}`;
+        } else if (d6 === '4') {
+            upcAWithoutCheck = `${numberSystem}${d1}${d2}${d3}${d4}00000${d5}`;
+        } else {
+            upcAWithoutCheck = `${numberSystem}${d1}${d2}${d3}${d4}${d5}0000${d6}`;
+        }
+
+        if (!/^\d{11}$/.test(upcAWithoutCheck)) {
+            return null;
+        }
+
+        const computedCheckDigit = this.computeUpcACheckDigit(upcAWithoutCheck);
+        if (computedCheckDigit === null) {
+            return null;
+        }
+
+        if (checkDigit && checkDigit !== computedCheckDigit) {
+            return null;
+        }
+
+        return `${upcAWithoutCheck}${computedCheckDigit}`;
+    }
+
+    /**
+     * Calculate a UPC-A check digit from the 11-digit body.
+     */
+    private computeUpcACheckDigit(upcAWithoutCheck: string): string | null {
+        if (!/^\d{11}$/.test(upcAWithoutCheck)) {
+            return null;
+        }
+
+        let sumOdd = 0;
+        let sumEven = 0;
+        for (let i = 0; i < upcAWithoutCheck.length; i += 1) {
+            const digit = Number(upcAWithoutCheck[i]);
+            if (!Number.isFinite(digit)) {
+                return null;
+            }
+            if (i % 2 === 0) {
+                sumOdd += digit;
+            } else {
+                sumEven += digit;
+            }
+        }
+
+        const total = sumOdd * 3 + sumEven;
+        const remainder = total % 10;
+        const checkDigit = remainder === 0 ? 0 : 10 - remainder;
+        return String(checkDigit);
     }
 
     /**
