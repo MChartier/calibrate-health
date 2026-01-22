@@ -72,6 +72,7 @@ type DescriptionNutrients = {
 
 const FATSECRET_MAX_UPSTREAM_PAGE_SIZE = 50;
 const FATSECRET_ACCESS_TOKEN_BUFFER_MS = 60_000;
+const FATSECRET_OAUTH_SCOPES = 'premier barcode';
 
 class FatSecretFoodDataProvider implements FoodDataProvider {
     public name = 'fatsecret' as const;
@@ -194,7 +195,7 @@ class FatSecretFoodDataProvider implements FoodDataProvider {
             },
             body: new URLSearchParams({
                 grant_type: 'client_credentials',
-                scope: 'basic'
+                scope: FATSECRET_OAUTH_SCOPES
             })
         });
 
