@@ -66,6 +66,14 @@ type FoodSearchParams = {
     barcode?: string;
 };
 
+const normalizeBarcodeCandidate = (value: string): string => value.replace(/\D/g, '').trim();
+
+const isBarcodeCandidate = (value: string): boolean => {
+    const digits = normalizeBarcodeCandidate(value);
+    if (!digits) return false;
+    return digits.length === 8 || digits.length === 12 || digits.length === 13 || digits.length === 14;
+};
+
 /**
  * Choose a sensible default meal period based on the current local time.
  * Thresholds:
@@ -263,13 +271,17 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
 
             const trimmedQuery = request.query?.trim();
             const barcode = request.barcode?.trim();
-            if (!trimmedQuery && !barcode) {
+            const normalizedBarcode =
+                barcode || (trimmedQuery && isBarcodeCandidate(trimmedQuery) ? normalizeBarcodeCandidate(trimmedQuery) : '');
+            const resolvedQuery = barcode ? trimmedQuery : normalizedBarcode ? undefined : trimmedQuery;
+
+            if (!resolvedQuery && !normalizedBarcode) {
                 return;
             }
 
             const params: FoodSearchParams = {
-                query: trimmedQuery || undefined,
-                barcode: barcode || undefined
+                query: resolvedQuery || undefined,
+                barcode: normalizedBarcode || undefined
             };
 
             searchSessionRef.current += 1;
@@ -462,6 +474,7 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
     };
 
     const providerLookupNote = supportsBarcodeLookup === false ? ` ${t('foodEntry.search.barcodeUnavailable')}` : '';
+    const canUseBarcodeScanner = supportsBarcodeLookup !== false;
     // FatSecret terms require attribution wherever FatSecret content is displayed.
     const showFatSecretAttribution = providerName.trim().toLowerCase() === 'fatsecret';
 
@@ -627,7 +640,7 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
                                     }
                                 }}
                                 InputProps={{
-                                    endAdornment: (
+                                    endAdornment: canUseBarcodeScanner ? (
                                         <InputAdornment position="end">
                                             <IconButton
                                                 aria-label={t('foodEntry.search.scanBarcode')}
@@ -640,7 +653,7 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
                                                 <QrCodeScannerIcon />
                                             </IconButton>
                                         </InputAdornment>
-                                    )
+                                    ) : undefined
                                 }}
                             />
                             {providerName && (

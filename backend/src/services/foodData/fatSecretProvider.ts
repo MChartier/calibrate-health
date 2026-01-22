@@ -5,6 +5,8 @@ type FatSecretAuthResponse = {
     access_token?: string;
     token_type?: string;
     expires_in?: number | string;
+    scope?: string;
+    scopes?: string | string[];
 };
 
 type FatSecretFoodsSearchResponse = {
@@ -56,6 +58,7 @@ type FatSecretServing = {
 
 type FatSecretBarcodeLookupResponse = {
     food_id?: string | number | { value?: string | number } | null;
+    food?: FatSecretFoodDetail | FatSecretFoodSummary | null;
 };
 
 type FatSecretErrorResponse = {
@@ -72,7 +75,18 @@ type DescriptionNutrients = {
 
 const FATSECRET_MAX_UPSTREAM_PAGE_SIZE = 50;
 const FATSECRET_ACCESS_TOKEN_BUFFER_MS = 60_000;
+const FATSECRET_GTIN_LENGTH = 13; // FatSecret barcode lookups require GTIN-13 digits.
+const FATSECRET_BARCODE_SCOPE_ERROR_CODE = 14;
+const FATSECRET_BARCODE_NOT_FOUND_CODE = 211;
 
+class FatSecretApiError extends Error {
+    public code?: string | number;
+
+    constructor(message: string, code?: string | number) {
+        super(message);
+        this.code = code;
+    }
+}
 class FatSecretFoodDataProvider implements FoodDataProvider {
     public name = 'fatsecret' as const;
     public supportsBarcodeLookup = true;
@@ -83,6 +97,7 @@ class FatSecretFoodDataProvider implements FoodDataProvider {
     private accessToken: string | null = null;
     private accessTokenExpiresAt = 0;
     private accessTokenPromise: Promise<string> | null = null;
+    private hasLoggedBarcodeScopeWarning = false;
 
     /**
      * Construct a FatSecret provider instance using OAuth client credentials.
@@ -94,14 +109,18 @@ class FatSecretFoodDataProvider implements FoodDataProvider {
 
     async searchFoods(request: FoodSearchRequest): Promise<FoodSearchResult> {
         const trimmedBarcode = request.barcode?.trim();
+        const normalizedBarcode = trimmedBarcode ? this.normalizeBarcodeForLookup(trimmedBarcode) : null;
         if (trimmedBarcode) {
-            const barcodeItem = await this.lookupFoodByBarcode(trimmedBarcode, request);
-            if (barcodeItem) {
-                return { items: [barcodeItem] };
+            await this.getAccessToken();
+            if (this.supportsBarcodeLookup && normalizedBarcode) {
+                const barcodeItem = await this.lookupFoodByBarcode(normalizedBarcode, request);
+                if (barcodeItem) {
+                    return { items: [barcodeItem] };
+                }
             }
         }
 
-        const query = (request.query || request.barcode)?.trim();
+        const query = (request.query || normalizedBarcode || trimmedBarcode)?.trim();
         if (!query) {
             return { items: [] };
         }
@@ -193,8 +212,7 @@ class FatSecretFoodDataProvider implements FoodDataProvider {
                 'Content-Type': 'application/x-www-form-urlencoded'
             },
             body: new URLSearchParams({
-                grant_type: 'client_credentials',
-                scope: 'basic'
+                grant_type: 'client_credentials'
             })
         });
 
@@ -208,6 +226,8 @@ class FatSecretFoodDataProvider implements FoodDataProvider {
             throw new Error('FatSecret auth failed: access_token is missing.');
         }
 
+        this.updateSupportedScopes(data.scope ?? data.scopes);
+
         const expiresInSeconds = parseNumber(data.expires_in) ?? 3600;
         const expiresAt = Date.now() + expiresInSeconds * 1000 - FATSECRET_ACCESS_TOKEN_BUFFER_MS;
 
@@ -215,6 +235,153 @@ class FatSecretFoodDataProvider implements FoodDataProvider {
         this.accessTokenExpiresAt = Math.max(Date.now(), expiresAt);
 
         return data.access_token;
+    }
+
+    /**
+     * Record OAuth scopes so the UI can reflect whether barcode lookups are available.
+     */
+    private updateSupportedScopes(scopeValue: unknown): void {
+        if (!scopeValue) {
+            return;
+        }
+
+        const scopeString = Array.isArray(scopeValue) ? scopeValue.join(' ') : String(scopeValue);
+        const scopes = scopeString
+            .split(/\s+/)
+            .map((scope) => scope.trim().toLowerCase())
+            .filter(Boolean);
+
+        if (scopes.length === 0) {
+            return;
+        }
+
+        const scopeSet = new Set(scopes);
+        this.supportsBarcodeLookup = scopeSet.has('barcode');
+    }
+
+    /**
+     * Normalize UPC/EAN inputs into GTIN-13 digits for FatSecret barcode lookup.
+     */
+    private normalizeBarcodeForLookup(rawBarcode: string): string | null {
+        const digits = rawBarcode.replace(/\D/g, '');
+        if (!digits) {
+            return null;
+        }
+
+        if (digits.length === FATSECRET_GTIN_LENGTH) {
+            return digits;
+        }
+
+        const upcA = this.expandUpcEToUpcA(digits);
+        if (upcA) {
+            return upcA.padStart(FATSECRET_GTIN_LENGTH, '0');
+        }
+
+        if (digits.length < FATSECRET_GTIN_LENGTH) {
+            return digits.padStart(FATSECRET_GTIN_LENGTH, '0');
+        }
+
+        if (digits.length === FATSECRET_GTIN_LENGTH + 1 && digits.startsWith('0')) {
+            return digits.slice(1);
+        }
+
+        return null;
+    }
+
+    /**
+     * Convert UPC-E digits into their UPC-A equivalent when possible.
+     */
+    private expandUpcEToUpcA(rawDigits: string): string | null {
+        if (!rawDigits) {
+            return null;
+        }
+
+        let numberSystem = '0';
+        let upceBody = '';
+        let checkDigit: string | null = null;
+
+        if (rawDigits.length === 6) {
+            upceBody = rawDigits;
+        } else if (rawDigits.length === 7) {
+            numberSystem = rawDigits[0] ?? '0';
+            upceBody = rawDigits.slice(1);
+        } else if (rawDigits.length === 8) {
+            numberSystem = rawDigits[0] ?? '0';
+            upceBody = rawDigits.slice(1, 7);
+            checkDigit = rawDigits[7] ?? null;
+        } else {
+            return null;
+        }
+
+        if (!/^\d{6}$/.test(upceBody)) {
+            return null;
+        }
+
+        if (numberSystem !== '0' && numberSystem !== '1') {
+            return null;
+        }
+
+        const digits = upceBody.split('');
+        const d1 = digits[0];
+        const d2 = digits[1];
+        const d3 = digits[2];
+        const d4 = digits[3];
+        const d5 = digits[4];
+        const d6 = digits[5];
+
+        let upcAWithoutCheck = '';
+        if (d6 === '0' || d6 === '1' || d6 === '2') {
+            upcAWithoutCheck = `${numberSystem}${d1}${d2}${d6}0000${d3}${d4}${d5}`;
+        } else if (d6 === '3') {
+            upcAWithoutCheck = `${numberSystem}${d1}${d2}${d3}00000${d4}${d5}`;
+        } else if (d6 === '4') {
+            upcAWithoutCheck = `${numberSystem}${d1}${d2}${d3}${d4}00000${d5}`;
+        } else {
+            upcAWithoutCheck = `${numberSystem}${d1}${d2}${d3}${d4}${d5}0000${d6}`;
+        }
+
+        if (!/^\d{11}$/.test(upcAWithoutCheck)) {
+            return null;
+        }
+
+        const computedCheckDigit = this.computeUpcACheckDigit(upcAWithoutCheck);
+        if (computedCheckDigit === null) {
+            return null;
+        }
+
+        if (checkDigit && checkDigit !== computedCheckDigit) {
+            return null;
+        }
+
+        return `${upcAWithoutCheck}${computedCheckDigit}`;
+    }
+
+    /**
+     * Calculate a UPC-A check digit from the 11-digit body.
+     */
+    private computeUpcACheckDigit(upcAWithoutCheck: string): string | null {
+        if (!/^\d{11}$/.test(upcAWithoutCheck)) {
+            return null;
+        }
+
+        let sumOdd = 0;
+        let sumEven = 0;
+        for (let i = 0; i < upcAWithoutCheck.length; i += 1) {
+            const digit = Number(upcAWithoutCheck[i]);
+            if (!Number.isFinite(digit)) {
+                return null;
+            }
+            if (i % 2 === 0) {
+                sumOdd += digit;
+            } else {
+                sumEven += digit;
+            }
+        }
+
+        const total = sumOdd * 3 + sumEven;
+        const remainder = total % 10;
+        const checkDigit = remainder === 0 ? 0 : 10 - remainder;
+        return String(checkDigit);
     }
 
     /**
@@ -237,16 +404,29 @@ class FatSecretFoodDataProvider implements FoodDataProvider {
         });
 
         const payload = await response.json();
+        const apiError = this.parseApiError(payload);
+
         if (!response.ok) {
+            if (apiError) {
+                throw new FatSecretApiError(
+                    `FatSecret API error${apiError.code !== undefined ? ` (${apiError.code})` : ''}: ${
+                        apiError.message || 'Unknown error'
+                    }`,
+                    apiError.code
+                );
+            }
+
             const message = typeof payload === 'object' && payload ? JSON.stringify(payload) : String(payload);
             throw new Error(`FatSecret request failed: ${response.status} ${message}`.trim());
         }
 
-        const apiError = this.parseApiError(payload);
         if (apiError) {
-            const code = apiError.code !== undefined ? ` (${apiError.code})` : '';
-            const message = apiError.message || 'Unknown error';
-            throw new Error(`FatSecret API error${code}: ${message}`);
+            throw new FatSecretApiError(
+                `FatSecret API error${apiError.code !== undefined ? ` (${apiError.code})` : ''}: ${
+                    apiError.message || 'Unknown error'
+                }`,
+                apiError.code
+            );
         }
 
         return payload as T;
@@ -256,10 +436,23 @@ class FatSecretFoodDataProvider implements FoodDataProvider {
      * Use the barcode endpoint to resolve a FatSecret food id.
      */
     private async findFoodIdForBarcode(barcode: string): Promise<string | null> {
-        const response = await this.executeApiRequest<FatSecretBarcodeLookupResponse>({
-            method: 'food.find_id_for_barcode',
-            barcode
-        });
+        let response: FatSecretBarcodeLookupResponse;
+        try {
+            response = await this.executeApiRequest<FatSecretBarcodeLookupResponse>({
+                method: 'food.find_id_for_barcode.v2',
+                barcode
+            });
+        } catch (error) {
+            if (this.shouldDisableBarcodeLookup(error)) {
+                this.supportsBarcodeLookup = false;
+                this.warnMissingBarcodeScope(error);
+                return null;
+            }
+            if (this.isBarcodeNotFoundError(error)) {
+                return null;
+            }
+            throw error;
+        }
 
         const candidateSources = [
             response?.food_id,
@@ -280,6 +473,43 @@ class FatSecretFoodDataProvider implements FoodDataProvider {
         }
 
         return null;
+    }
+
+    private shouldDisableBarcodeLookup(error: unknown): boolean {
+        if (!(error instanceof FatSecretApiError)) {
+            return false;
+        }
+
+        if (error.code === FATSECRET_BARCODE_SCOPE_ERROR_CODE) {
+            return true;
+        }
+
+        return /scope/i.test(error.message);
+    }
+
+    private isBarcodeNotFoundError(error: unknown): boolean {
+        if (!(error instanceof FatSecretApiError)) {
+            return false;
+        }
+
+        return error.code === FATSECRET_BARCODE_NOT_FOUND_CODE;
+    }
+
+    private warnMissingBarcodeScope(error: unknown): void {
+        if (this.hasLoggedBarcodeScopeWarning) {
+            return;
+        }
+        this.hasLoggedBarcodeScopeWarning = true;
+
+        const message =
+            error instanceof Error && error.message
+                ? error.message
+                : 'FatSecret barcode lookup failed due to a missing scope.';
+
+        console.warn(
+            `${message} Barcode lookup is disabled. ` +
+                'Enable the FatSecret barcode scope or remove barcode scanning from the UI.'
+        );
     }
 
     /**
