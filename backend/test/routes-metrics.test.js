@@ -105,18 +105,18 @@ test('metrics route: GET / validates start/end query params when provided', asyn
 test('metrics route: GET / returns metrics with weight converted to the user unit', async () => {
   const rows = [
     {
-      id: 1,
-      user_id: 7,
-      date: new Date('2025-01-02T00:00:00Z'),
-      weight_grams: 68039,
-      body_fat_percent: null
-    },
-    {
       id: 2,
       user_id: 7,
       date: new Date('2025-01-01T00:00:00Z'),
       weight_grams: 1000,
       body_fat_percent: 20.5
+    },
+    {
+      id: 1,
+      user_id: 7,
+      date: new Date('2025-01-02T00:00:00Z'),
+      weight_grams: 68039,
+      body_fat_percent: null
     }
   ];
 
@@ -136,18 +136,19 @@ test('metrics route: GET / returns metrics with weight converted to the user uni
 
   await handler(req, res);
   assert.equal(res.statusCode, 200);
+  // Query order is ascending; response should remain newest-first.
   assert.deepEqual(res.body, [
     {
       id: 1,
       user_id: 7,
-      date: rows[0].date,
+      date: rows[1].date,
       body_fat_percent: null,
       weight: 150
     },
     {
       id: 2,
       user_id: 7,
-      date: rows[1].date,
+      date: rows[0].date,
       body_fat_percent: 20.5,
       weight: 2.2
     }
@@ -312,4 +313,3 @@ test('metrics route: DELETE /:id returns 204 when a row is deleted', async () =>
 
   assert.equal(res.statusCode, 204);
 });
-
