@@ -93,7 +93,7 @@ export function createAppTheme(mode: PaletteMode) {
                     gutterX: { xs: 2, sm: 2, md: 3 },
                     paddingTop: { xs: 2, sm: 3, md: 3 },
                     paddingBottom: { xs: 2, sm: 3, md: 3 },
-                    paddingBottomWithBottomNav: 'calc(80px + env(safe-area-inset-bottom))',
+                    paddingBottomWithBottomNav: 'calc(80px + var(--safe-area-inset-bottom, 0px))',
                     sectionGap: 2
                 },
                 surface: {
@@ -129,6 +129,12 @@ export function createAppTheme(mode: PaletteMode) {
                     const bottom = darken(theme.palette.background.default, theme.palette.mode === 'dark' ? 0.18 : 0.05);
 
                     return {
+                        ':root': {
+                            '--safe-area-inset-top': 'env(safe-area-inset-top)',
+                            '--safe-area-inset-right': 'env(safe-area-inset-right)',
+                            '--safe-area-inset-bottom': 'env(safe-area-inset-bottom)',
+                            '--safe-area-inset-left': 'env(safe-area-inset-left)'
+                        },
                         html: {
                             height: '100%'
                         },
@@ -238,7 +244,14 @@ export function createAppTheme(mode: PaletteMode) {
                         [theme.breakpoints.up('sm')]: {
                             margin: theme.spacing(2)
                         }
-                    })
+                    }),
+                    paperFullScreen: {
+                        margin: 0,
+                        paddingTop: 'var(--safe-area-inset-top, 0px)',
+                        paddingRight: 'var(--safe-area-inset-right, 0px)',
+                        paddingBottom: 'var(--safe-area-inset-bottom, 0px)',
+                        paddingLeft: 'var(--safe-area-inset-left, 0px)'
+                    }
                 }
             },
             MuiDialogTitle: {

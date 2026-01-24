@@ -27,6 +27,7 @@ import SettingsIcon from '@mui/icons-material/SettingsRounded';
 import LogoutIcon from '@mui/icons-material/LogoutRounded';
 import GitHubIcon from '@mui/icons-material/GitHub';
 import { alpha, useTheme } from '@mui/material/styles';
+import type { SxProps, Theme } from '@mui/material/styles';
 import { useAuth } from '../context/useAuth';
 import { QuickAddFabProvider } from '../context/QuickAddFabContext';
 import { useQuickAddFab } from '../context/useQuickAddFab';
@@ -42,6 +43,9 @@ import LogQuickAddFab from './LogQuickAddFab';
  */
 const drawerWidth = 240;
 const GITHUB_REPO_URL = 'https://github.com/mchartier/calibrate-health';
+const SAFE_AREA_INSET_TOP = 'var(--safe-area-inset-top, 0px)';
+const SAFE_AREA_INSET_BOTTOM = 'var(--safe-area-inset-bottom, 0px)';
+const DEFAULT_TOOLBAR_MIN_HEIGHT_SPACING = 7; // MUI default toolbar height in spacing units (56px).
 
 /**
  * Map the current pathname to a navigation value so nested routes keep the correct tab highlighted.
@@ -54,11 +58,39 @@ function getActiveNavigationValue(pathname: string): string | null {
     return null;
 }
 
+/**
+ * Normalize MUI toolbar min-heights into CSS length strings for safe-area math.
+ */
+function normalizeToolbarMinHeight(minHeight: number | string | undefined, fallback: string): string {
+    if (typeof minHeight === 'number') return `${minHeight}px`;
+    if (typeof minHeight === 'string' && minHeight.trim().length > 0) return minHeight;
+    return fallback;
+}
+
+/**
+ * Build Toolbar sizing that includes top safe-area padding so fixed headers and their spacers align.
+ */
+function buildSafeAreaToolbarSx(theme: Theme): SxProps<Theme> {
+    const fallbackMinHeight = theme.spacing(DEFAULT_TOOLBAR_MIN_HEIGHT_SPACING);
+    const baseMinHeight = normalizeToolbarMinHeight(theme.mixins.toolbar.minHeight, fallbackMinHeight);
+    const toolbarMixins = theme.mixins.toolbar as Record<string, { minHeight?: number | string } | undefined>;
+    const smMinHeight = normalizeToolbarMinHeight(toolbarMixins[theme.breakpoints.up('sm')]?.minHeight, baseMinHeight);
+
+    return {
+        pt: SAFE_AREA_INSET_TOP,
+        minHeight: `calc(${baseMinHeight} + ${SAFE_AREA_INSET_TOP})`,
+        [theme.breakpoints.up('sm')]: {
+            minHeight: `calc(${smMinHeight} + ${SAFE_AREA_INSET_TOP})`
+        }
+    };
+}
+
 const LayoutShell: React.FC = () => {
     const { user, logout, isLoading } = useAuth();
     const { dialogs, logDateOverride } = useQuickAddFab();
     const { t } = useI18n();
     const theme = useTheme();
+    const safeAreaToolbarSx = useMemo(() => buildSafeAreaToolbarSx(theme), [theme]);
     const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
     const navigate = useNavigate();
     const location = useLocation();
@@ -87,7 +119,7 @@ const LayoutShell: React.FC = () => {
 
     const drawerContent = (
         <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-            <Toolbar />
+            <Toolbar sx={safeAreaToolbarSx} />
 
             <Box sx={{ flexGrow: 1 }}>
                 <List>
@@ -167,7 +199,7 @@ const LayoutShell: React.FC = () => {
     return (
         <Box sx={{ display: 'flex', minHeight: '100vh', width: '100%' }}>
             <AppBar position="fixed" sx={{ zIndex: (t) => t.zIndex.drawer + 1 }}>
-                <Toolbar>
+                <Toolbar sx={safeAreaToolbarSx}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                         <Typography
                             variant="h6"
@@ -274,7 +306,7 @@ const LayoutShell: React.FC = () => {
             )}
 
             <Box component="main" sx={{ flexGrow: 1, minWidth: 0 }}>
-                <Toolbar />
+                <Toolbar sx={safeAreaToolbarSx} />
                 <Box sx={showQuickAdd ? { pb: QUICK_ADD_FAB_PAGE_BOTTOM_PADDING } : undefined}>
                     <AppPage fullBleedOnXs={showBottomNav} reserveBottomNavSpace={showBottomNav}>
                         <Outlet />
@@ -291,7 +323,7 @@ const LayoutShell: React.FC = () => {
                         bottom: 0,
                         borderTop: (t) => `1px solid ${t.palette.divider}`,
                         bgcolor: 'background.paper',
-                        pb: 'env(safe-area-inset-bottom)',
+                        pb: SAFE_AREA_INSET_BOTTOM,
                         zIndex: (t) => t.zIndex.appBar
                     }}
                 >
