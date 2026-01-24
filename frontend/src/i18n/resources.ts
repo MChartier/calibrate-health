@@ -19,10 +19,14 @@ export const en = {
     'nav.goals': 'Goals',
     'nav.profile': 'Profile',
     'nav.settings': 'Settings',
+    'nav.about': 'About',
     'nav.logOut': 'Log out',
     'nav.github': 'GitHub',
     'nav.openRepoAria': 'Open the source repository on GitHub',
     'nav.openSettingsAria': 'Open settings',
+
+    'about.subtitle': 'App details, open-source links, and legal policies.',
+    'legal.privacyPolicy': 'Privacy policy',
 
     'auth.signIn': 'Sign in',
     'auth.login': 'Login',
@@ -440,10 +444,14 @@ export const es: Record<TranslationKey, string> = {
     'nav.goals': 'Objetivos',
     'nav.profile': 'Perfil',
     'nav.settings': 'Ajustes',
+    'nav.about': 'Acerca de',
     'nav.logOut': 'Cerrar sesión',
     'nav.github': 'GitHub',
     'nav.openRepoAria': 'Abrir el repositorio de código fuente en GitHub',
     'nav.openSettingsAria': 'Abrir ajustes',
+
+    'about.subtitle': 'Detalles de la app, enlaces de código abierto y políticas legales.',
+    'legal.privacyPolicy': 'Política de privacidad',
 
     'auth.signIn': 'Iniciar sesión',
     'auth.login': 'Iniciar sesión',
@@ -859,10 +867,14 @@ export const fr: Record<TranslationKey, string> = {
     'nav.goals': 'Objectifs',
     'nav.profile': 'Profil',
     'nav.settings': 'Paramètres',
+    'nav.about': 'À propos',
     'nav.logOut': 'Se déconnecter',
     'nav.github': 'GitHub',
     'nav.openRepoAria': 'Ouvrir le dépôt source sur GitHub',
     'nav.openSettingsAria': 'Ouvrir les paramètres',
+
+    'about.subtitle': "Détails de l'app, liens open source et politiques légales.",
+    'legal.privacyPolicy': 'Politique de confidentialité',
 
     'auth.signIn': 'Se connecter',
     'auth.login': 'Connexion',
@@ -1278,10 +1290,14 @@ export const ru: Record<TranslationKey, string> = {
     'nav.goals': 'Цели',
     'nav.profile': 'Профиль',
     'nav.settings': 'Настройки',
+    'nav.about': 'О приложении',
     'nav.logOut': 'Выйти',
     'nav.github': 'GitHub',
     'nav.openRepoAria': 'Открыть репозиторий исходного кода на GitHub',
     'nav.openSettingsAria': 'Открыть настройки',
+
+    'about.subtitle': 'Сведения о приложении, ссылки на исходный код и юридические политики.',
+    'legal.privacyPolicy': 'Политика конфиденциальности',
 
     'auth.signIn': 'Войти',
     'auth.login': 'Вход',

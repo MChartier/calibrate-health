@@ -4,11 +4,16 @@ import {
     FormControl,
     FormHelperText,
     InputLabel,
+    List,
+    ListItemButton,
+    ListItemText,
     MenuItem,
     Select,
     Stack
 } from '@mui/material';
+import ChevronRightIcon from '@mui/icons-material/ChevronRightRounded';
 import { useTheme } from '@mui/material/styles';
+import { Link as RouterLink } from 'react-router-dom';
 import { useTransientStatus } from '../hooks/useTransientStatus';
 import { useAuth } from '../context/useAuth';
 import type { HeightUnit, WeightUnit } from '../context/authContext';
@@ -185,6 +190,15 @@ const Settings: React.FC = () => {
                                 : t('settings.themeHelper.persisted')}
                         </FormHelperText>
                     </FormControl>
+                </AppCard>
+
+                <AppCard contentSx={{ p: 0 }}>
+                    <List disablePadding>
+                        <ListItemButton component={RouterLink} to="/about">
+                            <ListItemText primary={t('nav.about')} secondary={t('about.subtitle')} />
+                            <ChevronRightIcon sx={{ color: 'text.secondary' }} />
+                        </ListItemButton>
+                    </List>
                 </AppCard>
             </Stack>
         </AppPage>

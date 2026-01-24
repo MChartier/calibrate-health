@@ -25,6 +25,7 @@ import ShowChartIcon from '@mui/icons-material/ShowChartRounded';
 import PersonIcon from '@mui/icons-material/PersonRounded';
 import SettingsIcon from '@mui/icons-material/SettingsRounded';
 import LogoutIcon from '@mui/icons-material/LogoutRounded';
+import InfoIcon from '@mui/icons-material/InfoRounded';
 import GitHubIcon from '@mui/icons-material/GitHub';
 import { alpha, useTheme } from '@mui/material/styles';
 import { useAuth } from '../context/useAuth';
@@ -35,14 +36,13 @@ import { getAvatarLabel } from '../utils/avatarLabel';
 import { getTodayIsoDate } from '../utils/date';
 import { useI18n } from '../i18n/useI18n';
 import { QUICK_ADD_FAB_PAGE_BOTTOM_PADDING } from '../constants/quickAddFab';
+import { CALIBRATE_REPO_URL } from '../constants/links';
 import LogQuickAddFab from './LogQuickAddFab';
 
 /**
  * App shell layout with navigation chrome and quick-add entry points.
  */
 const drawerWidth = 240;
-const GITHUB_REPO_URL = 'https://github.com/mchartier/calibrate-health';
-
 /**
  * Map the current pathname to a navigation value so nested routes keep the correct tab highlighted.
  */
@@ -143,6 +143,13 @@ const LayoutShell: React.FC = () => {
                     <ListItemText primary={t('nav.settings')} />
                 </ListItemButton>
 
+                <ListItemButton selected={location.pathname.startsWith('/about')} component={RouterLink} to="/about">
+                    <ListItemIcon>
+                        <InfoIcon />
+                    </ListItemIcon>
+                    <ListItemText primary={t('nav.about')} />
+                </ListItemButton>
+
                 <ListItemButton onClick={handleLogout}>
                     <ListItemIcon>
                         <LogoutIcon />
@@ -203,7 +210,7 @@ const LayoutShell: React.FC = () => {
                     <Tooltip title={t('nav.github')}>
                         <IconButton
                             component="a"
-                            href={GITHUB_REPO_URL}
+                            href={CALIBRATE_REPO_URL}
                             target="_blank"
                             rel="noreferrer"
                             color="inherit"
