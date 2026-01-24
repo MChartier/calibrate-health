@@ -125,6 +125,8 @@ function getPwaOptions(): Partial<VitePWAOptions> {
       // In constrained/dev environments this can occasionally fail, and minification isn't critical here.
       mode: 'development',
       disableDevLogs: true,
+      // Include the push notification handlers alongside the generated service worker.
+      importScripts: ['pwa-push-sw.js'],
       // SPA navigation fallback should not hijack backend endpoints.
       navigateFallbackDenylist: [/^\/api\//, /^\/auth\//, /^\/dev\/test\//],
     },

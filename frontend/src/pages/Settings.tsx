@@ -17,6 +17,7 @@ import type { ThemePreference } from '../context/themeModeContext';
 import AccountSecurityCard from '../components/AccountSecurityCard';
 import LoseItImportCard from '../components/imports/LoseItImportCard';
 import ProfilePhotoCard from '../components/ProfilePhotoCard';
+import NotificationSettingsCard from '../components/NotificationSettingsCard';
 import TimeZonePicker from '../components/TimeZonePicker';
 import UnitPreferenceToggles from '../components/UnitPreferenceToggles';
 import AppPage from '../ui/AppPage';
@@ -125,6 +126,8 @@ const Settings: React.FC = () => {
                 <AccountSecurityCard />
 
                 <LoseItImportCard />
+
+                <NotificationSettingsCard />
 
                 <AppCard>
                     <SectionHeader title={t('settings.unitsAndLocalization')} sx={{ mb: 0.5 }} />

@@ -78,6 +78,43 @@ model User {
   food_logs     FoodLog[]
   /// User-owned library of reusable foods and recipes for quick logging.
   my_foods      MyFood[]
+  /// Notification preferences for reminders and badges (optional until a user opts in).
+  notification_settings NotificationSettings?
+  /// Web push subscriptions registered for this user (one per device/browser).
+  push_subscriptions     PushSubscription[]
+}
+
+model NotificationSettings {
+  id                          Int      @id @default(autoincrement())
+  user_id                     Int      @unique
+  user                        User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  /// Whether to send a daily weigh-in reminder notification.
+  weight_reminder_enabled     Boolean  @default(false)
+  /// Whether to send an end-of-day meal logging reminder notification.
+  food_reminder_enabled       Boolean  @default(false)
+  /// Whether to update the app badge when today's logging is incomplete.
+  badge_enabled               Boolean  @default(false)
+  /// Last local date (UTC-normalized) a weigh-in reminder was sent.
+  last_weight_reminder_date   DateTime? @db.Date
+  /// Last local date (UTC-normalized) a meal logging reminder was sent.
+  last_food_reminder_date     DateTime? @db.Date
+  created_at                  DateTime @default(now())
+  updated_at                  DateTime @updatedAt
+}
+
+model PushSubscription {
+  id           Int      @id @default(autoincrement())
+  user_id      Int
+  user         User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  endpoint     String   @unique
+  p256dh       String
+  auth         String
+  user_agent   String?
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+  last_seen_at DateTime @default(now())
+
+  @@index([user_id])
 }
 
 model Goal {

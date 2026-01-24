@@ -36,6 +36,7 @@ import { getTodayIsoDate } from '../utils/date';
 import { useI18n } from '../i18n/useI18n';
 import { QUICK_ADD_FAB_PAGE_BOTTOM_PADDING } from '../constants/quickAddFab';
 import LogQuickAddFab from './LogQuickAddFab';
+import { useNotificationBadges } from '../hooks/useNotificationBadges';
 
 /**
  * App shell layout with navigation chrome and quick-add entry points.
@@ -79,6 +80,8 @@ const LayoutShell: React.FC = () => {
     const authCtaSize = isDesktop ? 'medium' : 'small';
     const registerCtaLabel = isDesktop ? t('auth.createAccount') : t('auth.register');
     const today = useMemo(() => getTodayIsoDate(user?.timezone), [user?.timezone]);
+
+    useNotificationBadges();
 
     const handleLogout = async () => {
         await logout();
