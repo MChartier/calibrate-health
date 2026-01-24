@@ -3,7 +3,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
-import { VitePWA, type VitePWAOptions } from 'vite-plugin-pwa'
+import { VitePWA, type ManifestOptions, type VitePWAOptions } from 'vite-plugin-pwa'
 import {
   QUICK_ADD_SHORTCUT_ACTIONS,
   QUICK_ADD_SHORTCUT_QUERY_PARAM,
@@ -30,6 +30,86 @@ const QUICK_ADD_SHORTCUT_BASE_PATH = '/log' // Base route for quick-add shortcut
 const PWA_LAUNCH_HANDLER = {
   client_mode: 'navigate-existing',
 } as const
+// Placeholder PWA asset paths; replace with real files under frontend/public/.
+const PWA_ICON_ASSETS: string[] = [
+  'pwa/icons/app-maskable-192.png',
+  'pwa/icons/app-maskable-512.png',
+  'pwa/icons/app-monochrome-192.png',
+  'pwa/icons/app-monochrome-512.png',
+] 
+// Screenshot placeholders used by install prompts/app stores (wide + narrow form factors).
+const PWA_SCREENSHOT_ASSETS: string[] = [
+  'pwa/screenshots/desktop-dashboard-1280x720.png',
+  'pwa/screenshots/desktop-log-1280x720.png',
+  'pwa/screenshots/mobile-dashboard-720x1280.png',
+  'pwa/screenshots/mobile-log-720x1280.png',
+]
+const PWA_ICON_SPECS: ManifestOptions['icons'] = [
+  {
+    src: 'pwa-192x192.png',
+    sizes: '192x192',
+    type: 'image/png',
+  },
+  {
+    src: 'pwa-512x512.png',
+    sizes: '512x512',
+    type: 'image/png',
+  },
+  {
+    src: 'pwa/icons/app-maskable-192.png',
+    sizes: '192x192',
+    type: 'image/png',
+    purpose: 'maskable',
+  },
+  {
+    src: 'pwa/icons/app-maskable-512.png',
+    sizes: '512x512',
+    type: 'image/png',
+    purpose: 'maskable',
+  },
+  {
+    src: 'pwa/icons/app-monochrome-192.png',
+    sizes: '192x192',
+    type: 'image/png',
+    purpose: 'monochrome',
+  },
+  {
+    src: 'pwa/icons/app-monochrome-512.png',
+    sizes: '512x512',
+    type: 'image/png',
+    purpose: 'monochrome',
+  },
+]
+const PWA_SCREENSHOT_SPECS: ManifestOptions['screenshots'] = [
+  {
+    src: 'pwa/screenshots/desktop-dashboard-1280x720.png',
+    sizes: '1280x720',
+    type: 'image/png',
+    label: 'Dashboard overview',
+    form_factor: 'wide',
+  },
+  {
+    src: 'pwa/screenshots/desktop-log-1280x720.png',
+    sizes: '1280x720',
+    type: 'image/png',
+    label: 'Food log and daily totals',
+    form_factor: 'wide',
+  },
+  {
+    src: 'pwa/screenshots/mobile-dashboard-720x1280.png',
+    sizes: '720x1280',
+    type: 'image/png',
+    label: 'Mobile dashboard',
+    form_factor: 'narrow',
+  },
+  {
+    src: 'pwa/screenshots/mobile-log-720x1280.png',
+    sizes: '720x1280',
+    type: 'image/png',
+    label: 'Mobile food log',
+    form_factor: 'narrow',
+  },
+]
 
 /**
  * Build a log-route URL that triggers a quick-add dialog when opened from a PWA shortcut.
@@ -62,6 +142,8 @@ function getPwaOptions(): Partial<VitePWAOptions> {
       'apple-touch-icon.png',
       'pwa-192x192.png',
       'pwa-512x512.png',
+      ...PWA_ICON_ASSETS,
+      ...PWA_SCREENSHOT_ASSETS,
     ],
     manifest: {
       name: 'calibrate',
@@ -69,28 +151,14 @@ function getPwaOptions(): Partial<VitePWAOptions> {
       description: 'A responsive calorie tracker.',
       theme_color: '#111827',
       background_color: '#111827',
+      categories: ['health', 'fitness', 'lifestyle'],
       display: 'standalone',
+      display_override: ['window-controls-overlay', 'standalone', 'minimal-ui', 'browser'],
       launch_handler: PWA_LAUNCH_HANDLER,
       start_url: '/',
       scope: '/',
-      icons: [
-        {
-          src: 'pwa-192x192.png',
-          sizes: '192x192',
-          type: 'image/png',
-        },
-        {
-          src: 'pwa-512x512.png',
-          sizes: '512x512',
-          type: 'image/png',
-        },
-        {
-          src: 'pwa-512x512.png',
-          sizes: '512x512',
-          type: 'image/png',
-          purpose: 'maskable',
-        },
-      ],
+      icons: PWA_ICON_SPECS,
+      screenshots: PWA_SCREENSHOT_SPECS,
       shortcuts: [
         {
           name: 'Log Weight',
