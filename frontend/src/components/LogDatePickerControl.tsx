@@ -1,0 +1,161 @@
+import React, { useRef } from 'react';
+import { Box, TextField } from '@mui/material';
+
+const LOG_DATE_CONTROL_HEIGHT_SPACING = { xs: 9, sm: 7 }; // Fixed block height for the date control (in theme spacing units).
+const LOG_DATE_CONTROL_TOP_PADDING_SPACING = 2; // Top padding keeps the floating label visible on full-bleed mobile layouts.
+const LOG_DATE_PICKER_OVERLAY_FOCUS_OUTLINE_PX = 2; // Thickness of the keyboard focus ring on the date control overlay.
+const LOG_DATE_PICKER_OVERLAY_FOCUS_OUTLINE_OFFSET_PX = 2; // Gap between the overlay outline and the field chrome.
+
+type LogDatePickerControlProps = {
+    value: string;
+    label: string;
+    ariaLabel: string;
+    min: string;
+    max: string;
+    onChange: (nextDate: string) => void;
+};
+
+/**
+ * Open a native browser date picker for an `<input type="date">` when supported.
+ *
+ * Chrome/Edge expose `HTMLInputElement.showPicker()` which lets us make the entire control open the picker (not just
+ * the calendar icon), avoiding the fiddly "edit month/day/year segments" interaction.
+ */
+function showNativeDatePicker(input: HTMLInputElement | null) {
+    if (!input) return;
+
+    try {
+        const maybeShowPicker = (input as HTMLInputElement & { showPicker?: () => void }).showPicker;
+        if (typeof maybeShowPicker === 'function') {
+            maybeShowPicker.call(input);
+            return;
+        }
+    } catch {
+        // Ignore - some browsers throw when attempting to show a picker programmatically.
+    }
+
+    // Fallbacks: try click() first (often opens the picker); if that fails, focus the hidden input.
+    input.click();
+    input.focus();
+}
+
+/**
+ * LogDatePickerControl
+ *
+ * Self-contained date picker field with a fixed height so the Log page can render it as a normal block.
+ * The control adds its own top inset on xs screens to keep the floating label visible under the app bar.
+ */
+const LogDatePickerControl: React.FC<LogDatePickerControlProps> = ({
+    value,
+    label,
+    ariaLabel,
+    min,
+    max,
+    onChange
+}) => {
+    const dateOverlayButtonRef = useRef<HTMLButtonElement | null>(null);
+    const datePickerInputRef = useRef<HTMLInputElement | null>(null);
+
+    return (
+        <Box
+            sx={(theme) => ({
+                position: 'relative',
+                flexGrow: 1,
+                minWidth: 0,
+                height: {
+                    xs: theme.spacing(LOG_DATE_CONTROL_HEIGHT_SPACING.xs),
+                    sm: theme.spacing(LOG_DATE_CONTROL_HEIGHT_SPACING.sm)
+                },
+                pt: { xs: theme.spacing(LOG_DATE_CONTROL_TOP_PADDING_SPACING), sm: 0 }
+            })}
+        >
+            <TextField
+                label={label}
+                type="date"
+                value={value}
+                InputLabelProps={{ shrink: true }}
+                inputProps={{
+                    min,
+                    max,
+                    readOnly: true,
+                    tabIndex: -1
+                }}
+                sx={{
+                    width: '100%',
+                    '& input': { textAlign: 'center' },
+                    // Native `type="date"` inputs render differently per-browser; these help keep the value visually centered
+                    // in Chrome/Safari without affecting the calendar icon alignment.
+                    '& input::-webkit-datetime-edit': { textAlign: 'center' },
+                    '& input::-webkit-date-and-time-value': { textAlign: 'center' },
+                    '& input::-webkit-datetime-edit-fields-wrapper': {
+                        display: 'flex',
+                        justifyContent: 'center'
+                    }
+                }}
+            />
+
+            {/* Hidden input used solely for the browser's native date picker UI. */}
+            <Box
+                component="input"
+                type="date"
+                ref={datePickerInputRef}
+                value={value}
+                min={min}
+                max={max}
+                tabIndex={-1}
+                aria-hidden="true"
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                    const nextDate = e.target.value;
+                    if (!nextDate) return;
+                    onChange(nextDate);
+                    dateOverlayButtonRef.current?.focus({ preventScroll: true });
+                }}
+                sx={(theme) => ({
+                    position: 'absolute',
+                    top: { xs: theme.spacing(LOG_DATE_CONTROL_TOP_PADDING_SPACING), sm: 0 },
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    opacity: 0,
+                    pointerEvents: 'none'
+                })}
+            />
+
+            {/*
+                Overlay button: makes the whole field open the date picker without focusing the visible
+                input's "month/day/year" segments (which feels fiddly on mobile).
+                The overlay itself is the focus target for keyboard navigation.
+            */}
+            <Box
+                component="button"
+                type="button"
+                ref={dateOverlayButtonRef}
+                aria-label={ariaLabel}
+                onClick={() => showNativeDatePicker(datePickerInputRef.current)}
+                sx={(theme) => ({
+                    position: 'absolute',
+                    top: { xs: theme.spacing(LOG_DATE_CONTROL_TOP_PADDING_SPACING), sm: 0 },
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    zIndex: 1,
+                    cursor: 'pointer',
+                    borderRadius: theme.shape.borderRadius,
+                    WebkitTapHighlightColor: 'transparent',
+                    background: 'transparent',
+                    border: 0,
+                    padding: 0,
+                    margin: 0,
+                    outline: 'none',
+                    '&:active': { backgroundColor: theme.palette.action.hover },
+                    '&:focus-visible': {
+                        outline: `${LOG_DATE_PICKER_OVERLAY_FOCUS_OUTLINE_PX}px solid ${theme.palette.primary.main}`,
+                        outlineOffset: `${LOG_DATE_PICKER_OVERLAY_FOCUS_OUTLINE_OFFSET_PX}px`
+                    }
+                })}
+            />
+        </Box>
+    );
+};
+
+export default LogDatePickerControl;

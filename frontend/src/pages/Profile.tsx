@@ -82,7 +82,9 @@ const Profile: React.FC = () => {
     const theme = useTheme();
     const { t } = useI18n();
     const { user, updateProfile } = useAuth();
-    const sectionGap = theme.custom.layout.page.sectionGap;
+    const { sectionGap, sectionGapCompact } = theme.custom.layout.page;
+    // Tighter section spacing on small screens keeps profile cards visually grouped.
+    const sectionSpacing = { xs: sectionGapCompact, sm: sectionGapCompact, md: sectionGap };
 
     const autosaveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const savedMessageTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -238,7 +240,7 @@ const Profile: React.FC = () => {
 
     return (
         <AppPage maxWidth="content">
-            <Stack spacing={sectionGap} useFlexGap>
+            <Stack spacing={sectionSpacing} useFlexGap>
                 <CalorieTargetBanner />
 
                 <AppCard>

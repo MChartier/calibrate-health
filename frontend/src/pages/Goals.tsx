@@ -90,7 +90,9 @@ const Goals: React.FC = () => {
     const { user } = useAuth();
     const { t } = useI18n();
     const theme = useTheme();
-    const sectionGap = theme.custom.layout.page.sectionGap;
+    const { sectionGap, sectionGapCompact } = theme.custom.layout.page;
+    // Tighter section spacing on small screens keeps stacked cards from feeling overly separated.
+    const sectionSpacing = { xs: sectionGapCompact, sm: sectionGapCompact, md: sectionGap };
     const unitLabel = user?.weight_unit === 'LB' ? 'lb' : 'kg';
     const rawWeightSeriesLabel = t('goals.weightSeriesLabel', { unit: unitLabel });
     const smoothedWeightSeriesLabel = t('goals.weightSeriesLabelSmoothed', {
@@ -328,7 +330,7 @@ const Goals: React.FC = () => {
 
     return (
         <AppPage maxWidth="wide">
-            <Stack spacing={sectionGap} useFlexGap>
+            <Stack spacing={sectionSpacing} useFlexGap>
                 <GoalTrackerCard />
 
                 <AppCard>

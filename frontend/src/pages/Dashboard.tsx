@@ -1,5 +1,6 @@
 import React from 'react';
-import { Box, Grid } from '@mui/material';
+import { Box } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import { useAuth } from '../context/useAuth';
 import CalorieTargetBanner from '../components/CalorieTargetBanner';
 import LogSummaryCard from '../components/LogSummaryCard';
@@ -10,20 +11,26 @@ import GoalTrackerCard from '../components/GoalTrackerCard';
  */
 const Dashboard: React.FC = () => {
     useAuth();
+    const theme = useTheme();
+    const { sectionGap, sectionGapCompact } = theme.custom.layout.page;
+    // Shared card spacing across the dashboard stack.
+    const cardGap = { xs: sectionGapCompact, sm: sectionGapCompact, md: sectionGap };
 
     return (
-        <Box>
-            <CalorieTargetBanner isDashboard />
+        <Box
+            sx={{
+                display: 'grid',
+                gridTemplateColumns: { xs: '1fr', md: 'repeat(2, minmax(0, 1fr))' },
+                gap: cardGap,
+                alignItems: 'stretch'
+            }}
+        >
+            <Box sx={{ gridColumn: { md: '1 / -1' } }}>
+                <CalorieTargetBanner isDashboard />
+            </Box>
 
-            <Grid container spacing={3} alignItems="stretch">
-                <Grid size={{ xs: 12, md: 6 }} sx={{ display: 'flex' }}>
-                    <LogSummaryCard dashboardMode />
-                </Grid>
-                <Grid size={{ xs: 12, md: 6 }} sx={{ display: 'flex' }}>
-                    <GoalTrackerCard isDashboard />
-                </Grid>
-            </Grid>
-
+            <LogSummaryCard dashboardMode />
+            <GoalTrackerCard isDashboard />
         </Box>
     );
 };

@@ -107,7 +107,7 @@ const AppPage: React.FC<AppPageProps> = ({
 
                     return {
                         px: fullBleedOnXs ? { ...theme.custom.layout.page.gutterX, xs: 0 } : theme.custom.layout.page.gutterX,
-                        pt: theme.custom.layout.page.paddingTop,
+                        pt: fullBleedOnXs ? theme.custom.layout.page.paddingTopCompact : theme.custom.layout.page.paddingTop,
                         pb: paddingBottom,
                         ...(fullBleedOnXs
                             ? {

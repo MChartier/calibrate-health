@@ -13,6 +13,8 @@ declare module '@mui/material/styles' {
                     gutterX: { xs: number; sm: number; md: number };
                     /** Top padding for page content (in theme spacing units). */
                     paddingTop: { xs: number; sm: number; md: number };
+                    /** Top padding for page content on compact (mobile) layouts (in theme spacing units). */
+                    paddingTopCompact: { xs: number; sm: number; md: number };
                     /** Bottom padding for page content when no bottom nav is present (in theme spacing units). */
                     paddingBottom: { xs: number; sm: number; md: number };
                     /**
@@ -22,6 +24,8 @@ declare module '@mui/material/styles' {
                     paddingBottomWithBottomNav: string;
                     /** Default vertical spacing between page sections (in theme spacing units). */
                     sectionGap: number;
+                    /** Tighter vertical spacing between page sections on small screens (in theme spacing units). */
+                    sectionGapCompact: number;
                 };
                 surface: {
                     padding: {

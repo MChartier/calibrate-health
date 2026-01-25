@@ -30,7 +30,9 @@ const ABOUT_LINK_SPACING = 1; // Spacing between About card action buttons.
  */
 const Settings: React.FC = () => {
     const theme = useTheme();
-    const sectionGap = theme.custom.layout.page.sectionGap;
+    const { sectionGap, sectionGapCompact } = theme.custom.layout.page;
+    // Tighter section spacing on small screens keeps settings cards readable without excess gaps.
+    const sectionSpacing = { xs: sectionGapCompact, sm: sectionGapCompact, md: sectionGap };
     const { t } = useI18n();
     const { user, updateUnitPreferences, updateTimezone, updateLanguage } = useAuth();
     const { preference: themePreference, mode: resolvedThemeMode, setPreference: setThemePreference } = useThemeMode();
@@ -118,7 +120,7 @@ const Settings: React.FC = () => {
 
     return (
         <AppPage maxWidth="content">
-            <Stack spacing={sectionGap} useFlexGap>
+            <Stack spacing={sectionSpacing} useFlexGap>
                 <ProfilePhotoCard description={t('settings.profilePhotoDescription')} />
 
                 <AccountSecurityCard />
