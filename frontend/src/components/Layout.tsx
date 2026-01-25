@@ -46,6 +46,11 @@ const drawerWidth = 240;
 const SAFE_AREA_INSET_TOP = 'var(--safe-area-inset-top, 0px)';
 const SAFE_AREA_INSET_BOTTOM = 'var(--safe-area-inset-bottom, 0px)';
 const DEFAULT_TOOLBAR_MIN_HEIGHT_SPACING = 7; // MUI default toolbar height in spacing units (56px).
+const DRAWER_NAV_ITEM_BORDER_RADIUS = 0;
+/**
+ * Keep drawer navigation backgrounds rectangular and flush so adjacent states do not visually overlap.
+ */
+const drawerNavItemSx: SxProps<Theme> = { borderRadius: DRAWER_NAV_ITEM_BORDER_RADIUS };
 /**
  * Map the current pathname to a navigation value so nested routes keep the correct tab highlighted.
  */
@@ -121,11 +126,12 @@ const LayoutShell: React.FC = () => {
             <Toolbar sx={safeAreaToolbarSx} />
 
             <Box sx={{ flexGrow: 1 }}>
-                <List>
+                <List disablePadding>
                     <ListItemButton
                         selected={location.pathname.startsWith('/dashboard')}
                         component={RouterLink}
                         to="/dashboard"
+                        sx={drawerNavItemSx}
                     >
                         <ListItemIcon>
                             <DashboardIcon />
@@ -133,14 +139,24 @@ const LayoutShell: React.FC = () => {
                         <ListItemText primary={t('nav.dashboard')} />
                     </ListItemButton>
 
-                    <ListItemButton selected={location.pathname.startsWith('/log')} component={RouterLink} to="/log">
+                    <ListItemButton
+                        selected={location.pathname.startsWith('/log')}
+                        component={RouterLink}
+                        to="/log"
+                        sx={drawerNavItemSx}
+                    >
                         <ListItemIcon>
                             <ListAltIcon />
                         </ListItemIcon>
                         <ListItemText primary={t('nav.log')} />
                     </ListItemButton>
 
-                    <ListItemButton selected={location.pathname.startsWith('/goals')} component={RouterLink} to="/goals">
+                    <ListItemButton
+                        selected={location.pathname.startsWith('/goals')}
+                        component={RouterLink}
+                        to="/goals"
+                        sx={drawerNavItemSx}
+                    >
                         <ListItemIcon>
                             <ShowChartIcon />
                         </ListItemIcon>
@@ -151,6 +167,7 @@ const LayoutShell: React.FC = () => {
                         selected={location.pathname.startsWith('/profile')}
                         component={RouterLink}
                         to="/profile"
+                        sx={drawerNavItemSx}
                     >
                         <ListItemIcon>
                             <PersonIcon />
@@ -162,11 +179,12 @@ const LayoutShell: React.FC = () => {
 
             <Divider />
 
-            <List>
+            <List disablePadding>
                 <ListItemButton
                     selected={location.pathname.startsWith('/settings')}
                     component={RouterLink}
                     to="/settings"
+                    sx={drawerNavItemSx}
                 >
                     <ListItemIcon>
                         <SettingsIcon />
@@ -174,7 +192,7 @@ const LayoutShell: React.FC = () => {
                     <ListItemText primary={t('nav.settings')} />
                 </ListItemButton>
 
-                <ListItemButton onClick={handleLogout}>
+                <ListItemButton onClick={handleLogout} sx={drawerNavItemSx}>
                     <ListItemIcon>
                         <LogoutIcon />
                     </ListItemIcon>
