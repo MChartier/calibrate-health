@@ -25,7 +25,7 @@ export const en = {
     'nav.openRepoAria': 'Open the source repository on GitHub',
     'nav.openSettingsAria': 'Open settings',
 
-    'about.subtitle': 'App details, open-source links, and legal policies.',
+    'about.subtitle': 'Purpose, mission, and transparency.',
     'legal.privacyPolicy': 'Privacy policy',
 
     'auth.signIn': 'Sign in',
@@ -450,7 +450,7 @@ export const es: Record<TranslationKey, string> = {
     'nav.openRepoAria': 'Abrir el repositorio de código fuente en GitHub',
     'nav.openSettingsAria': 'Abrir ajustes',
 
-    'about.subtitle': 'Detalles de la app, enlaces de código abierto y políticas legales.',
+    'about.subtitle': 'Propósito, misión y transparencia.',
     'legal.privacyPolicy': 'Política de privacidad',
 
     'auth.signIn': 'Iniciar sesión',
@@ -873,7 +873,7 @@ export const fr: Record<TranslationKey, string> = {
     'nav.openRepoAria': 'Ouvrir le dépôt source sur GitHub',
     'nav.openSettingsAria': 'Ouvrir les paramètres',
 
-    'about.subtitle': "Détails de l'app, liens open source et politiques légales.",
+    'about.subtitle': 'Objectif, mission et transparence.',
     'legal.privacyPolicy': 'Politique de confidentialité',
 
     'auth.signIn': 'Se connecter',
@@ -1296,7 +1296,7 @@ export const ru: Record<TranslationKey, string> = {
     'nav.openRepoAria': 'Открыть репозиторий исходного кода на GitHub',
     'nav.openSettingsAria': 'Открыть настройки',
 
-    'about.subtitle': 'Сведения о приложении, ссылки на исходный код и юридические политики.',
+    'about.subtitle': 'Цель, миссия и прозрачность.',
     'legal.privacyPolicy': 'Политика конфиденциальности',
 
     'auth.signIn': 'Войти',
