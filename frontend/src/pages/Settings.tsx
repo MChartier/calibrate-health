@@ -1,17 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import {
-    Box,
-    FormControl,
-    FormHelperText,
-    InputLabel,
-    List,
-    ListItemButton,
-    ListItemText,
-    MenuItem,
-    Select,
-    Stack
-} from '@mui/material';
-import ChevronRightIcon from '@mui/icons-material/ChevronRightRounded';
+import { Box, Button, FormControl, FormHelperText, InputLabel, MenuItem, Select, Stack, Typography } from '@mui/material';
+import DescriptionIcon from '@mui/icons-material/DescriptionRounded';
+import GitHubIcon from '@mui/icons-material/GitHub';
 import { useTheme } from '@mui/material/styles';
 import { Link as RouterLink } from 'react-router-dom';
 import { useTransientStatus } from '../hooks/useTransientStatus';
@@ -30,6 +20,10 @@ import InlineStatusLine from '../ui/InlineStatusLine';
 import SectionHeader from '../ui/SectionHeader';
 import { APP_LANGUAGES, DEFAULT_APP_LANGUAGE, type AppLanguage } from '../i18n/languages';
 import { useI18n } from '../i18n/useI18n';
+import { CALIBRATE_REPO_URL } from '../constants/links';
+
+const ABOUT_PARAGRAPH_SPACING = 1.5; // Spacing between About card paragraphs.
+const ABOUT_LINK_SPACING = 1; // Spacing between About card action buttons.
 
 /**
  * Settings is focused on account management (photo/password) and app preferences (units/theme).
@@ -192,13 +186,53 @@ const Settings: React.FC = () => {
                     </FormControl>
                 </AppCard>
 
-                <AppCard contentSx={{ p: 0 }}>
-                    <List disablePadding>
-                        <ListItemButton component={RouterLink} to="/about">
-                            <ListItemText primary={t('nav.about')} secondary={t('about.subtitle')} />
-                            <ChevronRightIcon sx={{ color: 'text.secondary' }} />
-                        </ListItemButton>
-                    </List>
+                <AppCard>
+                    <Stack spacing={2} useFlexGap>
+                        <SectionHeader title={t('nav.about')} />
+
+                        <Stack spacing={ABOUT_PARAGRAPH_SPACING} useFlexGap>
+                            <Typography variant="body1">
+                                calibrate is a calorie and weight-tracking app for people who want to lose or manage weight.
+                                Log meals, track weigh-ins, and see daily targets, trends, and goal projections.
+                            </Typography>
+                            <Typography variant="body1">
+                                Built for daily use, calibrate focuses on fast logging and clear, transparent math that helps
+                                you stay consistent on mobile or desktop.
+                            </Typography>
+                            <Typography variant="body1">
+                                We believe health tracking should be accessible and transparent. calibrate is free, ad-free,
+                                open-source, and self-hostable so you can keep control of your data.
+                            </Typography>
+                            <Typography variant="body1">
+                                We are focused on building a trustworthy tool that respects your privacy while making it
+                                easier to stay on track day after day.
+                            </Typography>
+                            <Typography variant="body1">
+                                Calibrate Health is not a medical service and does not provide medical advice.
+                            </Typography>
+                        </Stack>
+
+                        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={ABOUT_LINK_SPACING} useFlexGap>
+                            <Button
+                                component={RouterLink}
+                                to="/privacy"
+                                variant="outlined"
+                                startIcon={<DescriptionIcon />}
+                            >
+                                {t('legal.privacyPolicy')}
+                            </Button>
+                            <Button
+                                component="a"
+                                href={CALIBRATE_REPO_URL}
+                                target="_blank"
+                                rel="noreferrer"
+                                variant="outlined"
+                                startIcon={<GitHubIcon />}
+                            >
+                                {t('nav.github')}
+                            </Button>
+                        </Stack>
+                    </Stack>
                 </AppCard>
             </Stack>
         </AppPage>

@@ -25,7 +25,6 @@ export const en = {
     'nav.openRepoAria': 'Open the source repository on GitHub',
     'nav.openSettingsAria': 'Open settings',
 
-    'about.subtitle': 'Purpose, mission, and transparency.',
     'legal.privacyPolicy': 'Privacy policy',
 
     'auth.signIn': 'Sign in',
@@ -450,7 +449,6 @@ export const es: Record<TranslationKey, string> = {
     'nav.openRepoAria': 'Abrir el repositorio de código fuente en GitHub',
     'nav.openSettingsAria': 'Abrir ajustes',
 
-    'about.subtitle': 'Propósito, misión y transparencia.',
     'legal.privacyPolicy': 'Política de privacidad',
 
     'auth.signIn': 'Iniciar sesión',
@@ -873,7 +871,6 @@ export const fr: Record<TranslationKey, string> = {
     'nav.openRepoAria': 'Ouvrir le dépôt source sur GitHub',
     'nav.openSettingsAria': 'Ouvrir les paramètres',
 
-    'about.subtitle': 'Objectif, mission et transparence.',
     'legal.privacyPolicy': 'Politique de confidentialité',
 
     'auth.signIn': 'Se connecter',
@@ -1296,7 +1293,6 @@ export const ru: Record<TranslationKey, string> = {
     'nav.openRepoAria': 'Открыть репозиторий исходного кода на GitHub',
     'nav.openSettingsAria': 'Открыть настройки',
 
-    'about.subtitle': 'Цель, миссия и прозрачность.',
     'legal.privacyPolicy': 'Политика конфиденциальности',
 
     'auth.signIn': 'Войти',

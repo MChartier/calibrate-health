@@ -25,7 +25,6 @@ import ShowChartIcon from '@mui/icons-material/ShowChartRounded';
 import PersonIcon from '@mui/icons-material/PersonRounded';
 import SettingsIcon from '@mui/icons-material/SettingsRounded';
 import LogoutIcon from '@mui/icons-material/LogoutRounded';
-import InfoIcon from '@mui/icons-material/InfoRounded';
 import GitHubIcon from '@mui/icons-material/GitHub';
 import { alpha, useTheme } from '@mui/material/styles';
 import { useAuth } from '../context/useAuth';
@@ -141,13 +140,6 @@ const LayoutShell: React.FC = () => {
                         <SettingsIcon />
                     </ListItemIcon>
                     <ListItemText primary={t('nav.settings')} />
-                </ListItemButton>
-
-                <ListItemButton selected={location.pathname.startsWith('/about')} component={RouterLink} to="/about">
-                    <ListItemIcon>
-                        <InfoIcon />
-                    </ListItemIcon>
-                    <ListItemText primary={t('nav.about')} />
                 </ListItemButton>
 
                 <ListItemButton onClick={handleLogout}>

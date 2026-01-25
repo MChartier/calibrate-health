@@ -10,7 +10,6 @@ import Settings from './pages/Settings';
 import Profile from './pages/Profile';
 import Onboarding from './pages/Onboarding';
 import DevDashboard from './pages/DevDashboard';
-import About from './pages/About';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 
 import ProtectedRoute from './components/ProtectedRoute';
@@ -36,7 +35,6 @@ function App() {
                     <Route path="history" element={<Navigate to="/goals" replace />} />
                     <Route path="settings" element={<Settings />} />
                     <Route path="profile" element={<Profile />} />
-                    <Route path="about" element={<About />} />
                 </Route>
             </Route>
         </Routes>
