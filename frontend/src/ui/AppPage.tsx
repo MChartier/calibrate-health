@@ -37,6 +37,8 @@ const APP_PAGE_MAX_WIDTH: Record<AppPageMaxWidth, number> = {
     wide: 960
 };
 
+const SAFE_AREA_INSET_BOTTOM = 'var(--safe-area-inset-bottom, 0px)';
+
 /**
  * Resolve AppPage max-width presets into pixel values.
  */
@@ -45,6 +47,20 @@ function resolveAppPageMaxWidth(maxWidth: AppPageProps['maxWidth']): number | fa
     if (typeof maxWidth === 'number') return maxWidth;
     if (typeof maxWidth === 'string') return APP_PAGE_MAX_WIDTH[maxWidth];
     return false;
+}
+
+/**
+ * Add the bottom safe-area inset to responsive spacing tokens.
+ */
+function addBottomSafeAreaInset(
+    theme: Theme,
+    paddingBottom: Theme['custom']['layout']['page']['paddingBottom']
+): { xs: string; sm: string; md: string } {
+    return {
+        xs: `calc(${theme.spacing(paddingBottom.xs)} + ${SAFE_AREA_INSET_BOTTOM})`,
+        sm: `calc(${theme.spacing(paddingBottom.sm)} + ${SAFE_AREA_INSET_BOTTOM})`,
+        md: `calc(${theme.spacing(paddingBottom.md)} + ${SAFE_AREA_INSET_BOTTOM})`
+    };
 }
 
 /**
@@ -84,20 +100,24 @@ const AppPage: React.FC<AppPageProps> = ({
     return (
         <AppPageNestingContext.Provider value={true}>
             <Box
-                sx={(theme) => ({
-                    px: fullBleedOnXs ? { ...theme.custom.layout.page.gutterX, xs: 0 } : theme.custom.layout.page.gutterX,
-                    pt: fullBleedOnXs ? theme.custom.layout.page.paddingTopCompact : theme.custom.layout.page.paddingTop,
-                    pb: reserveBottomNavSpace
+                sx={(theme) => {
+                    const paddingBottom = reserveBottomNavSpace
                         ? theme.custom.layout.page.paddingBottomWithBottomNav
-                        : theme.custom.layout.page.paddingBottom,
-                    ...(fullBleedOnXs
-                        ? {
-                            [theme.breakpoints.down('sm')]: {
-                                '& .MuiPaper-root': { borderRadius: 0 }
+                        : addBottomSafeAreaInset(theme, theme.custom.layout.page.paddingBottom);
+
+                    return {
+                        px: fullBleedOnXs ? { ...theme.custom.layout.page.gutterX, xs: 0 } : theme.custom.layout.page.gutterX,
+                        pt: fullBleedOnXs ? theme.custom.layout.page.paddingTopCompact : theme.custom.layout.page.paddingTop,
+                        pb: paddingBottom,
+                        ...(fullBleedOnXs
+                            ? {
+                                [theme.breakpoints.down('sm')]: {
+                                    '& .MuiPaper-root': { borderRadius: 0 }
+                                }
                             }
-                        }
-                        : null)
-                })}
+                            : null)
+                    };
+                }}
             >
                 {content}
             </Box>
