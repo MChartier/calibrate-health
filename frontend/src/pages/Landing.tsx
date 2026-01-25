@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, Button, Chip, Grid, Stack, Typography } from '@mui/material';
+import { Box, Button, Chip, Grid, Link, Stack, Typography } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import DevicesIcon from '@mui/icons-material/DevicesRounded';
 import MoneyOffIcon from '@mui/icons-material/MoneyOffRounded';
@@ -322,7 +322,15 @@ const Landing: React.FC = () => {
                         fontSize: theme.typography.caption.fontSize
                     })}
                 >
-                    <Stack direction="row" justifyContent="center">
+                    <Stack
+                        direction={{ xs: 'column', sm: 'row' }}
+                        spacing={1}
+                        justifyContent="center"
+                        alignItems="center"
+                    >
+                        <Link component={RouterLink} to="/privacy" underline="hover" color="text.secondary">
+                            {t('legal.privacyPolicy')}
+                        </Link>
                         <FatSecretAttributionLink />
                     </Stack>
                 </Box>
