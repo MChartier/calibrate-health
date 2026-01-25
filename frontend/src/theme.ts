@@ -6,6 +6,7 @@ import type {} from '@mui/x-charts/themeAugmentation';
 const worktreeColor = import.meta.env.VITE_WORKTREE_COLOR?.trim();
 const isMainWorktree = import.meta.env.VITE_WORKTREE_IS_MAIN === 'true';
 const appBarColor = !isMainWorktree && worktreeColor ? worktreeColor : undefined;
+const PAGE_SECTION_GAP_SPACING = 0.75; // Base vertical gap between stacked cards (theme spacing units).
 
 type ShadowRampOptions = {
     /** Base RGB hex used to tint shadows. */
@@ -92,11 +93,12 @@ export function createAppTheme(mode: PaletteMode) {
                 page: {
                     gutterX: { xs: 2, sm: 2, md: 3 },
                     paddingTop: { xs: 2, sm: 3, md: 3 },
-                    paddingTopCompact: { xs: 0, sm: 0, md: 3 },
+                    // Keep xs full-bleed, but add a small top inset on sm so rounded cards do not touch the app bar.
+                    paddingTopCompact: { xs: 0, sm: PAGE_SECTION_GAP_SPACING, md: 3 },
                     paddingBottom: { xs: 2, sm: 3, md: 3 },
                     paddingBottomWithBottomNav: 'calc(80px + var(--safe-area-inset-bottom, 0px))',
-                    sectionGap: 0.75,
-                    sectionGapCompact: 0.75
+                    sectionGap: PAGE_SECTION_GAP_SPACING,
+                    sectionGapCompact: PAGE_SECTION_GAP_SPACING
                 },
                 surface: {
                     padding: {

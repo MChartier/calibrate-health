@@ -1,8 +1,8 @@
 import React, { useRef } from 'react';
 import { Box, TextField } from '@mui/material';
 
-const LOG_DATE_CONTROL_HEIGHT_SPACING = { xs: 9, sm: 7 }; // Fixed block height for the date control (in theme spacing units).
-const LOG_DATE_CONTROL_TOP_PADDING_SPACING = 2; // Top padding keeps the floating label visible on full-bleed mobile layouts.
+const LOG_DATE_CONTROL_HEIGHT_SPACING = { xs: 9, sm: 9, md: 7 }; // Include top inset on compact layouts without shrinking the inner field height.
+const LOG_DATE_CONTROL_TOP_PADDING_SPACING = { xs: 2, sm: 2, md: 0 }; // Keep the floating label inside the control when page padding is minimal.
 const LOG_DATE_PICKER_OVERLAY_FOCUS_OUTLINE_PX = 2; // Thickness of the keyboard focus ring on the date control overlay.
 const LOG_DATE_PICKER_OVERLAY_FOCUS_OUTLINE_OFFSET_PX = 2; // Gap between the overlay outline and the field chrome.
 
@@ -43,7 +43,7 @@ function showNativeDatePicker(input: HTMLInputElement | null) {
  * LogDatePickerControl
  *
  * Self-contained date picker field with a fixed height so the Log page can render it as a normal block.
- * The control adds its own top inset on xs screens to keep the floating label visible under the app bar.
+ * The control adds its own top inset on compact layouts to keep the floating label visible under the app bar.
  */
 const LogDatePickerControl: React.FC<LogDatePickerControlProps> = ({
     value,
@@ -64,9 +64,14 @@ const LogDatePickerControl: React.FC<LogDatePickerControlProps> = ({
                 minWidth: 0,
                 height: {
                     xs: theme.spacing(LOG_DATE_CONTROL_HEIGHT_SPACING.xs),
-                    sm: theme.spacing(LOG_DATE_CONTROL_HEIGHT_SPACING.sm)
+                    sm: theme.spacing(LOG_DATE_CONTROL_HEIGHT_SPACING.sm),
+                    md: theme.spacing(LOG_DATE_CONTROL_HEIGHT_SPACING.md)
                 },
-                pt: { xs: theme.spacing(LOG_DATE_CONTROL_TOP_PADDING_SPACING), sm: 0 }
+                pt: {
+                    xs: theme.spacing(LOG_DATE_CONTROL_TOP_PADDING_SPACING.xs),
+                    sm: theme.spacing(LOG_DATE_CONTROL_TOP_PADDING_SPACING.sm),
+                    md: LOG_DATE_CONTROL_TOP_PADDING_SPACING.md
+                }
             })}
         >
             <TextField
@@ -112,7 +117,11 @@ const LogDatePickerControl: React.FC<LogDatePickerControlProps> = ({
                 }}
                 sx={(theme) => ({
                     position: 'absolute',
-                    top: { xs: theme.spacing(LOG_DATE_CONTROL_TOP_PADDING_SPACING), sm: 0 },
+                    top: {
+                        xs: theme.spacing(LOG_DATE_CONTROL_TOP_PADDING_SPACING.xs),
+                        sm: theme.spacing(LOG_DATE_CONTROL_TOP_PADDING_SPACING.sm),
+                        md: LOG_DATE_CONTROL_TOP_PADDING_SPACING.md
+                    },
                     left: 0,
                     right: 0,
                     bottom: 0,
@@ -134,7 +143,11 @@ const LogDatePickerControl: React.FC<LogDatePickerControlProps> = ({
                 onClick={() => showNativeDatePicker(datePickerInputRef.current)}
                 sx={(theme) => ({
                     position: 'absolute',
-                    top: { xs: theme.spacing(LOG_DATE_CONTROL_TOP_PADDING_SPACING), sm: 0 },
+                    top: {
+                        xs: theme.spacing(LOG_DATE_CONTROL_TOP_PADDING_SPACING.xs),
+                        sm: theme.spacing(LOG_DATE_CONTROL_TOP_PADDING_SPACING.sm),
+                        md: LOG_DATE_CONTROL_TOP_PADDING_SPACING.md
+                    },
                     left: 0,
                     right: 0,
                     bottom: 0,
