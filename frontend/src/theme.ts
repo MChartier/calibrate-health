@@ -92,9 +92,11 @@ export function createAppTheme(mode: PaletteMode) {
                 page: {
                     gutterX: { xs: 2, sm: 2, md: 3 },
                     paddingTop: { xs: 2, sm: 3, md: 3 },
+                    paddingTopCompact: { xs: 0, sm: 0, md: 3 },
                     paddingBottom: { xs: 2, sm: 3, md: 3 },
                     paddingBottomWithBottomNav: 'calc(80px + env(safe-area-inset-bottom))',
-                    sectionGap: 2
+                    sectionGap: 2,
+                    sectionGapCompact: 1.5
                 },
                 surface: {
                     padding: {

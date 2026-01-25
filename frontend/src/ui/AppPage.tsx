@@ -86,7 +86,7 @@ const AppPage: React.FC<AppPageProps> = ({
             <Box
                 sx={(theme) => ({
                     px: fullBleedOnXs ? { ...theme.custom.layout.page.gutterX, xs: 0 } : theme.custom.layout.page.gutterX,
-                    pt: theme.custom.layout.page.paddingTop,
+                    pt: fullBleedOnXs ? theme.custom.layout.page.paddingTopCompact : theme.custom.layout.page.paddingTop,
                     pb: reserveBottomNavSpace
                         ? theme.custom.layout.page.paddingBottomWithBottomNav
                         : theme.custom.layout.page.paddingBottom,

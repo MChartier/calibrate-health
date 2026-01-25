@@ -322,7 +322,6 @@ const CalorieTargetBanner: React.FC<CalorieTargetBannerProps> = ({ isDashboard =
     return (
         <Card
             sx={{
-                mb: 2,
                 width: '100%',
                 ...(isDashboard
                     ? {

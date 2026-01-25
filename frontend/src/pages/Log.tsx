@@ -1,20 +1,22 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
     Alert,
     Box,
     Button,
     IconButton,
-    TextField,
+    Stack,
     Tooltip
 } from '@mui/material';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeftRounded';
 import ChevronRightIcon from '@mui/icons-material/ChevronRightRounded';
 import TodayIcon from '@mui/icons-material/TodayRounded';
+import { useTheme } from '@mui/material/styles';
 import { useSearchParams } from 'react-router-dom';
 import FoodLogMeals from '../components/FoodLogMeals';
 import { useQueryClient } from '@tanstack/react-query';
 import LogSummaryCard from '../components/LogSummaryCard';
 import WeightSummaryCard from '../components/WeightSummaryCard';
+import LogDatePickerControl from '../components/LogDatePickerControl';
 import { useAuth } from '../context/useAuth';
 import { useQuickAddFab } from '../context/useQuickAddFab';
 import {
@@ -38,9 +40,6 @@ import { useI18n } from '../i18n/useI18n';
  *
  * Manages local-day bounds and keeps quick-add dialogs in sync with URL actions.
  */
-const LOG_DATE_PICKER_OVERLAY_FOCUS_OUTLINE_PX = 2; // Thickness of the keyboard focus ring on the date control overlay.
-const LOG_DATE_PICKER_OVERLAY_FOCUS_OUTLINE_OFFSET_PX = 2; // Gap between the overlay outline and the field chrome.
-
 type LogDateBounds = { min: string; max: string };
 
 /**
@@ -64,30 +63,6 @@ function getLogDateBounds(args: { todayIso: string; createdAtIso?: string; timeZ
 }
 
 /**
- * Open a native browser date picker for an `<input type="date">` when supported.
- *
- * Chrome/Edge expose `HTMLInputElement.showPicker()` which lets us make the entire control open the picker (not just
- * the calendar icon), avoiding the fiddly "edit month/day/year segments" interaction.
- */
-function showNativeDatePicker(input: HTMLInputElement | null) {
-    if (!input) return;
-
-    try {
-        const maybeShowPicker = (input as HTMLInputElement & { showPicker?: () => void }).showPicker;
-        if (typeof maybeShowPicker === 'function') {
-            maybeShowPicker.call(input);
-            return;
-        }
-    } catch {
-        // Ignore - some browsers throw when attempting to show a picker programmatically.
-    }
-
-    // Fallbacks: try click() first (often opens the picker); if that fails, focus the hidden input.
-    input.click();
-    input.focus();
-}
-
-/**
  * Resolve a valid quick-add action from the URL query string (used by PWA shortcuts).
  */
 function getQuickAddAction(searchParams: URLSearchParams): QuickAddShortcutAction | null {
@@ -103,6 +78,10 @@ const Log: React.FC = () => {
     const { user } = useAuth();
     const { dialogs, openWeightDialogForLogDate, openWeightDialogFromFab, setLogDateOverride } = useQuickAddFab();
     const { openFoodDialog } = dialogs;
+    const theme = useTheme();
+    const { sectionGap, sectionGapCompact } = theme.custom.layout.page;
+    // Tighter section spacing on small screens keeps log sections visually compact.
+    const sectionSpacing = { xs: sectionGapCompact, sm: sectionGapCompact, md: sectionGap };
     const [searchParams, setSearchParams] = useSearchParams();
     const timeZone = useMemo(
         () => user?.timezone?.trim() || Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
@@ -115,8 +94,6 @@ const Log: React.FC = () => {
     }, [today, timeZone, user?.created_at]);
 
     const [selectedDate, setSelectedDate] = useState(() => today);
-    const dateOverlayButtonRef = useRef<HTMLButtonElement | null>(null);
-    const datePickerInputRef = useRef<HTMLInputElement | null>(null);
 
     // Clamp selection when the bounds change (e.g. user profile loads, timezone changes).
     useEffect(() => {
@@ -199,7 +176,7 @@ const Log: React.FC = () => {
     ]);
 
     return (
-        <Box>
+        <Stack spacing={sectionSpacing} useFlexGap>
             <Box
                 sx={{
                     display: 'flex',
@@ -230,87 +207,14 @@ const Log: React.FC = () => {
                         </span>
                     </Tooltip>
 
-                    <Box sx={{ position: 'relative', flexGrow: 1, minWidth: 0 }}>
-                        <TextField
-                            label={t('log.date.label')}
-                            type="date"
-                            value={effectiveDate}
-                            InputLabelProps={{ shrink: true }}
-                            inputProps={{
-                                min: dateBounds.min,
-                                max: dateBounds.max,
-                                readOnly: true,
-                                tabIndex: -1
-                            }}
-                            sx={{
-                                width: '100%',
-                                '& input': { textAlign: 'center' },
-                                // Native `type="date"` inputs render differently per-browser; these help keep the value visually centered
-                                // in Chrome/Safari without affecting the calendar icon alignment.
-                                '& input::-webkit-datetime-edit': { textAlign: 'center' },
-                                '& input::-webkit-date-and-time-value': { textAlign: 'center' },
-                                '& input::-webkit-datetime-edit-fields-wrapper': {
-                                    display: 'flex',
-                                    justifyContent: 'center'
-                                }
-                            }}
-                        />
-
-                        {/* Hidden input used solely for the browser's native date picker UI. */}
-                        <Box
-                            component="input"
-                            type="date"
-                            ref={datePickerInputRef}
-                            value={effectiveDate}
-                            min={dateBounds.min}
-                            max={dateBounds.max}
-                            tabIndex={-1}
-                            aria-hidden="true"
-                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                                const nextDate = e.target.value;
-                                if (!nextDate) return;
-                                setSelectedDate(clampIsoDate(nextDate, dateBounds));
-                                dateOverlayButtonRef.current?.focus({ preventScroll: true });
-                            }}
-                            sx={{
-                                position: 'absolute',
-                                inset: 0,
-                                opacity: 0,
-                                pointerEvents: 'none'
-                            }}
-                        />
-
-                        {/*
-                            Overlay button: makes the whole field open the date picker without focusing the visible
-                            input's "month/day/year" segments (which feels fiddly on mobile).
-                            The overlay itself is the focus target for keyboard navigation.
-                        */}
-                        <Box
-                            component="button"
-                            type="button"
-                            ref={dateOverlayButtonRef}
-                            aria-label={t('log.datePicker.aria', { date: effectiveDateLabel })}
-                            onClick={() => showNativeDatePicker(datePickerInputRef.current)}
-                            sx={(theme) => ({
-                                position: 'absolute',
-                                inset: 0,
-                                zIndex: 1,
-                                cursor: 'pointer',
-                                borderRadius: theme.shape.borderRadius,
-                                WebkitTapHighlightColor: 'transparent',
-                                background: 'transparent',
-                                border: 0,
-                                padding: 0,
-                                margin: 0,
-                                outline: 'none',
-                                '&:active': { backgroundColor: theme.palette.action.hover },
-                                '&:focus-visible': {
-                                    outline: `${LOG_DATE_PICKER_OVERLAY_FOCUS_OUTLINE_PX}px solid ${theme.palette.primary.main}`,
-                                    outlineOffset: `${LOG_DATE_PICKER_OVERLAY_FOCUS_OUTLINE_OFFSET_PX}px`
-                                }
-                            })}
-                        />
-                    </Box>
+                    <LogDatePickerControl
+                        value={effectiveDate}
+                        label={t('log.date.label')}
+                        ariaLabel={t('log.datePicker.aria', { date: effectiveDateLabel })}
+                        min={dateBounds.min}
+                        max={dateBounds.max}
+                        onChange={(nextDate) => setSelectedDate(clampIsoDate(nextDate, dateBounds))}
+                    />
 
                     <Tooltip title={t('log.nav.nextDay')}>
                         <span>
@@ -343,10 +247,9 @@ const Log: React.FC = () => {
 
             <Box
                 sx={{
-                    mt: 2,
                     display: 'grid',
                     gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' },
-                    gap: 2,
+                    gap: sectionSpacing,
                     alignItems: 'stretch'
                 }}
             >
@@ -355,7 +258,7 @@ const Log: React.FC = () => {
                 <WeightSummaryCard date={effectiveDate} onOpenWeightEntry={openWeightDialogForLogDate} />
             </Box>
 
-            <AppCard sx={{ mt: 2 }}>
+            <AppCard>
                 {foodQuery.isError ? (
                     <Alert
                         severity="error"
@@ -371,7 +274,7 @@ const Log: React.FC = () => {
                     <FoodLogMeals logs={foodQuery.data ?? []} isLoading={foodQuery.isLoading} />
                 )}
             </AppCard>
-        </Box>
+        </Stack>
     );
 };
 
