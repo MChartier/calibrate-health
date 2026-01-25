@@ -22,6 +22,9 @@ For actual use, the Caddy container expects a `Caddyfile` next to `docker-compos
 ## Optional Environment Variables
 
 - `CADDY_EMAIL`: Email used for ACME registration (Let's Encrypt).
+- `VAPID_PUBLIC_KEY`: Web Push public key for reminder notifications.
+- `VAPID_PRIVATE_KEY`: Web Push private key for reminder notifications.
+- `VAPID_SUBJECT`: Contact string for VAPID (for example, `mailto:admin@example.com`).
 
 Staging-only:
 
@@ -31,4 +34,5 @@ Staging-only:
 ## Notes
 
 - The app image runs `npm run db:migrate` on startup (see `backend/scripts/start-prod.sh`), so ensure your database is reachable before bringing the stack up.
+- Reminder notifications are dispatched by running `npm --prefix backend run notifications:dispatch` on a schedule (for example, every 15 minutes).
 - This stack assumes a single-origin deployment (Caddy + app). For split frontend/backend hosting, set `CORS_ORIGINS` and related session cookie settings; see the root `README.md`.
