@@ -95,8 +95,8 @@ export function createAppTheme(mode: PaletteMode) {
                     paddingTopCompact: { xs: 0, sm: 0, md: 3 },
                     paddingBottom: { xs: 2, sm: 3, md: 3 },
                     paddingBottomWithBottomNav: 'calc(80px + env(safe-area-inset-bottom))',
-                    sectionGap: 2,
-                    sectionGapCompact: 1.5
+                    sectionGap: 0.75,
+                    sectionGapCompact: 0.75
                 },
                 surface: {
                     padding: {
