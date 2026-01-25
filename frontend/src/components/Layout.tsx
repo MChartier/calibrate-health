@@ -36,17 +36,16 @@ import { getAvatarLabel } from '../utils/avatarLabel';
 import { getTodayIsoDate } from '../utils/date';
 import { useI18n } from '../i18n/useI18n';
 import { QUICK_ADD_FAB_PAGE_BOTTOM_PADDING } from '../constants/quickAddFab';
+import { CALIBRATE_REPO_URL } from '../constants/links';
 import LogQuickAddFab from './LogQuickAddFab';
 
 /**
  * App shell layout with navigation chrome and quick-add entry points.
  */
 const drawerWidth = 240;
-const GITHUB_REPO_URL = 'https://github.com/mchartier/calibrate-health';
 const SAFE_AREA_INSET_TOP = 'var(--safe-area-inset-top, 0px)';
 const SAFE_AREA_INSET_BOTTOM = 'var(--safe-area-inset-bottom, 0px)';
 const DEFAULT_TOOLBAR_MIN_HEIGHT_SPACING = 7; // MUI default toolbar height in spacing units (56px).
-
 /**
  * Map the current pathname to a navigation value so nested routes keep the correct tab highlighted.
  */
@@ -235,7 +234,7 @@ const LayoutShell: React.FC = () => {
                     <Tooltip title={t('nav.github')}>
                         <IconButton
                             component="a"
-                            href={GITHUB_REPO_URL}
+                            href={CALIBRATE_REPO_URL}
                             target="_blank"
                             rel="noreferrer"
                             color="inherit"
