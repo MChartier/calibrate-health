@@ -21,7 +21,8 @@ import {
     Stack,
     TextField,
     Tooltip,
-    Typography
+    Typography,
+    useMediaQuery
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMoreRounded';
 import EditIcon from '@mui/icons-material/EditRounded';
@@ -63,6 +64,11 @@ const FOOD_LOG_SKELETON_ROW_HEIGHT_PX = 22; // Height for each placeholder row i
 const FOOD_LOG_SKELETON_ROW_CALORIES_WIDTH_PX = 76; // Approx width of a "{N} Calories" entry label.
 const FOOD_LOG_SKELETON_ROW_NAME_WIDTH_BASE_PERCENT = 58; // Base width for the entry name skeleton (varied per row).
 const FOOD_LOG_SKELETON_ROW_NAME_WIDTH_STEP_PERCENT = 10; // Step size for varying each skeleton row width.
+const FOOD_LOG_ACCORDION_SUMMARY_MIN_HEIGHT_PX = { xs: 44, sm: 48 }; // Keep headers touch-friendly while trimming excess height on xs screens.
+const FOOD_LOG_ACCORDION_SUMMARY_PADDING_X_SPACING = { xs: 1.25, sm: 1.75 }; // Horizontal padding for meal headers at each breakpoint.
+const FOOD_LOG_ACCORDION_SUMMARY_PADDING_Y_SPACING = { xs: 0.5, sm: 0.75 }; // Vertical padding/margins inside the summary row.
+const FOOD_LOG_ACCORDION_DETAILS_PADDING_SPACING = { xs: 1.25, sm: 1.75 }; // Inner padding for the accordion body.
+const FOOD_LOG_MEAL_AVATAR_SIZE_PX = { xs: 26, sm: 28 }; // Slightly smaller meal avatars on xs helps keep headers compact.
 
 /**
  * Build a Record keyed by MealPeriod using the canonical MEAL_PERIOD_ORDER sequence.
@@ -126,8 +132,20 @@ export type FoodLogMealsProps = {
 const FoodLogMeals: React.FC<FoodLogMealsProps> = ({ logs, isLoading = false }) => {
     const queryClient = useQueryClient();
     const theme = useTheme();
+    const isXs = useMediaQuery(theme.breakpoints.down('sm'));
     const { t } = useI18n();
     const sectionGap = theme.custom.layout.page.sectionGap;
+    const summaryMinHeightPx = isXs ? FOOD_LOG_ACCORDION_SUMMARY_MIN_HEIGHT_PX.xs : FOOD_LOG_ACCORDION_SUMMARY_MIN_HEIGHT_PX.sm;
+    const summaryPaddingX = isXs
+        ? FOOD_LOG_ACCORDION_SUMMARY_PADDING_X_SPACING.xs
+        : FOOD_LOG_ACCORDION_SUMMARY_PADDING_X_SPACING.sm;
+    const summaryPaddingY = isXs
+        ? FOOD_LOG_ACCORDION_SUMMARY_PADDING_Y_SPACING.xs
+        : FOOD_LOG_ACCORDION_SUMMARY_PADDING_Y_SPACING.sm;
+    const detailsPadding = isXs
+        ? FOOD_LOG_ACCORDION_DETAILS_PADDING_SPACING.xs
+        : FOOD_LOG_ACCORDION_DETAILS_PADDING_SPACING.sm;
+    const mealAvatarSizePx = isXs ? FOOD_LOG_MEAL_AVATAR_SIZE_PX.xs : FOOD_LOG_MEAL_AVATAR_SIZE_PX.sm;
 
     const meals = useMemo(() => {
         return MEAL_PERIOD_ORDER.map((key) => ({
@@ -334,12 +352,20 @@ const FoodLogMeals: React.FC<FoodLogMealsProps> = ({ logs, isLoading = false }) 
                     >
                         <AccordionSummary
                             expandIcon={<ExpandMoreIcon />}
+                            sx={{
+                                px: summaryPaddingX,
+                                py: summaryPaddingY,
+                                minHeight: summaryMinHeightPx,
+                                '&.Mui-expanded': { minHeight: summaryMinHeightPx },
+                                '& .MuiAccordionSummary-content': { my: summaryPaddingY },
+                                '& .MuiAccordionSummary-content.Mui-expanded': { my: summaryPaddingY }
+                            }}
                         >
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexGrow: 1 }}>
                                 <Avatar
                                     sx={{
-                                        width: 28,
-                                        height: 28,
+                                        width: mealAvatarSizePx,
+                                        height: mealAvatarSizePx,
                                         bgcolor: avatarBg,
                                         border: (t) => `1px solid ${t.palette.divider}`
                                     }}
@@ -357,7 +383,7 @@ const FoodLogMeals: React.FC<FoodLogMealsProps> = ({ logs, isLoading = false }) 
                                 </Typography>
                             )}
                         </AccordionSummary>
-                        <AccordionDetails>
+                        <AccordionDetails sx={{ px: detailsPadding, py: detailsPadding }}>
                             {isLoading ? (
                                 <Stack divider={<Divider flexItem />} spacing={1}>
                                     {Array.from({ length: FOOD_LOG_SKELETON_ROW_COUNT }).map((_, idx) => (

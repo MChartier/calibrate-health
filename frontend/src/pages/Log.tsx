@@ -1,24 +1,14 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import {
-    Alert,
-    Box,
-    Button,
-    IconButton,
-    Stack,
-    Tooltip
-} from '@mui/material';
-import ChevronLeftIcon from '@mui/icons-material/ChevronLeftRounded';
-import ChevronRightIcon from '@mui/icons-material/ChevronRightRounded';
-import TodayIcon from '@mui/icons-material/TodayRounded';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { Alert, Box, Button, Stack } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { useSearchParams } from 'react-router-dom';
 import FoodLogMeals from '../components/FoodLogMeals';
 import { useQueryClient } from '@tanstack/react-query';
 import LogSummaryCard from '../components/LogSummaryCard';
 import WeightSummaryCard from '../components/WeightSummaryCard';
-import LogDatePickerControl from '../components/LogDatePickerControl';
 import { useAuth } from '../context/useAuth';
 import { useQuickAddFab } from '../context/useQuickAddFab';
+import type { LogDateNavigationState } from '../context/quickAddFabState';
 import {
     QUICK_ADD_SHORTCUT_ACTIONS,
     QUICK_ADD_SHORTCUT_QUERY_PARAM,
@@ -76,7 +66,13 @@ const Log: React.FC = () => {
     const queryClient = useQueryClient();
     const { t } = useI18n();
     const { user } = useAuth();
-    const { dialogs, openWeightDialogForLogDate, openWeightDialogFromFab, setLogDateOverride } = useQuickAddFab();
+    const {
+        dialogs,
+        openWeightDialogForLogDate,
+        openWeightDialogFromFab,
+        setLogDateNavigation,
+        setLogDateOverride
+    } = useQuickAddFab();
     const { openFoodDialog } = dialogs;
     const theme = useTheme();
     const { sectionGap, sectionGapCompact } = theme.custom.layout.page;
@@ -129,6 +125,64 @@ const Log: React.FC = () => {
     const canGoBack = effectiveDate > dateBounds.min;
     const canGoForward = effectiveDate < dateBounds.max;
 
+    /**
+     * Clamp and apply a new log date selection so all navigation paths stay in bounds.
+     */
+    const applyClampedDate = useCallback(
+        (nextDate: string) => {
+            setSelectedDate(clampIsoDate(nextDate, dateBounds));
+        },
+        [dateBounds]
+    );
+
+    /**
+     * Navigate to the previous valid log day.
+     */
+    const goToPreviousDate = useCallback(() => {
+        applyClampedDate(addDaysToIsoDate(effectiveDate, -1));
+    }, [applyClampedDate, effectiveDate]);
+
+    /**
+     * Navigate to the next valid log day.
+     */
+    const goToNextDate = useCallback(() => {
+        applyClampedDate(addDaysToIsoDate(effectiveDate, 1));
+    }, [applyClampedDate, effectiveDate]);
+
+    /**
+     * Jump directly to today (the upper date bound).
+     */
+    const goToToday = useCallback(() => {
+        applyClampedDate(dateBounds.max);
+    }, [applyClampedDate, dateBounds.max]);
+
+    const logDateNavigation = useMemo<LogDateNavigationState>(
+        () => ({
+            date: effectiveDate,
+            dateLabel: effectiveDateLabel,
+            minDate: dateBounds.min,
+            maxDate: dateBounds.max,
+            canGoBack,
+            canGoForward,
+            goToPreviousDate,
+            goToNextDate,
+            goToToday,
+            setDate: applyClampedDate
+        }),
+        [
+            applyClampedDate,
+            canGoBack,
+            canGoForward,
+            dateBounds.max,
+            dateBounds.min,
+            effectiveDate,
+            effectiveDateLabel,
+            goToNextDate,
+            goToPreviousDate,
+            goToToday
+        ]
+    );
+
     useEffect(() => {
         setLogDateOverride(effectiveDate);
     }, [effectiveDate, setLogDateOverride]);
@@ -139,6 +193,13 @@ const Log: React.FC = () => {
         };
     }, [setLogDateOverride]);
 
+    useEffect(() => {
+        setLogDateNavigation(logDateNavigation);
+        return () => {
+            setLogDateNavigation(null);
+        };
+    }, [logDateNavigation, setLogDateNavigation]);
+
     const quickAddAction = getQuickAddAction(searchParams);
 
     useEffect(() => {
@@ -146,7 +207,7 @@ const Log: React.FC = () => {
 
         const quickAddDate = dateBounds.max;
         if (selectedDate !== quickAddDate) {
-            setSelectedDate(quickAddDate);
+            applyClampedDate(quickAddDate);
         }
 
         switch (quickAddAction) {
@@ -166,6 +227,7 @@ const Log: React.FC = () => {
             setSearchParams(nextParams, { replace: true });
         }
     }, [
+        applyClampedDate,
         dateBounds.max,
         openFoodDialog,
         openWeightDialogFromFab,
@@ -177,74 +239,6 @@ const Log: React.FC = () => {
 
     return (
         <Stack spacing={sectionSpacing} useFlexGap>
-            <Box
-                sx={{
-                    display: 'flex',
-                    alignItems: { xs: 'stretch', sm: 'center' },
-                    gap: 2,
-                    flexDirection: { xs: 'column', sm: 'row' }
-                }}
-            >
-                <Box
-                    sx={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 1,
-                        width: '100%'
-                    }}
-                >
-                    <Tooltip title={t('log.nav.prevDay')}>
-                        <span>
-                            <IconButton
-                                aria-label={t('log.nav.prevDay')}
-                                onClick={() =>
-                                    setSelectedDate(clampIsoDate(addDaysToIsoDate(effectiveDate, -1), dateBounds))
-                                }
-                                disabled={!canGoBack}
-                            >
-                                <ChevronLeftIcon />
-                            </IconButton>
-                        </span>
-                    </Tooltip>
-
-                    <LogDatePickerControl
-                        value={effectiveDate}
-                        label={t('log.date.label')}
-                        ariaLabel={t('log.datePicker.aria', { date: effectiveDateLabel })}
-                        min={dateBounds.min}
-                        max={dateBounds.max}
-                        onChange={(nextDate) => setSelectedDate(clampIsoDate(nextDate, dateBounds))}
-                    />
-
-                    <Tooltip title={t('log.nav.nextDay')}>
-                        <span>
-                            <IconButton
-                                aria-label={t('log.nav.nextDay')}
-                                onClick={() => {
-                                    const next = addDaysToIsoDate(effectiveDate, 1);
-                                    setSelectedDate(clampIsoDate(next, dateBounds));
-                                }}
-                                disabled={!canGoForward}
-                            >
-                                <ChevronRightIcon />
-                            </IconButton>
-                        </span>
-                    </Tooltip>
-
-                    <Tooltip title={t('log.nav.jumpToToday')}>
-                        <span>
-                            <IconButton
-                                aria-label={t('log.nav.jumpToToday')}
-                                onClick={() => setSelectedDate(dateBounds.max)}
-                                disabled={effectiveDate === dateBounds.max}
-                            >
-                                <TodayIcon />
-                            </IconButton>
-                        </span>
-                    </Tooltip>
-                </Box>
-            </Box>
-
             <Box
                 sx={{
                     display: 'grid',

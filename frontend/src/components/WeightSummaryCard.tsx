@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
-import { Alert, Box, Button, Card, CardContent, Chip, Skeleton, Typography } from '@mui/material';
+import { Alert, Box, Button, Card, CardContent, Chip, Skeleton, Typography, useMediaQuery } from '@mui/material';
 import MonitorWeightIcon from '@mui/icons-material/MonitorWeightRounded';
-import { alpha } from '@mui/material/styles';
+import { alpha, useTheme } from '@mui/material/styles';
 import { useAuth } from '../context/useAuth';
 import { getTodayIsoDate } from '../utils/date';
 import { parseDateOnlyToLocalDate } from '../utils/goalTracking';
@@ -17,8 +17,10 @@ import { useI18n } from '../i18n/useI18n';
 const EM_DASH = '\u2014';
 // Duration used for "date switch" value transitions.
 const WEIGHT_SUMMARY_TWEEN_DURATION_MS = 520;
-// Icon tile size for the weight card (kept consistent between loading + loaded UI).
-const WEIGHT_ICON_TILE_SIZE_PX = 56;
+const WEIGHT_ICON_TILE_SIZE_PX = { xs: 48, sm: 56 }; // Icon tile size shrinks slightly on xs to keep the row compact without hurting tap targets.
+const WEIGHT_CARD_STACK_GAP = { xs: 1.25, sm: 1.5 }; // Vertical spacing between major rows within the card body.
+const WEIGHT_CARD_ROW_GAP = { xs: 1.25, sm: 2 }; // Gap between the icon tile and the text column.
+const WEIGHT_CARD_BODY_MARGIN_TOP = { xs: 1.25, sm: 1.5 }; // Space between the header and the card body content.
 
 export type WeightSummaryCardProps = {
     /**
@@ -56,6 +58,12 @@ function formatMetricDateLabel(value: string | null): string {
 const WeightSummaryCard: React.FC<WeightSummaryCardProps> = ({ date, onOpenWeightEntry }) => {
     const { user } = useAuth();
     const { t } = useI18n();
+    const theme = useTheme();
+    const isXs = useMediaQuery(theme.breakpoints.down('sm'));
+    const iconTileSizePx = isXs ? WEIGHT_ICON_TILE_SIZE_PX.xs : WEIGHT_ICON_TILE_SIZE_PX.sm;
+    const stackGap = isXs ? WEIGHT_CARD_STACK_GAP.xs : WEIGHT_CARD_STACK_GAP.sm;
+    const rowGap = isXs ? WEIGHT_CARD_ROW_GAP.xs : WEIGHT_CARD_ROW_GAP.sm;
+    const bodyMarginTop = isXs ? WEIGHT_CARD_BODY_MARGIN_TOP.xs : WEIGHT_CARD_BODY_MARGIN_TOP.sm;
     const unitLabel = user?.weight_unit === 'LB' ? 'lb' : 'kg';
     const today = useMemo(() => getTodayIsoDate(user?.timezone), [user?.timezone]);
     const isToday = date === today;
@@ -93,19 +101,19 @@ const WeightSummaryCard: React.FC<WeightSummaryCardProps> = ({ date, onOpenWeigh
     let cardBody: React.ReactNode;
     if (metricsQuery.isLoading) {
         cardBody = (
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: stackGap }}>
                 <Box
                     sx={{
                         display: 'flex',
                         alignItems: 'center',
-                        gap: 2,
+                        gap: rowGap,
                         flexDirection: { xs: 'column', sm: 'row' }
                     }}
                 >
                     <Box
                         sx={{
-                            width: WEIGHT_ICON_TILE_SIZE_PX,
-                            height: WEIGHT_ICON_TILE_SIZE_PX,
+                            width: iconTileSizePx,
+                            height: iconTileSizePx,
                             borderRadius: 2,
                             backgroundColor: (theme) =>
                                 alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.18 : 0.08),
@@ -148,19 +156,19 @@ const WeightSummaryCard: React.FC<WeightSummaryCardProps> = ({ date, onOpenWeigh
         );
     } else {
         cardBody = (
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: stackGap }}>
                 <Box
                     sx={{
                         display: 'flex',
                         alignItems: 'center',
-                        gap: 2,
+                        gap: rowGap,
                         flexDirection: { xs: 'column', sm: 'row' }
                     }}
                 >
                     <Box
                         sx={{
-                            width: WEIGHT_ICON_TILE_SIZE_PX,
-                            height: WEIGHT_ICON_TILE_SIZE_PX,
+                            width: iconTileSizePx,
+                            height: iconTileSizePx,
                             borderRadius: 2,
                             backgroundColor: (theme) =>
                                 alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.18 : 0.08),
@@ -215,7 +223,7 @@ const WeightSummaryCard: React.FC<WeightSummaryCardProps> = ({ date, onOpenWeigh
                     }
                 />
 
-                <Box sx={{ mt: 1.5 }}>{cardBody}</Box>
+                <Box sx={{ mt: bodyMarginTop }}>{cardBody}</Box>
             </CardContent>
         </Card>
     );
