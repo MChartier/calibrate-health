@@ -55,13 +55,13 @@ const DEFAULT_TOOLBAR_MIN_HEIGHT_SPACING = 7; // MUI default toolbar height in s
 const DRAWER_NAV_ITEM_BORDER_RADIUS = 0;
 const NAV_BRAND_LOGO_SIZE_PX = 32; // Brand icon size in the AppBar; matches the avatar scale without dominating the toolbar.
 const NAV_BRAND_LOGO_BORDER_RADIUS_PX = 8; // Slight rounding keeps the square logo from feeling visually harsh against rounded UI chrome.
-const NAV_BRAND_GAP_SPACING = { xs: 0.75, lg: 1 }; // Space between the logo and brand text on larger screens.
-const NAV_BRAND_TEXT_DISPLAY = { xs: 'none', lg: 'block' } as const; // Hide the brand wordmark below lg to preserve room for primary controls.
-const NAV_BRAND_BADGE_DISPLAY = { xs: 'none', lg: 'inline-flex' } as const; // Only show the worktree badge when the wordmark is visible.
+const NAV_BRAND_GAP_SPACING = { xs: 0.75, md: 1 }; // Space between the logo and brand text once the md sidebar layout is active.
+const NAV_BRAND_TEXT_DISPLAY = { xs: 'none', md: 'block' } as const; // Show the brand wordmark whenever the md sidebar is present.
+const NAV_BRAND_BADGE_DISPLAY = { xs: 'none', md: 'inline-flex' } as const; // Only show the worktree badge when the wordmark is visible.
 const NAV_DATE_CONTROLS_GAP_SPACING = { xs: 0.5, sm: 0.75 }; // Tighten date control spacing on xs so the cluster fits between brand and avatar.
-const NAV_DATE_PICKER_WIDTH_PX = { xs: 136, sm: 180, md: 210 }; // Target widths for the navbar date picker at each breakpoint.
-const NAV_DATE_PICKER_MIN_WIDTH_PX = 120; // Minimum readable width for the date picker when space is constrained.
-const NAV_DATE_PICKER_MAX_WIDTH_PX = 240; // Keep the date picker from growing too wide on desktop layouts.
+const NAV_DATE_PICKER_WIDTH_PX = { xs: 122, sm: 168, md: 200 }; // Narrower widths keep the centered control from colliding with brand/avatar on small phones.
+const NAV_DATE_PICKER_MIN_WIDTH_PX = 104; // Allow the picker to shrink on xs while staying readable.
+const NAV_DATE_PICKER_MAX_WIDTH_PX = 220; // Keep the date picker from growing too wide on desktop layouts.
 const NAV_CENTER_PADDING_X_SPACING = { xs: 0.5, sm: 1 }; // Add small horizontal breathing room around the centered date controls.
 /**
  * Keep drawer navigation backgrounds rectangular and flush so adjacent states do not visually overlap.
@@ -160,7 +160,6 @@ const NavbarLogDateControls: React.FC<NavbarLogDateControlsProps> = ({ navigatio
                 <LogDatePickerControl
                     placement="navbar"
                     value={navigation.date}
-                    label={t('log.date.label')}
                     ariaLabel={datePickerAriaLabel}
                     min={navigation.minDate}
                     max={navigation.maxDate}

@@ -3,7 +3,7 @@ import { Box, TextField } from '@mui/material';
 
 const LOG_DATE_CONTROL_HEIGHT_SPACING = { xs: 9, sm: 9, md: 7 }; // Include top inset on compact layouts without shrinking the inner field height.
 const LOG_DATE_CONTROL_TOP_PADDING_SPACING = { xs: 2, sm: 2, md: 0 }; // Keep the floating label inside the control when page padding is minimal.
-const NAVBAR_LOG_DATE_CONTROL_HEIGHT_SPACING = { xs: 6, sm: 6, md: 6 }; // Compact height so the control fits within the AppBar without increasing toolbar height.
+const NAVBAR_LOG_DATE_CONTROL_HEIGHT_SPACING = { xs: 5, sm: 5, md: 5 }; // Match the small TextField height (40px) so the control stays within the AppBar.
 const NAVBAR_LOG_DATE_CONTROL_TOP_PADDING_SPACING = { xs: 0, sm: 0, md: 0 }; // The navbar already provides vertical padding; do not add extra top inset.
 const LOG_DATE_PICKER_OVERLAY_FOCUS_OUTLINE_PX = 2; // Thickness of the keyboard focus ring on the date control overlay.
 const LOG_DATE_PICKER_OVERLAY_FOCUS_OUTLINE_OFFSET_PX = 2; // Gap between the overlay outline and the field chrome.
@@ -34,7 +34,7 @@ function getLogDateControlMetrics(placement: LogDateControlPlacement): LogDateCo
 
 type LogDatePickerControlProps = {
     value: string;
-    label: string;
+    label?: string;
     ariaLabel: string;
     min: string;
     max: string;
@@ -85,6 +85,7 @@ const LogDatePickerControl: React.FC<LogDatePickerControlProps> = ({
     const dateOverlayButtonRef = useRef<HTMLButtonElement | null>(null);
     const datePickerInputRef = useRef<HTMLInputElement | null>(null);
     const metrics = getLogDateControlMetrics(placement);
+    const isNavbarPlacement = placement === 'navbar';
 
     return (
         <Box
@@ -108,7 +109,8 @@ const LogDatePickerControl: React.FC<LogDatePickerControlProps> = ({
                 label={label}
                 type="date"
                 value={value}
-                InputLabelProps={{ shrink: true }}
+                size={isNavbarPlacement ? 'small' : undefined}
+                InputLabelProps={label ? { shrink: true } : undefined}
                 inputProps={{
                     min,
                     max,
@@ -117,6 +119,7 @@ const LogDatePickerControl: React.FC<LogDatePickerControlProps> = ({
                 }}
                 sx={{
                     width: '100%',
+                    ...(isNavbarPlacement ? { '& .MuiInputLabel-root': { display: 'none' } } : null),
                     '& input': { textAlign: 'center' },
                     // Native `type="date"` inputs render differently per-browser; these help keep the value visually centered
                     // in Chrome/Safari without affecting the calendar icon alignment.

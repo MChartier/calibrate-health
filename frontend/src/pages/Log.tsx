@@ -242,7 +242,7 @@ const Log: React.FC = () => {
             <Box
                 sx={{
                     display: 'grid',
-                    gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' },
+                    gridTemplateColumns: { xs: '1fr', lg: '1fr 1fr' },
                     gap: sectionSpacing,
                     alignItems: 'stretch'
                 }}
