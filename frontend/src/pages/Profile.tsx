@@ -239,7 +239,7 @@ const Profile: React.FC = () => {
     );
 
     return (
-        <AppPage maxWidth="content">
+        <AppPage>
             <Stack spacing={sectionSpacing} useFlexGap>
                 <CalorieTargetBanner />
 

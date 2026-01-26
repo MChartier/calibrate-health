@@ -1,6 +1,19 @@
 import React, { useMemo, useState } from 'react';
-import { Alert, Box, Button, Card, CardActionArea, CardContent, Dialog, DialogContent, DialogTitle, Skeleton, Typography } from '@mui/material';
-import { alpha, type Theme } from '@mui/material/styles';
+import {
+    Alert,
+    Box,
+    Button,
+    Card,
+    CardActionArea,
+    CardContent,
+    Dialog,
+    DialogContent,
+    DialogTitle,
+    Skeleton,
+    Typography,
+    useMediaQuery
+} from '@mui/material';
+import { alpha, useTheme, type Theme } from '@mui/material/styles';
 import { Link as RouterLink } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
@@ -33,6 +46,8 @@ const MAINTENANCE_TOLERANCE_ALPHA: ModeAlpha = { dark: 0.28, light: 0.18 };
 const PROGRESS_BAR_HEIGHT_PX = 10;
 const PROGRESS_MARKER_SIZE_PX = 14;
 const PROGRESS_MARKER_TOP_PX = (PROGRESS_BAR_HEIGHT_PX - PROGRESS_MARKER_SIZE_PX) / 2;
+const GOAL_TRACKER_HEADER_MARGIN_BOTTOM = { xs: 1, sm: 1.5 }; // Reduce header-to-body spacing on xs to keep the card compact.
+const GOAL_TRACKER_BODY_GAP = { xs: 1.5, sm: 2 }; // Vertical gap between stacked goal sections; tighter on xs preserves scan speed.
 
 /**
  * Resolve a mode-specific alpha value so translucent surfaces stay consistent in light/dark mode.
@@ -302,6 +317,10 @@ const GoalTrackerBody: React.FC<{
 const GoalTrackerCard: React.FC<GoalTrackerCardProps> = ({ isDashboard = false }) => {
     const { user } = useAuth();
     const { t } = useI18n();
+    const theme = useTheme();
+    const isXs = useMediaQuery(theme.breakpoints.down('sm'));
+    const bodyGap = isXs ? GOAL_TRACKER_BODY_GAP.xs : GOAL_TRACKER_BODY_GAP.sm;
+    const headerMarginBottom = isXs ? GOAL_TRACKER_HEADER_MARGIN_BOTTOM.xs : GOAL_TRACKER_HEADER_MARGIN_BOTTOM.sm;
     const unitLabel = user?.weight_unit === 'LB' ? 'lb' : 'kg';
     const [goalEditorDialog, setGoalEditorDialog] = useState<
         | {
@@ -419,7 +438,7 @@ const GoalTrackerCard: React.FC<GoalTrackerCardProps> = ({ isDashboard = false }
         );
     } else {
         cardBody = (
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: bodyGap }}>
                 {completion && (
                     <Alert severity="success">
                         {goalMode === 'maintain'
@@ -459,7 +478,7 @@ const GoalTrackerCard: React.FC<GoalTrackerCardProps> = ({ isDashboard = false }
                         </Button>
                     ) : null
                 }
-                sx={{ mb: 1.5 }}
+                sx={{ mb: headerMarginBottom }}
             />
             {cardBody}
         </CardContent>

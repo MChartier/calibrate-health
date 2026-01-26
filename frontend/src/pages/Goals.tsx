@@ -329,7 +329,7 @@ const Goals: React.FC = () => {
     }
 
     return (
-        <AppPage maxWidth="wide">
+        <AppPage>
             <Stack spacing={sectionSpacing} useFlexGap>
                 <GoalTrackerCard />
 

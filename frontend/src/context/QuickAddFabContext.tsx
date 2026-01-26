@@ -2,6 +2,7 @@ import React, { useCallback, useMemo, useState } from 'react';
 import { useQuickAddDialogs } from '../hooks/useQuickAddDialogs';
 import {
     QuickAddFabContext,
+    type LogDateNavigationState,
     type QuickAddFabContextValue,
     type WeightDialogDateMode
 } from './quickAddFabState';
@@ -9,11 +10,12 @@ import {
 /**
  * QuickAddFabProvider
  *
- * Holds the shared quick-add dialog state and optional log-date override for the floating FAB.
+ * Holds shared quick-add dialog state plus log-date navigation/override state for `/log`.
  */
 export const QuickAddFabProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const dialogs = useQuickAddDialogs();
     const [logDateOverride, setLogDateOverride] = useState<string | null>(null);
+    const [logDateNavigation, setLogDateNavigation] = useState<LogDateNavigationState | null>(null);
     const [weightDialogDateMode, setWeightDialogDateMode] = useState<WeightDialogDateMode>('today');
 
     const openWeightDialogFromFab = useCallback(() => {
@@ -31,6 +33,8 @@ export const QuickAddFabProvider: React.FC<{ children: React.ReactNode }> = ({ c
             dialogs,
             logDateOverride,
             setLogDateOverride,
+            logDateNavigation,
+            setLogDateNavigation,
             weightDialogDateMode,
             openWeightDialogFromFab,
             openWeightDialogForLogDate
@@ -38,9 +42,11 @@ export const QuickAddFabProvider: React.FC<{ children: React.ReactNode }> = ({ c
         [
             dialogs,
             logDateOverride,
+            logDateNavigation,
             openWeightDialogForLogDate,
             openWeightDialogFromFab,
             setLogDateOverride,
+            setLogDateNavigation,
             weightDialogDateMode
         ]
     );

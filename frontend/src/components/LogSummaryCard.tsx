@@ -1,7 +1,8 @@
 import React from 'react';
-import { Box, Card, CardActionArea, CardContent, Skeleton, Typography } from '@mui/material';
+import { Box, Card, CardActionArea, CardContent, Skeleton, Typography, useMediaQuery } from '@mui/material';
 import { Gauge } from '@mui/x-charts/Gauge';
 import { Link as RouterLink } from 'react-router-dom';
+import { useTheme } from '@mui/material/styles';
 import { useAuth } from '../context/useAuth';
 import {
     formatDateToLocalDateString,
@@ -19,13 +20,17 @@ import { useI18n } from '../i18n/useI18n';
  *
  * Handles local-date math, gauge animation, and dashboard vs /log presentation.
  */
-const GAUGE_WIDTH = 200;
-const GAUGE_HEIGHT = 140;
+const GAUGE_DIMENSIONS_DEFAULT = { width: 200, height: 140 }; // Standard gauge size for sm+ layouts.
+const GAUGE_DIMENSIONS_COMPACT = { width: 150, height: 104 }; // Smaller gauge size for xs layouts keeps the card from filling the viewport height.
 const GAUGE_START_ANGLE = -90;
 const GAUGE_END_ANGLE = 90;
 const GAUGE_INNER_RADIUS = '70%';
 const GAUGE_OUTER_RADIUS = '90%';
 const SUMMARY_SKELETON_VALUE_HEIGHT = 32;
+const LOG_SUMMARY_LAYOUT_GAP = { compact: 1, default: 2 }; // Gap between the gauge and the text column; tighter on xs keeps the card shorter.
+const LOG_SUMMARY_VALUE_VARIANT = { compact: 'h6', default: 'h5' } as const; // Use a slightly smaller headline on xs to keep the vertical rhythm compact.
+const LOG_SUMMARY_CARD_PADDING_SPACING = { xs: 1.25, sm: 1.5 }; // Slightly reduce card padding on xs to reclaim vertical space.
+const LOG_SUMMARY_TITLE_MARGIN_BOTTOM_SPACING = { xs: 1, sm: 1.5 }; // Title-to-body spacing; smaller on xs keeps the card dense but readable.
 // Duration used for "date switch" value transitions (gauge fill + numbers).
 const LOG_SUMMARY_TWEEN_DURATION_MS = 520;
 
@@ -160,6 +165,11 @@ export type LogSummaryCardProps = {
 const LogSummaryCard: React.FC<LogSummaryCardProps> = ({ dashboardMode = false, date }) => {
     const { user } = useAuth();
     const { t } = useI18n();
+    const theme = useTheme();
+    const isXs = useMediaQuery(theme.breakpoints.down('sm'));
+    const gaugeDimensions = isXs ? GAUGE_DIMENSIONS_COMPACT : GAUGE_DIMENSIONS_DEFAULT;
+    const layoutGap = isXs ? LOG_SUMMARY_LAYOUT_GAP.compact : LOG_SUMMARY_LAYOUT_GAP.default;
+    const remainingValueVariant = isXs ? LOG_SUMMARY_VALUE_VARIANT.compact : LOG_SUMMARY_VALUE_VARIANT.default;
     const timeZone = React.useMemo(() => {
         return user?.timezone?.trim() || Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
     }, [user?.timezone]);
@@ -224,13 +234,14 @@ const LogSummaryCard: React.FC<LogSummaryCardProps> = ({ dashboardMode = false, 
                 sx={{
                     display: 'flex',
                     alignItems: 'center',
-                    gap: 2,
-                    flexDirection: { xs: 'column', sm: 'row' }
+                    gap: layoutGap,
+                    flexDirection: 'row',
+                    flexWrap: 'nowrap'
                 }}
             >
                 <Gauge
-                    width={GAUGE_WIDTH}
-                    height={GAUGE_HEIGHT}
+                    width={gaugeDimensions.width}
+                    height={gaugeDimensions.height}
                     startAngle={GAUGE_START_ANGLE}
                     endAngle={GAUGE_END_ANGLE}
                     value={0}
@@ -245,6 +256,7 @@ const LogSummaryCard: React.FC<LogSummaryCardProps> = ({ dashboardMode = false, 
                         contain: 'paint',
                         willChange: 'transform',
                         transform: 'translateZ(0)',
+                        flexShrink: 0,
                         '& .MuiGauge-referenceArc': {
                             fill: (theme) => theme.palette.grey[300]
                         },
@@ -253,7 +265,7 @@ const LogSummaryCard: React.FC<LogSummaryCardProps> = ({ dashboardMode = false, 
                         }
                     }}
                 />
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, flexGrow: 1 }}>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, flexGrow: 1, minWidth: 0 }}>
                     <Typography variant="subtitle1">{t('logSummary.caloriesRemaining')}</Typography>
                     <Skeleton width="40%" height={SUMMARY_SKELETON_VALUE_HEIGHT} />
                     <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1 }}>
@@ -293,13 +305,14 @@ const LogSummaryCard: React.FC<LogSummaryCardProps> = ({ dashboardMode = false, 
                 sx={{
                     display: 'flex',
                     alignItems: 'center',
-                    gap: 2,
-                    flexDirection: { xs: 'column', sm: 'row' }
+                    gap: layoutGap,
+                    flexDirection: 'row',
+                    flexWrap: 'nowrap'
                 }}
             >
                 <Gauge
-                    width={GAUGE_WIDTH}
-                    height={GAUGE_HEIGHT}
+                    width={gaugeDimensions.width}
+                    height={gaugeDimensions.height}
                     startAngle={GAUGE_START_ANGLE}
                     endAngle={GAUGE_END_ANGLE}
                     value={displayedGaugeValue}
@@ -314,6 +327,7 @@ const LogSummaryCard: React.FC<LogSummaryCardProps> = ({ dashboardMode = false, 
                         contain: 'paint',
                         willChange: 'transform',
                         transform: 'translateZ(0)',
+                        flexShrink: 0,
                         '& .MuiGauge-referenceArc': {
                             fill: (theme) => (isOver ? theme.palette.error.main : theme.palette.grey[300])
                         },
@@ -322,13 +336,13 @@ const LogSummaryCard: React.FC<LogSummaryCardProps> = ({ dashboardMode = false, 
                         }
                     }}
                 />
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, flexGrow: 1, minWidth: 0 }}>
                     <Typography variant="subtitle1">
                         {remainingCalories !== null && remainingCalories < 0
                             ? t('logSummary.caloriesOverBudget')
                             : t('logSummary.caloriesRemaining')}
                     </Typography>
-                    <Typography variant="h5">
+                    <Typography variant={remainingValueVariant}>
                         {displayedRemainingCaloriesLabel !== null
                             ? t('logSummary.caloriesValue', { value: displayedRemainingCaloriesLabel })
                             : '—'}
@@ -347,8 +361,13 @@ const LogSummaryCard: React.FC<LogSummaryCardProps> = ({ dashboardMode = false, 
     }
 
     const content = (
-        <CardContent>
-            <Typography variant="h6" gutterBottom>
+        <CardContent
+            sx={{
+                p: LOG_SUMMARY_CARD_PADDING_SPACING,
+                '&:last-child': { pb: LOG_SUMMARY_CARD_PADDING_SPACING }
+            }}
+        >
+            <Typography variant="h6" sx={{ mb: LOG_SUMMARY_TITLE_MARGIN_BOTTOM_SPACING }}>
                 {title}
             </Typography>
             {cardBody}

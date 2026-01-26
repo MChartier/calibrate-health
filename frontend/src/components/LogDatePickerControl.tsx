@@ -3,16 +3,43 @@ import { Box, TextField } from '@mui/material';
 
 const LOG_DATE_CONTROL_HEIGHT_SPACING = { xs: 9, sm: 9, md: 7 }; // Include top inset on compact layouts without shrinking the inner field height.
 const LOG_DATE_CONTROL_TOP_PADDING_SPACING = { xs: 2, sm: 2, md: 0 }; // Keep the floating label inside the control when page padding is minimal.
+const NAVBAR_LOG_DATE_CONTROL_HEIGHT_SPACING = { xs: 5, sm: 5, md: 5 }; // Match the small TextField height (40px) so the control stays within the AppBar.
+const NAVBAR_LOG_DATE_CONTROL_TOP_PADDING_SPACING = { xs: 0, sm: 0, md: 0 }; // The navbar already provides vertical padding; do not add extra top inset.
 const LOG_DATE_PICKER_OVERLAY_FOCUS_OUTLINE_PX = 2; // Thickness of the keyboard focus ring on the date control overlay.
 const LOG_DATE_PICKER_OVERLAY_FOCUS_OUTLINE_OFFSET_PX = 2; // Gap between the overlay outline and the field chrome.
 
+type LogDateControlPlacement = 'page' | 'navbar';
+
+type LogDateControlMetrics = {
+    heightSpacing: typeof LOG_DATE_CONTROL_HEIGHT_SPACING;
+    topPaddingSpacing: typeof LOG_DATE_CONTROL_TOP_PADDING_SPACING;
+};
+
+/**
+ * Resolve spacing metrics for the date control based on where it is rendered.
+ */
+function getLogDateControlMetrics(placement: LogDateControlPlacement): LogDateControlMetrics {
+    if (placement === 'navbar') {
+        return {
+            heightSpacing: NAVBAR_LOG_DATE_CONTROL_HEIGHT_SPACING,
+            topPaddingSpacing: NAVBAR_LOG_DATE_CONTROL_TOP_PADDING_SPACING
+        };
+    }
+
+    return {
+        heightSpacing: LOG_DATE_CONTROL_HEIGHT_SPACING,
+        topPaddingSpacing: LOG_DATE_CONTROL_TOP_PADDING_SPACING
+    };
+}
+
 type LogDatePickerControlProps = {
     value: string;
-    label: string;
+    label?: string;
     ariaLabel: string;
     min: string;
     max: string;
     onChange: (nextDate: string) => void;
+    placement?: LogDateControlPlacement;
 };
 
 /**
@@ -42,8 +69,9 @@ function showNativeDatePicker(input: HTMLInputElement | null) {
 /**
  * LogDatePickerControl
  *
- * Self-contained date picker field with a fixed height so the Log page can render it as a normal block.
- * The control adds its own top inset on compact layouts to keep the floating label visible under the app bar.
+ * Self-contained date picker field with placement-aware sizing.
+ * The page placement reserves extra height/top padding to keep the floating label visible under the app bar,
+ * while the navbar placement stays compact so the toolbar height remains stable.
  */
 const LogDatePickerControl: React.FC<LogDatePickerControlProps> = ({
     value,
@@ -51,10 +79,13 @@ const LogDatePickerControl: React.FC<LogDatePickerControlProps> = ({
     ariaLabel,
     min,
     max,
-    onChange
+    onChange,
+    placement = 'page'
 }) => {
     const dateOverlayButtonRef = useRef<HTMLButtonElement | null>(null);
     const datePickerInputRef = useRef<HTMLInputElement | null>(null);
+    const metrics = getLogDateControlMetrics(placement);
+    const isNavbarPlacement = placement === 'navbar';
 
     return (
         <Box
@@ -63,14 +94,14 @@ const LogDatePickerControl: React.FC<LogDatePickerControlProps> = ({
                 flexGrow: 1,
                 minWidth: 0,
                 height: {
-                    xs: theme.spacing(LOG_DATE_CONTROL_HEIGHT_SPACING.xs),
-                    sm: theme.spacing(LOG_DATE_CONTROL_HEIGHT_SPACING.sm),
-                    md: theme.spacing(LOG_DATE_CONTROL_HEIGHT_SPACING.md)
+                    xs: theme.spacing(metrics.heightSpacing.xs),
+                    sm: theme.spacing(metrics.heightSpacing.sm),
+                    md: theme.spacing(metrics.heightSpacing.md)
                 },
                 pt: {
-                    xs: theme.spacing(LOG_DATE_CONTROL_TOP_PADDING_SPACING.xs),
-                    sm: theme.spacing(LOG_DATE_CONTROL_TOP_PADDING_SPACING.sm),
-                    md: LOG_DATE_CONTROL_TOP_PADDING_SPACING.md
+                    xs: theme.spacing(metrics.topPaddingSpacing.xs),
+                    sm: theme.spacing(metrics.topPaddingSpacing.sm),
+                    md: theme.spacing(metrics.topPaddingSpacing.md)
                 }
             })}
         >
@@ -78,7 +109,8 @@ const LogDatePickerControl: React.FC<LogDatePickerControlProps> = ({
                 label={label}
                 type="date"
                 value={value}
-                InputLabelProps={{ shrink: true }}
+                size={isNavbarPlacement ? 'small' : undefined}
+                InputLabelProps={label ? { shrink: true } : undefined}
                 inputProps={{
                     min,
                     max,
@@ -87,6 +119,7 @@ const LogDatePickerControl: React.FC<LogDatePickerControlProps> = ({
                 }}
                 sx={{
                     width: '100%',
+                    ...(isNavbarPlacement ? { '& .MuiInputLabel-root': { display: 'none' } } : null),
                     '& input': { textAlign: 'center' },
                     // Native `type="date"` inputs render differently per-browser; these help keep the value visually centered
                     // in Chrome/Safari without affecting the calendar icon alignment.
@@ -118,9 +151,9 @@ const LogDatePickerControl: React.FC<LogDatePickerControlProps> = ({
                 sx={(theme) => ({
                     position: 'absolute',
                     top: {
-                        xs: theme.spacing(LOG_DATE_CONTROL_TOP_PADDING_SPACING.xs),
-                        sm: theme.spacing(LOG_DATE_CONTROL_TOP_PADDING_SPACING.sm),
-                        md: LOG_DATE_CONTROL_TOP_PADDING_SPACING.md
+                        xs: theme.spacing(metrics.topPaddingSpacing.xs),
+                        sm: theme.spacing(metrics.topPaddingSpacing.sm),
+                        md: theme.spacing(metrics.topPaddingSpacing.md)
                     },
                     left: 0,
                     right: 0,
@@ -144,9 +177,9 @@ const LogDatePickerControl: React.FC<LogDatePickerControlProps> = ({
                 sx={(theme) => ({
                     position: 'absolute',
                     top: {
-                        xs: theme.spacing(LOG_DATE_CONTROL_TOP_PADDING_SPACING.xs),
-                        sm: theme.spacing(LOG_DATE_CONTROL_TOP_PADDING_SPACING.sm),
-                        md: LOG_DATE_CONTROL_TOP_PADDING_SPACING.md
+                        xs: theme.spacing(metrics.topPaddingSpacing.xs),
+                        sm: theme.spacing(metrics.topPaddingSpacing.sm),
+                        md: theme.spacing(metrics.topPaddingSpacing.md)
                     },
                     left: 0,
                     right: 0,

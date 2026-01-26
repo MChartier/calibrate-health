@@ -20,12 +20,12 @@ const Dashboard: React.FC = () => {
         <Box
             sx={{
                 display: 'grid',
-                gridTemplateColumns: { xs: '1fr', md: 'repeat(2, minmax(0, 1fr))' },
+                gridTemplateColumns: { xs: '1fr', lg: 'repeat(2, minmax(0, 1fr))' },
                 gap: cardGap,
                 alignItems: 'stretch'
             }}
         >
-            <Box sx={{ gridColumn: { md: '1 / -1' } }}>
+            <Box sx={{ gridColumn: { lg: '1 / -1' } }}>
                 <CalorieTargetBanner isDashboard />
             </Box>
 

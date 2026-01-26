@@ -25,19 +25,22 @@ import ShowChartIcon from '@mui/icons-material/ShowChartRounded';
 import PersonIcon from '@mui/icons-material/PersonRounded';
 import SettingsIcon from '@mui/icons-material/SettingsRounded';
 import LogoutIcon from '@mui/icons-material/LogoutRounded';
-import GitHubIcon from '@mui/icons-material/GitHub';
+import ChevronLeftIcon from '@mui/icons-material/ChevronLeftRounded';
+import ChevronRightIcon from '@mui/icons-material/ChevronRightRounded';
+import TodayIcon from '@mui/icons-material/TodayRounded';
 import { alpha, useTheme } from '@mui/material/styles';
 import type { SxProps, Theme } from '@mui/material/styles';
 import { useAuth } from '../context/useAuth';
 import { QuickAddFabProvider } from '../context/QuickAddFabContext';
 import { useQuickAddFab } from '../context/useQuickAddFab';
+import type { LogDateNavigationState } from '../context/quickAddFabState';
 import AppPage from '../ui/AppPage';
 import { getAvatarLabel } from '../utils/avatarLabel';
 import { getTodayIsoDate } from '../utils/date';
 import { useI18n } from '../i18n/useI18n';
 import { QUICK_ADD_FAB_PAGE_BOTTOM_PADDING } from '../constants/quickAddFab';
-import { CALIBRATE_REPO_URL } from '../constants/links';
 import LogQuickAddFab from './LogQuickAddFab';
+import LogDatePickerControl from './LogDatePickerControl';
 
 /**
  * App shell layout with navigation chrome and quick-add entry points.
@@ -45,8 +48,21 @@ import LogQuickAddFab from './LogQuickAddFab';
 const drawerWidth = 240;
 const SAFE_AREA_INSET_TOP = 'var(--safe-area-inset-top, 0px)';
 const SAFE_AREA_INSET_BOTTOM = 'var(--safe-area-inset-bottom, 0px)';
+const SAFE_AREA_INSET_LEFT = 'var(--safe-area-inset-left, 0px)';
+const SAFE_AREA_INSET_RIGHT = 'var(--safe-area-inset-right, 0px)';
+const TOOLBAR_HORIZONTAL_PADDING_SPACING = { xs: 1, sm: 2 }; // Reduce horizontal padding on xs so centered controls have enough room on small phones.
 const DEFAULT_TOOLBAR_MIN_HEIGHT_SPACING = 7; // MUI default toolbar height in spacing units (56px).
 const DRAWER_NAV_ITEM_BORDER_RADIUS = 0;
+const NAV_BRAND_LOGO_SIZE_PX = 32; // Brand icon size in the AppBar; matches the avatar scale without dominating the toolbar.
+const NAV_BRAND_LOGO_BORDER_RADIUS_PX = 8; // Slight rounding keeps the square logo from feeling visually harsh against rounded UI chrome.
+const NAV_BRAND_GAP_SPACING = { xs: 0.75, md: 1 }; // Space between the logo and brand text once the md sidebar layout is active.
+const NAV_BRAND_TEXT_DISPLAY = { xs: 'none', md: 'block' } as const; // Show the brand wordmark whenever the md sidebar is present.
+const NAV_BRAND_BADGE_DISPLAY = { xs: 'none', md: 'inline-flex' } as const; // Only show the worktree badge when the wordmark is visible.
+const NAV_DATE_CONTROLS_GAP_SPACING = { xs: 0.5, sm: 0.75 }; // Tighten date control spacing on xs so the cluster fits between brand and avatar.
+const NAV_DATE_PICKER_WIDTH_PX = { xs: 122, sm: 168, md: 200 }; // Narrower widths keep the centered control from colliding with brand/avatar on small phones.
+const NAV_DATE_PICKER_MIN_WIDTH_PX = 104; // Allow the picker to shrink on xs while staying readable.
+const NAV_DATE_PICKER_MAX_WIDTH_PX = 220; // Keep the date picker from growing too wide on desktop layouts.
+const NAV_CENTER_PADDING_X_SPACING = { xs: 0.5, sm: 1 }; // Add small horizontal breathing room around the centered date controls.
 /**
  * Keep drawer navigation backgrounds rectangular and flush so adjacent states do not visually overlap.
  */
@@ -72,7 +88,7 @@ function normalizeToolbarMinHeight(minHeight: number | string | undefined, fallb
 }
 
 /**
- * Build Toolbar sizing that includes top safe-area padding so fixed headers and their spacers align.
+ * Build Toolbar sizing that includes safe-area padding so fixed headers and their spacers align.
  */
 function buildSafeAreaToolbarSx(theme: Theme): SxProps<Theme> {
     const fallbackMinHeight = theme.spacing(DEFAULT_TOOLBAR_MIN_HEIGHT_SPACING);
@@ -82,20 +98,114 @@ function buildSafeAreaToolbarSx(theme: Theme): SxProps<Theme> {
 
     return {
         pt: SAFE_AREA_INSET_TOP,
+        pl: `calc(${theme.spacing(TOOLBAR_HORIZONTAL_PADDING_SPACING.xs)} + ${SAFE_AREA_INSET_LEFT})`,
+        pr: `calc(${theme.spacing(TOOLBAR_HORIZONTAL_PADDING_SPACING.xs)} + ${SAFE_AREA_INSET_RIGHT})`,
         minHeight: `calc(${baseMinHeight} + ${SAFE_AREA_INSET_TOP})`,
         [theme.breakpoints.up('sm')]: {
-            minHeight: `calc(${smMinHeight} + ${SAFE_AREA_INSET_TOP})`
+            minHeight: `calc(${smMinHeight} + ${SAFE_AREA_INSET_TOP})`,
+            pl: `calc(${theme.spacing(TOOLBAR_HORIZONTAL_PADDING_SPACING.sm)} + ${SAFE_AREA_INSET_LEFT})`,
+            pr: `calc(${theme.spacing(TOOLBAR_HORIZONTAL_PADDING_SPACING.sm)} + ${SAFE_AREA_INSET_RIGHT})`
         }
     };
 }
 
+type NavbarLogDateControlsProps = {
+    navigation: LogDateNavigationState;
+    compact: boolean;
+};
+
+/**
+ * Render the centered `/log` date navigation cluster inside the AppBar.
+ */
+const NavbarLogDateControls: React.FC<NavbarLogDateControlsProps> = ({ navigation, compact }) => {
+    const { t } = useI18n();
+    const iconButtonSize = compact ? 'small' : 'medium';
+    // Hide the dedicated "today" button on xs to keep the control cluster within the available toolbar width.
+    const showTodayButton = !compact;
+    const isAtToday = navigation.date === navigation.maxDate;
+    const datePickerAriaLabel = t('log.datePicker.aria', { date: navigation.dateLabel });
+
+    return (
+        <Box
+            sx={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: NAV_DATE_CONTROLS_GAP_SPACING,
+                width: '100%',
+                minWidth: 0
+            }}
+        >
+            <Tooltip title={t('log.nav.prevDay')}>
+                <span>
+                    <IconButton
+                        size={iconButtonSize}
+                        aria-label={t('log.nav.prevDay')}
+                        onClick={navigation.goToPreviousDate}
+                        disabled={!navigation.canGoBack}
+                    >
+                        <ChevronLeftIcon fontSize={compact ? 'small' : 'medium'} />
+                    </IconButton>
+                </span>
+            </Tooltip>
+
+            <Box
+                sx={{
+                    flexGrow: 0,
+                    width: NAV_DATE_PICKER_WIDTH_PX,
+                    minWidth: NAV_DATE_PICKER_MIN_WIDTH_PX,
+                    maxWidth: NAV_DATE_PICKER_MAX_WIDTH_PX
+                }}
+            >
+                <LogDatePickerControl
+                    placement="navbar"
+                    value={navigation.date}
+                    ariaLabel={datePickerAriaLabel}
+                    min={navigation.minDate}
+                    max={navigation.maxDate}
+                    onChange={navigation.setDate}
+                />
+            </Box>
+
+            <Tooltip title={t('log.nav.nextDay')}>
+                <span>
+                    <IconButton
+                        size={iconButtonSize}
+                        aria-label={t('log.nav.nextDay')}
+                        onClick={navigation.goToNextDate}
+                        disabled={!navigation.canGoForward}
+                    >
+                        <ChevronRightIcon fontSize={compact ? 'small' : 'medium'} />
+                    </IconButton>
+                </span>
+            </Tooltip>
+
+            {showTodayButton && (
+                <Tooltip title={t('log.nav.jumpToToday')}>
+                    <span>
+                        <IconButton
+                            size={iconButtonSize}
+                            aria-label={t('log.nav.jumpToToday')}
+                            onClick={navigation.goToToday}
+                            disabled={isAtToday}
+                        >
+                            <TodayIcon fontSize={compact ? 'small' : 'medium'} />
+                        </IconButton>
+                    </span>
+                </Tooltip>
+            )}
+        </Box>
+    );
+};
+
 const LayoutShell: React.FC = () => {
     const { user, logout, isLoading } = useAuth();
-    const { dialogs, logDateOverride } = useQuickAddFab();
+    const { dialogs, logDateOverride, logDateNavigation } = useQuickAddFab();
     const { t } = useI18n();
     const theme = useTheme();
     const safeAreaToolbarSx = useMemo(() => buildSafeAreaToolbarSx(theme), [theme]);
     const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
+    const isXs = useMediaQuery(theme.breakpoints.down('sm'));
     const navigate = useNavigate();
     const location = useLocation();
     const worktreeName = import.meta.env.VITE_WORKTREE_NAME?.trim();
@@ -205,6 +315,7 @@ const LayoutShell: React.FC = () => {
     const navigationValue = getActiveNavigationValue(location.pathname);
     const showQuickAdd = showAppNav && Boolean(navigationValue);
     const isLogRoute = location.pathname.startsWith('/log');
+    const showLogDateControls = isLogRoute && Boolean(logDateNavigation);
     const fabDate = isLogRoute && logDateOverride ? logDateOverride : today;
     const { closeFoodDialog, closeWeightDialog } = dialogs;
 
@@ -217,27 +328,50 @@ const LayoutShell: React.FC = () => {
         <Box sx={{ display: 'flex', minHeight: '100vh', width: '100%' }}>
             <AppBar position="fixed" sx={{ zIndex: (t) => t.zIndex.drawer + 1 }}>
                 <Toolbar sx={safeAreaToolbarSx}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <Typography
-                            variant="h6"
-                            component={RouterLink}
-                            to={user ? '/dashboard' : '/'}
-                            sx={{ color: 'inherit', textDecoration: 'none' }}
-                        >
+                    <Box
+                        component={RouterLink}
+                        to={user ? '/dashboard' : '/'}
+                        aria-label={t('app.brand')}
+                        sx={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: NAV_BRAND_GAP_SPACING,
+                            color: 'inherit',
+                            textDecoration: 'none',
+                            flexShrink: 0,
+                            minWidth: 0
+                        }}
+                    >
+                        <Box
+                            component="img"
+                            src="/icon.png"
+                            alt=""
+                            aria-hidden="true"
+                            sx={{
+                                width: NAV_BRAND_LOGO_SIZE_PX,
+                                height: NAV_BRAND_LOGO_SIZE_PX,
+                                borderRadius: `${NAV_BRAND_LOGO_BORDER_RADIUS_PX}px`,
+                                display: 'block'
+                            }}
+                        />
+                        <Typography variant="h6" sx={{ display: NAV_BRAND_TEXT_DISPLAY }}>
                             {t('app.brand')}
                         </Typography>
                         {worktreeBadgeLabel && (
                             <Box
                                 component="span"
                                 sx={{
-                                    border: (t) => `1px solid ${alpha(t.palette.text.primary, t.palette.mode === 'dark' ? 0.22 : 0.18)}`,
+                                    display: NAV_BRAND_BADGE_DISPLAY,
+                                    border: (t) =>
+                                        `1px solid ${alpha(t.palette.text.primary, t.palette.mode === 'dark' ? 0.22 : 0.18)}`,
                                     borderRadius: 999,
                                     px: 1,
                                     py: 0.25,
                                     fontSize: '0.7rem',
                                     fontWeight: 800,
                                     lineHeight: 1,
-                                    backgroundColor: (t) => alpha(t.palette.primary.main, t.palette.mode === 'dark' ? 0.18 : 0.12),
+                                    backgroundColor: (t) =>
+                                        alpha(t.palette.primary.main, t.palette.mode === 'dark' ? 0.18 : 0.12),
                                     letterSpacing: '0.06em',
                                     textTransform: 'uppercase'
                                 }}
@@ -247,65 +381,67 @@ const LayoutShell: React.FC = () => {
                         )}
                     </Box>
 
-                    <Box sx={{ flexGrow: 1 }} />
+                    <Box
+                        sx={{
+                            flexGrow: 1,
+                            flexBasis: 0,
+                            minWidth: 0,
+                            px: NAV_CENTER_PADDING_X_SPACING,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                        }}
+                    >
+                        {showLogDateControls && logDateNavigation ? (
+                            <NavbarLogDateControls navigation={logDateNavigation} compact={isXs} />
+                        ) : null}
+                    </Box>
 
-                    <Tooltip title={t('nav.github')}>
-                        <IconButton
-                            component="a"
-                            href={CALIBRATE_REPO_URL}
-                            target="_blank"
-                            rel="noreferrer"
-                            color="inherit"
-                            aria-label={t('nav.openRepoAria')}
-                        >
-                            <GitHubIcon />
-                        </IconButton>
-                    </Tooltip>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexShrink: 0 }}>
+                        {(showLoginCta || showRegisterCta) && (
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                {showLoginCta && (
+                                    <Button
+                                        component={RouterLink}
+                                        to="/login"
+                                        color="inherit"
+                                        variant="text"
+                                        size={authCtaSize}
+                                    >
+                                        {t('auth.signIn')}
+                                    </Button>
+                                )}
+                                {showRegisterCta && (
+                                    <Button component={RouterLink} to="/register" variant="contained" size={authCtaSize}>
+                                        {registerCtaLabel}
+                                    </Button>
+                                )}
+                            </Box>
+                        )}
 
-                    {(showLoginCta || showRegisterCta) && (
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            {showLoginCta && (
-                                <Button
-                                    component={RouterLink}
-                                    to="/login"
+                        {showSettingsShortcut && (
+                            <Tooltip title={t('nav.settings')}>
+                                <IconButton
                                     color="inherit"
-                                    variant="text"
-                                    size={authCtaSize}
+                                    onClick={() => navigate('/settings')}
+                                    aria-label={t('nav.openSettingsAria')}
                                 >
-                                    {t('auth.signIn')}
-                                </Button>
-                            )}
-                            {showRegisterCta && (
-                                <Button component={RouterLink} to="/register" variant="contained" size={authCtaSize}>
-                                    {registerCtaLabel}
-                                </Button>
-                            )}
-                        </Box>
-                    )}
-
-                    {showSettingsShortcut && (
-                        <Tooltip title={t('nav.settings')}>
-                            <IconButton
-                                color="inherit"
-                                onClick={() => navigate('/settings')}
-                                aria-label={t('nav.openSettingsAria')}
-                                sx={{ ml: 1 }}
-                            >
-                                <Avatar
-                                    src={user?.profile_image_url ?? undefined}
-                                    sx={{
-                                        width: 32,
-                                        height: 32,
-                                        bgcolor: (t) => alpha(t.palette.primary.main, t.palette.mode === 'dark' ? 0.18 : 0.12),
-                                        color: 'text.primary',
-                                        fontWeight: 900
-                                    }}
-                                >
-                                    {getAvatarLabel(user?.email)}
-                                </Avatar>
-                            </IconButton>
-                        </Tooltip>
-                    )}
+                                    <Avatar
+                                        src={user?.profile_image_url ?? undefined}
+                                        sx={{
+                                            width: 32,
+                                            height: 32,
+                                            bgcolor: (t) => alpha(t.palette.primary.main, t.palette.mode === 'dark' ? 0.18 : 0.12),
+                                            color: 'text.primary',
+                                            fontWeight: 900
+                                        }}
+                                    >
+                                        {getAvatarLabel(user?.email)}
+                                    </Avatar>
+                                </IconButton>
+                            </Tooltip>
+                        )}
+                    </Box>
                 </Toolbar>
             </AppBar>
 
