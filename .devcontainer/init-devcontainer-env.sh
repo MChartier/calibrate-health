@@ -136,10 +136,11 @@ if [ "$is_main_worktree" = "true" ]; then
   vite_worktree_color=""
 fi
 
-# Allow the host to provide either OPENAI_API_KEY or CODEX_API_KEY for Codex auth.
+# Allow the host to provide either CALIBRATE_CODEX_API_KEY, CODEX_API_KEY, or OPENAI_API_KEY for Codex auth.
+repo_calibrate_codex_api_key="$(read_repo_dotenv_value "CALIBRATE_CODEX_API_KEY")"
 repo_codex_api_key="$(read_repo_dotenv_value "CODEX_API_KEY")"
 repo_openai_api_key="$(read_repo_dotenv_value "OPENAI_API_KEY")"
-codex_api_key="${CODEX_API_KEY:-${OPENAI_API_KEY:-${repo_codex_api_key:-${repo_openai_api_key:-}}}}"
+codex_api_key="${CALIBRATE_CODEX_API_KEY:-${CODEX_API_KEY:-${OPENAI_API_KEY:-${repo_calibrate_codex_api_key:-${repo_codex_api_key:-${repo_openai_api_key:-}}}}}}"
 
 repo_fatsecret_client_id="$(read_repo_dotenv_value "FATSECRET_CLIENT_ID")"
 fatsecret_client_id="${FATSECRET_CLIENT_ID:-${repo_fatsecret_client_id:-}}"
@@ -150,9 +151,11 @@ fatsecret_client_secret="${FATSECRET_CLIENT_SECRET:-${repo_fatsecret_client_secr
 repo_usda_api_key="$(read_repo_dotenv_value "USDA_API_KEY")"
 usda_api_key="${USDA_API_KEY:-${repo_usda_api_key:-}}"
 
+repo_calibrate_gh_pat="$(read_repo_dotenv_value "CALIBRATE_GH_PAT")"
+repo_gh_auth_token="$(read_repo_dotenv_value "GH_AUTH_TOKEN")"
 repo_github_token="$(read_repo_dotenv_value "GITHUB_TOKEN")"
 repo_gh_token="$(read_repo_dotenv_value "GH_TOKEN")"
-github_token="${GITHUB_TOKEN:-${GH_TOKEN:-${repo_github_token:-${repo_gh_token:-}}}}"
+github_token="${CALIBRATE_GH_PAT:-${GH_AUTH_TOKEN:-${GH_TOKEN:-${GITHUB_TOKEN:-${repo_calibrate_gh_pat:-${repo_gh_auth_token:-${repo_gh_token:-${repo_github_token:-}}}}}}}}"
 
 env_path=".devcontainer/.env"
 tmp_path="${env_path}.tmp"
@@ -175,6 +178,7 @@ FATSECRET_CLIENT_ID=${fatsecret_client_id}
 FATSECRET_CLIENT_SECRET=${fatsecret_client_secret}
 USDA_API_KEY=${usda_api_key}
 CODEX_API_KEY=${codex_api_key}
+GH_AUTH_TOKEN=${github_token}
 GITHUB_TOKEN=${github_token}
 GH_TOKEN=${github_token}
 EOF
