@@ -163,6 +163,11 @@ fi
 repo_codex_home="$(read_repo_dotenv_value "CODEX_HOME")"
 # Prefer the host CODEX_HOME when set; default to ~/.codex so auth can be mounted into the container.
 codex_host_home="${CODEX_HOME:-${repo_codex_home:-$HOME/.codex}}"
+if [ "$codex_host_home" = "~" ]; then
+  codex_host_home="$HOME"
+elif [[ "$codex_host_home" == "~/"* ]]; then
+  codex_host_home="$HOME/${codex_host_home#~/}"
+fi
 if [ "${codex_host_home#/}" = "$codex_host_home" ]; then
   codex_host_home="$HOME/$codex_host_home"
 fi
