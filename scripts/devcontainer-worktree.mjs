@@ -84,7 +84,7 @@ function isPathLike(value) {
 /**
  * Resolve the target workspace folder path based on CLI args.
  * @param {string[]} args - Positional/flag args (without subcommand).
- * @returns {{ workspacePath: string, devcontainerArgs: string[], commandArgs: string[] }} Resolved path + passthrough args.
+ * @returns {{ workspacePath: string, devcontainerArgs: string[], commandArgs: string[], removeExistingContainer: boolean }} Resolved path + passthrough args.
  */
 function resolveTarget(args) {
   const passthroughIndex = args.indexOf("--");
@@ -98,6 +98,7 @@ function resolveTarget(args) {
   let useCwd = false;
   let positional = null;
   const devcontainerArgs = [];
+  let removeExistingContainer = false;
 
   for (let i = 0; i < inputArgs.length; i += 1) {
     const arg = inputArgs[i];
@@ -116,6 +117,11 @@ function resolveTarget(args) {
 
     if (arg === "--cwd") {
       useCwd = true;
+      continue;
+    }
+
+    if (arg === "--remove-existing-container") {
+      removeExistingContainer = true;
       continue;
     }
 
@@ -163,7 +169,7 @@ function resolveTarget(args) {
     );
   }
 
-  return { workspacePath: resolved, devcontainerArgs, commandArgs };
+  return { workspacePath: resolved, devcontainerArgs, commandArgs, removeExistingContainer };
 }
 
 /**
@@ -291,6 +297,7 @@ function printHelp() {
       "  --path <path>    Use an explicit worktree path.",
       "  --branch <name>  Resolve a worktree by branch name.",
       "  --cwd            Use the current working directory.",
+      "  --remove-existing-container  Recreate the container before exec.",
       "",
       "Notes:",
       "  - Run from any worktree in the repo when resolving by branch.",
@@ -332,6 +339,7 @@ if (subcommand === "up") {
     "up",
     "--workspace-folder",
     target.workspacePath,
+    ...(target.removeExistingContainer ? ["--remove-existing-container"] : []),
     ...target.devcontainerArgs,
     ...target.commandArgs,
   ]);
@@ -349,6 +357,7 @@ if (subcommand === "exec") {
     "up",
     "--workspace-folder",
     target.workspacePath,
+    ...(target.removeExistingContainer ? ["--remove-existing-container"] : []),
   ]);
   const execArgs = [
     "exec",
@@ -368,6 +377,7 @@ const containerId = runDevcontainerUp([
   "up",
   "--workspace-folder",
   target.workspacePath,
+  ...(target.removeExistingContainer ? ["--remove-existing-container"] : []),
 ]);
 const execArgs = [
   "exec",

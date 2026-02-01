@@ -117,6 +117,17 @@ This repo supports a repo-local `.env` file (gitignored) for devcontainer secret
 `.env`, then rebuild the devcontainer so `.devcontainer/.env` is regenerated and Docker can pass the values into the
 container.
 
+Devcontainer CLI helpers (worktree-friendly, safe to run from any worktree):
+
+- Start or reuse a container: `npm run devcontainer:up -- <branch|path>`
+- Start a fresh container: `npm run devcontainer:up:new -- <branch|path>`
+- Open a shell in the workspace: `npm run devcontainer:shell -- <branch|path>`
+- Recreate then shell: `npm run devcontainer:shell:new -- <branch|path>`
+
+If you omit `<branch|path>`, the current directory is used. You can pass a worktree branch name (e.g. `alpha`, `beta`)
+or a path. For example: `npm run devcontainer:shell -- alpha` or
+`npm run devcontainer:shell -- --path /home/matthew/code/calibrate-health-alpha`.
+
 1. Start the app: `npm run dev`
 2. Frontend: `http://localhost:5173` (proxies `/auth` and `/api` to the backend)
 3. Backend/API: `http://localhost:3000`
