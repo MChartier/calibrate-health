@@ -84,11 +84,11 @@ function isPathLike(value) {
 /**
  * Resolve the target workspace folder path based on CLI args.
  * @param {string[]} args - Positional/flag args (without subcommand).
- * @returns {{ workspacePath: string, passthrough: string[] }} Resolved path + passthrough args.
+ * @returns {{ workspacePath: string, devcontainerArgs: string[], commandArgs: string[] }} Resolved path + passthrough args.
  */
 function resolveTarget(args) {
   const passthroughIndex = args.indexOf("--");
-  const passthrough =
+  const commandArgs =
     passthroughIndex === -1 ? [] : args.slice(passthroughIndex + 1);
   const inputArgs =
     passthroughIndex === -1 ? args.slice() : args.slice(0, passthroughIndex);
@@ -97,6 +97,7 @@ function resolveTarget(args) {
   let branchName = null;
   let useCwd = false;
   let positional = null;
+  const devcontainerArgs = [];
 
   for (let i = 0; i < inputArgs.length; i += 1) {
     const arg = inputArgs[i];
@@ -119,7 +120,8 @@ function resolveTarget(args) {
     }
 
     if (arg.startsWith("-")) {
-      throw new Error(`Unknown option: ${arg}`);
+      devcontainerArgs.push(arg);
+      continue;
     }
 
     if (positional) {
@@ -161,7 +163,7 @@ function resolveTarget(args) {
     );
   }
 
-  return { workspacePath: resolved, passthrough };
+  return { workspacePath: resolved, devcontainerArgs, commandArgs };
 }
 
 /**
@@ -283,7 +285,7 @@ function printHelp() {
       "Usage:",
       "  npm run devcontainer:up -- <branch|path> [-- <devcontainer up args>]",
       "  npm run devcontainer:exec -- <branch|path> -- <command...>",
-      "  npm run devcontainer:shell -- <branch|path>",
+      "  npm run devcontainer:shell -- <branch|path> [-- <command...>]",
       "",
       "Options:",
       "  --path <path>    Use an explicit worktree path.",
@@ -293,6 +295,7 @@ function printHelp() {
       "Notes:",
       "  - Run from any worktree in the repo when resolving by branch.",
       "  - For branch names that include '/', use --branch to disambiguate.",
+      "  - When passing devcontainer args with values, prefer `--` or `--flag=value`.",
     ].join("\n")
   );
 }
@@ -329,13 +332,14 @@ if (subcommand === "up") {
     "up",
     "--workspace-folder",
     target.workspacePath,
-    ...target.passthrough,
+    ...target.devcontainerArgs,
+    ...target.commandArgs,
   ]);
   process.exit(0);
 }
 
 if (subcommand === "exec") {
-  if (target.passthrough.length === 0) {
+  if (target.commandArgs.length === 0) {
     console.error("exec requires a command after '--'.");
     printHelp();
     process.exit(1);
@@ -350,15 +354,16 @@ if (subcommand === "exec") {
     "exec",
     containerId ? "--container-id" : "--workspace-folder",
     containerId ? containerId : target.workspacePath,
+    ...target.devcontainerArgs,
     "--",
-    ...buildWorkspaceCommand(containerWorkspaceFolder, target.passthrough),
+    ...buildWorkspaceCommand(containerWorkspaceFolder, target.commandArgs),
   ];
   runDevcontainer(execArgs);
   process.exit(0);
 }
 
 const shellCommand =
-  target.passthrough.length === 0 ? ["bash"] : target.passthrough;
+  target.commandArgs.length === 0 ? ["bash"] : target.commandArgs;
 const containerId = runDevcontainerUp([
   "up",
   "--workspace-folder",
@@ -368,6 +373,7 @@ const execArgs = [
   "exec",
   containerId ? "--container-id" : "--workspace-folder",
   containerId ? containerId : target.workspacePath,
+  ...target.devcontainerArgs,
   "--",
   ...buildWorkspaceCommand(containerWorkspaceFolder, shellCommand),
 ];
