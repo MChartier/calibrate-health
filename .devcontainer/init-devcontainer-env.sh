@@ -10,6 +10,30 @@ if [ -d "${workspace_root}/.git" ]; then
   is_main_worktree="true"
 fi
 
+# Resolve the shared .git directory so worktree Git commands function inside containers.
+git_common_dir=""
+main_worktree_name="$workspace_name"
+if git_common_dir="$(git rev-parse --git-common-dir 2>/dev/null)"; then
+  if [ -n "$git_common_dir" ]; then
+    if [ "${git_common_dir#/}" = "$git_common_dir" ]; then
+      git_common_dir="${workspace_root}/${git_common_dir}"
+    fi
+
+    if [ -d "$git_common_dir" ]; then
+      git_common_dir="$(cd "$git_common_dir" && pwd)"
+      main_worktree_name="$(basename "$(dirname "$git_common_dir")")"
+    else
+      git_common_dir=""
+    fi
+  fi
+fi
+
+if [ -z "$git_common_dir" ]; then
+  echo "Unable to resolve the git common directory; worktree Git commands will fail in the container." >&2
+  echo "Run this script from a git worktree, or ensure git is available on the host." >&2
+  exit 1
+fi
+
 repo_dotenv_path="${workspace_root}/.env"
 
 # Best-effort parse of a single `KEY=value` from a repo-local `.env` file (without executing it).
@@ -164,6 +188,8 @@ tmp_path="${env_path}.tmp"
 cat > "$tmp_path" <<EOF
 COMPOSE_PROJECT_NAME=${project_slug}
 WORKSPACE_FOLDER_NAME=${workspace_name}
+MAIN_WORKTREE_NAME=${main_worktree_name}
+GIT_COMMON_DIR=${git_common_dir}
 BACKEND_PORT=${backend_port}
 FRONTEND_PORT=${frontend_port}
 VITE_DEV_SERVER_PORT=${frontend_port}
@@ -173,7 +199,7 @@ WORKTREE_COLOR=${worktree_color}
 VITE_WORKTREE_COLOR=${vite_worktree_color}
 VITE_WORKTREE_NAME=${workspace_name}
 VITE_WORKTREE_IS_MAIN=${is_main_worktree}
-# Sourced from the host environment or repo-local `.env` during devcontainer init so Docker can pass it into the container.
+# Sourced from the host environment or repo-local .env during devcontainer init so Docker can pass it into the container.
 FATSECRET_CLIENT_ID=${fatsecret_client_id}
 FATSECRET_CLIENT_SECRET=${fatsecret_client_secret}
 USDA_API_KEY=${usda_api_key}

@@ -4,7 +4,8 @@ services:
   app:
     image: mcr.microsoft.com/devcontainers/typescript-node:1-22-bookworm
     volumes:
-      - ../..:/workspaces:cached
+      - ..:/workspaces/${WORKSPACE_FOLDER_NAME}:cached
+      - ${GIT_COMMON_DIR}:/workspaces/${MAIN_WORKTREE_NAME}/.git:cached
     ports:
       - "${BACKEND_PORT}:3000"
       - "${FRONTEND_PORT}:${FRONTEND_PORT}"
