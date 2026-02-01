@@ -7,12 +7,13 @@ if ! command -v gh >/dev/null 2>&1; then
   exit 0
 fi
 
-github_token="${GH_TOKEN:-${GITHUB_TOKEN:-}}"
+github_token="${GH_AUTH_TOKEN:-${GH_TOKEN:-${GITHUB_TOKEN:-}}}"
 if [ -z "$github_token" ]; then
-  echo "GH_TOKEN/GITHUB_TOKEN not set; skipping GitHub auth setup."
+  echo "GH_AUTH_TOKEN/GH_TOKEN/GITHUB_TOKEN not set; skipping GitHub auth setup."
   exit 0
 fi
 
+export GH_AUTH_TOKEN="$github_token"
 export GH_TOKEN="$github_token"
 export GITHUB_TOKEN="$github_token"
 

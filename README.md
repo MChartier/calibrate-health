@@ -142,12 +142,31 @@ If you add/change the credentials, rebuild the devcontainer so the generated `.d
 
 To use USDA instead, set `FOOD_DATA_PROVIDER=usda` and supply `USDA_API_KEY` before rebuilding the devcontainer.
 
+#### Codex CLI auth (devcontainer)
+
+If you want Codex pre-authenticated in the container, set a Codex API key before the devcontainer is created/rebuilt.
+Prefer `CALIBRATE_CODEX_API_KEY` (host env or repo-local `.env`); `CODEX_API_KEY` and `OPENAI_API_KEY` are also accepted.
+
+Example (host machine):
+
+```sh
+export CALIBRATE_CODEX_API_KEY="your-codex-key"
+```
+
 #### GitHub CLI auth (devcontainer)
 
 To let Codex (and you) run non-interactive GitHub operations like pushing branches and creating PRs, set a fine-grained
-PAT in `.env` as `GITHUB_TOKEN` before the devcontainer is created/rebuilt.
+PAT before the devcontainer is created/rebuilt. Prefer the repo-specific name `CALIBRATE_GH_PAT` (host env or repo-local
+`.env`). We also accept `GH_AUTH_TOKEN`, `GH_TOKEN`, or `GITHUB_TOKEN` if you already use those names.
 
-The devcontainer installs `gh`, passes the token into the container (as `GH_TOKEN` and `GITHUB_TOKEN`), and configures:
+Example (host machine):
+
+```sh
+export CALIBRATE_GH_PAT="ghp_your_token_here"
+```
+
+During devcontainer init, the token is translated to `GH_AUTH_TOKEN` (and `GH_TOKEN`/`GITHUB_TOKEN`) for the container.
+The devcontainer installs `gh`, passes the token into the container, and configures:
 
 - `gh` to use the token without prompting.
 - `git push` to use an HTTPS *push* URL for `origin` (fetch stays as-is) with credentials supplied by `gh`.
