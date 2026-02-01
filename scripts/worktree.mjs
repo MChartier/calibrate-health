@@ -151,7 +151,7 @@ const letter = findAvailableLetter(branchSet, usedLetters);
 const branchName = letter;
 const worktreePath = path.join(parentDir, `${baseName}-${branchName}`);
 
-runGit(["worktree", "add", "-b", branchName, worktreePath]);
+runGit(["worktree", "add", "--relative-paths", "-b", branchName, worktreePath]);
 rewriteWorktreeGitFile(worktreePath, gitCommonDir);
 
 console.log(`Created worktree: ${worktreePath} (branch: ${branchName})`);
