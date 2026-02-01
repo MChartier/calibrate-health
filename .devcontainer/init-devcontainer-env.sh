@@ -160,11 +160,12 @@ if [ "$is_main_worktree" = "true" ]; then
   vite_worktree_color=""
 fi
 
-# Allow the host to provide either CALIBRATE_CODEX_API_KEY, CODEX_API_KEY, or OPENAI_API_KEY for Codex auth.
-repo_calibrate_codex_api_key="$(read_repo_dotenv_value "CALIBRATE_CODEX_API_KEY")"
-repo_codex_api_key="$(read_repo_dotenv_value "CODEX_API_KEY")"
-repo_openai_api_key="$(read_repo_dotenv_value "OPENAI_API_KEY")"
-codex_api_key="${CALIBRATE_CODEX_API_KEY:-${CODEX_API_KEY:-${OPENAI_API_KEY:-${repo_calibrate_codex_api_key:-${repo_codex_api_key:-${repo_openai_api_key:-}}}}}}"
+repo_codex_home="$(read_repo_dotenv_value "CODEX_HOME")"
+# Prefer the host CODEX_HOME when set; default to ~/.codex so auth can be mounted into the container.
+codex_host_home="${CODEX_HOME:-${repo_codex_home:-$HOME/.codex}}"
+if [ "${codex_host_home#/}" = "$codex_host_home" ]; then
+  codex_host_home="$HOME/$codex_host_home"
+fi
 
 repo_fatsecret_client_id="$(read_repo_dotenv_value "FATSECRET_CLIENT_ID")"
 fatsecret_client_id="${FATSECRET_CLIENT_ID:-${repo_fatsecret_client_id:-}}"
@@ -203,7 +204,7 @@ VITE_WORKTREE_IS_MAIN=${is_main_worktree}
 FATSECRET_CLIENT_ID=${fatsecret_client_id}
 FATSECRET_CLIENT_SECRET=${fatsecret_client_secret}
 USDA_API_KEY=${usda_api_key}
-CODEX_API_KEY=${codex_api_key}
+CODEX_HOST_HOME=${codex_host_home}
 GH_AUTH_TOKEN=${github_token}
 GITHUB_TOKEN=${github_token}
 GH_TOKEN=${github_token}
