@@ -25,16 +25,11 @@ else
 fi
 
 if [ -d "$codex_host_skills" ]; then
-  if [ -L "$codex_skills" ]; then
-    if target="$(readlink "$codex_skills" 2>/dev/null)"; then
-      if [ "$target" != "$codex_host_skills" ]; then
-        rm "$codex_skills"
-        ln -s "$codex_host_skills" "$codex_skills"
-      fi
-    fi
-  elif [ -e "$codex_skills" ]; then
-    echo "Codex skills already exist at ${codex_skills}; leaving them in place."
-  else
-    ln -s "$codex_host_skills" "$codex_skills"
+  if [ -L "$codex_skills" ] || { [ -e "$codex_skills" ] && [ ! -d "$codex_skills" ]; }; then
+    rm -f "$codex_skills"
   fi
+
+  mkdir -p "$codex_skills"
+  cp -R "$codex_host_skills"/. "$codex_skills"/
+  chmod -R u+rw "$codex_skills"
 fi
