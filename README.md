@@ -155,14 +155,21 @@ To use USDA instead, set `FOOD_DATA_PROVIDER=usda` and supply `USDA_API_KEY` bef
 
 #### Codex CLI auth (devcontainer)
 
-If you want Codex pre-authenticated in the container, set a Codex API key before the devcontainer is created/rebuilt.
-Prefer `CALIBRATE_CODEX_API_KEY` (host env or repo-local `.env`); `CODEX_API_KEY` and `OPENAI_API_KEY` are also accepted.
+The devcontainer uses ChatGPT auth via your host Codex credentials. It bind-mounts your host
+`CODEX_HOME` (defaults to `~/.codex`) into `/home/node/.codex-host`, then copies `auth.json`
+into `/home/node/.codex` so you only need to log in once on the host (and avoid config schema
+mismatches inside the container).
+Set `CODEX_HOME` in your shell or repo-local `.env` if you store credentials elsewhere.
 
 Example (host machine):
 
 ```sh
-export CALIBRATE_CODEX_API_KEY="your-codex-key"
+codex login --device-auth
+# Optional: if your credentials live elsewhere, set CODEX_HOME before starting the devcontainer.
+export CODEX_HOME="/path/to/.codex"
 ```
+
+If you change `CODEX_HOME`, rebuild the devcontainer so the generated `.devcontainer/.env` is refreshed.
 
 #### GitHub CLI auth (devcontainer)
 

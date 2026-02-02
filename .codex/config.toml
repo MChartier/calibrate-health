@@ -1,0 +1,2 @@
+# Prefer ChatGPT auth so devcontainers use the mounted host credentials.
+preferred_auth_method = "chatgpt"
