@@ -41,9 +41,19 @@ type PushPayload = {
   body?: string;
   url?: string;
   tag?: string;
-  actions?: NotificationAction[];
+  actions?: PushNotificationAction[];
   actionUrls?: Record<string, string>;
   data?: Record<string, unknown>;
+};
+
+type PushNotificationAction = {
+  action: string;
+  title: string;
+  icon?: string;
+};
+
+type NotificationOptionsWithActions = NotificationOptions & {
+  actions?: PushNotificationAction[];
 };
 
 /**
@@ -70,7 +80,7 @@ self.addEventListener('push', (event) => {
   const body = payload.body?.trim() || DEFAULT_NOTIFICATION_BODY;
   const url = payload.url?.trim() || DEFAULT_NOTIFICATION_URL;
 
-  const options: NotificationOptions = {
+  const options: NotificationOptionsWithActions = {
     body,
     icon: '/pwa-192x192.png',
     badge: '/pwa-192x192.png',
