@@ -20,6 +20,7 @@ import {
 import QrCodeScannerIcon from '@mui/icons-material/QrCodeScannerRounded';
 import axios from 'axios';
 import BarcodeScannerDialog from '../components/BarcodeScannerDialog';
+import { clearAppBadge, isBadgingSupported, setAppBadge } from '../utils/badging';
 import { resolveServiceWorkerRegistration, urlBase64ToUint8Array } from '../utils/pushNotifications';
 
 type FoodDataSource = 'fatsecret' | 'usda' | 'openFoodFacts';
@@ -89,11 +90,14 @@ const DevDashboard: React.FC = () => {
     const [isSendingPush, setIsSendingPush] = useState(false);
     const [hasPushSubscription, setHasPushSubscription] = useState(false);
     const [activePushEndpoint, setActivePushEndpoint] = useState<string | null>(null);
+    const [badgeStatus, setBadgeStatus] = useState<string | null>(null);
+    const [badgeError, setBadgeError] = useState<string | null>(null);
 
     const notificationPermission =
         typeof window !== 'undefined' && 'Notification' in window ? Notification.permission : 'unsupported';
     const supportsServiceWorker = typeof window !== 'undefined' && 'serviceWorker' in navigator;
     const supportsPushManager = typeof window !== 'undefined' && 'PushManager' in window;
+    const supportsBadging = isBadgingSupported();
 
     /**
      * Fetch provider metadata so the UI reflects current backend configuration.
@@ -338,6 +342,40 @@ const DevDashboard: React.FC = () => {
         );
     }, [sendDevNotification]);
 
+    const handleSetBadge = useCallback(async (count: number) => {
+        setBadgeError(null);
+        setBadgeStatus(null);
+
+        try {
+            const ok = await setAppBadge(count);
+            if (!ok) {
+                setBadgeError('Badging API is not supported on this platform.');
+                return;
+            }
+            setBadgeStatus(`Badge set to ${count}.`);
+        } catch (err) {
+            console.error(err);
+            setBadgeError('Failed to set the app badge.');
+        }
+    }, []);
+
+    const handleClearBadge = useCallback(async () => {
+        setBadgeError(null);
+        setBadgeStatus(null);
+
+        try {
+            const ok = await clearAppBadge();
+            if (!ok) {
+                setBadgeError('Badging API is not supported on this platform.');
+                return;
+            }
+            setBadgeStatus('Badge cleared.');
+        } catch (err) {
+            console.error(err);
+            setBadgeError('Failed to clear the app badge.');
+        }
+    }, []);
+
     /**
      * Run a search against the selected providers using either a free-text query or a UPC/EAN barcode.
      */
@@ -469,6 +507,55 @@ const DevDashboard: React.FC = () => {
                                     setResetSuccess(null);
                                 }}
                                 disabled={isResettingTestUser}
+                            >
+                                Clear message
+                            </Button>
+                        </Stack>
+                    </Stack>
+                </CardContent>
+            </Card>
+
+            <Card variant="outlined" sx={{ mb: 3 }}>
+                <CardContent>
+                    <Stack spacing={2}>
+                        <Box>
+                            <Typography variant="subtitle1" gutterBottom>
+                                App badge
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary">
+                                Set or clear the app badge to validate Badging API support.
+                            </Typography>
+                        </Box>
+
+                        {!supportsBadging && (
+                            <Alert severity="warning">Badging API is not supported on this platform.</Alert>
+                        )}
+
+                        {badgeError && <Alert severity="error">{badgeError}</Alert>}
+                        {badgeStatus && <Alert severity="success">{badgeStatus}</Alert>}
+
+                        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+                            <Button
+                                variant="outlined"
+                                onClick={() => void handleSetBadge(1)}
+                                disabled={!supportsBadging}
+                            >
+                                Set badge to 1
+                            </Button>
+                            <Button
+                                variant="outlined"
+                                onClick={() => void handleClearBadge()}
+                                disabled={!supportsBadging}
+                            >
+                                Clear badge
+                            </Button>
+                            <Button
+                                variant="text"
+                                onClick={() => {
+                                    setBadgeError(null);
+                                    setBadgeStatus(null);
+                                }}
+                                disabled={!supportsBadging}
                             >
                                 Clear message
                             </Button>
