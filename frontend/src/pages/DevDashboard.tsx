@@ -347,27 +347,49 @@ const DevDashboard: React.FC = () => {
     /**
      * Send a basic test notification to validate delivery and click handling.
      */
-    const handleSendTestNotification = useCallback(async () => {
+    const sendDevNotification = useCallback(async (path: string, successMessage: string, errorMessage: string) => {
         setPushError(null);
         setPushStatus(null);
         setIsSendingPush(true);
         try {
-            await axios.post('/api/dev/notifications/test');
-            setPushStatus('Test notification sent.');
+            await axios.post(path);
+            setPushStatus(successMessage);
         } catch (err) {
             console.error(err);
             const serverMessage = axios.isAxiosError(err)
                 ? (err.response?.data as { message?: unknown } | undefined)?.message
                 : null;
             setPushError(
-                typeof serverMessage === 'string' && serverMessage.trim().length > 0
-                    ? serverMessage
-                    : 'Failed to send test notification.'
+                typeof serverMessage === 'string' && serverMessage.trim().length > 0 ? serverMessage : errorMessage
             );
         } finally {
             setIsSendingPush(false);
         }
     }, []);
+
+    const handleSendTestNotification = useCallback(() => {
+        return sendDevNotification(
+            '/api/dev/notifications/test',
+            'Test notification sent.',
+            'Failed to send test notification.'
+        );
+    }, [sendDevNotification]);
+
+    const handleSendLogWeightNotification = useCallback(() => {
+        return sendDevNotification(
+            '/api/dev/notifications/log-weight',
+            'Log weight notification sent.',
+            'Failed to send log weight notification.'
+        );
+    }, [sendDevNotification]);
+
+    const handleSendLogFoodNotification = useCallback(() => {
+        return sendDevNotification(
+            '/api/dev/notifications/log-food',
+            'Log food notification sent.',
+            'Failed to send log food notification.'
+        );
+    }, [sendDevNotification]);
 
     /**
      * Run a search against the selected providers using either a free-text query or a UPC/EAN barcode.
@@ -497,31 +519,50 @@ const DevDashboard: React.FC = () => {
                         {pushError && <Alert severity="error">{pushError}</Alert>}
                         {pushStatus && <Alert severity="success">{pushStatus}</Alert>}
 
-                        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-                            <Button
-                                variant="contained"
-                                onClick={() => void handleRegisterPush()}
-                                disabled={isPreparingPush}
-                            >
-                                {isPreparingPush ? 'Registering...' : 'Register push subscription'}
-                            </Button>
-                            <Button
-                                variant="outlined"
-                                onClick={() => void handleSendTestNotification()}
-                                disabled={!hasPushSubscription || isSendingPush}
-                            >
-                                {isSendingPush ? 'Sending...' : 'Send test notification'}
-                            </Button>
-                            <Button
-                                variant="text"
-                                onClick={() => {
-                                    setPushError(null);
-                                    setPushStatus(null);
-                                }}
-                                disabled={isPreparingPush || isSendingPush}
-                            >
-                                Clear message
-                            </Button>
+                        <Stack spacing={2}>
+                            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+                                <Button
+                                    variant="contained"
+                                    onClick={() => void handleRegisterPush()}
+                                    disabled={isPreparingPush}
+                                >
+                                    {isPreparingPush ? 'Registering...' : 'Register push subscription'}
+                                </Button>
+                                <Button
+                                    variant="outlined"
+                                    onClick={() => void handleSendTestNotification()}
+                                    disabled={!hasPushSubscription || isSendingPush}
+                                >
+                                    {isSendingPush ? 'Sending...' : 'Send test notification'}
+                                </Button>
+                                <Button
+                                    variant="text"
+                                    onClick={() => {
+                                        setPushError(null);
+                                        setPushStatus(null);
+                                    }}
+                                    disabled={isPreparingPush || isSendingPush}
+                                >
+                                    Clear message
+                                </Button>
+                            </Stack>
+
+                            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+                                <Button
+                                    variant="outlined"
+                                    onClick={() => void handleSendLogWeightNotification()}
+                                    disabled={!hasPushSubscription || isSendingPush}
+                                >
+                                    {isSendingPush ? 'Sending...' : 'Send log weight notification'}
+                                </Button>
+                                <Button
+                                    variant="outlined"
+                                    onClick={() => void handleSendLogFoodNotification()}
+                                    disabled={!hasPushSubscription || isSendingPush}
+                                >
+                                    {isSendingPush ? 'Sending...' : 'Send log food notification'}
+                                </Button>
+                            </Stack>
                         </Stack>
                     </Stack>
                 </CardContent>
