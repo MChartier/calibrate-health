@@ -1,9 +1,22 @@
-import React, { useEffect, useState } from 'react';
-import { Box, Button, FormControl, FormHelperText, InputLabel, MenuItem, Select, Stack, Typography } from '@mui/material';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import {
+    Box,
+    Button,
+    FormControl,
+    FormControlLabel,
+    FormHelperText,
+    InputLabel,
+    MenuItem,
+    Select,
+    Stack,
+    Switch,
+    Typography
+} from '@mui/material';
 import DescriptionIcon from '@mui/icons-material/DescriptionRounded';
 import GitHubIcon from '@mui/icons-material/GitHub';
 import { useTheme } from '@mui/material/styles';
 import { Link as RouterLink } from 'react-router-dom';
+import axios from 'axios';
 import { useTransientStatus } from '../hooks/useTransientStatus';
 import { useAuth } from '../context/useAuth';
 import type { HeightUnit, WeightUnit } from '../context/authContext';
@@ -21,9 +34,25 @@ import SectionHeader from '../ui/SectionHeader';
 import { APP_LANGUAGES, DEFAULT_APP_LANGUAGE, type AppLanguage } from '../i18n/languages';
 import { useI18n } from '../i18n/useI18n';
 import { CALIBRATE_REPO_URL } from '../constants/links';
+import { resolveServiceWorkerRegistration, urlBase64ToUint8Array } from '../utils/pushNotifications';
 
 const ABOUT_PARAGRAPH_SPACING = 1.5; // Spacing between About card paragraphs.
 const ABOUT_LINK_SPACING = 1; // Spacing between About card action buttons.
+const IOS_USER_AGENT_REGEX = /iphone|ipad|ipod/i;
+
+const isIosDevice = (): boolean => {
+    if (typeof navigator === 'undefined') return false;
+    const userAgent = navigator.userAgent || '';
+    const isIos = IOS_USER_AGENT_REGEX.test(userAgent);
+    const isIpadOs = userAgent.includes('Mac') && navigator.maxTouchPoints > 1;
+    return isIos || isIpadOs;
+};
+
+const isStandaloneDisplayMode = (): boolean => {
+    if (typeof window === 'undefined') return false;
+    if (window.matchMedia('(display-mode: standalone)').matches) return true;
+    return (window.navigator as { standalone?: boolean }).standalone === true;
+};
 
 /**
  * Settings is focused on account management (photo/password) and app preferences (units/theme).
@@ -38,12 +67,54 @@ const Settings: React.FC = () => {
     const { preference: themePreference, mode: resolvedThemeMode, setPreference: setThemePreference } = useThemeMode();
 
     const { status: unitsStatus, showStatus: showUnitsStatus } = useTransientStatus();
+    const { status: remindersStatus, showStatus: showRemindersStatus } = useTransientStatus();
 
     const detectedTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
     const [timezoneValue, setTimezoneValue] = useState(() => user?.timezone ?? detectedTimezone);
     const [weightUnit, setWeightUnit] = useState<WeightUnit>(() => user?.weight_unit ?? 'KG');
     const [heightUnit, setHeightUnit] = useState<HeightUnit>(() => user?.height_unit ?? 'CM');
     const [languageValue, setLanguageValue] = useState<AppLanguage>(() => user?.language ?? DEFAULT_APP_LANGUAGE);
+    const [remindersEnabled, setRemindersEnabled] = useState(false);
+    const [isUpdatingReminders, setIsUpdatingReminders] = useState(false);
+    const [notificationPermission, setNotificationPermission] = useState<NotificationPermission | 'unsupported'>(() => {
+        if (typeof window === 'undefined' || !('Notification' in window)) {
+            return 'unsupported';
+        }
+        return Notification.permission;
+    });
+
+    const supportsNotifications = typeof window !== 'undefined' && 'Notification' in window;
+    const supportsServiceWorker = typeof window !== 'undefined' && 'serviceWorker' in navigator;
+    const supportsPushManager = typeof window !== 'undefined' && 'PushManager' in window;
+    const iosDevice = isIosDevice();
+    const standaloneDisplayMode = isStandaloneDisplayMode();
+
+    const reminderSupport = useMemo(() => {
+        if (!supportsNotifications) {
+            return { supported: false, message: t('settings.remindersUnsupportedNotifications') };
+        }
+        if (!supportsServiceWorker) {
+            return { supported: false, message: t('settings.remindersUnsupportedServiceWorker') };
+        }
+        if (!supportsPushManager) {
+            return { supported: false, message: t('settings.remindersUnsupportedPush') };
+        }
+        if (iosDevice && !standaloneDisplayMode) {
+            return { supported: false, message: t('settings.remindersInstallRequired') };
+        }
+        if (notificationPermission === 'denied') {
+            return { supported: false, message: t('settings.remindersPermissionDenied') };
+        }
+        return { supported: true, message: t('settings.remindersHelper') };
+    }, [
+        iosDevice,
+        notificationPermission,
+        standaloneDisplayMode,
+        supportsNotifications,
+        supportsPushManager,
+        supportsServiceWorker,
+        t
+    ]);
 
     useEffect(() => {
         setTimezoneValue(user?.timezone ?? detectedTimezone);
@@ -51,6 +122,31 @@ const Settings: React.FC = () => {
         setHeightUnit(user?.height_unit ?? 'CM');
         setLanguageValue(user?.language ?? DEFAULT_APP_LANGUAGE);
     }, [detectedTimezone, user?.height_unit, user?.language, user?.timezone, user?.weight_unit]);
+
+    const loadReminderSubscriptionStatus = useCallback(async () => {
+        if (!supportsServiceWorker || !supportsPushManager) {
+            setRemindersEnabled(false);
+            return;
+        }
+
+        try {
+            const registration = await resolveServiceWorkerRegistration();
+            if (!registration) {
+                setRemindersEnabled(false);
+                return;
+            }
+
+            const subscription = await registration.pushManager.getSubscription();
+            setRemindersEnabled(Boolean(subscription));
+        } catch (err) {
+            console.error(err);
+            setRemindersEnabled(false);
+        }
+    }, [supportsPushManager, supportsServiceWorker]);
+
+    useEffect(() => {
+        void loadReminderSubscriptionStatus();
+    }, [loadReminderSubscriptionStatus]);
 
     const handleWeightUnitChange = async (next: WeightUnit) => {
         if (!user) {
@@ -116,6 +212,95 @@ const Settings: React.FC = () => {
         }
     };
 
+    const handleRemindersToggle = useCallback(
+        async (nextEnabled: boolean) => {
+            if (!user) {
+                showRemindersStatus(t('status.failedToSaveChanges'), 'error');
+                return;
+            }
+
+            if (!reminderSupport.supported) {
+                showRemindersStatus(reminderSupport.message, 'error');
+                return;
+            }
+
+            const previous = remindersEnabled;
+            setRemindersEnabled(nextEnabled);
+            setIsUpdatingReminders(true);
+
+            try {
+                if (nextEnabled) {
+                    const permission = await Notification.requestPermission();
+                    setNotificationPermission(permission);
+
+                    if (permission !== 'granted') {
+                        setRemindersEnabled(false);
+                        const message =
+                            permission === 'denied'
+                                ? t('settings.remindersPermissionDenied')
+                                : t('settings.remindersPermissionRequired');
+                        showRemindersStatus(message, 'error');
+                        return;
+                    }
+
+                    const registration = await resolveServiceWorkerRegistration();
+                    if (!registration) {
+                        setRemindersEnabled(false);
+                        showRemindersStatus(t('settings.remindersMissingServiceWorker'), 'error');
+                        return;
+                    }
+
+                    const keyResponse = await axios.get('/api/notifications/public-key');
+                    const publicKey = keyResponse.data?.publicKey;
+                    if (!publicKey || typeof publicKey !== 'string') {
+                        setRemindersEnabled(false);
+                        showRemindersStatus(t('settings.remindersUpdateFailed'), 'error');
+                        return;
+                    }
+
+                    const existingSubscription = await registration.pushManager.getSubscription();
+                    const subscription =
+                        existingSubscription ??
+                        (await registration.pushManager.subscribe({
+                            userVisibleOnly: true,
+                            applicationServerKey: urlBase64ToUint8Array(publicKey)
+                        }));
+
+                    await axios.post('/api/notifications/subscription', subscription.toJSON());
+                    setRemindersEnabled(true);
+                    showRemindersStatus(t('settings.remindersEnabledStatus'), 'success');
+                } else {
+                    const registration = await resolveServiceWorkerRegistration();
+                    const subscription = registration ? await registration.pushManager.getSubscription() : null;
+                    if (subscription) {
+                        await subscription.unsubscribe();
+                        await axios.delete('/api/notifications/subscription', {
+                            data: { endpoint: subscription.endpoint }
+                        });
+                    }
+                    setRemindersEnabled(false);
+                    showRemindersStatus(t('settings.remindersDisabledStatus'), 'success');
+                }
+            } catch (err) {
+                console.error(err);
+                setRemindersEnabled(previous);
+                showRemindersStatus(t('settings.remindersUpdateFailed'), 'error');
+            } finally {
+                setIsUpdatingReminders(false);
+                void loadReminderSubscriptionStatus();
+            }
+        },
+        [
+            loadReminderSubscriptionStatus,
+            reminderSupport.message,
+            reminderSupport.supported,
+            remindersEnabled,
+            showRemindersStatus,
+            t,
+            user
+        ]
+    );
+
     const resolvedThemeModeLabel = resolvedThemeMode === 'dark' ? t('themeMode.dark') : t('themeMode.light');
 
     return (
@@ -126,6 +311,32 @@ const Settings: React.FC = () => {
                 <AccountSecurityCard />
 
                 <LoseItImportCard />
+
+                <AppCard>
+                    <Stack spacing={1.5} useFlexGap>
+                        <SectionHeader title={t('settings.remindersTitle')} />
+
+                        <Typography variant="body2" color="text.secondary">
+                            {t('settings.remindersDescription')}
+                        </Typography>
+
+                        <InlineStatusLine status={remindersStatus} />
+
+                        <FormControl>
+                            <FormControlLabel
+                                control={
+                                    <Switch
+                                        checked={remindersEnabled}
+                                        onChange={(e) => void handleRemindersToggle(e.target.checked)}
+                                        disabled={!reminderSupport.supported || isUpdatingReminders}
+                                    />
+                                }
+                                label={t('settings.remindersToggleLabel')}
+                            />
+                            <FormHelperText>{reminderSupport.message}</FormHelperText>
+                        </FormControl>
+                    </Stack>
+                </AppCard>
 
                 <AppCard>
                     <SectionHeader title={t('settings.unitsAndLocalization')} sx={{ mb: 0.5 }} />
