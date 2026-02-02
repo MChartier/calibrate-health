@@ -247,7 +247,7 @@ const Log: React.FC = () => {
                     alignItems: 'stretch'
                 }}
             >
-                <LogSummaryCard date={effectiveDate} />
+                <LogSummaryCard date={effectiveDate} completionMode="toggle" />
 
                 <WeightSummaryCard date={effectiveDate} onOpenWeightEntry={openWeightDialogForLogDate} />
             </Box>
