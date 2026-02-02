@@ -1,4 +1,5 @@
 import express from 'express';
+import prisma from '../config/database';
 import {
     getFoodDataProviderByName,
     listFoodDataProviders,
@@ -6,6 +7,7 @@ import {
     type FoodDataSource,
     type FoodSearchRequest
 } from '../services/foodData';
+import { ensureWebPushConfigured, sendWebPushNotification } from '../services/webPush';
 
 /**
  * Dev-only endpoints for food provider diagnostics and comparisons.
@@ -62,6 +64,16 @@ const resolveRequestedProviders = (req: express.Request, available: FoodDataProv
         .filter((name): name is FoodDataSource => availableNames.has(name as FoodDataSource));
 
     return requested.length ? requested : readyProviders;
+};
+
+/**
+ * Ensure the session is authenticated before executing dev-only notification actions.
+ */
+const requireAuthenticatedUser = (req: express.Request, res: express.Response, next: express.NextFunction) => {
+    if (req.isAuthenticated()) {
+        return next();
+    }
+    res.status(401).json({ message: 'Not authenticated' });
 };
 
 router.get('/food/providers', (req, res) => {
@@ -135,6 +147,61 @@ router.get('/food/search', async (req, res) => {
         query: searchRequest.query,
         barcode: searchRequest.barcode,
         results
+    });
+});
+
+router.post('/notifications/test', requireAuthenticatedUser, async (req, res) => {
+    const configured = ensureWebPushConfigured();
+    if (!configured.ok) {
+        return res.status(500).json({ message: configured.error ?? 'Web push is not configured.' });
+    }
+
+    const user = req.user as { id: number };
+    const title = typeof req.body?.title === 'string' ? req.body.title.trim() : '';
+    const body = typeof req.body?.body === 'string' ? req.body.body.trim() : '';
+    const url = typeof req.body?.url === 'string' ? req.body.url.trim() : '';
+
+    const payload = JSON.stringify({
+        title: title || 'calibrate',
+        body: body || 'This is a test notification.',
+        url: url || '/'
+    });
+
+    const subscriptions = await prisma.pushSubscription.findMany({
+        where: { user_id: user.id }
+    });
+
+    if (subscriptions.length === 0) {
+        return res.status(400).json({ message: 'No push subscriptions found for this user.' });
+    }
+
+    const results = await Promise.allSettled(
+        subscriptions.map((subscription) =>
+            sendWebPushNotification(
+                {
+                    endpoint: subscription.endpoint,
+                    keys: {
+                        p256dh: subscription.p256dh,
+                        auth: subscription.auth
+                    }
+                },
+                payload
+            )
+        )
+    );
+
+    const failures = results.filter((result) => result.status === 'rejected');
+
+    if (failures.length > 0) {
+        console.warn(
+            `Dev push test sent with ${failures.length} failures. Some subscriptions may be expired; clear them and re-subscribe to refresh.`
+        );
+    }
+
+    res.json({
+        ok: failures.length === 0,
+        sent: results.length,
+        failed: failures.length
     });
 });
 

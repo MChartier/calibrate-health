@@ -142,10 +142,14 @@ function getWorktreeNameFromRepoRoot(repoRootName: string) {
  */
 function getPwaOptions(enableServiceWorkerInDev: boolean): Partial<VitePWAOptions> {
   return {
+    strategies: 'injectManifest',
     registerType: 'autoUpdate',
+    srcDir: 'src',
+    filename: 'service-worker.ts',
     devOptions: {
       // Keep local service workers opt-in so regular dev mode stays HMR-friendly by default.
       enabled: enableServiceWorkerInDev,
+      type: 'module',
     },
     // Ensure icons referenced by the manifest are copied through to the build output.
     includeAssets: [
@@ -198,14 +202,6 @@ function getPwaOptions(enableServiceWorkerInDev: boolean): Partial<VitePWAOption
           ],
         },
       ],
-    },
-    workbox: {
-      // Workbox's default service worker bundling uses @rollup/plugin-terser in production mode.
-      // In constrained/dev environments this can occasionally fail, and minification isn't critical here.
-      mode: 'development',
-      disableDevLogs: true,
-      // SPA navigation fallback should not hijack backend endpoints.
-      navigateFallbackDenylist: [/^\/api\//, /^\/auth\//, /^\/dev\/test\//],
     },
   }
 }
