@@ -143,6 +143,149 @@ test('food route: GET /search calls provider.searchFoods and returns provider me
   assert.equal(Array.isArray(res.body.items), true);
 });
 
+test('food route: GET /search falls back to the next provider for barcode lookups', async () => {
+  const callOrder = [];
+  const providerA = {
+    name: 'fatsecret',
+    supportsBarcodeLookup: true,
+    searchFoods: async () => {
+      callOrder.push('fatsecret');
+      return { items: [] };
+    }
+  };
+  const providerB = {
+    name: 'openFoodFacts',
+    supportsBarcodeLookup: true,
+    searchFoods: async () => {
+      callOrder.push('openFoodFacts');
+      return { items: [{ id: '1', source: 'openFoodFacts', description: 'Test', availableMeasures: [] }] };
+    }
+  };
+
+  const router = loadFoodRouter({
+    prismaStub: {},
+    foodDataStub: {
+      getFoodDataProvider: () => {
+        throw new Error('getFoodDataProvider should not be called for barcode searches');
+      },
+      getEnabledFoodDataProviders: () => ({
+        primary: { name: 'fatsecret', label: 'FatSecret', supportsBarcodeLookup: true, ready: true },
+        providers: [
+          { name: 'fatsecret', label: 'FatSecret', supportsBarcodeLookup: true, ready: true },
+          { name: 'openFoodFacts', label: 'Open Food Facts', supportsBarcodeLookup: true, ready: true }
+        ]
+      }),
+      getFoodDataProviderByName: (name) => {
+        if (name === 'fatsecret') return { provider: providerA };
+        if (name === 'openFoodFacts') return { provider: providerB };
+        return { error: 'unknown provider' };
+      }
+    }
+  });
+
+  const handler = getRouteHandler(router, 'get', '/search');
+  const req = { query: { barcode: '1234567890123' }, headers: {} };
+  const res = createRes();
+
+  await handler(req, res);
+
+  assert.equal(res.statusCode, 200);
+  assert.equal(res.body.provider, 'openFoodFacts');
+  assert.equal(res.body.supportsBarcodeLookup, true);
+  assert.equal(res.body.items.length, 1);
+  assert.deepEqual(callOrder, ['fatsecret', 'openFoodFacts']);
+});
+
+test('food route: GET /search returns empty results when barcode providers return no matches', async () => {
+  const providerA = {
+    name: 'fatsecret',
+    supportsBarcodeLookup: true,
+    searchFoods: async () => ({ items: [] })
+  };
+  const providerB = {
+    name: 'openFoodFacts',
+    supportsBarcodeLookup: true,
+    searchFoods: async () => ({ items: [] })
+  };
+
+  const router = loadFoodRouter({
+    prismaStub: {},
+    foodDataStub: {
+      getFoodDataProvider: () => {
+        throw new Error('getFoodDataProvider should not be called for barcode searches');
+      },
+      getEnabledFoodDataProviders: () => ({
+        primary: { name: 'fatsecret', label: 'FatSecret', supportsBarcodeLookup: true, ready: true },
+        providers: [
+          { name: 'fatsecret', label: 'FatSecret', supportsBarcodeLookup: true, ready: true },
+          { name: 'openFoodFacts', label: 'Open Food Facts', supportsBarcodeLookup: true, ready: true }
+        ]
+      }),
+      getFoodDataProviderByName: (name) => {
+        if (name === 'fatsecret') return { provider: providerA };
+        if (name === 'openFoodFacts') return { provider: providerB };
+        return { error: 'unknown provider' };
+      }
+    }
+  });
+
+  const handler = getRouteHandler(router, 'get', '/search');
+  const req = { query: { barcode: '1234567890123' }, headers: {} };
+  const res = createRes();
+
+  await handler(req, res);
+
+  assert.equal(res.statusCode, 200);
+  assert.deepEqual(res.body.items, []);
+});
+
+test('food route: GET /search returns 500 when all barcode providers fail', async () => {
+  const providerA = {
+    name: 'fatsecret',
+    supportsBarcodeLookup: true,
+    searchFoods: async () => {
+      throw new Error('FatSecret down');
+    }
+  };
+  const providerB = {
+    name: 'openFoodFacts',
+    supportsBarcodeLookup: true,
+    searchFoods: async () => {
+      throw new Error('Open Food Facts down');
+    }
+  };
+
+  const router = loadFoodRouter({
+    prismaStub: {},
+    foodDataStub: {
+      getFoodDataProvider: () => {
+        throw new Error('getFoodDataProvider should not be called for barcode searches');
+      },
+      getEnabledFoodDataProviders: () => ({
+        primary: { name: 'fatsecret', label: 'FatSecret', supportsBarcodeLookup: true, ready: true },
+        providers: [
+          { name: 'fatsecret', label: 'FatSecret', supportsBarcodeLookup: true, ready: true },
+          { name: 'openFoodFacts', label: 'Open Food Facts', supportsBarcodeLookup: true, ready: true }
+        ]
+      }),
+      getFoodDataProviderByName: (name) => {
+        if (name === 'fatsecret') return { provider: providerA };
+        if (name === 'openFoodFacts') return { provider: providerB };
+        return { error: 'unknown provider' };
+      }
+    }
+  });
+
+  const handler = getRouteHandler(router, 'get', '/search');
+  const req = { query: { barcode: '1234567890123' }, headers: {} };
+  const res = createRes();
+
+  await handler(req, res);
+
+  assert.equal(res.statusCode, 500);
+  assert.deepEqual(res.body, { message: 'Unable to search foods right now.' });
+});
+
 test('food route: GET / validates local_date/date query params', async () => {
   const prismaStub = {
     foodLog: {
@@ -330,4 +473,3 @@ test('food route: DELETE /:id validates ids and returns 204 on delete', async ()
   await handler({ user: { id: 7 }, params: { id: '123' } }, res);
   assert.equal(res.statusCode, 204);
 });
-
