@@ -24,7 +24,7 @@ export function resolveWebPushConfig(env: NodeJS.ProcessEnv = process.env): WebP
   if (!privateKey) missing.push('WEB_PUSH_PRIVATE_KEY');
   if (!subject) missing.push('WEB_PUSH_SUBJECT');
 
-  if (missing.length > 0) {
+  if (!publicKey || !privateKey || !subject) {
     return {
       config: null,
       error: `Web push is disabled: missing ${missing.join(
