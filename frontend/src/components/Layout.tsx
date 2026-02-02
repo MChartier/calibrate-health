@@ -41,6 +41,7 @@ import { useI18n } from '../i18n/useI18n';
 import { QUICK_ADD_FAB_PAGE_BOTTOM_PADDING } from '../constants/quickAddFab';
 import LogQuickAddFab from './LogQuickAddFab';
 import LogDatePickerControl from './LogDatePickerControl';
+import { useIncompleteTodayBadge } from '../hooks/useIncompleteTodayBadge';
 
 /**
  * App shell layout with navigation chrome and quick-add entry points.
@@ -203,6 +204,7 @@ const LayoutShell: React.FC = () => {
     const { dialogs, logDateOverride, logDateNavigation } = useQuickAddFab();
     const { t } = useI18n();
     const theme = useTheme();
+    useIncompleteTodayBadge();
     const safeAreaToolbarSx = useMemo(() => buildSafeAreaToolbarSx(theme), [theme]);
     const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
     const isXs = useMediaQuery(theme.breakpoints.down('sm'));
