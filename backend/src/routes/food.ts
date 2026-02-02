@@ -103,8 +103,26 @@ router.get('/search', async (req, res) => {
             continue;
         }
 
+        if (!resolution.provider.supportsBarcodeLookup) {
+            attempts.push({
+                name: providerInfo.name,
+                status: 'skipped',
+                detail: 'Barcode lookup is disabled for this provider.'
+            });
+            continue;
+        }
+
         try {
             const result = await resolution.provider.searchFoods(parsed.params);
+            if (!resolution.provider.supportsBarcodeLookup) {
+                attempts.push({
+                    name: providerInfo.name,
+                    status: 'skipped',
+                    detail: 'Barcode lookup is disabled for this provider.'
+                });
+                continue;
+            }
+
             sawSuccessfulResponse = true;
             if (result.items.length > 0) {
                 return res.json({

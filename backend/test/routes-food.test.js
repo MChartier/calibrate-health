@@ -239,6 +239,59 @@ test('food route: GET /search returns empty results when barcode providers retur
   assert.deepEqual(res.body.items, []);
 });
 
+test('food route: GET /search skips providers that disable barcode lookup at runtime', async () => {
+  const callOrder = [];
+  const providerA = {
+    name: 'fatsecret',
+    supportsBarcodeLookup: true,
+    searchFoods: async () => {
+      callOrder.push('fatsecret');
+      providerA.supportsBarcodeLookup = false;
+      return { items: [{ id: '1', source: 'fatsecret', description: 'Fallback', availableMeasures: [] }] };
+    }
+  };
+  const providerB = {
+    name: 'openFoodFacts',
+    supportsBarcodeLookup: true,
+    searchFoods: async () => {
+      callOrder.push('openFoodFacts');
+      return { items: [{ id: '2', source: 'openFoodFacts', description: 'Barcode', availableMeasures: [] }] };
+    }
+  };
+
+  const router = loadFoodRouter({
+    prismaStub: {},
+    foodDataStub: {
+      getFoodDataProvider: () => {
+        throw new Error('getFoodDataProvider should not be called for barcode searches');
+      },
+      getEnabledFoodDataProviders: () => ({
+        primary: { name: 'fatsecret', label: 'FatSecret', supportsBarcodeLookup: true, ready: true },
+        providers: [
+          { name: 'fatsecret', label: 'FatSecret', supportsBarcodeLookup: true, ready: true },
+          { name: 'openFoodFacts', label: 'Open Food Facts', supportsBarcodeLookup: true, ready: true }
+        ]
+      }),
+      getFoodDataProviderByName: (name) => {
+        if (name === 'fatsecret') return { provider: providerA };
+        if (name === 'openFoodFacts') return { provider: providerB };
+        return { error: 'unknown provider' };
+      }
+    }
+  });
+
+  const handler = getRouteHandler(router, 'get', '/search');
+  const req = { query: { barcode: '1234567890123' }, headers: {} };
+  const res = createRes();
+
+  await handler(req, res);
+
+  assert.equal(res.statusCode, 200);
+  assert.equal(res.body.provider, 'openFoodFacts');
+  assert.equal(res.body.items.length, 1);
+  assert.deepEqual(callOrder, ['fatsecret', 'openFoodFacts']);
+});
+
 test('food route: GET /search returns 500 when all barcode providers fail', async () => {
   const providerA = {
     name: 'fatsecret',
