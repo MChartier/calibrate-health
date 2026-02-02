@@ -7,62 +7,8 @@ import {
     type FoodDataSource,
     type FoodSearchRequest
 } from '../services/foodData';
+import { buildReminderPayload, type PushNotificationPayload } from '../services/pushNotificationPayloads';
 import { ensureWebPushConfigured, sendWebPushNotification } from '../services/webPush';
-
-type DevNotificationAction = {
-    action: string;
-    title: string;
-};
-
-type DevPushPayload = {
-    title: string;
-    body: string;
-    url?: string;
-    tag?: string;
-    actions?: DevNotificationAction[];
-    actionUrls?: Record<string, string>;
-};
-
-const QUICK_ADD_BASE_PATH = '/log'; // Route used for quick-add notification deep links.
-const QUICK_ADD_QUERY_PARAM = 'quickAdd'; // Matches frontend quick-add query param name.
-const QUICK_ADD_ACTIONS = {
-    weight: 'weight',
-    food: 'food'
-} as const;
-
-const REMINDER_ACTION_IDS = {
-    logWeight: 'log_weight',
-    logFood: 'log_food'
-} as const;
-
-const REMINDER_ACTIONS: DevNotificationAction[] = [
-    { action: REMINDER_ACTION_IDS.logWeight, title: 'Log weight' },
-    { action: REMINDER_ACTION_IDS.logFood, title: 'Log food' }
-];
-
-const buildQuickAddUrl = (action: typeof QUICK_ADD_ACTIONS[keyof typeof QUICK_ADD_ACTIONS]): string => {
-    return `${QUICK_ADD_BASE_PATH}?${QUICK_ADD_QUERY_PARAM}=${action}`;
-};
-
-const REMINDER_ACTION_URLS: Record<string, string> = {
-    [REMINDER_ACTION_IDS.logWeight]: buildQuickAddUrl(QUICK_ADD_ACTIONS.weight),
-    [REMINDER_ACTION_IDS.logFood]: buildQuickAddUrl(QUICK_ADD_ACTIONS.food)
-};
-
-const buildReminderPayload = (variant: 'log_weight' | 'log_food'): DevPushPayload => {
-    const isWeight = variant === REMINDER_ACTION_IDS.logWeight;
-    const targetUrl = isWeight
-        ? REMINDER_ACTION_URLS[REMINDER_ACTION_IDS.logWeight]
-        : REMINDER_ACTION_URLS[REMINDER_ACTION_IDS.logFood];
-    return {
-        title: 'calibrate',
-        body: isWeight ? 'Time to log your weight.' : 'Time to log your food.',
-        url: targetUrl,
-        tag: `reminder-${variant}`,
-        actions: REMINDER_ACTIONS,
-        actionUrls: REMINDER_ACTION_URLS
-    };
-};
 
 /**
  * Dev-only endpoints for food provider diagnostics and comparisons.
@@ -131,7 +77,7 @@ const requireAuthenticatedUser = (req: express.Request, res: express.Response, n
     res.status(401).json({ message: 'Not authenticated' });
 };
 
-const sendDevPushToUser = async (userId: number, payload: DevPushPayload) => {
+const sendDevPushToUser = async (userId: number, payload: PushNotificationPayload) => {
     const subscriptions = await prisma.pushSubscription.findMany({
         where: { user_id: userId }
     });
@@ -252,7 +198,7 @@ router.post('/notifications/test', requireAuthenticatedUser, async (req, res) =>
     const body = typeof req.body?.body === 'string' ? req.body.body.trim() : '';
     const url = typeof req.body?.url === 'string' ? req.body.url.trim() : '';
 
-    const payload: DevPushPayload = {
+    const payload: PushNotificationPayload = {
         title: title || 'calibrate',
         body: body || 'This is a test notification.',
         url: url || '/'
@@ -303,7 +249,7 @@ router.post('/notifications/log-weight', requireAuthenticatedUser, async (req, r
     }
 
     const user = req.user as { id: number };
-    const payload = buildReminderPayload(REMINDER_ACTION_IDS.logWeight);
+    const payload = buildReminderPayload({ missingWeight: true, missingFood: false });
     const result = await sendDevPushToUser(user.id, payload);
 
     if (result.sent === 0) {
@@ -328,7 +274,7 @@ router.post('/notifications/log-food', requireAuthenticatedUser, async (req, res
     }
 
     const user = req.user as { id: number };
-    const payload = buildReminderPayload(REMINDER_ACTION_IDS.logFood);
+    const payload = buildReminderPayload({ missingWeight: false, missingFood: true });
     const result = await sendDevPushToUser(user.id, payload);
 
     if (result.sent === 0) {
