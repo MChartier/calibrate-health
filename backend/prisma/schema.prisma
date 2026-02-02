@@ -245,6 +245,8 @@ model PushSubscription {
   auth            String
   /// Optional expiration timestamp for the subscription.
   expiration_time DateTime?
+  /// Local date (UTC-normalized) when the last reminder was sent for this subscription.
+  last_sent_local_date DateTime? @db.Date
   created_at      DateTime @default(now())
   updated_at      DateTime @updatedAt
 
