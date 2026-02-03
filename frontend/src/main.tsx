@@ -22,10 +22,31 @@ function getBrowserTitle() {
 }
 
 /**
- * Register the PWA service worker in production so the app is installable and can load offline.
+ * Parse environment-style boolean flags where enabled values are "true" or "1".
+ */
+function isEnabledEnvFlag(rawValue: string | undefined): boolean {
+  return rawValue === 'true' || rawValue === '1'
+}
+
+/**
+ * Allow opt-in service worker registration during local development for PWA/push validation.
+ */
+function isServiceWorkerDevModeEnabled(): boolean {
+  return isEnabledEnvFlag(import.meta.env.VITE_ENABLE_SW_DEV)
+}
+
+/**
+ * Decide whether this runtime should register a service worker.
+ */
+function shouldRegisterServiceWorker(): boolean {
+  if (import.meta.env.PROD) return true
+  return import.meta.env.DEV && isServiceWorkerDevModeEnabled()
+}
+
+/**
+ * Register the PWA service worker so production stays installable and opt-in dev can validate push.
  */
 function registerServiceWorker() {
-  if (!import.meta.env.PROD) return
   registerSW({ immediate: true })
 }
 
@@ -41,10 +62,12 @@ async function unregisterServiceWorkersInDev() {
 
   try {
     const registrations = await navigator.serviceWorker.getRegistrations()
-    if (registrations.length === 0) return
-
-    const results = await Promise.all(registrations.map((registration) => registration.unregister()))
-    const didUnregister = results.some(Boolean)
+    const didUnregister =
+      registrations.length > 0
+        ? (await Promise.all(registrations.map((registration) => registration.unregister()))).some(
+            Boolean,
+          )
+        : false
 
     if ('caches' in window) {
       const cacheKeys = await caches.keys()
@@ -60,9 +83,20 @@ async function unregisterServiceWorkersInDev() {
   }
 }
 
+/**
+ * Configure service worker behavior for this boot with mutually exclusive register vs cleanup paths.
+ */
+async function configureServiceWorkerMode() {
+  if (shouldRegisterServiceWorker()) {
+    registerServiceWorker()
+    return
+  }
+
+  await unregisterServiceWorkersInDev()
+}
+
 document.title = getBrowserTitle()
-void unregisterServiceWorkersInDev()
-registerServiceWorker()
+void configureServiceWorkerMode()
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

@@ -219,6 +219,7 @@ If you see Prisma errors like "The table `public.User` does not exist", you have
 ### Common scripts
 
 - `npm run dev`: runs backend + frontend together (`backend/` + `frontend/`).
+- `npm run dev:pwa`: runs backend + frontend with `VITE_ENABLE_SW_DEV=1` so local dev registers the service worker for PWA/push validation.
 - `npm run dev:test`: same as `npm run dev`, but auto-logs in the seeded dev user.
 - `npm run dev:reset-test-user-onboarding`: reset the dev test user to pre-onboarding.
 - `npm run dev:backend`: runs only the backend (`http://localhost:3000`).
@@ -252,6 +253,7 @@ docker compose up --build
 The frontend is configured as a Progressive Web App (PWA), so it can be installed on desktop/mobile and added to a home
 screen.
 
+- For local push/PWA flow validation in dev mode, run `npm run dev:pwa` (opt-in). Standard `npm run dev` keeps service workers unregistered to avoid stale-cache HMR issues.
 - Test locally: `npm --prefix frontend run build && npm --prefix frontend run preview` then open
   `http://localhost:4173` and use the browser install UI.
 - iOS: open the app in Safari and use Share -> Add to Home Screen.
