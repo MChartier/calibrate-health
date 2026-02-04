@@ -24,6 +24,13 @@ function isRunningInContainer() {
   }
 }
 
+/**
+ * Parse environment-style boolean flags where enabled values are "true" or "1".
+ */
+function isEnabledEnvFlag(rawValue: string | undefined): boolean {
+  return rawValue === 'true' || rawValue === '1'
+}
+
 const QUICK_ADD_SHORTCUT_ICON = 'pwa-192x192.png' // Icon used for quick-add PWA shortcuts.
 const QUICK_ADD_SHORTCUT_BASE_PATH = '/log' // Base route for quick-add shortcuts.
 // Reuse an existing app window so PWA shortcuts navigate instead of spawning a new instance.
@@ -133,9 +140,13 @@ function getWorktreeNameFromRepoRoot(repoRootName: string) {
 /**
  * Configure PWA behavior (manifest + service worker) for installability on mobile/desktop.
  */
-function getPwaOptions(): Partial<VitePWAOptions> {
+function getPwaOptions(enableServiceWorkerInDev: boolean): Partial<VitePWAOptions> {
   return {
     registerType: 'autoUpdate',
+    devOptions: {
+      // Keep local service workers opt-in so regular dev mode stays HMR-friendly by default.
+      enabled: enableServiceWorkerInDev,
+    },
     // Ensure icons referenced by the manifest are copied through to the build output.
     includeAssets: [
       'icon.png',
@@ -202,6 +213,7 @@ function getPwaOptions(): Partial<VitePWAOptions> {
 const frontendDir = path.dirname(fileURLToPath(import.meta.url))
 const repoRootName = path.basename(path.resolve(frontendDir, '..'))
 const worktreeName = getWorktreeNameFromRepoRoot(repoRootName)
+const enableServiceWorkerInDev = isEnabledEnvFlag(process.env.VITE_ENABLE_SW_DEV)
 
 const usePolling =
   process.env.VITE_USE_POLLING === 'true' ||
@@ -224,7 +236,7 @@ const backendProxy = {
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [react(), VitePWA(getPwaOptions())],
+  plugins: [react(), VitePWA(getPwaOptions(enableServiceWorkerInDev))],
   define: {
     __WORKTREE_NAME__: JSON.stringify(worktreeName),
   },

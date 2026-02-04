@@ -5,6 +5,7 @@
   "main": "index.js",
     "scripts": {
       "dev": "node scripts/dev.mjs",
+      "dev:pwa": "VITE_ENABLE_SW_DEV=1 node scripts/dev.mjs",
       "dev:test": "AUTO_LOGIN_TEST_USER=true node scripts/dev.mjs",
     "dev:reset-test-user-onboarding": "node scripts/reset-test-user-onboarding.mjs",
       "dev:backend": "npm --prefix backend run dev",
