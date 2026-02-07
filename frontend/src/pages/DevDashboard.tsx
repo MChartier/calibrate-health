@@ -86,7 +86,7 @@ const urlBase64ToUint8Array = (base64String: string): Uint8Array<ArrayBuffer> =>
  * Prefer the registration that can immediately handle push events.
  */
 const pickBestServiceWorkerRegistration = (
-    registrations: ServiceWorkerRegistration[]
+    registrations: readonly ServiceWorkerRegistration[]
 ): ServiceWorkerRegistration | null => {
     if (registrations.length === 0) {
         return null;
