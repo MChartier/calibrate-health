@@ -83,6 +83,24 @@ const urlBase64ToUint8Array = (base64String: string): Uint8Array<ArrayBuffer> =>
 };
 
 /**
+ * Prefer the registration that can immediately handle push events.
+ */
+const pickBestServiceWorkerRegistration = (
+    registrations: ServiceWorkerRegistration[]
+): ServiceWorkerRegistration | null => {
+    if (registrations.length === 0) {
+        return null;
+    }
+
+    return (
+        registrations.find((registration) => Boolean(registration.active)) ??
+        registrations.find((registration) => Boolean(registration.waiting)) ??
+        registrations.find((registration) => Boolean(registration.installing)) ??
+        registrations[0]
+    );
+};
+
+/**
  * Dev-only dashboard to compare food search results side-by-side across providers.
  */
 const DevDashboard: React.FC = () => {
@@ -148,7 +166,10 @@ const DevDashboard: React.FC = () => {
         }
 
         try {
-            const registration = await navigator.serviceWorker.getRegistration();
+            const currentPageRegistration = await navigator.serviceWorker.getRegistration();
+            const registration =
+                currentPageRegistration ??
+                pickBestServiceWorkerRegistration(await navigator.serviceWorker.getRegistrations());
             if (!registration) {
                 setHasPushSubscription(false);
                 return;
@@ -230,17 +251,27 @@ const DevDashboard: React.FC = () => {
             return null;
         }
 
-        const timeoutPromise = new Promise<null>((resolve) => {
-            window.setTimeout(() => resolve(null), SERVICE_WORKER_READY_TIMEOUT_MS);
-        });
+        try {
+            const timeoutPromise = new Promise<null>((resolve) => {
+                window.setTimeout(() => resolve(null), SERVICE_WORKER_READY_TIMEOUT_MS);
+            });
 
-        const readyPromise = navigator.serviceWorker.ready as Promise<ServiceWorkerRegistration>;
-        const registration = await Promise.race<ServiceWorkerRegistration | null>([readyPromise, timeoutPromise]);
-        if (registration) {
-            return registration;
+            const readyPromise = navigator.serviceWorker.ready as Promise<ServiceWorkerRegistration>;
+            const registration = await Promise.race<ServiceWorkerRegistration | null>([readyPromise, timeoutPromise]);
+            if (registration) {
+                return registration;
+            }
+
+            const currentPageRegistration = await navigator.serviceWorker.getRegistration();
+            if (currentPageRegistration) {
+                return currentPageRegistration;
+            }
+
+            return pickBestServiceWorkerRegistration(await navigator.serviceWorker.getRegistrations());
+        } catch (err) {
+            console.error(err);
+            return null;
         }
-
-        return (await navigator.serviceWorker.getRegistration()) ?? null;
     }, []);
 
     /**
@@ -274,7 +305,7 @@ const DevDashboard: React.FC = () => {
             const registration = await resolveServiceWorkerRegistration();
             if (!registration) {
                 setPushError(
-                    'No active service worker registration found. Enable the PWA service worker (VITE_ENABLE_SW_IN_DEV=1) or use a production/preview build.'
+                    'No active service worker registration found. Enable the PWA service worker (VITE_ENABLE_SW_DEV=1) or use a production/preview build.'
                 );
                 return;
             }

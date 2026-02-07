@@ -26,6 +26,9 @@ services:
       AUTO_LOGIN_TEST_USER: "false"
       SESSION_COOKIE_SECURE: "false"
       NODE_ENV: development
+      WEB_PUSH_PUBLIC_KEY: ${WEB_PUSH_PUBLIC_KEY:-}
+      WEB_PUSH_PRIVATE_KEY: ${WEB_PUSH_PRIVATE_KEY:-}
+      WEB_PUSH_SUBJECT: ${WEB_PUSH_SUBJECT:-}
     ports:
       - "3000:3000"
     depends_on:

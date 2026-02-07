@@ -1,7 +1,7 @@
 /// <reference lib="webworker" />
 
 import { clientsClaim } from 'workbox-core';
-import { cleanupOutdatedCaches, precacheAndRoute, createHandlerBoundToURL } from 'workbox-precaching';
+import { cleanupOutdatedCaches, precacheAndRoute, createHandlerBoundToURL, getCacheKeyForURL } from 'workbox-precaching';
 import { registerRoute, NavigationRoute } from 'workbox-routing';
 
 declare const self: ServiceWorkerGlobalScope & {
@@ -14,6 +14,7 @@ declare const self: ServiceWorkerGlobalScope & {
 const DEFAULT_NOTIFICATION_TITLE = 'calibrate';
 const DEFAULT_NOTIFICATION_BODY = 'You have a new reminder.';
 const DEFAULT_NOTIFICATION_URL = '/';
+const SPA_ENTRY_URL = '/index.html';
 
 const NAVIGATION_DENYLIST = [/^\/api\//, /^\/auth\//, /^\/dev\/test\//];
 
@@ -29,9 +30,11 @@ precacheAndRoute(self.__WB_MANIFEST);
 /**
  * Support SPA navigation without intercepting API or auth endpoints.
  */
-const navigationHandler = createHandlerBoundToURL('/index.html');
-const navigationRoute = new NavigationRoute(navigationHandler, { denylist: NAVIGATION_DENYLIST });
-registerRoute(navigationRoute);
+if (getCacheKeyForURL(SPA_ENTRY_URL)) {
+  const navigationHandler = createHandlerBoundToURL(SPA_ENTRY_URL);
+  const navigationRoute = new NavigationRoute(navigationHandler, { denylist: NAVIGATION_DENYLIST });
+  registerRoute(navigationRoute);
+}
 
 type PushPayload = {
   title?: string;
