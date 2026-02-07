@@ -41,7 +41,19 @@ type PushPayload = {
   body?: string;
   url?: string;
   tag?: string;
+  actions?: PushNotificationAction[];
+  actionUrls?: Record<string, string>;
   data?: Record<string, unknown>;
+};
+
+type PushNotificationAction = {
+  action: string;
+  title: string;
+  icon?: string;
+};
+
+type NotificationOptionsWithActions = NotificationOptions & {
+  actions?: PushNotificationAction[];
 };
 
 /**
@@ -68,16 +80,24 @@ self.addEventListener('push', (event) => {
   const body = payload.body?.trim() || DEFAULT_NOTIFICATION_BODY;
   const url = payload.url?.trim() || DEFAULT_NOTIFICATION_URL;
 
-  const options: NotificationOptions = {
+  const options: NotificationOptionsWithActions = {
     body,
     icon: '/pwa-192x192.png',
     badge: '/pwa-192x192.png',
-    tag: payload.tag,
     data: {
       url,
+      actionUrls: payload.actionUrls,
       ...(payload.data ?? {})
     }
   };
+
+  if (payload.tag) {
+    options.tag = payload.tag;
+  }
+
+  if (payload.actions && payload.actions.length > 0) {
+    options.actions = payload.actions;
+  }
 
   event.waitUntil(self.registration.showNotification(title, options));
 });
@@ -88,8 +108,15 @@ self.addEventListener('push', (event) => {
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
 
-  const rawUrl = (event.notification.data as { url?: string } | undefined)?.url;
-  const targetUrl = new URL(rawUrl || DEFAULT_NOTIFICATION_URL, self.location.origin).href;
+  const data = event.notification.data as
+    | {
+        url?: string;
+        actionUrls?: Record<string, string>;
+      }
+    | undefined;
+  const actionUrl = event.action ? data?.actionUrls?.[event.action] : undefined;
+  const rawUrl = actionUrl || data?.url || DEFAULT_NOTIFICATION_URL;
+  const targetUrl = new URL(rawUrl, self.location.origin).href;
 
   event.waitUntil(
     (async () => {

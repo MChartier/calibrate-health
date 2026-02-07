@@ -9,6 +9,61 @@ import {
 } from '../services/foodData';
 import { ensureWebPushConfigured, sendWebPushNotification } from '../services/webPush';
 
+type DevNotificationAction = {
+    action: string;
+    title: string;
+};
+
+type DevPushPayload = {
+    title: string;
+    body: string;
+    url?: string;
+    tag?: string;
+    actions?: DevNotificationAction[];
+    actionUrls?: Record<string, string>;
+};
+
+const QUICK_ADD_BASE_PATH = '/log'; // Route used for quick-add notification deep links.
+const QUICK_ADD_QUERY_PARAM = 'quickAdd'; // Matches frontend quick-add query param name.
+const QUICK_ADD_ACTIONS = {
+    weight: 'weight',
+    food: 'food'
+} as const;
+
+const REMINDER_ACTION_IDS = {
+    logWeight: 'log_weight',
+    logFood: 'log_food'
+} as const;
+
+const REMINDER_ACTIONS: DevNotificationAction[] = [
+    { action: REMINDER_ACTION_IDS.logWeight, title: 'Log weight' },
+    { action: REMINDER_ACTION_IDS.logFood, title: 'Log food' }
+];
+
+const buildQuickAddUrl = (action: typeof QUICK_ADD_ACTIONS[keyof typeof QUICK_ADD_ACTIONS]): string => {
+    return `${QUICK_ADD_BASE_PATH}?${QUICK_ADD_QUERY_PARAM}=${action}`;
+};
+
+const REMINDER_ACTION_URLS: Record<string, string> = {
+    [REMINDER_ACTION_IDS.logWeight]: buildQuickAddUrl(QUICK_ADD_ACTIONS.weight),
+    [REMINDER_ACTION_IDS.logFood]: buildQuickAddUrl(QUICK_ADD_ACTIONS.food)
+};
+
+const buildReminderPayload = (variant: 'log_weight' | 'log_food'): DevPushPayload => {
+    const isWeight = variant === REMINDER_ACTION_IDS.logWeight;
+    const targetUrl = isWeight
+        ? REMINDER_ACTION_URLS[REMINDER_ACTION_IDS.logWeight]
+        : REMINDER_ACTION_URLS[REMINDER_ACTION_IDS.logFood];
+    return {
+        title: 'calibrate',
+        body: isWeight ? 'Time to log your weight.' : 'Time to log your food.',
+        url: targetUrl,
+        tag: `reminder-${variant}`,
+        actions: REMINDER_ACTIONS,
+        actionUrls: REMINDER_ACTION_URLS
+    };
+};
+
 /**
  * Dev-only endpoints for food provider diagnostics and comparisons.
  */
@@ -74,6 +129,42 @@ const requireAuthenticatedUser = (req: express.Request, res: express.Response, n
         return next();
     }
     res.status(401).json({ message: 'Not authenticated' });
+};
+
+const sendDevPushToUser = async (userId: number, payload: DevPushPayload) => {
+    const subscriptions = await prisma.pushSubscription.findMany({
+        where: { user_id: userId }
+    });
+
+    if (subscriptions.length === 0) {
+        return { sent: 0, failed: 0, message: 'No push subscriptions found for this user.' };
+    }
+
+    const payloadString = JSON.stringify(payload);
+    const results = await Promise.allSettled(
+        subscriptions.map((subscription) =>
+            sendWebPushNotification(
+                {
+                    endpoint: subscription.endpoint,
+                    keys: {
+                        p256dh: subscription.p256dh,
+                        auth: subscription.auth
+                    }
+                },
+                payloadString
+            )
+        )
+    );
+
+    const failures = results.filter((result) => result.status === 'rejected');
+    return {
+        sent: results.length,
+        failed: failures.length,
+        message:
+            failures.length > 0
+                ? 'Some subscriptions failed. Clear them and re-subscribe to refresh.'
+                : undefined
+    };
 };
 
 router.get('/food/providers', (req, res) => {
@@ -161,11 +252,11 @@ router.post('/notifications/test', requireAuthenticatedUser, async (req, res) =>
     const body = typeof req.body?.body === 'string' ? req.body.body.trim() : '';
     const url = typeof req.body?.url === 'string' ? req.body.url.trim() : '';
 
-    const payload = JSON.stringify({
+    const payload: DevPushPayload = {
         title: title || 'calibrate',
         body: body || 'This is a test notification.',
         url: url || '/'
-    });
+    };
 
     const subscription = await prisma.pushSubscription.findFirst({
         where: { user_id: user.id },
@@ -202,6 +293,56 @@ router.post('/notifications/test', requireAuthenticatedUser, async (req, res) =>
         ok: failures.length === 0,
         sent: result.length,
         failed: failures.length
+    });
+});
+
+router.post('/notifications/log-weight', requireAuthenticatedUser, async (req, res) => {
+    const configured = ensureWebPushConfigured();
+    if (!configured.ok) {
+        return res.status(500).json({ message: configured.error ?? 'Web push is not configured.' });
+    }
+
+    const user = req.user as { id: number };
+    const payload = buildReminderPayload(REMINDER_ACTION_IDS.logWeight);
+    const result = await sendDevPushToUser(user.id, payload);
+
+    if (result.sent === 0) {
+        return res.status(400).json({ message: result.message ?? 'No push subscriptions found for this user.' });
+    }
+
+    if (result.message) {
+        console.warn(`Dev push log weight sent with ${result.failed} failures. ${result.message}`);
+    }
+
+    res.json({
+        ok: result.failed === 0,
+        sent: result.sent,
+        failed: result.failed
+    });
+});
+
+router.post('/notifications/log-food', requireAuthenticatedUser, async (req, res) => {
+    const configured = ensureWebPushConfigured();
+    if (!configured.ok) {
+        return res.status(500).json({ message: configured.error ?? 'Web push is not configured.' });
+    }
+
+    const user = req.user as { id: number };
+    const payload = buildReminderPayload(REMINDER_ACTION_IDS.logFood);
+    const result = await sendDevPushToUser(user.id, payload);
+
+    if (result.sent === 0) {
+        return res.status(400).json({ message: result.message ?? 'No push subscriptions found for this user.' });
+    }
+
+    if (result.message) {
+        console.warn(`Dev push log food sent with ${result.failed} failures. ${result.message}`);
+    }
+
+    res.json({
+        ok: result.failed === 0,
+        sent: result.sent,
+        failed: result.failed
     });
 });
 
