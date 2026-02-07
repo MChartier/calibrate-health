@@ -65,6 +65,41 @@ type ResetTestUserOnboardingResponse = {
     user: { email?: string } | null;
 };
 
+const SERVICE_WORKER_READY_TIMEOUT_MS = 5000; // Avoid hanging in dev when no service worker is registered.
+
+/**
+ * Convert a base64 URL-safe VAPID key into a Uint8Array for PushManager.subscribe().
+ */
+const urlBase64ToUint8Array = (base64String: string): Uint8Array<ArrayBuffer> => {
+    const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+    const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+    const rawData = window.atob(base64);
+    const buffer = new ArrayBuffer(rawData.length);
+    const outputArray = new Uint8Array(buffer);
+    for (let i = 0; i < rawData.length; i += 1) {
+        outputArray[i] = rawData.charCodeAt(i);
+    }
+    return outputArray;
+};
+
+/**
+ * Prefer the registration that can immediately handle push events.
+ */
+const pickBestServiceWorkerRegistration = (
+    registrations: readonly ServiceWorkerRegistration[]
+): ServiceWorkerRegistration | null => {
+    if (registrations.length === 0) {
+        return null;
+    }
+
+    return (
+        registrations.find((registration) => Boolean(registration.active)) ??
+        registrations.find((registration) => Boolean(registration.waiting)) ??
+        registrations.find((registration) => Boolean(registration.installing)) ??
+        registrations[0]
+    );
+};
+
 /**
  * Dev-only dashboard to compare food search results side-by-side across providers.
  */
@@ -81,6 +116,17 @@ const DevDashboard: React.FC = () => {
     const [resetError, setResetError] = useState<string | null>(null);
     const [resetSuccess, setResetSuccess] = useState<string | null>(null);
     const [isResettingTestUser, setIsResettingTestUser] = useState(false);
+
+    const [pushError, setPushError] = useState<string | null>(null);
+    const [pushStatus, setPushStatus] = useState<string | null>(null);
+    const [isPreparingPush, setIsPreparingPush] = useState(false);
+    const [isSendingPush, setIsSendingPush] = useState(false);
+    const [hasPushSubscription, setHasPushSubscription] = useState(false);
+
+    const notificationPermission =
+        typeof window !== 'undefined' && 'Notification' in window ? Notification.permission : 'unsupported';
+    const supportsServiceWorker = typeof window !== 'undefined' && 'serviceWorker' in navigator;
+    const supportsPushManager = typeof window !== 'undefined' && 'PushManager' in window;
 
     /**
      * Fetch provider metadata so the UI reflects current backend configuration.
@@ -109,6 +155,36 @@ const DevDashboard: React.FC = () => {
     useEffect(() => {
         void loadProviders();
     }, [loadProviders]);
+
+    /**
+     * Check the active push subscription so the UI can reflect current status.
+     */
+    const loadPushSubscriptionStatus = useCallback(async () => {
+        if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+            setHasPushSubscription(false);
+            return;
+        }
+
+        try {
+            const currentPageRegistration = await navigator.serviceWorker.getRegistration();
+            const registration =
+                currentPageRegistration ??
+                pickBestServiceWorkerRegistration(await navigator.serviceWorker.getRegistrations());
+            if (!registration) {
+                setHasPushSubscription(false);
+                return;
+            }
+            const subscription = await registration.pushManager.getSubscription();
+            setHasPushSubscription(Boolean(subscription));
+        } catch (err) {
+            console.error(err);
+            setHasPushSubscription(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        void loadPushSubscriptionStatus();
+    }, [loadPushSubscriptionStatus]);
 
     /**
      * Toggle providers while keeping the selection array stable for requests.
@@ -164,6 +240,132 @@ const DevDashboard: React.FC = () => {
             setResetError(typeof serverMessage === 'string' && serverMessage.trim().length > 0 ? serverMessage : 'Reset failed.');
         } finally {
             setIsResettingTestUser(false);
+        }
+    }, []);
+
+    /**
+     * Resolve the active service worker registration without hanging if none is registered.
+     */
+    const resolveServiceWorkerRegistration = useCallback(async (): Promise<ServiceWorkerRegistration | null> => {
+        if (!('serviceWorker' in navigator)) {
+            return null;
+        }
+
+        try {
+            const timeoutPromise = new Promise<null>((resolve) => {
+                window.setTimeout(() => resolve(null), SERVICE_WORKER_READY_TIMEOUT_MS);
+            });
+
+            const readyPromise = navigator.serviceWorker.ready as Promise<ServiceWorkerRegistration>;
+            const registration = await Promise.race<ServiceWorkerRegistration | null>([readyPromise, timeoutPromise]);
+            if (registration) {
+                return registration;
+            }
+
+            const currentPageRegistration = await navigator.serviceWorker.getRegistration();
+            if (currentPageRegistration) {
+                return currentPageRegistration;
+            }
+
+            return pickBestServiceWorkerRegistration(await navigator.serviceWorker.getRegistrations());
+        } catch (err) {
+            console.error(err);
+            return null;
+        }
+    }, []);
+
+    /**
+     * Subscribe the current browser to push notifications and persist the subscription.
+     */
+    const handleRegisterPush = useCallback(async () => {
+        setPushError(null);
+        setPushStatus(null);
+
+        if (!('Notification' in window)) {
+            setPushError('Notifications are not supported in this browser.');
+            return;
+        }
+        if (!('serviceWorker' in navigator)) {
+            setPushError('Service workers are not supported in this browser.');
+            return;
+        }
+        if (!('PushManager' in window)) {
+            setPushError('Push messaging is not supported in this browser.');
+            return;
+        }
+
+        setIsPreparingPush(true);
+        try {
+            const permission = await Notification.requestPermission();
+            if (permission !== 'granted') {
+                setPushError('Notification permission was not granted.');
+                return;
+            }
+
+            const registration = await resolveServiceWorkerRegistration();
+            if (!registration) {
+                setPushError(
+                    'No active service worker registration found. Enable the PWA service worker (VITE_ENABLE_SW_DEV=1) or use a production/preview build.'
+                );
+                return;
+            }
+
+            const keyResponse = await axios.get('/api/notifications/public-key');
+            const publicKey = keyResponse.data?.publicKey;
+            if (!publicKey || typeof publicKey !== 'string') {
+                setPushError('Missing VAPID public key from the backend.');
+                return;
+            }
+
+            const existingSubscription = await registration.pushManager.getSubscription();
+            const subscription =
+                existingSubscription ??
+                (await registration.pushManager.subscribe({
+                    userVisibleOnly: true,
+                    applicationServerKey: urlBase64ToUint8Array(publicKey)
+                }));
+
+            await axios.post('/api/notifications/subscription', subscription.toJSON());
+            setHasPushSubscription(true);
+            setPushStatus('Push subscription saved. You can send a test notification.');
+        } catch (err) {
+            console.error(err);
+            const serverMessage = axios.isAxiosError(err)
+                ? (err.response?.data as { message?: unknown } | undefined)?.message
+                : null;
+            setPushError(
+                typeof serverMessage === 'string' && serverMessage.trim().length > 0
+                    ? serverMessage
+                    : 'Failed to register push subscription.'
+            );
+        } finally {
+            setIsPreparingPush(false);
+            void loadPushSubscriptionStatus();
+        }
+    }, [loadPushSubscriptionStatus, resolveServiceWorkerRegistration]);
+
+    /**
+     * Send a basic test notification to validate delivery and click handling.
+     */
+    const handleSendTestNotification = useCallback(async () => {
+        setPushError(null);
+        setPushStatus(null);
+        setIsSendingPush(true);
+        try {
+            await axios.post('/api/dev/notifications/test');
+            setPushStatus('Test notification sent.');
+        } catch (err) {
+            console.error(err);
+            const serverMessage = axios.isAxiosError(err)
+                ? (err.response?.data as { message?: unknown } | undefined)?.message
+                : null;
+            setPushError(
+                typeof serverMessage === 'string' && serverMessage.trim().length > 0
+                    ? serverMessage
+                    : 'Failed to send test notification.'
+            );
+        } finally {
+            setIsSendingPush(false);
         }
     }, []);
 
@@ -256,6 +458,67 @@ const DevDashboard: React.FC = () => {
                                     setResetSuccess(null);
                                 }}
                                 disabled={isResettingTestUser}
+                            >
+                                Clear message
+                            </Button>
+                        </Stack>
+                    </Stack>
+                </CardContent>
+            </Card>
+
+            <Card variant="outlined" sx={{ mb: 3 }}>
+                <CardContent>
+                    <Stack spacing={2}>
+                        <Box>
+                            <Typography variant="subtitle1" gutterBottom>
+                                Push notifications
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary">
+                                Register a push subscription and send a test notification to validate service worker
+                                delivery.
+                            </Typography>
+                        </Box>
+
+                        <Stack spacing={0.5}>
+                            <Typography variant="body2" color="text.secondary">
+                                Notifications permission: {notificationPermission}
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary">
+                                Service worker: {supportsServiceWorker ? 'supported' : 'unsupported'}
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary">
+                                PushManager: {supportsPushManager ? 'supported' : 'unsupported'}
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary">
+                                Subscription: {hasPushSubscription ? 'active' : 'none'}
+                            </Typography>
+                        </Stack>
+
+                        {pushError && <Alert severity="error">{pushError}</Alert>}
+                        {pushStatus && <Alert severity="success">{pushStatus}</Alert>}
+
+                        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+                            <Button
+                                variant="contained"
+                                onClick={() => void handleRegisterPush()}
+                                disabled={isPreparingPush}
+                            >
+                                {isPreparingPush ? 'Registering...' : 'Register push subscription'}
+                            </Button>
+                            <Button
+                                variant="outlined"
+                                onClick={() => void handleSendTestNotification()}
+                                disabled={!hasPushSubscription || isSendingPush}
+                            >
+                                {isSendingPush ? 'Sending...' : 'Send test notification'}
+                            </Button>
+                            <Button
+                                variant="text"
+                                onClick={() => {
+                                    setPushError(null);
+                                    setPushStatus(null);
+                                }}
+                                disabled={isPreparingPush || isSendingPush}
                             >
                                 Clear message
                             </Button>
