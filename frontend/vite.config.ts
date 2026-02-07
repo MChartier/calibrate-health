@@ -150,6 +150,8 @@ function getPwaOptions(enableServiceWorkerInDev: boolean): Partial<VitePWAOption
       // Keep local service workers opt-in so regular dev mode stays HMR-friendly by default.
       enabled: enableServiceWorkerInDev,
       type: 'module',
+      // injectManifest dev mode needs this entry precached for createHandlerBoundToURL('/index.html').
+      navigateFallback: '/index.html',
     },
     // Ensure icons referenced by the manifest are copied through to the build output.
     includeAssets: [

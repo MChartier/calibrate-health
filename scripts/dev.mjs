@@ -5,10 +5,14 @@ import { fileURLToPath } from 'node:url';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const npmCmd = process.platform === 'win32' ? 'npm.cmd' : 'npm';
+const enableServiceWorkerInDev =
+  process.env.VITE_ENABLE_SW_DEV === '1' || process.env.VITE_ENABLE_SW_DEV === 'true';
+const frontendDevScript = enableServiceWorkerInDev ? 'dev:pwa' : 'dev';
 
 const services = [
   { name: 'backend', cwd: path.join(repoRoot, 'backend'), args: ['run', 'dev'] },
-  { name: 'frontend', cwd: path.join(repoRoot, 'frontend'), args: ['run', 'dev'] },
+  // Keep the root-level dev:pwa flag and frontend script aligned to avoid accidental SW cleanup mode.
+  { name: 'frontend', cwd: path.join(repoRoot, 'frontend'), args: ['run', frontendDevScript] },
 ];
 
 const states = new Map();
