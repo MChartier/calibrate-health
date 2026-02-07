@@ -21,6 +21,7 @@ import metricRoutes from './routes/metrics';
 import myFoodsRoutes from './routes/myFoods';
 import notificationRoutes from './routes/notifications';
 import userRoutes from './routes/user';
+import { startReminderScheduler } from './services/reminderScheduler';
 import { autoLoginTestUser } from './utils/devAuth';
 import { DEFAULT_SESSION_TTL_MS, PostgresSessionStore } from './utils/postgresSessionStore';
 import { USER_CLIENT_SELECT } from './utils/userSerialization';
@@ -333,6 +334,7 @@ const bootstrap = async (): Promise<void> => {
 
   app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
+    startReminderScheduler();
   });
 };
 
