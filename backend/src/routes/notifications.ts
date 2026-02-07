@@ -1,4 +1,5 @@
 import express from 'express';
+import { Prisma } from '@prisma/client';
 import prisma from '../config/database';
 import { getWebPushPublicKey } from '../services/webPush';
 
@@ -45,9 +46,13 @@ router.post('/subscription', async (req, res) => {
   }
 
   await prisma.pushSubscription.upsert({
-    where: { endpoint },
+    where: {
+      user_id_endpoint: {
+        user_id: user.id,
+        endpoint
+      }
+    },
     update: {
-      user_id: user.id,
       p256dh,
       auth,
       expiration_time: expirationTime
@@ -72,12 +77,25 @@ router.delete('/subscription', async (req, res) => {
     return res.status(400).json({ message: 'Endpoint is required.' });
   }
 
-  await prisma.pushSubscription.deleteMany({
-    where: {
-      user_id: user.id,
-      endpoint
+  try {
+    await prisma.pushSubscription.delete({
+      where: {
+        user_id_endpoint: {
+          user_id: user.id,
+          endpoint
+        }
+      }
+    });
+  } catch (error) {
+    // Treat repeated unsubscribe calls as success so this endpoint stays idempotent.
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === 'P2025'
+    ) {
+      return res.json({ ok: true });
     }
-  });
+    throw error;
+  }
 
   res.json({ ok: true });
 });

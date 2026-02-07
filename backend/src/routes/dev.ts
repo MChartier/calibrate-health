@@ -167,40 +167,40 @@ router.post('/notifications/test', requireAuthenticatedUser, async (req, res) =>
         url: url || '/'
     });
 
-    const subscriptions = await prisma.pushSubscription.findMany({
-        where: { user_id: user.id }
+    const subscription = await prisma.pushSubscription.findFirst({
+        where: { user_id: user.id },
+        orderBy: [{ updated_at: 'desc' }, { id: 'desc' }]
     });
 
-    if (subscriptions.length === 0) {
+    if (!subscription) {
         return res.status(400).json({ message: 'No push subscriptions found for this user.' });
     }
 
-    const results = await Promise.allSettled(
-        subscriptions.map((subscription) =>
-            sendWebPushNotification(
-                {
-                    endpoint: subscription.endpoint,
-                    keys: {
-                        p256dh: subscription.p256dh,
-                        auth: subscription.auth
-                    }
-                },
-                payload
-            )
+    // Send only one deterministic test notification to avoid duplicate toasts when users have multiple devices.
+    const result = await Promise.allSettled([
+        sendWebPushNotification(
+            {
+                endpoint: subscription.endpoint,
+                keys: {
+                    p256dh: subscription.p256dh,
+                    auth: subscription.auth
+                }
+            },
+            payload
         )
-    );
+    ]);
 
-    const failures = results.filter((result) => result.status === 'rejected');
+    const failures = result.filter((entry) => entry.status === 'rejected');
 
     if (failures.length > 0) {
         console.warn(
-            `Dev push test sent with ${failures.length} failures. Some subscriptions may be expired; clear them and re-subscribe to refresh.`
+            `Dev push test failed for user ${user.id}. The selected subscription may be expired; clear it and re-subscribe to refresh.`
         );
     }
 
     res.json({
         ok: failures.length === 0,
-        sent: results.length,
+        sent: result.length,
         failed: failures.length
     });
 });
