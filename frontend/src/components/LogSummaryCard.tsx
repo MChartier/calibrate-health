@@ -14,7 +14,12 @@ import {
 import { usePrefersReducedMotion } from '../hooks/usePrefersReducedMotion';
 import { useUserProfileQuery } from '../queries/userProfile';
 import { useFoodLogQuery } from '../queries/foodLog';
-import { foodLogDayQueryKey, useFoodLogDayMutation, useFoodLogDayQuery } from '../queries/foodLogDay';
+import {
+    foodLogDayQueryKey,
+    foodLogDayRangeQueryKeyPrefix,
+    useFoodLogDayMutation,
+    useFoodLogDayQuery
+} from '../queries/foodLogDay';
 import { useI18n } from '../i18n/useI18n';
 
 /**
@@ -271,6 +276,7 @@ const LogSummaryCard: React.FC<LogSummaryCardProps> = ({ dashboardMode = false, 
                 await completionMutation.mutateAsync({ date: activeDate, is_complete: nextValue });
             } finally {
                 void queryClient.invalidateQueries({ queryKey: foodLogDayQueryKey(activeDate) });
+                void queryClient.invalidateQueries({ queryKey: foodLogDayRangeQueryKeyPrefix() });
             }
         },
         [activeDate, completionMutation, isCompletionPending, queryClient]
