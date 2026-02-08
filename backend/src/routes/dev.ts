@@ -100,7 +100,6 @@ const sendDevPushToEndpoint = async (userId: number, endpoint: string, payload: 
             }
         }
     });
-    });
 
     if (!subscription) {
         return {
