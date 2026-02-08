@@ -97,7 +97,9 @@ const runReminderCheck = async (): Promise<void> => {
             user: {
                 select: {
                     id: true,
-                    timezone: true
+                    timezone: true,
+                    reminder_log_weight_enabled: true,
+                    reminder_log_food_enabled: true
                 }
             }
         }
@@ -130,8 +132,8 @@ const runReminderCheck = async (): Promise<void> => {
             })
         ]);
 
-        const missingFood = foodCount === 0;
-        const missingWeight = weightCount === 0;
+        const missingFood = foodCount === 0 && subscription.user.reminder_log_food_enabled;
+        const missingWeight = weightCount === 0 && subscription.user.reminder_log_weight_enabled;
         if (!missingFood && !missingWeight) {
             continue;
         }
