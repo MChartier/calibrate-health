@@ -29,7 +29,7 @@ const Dashboard: React.FC = () => {
                 <CalorieTargetBanner isDashboard />
             </Box>
 
-            <LogSummaryCard dashboardMode />
+            <LogSummaryCard dashboardMode completionMode="status" />
             <GoalTrackerCard isDashboard />
         </Box>
     );
