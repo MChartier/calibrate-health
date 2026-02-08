@@ -55,6 +55,7 @@ enum RecipeIngredientSource {
 enum InAppNotificationType {
   LOG_WEIGHT_REMINDER
   LOG_FOOD_REMINDER
+  GENERIC
 }
 
 model User {
@@ -269,6 +270,14 @@ model InAppNotification {
   type            InAppNotificationType
   /// Calendar day for this reminder, derived from the user's timezone.
   local_date      DateTime              @db.Date
+  /// Optional notification title for generic/dev notifications.
+  title           String?
+  /// Optional notification body for generic/dev notifications.
+  body            String?
+  /// Optional deep link destination; reminder types fall back to known quick-add URLs.
+  action_url      String?
+  /// Optional dedupe key used to enforce one-per-key delivery while allowing repeated generic sends.
+  dedupe_key      String?
   /// Read state for unread badge counts in the header bell + app icon.
   read_at         DateTime?
   /// User-initiated dismissal timestamp for explicit "not now" actions.
@@ -278,7 +287,7 @@ model InAppNotification {
   created_at      DateTime              @default(now())
   updated_at      DateTime              @updatedAt
 
-  @@unique([user_id, type, local_date])
+  @@unique([user_id, dedupe_key])
   @@index([user_id, created_at])
   @@index([user_id, dismissed_at, resolved_at])
 }

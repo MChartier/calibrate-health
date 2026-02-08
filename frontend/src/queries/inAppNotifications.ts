@@ -8,6 +8,8 @@ export type InAppNotification = {
     local_date: string;
     created_at: string;
     read_at: string | null;
+    title: string | null;
+    body: string | null;
     action_url: string;
 };
 

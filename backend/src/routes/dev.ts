@@ -1,5 +1,5 @@
 import express from 'express';
-import prisma from '../config/database';
+import { InAppNotificationType } from '@prisma/client';
 import {
     getFoodDataProviderByName,
     listFoodDataProviders,
@@ -8,7 +8,14 @@ import {
     type FoodSearchRequest
 } from '../services/foodData';
 import { buildReminderPayload, type PushNotificationPayload } from '../services/pushNotificationPayloads';
-import { ensureWebPushConfigured, sendWebPushNotification } from '../services/webPush';
+import {
+    DEFAULT_NOTIFICATION_DELIVERY_CHANNELS,
+    NOTIFICATION_DELIVERY_CHANNELS,
+    parseNotificationDeliveryChannels,
+    type NotificationDeliveryChannel
+} from '../../../shared/notificationDelivery';
+import { getSafeUtcTodayDateOnlyInTimeZone } from '../utils/date';
+import { deliverUserNotification, type DeliverUserNotificationResult } from '../services/notificationDelivery';
 
 /**
  * Dev-only endpoints for food provider diagnostics and comparisons.
@@ -77,6 +84,11 @@ const requireAuthenticatedUser = (req: express.Request, res: express.Response, n
     res.status(401).json({ message: 'Not authenticated' });
 };
 
+type AuthenticatedDevUser = {
+    id: number;
+    timezone?: string;
+};
+
 /**
  * Read an endpoint from the request body so dev sends can target the current browser only.
  */
@@ -89,46 +101,49 @@ const resolvePushEndpoint = (body: unknown): string => {
 };
 
 /**
- * Send to a single user+endpoint subscription so dev test sends mirror browser-local state.
+ * Parse requested delivery channels, defaulting to both when the body omits channel selection.
  */
-const sendDevPushToEndpoint = async (userId: number, endpoint: string, payload: PushNotificationPayload) => {
-    const subscription = await prisma.pushSubscription.findUnique({
-        where: {
-            user_id_endpoint: {
-                user_id: userId,
-                endpoint
-            }
-        }
-    });
-
-    if (!subscription) {
-        return {
-            sent: 0,
-            failed: 0,
-            message: 'No push subscription found for this browser endpoint. Register push in this browser and try again.'
-        };
+const resolveRequestedChannels = (body: unknown): NotificationDeliveryChannel[] => {
+    if (!body || typeof body !== 'object') {
+        return [...DEFAULT_NOTIFICATION_DELIVERY_CHANNELS];
     }
 
-    const payloadString = JSON.stringify(payload);
-    try {
-        await sendWebPushNotification(
-            {
-                endpoint: subscription.endpoint,
-                keys: {
-                    p256dh: subscription.p256dh,
-                    auth: subscription.auth
-                }
-            },
-            payloadString
-        );
-        return { sent: 1, failed: 0, message: undefined };
-    } catch {
-        return {
-            sent: 1,
-            failed: 1,
-            message: 'Push delivery failed for this endpoint. Clear the subscription and re-register in this browser.'
-        };
+    const rawChannels = (body as { channels?: unknown }).channels;
+    if (rawChannels === undefined) {
+        return [...DEFAULT_NOTIFICATION_DELIVERY_CHANNELS];
     }
+
+    return parseNotificationDeliveryChannels(rawChannels);
+};
+
+const shouldRequirePushEndpoint = (channels: NotificationDeliveryChannel[]): boolean => {
+    return channels.includes(NOTIFICATION_DELIVERY_CHANNELS.PUSH);
+};
+
+const buildDeliveryResponse = (
+    channels: NotificationDeliveryChannel[],
+    result: DeliverUserNotificationResult
+) => {
+    const pushSelected = channels.includes(NOTIFICATION_DELIVERY_CHANNELS.PUSH);
+    const inAppSelected = channels.includes(NOTIFICATION_DELIVERY_CHANNELS.IN_APP);
+
+    const pushSucceeded = !pushSelected || result.push.sent > 0;
+    const inAppSucceeded = !inAppSelected || result.inApp.created > 0;
+
+    const ok = pushSucceeded && inAppSucceeded;
+    const partial = !ok && ((pushSelected && result.push.sent > 0) || (inAppSelected && result.inApp.created > 0));
+
+    return {
+        ok,
+        partial,
+        channels,
+        push: result.push,
+        in_app: result.inApp
+    };
+};
+
+const getUserLocalDate = (user: AuthenticatedDevUser, now = new Date()): Date => {
+    return getSafeUtcTodayDateOnlyInTimeZone(user.timezone || 'UTC', now);
 };
 
 router.get('/food/providers', (req, res) => {
@@ -206,97 +221,105 @@ router.get('/food/search', async (req, res) => {
 });
 
 router.post('/notifications/test', requireAuthenticatedUser, async (req, res) => {
-    const configured = ensureWebPushConfigured();
-    if (!configured.ok) {
-        return res.status(500).json({ message: configured.error ?? 'Web push is not configured.' });
+    const user = req.user as AuthenticatedDevUser;
+    const channels = resolveRequestedChannels(req.body);
+    if (channels.length === 0) {
+        return res.status(400).json({ message: 'Select at least one notification channel.' });
     }
 
-    const user = req.user as { id: number };
+    const endpoint = resolvePushEndpoint(req.body);
+    if (shouldRequirePushEndpoint(channels) && !endpoint) {
+        return res.status(400).json({ message: 'Endpoint is required when push delivery is selected.' });
+    }
+
     const title = typeof req.body?.title === 'string' ? req.body.title.trim() : '';
     const body = typeof req.body?.body === 'string' ? req.body.body.trim() : '';
     const url = typeof req.body?.url === 'string' ? req.body.url.trim() : '';
+    const localDate = getUserLocalDate(user);
 
     const payload: PushNotificationPayload = {
         title: title || 'calibrate',
         body: body || 'This is a test notification.',
         url: url || '/'
     };
-    const endpoint = resolvePushEndpoint(req.body);
-    if (!endpoint) {
-        return res.status(400).json({ message: 'Endpoint is required. Register push in this browser and try again.' });
-    }
 
-    const result = await sendDevPushToEndpoint(user.id, endpoint, payload);
-    if (result.sent === 0) {
-        return res.status(400).json({ message: result.message ?? 'No push subscription found for this endpoint.' });
-    }
-    if (result.message) {
-        console.warn(`Dev push test notification sent with ${result.failed} failure. ${result.message}`);
-    }
-
-    res.json({
-        ok: result.failed === 0,
-        sent: result.sent,
-        failed: result.failed
+    const result = await deliverUserNotification({
+        userId: user.id,
+        channels,
+        push: {
+            payload,
+            endpoint
+        },
+        inApp: {
+            type: InAppNotificationType.GENERIC,
+            localDate,
+            title: payload.title,
+            body: payload.body,
+            actionUrl: payload.url
+        }
     });
+
+    res.json(buildDeliveryResponse(channels, result));
 });
 
 router.post('/notifications/log-weight', requireAuthenticatedUser, async (req, res) => {
-    const configured = ensureWebPushConfigured();
-    if (!configured.ok) {
-        return res.status(500).json({ message: configured.error ?? 'Web push is not configured.' });
+    const user = req.user as AuthenticatedDevUser;
+    const channels = resolveRequestedChannels(req.body);
+    if (channels.length === 0) {
+        return res.status(400).json({ message: 'Select at least one notification channel.' });
     }
 
-    const user = req.user as { id: number };
     const endpoint = resolvePushEndpoint(req.body);
-    if (!endpoint) {
-        return res.status(400).json({ message: 'Endpoint is required. Register push in this browser and try again.' });
+    if (shouldRequirePushEndpoint(channels) && !endpoint) {
+        return res.status(400).json({ message: 'Endpoint is required when push delivery is selected.' });
     }
+
+    const localDate = getUserLocalDate(user);
     const payload = buildReminderPayload({ missingWeight: true, missingFood: false });
-    const result = await sendDevPushToEndpoint(user.id, endpoint, payload);
-
-    if (result.sent === 0) {
-        return res.status(400).json({ message: result.message ?? 'No push subscription found for this endpoint.' });
-    }
-
-    if (result.message) {
-        console.warn(`Dev push log weight sent with ${result.failed} failure. ${result.message}`);
-    }
-
-    res.json({
-        ok: result.failed === 0,
-        sent: result.sent,
-        failed: result.failed
+    const result = await deliverUserNotification({
+        userId: user.id,
+        channels,
+        push: {
+            payload,
+            endpoint
+        },
+        inApp: {
+            type: InAppNotificationType.LOG_WEIGHT_REMINDER,
+            localDate
+        }
     });
+
+    res.json(buildDeliveryResponse(channels, result));
 });
 
 router.post('/notifications/log-food', requireAuthenticatedUser, async (req, res) => {
-    const configured = ensureWebPushConfigured();
-    if (!configured.ok) {
-        return res.status(500).json({ message: configured.error ?? 'Web push is not configured.' });
+    const user = req.user as AuthenticatedDevUser;
+    const channels = resolveRequestedChannels(req.body);
+    if (channels.length === 0) {
+        return res.status(400).json({ message: 'Select at least one notification channel.' });
     }
 
-    const user = req.user as { id: number };
     const endpoint = resolvePushEndpoint(req.body);
-    if (!endpoint) {
-        return res.status(400).json({ message: 'Endpoint is required. Register push in this browser and try again.' });
+    if (shouldRequirePushEndpoint(channels) && !endpoint) {
+        return res.status(400).json({ message: 'Endpoint is required when push delivery is selected.' });
     }
+
+    const localDate = getUserLocalDate(user);
     const payload = buildReminderPayload({ missingWeight: false, missingFood: true });
-    const result = await sendDevPushToEndpoint(user.id, endpoint, payload);
-
-    if (result.sent === 0) {
-        return res.status(400).json({ message: result.message ?? 'No push subscription found for this endpoint.' });
-    }
-
-    if (result.message) {
-        console.warn(`Dev push log food sent with ${result.failed} failure. ${result.message}`);
-    }
-
-    res.json({
-        ok: result.failed === 0,
-        sent: result.sent,
-        failed: result.failed
+    const result = await deliverUserNotification({
+        userId: user.id,
+        channels,
+        push: {
+            payload,
+            endpoint
+        },
+        inApp: {
+            type: InAppNotificationType.LOG_FOOD_REMINDER,
+            localDate
+        }
     });
+
+    res.json(buildDeliveryResponse(channels, result));
 });
 
 export default router;

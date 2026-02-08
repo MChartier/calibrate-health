@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
     Alert,
     Box,
@@ -22,6 +22,7 @@ import axios from 'axios';
 import BarcodeScannerDialog from '../components/BarcodeScannerDialog';
 import { clearAppBadge, isBadgingSupported, setAppBadge } from '../utils/badging';
 import { resolveServiceWorkerRegistration, urlBase64ToUint8Array } from '../utils/pushNotifications';
+import { NOTIFICATION_DELIVERY_CHANNELS, type NotificationDeliveryChannel } from '../../../shared/notificationDelivery';
 
 type FoodDataSource = 'fatsecret' | 'usda' | 'openFoodFacts';
 
@@ -67,6 +68,23 @@ type ResetTestUserOnboardingResponse = {
     user: { email?: string } | null;
 };
 
+type DevNotificationDeliveryResponse = {
+    ok?: boolean;
+    partial?: boolean;
+    channels?: NotificationDeliveryChannel[];
+    push?: {
+        sent?: number;
+        failed?: number;
+        skipped?: boolean;
+        message?: string;
+    };
+    in_app?: {
+        created?: number;
+        skipped?: boolean;
+        message?: string;
+    };
+};
+
 /**
  * Dev-only dashboard to compare food search results side-by-side across providers.
  */
@@ -90,6 +108,8 @@ const DevDashboard: React.FC = () => {
     const [isSendingPush, setIsSendingPush] = useState(false);
     const [hasPushSubscription, setHasPushSubscription] = useState(false);
     const [activePushEndpoint, setActivePushEndpoint] = useState<string | null>(null);
+    const [deliverViaPush, setDeliverViaPush] = useState(true);
+    const [deliverViaInApp, setDeliverViaInApp] = useState(true);
     const [badgeStatus, setBadgeStatus] = useState<string | null>(null);
     const [badgeError, setBadgeError] = useState<string | null>(null);
 
@@ -98,6 +118,16 @@ const DevDashboard: React.FC = () => {
     const supportsServiceWorker = typeof window !== 'undefined' && 'serviceWorker' in navigator;
     const supportsPushManager = typeof window !== 'undefined' && 'PushManager' in window;
     const supportsBadging = isBadgingSupported();
+    const selectedDeliveryChannels = useMemo<NotificationDeliveryChannel[]>(() => {
+        const channels: NotificationDeliveryChannel[] = [];
+        if (deliverViaPush) {
+            channels.push(NOTIFICATION_DELIVERY_CHANNELS.PUSH);
+        }
+        if (deliverViaInApp) {
+            channels.push(NOTIFICATION_DELIVERY_CHANNELS.IN_APP);
+        }
+        return channels;
+    }, [deliverViaInApp, deliverViaPush]);
 
     /**
      * Fetch provider metadata so the UI reflects current backend configuration.
@@ -292,19 +322,66 @@ const DevDashboard: React.FC = () => {
     }, [loadPushSubscriptionStatus]);
 
     /**
+     * Build a concise summary string from channel-level backend delivery results.
+     */
+    const formatDeliveryStatus = useCallback(
+        (baseMessage: string, response: DevNotificationDeliveryResponse, channels: NotificationDeliveryChannel[]): string => {
+            const statusParts = [baseMessage];
+
+            if (channels.includes(NOTIFICATION_DELIVERY_CHANNELS.PUSH)) {
+                const sent = typeof response.push?.sent === 'number' ? response.push.sent : 0;
+                const failed = typeof response.push?.failed === 'number' ? response.push.failed : 0;
+                statusParts.push(`Push sent ${sent}${failed > 0 ? ` (failed ${failed})` : ''}.`);
+            }
+
+            if (channels.includes(NOTIFICATION_DELIVERY_CHANNELS.IN_APP)) {
+                const created = typeof response.in_app?.created === 'number' ? response.in_app.created : 0;
+                statusParts.push(`In-app created ${created}.`);
+            }
+
+            return statusParts.join(' ');
+        },
+        []
+    );
+
+    /**
      * Send a basic test notification to validate delivery and click handling.
      */
     const sendDevNotification = useCallback(async (path: string, successMessage: string, errorMessage: string) => {
         setPushError(null);
         setPushStatus(null);
-        if (!activePushEndpoint) {
+        if (selectedDeliveryChannels.length === 0) {
+            setPushError('Select at least one delivery channel.');
+            return;
+        }
+
+        const requiresPushEndpoint = selectedDeliveryChannels.includes(NOTIFICATION_DELIVERY_CHANNELS.PUSH);
+        if (requiresPushEndpoint && !activePushEndpoint) {
             setPushError('No active push subscription found for this browser endpoint.');
             return;
         }
+
         setIsSendingPush(true);
         try {
-            await axios.post(path, { endpoint: activePushEndpoint });
-            setPushStatus(successMessage);
+            const requestBody: { channels: NotificationDeliveryChannel[]; endpoint?: string } = {
+                channels: selectedDeliveryChannels
+            };
+            if (requiresPushEndpoint && activePushEndpoint) {
+                requestBody.endpoint = activePushEndpoint;
+            }
+
+            const response = await axios.post<DevNotificationDeliveryResponse>(path, requestBody);
+            const responseData = response.data ?? {};
+            if (responseData.ok === false && !responseData.partial) {
+                const pushMessage = typeof responseData.push?.message === 'string' ? responseData.push.message : null;
+                const inAppMessage =
+                    typeof responseData.in_app?.message === 'string' ? responseData.in_app.message : null;
+                setPushError(pushMessage || inAppMessage || errorMessage);
+                return;
+            }
+
+            const statusPrefix = responseData.partial ? `Partial delivery. ${successMessage}` : successMessage;
+            setPushStatus(formatDeliveryStatus(statusPrefix, responseData, selectedDeliveryChannels));
         } catch (err) {
             console.error(err);
             const serverMessage = axios.isAxiosError(err)
@@ -316,7 +393,7 @@ const DevDashboard: React.FC = () => {
         } finally {
             setIsSendingPush(false);
         }
-    }, [activePushEndpoint]);
+    }, [activePushEndpoint, formatDeliveryStatus, selectedDeliveryChannels]);
 
     const handleSendTestNotification = useCallback(() => {
         return sendDevNotification(
@@ -425,7 +502,10 @@ const DevDashboard: React.FC = () => {
         await runSearch({ q: trimmedQuery });
     };
 
-    const canSendDevNotifications = Boolean(activePushEndpoint) && !isSendingPush;
+    const pushChannelSelected = selectedDeliveryChannels.includes(NOTIFICATION_DELIVERY_CHANNELS.PUSH);
+    const hasSelectedDeliveryChannels = selectedDeliveryChannels.length > 0;
+    const canSendDevNotifications =
+        hasSelectedDeliveryChannels && !isSendingPush && (!pushChannelSelected || Boolean(activePushEndpoint));
     const clearPushMessages = () => {
         setPushError(null);
         setPushStatus(null);
@@ -569,11 +649,10 @@ const DevDashboard: React.FC = () => {
                     <Stack spacing={2}>
                         <Box>
                             <Typography variant="subtitle1" gutterBottom>
-                                Push notifications
+                                Notifications
                             </Typography>
                             <Typography variant="body2" color="text.secondary">
-                                Register a push subscription and send a test notification to validate service worker
-                                delivery.
+                                Register a push subscription, then choose push and/or in-app delivery for each dev send.
                             </Typography>
                         </Box>
 
@@ -591,6 +670,37 @@ const DevDashboard: React.FC = () => {
                                 Subscription: {hasPushSubscription ? 'active' : 'none'}
                             </Typography>
                         </Stack>
+
+                        <FormGroup row>
+                            <FormControlLabel
+                                control={
+                                    <Checkbox
+                                        checked={deliverViaPush}
+                                        onChange={(event) => setDeliverViaPush(event.target.checked)}
+                                    />
+                                }
+                                label="Deliver via push"
+                            />
+                            <FormControlLabel
+                                control={
+                                    <Checkbox
+                                        checked={deliverViaInApp}
+                                        onChange={(event) => setDeliverViaInApp(event.target.checked)}
+                                    />
+                                }
+                                label="Deliver via in-app"
+                            />
+                        </FormGroup>
+
+                        {!hasSelectedDeliveryChannels && (
+                            <Alert severity="warning">Select at least one delivery channel before sending.</Alert>
+                        )}
+
+                        {pushChannelSelected && !activePushEndpoint && (
+                            <Alert severity="warning">
+                                Push delivery is selected, but this browser has no active subscription endpoint.
+                            </Alert>
+                        )}
 
                         {pushError && <Alert severity="error">{pushError}</Alert>}
                         {pushStatus && <Alert severity="success">{pushStatus}</Alert>}

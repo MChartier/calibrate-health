@@ -41,7 +41,26 @@ type NotificationCopy = {
     actionLabel: string;
 };
 
+const resolveCustomCopy = (notification: InAppNotification, t: Translate): NotificationCopy | null => {
+    const customTitle = notification.title?.trim();
+    const customBody = notification.body?.trim();
+    if (!customTitle && !customBody) {
+        return null;
+    }
+
+    return {
+        title: customTitle || t('notifications.default.title'),
+        body: customBody || t('notifications.default.body'),
+        actionLabel: t('notifications.default.action')
+    };
+};
+
 const getNotificationCopy = (notification: InAppNotification, t: Translate): NotificationCopy => {
+    const customCopy = resolveCustomCopy(notification, t);
+    if (customCopy) {
+        return customCopy;
+    }
+
     switch (notification.type) {
         case IN_APP_NOTIFICATION_TYPES.LOG_WEIGHT_REMINDER:
             return {
