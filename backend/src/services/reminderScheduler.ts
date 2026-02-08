@@ -2,6 +2,11 @@ import prisma from '../config/database';
 import { getSafeUtcTodayDateOnlyInTimeZone } from '../utils/date';
 import { parsePositiveInteger } from '../utils/requestParsing';
 import { MS_PER_MINUTE } from '../utils/time';
+import {
+    ensureReminderInAppNotificationsForDate,
+    getReminderMissingStatusForDate,
+    resolveInactiveReminderNotificationsForUser
+} from './inAppNotifications';
 import { buildReminderPayload } from './pushNotificationPayloads';
 import { ensureWebPushConfigured, sendWebPushNotification } from './webPush';
 
@@ -71,101 +76,143 @@ const shouldDeleteSubscription = (error: unknown): boolean => {
     return statusCode === 404 || statusCode === 410;
 };
 
-const runReminderCheck = async (): Promise<void> => {
-    const configured = ensureWebPushConfigured();
-    if (!configured.ok) {
+/**
+ * Keep in-app reminder entries synchronized with current log completeness and local-day rollover.
+ */
+const resolveInactiveInAppReminders = async (now: Date): Promise<void> => {
+    const usersWithActiveInAppReminders = await prisma.user.findMany({
+        where: {
+            in_app_notifications: {
+                some: {
+                    dismissed_at: null,
+                    resolved_at: null
+                }
+            }
+        },
+        select: {
+            id: true,
+            timezone: true
+        }
+    });
+
+    for (const user of usersWithActiveInAppReminders) {
+        await resolveInactiveReminderNotificationsForUser({
+            userId: user.id,
+            timeZone: user.timezone,
+            now
+        });
+    }
+};
+
+/**
+ * Create scheduled in-app reminders and optionally fan out matching push notifications.
+ */
+const createAndSendScheduledReminders = async (reminderHour: number, now: Date): Promise<void> => {
+    const webPushConfig = ensureWebPushConfigured();
+    if (!webPushConfig.ok) {
         if (!hasLoggedMissingConfig) {
             console.warn(
-                `${configured.error ?? 'Web push is not configured.'} Reminders will not send until these values are set.`
+                `${webPushConfig.error ?? 'Web push is not configured.'} Push delivery is disabled; in-app reminders will continue.`
             );
             hasLoggedMissingConfig = true;
         }
-        return;
+    } else {
+        hasLoggedMissingConfig = false;
     }
-    hasLoggedMissingConfig = false;
 
-    const reminderHour = resolveReminderHour();
-    const now = new Date();
-
-    const subscriptions = await prisma.pushSubscription.findMany({
+    const users = await prisma.user.findMany({
+        where: {
+            OR: [{ reminder_log_weight_enabled: true }, { reminder_log_food_enabled: true }]
+        },
         select: {
             id: true,
-            endpoint: true,
-            p256dh: true,
-            auth: true,
-            last_sent_local_date: true,
-            user: {
+            timezone: true,
+            reminder_log_weight_enabled: true,
+            reminder_log_food_enabled: true,
+            push_subscriptions: {
                 select: {
                     id: true,
-                    timezone: true,
-                    reminder_log_weight_enabled: true,
-                    reminder_log_food_enabled: true
+                    endpoint: true,
+                    p256dh: true,
+                    auth: true,
+                    last_sent_local_date: true
                 }
             }
         }
     });
 
-    for (const subscription of subscriptions) {
-        const timeZone = subscription.user?.timezone ?? 'UTC';
+    for (const user of users) {
+        const timeZone = user.timezone || 'UTC';
         const localHour = getLocalHour(timeZone, now);
         if (localHour < reminderHour) {
             continue;
         }
 
         const todayLocalDate = getSafeUtcTodayDateOnlyInTimeZone(timeZone, now);
-        if (isSameUtcDate(subscription.last_sent_local_date, todayLocalDate)) {
+        const { missingWeight, missingFood } = await getReminderMissingStatusForDate({
+            userId: user.id,
+            localDate: todayLocalDate,
+            reminderLogWeightEnabled: user.reminder_log_weight_enabled,
+            reminderLogFoodEnabled: user.reminder_log_food_enabled
+        });
+
+        if (!missingWeight && !missingFood) {
             continue;
         }
 
-        const [foodCount, weightCount] = await Promise.all([
-            prisma.foodLog.count({
-                where: {
-                    user_id: subscription.user.id,
-                    local_date: todayLocalDate
-                }
-            }),
-            prisma.bodyMetric.count({
-                where: {
-                    user_id: subscription.user.id,
-                    date: todayLocalDate
-                }
-            })
-        ]);
+        await ensureReminderInAppNotificationsForDate({
+            userId: user.id,
+            localDate: todayLocalDate,
+            missingWeight,
+            missingFood
+        });
 
-        const missingFood = foodCount === 0 && subscription.user.reminder_log_food_enabled;
-        const missingWeight = weightCount === 0 && subscription.user.reminder_log_weight_enabled;
-        if (!missingFood && !missingWeight) {
+        if (!webPushConfig.ok) {
             continue;
         }
 
         const payload = buildReminderPayload({ missingFood, missingWeight });
 
-        try {
-            await sendWebPushNotification(
-                {
-                    endpoint: subscription.endpoint,
-                    keys: {
-                        p256dh: subscription.p256dh,
-                        auth: subscription.auth
-                    }
-                },
-                JSON.stringify(payload)
-            );
-
-            await prisma.pushSubscription.update({
-                where: { id: subscription.id },
-                data: { last_sent_local_date: todayLocalDate }
-            });
-        } catch (error) {
-            if (shouldDeleteSubscription(error)) {
-                await prisma.pushSubscription.delete({ where: { id: subscription.id } });
+        for (const subscription of user.push_subscriptions) {
+            if (isSameUtcDate(subscription.last_sent_local_date, todayLocalDate)) {
                 continue;
             }
 
-            const message = error instanceof Error ? error.message : 'Unknown error';
-            console.warn(`Failed to send reminder for subscription ${subscription.id}: ${message}`);
+            try {
+                await sendWebPushNotification(
+                    {
+                        endpoint: subscription.endpoint,
+                        keys: {
+                            p256dh: subscription.p256dh,
+                            auth: subscription.auth
+                        }
+                    },
+                    JSON.stringify(payload)
+                );
+
+                await prisma.pushSubscription.update({
+                    where: { id: subscription.id },
+                    data: { last_sent_local_date: todayLocalDate }
+                });
+            } catch (error) {
+                if (shouldDeleteSubscription(error)) {
+                    await prisma.pushSubscription.delete({ where: { id: subscription.id } });
+                    continue;
+                }
+
+                const message = error instanceof Error ? error.message : 'Unknown error';
+                console.warn(`Failed to send reminder for subscription ${subscription.id}: ${message}`);
+            }
         }
     }
+};
+
+const runReminderCheck = async (): Promise<void> => {
+    const reminderHour = resolveReminderHour();
+    const now = new Date();
+
+    await resolveInactiveInAppReminders(now);
+    await createAndSendScheduledReminders(reminderHour, now);
 };
 
 /**

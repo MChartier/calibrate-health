@@ -52,6 +52,11 @@ enum RecipeIngredientSource {
   EXTERNAL
 }
 
+enum InAppNotificationType {
+  LOG_WEIGHT_REMINDER
+  LOG_FOOD_REMINDER
+}
+
 model User {
   id            Int       @id @default(autoincrement())
   email         String    @unique
@@ -85,6 +90,8 @@ model User {
   my_foods      MyFood[]
   /// Web push subscriptions for reminder notifications.
   push_subscriptions PushSubscription[]
+  /// In-app reminder feed entries rendered in the notifications panel.
+  in_app_notifications InAppNotification[]
 }
 
 model Goal {
@@ -252,4 +259,26 @@ model PushSubscription {
 
   @@unique([user_id, endpoint])
   @@index([user_id])
+}
+
+model InAppNotification {
+  id              Int                   @id @default(autoincrement())
+  user_id         Int
+  user            User                  @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  /// Reminder type used to select copy and action URLs in the frontend.
+  type            InAppNotificationType
+  /// Calendar day for this reminder, derived from the user's timezone.
+  local_date      DateTime              @db.Date
+  /// Read state for unread badge counts in the header bell + app icon.
+  read_at         DateTime?
+  /// User-initiated dismissal timestamp for explicit "not now" actions.
+  dismissed_at    DateTime?
+  /// Auto-resolution timestamp when logs are completed or the day rolls over.
+  resolved_at     DateTime?
+  created_at      DateTime              @default(now())
+  updated_at      DateTime              @updatedAt
+
+  @@unique([user_id, type, local_date])
+  @@index([user_id, created_at])
+  @@index([user_id, dismissed_at, resolved_at])
 }
