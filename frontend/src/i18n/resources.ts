@@ -196,8 +196,10 @@ export const en = {
     'log.completion.label': 'Log completion',
     'log.completion.status.complete': 'Complete',
     'log.completion.status.incomplete': 'Incomplete',
+    'log.completion.status.unknown': 'Unknown',
     'log.completion.markComplete': 'Mark log complete',
     'log.completion.markIncomplete': 'Mark log incomplete',
+    'log.completion.actionUnavailable': 'Log completion unavailable',
 
     'goalTracker.title': 'Goal tracker',
     'goalTracker.cta.setGoal': 'Set a goal',
@@ -625,8 +627,10 @@ export const es: Record<TranslationKey, string> = {
     'log.completion.label': 'Registro completo',
     'log.completion.status.complete': 'Completo',
     'log.completion.status.incomplete': 'Incompleto',
+    'log.completion.status.unknown': 'Desconocido',
     'log.completion.markComplete': 'Marcar registro como completo',
     'log.completion.markIncomplete': 'Marcar registro como incompleto',
+    'log.completion.actionUnavailable': 'Estado de registro no disponible',
 
     'goalTracker.title': 'Seguimiento de objetivo',
     'goalTracker.cta.setGoal': 'Definir un objetivo',
@@ -1052,8 +1056,10 @@ export const fr: Record<TranslationKey, string> = {
     'log.completion.label': 'Journal complet',
     'log.completion.status.complete': 'Complet',
     'log.completion.status.incomplete': 'Incomplet',
+    'log.completion.status.unknown': 'Inconnu',
     'log.completion.markComplete': 'Marquer le journal comme complet',
     'log.completion.markIncomplete': 'Marquer le journal comme incomplet',
+    'log.completion.actionUnavailable': 'Statut du journal indisponible',
 
     'goalTracker.title': "Suivi d'objectif",
     'goalTracker.cta.setGoal': 'Définir un objectif',
@@ -1479,8 +1485,10 @@ export const ru: Record<TranslationKey, string> = {
     'log.completion.label': 'Завершение журнала',
     'log.completion.status.complete': 'Завершен',
     'log.completion.status.incomplete': 'Не завершен',
+    'log.completion.status.unknown': 'Неизвестно',
     'log.completion.markComplete': 'Отметить журнал завершенным',
     'log.completion.markIncomplete': 'Отметить журнал незавершенным',
+    'log.completion.actionUnavailable': 'Статус журнала недоступен',
 
     'goalTracker.title': 'Отслеживание цели',
     'goalTracker.cta.setGoal': 'Задать цель',

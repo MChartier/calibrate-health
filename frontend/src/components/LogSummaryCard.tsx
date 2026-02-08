@@ -38,6 +38,7 @@ const LOG_SUMMARY_TWEEN_DURATION_MS = 520;
 const LOG_SUMMARY_COMPLETION_ROW_GAP = 1; // Horizontal spacing between the completion label cluster and the action control.
 const LOG_SUMMARY_COMPLETION_LABEL_GAP = 0.25; // Vertical spacing between completion label text and status text.
 const LOG_SUMMARY_COMPLETION_CHIP_MIN_WIDTH_PX = 90; // Prevent the status chip from jittering widths between states.
+type CompletionStatusDisplay = 'complete' | 'incomplete' | 'unknown';
 
 type AnimatedLogSummaryValues = {
     gaugeValue: number;
@@ -244,13 +245,24 @@ const LogSummaryCard: React.FC<LogSummaryCardProps> = ({ dashboardMode = false, 
             : (animatedValues.remainingCaloriesLabel ?? 0);
     }
 
-    const completionStatus = completionQuery.data?.is_complete ?? false;
-    const completionStatusLabel = completionStatus
-        ? t('log.completion.status.complete')
-        : t('log.completion.status.incomplete');
-    const completionActionLabel = completionStatus
-        ? t('log.completion.markIncomplete')
-        : t('log.completion.markComplete');
+    // Show an explicit unknown state whenever completion status cannot be trusted from the query result.
+    let completionStatus: CompletionStatusDisplay = 'unknown';
+    if (completionQuery.data?.is_complete === true) {
+        completionStatus = 'complete';
+    } else if (!isCompletionError && completionQuery.data?.is_complete === false) {
+        completionStatus = 'incomplete';
+    }
+    const isCompletionComplete = completionStatus === 'complete';
+
+    let completionStatusLabel = t('log.completion.status.unknown');
+    let completionActionLabel = t('log.completion.actionUnavailable');
+    if (completionStatus === 'complete') {
+        completionStatusLabel = t('log.completion.status.complete');
+        completionActionLabel = t('log.completion.markIncomplete');
+    } else if (completionStatus === 'incomplete') {
+        completionStatusLabel = t('log.completion.status.incomplete');
+        completionActionLabel = t('log.completion.markComplete');
+    }
 
     const handleCompletionToggle = React.useCallback(
         async (nextValue: boolean) => {
@@ -270,8 +282,8 @@ const LogSummaryCard: React.FC<LogSummaryCardProps> = ({ dashboardMode = false, 
             <Chip
                 size="small"
                 label={completionStatusLabel}
-                color={completionStatus ? 'success' : 'default'}
-                variant={completionStatus ? 'filled' : 'outlined'}
+                color={isCompletionComplete ? 'success' : 'default'}
+                variant={isCompletionComplete ? 'filled' : 'outlined'}
                 sx={{ minWidth: LOG_SUMMARY_COMPLETION_CHIP_MIN_WIDTH_PX }}
             />
         );
@@ -279,9 +291,9 @@ const LogSummaryCard: React.FC<LogSummaryCardProps> = ({ dashboardMode = false, 
         const rightControl = completionMode === 'toggle'
             ? (
                 <Switch
-                    checked={completionStatus}
+                    checked={isCompletionComplete}
                     onChange={(_event, checked) => void handleCompletionToggle(checked)}
-                    disabled={isCompletionLoading || isCompletionError || isCompletionPending}
+                    disabled={isCompletionLoading || completionStatus === 'unknown' || isCompletionPending}
                     inputProps={{ 'aria-label': completionActionLabel }}
                 />
             )
