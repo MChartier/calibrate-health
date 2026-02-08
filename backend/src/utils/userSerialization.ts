@@ -10,6 +10,8 @@ export type UserClientPayload = {
   height_unit: HeightUnit;
   timezone: string;
   language: SupportedLanguage;
+  reminder_log_weight_enabled: boolean;
+  reminder_log_food_enabled: boolean;
   date_of_birth: Date | null;
   sex: Sex | null;
   height_mm: number | null;
@@ -29,6 +31,8 @@ export const USER_CLIENT_SELECT = {
   height_unit: true,
   timezone: true,
   language: true,
+  reminder_log_weight_enabled: true,
+  reminder_log_food_enabled: true,
   date_of_birth: true,
   sex: true,
   height_mm: true,
@@ -59,6 +63,8 @@ export const serializeUserForClient = (user: UserForClient): UserClientPayload =
     height_unit: user.height_unit,
     timezone: user.timezone,
     language: isSupportedLanguage(user.language) ? user.language : SUPPORTED_LANGUAGES.EN,
+    reminder_log_weight_enabled: user.reminder_log_weight_enabled,
+    reminder_log_food_enabled: user.reminder_log_food_enabled,
     date_of_birth: user.date_of_birth,
     sex: user.sex,
     height_mm: user.height_mm,

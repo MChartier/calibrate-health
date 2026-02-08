@@ -63,7 +63,7 @@ const Settings: React.FC = () => {
     // Tighter section spacing on small screens keeps settings cards readable without excess gaps.
     const sectionSpacing = { xs: sectionGapCompact, sm: sectionGapCompact, md: sectionGap };
     const { t } = useI18n();
-    const { user, updateUnitPreferences, updateTimezone, updateLanguage } = useAuth();
+    const { user, updateUnitPreferences, updateReminderPreferences, updateTimezone, updateLanguage } = useAuth();
     const { preference: themePreference, mode: resolvedThemeMode, setPreference: setThemePreference } = useThemeMode();
 
     const { status: unitsStatus, showStatus: showUnitsStatus } = useTransientStatus();
@@ -75,7 +75,10 @@ const Settings: React.FC = () => {
     const [heightUnit, setHeightUnit] = useState<HeightUnit>(() => user?.height_unit ?? 'CM');
     const [languageValue, setLanguageValue] = useState<AppLanguage>(() => user?.language ?? DEFAULT_APP_LANGUAGE);
     const [remindersEnabled, setRemindersEnabled] = useState(false);
+    const [reminderLogWeightEnabled, setReminderLogWeightEnabled] = useState(() => user?.reminder_log_weight_enabled ?? true);
+    const [reminderLogFoodEnabled, setReminderLogFoodEnabled] = useState(() => user?.reminder_log_food_enabled ?? true);
     const [isUpdatingReminders, setIsUpdatingReminders] = useState(false);
+    const [isUpdatingReminderPreferences, setIsUpdatingReminderPreferences] = useState(false);
     const [notificationPermission, setNotificationPermission] = useState<NotificationPermission | 'unsupported'>(() => {
         if (typeof window === 'undefined' || !('Notification' in window)) {
             return 'unsupported';
@@ -121,7 +124,17 @@ const Settings: React.FC = () => {
         setWeightUnit(user?.weight_unit ?? 'KG');
         setHeightUnit(user?.height_unit ?? 'CM');
         setLanguageValue(user?.language ?? DEFAULT_APP_LANGUAGE);
-    }, [detectedTimezone, user?.height_unit, user?.language, user?.timezone, user?.weight_unit]);
+        setReminderLogWeightEnabled(user?.reminder_log_weight_enabled ?? true);
+        setReminderLogFoodEnabled(user?.reminder_log_food_enabled ?? true);
+    }, [
+        detectedTimezone,
+        user?.height_unit,
+        user?.language,
+        user?.reminder_log_food_enabled,
+        user?.reminder_log_weight_enabled,
+        user?.timezone,
+        user?.weight_unit
+    ]);
 
     const loadReminderSubscriptionStatus = useCallback(async () => {
         if (!supportsServiceWorker || !supportsPushManager) {
@@ -211,6 +224,48 @@ const Settings: React.FC = () => {
             showUnitsStatus(t('status.failedToSaveChanges'), 'error');
         }
     };
+
+    const handleReminderPreferenceToggle = useCallback(
+        async (type: 'weight' | 'food', nextEnabled: boolean) => {
+            if (!user) {
+                showRemindersStatus(t('status.failedToSaveChanges'), 'error');
+                return;
+            }
+
+            const previousWeight = reminderLogWeightEnabled;
+            const previousFood = reminderLogFoodEnabled;
+            if (type === 'weight') {
+                setReminderLogWeightEnabled(nextEnabled);
+            } else {
+                setReminderLogFoodEnabled(nextEnabled);
+            }
+            setIsUpdatingReminderPreferences(true);
+
+            try {
+                await updateReminderPreferences(
+                    type === 'weight'
+                        ? { reminder_log_weight_enabled: nextEnabled }
+                        : { reminder_log_food_enabled: nextEnabled }
+                );
+                showRemindersStatus(t('settings.remindersPreferencesUpdatedStatus'), 'success');
+            } catch (err) {
+                console.error(err);
+                setReminderLogWeightEnabled(previousWeight);
+                setReminderLogFoodEnabled(previousFood);
+                showRemindersStatus(t('settings.remindersPreferencesUpdateFailed'), 'error');
+            } finally {
+                setIsUpdatingReminderPreferences(false);
+            }
+        },
+        [
+            reminderLogFoodEnabled,
+            reminderLogWeightEnabled,
+            showRemindersStatus,
+            t,
+            updateReminderPreferences,
+            user
+        ]
+    );
 
     const handleRemindersToggle = useCallback(
         async (nextEnabled: boolean) => {
@@ -355,9 +410,36 @@ const Settings: React.FC = () => {
                                         disabled={!reminderSupport.supported || isUpdatingReminders}
                                     />
                                 }
-                                label={t('settings.remindersToggleLabel')}
+                                label={t('settings.remindersDeviceToggleLabel')}
                             />
                             <FormHelperText>{reminderSupport.message}</FormHelperText>
+                        </FormControl>
+
+                        <Typography variant="body2" color="text.secondary">
+                            {t('settings.remindersPreferencesHelper')}
+                        </Typography>
+
+                        <FormControl>
+                            <FormControlLabel
+                                control={
+                                    <Switch
+                                        checked={reminderLogWeightEnabled}
+                                        onChange={(e) => void handleReminderPreferenceToggle('weight', e.target.checked)}
+                                        disabled={!user || isUpdatingReminderPreferences}
+                                    />
+                                }
+                                label={t('settings.remindersLogWeightToggleLabel')}
+                            />
+                            <FormControlLabel
+                                control={
+                                    <Switch
+                                        checked={reminderLogFoodEnabled}
+                                        onChange={(e) => void handleReminderPreferenceToggle('food', e.target.checked)}
+                                        disabled={!user || isUpdatingReminderPreferences}
+                                    />
+                                }
+                                label={t('settings.remindersLogFoodToggleLabel')}
+                            />
                         </FormControl>
                     </Stack>
                 </AppCard>

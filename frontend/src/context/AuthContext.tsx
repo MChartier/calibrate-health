@@ -104,6 +104,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     /**
+     * Update account-level reminder preferences that apply across all devices.
+     */
+    const updateReminderPreferences = async (preferences: {
+        reminder_log_weight_enabled?: boolean;
+        reminder_log_food_enabled?: boolean;
+    }) => {
+        const res = await axios.patch('/api/user/preferences', preferences);
+        setUser(res.data.user);
+    };
+
+    /**
      * Update the user's preferred weight unit (kg/lb).
      */
     const updateWeightUnit = async (weight_unit: WeightUnit) => {
@@ -175,6 +186,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 logout,
                 changePassword,
                 updateUnitPreferences,
+                updateReminderPreferences,
                 updateWeightUnit,
                 updateHeightUnit,
                 updateLanguage,
