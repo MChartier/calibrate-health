@@ -1,6 +1,7 @@
 export const IN_APP_NOTIFICATION_TYPES = {
     LOG_WEIGHT_REMINDER: 'LOG_WEIGHT_REMINDER',
-    LOG_FOOD_REMINDER: 'LOG_FOOD_REMINDER'
+    LOG_FOOD_REMINDER: 'LOG_FOOD_REMINDER',
+    GENERIC: 'GENERIC'
 } as const;
 
 export type InAppNotificationType =
@@ -24,5 +25,6 @@ const buildQuickAddUrl = (
  */
 export const IN_APP_NOTIFICATION_ACTION_URLS: Record<InAppNotificationType, string> = {
     [IN_APP_NOTIFICATION_TYPES.LOG_WEIGHT_REMINDER]: buildQuickAddUrl(QUICK_ADD_ACTIONS.weight),
-    [IN_APP_NOTIFICATION_TYPES.LOG_FOOD_REMINDER]: buildQuickAddUrl(QUICK_ADD_ACTIONS.food)
+    [IN_APP_NOTIFICATION_TYPES.LOG_FOOD_REMINDER]: buildQuickAddUrl(QUICK_ADD_ACTIONS.food),
+    [IN_APP_NOTIFICATION_TYPES.GENERIC]: '/log'
 };
