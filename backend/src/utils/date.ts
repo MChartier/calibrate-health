@@ -1,3 +1,5 @@
+export const MS_PER_DAY = 24 * 60 * 60 * 1000; // Shared day-duration constant for UTC date-range math.
+
 export function normalizeToUtcDateOnly(input: unknown): Date {
   const date =
     input instanceof Date
