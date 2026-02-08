@@ -1,9 +1,10 @@
 import React from 'react';
-import { Box, Card, CardActionArea, CardContent, Skeleton, Typography, useMediaQuery } from '@mui/material';
+import { Box, Card, CardActionArea, CardContent, Chip, Skeleton, Switch, Typography, useMediaQuery } from '@mui/material';
 import { Gauge } from '@mui/x-charts/Gauge';
 import { Link as RouterLink } from 'react-router-dom';
 import { useTheme } from '@mui/material/styles';
 import { useAuth } from '../context/useAuth';
+import { useQueryClient } from '@tanstack/react-query';
 import {
     formatDateToLocalDateString,
     formatIsoDateForDisplay,
@@ -13,6 +14,7 @@ import {
 import { usePrefersReducedMotion } from '../hooks/usePrefersReducedMotion';
 import { useUserProfileQuery } from '../queries/userProfile';
 import { useFoodLogQuery } from '../queries/foodLog';
+import { foodLogDayQueryKey, useFoodLogDayMutation, useFoodLogDayQuery } from '../queries/foodLogDay';
 import { useI18n } from '../i18n/useI18n';
 
 /**
@@ -33,6 +35,10 @@ const LOG_SUMMARY_CARD_PADDING_SPACING = { xs: 1.25, sm: 1.5 }; // Slightly redu
 const LOG_SUMMARY_TITLE_MARGIN_BOTTOM_SPACING = { xs: 1, sm: 1.5 }; // Title-to-body spacing; smaller on xs keeps the card dense but readable.
 // Duration used for "date switch" value transitions (gauge fill + numbers).
 const LOG_SUMMARY_TWEEN_DURATION_MS = 520;
+const LOG_SUMMARY_COMPLETION_ROW_GAP = 1; // Horizontal spacing between the completion label cluster and the action control.
+const LOG_SUMMARY_COMPLETION_LABEL_GAP = 0.25; // Vertical spacing between completion label text and status text.
+const LOG_SUMMARY_COMPLETION_CHIP_MIN_WIDTH_PX = 90; // Prevent the status chip from jittering widths between states.
+type CompletionStatusDisplay = 'complete' | 'incomplete' | 'unknown';
 
 type AnimatedLogSummaryValues = {
     gaugeValue: number;
@@ -157,15 +163,22 @@ export type LogSummaryCardProps = {
      * Defaults to the user's local "today" (based on their profile timezone when available).
      */
     date?: string;
+    /**
+     * Controls how the log completion status is displayed.
+     * - "toggle": show a switch so users can mark the day complete.
+     * - "status": show a read-only status indicator.
+     */
+    completionMode?: 'toggle' | 'status';
 };
 
 /**
  * LogSummaryCard shows the daily calorie balance with optional dashboard CTA behavior.
  */
-const LogSummaryCard: React.FC<LogSummaryCardProps> = ({ dashboardMode = false, date }) => {
+const LogSummaryCard: React.FC<LogSummaryCardProps> = ({ dashboardMode = false, date, completionMode }) => {
     const { user } = useAuth();
     const { t } = useI18n();
     const theme = useTheme();
+    const queryClient = useQueryClient();
     const isXs = useMediaQuery(theme.breakpoints.down('sm'));
     const gaugeDimensions = isXs ? GAUGE_DIMENSIONS_COMPACT : GAUGE_DIMENSIONS_DEFAULT;
     const layoutGap = isXs ? LOG_SUMMARY_LAYOUT_GAP.compact : LOG_SUMMARY_LAYOUT_GAP.default;
@@ -192,6 +205,9 @@ const LogSummaryCard: React.FC<LogSummaryCardProps> = ({ dashboardMode = false, 
     const foodQuery = useFoodLogQuery(activeDate);
 
     const profileSummaryQuery = useUserProfileQuery();
+    const completionEnabled = completionMode === 'toggle' || completionMode === 'status';
+    const completionQuery = useFoodLogDayQuery(activeDate, { enabled: completionEnabled });
+    const completionMutation = useFoodLogDayMutation();
 
     const logs = foodQuery.data;
     const totalCalories = React.useMemo(() => {
@@ -205,6 +221,9 @@ const LogSummaryCard: React.FC<LogSummaryCardProps> = ({ dashboardMode = false, 
 
     const isLoading = foodQuery.isLoading || profileSummaryQuery.isLoading;
     const isError = foodQuery.isError || profileSummaryQuery.isError;
+    const isCompletionLoading = completionQuery.isLoading;
+    const isCompletionError = completionQuery.isError;
+    const isCompletionPending = completionMutation.isPending;
 
     const prefersReducedMotion = usePrefersReducedMotion();
     // The dashboard card is visible on the landing page where scroll smoothness matters most,
@@ -224,6 +243,87 @@ const LogSummaryCard: React.FC<LogSummaryCardProps> = ({ dashboardMode = false, 
         displayedRemainingCaloriesLabel = animationsDisabled
             ? Math.abs(remainingCalories)
             : (animatedValues.remainingCaloriesLabel ?? 0);
+    }
+
+    // Show an explicit unknown state whenever completion status cannot be trusted from the query result.
+    let completionStatus: CompletionStatusDisplay = 'unknown';
+    if (completionQuery.data?.is_complete === true) {
+        completionStatus = 'complete';
+    } else if (!isCompletionError && completionQuery.data?.is_complete === false) {
+        completionStatus = 'incomplete';
+    }
+    const isCompletionComplete = completionStatus === 'complete';
+
+    let completionStatusLabel = t('log.completion.status.unknown');
+    let completionActionLabel = t('log.completion.actionUnavailable');
+    if (completionStatus === 'complete') {
+        completionStatusLabel = t('log.completion.status.complete');
+        completionActionLabel = t('log.completion.markIncomplete');
+    } else if (completionStatus === 'incomplete') {
+        completionStatusLabel = t('log.completion.status.incomplete');
+        completionActionLabel = t('log.completion.markComplete');
+    }
+
+    const handleCompletionToggle = React.useCallback(
+        async (nextValue: boolean) => {
+            if (isCompletionPending) return;
+            try {
+                await completionMutation.mutateAsync({ date: activeDate, is_complete: nextValue });
+            } finally {
+                void queryClient.invalidateQueries({ queryKey: foodLogDayQueryKey(activeDate) });
+            }
+        },
+        [activeDate, completionMutation, isCompletionPending, queryClient]
+    );
+
+    let completionControl: React.ReactNode = null;
+    if (completionEnabled) {
+        const statusChip = (
+            <Chip
+                size="small"
+                label={completionStatusLabel}
+                color={isCompletionComplete ? 'success' : 'default'}
+                variant={isCompletionComplete ? 'filled' : 'outlined'}
+                sx={{ minWidth: LOG_SUMMARY_COMPLETION_CHIP_MIN_WIDTH_PX }}
+            />
+        );
+
+        const rightControl = completionMode === 'toggle'
+            ? (
+                <Switch
+                    checked={isCompletionComplete}
+                    onChange={(_event, checked) => void handleCompletionToggle(checked)}
+                    disabled={isCompletionLoading || completionStatus === 'unknown' || isCompletionPending}
+                    inputProps={{ 'aria-label': completionActionLabel }}
+                />
+            )
+            : (isCompletionLoading ? <Skeleton width={LOG_SUMMARY_COMPLETION_CHIP_MIN_WIDTH_PX} height={24} /> : statusChip);
+
+        completionControl = (
+            <Box
+                sx={{
+                    mt: 1,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: LOG_SUMMARY_COMPLETION_ROW_GAP
+                }}
+            >
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: LOG_SUMMARY_COMPLETION_LABEL_GAP }}>
+                    <Typography variant="body2">{t('log.completion.label')}</Typography>
+                    {completionMode === 'toggle' && (
+                        isCompletionLoading ? (
+                            <Skeleton width="45%" height={16} />
+                        ) : (
+                            <Typography variant="caption" color="text.secondary">
+                                {completionStatusLabel}
+                            </Typography>
+                        )
+                    )}
+                </Box>
+                {rightControl}
+            </Box>
+        );
     }
 
     // Split conditional branches into named nodes to keep the render tree readable.
@@ -274,6 +374,7 @@ const LogSummaryCard: React.FC<LogSummaryCardProps> = ({ dashboardMode = false, 
                         </Typography>
                         <Skeleton width="55%" height={20} />
                     </Box>
+                    {completionControl}
                     {dashboardMode && (
                         <Typography variant="body2" color="primary">
                             {isActiveDateToday ? t('logSummary.cta.viewEditToday') : t('logSummary.cta.viewEditThis')}
@@ -350,6 +451,7 @@ const LogSummaryCard: React.FC<LogSummaryCardProps> = ({ dashboardMode = false, 
                     <Typography variant="body2" color="text.secondary">
                         {loggedLine}
                     </Typography>
+                    {completionControl}
                     {dashboardMode && (
                         <Typography variant="body2" color="primary">
                             {isActiveDateToday ? t('logSummary.cta.viewEditToday') : t('logSummary.cta.viewEditThis')}
