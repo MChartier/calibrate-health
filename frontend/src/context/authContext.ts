@@ -43,6 +43,8 @@ export type User = {
     height_unit: HeightUnit;
     timezone: string;
     language: AppLanguage;
+    reminder_log_weight_enabled: boolean;
+    reminder_log_food_enabled: boolean;
     date_of_birth?: string | null;
     sex?: SexValue | null;
     height_mm?: number | null;
@@ -70,6 +72,10 @@ export type AuthContextType = {
     /** Update the authenticated user's password (current password required). */
     changePassword: (currentPassword: string, newPassword: string) => Promise<void>;
     updateUnitPreferences: (preferences: { weight_unit?: WeightUnit; height_unit?: HeightUnit }) => Promise<void>;
+    updateReminderPreferences: (preferences: {
+        reminder_log_weight_enabled?: boolean;
+        reminder_log_food_enabled?: boolean;
+    }) => Promise<void>;
     updateWeightUnit: (weight_unit: WeightUnit) => Promise<void>;
     updateHeightUnit: (height_unit: HeightUnit) => Promise<void>;
     updateLanguage: (language: AppLanguage) => Promise<void>;

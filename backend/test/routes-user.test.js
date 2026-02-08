@@ -110,6 +110,8 @@ test('user route: GET /me returns serialized user data', async () => {
     weight_unit: 'KG',
     height_unit: 'CM',
     timezone: 'UTC',
+    reminder_log_weight_enabled: true,
+    reminder_log_food_enabled: true,
     date_of_birth: null,
     sex: null,
     height_mm: null,
@@ -142,6 +144,8 @@ test('user route: GET /me returns serialized user data', async () => {
       height_unit: dbUser.height_unit,
       timezone: dbUser.timezone,
       language: 'en',
+      reminder_log_weight_enabled: dbUser.reminder_log_weight_enabled,
+      reminder_log_food_enabled: dbUser.reminder_log_food_enabled,
       date_of_birth: dbUser.date_of_birth,
       sex: dbUser.sex,
       height_mm: dbUser.height_mm,
@@ -189,6 +193,8 @@ test('user route: PUT /profile-image stores bytes and returns a data URL', async
     weight_unit: 'KG',
     height_unit: 'CM',
     timezone: 'UTC',
+    reminder_log_weight_enabled: true,
+    reminder_log_food_enabled: true,
     date_of_birth: null,
     sex: null,
     height_mm: null,
@@ -269,4 +275,70 @@ test('user route: PATCH /password updates password when current password matches
   assert.equal(updated, true);
   assert.equal(res.statusCode, 200);
   assert.deepEqual(res.body, { message: 'Password updated' });
+});
+
+test('user route: PATCH /preferences validates reminder preference booleans', async () => {
+  const prismaStub = {
+    user: {
+      update: async () => {
+        throw new Error('should not be called');
+      }
+    }
+  };
+  const bcryptStub = {};
+
+  const router = loadUserRouter({ prismaStub, bcryptStub });
+  const handler = getRouteHandler(router, 'patch', '/preferences');
+
+  const req = { user: { id: 7 }, body: { reminder_log_weight_enabled: 'yes' } };
+  const res = createRes();
+
+  await handler(req, res);
+  assert.equal(res.statusCode, 400);
+  assert.deepEqual(res.body, { message: 'Invalid reminder_log_weight_enabled' });
+});
+
+test('user route: PATCH /preferences updates reminder preference fields', async () => {
+  const updatedUser = {
+    id: 7,
+    email: 'user@example.com',
+    created_at: new Date('2025-01-01T00:00:00Z'),
+    weight_unit: 'KG',
+    height_unit: 'CM',
+    timezone: 'UTC',
+    language: 'en',
+    reminder_log_weight_enabled: false,
+    reminder_log_food_enabled: true,
+    date_of_birth: null,
+    sex: null,
+    height_mm: null,
+    activity_level: null,
+    profile_image: null,
+    profile_image_mime_type: null
+  };
+
+  let updateArgs = null;
+  const prismaStub = {
+    user: {
+      update: async (args) => {
+        updateArgs = args;
+        return updatedUser;
+      }
+    }
+  };
+  const bcryptStub = {};
+
+  const router = loadUserRouter({ prismaStub, bcryptStub });
+  const handler = getRouteHandler(router, 'patch', '/preferences');
+
+  const req = { user: { id: 7 }, body: { reminder_log_weight_enabled: false } };
+  const res = createRes();
+
+  await handler(req, res);
+
+  assert.equal(res.statusCode, 200);
+  assert.equal(updateArgs.where.id, 7);
+  assert.deepEqual(updateArgs.data, { reminder_log_weight_enabled: false });
+  assert.equal(res.body.user.reminder_log_weight_enabled, false);
+  assert.equal(res.body.user.reminder_log_food_enabled, true);
 });
