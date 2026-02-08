@@ -12,7 +12,9 @@ const ACTION_URL_BY_TYPE: Record<InAppNotificationType, string> = {
     [InAppNotificationType.LOG_WEIGHT_REMINDER]:
         IN_APP_NOTIFICATION_ACTION_URLS[IN_APP_NOTIFICATION_TYPES.LOG_WEIGHT_REMINDER],
     [InAppNotificationType.LOG_FOOD_REMINDER]:
-        IN_APP_NOTIFICATION_ACTION_URLS[IN_APP_NOTIFICATION_TYPES.LOG_FOOD_REMINDER]
+        IN_APP_NOTIFICATION_ACTION_URLS[IN_APP_NOTIFICATION_TYPES.LOG_FOOD_REMINDER],
+    [InAppNotificationType.GENERIC]:
+        IN_APP_NOTIFICATION_ACTION_URLS[IN_APP_NOTIFICATION_TYPES.GENERIC]
 };
 
 type InAppNotificationClient = {
@@ -35,6 +37,8 @@ export type InAppNotificationWire = {
     local_date: string;
     created_at: string;
     read_at: string | null;
+    title: string | null;
+    body: string | null;
     action_url: string;
 };
 
@@ -90,12 +94,31 @@ type NotificationRow = Prisma.InAppNotificationGetPayload<{
         local_date: true;
         created_at: true;
         read_at: true;
+        title: true;
+        body: true;
+        action_url: true;
     };
 }>;
 
 const isSameUtcDate = (left: Date, right: Date): boolean => left.getTime() === right.getTime();
 
 const formatUtcDateOnly = (value: Date): string => value.toISOString().slice(0, 10);
+
+/**
+ * Build a stable dedupe key for scheduler-driven reminder notifications.
+ */
+export const buildReminderInAppDedupeKey = (type: InAppNotificationType, localDate: Date): string => {
+    return `reminder:${type}:${formatUtcDateOnly(localDate)}`;
+};
+
+const resolveSerializedActionUrl = (row: NotificationRow): string => {
+    const explicitActionUrl = row.action_url?.trim();
+    if (explicitActionUrl) {
+        return explicitActionUrl;
+    }
+
+    return ACTION_URL_BY_TYPE[row.type];
+};
 
 const serializeNotification = (row: NotificationRow): InAppNotificationWire => {
     return {
@@ -104,7 +127,9 @@ const serializeNotification = (row: NotificationRow): InAppNotificationWire => {
         local_date: formatUtcDateOnly(row.local_date),
         created_at: row.created_at.toISOString(),
         read_at: row.read_at ? row.read_at.toISOString() : null,
-        action_url: ACTION_URL_BY_TYPE[row.type]
+        title: row.title?.trim() || null,
+        body: row.body?.trim() || null,
+        action_url: resolveSerializedActionUrl(row)
     };
 };
 
@@ -159,7 +184,8 @@ export const ensureReminderInAppNotificationsForDate = async ({
         rows.push({
             user_id: userId,
             type: InAppNotificationType.LOG_WEIGHT_REMINDER,
-            local_date: localDate
+            local_date: localDate,
+            dedupe_key: buildReminderInAppDedupeKey(InAppNotificationType.LOG_WEIGHT_REMINDER, localDate)
         });
     }
 
@@ -167,7 +193,8 @@ export const ensureReminderInAppNotificationsForDate = async ({
         rows.push({
             user_id: userId,
             type: InAppNotificationType.LOG_FOOD_REMINDER,
-            local_date: localDate
+            local_date: localDate,
+            dedupe_key: buildReminderInAppDedupeKey(InAppNotificationType.LOG_FOOD_REMINDER, localDate)
         });
     }
 
@@ -305,7 +332,10 @@ export const listActiveInAppNotificationsForUser = async ({
             type: true,
             local_date: true,
             created_at: true,
-            read_at: true
+            read_at: true,
+            title: true,
+            body: true,
+            action_url: true
         }
     });
 

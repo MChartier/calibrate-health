@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import {
     AppBar,
     Avatar,
@@ -46,7 +47,8 @@ import LogQuickAddFab from './LogQuickAddFab';
 import LogDatePickerControl from './LogDatePickerControl';
 import InAppNotificationsDrawer from './InAppNotificationsDrawer';
 import { useInAppNotificationBadge } from '../hooks/useInAppNotificationBadge';
-import { type InAppNotification, useInAppNotificationsQuery } from '../queries/inAppNotifications';
+import { type InAppNotification, inAppNotificationsQueryKey, useInAppNotificationsQuery } from '../queries/inAppNotifications';
+import { isInAppNotificationsUpdatedMessage } from '../constants/notificationEvents';
 
 /**
  * App shell layout with navigation chrome and quick-add entry points.
@@ -207,6 +209,7 @@ const NavbarLogDateControls: React.FC<NavbarLogDateControlsProps> = ({ navigatio
 
 const LayoutShell: React.FC = () => {
     const { user, logout, isLoading } = useAuth();
+    const queryClient = useQueryClient();
     const { dialogs, logDateOverride, logDateNavigation } = useQuickAddFab();
     const { t } = useI18n();
     const theme = useTheme();
@@ -247,6 +250,25 @@ const LayoutShell: React.FC = () => {
         unreadCount: unreadNotificationCount,
         hasLoadedCount: hasLoadedNotificationCount
     });
+
+    useEffect(() => {
+        if (!showAppNav || typeof navigator === 'undefined' || !('serviceWorker' in navigator)) {
+            return;
+        }
+
+        const handleServiceWorkerMessage = (event: MessageEvent) => {
+            if (!isInAppNotificationsUpdatedMessage(event.data)) {
+                return;
+            }
+
+            void queryClient.invalidateQueries({ queryKey: inAppNotificationsQueryKey() });
+        };
+
+        navigator.serviceWorker.addEventListener('message', handleServiceWorkerMessage);
+        return () => {
+            navigator.serviceWorker.removeEventListener('message', handleServiceWorkerMessage);
+        };
+    }, [queryClient, showAppNav]);
 
     const handleLogout = async () => {
         await logout();
