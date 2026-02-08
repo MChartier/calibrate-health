@@ -227,6 +227,9 @@ const Settings: React.FC = () => {
             const previous = remindersEnabled;
             setRemindersEnabled(nextEnabled);
             setIsUpdatingReminders(true);
+            let shouldReloadReminderSubscriptionStatus = false;
+            let subscribedBrowserEndpoint: string | null = null;
+            let persistedSubscription = false;
 
             try {
                 if (nextEnabled) {
@@ -265,8 +268,11 @@ const Settings: React.FC = () => {
                             userVisibleOnly: true,
                             applicationServerKey: urlBase64ToUint8Array(publicKey)
                         }));
+                    subscribedBrowserEndpoint = subscription.endpoint;
 
                     await axios.post('/api/notifications/subscription', subscription.toJSON());
+                    persistedSubscription = true;
+                    shouldReloadReminderSubscriptionStatus = true;
                     setRemindersEnabled(true);
                     showRemindersStatus(t('settings.remindersEnabledStatus'), 'success');
                 } else {
@@ -278,16 +284,34 @@ const Settings: React.FC = () => {
                             data: { endpoint: subscription.endpoint }
                         });
                     }
+                    shouldReloadReminderSubscriptionStatus = true;
                     setRemindersEnabled(false);
                     showRemindersStatus(t('settings.remindersDisabledStatus'), 'success');
                 }
             } catch (err) {
                 console.error(err);
+                if (nextEnabled && !persistedSubscription && subscribedBrowserEndpoint) {
+                    // Keep local browser state aligned with server state when subscription save fails.
+                    try {
+                        const registration = await resolveServiceWorkerRegistration();
+                        const subscription = registration ? await registration.pushManager.getSubscription() : null;
+                        if (subscription && subscription.endpoint === subscribedBrowserEndpoint) {
+                            await subscription.unsubscribe();
+                        }
+                    } catch (cleanupError) {
+                        console.warn(
+                            'Failed to clean up unsaved reminders subscription in this browser. Toggle reminders off and on to re-sync.',
+                            cleanupError
+                        );
+                    }
+                }
                 setRemindersEnabled(previous);
                 showRemindersStatus(t('settings.remindersUpdateFailed'), 'error');
             } finally {
                 setIsUpdatingReminders(false);
-                void loadReminderSubscriptionStatus();
+                if (shouldReloadReminderSubscriptionStatus) {
+                    void loadReminderSubscriptionStatus();
+                }
             }
         },
         [
