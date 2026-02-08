@@ -267,6 +267,8 @@ router.post('/notifications/test', requireAuthenticatedUser, async (req, res) =>
         return res.status(400).json({ message: 'No push subscriptions found for this user.' });
     }
 
+    const payloadString = JSON.stringify(payload);
+
     // Send only one deterministic test notification to avoid duplicate toasts when users have multiple devices.
     const result = await Promise.allSettled([
         sendWebPushNotification(
@@ -277,7 +279,7 @@ router.post('/notifications/test', requireAuthenticatedUser, async (req, res) =>
                     auth: subscription.auth
                 }
             },
-            payload
+            payloadString
         )
     ]);
 
