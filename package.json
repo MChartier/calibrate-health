@@ -3,16 +3,16 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
-    "scripts": {
-      "dev": "node scripts/dev.mjs",
-      "dev:pwa": "VITE_ENABLE_SW_DEV=1 node scripts/dev.mjs",
-      "dev:test": "AUTO_LOGIN_TEST_USER=true node scripts/dev.mjs",
+  "scripts": {
+    "dev": "node scripts/dev.mjs",
+    "dev:pwa": "VITE_ENABLE_SW_DEV=1 node scripts/dev.mjs",
+    "dev:test": "AUTO_LOGIN_TEST_USER=true node scripts/dev.mjs",
     "dev:reset-test-user-onboarding": "node scripts/reset-test-user-onboarding.mjs",
-      "dev:backend": "npm --prefix backend run dev",
-      "dev:frontend": "npm --prefix frontend run dev",
-      "preview": "node scripts/preview.mjs",
-      "prisma:generate": "npm --prefix backend run prisma:generate",
-      "db:migrate": "npm --prefix backend run db:migrate",
+    "dev:backend": "npm --prefix backend run dev",
+    "dev:frontend": "npm --prefix frontend run dev",
+    "preview": "node scripts/preview.mjs",
+    "prisma:generate": "npm --prefix backend run prisma:generate",
+    "db:migrate": "npm --prefix backend run db:migrate",
     "db:migrate:dev": "npm --prefix backend run db:migrate:dev",
     "db:reset": "npm --prefix backend run db:reset",
     "db:seed": "npm --prefix backend run db:seed",
@@ -41,7 +41,8 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "typescript": "^5.0.0",
-    "@types/node": "^20.0.0"
+    "@types/node": "^20.0.0",
+    "baseline-browser-mapping": "^2.9.19",
+    "typescript": "^5.0.0"
   }
 }
