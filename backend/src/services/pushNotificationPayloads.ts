@@ -1,3 +1,5 @@
+import { IN_APP_NOTIFICATION_ACTION_URLS, IN_APP_NOTIFICATION_TYPES } from '../../../shared/inAppNotifications';
+
 export type PushNotificationAction = {
     action: string;
     title: string;
@@ -12,13 +14,6 @@ export type PushNotificationPayload = {
     actionUrls?: Record<string, string>;
 };
 
-const QUICK_ADD_BASE_PATH = '/log'; // Route used for quick-add notification deep links.
-const QUICK_ADD_QUERY_PARAM = 'quickAdd'; // Matches frontend quick-add query param name.
-const QUICK_ADD_ACTIONS = {
-    weight: 'weight',
-    food: 'food'
-} as const;
-
 export const REMINDER_ACTION_IDS = {
     logWeight: 'log_weight',
     logFood: 'log_food'
@@ -29,13 +24,11 @@ export const REMINDER_ACTIONS: PushNotificationAction[] = [
     { action: REMINDER_ACTION_IDS.logFood, title: 'Log food' }
 ];
 
-const buildQuickAddUrl = (action: typeof QUICK_ADD_ACTIONS[keyof typeof QUICK_ADD_ACTIONS]): string => {
-    return `${QUICK_ADD_BASE_PATH}?${QUICK_ADD_QUERY_PARAM}=${action}`;
-};
-
 export const REMINDER_ACTION_URLS: Record<string, string> = {
-    [REMINDER_ACTION_IDS.logWeight]: buildQuickAddUrl(QUICK_ADD_ACTIONS.weight),
-    [REMINDER_ACTION_IDS.logFood]: buildQuickAddUrl(QUICK_ADD_ACTIONS.food)
+    [REMINDER_ACTION_IDS.logWeight]:
+        IN_APP_NOTIFICATION_ACTION_URLS[IN_APP_NOTIFICATION_TYPES.LOG_WEIGHT_REMINDER],
+    [REMINDER_ACTION_IDS.logFood]:
+        IN_APP_NOTIFICATION_ACTION_URLS[IN_APP_NOTIFICATION_TYPES.LOG_FOOD_REMINDER]
 };
 
 type ReminderPayloadOptions = {
