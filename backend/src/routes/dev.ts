@@ -131,40 +131,58 @@ const requireAuthenticatedUser = (req: express.Request, res: express.Response, n
     res.status(401).json({ message: 'Not authenticated' });
 };
 
-const sendDevPushToUser = async (userId: number, payload: DevPushPayload) => {
-    const subscriptions = await prisma.pushSubscription.findMany({
-        where: { user_id: userId }
+/**
+ * Read an endpoint from the request body so dev sends can target the current browser only.
+ */
+const resolvePushEndpoint = (body: unknown): string => {
+    if (!body || typeof body !== 'object') {
+        return '';
+    }
+    const endpoint = (body as { endpoint?: unknown }).endpoint;
+    return typeof endpoint === 'string' ? endpoint.trim() : '';
+};
+
+/**
+ * Send to a single user+endpoint subscription so dev test sends mirror browser-local state.
+ */
+const sendDevPushToEndpoint = async (userId: number, endpoint: string, payload: DevPushPayload) => {
+    const subscription = await prisma.pushSubscription.findUnique({
+        where: {
+            user_id_endpoint: {
+                user_id: userId,
+                endpoint
+            }
+        }
     });
 
-    if (subscriptions.length === 0) {
-        return { sent: 0, failed: 0, message: 'No push subscriptions found for this user.' };
+    if (!subscription) {
+        return {
+            sent: 0,
+            failed: 0,
+            message: 'No push subscription found for this browser endpoint. Register push in this browser and try again.'
+        };
     }
 
     const payloadString = JSON.stringify(payload);
-    const results = await Promise.allSettled(
-        subscriptions.map((subscription) =>
-            sendWebPushNotification(
-                {
-                    endpoint: subscription.endpoint,
-                    keys: {
-                        p256dh: subscription.p256dh,
-                        auth: subscription.auth
-                    }
-                },
-                payloadString
-            )
-        )
-    );
-
-    const failures = results.filter((result) => result.status === 'rejected');
-    return {
-        sent: results.length,
-        failed: failures.length,
-        message:
-            failures.length > 0
-                ? 'Some subscriptions failed. Clear them and re-subscribe to refresh.'
-                : undefined
-    };
+    try {
+        await sendWebPushNotification(
+            {
+                endpoint: subscription.endpoint,
+                keys: {
+                    p256dh: subscription.p256dh,
+                    auth: subscription.auth
+                }
+            },
+            payloadString
+        );
+        return { sent: 1, failed: 0, message: undefined };
+    } catch {
+        return {
+            sent: 1,
+            failed: 1,
+            message: 'Push delivery failed for this endpoint. Clear the subscription and re-register in this browser.'
+        };
+    }
 };
 
 router.get('/food/providers', (req, res) => {
@@ -257,44 +275,23 @@ router.post('/notifications/test', requireAuthenticatedUser, async (req, res) =>
         body: body || 'This is a test notification.',
         url: url || '/'
     };
-
-    const subscription = await prisma.pushSubscription.findFirst({
-        where: { user_id: user.id },
-        orderBy: [{ updated_at: 'desc' }, { id: 'desc' }]
-    });
-
-    if (!subscription) {
-        return res.status(400).json({ message: 'No push subscriptions found for this user.' });
+    const endpoint = resolvePushEndpoint(req.body);
+    if (!endpoint) {
+        return res.status(400).json({ message: 'Endpoint is required. Register push in this browser and try again.' });
     }
 
-    const payloadString = JSON.stringify(payload);
-
-    // Send only one deterministic test notification to avoid duplicate toasts when users have multiple devices.
-    const result = await Promise.allSettled([
-        sendWebPushNotification(
-            {
-                endpoint: subscription.endpoint,
-                keys: {
-                    p256dh: subscription.p256dh,
-                    auth: subscription.auth
-                }
-            },
-            payloadString
-        )
-    ]);
-
-    const failures = result.filter((entry) => entry.status === 'rejected');
-
-    if (failures.length > 0) {
-        console.warn(
-            `Dev push test failed for user ${user.id}. The selected subscription may be expired; clear it and re-subscribe to refresh.`
-        );
+    const result = await sendDevPushToEndpoint(user.id, endpoint, payload);
+    if (result.sent === 0) {
+        return res.status(400).json({ message: result.message ?? 'No push subscription found for this endpoint.' });
+    }
+    if (result.message) {
+        console.warn(`Dev push test notification sent with ${result.failed} failure. ${result.message}`);
     }
 
     res.json({
-        ok: failures.length === 0,
-        sent: result.length,
-        failed: failures.length
+        ok: result.failed === 0,
+        sent: result.sent,
+        failed: result.failed
     });
 });
 
@@ -305,15 +302,19 @@ router.post('/notifications/log-weight', requireAuthenticatedUser, async (req, r
     }
 
     const user = req.user as { id: number };
+    const endpoint = resolvePushEndpoint(req.body);
+    if (!endpoint) {
+        return res.status(400).json({ message: 'Endpoint is required. Register push in this browser and try again.' });
+    }
     const payload = buildReminderPayload(REMINDER_ACTION_IDS.logWeight);
-    const result = await sendDevPushToUser(user.id, payload);
+    const result = await sendDevPushToEndpoint(user.id, endpoint, payload);
 
     if (result.sent === 0) {
-        return res.status(400).json({ message: result.message ?? 'No push subscriptions found for this user.' });
+        return res.status(400).json({ message: result.message ?? 'No push subscription found for this endpoint.' });
     }
 
     if (result.message) {
-        console.warn(`Dev push log weight sent with ${result.failed} failures. ${result.message}`);
+        console.warn(`Dev push log weight sent with ${result.failed} failure. ${result.message}`);
     }
 
     res.json({
@@ -330,15 +331,19 @@ router.post('/notifications/log-food', requireAuthenticatedUser, async (req, res
     }
 
     const user = req.user as { id: number };
+    const endpoint = resolvePushEndpoint(req.body);
+    if (!endpoint) {
+        return res.status(400).json({ message: 'Endpoint is required. Register push in this browser and try again.' });
+    }
     const payload = buildReminderPayload(REMINDER_ACTION_IDS.logFood);
-    const result = await sendDevPushToUser(user.id, payload);
+    const result = await sendDevPushToEndpoint(user.id, endpoint, payload);
 
     if (result.sent === 0) {
-        return res.status(400).json({ message: result.message ?? 'No push subscriptions found for this user.' });
+        return res.status(400).json({ message: result.message ?? 'No push subscription found for this endpoint.' });
     }
 
     if (result.message) {
-        console.warn(`Dev push log food sent with ${result.failed} failures. ${result.message}`);
+        console.warn(`Dev push log food sent with ${result.failed} failure. ${result.message}`);
     }
 
     res.json({
