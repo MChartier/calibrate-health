@@ -76,6 +76,7 @@ model User {
   goals         Goal[]
   metrics       BodyMetric[]
   food_logs     FoodLog[]
+  food_log_days FoodLogDay[]
   /// User-owned library of reusable foods and recipes for quick logging.
   my_foods      MyFood[]
 }
@@ -128,6 +129,22 @@ model FoodLog {
   created_at  DateTime @default(now())
 
   @@index([user_id, local_date])
+}
+
+model FoodLogDay {
+  id           Int      @id @default(autoincrement())
+  user_id      Int
+  user         User     @relation(fields: [user_id], references: [id])
+  /// Calendar day for grouping logs, derived from the user's timezone at write time.
+  local_date   DateTime @db.Date
+  /// Whether the user has marked the day's log as complete.
+  is_complete  Boolean  @default(false)
+  /// Timestamp of when the day was marked complete (cleared when toggled off).
+  completed_at DateTime?
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+
+  @@unique([user_id, local_date])
 }
 
 model MyFood {
