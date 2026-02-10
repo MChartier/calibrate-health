@@ -1,5 +1,4 @@
 import express from 'express';
-import { Prisma } from '@prisma/client';
 import prisma from '../config/database';
 import {
   listActiveInAppNotificationsForUser,
@@ -52,24 +51,29 @@ router.post('/subscription', async (req, res) => {
     return res.status(400).json({ message: 'Invalid subscription payload.' });
   }
 
+  const existingSubscription = await prisma.pushSubscription.findUnique({
+    where: { endpoint },
+    select: { user_id: true }
+  });
+  const endpointOwnerChanged = existingSubscription?.user_id !== undefined && existingSubscription.user_id !== user.id;
+
   await prisma.pushSubscription.upsert({
-    where: {
-      user_id_endpoint: {
-        user_id: user.id,
-        endpoint
-      }
-    },
+    where: { endpoint },
     update: {
+      user_id: user.id,
       p256dh,
       auth,
-      expiration_time: expirationTime
+      expiration_time: expirationTime,
+      // Reset local-day dedupe when ownership changes so old-account send state does not bleed to the new owner.
+      ...(endpointOwnerChanged ? { last_sent_local_date: null } : {})
     },
     create: {
       user_id: user.id,
       endpoint,
       p256dh,
       auth,
-      expiration_time: expirationTime
+      expiration_time: expirationTime,
+      last_sent_local_date: null
     }
   });
 
@@ -84,25 +88,13 @@ router.delete('/subscription', async (req, res) => {
     return res.status(400).json({ message: 'Endpoint is required.' });
   }
 
-  try {
-    await prisma.pushSubscription.delete({
-      where: {
-        user_id_endpoint: {
-          user_id: user.id,
-          endpoint
-        }
-      }
-    });
-  } catch (error) {
-    // Treat repeated unsubscribe calls as success so this endpoint stays idempotent.
-    if (
-      error instanceof Prisma.PrismaClientKnownRequestError &&
-      error.code === 'P2025'
-    ) {
-      return res.json({ ok: true });
+  // Delete only rows owned by this user so repeated unsubscribe calls stay idempotent.
+  await prisma.pushSubscription.deleteMany({
+    where: {
+      user_id: user.id,
+      endpoint
     }
-    throw error;
-  }
+  });
 
   res.json({ ok: true });
 });
