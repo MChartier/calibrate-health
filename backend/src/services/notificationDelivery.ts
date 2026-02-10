@@ -168,12 +168,10 @@ const resolvePushSubscriptions = async (
 ): Promise<NormalizedPushSubscription[]> => {
     const normalizedEndpoint = normalizeOptionalText(endpoint);
     if (normalizedEndpoint) {
-        const subscription = await prisma.pushSubscription.findUnique({
+        const subscription = await prisma.pushSubscription.findFirst({
             where: {
-                user_id_endpoint: {
-                    user_id: userId,
-                    endpoint: normalizedEndpoint
-                }
+                user_id: userId,
+                endpoint: normalizedEndpoint
             },
             select: {
                 id: true,

@@ -55,7 +55,7 @@ test('deliverUserNotification creates one in-app notification and dedupes repeat
       }
     },
     pushSubscription: {
-      findUnique: async () => null,
+      findFirst: async () => null,
       findMany: async () => [],
       update: async () => {
         throw new Error('should not be called');
@@ -127,7 +127,7 @@ test('deliverUserNotification skips push when endpoint lookup fails', async () =
       }
     },
     pushSubscription: {
-      findUnique: async () => null,
+      findFirst: async () => null,
       findMany: async () => {
         throw new Error('should not be called');
       },
@@ -184,7 +184,7 @@ test('deliverUserNotification sends push and updates last sent date for successf
       }
     },
     pushSubscription: {
-      findUnique: async () => ({
+      findFirst: async () => ({
         id: 42,
         endpoint: 'https://example.test/push-endpoint',
         p256dh: 'p256dh-key',
@@ -252,7 +252,7 @@ test('deliverUserNotification skips push when local-day send already happened', 
       }
     },
     pushSubscription: {
-      findUnique: async () => ({
+      findFirst: async () => ({
         id: 11,
         endpoint: 'https://example.test/push-endpoint',
         p256dh: 'p256dh-key',
