@@ -108,8 +108,10 @@ test('deliverUserNotification creates one in-app notification and dedupes repeat
 
   assert.equal(first.inApp.created, 1);
   assert.equal(first.inApp.skipped, false);
+  assert.equal(first.inApp.deduped, false);
   assert.equal(second.inApp.created, 0);
   assert.equal(second.inApp.skipped, true);
+  assert.equal(second.inApp.deduped, true);
   assert.equal(createdRows.length, 1);
   assert.equal(createdRows[0].title, 'Test title');
   assert.equal(createdRows[0].body, 'Test body');
@@ -166,6 +168,7 @@ test('deliverUserNotification skips push when endpoint lookup fails', async () =
   assert.equal(result.push.sent, 0);
   assert.equal(result.push.failed, 0);
   assert.equal(result.push.skipped, true);
+  assert.equal(result.push.deduped, false);
   assert.match(result.push.message, /No push subscription found/);
 });
 
@@ -230,6 +233,7 @@ test('deliverUserNotification sends push and updates last sent date for successf
 
   assert.equal(result.push.sent, 1);
   assert.equal(result.push.failed, 0);
+  assert.equal(result.push.deduped, false);
   assert.equal(sendCalls.length, 1);
   assert.equal(updateCalls.length, 1);
   assert.equal(updateCalls[0].where.id, 42);
@@ -297,5 +301,6 @@ test('deliverUserNotification skips push when local-day send already happened', 
   assert.equal(result.push.sent, 0);
   assert.equal(result.push.failed, 0);
   assert.equal(result.push.skipped, true);
+  assert.equal(result.push.deduped, true);
   assert.match(result.push.message, /already received this reminder/);
 });
