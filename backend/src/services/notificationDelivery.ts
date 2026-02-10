@@ -36,6 +36,7 @@ type InAppDeliveryResult = {
     attempted: boolean;
     created: number;
     skipped: boolean;
+    deduped: boolean;
     message?: string;
 };
 
@@ -44,6 +45,7 @@ type PushDeliveryResult = {
     sent: number;
     failed: number;
     skipped: boolean;
+    deduped: boolean;
     message?: string;
 };
 
@@ -100,6 +102,7 @@ const createInAppNotifications = async (
             attempted: true,
             created: 0,
             skipped: true,
+            deduped: false,
             message: 'In-app payload is missing.'
         };
     }
@@ -146,6 +149,7 @@ const createInAppNotifications = async (
             attempted: true,
             created: 0,
             skipped: true,
+            deduped: true,
             message: 'In-app notifications were skipped because matching dedupe keys already exist.'
         };
     }
@@ -153,7 +157,8 @@ const createInAppNotifications = async (
     return {
         attempted: true,
         created,
-        skipped: created === 0
+        skipped: created === 0,
+        deduped: dedupeSkipCount > 0
     };
 };
 
@@ -204,6 +209,7 @@ const sendPushNotifications = async (
             sent: 0,
             failed: 0,
             skipped: true,
+            deduped: false,
             message: 'Push payload is missing.'
         };
     }
@@ -215,6 +221,7 @@ const sendPushNotifications = async (
             sent: 0,
             failed: 0,
             skipped: true,
+            deduped: false,
             message: pushConfig.error ?? 'Web push is not configured.'
         };
     }
@@ -226,6 +233,7 @@ const sendPushNotifications = async (
             sent: 0,
             failed: 0,
             skipped: true,
+            deduped: false,
             message: pushRequest.endpoint
                 ? 'No push subscription found for this browser endpoint.'
                 : 'No push subscriptions found for this user.'
@@ -246,6 +254,7 @@ const sendPushNotifications = async (
             sent: 0,
             failed: 0,
             skipped: true,
+            deduped: true,
             message: 'All push subscriptions already received this reminder for the local day.'
         };
     }
@@ -292,7 +301,8 @@ const sendPushNotifications = async (
         attempted: true,
         sent,
         failed,
-        skipped: sent === 0 && failed === 0
+        skipped: sent === 0 && failed === 0,
+        deduped: false
     };
 };
 
@@ -315,6 +325,7 @@ export const deliverUserNotification = async ({
               attempted: false,
               created: 0,
               skipped: true,
+              deduped: false,
               message: 'In-app channel not selected.'
           });
 
@@ -325,6 +336,7 @@ export const deliverUserNotification = async ({
               sent: 0,
               failed: 0,
               skipped: true,
+              deduped: false,
               message: 'Push channel not selected.'
           });
 
