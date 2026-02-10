@@ -1,5 +1,6 @@
 import express from 'express';
 import { InAppNotificationType } from '@prisma/client';
+import prisma from '../config/database';
 import {
     getFoodDataProviderByName,
     listFoodDataProviders,
@@ -14,6 +15,7 @@ import {
     parseNotificationDeliveryChannels,
     type NotificationDeliveryChannel
 } from '../../../shared/notificationDelivery';
+import { buildDevReminderInAppDedupeKey } from '../services/inAppNotifications';
 import { getSafeUtcTodayDateOnlyInTimeZone } from '../utils/date';
 import { deliverUserNotification, type DeliverUserNotificationResult } from '../services/notificationDelivery';
 
@@ -89,6 +91,54 @@ type AuthenticatedDevUser = {
     timezone?: string;
 };
 
+const DEV_NOTIFICATION_TYPES = {
+    TEST: 'test',
+    LOG_WEIGHT: 'log_weight',
+    LOG_FOOD: 'log_food'
+} as const;
+
+type DevNotificationType = (typeof DEV_NOTIFICATION_TYPES)[keyof typeof DEV_NOTIFICATION_TYPES];
+
+type DevNotificationClearRequestBody = {
+    type?: unknown;
+    endpoint?: unknown;
+    clear_push_subscription?: unknown;
+    clear_push_delivery?: unknown;
+    clear_in_app?: unknown;
+};
+
+const DEV_NOTIFICATION_TYPE_VALUES = new Set<string>(Object.values(DEV_NOTIFICATION_TYPES));
+
+const resolveSingleValue = (value: unknown): string | null => {
+    if (typeof value === 'string') {
+        return value;
+    }
+
+    if (Array.isArray(value)) {
+        const [first] = value;
+        return typeof first === 'string' ? first : null;
+    }
+
+    return null;
+};
+
+/**
+ * Parse a dev notification type from query/body input.
+ */
+const parseDevNotificationType = (value: unknown): DevNotificationType | null => {
+    const rawValue = resolveSingleValue(value);
+    if (!rawValue) {
+        return null;
+    }
+
+    const normalized = rawValue.trim().toLowerCase();
+    if (!DEV_NOTIFICATION_TYPE_VALUES.has(normalized)) {
+        return null;
+    }
+
+    return normalized as DevNotificationType;
+};
+
 /**
  * Read an endpoint from the request body so dev sends can target the current browser only.
  */
@@ -98,6 +148,11 @@ const resolvePushEndpoint = (body: unknown): string => {
     }
     const endpoint = (body as { endpoint?: unknown }).endpoint;
     return typeof endpoint === 'string' ? endpoint.trim() : '';
+};
+
+const resolvePushEndpointFromQuery = (query: express.Request['query']): string => {
+    const endpoint = resolveSingleValue(query.endpoint);
+    return endpoint ? endpoint.trim() : '';
 };
 
 /**
@@ -127,11 +182,14 @@ const buildDeliveryResponse = (
     const pushSelected = channels.includes(NOTIFICATION_DELIVERY_CHANNELS.PUSH);
     const inAppSelected = channels.includes(NOTIFICATION_DELIVERY_CHANNELS.IN_APP);
 
-    const pushSucceeded = !pushSelected || result.push.sent > 0;
-    const inAppSucceeded = !inAppSelected || result.inApp.created > 0;
+    const pushSucceeded = !pushSelected || result.push.sent > 0 || result.push.deduped;
+    const inAppSucceeded = !inAppSelected || result.inApp.created > 0 || result.inApp.deduped;
 
     const ok = pushSucceeded && inAppSucceeded;
-    const partial = !ok && ((pushSelected && result.push.sent > 0) || (inAppSelected && result.inApp.created > 0));
+    const partial =
+        !ok &&
+        ((pushSelected && (result.push.sent > 0 || result.push.deduped)) ||
+            (inAppSelected && (result.inApp.created > 0 || result.inApp.deduped)));
 
     return {
         ok,
@@ -144,6 +202,31 @@ const buildDeliveryResponse = (
 
 const getUserLocalDate = (user: AuthenticatedDevUser, now = new Date()): Date => {
     return getSafeUtcTodayDateOnlyInTimeZone(user.timezone || 'UTC', now);
+};
+
+const formatUtcDateOnly = (value: Date): string => value.toISOString().slice(0, 10);
+
+const isSameUtcDate = (left: Date | null | undefined, right: Date): boolean => {
+    if (!left) {
+        return false;
+    }
+
+    return left.getTime() === right.getTime();
+};
+
+const resolveInAppNotificationType = (notificationType: DevNotificationType): InAppNotificationType => {
+    switch (notificationType) {
+        case DEV_NOTIFICATION_TYPES.LOG_WEIGHT:
+            return InAppNotificationType.LOG_WEIGHT_REMINDER;
+        case DEV_NOTIFICATION_TYPES.LOG_FOOD:
+            return InAppNotificationType.LOG_FOOD_REMINDER;
+        default:
+            return InAppNotificationType.GENERIC;
+    }
+};
+
+const supportsReminderDedupe = (notificationType: DevNotificationType): boolean => {
+    return notificationType !== DEV_NOTIFICATION_TYPES.TEST;
 };
 
 router.get('/food/providers', (req, res) => {
@@ -220,6 +303,180 @@ router.get('/food/search', async (req, res) => {
     });
 });
 
+router.get('/notifications/status', requireAuthenticatedUser, async (req, res) => {
+    const user = req.user as AuthenticatedDevUser;
+    const notificationType = parseDevNotificationType(req.query.type);
+    if (!notificationType) {
+        return res.status(400).json({
+            message: 'Invalid notification type. Use test, log_weight, or log_food.'
+        });
+    }
+
+    const endpoint = resolvePushEndpointFromQuery(req.query);
+    const localDate = getUserLocalDate(user);
+    const localDateLabel = formatUtcDateOnly(localDate);
+    const inAppType = resolveInAppNotificationType(notificationType);
+    const usesReminderDedupe = supportsReminderDedupe(notificationType);
+    const inAppDedupeKey = usesReminderDedupe ? buildDevReminderInAppDedupeKey(inAppType, localDate) : null;
+    const pushScope = endpoint ? { user_id: user.id, endpoint } : { user_id: user.id };
+
+    const [totalSubscriptionCount, scopedSubscriptions, inAppRows] = await Promise.all([
+        prisma.pushSubscription.count({
+            where: {
+                user_id: user.id
+            }
+        }),
+        prisma.pushSubscription.findMany({
+            where: pushScope,
+            select: {
+                endpoint: true,
+                last_sent_local_date: true
+            }
+        }),
+        prisma.inAppNotification.findMany({
+            where: {
+                user_id: user.id,
+                type: inAppType,
+                local_date: localDate
+            },
+            select: {
+                dedupe_key: true,
+                read_at: true,
+                dismissed_at: true,
+                resolved_at: true
+            }
+        })
+    ]);
+
+    const deliveredSubscriptionCount = scopedSubscriptions.filter((subscription) =>
+        isSameUtcDate(subscription.last_sent_local_date, localDate)
+    ).length;
+    const matchingSubscriptionCount = scopedSubscriptions.length;
+    const latestLastSentLocalDate = scopedSubscriptions.reduce<Date | null>((latest, subscription) => {
+        if (!(subscription.last_sent_local_date instanceof Date)) {
+            return latest;
+        }
+        if (!latest || subscription.last_sent_local_date.getTime() > latest.getTime()) {
+            return subscription.last_sent_local_date;
+        }
+        return latest;
+    }, null);
+
+    const inAppTodayTotalCount = inAppRows.length;
+    const inAppTodayActiveCount = inAppRows.filter(
+        (row) => row.dismissed_at === null && row.resolved_at === null
+    ).length;
+    const inAppTodayReadCount = inAppRows.filter((row) => row.read_at instanceof Date).length;
+    const inAppTodayDismissedCount = inAppRows.filter((row) => row.dismissed_at instanceof Date).length;
+    const inAppTodayResolvedCount = inAppRows.filter((row) => row.resolved_at instanceof Date).length;
+    const inAppDedupedForLocalDay =
+        usesReminderDedupe && Boolean(inAppDedupeKey) && inAppRows.some((row) => row.dedupe_key === inAppDedupeKey);
+
+    res.json({
+        notification_type: notificationType,
+        local_date: localDateLabel,
+        push: {
+            endpoint: endpoint || null,
+            total_subscription_count: totalSubscriptionCount,
+            matching_subscription_count: matchingSubscriptionCount,
+            delivery_dedupe_applies: usesReminderDedupe,
+            delivered_subscription_count: deliveredSubscriptionCount,
+            delivered_for_local_day:
+                usesReminderDedupe && matchingSubscriptionCount > 0 && deliveredSubscriptionCount === matchingSubscriptionCount,
+            last_sent_local_date: latestLastSentLocalDate ? formatUtcDateOnly(latestLastSentLocalDate) : null
+        },
+        in_app: {
+            type: inAppType,
+            dedupe_key: inAppDedupeKey,
+            delivery_dedupe_applies: usesReminderDedupe,
+            deduped_for_local_day: inAppDedupedForLocalDay,
+            today_total_count: inAppTodayTotalCount,
+            today_active_count: inAppTodayActiveCount,
+            today_read_count: inAppTodayReadCount,
+            today_dismissed_count: inAppTodayDismissedCount,
+            today_resolved_count: inAppTodayResolvedCount
+        }
+    });
+});
+
+router.post('/notifications/clear', requireAuthenticatedUser, async (req, res) => {
+    const user = req.user as AuthenticatedDevUser;
+    const body = (req.body ?? {}) as DevNotificationClearRequestBody;
+    const notificationType = parseDevNotificationType(body.type);
+    if (!notificationType) {
+        return res.status(400).json({
+            message: 'Invalid notification type. Use test, log_weight, or log_food.'
+        });
+    }
+
+    const clearPushSubscription = body.clear_push_subscription === true;
+    const clearPushDelivery = body.clear_push_delivery === true;
+    const clearInApp = body.clear_in_app === true;
+    if (!clearPushSubscription && !clearPushDelivery && !clearInApp) {
+        return res.status(400).json({
+            message: 'Select at least one notification state to clear.'
+        });
+    }
+
+    const endpoint = resolvePushEndpoint(body);
+    const localDate = getUserLocalDate(user);
+    const localDateLabel = formatUtcDateOnly(localDate);
+    const inAppType = resolveInAppNotificationType(notificationType);
+    const usesReminderDedupe = supportsReminderDedupe(notificationType);
+    const inAppDedupeKey = usesReminderDedupe ? buildDevReminderInAppDedupeKey(inAppType, localDate) : null;
+    const pushScope = endpoint ? { user_id: user.id, endpoint } : { user_id: user.id };
+
+    let clearedPushSubscriptionCount = 0;
+    let clearedPushDeliveryCount = 0;
+    let clearedInAppCount = 0;
+
+    if (clearPushSubscription) {
+        const result = await prisma.pushSubscription.deleteMany({
+            where: pushScope
+        });
+        clearedPushSubscriptionCount = result.count;
+    }
+
+    if (clearPushDelivery) {
+        const result = await prisma.pushSubscription.updateMany({
+            where: pushScope,
+            data: {
+                last_sent_local_date: null
+            }
+        });
+        clearedPushDeliveryCount = result.count;
+    }
+
+    if (clearInApp) {
+        const result = inAppDedupeKey
+            ? await prisma.inAppNotification.deleteMany({
+                  where: {
+                      user_id: user.id,
+                      OR: [{ dedupe_key: inAppDedupeKey }, { type: inAppType, local_date: localDate }]
+                  }
+              })
+            : await prisma.inAppNotification.deleteMany({
+                  where: {
+                      user_id: user.id,
+                      type: inAppType,
+                      local_date: localDate
+                  }
+              });
+        clearedInAppCount = result.count;
+    }
+
+    res.json({
+        ok: true,
+        notification_type: notificationType,
+        local_date: localDateLabel,
+        cleared: {
+            push_subscription: clearedPushSubscriptionCount,
+            push_delivery: clearedPushDeliveryCount,
+            in_app: clearedInAppCount
+        }
+    });
+});
+
 router.post('/notifications/test', requireAuthenticatedUser, async (req, res) => {
     const user = req.user as AuthenticatedDevUser;
     const channels = resolveRequestedChannels(req.body);
@@ -275,17 +532,21 @@ router.post('/notifications/log-weight', requireAuthenticatedUser, async (req, r
     }
 
     const localDate = getUserLocalDate(user);
+    const dedupeKey = buildDevReminderInAppDedupeKey(InAppNotificationType.LOG_WEIGHT_REMINDER, localDate);
     const payload = buildReminderPayload({ missingWeight: true, missingFood: false });
     const result = await deliverUserNotification({
         userId: user.id,
         channels,
         push: {
             payload,
-            endpoint
+            endpoint,
+            skipIfLastSentLocalDate: localDate,
+            markSentLocalDate: localDate
         },
         inApp: {
             type: InAppNotificationType.LOG_WEIGHT_REMINDER,
-            localDate
+            localDate,
+            dedupeKey
         }
     });
 
@@ -305,17 +566,21 @@ router.post('/notifications/log-food', requireAuthenticatedUser, async (req, res
     }
 
     const localDate = getUserLocalDate(user);
+    const dedupeKey = buildDevReminderInAppDedupeKey(InAppNotificationType.LOG_FOOD_REMINDER, localDate);
     const payload = buildReminderPayload({ missingWeight: false, missingFood: true });
     const result = await deliverUserNotification({
         userId: user.id,
         channels,
         push: {
             payload,
-            endpoint
+            endpoint,
+            skipIfLastSentLocalDate: localDate,
+            markSentLocalDate: localDate
         },
         inApp: {
             type: InAppNotificationType.LOG_FOOD_REMINDER,
-            localDate
+            localDate,
+            dedupeKey
         }
     });
 

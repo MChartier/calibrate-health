@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import {
     Alert,
     Box,
@@ -13,6 +14,7 @@ import {
     Grid,
     IconButton,
     InputAdornment,
+    MenuItem,
     Stack,
     TextField,
     Typography
@@ -20,6 +22,7 @@ import {
 import QrCodeScannerIcon from '@mui/icons-material/QrCodeScannerRounded';
 import axios from 'axios';
 import BarcodeScannerDialog from '../components/BarcodeScannerDialog';
+import { inAppNotificationsQueryKey } from '../queries/inAppNotifications';
 import { clearAppBadge, isBadgingSupported, setAppBadge } from '../utils/badging';
 import { resolveServiceWorkerRegistration, urlBase64ToUint8Array } from '../utils/pushNotifications';
 import { NOTIFICATION_DELIVERY_CHANNELS, type NotificationDeliveryChannel } from '../../../shared/notificationDelivery';
@@ -68,6 +71,85 @@ type ResetTestUserOnboardingResponse = {
     user: { email?: string } | null;
 };
 
+const DEV_NOTIFICATION_TYPES = {
+    TEST: 'test',
+    LOG_WEIGHT: 'log_weight',
+    LOG_FOOD: 'log_food'
+} as const;
+
+type DevNotificationType = (typeof DEV_NOTIFICATION_TYPES)[keyof typeof DEV_NOTIFICATION_TYPES];
+
+type DevNotificationStatusResponse = {
+    notification_type: DevNotificationType;
+    local_date: string;
+    push: {
+        endpoint: string | null;
+        total_subscription_count: number;
+        matching_subscription_count: number;
+        delivery_dedupe_applies: boolean;
+        delivered_subscription_count: number;
+        delivered_for_local_day: boolean;
+        last_sent_local_date: string | null;
+    };
+    in_app: {
+        type: string;
+        dedupe_key: string | null;
+        delivery_dedupe_applies: boolean;
+        deduped_for_local_day: boolean;
+        today_total_count: number;
+        today_active_count: number;
+        today_read_count: number;
+        today_dismissed_count: number;
+        today_resolved_count: number;
+    };
+};
+
+type DevNotificationClearResponse = {
+    ok: boolean;
+    notification_type: DevNotificationType;
+    local_date: string;
+    cleared: {
+        push_subscription: number;
+        push_delivery: number;
+        in_app: number;
+    };
+};
+
+type DevNotificationClearAction = 'push_subscription' | 'push_delivery' | 'in_app';
+
+const DEV_NOTIFICATION_TYPE_OPTIONS: { value: DevNotificationType; label: string }[] = [
+    { value: DEV_NOTIFICATION_TYPES.TEST, label: 'Test notification' },
+    { value: DEV_NOTIFICATION_TYPES.LOG_WEIGHT, label: 'Log weight reminder' },
+    { value: DEV_NOTIFICATION_TYPES.LOG_FOOD, label: 'Log food reminder' }
+];
+
+const DEV_NOTIFICATION_SEND_CONFIG: Record<
+    DevNotificationType,
+    { path: string; successMessage: string; errorMessage: string }
+> = {
+    [DEV_NOTIFICATION_TYPES.TEST]: {
+        path: '/api/dev/notifications/test',
+        successMessage: 'Test notification sent.',
+        errorMessage: 'Failed to send test notification.'
+    },
+    [DEV_NOTIFICATION_TYPES.LOG_WEIGHT]: {
+        path: '/api/dev/notifications/log-weight',
+        successMessage: 'Log weight notification sent.',
+        errorMessage: 'Failed to send log weight notification.'
+    },
+    [DEV_NOTIFICATION_TYPES.LOG_FOOD]: {
+        path: '/api/dev/notifications/log-food',
+        successMessage: 'Log food notification sent.',
+        errorMessage: 'Failed to send log food notification.'
+    }
+};
+
+const DEV_NOTIFICATION_SEND_BUTTON_LABELS: Record<DevNotificationType, string> = {
+    [DEV_NOTIFICATION_TYPES.TEST]: 'Send test notification',
+    [DEV_NOTIFICATION_TYPES.LOG_WEIGHT]: 'Send log weight notification',
+    [DEV_NOTIFICATION_TYPES.LOG_FOOD]: 'Send log food notification'
+};
+
 type DevNotificationDeliveryResponse = {
     ok?: boolean;
     partial?: boolean;
@@ -76,11 +158,13 @@ type DevNotificationDeliveryResponse = {
         sent?: number;
         failed?: number;
         skipped?: boolean;
+        deduped?: boolean;
         message?: string;
     };
     in_app?: {
         created?: number;
         skipped?: boolean;
+        deduped?: boolean;
         message?: string;
     };
 };
@@ -89,6 +173,7 @@ type DevNotificationDeliveryResponse = {
  * Dev-only dashboard to compare food search results side-by-side across providers.
  */
 const DevDashboard: React.FC = () => {
+    const queryClient = useQueryClient();
     const [providers, setProviders] = useState<FoodProviderInfo[]>([]);
     const [selectedProviders, setSelectedProviders] = useState<FoodDataSource[]>([]);
     const [query, setQuery] = useState('');
@@ -108,6 +193,13 @@ const DevDashboard: React.FC = () => {
     const [isSendingPush, setIsSendingPush] = useState(false);
     const [hasPushSubscription, setHasPushSubscription] = useState(false);
     const [activePushEndpoint, setActivePushEndpoint] = useState<string | null>(null);
+    const [selectedNotificationType, setSelectedNotificationType] = useState<DevNotificationType>(
+        DEV_NOTIFICATION_TYPES.LOG_WEIGHT
+    );
+    const [notificationStatus, setNotificationStatus] = useState<DevNotificationStatusResponse | null>(null);
+    const [isLoadingNotificationStatus, setIsLoadingNotificationStatus] = useState(false);
+    const [notificationStatusError, setNotificationStatusError] = useState<string | null>(null);
+    const [isClearingNotificationState, setIsClearingNotificationState] = useState<DevNotificationClearAction | null>(null);
     const [deliverViaPush, setDeliverViaPush] = useState(true);
     const [deliverViaInApp, setDeliverViaInApp] = useState(true);
     const [badgeStatus, setBadgeStatus] = useState<string | null>(null);
@@ -187,6 +279,41 @@ const DevDashboard: React.FC = () => {
     useEffect(() => {
         void loadPushSubscriptionStatus();
     }, [loadPushSubscriptionStatus]);
+
+    /**
+     * Fetch channel state for the selected dev notification type so reset actions are predictable.
+     */
+    const loadNotificationStatus = useCallback(async () => {
+        setIsLoadingNotificationStatus(true);
+        setNotificationStatusError(null);
+
+        try {
+            const response = await axios.get<DevNotificationStatusResponse>('/api/dev/notifications/status', {
+                params: {
+                    type: selectedNotificationType,
+                    endpoint: activePushEndpoint ?? undefined
+                }
+            });
+            setNotificationStatus(response.data);
+        } catch (err) {
+            console.error(err);
+            const serverMessage = axios.isAxiosError(err)
+                ? (err.response?.data as { message?: unknown } | undefined)?.message
+                : null;
+            setNotificationStatusError(
+                typeof serverMessage === 'string' && serverMessage.trim().length > 0
+                    ? serverMessage
+                    : 'Failed to load notification state.'
+            );
+            setNotificationStatus(null);
+        } finally {
+            setIsLoadingNotificationStatus(false);
+        }
+    }, [activePushEndpoint, selectedNotificationType]);
+
+    useEffect(() => {
+        void loadNotificationStatus();
+    }, [loadNotificationStatus]);
 
     /**
      * Toggle providers while keeping the selection array stable for requests.
@@ -318,8 +445,9 @@ const DevDashboard: React.FC = () => {
         } finally {
             setIsPreparingPush(false);
             void loadPushSubscriptionStatus();
+            void loadNotificationStatus();
         }
-    }, [loadPushSubscriptionStatus]);
+    }, [loadNotificationStatus, loadPushSubscriptionStatus]);
 
     /**
      * Build a concise summary string from channel-level backend delivery results.
@@ -331,12 +459,20 @@ const DevDashboard: React.FC = () => {
             if (channels.includes(NOTIFICATION_DELIVERY_CHANNELS.PUSH)) {
                 const sent = typeof response.push?.sent === 'number' ? response.push.sent : 0;
                 const failed = typeof response.push?.failed === 'number' ? response.push.failed : 0;
-                statusParts.push(`Push sent ${sent}${failed > 0 ? ` (failed ${failed})` : ''}.`);
+                if (response.push?.deduped) {
+                    statusParts.push('Push deduped for this local day.');
+                } else {
+                    statusParts.push(`Push sent ${sent}${failed > 0 ? ` (failed ${failed})` : ''}.`);
+                }
             }
 
             if (channels.includes(NOTIFICATION_DELIVERY_CHANNELS.IN_APP)) {
                 const created = typeof response.in_app?.created === 'number' ? response.in_app.created : 0;
-                statusParts.push(`In-app created ${created}.`);
+                if (response.in_app?.deduped) {
+                    statusParts.push('In-app deduped for this local day.');
+                } else {
+                    statusParts.push(`In-app created ${created}.`);
+                }
             }
 
             return statusParts.join(' ');
@@ -382,6 +518,10 @@ const DevDashboard: React.FC = () => {
 
             const statusPrefix = responseData.partial ? `Partial delivery. ${successMessage}` : successMessage;
             setPushStatus(formatDeliveryStatus(statusPrefix, responseData, selectedDeliveryChannels));
+
+            if (selectedDeliveryChannels.includes(NOTIFICATION_DELIVERY_CHANNELS.IN_APP)) {
+                await queryClient.invalidateQueries({ queryKey: inAppNotificationsQueryKey() });
+            }
         } catch (err) {
             console.error(err);
             const serverMessage = axios.isAxiosError(err)
@@ -392,32 +532,69 @@ const DevDashboard: React.FC = () => {
             );
         } finally {
             setIsSendingPush(false);
+            void loadNotificationStatus();
         }
-    }, [activePushEndpoint, formatDeliveryStatus, selectedDeliveryChannels]);
+    }, [activePushEndpoint, formatDeliveryStatus, loadNotificationStatus, queryClient, selectedDeliveryChannels]);
 
-    const handleSendTestNotification = useCallback(() => {
-        return sendDevNotification(
-            '/api/dev/notifications/test',
-            'Test notification sent.',
-            'Failed to send test notification.'
-        );
-    }, [sendDevNotification]);
+    const handleSendSelectedNotification = useCallback(() => {
+        const sendConfig = DEV_NOTIFICATION_SEND_CONFIG[selectedNotificationType];
+        return sendDevNotification(sendConfig.path, sendConfig.successMessage, sendConfig.errorMessage);
+    }, [selectedNotificationType, sendDevNotification]);
 
-    const handleSendLogWeightNotification = useCallback(() => {
-        return sendDevNotification(
-            '/api/dev/notifications/log-weight',
-            'Log weight notification sent.',
-            'Failed to send log weight notification.'
-        );
-    }, [sendDevNotification]);
+    /**
+     * Clear scoped notification state so reminder flows can be re-tested without reseeding data.
+     */
+    const handleClearNotificationState = useCallback(async (action: DevNotificationClearAction) => {
+        setPushError(null);
+        setPushStatus(null);
+        setIsClearingNotificationState(action);
 
-    const handleSendLogFoodNotification = useCallback(() => {
-        return sendDevNotification(
-            '/api/dev/notifications/log-food',
-            'Log food notification sent.',
-            'Failed to send log food notification.'
-        );
-    }, [sendDevNotification]);
+        try {
+            const response = await axios.post<DevNotificationClearResponse>('/api/dev/notifications/clear', {
+                type: selectedNotificationType,
+                endpoint: activePushEndpoint ?? undefined,
+                clear_push_subscription: action === 'push_subscription',
+                clear_push_delivery: action === 'push_delivery',
+                clear_in_app: action === 'in_app'
+            });
+
+            const cleared = response.data?.cleared;
+            if (!cleared) {
+                setPushStatus('Notification state cleared.');
+                return;
+            }
+
+            const statusParts: string[] = [];
+            if (action === 'push_subscription') {
+                statusParts.push(`Removed ${cleared.push_subscription} push subscription(s).`);
+            }
+            if (action === 'push_delivery') {
+                statusParts.push(`Cleared push delivery state for ${cleared.push_delivery} subscription(s).`);
+            }
+            if (action === 'in_app') {
+                statusParts.push(`Removed ${cleared.in_app} in-app notification row(s).`);
+            }
+            setPushStatus(statusParts.join(' '));
+
+            if (action === 'in_app') {
+                await queryClient.invalidateQueries({ queryKey: inAppNotificationsQueryKey() });
+            }
+        } catch (err) {
+            console.error(err);
+            const serverMessage = axios.isAxiosError(err)
+                ? (err.response?.data as { message?: unknown } | undefined)?.message
+                : null;
+            setPushError(
+                typeof serverMessage === 'string' && serverMessage.trim().length > 0
+                    ? serverMessage
+                    : 'Failed to clear notification state.'
+            );
+        } finally {
+            setIsClearingNotificationState(null);
+            void loadPushSubscriptionStatus();
+            void loadNotificationStatus();
+        }
+    }, [activePushEndpoint, loadNotificationStatus, loadPushSubscriptionStatus, queryClient, selectedNotificationType]);
 
     const handleSetBadge = useCallback(async (count: number) => {
         setBadgeError(null);
@@ -506,6 +683,10 @@ const DevDashboard: React.FC = () => {
     const hasSelectedDeliveryChannels = selectedDeliveryChannels.length > 0;
     const canSendDevNotifications =
         hasSelectedDeliveryChannels && !isSendingPush && (!pushChannelSelected || Boolean(activePushEndpoint));
+    const canClearNotificationState = !isLoadingNotificationStatus && isClearingNotificationState === null;
+    const selectedNotificationSendLabel = DEV_NOTIFICATION_SEND_BUTTON_LABELS[selectedNotificationType];
+    const pushStatusRow = notificationStatus?.push;
+    const inAppStatusRow = notificationStatus?.in_app;
     const clearPushMessages = () => {
         setPushError(null);
         setPushStatus(null);
@@ -518,31 +699,38 @@ const DevDashboard: React.FC = () => {
             </Button>
             <Button
                 variant="outlined"
-                onClick={() => void handleSendTestNotification()}
+                onClick={() => void handleSendSelectedNotification()}
                 disabled={!canSendDevNotifications}
             >
-                {isSendingPush ? 'Sending...' : 'Send test notification'}
+                {isSendingPush ? 'Sending...' : selectedNotificationSendLabel}
             </Button>
             <Button variant="text" onClick={clearPushMessages} disabled={isPreparingPush || isSendingPush}>
                 Clear message
             </Button>
         </Stack>
     );
-    const pushReminderActions = (
+    const notificationResetActions = (
         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
             <Button
                 variant="outlined"
-                onClick={() => void handleSendLogWeightNotification()}
-                disabled={!canSendDevNotifications}
+                onClick={() => void handleClearNotificationState('push_delivery')}
+                disabled={!canClearNotificationState}
             >
-                {isSendingPush ? 'Sending...' : 'Send log weight notification'}
+                {isClearingNotificationState === 'push_delivery' ? 'Clearing...' : 'Clear push delivery state'}
             </Button>
             <Button
                 variant="outlined"
-                onClick={() => void handleSendLogFoodNotification()}
-                disabled={!canSendDevNotifications}
+                onClick={() => void handleClearNotificationState('push_subscription')}
+                disabled={!canClearNotificationState || !activePushEndpoint}
             >
-                {isSendingPush ? 'Sending...' : 'Send log food notification'}
+                {isClearingNotificationState === 'push_subscription' ? 'Clearing...' : 'Remove push subscription'}
+            </Button>
+            <Button
+                variant="outlined"
+                onClick={() => void handleClearNotificationState('in_app')}
+                disabled={!canClearNotificationState}
+            >
+                {isClearingNotificationState === 'in_app' ? 'Clearing...' : 'Clear in-app entries'}
             </Button>
         </Stack>
     );
@@ -671,6 +859,61 @@ const DevDashboard: React.FC = () => {
                             </Typography>
                         </Stack>
 
+                        <TextField
+                            select
+                            label="Notification type"
+                            value={selectedNotificationType}
+                            onChange={(event) => setSelectedNotificationType(event.target.value as DevNotificationType)}
+                            sx={{ maxWidth: { xs: '100%', sm: 320 } }}
+                        >
+                            {DEV_NOTIFICATION_TYPE_OPTIONS.map((option) => (
+                                <MenuItem key={option.value} value={option.value}>
+                                    {option.label}
+                                </MenuItem>
+                            ))}
+                        </TextField>
+
+                        {isLoadingNotificationStatus && (
+                            <Typography variant="body2" color="text.secondary">
+                                Loading notification state...
+                            </Typography>
+                        )}
+
+                        {notificationStatusError && <Alert severity="error">{notificationStatusError}</Alert>}
+
+                        {notificationStatus && (
+                            <Stack spacing={0.5}>
+                                <Typography variant="body2" color="text.secondary">
+                                    Local day: {notificationStatus.local_date}
+                                </Typography>
+                                <Typography variant="body2" color="text.secondary">
+                                    Push subscriptions in scope: {pushStatusRow?.matching_subscription_count ?? 0} (total{' '}
+                                    {pushStatusRow?.total_subscription_count ?? 0})
+                                </Typography>
+                                <Typography variant="body2" color="text.secondary">
+                                    Push last sent local date: {pushStatusRow?.last_sent_local_date || 'none'}
+                                </Typography>
+                                <Typography variant="body2" color="text.secondary">
+                                    {pushStatusRow?.delivery_dedupe_applies
+                                        ? `Push delivered for local day: ${pushStatusRow?.delivered_for_local_day ? 'yes' : 'no'}`
+                                        : 'Push delivery dedupe is not used for this notification type.'}
+                                </Typography>
+                                <Typography variant="body2" color="text.secondary">
+                                    In-app rows today: {inAppStatusRow?.today_total_count ?? 0} (active{' '}
+                                    {inAppStatusRow?.today_active_count ?? 0}, read {inAppStatusRow?.today_read_count ?? 0},
+                                    dismissed {inAppStatusRow?.today_dismissed_count ?? 0}, resolved{' '}
+                                    {inAppStatusRow?.today_resolved_count ?? 0})
+                                </Typography>
+                                <Typography variant="body2" color="text.secondary">
+                                    {inAppStatusRow?.delivery_dedupe_applies
+                                        ? `In-app dedupe key ${inAppStatusRow?.dedupe_key || 'n/a'} is ${
+                                              inAppStatusRow?.deduped_for_local_day ? 'already used today' : 'not used today'
+                                          }.`
+                                        : 'In-app delivery dedupe is not used for this notification type.'}
+                                </Typography>
+                            </Stack>
+                        )}
+
                         <FormGroup row>
                             <FormControlLabel
                                 control={
@@ -707,7 +950,16 @@ const DevDashboard: React.FC = () => {
 
                         <Stack spacing={2}>
                             {pushPrimaryActions}
-                            {pushReminderActions}
+                            {notificationResetActions}
+                            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+                                <Button
+                                    variant="text"
+                                    onClick={() => void loadNotificationStatus()}
+                                    disabled={isLoadingNotificationStatus || isClearingNotificationState !== null}
+                                >
+                                    Refresh notification state
+                                </Button>
+                            </Stack>
                         </Stack>
                     </Stack>
                 </CardContent>

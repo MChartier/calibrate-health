@@ -7,6 +7,7 @@ const REMINDER_TYPES: readonly InAppNotificationType[] = [
     InAppNotificationType.LOG_WEIGHT_REMINDER,
     InAppNotificationType.LOG_FOOD_REMINDER
 ] as const;
+const DEV_REMINDER_DEDUPE_KEY_PREFIX = 'dev:reminder:';
 
 const ACTION_URL_BY_TYPE: Record<InAppNotificationType, string> = {
     [InAppNotificationType.LOG_WEIGHT_REMINDER]:
@@ -109,6 +110,18 @@ const formatUtcDateOnly = (value: Date): string => value.toISOString().slice(0, 
  */
 export const buildReminderInAppDedupeKey = (type: InAppNotificationType, localDate: Date): string => {
     return `reminder:${type}:${formatUtcDateOnly(localDate)}`;
+};
+
+/**
+ * Build a dev-only reminder dedupe key so dashboard-triggered sends can be tested independently
+ * from scheduler-generated reminder rows.
+ */
+export const buildDevReminderInAppDedupeKey = (type: InAppNotificationType, localDate: Date): string => {
+    return `dev:${buildReminderInAppDedupeKey(type, localDate)}`;
+};
+
+const isDevReminderDedupeKey = (dedupeKey: string | null | undefined): boolean => {
+    return typeof dedupeKey === 'string' && dedupeKey.startsWith(DEV_REMINDER_DEDUPE_KEY_PREFIX);
 };
 
 const resolveSerializedActionUrl = (row: NotificationRow): string => {
@@ -227,7 +240,8 @@ export const resolveInactiveReminderNotificationsForUser = async ({
         select: {
             id: true,
             type: true,
-            local_date: true
+            local_date: true,
+            dedupe_key: true
         }
     });
 
@@ -271,6 +285,10 @@ export const resolveInactiveReminderNotificationsForUser = async ({
         .filter((notification) => {
             if (notification.local_date.getTime() < todayLocalDate.getTime()) {
                 return true;
+            }
+
+            if (isDevReminderDedupeKey(notification.dedupe_key)) {
+                return false;
             }
 
             if (
