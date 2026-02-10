@@ -35,13 +35,15 @@ if [ -z "$git_common_dir" ]; then
 fi
 
 repo_dotenv_path="${workspace_root}/.env"
+devcontainer_dotenv_path="${workspace_root}/.devcontainer/.env"
 
-# Best-effort parse of a single `KEY=value` from a repo-local `.env` file (without executing it).
-read_repo_dotenv_value() {
-  local key line value
-  key="$1"
+# Best-effort parse of a single `KEY=value` from a dotenv file (without executing it).
+read_dotenv_value_from_file() {
+  local dotenv_path key line value
+  dotenv_path="$1"
+  key="$2"
 
-  if [ ! -f "$repo_dotenv_path" ]; then
+  if [ ! -f "$dotenv_path" ]; then
     printf ''
     return 0
   fi
@@ -72,9 +74,57 @@ read_repo_dotenv_value() {
 
     printf '%s' "$value"
     return 0
-  done < "$repo_dotenv_path"
+  done < "$dotenv_path"
 
   printf ''
+}
+
+# Best-effort parse of a single `KEY=value` from the repo-local `.env` file.
+read_repo_dotenv_value() {
+  local key
+  key="$1"
+  read_dotenv_value_from_file "$repo_dotenv_path" "$key"
+}
+
+# Generate VAPID keys in a Node-compatible format when local push env vars are unset.
+generate_web_push_vapid_key_lines() {
+  if ! command -v node >/dev/null 2>&1; then
+    return 1
+  fi
+
+  node <<'NODE'
+const crypto = require('node:crypto');
+
+function fromBase64Url(value) {
+  const normalized = value.replace(/-/g, '+').replace(/_/g, '/');
+  const padding = normalized.length % 4 === 0 ? '' : '='.repeat(4 - (normalized.length % 4));
+  return Buffer.from(normalized + padding, 'base64');
+}
+
+function toBase64Url(value) {
+  return value.toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
+}
+
+const { publicKey, privateKey } = crypto.generateKeyPairSync('ec', { namedCurve: 'prime256v1' });
+const publicJwk = publicKey.export({ format: 'jwk' });
+const privateJwk = privateKey.export({ format: 'jwk' });
+
+if (!publicJwk.x || !publicJwk.y || !privateJwk.d) {
+  throw new Error('Failed to export VAPID JWK components.');
+}
+
+const x = fromBase64Url(publicJwk.x);
+const y = fromBase64Url(publicJwk.y);
+const d = fromBase64Url(privateJwk.d);
+
+if (x.length !== 32 || y.length !== 32 || d.length !== 32) {
+  throw new Error('Unexpected VAPID key length.');
+}
+
+const uncompressedPublicKey = Buffer.concat([Buffer.from([0x04]), x, y]);
+process.stdout.write(`WEB_PUSH_PUBLIC_KEY=${toBase64Url(uncompressedPublicKey)}\n`);
+process.stdout.write(`WEB_PUSH_PRIVATE_KEY=${toBase64Url(d)}\n`);
+NODE
 }
 
 if [ -z "$project_slug" ]; then
@@ -181,6 +231,57 @@ fatsecret_client_secret="${FATSECRET_CLIENT_SECRET:-${repo_fatsecret_client_secr
 repo_usda_api_key="$(read_repo_dotenv_value "USDA_API_KEY")"
 usda_api_key="${USDA_API_KEY:-${repo_usda_api_key:-}}"
 
+existing_web_push_public_key="$(read_dotenv_value_from_file "$devcontainer_dotenv_path" "WEB_PUSH_PUBLIC_KEY")"
+existing_web_push_private_key="$(read_dotenv_value_from_file "$devcontainer_dotenv_path" "WEB_PUSH_PRIVATE_KEY")"
+existing_web_push_subject="$(read_dotenv_value_from_file "$devcontainer_dotenv_path" "WEB_PUSH_SUBJECT")"
+
+repo_web_push_public_key="$(read_repo_dotenv_value "WEB_PUSH_PUBLIC_KEY")"
+web_push_public_key="${WEB_PUSH_PUBLIC_KEY:-${repo_web_push_public_key:-${existing_web_push_public_key:-}}}"
+
+repo_web_push_private_key="$(read_repo_dotenv_value "WEB_PUSH_PRIVATE_KEY")"
+web_push_private_key="${WEB_PUSH_PRIVATE_KEY:-${repo_web_push_private_key:-${existing_web_push_private_key:-}}}"
+
+repo_web_push_subject="$(read_repo_dotenv_value "WEB_PUSH_SUBJECT")"
+web_push_subject="${WEB_PUSH_SUBJECT:-${repo_web_push_subject:-${existing_web_push_subject:-}}}"
+
+if [ -z "$web_push_public_key" ] || [ -z "$web_push_private_key" ]; then
+  generated_web_push_lines="$(generate_web_push_vapid_key_lines || true)"
+  if [ -n "$generated_web_push_lines" ]; then
+    generated_web_push_public_key=""
+    generated_web_push_private_key=""
+    while IFS='=' read -r key value; do
+      case "$key" in
+        WEB_PUSH_PUBLIC_KEY)
+          generated_web_push_public_key="$value"
+          ;;
+        WEB_PUSH_PRIVATE_KEY)
+          generated_web_push_private_key="$value"
+          ;;
+      esac
+    done <<EOF
+$generated_web_push_lines
+EOF
+
+    if [ -n "$generated_web_push_public_key" ] && [ -n "$generated_web_push_private_key" ]; then
+      if [ -z "$web_push_public_key" ]; then
+        web_push_public_key="$generated_web_push_public_key"
+      fi
+      if [ -z "$web_push_private_key" ]; then
+        web_push_private_key="$generated_web_push_private_key"
+      fi
+      echo "Generated local WEB_PUSH VAPID keys for devcontainer startup." >&2
+    else
+      echo "Unable to parse generated WEB_PUSH VAPID keys; push notifications remain disabled." >&2
+    fi
+  else
+    echo "Unable to auto-generate WEB_PUSH VAPID keys; push notifications remain disabled." >&2
+  fi
+fi
+
+if [ -z "$web_push_subject" ]; then
+  web_push_subject="mailto:dev@calibrate.local"
+fi
+
 repo_calibrate_gh_pat="$(read_repo_dotenv_value "CALIBRATE_GH_PAT")"
 repo_gh_auth_token="$(read_repo_dotenv_value "GH_AUTH_TOKEN")"
 repo_github_token="$(read_repo_dotenv_value "GITHUB_TOKEN")"
@@ -209,6 +310,9 @@ VITE_WORKTREE_IS_MAIN=${is_main_worktree}
 FATSECRET_CLIENT_ID=${fatsecret_client_id}
 FATSECRET_CLIENT_SECRET=${fatsecret_client_secret}
 USDA_API_KEY=${usda_api_key}
+WEB_PUSH_PUBLIC_KEY=${web_push_public_key}
+WEB_PUSH_PRIVATE_KEY=${web_push_private_key}
+WEB_PUSH_SUBJECT=${web_push_subject}
 CODEX_HOST_HOME=${codex_host_home}
 GH_AUTH_TOKEN=${github_token}
 GITHUB_TOKEN=${github_token}

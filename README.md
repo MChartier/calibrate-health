@@ -218,8 +218,7 @@ If you see Prisma errors like "The table `public.User` does not exist", you have
 
 ### Common scripts
 
-- `npm run dev`: runs backend + frontend together (`backend/` + `frontend/`).
-- `npm run dev:pwa`: runs backend + frontend with `VITE_ENABLE_SW_DEV=1` so local dev registers the service worker for PWA/push validation.
+- `npm run dev`: runs backend + frontend together (`backend/` + `frontend/`) with `VITE_ENABLE_SW_DEV=1` for local PWA/push validation.
 - `npm run dev:test`: same as `npm run dev`, but auto-logs in the seeded dev user.
 - `npm run dev:reset-test-user-onboarding`: reset the dev test user to pre-onboarding.
 - `npm run dev:backend`: runs only the backend (`http://localhost:3000`).
@@ -253,10 +252,16 @@ docker compose up --build
 The frontend is configured as a Progressive Web App (PWA), so it can be installed on desktop/mobile and added to a home
 screen.
 
-- For local push/PWA flow validation in dev mode, run `npm run dev:pwa` (opt-in). Standard `npm run dev` keeps service workers unregistered to avoid stale-cache HMR issues.
+- For local push/PWA flow validation in dev mode, run `npm run dev` (service worker enabled by default in local dev scripts).
 - Test locally: `npm --prefix frontend run build && npm --prefix frontend run preview` then open
   `http://localhost:4173` and use the browser install UI.
 - iOS: open the app in Safari and use Share -> Add to Home Screen.
+
+Push notes:
+
+- Browser push registration and delivery require backend VAPID env vars: `WEB_PUSH_PUBLIC_KEY`, `WEB_PUSH_PRIVATE_KEY`, and `WEB_PUSH_SUBJECT`.
+- In the devcontainer workflow, `.devcontainer/init-devcontainer-env.sh` auto-generates missing VAPID keys and writes them into `.devcontainer/.env` during container initialization.
+- For local backend runs outside the devcontainer (or for plain `docker compose`), set `WEB_PUSH_*` values explicitly (see `.env.example` and `backend/.env.example`).
 
 ## Production / staging (single origin)
 

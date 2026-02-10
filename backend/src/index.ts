@@ -20,6 +20,7 @@ import goalRoutes from './routes/goals';
 import importRoutes from './routes/imports';
 import metricRoutes from './routes/metrics';
 import myFoodsRoutes from './routes/myFoods';
+import notificationRoutes from './routes/notifications';
 import userRoutes from './routes/user';
 import { autoLoginTestUser } from './utils/devAuth';
 import { DEFAULT_SESSION_TTL_MS, PostgresSessionStore } from './utils/postgresSessionStore';
@@ -321,6 +322,7 @@ const bootstrap = async (): Promise<void> => {
   apiRouter.use('/food-days', foodDayRoutes);
   apiRouter.use('/my-foods', myFoodsRoutes);
   apiRouter.use('/imports', importRoutes);
+  apiRouter.use('/notifications', notificationRoutes);
   apiRouter.use('/user', userRoutes);
 
   // Keep debug/prototype routes (food provider comparisons, etc.) out of production deployments.

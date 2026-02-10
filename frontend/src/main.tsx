@@ -58,6 +58,8 @@ function registerServiceWorker() {
  */
 async function unregisterServiceWorkersInDev() {
   if (!import.meta.env.DEV) return
+  const enableDevServiceWorker = isServiceWorkerDevModeEnabled()
+  if (enableDevServiceWorker) return
   if (!('serviceWorker' in navigator)) return
 
   try {
