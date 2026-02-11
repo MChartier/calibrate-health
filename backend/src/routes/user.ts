@@ -180,17 +180,31 @@ router.patch('/password', async (req, res) => {
 
 router.patch('/preferences', async (req, res) => {
   const user = req.user as any;
-  const { weight_unit, height_unit, language } = req.body as {
+  const { weight_unit, height_unit, language, reminder_log_weight_enabled, reminder_log_food_enabled } = req.body as {
     weight_unit?: unknown;
     height_unit?: unknown;
     language?: unknown;
+    reminder_log_weight_enabled?: unknown;
+    reminder_log_food_enabled?: unknown;
   };
 
-  if (weight_unit === undefined && height_unit === undefined && language === undefined) {
+  if (
+    weight_unit === undefined &&
+    height_unit === undefined &&
+    language === undefined &&
+    reminder_log_weight_enabled === undefined &&
+    reminder_log_food_enabled === undefined
+  ) {
     return res.status(400).json({ message: 'No fields to update' });
   }
 
-  const updateData: Partial<{ weight_unit: WeightUnit; height_unit: HeightUnit; language: SupportedLanguage }> = {};
+  const updateData: Partial<{
+    weight_unit: WeightUnit;
+    height_unit: HeightUnit;
+    language: SupportedLanguage;
+    reminder_log_weight_enabled: boolean;
+    reminder_log_food_enabled: boolean;
+  }> = {};
 
   if (weight_unit !== undefined) {
     if (!isWeightUnit(weight_unit)) {
@@ -211,6 +225,20 @@ router.patch('/preferences', async (req, res) => {
       return res.status(400).json({ message: 'Invalid language' });
     }
     updateData.language = language;
+  }
+
+  if (reminder_log_weight_enabled !== undefined) {
+    if (typeof reminder_log_weight_enabled !== 'boolean') {
+      return res.status(400).json({ message: 'Invalid reminder_log_weight_enabled' });
+    }
+    updateData.reminder_log_weight_enabled = reminder_log_weight_enabled;
+  }
+
+  if (reminder_log_food_enabled !== undefined) {
+    if (typeof reminder_log_food_enabled !== 'boolean') {
+      return res.status(400).json({ message: 'Invalid reminder_log_food_enabled' });
+    }
+    updateData.reminder_log_food_enabled = reminder_log_food_enabled;
   }
 
   try {

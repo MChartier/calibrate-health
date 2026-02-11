@@ -64,6 +64,10 @@ model User {
   timezone      String     @default("UTC")
   /// Preferred UI language (short code like "en", "es", "fr", "ru").
   language      String     @default("en")
+  /// Account-level preference for weight reminder notifications across devices.
+  reminder_log_weight_enabled Boolean @default(true)
+  /// Account-level preference for food reminder notifications across devices.
+  reminder_log_food_enabled   Boolean @default(true)
   date_of_birth DateTime?
   sex           Sex?
   height_mm     Int?
