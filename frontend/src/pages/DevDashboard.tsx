@@ -122,6 +122,7 @@ const DevDashboard: React.FC = () => {
     const [isPreparingPush, setIsPreparingPush] = useState(false);
     const [isSendingPush, setIsSendingPush] = useState(false);
     const [hasPushSubscription, setHasPushSubscription] = useState(false);
+    const [activePushEndpoint, setActivePushEndpoint] = useState<string | null>(null);
 
     const notificationPermission =
         typeof window !== 'undefined' && 'Notification' in window ? Notification.permission : 'unsupported';
@@ -162,6 +163,7 @@ const DevDashboard: React.FC = () => {
     const loadPushSubscriptionStatus = useCallback(async () => {
         if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
             setHasPushSubscription(false);
+            setActivePushEndpoint(null);
             return;
         }
 
@@ -172,13 +174,16 @@ const DevDashboard: React.FC = () => {
                 pickBestServiceWorkerRegistration(await navigator.serviceWorker.getRegistrations());
             if (!registration) {
                 setHasPushSubscription(false);
+                setActivePushEndpoint(null);
                 return;
             }
             const subscription = await registration.pushManager.getSubscription();
             setHasPushSubscription(Boolean(subscription));
+            setActivePushEndpoint(subscription?.endpoint ?? null);
         } catch (err) {
             console.error(err);
             setHasPushSubscription(false);
+            setActivePushEndpoint(null);
         }
     }, []);
 
@@ -324,9 +329,15 @@ const DevDashboard: React.FC = () => {
                     userVisibleOnly: true,
                     applicationServerKey: urlBase64ToUint8Array(publicKey)
                 }));
+            const endpoint = subscription.endpoint.trim();
+            if (!endpoint) {
+                setPushError('Push subscription endpoint is missing.');
+                return;
+            }
 
             await axios.post('/api/notifications/subscription', subscription.toJSON());
             setHasPushSubscription(true);
+            setActivePushEndpoint(endpoint);
             setPushStatus('Push subscription saved. You can send a test notification.');
         } catch (err) {
             console.error(err);
@@ -347,27 +358,53 @@ const DevDashboard: React.FC = () => {
     /**
      * Send a basic test notification to validate delivery and click handling.
      */
-    const handleSendTestNotification = useCallback(async () => {
+    const sendDevNotification = useCallback(async (path: string, successMessage: string, errorMessage: string) => {
         setPushError(null);
         setPushStatus(null);
+        if (!activePushEndpoint) {
+            setPushError('No active push subscription found for this browser endpoint.');
+            return;
+        }
         setIsSendingPush(true);
         try {
-            await axios.post('/api/dev/notifications/test');
-            setPushStatus('Test notification sent.');
+            await axios.post(path, { endpoint: activePushEndpoint });
+            setPushStatus(successMessage);
         } catch (err) {
             console.error(err);
             const serverMessage = axios.isAxiosError(err)
                 ? (err.response?.data as { message?: unknown } | undefined)?.message
                 : null;
             setPushError(
-                typeof serverMessage === 'string' && serverMessage.trim().length > 0
-                    ? serverMessage
-                    : 'Failed to send test notification.'
+                typeof serverMessage === 'string' && serverMessage.trim().length > 0 ? serverMessage : errorMessage
             );
         } finally {
             setIsSendingPush(false);
         }
-    }, []);
+    }, [activePushEndpoint]);
+
+    const handleSendTestNotification = useCallback(() => {
+        return sendDevNotification(
+            '/api/dev/notifications/test',
+            'Test notification sent.',
+            'Failed to send test notification.'
+        );
+    }, [sendDevNotification]);
+
+    const handleSendLogWeightNotification = useCallback(() => {
+        return sendDevNotification(
+            '/api/dev/notifications/log-weight',
+            'Log weight notification sent.',
+            'Failed to send log weight notification.'
+        );
+    }, [sendDevNotification]);
+
+    const handleSendLogFoodNotification = useCallback(() => {
+        return sendDevNotification(
+            '/api/dev/notifications/log-food',
+            'Log food notification sent.',
+            'Failed to send log food notification.'
+        );
+    }, [sendDevNotification]);
 
     /**
      * Run a search against the selected providers using either a free-text query or a UPC/EAN barcode.
@@ -417,6 +454,48 @@ const DevDashboard: React.FC = () => {
 
         await runSearch({ q: trimmedQuery });
     };
+
+    const canSendDevNotifications = Boolean(activePushEndpoint) && !isSendingPush;
+    const clearPushMessages = () => {
+        setPushError(null);
+        setPushStatus(null);
+    };
+    // Keep the card's high-level flow readable by collapsing button row details into named blocks.
+    const pushPrimaryActions = (
+        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+            <Button variant="contained" onClick={() => void handleRegisterPush()} disabled={isPreparingPush}>
+                {isPreparingPush ? 'Registering...' : 'Register push subscription'}
+            </Button>
+            <Button
+                variant="outlined"
+                onClick={() => void handleSendTestNotification()}
+                disabled={!canSendDevNotifications}
+            >
+                {isSendingPush ? 'Sending...' : 'Send test notification'}
+            </Button>
+            <Button variant="text" onClick={clearPushMessages} disabled={isPreparingPush || isSendingPush}>
+                Clear message
+            </Button>
+        </Stack>
+    );
+    const pushReminderActions = (
+        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+            <Button
+                variant="outlined"
+                onClick={() => void handleSendLogWeightNotification()}
+                disabled={!canSendDevNotifications}
+            >
+                {isSendingPush ? 'Sending...' : 'Send log weight notification'}
+            </Button>
+            <Button
+                variant="outlined"
+                onClick={() => void handleSendLogFoodNotification()}
+                disabled={!canSendDevNotifications}
+            >
+                {isSendingPush ? 'Sending...' : 'Send log food notification'}
+            </Button>
+        </Stack>
+    );
 
     return (
         <Box>
@@ -497,31 +576,9 @@ const DevDashboard: React.FC = () => {
                         {pushError && <Alert severity="error">{pushError}</Alert>}
                         {pushStatus && <Alert severity="success">{pushStatus}</Alert>}
 
-                        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-                            <Button
-                                variant="contained"
-                                onClick={() => void handleRegisterPush()}
-                                disabled={isPreparingPush}
-                            >
-                                {isPreparingPush ? 'Registering...' : 'Register push subscription'}
-                            </Button>
-                            <Button
-                                variant="outlined"
-                                onClick={() => void handleSendTestNotification()}
-                                disabled={!hasPushSubscription || isSendingPush}
-                            >
-                                {isSendingPush ? 'Sending...' : 'Send test notification'}
-                            </Button>
-                            <Button
-                                variant="text"
-                                onClick={() => {
-                                    setPushError(null);
-                                    setPushStatus(null);
-                                }}
-                                disabled={isPreparingPush || isSendingPush}
-                            >
-                                Clear message
-                            </Button>
+                        <Stack spacing={2}>
+                            {pushPrimaryActions}
+                            {pushReminderActions}
                         </Stack>
                     </Stack>
                 </CardContent>
