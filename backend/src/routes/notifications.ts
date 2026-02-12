@@ -1,10 +1,17 @@
 import express from 'express';
 import { Prisma } from '@prisma/client';
 import prisma from '../config/database';
+import {
+  listActiveInAppNotificationsForUser,
+  markInAppNotificationDismissed,
+  markInAppNotificationRead,
+  resolveInactiveReminderNotificationsForUser
+} from '../services/inAppNotifications';
 import { getWebPushPublicKey } from '../services/webPush';
+import { parsePositiveInteger } from '../utils/requestParsing';
 
 /**
- * Push notification subscription endpoints.
+ * Push notification subscription endpoints plus in-app reminder feed endpoints.
  */
 const router = express.Router();
 
@@ -96,6 +103,52 @@ router.delete('/subscription', async (req, res) => {
     }
     throw error;
   }
+
+  res.json({ ok: true });
+});
+
+/**
+ * Return active in-app reminders, resolving stale/completed entries first.
+ */
+router.get('/in-app', async (req, res) => {
+  const user = req.user as { id: number; timezone?: string };
+  const timeZone = user.timezone || 'UTC';
+
+  await resolveInactiveReminderNotificationsForUser({
+    userId: user.id,
+    timeZone
+  });
+
+  const { notifications, unreadCount } = await listActiveInAppNotificationsForUser({ userId: user.id });
+  res.json({ notifications, unread_count: unreadCount });
+});
+
+router.patch('/in-app/:notificationId/read', async (req, res) => {
+  const user = req.user as { id: number };
+  const notificationId = parsePositiveInteger(req.params.notificationId);
+  if (!notificationId) {
+    return res.status(400).json({ message: 'Invalid notification id.' });
+  }
+
+  await markInAppNotificationRead({
+    userId: user.id,
+    notificationId
+  });
+
+  res.json({ ok: true });
+});
+
+router.patch('/in-app/:notificationId/dismiss', async (req, res) => {
+  const user = req.user as { id: number };
+  const notificationId = parsePositiveInteger(req.params.notificationId);
+  if (!notificationId) {
+    return res.status(400).json({ message: 'Invalid notification id.' });
+  }
+
+  await markInAppNotificationDismissed({
+    userId: user.id,
+    notificationId
+  });
 
   res.json({ ok: true });
 });

@@ -25,6 +25,7 @@ import {
 import { useAuth } from '../context/useAuth';
 import { useQuickAddFab } from '../context/useQuickAddFab';
 import { useI18n } from '../i18n/useI18n';
+import { inAppNotificationsQueryKey } from '../queries/inAppNotifications';
 import { formatIsoDateForDisplay, getTodayIsoDate } from '../utils/date';
 
 /**
@@ -118,6 +119,7 @@ const LogQuickAddFab: React.FC<LogQuickAddFabProps> = ({ date }) => {
                     date={date}
                     onSuccess={() => {
                         void queryClient.invalidateQueries({ queryKey: ['food'] });
+                        void queryClient.invalidateQueries({ queryKey: inAppNotificationsQueryKey() });
                         dialogs.closeFoodDialog();
                     }}
                 />
@@ -148,6 +150,7 @@ const LogQuickAddFab: React.FC<LogQuickAddFabProps> = ({ date }) => {
                         void queryClient.invalidateQueries({ queryKey: ['metrics'] });
                         void queryClient.invalidateQueries({ queryKey: ['user-profile'] });
                         void queryClient.invalidateQueries({ queryKey: ['profile'] });
+                        void queryClient.invalidateQueries({ queryKey: inAppNotificationsQueryKey() });
                         dialogs.closeWeightDialog();
                     }}
                 />
