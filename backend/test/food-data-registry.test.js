@@ -179,3 +179,47 @@ test('foodData registry: getFoodDataProvider falls back when configured for USDA
 
   assert.equal(warnCalls.length > 0, true);
 });
+
+test('foodData registry: getPrimaryFoodDataProviderName normalizes FOOD_DATA_PROVIDER values', () => {
+  withFoodDataModule({ FOOD_DATA_PROVIDER: 'OPENFOODFACTS' }, ({ getPrimaryFoodDataProviderName }) => {
+    assert.equal(getPrimaryFoodDataProviderName(), 'openFoodFacts');
+  });
+});
+
+test('foodData registry: getEnabledFoodDataProviders orders ready providers with primary first', () => {
+  withFoodDataModule(
+    {
+      FOOD_DATA_PROVIDER: 'usda',
+      USDA_API_KEY: 'test-key',
+      FATSECRET_CLIENT_ID: 'client-id',
+      FATSECRET_CLIENT_SECRET: 'client-secret'
+    },
+    ({ getEnabledFoodDataProviders }) => {
+      const selection = getEnabledFoodDataProviders();
+      assert.equal(selection.primary.name, 'usda');
+      assert.equal(selection.primary.ready, true);
+      assert.deepEqual(
+        selection.providers.map((provider) => provider.name),
+        ['usda', 'fatsecret', 'openFoodFacts']
+      );
+    }
+  );
+});
+
+test('foodData registry: getEnabledFoodDataProviders excludes unready providers but returns primary metadata', () => {
+  withFoodDataModule(
+    {
+      FOOD_DATA_PROVIDER: 'fatsecret',
+      FATSECRET_CLIENT_ID: undefined,
+      FATSECRET_CLIENT_SECRET: undefined,
+      USDA_API_KEY: undefined
+    },
+    ({ getEnabledFoodDataProviders }) => {
+      const selection = getEnabledFoodDataProviders();
+      assert.equal(selection.primary.name, 'fatsecret');
+      assert.equal(selection.primary.ready, false);
+      assert.match(selection.primary.detail, /FATSECRET_CLIENT_ID/);
+      assert.deepEqual(selection.providers.map((provider) => provider.name), ['openFoodFacts']);
+    }
+  );
+});
