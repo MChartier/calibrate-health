@@ -20,9 +20,11 @@ import {
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
+import { useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
 import { WEIGHT_UNITS, type WeightUnit } from '../../context/authContext';
 import { useI18n } from '../../i18n/useI18n';
+import { metricsQueryKey } from '../../queries/metrics';
 import { getApiErrorMessage } from '../../utils/apiError';
 
 /**
@@ -87,6 +89,7 @@ const LoseItImportDialog: React.FC<LoseItImportDialogProps> = ({ open, onClose, 
     const theme = useTheme();
     const { t } = useI18n();
     const fullScreen = useMediaQuery(theme.breakpoints.down('sm'));
+    const queryClient = useQueryClient();
 
     const [step, setStep] = useState<ImportStep>('select');
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -184,6 +187,8 @@ const LoseItImportDialog: React.FC<LoseItImportDialogProps> = ({ open, onClose, 
             const data = res.data as LoseItImportResult;
             setResult(data);
             setStep('complete');
+            void queryClient.invalidateQueries({ queryKey: ['food'] });
+            void queryClient.invalidateQueries({ queryKey: metricsQueryKey() });
             onComplete?.({
                 foodLogsImported: data.importedFoodLogs,
                 weightEntriesImported: data.importedWeights,
