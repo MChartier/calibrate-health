@@ -4,7 +4,13 @@ import path from 'node:path';
 import prisma from '../config/database';
 import { SUPPORTED_LANGUAGES } from '../utils/language';
 import { ActivityLevel, HeightUnit, Sex, WeightUnit } from '@prisma/client';
-import { buildMealLogsForDay, getPastWeekDates, getSeedUserCreatedAt } from './devTestDataUtils';
+import {
+  buildMealLogsForDay,
+  getPastDateRangeDates,
+  getPastWeekDates,
+  getSeedUserCreatedAt,
+  getSeedWeightGramsForDayIndex
+} from './devTestDataUtils';
 
 /**
  * Deterministic dev seed data helpers (test user, goals, metrics, food logs).
@@ -17,6 +23,7 @@ const TEST_USER_DATE_OF_BIRTH = new Date('1990-01-15T00:00:00');
 const TEST_USER_HEIGHT_MM = 1750;
 const TEST_USER_WEIGHT_GRAMS = 82000;
 const TEST_GOAL_TARGET_WEIGHT_GRAMS = 76000;
+const TEST_METRIC_HISTORY_DAYS = 120; // Seed roughly four months of weigh-ins so trend charts show noise vs signal.
 
 const PROFILE_PLACEHOLDER_IMAGE_PATH = path.resolve(__dirname, '../../prisma/assets/profile-placeholder.png');
 const PROFILE_PLACEHOLDER_IMAGE_MIME_TYPE = 'image/png';
@@ -113,7 +120,7 @@ const ensureTestGoal = async (userId: number): Promise<void> => {
 };
 
 /**
- * Create daily body metrics for the past week without overwriting existing entries.
+ * Create daily body metrics for the configured multi-month history without overwriting existing entries.
  */
 const ensureBodyMetrics = async (userId: number, days: Date[]): Promise<void> => {
   for (const [index, day] of days.entries()) {
@@ -123,12 +130,11 @@ const ensureBodyMetrics = async (userId: number, days: Date[]): Promise<void> =>
     });
     if (existing) continue;
 
-    const weightAdjustment = (days.length - 1 - index) * 150;
     await prisma.bodyMetric.create({
       data: {
         user_id: userId,
         date: day,
-        weight_grams: TEST_USER_WEIGHT_GRAMS - weightAdjustment,
+        weight_grams: getSeedWeightGramsForDayIndex(index, TEST_USER_WEIGHT_GRAMS),
       },
     });
   }
@@ -154,17 +160,18 @@ const ensureFoodLogs = async (userId: number, days: Date[]): Promise<void> => {
 };
 
 /**
- * Seed the local database with a test user and a week of sample data.
+ * Seed the local database with a deterministic test user and sample tracking history.
  */
 export const seedDevTestData = async (): Promise<void> => {
-  const days = getPastWeekDates(TEST_USER_TIMEZONE);
-  const createdAt = getSeedUserCreatedAt(days, TEST_USER_TIMEZONE);
+  const metricDays = getPastDateRangeDates(TEST_USER_TIMEZONE, TEST_METRIC_HISTORY_DAYS);
+  const foodLogDays = getPastWeekDates(TEST_USER_TIMEZONE);
+  const createdAt = getSeedUserCreatedAt(metricDays, TEST_USER_TIMEZONE);
 
   const user = await ensureTestUser(createdAt);
 
   await ensureTestGoal(user.id);
-  await ensureBodyMetrics(user.id, days);
-  await ensureFoodLogs(user.id, days);
+  await ensureBodyMetrics(user.id, metricDays);
+  await ensureFoodLogs(user.id, foodLogDays);
 };
 
 /**
@@ -180,7 +187,7 @@ export const resetDevTestUserToPreOnboardingState = async (): Promise<number> =>
   });
   const user =
     existing ??
-    (await ensureTestUser(getSeedUserCreatedAt(getPastWeekDates(TEST_USER_TIMEZONE), TEST_USER_TIMEZONE)));
+    (await ensureTestUser(getSeedUserCreatedAt(getPastDateRangeDates(TEST_USER_TIMEZONE, TEST_METRIC_HISTORY_DAYS), TEST_USER_TIMEZONE)));
 
   await prisma.$transaction(async (tx) => {
     await tx.goal.deleteMany({ where: { user_id: user.id } });

@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
+import { type MetricsRange } from '../constants/metricsRanges';
 
 /**
  * React Query helpers for weight metrics.
@@ -8,6 +9,25 @@ export type MetricEntry = {
     id: number;
     date: string;
     weight: number;
+};
+
+export type MetricTrendEntry = MetricEntry & {
+    trend_weight: number;
+    trend_ci_lower: number;
+    trend_ci_upper: number;
+    trend_std: number;
+};
+
+export type MetricTrendVolatility = 'low' | 'medium' | 'high';
+
+export type TrendMetricsResponse = {
+    metrics: MetricTrendEntry[];
+    meta: {
+        weekly_rate: number;
+        volatility: MetricTrendVolatility;
+        total_points: number;
+        total_span_days: number;
+    };
 };
 
 /**
@@ -23,6 +43,31 @@ export function metricsQueryKey() {
 export async function fetchMetrics(): Promise<MetricEntry[]> {
     const res = await axios.get('/api/metrics');
     return Array.isArray(res.data) ? (res.data as MetricEntry[]) : [];
+}
+
+/**
+ * Fetch trend-augmented metrics prepared by the server for chart rendering.
+ */
+export async function fetchTrendMetrics(range: MetricsRange): Promise<TrendMetricsResponse> {
+    const res = await axios.get('/api/metrics', {
+        params: {
+            include_trend: 'true',
+            range
+        }
+    });
+
+    const metrics = Array.isArray(res.data?.metrics) ? (res.data.metrics as MetricTrendEntry[]) : [];
+    const meta = res.data?.meta;
+
+    return {
+        metrics,
+        meta: {
+            weekly_rate: typeof meta?.weekly_rate === 'number' ? meta.weekly_rate : 0,
+            volatility: meta?.volatility === 'high' || meta?.volatility === 'medium' ? meta.volatility : 'low',
+            total_points: typeof meta?.total_points === 'number' ? meta.total_points : metrics.length,
+            total_span_days: typeof meta?.total_span_days === 'number' ? meta.total_span_days : (metrics.length > 0 ? 1 : 0)
+        }
+    };
 }
 
 /**

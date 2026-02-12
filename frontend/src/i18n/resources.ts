@@ -116,6 +116,8 @@ export const en = {
     'goals.noWeightEntries': 'No weight entries yet.',
     'goals.weightSeriesLabel': 'Weight ({unit})',
     'goals.weightSeriesLabelSmoothed': 'Weight ({unit}) - {days}-day average',
+    'goals.trendLabel': 'Trend',
+    'goals.expectedRangeLabel': 'Expected range',
     'goals.targetLineLabel': 'Target: {value} {unit}',
     'goals.weightHistoryRangeLabel': 'Weight history range',
     'goals.weightHistoryRangeWeek': 'Week',
@@ -123,6 +125,24 @@ export const en = {
     'goals.weightHistoryRangeYear': 'Year',
     'goals.weightHistoryRangeAll': 'All',
     'goals.weightHistorySmoothingLabel': '{days}-day average',
+    'goals.weightHistoryTooltip.raw': 'Raw',
+    'goals.weightHistoryTooltip.trend': 'Trend',
+    'goals.weightHistoryTooltip.expectedRange': 'Expected range',
+    'goals.weightHistorySummary.weeklyRate': 'Estimated rate: {value} {unit}/week',
+    'goals.weightHistorySummary.volatility': 'Volatility: {level}',
+    'goals.weightHistoryExplainer.inline':
+        'Trend smooths daily noise. Expected range shows uncertainty around your underlying weight trend.',
+    'goals.weightHistoryExplainer.tooltipAria': 'How to read the weight chart',
+    'goals.weightHistoryExplainer.tooltipTitle': 'How to read this chart',
+    'goals.weightHistoryExplainer.tooltipTrend':
+        'Trend smooths day-to-day swings so you can focus on overall direction.',
+    'goals.weightHistoryExplainer.tooltipRange':
+        'Expected range shows confidence bounds around your estimated true weight trend.',
+    'goals.weightHistoryExplainer.tooltipOutliers':
+        'Daily scale points can sit outside this range because of short-term water and measurement noise.',
+    'goals.volatility.low': 'Low',
+    'goals.volatility.medium': 'Medium',
+    'goals.volatility.high': 'High',
 
     'activityLevel.SEDENTARY.title': 'Sedentary',
     'activityLevel.SEDENTARY.description': 'Mostly seated, <5k steps/day, little structured exercise',
@@ -571,6 +591,8 @@ export const es: Record<TranslationKey, string> = {
     'goals.noWeightEntries': 'Todavía no hay registros de peso.',
     'goals.weightSeriesLabel': 'Peso ({unit})',
     'goals.weightSeriesLabelSmoothed': 'Peso ({unit}) - promedio de {days} días',
+    'goals.trendLabel': 'Tendencia',
+    'goals.expectedRangeLabel': 'Rango esperado',
     'goals.targetLineLabel': 'Objetivo: {value} {unit}',
     'goals.weightHistoryRangeLabel': 'Rango del historial de peso',
     'goals.weightHistoryRangeWeek': 'Semana',
@@ -578,6 +600,24 @@ export const es: Record<TranslationKey, string> = {
     'goals.weightHistoryRangeYear': 'Año',
     'goals.weightHistoryRangeAll': 'Todo',
     'goals.weightHistorySmoothingLabel': 'Promedio de {days} días',
+    'goals.weightHistoryTooltip.raw': 'Real',
+    'goals.weightHistoryTooltip.trend': 'Tendencia',
+    'goals.weightHistoryTooltip.expectedRange': 'Rango esperado',
+    'goals.weightHistorySummary.weeklyRate': 'Ritmo estimado: {value} {unit}/semana',
+    'goals.weightHistorySummary.volatility': 'Volatilidad: {level}',
+    'goals.weightHistoryExplainer.inline':
+        'La tendencia suaviza el ruido diario. El rango esperado muestra la incertidumbre alrededor de tu tendencia de peso real.',
+    'goals.weightHistoryExplainer.tooltipAria': 'Como leer el grafico de peso',
+    'goals.weightHistoryExplainer.tooltipTitle': 'Como leer este grafico',
+    'goals.weightHistoryExplainer.tooltipTrend':
+        'La tendencia suaviza variaciones del dia a dia para enfocarte en la direccion general.',
+    'goals.weightHistoryExplainer.tooltipRange':
+        'El rango esperado muestra limites de confianza alrededor de tu tendencia estimada de peso real.',
+    'goals.weightHistoryExplainer.tooltipOutliers':
+        'Los puntos diarios de la balanza pueden quedar fuera por ruido temporal de agua y medicion.',
+    'goals.volatility.low': 'Baja',
+    'goals.volatility.medium': 'Media',
+    'goals.volatility.high': 'Alta',
 
     'activityLevel.SEDENTARY.title': 'Sedentario',
     'activityLevel.SEDENTARY.description': 'Mayormente sentado, <5k pasos/día, poco ejercicio estructurado',
@@ -1024,6 +1064,8 @@ export const fr: Record<TranslationKey, string> = {
     'goals.noWeightEntries': "Aucune entrée de poids pour l'instant.",
     'goals.weightSeriesLabel': 'Poids ({unit})',
     'goals.weightSeriesLabelSmoothed': 'Poids ({unit}) - moyenne sur {days} jours',
+    'goals.trendLabel': 'Tendance',
+    'goals.expectedRangeLabel': 'Plage attendue',
     'goals.targetLineLabel': 'Objectif: {value} {unit}',
     'goals.weightHistoryRangeLabel': "Période de l'historique du poids",
     'goals.weightHistoryRangeWeek': 'Semaine',
@@ -1031,6 +1073,24 @@ export const fr: Record<TranslationKey, string> = {
     'goals.weightHistoryRangeYear': 'Année',
     'goals.weightHistoryRangeAll': 'Tout',
     'goals.weightHistorySmoothingLabel': 'Moyenne sur {days} jours',
+    'goals.weightHistoryTooltip.raw': 'Brut',
+    'goals.weightHistoryTooltip.trend': 'Tendance',
+    'goals.weightHistoryTooltip.expectedRange': 'Plage attendue',
+    'goals.weightHistorySummary.weeklyRate': 'Rythme estimé: {value} {unit}/semaine',
+    'goals.weightHistorySummary.volatility': 'Volatilité: {level}',
+    'goals.weightHistoryExplainer.inline':
+        'La tendance lisse le bruit quotidien. La plage attendue montre l\'incertitude autour de votre tendance de poids reel.',
+    'goals.weightHistoryExplainer.tooltipAria': 'Comment lire le graphique du poids',
+    'goals.weightHistoryExplainer.tooltipTitle': 'Comment lire ce graphique',
+    'goals.weightHistoryExplainer.tooltipTrend':
+        'La tendance lisse les variations jour apres jour pour montrer la direction generale.',
+    'goals.weightHistoryExplainer.tooltipRange':
+        'La plage attendue montre des bornes de confiance autour de votre tendance de poids reel estimee.',
+    'goals.weightHistoryExplainer.tooltipOutliers':
+        'Les points quotidiens peuvent sortir de cette plage a cause du bruit temporaire de l\'eau et de la mesure.',
+    'goals.volatility.low': 'Faible',
+    'goals.volatility.medium': 'Moyenne',
+    'goals.volatility.high': 'Élevée',
 
     'activityLevel.SEDENTARY.title': 'Sédentaire',
     'activityLevel.SEDENTARY.description': "Principalement assis, <5k pas/jour, peu d'exercice structuré",
@@ -1477,6 +1537,8 @@ export const ru: Record<TranslationKey, string> = {
     'goals.noWeightEntries': 'Пока нет записей веса.',
     'goals.weightSeriesLabel': 'Вес ({unit})',
     'goals.weightSeriesLabelSmoothed': 'Вес ({unit}) - среднее за {days} дней',
+    'goals.trendLabel': 'Тренд',
+    'goals.expectedRangeLabel': 'Ожидаемый диапазон',
     'goals.targetLineLabel': 'Цель: {value} {unit}',
     'goals.weightHistoryRangeLabel': 'Период истории веса',
     'goals.weightHistoryRangeWeek': 'Неделя',
@@ -1484,6 +1546,24 @@ export const ru: Record<TranslationKey, string> = {
     'goals.weightHistoryRangeYear': 'Год',
     'goals.weightHistoryRangeAll': 'Все время',
     'goals.weightHistorySmoothingLabel': 'Среднее за {days} дней',
+    'goals.weightHistoryTooltip.raw': 'Факт',
+    'goals.weightHistoryTooltip.trend': 'Тренд',
+    'goals.weightHistoryTooltip.expectedRange': 'Ожидаемый диапазон',
+    'goals.weightHistorySummary.weeklyRate': 'Оценочный темп: {value} {unit}/неделю',
+    'goals.weightHistorySummary.volatility': 'Волатильность: {level}',
+    'goals.weightHistoryExplainer.inline':
+        'Тренд сглаживает ежедневный шум. Ожидаемый диапазон показывает неопределенность вокруг тренда реального веса.',
+    'goals.weightHistoryExplainer.tooltipAria': 'Как читать график веса',
+    'goals.weightHistoryExplainer.tooltipTitle': 'Как читать этот график',
+    'goals.weightHistoryExplainer.tooltipTrend':
+        'Тренд сглаживает колебания день за днем, чтобы показать общее направление.',
+    'goals.weightHistoryExplainer.tooltipRange':
+        'Ожидаемый диапазон показывает границы уверенности вокруг оцененного тренда реального веса.',
+    'goals.weightHistoryExplainer.tooltipOutliers':
+        'Ежедневные точки могут выходить за диапазон из-за краткосрочного водного и измерительного шума.',
+    'goals.volatility.low': 'Низкая',
+    'goals.volatility.medium': 'Средняя',
+    'goals.volatility.high': 'Высокая',
 
     'activityLevel.SEDENTARY.title': 'Сидячий',
     'activityLevel.SEDENTARY.description': 'В основном сидя, <5k шагов/день, мало тренировок',
