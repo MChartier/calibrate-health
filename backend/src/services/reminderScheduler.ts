@@ -20,6 +20,7 @@ const DEFAULT_REMINDER_SEND_HOUR_LOCAL = 9; // Local hour (0-23) to begin sendin
 const DEFAULT_REMINDER_JOB_INTERVAL_MINUTES = 15; // How often to scan for eligible reminders.
 
 let hasLoggedMissingConfig = false;
+let isReminderCheckInProgress = false;
 
 const parseReminderHour = (value: string | undefined): number | null => {
     if (!value) return null;
@@ -192,14 +193,32 @@ const runReminderCheck = async (): Promise<void> => {
 };
 
 /**
+ * Execute the reminder scan with overlap protection and crash-safe error handling.
+ */
+const runReminderCheckSafely = async (): Promise<void> => {
+    if (isReminderCheckInProgress) {
+        return;
+    }
+
+    isReminderCheckInProgress = true;
+    try {
+        await runReminderCheck();
+    } catch (error) {
+        console.error('Reminder scheduler run failed; the next interval will retry.', error);
+    } finally {
+        isReminderCheckInProgress = false;
+    }
+};
+
+/**
  * Start the reminder scheduler loop.
  */
 export const startReminderScheduler = (): void => {
     const intervalMinutes = resolveJobIntervalMinutes();
     const intervalMs = intervalMinutes * MS_PER_MINUTE;
 
-    void runReminderCheck();
+    void runReminderCheckSafely();
     setInterval(() => {
-        void runReminderCheck();
+        void runReminderCheckSafely();
     }, intervalMs);
 };
