@@ -102,6 +102,50 @@ test('metrics route: GET / validates start/end query params when provided', asyn
   assert.deepEqual(res.body, { message: 'Invalid date range' });
 });
 
+test('metrics route: GET / validates include_trend query values', async () => {
+  const prismaStub = {
+    bodyMetric: {
+      findMany: async () => {
+        throw new Error('should not be called');
+      }
+    }
+  };
+  const router = loadMetricsRouter(prismaStub);
+  const handler = getRouteHandler(router, 'get', '/');
+
+  const req = {
+    user: { id: 7, weight_unit: 'KG' },
+    query: { include_trend: 'maybe' }
+  };
+  const res = createRes();
+
+  await handler(req, res);
+  assert.equal(res.statusCode, 400);
+  assert.deepEqual(res.body, { message: 'Invalid include_trend option' });
+});
+
+test('metrics route: GET / validates range query values', async () => {
+  const prismaStub = {
+    bodyMetric: {
+      findMany: async () => {
+        throw new Error('should not be called');
+      }
+    }
+  };
+  const router = loadMetricsRouter(prismaStub);
+  const handler = getRouteHandler(router, 'get', '/');
+
+  const req = {
+    user: { id: 7, weight_unit: 'KG' },
+    query: { range: 'quarter' }
+  };
+  const res = createRes();
+
+  await handler(req, res);
+  assert.equal(res.statusCode, 400);
+  assert.deepEqual(res.body, { message: 'Invalid range option' });
+});
+
 test('metrics route: GET / returns metrics with weight converted to the user unit', async () => {
   const rows = [
     {
@@ -153,6 +197,62 @@ test('metrics route: GET / returns metrics with weight converted to the user uni
       weight: 2.2
     }
   ]);
+});
+
+test('metrics route: GET / returns trend-augmented payload when include_trend=true', async () => {
+  const rows = [
+    {
+      id: 1,
+      user_id: 7,
+      date: new Date('2025-01-01T00:00:00Z'),
+      weight_grams: 80000,
+      body_fat_percent: null
+    },
+    {
+      id: 2,
+      user_id: 7,
+      date: new Date('2025-01-02T00:00:00Z'),
+      weight_grams: 79800,
+      body_fat_percent: null
+    },
+    {
+      id: 3,
+      user_id: 7,
+      date: new Date('2025-01-03T00:00:00Z'),
+      weight_grams: 79600,
+      body_fat_percent: null
+    }
+  ];
+
+  const prismaStub = {
+    bodyMetric: {
+      findMany: async () => rows
+    }
+  };
+  const router = loadMetricsRouter(prismaStub);
+  const handler = getRouteHandler(router, 'get', '/');
+
+  const req = {
+    user: { id: 7, weight_unit: 'KG' },
+    query: { include_trend: 'true', range: 'week' }
+  };
+  const res = createRes();
+
+  await handler(req, res);
+  assert.equal(res.statusCode, 200);
+  assert.equal(Array.isArray(res.body.metrics), true);
+  assert.equal(res.body.metrics.length, 3);
+  assert.deepEqual(res.body.meta.total_points, 3);
+  assert.equal(typeof res.body.meta.weekly_rate, 'number');
+  assert.equal(typeof res.body.meta.total_span_days, 'number');
+  assert.ok(['low', 'medium', 'high'].includes(res.body.meta.volatility));
+
+  const newest = res.body.metrics[0];
+  assert.equal(typeof newest.weight, 'number');
+  assert.equal(typeof newest.trend_weight, 'number');
+  assert.equal(typeof newest.trend_ci_lower, 'number');
+  assert.equal(typeof newest.trend_ci_upper, 'number');
+  assert.equal(typeof newest.trend_std, 'number');
 });
 
 test('metrics route: POST / rejects invalid date values', async () => {
