@@ -4,9 +4,11 @@ const assert = require('node:assert/strict');
 const {
   addUtcDays,
   buildMealLogsForDay,
+  getPastDateRangeDates,
   getMealTemplatesForSeedDayIndex,
   getPastWeekDates,
-  getSeedUserCreatedAt
+  getSeedUserCreatedAt,
+  getSeedWeightGramsForDayIndex
 } = require('../src/services/devTestDataUtils');
 
 test('devTestDataUtils: addUtcDays adds days using UTC math without mutating the input', () => {
@@ -34,6 +36,15 @@ test('devTestDataUtils: getPastWeekDates returns 7 UTC date-only values ending o
     assert.equal(date.getUTCSeconds(), 0);
     assert.equal(date.getUTCMilliseconds(), 0);
   }
+});
+
+test('devTestDataUtils: getPastDateRangeDates returns a date-only range with requested length', () => {
+  const now = new Date('2025-01-02T05:00:00Z');
+  const dates = getPastDateRangeDates('America/Los_Angeles', 30, now);
+
+  assert.equal(dates.length, 30);
+  assert.equal(dates[29].toISOString(), '2025-01-01T00:00:00.000Z');
+  assert.equal(dates[0].toISOString(), '2024-12-03T00:00:00.000Z');
 });
 
 test('devTestDataUtils: getSeedUserCreatedAt picks a UTC hour that preserves the earliest seed local day', () => {
@@ -80,3 +91,16 @@ test('devTestDataUtils: buildMealLogsForDay stamps log timestamps using the temp
   assert.equal(logs[0].date.toISOString(), '2025-01-01T07:00:00.000Z');
 });
 
+test('devTestDataUtils: getSeedWeightGramsForDayIndex yields a long-term downtrend with daily volatility', () => {
+  const startWeight = 82000;
+  const samples = Array.from({ length: 120 }, (_, dayIndex) =>
+    getSeedWeightGramsForDayIndex(dayIndex, startWeight)
+  );
+
+  assert.equal(samples[0], getSeedWeightGramsForDayIndex(0, startWeight));
+  assert.ok(samples[119] < samples[0] - 3000, 'expected at least ~3kg downward change over 120 days');
+
+  const dayToDayChanges = samples.slice(1).map((weight, index) => weight - samples[index]);
+  assert.ok(dayToDayChanges.some((change) => change > 0), 'expected at least one upward day');
+  assert.ok(dayToDayChanges.some((change) => change < 0), 'expected at least one downward day');
+});

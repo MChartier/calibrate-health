@@ -112,6 +112,16 @@ const WEEK_MEAL_PLANS: MealTemplate[][] = [
   ],
 ];
 
+const SEED_WEIGHT_WEEKLY_SWING_GRAMS = [260, -190, 210, -160, 280, -230, 130] as const;
+const SEED_WEIGHT_PHASE_ONE_DAYS = 35;
+const SEED_WEIGHT_PHASE_TWO_DAYS = 30;
+const SEED_WEIGHT_PHASE_ONE_DAILY_CHANGE_GRAMS = -35;
+const SEED_WEIGHT_PHASE_TWO_DAILY_CHANGE_GRAMS = -8;
+const SEED_WEIGHT_PHASE_THREE_DAILY_CHANGE_GRAMS = -55;
+const SEED_WEIGHT_MONTHLY_WAVE_AMPLITUDE_GRAMS = 120;
+const SEED_WEIGHT_SPIKE_PRIMARY_GRAMS = 360;
+const SEED_WEIGHT_SPIKE_SECONDARY_GRAMS = 180;
+
 /**
  * Build a new Date by adding the provided day offset using UTC math (no DST surprises).
  */
@@ -122,12 +132,57 @@ export function addUtcDays(date: Date, offset: number): Date {
 }
 
 /**
+ * Return an array of UTC-normalized DATE values ending on "today" in the provided time zone.
+ *
+ * Dates are returned in ascending order (oldest -> newest).
+ */
+export function getPastDateRangeDates(timeZone: string, days: number, now: Date = new Date()): Date[] {
+  const rangeDays = Number.isFinite(days) ? Math.max(1, Math.trunc(days)) : 1;
+  const todayLocalDate = formatDateToLocalDateString(now, timeZone);
+  const today = normalizeToUtcDateOnly(todayLocalDate);
+  return Array.from({ length: rangeDays }, (_, index) => addUtcDays(today, index - (rangeDays - 1)));
+}
+
+/**
  * Return an array of UTC-normalized DATE values covering the past week in the provided time zone.
  */
 export function getPastWeekDates(timeZone: string, now: Date = new Date()): Date[] {
-  const todayLocalDate = formatDateToLocalDateString(now, timeZone);
-  const today = normalizeToUtcDateOnly(todayLocalDate);
-  return Array.from({ length: 7 }, (_, index) => addUtcDays(today, index - 6));
+  return getPastDateRangeDates(timeZone, 7, now);
+}
+
+/**
+ * Return a deterministic seeded scale weight with visible day-to-day volatility and multi-month trend shifts.
+ *
+ * The generated pattern intentionally includes:
+ * - mixed up/down day-to-day movement (water/noise)
+ * - a mid-period plateau-like segment
+ * - stronger late trend movement
+ */
+export function getSeedWeightGramsForDayIndex(dayIndex: number, startingWeightGrams: number): number {
+  const safeIndex = Math.max(0, Math.trunc(dayIndex));
+  const phaseOneCumulative = SEED_WEIGHT_PHASE_ONE_DAYS * SEED_WEIGHT_PHASE_ONE_DAILY_CHANGE_GRAMS;
+  const phaseTwoCumulative = SEED_WEIGHT_PHASE_TWO_DAYS * SEED_WEIGHT_PHASE_TWO_DAILY_CHANGE_GRAMS;
+
+  const trendOffset =
+    safeIndex < SEED_WEIGHT_PHASE_ONE_DAYS
+      ? safeIndex * SEED_WEIGHT_PHASE_ONE_DAILY_CHANGE_GRAMS
+      : safeIndex < SEED_WEIGHT_PHASE_ONE_DAYS + SEED_WEIGHT_PHASE_TWO_DAYS
+      ? phaseOneCumulative + (safeIndex - SEED_WEIGHT_PHASE_ONE_DAYS) * SEED_WEIGHT_PHASE_TWO_DAILY_CHANGE_GRAMS
+      : phaseOneCumulative +
+        phaseTwoCumulative +
+        (safeIndex - SEED_WEIGHT_PHASE_ONE_DAYS - SEED_WEIGHT_PHASE_TWO_DAYS) *
+          SEED_WEIGHT_PHASE_THREE_DAILY_CHANGE_GRAMS;
+
+  const weeklySwing = SEED_WEIGHT_WEEKLY_SWING_GRAMS[safeIndex % SEED_WEIGHT_WEEKLY_SWING_GRAMS.length] ?? 0;
+  const monthlyWave = Math.round(Math.sin((safeIndex / 14) * Math.PI) * SEED_WEIGHT_MONTHLY_WAVE_AMPLITUDE_GRAMS);
+  const periodicSpike =
+    safeIndex % 29 === 0
+      ? SEED_WEIGHT_SPIKE_PRIMARY_GRAMS
+      : safeIndex % 29 === 1
+      ? SEED_WEIGHT_SPIKE_SECONDARY_GRAMS
+      : 0;
+
+  return Math.max(30000, Math.round(startingWeightGrams + trendOffset + weeklySwing + monthlyWave + periodicSpike));
 }
 
 /**
