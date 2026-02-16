@@ -2,6 +2,9 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const Module = require('node:module');
 
+const POUNDS_PER_KILOGRAM = 2.2046226218487757;
+const FLOAT_TOLERANCE = 1e-9;
+
 function stubModule(resolvedPath, exports) {
   const moduleInstance = new Module(resolvedPath);
   moduleInstance.exports = exports;
@@ -60,6 +63,10 @@ function getRouteHandler(router, method, path) {
   assert.ok(layer, `Expected ${method.toUpperCase()} ${path} route to exist`);
   assert.equal(layer.route.stack.length, 1);
   return layer.route.stack[0].handle;
+}
+
+function assertNearlyEqual(actual, expected) {
+  assert.ok(Math.abs(actual - expected) <= FLOAT_TOLERANCE, `Expected ${actual} to be within ${FLOAT_TOLERANCE} of ${expected}`);
 }
 
 test('metrics route: rejects unauthenticated requests via router.use middleware', async () => {
@@ -253,6 +260,81 @@ test('metrics route: GET / returns trend-augmented payload when include_trend=tr
   assert.equal(typeof newest.trend_ci_lower, 'number');
   assert.equal(typeof newest.trend_ci_upper, 'number');
   assert.equal(typeof newest.trend_std, 'number');
+});
+
+test('metrics route: GET / trend payload stays unit-invariant across KG and LB preferences', async () => {
+  const rows = [
+    {
+      id: 1,
+      user_id: 7,
+      date: new Date('2025-01-01T00:00:00Z'),
+      weight_grams: 81200,
+      body_fat_percent: null
+    },
+    {
+      id: 2,
+      user_id: 7,
+      date: new Date('2025-01-03T00:00:00Z'),
+      weight_grams: 80850,
+      body_fat_percent: null
+    },
+    {
+      id: 3,
+      user_id: 7,
+      date: new Date('2025-01-06T00:00:00Z'),
+      weight_grams: 80650,
+      body_fat_percent: null
+    },
+    {
+      id: 4,
+      user_id: 7,
+      date: new Date('2025-01-10T00:00:00Z'),
+      weight_grams: 80400,
+      body_fat_percent: null
+    }
+  ];
+
+  const prismaStub = {
+    bodyMetric: {
+      findMany: async () => rows
+    }
+  };
+  const router = loadMetricsRouter(prismaStub);
+  const handler = getRouteHandler(router, 'get', '/');
+
+  const kgReq = {
+    user: { id: 7, weight_unit: 'KG' },
+    query: { include_trend: 'true', range: 'all' }
+  };
+  const kgRes = createRes();
+  await handler(kgReq, kgRes);
+  assert.equal(kgRes.statusCode, 200);
+
+  const lbReq = {
+    user: { id: 7, weight_unit: 'LB' },
+    query: { include_trend: 'true', range: 'all' }
+  };
+  const lbRes = createRes();
+  await handler(lbReq, lbRes);
+  assert.equal(lbRes.statusCode, 200);
+
+  assert.equal(lbRes.body.metrics.length, kgRes.body.metrics.length);
+  assert.equal(lbRes.body.meta.total_points, kgRes.body.meta.total_points);
+  assert.equal(lbRes.body.meta.total_span_days, kgRes.body.meta.total_span_days);
+  assert.equal(lbRes.body.meta.volatility, kgRes.body.meta.volatility);
+  assertNearlyEqual(lbRes.body.meta.weekly_rate, kgRes.body.meta.weekly_rate * POUNDS_PER_KILOGRAM);
+
+  for (let i = 0; i < kgRes.body.metrics.length; i += 1) {
+    const kgMetric = kgRes.body.metrics[i];
+    const lbMetric = lbRes.body.metrics[i];
+
+    assert.equal(lbMetric.id, kgMetric.id);
+    assert.equal(lbMetric.date.getTime(), kgMetric.date.getTime());
+    assertNearlyEqual(lbMetric.trend_weight, kgMetric.trend_weight * POUNDS_PER_KILOGRAM);
+    assertNearlyEqual(lbMetric.trend_ci_lower, kgMetric.trend_ci_lower * POUNDS_PER_KILOGRAM);
+    assertNearlyEqual(lbMetric.trend_ci_upper, kgMetric.trend_ci_upper * POUNDS_PER_KILOGRAM);
+    assertNearlyEqual(lbMetric.trend_std, kgMetric.trend_std * POUNDS_PER_KILOGRAM);
+  }
 });
 
 test('metrics route: POST / rejects invalid date values', async () => {

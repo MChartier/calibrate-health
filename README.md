@@ -30,6 +30,7 @@ attribution requirements: https://platform.fatsecret.com/docs/guides
 
 ## Docs
 
+- Weight trend model: `docs/weight-trend-model.md`
 - Deployment (Compose self-hosting): `deploy/README.md`
 - AWS infra (ECS Fargate): `infra/README.md`
 - Frontend dev/build/PWA: `frontend/README.md`

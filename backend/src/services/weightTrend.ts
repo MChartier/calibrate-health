@@ -1,14 +1,14 @@
 import { MS_PER_DAY } from '../utils/date';
-import { type WeightUnit } from '../utils/units';
 
 const TREND_CONFIDENCE_Z_SCORE = 1.96; // 95% confidence interval for latent true-weight estimate.
 const EWMA_TIME_CONSTANT_DAYS = 7; // Baseline smoother horizon used for robust residual estimation.
 const RECENT_WINDOW_POINTS = 14; // Recent window for user-facing weekly-rate and volatility summaries.
+const DRIFT_RECENCY_HALF_LIFE_DAYS = 30; // Recency horizon for drift: older history decays by 50% every 30 days.
 const MIN_POSTERIOR_VARIANCE = 1e-8;
 const MAX_PROCESS_TO_MEASUREMENT_VARIANCE_RATIO = 0.35; // Keep the trend from overfitting day-to-day scale noise.
 const MAX_PREDICTION_GAP_DAYS = 14; // Cap uncertainty/mean propagation across sparse logging gaps.
 
-type UnitDefaults = {
+type ModelDefaults = {
   measurementStd: number;
   processStd: number;
   minMeasurementStd: number;
@@ -19,27 +19,15 @@ type UnitDefaults = {
   mediumVolatilityStdThreshold: number;
 };
 
-const UNIT_DEFAULTS: Record<WeightUnit, UnitDefaults> = {
-  KG: {
-    measurementStd: 0.9,
-    processStd: 0.1,
-    minMeasurementStd: 0.25,
-    maxMeasurementStd: 3.5,
-    minProcessStd: 0.02,
-    maxProcessStd: 0.6,
-    lowVolatilityStdThreshold: 0.5,
-    mediumVolatilityStdThreshold: 1.2
-  },
-  LB: {
-    measurementStd: 2,
-    processStd: 0.22,
-    minMeasurementStd: 0.5,
-    maxMeasurementStd: 8,
-    minProcessStd: 0.05,
-    maxProcessStd: 1.3,
-    lowVolatilityStdThreshold: 1.1,
-    mediumVolatilityStdThreshold: 2.6
-  }
+const MODEL_DEFAULTS: ModelDefaults = {
+  measurementStd: 0.9,
+  processStd: 0.1,
+  minMeasurementStd: 0.25,
+  maxMeasurementStd: 3.5,
+  minProcessStd: 0.02,
+  maxProcessStd: 0.6,
+  lowVolatilityStdThreshold: 0.5,
+  mediumVolatilityStdThreshold: 1.2
 };
 
 export type WeightTrendObservation = {
@@ -70,10 +58,12 @@ export type WeightTrendResult = {
 /**
  * Estimate latent "true weight" from noisy daily weigh-ins with a scalar Kalman filter.
  *
+ * All modeling is done in kilograms. Unit conversion belongs at API boundaries.
+ *
  * - State model: x_t = x_{t-1} + drift * dt + process_noise
  * - Observation: z_t = x_t + measurement_noise
  */
-export function computeWeightTrend(observations: WeightTrendObservation[], weightUnit: WeightUnit): WeightTrendResult {
+export function computeWeightTrend(observations: WeightTrendObservation[]): WeightTrendResult {
   if (observations.length === 0) {
     return {
       points: [],
@@ -81,8 +71,8 @@ export function computeWeightTrend(observations: WeightTrendObservation[], weigh
       volatility: 'low',
       params: {
         driftPerDay: 0,
-        processVariance: UNIT_DEFAULTS[weightUnit].processStd ** 2,
-        measurementVariance: UNIT_DEFAULTS[weightUnit].measurementStd ** 2
+        processVariance: MODEL_DEFAULTS.processStd ** 2,
+        measurementVariance: MODEL_DEFAULTS.measurementStd ** 2
       }
     };
   }
@@ -99,14 +89,14 @@ export function computeWeightTrend(observations: WeightTrendObservation[], weigh
       volatility: 'low',
       params: {
         driftPerDay: 0,
-        processVariance: UNIT_DEFAULTS[weightUnit].processStd ** 2,
-        measurementVariance: UNIT_DEFAULTS[weightUnit].measurementStd ** 2
+        processVariance: MODEL_DEFAULTS.processStd ** 2,
+        measurementVariance: MODEL_DEFAULTS.measurementStd ** 2
       }
     };
   }
 
   const driftPerDay = estimateLinearDriftPerDay(sorted);
-  const { processVariance, measurementVariance } = estimateVariances(sorted, driftPerDay, weightUnit);
+  const { processVariance, measurementVariance } = estimateVariances(sorted, driftPerDay);
 
   const points = runKalmanFilter(sorted, {
     driftPerDay,
@@ -117,7 +107,7 @@ export function computeWeightTrend(observations: WeightTrendObservation[], weigh
   return {
     points,
     weeklyRate: computeRecentWeeklyRate(points),
-    volatility: classifyVolatility(points, weightUnit),
+    volatility: classifyVolatility(points),
     params: {
       driftPerDay,
       processVariance,
@@ -173,10 +163,9 @@ function runKalmanFilter(observations: WeightTrendObservation[], params: KalmanP
 
 function estimateVariances(
   observations: WeightTrendObservation[],
-  driftPerDay: number,
-  weightUnit: WeightUnit
+  driftPerDay: number
 ): { processVariance: number; measurementVariance: number } {
-  const defaults = UNIT_DEFAULTS[weightUnit];
+  const defaults = MODEL_DEFAULTS;
   if (observations.length < 3) {
     return {
       processVariance: defaults.processStd ** 2,
@@ -215,31 +204,66 @@ function estimateVariances(
 }
 
 /**
- * Estimate slow daily drift with least-squares slope to avoid overreacting to alternating noise.
+ * Estimate slow daily drift with recency-weighted least-squares slope.
+ *
+ * We apply exponential decay so older logs still contribute but recent logs drive the current momentum estimate.
  */
 function estimateLinearDriftPerDay(observations: WeightTrendObservation[]): number {
   if (observations.length < 2) return 0;
 
   const startMs = observations[0].date.getTime();
+  const latestMs = observations[observations.length - 1].date.getTime();
   const xValues = observations.map((observation) => (observation.date.getTime() - startMs) / MS_PER_DAY);
   const yValues = observations.map((observation) => observation.weight);
+  const weights = observations.map((observation) => {
+    const ageDays = (latestMs - observation.date.getTime()) / MS_PER_DAY;
+    return Math.exp((-Math.LN2 * ageDays) / DRIFT_RECENCY_HALF_LIFE_DAYS);
+  });
 
-  const xMean = xValues.reduce((sum, value) => sum + value, 0) / xValues.length;
-  const yMean = yValues.reduce((sum, value) => sum + value, 0) / yValues.length;
+  const weightedSlope = computeLeastSquaresSlope(xValues, yValues, weights);
+  if (weightedSlope !== null) return weightedSlope;
+
+  // Fall back to unweighted regression if recency weights become numerically degenerate.
+  return computeLeastSquaresSlope(xValues, yValues) ?? 0;
+}
+
+function computeLeastSquaresSlope(xValues: number[], yValues: number[], weights?: number[]): number | null {
+  if (xValues.length !== yValues.length || xValues.length === 0) return null;
+  if (weights && weights.length !== xValues.length) return null;
+
+  let weightSum = 0;
+  let weightedXSum = 0;
+  let weightedYSum = 0;
+  for (let i = 0; i < xValues.length; i += 1) {
+    const weight = weights?.[i] ?? 1;
+    if (!Number.isFinite(weight) || weight <= 0) continue;
+
+    weightSum += weight;
+    weightedXSum += weight * xValues[i];
+    weightedYSum += weight * yValues[i];
+  }
+
+  if (!Number.isFinite(weightSum) || weightSum <= 0) return null;
+
+  const xMean = weightedXSum / weightSum;
+  const yMean = weightedYSum / weightSum;
 
   let numerator = 0;
   let denominator = 0;
   for (let i = 0; i < xValues.length; i += 1) {
+    const weight = weights?.[i] ?? 1;
+    if (!Number.isFinite(weight) || weight <= 0) continue;
+
     const xCentered = xValues[i] - xMean;
-    numerator += xCentered * (yValues[i] - yMean);
-    denominator += xCentered * xCentered;
+    numerator += weight * xCentered * (yValues[i] - yMean);
+    denominator += weight * xCentered * xCentered;
   }
 
-  if (!Number.isFinite(numerator) || !Number.isFinite(denominator) || denominator <= 0) {
-    return 0;
-  }
+  if (!Number.isFinite(numerator) || !Number.isFinite(denominator) || denominator <= 0) return null;
 
-  return numerator / denominator;
+  const slope = numerator / denominator;
+  if (!Number.isFinite(slope)) return null;
+  return slope;
 }
 
 function computeEwmaWeights(observations: WeightTrendObservation[]): number[] {
@@ -269,10 +293,10 @@ function computeRecentWeeklyRate(points: WeightTrendPoint[]): number {
   return perDayRate * 7;
 }
 
-function classifyVolatility(points: WeightTrendPoint[], weightUnit: WeightUnit): VolatilityLevel {
+function classifyVolatility(points: WeightTrendPoint[]): VolatilityLevel {
   if (points.length === 0) return 'low';
 
-  const defaults = UNIT_DEFAULTS[weightUnit];
+  const defaults = MODEL_DEFAULTS;
   const recent = points.slice(-RECENT_WINDOW_POINTS).map((point) => point.trendStd);
   const medianStd = median(recent) ?? 0;
 

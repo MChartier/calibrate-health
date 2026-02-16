@@ -19,6 +19,8 @@ import { computeWeightTrend, type VolatilityLevel } from '../services/weightTren
 const router = express.Router();
 
 const ROLLING_WEIGHT_AVERAGE_DAYS = 7; // Rolling window length for weight smoothing requests.
+const GRAMS_PER_KILOGRAM = 1000; // Canonical storage-to-model conversion factor for weight trends.
+const POUNDS_PER_KILOGRAM = 2.2046226218487757; // High-precision factor so trend math stays unit-invariant.
 const METRICS_RANGE_OPTIONS = {
     WEEK: 'week',
     MONTH: 'month',
@@ -188,6 +190,21 @@ function getMetricsSpanDays(rows: { date: Date }[]): number {
 }
 
 /**
+ * Convert stored integer grams into unrounded kilograms for internal trend modeling.
+ */
+function gramsToKilograms(grams: number): number {
+    return grams / GRAMS_PER_KILOGRAM;
+}
+
+/**
+ * Convert internal kilogram trend values into the user's display unit without chart-destabilizing rounding.
+ */
+function kilogramsToWeightUnit(kilograms: number, weightUnit: WeightUnit): number {
+    if (weightUnit === 'KG') return kilograms;
+    return kilograms * POUNDS_PER_KILOGRAM;
+}
+
+/**
  * Build the legacy metrics response shape.
  */
 function serializeMetrics(
@@ -216,9 +233,9 @@ function buildTrendMetricsResponse(
 ): TrendMetricsResponse {
     const observations = metricsAsc.map((metric) => ({
         date: metric.date,
-        weight: gramsToWeight(metric.weight_grams, weightUnit)
+        weight: gramsToKilograms(metric.weight_grams)
     }));
-    const trendResult = computeWeightTrend(observations, weightUnit);
+    const trendResult = computeWeightTrend(observations);
 
     const trendByDateMs = new Map<number, (typeof trendResult.points)[number]>();
     for (const point of trendResult.points) {
@@ -237,17 +254,17 @@ function buildTrendMetricsResponse(
                 date: metric.date,
                 body_fat_percent: metric.body_fat_percent,
                 weight,
-                trend_weight: trendPoint?.trendWeight ?? weight,
-                trend_ci_lower: trendPoint?.lower95 ?? weight,
-                trend_ci_upper: trendPoint?.upper95 ?? weight,
-                trend_std: trendPoint?.trendStd ?? 0
+                trend_weight: trendPoint ? kilogramsToWeightUnit(trendPoint.trendWeight, weightUnit) : weight,
+                trend_ci_lower: trendPoint ? kilogramsToWeightUnit(trendPoint.lower95, weightUnit) : weight,
+                trend_ci_upper: trendPoint ? kilogramsToWeightUnit(trendPoint.upper95, weightUnit) : weight,
+                trend_std: trendPoint ? kilogramsToWeightUnit(trendPoint.trendStd, weightUnit) : 0
             };
         });
 
     return {
         metrics,
         meta: {
-            weekly_rate: trendResult.weeklyRate,
+            weekly_rate: kilogramsToWeightUnit(trendResult.weeklyRate, weightUnit),
             volatility: trendResult.volatility,
             total_points: metricsAsc.length,
             total_span_days: getMetricsSpanDays(metricsAsc)
