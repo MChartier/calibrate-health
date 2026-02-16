@@ -22,7 +22,19 @@ function loadMetricsRouter(prismaStub) {
   delete require.cache[metricsPath];
   delete require.cache[materializedTrendPath];
 
-  stubModule(dbPath, prismaStub);
+  const normalizedPrismaStub = {
+    ...prismaStub,
+    bodyMetric: {
+      findMany: async () => [],
+      ...(prismaStub.bodyMetric ?? {})
+    },
+    bodyMetricTrend: {
+      deleteMany: async () => ({ count: 0 }),
+      ...(prismaStub.bodyMetricTrend ?? {})
+    }
+  };
+
+  stubModule(dbPath, normalizedPrismaStub);
   const loaded = require('../src/routes/metrics');
 
   if (previousMaterializedTrendModule) {

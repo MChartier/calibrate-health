@@ -82,9 +82,20 @@ export async function refreshMaterializedWeightTrendsBestEffort(userId: number):
     try {
         await recomputeAndStoreUserWeightTrends(userId);
     } catch (error) {
-        const detail = error instanceof Error ? error.message : String(error);
-        console.warn(
-            `Unable to refresh materialized weight trends for user ${userId}; trend visualizations may be stale until recompute succeeds. Check backend logs and rerun trend recompute. Detail: ${detail}`
-        );
+        const recomputeDetail = error instanceof Error ? error.message : String(error);
+        try {
+            // Remove stale rows so read-time ensure can deterministically recompute on next trend fetch.
+            await prisma.bodyMetricTrend.deleteMany({
+                where: { user_id: userId }
+            });
+            console.warn(
+                `Unable to refresh materialized weight trends for user ${userId}; existing trend rows were invalidated and will be recomputed on next trend read. Check backend logs and rerun trend recompute if this persists. Detail: ${recomputeDetail}`
+            );
+        } catch (invalidateError) {
+            const invalidateDetail = invalidateError instanceof Error ? invalidateError.message : String(invalidateError);
+            console.warn(
+                `Unable to refresh materialized weight trends for user ${userId}, and stale rows could not be invalidated. Trend visualizations may remain stale until recompute succeeds. Check backend logs and rerun trend recompute. Recompute detail: ${recomputeDetail}. Invalidation detail: ${invalidateDetail}`
+            );
+        }
     }
 }
