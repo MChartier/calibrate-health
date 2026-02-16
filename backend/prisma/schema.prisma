@@ -105,8 +105,34 @@ model BodyMetric {
   date             DateTime @default(dbgenerated("CURRENT_DATE")) @db.Date
   weight_grams     Int
   body_fat_percent Float?
+  /// Materialized trend/confidence values keyed to this day for fast chart responses.
+  trend            BodyMetricTrend?
   
   @@unique([user_id, date])
+}
+
+model BodyMetricTrend {
+  /// Uses the metric id as both primary key and relation key to enforce one trend row per metric.
+  metric_id          Int       @id
+  metric             BodyMetric @relation(fields: [metric_id], references: [id], onDelete: Cascade)
+  /// Duplicated owner id keeps user-scoped deletes and maintenance queries simple.
+  user_id            Int
+  /// Duplicated metric date allows date-range operations without an additional join.
+  date               DateTime  @db.Date
+  /// Materialized latent trend estimate in kilograms.
+  trend_weight_kg    Float
+  /// Materialized lower 95% confidence bound in kilograms.
+  trend_ci_lower_kg  Float
+  /// Materialized upper 95% confidence bound in kilograms.
+  trend_ci_upper_kg  Float
+  /// Materialized posterior standard deviation in kilograms.
+  trend_std_kg       Float
+  /// Version marker for invalidating persisted rows if model behavior changes later.
+  model_version      Int       @default(1)
+  /// Timestamp for operational visibility into the latest recompute.
+  computed_at        DateTime  @default(now())
+
+  @@index([user_id, date])
 }
 
 model FoodLog {

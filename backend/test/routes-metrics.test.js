@@ -15,12 +15,21 @@ function stubModule(resolvedPath, exports) {
 function loadMetricsRouter(prismaStub) {
   const dbPath = require.resolve('../src/config/database');
   const metricsPath = require.resolve('../src/routes/metrics');
+  const materializedTrendPath = require.resolve('../src/services/materializedWeightTrend');
 
   const previousDbModule = require.cache[dbPath];
+  const previousMaterializedTrendModule = require.cache[materializedTrendPath];
   delete require.cache[metricsPath];
+  delete require.cache[materializedTrendPath];
 
   stubModule(dbPath, prismaStub);
   const loaded = require('../src/routes/metrics');
+
+  if (previousMaterializedTrendModule) {
+    require.cache[materializedTrendPath] = previousMaterializedTrendModule;
+  } else {
+    delete require.cache[materializedTrendPath];
+  }
 
   if (previousDbModule) {
     require.cache[dbPath] = previousDbModule;
@@ -173,6 +182,7 @@ test('metrics route: GET / returns metrics with weight converted to the user uni
 
   const prismaStub = {
     bodyMetric: {
+      findFirst: async () => null,
       findMany: async () => rows
     }
   };
@@ -213,26 +223,45 @@ test('metrics route: GET / returns trend-augmented payload when include_trend=tr
       user_id: 7,
       date: new Date('2025-01-01T00:00:00Z'),
       weight_grams: 80000,
-      body_fat_percent: null
+      body_fat_percent: null,
+      trend: {
+        trend_weight_kg: 80,
+        trend_ci_lower_kg: 79.6,
+        trend_ci_upper_kg: 80.4,
+        trend_std_kg: 0.2
+      }
     },
     {
       id: 2,
       user_id: 7,
       date: new Date('2025-01-02T00:00:00Z'),
       weight_grams: 79800,
-      body_fat_percent: null
+      body_fat_percent: null,
+      trend: {
+        trend_weight_kg: 79.85,
+        trend_ci_lower_kg: 79.45,
+        trend_ci_upper_kg: 80.25,
+        trend_std_kg: 0.2
+      }
     },
     {
       id: 3,
       user_id: 7,
       date: new Date('2025-01-03T00:00:00Z'),
       weight_grams: 79600,
-      body_fat_percent: null
+      body_fat_percent: null,
+      trend: {
+        trend_weight_kg: 79.7,
+        trend_ci_lower_kg: 79.3,
+        trend_ci_upper_kg: 80.1,
+        trend_std_kg: 0.2
+      }
     }
   ];
 
   const prismaStub = {
     bodyMetric: {
+      findFirst: async () => null,
       findMany: async () => rows
     }
   };
@@ -269,33 +298,58 @@ test('metrics route: GET / trend payload stays unit-invariant across KG and LB p
       user_id: 7,
       date: new Date('2025-01-01T00:00:00Z'),
       weight_grams: 81200,
-      body_fat_percent: null
+      body_fat_percent: null,
+      trend: {
+        trend_weight_kg: 81.2,
+        trend_ci_lower_kg: 80.95,
+        trend_ci_upper_kg: 81.45,
+        trend_std_kg: 0.125
+      }
     },
     {
       id: 2,
       user_id: 7,
       date: new Date('2025-01-03T00:00:00Z'),
       weight_grams: 80850,
-      body_fat_percent: null
+      body_fat_percent: null,
+      trend: {
+        trend_weight_kg: 80.95,
+        trend_ci_lower_kg: 80.65,
+        trend_ci_upper_kg: 81.25,
+        trend_std_kg: 0.15
+      }
     },
     {
       id: 3,
       user_id: 7,
       date: new Date('2025-01-06T00:00:00Z'),
       weight_grams: 80650,
-      body_fat_percent: null
+      body_fat_percent: null,
+      trend: {
+        trend_weight_kg: 80.72,
+        trend_ci_lower_kg: 80.35,
+        trend_ci_upper_kg: 81.09,
+        trend_std_kg: 0.185
+      }
     },
     {
       id: 4,
       user_id: 7,
       date: new Date('2025-01-10T00:00:00Z'),
       weight_grams: 80400,
-      body_fat_percent: null
+      body_fat_percent: null,
+      trend: {
+        trend_weight_kg: 80.5,
+        trend_ci_lower_kg: 80.1,
+        trend_ci_upper_kg: 80.9,
+        trend_std_kg: 0.2
+      }
     }
   ];
 
   const prismaStub = {
     bodyMetric: {
+      findFirst: async () => null,
       findMany: async () => rows
     }
   };

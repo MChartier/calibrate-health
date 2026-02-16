@@ -11,6 +11,7 @@ import {
   getSeedUserCreatedAt,
   getSeedWeightGramsForDayIndex
 } from './devTestDataUtils';
+import { refreshMaterializedWeightTrendsBestEffort } from './materializedWeightTrend';
 
 /**
  * Deterministic dev seed data helpers (test user, goals, metrics, food logs).
@@ -122,7 +123,8 @@ const ensureTestGoal = async (userId: number): Promise<void> => {
 /**
  * Create daily body metrics for the configured multi-month history without overwriting existing entries.
  */
-const ensureBodyMetrics = async (userId: number, days: Date[]): Promise<void> => {
+const ensureBodyMetrics = async (userId: number, days: Date[]): Promise<boolean> => {
+  let createdAny = false;
   for (const [index, day] of days.entries()) {
     const existing = await prisma.bodyMetric.findUnique({
       where: { user_id_date: { user_id: userId, date: day } },
@@ -137,7 +139,9 @@ const ensureBodyMetrics = async (userId: number, days: Date[]): Promise<void> =>
         weight_grams: getSeedWeightGramsForDayIndex(index, TEST_USER_WEIGHT_GRAMS),
       },
     });
+    createdAny = true;
   }
+  return createdAny;
 };
 
 /**
@@ -170,7 +174,10 @@ export const seedDevTestData = async (): Promise<void> => {
   const user = await ensureTestUser(createdAt);
 
   await ensureTestGoal(user.id);
-  await ensureBodyMetrics(user.id, metricDays);
+  const createdBodyMetrics = await ensureBodyMetrics(user.id, metricDays);
+  if (createdBodyMetrics) {
+    await refreshMaterializedWeightTrendsBestEffort(user.id);
+  }
   await ensureFoodLogs(user.id, foodLogDays);
 };
 
