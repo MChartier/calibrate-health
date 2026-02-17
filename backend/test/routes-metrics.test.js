@@ -238,10 +238,10 @@ test('metrics route: GET / returns trend-augmented payload when include_trend=tr
       weight_grams: 80000,
       body_fat_percent: null,
       trend: {
-        trend_weight_kg: 80,
-        trend_ci_lower_kg: 79.6,
-        trend_ci_upper_kg: 80.4,
-        trend_std_kg: 0.2
+        trend_weight_grams: 80000,
+        trend_ci_lower_grams: 79600,
+        trend_ci_upper_grams: 80400,
+        trend_std_grams: 200
       }
     },
     {
@@ -251,10 +251,10 @@ test('metrics route: GET / returns trend-augmented payload when include_trend=tr
       weight_grams: 79800,
       body_fat_percent: null,
       trend: {
-        trend_weight_kg: 79.85,
-        trend_ci_lower_kg: 79.45,
-        trend_ci_upper_kg: 80.25,
-        trend_std_kg: 0.2
+        trend_weight_grams: 79850,
+        trend_ci_lower_grams: 79450,
+        trend_ci_upper_grams: 80250,
+        trend_std_grams: 200
       }
     },
     {
@@ -264,10 +264,10 @@ test('metrics route: GET / returns trend-augmented payload when include_trend=tr
       weight_grams: 79600,
       body_fat_percent: null,
       trend: {
-        trend_weight_kg: 79.7,
-        trend_ci_lower_kg: 79.3,
-        trend_ci_upper_kg: 80.1,
-        trend_std_kg: 0.2
+        trend_weight_grams: 79700,
+        trend_ci_lower_grams: 79300,
+        trend_ci_upper_grams: 80100,
+        trend_std_grams: 200
       }
     }
   ];
@@ -313,10 +313,10 @@ test('metrics route: GET / trend payload stays unit-invariant across KG and LB p
       weight_grams: 81200,
       body_fat_percent: null,
       trend: {
-        trend_weight_kg: 81.2,
-        trend_ci_lower_kg: 80.95,
-        trend_ci_upper_kg: 81.45,
-        trend_std_kg: 0.125
+        trend_weight_grams: 81200,
+        trend_ci_lower_grams: 80950,
+        trend_ci_upper_grams: 81450,
+        trend_std_grams: 125
       }
     },
     {
@@ -326,10 +326,10 @@ test('metrics route: GET / trend payload stays unit-invariant across KG and LB p
       weight_grams: 80850,
       body_fat_percent: null,
       trend: {
-        trend_weight_kg: 80.95,
-        trend_ci_lower_kg: 80.65,
-        trend_ci_upper_kg: 81.25,
-        trend_std_kg: 0.15
+        trend_weight_grams: 80950,
+        trend_ci_lower_grams: 80650,
+        trend_ci_upper_grams: 81250,
+        trend_std_grams: 150
       }
     },
     {
@@ -339,10 +339,10 @@ test('metrics route: GET / trend payload stays unit-invariant across KG and LB p
       weight_grams: 80650,
       body_fat_percent: null,
       trend: {
-        trend_weight_kg: 80.72,
-        trend_ci_lower_kg: 80.35,
-        trend_ci_upper_kg: 81.09,
-        trend_std_kg: 0.185
+        trend_weight_grams: 80720,
+        trend_ci_lower_grams: 80350,
+        trend_ci_upper_grams: 81090,
+        trend_std_grams: 185
       }
     },
     {
@@ -352,10 +352,10 @@ test('metrics route: GET / trend payload stays unit-invariant across KG and LB p
       weight_grams: 80400,
       body_fat_percent: null,
       trend: {
-        trend_weight_kg: 80.5,
-        trend_ci_lower_kg: 80.1,
-        trend_ci_upper_kg: 80.9,
-        trend_std_kg: 0.2
+        trend_weight_grams: 80500,
+        trend_ci_lower_grams: 80100,
+        trend_ci_upper_grams: 80900,
+        trend_std_grams: 200
       }
     }
   ];
@@ -415,10 +415,10 @@ test('metrics route: GET / ignores trend rows older than the active trend horizo
       weight_grams: 92000,
       body_fat_percent: null,
       trend: {
-        trend_weight_kg: 88,
-        trend_ci_lower_kg: 87.5,
-        trend_ci_upper_kg: 88.5,
-        trend_std_kg: 0.25
+        trend_weight_grams: 88000,
+        trend_ci_lower_grams: 87500,
+        trend_ci_upper_grams: 88500,
+        trend_std_grams: 250
       }
     },
     {
@@ -428,10 +428,10 @@ test('metrics route: GET / ignores trend rows older than the active trend horizo
       weight_grams: 80500,
       body_fat_percent: null,
       trend: {
-        trend_weight_kg: 80.45,
-        trend_ci_lower_kg: 80.1,
-        trend_ci_upper_kg: 80.8,
-        trend_std_kg: 0.18
+        trend_weight_grams: 80450,
+        trend_ci_lower_grams: 80100,
+        trend_ci_upper_grams: 80800,
+        trend_std_grams: 180
       }
     }
   ];

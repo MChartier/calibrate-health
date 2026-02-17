@@ -91,6 +91,15 @@ test('materializedWeightTrend: recomputeAndStoreUserWeightTrends only refreshes 
   assert.ok(Array.isArray(insertedRows));
   assert.equal(insertedRows.length, service.MATERIALIZED_TREND_ACTIVE_HORIZON_DAYS);
   assert.ok(insertedRows.every((row) => row.date >= activeStartDate));
+  assert.ok(
+    insertedRows.every(
+      (row) =>
+        Number.isInteger(row.trend_weight_grams) &&
+        Number.isInteger(row.trend_ci_lower_grams) &&
+        Number.isInteger(row.trend_ci_upper_grams) &&
+        Number.isInteger(row.trend_std_grams)
+    )
+  );
 });
 
 test('materializedWeightTrend: refreshMaterializedWeightTrendsBestEffort invalidates stale rows when recompute fails', async () => {

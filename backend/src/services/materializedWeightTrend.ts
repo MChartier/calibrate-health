@@ -20,6 +20,13 @@ type MaterializedTrendWindow = {
 };
 
 /**
+ * Convert kilogram-domain model outputs to integer grams for persistence.
+ */
+function kilogramsToRoundedGrams(kilograms: number): number {
+    return Math.round(kilograms * GRAMS_PER_KILOGRAM);
+}
+
+/**
  * Compute the active trend window and model warmup bounds from the latest metric date.
  */
 export function getMaterializedTrendWindowFromLatestDate(latestMetricDate: Date): MaterializedTrendWindow {
@@ -68,10 +75,10 @@ function buildActiveTrendRows(
     metric_id: number;
     user_id: number;
     date: Date;
-    trend_weight_kg: number;
-    trend_ci_lower_kg: number;
-    trend_ci_upper_kg: number;
-    trend_std_kg: number;
+    trend_weight_grams: number;
+    trend_ci_lower_grams: number;
+    trend_ci_upper_grams: number;
+    trend_std_grams: number;
     model_version: number;
 }> {
     const trendResult = computeWeightTrend(
@@ -95,10 +102,10 @@ function buildActiveTrendRows(
                 metric_id: metric.id,
                 user_id: metric.user_id,
                 date: metric.date,
-                trend_weight_kg: point.trendWeight,
-                trend_ci_lower_kg: point.lower95,
-                trend_ci_upper_kg: point.upper95,
-                trend_std_kg: point.trendStd,
+                trend_weight_grams: kilogramsToRoundedGrams(point.trendWeight),
+                trend_ci_lower_grams: kilogramsToRoundedGrams(point.lower95),
+                trend_ci_upper_grams: kilogramsToRoundedGrams(point.upper95),
+                trend_std_grams: kilogramsToRoundedGrams(point.trendStd),
                 model_version: WEIGHT_TREND_MODEL_VERSION
             }
         ];

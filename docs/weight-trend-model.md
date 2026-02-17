@@ -57,6 +57,7 @@ Important materialization behavior (`backend/src/services/materializedWeightTren
 
 - write-time refresh recomputes only a bounded model window (active horizon + warmup), not full history.
 - write-time refresh reads only that bounded window from the database (`BodyMetric.date >= modelStartDate`) to avoid full-history over-fetching.
+- materialized trend values are stored in grams as integers (`BodyMetricTrend.trend_*_grams`) for consistency with canonical weight storage.
 - refresh rewrites only trend rows in the active horizon.
 - read-time ensure checks missing/stale trend rows only in the active horizon.
 - if write-time refresh fails, existing trend rows are invalidated so the next trend read forces a fresh recompute.

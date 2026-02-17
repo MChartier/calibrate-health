@@ -24,6 +24,7 @@ import {
 const router = express.Router();
 
 const ROLLING_WEIGHT_AVERAGE_DAYS = 7; // Rolling window length for weight smoothing requests.
+const GRAMS_PER_KILOGRAM = 1000; // Canonical conversion used for trend serialization.
 const POUNDS_PER_KILOGRAM = 2.2046226218487757; // High-precision factor so trend math stays unit-invariant.
 const METRICS_RANGE_OPTIONS = {
     WEEK: 'week',
@@ -37,7 +38,7 @@ type MetricsRange = (typeof METRICS_RANGE_OPTIONS)[keyof typeof METRICS_RANGE_OP
 type MetricRecord = Pick<BodyMetric, 'id' | 'user_id' | 'date' | 'weight_grams' | 'body_fat_percent'>;
 type MetricTrendRecord = Pick<
     BodyMetricTrend,
-    'trend_weight_kg' | 'trend_ci_lower_kg' | 'trend_ci_upper_kg' | 'trend_std_kg'
+    'trend_weight_grams' | 'trend_ci_lower_grams' | 'trend_ci_upper_grams' | 'trend_std_grams'
 >;
 type MetricRecordWithTrend = MetricRecord & { trend: MetricTrendRecord | null };
 type MetricAverage = { metric: MetricRecord; averageWeightGrams: number };
@@ -207,6 +208,13 @@ function kilogramsToWeightUnit(kilograms: number, weightUnit: WeightUnit): numbe
 }
 
 /**
+ * Convert materialized trend values stored in grams to the user's display unit.
+ */
+function trendGramsToWeightUnit(grams: number, weightUnit: WeightUnit): number {
+    return kilogramsToWeightUnit(grams / GRAMS_PER_KILOGRAM, weightUnit);
+}
+
+/**
  * Build the legacy metrics response shape.
  */
 function serializeMetrics(
@@ -243,8 +251,8 @@ function buildTrendMetricsResponse(
             .filter(hasActiveTrend)
             .map((metric) => ({
                 date: metric.date,
-                trendWeight: metric.trend.trend_weight_kg,
-                trendStd: metric.trend.trend_std_kg
+                trendWeight: metric.trend.trend_weight_grams / GRAMS_PER_KILOGRAM,
+                trendStd: metric.trend.trend_std_grams / GRAMS_PER_KILOGRAM
             }))
     );
 
@@ -260,10 +268,10 @@ function buildTrendMetricsResponse(
                 date: metric.date,
                 body_fat_percent: metric.body_fat_percent,
                 weight,
-                trend_weight: trend ? kilogramsToWeightUnit(trend.trend_weight_kg, weightUnit) : weight,
-                trend_ci_lower: trend ? kilogramsToWeightUnit(trend.trend_ci_lower_kg, weightUnit) : weight,
-                trend_ci_upper: trend ? kilogramsToWeightUnit(trend.trend_ci_upper_kg, weightUnit) : weight,
-                trend_std: trend ? kilogramsToWeightUnit(trend.trend_std_kg, weightUnit) : 0
+                trend_weight: trend ? trendGramsToWeightUnit(trend.trend_weight_grams, weightUnit) : weight,
+                trend_ci_lower: trend ? trendGramsToWeightUnit(trend.trend_ci_lower_grams, weightUnit) : weight,
+                trend_ci_upper: trend ? trendGramsToWeightUnit(trend.trend_ci_upper_grams, weightUnit) : weight,
+                trend_std: trend ? trendGramsToWeightUnit(trend.trend_std_grams, weightUnit) : 0
             };
         });
 
@@ -328,10 +336,10 @@ router.get('/', async (req, res) => {
                 include: {
                     trend: {
                         select: {
-                            trend_weight_kg: true,
-                            trend_ci_lower_kg: true,
-                            trend_ci_upper_kg: true,
-                            trend_std_kg: true
+                            trend_weight_grams: true,
+                            trend_ci_lower_grams: true,
+                            trend_ci_upper_grams: true,
+                            trend_std_grams: true
                         }
                     }
                 }

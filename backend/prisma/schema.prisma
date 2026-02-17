@@ -119,14 +119,14 @@ model BodyMetricTrend {
   user_id            Int
   /// Duplicated metric date allows date-range operations without an additional join.
   date               DateTime  @db.Date
-  /// Materialized latent trend estimate in kilograms.
-  trend_weight_kg    Float
-  /// Materialized lower 95% confidence bound in kilograms.
-  trend_ci_lower_kg  Float
-  /// Materialized upper 95% confidence bound in kilograms.
-  trend_ci_upper_kg  Float
-  /// Materialized posterior standard deviation in kilograms.
-  trend_std_kg       Float
+  /// Materialized latent trend estimate in grams.
+  trend_weight_grams Int
+  /// Materialized lower 95% confidence bound in grams.
+  trend_ci_lower_grams Int
+  /// Materialized upper 95% confidence bound in grams.
+  trend_ci_upper_grams Int
+  /// Materialized posterior standard deviation in grams.
+  trend_std_grams    Int
   /// Version marker for invalidating persisted rows if model behavior changes later.
   model_version      Int       @default(1)
   /// Timestamp for operational visibility into the latest recompute.
