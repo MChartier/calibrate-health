@@ -1,43 +1,70 @@
 import prisma from '../config/database';
+import { addUtcDays } from '../utils/date';
 import { computeWeightTrend } from './weightTrend';
 
 const GRAMS_PER_KILOGRAM = 1000; // Canonical storage-to-model conversion for trend persistence.
+export const MATERIALIZED_TREND_ACTIVE_HORIZON_DAYS = 120; // Keep trend modeling focused on recent weight behavior.
+export const MATERIALIZED_TREND_WARMUP_DAYS = 30; // Extra context stabilizes the first active-window trend points.
 export const WEIGHT_TREND_MODEL_VERSION = 1;
 
 type TrendPersistenceClient = Pick<typeof prisma, 'bodyMetric' | 'bodyMetricTrend'>;
+type MetricHistoryRow = {
+    id: number;
+    user_id: number;
+    date: Date;
+    weight_grams: number;
+};
+type MaterializedTrendWindow = {
+    activeStartDate: Date;
+    modelStartDate: Date;
+};
 
 /**
- * Recompute and replace one user's materialized weight trend rows from current BodyMetric history.
+ * Compute the active trend window and model warmup bounds from the latest metric date.
  */
-export async function recomputeAndStoreUserWeightTrends(
-    userId: number,
-    client: TrendPersistenceClient = prisma
-): Promise<void> {
-    const metricsAsc = await client.bodyMetric.findMany({
-        where: { user_id: userId },
-        orderBy: { date: 'asc' },
-        select: { id: true, user_id: true, date: true, weight_grams: true }
-    });
+export function getMaterializedTrendWindowFromLatestDate(latestMetricDate: Date): MaterializedTrendWindow {
+    const activeStartDate = addUtcDays(latestMetricDate, -(MATERIALIZED_TREND_ACTIVE_HORIZON_DAYS - 1));
+    const modelStartDate = addUtcDays(activeStartDate, -MATERIALIZED_TREND_WARMUP_DAYS);
+    return { activeStartDate, modelStartDate };
+}
 
+/**
+ * Return the subset of metrics needed to model the active trend horizon.
+ */
+function getMetricsForModelWindow(metricsAsc: MetricHistoryRow[], modelStartDate: Date): MetricHistoryRow[] {
+    return metricsAsc.filter((metric) => metric.date >= modelStartDate);
+}
+
+/**
+ * Build persistence rows only for dates in the active trend horizon.
+ */
+function buildActiveTrendRows(
+    metricsForModelWindow: MetricHistoryRow[],
+    activeStartDate: Date
+): Array<{
+    metric_id: number;
+    user_id: number;
+    date: Date;
+    trend_weight_kg: number;
+    trend_ci_lower_kg: number;
+    trend_ci_upper_kg: number;
+    trend_std_kg: number;
+    model_version: number;
+}> {
     const trendResult = computeWeightTrend(
-        metricsAsc.map((metric) => ({
+        metricsForModelWindow.map((metric) => ({
             date: metric.date,
             weight: metric.weight_grams / GRAMS_PER_KILOGRAM
         }))
     );
-
-    await client.bodyMetricTrend.deleteMany({
-        where: { user_id: userId }
-    });
-
-    if (metricsAsc.length === 0) return;
 
     const trendByDateMs = new Map<number, (typeof trendResult.points)[number]>();
     for (const point of trendResult.points) {
         trendByDateMs.set(point.date.getTime(), point);
     }
 
-    const rows = metricsAsc.flatMap((metric) => {
+    return metricsForModelWindow.flatMap((metric) => {
+        if (metric.date < activeStartDate) return [];
         const point = trendByDateMs.get(metric.date.getTime());
         if (!point) return [];
         return [
@@ -53,19 +80,61 @@ export async function recomputeAndStoreUserWeightTrends(
             }
         ];
     });
-
-    if (rows.length === 0) return;
-
-    await client.bodyMetricTrend.createMany({ data: rows });
 }
 
 /**
- * Ensure trend rows exist for all metrics and match the active model version.
+ * Recompute and replace one user's materialized weight trend rows from current BodyMetric history.
+ */
+export async function recomputeAndStoreUserWeightTrends(
+    userId: number,
+    client: TrendPersistenceClient = prisma
+): Promise<void> {
+    const metricsAsc = await client.bodyMetric.findMany({
+        where: { user_id: userId },
+        orderBy: { date: 'asc' },
+        select: { id: true, user_id: true, date: true, weight_grams: true }
+    });
+
+    if (metricsAsc.length === 0) {
+        await client.bodyMetricTrend.deleteMany({
+            where: { user_id: userId }
+        });
+        return;
+    }
+
+    const latestMetricDate = metricsAsc[metricsAsc.length - 1].date;
+    const { activeStartDate, modelStartDate } = getMaterializedTrendWindowFromLatestDate(latestMetricDate);
+    const metricsForModelWindow = getMetricsForModelWindow(metricsAsc, modelStartDate);
+    const rows = buildActiveTrendRows(metricsForModelWindow, activeStartDate);
+
+    await client.bodyMetricTrend.deleteMany({
+        where: {
+            user_id: userId,
+            date: { gte: activeStartDate }
+        }
+    });
+
+    if (rows.length > 0) {
+        await client.bodyMetricTrend.createMany({ data: rows });
+    }
+}
+
+/**
+ * Ensure active-horizon trend rows exist and match the active model version.
  */
 export async function ensureMaterializedWeightTrends(userId: number): Promise<void> {
+    const latestMetric = await prisma.bodyMetric.findFirst({
+        where: { user_id: userId },
+        orderBy: { date: 'desc' },
+        select: { date: true }
+    });
+    if (!latestMetric) return;
+
+    const { activeStartDate } = getMaterializedTrendWindowFromLatestDate(latestMetric.date);
     const staleOrMissing = await prisma.bodyMetric.findFirst({
         where: {
             user_id: userId,
+            date: { gte: activeStartDate },
             OR: [{ trend: { is: null } }, { trend: { is: { model_version: { not: WEIGHT_TREND_MODEL_VERSION } } } }]
         },
         select: { id: true }

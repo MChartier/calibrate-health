@@ -12,6 +12,7 @@ import { parsePositiveInteger } from '../utils/requestParsing';
 import { summarizeWeightTrend, type VolatilityLevel } from '../services/weightTrend';
 import {
     ensureMaterializedWeightTrends,
+    getMaterializedTrendWindowFromLatestDate,
     refreshMaterializedWeightTrendsBestEffort
 } from '../services/materializedWeightTrend';
 
@@ -230,14 +231,16 @@ function serializeMetrics(
 function buildTrendMetricsResponse(
     metricsAsc: MetricRecordWithTrend[],
     filteredAsc: MetricRecordWithTrend[],
-    weightUnit: WeightUnit
+    weightUnit: WeightUnit,
+    activeTrendStartDate: Date | null
 ): TrendMetricsResponse {
+    const activeTrendStartMs = activeTrendStartDate ? activeTrendStartDate.getTime() : Number.POSITIVE_INFINITY;
+    const hasActiveTrend = (metric: MetricRecordWithTrend): metric is MetricRecord & { trend: MetricTrendRecord } =>
+        metric.trend !== null && metric.trend !== undefined && metric.date.getTime() >= activeTrendStartMs;
+
     const trendSummary = summarizeWeightTrend(
         metricsAsc
-            .filter(
-                (metric): metric is MetricRecord & { trend: MetricTrendRecord } =>
-                    metric.trend !== null && metric.trend !== undefined
-            )
+            .filter(hasActiveTrend)
             .map((metric) => ({
                 date: metric.date,
                 trendWeight: metric.trend.trend_weight_kg,
@@ -250,16 +253,17 @@ function buildTrendMetricsResponse(
         .reverse()
         .map((metric) => {
             const weight = gramsToWeight(metric.weight_grams, weightUnit);
+            const trend = hasActiveTrend(metric) ? metric.trend : null;
             return {
                 id: metric.id,
                 user_id: metric.user_id,
                 date: metric.date,
                 body_fat_percent: metric.body_fat_percent,
                 weight,
-                trend_weight: metric.trend ? kilogramsToWeightUnit(metric.trend.trend_weight_kg, weightUnit) : weight,
-                trend_ci_lower: metric.trend ? kilogramsToWeightUnit(metric.trend.trend_ci_lower_kg, weightUnit) : weight,
-                trend_ci_upper: metric.trend ? kilogramsToWeightUnit(metric.trend.trend_ci_upper_kg, weightUnit) : weight,
-                trend_std: metric.trend ? kilogramsToWeightUnit(metric.trend.trend_std_kg, weightUnit) : 0
+                trend_weight: trend ? kilogramsToWeightUnit(trend.trend_weight_kg, weightUnit) : weight,
+                trend_ci_lower: trend ? kilogramsToWeightUnit(trend.trend_ci_lower_kg, weightUnit) : weight,
+                trend_ci_upper: trend ? kilogramsToWeightUnit(trend.trend_ci_upper_kg, weightUnit) : weight,
+                trend_std: trend ? kilogramsToWeightUnit(trend.trend_std_kg, weightUnit) : 0
             };
         });
 
@@ -335,7 +339,11 @@ router.get('/', async (req, res) => {
 
             const absoluteFiltered = applyAbsoluteDateFilter(metricsAsc, requestedStart, requestedEnd);
             const relativeFiltered = applyRelativeRangeFilter(absoluteFiltered, rangeOption ?? null, (row) => row.date);
-            return res.json(buildTrendMetricsResponse(metricsAsc, relativeFiltered, weightUnit));
+            const activeTrendStartDate =
+                metricsAsc.length > 0
+                    ? getMaterializedTrendWindowFromLatestDate(metricsAsc[metricsAsc.length - 1].date).activeStartDate
+                    : null;
+            return res.json(buildTrendMetricsResponse(metricsAsc, relativeFiltered, weightUnit, activeTrendStartDate));
         }
 
         const smoothingWindowDays = typeof smoothingDays === 'number' ? smoothingDays : null;

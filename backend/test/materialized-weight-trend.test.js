@@ -28,6 +28,64 @@ function loadMaterializedWeightTrendService(prismaStub) {
   return loaded;
 }
 
+/**
+ * Build an ascending daily metric history ending on the supplied date.
+ */
+function buildDailyMetricHistory(opts) {
+  const rows = [];
+  for (let index = 0; index < opts.count; index += 1) {
+    const offsetDays = opts.count - index - 1;
+    const date = new Date(opts.endDate);
+    date.setUTCDate(date.getUTCDate() - offsetDays);
+    rows.push({
+      id: index + 1,
+      user_id: opts.userId,
+      date,
+      weight_grams: 80000 - index * 15
+    });
+  }
+  return rows;
+}
+
+test('materializedWeightTrend: recomputeAndStoreUserWeightTrends only refreshes active-horizon rows', async () => {
+  const userId = 31;
+  const metrics = buildDailyMetricHistory({
+    userId,
+    count: 220,
+    endDate: new Date('2026-02-16T00:00:00Z')
+  });
+
+  let deletedWhere = null;
+  let insertedRows = null;
+  const prismaStub = {
+    bodyMetric: {
+      findMany: async () => metrics
+    },
+    bodyMetricTrend: {
+      deleteMany: async (args) => {
+        deletedWhere = args.where;
+        return { count: 42 };
+      },
+      createMany: async (args) => {
+        insertedRows = args.data;
+        return { count: args.data.length };
+      }
+    }
+  };
+  const service = loadMaterializedWeightTrendService(prismaStub);
+
+  await service.recomputeAndStoreUserWeightTrends(userId);
+
+  const { activeStartDate } = service.getMaterializedTrendWindowFromLatestDate(metrics[metrics.length - 1].date);
+  assert.deepEqual(deletedWhere, {
+    user_id: userId,
+    date: { gte: activeStartDate }
+  });
+  assert.ok(Array.isArray(insertedRows));
+  assert.equal(insertedRows.length, service.MATERIALIZED_TREND_ACTIVE_HORIZON_DAYS);
+  assert.ok(insertedRows.every((row) => row.date >= activeStartDate));
+});
+
 test('materializedWeightTrend: refreshMaterializedWeightTrendsBestEffort invalidates stale rows when recompute fails', async () => {
   let invalidationWhere = null;
   const prismaStub = {

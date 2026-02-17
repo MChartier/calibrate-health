@@ -403,6 +403,65 @@ test('metrics route: GET / trend payload stays unit-invariant across KG and LB p
   }
 });
 
+test('metrics route: GET / ignores trend rows older than the active trend horizon', async () => {
+  const oldDate = new Date('2024-01-01T00:00:00Z');
+  const latestDate = new Date('2025-01-10T00:00:00Z');
+  const rows = [
+    {
+      id: 1,
+      user_id: 7,
+      date: oldDate,
+      weight_grams: 92000,
+      body_fat_percent: null,
+      trend: {
+        trend_weight_kg: 88,
+        trend_ci_lower_kg: 87.5,
+        trend_ci_upper_kg: 88.5,
+        trend_std_kg: 0.25
+      }
+    },
+    {
+      id: 2,
+      user_id: 7,
+      date: latestDate,
+      weight_grams: 80500,
+      body_fat_percent: null,
+      trend: {
+        trend_weight_kg: 80.45,
+        trend_ci_lower_kg: 80.1,
+        trend_ci_upper_kg: 80.8,
+        trend_std_kg: 0.18
+      }
+    }
+  ];
+
+  const prismaStub = {
+    bodyMetric: {
+      findFirst: async () => null,
+      findMany: async () => rows
+    }
+  };
+  const router = loadMetricsRouter(prismaStub);
+  const handler = getRouteHandler(router, 'get', '/');
+
+  const req = {
+    user: { id: 7, weight_unit: 'KG' },
+    query: { include_trend: 'true', range: 'all' }
+  };
+  const res = createRes();
+  await handler(req, res);
+
+  assert.equal(res.statusCode, 200);
+  assert.equal(res.body.metrics.length, 2);
+  // Response is newest-first, so the old point is index 1.
+  const oldMetric = res.body.metrics[1];
+  assert.equal(oldMetric.date.getTime(), oldDate.getTime());
+  assert.equal(oldMetric.trend_weight, oldMetric.weight);
+  assert.equal(oldMetric.trend_ci_lower, oldMetric.weight);
+  assert.equal(oldMetric.trend_ci_upper, oldMetric.weight);
+  assert.equal(oldMetric.trend_std, 0);
+});
+
 test('metrics route: POST / rejects invalid date values', async () => {
   const prismaStub = { bodyMetric: {} };
   const router = loadMetricsRouter(prismaStub);
