@@ -29,10 +29,33 @@ export function getMaterializedTrendWindowFromLatestDate(latestMetricDate: Date)
 }
 
 /**
- * Return the subset of metrics needed to model the active trend horizon.
+ * Load only the metrics needed to model the active trend horizon.
  */
-function getMetricsForModelWindow(metricsAsc: MetricHistoryRow[], modelStartDate: Date): MetricHistoryRow[] {
-    return metricsAsc.filter((metric) => metric.date >= modelStartDate);
+async function loadMetricsForModelWindow(
+    userId: number,
+    modelStartDate: Date,
+    client: TrendPersistenceClient
+): Promise<MetricHistoryRow[]> {
+    return client.bodyMetric.findMany({
+        where: {
+            user_id: userId,
+            date: { gte: modelStartDate }
+        },
+        orderBy: { date: 'asc' },
+        select: { id: true, user_id: true, date: true, weight_grams: true }
+    });
+}
+
+/**
+ * Fetch the newest metric date so recompute can anchor the active horizon.
+ */
+async function findLatestMetricDate(userId: number, client: TrendPersistenceClient): Promise<Date | null> {
+    const latestMetric = await client.bodyMetric.findFirst({
+        where: { user_id: userId },
+        orderBy: { date: 'desc' },
+        select: { date: true }
+    });
+    return latestMetric?.date ?? null;
 }
 
 /**
@@ -89,22 +112,16 @@ export async function recomputeAndStoreUserWeightTrends(
     userId: number,
     client: TrendPersistenceClient = prisma
 ): Promise<void> {
-    const metricsAsc = await client.bodyMetric.findMany({
-        where: { user_id: userId },
-        orderBy: { date: 'asc' },
-        select: { id: true, user_id: true, date: true, weight_grams: true }
-    });
-
-    if (metricsAsc.length === 0) {
+    const latestMetricDate = await findLatestMetricDate(userId, client);
+    if (!latestMetricDate) {
         await client.bodyMetricTrend.deleteMany({
             where: { user_id: userId }
         });
         return;
     }
 
-    const latestMetricDate = metricsAsc[metricsAsc.length - 1].date;
     const { activeStartDate, modelStartDate } = getMaterializedTrendWindowFromLatestDate(latestMetricDate);
-    const metricsForModelWindow = getMetricsForModelWindow(metricsAsc, modelStartDate);
+    const metricsForModelWindow = await loadMetricsForModelWindow(userId, modelStartDate, client);
     const rows = buildActiveTrendRows(metricsForModelWindow, activeStartDate);
 
     await client.bodyMetricTrend.deleteMany({

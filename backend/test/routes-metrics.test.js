@@ -25,6 +25,7 @@ function loadMetricsRouter(prismaStub) {
   const normalizedPrismaStub = {
     ...prismaStub,
     bodyMetric: {
+      findFirst: async () => null,
       findMany: async () => [],
       ...(prismaStub.bodyMetric ?? {})
     },

@@ -57,9 +57,14 @@ test('materializedWeightTrend: recomputeAndStoreUserWeightTrends only refreshes 
 
   let deletedWhere = null;
   let insertedRows = null;
+  let modelFindManyArgs = null;
   const prismaStub = {
     bodyMetric: {
-      findMany: async () => metrics
+      findFirst: async () => ({ date: metrics[metrics.length - 1].date }),
+      findMany: async (args) => {
+        modelFindManyArgs = args;
+        return metrics.filter((metric) => metric.date >= args.where.date.gte);
+      }
     },
     bodyMetricTrend: {
       deleteMany: async (args) => {
@@ -76,7 +81,9 @@ test('materializedWeightTrend: recomputeAndStoreUserWeightTrends only refreshes 
 
   await service.recomputeAndStoreUserWeightTrends(userId);
 
-  const { activeStartDate } = service.getMaterializedTrendWindowFromLatestDate(metrics[metrics.length - 1].date);
+  const { activeStartDate, modelStartDate } = service.getMaterializedTrendWindowFromLatestDate(metrics[metrics.length - 1].date);
+  assert.equal(modelFindManyArgs.where.date.gte.getTime(), modelStartDate.getTime());
+  assert.deepEqual(modelFindManyArgs.where.user_id, userId);
   assert.deepEqual(deletedWhere, {
     user_id: userId,
     date: { gte: activeStartDate }
@@ -90,6 +97,7 @@ test('materializedWeightTrend: refreshMaterializedWeightTrendsBestEffort invalid
   let invalidationWhere = null;
   const prismaStub = {
     bodyMetric: {
+      findFirst: async () => ({ date: new Date('2026-02-16T00:00:00Z') }),
       findMany: async () => {
         throw new Error('recompute read failed');
       }
@@ -123,6 +131,7 @@ test('materializedWeightTrend: refreshMaterializedWeightTrendsBestEffort invalid
 test('materializedWeightTrend: refreshMaterializedWeightTrendsBestEffort warns when recompute and invalidation both fail', async () => {
   const prismaStub = {
     bodyMetric: {
+      findFirst: async () => ({ date: new Date('2026-02-16T00:00:00Z') }),
       findMany: async () => {
         throw new Error('recompute read failed');
       }
@@ -157,7 +166,7 @@ test('materializedWeightTrend: refreshMaterializedWeightTrendsBestEffort stays q
   let deleteCount = 0;
   const prismaStub = {
     bodyMetric: {
-      findMany: async () => []
+      findFirst: async () => null
     },
     bodyMetricTrend: {
       deleteMany: async () => {
