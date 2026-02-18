@@ -8,18 +8,21 @@ This document explains the weight trend model used by the Goals chart so we can:
 - reason about the assumptions in the model
 - tune behavior safely when we want different responsiveness or stability
 
-The implementation lives primarily in `backend/src/services/weightTrend.ts`, with API wiring in `backend/src/routes/metrics.ts` and chart rendering in `frontend/src/pages/Goals.tsx`.
+The implementation lives primarily in `backend/src/services/weightTrend.ts`, with materialization + recompute windowing in `backend/src/services/materializedWeightTrend.ts`, API wiring in `backend/src/routes/metrics.ts`, and chart rendering in `frontend/src/pages/Goals.tsx`.
 
 ## High-Level Flow
 
 1. We start with timestamped weight logs stored in grams.
-2. We convert grams to kilograms (unrounded) for all model calculations.
-3. We sort observations by date and estimate a recency-weighted linear drift (weight change per day).
-4. We estimate measurement noise and process noise from robust residual statistics.
-5. We run a 1D Kalman filter to estimate the latent trend weight at each observation.
-6. We expose trend points, uncertainty (standard deviation), and a 95% uncertainty band.
-7. We convert trend outputs back to the user's display unit for API responses.
-8. The frontend renders:
+2. We define a bounded modeling window from the latest metric date:
+   - active trend horizon: latest 120 days
+   - warmup context: prior 30 days
+3. We convert grams to kilograms (unrounded) for all model calculations.
+4. We sort windowed observations by date and estimate a recency-weighted linear drift (weight change per day).
+5. We estimate measurement noise and process noise from robust residual statistics.
+6. We run a 1D Kalman filter to estimate the latent trend weight at each observation.
+7. We materialize only active-horizon trend points for API reads.
+8. We convert trend outputs back to the user's display unit for API responses.
+9. The frontend renders:
    - raw weight points
    - trend line
    - expected range band (95% CI)
@@ -48,6 +51,36 @@ Important route behavior (`backend/src/routes/metrics.ts`):
 - `start` and `end` apply absolute date filters.
 - legacy `smoothing` applies only to non-trend mode.
 - trend modeling runs in kilograms internally, then `trend_*` and `weekly_rate` are converted to user unit at serialization.
+- trend values older than the active horizon are intentionally ignored at read time (raw weight fallback is used), even if older materialized rows still exist.
+
+Important materialization behavior (`backend/src/services/materializedWeightTrend.ts`):
+
+- write-time refresh recomputes only a bounded model window (active horizon + warmup), not full history.
+- write-time refresh reads only that bounded window from the database (`BodyMetric.date >= modelStartDate`) to avoid full-history over-fetching.
+- materialized trend values are stored in grams as integers (`BodyMetricTrend.trend_*_grams`) for consistency with canonical weight storage.
+- refresh rewrites only trend rows in the active horizon.
+- read-time ensure checks missing/stale trend rows only in the active horizon.
+- if write-time refresh fails, existing trend rows are invalidated so the next trend read forces a fresh recompute.
+
+## Materialized Trend Horizon
+
+The trend system uses two windows anchored to the most recent metric date:
+
+- active horizon (`MATERIALIZED_TREND_ACTIVE_HORIZON_DAYS = 120`):
+  - days that receive materialized trend/confidence values and influence chart trend rendering.
+- warmup (`MATERIALIZED_TREND_WARMUP_DAYS = 30`):
+  - extra context included in model fitting so the first active-horizon points are stable.
+
+Why this split exists:
+
+- old history should not materially influence today's trend behavior.
+- a short warmup avoids boundary artifacts from abruptly starting the filter at the first active day.
+- limiting to the recent window reduces write-time recompute cost for long-lived accounts.
+
+Effect on old points:
+
+- points older than the active horizon fall back to raw-weight trend fields (`trend_weight = weight`, `trend_ci_* = weight`, `trend_std = 0`).
+- this is intentional: recent trend interpretation remains responsive and computationally bounded.
 
 Important chart behavior (`frontend/src/pages/Goals.tsx`):
 
@@ -197,6 +230,11 @@ Core constants in `backend/src/services/weightTrend.ts`:
 - `MAX_PROCESS_TO_MEASUREMENT_VARIANCE_RATIO = 0.35`
 - `MAX_PREDICTION_GAP_DAYS = 14`
 
+Materialization window constants in `backend/src/services/materializedWeightTrend.ts`:
+
+- `MATERIALIZED_TREND_ACTIVE_HORIZON_DAYS = 120`
+- `MATERIALIZED_TREND_WARMUP_DAYS = 30`
+
 ### Model Defaults (KG Internal)
 
 - `measurementStd = 0.9`
@@ -215,6 +253,7 @@ Core constants in `backend/src/services/weightTrend.ts`:
 
 - Weight is modeled as a latent smooth signal plus noise.
 - Drift is approximately linear over the historical window used for slope estimation.
+- The model deliberately prioritizes recent history by restricting materialized trend output to a bounded active horizon.
 - Day-to-day fluctuations are treated as noise around that latent trend.
 - Uncertainty is represented as a Gaussian-style band (`+/- 1.96 * std`) around the latent trend estimate.
 - Long logging gaps should not imply strong trend continuity, so prediction horizon is capped.

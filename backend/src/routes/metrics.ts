@@ -1,5 +1,5 @@
 import express from 'express';
-import { type BodyMetric } from '@prisma/client';
+import { type BodyMetric, type BodyMetricTrend } from '@prisma/client';
 import prisma from '../config/database';
 import {
     gramsToWeight,
@@ -9,7 +9,12 @@ import {
 } from '../utils/units';
 import { MS_PER_DAY, addUtcDays, getUtcTodayDateOnlyInTimeZone, normalizeToUtcDateOnly } from '../utils/date';
 import { parsePositiveInteger } from '../utils/requestParsing';
-import { computeWeightTrend, type VolatilityLevel } from '../services/weightTrend';
+import { summarizeWeightTrend, type VolatilityLevel } from '../services/weightTrend';
+import {
+    ensureMaterializedWeightTrends,
+    getMaterializedTrendWindowFromLatestDate,
+    refreshMaterializedWeightTrendsBestEffort
+} from '../services/materializedWeightTrend';
 
 /**
  * Weight and body metric log endpoints.
@@ -19,7 +24,7 @@ import { computeWeightTrend, type VolatilityLevel } from '../services/weightTren
 const router = express.Router();
 
 const ROLLING_WEIGHT_AVERAGE_DAYS = 7; // Rolling window length for weight smoothing requests.
-const GRAMS_PER_KILOGRAM = 1000; // Canonical storage-to-model conversion factor for weight trends.
+const GRAMS_PER_KILOGRAM = 1000; // Canonical conversion used for trend serialization.
 const POUNDS_PER_KILOGRAM = 2.2046226218487757; // High-precision factor so trend math stays unit-invariant.
 const METRICS_RANGE_OPTIONS = {
     WEEK: 'week',
@@ -31,6 +36,11 @@ const METRICS_RANGE_OPTIONS = {
 type MetricsRange = (typeof METRICS_RANGE_OPTIONS)[keyof typeof METRICS_RANGE_OPTIONS];
 
 type MetricRecord = Pick<BodyMetric, 'id' | 'user_id' | 'date' | 'weight_grams' | 'body_fat_percent'>;
+type MetricTrendRecord = Pick<
+    BodyMetricTrend,
+    'trend_weight_grams' | 'trend_ci_lower_grams' | 'trend_ci_upper_grams' | 'trend_std_grams'
+>;
+type MetricRecordWithTrend = MetricRecord & { trend: MetricTrendRecord | null };
 type MetricAverage = { metric: MetricRecord; averageWeightGrams: number };
 type SerializedMetric = {
     id: number;
@@ -190,18 +200,18 @@ function getMetricsSpanDays(rows: { date: Date }[]): number {
 }
 
 /**
- * Convert stored integer grams into unrounded kilograms for internal trend modeling.
- */
-function gramsToKilograms(grams: number): number {
-    return grams / GRAMS_PER_KILOGRAM;
-}
-
-/**
  * Convert internal kilogram trend values into the user's display unit without chart-destabilizing rounding.
  */
 function kilogramsToWeightUnit(kilograms: number, weightUnit: WeightUnit): number {
     if (weightUnit === 'KG') return kilograms;
     return kilograms * POUNDS_PER_KILOGRAM;
+}
+
+/**
+ * Convert materialized trend values stored in grams to the user's display unit.
+ */
+function trendGramsToWeightUnit(grams: number, weightUnit: WeightUnit): number {
+    return kilogramsToWeightUnit(grams / GRAMS_PER_KILOGRAM, weightUnit);
 }
 
 /**
@@ -227,45 +237,49 @@ function serializeMetrics(
  * Build the trend-augmented response shape for chart rendering.
  */
 function buildTrendMetricsResponse(
-    metricsAsc: MetricRecord[],
-    filteredAsc: MetricRecord[],
-    weightUnit: WeightUnit
+    metricsAsc: MetricRecordWithTrend[],
+    filteredAsc: MetricRecordWithTrend[],
+    weightUnit: WeightUnit,
+    activeTrendStartDate: Date | null
 ): TrendMetricsResponse {
-    const observations = metricsAsc.map((metric) => ({
-        date: metric.date,
-        weight: gramsToKilograms(metric.weight_grams)
-    }));
-    const trendResult = computeWeightTrend(observations);
+    const activeTrendStartMs = activeTrendStartDate ? activeTrendStartDate.getTime() : Number.POSITIVE_INFINITY;
+    const hasActiveTrend = (metric: MetricRecordWithTrend): metric is MetricRecord & { trend: MetricTrendRecord } =>
+        metric.trend !== null && metric.trend !== undefined && metric.date.getTime() >= activeTrendStartMs;
 
-    const trendByDateMs = new Map<number, (typeof trendResult.points)[number]>();
-    for (const point of trendResult.points) {
-        trendByDateMs.set(point.date.getTime(), point);
-    }
+    const trendSummary = summarizeWeightTrend(
+        metricsAsc
+            .filter(hasActiveTrend)
+            .map((metric) => ({
+                date: metric.date,
+                trendWeight: metric.trend.trend_weight_grams / GRAMS_PER_KILOGRAM,
+                trendStd: metric.trend.trend_std_grams / GRAMS_PER_KILOGRAM
+            }))
+    );
 
     const metrics: SerializedTrendMetric[] = filteredAsc
         .slice()
         .reverse()
         .map((metric) => {
-            const trendPoint = trendByDateMs.get(metric.date.getTime());
             const weight = gramsToWeight(metric.weight_grams, weightUnit);
+            const trend = hasActiveTrend(metric) ? metric.trend : null;
             return {
                 id: metric.id,
                 user_id: metric.user_id,
                 date: metric.date,
                 body_fat_percent: metric.body_fat_percent,
                 weight,
-                trend_weight: trendPoint ? kilogramsToWeightUnit(trendPoint.trendWeight, weightUnit) : weight,
-                trend_ci_lower: trendPoint ? kilogramsToWeightUnit(trendPoint.lower95, weightUnit) : weight,
-                trend_ci_upper: trendPoint ? kilogramsToWeightUnit(trendPoint.upper95, weightUnit) : weight,
-                trend_std: trendPoint ? kilogramsToWeightUnit(trendPoint.trendStd, weightUnit) : 0
+                trend_weight: trend ? trendGramsToWeightUnit(trend.trend_weight_grams, weightUnit) : weight,
+                trend_ci_lower: trend ? trendGramsToWeightUnit(trend.trend_ci_lower_grams, weightUnit) : weight,
+                trend_ci_upper: trend ? trendGramsToWeightUnit(trend.trend_ci_upper_grams, weightUnit) : weight,
+                trend_std: trend ? trendGramsToWeightUnit(trend.trend_std_grams, weightUnit) : 0
             };
         });
 
     return {
         metrics,
         meta: {
-            weekly_rate: kilogramsToWeightUnit(trendResult.weeklyRate, weightUnit),
-            volatility: trendResult.volatility,
+            weekly_rate: kilogramsToWeightUnit(trendSummary.weeklyRate, weightUnit),
+            volatility: trendSummary.volatility,
             total_points: metricsAsc.length,
             total_span_days: getMetricsSpanDays(metricsAsc)
         }
@@ -315,14 +329,29 @@ router.get('/', async (req, res) => {
         }
 
         if (includeTrend) {
+            await ensureMaterializedWeightTrends(user.id);
             const metricsAsc = await prisma.bodyMetric.findMany({
                 where: { user_id: user.id },
-                orderBy: { date: 'asc' }
+                orderBy: { date: 'asc' },
+                include: {
+                    trend: {
+                        select: {
+                            trend_weight_grams: true,
+                            trend_ci_lower_grams: true,
+                            trend_ci_upper_grams: true,
+                            trend_std_grams: true
+                        }
+                    }
+                }
             });
 
             const absoluteFiltered = applyAbsoluteDateFilter(metricsAsc, requestedStart, requestedEnd);
             const relativeFiltered = applyRelativeRangeFilter(absoluteFiltered, rangeOption ?? null, (row) => row.date);
-            return res.json(buildTrendMetricsResponse(metricsAsc, relativeFiltered, weightUnit));
+            const activeTrendStartDate =
+                metricsAsc.length > 0
+                    ? getMaterializedTrendWindowFromLatestDate(metricsAsc[metricsAsc.length - 1].date).activeStartDate
+                    : null;
+            return res.json(buildTrendMetricsResponse(metricsAsc, relativeFiltered, weightUnit, activeTrendStartDate));
         }
 
         const smoothingWindowDays = typeof smoothingDays === 'number' ? smoothingDays : null;
@@ -431,6 +460,10 @@ router.post('/', async (req, res) => {
             });
         }
 
+        if (updateData.weight_grams !== undefined) {
+            await refreshMaterializedWeightTrendsBestEffort(user.id);
+        }
+
         const { weight_grams: savedWeightGrams, ...savedMetric } = metric;
         res.json({ ...savedMetric, weight: gramsToWeight(savedWeightGrams, weightUnit) });
     } catch (err) {
@@ -451,6 +484,7 @@ router.delete('/:id', async (req, res) => {
             return res.status(404).json({ message: 'Metric not found' });
         }
 
+        await refreshMaterializedWeightTrendsBestEffort(user.id);
         res.status(204).send();
     } catch (err) {
         res.status(500).json({ message: 'Server error' });

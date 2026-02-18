@@ -55,6 +55,17 @@ export type WeightTrendResult = {
   };
 };
 
+export type WeightTrendSummaryInput = {
+  date: Date;
+  trendWeight: number;
+  trendStd: number;
+};
+
+export type WeightTrendSummary = {
+  weeklyRate: number;
+  volatility: VolatilityLevel;
+};
+
 /**
  * Estimate latent "true weight" from noisy daily weigh-ins with a scalar Kalman filter.
  *
@@ -113,6 +124,41 @@ export function computeWeightTrend(observations: WeightTrendObservation[]): Weig
       processVariance,
       measurementVariance
     }
+  };
+}
+
+/**
+ * Summarize already-computed trend points into user-facing metadata.
+ *
+ * This keeps API responses aligned with `computeWeightTrend` when trend values are materialized.
+ */
+export function summarizeWeightTrend(points: WeightTrendSummaryInput[]): WeightTrendSummary {
+  if (points.length === 0) {
+    return {
+      weeklyRate: 0,
+      volatility: 'low'
+    };
+  }
+
+  const normalized = points
+    .filter((point) => Number.isFinite(point.date.getTime()) && Number.isFinite(point.trendWeight) && Number.isFinite(point.trendStd))
+    .slice()
+    .sort((a, b) => a.date.getTime() - b.date.getTime())
+    .map<WeightTrendPoint>((point) => {
+      const trendStd = Math.max(0, point.trendStd);
+      return {
+        date: point.date,
+        weight: point.trendWeight,
+        trendWeight: point.trendWeight,
+        trendStd,
+        lower95: point.trendWeight - TREND_CONFIDENCE_Z_SCORE * trendStd,
+        upper95: point.trendWeight + TREND_CONFIDENCE_Z_SCORE * trendStd
+      };
+    });
+
+  return {
+    weeklyRate: computeRecentWeeklyRate(normalized),
+    volatility: classifyVolatility(normalized)
   };
 }
 
