@@ -25,6 +25,7 @@ import {
 import { useAuth } from '../context/useAuth';
 import { useQuickAddFab } from '../context/useQuickAddFab';
 import { useI18n } from '../i18n/useI18n';
+import { haptic } from '../utils/haptics';
 import { formatIsoDateForDisplay, getTodayIsoDate } from '../utils/date';
 
 /**
@@ -74,13 +75,19 @@ const LogQuickAddFab: React.FC<LogQuickAddFabProps> = ({ date }) => {
                     key="add-food"
                     icon={<RestaurantIcon />}
                     tooltipTitle={t('log.speedDial.addFood')}
-                    onClick={dialogs.openFoodDialog}
+                    onClick={() => {
+                        haptic.tap();
+                        dialogs.openFoodDialog();
+                    }}
                 />
                 <SpeedDialAction
                     key="add-weight"
                     icon={<MonitorWeightIcon />}
                     tooltipTitle={t('log.speedDial.addWeight')}
-                    onClick={openWeightDialogFromFab}
+                    onClick={() => {
+                        haptic.tap();
+                        openWeightDialogFromFab();
+                    }}
                 />
             </SpeedDial>
 

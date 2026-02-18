@@ -68,6 +68,8 @@ model User {
   reminder_log_weight_enabled Boolean @default(true)
   /// Account-level preference for food reminder notifications across devices.
   reminder_log_food_enabled   Boolean @default(true)
+  /// Account-level preference that enables/disables app haptic feedback patterns.
+  haptics_enabled             Boolean @default(true)
   date_of_birth DateTime?
   sex           Sex?
   height_mm     Int?
