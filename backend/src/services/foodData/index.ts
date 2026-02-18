@@ -42,8 +42,19 @@ const providerRegistry: Record<FoodDataSource, FoodDataProviderConfig> = {
     }
 };
 
+const DEFAULT_PROVIDER: FoodDataSource = 'fatsecret';
+// Preferred order for fallback when multiple providers are enabled.
+const DEFAULT_PROVIDER_ORDER: FoodDataSource[] = ['fatsecret', 'usda', 'openFoodFacts'];
+
 const providerCache: Partial<Record<FoodDataSource, FoodDataProvider>> = {};
 let providerInstance: FoodDataProvider | null = null;
+let primaryProviderSelection: PrimaryProviderSelection | null = null;
+
+type PrimaryProviderSelection = {
+    normalized: FoodDataSource;
+    requestedRaw?: string;
+    requestedValue: string;
+};
 
 const normalizeProviderName = (value: string): FoodDataSource | null => {
     const normalized = value.trim().toLowerCase();
@@ -76,6 +87,96 @@ const formatMissingEnvSentence = (missing: string[]): string => {
         return `${missing[0]} is missing`;
     }
     return `${missing.join(', ')} are missing`;
+};
+
+/**
+ * Resolve the primary provider name from environment config once per process.
+ */
+const resolvePrimaryProviderSelection = (): PrimaryProviderSelection => {
+    if (primaryProviderSelection) {
+        return primaryProviderSelection;
+    }
+
+    const requestedRaw = process.env.FOOD_DATA_PROVIDER;
+    const requestedValue = (requestedRaw || DEFAULT_PROVIDER).toLowerCase();
+    let normalized = normalizeProviderName(requestedValue);
+
+    if (!normalized) {
+        console.warn(
+            `FOOD_DATA_PROVIDER=${requestedRaw ?? requestedValue} is not recognized. ` +
+                'Set FOOD_DATA_PROVIDER to fatsecret, usda, or openfoodfacts. Falling back to FatSecret.'
+        );
+        normalized = DEFAULT_PROVIDER;
+    }
+
+    primaryProviderSelection = { normalized, requestedRaw, requestedValue };
+    return primaryProviderSelection;
+};
+
+/**
+ * Build a stable provider order starting with the configured primary provider.
+ */
+const buildProviderOrder = (primary: FoodDataSource): FoodDataSource[] => {
+    const order = [primary, ...DEFAULT_PROVIDER_ORDER.filter((name) => name !== primary)];
+    const fallbackSet = new Set(order);
+
+    for (const name of Object.keys(providerRegistry) as FoodDataSource[]) {
+        if (!fallbackSet.has(name)) {
+            order.push(name);
+            fallbackSet.add(name);
+        }
+    }
+
+    return order;
+};
+
+export type EnabledFoodDataProviders = {
+    primary: FoodDataProviderInfo;
+    providers: FoodDataProviderInfo[];
+};
+
+/**
+ * Return the normalized primary provider name.
+ */
+export const getPrimaryFoodDataProviderName = (): FoodDataSource => {
+    return resolvePrimaryProviderSelection().normalized;
+};
+
+/**
+ * List enabled providers in fallback order while preserving primary metadata.
+ */
+export const getEnabledFoodDataProviders = (): EnabledFoodDataProviders => {
+    const providers = listFoodDataProviders();
+    const primaryName = getPrimaryFoodDataProviderName();
+    const primary =
+        providers.find((provider) => provider.name === primaryName) ??
+        ({
+            name: primaryName,
+            label: providerRegistry[primaryName]?.label ?? primaryName,
+            supportsBarcodeLookup: providerRegistry[primaryName]?.supportsBarcodeLookup ?? false,
+            ready: false,
+            detail: 'Provider metadata missing.'
+        } satisfies FoodDataProviderInfo);
+
+    const orderedNames = buildProviderOrder(primaryName);
+    const providersByName = new Map(providers.map((provider) => [provider.name, provider]));
+    const orderedReady: FoodDataProviderInfo[] = [];
+
+    for (const name of orderedNames) {
+        const provider = providersByName.get(name);
+        if (provider?.ready) {
+            orderedReady.push(provider);
+        }
+        providersByName.delete(name);
+    }
+
+    for (const provider of providersByName.values()) {
+        if (provider.ready) {
+            orderedReady.push(provider);
+        }
+    }
+
+    return { primary, providers: orderedReady };
 };
 
 /**
@@ -150,17 +251,7 @@ export const getFoodDataProvider = (): FoodDataProvider => {
         return providerInstance;
     }
 
-    const requestedRaw = process.env.FOOD_DATA_PROVIDER;
-    const requested = (requestedRaw || 'fatsecret').toLowerCase();
-    let normalized = normalizeProviderName(requested);
-
-    if (!normalized) {
-        console.warn(
-            `FOOD_DATA_PROVIDER=${requestedRaw ?? requested} is not recognized. ` +
-                'Set FOOD_DATA_PROVIDER to fatsecret, usda, or openfoodfacts. Falling back to FatSecret.'
-        );
-        normalized = 'fatsecret';
-    }
+    const { normalized, requestedRaw, requestedValue } = resolvePrimaryProviderSelection();
 
     const resolution = getFoodDataProviderByName(normalized);
     if (resolution.provider) {
@@ -175,12 +266,12 @@ export const getFoodDataProvider = (): FoodDataProvider => {
             ? `Set ${missing[0]} to enable ${config.label}.`
             : `Set ${missing.join(', ')} to enable ${config.label}.`;
         console.warn(
-            `FOOD_DATA_PROVIDER=${requestedRaw ?? requested}, but ${formatMissingEnvSentence(missing)}. ` +
+            `FOOD_DATA_PROVIDER=${requestedRaw ?? requestedValue}, but ${formatMissingEnvSentence(missing)}. ` +
                 `${action} Falling back to Open Food Facts.`
         );
     } else {
         console.warn(
-            `FOOD_DATA_PROVIDER=${requestedRaw ?? requested} failed to initialize. ` +
+            `FOOD_DATA_PROVIDER=${requestedRaw ?? requestedValue} failed to initialize. ` +
                 'Check the provider configuration and credentials. Falling back to Open Food Facts.'
         );
     }
