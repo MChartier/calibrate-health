@@ -15,6 +15,7 @@ import {
     useTheme
 } from '@mui/material';
 import type { BrowserBarcodeReader, DecodeHintType } from '@zxing/library';
+import { haptic } from '../utils/haptics';
 
 /**
  * Barcode scanning dialog with native BarcodeDetector support and ZXing fallback.
@@ -205,6 +206,7 @@ const BarcodeScannerDialog: React.FC<Props> = ({ open, onClose, onDetected }) =>
             const normalized = normalizeBarcodeValue(barcode);
             if (!normalized) {
                 setError('Enter a barcode made up of digits (UPC/EAN).');
+                haptic.warning();
                 return;
             }
 
@@ -293,7 +295,7 @@ const BarcodeScannerDialog: React.FC<Props> = ({ open, onClose, onDetected }) =>
                             const rawValue = detections.find((detected) => Boolean(detected.rawValue))?.rawValue;
                             const normalized = rawValue ? normalizeBarcodeValue(rawValue) : '';
                             if (normalized) {
-                                navigator.vibrate?.(80);
+                                haptic.success();
                                 submitBarcode(normalized);
                                 return;
                             }
@@ -353,7 +355,7 @@ const BarcodeScannerDialog: React.FC<Props> = ({ open, onClose, onDetected }) =>
                     if (result) {
                         const normalized = normalizeBarcodeValue(result.getText());
                         if (normalized) {
-                            navigator.vibrate?.(80);
+                            haptic.success();
                             submitBarcode(normalized);
                         }
                         return;
@@ -370,6 +372,7 @@ const BarcodeScannerDialog: React.FC<Props> = ({ open, onClose, onDetected }) =>
 
                 console.error(cameraError);
                 setError(describeCameraError(cameraError));
+                haptic.error();
                 stopCamera();
             } finally {
                 if (!cancelled) {

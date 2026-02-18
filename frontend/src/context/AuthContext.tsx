@@ -9,6 +9,7 @@ import {
     type WeightUnit
 } from './authContext';
 import type { AppLanguage } from '../i18n/languages';
+import { setHapticsEnabled } from '../utils/haptics';
 
 /**
  * AuthProvider bootstraps session state and exposes auth/profile mutations.
@@ -58,6 +59,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     useEffect(() => {
         void checkAuth();
     }, [checkAuth]);
+
+    useEffect(() => {
+        setHapticsEnabled(user?.haptics_enabled ?? true);
+    }, [user?.haptics_enabled]);
 
     const login = async (email: string, password: string) => {
         const res = await axios.post('/auth/login', { email, password });
@@ -109,6 +114,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const updateReminderPreferences = async (preferences: {
         reminder_log_weight_enabled?: boolean;
         reminder_log_food_enabled?: boolean;
+    }) => {
+        const res = await axios.patch('/api/user/preferences', preferences);
+        setUser(res.data.user);
+    };
+
+    /**
+     * Update feedback preferences that affect interaction affordances like haptics.
+     */
+    const updateFeedbackPreferences = async (preferences: {
+        haptics_enabled?: boolean;
     }) => {
         const res = await axios.patch('/api/user/preferences', preferences);
         setUser(res.data.user);
@@ -187,6 +202,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 changePassword,
                 updateUnitPreferences,
                 updateReminderPreferences,
+                updateFeedbackPreferences,
                 updateWeightUnit,
                 updateHeightUnit,
                 updateLanguage,

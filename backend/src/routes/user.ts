@@ -180,12 +180,13 @@ router.patch('/password', async (req, res) => {
 
 router.patch('/preferences', async (req, res) => {
   const user = req.user as any;
-  const { weight_unit, height_unit, language, reminder_log_weight_enabled, reminder_log_food_enabled } = req.body as {
+  const { weight_unit, height_unit, language, reminder_log_weight_enabled, reminder_log_food_enabled, haptics_enabled } = req.body as {
     weight_unit?: unknown;
     height_unit?: unknown;
     language?: unknown;
     reminder_log_weight_enabled?: unknown;
     reminder_log_food_enabled?: unknown;
+    haptics_enabled?: unknown;
   };
 
   if (
@@ -193,7 +194,8 @@ router.patch('/preferences', async (req, res) => {
     height_unit === undefined &&
     language === undefined &&
     reminder_log_weight_enabled === undefined &&
-    reminder_log_food_enabled === undefined
+    reminder_log_food_enabled === undefined &&
+    haptics_enabled === undefined
   ) {
     return res.status(400).json({ message: 'No fields to update' });
   }
@@ -204,6 +206,7 @@ router.patch('/preferences', async (req, res) => {
     language: SupportedLanguage;
     reminder_log_weight_enabled: boolean;
     reminder_log_food_enabled: boolean;
+    haptics_enabled: boolean;
   }> = {};
 
   if (weight_unit !== undefined) {
@@ -239,6 +242,13 @@ router.patch('/preferences', async (req, res) => {
       return res.status(400).json({ message: 'Invalid reminder_log_food_enabled' });
     }
     updateData.reminder_log_food_enabled = reminder_log_food_enabled;
+  }
+
+  if (haptics_enabled !== undefined) {
+    if (typeof haptics_enabled !== 'boolean') {
+      return res.status(400).json({ message: 'Invalid haptics_enabled' });
+    }
+    updateData.haptics_enabled = haptics_enabled;
   }
 
   try {

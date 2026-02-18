@@ -29,6 +29,7 @@ import {
     useMetricsQuery
 } from '../queries/metrics';
 import { useI18n } from '../i18n/useI18n';
+import { haptic } from '../utils/haptics';
 
 /**
  * Weight entry dialog content for logging or editing daily weigh-ins.
@@ -133,9 +134,11 @@ const WeightEntryFormContent: React.FC<WeightEntryFormContentProps> = ({
         setError(null);
         try {
             await saveMutation.mutateAsync();
+            haptic.success();
             setWeight('');
             onSuccess?.();
         } catch (err) {
+            haptic.error();
             setError(getApiErrorMessage(err) ?? t('weightEntry.error.saveFailed'));
         }
     };
@@ -155,10 +158,12 @@ const WeightEntryFormContent: React.FC<WeightEntryFormContentProps> = ({
         setError(null);
         try {
             await deleteMutation.mutateAsync(existingMetric.id);
+            haptic.warning();
             setIsDeleteConfirmOpen(false);
             setWeight('');
             onSuccess?.();
         } catch (err) {
+            haptic.error();
             setError(getApiErrorMessage(err) ?? t('weightEntry.error.deleteFailed'));
         }
     };

@@ -34,6 +34,7 @@ import SectionHeader from '../ui/SectionHeader';
 import { APP_LANGUAGES, DEFAULT_APP_LANGUAGE, type AppLanguage } from '../i18n/languages';
 import { useI18n } from '../i18n/useI18n';
 import { CALIBRATE_REPO_URL } from '../constants/links';
+import { setHapticsEnabled, supportsHaptics } from '../utils/haptics';
 import { resolveServiceWorkerRegistration, urlBase64ToUint8Array } from '../utils/pushNotifications';
 
 const ABOUT_PARAGRAPH_SPACING = 1.5; // Spacing between About card paragraphs.
@@ -63,11 +64,12 @@ const Settings: React.FC = () => {
     // Tighter section spacing on small screens keeps settings cards readable without excess gaps.
     const sectionSpacing = { xs: sectionGapCompact, sm: sectionGapCompact, md: sectionGap };
     const { t } = useI18n();
-    const { user, updateUnitPreferences, updateReminderPreferences, updateTimezone, updateLanguage } = useAuth();
+    const { user, updateUnitPreferences, updateReminderPreferences, updateFeedbackPreferences, updateTimezone, updateLanguage } = useAuth();
     const { preference: themePreference, mode: resolvedThemeMode, setPreference: setThemePreference } = useThemeMode();
 
     const { status: unitsStatus, showStatus: showUnitsStatus } = useTransientStatus();
     const { status: remindersStatus, showStatus: showRemindersStatus } = useTransientStatus();
+    const { status: feedbackStatus, showStatus: showFeedbackStatus } = useTransientStatus();
 
     const detectedTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
     const [timezoneValue, setTimezoneValue] = useState(() => user?.timezone ?? detectedTimezone);
@@ -77,8 +79,10 @@ const Settings: React.FC = () => {
     const [remindersEnabled, setRemindersEnabled] = useState(false);
     const [reminderLogWeightEnabled, setReminderLogWeightEnabled] = useState(() => user?.reminder_log_weight_enabled ?? true);
     const [reminderLogFoodEnabled, setReminderLogFoodEnabled] = useState(() => user?.reminder_log_food_enabled ?? true);
+    const [hapticsEnabled, setHapticsEnabledState] = useState(() => user?.haptics_enabled ?? true);
     const [isUpdatingReminders, setIsUpdatingReminders] = useState(false);
     const [isUpdatingReminderPreferences, setIsUpdatingReminderPreferences] = useState(false);
+    const [isUpdatingFeedbackPreferences, setIsUpdatingFeedbackPreferences] = useState(false);
     const [notificationPermission, setNotificationPermission] = useState<NotificationPermission | 'unsupported'>(() => {
         if (typeof window === 'undefined' || !('Notification' in window)) {
             return 'unsupported';
@@ -89,6 +93,7 @@ const Settings: React.FC = () => {
     const supportsNotifications = typeof window !== 'undefined' && 'Notification' in window;
     const supportsServiceWorker = typeof window !== 'undefined' && 'serviceWorker' in navigator;
     const supportsPushManager = typeof window !== 'undefined' && 'PushManager' in window;
+    const hapticsSupportAvailable = supportsHaptics();
     const iosDevice = isIosDevice();
     const standaloneDisplayMode = isStandaloneDisplayMode();
 
@@ -126,15 +131,40 @@ const Settings: React.FC = () => {
         setLanguageValue(user?.language ?? DEFAULT_APP_LANGUAGE);
         setReminderLogWeightEnabled(user?.reminder_log_weight_enabled ?? true);
         setReminderLogFoodEnabled(user?.reminder_log_food_enabled ?? true);
+        setHapticsEnabledState(user?.haptics_enabled ?? true);
     }, [
         detectedTimezone,
         user?.height_unit,
+        user?.haptics_enabled,
         user?.language,
         user?.reminder_log_food_enabled,
         user?.reminder_log_weight_enabled,
         user?.timezone,
         user?.weight_unit
     ]);
+
+    const handleHapticsToggle = async (nextEnabled: boolean) => {
+        if (!user) {
+            showFeedbackStatus(t('status.failedToSaveChanges'), 'error');
+            return;
+        }
+
+        const previous = hapticsEnabled;
+        setHapticsEnabledState(nextEnabled);
+        setHapticsEnabled(nextEnabled);
+        setIsUpdatingFeedbackPreferences(true);
+
+        try {
+            await updateFeedbackPreferences({ haptics_enabled: nextEnabled });
+            showFeedbackStatus(t('settings.feedbackUpdatedStatus'), 'success');
+        } catch {
+            setHapticsEnabledState(previous);
+            setHapticsEnabled(previous);
+            showFeedbackStatus(t('settings.feedbackUpdateFailed'), 'error');
+        } finally {
+            setIsUpdatingFeedbackPreferences(false);
+        }
+    };
 
     const loadReminderSubscriptionStatus = useCallback(async () => {
         if (!supportsServiceWorker || !supportsPushManager) {
@@ -390,6 +420,36 @@ const Settings: React.FC = () => {
                 <AccountSecurityCard />
 
                 <LoseItImportCard />
+
+                <AppCard>
+                    <Stack spacing={1.5} useFlexGap>
+                        <SectionHeader title={t('settings.feedbackTitle')} />
+
+                        <Typography variant="body2" color="text.secondary">
+                            {t('settings.feedbackDescription')}
+                        </Typography>
+
+                        <InlineStatusLine status={feedbackStatus} />
+
+                        <FormControl>
+                            <FormControlLabel
+                                control={
+                                    <Switch
+                                        checked={hapticsEnabled}
+                                        onChange={(e) => void handleHapticsToggle(e.target.checked)}
+                                        disabled={!user || isUpdatingFeedbackPreferences}
+                                    />
+                                }
+                                label={t('settings.feedbackHapticsLabel')}
+                            />
+                            <FormHelperText>
+                                {hapticsSupportAvailable
+                                    ? t('settings.feedbackHapticsHelper')
+                                    : t('settings.feedbackHapticsUnsupported')}
+                            </FormHelperText>
+                        </FormControl>
+                    </Stack>
+                </AppCard>
 
                 <AppCard>
                     <Stack spacing={1.5} useFlexGap>

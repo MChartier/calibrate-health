@@ -8,11 +8,15 @@ import {
     Checkbox,
     Chip,
     Divider,
+    FormControl,
     FormControlLabel,
     FormGroup,
     Grid,
     IconButton,
+    InputLabel,
     InputAdornment,
+    MenuItem,
+    Select,
     Stack,
     TextField,
     Typography
@@ -20,7 +24,9 @@ import {
 import QrCodeScannerIcon from '@mui/icons-material/QrCodeScannerRounded';
 import axios from 'axios';
 import BarcodeScannerDialog from '../components/BarcodeScannerDialog';
+import { useAuth } from '../context/useAuth';
 import { clearAppBadge, isBadgingSupported, setAppBadge } from '../utils/badging';
+import { haptic } from '../utils/haptics';
 import { resolveServiceWorkerRegistration, urlBase64ToUint8Array } from '../utils/pushNotifications';
 
 type FoodDataSource = 'fatsecret' | 'usda' | 'openFoodFacts';
@@ -67,10 +73,20 @@ type ResetTestUserOnboardingResponse = {
     user: { email?: string } | null;
 };
 
+type ProductHapticPatternId = 'tap' | 'success' | 'warning' | 'error';
+
+const PRODUCT_HAPTIC_PATTERN_OPTIONS: Array<{ id: ProductHapticPatternId; label: string }> = [
+    { id: 'tap', label: 'Product tap (10ms)' },
+    { id: 'success', label: 'Product success (15ms)' },
+    { id: 'warning', label: 'Product warning ([20, 40, 20]ms)' },
+    { id: 'error', label: 'Product error ([30, 30, 30]ms)' }
+];
+
 /**
  * Dev-only dashboard to compare food search results side-by-side across providers.
  */
 const DevDashboard: React.FC = () => {
+    const { user } = useAuth();
     const [providers, setProviders] = useState<FoodProviderInfo[]>([]);
     const [selectedProviders, setSelectedProviders] = useState<FoodDataSource[]>([]);
     const [query, setQuery] = useState('');
@@ -92,12 +108,20 @@ const DevDashboard: React.FC = () => {
     const [activePushEndpoint, setActivePushEndpoint] = useState<string | null>(null);
     const [badgeStatus, setBadgeStatus] = useState<string | null>(null);
     const [badgeError, setBadgeError] = useState<string | null>(null);
+    const [vibrationStatus, setVibrationStatus] = useState<string | null>(null);
+    const [vibrationError, setVibrationError] = useState<string | null>(null);
+    const [selectedProductHapticPattern, setSelectedProductHapticPattern] = useState<ProductHapticPatternId>('tap');
 
     const notificationPermission =
         typeof window !== 'undefined' && 'Notification' in window ? Notification.permission : 'unsupported';
     const supportsServiceWorker = typeof window !== 'undefined' && 'serviceWorker' in navigator;
     const supportsPushManager = typeof window !== 'undefined' && 'PushManager' in window;
     const supportsBadging = isBadgingSupported();
+    const supportsVibrationApi = typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function';
+    const prefersReducedMotion =
+        typeof window !== 'undefined' &&
+        typeof window.matchMedia === 'function' &&
+        window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
     /**
      * Fetch provider metadata so the UI reflects current backend configuration.
@@ -377,6 +401,37 @@ const DevDashboard: React.FC = () => {
     }, []);
 
     /**
+     * Trigger the currently selected product haptic pattern through the app utility.
+     */
+    const testSelectedProductHapticPattern = useCallback(() => {
+        setVibrationError(null);
+        setVibrationStatus(null);
+
+        const selectedOption = PRODUCT_HAPTIC_PATTERN_OPTIONS.find((option) => option.id === selectedProductHapticPattern);
+
+        try {
+            switch (selectedProductHapticPattern) {
+                case 'tap':
+                    haptic.tap();
+                    break;
+                case 'success':
+                    haptic.success();
+                    break;
+                case 'warning':
+                    haptic.warning();
+                    break;
+                case 'error':
+                    haptic.error();
+                    break;
+            }
+            setVibrationStatus(`Triggered ${selectedOption?.label ?? 'selected pattern'}.`);
+        } catch (err) {
+            console.error(err);
+            setVibrationError('Failed to trigger app haptic pattern.');
+        }
+    }, [selectedProductHapticPattern]);
+
+    /**
      * Run a search against the selected providers using either a free-text query or a UPC/EAN barcode.
      */
     const runSearch = useCallback(
@@ -511,6 +566,71 @@ const DevDashboard: React.FC = () => {
                                 Clear message
                             </Button>
                         </Stack>
+                    </Stack>
+                </CardContent>
+            </Card>
+
+            <Card variant="outlined" sx={{ mb: 3 }}>
+                <CardContent>
+                    <Stack spacing={2}>
+                        <Box>
+                            <Typography variant="subtitle1" gutterBottom>
+                                Vibration API
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary">
+                                Test the exact haptic patterns used in product interactions.
+                            </Typography>
+                        </Box>
+
+                        <Stack spacing={0.5}>
+                            <Typography variant="body2" color="text.secondary">
+                                Vibrate API: {supportsVibrationApi ? 'supported' : 'unsupported'}
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary">
+                                Account haptics setting: {user?.haptics_enabled ?? true ? 'enabled' : 'disabled'}
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary">
+                                Prefers reduced motion: {prefersReducedMotion ? 'yes' : 'no'}
+                            </Typography>
+                        </Stack>
+
+                        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
+                            <FormControl fullWidth>
+                                <InputLabel id="dev-haptics-pattern-label">Pattern</InputLabel>
+                                <Select
+                                    labelId="dev-haptics-pattern-label"
+                                    label="Pattern"
+                                    value={selectedProductHapticPattern}
+                                    onChange={(event) =>
+                                        setSelectedProductHapticPattern(event.target.value as ProductHapticPatternId)
+                                    }
+                                >
+                                    {PRODUCT_HAPTIC_PATTERN_OPTIONS.map((option) => (
+                                        <MenuItem key={option.id} value={option.id}>
+                                            {option.label}
+                                        </MenuItem>
+                                    ))}
+                                </Select>
+                            </FormControl>
+                            <Button
+                                variant="contained"
+                                onClick={() => testSelectedProductHapticPattern()}
+                            >
+                                Test
+                            </Button>
+                            <Button
+                                variant="text"
+                                onClick={() => {
+                                    setVibrationError(null);
+                                    setVibrationStatus(null);
+                                }}
+                            >
+                                Clear message
+                            </Button>
+                        </Stack>
+
+                        {vibrationError && <Alert severity="error">{vibrationError}</Alert>}
+                        {vibrationStatus && <Alert severity="success">{vibrationStatus}</Alert>}
                     </Stack>
                 </CardContent>
             </Card>
