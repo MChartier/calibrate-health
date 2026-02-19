@@ -257,25 +257,37 @@ const Goals: React.FC = () => {
         return rows;
     }, [points]);
 
-    const xDomain = useMemo(() => {
-        if (requestedWindow) {
-            const min = parseDateOnlyToLocalDate(requestedWindow.startIso);
-            const max = parseDateOnlyToLocalDate(requestedWindow.endIso);
-            if (min && max) return { min, max };
-        }
+    const dataDomain = useMemo(() => {
         if (points.length === 0) return null;
         return {
             min: startOfLocalDay(points[0].date),
             max: startOfLocalDay(points[points.length - 1].date)
         };
-    }, [points, requestedWindow]);
+    }, [points]);
+    const dataSpanDays = useMemo(() => {
+        if (!dataDomain) return 0;
+        const diffDays = Math.round((dataDomain.max.getTime() - dataDomain.min.getTime()) / MS_PER_DAY);
+        return Math.max(1, diffDays + 1);
+    }, [dataDomain]);
+    const showRangeControl =
+        (trendMeta?.total_span_days ?? dataSpanDays) >= RANGE_CONTROL_MIN_DAYS ||
+        (trendMeta?.total_points ?? points.length) >= RANGE_CONTROL_MIN_POINTS;
+
+    const xDomain = useMemo(() => {
+        if (showRangeControl && requestedWindow) {
+            const min = parseDateOnlyToLocalDate(requestedWindow.startIso);
+            const max = parseDateOnlyToLocalDate(requestedWindow.endIso);
+            if (min && max) return { min, max };
+        }
+        return dataDomain;
+    }, [dataDomain, requestedWindow, showRangeControl]);
 
     const activeSpanDays = useMemo(() => {
-        if (requestedWindow) return requestedWindow.windowDays;
+        if (showRangeControl && requestedWindow) return requestedWindow.windowDays;
         if (!xDomain) return 0;
         const diffDays = Math.round((xDomain.max.getTime() - xDomain.min.getTime()) / MS_PER_DAY);
         return Math.max(1, diffDays + 1);
-    }, [requestedWindow, xDomain]);
+    }, [requestedWindow, showRangeControl, xDomain]);
 
     const xAxisLabelOptions = useMemo(() => getAxisLabelOptions(activeSpanDays), [activeSpanDays]);
     const xAxisFormatter = useMemo(() => new Intl.DateTimeFormat(undefined, xAxisLabelOptions), [xAxisLabelOptions]);
@@ -354,13 +366,10 @@ const Goals: React.FC = () => {
         return { min: min - padding, max: max + padding };
     }, [goal, targetIsValid, visiblePoints]);
 
-    const showRangeControl =
-        (trendMeta?.total_span_days ?? activeSpanDays) >= RANGE_CONTROL_MIN_DAYS ||
-        (trendMeta?.total_points ?? points.length) >= RANGE_CONTROL_MIN_POINTS;
     const canPanBackward = useMemo(() => {
-        if (!requestedWindow || !earliestMetricDateIso) return false;
+        if (!showRangeControl || !requestedWindow || !earliestMetricDateIso) return false;
         return requestedWindow.startIso > earliestMetricDateIso;
-    }, [earliestMetricDateIso, requestedWindow]);
+    }, [earliestMetricDateIso, requestedWindow, showRangeControl]);
     const canPanForward = panWindowIndex > 0;
     const showPanControls = showRangeControl && requestedWindow !== null;
     const visibleWindowLabel = useMemo(() => {
