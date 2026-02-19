@@ -30,6 +30,12 @@ export type TrendMetricsResponse = {
     };
 };
 
+export type TrendMetricsQueryParams = {
+    range?: MetricsRange;
+    start?: string;
+    end?: string;
+};
+
 /**
  * Build the canonical React Query key for the current user's weight history.
  */
@@ -48,11 +54,13 @@ export async function fetchMetrics(): Promise<MetricEntry[]> {
 /**
  * Fetch trend-augmented metrics prepared by the server for chart rendering.
  */
-export async function fetchTrendMetrics(range: MetricsRange): Promise<TrendMetricsResponse> {
+export async function fetchTrendMetrics(params: TrendMetricsQueryParams): Promise<TrendMetricsResponse> {
     const res = await axios.get('/api/metrics', {
         params: {
             include_trend: 'true',
-            range
+            ...(params.range ? { range: params.range } : {}),
+            ...(params.start ? { start: params.start } : {}),
+            ...(params.end ? { end: params.end } : {})
         }
     });
 
