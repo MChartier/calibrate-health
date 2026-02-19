@@ -1,25 +1,17 @@
 import React, { useMemo, useState } from 'react';
-import {
-    Alert,
-    Box,
-    FormControlLabel,
-    Skeleton,
-    Stack,
-    Switch,
-    ToggleButton,
-    ToggleButtonGroup,
-    Typography
-} from '@mui/material';
-import { useTheme } from '@mui/material/styles';
+import { Alert, Box, IconButton, Skeleton, Stack, ToggleButton, ToggleButtonGroup, Tooltip, Typography } from '@mui/material';
+import { alpha, useTheme } from '@mui/material/styles';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import axios from 'axios';
 import { useQuery } from '@tanstack/react-query';
 import { LineChart } from '@mui/x-charts/LineChart';
 import { ChartsReferenceLine } from '@mui/x-charts/ChartsReferenceLine';
 import GoalTrackerCard from '../components/GoalTrackerCard';
 import { useAuth } from '../context/useAuth';
-import { addDays, parseDateOnlyToLocalDate, startOfLocalDay } from '../utils/goalTracking';
+import { parseDateOnlyToLocalDate, startOfLocalDay } from '../utils/goalTracking';
 import { MS_PER_DAY } from '../utils/date';
-import { type MetricEntry, useMetricsQuery } from '../queries/metrics';
+import { METRICS_RANGE_OPTIONS, type MetricsRange } from '../constants/metricsRanges';
+import { fetchTrendMetrics } from '../queries/metrics';
 import AppPage from '../ui/AppPage';
 import AppCard from '../ui/AppCard';
 import SectionHeader from '../ui/SectionHeader';
@@ -38,37 +30,34 @@ type GoalResponse = {
     created_at: string;
 };
 
-type WeightPoint = { date: Date; weight: number };
-
-const WEIGHT_HISTORY_RANGES = {
-    WEEK: 'WEEK',
-    MONTH: 'MONTH',
-    YEAR: 'YEAR',
-    ALL: 'ALL'
-} as const;
-
-type WeightHistoryRange = (typeof WEIGHT_HISTORY_RANGES)[keyof typeof WEIGHT_HISTORY_RANGES];
-
-const RANGE_DAYS_BY_KEY: Record<Exclude<WeightHistoryRange, 'ALL'>, number> = {
-    WEEK: 7,
-    MONTH: 30,
-    YEAR: 365
+type WeightPoint = {
+    date: Date;
+    rawWeight: number;
+    trendWeight: number;
+    rangeLower: number;
+    rangeUpper: number;
+};
+type ChartPoint = {
+    date: Date;
+    rawWeight: number | null;
+    trendWeight: number | null;
+    rangeLower: number | null;
+    rangeUpper: number | null;
 };
 
 const RANGE_CONTROL_MIN_POINTS = 45; // Minimum number of points before showing the range control.
 const RANGE_CONTROL_MIN_DAYS = 45; // Minimum span (in days) before showing the range control.
-const SMOOTHING_WINDOW_DAYS = 7; // Rolling window length for weight history smoothing.
-const SMOOTHING_QUERY_VALUE = `${SMOOTHING_WINDOW_DAYS}d`;
 const CONTROLS_ROW_GAP = 1.5; // Spacing between weight history controls when wrapping.
-
-/**
- * Compute the local-day start date for a range window ending at the latest weight entry.
- */
-function getRangeStartDate(endDate: Date, range: WeightHistoryRange): Date | null {
-    if (range === WEIGHT_HISTORY_RANGES.ALL) return null;
-    const days = RANGE_DAYS_BY_KEY[range];
-    return addDays(startOfLocalDay(endDate), -(days - 1));
-}
+const CHART_HEIGHT_PX = 320; // Fixed chart height for consistent card layout.
+const LEGEND_SWATCH_SIZE_PX = 12; // Square legend swatch size used for dots/area chips.
+const CHART_GAP_BREAK_DAYS = 21; // Break line/area segments when logs are sparse to avoid misleading interpolation across long gaps.
+const TREND_LINE_STROKE_WIDTH_PX = 4; // Emphasize trend as the primary signal.
+const RAW_LINE_STROKE_WIDTH_PX = 2; // Keep daily measurements visible but secondary to the trend.
+const RAW_LINE_ALPHA = 0.6; // Reduce visual dominance of noisy day-to-day measurements.
+const EXPECTED_RANGE_FILL_ALPHA = 0.065; // Keep expected range visible on light backgrounds without overpowering lines.
+const EXPECTED_RANGE_EDGE_ALPHA = 0.14; // Subtle edge improves band readability against white chart backgrounds.
+const RAW_MARK_STROKE_WIDTH_PX = 1.5; // Soften marker outlines to reduce clutter on dense histories.
+const WEIGHT_HISTORY_TOOLTIP_MAX_WIDTH_PX = 340; // Maintain readable tooltip wrapping on mobile and desktop.
 
 /**
  * Choose x-axis date label granularity based on the displayed span.
@@ -95,16 +84,15 @@ const Goals: React.FC = () => {
     const sectionSpacing = { xs: sectionGapCompact, sm: sectionGapCompact, md: sectionGap };
     const unitLabel = user?.weight_unit === 'LB' ? 'lb' : 'kg';
     const rawWeightSeriesLabel = t('goals.weightSeriesLabel', { unit: unitLabel });
-    const smoothedWeightSeriesLabel = t('goals.weightSeriesLabelSmoothed', {
-        unit: unitLabel,
-        days: SMOOTHING_WINDOW_DAYS
-    });
-    const legendSwatchSizePx = 12;
-    const weightChartHeightPx = 320;
-    const smoothingLabel = t('goals.weightHistorySmoothingLabel', { days: SMOOTHING_WINDOW_DAYS });
+    const trendSeriesLabel = t('goals.trendLabel');
+    const expectedRangeLabel = t('goals.expectedRangeLabel');
+    const trendLineColor = theme.palette.primary.dark;
+    const rawLineColor = alpha(theme.palette.primary.main, RAW_LINE_ALPHA);
+    const expectedRangeFillColor = alpha(theme.palette.primary.main, EXPECTED_RANGE_FILL_ALPHA);
+    const expectedRangeEdgeColor = alpha(theme.palette.primary.main, EXPECTED_RANGE_EDGE_ALPHA);
 
-    const [isSmoothed, setIsSmoothed] = useState(false);
-    const [selectedRange, setSelectedRange] = useState<WeightHistoryRange | null>(null);
+    // Default to YEAR so long histories do not fetch/render the full timeline on initial load.
+    const [selectedRange, setSelectedRange] = useState<MetricsRange>(METRICS_RANGE_OPTIONS.YEAR);
 
     const goalQuery = useQuery({
         queryKey: ['goal'],
@@ -114,69 +102,90 @@ const Goals: React.FC = () => {
         }
     });
 
-    const rawMetricsQuery = useMetricsQuery();
-    const smoothedMetricsQuery = useQuery({
-        queryKey: ['metrics', 'history', SMOOTHING_QUERY_VALUE],
-        queryFn: async (): Promise<MetricEntry[]> => {
-            const res = await axios.get('/api/metrics', {
-                params: { smoothing: SMOOTHING_QUERY_VALUE }
-            });
-            return Array.isArray(res.data) ? res.data : [];
-        },
-        enabled: isSmoothed
+    const trendMetricsQuery = useQuery({
+        queryKey: ['metrics', 'trend', selectedRange],
+        queryFn: async () => fetchTrendMetrics(selectedRange)
     });
 
-    const metricsQuery = isSmoothed ? smoothedMetricsQuery : rawMetricsQuery;
-    const metrics = useMemo(() => metricsQuery.data ?? [], [metricsQuery.data]);
     const goal = goalQuery.data;
-
-    const weightSeriesLabel = isSmoothed ? smoothedWeightSeriesLabel : rawWeightSeriesLabel;
+    const trendMetrics = useMemo(() => trendMetricsQuery.data?.metrics ?? [], [trendMetricsQuery.data]);
+    const trendMeta = trendMetricsQuery.data?.meta ?? null;
 
     const points = useMemo(() => {
-        const parsed: WeightPoint[] = metrics
-            .filter((metric) => typeof metric.weight === 'number' && Number.isFinite(metric.weight))
+        const parsed: WeightPoint[] = trendMetrics
+            .filter(
+                (metric) =>
+                    Number.isFinite(metric.weight) &&
+                    Number.isFinite(metric.trend_weight) &&
+                    Number.isFinite(metric.trend_ci_lower) &&
+                    Number.isFinite(metric.trend_ci_upper)
+            )
             .map((metric) => {
                 const date = parseDateOnlyToLocalDate(metric.date);
                 if (!date) return null;
-                return { date, weight: metric.weight };
+                return {
+                    date,
+                    rawWeight: metric.weight,
+                    trendWeight: metric.trend_weight,
+                    rangeLower: metric.trend_ci_lower,
+                    rangeUpper: metric.trend_ci_upper
+                };
             })
             .filter((value): value is WeightPoint => value !== null);
 
         parsed.sort((a, b) => a.date.getTime() - b.date.getTime());
         return parsed;
-    }, [metrics]);
+    }, [trendMetrics]);
+    const chartPoints = useMemo(() => {
+        if (points.length === 0) return [];
 
-    const spanDays = useMemo(() => {
+        const rows: ChartPoint[] = [
+            {
+                date: points[0].date,
+                rawWeight: points[0].rawWeight,
+                trendWeight: points[0].trendWeight,
+                rangeLower: points[0].rangeLower,
+                rangeUpper: points[0].rangeUpper
+            }
+        ];
+
+        for (let index = 1; index < points.length; index += 1) {
+            const previousPoint = points[index - 1];
+            const currentPoint = points[index];
+            const gapDays = Math.round(
+                (startOfLocalDay(currentPoint.date).getTime() - startOfLocalDay(previousPoint.date).getTime()) / MS_PER_DAY
+            );
+
+            if (gapDays > CHART_GAP_BREAK_DAYS) {
+                const midpointDate = new Date(previousPoint.date.getTime() + (currentPoint.date.getTime() - previousPoint.date.getTime()) / 2);
+                rows.push({
+                    date: midpointDate,
+                    rawWeight: null,
+                    trendWeight: null,
+                    rangeLower: null,
+                    rangeUpper: null
+                });
+            }
+
+            rows.push({
+                date: currentPoint.date,
+                rawWeight: currentPoint.rawWeight,
+                trendWeight: currentPoint.trendWeight,
+                rangeLower: currentPoint.rangeLower,
+                rangeUpper: currentPoint.rangeUpper
+            });
+        }
+
+        return rows;
+    }, [points]);
+
+    const activeSpanDays = useMemo(() => {
         if (points.length === 0) return 0;
         const start = startOfLocalDay(points[0].date);
         const end = startOfLocalDay(points[points.length - 1].date);
         const diffDays = Math.round((end.getTime() - start.getTime()) / MS_PER_DAY);
         return Math.max(1, diffDays + 1);
     }, [points]);
-
-    const defaultRange = useMemo<WeightHistoryRange>(() => {
-        if (spanDays >= RANGE_DAYS_BY_KEY.YEAR) return WEIGHT_HISTORY_RANGES.YEAR;
-        if (spanDays >= RANGE_DAYS_BY_KEY.MONTH) return WEIGHT_HISTORY_RANGES.MONTH;
-        return WEIGHT_HISTORY_RANGES.ALL;
-    }, [spanDays]);
-
-    const activeRange = selectedRange ?? defaultRange;
-
-    const filteredPoints = useMemo(() => {
-        if (points.length === 0) return [];
-        const endDate = points[points.length - 1].date;
-        const startDate = getRangeStartDate(endDate, activeRange);
-        if (!startDate) return points;
-        return points.filter((point) => point.date >= startDate);
-    }, [activeRange, points]);
-
-    const activeSpanDays = useMemo(() => {
-        if (filteredPoints.length === 0) return 0;
-        const start = startOfLocalDay(filteredPoints[0].date);
-        const end = startOfLocalDay(filteredPoints[filteredPoints.length - 1].date);
-        const diffDays = Math.round((end.getTime() - start.getTime()) / MS_PER_DAY);
-        return Math.max(1, diffDays + 1);
-    }, [filteredPoints]);
 
     const xAxisLabelOptions = useMemo(() => getAxisLabelOptions(activeSpanDays), [activeSpanDays]);
     const xAxisFormatter = useMemo(() => new Intl.DateTimeFormat(undefined, xAxisLabelOptions), [xAxisLabelOptions]);
@@ -185,77 +194,114 @@ const Goals: React.FC = () => {
         []
     );
 
-    const xData = useMemo(() => filteredPoints.map((point) => point.date), [filteredPoints]);
-    const yData = useMemo(() => filteredPoints.map((point) => point.weight), [filteredPoints]);
+    const xData = useMemo(() => chartPoints.map((point) => point.date), [chartPoints]);
+    const rawData = useMemo(() => chartPoints.map((point) => point.rawWeight), [chartPoints]);
+    const trendData = useMemo(() => chartPoints.map((point) => point.trendWeight), [chartPoints]);
+    const rangeLowerData = useMemo(() => chartPoints.map((point) => point.rangeLower), [chartPoints]);
+    const rangeUpperData = useMemo(() => chartPoints.map((point) => point.rangeUpper), [chartPoints]);
+
+    // Stacked area series uses (upper-lower) as fill thickness to render the expected range band.
+    const rangeBandData = useMemo(
+        () =>
+            chartPoints.map((point) =>
+                point.rangeLower === null || point.rangeUpper === null ? null : Math.max(0, point.rangeUpper - point.rangeLower)
+            ),
+        [chartPoints]
+    );
 
     const targetIsValid = typeof goal?.target_weight === 'number' && Number.isFinite(goal.target_weight);
     const yDomain = useMemo(() => {
-        const values = [...yData, ...(targetIsValid ? [goal!.target_weight] : [])];
+        const values = points
+            .flatMap((point) => [point.rawWeight, point.trendWeight, point.rangeLower, point.rangeUpper])
+            .filter((value) => Number.isFinite(value));
+        if (targetIsValid) values.push(goal!.target_weight);
         if (values.length === 0) return null;
         const min = Math.min(...values);
         const max = Math.max(...values);
         const range = Math.max(0.1, max - min);
         const padding = range * 0.1;
         return { min: min - padding, max: max + padding };
-    }, [goal, targetIsValid, yData]);
+    }, [goal, points, targetIsValid]);
 
-    const showRangeControl = spanDays >= RANGE_CONTROL_MIN_DAYS || points.length >= RANGE_CONTROL_MIN_POINTS;
-    const rangeControl = showRangeControl ? (
-        <ToggleButtonGroup
-            color="primary"
-            exclusive
-            size="small"
-            value={activeRange}
-            onChange={(_event, next) => {
-                if (next) setSelectedRange(next);
-            }}
-            aria-label={t('goals.weightHistoryRangeLabel')}
-        >
-            <ToggleButton value={WEIGHT_HISTORY_RANGES.WEEK}>{t('goals.weightHistoryRangeWeek')}</ToggleButton>
-            <ToggleButton value={WEIGHT_HISTORY_RANGES.MONTH}>{t('goals.weightHistoryRangeMonth')}</ToggleButton>
-            <ToggleButton value={WEIGHT_HISTORY_RANGES.YEAR}>{t('goals.weightHistoryRangeYear')}</ToggleButton>
-            <ToggleButton value={WEIGHT_HISTORY_RANGES.ALL}>{t('goals.weightHistoryRangeAll')}</ToggleButton>
-        </ToggleButtonGroup>
+    const showRangeControl =
+        (trendMeta?.total_span_days ?? activeSpanDays) >= RANGE_CONTROL_MIN_DAYS ||
+        (trendMeta?.total_points ?? points.length) >= RANGE_CONTROL_MIN_POINTS;
+
+    const volatilityLabel = useMemo(() => {
+        switch (trendMeta?.volatility) {
+            case 'high':
+                return t('goals.volatility.high');
+            case 'medium':
+                return t('goals.volatility.medium');
+            default:
+                return t('goals.volatility.low');
+        }
+    }, [t, trendMeta?.volatility]);
+
+    const summaryLine = trendMeta ? (
+        <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center' }}>
+            {t('goals.weightHistorySummary.weeklyRate', {
+                value: trendMeta.weekly_rate.toFixed(2),
+                unit: unitLabel
+            })}{' '}
+            | {t('goals.weightHistorySummary.volatility', { level: volatilityLabel })}
+        </Typography>
     ) : null;
 
-    const smoothingControl = (
-        <FormControlLabel
-            control={
-                <Switch
-                    checked={isSmoothed}
-                    onChange={(event) => setIsSmoothed(event.target.checked)}
-                    color="primary"
-                    size="small"
-                />
-            }
-            label={smoothingLabel}
-        />
+    const weightHistoryTooltipContent = (
+        <Box sx={{ maxWidth: WEIGHT_HISTORY_TOOLTIP_MAX_WIDTH_PX, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+            <Typography variant="subtitle2">{t('goals.weightHistoryExplainer.tooltipTitle')}</Typography>
+            <Typography variant="body2">{t('goals.weightHistoryExplainer.tooltipTrend')}</Typography>
+            <Typography variant="body2">{t('goals.weightHistoryExplainer.tooltipRange')}</Typography>
+            <Typography variant="body2">{t('goals.weightHistoryExplainer.tooltipOutliers')}</Typography>
+        </Box>
     );
 
-    const controlsRow = (
+    const weightHistoryHeaderActions = (
+        <Tooltip title={weightHistoryTooltipContent} arrow enterTouchDelay={0}>
+            <IconButton size="small" aria-label={t('goals.weightHistoryExplainer.tooltipAria')}>
+                <InfoOutlinedIcon fontSize="small" />
+            </IconButton>
+        </Tooltip>
+    );
+
+    const controlsRow = showRangeControl ? (
         <Box
             sx={{
                 display: 'flex',
                 flexWrap: 'wrap',
                 gap: CONTROLS_ROW_GAP,
                 alignItems: 'center',
-                justifyContent: showRangeControl ? 'space-between' : 'flex-end'
+                justifyContent: 'flex-end'
             }}
         >
-            {smoothingControl}
-            {rangeControl}
+            <ToggleButtonGroup
+                color="primary"
+                exclusive
+                size="small"
+                value={selectedRange}
+                onChange={(_event, nextRange) => {
+                    if (nextRange) setSelectedRange(nextRange as MetricsRange);
+                }}
+                aria-label={t('goals.weightHistoryRangeLabel')}
+            >
+                <ToggleButton value={METRICS_RANGE_OPTIONS.WEEK}>{t('goals.weightHistoryRangeWeek')}</ToggleButton>
+                <ToggleButton value={METRICS_RANGE_OPTIONS.MONTH}>{t('goals.weightHistoryRangeMonth')}</ToggleButton>
+                <ToggleButton value={METRICS_RANGE_OPTIONS.YEAR}>{t('goals.weightHistoryRangeYear')}</ToggleButton>
+                <ToggleButton value={METRICS_RANGE_OPTIONS.ALL}>{t('goals.weightHistoryRangeAll')}</ToggleButton>
+            </ToggleButtonGroup>
         </Box>
-    );
+    ) : null;
 
     let weightHistoryContent: React.ReactNode;
 
-    if (metricsQuery.isError) {
+    if (trendMetricsQuery.isError) {
         weightHistoryContent = <Alert severity="warning">{t('goals.weightHistoryLoadError')}</Alert>;
-    } else if (metricsQuery.isLoading) {
+    } else if (trendMetricsQuery.isLoading) {
         weightHistoryContent = (
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                 <Skeleton width="40%" />
-                <Skeleton variant="rounded" height={weightChartHeightPx} />
+                <Skeleton variant="rounded" height={CHART_HEIGHT_PX} />
             </Box>
         );
     } else if (points.length === 0) {
@@ -279,19 +325,92 @@ const Goals: React.FC = () => {
                         {
                             min: yDomain?.min,
                             max: yDomain?.max,
-                            label: weightSeriesLabel
+                            label: rawWeightSeriesLabel
                         }
                     ]}
                     series={[
                         {
-                            data: yData,
-                            label: weightSeriesLabel,
-                            color: theme.palette.primary.main,
-                            showMark: true
+                            id: 'expectedRangeBaseline',
+                            data: rangeLowerData,
+                            stack: 'expectedRange',
+                            color: 'transparent',
+                            showMark: false,
+                            connectNulls: false,
+                            valueFormatter: () => null
+                        },
+                        {
+                            id: 'expectedRangeBand',
+                            data: rangeBandData,
+                            stack: 'expectedRange',
+                            area: true,
+                            color: expectedRangeFillColor,
+                            showMark: false,
+                            connectNulls: false,
+                            valueFormatter: () => null
+                        },
+                        {
+                            id: 'expectedRangeTooltip',
+                            data: trendData,
+                            label: expectedRangeLabel,
+                            color: 'transparent',
+                            showMark: false,
+                            connectNulls: false,
+                            valueFormatter: (_value, context) => {
+                                const lower = rangeLowerData[context.dataIndex];
+                                const upper = rangeUpperData[context.dataIndex];
+                                if (
+                                    typeof lower !== 'number' ||
+                                    !Number.isFinite(lower) ||
+                                    typeof upper !== 'number' ||
+                                    !Number.isFinite(upper)
+                                ) {
+                                    return null;
+                                }
+                                return `${lower.toFixed(1)} - ${upper.toFixed(1)} ${unitLabel}`;
+                            }
+                        },
+                        {
+                            id: 'trend',
+                            data: trendData,
+                            label: trendSeriesLabel,
+                            color: trendLineColor,
+                            showMark: false,
+                            connectNulls: false,
+                            valueFormatter: (value) => (value == null ? null : `${value.toFixed(1)} ${unitLabel}`)
+                        },
+                        {
+                            id: 'raw',
+                            data: rawData,
+                            label: rawWeightSeriesLabel,
+                            color: rawLineColor,
+                            showMark: true,
+                            connectNulls: false,
+                            valueFormatter: (value) => (value == null ? null : `${value.toFixed(1)} ${unitLabel}`)
                         }
                     ]}
-                    height={weightChartHeightPx}
+                    height={CHART_HEIGHT_PX}
                     slotProps={{ legend: { hidden: true } }}
+                    tooltip={{ trigger: 'axis' }}
+                    sx={{
+                        '& .MuiAreaElement-series-expectedRangeBand': {
+                            fill: expectedRangeFillColor,
+                            fillOpacity: 1
+                        },
+                        '& .MuiLineElement-series-expectedRangeBand': {
+                            stroke: expectedRangeEdgeColor,
+                            strokeWidth: 1
+                        },
+                        '& .MuiLineElement-series-trend': {
+                            strokeWidth: TREND_LINE_STROKE_WIDTH_PX
+                        },
+                        '& .MuiLineElement-series-raw': {
+                            strokeWidth: RAW_LINE_STROKE_WIDTH_PX
+                        },
+                        '& .MuiMarkElement-series-raw': {
+                            stroke: rawLineColor,
+                            strokeWidth: RAW_MARK_STROKE_WIDTH_PX
+                        }
+                    }}
                 >
                     {targetIsValid && (
                         <ChartsReferenceLine
@@ -310,20 +429,54 @@ const Goals: React.FC = () => {
                     )}
                 </LineChart>
 
-                <Box sx={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: 1.25, alignItems: 'center' }}>
-                    <Box
-                        aria-hidden
-                        sx={{
-                            width: legendSwatchSizePx,
-                            height: legendSwatchSizePx,
-                            borderRadius: '50%',
-                            backgroundColor: theme.palette.primary.main
-                        }}
-                    />
-                    <Typography variant="body2" color="text.secondary">
-                        {weightSeriesLabel}
-                    </Typography>
+                <Box sx={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: 1.75, alignItems: 'center' }}>
+                    <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 1 }}>
+                        <Box
+                            aria-hidden
+                            sx={{
+                                width: LEGEND_SWATCH_SIZE_PX,
+                                height: LEGEND_SWATCH_SIZE_PX,
+                                borderRadius: '50%',
+                                backgroundColor: rawLineColor
+                            }}
+                        />
+                        <Typography variant="body2" color="text.secondary">
+                            {rawWeightSeriesLabel}
+                        </Typography>
+                    </Box>
+
+                    <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 1 }}>
+                        <Box
+                            aria-hidden
+                            sx={{
+                                width: LEGEND_SWATCH_SIZE_PX + 6,
+                                height: 3,
+                                backgroundColor: trendLineColor
+                            }}
+                        />
+                        <Typography variant="body2" color="text.secondary">
+                            {trendSeriesLabel}
+                        </Typography>
+                    </Box>
+
+                    <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 1 }}>
+                        <Box
+                            aria-hidden
+                            sx={{
+                                width: LEGEND_SWATCH_SIZE_PX + 8,
+                                height: LEGEND_SWATCH_SIZE_PX - 2,
+                                borderRadius: 999,
+                                backgroundColor: expectedRangeFillColor,
+                                border: `1px solid ${expectedRangeEdgeColor}`
+                            }}
+                        />
+                        <Typography variant="body2" color="text.secondary">
+                            {expectedRangeLabel}
+                        </Typography>
+                    </Box>
                 </Box>
+
+                {summaryLine}
             </Stack>
         );
     }
@@ -334,7 +487,12 @@ const Goals: React.FC = () => {
                 <GoalTrackerCard />
 
                 <AppCard>
-                    <SectionHeader title={t('goals.weightHistoryTitle')} sx={{ mb: 1.5 }} />
+                    <SectionHeader
+                        title={t('goals.weightHistoryTitle')}
+                        subtitle={t('goals.weightHistoryExplainer.inline')}
+                        actions={weightHistoryHeaderActions}
+                        sx={{ mb: 1.5 }}
+                    />
                     {weightHistoryContent}
                 </AppCard>
             </Stack>

@@ -26,6 +26,13 @@ export const en = {
     'nav.openRepoAria': 'Open the source repository on GitHub',
     'nav.openSettingsAria': 'Open settings',
     'nav.openNotificationsAria': 'Open notifications',
+    'nav.install': 'Install',
+    'nav.openInstallAria': 'Install app',
+    'install.ios.title': 'Install on iPhone',
+    'install.ios.body': 'Add calibrate to your home screen from Safari:',
+    'install.ios.step1': 'Tap the Share button in Safari.',
+    'install.ios.step2': 'Choose Add to Home Screen.',
+    'install.ios.step3': 'Tap Add to finish installing.',
 
     'legal.privacyPolicy': 'Privacy policy',
 
@@ -499,6 +506,13 @@ export const es: Record<TranslationKey, string> = {
     'nav.openRepoAria': 'Abrir el repositorio de código fuente en GitHub',
     'nav.openSettingsAria': 'Abrir ajustes',
     'nav.openNotificationsAria': 'Abrir notificaciones',
+    'nav.install': 'Instalar',
+    'nav.openInstallAria': 'Instalar app',
+    'install.ios.title': 'Instalar en iPhone',
+    'install.ios.body': 'Agrega calibrate a tu pantalla de inicio desde Safari:',
+    'install.ios.step1': 'Toca el boton Compartir en Safari.',
+    'install.ios.step2': 'Elige Agregar a pantalla de inicio.',
+    'install.ios.step3': 'Toca Agregar para terminar la instalacion.',
 
     'legal.privacyPolicy': 'Política de privacidad',
 
@@ -970,6 +984,13 @@ export const fr: Record<TranslationKey, string> = {
     'nav.openRepoAria': 'Ouvrir le dépôt source sur GitHub',
     'nav.openSettingsAria': 'Ouvrir les paramètres',
     'nav.openNotificationsAria': 'Ouvrir les notifications',
+    'nav.install': 'Installer',
+    'nav.openInstallAria': "Installer l'application",
+    'install.ios.title': 'Installer sur iPhone',
+    'install.ios.body': "Ajoutez calibrate a l'ecran d'accueil depuis Safari :",
+    'install.ios.step1': 'Touchez le bouton Partager dans Safari.',
+    'install.ios.step2': "Choisissez Ajouter a l'ecran d'accueil.",
+    'install.ios.step3': "Touchez Ajouter pour terminer l'installation.",
 
     'legal.privacyPolicy': 'Politique de confidentialité',
 
@@ -1441,6 +1462,13 @@ export const ru: Record<TranslationKey, string> = {
     'nav.openRepoAria': 'Открыть репозиторий исходного кода на GitHub',
     'nav.openSettingsAria': 'Открыть настройки',
     'nav.openNotificationsAria': 'Открыть уведомления',
+    'nav.install': 'Установить',
+    'nav.openInstallAria': 'Установить приложение',
+    'install.ios.title': 'Установка на iPhone',
+    'install.ios.body': 'Добавьте calibrate на экран домой через Safari:',
+    'install.ios.step1': 'Нажмите кнопку Поделиться в Safari.',
+    'install.ios.step2': 'Выберите На экран Домой.',
+    'install.ios.step3': 'Нажмите Добавить для завершения установки.',
 
     'legal.privacyPolicy': 'Политика конфиденциальности',
 

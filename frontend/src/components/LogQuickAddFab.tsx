@@ -27,6 +27,7 @@ import { useQuickAddFab } from '../context/useQuickAddFab';
 import { useI18n } from '../i18n/useI18n';
 import { inAppNotificationsQueryKey } from '../queries/inAppNotifications';
 import { formatIsoDateForDisplay, getTodayIsoDate } from '../utils/date';
+import { haptic } from '../utils/haptics';
 
 /**
  * Floating action button for adding food or weight logs from the log view.
@@ -75,13 +76,19 @@ const LogQuickAddFab: React.FC<LogQuickAddFabProps> = ({ date }) => {
                     key="add-food"
                     icon={<RestaurantIcon />}
                     tooltipTitle={t('log.speedDial.addFood')}
-                    onClick={dialogs.openFoodDialog}
+                    onClick={() => {
+                        haptic.tap();
+                        dialogs.openFoodDialog();
+                    }}
                 />
                 <SpeedDialAction
                     key="add-weight"
                     icon={<MonitorWeightIcon />}
                     tooltipTitle={t('log.speedDial.addWeight')}
-                    onClick={openWeightDialogFromFab}
+                    onClick={() => {
+                        haptic.tap();
+                        openWeightDialogFromFab();
+                    }}
                 />
             </SpeedDial>
 

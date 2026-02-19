@@ -5,7 +5,7 @@ import { seedDevTestData } from '../src/services/devTestData';
  * Prisma seed entrypoint.
  *
  * Note: this script is intentionally safe to re-run; it creates or updates the
- * deterministic dev user and backfills the last week of sample data.
+ * deterministic dev user and backfills several months of sample metrics.
  */
 const run = async (): Promise<void> => {
   await seedDevTestData();
@@ -19,4 +19,3 @@ run()
   .finally(async () => {
     await prisma.$disconnect();
   });
-

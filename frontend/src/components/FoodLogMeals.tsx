@@ -37,6 +37,7 @@ import { inAppNotificationsQueryKey } from '../queries/inAppNotifications';
 import SectionHeader from '../ui/SectionHeader';
 import MealPeriodIcon from './MealPeriodIcon';
 import { useI18n } from '../i18n/useI18n';
+import { haptic } from '../utils/haptics';
 
 /**
  * Food log UI grouped by meal period with edit/delete controls.
@@ -288,9 +289,11 @@ const FoodLogMeals: React.FC<FoodLogMealsProps> = ({ logs, isLoading = false }) 
                     ...(servingsValue !== null ? { servings_consumed: servingsValue } : {})
                 }
             });
+            haptic.success();
             setEditEntry(null);
         } catch (err) {
             console.error(err);
+            haptic.error();
             setEditError(t('foodLog.error.saveFailed'));
         }
     };
@@ -311,9 +314,11 @@ const FoodLogMeals: React.FC<FoodLogMealsProps> = ({ logs, isLoading = false }) 
         setDeleteError(null);
         try {
             await deleteMutation.mutateAsync(deleteEntry.id);
+            haptic.warning();
             setDeleteEntry(null);
         } catch (err) {
             console.error(err);
+            haptic.error();
             setDeleteError(t('foodLog.error.deleteFailed'));
         }
     };

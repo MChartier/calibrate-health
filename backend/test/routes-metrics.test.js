@@ -2,6 +2,9 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const Module = require('node:module');
 
+const POUNDS_PER_KILOGRAM = 2.2046226218487757;
+const FLOAT_TOLERANCE = 1e-9;
+
 function stubModule(resolvedPath, exports) {
   const moduleInstance = new Module(resolvedPath);
   moduleInstance.exports = exports;
@@ -12,12 +15,34 @@ function stubModule(resolvedPath, exports) {
 function loadMetricsRouter(prismaStub) {
   const dbPath = require.resolve('../src/config/database');
   const metricsPath = require.resolve('../src/routes/metrics');
+  const materializedTrendPath = require.resolve('../src/services/materializedWeightTrend');
 
   const previousDbModule = require.cache[dbPath];
+  const previousMaterializedTrendModule = require.cache[materializedTrendPath];
   delete require.cache[metricsPath];
+  delete require.cache[materializedTrendPath];
 
-  stubModule(dbPath, prismaStub);
+  const normalizedPrismaStub = {
+    ...prismaStub,
+    bodyMetric: {
+      findFirst: async () => null,
+      findMany: async () => [],
+      ...(prismaStub.bodyMetric ?? {})
+    },
+    bodyMetricTrend: {
+      deleteMany: async () => ({ count: 0 }),
+      ...(prismaStub.bodyMetricTrend ?? {})
+    }
+  };
+
+  stubModule(dbPath, normalizedPrismaStub);
   const loaded = require('../src/routes/metrics');
+
+  if (previousMaterializedTrendModule) {
+    require.cache[materializedTrendPath] = previousMaterializedTrendModule;
+  } else {
+    delete require.cache[materializedTrendPath];
+  }
 
   if (previousDbModule) {
     require.cache[dbPath] = previousDbModule;
@@ -62,6 +87,10 @@ function getRouteHandler(router, method, path) {
   return layer.route.stack[0].handle;
 }
 
+function assertNearlyEqual(actual, expected) {
+  assert.ok(Math.abs(actual - expected) <= FLOAT_TOLERANCE, `Expected ${actual} to be within ${FLOAT_TOLERANCE} of ${expected}`);
+}
+
 test('metrics route: rejects unauthenticated requests via router.use middleware', async () => {
   const prismaStub = { bodyMetric: {} };
   const router = loadMetricsRouter(prismaStub);
@@ -102,6 +131,50 @@ test('metrics route: GET / validates start/end query params when provided', asyn
   assert.deepEqual(res.body, { message: 'Invalid date range' });
 });
 
+test('metrics route: GET / validates include_trend query values', async () => {
+  const prismaStub = {
+    bodyMetric: {
+      findMany: async () => {
+        throw new Error('should not be called');
+      }
+    }
+  };
+  const router = loadMetricsRouter(prismaStub);
+  const handler = getRouteHandler(router, 'get', '/');
+
+  const req = {
+    user: { id: 7, weight_unit: 'KG' },
+    query: { include_trend: 'maybe' }
+  };
+  const res = createRes();
+
+  await handler(req, res);
+  assert.equal(res.statusCode, 400);
+  assert.deepEqual(res.body, { message: 'Invalid include_trend option' });
+});
+
+test('metrics route: GET / validates range query values', async () => {
+  const prismaStub = {
+    bodyMetric: {
+      findMany: async () => {
+        throw new Error('should not be called');
+      }
+    }
+  };
+  const router = loadMetricsRouter(prismaStub);
+  const handler = getRouteHandler(router, 'get', '/');
+
+  const req = {
+    user: { id: 7, weight_unit: 'KG' },
+    query: { range: 'quarter' }
+  };
+  const res = createRes();
+
+  await handler(req, res);
+  assert.equal(res.statusCode, 400);
+  assert.deepEqual(res.body, { message: 'Invalid range option' });
+});
+
 test('metrics route: GET / returns metrics with weight converted to the user unit', async () => {
   const rows = [
     {
@@ -122,6 +195,7 @@ test('metrics route: GET / returns metrics with weight converted to the user uni
 
   const prismaStub = {
     bodyMetric: {
+      findFirst: async () => null,
       findMany: async () => rows
     }
   };
@@ -153,6 +227,240 @@ test('metrics route: GET / returns metrics with weight converted to the user uni
       weight: 2.2
     }
   ]);
+});
+
+test('metrics route: GET / returns trend-augmented payload when include_trend=true', async () => {
+  const rows = [
+    {
+      id: 1,
+      user_id: 7,
+      date: new Date('2025-01-01T00:00:00Z'),
+      weight_grams: 80000,
+      body_fat_percent: null,
+      trend: {
+        trend_weight_grams: 80000,
+        trend_ci_lower_grams: 79600,
+        trend_ci_upper_grams: 80400,
+        trend_std_grams: 200
+      }
+    },
+    {
+      id: 2,
+      user_id: 7,
+      date: new Date('2025-01-02T00:00:00Z'),
+      weight_grams: 79800,
+      body_fat_percent: null,
+      trend: {
+        trend_weight_grams: 79850,
+        trend_ci_lower_grams: 79450,
+        trend_ci_upper_grams: 80250,
+        trend_std_grams: 200
+      }
+    },
+    {
+      id: 3,
+      user_id: 7,
+      date: new Date('2025-01-03T00:00:00Z'),
+      weight_grams: 79600,
+      body_fat_percent: null,
+      trend: {
+        trend_weight_grams: 79700,
+        trend_ci_lower_grams: 79300,
+        trend_ci_upper_grams: 80100,
+        trend_std_grams: 200
+      }
+    }
+  ];
+
+  const prismaStub = {
+    bodyMetric: {
+      findFirst: async () => null,
+      findMany: async () => rows
+    }
+  };
+  const router = loadMetricsRouter(prismaStub);
+  const handler = getRouteHandler(router, 'get', '/');
+
+  const req = {
+    user: { id: 7, weight_unit: 'KG' },
+    query: { include_trend: 'true', range: 'week' }
+  };
+  const res = createRes();
+
+  await handler(req, res);
+  assert.equal(res.statusCode, 200);
+  assert.equal(Array.isArray(res.body.metrics), true);
+  assert.equal(res.body.metrics.length, 3);
+  assert.deepEqual(res.body.meta.total_points, 3);
+  assert.equal(typeof res.body.meta.weekly_rate, 'number');
+  assert.equal(typeof res.body.meta.total_span_days, 'number');
+  assert.ok(['low', 'medium', 'high'].includes(res.body.meta.volatility));
+
+  const newest = res.body.metrics[0];
+  assert.equal(typeof newest.weight, 'number');
+  assert.equal(typeof newest.trend_weight, 'number');
+  assert.equal(typeof newest.trend_ci_lower, 'number');
+  assert.equal(typeof newest.trend_ci_upper, 'number');
+  assert.equal(typeof newest.trend_std, 'number');
+});
+
+test('metrics route: GET / trend payload stays unit-invariant across KG and LB preferences', async () => {
+  const rows = [
+    {
+      id: 1,
+      user_id: 7,
+      date: new Date('2025-01-01T00:00:00Z'),
+      weight_grams: 81200,
+      body_fat_percent: null,
+      trend: {
+        trend_weight_grams: 81200,
+        trend_ci_lower_grams: 80950,
+        trend_ci_upper_grams: 81450,
+        trend_std_grams: 125
+      }
+    },
+    {
+      id: 2,
+      user_id: 7,
+      date: new Date('2025-01-03T00:00:00Z'),
+      weight_grams: 80850,
+      body_fat_percent: null,
+      trend: {
+        trend_weight_grams: 80950,
+        trend_ci_lower_grams: 80650,
+        trend_ci_upper_grams: 81250,
+        trend_std_grams: 150
+      }
+    },
+    {
+      id: 3,
+      user_id: 7,
+      date: new Date('2025-01-06T00:00:00Z'),
+      weight_grams: 80650,
+      body_fat_percent: null,
+      trend: {
+        trend_weight_grams: 80720,
+        trend_ci_lower_grams: 80350,
+        trend_ci_upper_grams: 81090,
+        trend_std_grams: 185
+      }
+    },
+    {
+      id: 4,
+      user_id: 7,
+      date: new Date('2025-01-10T00:00:00Z'),
+      weight_grams: 80400,
+      body_fat_percent: null,
+      trend: {
+        trend_weight_grams: 80500,
+        trend_ci_lower_grams: 80100,
+        trend_ci_upper_grams: 80900,
+        trend_std_grams: 200
+      }
+    }
+  ];
+
+  const prismaStub = {
+    bodyMetric: {
+      findFirst: async () => null,
+      findMany: async () => rows
+    }
+  };
+  const router = loadMetricsRouter(prismaStub);
+  const handler = getRouteHandler(router, 'get', '/');
+
+  const kgReq = {
+    user: { id: 7, weight_unit: 'KG' },
+    query: { include_trend: 'true', range: 'all' }
+  };
+  const kgRes = createRes();
+  await handler(kgReq, kgRes);
+  assert.equal(kgRes.statusCode, 200);
+
+  const lbReq = {
+    user: { id: 7, weight_unit: 'LB' },
+    query: { include_trend: 'true', range: 'all' }
+  };
+  const lbRes = createRes();
+  await handler(lbReq, lbRes);
+  assert.equal(lbRes.statusCode, 200);
+
+  assert.equal(lbRes.body.metrics.length, kgRes.body.metrics.length);
+  assert.equal(lbRes.body.meta.total_points, kgRes.body.meta.total_points);
+  assert.equal(lbRes.body.meta.total_span_days, kgRes.body.meta.total_span_days);
+  assert.equal(lbRes.body.meta.volatility, kgRes.body.meta.volatility);
+  assertNearlyEqual(lbRes.body.meta.weekly_rate, kgRes.body.meta.weekly_rate * POUNDS_PER_KILOGRAM);
+
+  for (let i = 0; i < kgRes.body.metrics.length; i += 1) {
+    const kgMetric = kgRes.body.metrics[i];
+    const lbMetric = lbRes.body.metrics[i];
+
+    assert.equal(lbMetric.id, kgMetric.id);
+    assert.equal(lbMetric.date.getTime(), kgMetric.date.getTime());
+    assertNearlyEqual(lbMetric.trend_weight, kgMetric.trend_weight * POUNDS_PER_KILOGRAM);
+    assertNearlyEqual(lbMetric.trend_ci_lower, kgMetric.trend_ci_lower * POUNDS_PER_KILOGRAM);
+    assertNearlyEqual(lbMetric.trend_ci_upper, kgMetric.trend_ci_upper * POUNDS_PER_KILOGRAM);
+    assertNearlyEqual(lbMetric.trend_std, kgMetric.trend_std * POUNDS_PER_KILOGRAM);
+  }
+});
+
+test('metrics route: GET / ignores trend rows older than the active trend horizon', async () => {
+  const oldDate = new Date('2024-01-01T00:00:00Z');
+  const latestDate = new Date('2025-01-10T00:00:00Z');
+  const rows = [
+    {
+      id: 1,
+      user_id: 7,
+      date: oldDate,
+      weight_grams: 92000,
+      body_fat_percent: null,
+      trend: {
+        trend_weight_grams: 88000,
+        trend_ci_lower_grams: 87500,
+        trend_ci_upper_grams: 88500,
+        trend_std_grams: 250
+      }
+    },
+    {
+      id: 2,
+      user_id: 7,
+      date: latestDate,
+      weight_grams: 80500,
+      body_fat_percent: null,
+      trend: {
+        trend_weight_grams: 80450,
+        trend_ci_lower_grams: 80100,
+        trend_ci_upper_grams: 80800,
+        trend_std_grams: 180
+      }
+    }
+  ];
+
+  const prismaStub = {
+    bodyMetric: {
+      findFirst: async () => null,
+      findMany: async () => rows
+    }
+  };
+  const router = loadMetricsRouter(prismaStub);
+  const handler = getRouteHandler(router, 'get', '/');
+
+  const req = {
+    user: { id: 7, weight_unit: 'KG' },
+    query: { include_trend: 'true', range: 'all' }
+  };
+  const res = createRes();
+  await handler(req, res);
+
+  assert.equal(res.statusCode, 200);
+  assert.equal(res.body.metrics.length, 2);
+  // Response is newest-first, so the old point is index 1.
+  const oldMetric = res.body.metrics[1];
+  assert.equal(oldMetric.date.getTime(), oldDate.getTime());
+  assert.equal(oldMetric.trend_weight, oldMetric.weight);
+  assert.equal(oldMetric.trend_ci_lower, oldMetric.weight);
+  assert.equal(oldMetric.trend_ci_upper, oldMetric.weight);
+  assert.equal(oldMetric.trend_std, 0);
 });
 
 test('metrics route: POST / rejects invalid date values', async () => {

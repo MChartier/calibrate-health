@@ -8,6 +8,10 @@ import {
     BottomNavigation,
     BottomNavigationAction,
     Button,
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogTitle,
     Divider,
     Drawer,
     IconButton,
@@ -31,6 +35,7 @@ import LogoutIcon from '@mui/icons-material/LogoutRounded';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeftRounded';
 import ChevronRightIcon from '@mui/icons-material/ChevronRightRounded';
 import TodayIcon from '@mui/icons-material/TodayRounded';
+import DownloadRoundedIcon from '@mui/icons-material/DownloadRounded';
 import { alpha, useTheme } from '@mui/material/styles';
 import type { SxProps, Theme } from '@mui/material/styles';
 import axios from 'axios';
@@ -46,7 +51,9 @@ import { QUICK_ADD_FAB_PAGE_BOTTOM_PADDING } from '../constants/quickAddFab';
 import LogQuickAddFab from './LogQuickAddFab';
 import LogDatePickerControl from './LogDatePickerControl';
 import InAppNotificationsDrawer from './InAppNotificationsDrawer';
+import { useIncompleteTodayBadge } from '../hooks/useIncompleteTodayBadge';
 import { useInAppNotificationBadge } from '../hooks/useInAppNotificationBadge';
+import { useInstallState } from '../hooks/useInstallState';
 import { type InAppNotification, inAppNotificationsQueryKey, useInAppNotificationsQuery } from '../queries/inAppNotifications';
 import { isInAppNotificationsUpdatedMessage } from '../constants/notificationEvents';
 
@@ -72,6 +79,7 @@ const NAV_DATE_PICKER_MIN_WIDTH_PX = 104; // Allow the picker to shrink on xs wh
 const NAV_DATE_PICKER_MAX_WIDTH_PX = 220; // Keep the date picker from growing too wide on desktop layouts.
 const NAV_CENTER_PADDING_X_SPACING = { xs: 0.5, sm: 1 }; // Add small horizontal breathing room around the centered date controls.
 const NAV_NOTIFICATION_BADGE_MAX = 99; // Prevent oversized badge strings from crowding the header controls.
+const NAV_INSTALL_ICON_SIZE = 'small'; // Keep the install icon compact on xs viewports where toolbar width is tight.
 /**
  * Keep drawer navigation backgrounds rectangular and flush so adjacent states do not visually overlap.
  */
@@ -213,6 +221,8 @@ const LayoutShell: React.FC = () => {
     const { dialogs, logDateOverride, logDateNavigation } = useQuickAddFab();
     const { t } = useI18n();
     const theme = useTheme();
+    const { isInstalled, canInstallPrompt, platformHint, showInstallCta, promptInstall } = useInstallState();
+    useIncompleteTodayBadge();
     const [notificationsOpen, setNotificationsOpen] = useState(false);
     const [isOpeningNotification, setIsOpeningNotification] = useState(false);
     const [dismissingNotificationId, setDismissingNotificationId] = useState<number | null>(null);
@@ -224,6 +234,7 @@ const LayoutShell: React.FC = () => {
     const worktreeName = import.meta.env.VITE_WORKTREE_NAME?.trim();
     const isMainWorktree = import.meta.env.VITE_WORKTREE_IS_MAIN === 'true';
     const worktreeBadgeLabel = worktreeName && !isMainWorktree ? worktreeName : null;
+    const [isIosInstallDialogOpen, setIsIosInstallDialogOpen] = useState(false);
 
     const hideNav = location.pathname.startsWith('/onboarding');
     const showAppNav = Boolean(user) && !isLoading && !hideNav;
@@ -234,6 +245,7 @@ const LayoutShell: React.FC = () => {
     const showRegisterCta = showAuthActions && !isRegisterRoute;
     const showNotificationsShortcut = showAppNav;
     const showSettingsShortcut = Boolean(user) && !isLoading && !hideNav;
+    const showInstallShortcut = showInstallCta && !hideNav;
     const showDrawer = showAppNav && isDesktop;
     const showBottomNav = showAppNav && !isDesktop;
     const authCtaSize = isDesktop ? 'medium' : 'small';
@@ -411,6 +423,19 @@ const LayoutShell: React.FC = () => {
         closeWeightDialog();
     }, [closeFoodDialog, closeWeightDialog, location.pathname]);
 
+    /**
+     * Route the navbar Install CTA to Chromium's deferred prompt when available, otherwise iOS instructions.
+     */
+    const handleInstallClick = useCallback(() => {
+        if (canInstallPrompt) {
+            void promptInstall();
+            return;
+        }
+        if (platformHint === 'ios') {
+            setIsIosInstallDialogOpen(true);
+        }
+    }, [canInstallPrompt, platformHint, promptInstall]);
+
     return (
         <Box sx={{ display: 'flex', minHeight: '100vh', width: '100%' }}>
             <AppBar position="fixed" sx={{ zIndex: (t) => t.zIndex.drawer + 1 }}>
@@ -525,6 +550,26 @@ const LayoutShell: React.FC = () => {
                             </Tooltip>
                         )}
 
+                        {showInstallShortcut && (
+                            <Tooltip title={t('nav.install')}>
+                                {isXs ? (
+                                    <IconButton color="inherit" aria-label={t('nav.openInstallAria')} onClick={handleInstallClick}>
+                                        <DownloadRoundedIcon fontSize={NAV_INSTALL_ICON_SIZE} />
+                                    </IconButton>
+                                ) : (
+                                    <Button
+                                        color="inherit"
+                                        variant="outlined"
+                                        size={authCtaSize}
+                                        onClick={handleInstallClick}
+                                        startIcon={<DownloadRoundedIcon />}
+                                    >
+                                        {t('nav.install')}
+                                    </Button>
+                                )}
+                            </Tooltip>
+                        )}
+
                         {showSettingsShortcut && (
                             <Tooltip title={t('nav.settings')}>
                                 <IconButton
@@ -620,6 +665,34 @@ const LayoutShell: React.FC = () => {
             )}
 
             {showQuickAdd && <LogQuickAddFab date={fabDate} />}
+
+            <Dialog
+                open={isIosInstallDialogOpen && !isInstalled}
+                onClose={() => setIsIosInstallDialogOpen(false)}
+                fullWidth
+                maxWidth="xs"
+            >
+                <DialogTitle>{t('install.ios.title')}</DialogTitle>
+                <DialogContent>
+                    <Typography variant="body2" sx={{ mt: 1 }}>
+                        {t('install.ios.body')}
+                    </Typography>
+                    <Box component="ol" sx={{ mt: 2, mb: 0, pl: 2.5 }}>
+                        <li>
+                            <Typography variant="body2">{t('install.ios.step1')}</Typography>
+                        </li>
+                        <li>
+                            <Typography variant="body2">{t('install.ios.step2')}</Typography>
+                        </li>
+                        <li>
+                            <Typography variant="body2">{t('install.ios.step3')}</Typography>
+                        </li>
+                    </Box>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setIsIosInstallDialogOpen(false)}>{t('common.close')}</Button>
+                </DialogActions>
+            </Dialog>
         </Box>
     );
 };

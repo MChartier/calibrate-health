@@ -45,6 +45,7 @@ export type User = {
     language: AppLanguage;
     reminder_log_weight_enabled: boolean;
     reminder_log_food_enabled: boolean;
+    haptics_enabled: boolean;
     date_of_birth?: string | null;
     sex?: SexValue | null;
     height_mm?: number | null;
@@ -75,6 +76,9 @@ export type AuthContextType = {
     updateReminderPreferences: (preferences: {
         reminder_log_weight_enabled?: boolean;
         reminder_log_food_enabled?: boolean;
+    }) => Promise<void>;
+    updateFeedbackPreferences: (preferences: {
+        haptics_enabled?: boolean;
     }) => Promise<void>;
     updateWeightUnit: (weight_unit: WeightUnit) => Promise<void>;
     updateHeightUnit: (height_unit: HeightUnit) => Promise<void>;

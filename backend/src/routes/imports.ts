@@ -4,6 +4,7 @@ import type { Prisma } from '@prisma/client';
 import prisma from '../config/database';
 import { parseWeightToGrams, isWeightUnit, type WeightUnit } from '../utils/units';
 import { parseLocalDateOnly } from '../utils/date';
+import { refreshMaterializedWeightTrendsBestEffort } from '../services/materializedWeightTrend';
 import {
   buildImportTimestamp,
   inferLoseItWeightUnit,
@@ -145,6 +146,9 @@ router.post('/loseit/execute', upload.single('file'), async (req, res) => {
   updatedWeights = weightResult.updated;
   skippedWeights = weightResult.skipped;
   updatedBodyFat = weightResult.bodyFatUpdated;
+  if (importedWeights > 0 || updatedWeights > 0) {
+    await refreshMaterializedWeightTrendsBestEffort(user.id);
+  }
 
   res.json({
     importedFoodLogs,

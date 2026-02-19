@@ -46,6 +46,7 @@ import {
 } from '../utils/foodMeasure';
 import { useDebouncedValue } from '../hooks/useDebouncedValue';
 import { useI18n } from '../i18n/useI18n';
+import { haptic } from '../utils/haptics';
 
 /**
  * Food entry form used in the log dialog.
@@ -312,12 +313,18 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
                 );
                 setSearchResults(firstPage.items);
                 setHasMoreResults(firstPage.items.length === SEARCH_PAGE_SIZE);
+                if (params.barcode && firstPage.items.length === 0) {
+                    haptic.warning();
+                }
 
                 // Barcode lookups generally return a single exact match; auto-select it for faster logging.
                 if (params.barcode && !params.query && firstPage.items.length === 1) {
                     selectSearchResult(firstPage.items[0]);
                 }
             } catch (err) {
+                if (params.barcode) {
+                    haptic.error();
+                }
                 setError(getApiErrorMessage(err) ?? t('foodEntry.search.error.searchFailed'));
             } finally {
                 if (searchSessionRef.current === sessionId) {
@@ -420,10 +427,12 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
                 meal_period: mealPeriod,
                 ...(entryLocalDate ? { date: entryLocalDate } : {})
             });
+            haptic.success();
             setQuickEntryName('');
             setQuickEntryCalories('');
             onSuccess?.();
         } catch (err) {
+            haptic.error();
             setError(getApiErrorMessage(err) ?? t('foodEntry.error.unableToAdd'));
         } finally {
             setIsSubmitting(false);
@@ -446,9 +455,11 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
             });
 
             // Keep selection around for multi-add workflows, but reset servings to a sensible default.
+            haptic.success();
             setMyFoodServingsConsumed('1');
             onSuccess?.();
         } catch (err) {
+            haptic.error();
             setError(getApiErrorMessage(err) ?? t('foodEntry.error.unableToAdd'));
         } finally {
             setIsSubmitting(false);
@@ -466,8 +477,10 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
                 meal_period: mealPeriod,
                 ...(entryLocalDate ? { date: entryLocalDate } : {})
             });
+            haptic.success();
             onSuccess?.();
         } catch (err) {
+            haptic.error();
             setError(getApiErrorMessage(err) ?? t('foodEntry.error.unableToAdd'));
         } finally {
             setIsSubmitting(false);
