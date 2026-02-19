@@ -1,7 +1,9 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import {
     AppBar,
     Avatar,
+    Badge,
     Box,
     BottomNavigation,
     BottomNavigationAction,
@@ -27,6 +29,7 @@ import DashboardIcon from '@mui/icons-material/DashboardRounded';
 import ListAltIcon from '@mui/icons-material/ListAltRounded';
 import ShowChartIcon from '@mui/icons-material/ShowChartRounded';
 import PersonIcon from '@mui/icons-material/PersonRounded';
+import NotificationsIcon from '@mui/icons-material/NotificationsRounded';
 import SettingsIcon from '@mui/icons-material/SettingsRounded';
 import LogoutIcon from '@mui/icons-material/LogoutRounded';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeftRounded';
@@ -35,6 +38,7 @@ import TodayIcon from '@mui/icons-material/TodayRounded';
 import DownloadRoundedIcon from '@mui/icons-material/DownloadRounded';
 import { alpha, useTheme } from '@mui/material/styles';
 import type { SxProps, Theme } from '@mui/material/styles';
+import axios from 'axios';
 import { useAuth } from '../context/useAuth';
 import { QuickAddFabProvider } from '../context/QuickAddFabContext';
 import { useQuickAddFab } from '../context/useQuickAddFab';
@@ -46,6 +50,10 @@ import { useI18n } from '../i18n/useI18n';
 import { QUICK_ADD_FAB_PAGE_BOTTOM_PADDING } from '../constants/quickAddFab';
 import LogQuickAddFab from './LogQuickAddFab';
 import LogDatePickerControl from './LogDatePickerControl';
+import InAppNotificationsDrawer from './InAppNotificationsDrawer';
+import { useInAppNotificationBadge } from '../hooks/useInAppNotificationBadge';
+import { type InAppNotification, inAppNotificationsQueryKey, useInAppNotificationsQuery } from '../queries/inAppNotifications';
+import { isInAppNotificationsUpdatedMessage } from '../constants/notificationEvents';
 import { useIncompleteTodayBadge } from '../hooks/useIncompleteTodayBadge';
 import { useInstallState } from '../hooks/useInstallState';
 
@@ -70,6 +78,7 @@ const NAV_DATE_PICKER_WIDTH_PX = { xs: 122, sm: 168, md: 200 }; // Narrower widt
 const NAV_DATE_PICKER_MIN_WIDTH_PX = 104; // Allow the picker to shrink on xs while staying readable.
 const NAV_DATE_PICKER_MAX_WIDTH_PX = 220; // Keep the date picker from growing too wide on desktop layouts.
 const NAV_CENTER_PADDING_X_SPACING = { xs: 0.5, sm: 1 }; // Add small horizontal breathing room around the centered date controls.
+const NAV_NOTIFICATION_BADGE_MAX = 99; // Prevent oversized badge strings from crowding the header controls.
 const NAV_INSTALL_ICON_SIZE = 'small'; // Keep the install icon compact on xs viewports where toolbar width is tight.
 /**
  * Keep drawer navigation backgrounds rectangular and flush so adjacent states do not visually overlap.
@@ -208,9 +217,13 @@ const NavbarLogDateControls: React.FC<NavbarLogDateControlsProps> = ({ navigatio
 
 const LayoutShell: React.FC = () => {
     const { user, logout, isLoading } = useAuth();
+    const queryClient = useQueryClient();
     const { dialogs, logDateOverride, logDateNavigation } = useQuickAddFab();
     const { t } = useI18n();
     const theme = useTheme();
+    const [notificationsOpen, setNotificationsOpen] = useState(false);
+    const [isOpeningNotification, setIsOpeningNotification] = useState(false);
+    const [dismissingNotificationId, setDismissingNotificationId] = useState<number | null>(null);
     const { isInstalled, canInstallPrompt, platformHint, showInstallCta, promptInstall } = useInstallState();
     useIncompleteTodayBadge();
     const safeAreaToolbarSx = useMemo(() => buildSafeAreaToolbarSx(theme), [theme]);
@@ -230,6 +243,7 @@ const LayoutShell: React.FC = () => {
     const isRegisterRoute = location.pathname.startsWith('/register');
     const showLoginCta = showAuthActions && !isLoginRoute;
     const showRegisterCta = showAuthActions && !isRegisterRoute;
+    const showNotificationsShortcut = showAppNav;
     const showSettingsShortcut = Boolean(user) && !isLoading && !hideNav;
     const showInstallShortcut = showInstallCta && !hideNav;
     const showDrawer = showAppNav && isDesktop;
@@ -237,11 +251,84 @@ const LayoutShell: React.FC = () => {
     const authCtaSize = isDesktop ? 'medium' : 'small';
     const registerCtaLabel = isDesktop ? t('auth.createAccount') : t('auth.register');
     const today = useMemo(() => getTodayIsoDate(user?.timezone), [user?.timezone]);
+    const inAppNotificationsQuery = useInAppNotificationsQuery({ enabled: showAppNav });
+    const inAppNotifications = inAppNotificationsQuery.data?.notifications ?? [];
+    const unreadNotificationCount = inAppNotificationsQuery.data?.unreadCount ?? 0;
+    const hasLoadedNotificationCount = inAppNotificationsQuery.status !== 'pending';
+    const refetchInAppNotifications = inAppNotificationsQuery.refetch;
+
+    useInAppNotificationBadge({
+        enabled: showAppNav,
+        unreadCount: unreadNotificationCount,
+        hasLoadedCount: hasLoadedNotificationCount
+    });
+
+    useEffect(() => {
+        if (!showAppNav || typeof navigator === 'undefined' || !('serviceWorker' in navigator)) {
+            return;
+        }
+
+        const handleServiceWorkerMessage = (event: MessageEvent) => {
+            if (!isInAppNotificationsUpdatedMessage(event.data)) {
+                return;
+            }
+
+            void queryClient.invalidateQueries({ queryKey: inAppNotificationsQueryKey() });
+        };
+
+        navigator.serviceWorker.addEventListener('message', handleServiceWorkerMessage);
+        return () => {
+            navigator.serviceWorker.removeEventListener('message', handleServiceWorkerMessage);
+        };
+    }, [queryClient, showAppNav]);
 
     const handleLogout = async () => {
         await logout();
         navigate('/');
     };
+
+    const handleOpenNotifications = useCallback(() => {
+        setNotificationsOpen(true);
+    }, []);
+
+    const handleCloseNotifications = useCallback(() => {
+        setNotificationsOpen(false);
+    }, []);
+
+    const handleRetryNotifications = useCallback(() => {
+        void refetchInAppNotifications();
+    }, [refetchInAppNotifications]);
+
+    const handleOpenNotification = useCallback(
+        async (notification: InAppNotification) => {
+            setIsOpeningNotification(true);
+            try {
+                setNotificationsOpen(false);
+                navigate(notification.action_url);
+            } catch (error) {
+                console.error(error);
+            } finally {
+                setIsOpeningNotification(false);
+                void refetchInAppNotifications();
+            }
+        },
+        [navigate, refetchInAppNotifications]
+    );
+
+    const handleDismissNotification = useCallback(
+        async (notification: InAppNotification) => {
+            setDismissingNotificationId(notification.id);
+            try {
+                await axios.patch(`/api/notifications/in-app/${notification.id}/dismiss`);
+            } catch (error) {
+                console.error(error);
+            } finally {
+                setDismissingNotificationId(null);
+                void refetchInAppNotifications();
+            }
+        },
+        [refetchInAppNotifications]
+    );
 
     const drawerContent = (
         <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
@@ -444,6 +531,25 @@ const LayoutShell: React.FC = () => {
                             </Box>
                         )}
 
+                        {showNotificationsShortcut && (
+                            <Tooltip title={t('nav.notifications')}>
+                                <IconButton
+                                    color="inherit"
+                                    onClick={handleOpenNotifications}
+                                    aria-label={t('nav.openNotificationsAria')}
+                                >
+                                    <Badge
+                                        color="error"
+                                        badgeContent={unreadNotificationCount}
+                                        max={NAV_NOTIFICATION_BADGE_MAX}
+                                        invisible={unreadNotificationCount <= 0}
+                                    >
+                                        <NotificationsIcon />
+                                    </Badge>
+                                </IconButton>
+                            </Tooltip>
+                        )}
+
                         {showInstallShortcut && (
                             <Tooltip title={t('nav.install')}>
                                 {isXs ? (
@@ -540,6 +646,22 @@ const LayoutShell: React.FC = () => {
                         <BottomNavigationAction value="/profile" label={t('nav.profile')} icon={<PersonIcon />} />
                     </BottomNavigation>
                 </Box>
+            )}
+
+            {showAppNav && (
+                <InAppNotificationsDrawer
+                    open={notificationsOpen}
+                    notifications={inAppNotifications}
+                    unreadCount={unreadNotificationCount}
+                    isLoading={inAppNotificationsQuery.isLoading}
+                    isError={inAppNotificationsQuery.isError}
+                    isOpeningNotification={isOpeningNotification}
+                    dismissingNotificationId={dismissingNotificationId}
+                    onClose={handleCloseNotifications}
+                    onRetry={handleRetryNotifications}
+                    onOpenNotification={handleOpenNotification}
+                    onDismissNotification={handleDismissNotification}
+                />
             )}
 
             {showQuickAdd && <LogQuickAddFab date={fabDate} />}

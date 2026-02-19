@@ -24,6 +24,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
 import { WEIGHT_UNITS, type WeightUnit } from '../../context/authContext';
 import { useI18n } from '../../i18n/useI18n';
+import { inAppNotificationsQueryKey } from '../../queries/inAppNotifications';
 import { metricsQueryKey } from '../../queries/metrics';
 import { getApiErrorMessage } from '../../utils/apiError';
 
@@ -189,6 +190,7 @@ const LoseItImportDialog: React.FC<LoseItImportDialogProps> = ({ open, onClose, 
             setStep('complete');
             void queryClient.invalidateQueries({ queryKey: ['food'] });
             void queryClient.invalidateQueries({ queryKey: metricsQueryKey() });
+            void queryClient.invalidateQueries({ queryKey: inAppNotificationsQueryKey() });
             onComplete?.({
                 foodLogsImported: data.importedFoodLogs,
                 weightEntriesImported: data.importedWeights,

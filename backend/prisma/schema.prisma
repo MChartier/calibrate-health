@@ -52,6 +52,12 @@ enum RecipeIngredientSource {
   EXTERNAL
 }
 
+enum InAppNotificationType {
+  LOG_WEIGHT_REMINDER
+  LOG_FOOD_REMINDER
+  GENERIC
+}
+
 model User {
   id            Int       @id @default(autoincrement())
   email         String    @unique
@@ -87,6 +93,8 @@ model User {
   my_foods      MyFood[]
   /// Web push subscriptions for reminder notifications.
   push_subscriptions PushSubscription[]
+  /// In-app reminder feed entries rendered in the notifications panel.
+  in_app_notifications InAppNotification[]
 }
 
 model Goal {
@@ -273,9 +281,41 @@ model PushSubscription {
   auth            String
   /// Optional expiration timestamp for the subscription.
   expiration_time DateTime?
+  /// Local date (UTC-normalized) when the last reminder was sent for this subscription.
+  last_sent_local_date DateTime? @db.Date
   created_at      DateTime @default(now())
   updated_at      DateTime @updatedAt
 
   @@unique([user_id, endpoint])
   @@index([user_id])
+}
+
+model InAppNotification {
+  id              Int                   @id @default(autoincrement())
+  user_id         Int
+  user            User                  @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  /// Reminder type used to select copy and action URLs in the frontend.
+  type            InAppNotificationType
+  /// Calendar day for this reminder, derived from the user's timezone.
+  local_date      DateTime              @db.Date
+  /// Optional notification title for generic/dev notifications.
+  title           String?
+  /// Optional notification body for generic/dev notifications.
+  body            String?
+  /// Optional deep link destination; reminder types fall back to known quick-add URLs.
+  action_url      String?
+  /// Optional dedupe key used to enforce one-per-key delivery while allowing repeated generic sends.
+  dedupe_key      String?
+  /// Read state for unread badge counts in the header bell + app icon.
+  read_at         DateTime?
+  /// User-initiated dismissal timestamp for explicit "not now" actions.
+  dismissed_at    DateTime?
+  /// Auto-resolution timestamp when logs are completed or the day rolls over.
+  resolved_at     DateTime?
+  created_at      DateTime              @default(now())
+  updated_at      DateTime              @updatedAt
+
+  @@unique([user_id, dedupe_key])
+  @@index([user_id, created_at])
+  @@index([user_id, dismissed_at, resolved_at])
 }

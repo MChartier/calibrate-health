@@ -28,6 +28,7 @@ import {
     toDatePart,
     useMetricsQuery
 } from '../queries/metrics';
+import { inAppNotificationsQueryKey } from '../queries/inAppNotifications';
 import { useI18n } from '../i18n/useI18n';
 import { haptic } from '../utils/haptics';
 
@@ -116,6 +117,7 @@ const WeightEntryFormContent: React.FC<WeightEntryFormContentProps> = ({
             await queryClient.invalidateQueries({ queryKey: metricsQueryKey() });
             await queryClient.invalidateQueries({ queryKey: ['user-profile'] });
             await queryClient.invalidateQueries({ queryKey: ['profile'] });
+            await queryClient.invalidateQueries({ queryKey: inAppNotificationsQueryKey() });
         }
     });
 
@@ -127,6 +129,7 @@ const WeightEntryFormContent: React.FC<WeightEntryFormContentProps> = ({
             await queryClient.invalidateQueries({ queryKey: metricsQueryKey() });
             await queryClient.invalidateQueries({ queryKey: ['user-profile'] });
             await queryClient.invalidateQueries({ queryKey: ['profile'] });
+            await queryClient.invalidateQueries({ queryKey: inAppNotificationsQueryKey() });
         }
     });
 

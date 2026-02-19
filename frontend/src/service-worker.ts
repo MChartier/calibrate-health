@@ -3,6 +3,7 @@
 import { clientsClaim } from 'workbox-core';
 import { cleanupOutdatedCaches, precacheAndRoute, createHandlerBoundToURL, getCacheKeyForURL } from 'workbox-precaching';
 import { registerRoute, NavigationRoute } from 'workbox-routing';
+import { buildInAppNotificationsUpdatedMessage } from './constants/notificationEvents';
 
 declare const self: ServiceWorkerGlobalScope & {
   __WB_MANIFEST: Array<{
@@ -74,6 +75,17 @@ const parsePushPayload = (event: PushEvent): PushPayload => {
   }
 };
 
+/**
+ * Prompt open app windows to refresh in-app notification state after a push arrives.
+ */
+const notifyClientsInAppNotificationsUpdated = async (): Promise<void> => {
+  const windowClients = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+  const message = buildInAppNotificationsUpdatedMessage();
+  for (const client of windowClients) {
+    client.postMessage(message);
+  }
+};
+
 self.addEventListener('push', (event) => {
   const payload = parsePushPayload(event);
   const title = payload.title?.trim() || DEFAULT_NOTIFICATION_TITLE;
@@ -99,7 +111,12 @@ self.addEventListener('push', (event) => {
     options.actions = payload.actions;
   }
 
-  event.waitUntil(self.registration.showNotification(title, options));
+  event.waitUntil(
+    Promise.all([
+      self.registration.showNotification(title, options),
+      notifyClientsInAppNotificationsUpdated()
+    ]).then(() => undefined)
+  );
 });
 
 /**

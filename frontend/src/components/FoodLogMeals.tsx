@@ -33,6 +33,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { getMealPeriodLabel, MEAL_PERIOD_ORDER, type MealPeriod } from '../types/mealPeriod';
 import { getMealPeriodAccentColor } from '../utils/mealColors';
 import { formatServingSnapshotLabel } from '../utils/servingDisplay';
+import { inAppNotificationsQueryKey } from '../queries/inAppNotifications';
 import SectionHeader from '../ui/SectionHeader';
 import MealPeriodIcon from './MealPeriodIcon';
 import { useI18n } from '../i18n/useI18n';
@@ -221,6 +222,7 @@ const FoodLogMeals: React.FC<FoodLogMealsProps> = ({ logs, isLoading = false }) 
         },
         onSuccess: async () => {
             await queryClient.invalidateQueries({ queryKey: ['food'] });
+            await queryClient.invalidateQueries({ queryKey: inAppNotificationsQueryKey() });
         }
     });
 
@@ -230,6 +232,7 @@ const FoodLogMeals: React.FC<FoodLogMealsProps> = ({ logs, isLoading = false }) 
         },
         onSuccess: async () => {
             await queryClient.invalidateQueries({ queryKey: ['food'] });
+            await queryClient.invalidateQueries({ queryKey: inAppNotificationsQueryKey() });
         }
     });
 
