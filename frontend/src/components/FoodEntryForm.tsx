@@ -35,6 +35,7 @@ import NewMyFoodDialog from './NewMyFoodDialog';
 import NewRecipeDialog from './NewRecipeDialog';
 import type { NormalizedFoodItem } from '../types/food';
 import { getMealPeriodLabel, MEAL_PERIOD_ORDER, type MealPeriod } from '../types/mealPeriod';
+import { inAppNotificationsQueryKey } from '../queries/inAppNotifications';
 import { useMyFoodsQuery } from '../queries/myFoods';
 import { getApiErrorMessage } from '../utils/apiError';
 import {
@@ -808,6 +809,7 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
                                 }}
                                 onLogged={() => {
                                     void queryClient.invalidateQueries({ queryKey: ['food'] });
+                                    void queryClient.invalidateQueries({ queryKey: inAppNotificationsQueryKey() });
                                     onSuccess?.();
                                 }}
                             />
@@ -921,6 +923,7 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
                                 }}
                                 onLogged={() => {
                                     void queryClient.invalidateQueries({ queryKey: ['food'] });
+                                    void queryClient.invalidateQueries({ queryKey: inAppNotificationsQueryKey() });
                                     onSuccess?.();
                                 }}
                             />
