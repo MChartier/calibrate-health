@@ -26,8 +26,8 @@ import { useAuth } from '../context/useAuth';
 import { useQuickAddFab } from '../context/useQuickAddFab';
 import { useI18n } from '../i18n/useI18n';
 import { inAppNotificationsQueryKey } from '../queries/inAppNotifications';
-import { formatIsoDateForDisplay, getTodayIsoDate } from '../utils/date';
 import { haptic } from '../utils/haptics';
+import { formatIsoDateForDisplay, getTodayIsoDate } from '../utils/date';
 
 /**
  * Floating action button for adding food or weight logs from the log view.

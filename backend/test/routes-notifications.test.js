@@ -68,19 +68,13 @@ function getRouteHandlers(router, method, path) {
   return layer.route.stack.map((stackLayer) => stackLayer.handle);
 }
 
-test('notifications route: POST /subscription reassigns endpoint ownership and clears dedupe state', async () => {
-  const upsertCalls = [];
+test('notifications route: POST /subscription uses one atomic write for ownership handoff + dedupe reset', async () => {
+  const executeRawCalls = [];
   const router = loadNotificationsRouter({
     prismaStub: {
-      pushSubscription: {
-        findUnique: async (args) => {
-          assert.equal(args.where.endpoint, 'https://example.test/browser-endpoint');
-          return { user_id: 7 };
-        },
-        upsert: async (args) => {
-          upsertCalls.push(args);
-          return { id: 33 };
-        }
+      $executeRaw: async (query, ...values) => {
+        executeRawCalls.push({ query, values });
+        return 1;
       }
     }
   });
@@ -101,26 +95,31 @@ test('notifications route: POST /subscription reassigns endpoint ownership and c
 
   await handler(req, res);
 
-  assert.equal(upsertCalls.length, 1);
-  assert.deepEqual(upsertCalls[0].where, { endpoint: 'https://example.test/browser-endpoint' });
-  assert.equal(upsertCalls[0].update.user_id, 9);
-  assert.equal(upsertCalls[0].update.last_sent_local_date, null);
-  assert.equal(upsertCalls[0].create.user_id, 9);
-  assert.equal(upsertCalls[0].create.last_sent_local_date, null);
+  assert.equal(executeRawCalls.length, 1);
+  const sqlText = executeRawCalls[0].query.join(' ');
+  assert.match(sqlText, /ON CONFLICT \("endpoint"\)/);
+  assert.match(sqlText, /"last_sent_local_date" = CASE/);
+  assert.match(sqlText, /IS DISTINCT FROM/);
+  assert.match(sqlText, /ELSE "PushSubscription"\."last_sent_local_date"/);
+  assert.deepEqual(executeRawCalls[0].values, [
+    9,
+    'https://example.test/browser-endpoint',
+    'p256dh-key',
+    'auth-key',
+    null
+  ]);
   assert.equal(res.statusCode, 200);
   assert.deepEqual(res.body, { ok: true });
 });
 
-test('notifications route: POST /subscription keeps dedupe state when endpoint owner is unchanged', async () => {
-  const upsertCalls = [];
+test('notifications route: POST /subscription forwards expirationTime to the atomic write', async () => {
+  const executeRawCalls = [];
+  const expirationTimeMs = Date.UTC(2026, 1, 20, 16, 5, 0, 0);
   const router = loadNotificationsRouter({
     prismaStub: {
-      pushSubscription: {
-        findUnique: async () => ({ user_id: 9 }),
-        upsert: async (args) => {
-          upsertCalls.push(args);
-          return { id: 34 };
-        }
+      $executeRaw: async (query, ...values) => {
+        executeRawCalls.push({ query, values });
+        return 1;
       }
     }
   });
@@ -134,19 +133,17 @@ test('notifications route: POST /subscription keeps dedupe state when endpoint o
       keys: {
         p256dh: 'p256dh-key',
         auth: 'auth-key'
-      }
+      },
+      expirationTime: expirationTimeMs
     }
   };
   const res = createRes();
 
   await handler(req, res);
 
-  assert.equal(upsertCalls.length, 1);
-  assert.equal(upsertCalls[0].update.user_id, 9);
-  assert.equal(
-    Object.prototype.hasOwnProperty.call(upsertCalls[0].update, 'last_sent_local_date'),
-    false
-  );
+  assert.equal(executeRawCalls.length, 1);
+  assert.ok(executeRawCalls[0].values[4] instanceof Date);
+  assert.equal(executeRawCalls[0].values[4].getTime(), expirationTimeMs);
   assert.equal(res.statusCode, 200);
   assert.deepEqual(res.body, { ok: true });
 });
@@ -156,10 +153,6 @@ test('notifications route: DELETE /subscription only removes endpoint rows for t
   const router = loadNotificationsRouter({
     prismaStub: {
       pushSubscription: {
-        findUnique: async () => null,
-        upsert: async () => {
-          throw new Error('should not be called');
-        },
         deleteMany: async (args) => {
           deleteManyCalls.push(args);
           return { count: 0 };

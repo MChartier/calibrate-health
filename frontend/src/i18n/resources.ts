@@ -131,6 +131,9 @@ export const en = {
     'goals.weightHistoryRangeMonth': 'Month',
     'goals.weightHistoryRangeYear': 'Year',
     'goals.weightHistoryRangeAll': 'All',
+    'goals.weightHistoryPanPrevious': 'Show previous period',
+    'goals.weightHistoryPanNext': 'Show next period',
+    'goals.weightHistoryWindowLabel': '{start} - {end}',
     'goals.weightHistorySmoothingLabel': '{days}-day average',
 
     'activityLevel.SEDENTARY.title': 'Sedentary',
@@ -611,6 +614,9 @@ export const es: Record<TranslationKey, string> = {
     'goals.weightHistoryRangeMonth': 'Mes',
     'goals.weightHistoryRangeYear': 'Año',
     'goals.weightHistoryRangeAll': 'Todo',
+    'goals.weightHistoryPanPrevious': 'Mostrar periodo anterior',
+    'goals.weightHistoryPanNext': 'Mostrar periodo siguiente',
+    'goals.weightHistoryWindowLabel': '{start} - {end}',
     'goals.weightHistorySmoothingLabel': 'Promedio de {days} días',
 
     'activityLevel.SEDENTARY.title': 'Sedentario',
@@ -1089,6 +1095,9 @@ export const fr: Record<TranslationKey, string> = {
     'goals.weightHistoryRangeMonth': 'Mois',
     'goals.weightHistoryRangeYear': 'Année',
     'goals.weightHistoryRangeAll': 'Tout',
+    'goals.weightHistoryPanPrevious': 'Afficher la periode precedente',
+    'goals.weightHistoryPanNext': 'Afficher la periode suivante',
+    'goals.weightHistoryWindowLabel': '{start} - {end}',
     'goals.weightHistorySmoothingLabel': 'Moyenne sur {days} jours',
 
     'activityLevel.SEDENTARY.title': 'Sédentaire',
@@ -1567,6 +1576,9 @@ export const ru: Record<TranslationKey, string> = {
     'goals.weightHistoryRangeMonth': 'Месяц',
     'goals.weightHistoryRangeYear': 'Год',
     'goals.weightHistoryRangeAll': 'Все время',
+    'goals.weightHistoryPanPrevious': 'Показать предыдущий период',
+    'goals.weightHistoryPanNext': 'Показать следующий период',
+    'goals.weightHistoryWindowLabel': '{start} - {end}',
     'goals.weightHistorySmoothingLabel': 'Среднее за {days} дней',
 
     'activityLevel.SEDENTARY.title': 'Сидячий',

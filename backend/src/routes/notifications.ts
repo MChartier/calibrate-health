@@ -51,31 +51,36 @@ router.post('/subscription', async (req, res) => {
     return res.status(400).json({ message: 'Invalid subscription payload.' });
   }
 
-  const existingSubscription = await prisma.pushSubscription.findUnique({
-    where: { endpoint },
-    select: { user_id: true }
-  });
-  const endpointOwnerChanged = existingSubscription?.user_id !== undefined && existingSubscription.user_id !== user.id;
-
-  await prisma.pushSubscription.upsert({
-    where: { endpoint },
-    update: {
-      user_id: user.id,
-      p256dh,
-      auth,
-      expiration_time: expirationTime,
-      // Reset local-day dedupe when ownership changes so old-account send state does not bleed to the new owner.
-      ...(endpointOwnerChanged ? { last_sent_local_date: null } : {})
-    },
-    create: {
-      user_id: user.id,
-      endpoint,
-      p256dh,
-      auth,
-      expiration_time: expirationTime,
-      last_sent_local_date: null
-    }
-  });
+  // Keep ownership handoff + dedupe reset in one write to avoid races between separate read/update steps.
+  await prisma.$executeRaw`
+    INSERT INTO "PushSubscription" (
+      "user_id",
+      "endpoint",
+      "p256dh",
+      "auth",
+      "expiration_time",
+      "last_sent_local_date"
+    )
+    VALUES (
+      ${user.id},
+      ${endpoint},
+      ${p256dh},
+      ${auth},
+      ${expirationTime},
+      NULL
+    )
+    ON CONFLICT ("endpoint")
+    DO UPDATE SET
+      "user_id" = EXCLUDED."user_id",
+      "p256dh" = EXCLUDED."p256dh",
+      "auth" = EXCLUDED."auth",
+      "expiration_time" = EXCLUDED."expiration_time",
+      "last_sent_local_date" = CASE
+        WHEN "PushSubscription"."user_id" IS DISTINCT FROM EXCLUDED."user_id" THEN NULL
+        ELSE "PushSubscription"."last_sent_local_date"
+      END,
+      "updated_at" = NOW()
+  `;
 
   res.json({ ok: true });
 });

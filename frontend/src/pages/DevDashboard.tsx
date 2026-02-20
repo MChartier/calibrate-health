@@ -25,8 +25,8 @@ import {
 import QrCodeScannerIcon from '@mui/icons-material/QrCodeScannerRounded';
 import axios from 'axios';
 import BarcodeScannerDialog from '../components/BarcodeScannerDialog';
-import { useAuth } from '../context/useAuth';
 import { inAppNotificationsQueryKey } from '../queries/inAppNotifications';
+import { useAuth } from '../context/useAuth';
 import { clearAppBadge, isBadgingSupported, setAppBadge } from '../utils/badging';
 import { haptic } from '../utils/haptics';
 import { resolveServiceWorkerRegistration, urlBase64ToUint8Array } from '../utils/pushNotifications';
@@ -75,15 +75,6 @@ type ResetTestUserOnboardingResponse = {
     ok: boolean;
     user: { email?: string } | null;
 };
-
-type ProductHapticPatternId = 'tap' | 'success' | 'warning' | 'error';
-
-const PRODUCT_HAPTIC_PATTERN_OPTIONS: Array<{ id: ProductHapticPatternId; label: string }> = [
-    { id: 'tap', label: 'Product tap (10ms)' },
-    { id: 'success', label: 'Product success (15ms)' },
-    { id: 'warning', label: 'Product warning ([20, 40, 20]ms)' },
-    { id: 'error', label: 'Product error ([30, 30, 30]ms)' }
-];
 
 const DEV_NOTIFICATION_TYPES = {
     TEST: 'test',
@@ -182,13 +173,20 @@ type DevNotificationDeliveryResponse = {
         message?: string;
     };
 };
+type ProductHapticPatternId = 'tap' | 'success' | 'warning' | 'error';
 
+const PRODUCT_HAPTIC_PATTERN_OPTIONS: Array<{ id: ProductHapticPatternId; label: string }> = [
+    { id: 'tap', label: 'Product tap (10ms)' },
+    { id: 'success', label: 'Product success (15ms)' },
+    { id: 'warning', label: 'Product warning ([20, 40, 20]ms)' },
+    { id: 'error', label: 'Product error ([30, 30, 30]ms)' }
+];
 /**
  * Dev-only dashboard to compare food search results side-by-side across providers.
  */
 const DevDashboard: React.FC = () => {
-    const { user } = useAuth();
     const queryClient = useQueryClient();
+    const { user } = useAuth();
     const [providers, setProviders] = useState<FoodProviderInfo[]>([]);
     const [selectedProviders, setSelectedProviders] = useState<FoodDataSource[]>([]);
     const [query, setQuery] = useState('');
@@ -228,11 +226,6 @@ const DevDashboard: React.FC = () => {
     const supportsServiceWorker = typeof window !== 'undefined' && 'serviceWorker' in navigator;
     const supportsPushManager = typeof window !== 'undefined' && 'PushManager' in window;
     const supportsBadging = isBadgingSupported();
-    const supportsVibrationApi = typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function';
-    const prefersReducedMotion =
-        typeof window !== 'undefined' &&
-        typeof window.matchMedia === 'function' &&
-        window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const selectedDeliveryChannels = useMemo<NotificationDeliveryChannel[]>(() => {
         const channels: NotificationDeliveryChannel[] = [];
         if (deliverViaPush) {
@@ -243,6 +236,11 @@ const DevDashboard: React.FC = () => {
         }
         return channels;
     }, [deliverViaInApp, deliverViaPush]);
+    const supportsVibrationApi = typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function';
+    const prefersReducedMotion =
+        typeof window !== 'undefined' &&
+        typeof window.matchMedia === 'function' &&
+        window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
     /**
      * Fetch provider metadata so the UI reflects current backend configuration.
@@ -879,7 +877,10 @@ const DevDashboard: React.FC = () => {
                                     ))}
                                 </Select>
                             </FormControl>
-                            <Button variant="contained" onClick={() => testSelectedProductHapticPattern()}>
+                            <Button
+                                variant="contained"
+                                onClick={() => testSelectedProductHapticPattern()}
+                            >
                                 Test
                             </Button>
                             <Button

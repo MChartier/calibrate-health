@@ -51,11 +51,11 @@ import { QUICK_ADD_FAB_PAGE_BOTTOM_PADDING } from '../constants/quickAddFab';
 import LogQuickAddFab from './LogQuickAddFab';
 import LogDatePickerControl from './LogDatePickerControl';
 import InAppNotificationsDrawer from './InAppNotificationsDrawer';
-import { useIncompleteTodayBadge } from '../hooks/useIncompleteTodayBadge';
 import { useInAppNotificationBadge } from '../hooks/useInAppNotificationBadge';
-import { useInstallState } from '../hooks/useInstallState';
 import { type InAppNotification, inAppNotificationsQueryKey, useInAppNotificationsQuery } from '../queries/inAppNotifications';
 import { isInAppNotificationsUpdatedMessage } from '../constants/notificationEvents';
+import { useIncompleteTodayBadge } from '../hooks/useIncompleteTodayBadge';
+import { useInstallState } from '../hooks/useInstallState';
 
 /**
  * App shell layout with navigation chrome and quick-add entry points.
@@ -221,11 +221,11 @@ const LayoutShell: React.FC = () => {
     const { dialogs, logDateOverride, logDateNavigation } = useQuickAddFab();
     const { t } = useI18n();
     const theme = useTheme();
-    const { isInstalled, canInstallPrompt, platformHint, showInstallCta, promptInstall } = useInstallState();
-    useIncompleteTodayBadge();
     const [notificationsOpen, setNotificationsOpen] = useState(false);
     const [isOpeningNotification, setIsOpeningNotification] = useState(false);
     const [dismissingNotificationId, setDismissingNotificationId] = useState<number | null>(null);
+    const { isInstalled, canInstallPrompt, platformHint, showInstallCta, promptInstall } = useInstallState();
+    useIncompleteTodayBadge();
     const safeAreaToolbarSx = useMemo(() => buildSafeAreaToolbarSx(theme), [theme]);
     const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
     const isXs = useMediaQuery(theme.breakpoints.down('sm'));
