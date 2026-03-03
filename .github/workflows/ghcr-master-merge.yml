@@ -69,7 +69,8 @@ jobs:
         with:
           context: .
           file: ./Dockerfile.app
-          platforms: linux/amd64,linux/arm64
+          # Target the local server architecture to keep CI build times down.
+          platforms: linux/amd64
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           cache-from: type=gha
