@@ -1,0 +1,83 @@
+services:
+  app:
+    # Full image reference, e.g. ghcr.io/mchartier/calibratehealth:master
+    image: ${APP_IMAGE}
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      FRONTEND_DIST_DIR: /app/frontend/dist
+
+      # Session + DB configuration required by the backend runtime.
+      SESSION_SECRET: ${SESSION_SECRET}
+      DB_HOST: db
+      DB_PORT: "5432"
+      DB_NAME: ${POSTGRES_DB}
+      DB_USER: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_SSLMODE: disable
+
+      AUTO_LOGIN_TEST_USER: "false"
+
+      # Optional push notification keys.
+      WEB_PUSH_PUBLIC_KEY: ${WEB_PUSH_PUBLIC_KEY:-}
+      WEB_PUSH_PRIVATE_KEY: ${WEB_PUSH_PRIVATE_KEY:-}
+      WEB_PUSH_SUBJECT: ${WEB_PUSH_SUBJECT:-}
+
+      # Optional food provider credentials (falls back automatically when missing).
+      FOOD_DATA_PROVIDER: ${FOOD_DATA_PROVIDER:-fatsecret}
+      FATSECRET_CLIENT_ID: ${FATSECRET_CLIENT_ID:-}
+      FATSECRET_CLIENT_SECRET: ${FATSECRET_CLIENT_SECRET:-}
+      USDA_API_KEY: ${USDA_API_KEY:-}
+
+    expose:
+      - "3000"
+
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=${TRAEFIK_NETWORK:-traefik}
+
+      - traefik.http.routers.calibratehealth.rule=Host(`${APP_HOST}`)
+      - traefik.http.routers.calibratehealth.entrypoints=websecure
+      - traefik.http.routers.calibratehealth.tls=true
+      - traefik.http.routers.calibratehealth.tls.certresolver=${TRAEFIK_CERT_RESOLVER:-letsencrypt}
+      - traefik.http.services.calibratehealth.loadbalancer.server.port=3000
+
+      - traefik.http.routers.calibratehealth-http.rule=Host(`${APP_HOST}`)
+      - traefik.http.routers.calibratehealth-http.entrypoints=web
+      - traefik.http.routers.calibratehealth-http.middlewares=calibratehealth-https-redirect
+      - traefik.http.middlewares.calibratehealth-https-redirect.redirectscheme.scheme=https
+
+    networks:
+      - internal
+      - traefik
+
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - internal
+
+volumes:
+  postgres_data:
+
+networks:
+  internal:
+  traefik:
+    external: true
+    name: ${TRAEFIK_NETWORK:-traefik}
