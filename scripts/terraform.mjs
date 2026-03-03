@@ -189,7 +189,7 @@ function ensureBackendConfig(opts) {
  */
 function renderBackendConfig(template, bucket) {
   const rendered = template.replace(
-    /bucket\\s*=\\s*\"calibratehealth-tfstate-CHANGEME\"/g,
+    /bucket\s*=\s*"calibratehealth-tfstate-CHANGEME"/g,
     `bucket         = \"${bucket}\"`
   );
 
@@ -340,4 +340,3 @@ function terraformRunAction(opts) {
   const res = spawnSync("terraform", args, { cwd, env, stdio: "inherit" });
   process.exit(res.status ?? 1);
 }
-

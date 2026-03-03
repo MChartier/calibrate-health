@@ -3,6 +3,12 @@ variable "name_prefix" {
   type        = string
 }
 
+variable "extra_tags" {
+  description = "Additional tags applied to all module resources."
+  type        = map(string)
+  default     = {}
+}
+
 variable "vpc_id" {
   description = "VPC ID where the database will live."
   type        = string
@@ -47,4 +53,16 @@ variable "deletion_protection" {
   description = "Whether to enable deletion protection (recommended for prod)."
   type        = bool
   default     = false
+}
+
+variable "skip_final_snapshot" {
+  description = "If false, Terraform requires a final snapshot identifier before deleting the DB."
+  type        = bool
+  default     = false
+}
+
+variable "final_snapshot_identifier" {
+  description = "Final snapshot identifier used when skip_final_snapshot is false."
+  type        = string
+  default     = null
 }

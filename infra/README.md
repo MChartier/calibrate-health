@@ -101,6 +101,50 @@ cd ../prod
 terraform apply
 ```
 
+## Temporarily suspend an environment (cost control)
+
+Each environment now exposes toggles so you can drop monthly cost while keeping Terraform as the source of truth.
+
+Suspend runtime resources (ECS service, ALB, and RDS) for staging:
+
+```sh
+cd infra/envs/staging
+terraform apply -var='runtime_enabled=false'
+```
+
+Suspend runtime resources for prod:
+
+```sh
+cd infra/envs/prod
+terraform apply -var='runtime_enabled=false'
+```
+
+Resume an environment:
+
+```sh
+terraform apply -var='runtime_enabled=true' -var='service_desired_count=1'
+```
+
+Run ECS at zero tasks while keeping ALB + RDS provisioned:
+
+```sh
+terraform apply -var='runtime_enabled=true' -var='service_desired_count=0'
+```
+
+RDS safety notes:
+- `db_skip_final_snapshot` defaults to `false`, so Terraform requires a final snapshot identifier before DB deletion.
+- The default snapshot identifier is `<app_name>-<environment>-final`; if a snapshot with that name already exists, pass a unique `db_final_snapshot_identifier`.
+- `db_deletion_protection` defaults to `false` for easier suspend/resume flows; set it to `true` for long-lived production operation.
+- If an existing DB still has deletion protection enabled from older config, apply once with `runtime_enabled=true` before suspending.
+
+## Tagging + AWS Resource Groups
+
+Each environment now applies consistent tags (`App`, `Environment`, `ManagedBy`, `Stack`) and creates an AWS Resource Group filtered by those tags.
+
+Useful outputs:
+- `resource_group_name`
+- `resource_group_arn`
+
 ## Secrets Manager: required JSON payloads
 
 Each environment creates an empty secret:

@@ -3,6 +3,12 @@ variable "name_prefix" {
   type        = string
 }
 
+variable "extra_tags" {
+  description = "Additional tags applied to all taggable module resources."
+  type        = map(string)
+  default     = {}
+}
+
 variable "cluster_name" {
   description = "ECS cluster name that should be redeployed after rotation."
   type        = string
