@@ -1,7 +1,7 @@
 locals {
-  common_tags = {
+  common_tags = merge(var.extra_tags, {
     NamePrefix = var.name_prefix
-  }
+  })
 }
 
 resource "aws_db_subnet_group" "this" {
@@ -46,13 +46,21 @@ resource "aws_db_instance" "this" {
   auto_minor_version_upgrade      = true
   backup_retention_period         = var.backup_retention_days
   deletion_protection             = var.deletion_protection
-  skip_final_snapshot             = true
+  skip_final_snapshot             = var.skip_final_snapshot
+  final_snapshot_identifier       = var.skip_final_snapshot ? null : var.final_snapshot_identifier
   copy_tags_to_snapshot           = true
   performance_insights_enabled    = false
   enabled_cloudwatch_logs_exports = []
 
   # Keep early iteration fast; you can switch to controlled windows later.
   apply_immediately = true
+
+  lifecycle {
+    precondition {
+      condition     = var.skip_final_snapshot || var.final_snapshot_identifier != null
+      error_message = "final_snapshot_identifier must be set when skip_final_snapshot is false."
+    }
+  }
 
   tags = merge(local.common_tags, { Name = "${var.name_prefix}-postgres" })
 }

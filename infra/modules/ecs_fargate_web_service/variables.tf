@@ -3,6 +3,12 @@ variable "name_prefix" {
   type        = string
 }
 
+variable "extra_tags" {
+  description = "Additional tags applied to all module resources."
+  type        = map(string)
+  default     = {}
+}
+
 variable "aws_region" {
   description = "AWS region hosting the ECS service/ALB (used for CloudWatch Logs configuration)."
   type        = string
@@ -98,4 +104,3 @@ variable "log_retention_in_days" {
   type        = number
   default     = 14
 }
-

@@ -1,11 +1,14 @@
 locals {
+  common_tags = merge(var.extra_tags, {
+    NamePrefix = var.name_prefix
+  })
   lambda_name     = "${var.name_prefix}-db-secret-redeploy"
   event_rule_name = "${var.name_prefix}-db-secret-rotation"
 }
 
 data "archive_file" "lambda_zip" {
-  type = "zip"
-  source_content = <<-EOT
+  type                    = "zip"
+  source_content          = <<-EOT
   import os
   import boto3
 
@@ -82,6 +85,7 @@ data "aws_iam_policy_document" "lambda_assume_role" {
 resource "aws_iam_role" "this" {
   name               = substr("${var.name_prefix}-db-secret-redeploy", 0, 64)
   assume_role_policy = data.aws_iam_policy_document.lambda_assume_role.json
+  tags               = merge(local.common_tags, { Name = local.lambda_name })
 }
 
 resource "aws_iam_role_policy_attachment" "basic" {
@@ -119,24 +123,28 @@ resource "aws_lambda_function" "this" {
       SECRET_ARN   = var.secret_arn
     }
   }
+
+  tags = merge(local.common_tags, { Name = local.lambda_name })
 }
 
 resource "aws_cloudwatch_log_group" "this" {
   name              = "/aws/lambda/${aws_lambda_function.this.function_name}"
   retention_in_days = var.log_retention_days
+  tags              = merge(local.common_tags, { Name = "/aws/lambda/${aws_lambda_function.this.function_name}" })
 }
 
 resource "aws_cloudwatch_event_rule" "secret_rotation" {
   name        = local.event_rule_name
   description = "Force ECS redeploy when Secrets Manager updates DB credentials."
   event_pattern = jsonencode({
-    source = ["aws.secretsmanager"],
+    source        = ["aws.secretsmanager"],
     "detail-type" = ["AWS API Call via CloudTrail"],
     detail = {
       eventSource = ["secretsmanager.amazonaws.com"],
       eventName   = ["UpdateSecretVersionStage"]
     }
   })
+  tags = merge(local.common_tags, { Name = local.event_rule_name })
 }
 
 resource "aws_cloudwatch_event_target" "secret_rotation" {

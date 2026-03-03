@@ -1,7 +1,7 @@
 locals {
-  common_tags = {
+  common_tags = merge(var.extra_tags, {
     NamePrefix = var.name_prefix
-  }
+  })
 
   # ALB and target group names are limited to 32 characters.
   alb_name = substr("${var.name_prefix}-alb", 0, 32)

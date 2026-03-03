@@ -1,7 +1,7 @@
 locals {
-  common_tags = {
+  common_tags = merge(var.extra_tags, {
     NamePrefix = var.name_prefix
-  }
+  })
 }
 
 resource "aws_vpc" "this" {
@@ -65,4 +65,3 @@ resource "aws_route_table_association" "private" {
   subnet_id      = each.value.id
   route_table_id = aws_route_table.private.id
 }
-
