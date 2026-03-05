@@ -65,8 +65,9 @@ function getPwaOptions(): Partial<VitePWAOptions> {
           type: 'image/png',
         },
         {
-          src: 'pwa-512x512.png',
-          sizes: '512x512',
+          // Maskable icons should be full-bleed to avoid tiny/letterboxed installs on Android launchers.
+          src: 'icon.png',
+          sizes: '1024x1024',
           type: 'image/png',
           purpose: 'maskable',
         },
