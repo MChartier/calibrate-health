@@ -200,7 +200,7 @@ iterations you can auto-login this user and reset its onboarding state:
 
 ### Quickstart (local)
 
-Prereqs: Node.js + npm, and a Postgres database.
+Prereqs: Node.js `20.19+` or `22.12+`, npm, and a Postgres database.
 
 1. Set env vars (recommended via `backend/.env`):
    - `DATABASE_URL=postgresql://user:password@localhost:5432/fitness_app?schema=public`
