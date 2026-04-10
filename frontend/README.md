@@ -4,6 +4,7 @@ React + TypeScript + Vite UI for calibrate. Uses MUI and React Query.
 
 ## Development
 
+- Supported Node.js versions: `20.19+` or `22.12+` (required by Vite 8).
 - Run from the repo root: `npm run dev` (recommended), or `npm --prefix frontend run dev` if the backend is already running.
 - `npm run dev` at the repo root enables the PWA service worker in development (`VITE_ENABLE_SW_DEV=1`) so push flows can be tested locally.
 - If you run the frontend directly and still need push/PWA behavior, set `VITE_ENABLE_SW_DEV=1` for that process (for example: `VITE_ENABLE_SW_DEV=1 npm --prefix frontend run dev`).

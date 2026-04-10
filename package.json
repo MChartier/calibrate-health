@@ -16,7 +16,7 @@
     "db:reset": "npm --prefix backend run db:reset",
     "db:seed": "npm --prefix backend run db:seed",
     "db:studio": "npm --prefix backend run db:studio",
-    "setup": "npm --prefix backend install && npm run prisma:generate && npm --prefix frontend install",
+    "setup": "npm --prefix backend install && npm run prisma:generate && npm --prefix frontend install --legacy-peer-deps",
     "worktree:new": "node scripts/worktree.mjs",
     "worktree:code": "node scripts/worktree-code.mjs",
     "worktree:reset": "node scripts/worktree-reset.mjs",
@@ -39,6 +39,9 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
+  "engines": {
+    "node": "^20.19.0 || >=22.12.0"
+  },
   "devDependencies": {
     "@types/node": "^20.0.0",
     "baseline-browser-mapping": "^2.9.19",
