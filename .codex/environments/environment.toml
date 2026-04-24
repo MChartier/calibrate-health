@@ -7,3 +7,38 @@ script = '''
 node .codex/local-environment.setup.mjs
 
 '''
+
+[[actions]]
+name = "Dev"
+icon = "run"
+command = "node scripts/codex-worktree-env.mjs dev"
+
+[[actions]]
+name = "Dev test"
+icon = "run"
+command = "node scripts/codex-worktree-env.mjs dev:test"
+
+[[actions]]
+name = "Test"
+icon = "run"
+command = "node scripts/codex-worktree-env.mjs test"
+
+[[actions]]
+name = "Lint"
+icon = "run"
+command = "node scripts/codex-worktree-env.mjs lint"
+
+[[actions]]
+name = "Build"
+icon = "run"
+command = "node scripts/codex-worktree-env.mjs build"
+
+[[actions]]
+name = "Shell"
+icon = "run"
+command = "node scripts/codex-worktree-env.mjs shell"
+
+[[actions]]
+name = "Stop"
+icon = "run"
+command = "node scripts/codex-worktree-env.mjs down"

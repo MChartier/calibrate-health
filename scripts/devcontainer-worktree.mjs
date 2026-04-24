@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { execFileSync, spawnSync } from "node:child_process";
+import { execFileSync, spawn } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 
@@ -300,32 +300,36 @@ function redactSensitiveOutput(output) {
 }
 
 /**
- * Run `devcontainer up` and return the container id (if available).
+ * Run `devcontainer up`, stream redacted logs live, and return the container id.
  * @param {string[]} args - Arguments to pass to devcontainer.
- * @returns {string|null} Container id when reported by the CLI.
+ * @returns {Promise<string|null>} Container id when reported by the CLI.
  */
 function runDevcontainerUp(args) {
-  const result = spawnSync(DEVCONTAINER_COMMAND, [...DEVCONTAINER_BASE_ARGS, ...args], {
-    stdio: ["inherit", "pipe", "pipe"],
-    encoding: "utf8",
+  return new Promise((resolve, reject) => {
+    const child = spawn(DEVCONTAINER_COMMAND, [...DEVCONTAINER_BASE_ARGS, ...args], {
+      stdio: ["inherit", "pipe", "pipe"],
+    });
+    let stdout = "";
+
+    child.stdout.setEncoding("utf8");
+    child.stderr.setEncoding("utf8");
+
+    child.stdout.on("data", (chunk) => {
+      stdout += chunk;
+      process.stdout.write(redactSensitiveOutput(chunk));
+    });
+    child.stderr.on("data", (chunk) => {
+      process.stderr.write(redactSensitiveOutput(chunk));
+    });
+    child.on("error", reject);
+    child.on("close", (status) => {
+      if (status !== 0) {
+        reject(new Error("devcontainer up failed."));
+        return;
+      }
+      resolve(extractContainerId(stdout));
+    });
   });
-
-  if (result.stdout) {
-    process.stdout.write(redactSensitiveOutput(result.stdout));
-  }
-  if (result.stderr) {
-    process.stderr.write(redactSensitiveOutput(result.stderr));
-  }
-
-  if (result.error) {
-    throw result.error;
-  }
-
-  if (result.status !== 0) {
-    throw new Error("devcontainer up failed.");
-  }
-
-  return extractContainerId(result.stdout ?? "");
 }
 
 /**
@@ -389,7 +393,7 @@ const containerWorkspaceFolder = resolveContainerWorkspaceFolder(
 );
 
 if (subcommand === "up") {
-  runDevcontainerUp([
+  await runDevcontainerUp([
     "up",
     "--workspace-folder",
     target.workspacePath,
@@ -407,7 +411,7 @@ if (subcommand === "exec") {
     process.exit(1);
   }
 
-  const containerId = runDevcontainerUp([
+  const containerId = await runDevcontainerUp([
     "up",
     "--workspace-folder",
     target.workspacePath,
@@ -427,7 +431,7 @@ if (subcommand === "exec") {
 
 const shellCommand =
   target.commandArgs.length === 0 ? ["bash"] : target.commandArgs;
-const containerId = runDevcontainerUp([
+const containerId = await runDevcontainerUp([
   "up",
   "--workspace-folder",
   target.workspacePath,
