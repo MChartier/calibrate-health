@@ -111,8 +111,9 @@ Full guide (including required secrets and exact commands): [infra/README.md](in
 
 ### Quickstart (devcontainer)
 
-The devcontainer runs `npm run setup` automatically (installs deps + generates the Prisma client). On start it also runs
-`npm --prefix backend run db:push:reset` and `npm --prefix backend run db:seed`.
+The devcontainer starts quickly and does not install app dependencies or reset the database automatically. Run
+`npm run setup` inside the container when you need the full app environment; it installs dependencies, generates the
+Prisma client, applies migrations, and seeds deterministic dev data.
 
 This repo supports a repo-local `.env` file (gitignored) for devcontainer secrets. Start by copying `.env.example` to
 `.env`, then rebuild the devcontainer so `.devcontainer/.env` is regenerated and Docker can pass the values into the
@@ -132,29 +133,34 @@ or a path. For example: `npm run devcontainer:shell -- alpha` or
 #### Codex app worktrees
 
 Codex app local environments are defined under `.codex/environments/`. The `local-devcontainer` environment calls the
-tracked setup script at `.codex/local-environment.setup.sh`:
+tracked setup script at `.codex/local-environment.setup.mjs`:
 
 ```sh
-bash .codex/local-environment.setup.sh
+node .codex/local-environment.setup.mjs
 ```
 
 The script targets `CODEX_WORKTREE_PATH` when the Codex app provides it, installs the repo-local Dev Containers CLI if
 needed, copies the source checkout's ignored `.env` into the new worktree when needed, and starts that worktree's
-devcontainer with isolated Compose services and ports.
+devcontainer with isolated Compose services and ports. It intentionally does not install app dependencies, migrate the
+database, or seed data; those steps are exposed as Codex actions.
 For Codex-managed worktrees whose folder is still named `calibrate-health`, the devcontainer identity is derived from
 the full worktree path so concurrent app-created worktrees do not share a Compose project, database volume, or dev ports.
+Backend and frontend `node_modules` are mounted as shared lockfile-hashed Docker volumes, so sibling worktrees with the
+same lockfiles can reuse installed dependencies without writing them into the Windows bind mount.
 
 Recommended Codex app actions:
 
-- Setup: `npm run codex:setup`
+- Setup: `npm run codex:setup-app`
+- Migrate DB: `npm run codex:db:migrate`
+- Reset DB: `npm run codex:db:reset`
 - Dev server: `npm run codex:dev`
-- Dev server with test user: `npm run codex:dev:test`
 - Test: `npm run codex:test`
-- Coverage: `npm run codex:test:coverage`
-- Lint: `npm run codex:lint`
-- Build: `npm run codex:build`
+- Full CI: `npm run codex:ci`
 - Shell: `npm run codex:shell`
-- Stop devcontainer: `npm run codex:down`
+
+When using VS Code with a Codex-created worktree container, use **Dev Containers: Attach to Running Container** and open
+`/workspaces/calibrate-health` inside the container. **Reopen in Container** follows VS Code's own devcontainer flow and
+may create or recreate a separate container.
 
 1. Start the app: `npm run dev`
 2. Frontend: `http://localhost:5173` (proxies `/auth` and `/api` to the backend)
@@ -251,19 +257,23 @@ If you see Prisma errors like "The table `public.User` does not exist", you have
 - `npm run dev:reset-test-user-onboarding`: reset the dev test user to pre-onboarding.
 - `npm run dev:backend`: runs only the backend (`http://localhost:3000`).
 - `npm run dev:frontend`: runs only the frontend (`http://localhost:5173`).
-- `npm run setup`: installs deps in `backend/` and `frontend/` and runs `prisma generate` (does not modify the DB).
+- `npm run setup`: installs deps, runs `prisma generate`, applies migrations, and seeds dev data when missing.
 - `npm run db:migrate`: applies committed migrations (use for fresh DBs, CI, and prod).
 - `npm test`: runs backend unit tests (Node.js test runner).
 
 More:
 
-- `npm run db:migrate:dev`: create/apply new migrations during local development.
+- `npm run setup:deps`: install backend/frontend dependencies using shared devcontainer caches when available.
+- `npm run db:migrate:dev`: apply migrations and seed dev data when missing.
+- `npm run db:migrate:create`: create/apply new Prisma migrations during local development.
+- `npm run db:reset:dev`: destructive reset for a disposable devcontainer/worktree DB, then seed it.
 - `npm run db:reset`: destructive reset (drops data and recreates schema).
 - `npm run db:seed`: seed deterministic dev data (test user + sample logs).
 - `npm --prefix backend run db:push:reset`: dev-only schema reset using `prisma db push` (fast, skips migrations).
 - `npm run db:studio`: Prisma Studio (DB browser).
 - `npm run build`: build the frontend.
 - `npm run lint`: lint the frontend.
+- `npm run ci:local`: run the local equivalent of PR CI (backend build, frontend build, frontend lint, backend tests).
 - `npm run test:coverage`: print coverage + write `backend/coverage/index.html`.
 
 ### Docker Compose (dev stack)

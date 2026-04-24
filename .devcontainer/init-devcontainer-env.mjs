@@ -146,6 +146,43 @@ function toComposePath(value) {
 }
 
 /**
+ * Run a host command and return trimmed stdout when available.
+ * @param {string} command - Executable to run.
+ * @param {string[]} args - Arguments to pass.
+ * @returns {string} Trimmed stdout, or an empty string.
+ */
+function readCommandValue(command, args) {
+  try {
+    return execFileSync(command, args, { cwd: workspaceRoot, encoding: "utf8" }).trim();
+  } catch (error) {
+    return "";
+  }
+}
+
+/**
+ * Build a shared node_modules volume name that follows package lock changes.
+ * @param {string} packageName - Package name for the volume.
+ * @param {string} lockfileRelativePath - Relative package lock path.
+ * @returns {string} Docker volume name.
+ */
+function buildNodeModulesVolumeName(packageName, lockfileRelativePath) {
+  const lockfilePath = path.join(workspaceRoot, lockfileRelativePath);
+  const manifestPath = path.join(path.dirname(lockfilePath), "package.json");
+  const hash = crypto.createHash("sha256");
+
+  for (const filePath of [lockfilePath, manifestPath]) {
+    if (fs.existsSync(filePath)) {
+      hash.update(fs.readFileSync(filePath));
+    }
+  }
+
+  hash.update(`node-${process.versions.node.split(".")[0]}`);
+  hash.update(`npm-${readCommandValue("npm", ["--version"]).split(".")[0] || "unknown"}`);
+
+  return `calibrate-health-${packageName}-node-modules-${hash.digest("hex").slice(0, 16)}`;
+}
+
+/**
  * Read a single dotenv value without executing the file.
  * @param {string} dotenvPath - File path to read.
  * @param {string} key - Key to look up.
@@ -298,6 +335,8 @@ const colorIndex =
 const derivedColor = worktreeColors[colorIndex];
 const worktreeColor = isMainWorktree ? basePeacockColor : derivedColor;
 const viteWorktreeColor = isMainWorktree ? "" : derivedColor;
+const backendNodeModulesVolume = buildNodeModulesVolumeName("backend", "backend/package-lock.json");
+const frontendNodeModulesVolume = buildNodeModulesVolumeName("frontend", "frontend/package-lock.json");
 
 const repoCodexHome = readRepoDotenvValue("CODEX_HOME");
 let codexHostHome = process.env.CODEX_HOME || repoCodexHome || path.join(os.homedir(), ".codex");
@@ -363,6 +402,8 @@ const lines = [
   `BACKEND_PORT=${backendPort}`,
   `FRONTEND_PORT=${frontendPort}`,
   `VITE_DEV_SERVER_PORT=${frontendPort}`,
+  `BACKEND_NODE_MODULES_VOLUME=${backendNodeModulesVolume}`,
+  `FRONTEND_NODE_MODULES_VOLUME=${frontendNodeModulesVolume}`,
   `WORKTREE_NAME=${workspaceName}`,
   `WORKTREE_IS_MAIN=${isMainWorktree ? "true" : "false"}`,
   `WORKTREE_COLOR=${worktreeColor}`,

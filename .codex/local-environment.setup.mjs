@@ -52,9 +52,9 @@ const devcontainerBin = path.join(
 
 if (!fs.existsSync(devcontainerBin)) {
   const installArgs = fs.existsSync(path.join(workspacePath, "package-lock.json"))
-    ? ["ci", "--ignore-scripts"]
-    : ["install", "--ignore-scripts"];
+    ? ["ci", "--ignore-scripts", "--no-audit", "--fund=false"]
+    : ["install", "--ignore-scripts", "--no-audit", "--fund=false"];
   run(npmBin, installArgs);
 }
 
-run(npmBin, ["run", "codex:setup"]);
+run(npmBin, ["run", "codex:devcontainer:start"]);

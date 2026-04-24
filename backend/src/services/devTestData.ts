@@ -124,24 +124,25 @@ const ensureTestGoal = async (userId: number): Promise<void> => {
  * Create daily body metrics for the configured multi-month history without overwriting existing entries.
  */
 const ensureBodyMetrics = async (userId: number, days: Date[]): Promise<boolean> => {
-  let createdAny = false;
-  for (const [index, day] of days.entries()) {
-    const existing = await prisma.bodyMetric.findUnique({
-      where: { user_id_date: { user_id: userId, date: day } },
-      select: { id: true },
-    });
-    if (existing) continue;
+  const existingMetrics = await prisma.bodyMetric.findMany({
+    where: { user_id: userId, date: { in: days } },
+    select: { date: true },
+  });
+  const existingDateKeys = new Set(existingMetrics.map((metric) => metric.date.toISOString().slice(0, 10)));
+  const missingMetrics = days
+    .map((day, index) => ({
+      user_id: userId,
+      date: day,
+      weight_grams: getSeedWeightGramsForDayIndex(index, TEST_USER_WEIGHT_GRAMS),
+    }))
+    .filter((metric) => !existingDateKeys.has(metric.date.toISOString().slice(0, 10)));
 
-    await prisma.bodyMetric.create({
-      data: {
-        user_id: userId,
-        date: day,
-        weight_grams: getSeedWeightGramsForDayIndex(index, TEST_USER_WEIGHT_GRAMS),
-      },
-    });
-    createdAny = true;
+  if (missingMetrics.length === 0) {
+    return false;
   }
-  return createdAny;
+
+  const created = await prisma.bodyMetric.createMany({ data: missingMetrics });
+  return created.count > 0;
 };
 
 /**
