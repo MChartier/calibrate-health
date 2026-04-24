@@ -129,6 +129,33 @@ If you omit `<branch|path>`, the current directory is used. You can pass a workt
 or a path. For example: `npm run devcontainer:shell -- alpha` or
 `npm run devcontainer:shell -- --path /home/matthew/code/calibrate-health-alpha`.
 
+#### Codex app worktrees
+
+Codex app local environments are defined under `.codex/environments/`. The `local-devcontainer` environment calls the
+tracked setup script at `.codex/local-environment.setup.sh`:
+
+```sh
+bash .codex/local-environment.setup.sh
+```
+
+The script targets `CODEX_WORKTREE_PATH` when the Codex app provides it, installs the repo-local Dev Containers CLI if
+needed, copies the source checkout's ignored `.env` into the new worktree when needed, and starts that worktree's
+devcontainer with isolated Compose services and ports.
+For Codex-managed worktrees whose folder is still named `calibrate-health`, the devcontainer identity is derived from
+the full worktree path so concurrent app-created worktrees do not share a Compose project, database volume, or dev ports.
+
+Recommended Codex app actions:
+
+- Setup: `npm run codex:setup`
+- Dev server: `npm run codex:dev`
+- Dev server with test user: `npm run codex:dev:test`
+- Test: `npm run codex:test`
+- Coverage: `npm run codex:test:coverage`
+- Lint: `npm run codex:lint`
+- Build: `npm run codex:build`
+- Shell: `npm run codex:shell`
+- Stop devcontainer: `npm run codex:down`
+
 1. Start the app: `npm run dev`
 2. Frontend: `http://localhost:5173` (proxies `/auth` and `/api` to the backend)
 3. Backend/API: `http://localhost:3000`

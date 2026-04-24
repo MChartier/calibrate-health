@@ -3,6 +3,16 @@ import { execFileSync, spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 
+const LOCAL_DEVCONTAINER_BIN = path.resolve(
+  process.cwd(),
+  "node_modules",
+  ".bin",
+  process.platform === "win32" ? "devcontainer.cmd" : "devcontainer"
+);
+const DEVCONTAINER_BIN = fs.existsSync(LOCAL_DEVCONTAINER_BIN)
+  ? LOCAL_DEVCONTAINER_BIN
+  : "devcontainer";
+
 /**
  * Run a git command and return trimmed stdout.
  * @param {string[]} args - Arguments to pass to git.
@@ -258,7 +268,7 @@ function extractContainerId(stdout) {
  * @returns {string|null} Container id when reported by the CLI.
  */
 function runDevcontainerUp(args) {
-  const result = spawnSync("devcontainer", args, {
+  const result = spawnSync(DEVCONTAINER_BIN, args, {
     stdio: ["inherit", "pipe", "inherit"],
     encoding: "utf8",
   });
@@ -279,7 +289,7 @@ function runDevcontainerUp(args) {
  * @param {string[]} args - Arguments to pass to devcontainer.
  */
 function runDevcontainer(args) {
-  execFileSync("devcontainer", args, { stdio: "inherit" });
+  execFileSync(DEVCONTAINER_BIN, args, { stdio: "inherit" });
 }
 
 /**

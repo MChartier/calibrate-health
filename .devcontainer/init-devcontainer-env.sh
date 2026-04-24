@@ -131,7 +131,12 @@ if [ -z "$project_slug" ]; then
   project_slug="cal-io"
 fi
 
-hash="$(printf '%s' "$workspace_name" | cksum | awk '{print $1}')"
+# Codex-managed worktrees usually keep the repo basename, so use the full path for
+# per-worktree ports and Compose project names instead of only the folder name.
+hash="$(printf '%s' "$workspace_root" | cksum | awk '{print $1}')"
+if [ "$is_main_worktree" != "true" ]; then
+  project_slug="${project_slug}-${hash}"
+fi
 offset="$((hash % 1000))"
 
 backend_port="$((3000 + offset))"

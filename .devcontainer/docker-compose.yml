@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   app:
-    image: mcr.microsoft.com/devcontainers/typescript-node:1-22-bookworm
+    image: mcr.microsoft.com/devcontainers/javascript-node:4-24-bookworm
     volumes:
       - ..:/workspaces/${WORKSPACE_FOLDER_NAME}:cached
       - ${GIT_COMMON_DIR}:/workspaces/${MAIN_WORKTREE_NAME}/.git:cached

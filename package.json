@@ -25,6 +25,15 @@
     "devcontainer:exec": "node scripts/devcontainer-worktree.mjs exec",
     "devcontainer:shell": "node scripts/devcontainer-worktree.mjs shell",
     "devcontainer:shell:new": "node scripts/devcontainer-worktree.mjs shell --remove-existing-container",
+    "codex:setup": "node scripts/codex-worktree-env.mjs setup",
+    "codex:shell": "node scripts/codex-worktree-env.mjs shell",
+    "codex:test": "node scripts/codex-worktree-env.mjs test",
+    "codex:test:coverage": "node scripts/codex-worktree-env.mjs test:coverage",
+    "codex:lint": "node scripts/codex-worktree-env.mjs lint",
+    "codex:build": "node scripts/codex-worktree-env.mjs build",
+    "codex:dev": "node scripts/codex-worktree-env.mjs dev",
+    "codex:dev:test": "node scripts/codex-worktree-env.mjs dev:test",
+    "codex:down": "node scripts/codex-worktree-env.mjs down",
     "build": "npm --prefix frontend run build",
     "lint": "npm --prefix frontend run lint",
     "test": "npm --prefix backend test",
@@ -43,6 +52,7 @@
     "node": "^20.19.0 || >=22.12.0"
   },
   "devDependencies": {
+    "@devcontainers/cli": "^0.86.0",
     "@types/node": "^20.0.0",
     "baseline-browser-mapping": "^2.9.19",
     "typescript": "^5.0.0"
