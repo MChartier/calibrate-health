@@ -12,6 +12,16 @@ const LOCAL_DEVCONTAINER_BIN = path.resolve(
 const DEVCONTAINER_BIN = fs.existsSync(LOCAL_DEVCONTAINER_BIN)
   ? LOCAL_DEVCONTAINER_BIN
   : "devcontainer";
+const DEVCONTAINER_NEEDS_SHELL =
+  process.platform === "win32" && DEVCONTAINER_BIN.endsWith(".cmd");
+const SENSITIVE_OUTPUT_KEYS = [
+  "CALIBRATE_GH_PAT",
+  "FATSECRET_CLIENT_SECRET",
+  "GH_AUTH_TOKEN",
+  "GH_TOKEN",
+  "GITHUB_TOKEN",
+  "WEB_PUSH_PRIVATE_KEY",
+];
 
 /**
  * Run a git command and return trimmed stdout.
@@ -263,18 +273,40 @@ function extractContainerId(stdout) {
 }
 
 /**
+ * Redact known secret env values from devcontainer CLI logs before printing.
+ * @param {string} output - Raw CLI output.
+ * @returns {string} Output with sensitive values replaced.
+ */
+function redactSensitiveOutput(output) {
+  let redacted = output;
+  for (const key of SENSITIVE_OUTPUT_KEYS) {
+    const pattern = new RegExp(`(${key}\\s*[:=]\\s*)([^\\r\\n]+)`, "g");
+    redacted = redacted.replace(pattern, "$1[redacted]");
+  }
+  return redacted;
+}
+
+/**
  * Run `devcontainer up` and return the container id (if available).
  * @param {string[]} args - Arguments to pass to devcontainer.
  * @returns {string|null} Container id when reported by the CLI.
  */
 function runDevcontainerUp(args) {
   const result = spawnSync(DEVCONTAINER_BIN, args, {
-    stdio: ["inherit", "pipe", "inherit"],
+    stdio: ["inherit", "pipe", "pipe"],
     encoding: "utf8",
+    shell: DEVCONTAINER_NEEDS_SHELL,
   });
 
   if (result.stdout) {
-    process.stdout.write(result.stdout);
+    process.stdout.write(redactSensitiveOutput(result.stdout));
+  }
+  if (result.stderr) {
+    process.stderr.write(redactSensitiveOutput(result.stderr));
+  }
+
+  if (result.error) {
+    throw result.error;
   }
 
   if (result.status !== 0) {
@@ -289,7 +321,10 @@ function runDevcontainerUp(args) {
  * @param {string[]} args - Arguments to pass to devcontainer.
  */
 function runDevcontainer(args) {
-  execFileSync(DEVCONTAINER_BIN, args, { stdio: "inherit" });
+  execFileSync(DEVCONTAINER_BIN, args, {
+    stdio: "inherit",
+    shell: DEVCONTAINER_NEEDS_SHELL,
+  });
 }
 
 /**

@@ -3,7 +3,7 @@
 Use this repo-owned setup script for Codex app worktrees:
 
 ```sh
-bash .codex/local-environment.setup.sh
+node .codex/local-environment.setup.mjs
 ```
 
 Recommended Codex app actions:
@@ -21,6 +21,7 @@ Recommended Codex app actions:
 | Stop devcontainer | `npm run codex:down` |
 
 The setup script uses `CODEX_WORKTREE_PATH` when Codex provides it and falls
-back to the current directory outside the app. It also copies the source
+back to the current directory outside the app. It is host-platform neutral, so
+Windows Codex execution does not need WSL bash. It also copies the source
 checkout's ignored `.env` into the new worktree if that file exists and the
 worktree does not already have one.
