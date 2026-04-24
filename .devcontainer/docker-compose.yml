@@ -5,7 +5,8 @@ services:
     image: mcr.microsoft.com/devcontainers/javascript-node:4-24-bookworm
     volumes:
       - ..:/workspaces/${WORKSPACE_FOLDER_NAME}:cached
-      - ${GIT_COMMON_DIR}:/workspaces/${MAIN_WORKTREE_NAME}/.git:cached
+      - ${GIT_DIR}:/workspaces/.git-dir:cached
+      - ${GIT_COMMON_DIR}:/workspaces/.git-common:cached
       - ${CODEX_HOST_HOME}:/home/node/.codex-host:ro,cached
     ports:
       - "${BACKEND_PORT}:3000"
@@ -24,6 +25,9 @@ services:
       WEB_PUSH_SUBJECT: ${WEB_PUSH_SUBJECT}
       CODEX_HOME: /home/node/.codex
       CODEX_HOST_HOME: /home/node/.codex-host
+      GIT_COMMON_DIR: /workspaces/.git-common
+      GIT_DIR: /workspaces/.git-dir
+      GIT_WORK_TREE: /workspaces/${WORKSPACE_FOLDER_NAME}
       GH_AUTH_TOKEN: ${GH_AUTH_TOKEN}
       GH_TOKEN: ${GH_TOKEN}
       GITHUB_TOKEN: ${GITHUB_TOKEN}

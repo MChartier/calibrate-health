@@ -92,6 +92,32 @@ function resolveGitPath(value) {
  * @returns {string} Absolute common .git directory path, or an empty string.
  */
 function resolveGitCommonDirFromMetadata() {
+  const gitDir = resolveGitDirFromMetadata();
+  if (!gitDir) {
+    return "";
+  }
+
+  const commonDirPath = path.join(gitDir, "commondir");
+  if (fs.existsSync(commonDirPath)) {
+    const commonDir = fs.readFileSync(commonDirPath, "utf8").trim();
+    return resolveGitPath(path.isAbsolute(commonDir) ? commonDir : path.resolve(gitDir, commonDir));
+  }
+
+  const normalizedGitDir = gitDir.replace(/\\/g, "/");
+  const worktreesMarker = "/.git/worktrees/";
+  const markerIndex = normalizedGitDir.lastIndexOf(worktreesMarker);
+  if (markerIndex !== -1) {
+    return gitDir.slice(0, markerIndex + "/.git".length);
+  }
+
+  return gitDir;
+}
+
+/**
+ * Resolve the active worktree git directory without shelling out.
+ * @returns {string} Absolute .git directory path for this worktree, or an empty string.
+ */
+function resolveGitDirFromMetadata() {
   const metadataPath = path.join(workspaceRoot, ".git");
   if (!fs.existsSync(metadataPath)) {
     return "";
@@ -107,19 +133,6 @@ function resolveGitCommonDirFromMetadata() {
   }
 
   const gitDir = resolveGitPath(match[1].trim());
-  const commonDirPath = path.join(gitDir, "commondir");
-  if (fs.existsSync(commonDirPath)) {
-    const commonDir = fs.readFileSync(commonDirPath, "utf8").trim();
-    return resolveGitPath(path.isAbsolute(commonDir) ? commonDir : path.resolve(gitDir, commonDir));
-  }
-
-  const normalizedGitDir = gitDir.replace(/\\/g, "/");
-  const worktreesMarker = "/.git/worktrees/";
-  const markerIndex = normalizedGitDir.lastIndexOf(worktreesMarker);
-  if (markerIndex !== -1) {
-    return gitDir.slice(0, markerIndex + "/.git".length);
-  }
-
   return gitDir;
 }
 
@@ -220,8 +233,17 @@ const isMainWorktree =
   fs.existsSync(gitMetadataPath) && fs.statSync(gitMetadataPath).isDirectory();
 
 let gitCommonDir = "";
+let gitDir = "";
 let mainWorktreeName = workspaceName;
 try {
+  const rawGitDir = runGit(["rev-parse", "--git-dir"]);
+  if (rawGitDir) {
+    const resolvedGitDir = resolveGitPath(rawGitDir);
+    if (fs.existsSync(resolvedGitDir) && fs.statSync(resolvedGitDir).isDirectory()) {
+      gitDir = fs.realpathSync(resolvedGitDir);
+    }
+  }
+
   const rawGitCommonDir = runGit(["rev-parse", "--git-common-dir"]);
   if (rawGitCommonDir) {
     const resolvedGitCommonDir = resolveGitPath(rawGitCommonDir);
@@ -232,6 +254,14 @@ try {
   }
 } catch (error) {
   gitCommonDir = "";
+  gitDir = "";
+}
+
+if (!gitDir) {
+  const metadataGitDir = resolveGitDirFromMetadata();
+  if (metadataGitDir && fs.existsSync(metadataGitDir) && fs.statSync(metadataGitDir).isDirectory()) {
+    gitDir = fs.realpathSync(metadataGitDir);
+  }
 }
 
 if (!gitCommonDir) {
@@ -246,7 +276,7 @@ if (!gitCommonDir) {
   }
 }
 
-if (!gitCommonDir) {
+if (!gitCommonDir || !gitDir) {
   console.error("Unable to resolve the git common directory; worktree Git commands will fail in the container.");
   console.error("Run this script from a git worktree, or ensure git is available on the host.");
   process.exit(1);
@@ -328,6 +358,7 @@ const lines = [
   `COMPOSE_PROJECT_NAME=${projectSlug}`,
   `WORKSPACE_FOLDER_NAME=${workspaceName}`,
   `MAIN_WORKTREE_NAME=${mainWorktreeName}`,
+  `GIT_DIR=${toComposePath(gitDir)}`,
   `GIT_COMMON_DIR=${toComposePath(gitCommonDir)}`,
   `BACKEND_PORT=${backendPort}`,
   `FRONTEND_PORT=${frontendPort}`,
