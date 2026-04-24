@@ -9,11 +9,24 @@ const LOCAL_DEVCONTAINER_BIN = path.resolve(
   ".bin",
   process.platform === "win32" ? "devcontainer.cmd" : "devcontainer"
 );
+const LOCAL_DEVCONTAINER_JS = path.resolve(
+  process.cwd(),
+  "node_modules",
+  "@devcontainers",
+  "cli",
+  "devcontainer.js"
+);
 const DEVCONTAINER_BIN = fs.existsSync(LOCAL_DEVCONTAINER_BIN)
   ? LOCAL_DEVCONTAINER_BIN
   : "devcontainer";
-const DEVCONTAINER_NEEDS_SHELL =
-  process.platform === "win32" && DEVCONTAINER_BIN.endsWith(".cmd");
+const DEVCONTAINER_COMMAND =
+  process.platform === "win32" && fs.existsSync(LOCAL_DEVCONTAINER_JS)
+    ? process.execPath
+    : DEVCONTAINER_BIN;
+const DEVCONTAINER_BASE_ARGS =
+  process.platform === "win32" && fs.existsSync(LOCAL_DEVCONTAINER_JS)
+    ? [LOCAL_DEVCONTAINER_JS]
+    : [];
 const SENSITIVE_OUTPUT_KEYS = [
   "CALIBRATE_GH_PAT",
   "FATSECRET_CLIENT_SECRET",
@@ -292,10 +305,9 @@ function redactSensitiveOutput(output) {
  * @returns {string|null} Container id when reported by the CLI.
  */
 function runDevcontainerUp(args) {
-  const result = spawnSync(DEVCONTAINER_BIN, args, {
+  const result = spawnSync(DEVCONTAINER_COMMAND, [...DEVCONTAINER_BASE_ARGS, ...args], {
     stdio: ["inherit", "pipe", "pipe"],
     encoding: "utf8",
-    shell: DEVCONTAINER_NEEDS_SHELL,
   });
 
   if (result.stdout) {
@@ -321,10 +333,7 @@ function runDevcontainerUp(args) {
  * @param {string[]} args - Arguments to pass to devcontainer.
  */
 function runDevcontainer(args) {
-  execFileSync(DEVCONTAINER_BIN, args, {
-    stdio: "inherit",
-    shell: DEVCONTAINER_NEEDS_SHELL,
-  });
+  execFileSync(DEVCONTAINER_COMMAND, [...DEVCONTAINER_BASE_ARGS, ...args], { stdio: "inherit" });
 }
 
 /**
