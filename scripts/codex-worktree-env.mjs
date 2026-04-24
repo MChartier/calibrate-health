@@ -12,7 +12,7 @@ const devcontainerScript = path.join(
 );
 
 const commandMap = new Map([
-  ["setup", { type: "up" }],
+  ["setup", { type: "up", removeExistingContainer: true }],
   ["shell", { type: "shell" }],
   ["test", { type: "exec", command: ["npm", "test"] }],
   ["test:coverage", { type: "exec", command: ["npm", "run", "test:coverage"] }],
@@ -64,7 +64,7 @@ function printHelp() {
  * Run docker compose down for the current worktree's generated devcontainer stack.
  */
 function runComposeDown() {
-  const initScript = path.join(workspacePath, ".devcontainer", "init-devcontainer-env.sh");
+  const initScript = path.join(workspacePath, ".devcontainer", "init-devcontainer-env.mjs");
   const composeFile = path.join(workspacePath, ".devcontainer", "docker-compose.yml");
   const envFile = path.join(workspacePath, ".devcontainer", ".env");
 
@@ -73,7 +73,7 @@ function runComposeDown() {
     process.exit(1);
   }
 
-  run("bash", [initScript]);
+  run(process.execPath, [initScript]);
   if (process.exitCode) {
     return;
   }
@@ -108,7 +108,13 @@ if (commandName === "down") {
   }
 
   if (command.type === "up") {
-    run(process.execPath, [devcontainerScript, "up", "--path", workspacePath]);
+    run(process.execPath, [
+      devcontainerScript,
+      "up",
+      "--path",
+      workspacePath,
+      ...(command.removeExistingContainer ? ["--remove-existing-container"] : []),
+    ]);
   } else if (command.type === "shell") {
     run(process.execPath, [devcontainerScript, "shell", "--path", workspacePath]);
   } else {

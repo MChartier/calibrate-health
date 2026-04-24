@@ -4,6 +4,6 @@ name = "local-devcontainer"
 
 [setup]
 script = '''
-bash .codex/local-environment.setup.sh
+node .codex/local-environment.setup.mjs
 
 '''

@@ -3,7 +3,7 @@
   "dockerComposeFile": "docker-compose.yml",
   "service": "app",
   "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
-  "initializeCommand": "bash .devcontainer/init-devcontainer-env.sh",
+  "initializeCommand": "node .devcontainer/init-devcontainer-env.mjs",
   "waitFor": "postStartCommand",
   "features": {
     "ghcr.io/devcontainers/features/github-cli:1": {}
