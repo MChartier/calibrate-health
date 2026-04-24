@@ -16,7 +16,6 @@ Configured Codex app actions:
 | Lint | `node scripts/codex-worktree-env.mjs lint` |
 | Build | `node scripts/codex-worktree-env.mjs build` |
 | Shell | `node scripts/codex-worktree-env.mjs shell` |
-| Stop | `node scripts/codex-worktree-env.mjs down` |
 
 The setup script uses `CODEX_WORKTREE_PATH` when Codex provides it and falls
 back to the current directory outside the app. It is host-platform neutral, so
