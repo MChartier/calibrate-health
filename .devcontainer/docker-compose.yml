@@ -1,10 +1,10 @@
-version: '3.8'
-
 services:
   app:
     image: mcr.microsoft.com/devcontainers/javascript-node:4-24-bookworm
     volumes:
       - ..:/workspaces/${WORKSPACE_FOLDER_NAME}:cached
+      - backend_node_modules:/workspaces/${WORKSPACE_FOLDER_NAME}/backend/node_modules
+      - frontend_node_modules:/workspaces/${WORKSPACE_FOLDER_NAME}/frontend/node_modules
       - ${GIT_DIR}:/workspaces/.git-dir:cached
       - ${GIT_COMMON_DIR}:/workspaces/.git-common:cached
       - npm_cache:/home/node/.npm
@@ -40,7 +40,8 @@ services:
       VITE_WORKTREE_NAME: ${VITE_WORKTREE_NAME}
       VITE_WORKTREE_IS_MAIN: ${VITE_WORKTREE_IS_MAIN}
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
 
   postgres:
     image: postgres:15-alpine
@@ -50,8 +51,17 @@ services:
       POSTGRES_DB: fitness_app
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d fitness_app"]
+      interval: 5s
+      timeout: 5s
+      retries: 24
 
 volumes:
   postgres_data:
+  backend_node_modules:
+    name: ${BACKEND_NODE_MODULES_VOLUME}
+  frontend_node_modules:
+    name: ${FRONTEND_NODE_MODULES_VOLUME}
   npm_cache:
     name: calibrate-health-npm-cache

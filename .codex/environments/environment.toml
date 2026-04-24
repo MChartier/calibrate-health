@@ -9,14 +9,24 @@ node .codex/local-environment.setup.mjs
 '''
 
 [[actions]]
+name = "Setup"
+icon = "run"
+command = "node scripts/codex-worktree-env.mjs setup-app"
+
+[[actions]]
+name = "Migrate DB"
+icon = "run"
+command = "node scripts/codex-worktree-env.mjs db:migrate"
+
+[[actions]]
+name = "Reset DB"
+icon = "run"
+command = "node scripts/codex-worktree-env.mjs db:reset"
+
+[[actions]]
 name = "Dev"
 icon = "run"
 command = "node scripts/codex-worktree-env.mjs dev"
-
-[[actions]]
-name = "Dev test"
-icon = "run"
-command = "node scripts/codex-worktree-env.mjs dev:test"
 
 [[actions]]
 name = "Test"
@@ -24,14 +34,9 @@ icon = "run"
 command = "node scripts/codex-worktree-env.mjs test"
 
 [[actions]]
-name = "Lint"
+name = "Full CI"
 icon = "run"
-command = "node scripts/codex-worktree-env.mjs lint"
-
-[[actions]]
-name = "Build"
-icon = "run"
-command = "node scripts/codex-worktree-env.mjs build"
+command = "node scripts/codex-worktree-env.mjs ci"
 
 [[actions]]
 name = "Shell"

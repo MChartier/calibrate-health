@@ -12,12 +12,16 @@ const devcontainerScript = path.join(
 );
 
 const commandMap = new Map([
-  ["setup", { type: "up", removeExistingContainer: true }],
+  ["devcontainer:start", { type: "up" }],
+  ["setup-app", { type: "exec", command: ["npm", "run", "setup"] }],
+  ["db:migrate", { type: "exec", command: ["npm", "run", "db:migrate:dev"] }],
+  ["db:reset", { type: "exec", command: ["npm", "run", "db:reset:dev"] }],
   ["shell", { type: "shell" }],
-  ["test", { type: "exec", command: ["npm", "test"] }],
+  ["test", { type: "exec", command: ["node", "scripts/dev-env.mjs", "test"] }],
   ["test:coverage", { type: "exec", command: ["npm", "run", "test:coverage"] }],
   ["lint", { type: "exec", command: ["npm", "run", "lint"] }],
   ["build", { type: "exec", command: ["npm", "run", "build"] }],
+  ["ci", { type: "exec", command: ["npm", "run", "ci:local"] }],
   ["dev", { type: "exec", command: ["npm", "run", "dev"] }],
   ["dev:test", { type: "exec", command: ["npm", "run", "dev:test"] }],
   [
@@ -47,11 +51,16 @@ function printHelp() {
   console.log(
     [
       "Usage:",
-      "  npm run codex:setup",
+      "  npm run codex:devcontainer:start",
+      "  npm run codex:setup-app",
+      "  npm run codex:db:migrate",
+      "  npm run codex:db:reset",
       "  npm run codex:test",
+      "  npm run codex:ci",
       "  npm run codex:lint",
       "  npm run codex:build",
       "  npm run codex:dev",
+      "  npm run codex:shell",
       "  npm run codex:down",
       "",
       "The target worktree is CODEX_WORKTREE_PATH when Codex provides it; otherwise",
