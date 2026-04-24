@@ -37,8 +37,3 @@ command = "node scripts/codex-worktree-env.mjs build"
 name = "Shell"
 icon = "run"
 command = "node scripts/codex-worktree-env.mjs shell"
-
-[[actions]]
-name = "Stop"
-icon = "run"
-command = "node scripts/codex-worktree-env.mjs down"
