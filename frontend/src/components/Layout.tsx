@@ -52,6 +52,7 @@ import LogQuickAddFab from './LogQuickAddFab';
 import LogDatePickerControl from './LogDatePickerControl';
 import InAppNotificationsDrawer from './InAppNotificationsDrawer';
 import { useInAppNotificationBadge } from '../hooks/useInAppNotificationBadge';
+import { useInAppNotificationStream } from '../hooks/useInAppNotificationStream';
 import { type InAppNotification, inAppNotificationsQueryKey, useInAppNotificationsQuery } from '../queries/inAppNotifications';
 import { isInAppNotificationsUpdatedMessage } from '../constants/notificationEvents';
 import { useIncompleteTodayBadge } from '../hooks/useIncompleteTodayBadge';
@@ -262,6 +263,7 @@ const LayoutShell: React.FC = () => {
         unreadCount: unreadNotificationCount,
         hasLoadedCount: hasLoadedNotificationCount
     });
+    useInAppNotificationStream({ enabled: showAppNav, queryClient });
 
     useEffect(() => {
         if (!showAppNav || typeof navigator === 'undefined' || !('serviceWorker' in navigator)) {
