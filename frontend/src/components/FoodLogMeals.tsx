@@ -439,7 +439,7 @@ const FoodLogMeals: React.FC<FoodLogMealsProps> = ({ logs, onAddMeal, isLoading 
                                     ))}
                                 </Stack>
                             ) : entries.length === 0 ? (
-                                <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between">
+                                <Stack direction="row" spacing={1} sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
                                     <Typography sx={{ color: 'text.secondary' }}>{t('foodLog.noEntries')}</Typography>
                                     {onAddMeal && (
                                         <Button size="small" startIcon={<AddIcon />} onClick={() => onAddMeal(meal.key)}>

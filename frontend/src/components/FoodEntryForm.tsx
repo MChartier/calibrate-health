@@ -734,8 +734,10 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date, initialMealPeriod }) 
             <ListItemText
                 primary={food.name}
                 secondary={buildRecentFoodSecondaryText(food)}
-                primaryTypographyProps={{ variant: 'body2' }}
-                secondaryTypographyProps={{ variant: 'caption', color: 'text.secondary' }}
+                slotProps={{
+                    primary: { variant: 'body2' },
+                    secondary: { variant: 'caption', sx: { color: 'text.secondary' } }
+                }}
             />
         </ListItemButton>
     ));
@@ -874,7 +876,7 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date, initialMealPeriod }) 
     if (mode === 'quick') {
         if (quickRecentFoodsQuery.isLoading && quickRecentFoods.length === 0) {
             quickRecentFoodsContent = (
-                <Stack direction="row" spacing={1} alignItems="center">
+                <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
                     <CircularProgress size={18} />
                     <Typography variant="body2" sx={{ color: 'text.secondary' }}>
                         {t('foodEntry.recent.loading')}
@@ -884,7 +886,7 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date, initialMealPeriod }) 
         } else if (quickRecentFoods.length > 0) {
             quickRecentFoodsContent = (
                 <Stack spacing={1}>
-                    <Stack direction="row" spacing={1} alignItems="center">
+                    <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
                         <HistoryIcon fontSize="small" color="action" />
                         <Typography variant="subtitle2">{t('foodEntry.recent.title')}</Typography>
                     </Stack>
@@ -909,8 +911,10 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date, initialMealPeriod }) 
                                     <ListItemText
                                         primary={food.name}
                                         secondary={buildRecentFoodSecondaryText(food)}
-                                        primaryTypographyProps={{ variant: 'body2' }}
-                                        secondaryTypographyProps={{ variant: 'caption', color: 'text.secondary' }}
+                                        slotProps={{
+                                            primary: { variant: 'body2' },
+                                            secondary: { variant: 'caption', sx: { color: 'text.secondary' } }
+                                        }}
                                     />
                                 </ListItemButton>
                             ))}
