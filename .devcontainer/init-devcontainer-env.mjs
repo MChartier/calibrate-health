@@ -328,6 +328,7 @@ if (!isMainWorktree) {
 const offset = hash % 1000;
 const backendPort = 3000 + offset;
 const frontendPort = 5173 + offset;
+const storybookPort = 6006 + offset;
 const greekLetterIndex = greekLetters.indexOf(workspaceName.toLowerCase().split("-").at(-1) ?? "");
 const colorIndex =
   greekLetterIndex === -1 ? hash % worktreeColors.length : greekLetterIndex % worktreeColors.length;
@@ -379,6 +380,7 @@ const lines = [
   `GIT_COMMON_DIR=${toComposePath(gitCommonDir)}`,
   `BACKEND_PORT=${backendPort}`,
   `FRONTEND_PORT=${frontendPort}`,
+  `STORYBOOK_PORT=${storybookPort}`,
   `VITE_DEV_SERVER_PORT=${frontendPort}`,
   `BACKEND_NODE_MODULES_VOLUME=${backendNodeModulesVolume}`,
   `FRONTEND_NODE_MODULES_VOLUME=${frontendNodeModulesVolume}`,

@@ -21,6 +21,10 @@ const commandMap = new Map([
   ["test:coverage", { type: "exec", command: ["npm", "run", "test:coverage"] }],
   ["lint", { type: "exec", command: ["npm", "run", "lint"] }],
   ["build", { type: "exec", command: ["npm", "run", "build"] }],
+  [
+    "storybook",
+    { type: "exec", command: ["npm", "run", "dev:storybook", "--", "--host", "0.0.0.0"] },
+  ],
   ["ci", { type: "exec", command: ["npm", "run", "ci:local"] }],
   ["dev", { type: "exec", command: ["node", "scripts/dev-env.mjs", "dev"] }],
   ["dev:test", { type: "exec", command: ["node", "scripts/dev-env.mjs", "dev"] }],
@@ -59,6 +63,7 @@ function printHelp() {
       "  npm run codex:ci",
       "  npm run codex:lint",
       "  npm run codex:build",
+      "  npm run codex:storybook",
       "  npm run codex:dev",
       "  npm run codex:shell",
       "  npm run codex:down",
