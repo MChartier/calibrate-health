@@ -262,8 +262,9 @@ const bootstrap = async (): Promise<void> => {
   passport.use(
     new LocalStrategy({ usernameField: 'email' }, async (email, password, done) => {
       try {
+        const normalizedEmail = email.trim().toLowerCase();
         const user = await prisma.user.findUnique({
-          where: { email },
+          where: { email: normalizedEmail },
           select: { ...USER_CLIENT_SELECT, password_hash: true },
         });
         if (!user) return done(null, false, { message: 'Incorrect email.' });

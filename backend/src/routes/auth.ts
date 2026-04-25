@@ -2,6 +2,7 @@ import express from 'express';
 import passport from 'passport';
 import bcrypt from 'bcryptjs';
 import prisma from '../config/database';
+import { validatePasswordPolicy } from '../utils/passwordPolicy';
 import { serializeUserForClient, USER_CLIENT_SELECT } from '../utils/userSerialization';
 
 /**
@@ -11,8 +12,48 @@ import { serializeUserForClient, USER_CLIENT_SELECT } from '../utils/userSeriali
  */
 const router = express.Router();
 
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+type RegistrationPayload =
+    | { ok: true; email: string; password: string }
+    | { ok: false; message: string };
+
+/**
+ * Normalize and validate registration inputs before hashing or querying.
+ */
+function parseRegistrationPayload(body: unknown): RegistrationPayload {
+    if (!body || typeof body !== 'object') {
+        return { ok: false, message: 'Invalid request body' };
+    }
+
+    const record = body as Record<string, unknown>;
+    const rawEmail = record.email;
+    const rawPassword = record.password;
+
+    if (typeof rawEmail !== 'string') {
+        return { ok: false, message: 'Email is required' };
+    }
+
+    const email = rawEmail.trim().toLowerCase();
+    if (!EMAIL_PATTERN.test(email)) {
+        return { ok: false, message: 'Invalid email' };
+    }
+
+    const passwordError = validatePasswordPolicy(rawPassword, 'Password');
+    if (passwordError) {
+        return { ok: false, message: passwordError };
+    }
+
+    return { ok: true, email, password: rawPassword as string };
+}
+
 router.post('/register', async (req, res) => {
-    const { email, password } = req.body;
+    const parsed = parseRegistrationPayload(req.body);
+    if (!parsed.ok) {
+        return res.status(400).json({ message: parsed.message });
+    }
+
+    const { email, password } = parsed;
     try {
         const existingUser = await prisma.user.findUnique({ where: { email } });
         if (existingUser) {
