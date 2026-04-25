@@ -18,6 +18,8 @@ import {
 import { buildDevReminderInAppDedupeKey } from '../services/inAppNotifications';
 import { getSafeUtcTodayDateOnlyInTimeZone } from '../utils/date';
 import { deliverUserNotification, type DeliverUserNotificationResult } from '../services/notificationDelivery';
+import { publishNotificationRealtimeUpdate } from '../services/notificationRealtime';
+import { NOTIFICATION_REALTIME_REASONS } from '../../../shared/notificationRealtime';
 
 /**
  * Dev-only endpoints for food provider diagnostics and comparisons.
@@ -463,6 +465,13 @@ router.post('/notifications/clear', requireAuthenticatedUser, async (req, res) =
                   }
               });
         clearedInAppCount = result.count;
+    }
+
+    if (clearedInAppCount > 0) {
+        publishNotificationRealtimeUpdate({
+            userId: user.id,
+            reason: NOTIFICATION_REALTIME_REASONS.CLEARED
+        });
     }
 
     res.json({
