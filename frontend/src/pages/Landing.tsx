@@ -103,7 +103,9 @@ function LandingFeatureCard({ feature }: { feature: LandingFeature }) {
 
                 <Box sx={{ minWidth: 0 }}>
                     <Typography variant="subtitle1">{t(feature.titleKey)}</Typography>
-                    <Typography variant="body2" color="text.secondary">
+                    <Typography variant="body2" sx={{
+                        color: "text.secondary"
+                    }}>
                         {t(feature.descriptionKey)}
                     </Typography>
                 </Box>
@@ -179,7 +181,9 @@ const Landing: React.FC = () => {
                         }
                     })}
                 >
-                    <Grid container spacing={{ xs: 3, md: 4 }} alignItems="stretch">
+                    <Grid container spacing={{ xs: 3, md: 4 }} sx={{
+                        alignItems: "stretch"
+                    }}>
                         <Grid size={{ xs: 12, md: 7 }}>
                             <Stack spacing={2.5} sx={{ position: 'relative' }}>
                                 <Stack spacing={1}>
@@ -198,14 +202,21 @@ const Landing: React.FC = () => {
                                         {t('landing.hero.title')}
                                     </Typography>
 
-                                    <Typography variant="h6" color="text.secondary" sx={{ maxWidth: '56ch' }}>
+                                    <Typography
+                                        variant="h6"
+                                        sx={{
+                                            color: "text.secondary",
+                                            maxWidth: '56ch'
+                                        }}>
                                         {t('landing.hero.subtitleLine1')}
                                         <br />
                                         {t('landing.hero.subtitleLine2')}
                                     </Typography>
                                 </Stack>
 
-                                <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
+                                <Stack direction="row" spacing={1} useFlexGap sx={{
+                                    flexWrap: "wrap"
+                                }}>
                                     {LANDING_PILL_KEYS.map((pillKey) => (
                                         <Chip key={pillKey} label={t(pillKey)} size="small" variant="outlined" />
                                     ))}
@@ -232,7 +243,12 @@ const Landing: React.FC = () => {
                                     </Button>
                                 </Stack>
 
-                                <Typography variant="body2" color="text.secondary" sx={{ maxWidth: '68ch' }}>
+                                <Typography
+                                    variant="body2"
+                                    sx={{
+                                        color: "text.secondary",
+                                        maxWidth: '68ch'
+                                    }}>
                                     {t('landing.hero.body')}
                                 </Typography>
                             </Stack>
@@ -251,12 +267,19 @@ const Landing: React.FC = () => {
                         <Typography variant="h4" component="h2">
                             {t('landing.section.goals.title')}
                         </Typography>
-                        <Typography variant="body1" color="text.secondary" sx={{ maxWidth: '80ch' }}>
+                        <Typography
+                            variant="body1"
+                            sx={{
+                                color: "text.secondary",
+                                maxWidth: '80ch'
+                            }}>
                             {t('landing.section.goals.body')}
                         </Typography>
                     </Stack>
 
-                    <Grid container spacing={2} alignItems="stretch">
+                    <Grid container spacing={2} sx={{
+                        alignItems: "stretch"
+                    }}>
                         {LANDING_GOAL_FEATURES.map((feature) => (
                             <Grid key={feature.titleKey} size={{ xs: 12, sm: 6, md: 4 }} sx={{ display: 'flex' }}>
                                 <LandingFeatureCard feature={feature} />
@@ -270,12 +293,19 @@ const Landing: React.FC = () => {
                         <Typography variant="h4" component="h2">
                             {t('landing.section.value.title')}
                         </Typography>
-                        <Typography variant="body1" color="text.secondary" sx={{ maxWidth: '80ch' }}>
+                        <Typography
+                            variant="body1"
+                            sx={{
+                                color: "text.secondary",
+                                maxWidth: '80ch'
+                            }}>
                             {t('landing.section.value.body')}
                         </Typography>
                     </Stack>
 
-                    <Grid container spacing={2} alignItems="stretch">
+                    <Grid container spacing={2} sx={{
+                        alignItems: "stretch"
+                    }}>
                         {LANDING_VALUE_FEATURES.map((feature) => (
                             <Grid key={feature.titleKey} size={{ xs: 12, sm: 6, md: 4 }} sx={{ display: 'flex' }}>
                                 <LandingFeatureCard feature={feature} />
@@ -290,13 +320,17 @@ const Landing: React.FC = () => {
                         borderColor: alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.36 : 0.22)
                     })}
                 >
-                    <Grid container spacing={{ xs: 2, md: 3 }} alignItems="center">
+                    <Grid container spacing={{ xs: 2, md: 3 }} sx={{
+                        alignItems: "center"
+                    }}>
                         <Grid size={{ xs: 12, md: 8 }}>
                             <Stack spacing={0.75}>
                                 <Typography variant="h5" component="h3">
                                     {t('landing.cta.title')}
                                 </Typography>
-                                <Typography variant="body1" color="text.secondary">
+                                <Typography variant="body1" sx={{
+                                    color: "text.secondary"
+                                }}>
                                     {t('landing.cta.body')}
                                 </Typography>
                             </Stack>
@@ -325,10 +359,13 @@ const Landing: React.FC = () => {
                     <Stack
                         direction={{ xs: 'column', sm: 'row' }}
                         spacing={1}
-                        justifyContent="center"
-                        alignItems="center"
-                    >
-                        <Link component={RouterLink} to="/privacy" underline="hover" color="text.secondary">
+                        sx={{
+                            justifyContent: "center",
+                            alignItems: "center"
+                        }}>
+                        <Link component={RouterLink} to="/privacy" underline="hover" sx={{
+                            color: "text.secondary"
+                        }}>
                             {t('legal.privacyPolicy')}
                         </Link>
                         <FatSecretAttributionLink />

@@ -106,11 +106,12 @@ const AboutYouStep: React.FC<AboutYouStepProps> = (props) => {
                 <Typography variant="h5" gutterBottom>
                     Estimate your calorie burn
                 </Typography>
-                <Typography color="text.secondary">
+                <Typography sx={{
+                    color: "text.secondary"
+                }}>
                     We can estimate your TDEE (calories burned on a typical day) from a few quick details so your calorie target is realistic.
                 </Typography>
             </Box>
-
             {hasAnySummary ? (
                 <Stack spacing={ONBOARDING_FIELD_SPACING}>
                     {props.completedKeys.includes('dob') && props.dob.trim() && (
@@ -166,7 +167,9 @@ const AboutYouStep: React.FC<AboutYouStepProps> = (props) => {
                     )}
                 </Stack>
             ) : (
-                <Typography color="text.secondary">
+                <Typography sx={{
+                    color: "text.secondary"
+                }}>
                     These details help us estimate your calorie burn. You can update them later in your profile.
                 </Typography>
             )}

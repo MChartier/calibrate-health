@@ -386,7 +386,9 @@ const FoodLogMeals: React.FC<FoodLogMealsProps> = ({ logs, isLoading = false }) 
                             {isLoading ? (
                                 <Skeleton width={FOOD_LOG_SKELETON_TOTAL_WIDTH_PX} height={FOOD_LOG_SKELETON_TOTAL_HEIGHT_PX} />
                             ) : (
-                                <Typography color="text.secondary">
+                                <Typography sx={{
+                                    color: "text.secondary"
+                                }}>
                                     {t('foodLog.totalCalories', { calories: total })}
                                 </Typography>
                             )}
@@ -416,7 +418,9 @@ const FoodLogMeals: React.FC<FoodLogMealsProps> = ({ logs, isLoading = false }) 
                                     ))}
                                 </Stack>
                             ) : entries.length === 0 ? (
-                                <Typography color="text.secondary">{t('foodLog.noEntries')}</Typography>
+                                <Typography sx={{
+                                    color: "text.secondary"
+                                }}>{t('foodLog.noEntries')}</Typography>
                             ) : (
                                 <Stack divider={<Divider flexItem />} spacing={1}>
                                     {entries.map((entry) => (
@@ -434,14 +438,20 @@ const FoodLogMeals: React.FC<FoodLogMealsProps> = ({ logs, isLoading = false }) 
                                                     });
                                                     if (!servingLabel) return null;
                                                     return (
-                                                        <Typography variant="caption" color="text.secondary" noWrap>
+                                                        <Typography variant="caption" noWrap sx={{
+                                                            color: "text.secondary"
+                                                        }}>
                                                             {servingLabel}
                                                         </Typography>
                                                     );
                                                 })()}
                                             </Box>
                                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                                <Typography color="text.secondary" sx={{ whiteSpace: 'nowrap' }}>
+                                                <Typography
+                                                    sx={{
+                                                        color: "text.secondary",
+                                                        whiteSpace: 'nowrap'
+                                                    }}>
                                                     {t('foodLog.entryCalories', {
                                                         calories: typeof entry.calories === 'number' ? entry.calories : '-'
                                                     })}
@@ -469,7 +479,6 @@ const FoodLogMeals: React.FC<FoodLogMealsProps> = ({ logs, isLoading = false }) 
                     </Accordion>
                 );
             })}
-
             <Dialog open={!!editEntry} onClose={handleCloseEdit} fullWidth maxWidth="xs">
                 <DialogTitle>{t('foodLog.editDialog.title')}</DialogTitle>
                 <DialogContent>
@@ -487,8 +496,10 @@ const FoodLogMeals: React.FC<FoodLogMealsProps> = ({ logs, isLoading = false }) 
                             type="number"
                             value={editCalories}
                             onChange={(e) => setEditCalories(e.target.value)}
-                            inputProps={{ min: 0, step: 1 }}
                             fullWidth
+                            slotProps={{
+                                htmlInput: { min: 0, step: 1 }
+                            }}
                         />
                         {editEntry?.serving_unit_label_snapshot && (
                             <TextField
@@ -496,8 +507,10 @@ const FoodLogMeals: React.FC<FoodLogMealsProps> = ({ logs, isLoading = false }) 
                                 type="number"
                                 value={editServingsConsumed}
                                 onChange={(e) => setEditServingsConsumed(e.target.value)}
-                                inputProps={{ min: 0, step: 0.1 }}
                                 fullWidth
+                                slotProps={{
+                                    htmlInput: { min: 0, step: 0.1 }
+                                }}
                             />
                         )}
                         <FormControl fullWidth>
@@ -526,7 +539,6 @@ const FoodLogMeals: React.FC<FoodLogMealsProps> = ({ logs, isLoading = false }) 
                     </Button>
                 </DialogActions>
             </Dialog>
-
             <Dialog open={!!deleteEntry} onClose={handleCloseDelete} fullWidth maxWidth="xs">
                 <DialogTitle>{t('foodLog.deleteDialog.title')}</DialogTitle>
                 <DialogContent>

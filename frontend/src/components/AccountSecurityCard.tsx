@@ -165,7 +165,9 @@ const AccountSecurityCard: React.FC<Props> = ({
 
                 <Stack spacing={2}>
                     <Stack spacing={1.5}>
-                        <Typography variant="body2" color="text.secondary">
+                        <Typography variant="body2" sx={{
+                            color: "text.secondary"
+                        }}>
                             {t('account.email')}
                         </Typography>
                         <Box
@@ -193,7 +195,6 @@ const AccountSecurityCard: React.FC<Props> = ({
                     </Button>
                 </Stack>
             </AppCard>
-
             <Dialog
                 open={isPasswordDialogOpen}
                 onClose={handlePasswordDialogClose}
@@ -230,9 +231,11 @@ const AccountSecurityCard: React.FC<Props> = ({
                             onChange={(e) => setNewPassword(e.target.value)}
                             helperText={t('account.passwordHint', { min: MIN_PASSWORD_LENGTH })}
                             disabled={isChangingPassword}
-                            inputProps={{ minLength: MIN_PASSWORD_LENGTH }}
                             required
                             fullWidth
+                            slotProps={{
+                                htmlInput: { minLength: MIN_PASSWORD_LENGTH }
+                            }}
                         />
 
                         <TextField
@@ -242,9 +245,11 @@ const AccountSecurityCard: React.FC<Props> = ({
                             value={confirmPassword}
                             onChange={(e) => setConfirmPassword(e.target.value)}
                             disabled={isChangingPassword}
-                            inputProps={{ minLength: MIN_PASSWORD_LENGTH }}
                             required
                             fullWidth
+                            slotProps={{
+                                htmlInput: { minLength: MIN_PASSWORD_LENGTH }
+                            }}
                         />
                     </Stack>
                 </DialogContent>

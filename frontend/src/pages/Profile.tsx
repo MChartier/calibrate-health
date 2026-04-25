@@ -256,7 +256,6 @@ const Profile: React.FC = () => {
                         <TextField
                             label={t('profile.dateOfBirth')}
                             type="date"
-                            InputLabelProps={{ shrink: true }}
                             value={dobValue}
                             onChange={(e) => {
                                 const next = e.target.value;
@@ -264,6 +263,9 @@ const Profile: React.FC = () => {
                                 queueAutosave({ date_of_birth: normalizePatchString(next) });
                             }}
                             fullWidth
+                            slotProps={{
+                                inputLabel: { shrink: true }
+                            }}
                         />
 
                         <FormControl fullWidth>
@@ -292,8 +294,10 @@ const Profile: React.FC = () => {
                                     setHeightCm(next);
                                     queueAutosave({ height_cm: normalizePatchString(next) });
                                 }}
-                                inputProps={{ min: 50, max: 272, step: 0.1 }}
                                 fullWidth
+                                slotProps={{
+                                    htmlInput: { min: 50, max: 272, step: 0.1 }
+                                }}
                             />
                         ) : (
                             <Box sx={{ display: 'flex', gap: 2 }}>
@@ -306,8 +310,10 @@ const Profile: React.FC = () => {
                                         setHeightFeet(next);
                                         queueAutosave(buildFeetInchesHeightPatch(next, heightInchesValue));
                                     }}
-                                    inputProps={{ min: 1, max: 8, step: 1 }}
                                     fullWidth
+                                    slotProps={{
+                                        htmlInput: { min: 1, max: 8, step: 1 }
+                                    }}
                                 />
                                 <TextField
                                     label={t('profile.inches')}
@@ -318,13 +324,17 @@ const Profile: React.FC = () => {
                                         setHeightInches(next);
                                         queueAutosave(buildFeetInchesHeightPatch(heightFeetValue, next));
                                     }}
-                                    inputProps={{ min: 0, max: 11.9, step: 0.1 }}
                                     fullWidth
+                                    slotProps={{
+                                        htmlInput: { min: 0, max: 11.9, step: 0.1 }
+                                    }}
                                 />
                             </Box>
                         )}
 
-                        <Typography variant="caption" color="text.secondary">
+                        <Typography variant="caption" sx={{
+                            color: "text.secondary"
+                        }}>
                             {t('profile.unitsTimezoneHint.prefix')}{' '}
                             <Link component={RouterLink} to="/settings">
                                 {t('nav.settings')}
@@ -358,10 +368,14 @@ const Profile: React.FC = () => {
                                         }}
                                     >
                                         <Box>
-                                            <Typography variant="body2" fontWeight={800}>
+                                            <Typography variant="body2" sx={{
+                                                fontWeight: 800
+                                            }}>
                                                 {option.title}
                                             </Typography>
-                                            <Typography variant="caption" color="text.secondary">
+                                            <Typography variant="caption" sx={{
+                                                color: "text.secondary"
+                                            }}>
                                                 {option.description}
                                             </Typography>
                                         </Box>

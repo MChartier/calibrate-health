@@ -175,9 +175,11 @@ const GoalEditor: React.FC<GoalEditorProps> = ({
                         setStartWeightInput(e.target.value);
                         setAlert(null);
                     }}
-                    inputProps={{ step: 0.1 }}
                     required
                     fullWidth
+                    slotProps={{
+                        htmlInput: { step: 0.1 }
+                    }}
                 />
                 <TextField
                     label={t('goalEditor.targetWeightLabel', { unit: weightUnitLabel })}
@@ -187,9 +189,11 @@ const GoalEditor: React.FC<GoalEditorProps> = ({
                         setTargetWeightInput(e.target.value);
                         setAlert(null);
                     }}
-                    inputProps={{ step: 0.1 }}
                     required
                     fullWidth
+                    slotProps={{
+                        htmlInput: { step: 0.1 }
+                    }}
                 />
 
                 <FormControl fullWidth>
@@ -242,7 +246,6 @@ const GoalEditor: React.FC<GoalEditorProps> = ({
                     </Button>
                 </Box>
             </Stack>
-
             {alert && (
                 <Alert severity={alert.severity} sx={{ mt: 2 }}>
                     {alert.message}
