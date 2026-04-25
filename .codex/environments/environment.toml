@@ -39,6 +39,11 @@ icon = "run"
 command = "node scripts/codex-worktree-env.mjs dev"
 
 [[actions]]
+name = "Storybook"
+icon = "run"
+command = "node scripts/codex-worktree-env.mjs storybook"
+
+[[actions]]
 name = "Test"
 icon = "run"
 command = "node scripts/codex-worktree-env.mjs test"

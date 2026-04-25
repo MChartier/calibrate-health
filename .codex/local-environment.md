@@ -14,10 +14,15 @@ Configured Codex app actions:
 | Stop Devcontainer | `node scripts/codex-worktree-env.mjs down` |
 | Dev | `node scripts/codex-worktree-env.mjs dev` |
 | Dev test | `node scripts/codex-worktree-env.mjs dev:test` |
+| Storybook | `node scripts/codex-worktree-env.mjs storybook` |
 | Test | `node scripts/codex-worktree-env.mjs test` |
 | Lint | `node scripts/codex-worktree-env.mjs lint` |
 | Build | `node scripts/codex-worktree-env.mjs build` |
 | Shell | `node scripts/codex-worktree-env.mjs shell` |
+
+The Storybook action uses the worktree-specific `STORYBOOK_PORT` generated in
+`.devcontainer/.env`, so it can run alongside the Vite frontend and other
+worktree containers without reusing port 6006.
 
 The setup script uses `CODEX_WORKTREE_PATH` when Codex provides it and falls
 back to the current directory outside the app. It is host-platform neutral, so
