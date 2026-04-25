@@ -155,8 +155,8 @@ const Goals: React.FC = () => {
     const expectedRangeEdgeColor = alpha(theme.palette.primary.main, EXPECTED_RANGE_EDGE_ALPHA);
     const chartMargin = isCompactViewport ? CHART_MARGIN_COMPACT : CHART_MARGIN_DEFAULT;
 
-    // Default to YEAR so long histories do not fetch/render the full timeline on initial load.
-    const [selectedRange, setSelectedRange] = useState<MetricsRange>(METRICS_RANGE_OPTIONS.YEAR);
+    // Default to the most actionable daily-use window while retaining quick access to longer trends.
+    const [selectedRange, setSelectedRange] = useState<MetricsRange>(METRICS_RANGE_OPTIONS.WEEK);
     const [panWindowIndex, setPanWindowIndex] = useState(0);
 
     const goalQuery = useQuery({
