@@ -33,6 +33,8 @@ function isEnabledEnvFlag(rawValue: string | undefined): boolean {
 
 const QUICK_ADD_SHORTCUT_ICON = 'pwa-192x192.png' // Icon used for quick-add PWA shortcuts.
 const QUICK_ADD_SHORTCUT_BASE_PATH = '/log' // Base route for quick-add shortcuts.
+const PWA_THEME_COLOR = '#111827' // Browser UI color matching the dark app bar.
+const PWA_BACKGROUND_COLOR = '#f8fafc' // Android may use this behind transparent icons; keep it non-black for launcher tiles.
 // Reuse an existing app window so PWA shortcuts navigate instead of spawning a new instance.
 const PWA_LAUNCH_HANDLER = {
   client_mode: 'navigate-existing',
@@ -166,8 +168,8 @@ function getPwaOptions(enableServiceWorkerInDev: boolean): Partial<VitePWAOption
       name: 'calibrate',
       short_name: 'calibrate',
       description: 'A responsive calorie tracker.',
-      theme_color: '#111827',
-      background_color: '#111827',
+      theme_color: PWA_THEME_COLOR,
+      background_color: PWA_BACKGROUND_COLOR,
       categories: ['health', 'fitness', 'lifestyle'],
       display: 'standalone',
       display_override: ['window-controls-overlay', 'standalone', 'minimal-ui', 'browser'],
