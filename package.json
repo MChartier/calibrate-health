@@ -39,7 +39,7 @@
     "codex:build": "node scripts/codex-worktree-env.mjs build",
     "codex:ci": "node scripts/codex-worktree-env.mjs ci",
     "codex:dev": "node scripts/codex-worktree-env.mjs dev",
-    "codex:dev:test": "node scripts/codex-worktree-env.mjs dev:test",
+    "codex:dev:test": "node scripts/codex-worktree-env.mjs dev",
     "codex:down": "node scripts/codex-worktree-env.mjs down",
     "ci:local": "node scripts/dev-env.mjs ci",
     "build": "npm --prefix frontend run build",

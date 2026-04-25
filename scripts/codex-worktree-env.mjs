@@ -12,7 +12,7 @@ const devcontainerScript = path.join(
 );
 
 const commandMap = new Map([
-  ["devcontainer:start", { type: "up" }],
+  ["devcontainer:start", { type: "up", skipPostCreate: true }],
   ["setup-app", { type: "exec", command: ["npm", "run", "setup"] }],
   ["db:migrate", { type: "exec", command: ["npm", "run", "db:migrate:dev"] }],
   ["db:reset", { type: "exec", command: ["npm", "run", "db:reset:dev"] }],
@@ -22,8 +22,8 @@ const commandMap = new Map([
   ["lint", { type: "exec", command: ["npm", "run", "lint"] }],
   ["build", { type: "exec", command: ["npm", "run", "build"] }],
   ["ci", { type: "exec", command: ["npm", "run", "ci:local"] }],
-  ["dev", { type: "exec", command: ["npm", "run", "dev"] }],
-  ["dev:test", { type: "exec", command: ["npm", "run", "dev:test"] }],
+  ["dev", { type: "exec", command: ["node", "scripts/dev-env.mjs", "dev"] }],
+  ["dev:test", { type: "exec", command: ["node", "scripts/dev-env.mjs", "dev"] }],
   [
     "reset-test-user-onboarding",
     { type: "exec", command: ["npm", "run", "dev:reset-test-user-onboarding"] },
@@ -122,6 +122,7 @@ if (commandName === "down") {
       "up",
       "--path",
       workspacePath,
+      ...(command.skipPostCreate ? ["--skip-post-create"] : []),
       ...(command.removeExistingContainer ? ["--remove-existing-container"] : []),
     ]);
   } else if (command.type === "shell") {

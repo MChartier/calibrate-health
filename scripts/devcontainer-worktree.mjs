@@ -2,6 +2,7 @@
 import { execFileSync, spawn } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
+import { resolveDevcontainerCliCache } from "./devcontainer-cli-cache.mjs";
 
 const LOCAL_DEVCONTAINER_BIN = path.resolve(
   process.cwd(),
@@ -16,16 +17,29 @@ const LOCAL_DEVCONTAINER_JS = path.resolve(
   "cli",
   "devcontainer.js"
 );
+const ENV_DEVCONTAINER_JS = process.env.DEVCONTAINER_CLI_JS || "";
+const SHARED_DEVCONTAINER_JS = ENV_DEVCONTAINER_JS || resolveDevcontainerCliCache(process.cwd()).cliJs;
+const HAS_ENV_DEVCONTAINER_JS = Boolean(ENV_DEVCONTAINER_JS) && fs.existsSync(ENV_DEVCONTAINER_JS);
+const HAS_LOCAL_DEVCONTAINER_JS = fs.existsSync(LOCAL_DEVCONTAINER_JS);
+const HAS_SHARED_DEVCONTAINER_JS = fs.existsSync(SHARED_DEVCONTAINER_JS);
 const DEVCONTAINER_BIN = fs.existsSync(LOCAL_DEVCONTAINER_BIN)
   ? LOCAL_DEVCONTAINER_BIN
   : "devcontainer";
 const DEVCONTAINER_COMMAND =
-  process.platform === "win32" && fs.existsSync(LOCAL_DEVCONTAINER_JS)
+  HAS_ENV_DEVCONTAINER_JS
     ? process.execPath
+    : process.platform === "win32" && HAS_LOCAL_DEVCONTAINER_JS
+    ? process.execPath
+    : HAS_SHARED_DEVCONTAINER_JS
+      ? process.execPath
     : DEVCONTAINER_BIN;
 const DEVCONTAINER_BASE_ARGS =
-  process.platform === "win32" && fs.existsSync(LOCAL_DEVCONTAINER_JS)
+  HAS_ENV_DEVCONTAINER_JS
+    ? [ENV_DEVCONTAINER_JS]
+    : process.platform === "win32" && HAS_LOCAL_DEVCONTAINER_JS
     ? [LOCAL_DEVCONTAINER_JS]
+    : HAS_SHARED_DEVCONTAINER_JS
+      ? [SHARED_DEVCONTAINER_JS]
     : [];
 const SENSITIVE_OUTPUT_KEYS = [
   "CALIBRATE_GH_PAT",
@@ -117,7 +131,7 @@ function isPathLike(value) {
 /**
  * Resolve the target workspace folder path based on CLI args.
  * @param {string[]} args - Positional/flag args (without subcommand).
- * @returns {{ workspacePath: string, devcontainerArgs: string[], commandArgs: string[], removeExistingContainer: boolean }} Resolved path + passthrough args.
+ * @returns {{ workspacePath: string, devcontainerArgs: string[], commandArgs: string[], removeExistingContainer: boolean, skipPostCreate: boolean }} Resolved path + passthrough args.
  */
 function resolveTarget(args) {
   const passthroughIndex = args.indexOf("--");
@@ -132,6 +146,7 @@ function resolveTarget(args) {
   let positional = null;
   const devcontainerArgs = [];
   let removeExistingContainer = false;
+  let skipPostCreate = false;
 
   for (let i = 0; i < inputArgs.length; i += 1) {
     const arg = inputArgs[i];
@@ -155,6 +170,11 @@ function resolveTarget(args) {
 
     if (arg === "--remove-existing-container") {
       removeExistingContainer = true;
+      continue;
+    }
+
+    if (arg === "--skip-post-create") {
+      skipPostCreate = true;
       continue;
     }
 
@@ -202,7 +222,7 @@ function resolveTarget(args) {
     );
   }
 
-  return { workspacePath: resolved, devcontainerArgs, commandArgs, removeExistingContainer };
+  return { workspacePath: resolved, devcontainerArgs, commandArgs, removeExistingContainer, skipPostCreate };
 }
 
 /**
@@ -356,6 +376,7 @@ function printHelp() {
       "  --branch <name>  Resolve a worktree by branch name.",
       "  --cwd            Use the current working directory.",
       "  --remove-existing-container  Recreate the container before exec.",
+      "  --skip-post-create  Skip devcontainer lifecycle hooks during up.",
       "",
       "Notes:",
       "  - Run from any worktree in the repo when resolving by branch.",
@@ -398,6 +419,7 @@ if (subcommand === "up") {
     "--workspace-folder",
     target.workspacePath,
     ...(target.removeExistingContainer ? ["--remove-existing-container"] : []),
+    ...(target.skipPostCreate ? ["--skip-post-create"] : []),
     ...target.devcontainerArgs,
     ...target.commandArgs,
   ]);
@@ -416,6 +438,7 @@ if (subcommand === "exec") {
     "--workspace-folder",
     target.workspacePath,
     ...(target.removeExistingContainer ? ["--remove-existing-container"] : []),
+    ...(target.skipPostCreate ? ["--skip-post-create"] : []),
   ]);
   const execArgs = [
     "exec",
@@ -436,6 +459,7 @@ const containerId = await runDevcontainerUp([
   "--workspace-folder",
   target.workspacePath,
   ...(target.removeExistingContainer ? ["--remove-existing-container"] : []),
+  ...(target.skipPostCreate ? ["--skip-post-create"] : []),
 ]);
 const execArgs = [
   "exec",

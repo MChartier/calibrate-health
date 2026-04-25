@@ -5,9 +5,6 @@
   "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
   "initializeCommand": "node .devcontainer/init-devcontainer-env.mjs",
   "waitFor": "postCreateCommand",
-  "features": {
-    "ghcr.io/devcontainers/features/github-cli:1": {}
-  },
   "customizations": {
     "vscode": {
       "settings": {
@@ -16,6 +13,5 @@
     }
   },
 
-  "onCreateCommand": "npm install -g @openai/codex",
-  "postCreateCommand": "sudo chown -R node:node backend/node_modules frontend/node_modules /home/node/.npm && node .devcontainer/update-peacock-settings.mjs && bash .devcontainer/setup-codex.sh && bash .devcontainer/setup-github.sh"
+  "postCreateCommand": "bash .devcontainer/prepare-volumes.sh && node .devcontainer/update-peacock-settings.mjs"
 }

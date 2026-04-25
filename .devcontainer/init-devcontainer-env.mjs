@@ -2,7 +2,6 @@
 import { execFileSync } from "node:child_process";
 import crypto from "node:crypto";
 import fs from "node:fs";
-import os from "node:os";
 import path from "node:path";
 
 const workspaceRoot = process.cwd();
@@ -338,17 +337,6 @@ const viteWorktreeColor = isMainWorktree ? "" : derivedColor;
 const backendNodeModulesVolume = buildNodeModulesVolumeName("backend", "backend/package-lock.json");
 const frontendNodeModulesVolume = buildNodeModulesVolumeName("frontend", "frontend/package-lock.json");
 
-const repoCodexHome = readRepoDotenvValue("CODEX_HOME");
-let codexHostHome = process.env.CODEX_HOME || repoCodexHome || path.join(os.homedir(), ".codex");
-if (codexHostHome === "~") {
-  codexHostHome = os.homedir();
-} else if (codexHostHome.startsWith(`~${path.sep}`) || codexHostHome.startsWith("~/")) {
-  codexHostHome = path.join(os.homedir(), codexHostHome.slice(2));
-}
-if (!path.isAbsolute(codexHostHome)) {
-  codexHostHome = path.join(os.homedir(), codexHostHome);
-}
-
 const fatsecretClientId =
   process.env.FATSECRET_CLIENT_ID || readRepoDotenvValue("FATSECRET_CLIENT_ID");
 const fatsecretClientSecret =
@@ -383,16 +371,6 @@ if (!webPushSubject) {
   webPushSubject = "mailto:dev@calibrate.local";
 }
 
-const githubToken =
-  process.env.CALIBRATE_GH_PAT ||
-  process.env.GH_AUTH_TOKEN ||
-  process.env.GH_TOKEN ||
-  process.env.GITHUB_TOKEN ||
-  readRepoDotenvValue("CALIBRATE_GH_PAT") ||
-  readRepoDotenvValue("GH_AUTH_TOKEN") ||
-  readRepoDotenvValue("GH_TOKEN") ||
-  readRepoDotenvValue("GITHUB_TOKEN");
-
 const lines = [
   `COMPOSE_PROJECT_NAME=${projectSlug}`,
   `WORKSPACE_FOLDER_NAME=${workspaceName}`,
@@ -417,10 +395,6 @@ const lines = [
   `WEB_PUSH_PUBLIC_KEY=${webPushPublicKey}`,
   `WEB_PUSH_PRIVATE_KEY=${webPushPrivateKey}`,
   `WEB_PUSH_SUBJECT=${webPushSubject}`,
-  `CODEX_HOST_HOME=${toComposePath(fs.realpathSync.native?.(codexHostHome) ?? fs.realpathSync(codexHostHome))}`,
-  `GH_AUTH_TOKEN=${githubToken}`,
-  `GITHUB_TOKEN=${githubToken}`,
-  `GH_TOKEN=${githubToken}`,
   "",
 ].join("\n");
 
