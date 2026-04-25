@@ -17,7 +17,7 @@ import ChevronLeftRoundedIcon from '@mui/icons-material/ChevronLeftRounded';
 import ChevronRightRoundedIcon from '@mui/icons-material/ChevronRightRounded';
 import axios from 'axios';
 import { useQuery } from '@tanstack/react-query';
-import { LineChart, lineClasses } from '@mui/x-charts/LineChart';
+import { LineChart } from '@mui/x-charts/LineChart';
 import { ChartsReferenceLine } from '@mui/x-charts/ChartsReferenceLine';
 import GoalTrackerCard from '../components/GoalTrackerCard';
 import { useAuth } from '../context/useAuth';
@@ -621,7 +621,6 @@ const Goals: React.FC = () => {
                                 label: rawWeightSeriesLabel,
                                 color: rawLineColor,
                                 showMark: true,
-                                shape: 'circle',
                                 connectNulls: false,
                                 valueFormatter: (value) => (value == null ? null : `${value.toFixed(1)} ${unitLabel}`)
                             }
@@ -629,24 +628,24 @@ const Goals: React.FC = () => {
                         height={CHART_HEIGHT_PX}
                         margin={chartMargin}
                         skipAnimation={false}
-                        hideLegend
-                        slotProps={{ tooltip: { trigger: 'axis' } }}
+                        slots={{ legend: () => null }}
+                        slotProps={{ mark: { shape: 'circle' } }}
                         sx={{
-                            [`& .${lineClasses.area}[data-series="expectedRangeBand"]`]: {
+                            '& .MuiAreaElement-root[data-series="expectedRangeBand"]': {
                                 fill: expectedRangeFillColor,
                                 fillOpacity: 1
                             },
-                            [`& .${lineClasses.line}[data-series="expectedRangeBand"]`]: {
+                            '& .MuiLineElement-root[data-series="expectedRangeBand"]': {
                                 stroke: expectedRangeEdgeColor,
                                 strokeWidth: 1
                             },
-                            [`& .${lineClasses.line}[data-series="trend"]`]: {
+                            '& .MuiLineElement-root[data-series="trend"]': {
                                 strokeWidth: TREND_LINE_STROKE_WIDTH_PX
                             },
-                            [`& .${lineClasses.line}[data-series="raw"]`]: {
+                            '& .MuiLineElement-root[data-series="raw"]': {
                                 strokeWidth: RAW_LINE_STROKE_WIDTH_PX
                             },
-                            [`& .${lineClasses.mark}[data-series="raw"]`]: {
+                            '& .MuiMarkElement-root[data-series="raw"]': {
                                 stroke: rawLineColor,
                                 strokeWidth: RAW_MARK_STROKE_WIDTH_PX,
                                 opacity: rawMarksVisible ? 1 : 0,

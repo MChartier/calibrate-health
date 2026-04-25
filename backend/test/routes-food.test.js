@@ -339,6 +339,79 @@ test('food route: GET /search returns 500 when all barcode providers fail', asyn
   assert.deepEqual(res.body, { message: 'Unable to search foods right now.' });
 });
 
+test('food route: GET /recent returns deduped recent food suggestions', async () => {
+  const rows = [
+    {
+      id: 3,
+      name: 'Greek yogurt',
+      meal_period: 'BREAKFAST',
+      calories: 120,
+      my_food_id: null,
+      servings_consumed: 1,
+      serving_size_quantity_snapshot: 1,
+      serving_unit_label_snapshot: 'cup',
+      calories_per_serving_snapshot: 120,
+      external_source: 'openFoodFacts',
+      external_id: 'yogurt-1',
+      brand_snapshot: 'Brand',
+      locale_snapshot: null,
+      barcode_snapshot: null,
+      measure_label_snapshot: 'cup',
+      grams_per_measure_snapshot: 170,
+      measure_quantity_snapshot: 1,
+      grams_total_snapshot: 170,
+      created_at: new Date('2025-01-03T12:00:00Z')
+    },
+    {
+      id: 2,
+      name: 'Greek yogurt',
+      meal_period: 'BREAKFAST',
+      calories: 120,
+      my_food_id: null,
+      servings_consumed: 1,
+      serving_size_quantity_snapshot: 1,
+      serving_unit_label_snapshot: 'cup',
+      calories_per_serving_snapshot: 120,
+      external_source: 'openFoodFacts',
+      external_id: 'yogurt-1',
+      brand_snapshot: 'Brand',
+      locale_snapshot: null,
+      barcode_snapshot: null,
+      measure_label_snapshot: 'cup',
+      grams_per_measure_snapshot: 170,
+      measure_quantity_snapshot: 1,
+      grams_total_snapshot: 170,
+      created_at: new Date('2025-01-02T12:00:00Z')
+    }
+  ];
+
+  const prismaStub = {
+    foodLog: {
+      findMany: async ({ where, take }) => {
+        assert.deepEqual(where, { user_id: 7 });
+        assert.equal(take, 200);
+        return rows;
+      }
+    }
+  };
+
+  const router = loadFoodRouter({
+    prismaStub,
+    foodDataStub: { getFoodDataProvider: () => ({}) }
+  });
+  const handler = getRouteHandler(router, 'get', '/recent');
+
+  const req = { user: { id: 7 }, query: {} };
+  const res = createRes();
+
+  await handler(req, res);
+  assert.equal(res.statusCode, 200);
+  assert.equal(res.body.items.length, 1);
+  assert.equal(res.body.items[0].name, 'Greek yogurt');
+  assert.equal(res.body.items[0].times_logged, 2);
+  assert.equal(res.body.items[0].external_source, 'openFoodFacts');
+});
+
 test('food route: GET / validates local_date/date query params', async () => {
   const prismaStub = {
     foodLog: {
@@ -424,6 +497,60 @@ test('food route: POST / creates a manual log after validating inputs', async ()
   assert.equal(receivedData.name, 'Apple');
   assert.equal(receivedData.calories, 12);
   assert.equal(receivedData.meal_period, 'BREAKFAST');
+});
+
+test('food route: POST / stores external serving snapshots for search-backed logs', async () => {
+  let receivedData = null;
+  const createdLog = { id: 1, user_id: 7, name: 'Yogurt', calories: 180 };
+
+  const prismaStub = {
+    myFood: {},
+    foodLog: {
+      create: async ({ data }) => {
+        receivedData = data;
+        return createdLog;
+      }
+    }
+  };
+
+  const router = loadFoodRouter({
+    prismaStub,
+    foodDataStub: { getFoodDataProvider: () => ({}) }
+  });
+  const handler = getRouteHandler(router, 'post', '/');
+
+  const req = {
+    user: { id: 7, timezone: 'UTC' },
+    body: {
+      meal_period: 'LUNCH',
+      name: 'Yogurt',
+      calories: 180,
+      servings_consumed: 1.5,
+      serving_size_quantity_snapshot: 1,
+      serving_unit_label_snapshot: 'cup',
+      external_source: 'openFoodFacts',
+      external_id: 'abc',
+      brand: 'Brand',
+      measure_label: 'cup',
+      grams_per_measure_snapshot: 170,
+      grams_total_snapshot: 255,
+      date: '2025-01-01'
+    }
+  };
+  const res = createRes();
+
+  await handler(req, res);
+
+  assert.equal(res.statusCode, 200);
+  assert.deepEqual(res.body, createdLog);
+  assert.equal(receivedData.servings_consumed, 1.5);
+  assert.equal(receivedData.serving_unit_label_snapshot, 'cup');
+  assert.equal(receivedData.calories_per_serving_snapshot, 120);
+  assert.equal(receivedData.external_source, 'openFoodFacts');
+  assert.equal(receivedData.external_id, 'abc');
+  assert.equal(receivedData.brand_snapshot, 'Brand');
+  assert.equal(receivedData.measure_label_snapshot, 'cup');
+  assert.equal(receivedData.grams_total_snapshot, 255);
 });
 
 test('food route: POST / can create a my_food-backed log with snapshots', async () => {

@@ -56,6 +56,42 @@ test('foodUtils: parseFoodLogCreateBody defaults date fields when date is omitte
   assert.equal(result.calories, 12);
 });
 
+test('foodUtils: parseFoodLogCreateBody preserves optional external serving snapshots', () => {
+  const result = parseFoodLogCreateBody({
+    body: {
+      meal_period: 'LUNCH',
+      name: 'Provider yogurt',
+      calories: 180,
+      servings_consumed: '1.5',
+      serving_size_quantity_snapshot: '1',
+      serving_unit_label_snapshot: 'cup',
+      external_source: 'openFoodFacts',
+      external_id: 'abc123',
+      brand: ' Test Brand ',
+      measure_label: 'cup',
+      grams_per_measure_snapshot: '170',
+      measure_quantity_snapshot: '1.5',
+      grams_total_snapshot: '255',
+      date: '2025-01-01'
+    },
+    userTimeZone: 'UTC'
+  });
+
+  assert.equal(result.ok, true);
+  assert.equal(result.kind, 'MANUAL');
+  assert.equal(result.servingsConsumed, 1.5);
+  assert.equal(result.servingSizeQuantitySnapshot, 1);
+  assert.equal(result.servingUnitLabelSnapshot, 'cup');
+  assert.equal(result.caloriesPerServingSnapshot, 120);
+  assert.equal(result.externalSource, 'openFoodFacts');
+  assert.equal(result.externalId, 'abc123');
+  assert.equal(result.brandSnapshot, 'Test Brand');
+  assert.equal(result.measureLabelSnapshot, 'cup');
+  assert.equal(result.gramsPerMeasureSnapshot, 170);
+  assert.equal(result.measureQuantitySnapshot, 1.5);
+  assert.equal(result.gramsTotalSnapshot, 255);
+});
+
 test('foodUtils: parseFoodLogCreateBody rejects invalid dates and mutual exclusivity', () => {
   const badDate = parseFoodLogCreateBody({
     body: { meal_period: 'LUNCH', name: 'Apple', calories: 10, date: 'not-a-date' },
@@ -131,4 +167,3 @@ test('foodUtils: parseFoodLogUpdateBody derives calories_per_serving_snapshot fr
     calories_per_serving_snapshot: 125
   });
 });
-

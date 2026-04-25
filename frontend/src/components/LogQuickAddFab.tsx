@@ -46,7 +46,7 @@ type LogQuickAddFabProps = {
 const LogQuickAddFab: React.FC<LogQuickAddFabProps> = ({ date }) => {
     const queryClient = useQueryClient();
     const { user } = useAuth();
-    const { dialogs, openWeightDialogFromFab, weightDialogDateMode } = useQuickAddFab();
+    const { dialogs, foodDialogMealPeriod, openFoodDialogForMeal, openWeightDialogFromFab, weightDialogDateMode } = useQuickAddFab();
     const theme = useTheme();
     const { t } = useI18n();
     const isFoodDialogFullScreen = useMediaQuery(theme.breakpoints.down('sm'));
@@ -77,7 +77,7 @@ const LogQuickAddFab: React.FC<LogQuickAddFabProps> = ({ date }) => {
                     icon={<RestaurantIcon />}
                     onClick={() => {
                         haptic.tap();
-                        dialogs.openFoodDialog();
+                        openFoodDialogForMeal(null);
                     }}
                     slotProps={{
                         tooltip: {
@@ -133,10 +133,14 @@ const LogQuickAddFab: React.FC<LogQuickAddFabProps> = ({ date }) => {
                 </DialogTitle>
                 <FoodEntryForm
                     date={date}
-                    onSuccess={() => {
+                    initialMealPeriod={foodDialogMealPeriod}
+                    onSuccess={(result) => {
                         void queryClient.invalidateQueries({ queryKey: ['food'] });
+                        void queryClient.invalidateQueries({ queryKey: ['recent-foods'] });
                         void queryClient.invalidateQueries({ queryKey: inAppNotificationsQueryKey() });
-                        dialogs.closeFoodDialog();
+                        if (result?.closeDialog !== false) {
+                            dialogs.closeFoodDialog();
+                        }
                     }}
                 />
             </Dialog>

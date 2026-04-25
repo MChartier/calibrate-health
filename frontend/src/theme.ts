@@ -652,24 +652,6 @@ export function createAppTheme(mode: PaletteMode) {
                     })
                 }
             },
-            MuiLinePlot: {
-                styleOverrides: {
-                    root: {
-                        strokeWidth: 3,
-                        strokeLinecap: 'round',
-                        strokeLinejoin: 'round'
-                    }
-                }
-            },
-            MuiMarkPlot: {
-                styleOverrides: {
-                    root: ({ theme }) => ({
-                        fill: theme.palette.background.paper,
-                        stroke: theme.palette.primary.main,
-                        strokeWidth: 2
-                    })
-                }
-            }
         }
     });
 }

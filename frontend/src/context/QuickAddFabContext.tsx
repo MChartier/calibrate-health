@@ -6,6 +6,7 @@ import {
     type QuickAddFabContextValue,
     type WeightDialogDateMode
 } from './quickAddFabState';
+import type { MealPeriod } from '../types/mealPeriod';
 
 /**
  * QuickAddFabProvider
@@ -16,7 +17,16 @@ export const QuickAddFabProvider: React.FC<{ children: React.ReactNode }> = ({ c
     const dialogs = useQuickAddDialogs();
     const [logDateOverride, setLogDateOverride] = useState<string | null>(null);
     const [logDateNavigation, setLogDateNavigation] = useState<LogDateNavigationState | null>(null);
+    const [foodDialogMealPeriod, setFoodDialogMealPeriod] = useState<MealPeriod | null>(null);
     const [weightDialogDateMode, setWeightDialogDateMode] = useState<WeightDialogDateMode>('today');
+
+    const openFoodDialogForMeal = useCallback(
+        (mealPeriod: MealPeriod | null = null) => {
+            setFoodDialogMealPeriod(mealPeriod);
+            dialogs.openFoodDialog();
+        },
+        [dialogs]
+    );
 
     const openWeightDialogFromFab = useCallback(() => {
         setWeightDialogDateMode('today');
@@ -35,14 +45,18 @@ export const QuickAddFabProvider: React.FC<{ children: React.ReactNode }> = ({ c
             setLogDateOverride,
             logDateNavigation,
             setLogDateNavigation,
+            foodDialogMealPeriod,
             weightDialogDateMode,
+            openFoodDialogForMeal,
             openWeightDialogFromFab,
             openWeightDialogForLogDate
         }),
         [
             dialogs,
+            foodDialogMealPeriod,
             logDateOverride,
             logDateNavigation,
+            openFoodDialogForMeal,
             openWeightDialogForLogDate,
             openWeightDialogFromFab,
             setLogDateOverride,

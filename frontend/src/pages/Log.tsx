@@ -67,13 +67,12 @@ const Log: React.FC = () => {
     const { t } = useI18n();
     const { user } = useAuth();
     const {
-        dialogs,
+        openFoodDialogForMeal,
         openWeightDialogForLogDate,
         openWeightDialogFromFab,
         setLogDateNavigation,
         setLogDateOverride
     } = useQuickAddFab();
-    const { openFoodDialog } = dialogs;
     const theme = useTheme();
     const { sectionGap, sectionGapCompact } = theme.custom.layout.page;
     // Tighter section spacing on small screens keeps log sections visually compact.
@@ -212,7 +211,7 @@ const Log: React.FC = () => {
 
         switch (quickAddAction) {
             case QUICK_ADD_SHORTCUT_ACTIONS.food:
-                openFoodDialog();
+                openFoodDialogForMeal(null);
                 break;
             case QUICK_ADD_SHORTCUT_ACTIONS.weight:
                 openWeightDialogFromFab();
@@ -229,7 +228,7 @@ const Log: React.FC = () => {
     }, [
         applyClampedDate,
         dateBounds.max,
-        openFoodDialog,
+        openFoodDialogForMeal,
         openWeightDialogFromFab,
         quickAddAction,
         searchParams,
@@ -265,7 +264,11 @@ const Log: React.FC = () => {
                         {t('log.foodLog.error')}
                     </Alert>
                 ) : (
-                    <FoodLogMeals logs={foodQuery.data ?? []} isLoading={foodQuery.isLoading} />
+                    <FoodLogMeals
+                        logs={foodQuery.data ?? []}
+                        isLoading={foodQuery.isLoading}
+                        onAddMeal={(mealPeriod) => openFoodDialogForMeal(mealPeriod)}
+                    />
                 )}
             </AppCard>
         </Stack>
