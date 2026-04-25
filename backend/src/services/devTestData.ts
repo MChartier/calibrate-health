@@ -1,4 +1,3 @@
-import bcrypt from 'bcryptjs';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import prisma from '../config/database';
@@ -17,7 +16,8 @@ import { refreshMaterializedWeightTrendsBestEffort } from './materializedWeightT
  * Deterministic dev seed data helpers (test user, goals, metrics, food logs).
  */
 const TEST_USER_EMAIL = 'test@calibratehealth.app';
-const TEST_USER_PASSWORD = 'password123';
+// Precomputed bcrypt hash for the deterministic dev password, "password123".
+const TEST_USER_PASSWORD_HASH = '$2b$10$24sOV1l/uVCwMwPmB4.2X.K6q10fTODGqeX7xEILbzcoM0zIgAwFC';
 const TEST_USER_TIMEZONE = 'America/Los_Angeles';
 
 const TEST_USER_DATE_OF_BIRTH = new Date('1990-01-15T00:00:00');
@@ -32,6 +32,10 @@ const PROFILE_PLACEHOLDER_IMAGE_MIME_TYPE = 'image/png';
 type SeedProfileImage = {
   mimeType: string;
   bytes: Uint8Array<ArrayBuffer>;
+};
+
+type SeedDevTestDataOptions = {
+  logTimings?: boolean;
 };
 
 let cachedProfilePlaceholderImage: SeedProfileImage | null | undefined;
@@ -59,10 +63,30 @@ const loadProfilePlaceholderImage = async (): Promise<SeedProfileImage | null> =
 };
 
 /**
+ * Optionally time seed phases when the standalone Prisma seed command is running.
+ */
+async function timedSeedPhase<T>(
+  options: SeedDevTestDataOptions,
+  label: string,
+  task: () => Promise<T>
+): Promise<T> {
+  if (!options.logTimings) {
+    return task();
+  }
+
+  const startedAt = Date.now();
+  try {
+    return await task();
+  } finally {
+    const elapsedSeconds = ((Date.now() - startedAt) / 1000).toFixed(1);
+    console.log(`[seed] ${label} finished in ${elapsedSeconds}s`);
+  }
+}
+
+/**
  * Ensure a deterministic test user exists (and always has the expected password).
  */
 const ensureTestUser = async (createdAt: Date): Promise<{ id: number }> => {
-  const passwordHash = await bcrypt.hash(TEST_USER_PASSWORD, 10);
   const placeholderImage = await loadProfilePlaceholderImage();
   const placeholderImageData = placeholderImage
     ? { profile_image: placeholderImage.bytes, profile_image_mime_type: placeholderImage.mimeType }
@@ -72,7 +96,7 @@ const ensureTestUser = async (createdAt: Date): Promise<{ id: number }> => {
     where: { email: TEST_USER_EMAIL },
     create: {
       email: TEST_USER_EMAIL,
-      password_hash: passwordHash,
+      password_hash: TEST_USER_PASSWORD_HASH,
       created_at: createdAt,
       timezone: TEST_USER_TIMEZONE,
       language: SUPPORTED_LANGUAGES.EN,
@@ -87,7 +111,7 @@ const ensureTestUser = async (createdAt: Date): Promise<{ id: number }> => {
     update: {
       // Keep the dev user deterministic so "invalid credentials" doesn't happen
       // if the account already existed with a different password.
-      password_hash: passwordHash,
+      password_hash: TEST_USER_PASSWORD_HASH,
       created_at: createdAt,
       timezone: TEST_USER_TIMEZONE,
       language: SUPPORTED_LANGUAGES.EN,
@@ -149,37 +173,49 @@ const ensureBodyMetrics = async (userId: number, days: Date[]): Promise<boolean>
  * Create daily food logs for the past week without duplicating existing entries.
  */
 const ensureFoodLogs = async (userId: number, days: Date[]): Promise<void> => {
-  for (const [dayIndex, day] of days.entries()) {
-    const existingCount = await prisma.foodLog.count({
-      where: {
-        user_id: userId,
-        local_date: day,
-      },
-    });
-    if (existingCount > 0) continue;
+  const existingLogs = await prisma.foodLog.findMany({
+    where: {
+      user_id: userId,
+      local_date: { in: days },
+    },
+    select: { local_date: true },
+  });
+  const existingDateKeys = new Set(existingLogs.map((log) => log.local_date.toISOString().slice(0, 10)));
+  const missingLogs = days.flatMap((day, dayIndex) => {
+    if (existingDateKeys.has(day.toISOString().slice(0, 10))) {
+      return [];
+    }
 
-    await prisma.foodLog.createMany({
-      data: buildMealLogsForDay(userId, day, dayIndex),
-    });
+    return buildMealLogsForDay(userId, day, dayIndex);
+  });
+
+  if (missingLogs.length > 0) {
+    await prisma.foodLog.createMany({ data: missingLogs });
   }
 };
 
 /**
  * Seed the local database with a deterministic test user and sample tracking history.
  */
-export const seedDevTestData = async (): Promise<void> => {
+export const seedDevTestData = async (options: SeedDevTestDataOptions = {}): Promise<void> => {
+  const startedAt = Date.now();
   const metricDays = getPastDateRangeDates(TEST_USER_TIMEZONE, TEST_METRIC_HISTORY_DAYS);
   const foodLogDays = getPastWeekDates(TEST_USER_TIMEZONE);
   const createdAt = getSeedUserCreatedAt(metricDays, TEST_USER_TIMEZONE);
 
-  const user = await ensureTestUser(createdAt);
+  const user = await timedSeedPhase(options, 'user', () => ensureTestUser(createdAt));
 
-  await ensureTestGoal(user.id);
-  const createdBodyMetrics = await ensureBodyMetrics(user.id, metricDays);
+  await timedSeedPhase(options, 'goal', () => ensureTestGoal(user.id));
+  const createdBodyMetrics = await timedSeedPhase(options, 'body metrics', () => ensureBodyMetrics(user.id, metricDays));
   if (createdBodyMetrics) {
-    await refreshMaterializedWeightTrendsBestEffort(user.id);
+    await timedSeedPhase(options, 'weight trends', () => refreshMaterializedWeightTrendsBestEffort(user.id));
   }
-  await ensureFoodLogs(user.id, foodLogDays);
+  await timedSeedPhase(options, 'food logs', () => ensureFoodLogs(user.id, foodLogDays));
+
+  if (options.logTimings) {
+    const elapsedSeconds = ((Date.now() - startedAt) / 1000).toFixed(1);
+    console.log(`[seed] DONE: Dev seed data is ready in ${elapsedSeconds}s.`);
+  }
 };
 
 /**

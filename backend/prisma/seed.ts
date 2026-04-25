@@ -1,4 +1,4 @@
-import prisma from '../src/config/database';
+import { disconnectDatabase } from '../src/config/database';
 import { seedDevTestData } from '../src/services/devTestData';
 
 /**
@@ -8,7 +8,7 @@ import { seedDevTestData } from '../src/services/devTestData';
  * deterministic dev user and backfills several months of sample metrics.
  */
 const run = async (): Promise<void> => {
-  await seedDevTestData();
+  await seedDevTestData({ logTimings: true });
 };
 
 run()
@@ -17,5 +17,5 @@ run()
     process.exitCode = 1;
   })
   .finally(async () => {
-    await prisma.$disconnect();
+    await disconnectDatabase();
   });

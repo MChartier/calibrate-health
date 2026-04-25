@@ -169,10 +169,10 @@ function buildNodeModulesVolumeName(packageName, lockfileRelativePath) {
   const manifestPath = path.join(path.dirname(lockfilePath), "package.json");
   const hash = crypto.createHash("sha256");
 
-  for (const filePath of [lockfilePath, manifestPath]) {
-    if (fs.existsSync(filePath)) {
-      hash.update(fs.readFileSync(filePath));
-    }
+  if (fs.existsSync(lockfilePath)) {
+    hash.update(fs.readFileSync(lockfilePath));
+  } else if (fs.existsSync(manifestPath)) {
+    hash.update(fs.readFileSync(manifestPath));
   }
 
   hash.update(`node-${process.versions.node.split(".")[0]}`);

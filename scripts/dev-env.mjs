@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { spawnSync } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import crypto from "node:crypto";
 import fs from "node:fs";
 import { createRequire } from "node:module";
@@ -35,6 +35,8 @@ const packages = [
     ],
   },
 ];
+const packageLockHashCache = new Map();
+let cachedNpmVersion = null;
 
 /**
  * Run a subprocess and inherit stdio so Codex actions show useful logs.
@@ -54,6 +56,34 @@ function run(command, args, options = {}) {
   if (result.status !== 0) {
     process.exit(result.status ?? 1);
   }
+}
+
+/**
+ * Run a subprocess asynchronously and inherit stdio so parallel setup work can overlap.
+ * @param {string} command - Executable to run.
+ * @param {string[]} args - Command arguments.
+ * @param {{ cwd?: string }} options - Spawn options.
+ * @returns {Promise<void>} Resolves when the command exits successfully.
+ */
+function runAsync(command, args, options = {}) {
+  return new Promise((resolve, reject) => {
+    const child = spawn(command, args, {
+      cwd: options.cwd ?? repoRoot,
+      stdio: "inherit",
+      shell: process.platform === "win32",
+    });
+
+    child.on("error", reject);
+    child.on("exit", (code, signal) => {
+      if (code === 0) {
+        resolve();
+        return;
+      }
+
+      const suffix = signal ? `signal ${signal}` : `exit code ${code ?? 1}`;
+      reject(new Error(`${command} ${args.join(" ")} failed with ${suffix}.`));
+    });
+  });
 }
 
 /**
@@ -98,6 +128,18 @@ function readCommand(command, args) {
 }
 
 /**
+ * Return the npm version once per process for dependency-cache metadata.
+ * @returns {string} npm version, or "unknown-npm" when unavailable.
+ */
+function npmVersion() {
+  if (cachedNpmVersion === null) {
+    cachedNpmVersion = readCommand("npm", ["--version"]) || "unknown-npm";
+  }
+
+  return cachedNpmVersion;
+}
+
+/**
  * Time a setup phase and print a compact duration line.
  * @template T
  * @param {string} label - Phase label.
@@ -139,17 +181,26 @@ function sleep(ms) {
  * @returns {string} Short hash for the package lock.
  */
 function packageLockHash(packageDirectory) {
+  const cached = packageLockHashCache.get(packageDirectory);
+  if (cached) {
+    return cached;
+  }
+
   const lockPath = path.join(packageDirectory, "package-lock.json");
   const manifestPath = path.join(packageDirectory, "package.json");
   const hash = crypto.createHash("sha256");
-  for (const filePath of [lockPath, manifestPath]) {
-    if (fs.existsSync(filePath)) {
-      hash.update(fs.readFileSync(filePath));
-    }
+
+  if (fs.existsSync(lockPath)) {
+    hash.update(fs.readFileSync(lockPath));
+  } else if (fs.existsSync(manifestPath)) {
+    hash.update(fs.readFileSync(manifestPath));
   }
+
   hash.update(process.versions.node.split(".")[0]);
-  hash.update(readCommand("npm", ["--version"]).split(".")[0] || "unknown-npm");
-  return hash.digest("hex").slice(0, 16);
+  hash.update(npmVersion().split(".")[0] || "unknown-npm");
+  const digest = hash.digest("hex").slice(0, 16);
+  packageLockHashCache.set(packageDirectory, digest);
+  return digest;
 }
 
 /**
@@ -159,6 +210,24 @@ function packageLockHash(packageDirectory) {
  */
 function installSentinelPath(packageDirectory) {
   return path.join(packageDirectory, "node_modules", ".calibrate-install-complete.json");
+}
+
+/**
+ * Read the dependency install sentinel from a shared node_modules volume.
+ * @param {string} packageDirectory - Package directory.
+ * @returns {Record<string, unknown> | null} Sentinel data when present and valid.
+ */
+function readInstallSentinel(packageDirectory) {
+  const sentinelPath = installSentinelPath(packageDirectory);
+  if (!fs.existsSync(sentinelPath)) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(fs.readFileSync(sentinelPath, "utf8"));
+  } catch (error) {
+    return null;
+  }
 }
 
 /**
@@ -182,21 +251,50 @@ function installLockDirectory(packageDirectory) {
  * @returns {boolean} True when install can be skipped.
  */
 function hasCurrentInstall(packageConfig) {
-  const sentinelPath = installSentinelPath(packageConfig.directory);
-  if (!fs.existsSync(sentinelPath)) {
-    return false;
+  return dependencyInstallStatus(packageConfig).current;
+}
+
+/**
+ * Describe whether a package's shared node_modules volume matches the current lockfile/runtime.
+ * @param {{ name: string, directory: string, installArgs: string[] }} packageConfig - Package config.
+ * @returns {{ current: boolean, reason: string }} Install-cache status.
+ */
+function dependencyInstallStatus(packageConfig) {
+  const sentinel = readInstallSentinel(packageConfig.directory);
+  if (!sentinel) {
+    return {
+      current: false,
+      reason: "no install sentinel was found in the shared node_modules volume",
+    };
   }
 
-  try {
-    const sentinel = JSON.parse(fs.readFileSync(sentinelPath, "utf8"));
-    return (
-      sentinel.package === packageConfig.name &&
-      sentinel.lockHash === packageLockHash(packageConfig.directory) &&
-      sentinel.installCommand === `npm ${packageConfig.installArgs.join(" ")}`
-    );
-  } catch (error) {
-    return false;
+  if (sentinel.package !== packageConfig.name) {
+    return {
+      current: false,
+      reason: `install sentinel belongs to ${String(sentinel.package) || "another package"}`,
+    };
   }
+
+  const expectedLockHash = packageLockHash(packageConfig.directory);
+  if (sentinel.lockHash !== expectedLockHash) {
+    return {
+      current: false,
+      reason: `lockfile/runtime hash changed (${String(sentinel.lockHash) || "missing"} -> ${expectedLockHash})`,
+    };
+  }
+
+  const expectedCommand = `npm ${packageConfig.installArgs.join(" ")}`;
+  if (sentinel.installCommand !== expectedCommand) {
+    return {
+      current: false,
+      reason: `install command changed (${String(sentinel.installCommand) || "missing"} -> ${expectedCommand})`,
+    };
+  }
+
+  return {
+    current: true,
+    reason: "shared node_modules volume cache hit",
+  };
 }
 
 /**
@@ -209,7 +307,7 @@ function writeInstallSentinel(packageConfig) {
     lockHash: packageLockHash(packageConfig.directory),
     installCommand: `npm ${packageConfig.installArgs.join(" ")}`,
     node: process.versions.node,
-    npm: readCommand("npm", ["--version"]),
+    npm: npmVersion(),
     installedAt: new Date().toISOString(),
   };
   fs.writeFileSync(installSentinelPath(packageConfig.directory), `${JSON.stringify(sentinel, null, 2)}\n`);
@@ -264,19 +362,23 @@ async function acquireInstallLock(packageConfig) {
  * @param {{ name: string, directory: string, installArgs: string[] }} packageConfig - Package config.
  */
 async function ensurePackageDependencies(packageConfig) {
-  if (hasCurrentInstall(packageConfig)) {
-    console.log(`[dev-env] ${packageConfig.name} dependencies are current.`);
+  const initialStatus = dependencyInstallStatus(packageConfig);
+  if (initialStatus.current) {
+    console.log(`[dev-env] ${packageConfig.name} dependencies are current (${initialStatus.reason}).`);
     return;
   }
 
+  console.log(`[dev-env] ${packageConfig.name} dependency cache miss: ${initialStatus.reason}.`);
   const release = await acquireInstallLock(packageConfig);
   try {
-    if (hasCurrentInstall(packageConfig)) {
-      console.log(`[dev-env] ${packageConfig.name} dependencies are current.`);
+    const lockedStatus = dependencyInstallStatus(packageConfig);
+    if (lockedStatus.current) {
+      console.log(`[dev-env] ${packageConfig.name} dependencies are current (${lockedStatus.reason}).`);
       return;
     }
 
-    run("npm", packageConfig.installArgs, { cwd: packageConfig.directory });
+    console.log(`[dev-env] Installing ${packageConfig.name} dependencies: npm ${packageConfig.installArgs.join(" ")}`);
+    await runAsync("npm", packageConfig.installArgs, { cwd: packageConfig.directory });
     writeInstallSentinel(packageConfig);
   } finally {
     release();
@@ -294,9 +396,11 @@ async function ensureDependencies() {
   }
 
   await timed("Install dependencies", async () => {
-    for (const packageConfig of packages) {
-      await ensurePackageDependencies(packageConfig);
-    }
+    await Promise.all(
+      packages.map((packageConfig) =>
+        timed(`${packageConfig.name} dependencies`, () => ensurePackageDependencies(packageConfig))
+      )
+    );
   });
 }
 
