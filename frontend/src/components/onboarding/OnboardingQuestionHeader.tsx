@@ -23,7 +23,13 @@ const OnboardingQuestionHeader: React.FC<OnboardingQuestionHeaderProps> = ({ pro
             <Typography variant="subtitle2" sx={{ fontWeight: 800, flex: 1 }} aria-live="polite">
                 {prompt}
             </Typography>
-            <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 800, flexShrink: 0 }}>
+            <Typography
+                variant="caption"
+                sx={{
+                    color: "text.secondary",
+                    fontWeight: 800,
+                    flexShrink: 0
+                }}>
                 {progressLabel}
             </Typography>
         </Box>

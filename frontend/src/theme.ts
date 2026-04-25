@@ -652,7 +652,7 @@ export function createAppTheme(mode: PaletteMode) {
                     })
                 }
             },
-            MuiLineElement: {
+            MuiLinePlot: {
                 styleOverrides: {
                     root: {
                         strokeWidth: 3,
@@ -661,7 +661,7 @@ export function createAppTheme(mode: PaletteMode) {
                     }
                 }
             },
-            MuiMarkElement: {
+            MuiMarkPlot: {
                 styleOverrides: {
                     root: ({ theme }) => ({
                         fill: theme.palette.background.paper,

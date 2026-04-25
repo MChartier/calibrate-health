@@ -200,13 +200,17 @@ const WeightEntryFormContent: React.FC<WeightEntryFormContentProps> = ({
                         <Alert severity="warning">{t('weightEntry.error.loadExistingFailed')}</Alert>
                     )}
                     {existingMetric && (
-                        <Typography variant="body2" color="text.secondary">
+                        <Typography variant="body2" sx={{
+                            color: "text.secondary"
+                        }}>
                             {t('weightEntry.existingEntryNotice', { date: entryDateLabel })}
                         </Typography>
                     )}
 
                     {!existingMetric && prefillMetric && (
-                        <Typography variant="body2" color="text.secondary">
+                        <Typography variant="body2" sx={{
+                            color: "text.secondary"
+                        }}>
                             {t('weightEntry.prefilledNotice', {
                                 date: prefillDateLabel ?? toDatePart(prefillMetric.date)
                             })}
@@ -219,44 +223,48 @@ const WeightEntryFormContent: React.FC<WeightEntryFormContentProps> = ({
                         value={weight}
                         onChange={(e) => setWeight(e.target.value)}
                         autoFocus
-                        inputProps={{ min: WEIGHT_ENTRY_MIN, step: WEIGHT_ENTRY_STEP, inputMode: 'decimal' }}
-                        InputProps={{
-                            endAdornment: (
-                                <InputAdornment position="end">
-                                    <IconButton
-                                        aria-label={t('weightEntry.stepper.decrease', {
-                                            step: WEIGHT_ENTRY_STEP,
-                                            unit: weightUnitLabel
-                                        })}
-                                        size="small"
-                                        edge="end"
-                                        onClick={() => handleStepWeight(-WEIGHT_ENTRY_STEP)}
-                                        disabled={isBusy || stepperBase === null}
-                                    >
-                                        <RemoveIcon fontSize="small" />
-                                    </IconButton>
-                                    <IconButton
-                                        aria-label={t('weightEntry.stepper.increase', {
-                                            step: WEIGHT_ENTRY_STEP,
-                                            unit: weightUnitLabel
-                                        })}
-                                        size="small"
-                                        edge="end"
-                                        onClick={() => handleStepWeight(WEIGHT_ENTRY_STEP)}
-                                        disabled={isBusy || stepperBase === null}
-                                    >
-                                        <AddIcon fontSize="small" />
-                                    </IconButton>
-                                </InputAdornment>
-                            )
-                        }}
                         error={Boolean(weightFieldError)}
                         helperText={weightFieldError ?? ' '}
                         disabled={isBusy}
                         required
-                    />
+                        slotProps={{
+                            input: {
+                                endAdornment: (
+                                    <InputAdornment position="end">
+                                        <IconButton
+                                            aria-label={t('weightEntry.stepper.decrease', {
+                                                step: WEIGHT_ENTRY_STEP,
+                                                unit: weightUnitLabel
+                                            })}
+                                            size="small"
+                                            edge="end"
+                                            onClick={() => handleStepWeight(-WEIGHT_ENTRY_STEP)}
+                                            disabled={isBusy || stepperBase === null}
+                                        >
+                                            <RemoveIcon fontSize="small" />
+                                        </IconButton>
+                                        <IconButton
+                                            aria-label={t('weightEntry.stepper.increase', {
+                                                step: WEIGHT_ENTRY_STEP,
+                                                unit: weightUnitLabel
+                                            })}
+                                            size="small"
+                                            edge="end"
+                                            onClick={() => handleStepWeight(WEIGHT_ENTRY_STEP)}
+                                            disabled={isBusy || stepperBase === null}
+                                        >
+                                            <AddIcon fontSize="small" />
+                                        </IconButton>
+                                    </InputAdornment>
+                                )
+                            },
 
-                    <Typography variant="caption" color="text.secondary">
+                            htmlInput: { min: WEIGHT_ENTRY_MIN, step: WEIGHT_ENTRY_STEP, inputMode: 'decimal' }
+                        }} />
+
+                    <Typography variant="caption" sx={{
+                        color: "text.secondary"
+                    }}>
                         {t('weightEntry.unitsHint.prefix')}{' '}
                         <Link component={RouterLink} to="/settings">
                             {t('nav.settings')}
@@ -265,7 +273,6 @@ const WeightEntryFormContent: React.FC<WeightEntryFormContentProps> = ({
                     </Typography>
                 </Stack>
             </DialogContent>
-
             <DialogActions>
                 {existingMetric && (
                     <Button
@@ -287,7 +294,6 @@ const WeightEntryFormContent: React.FC<WeightEntryFormContentProps> = ({
                     {submitLabel}
                 </Button>
             </DialogActions>
-
             <Dialog open={isDeleteConfirmOpen} onClose={() => setIsDeleteConfirmOpen(false)} fullWidth maxWidth="xs">
                 <DialogTitle>{t('weightEntry.deleteDialog.title')}</DialogTitle>
                 <DialogContent>

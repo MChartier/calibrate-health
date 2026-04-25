@@ -395,7 +395,9 @@ const BarcodeScannerDialog: React.FC<Props> = ({ open, onClose, onDetected }) =>
             <DialogTitle>Scan UPC Barcode</DialogTitle>
             <DialogContent>
                 <Stack spacing={2}>
-                    <Typography variant="body2" color="text.secondary">
+                    <Typography variant="body2" sx={{
+                        color: "text.secondary"
+                    }}>
                         Align the barcode within the frame. If scanning is unavailable, enter the UPC/EAN digits
                         manually.
                     </Typography>
@@ -448,12 +450,14 @@ const BarcodeScannerDialog: React.FC<Props> = ({ open, onClose, onDetected }) =>
                             fullWidth
                             value={manualBarcode}
                             onChange={(event) => setManualBarcode(event.target.value)}
-                            inputProps={{ inputMode: 'numeric' }}
                             onKeyDown={(event) => {
                                 if (event.key === 'Enter') {
                                     event.preventDefault();
                                     submitBarcode(manualBarcode);
                                 }
+                            }}
+                            slotProps={{
+                                htmlInput: { inputMode: 'numeric' }
                             }}
                         />
                         <Button

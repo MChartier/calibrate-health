@@ -53,12 +53,13 @@ const SectionHeader: React.FC<SectionHeaderProps> = ({
             <Box sx={{ minWidth: 0 }}>
                 <Typography variant={titleVariant}>{title}</Typography>
                 {subtitle ? (
-                    <Typography variant="body2" color="text.secondary">
+                    <Typography variant="body2" sx={{
+                        color: "text.secondary"
+                    }}>
                         {subtitle}
                     </Typography>
                 ) : null}
             </Box>
-
             {actions ? <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>{actions}</Box> : null}
         </Box>
     );

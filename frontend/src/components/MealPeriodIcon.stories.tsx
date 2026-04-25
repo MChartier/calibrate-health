@@ -28,9 +28,9 @@ export const Single: Story = {};
 
 export const AllMealPeriods: Story = {
     render: () => (
-        <Stack direction="row" spacing={2} flexWrap="wrap" useFlexGap>
+        <Stack direction="row" spacing={2} useFlexGap sx={{ flexWrap: 'wrap' }}>
             {mealPeriods.map((mealPeriod) => (
-                <Stack key={mealPeriod} spacing={0.75} alignItems="center">
+                <Stack key={mealPeriod} spacing={0.75} sx={{ alignItems: 'center' }}>
                     <MealPeriodIcon mealPeriod={mealPeriod} fontSize="large" />
                     <Typography variant="caption">{mealPeriod.replaceAll('_', ' ')}</Typography>
                 </Stack>

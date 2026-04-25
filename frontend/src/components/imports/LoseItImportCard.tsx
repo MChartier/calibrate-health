@@ -36,14 +36,15 @@ const LoseItImportCard: React.FC = () => {
             <SectionHeader title={t('settings.importTitle')} sx={{ mb: 0.5 }} />
             <InlineStatusLine status={status} sx={{ mb: 1 }} />
             <Stack spacing={CARD_CONTENT_SPACING}>
-                <Typography color="text.secondary">
+                <Typography sx={{
+                    color: "text.secondary"
+                }}>
                     {t('settings.importDescription')}
                 </Typography>
                 <Button variant="outlined" onClick={() => setOpen(true)}>
                     {t('import.loseit.openButton')}
                 </Button>
             </Stack>
-
             <LoseItImportDialog
                 open={open}
                 onClose={() => setOpen(false)}
