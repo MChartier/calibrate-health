@@ -29,6 +29,8 @@
     "devcontainer:shell": "node scripts/devcontainer-worktree.mjs shell",
     "devcontainer:shell:new": "node scripts/devcontainer-worktree.mjs shell --remove-existing-container",
     "codex:devcontainer:start": "node scripts/codex-worktree-env.mjs devcontainer:start",
+    "codex:devcontainer:recreate": "node scripts/codex-worktree-env.mjs devcontainer:recreate",
+    "codex:devcontainer:down": "node scripts/codex-worktree-env.mjs down",
     "codex:setup-app": "node scripts/codex-worktree-env.mjs setup-app",
     "codex:db:migrate": "node scripts/codex-worktree-env.mjs db:migrate",
     "codex:db:reset": "node scripts/codex-worktree-env.mjs db:reset",
