@@ -273,8 +273,8 @@ model PushSubscription {
   id              Int      @id @default(autoincrement())
   user_id         Int
   user            User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  /// Browser-managed endpoint URL; unique per user so shared browsers can hold separate accounts.
-  endpoint        String
+  /// Browser-managed endpoint URL; globally unique so one browser endpoint maps to one account at a time.
+  endpoint        String   @unique
   /// Base64-encoded p256dh key for payload encryption.
   p256dh          String
   /// Base64-encoded auth key for payload encryption.
@@ -286,7 +286,6 @@ model PushSubscription {
   created_at      DateTime @default(now())
   updated_at      DateTime @updatedAt
 
-  @@unique([user_id, endpoint])
   @@index([user_id])
 }
 
