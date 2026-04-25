@@ -8,7 +8,6 @@ services:
       - ${GIT_DIR}:/workspaces/.git-dir:cached
       - ${GIT_COMMON_DIR}:/workspaces/.git-common:cached
       - npm_cache:/home/node/.npm
-      - ${CODEX_HOST_HOME}:/home/node/.codex-host:ro,cached
     ports:
       - "${BACKEND_PORT}:3000"
       - "${FRONTEND_PORT}:${FRONTEND_PORT}"
@@ -24,14 +23,9 @@ services:
       WEB_PUSH_PUBLIC_KEY: ${WEB_PUSH_PUBLIC_KEY}
       WEB_PUSH_PRIVATE_KEY: ${WEB_PUSH_PRIVATE_KEY}
       WEB_PUSH_SUBJECT: ${WEB_PUSH_SUBJECT}
-      CODEX_HOME: /home/node/.codex
-      CODEX_HOST_HOME: /home/node/.codex-host
       GIT_COMMON_DIR: /workspaces/.git-common
       GIT_DIR: /workspaces/.git-dir
       GIT_WORK_TREE: /workspaces/${WORKSPACE_FOLDER_NAME}
-      GH_AUTH_TOKEN: ${GH_AUTH_TOKEN}
-      GH_TOKEN: ${GH_TOKEN}
-      GITHUB_TOKEN: ${GITHUB_TOKEN}
       WORKTREE_COLOR: ${WORKTREE_COLOR}
       WORKTREE_IS_MAIN: ${WORKTREE_IS_MAIN}
       WORKTREE_NAME: ${WORKTREE_NAME}
@@ -41,7 +35,7 @@ services:
       VITE_WORKTREE_IS_MAIN: ${VITE_WORKTREE_IS_MAIN}
     depends_on:
       postgres:
-        condition: service_healthy
+        condition: service_started
 
   postgres:
     image: postgres:15-alpine
@@ -53,9 +47,9 @@ services:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U user -d fitness_app"]
-      interval: 5s
+      interval: 2s
       timeout: 5s
-      retries: 24
+      retries: 60
 
 volumes:
   postgres_data:

@@ -22,8 +22,8 @@ const commandMap = new Map([
   ["lint", { type: "exec", command: ["npm", "run", "lint"] }],
   ["build", { type: "exec", command: ["npm", "run", "build"] }],
   ["ci", { type: "exec", command: ["npm", "run", "ci:local"] }],
-  ["dev", { type: "exec", command: ["npm", "run", "dev"] }],
-  ["dev:test", { type: "exec", command: ["npm", "run", "dev:test"] }],
+  ["dev", { type: "exec", command: ["node", "scripts/dev-env.mjs", "dev"] }],
+  ["dev:test", { type: "exec", command: ["node", "scripts/dev-env.mjs", "dev"] }],
   [
     "reset-test-user-onboarding",
     { type: "exec", command: ["npm", "run", "dev:reset-test-user-onboarding"] },

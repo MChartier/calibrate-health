@@ -116,6 +116,14 @@ async function timed(label, task) {
 }
 
 /**
+ * Print a high-signal completion marker for Codex action output.
+ * @param {string} message - Completion message.
+ */
+function printDone(message) {
+  console.log(`\n[dev-env] DONE: ${message}`);
+}
+
+/**
  * Sleep for a short retry interval.
  * @param {number} ms - Milliseconds to sleep.
  */
@@ -287,6 +295,14 @@ async function ensureDependencies() {
 }
 
 /**
+ * Run dependency setup as a standalone user action.
+ */
+async function deps() {
+  await ensureDependencies();
+  printDone("Dependencies are ready.");
+}
+
+/**
  * Generate Prisma client code.
  */
 async function generatePrismaClient() {
@@ -430,6 +446,7 @@ async function migrateDatabase() {
     runMigrateDeploy();
   });
   await timed("Seed database", () => seedDatabase());
+  printDone("Database migrations are applied and seed data is ready.");
 }
 
 /**
@@ -443,12 +460,13 @@ async function resetDatabase() {
     run("npm", ["--prefix", "backend", "run", "db:reset", "--", "--force"]);
   });
   await timed("Seed database", () => seedDatabase({ force: true }));
+  printDone("Database was reset and seed data is ready.");
 }
 
 /**
  * Run full app setup for a worktree.
  */
-async function setup() {
+async function setup(doneMessage = "Setup complete.") {
   await ensureDependencies();
   await generatePrismaClient();
   await waitForDatabase();
@@ -456,6 +474,16 @@ async function setup() {
     runMigrateDeploy();
   });
   await timed("Seed database", () => seedDatabase());
+  printDone(doneMessage);
+}
+
+/**
+ * Ensure the app is ready, then start dev servers with the seeded test user.
+ */
+async function dev() {
+  await setup("Dev setup preflight complete.");
+  console.log("\n[dev-env] Starting dev server with seeded test-user auto-login...");
+  run("npm", ["run", "dev:test"]);
 }
 
 /**
@@ -466,6 +494,7 @@ async function test() {
   await timed("Run tests", () => {
     run("npm", ["test"]);
   });
+  printDone("Tests passed.");
 }
 
 /**
@@ -485,6 +514,7 @@ async function ci() {
   await timed("Run backend tests", () => {
     run("npm", ["--prefix", "backend", "test"]);
   });
+  printDone("Full local CI passed.");
 }
 
 function printHelp() {
@@ -497,6 +527,7 @@ function printHelp() {
       "  db:migrate  Apply migrations and seed without resetting data.",
       "  db:reset    Reset the disposable worktree DB, then seed it.",
       "  setup       Install deps, generate Prisma, migrate, and seed.",
+      "  dev         Ensure setup is ready, then run dev:test.",
       "  test        Install deps when needed, then run fast tests.",
       "  ci          Run the local equivalent of PR CI checks.",
     ].join("\n")
@@ -510,13 +541,15 @@ try {
     printHelp();
     process.exit(0);
   } else if (command === "deps") {
-    await ensureDependencies();
+    await deps();
   } else if (command === "db:migrate") {
     await migrateDatabase();
   } else if (command === "db:reset") {
     await resetDatabase();
   } else if (command === "setup") {
     await setup();
+  } else if (command === "dev") {
+    await dev();
   } else if (command === "test") {
     await test();
   } else if (command === "ci") {

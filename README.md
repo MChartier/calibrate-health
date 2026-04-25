@@ -140,9 +140,9 @@ node .codex/local-environment.setup.mjs
 ```
 
 The script targets `CODEX_WORKTREE_PATH` when the Codex app provides it, installs the repo-local Dev Containers CLI if
-needed, copies the source checkout's ignored `.env` into the new worktree when needed, and starts that worktree's
-devcontainer with isolated Compose services and ports. It intentionally does not install app dependencies, migrate the
-database, or seed data; those steps are exposed as Codex actions.
+needed into a host-level tool cache, copies the source checkout's ignored `.env` into the new worktree when needed, and
+starts that worktree's devcontainer with isolated Compose services and ports. It intentionally does not install app
+dependencies, migrate the database, or seed data; those steps are exposed as Codex actions.
 For Codex-managed worktrees whose folder is still named `calibrate-health`, the devcontainer identity is derived from
 the full worktree path so concurrent app-created worktrees do not share a Compose project, database volume, or dev ports.
 Backend and frontend `node_modules` are mounted as shared lockfile-hashed Docker volumes, so sibling worktrees with the
@@ -153,10 +153,13 @@ Recommended Codex app actions:
 - Setup: `npm run codex:setup-app`
 - Migrate DB: `npm run codex:db:migrate`
 - Reset DB: `npm run codex:db:reset`
-- Dev server: `npm run codex:dev`
+- Dev server with test-user auto-login: `npm run codex:dev`
 - Test: `npm run codex:test`
 - Full CI: `npm run codex:ci`
 - Shell: `npm run codex:shell`
+
+The Dev action runs the same setup checks as Setup first, but cached dependencies, already-applied migrations, and
+existing seed data are skipped. After the preflight passes, it starts `npm run dev:test`.
 
 When using VS Code with a Codex-created worktree container, use **Dev Containers: Attach to Running Container** and open
 `/workspaces/calibrate-health` inside the container. **Reopen in Container** follows VS Code's own devcontainer flow and
@@ -187,41 +190,11 @@ If you add/change the credentials, rebuild the devcontainer so the generated `.d
 
 To use USDA instead, set `FOOD_DATA_PROVIDER=usda` and supply `USDA_API_KEY` before rebuilding the devcontainer.
 
-#### Codex CLI auth (devcontainer)
+#### Codex app usage
 
-The devcontainer uses ChatGPT auth via your host Codex credentials. It bind-mounts your host
-`CODEX_HOME` (defaults to `~/.codex`) into `/home/node/.codex-host`, then copies `auth.json`
-into `/home/node/.codex` so you only need to log in once on the host (and avoid config schema
-mismatches inside the container).
-Set `CODEX_HOME` in your shell or repo-local `.env` if you store credentials elsewhere.
-
-Example (host machine):
-
-```sh
-codex login --device-auth
-# Optional: if your credentials live elsewhere, set CODEX_HOME before starting the devcontainer.
-export CODEX_HOME="/path/to/.codex"
-```
-
-If you change `CODEX_HOME`, rebuild the devcontainer so the generated `.devcontainer/.env` is refreshed.
-
-#### GitHub CLI auth (devcontainer)
-
-To let Codex (and you) run non-interactive GitHub operations like pushing branches and creating PRs, set a fine-grained
-PAT before the devcontainer is created/rebuilt. Prefer the repo-specific name `CALIBRATE_GH_PAT` (host env or repo-local
-`.env`). We also accept `GH_AUTH_TOKEN`, `GH_TOKEN`, or `GITHUB_TOKEN` if you already use those names.
-
-Example (host machine):
-
-```sh
-export CALIBRATE_GH_PAT="ghp_your_token_here"
-```
-
-During devcontainer init, the token is translated to `GH_AUTH_TOKEN` (and `GH_TOKEN`/`GITHUB_TOKEN`) for the container.
-The devcontainer installs `gh`, passes the token into the container, and configures:
-
-- `gh` to use the token without prompting.
-- `git push` to use an HTTPS *push* URL for `origin` (fetch stays as-is) with credentials supplied by `gh`.
+The Codex app runs outside the devcontainer and uses the repo-local actions above to execute commands inside it.
+The devcontainer does not install or configure the Codex CLI by default, which keeps new worktree startup focused on
+creating the app container quickly.
 
 #### Dev test user (optional)
 
@@ -298,7 +271,7 @@ screen.
 Push notes:
 
 - Browser push registration and delivery require backend VAPID env vars: `WEB_PUSH_PUBLIC_KEY`, `WEB_PUSH_PRIVATE_KEY`, and `WEB_PUSH_SUBJECT`.
-- In the devcontainer workflow, `.devcontainer/init-devcontainer-env.sh` auto-generates missing VAPID keys and writes them into `.devcontainer/.env` during container initialization.
+- In the devcontainer workflow, `.devcontainer/init-devcontainer-env.mjs` auto-generates missing VAPID keys and writes them into `.devcontainer/.env` during container initialization.
 - For local backend runs outside the devcontainer (or for plain `docker compose`), set `WEB_PUSH_*` values explicitly (see `.env.example` and `backend/.env.example`).
 
 ## Production / staging (single origin)

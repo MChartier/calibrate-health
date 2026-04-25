@@ -2,24 +2,25 @@
 import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
+import { ensureDevcontainerCliCache } from "../scripts/devcontainer-cli-cache.mjs";
 
 const workspacePath = path.resolve(process.env.CODEX_WORKTREE_PATH || process.cwd());
 const sourceTreePath = process.env.CODEX_SOURCE_TREE_PATH
   ? path.resolve(process.env.CODEX_SOURCE_TREE_PATH)
   : "";
-
-const npmBin = "npm";
+const npmBin = process.platform === "win32" ? "npm.cmd" : "npm";
 
 /**
  * Run a setup command with inherited stdio so Codex shows actionable logs.
  * @param {string} command - Executable to run.
  * @param {string[]} args - Arguments for the executable.
+ * @param {Record<string, string>} env - Extra environment variables.
  */
-function run(command, args) {
+function run(command, args, env = {}) {
   const result = spawnSync(command, args, {
     cwd: workspacePath,
+    env: { ...process.env, ...env },
     stdio: "inherit",
-    shell: process.platform === "win32",
   });
   if (result.error) {
     throw result.error;
@@ -43,18 +44,8 @@ if (sourceTreePath && sourceTreePath !== workspacePath) {
   }
 }
 
-const devcontainerBin = path.join(
-  workspacePath,
-  "node_modules",
-  ".bin",
-  process.platform === "win32" ? "devcontainer.cmd" : "devcontainer"
-);
+const devcontainerCli = ensureDevcontainerCliCache(workspacePath);
 
-if (!fs.existsSync(devcontainerBin)) {
-  const installArgs = fs.existsSync(path.join(workspacePath, "package-lock.json"))
-    ? ["ci", "--ignore-scripts", "--no-audit", "--fund=false"]
-    : ["install", "--ignore-scripts", "--no-audit", "--fund=false"];
-  run(npmBin, installArgs);
-}
-
-run(npmBin, ["run", "codex:devcontainer:start"]);
+run(npmBin, ["run", "codex:devcontainer:start"], {
+  DEVCONTAINER_CLI_JS: devcontainerCli.cliJs,
+});

@@ -2,6 +2,7 @@
 import { execFileSync, spawn } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
+import { resolveDevcontainerCliCache } from "./devcontainer-cli-cache.mjs";
 
 const LOCAL_DEVCONTAINER_BIN = path.resolve(
   process.cwd(),
@@ -16,16 +17,29 @@ const LOCAL_DEVCONTAINER_JS = path.resolve(
   "cli",
   "devcontainer.js"
 );
+const ENV_DEVCONTAINER_JS = process.env.DEVCONTAINER_CLI_JS || "";
+const SHARED_DEVCONTAINER_JS = ENV_DEVCONTAINER_JS || resolveDevcontainerCliCache(process.cwd()).cliJs;
+const HAS_ENV_DEVCONTAINER_JS = Boolean(ENV_DEVCONTAINER_JS) && fs.existsSync(ENV_DEVCONTAINER_JS);
+const HAS_LOCAL_DEVCONTAINER_JS = fs.existsSync(LOCAL_DEVCONTAINER_JS);
+const HAS_SHARED_DEVCONTAINER_JS = fs.existsSync(SHARED_DEVCONTAINER_JS);
 const DEVCONTAINER_BIN = fs.existsSync(LOCAL_DEVCONTAINER_BIN)
   ? LOCAL_DEVCONTAINER_BIN
   : "devcontainer";
 const DEVCONTAINER_COMMAND =
-  process.platform === "win32" && fs.existsSync(LOCAL_DEVCONTAINER_JS)
+  HAS_ENV_DEVCONTAINER_JS
     ? process.execPath
+    : process.platform === "win32" && HAS_LOCAL_DEVCONTAINER_JS
+    ? process.execPath
+    : HAS_SHARED_DEVCONTAINER_JS
+      ? process.execPath
     : DEVCONTAINER_BIN;
 const DEVCONTAINER_BASE_ARGS =
-  process.platform === "win32" && fs.existsSync(LOCAL_DEVCONTAINER_JS)
+  HAS_ENV_DEVCONTAINER_JS
+    ? [ENV_DEVCONTAINER_JS]
+    : process.platform === "win32" && HAS_LOCAL_DEVCONTAINER_JS
     ? [LOCAL_DEVCONTAINER_JS]
+    : HAS_SHARED_DEVCONTAINER_JS
+      ? [SHARED_DEVCONTAINER_JS]
     : [];
 const SENSITIVE_OUTPUT_KEYS = [
   "CALIBRATE_GH_PAT",
