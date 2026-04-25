@@ -1,40 +1,64 @@
+import { lazy, Suspense, type ComponentType, type ReactElement } from 'react';
+import { Box, LinearProgress } from '@mui/material';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './components/Layout';
-import Home from './pages/Home';
-import Login from './pages/Login';
-import Register from './pages/Register';
-import Dashboard from './pages/Dashboard';
-import Log from './pages/Log';
-import Goals from './pages/Goals';
-import Settings from './pages/Settings';
-import Profile from './pages/Profile';
-import Onboarding from './pages/Onboarding';
-import DevDashboard from './pages/DevDashboard';
-import PrivacyPolicy from './pages/PrivacyPolicy';
-
 import ProtectedRoute from './components/ProtectedRoute';
 import PublicRoute from './components/PublicRoute';
+
+const Home = lazy(() => import('./pages/Home'));
+const Login = lazy(() => import('./pages/Login'));
+const Register = lazy(() => import('./pages/Register'));
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const Log = lazy(() => import('./pages/Log'));
+const Goals = lazy(() => import('./pages/Goals'));
+const Settings = lazy(() => import('./pages/Settings'));
+const Profile = lazy(() => import('./pages/Profile'));
+const Onboarding = lazy(() => import('./pages/Onboarding'));
+const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'));
+const DevDashboard = import.meta.env.DEV ? lazy(() => import('./pages/DevDashboard')) : null;
+
+/**
+ * Lightweight page placeholder that keeps the persistent layout chrome visible during route chunk loads.
+ */
+function RouteLoadingFallback(): ReactElement {
+    return (
+        <Box sx={{ py: 3 }}>
+            <LinearProgress aria-label="Loading page" />
+        </Box>
+    );
+}
+
+/**
+ * Wrap route-level lazy pages so each route can split without duplicating Suspense boilerplate.
+ */
+function renderRouteElement(Page: ComponentType): ReactElement {
+    return (
+        <Suspense fallback={<RouteLoadingFallback />}>
+            <Page />
+        </Suspense>
+    );
+}
 
 function App() {
     return (
         <Routes>
             <Route path="/" element={<Layout />}>
-                <Route index element={<Home />} />
-                <Route path="privacy" element={<PrivacyPolicy />} />
+                <Route index element={renderRouteElement(Home)} />
+                <Route path="privacy" element={renderRouteElement(PrivacyPolicy)} />
                 <Route element={<PublicRoute />}>
-                    <Route path="login" element={<Login />} />
-                    <Route path="register" element={<Register />} />
+                    <Route path="login" element={renderRouteElement(Login)} />
+                    <Route path="register" element={renderRouteElement(Register)} />
                 </Route>
-                {import.meta.env.DEV && <Route path="dev" element={<DevDashboard />} />}
+                {DevDashboard && <Route path="dev" element={renderRouteElement(DevDashboard)} />}
 
                 <Route element={<ProtectedRoute />}>
-                    <Route path="onboarding" element={<Onboarding />} />
-                    <Route path="dashboard" element={<Dashboard />} />
-                    <Route path="log" element={<Log />} />
-                    <Route path="goals" element={<Goals />} />
+                    <Route path="onboarding" element={renderRouteElement(Onboarding)} />
+                    <Route path="dashboard" element={renderRouteElement(Dashboard)} />
+                    <Route path="log" element={renderRouteElement(Log)} />
+                    <Route path="goals" element={renderRouteElement(Goals)} />
                     <Route path="history" element={<Navigate to="/goals" replace />} />
-                    <Route path="settings" element={<Settings />} />
-                    <Route path="profile" element={<Profile />} />
+                    <Route path="settings" element={renderRouteElement(Settings)} />
+                    <Route path="profile" element={renderRouteElement(Profile)} />
                 </Route>
             </Route>
         </Routes>

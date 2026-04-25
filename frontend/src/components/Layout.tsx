@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import {
     AppBar,
@@ -48,7 +48,6 @@ import { getAvatarLabel } from '../utils/avatarLabel';
 import { getTodayIsoDate } from '../utils/date';
 import { useI18n } from '../i18n/useI18n';
 import { QUICK_ADD_FAB_PAGE_BOTTOM_PADDING } from '../constants/quickAddFab';
-import LogQuickAddFab from './LogQuickAddFab';
 import LogDatePickerControl from './LogDatePickerControl';
 import InAppNotificationsDrawer from './InAppNotificationsDrawer';
 import { useInAppNotificationBadge } from '../hooks/useInAppNotificationBadge';
@@ -78,6 +77,8 @@ const NAV_DATE_PICKER_WIDTH_PX = { xs: 122, sm: 168, md: 200 }; // Narrower widt
 const NAV_DATE_PICKER_MIN_WIDTH_PX = 104; // Allow the picker to shrink on xs while staying readable.
 const NAV_DATE_PICKER_MAX_WIDTH_PX = 220; // Keep the date picker from growing too wide on desktop layouts.
 const NAV_CENTER_PADDING_X_SPACING = { xs: 0.5, sm: 1 }; // Add small horizontal breathing room around the centered date controls.
+// Load the food/weight quick-add dialogs only on the log route; they pull in provider search and form code.
+const LazyLogQuickAddFab = lazy(() => import('./LogQuickAddFab'));
 const NAV_NOTIFICATION_BADGE_MAX = 99; // Prevent oversized badge strings from crowding the header controls.
 const NAV_INSTALL_ICON_SIZE = 'small'; // Keep the install icon compact on xs viewports where toolbar width is tight.
 /**
@@ -664,7 +665,11 @@ const LayoutShell: React.FC = () => {
                 />
             )}
 
-            {showQuickAdd && <LogQuickAddFab date={fabDate} />}
+            {showQuickAdd && (
+                <Suspense fallback={null}>
+                    <LazyLogQuickAddFab date={fabDate} />
+                </Suspense>
+            )}
 
             <Dialog
                 open={isIosInstallDialogOpen && !isInstalled}

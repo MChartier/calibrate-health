@@ -148,6 +148,10 @@ function getPwaOptions(enableServiceWorkerInDev: boolean): Partial<VitePWAOption
     registerType: 'autoUpdate',
     srcDir: 'src',
     filename: 'service-worker.ts',
+    injectManifest: {
+      // Vite 8 deprecates the plugin's ES service worker inline bundle path; iife keeps one SW file without inlineDynamicImports.
+      rollupFormat: 'iife',
+    },
     devOptions: {
       // Keep local service workers opt-in so regular dev mode stays HMR-friendly by default.
       enabled: enableServiceWorkerInDev,
