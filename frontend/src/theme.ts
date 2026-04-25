@@ -663,7 +663,7 @@ export function createAppTheme(mode: PaletteMode) {
             },
             MuiMarkElement: {
                 styleOverrides: {
-                    root: ({ theme }) => ({
+                    root: ({ theme }: { theme: Theme }) => ({
                         fill: theme.palette.background.paper,
                         stroke: theme.palette.primary.main,
                         strokeWidth: 2

@@ -43,16 +43,18 @@ const OnboardingSummaryRow: React.FC<OnboardingSummaryRowProps> = ({ label, valu
             <Box sx={{ minWidth: 0 }}>
                 <Typography
                     variant="caption"
-                    color="text.secondary"
-                    sx={{ fontWeight: 700, letterSpacing: SUMMARY_ROW_LABEL_LETTER_SPACING, textTransform: 'uppercase' }}
-                >
+                    sx={{
+                        color: "text.secondary",
+                        fontWeight: 700,
+                        letterSpacing: SUMMARY_ROW_LABEL_LETTER_SPACING,
+                        textTransform: 'uppercase'
+                    }}>
                     {label}
                 </Typography>
                 <Typography variant="body2" sx={{ fontWeight: 700, wordBreak: 'break-word' }}>
                     {value}
                 </Typography>
             </Box>
-
             {onEdit && (
                 <Button variant="text" size="small" onClick={onEdit} sx={{ flexShrink: 0 }}>
                     Edit

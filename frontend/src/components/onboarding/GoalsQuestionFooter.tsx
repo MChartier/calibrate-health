@@ -111,7 +111,6 @@ const GoalsQuestionFooter: React.FC<GoalsQuestionFooterProps> = (props) => {
                 prompt={prompt}
                 progressLabel={props.progressLabel}
             />
-
             {props.questionKey === 'currentWeight' && (
                 <Box>
                     <TextField
@@ -119,10 +118,6 @@ const GoalsQuestionFooter: React.FC<GoalsQuestionFooterProps> = (props) => {
                         type="number"
                         value={props.currentWeight}
                         onChange={(e) => props.onCurrentWeightChange(e.target.value)}
-                        inputProps={{ min: 1, step: 0.1, inputMode: 'decimal' }}
-                        InputProps={{
-                            endAdornment: <InputAdornment position="end">{weightUnitLabel}</InputAdornment>
-                        }}
                         required
                         disabled={props.disabled}
                         size="small"
@@ -131,7 +126,13 @@ const GoalsQuestionFooter: React.FC<GoalsQuestionFooterProps> = (props) => {
                         error={Boolean(currentWeightErrorText)}
                         helperText={currentWeightErrorText ?? ' '}
                         onKeyDown={handleEnterToSubmit}
-                    />
+                        slotProps={{
+                            input: {
+                                endAdornment: <InputAdornment position="end">{weightUnitLabel}</InputAdornment>
+                            },
+
+                            htmlInput: { min: 1, step: 0.1, inputMode: 'decimal' }
+                        }} />
 
                     <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 0.5 }}>
                         <ToggleButtonGroup
@@ -155,7 +156,6 @@ const GoalsQuestionFooter: React.FC<GoalsQuestionFooterProps> = (props) => {
                     </Box>
                 </Box>
             )}
-
             {props.questionKey === 'targetWeight' && (
                 <Box>
                     <TextField
@@ -163,10 +163,6 @@ const GoalsQuestionFooter: React.FC<GoalsQuestionFooterProps> = (props) => {
                         type="number"
                         value={props.targetWeight}
                         onChange={(e) => props.onTargetWeightChange(e.target.value)}
-                        inputProps={{ min: 1, step: 0.1, inputMode: 'decimal' }}
-                        InputProps={{
-                            endAdornment: <InputAdornment position="end">{weightUnitLabel}</InputAdornment>
-                        }}
                         required
                         disabled={props.disabled}
                         size="small"
@@ -175,7 +171,13 @@ const GoalsQuestionFooter: React.FC<GoalsQuestionFooterProps> = (props) => {
                         error={Boolean(targetWeightErrorText)}
                         helperText={targetWeightErrorText ?? ' '}
                         onKeyDown={handleEnterToSubmit}
-                    />
+                        slotProps={{
+                            input: {
+                                endAdornment: <InputAdornment position="end">{weightUnitLabel}</InputAdornment>
+                            },
+
+                            htmlInput: { min: 1, step: 0.1, inputMode: 'decimal' }
+                        }} />
 
                     <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 0.5 }}>
                         <ToggleButtonGroup
@@ -199,7 +201,6 @@ const GoalsQuestionFooter: React.FC<GoalsQuestionFooterProps> = (props) => {
                     </Box>
                 </Box>
             )}
-
             {props.questionKey === 'pace' && paceGoalMode && (
                 <FormControl fullWidth disabled={props.disabled} size="small">
                     <InputLabel>Pace</InputLabel>
@@ -239,10 +240,14 @@ const GoalsQuestionFooter: React.FC<GoalsQuestionFooterProps> = (props) => {
                                     }}
                                 >
                                     <Box>
-                                        <Typography variant="body2" fontWeight={800}>
+                                        <Typography variant="body2" sx={{
+                                            fontWeight: 800
+                                        }}>
                                             {hint}
                                         </Typography>
-                                        <Typography variant="caption" color="text.secondary">
+                                        <Typography variant="caption" sx={{
+                                            color: "text.secondary"
+                                        }}>
                                             {sign}
                                             {val} kcal/day
                                         </Typography>
@@ -252,7 +257,12 @@ const GoalsQuestionFooter: React.FC<GoalsQuestionFooterProps> = (props) => {
                         })}
                     </Select>
                     {paceCaloriesLabel && paceHint && (
-                        <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5 }}>
+                        <Typography
+                            variant="caption"
+                            sx={{
+                                color: "text.secondary",
+                                mt: 0.5
+                            }}>
                             {paceCaloriesLabel} ({paceHint}). You can adjust this later.
                         </Typography>
                     )}

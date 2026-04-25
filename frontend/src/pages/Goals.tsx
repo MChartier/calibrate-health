@@ -17,7 +17,7 @@ import ChevronLeftRoundedIcon from '@mui/icons-material/ChevronLeftRounded';
 import ChevronRightRoundedIcon from '@mui/icons-material/ChevronRightRounded';
 import axios from 'axios';
 import { useQuery } from '@tanstack/react-query';
-import { LineChart } from '@mui/x-charts/LineChart';
+import { LineChart, areaElementClasses, lineElementClasses, markElementClasses } from '@mui/x-charts/LineChart';
 import { ChartsReferenceLine } from '@mui/x-charts/ChartsReferenceLine';
 import GoalTrackerCard from '../components/GoalTrackerCard';
 import { useAuth } from '../context/useAuth';
@@ -395,7 +395,12 @@ const Goals: React.FC = () => {
     }, [t, trendMeta?.volatility]);
 
     const summaryLine = trendMeta ? (
-        <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center' }}>
+        <Typography
+            variant="body2"
+            sx={{
+                color: "text.secondary",
+                textAlign: 'center'
+            }}>
             {t('goals.weightHistorySummary.weeklyRate', {
                 value: trendMeta.weekly_rate.toFixed(2),
                 unit: unitLabel
@@ -488,9 +493,11 @@ const Goals: React.FC = () => {
                         </Tooltip>
                         <Typography
                             variant="caption"
-                            color="text.secondary"
-                            sx={{ minWidth: `${PAN_WINDOW_LABEL_MIN_WIDTH_CH}ch`, textAlign: 'center' }}
-                        >
+                            sx={{
+                                color: "text.secondary",
+                                minWidth: `${PAN_WINDOW_LABEL_MIN_WIDTH_CH}ch`,
+                                textAlign: 'center'
+                            }}>
                             {visibleWindowLabel}
                         </Typography>
                         <Tooltip title={t('goals.weightHistoryPanNext')}>
@@ -529,7 +536,9 @@ const Goals: React.FC = () => {
             </Box>
         );
     } else if (points.length === 0) {
-        weightHistoryContent = <Typography color="text.secondary">{t('goals.noWeightEntries')}</Typography>;
+        weightHistoryContent = <Typography sx={{
+            color: "text.secondary"
+        }}>{t('goals.noWeightEntries')}</Typography>;
     } else {
         weightHistoryContent = (
             <Stack spacing={1.5}>
@@ -619,24 +628,24 @@ const Goals: React.FC = () => {
                         height={CHART_HEIGHT_PX}
                         margin={chartMargin}
                         skipAnimation={false}
-                        slotProps={{ legend: { hidden: true } }}
                         tooltip={{ trigger: 'axis' }}
+                        slotProps={{ legend: { hidden: true }, mark: { shape: 'circle' } }}
                         sx={{
-                            '& .MuiAreaElement-series-expectedRangeBand': {
+                            [`& .${areaElementClasses.root}[data-series="expectedRangeBand"]`]: {
                                 fill: expectedRangeFillColor,
                                 fillOpacity: 1
                             },
-                            '& .MuiLineElement-series-expectedRangeBand': {
+                            [`& .${lineElementClasses.root}[data-series="expectedRangeBand"]`]: {
                                 stroke: expectedRangeEdgeColor,
                                 strokeWidth: 1
                             },
-                            '& .MuiLineElement-series-trend': {
+                            [`& .${lineElementClasses.root}[data-series="trend"]`]: {
                                 strokeWidth: TREND_LINE_STROKE_WIDTH_PX
                             },
-                            '& .MuiLineElement-series-raw': {
+                            [`& .${lineElementClasses.root}[data-series="raw"]`]: {
                                 strokeWidth: RAW_LINE_STROKE_WIDTH_PX
                             },
-                            '& .MuiMarkElement-series-raw': {
+                            [`& .${markElementClasses.root}[data-series="raw"]`]: {
                                 stroke: rawLineColor,
                                 strokeWidth: RAW_MARK_STROKE_WIDTH_PX,
                                 opacity: rawMarksVisible ? 1 : 0,
@@ -675,7 +684,9 @@ const Goals: React.FC = () => {
                                 backgroundColor: rawLineColor
                             }}
                         />
-                        <Typography variant="body2" color="text.secondary">
+                        <Typography variant="body2" sx={{
+                            color: "text.secondary"
+                        }}>
                             {rawWeightSeriesLabel}
                         </Typography>
                     </Box>
@@ -689,7 +700,9 @@ const Goals: React.FC = () => {
                                 backgroundColor: trendLineColor
                             }}
                         />
-                        <Typography variant="body2" color="text.secondary">
+                        <Typography variant="body2" sx={{
+                            color: "text.secondary"
+                        }}>
                             {trendSeriesLabel}
                         </Typography>
                     </Box>
@@ -705,7 +718,9 @@ const Goals: React.FC = () => {
                                 border: `1px solid ${expectedRangeEdgeColor}`
                             }}
                         />
-                        <Typography variant="body2" color="text.secondary">
+                        <Typography variant="body2" sx={{
+                            color: "text.secondary"
+                        }}>
                             {expectedRangeLabel}
                         </Typography>
                     </Box>
@@ -734,7 +749,9 @@ const Goals: React.FC = () => {
                     >
                         <Box sx={{ minWidth: 0, flexGrow: 1 }}>
                             <Typography variant="h6">{t('goals.weightHistoryTitle')}</Typography>
-                            <Typography variant="body2" color="text.secondary">
+                            <Typography variant="body2" sx={{
+                                color: "text.secondary"
+                            }}>
                                 {t('goals.weightHistoryExplainer.inline')}
                             </Typography>
                         </Box>

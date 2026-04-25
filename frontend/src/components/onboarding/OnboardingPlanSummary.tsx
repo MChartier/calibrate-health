@@ -180,23 +180,24 @@ const OnboardingPlanSummary: React.FC<OnboardingPlanSummaryProps> = ({
                 <Typography variant="h5" gutterBottom>
                     Your plan is ready
                 </Typography>
-                <Typography color="text.secondary">
+                <Typography sx={{
+                    color: "text.secondary"
+                }}>
                     This is your estimated daily calorie budget. Log food against this target, and we&apos;ll track progress over time.
                 </Typography>
             </Box>
-
             <Box>
                 <Typography variant="h3" sx={{ fontWeight: SUMMARY_NUMBER_FONT_WEIGHT }} color="primary">
                     {primaryTargetText}
                 </Typography>
-                <Typography variant="body2" color="text.secondary">
+                <Typography variant="body2" sx={{
+                    color: "text.secondary"
+                }}>
                     Estimated burn (TDEE): {typeof tdee === 'number' ? Math.round(tdee) : '—'} kcal/day
                     {goalInfo ? ` | ${goalInfo.label}` : ''}
                 </Typography>
             </Box>
-
             <Divider />
-
             <Stack spacing={1.25}>
                 <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
                     How we calculated it
@@ -206,7 +207,9 @@ const OnboardingPlanSummary: React.FC<OnboardingPlanSummaryProps> = ({
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 2 }}>
                         <Box sx={{ minWidth: 0 }}>
                             <Typography variant="body2">Basal Metabolic Rate (BMR)</Typography>
-                            <Typography variant="caption" color="text.secondary">
+                            <Typography variant="caption" sx={{
+                                color: "text.secondary"
+                            }}>
                                 From sex, age, height, weight (Mifflin-St Jeor)
                             </Typography>
                         </Box>
@@ -221,7 +224,9 @@ const OnboardingPlanSummary: React.FC<OnboardingPlanSummaryProps> = ({
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 2 }}>
                         <Box sx={{ minWidth: 0 }}>
                             <Typography variant="body2">Activity adjustment</Typography>
-                            <Typography variant="caption" color="text.secondary">
+                            <Typography variant="caption" sx={{
+                                color: "text.secondary"
+                            }}>
                                 Level: {activityLevelTitle || '—'} | Multiplier {activityMultiplier ?? '—'}x
                             </Typography>
                         </Box>
@@ -236,7 +241,9 @@ const OnboardingPlanSummary: React.FC<OnboardingPlanSummaryProps> = ({
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 2 }}>
                         <Box sx={{ minWidth: 0 }}>
                             <Typography variant="body2">Goal adjustment</Typography>
-                            <Typography variant="caption" color="text.secondary">
+                            <Typography variant="caption" sx={{
+                                color: "text.secondary"
+                            }}>
                                 {goalInfo?.caption ?? 'Deficit (lose) or surplus (gain) applied to your TDEE'}
                             </Typography>
                         </Box>
@@ -253,20 +260,29 @@ const OnboardingPlanSummary: React.FC<OnboardingPlanSummaryProps> = ({
                     </Box>
 
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 2 }}>
-                        <Typography variant="body2" fontWeight={600}>
+                        <Typography variant="body2" sx={{
+                            fontWeight: 600
+                        }}>
                             Daily target
                         </Typography>
-                        <Typography variant="body2" fontWeight={600} sx={{ textAlign: 'right', minWidth: BREAKDOWN_NUMBER_MIN_WIDTH_PX }}>
+                        <Typography
+                            variant="body2"
+                            sx={{
+                                fontWeight: 600,
+                                textAlign: 'right',
+                                minWidth: BREAKDOWN_NUMBER_MIN_WIDTH_PX
+                            }}>
                             {typeof dailyTarget === 'number' ? `${Math.round(dailyTarget)} kcal` : '—'}
                         </Typography>
                     </Box>
                 </Stack>
 
-                <Typography variant="body2" color="text.secondary">
+                <Typography variant="body2" sx={{
+                    color: "text.secondary"
+                }}>
                     This is an estimate, not a perfect measurement. You can change your goal pace and profile details any time in the app.
                 </Typography>
             </Stack>
-
             {projectedTargetDate && (
                 <Box
                     sx={(theme) => {
@@ -279,16 +295,23 @@ const OnboardingPlanSummary: React.FC<OnboardingPlanSummaryProps> = ({
                 >
                     <Typography
                         variant="overline"
-                        color="text.secondary"
-                        sx={{ fontWeight: 900, letterSpacing: TARGET_DATE_LABEL_LETTER_SPACING }}
-                    >
+                        sx={{
+                            color: "text.secondary",
+                            fontWeight: 900,
+                            letterSpacing: TARGET_DATE_LABEL_LETTER_SPACING
+                        }}>
                         Target date (estimate)
                     </Typography>
                     <Typography variant="h4" sx={{ fontWeight: 900, lineHeight: 1.1 }} color="secondary">
                         {projectedTargetDate.label}
                     </Typography>
                     {projectionCaption && (
-                        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                        <Typography
+                            variant="body2"
+                            sx={{
+                                color: "text.secondary",
+                                mt: 0.5
+                            }}>
                             {projectionCaption}
                         </Typography>
                     )}

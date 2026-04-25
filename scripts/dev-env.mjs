@@ -22,6 +22,7 @@ const packages = [
     name: "backend",
     directory: path.join(repoRoot, "backend"),
     installArgs: ["ci", "--prefer-offline", "--no-audit", "--fund=false"],
+    requiredPaths: ["node_modules/ts-node/package.json"],
   },
   {
     name: "frontend",
@@ -32,6 +33,11 @@ const packages = [
       "--prefer-offline",
       "--no-audit",
       "--fund=false",
+    ],
+    requiredPaths: [
+      "node_modules/.bin/vite",
+      "node_modules/react/package.json",
+      "node_modules/react-dom/package.json",
     ],
   },
 ];
@@ -300,6 +306,15 @@ function hasCurrentInstall(packageConfig) {
  * @returns {{ current: boolean, reason: string }} Install-cache status.
  */
 function dependencyInstallStatus(packageConfig) {
+  for (const requiredPath of packageConfig.requiredPaths ?? []) {
+    if (!fs.existsSync(path.join(packageConfig.directory, requiredPath))) {
+      return {
+        current: false,
+        reason: `required dependency path is missing (${requiredPath})`,
+      };
+    }
+  }
+
   const sentinel = readInstallSentinel(packageConfig.directory);
   if (!sentinel) {
     return {

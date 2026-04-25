@@ -120,9 +120,10 @@ const FoodSearchResultsList: React.FC<Props> = ({
                             <ListItemText
                                 primary={item.description}
                                 secondary={secondary || undefined}
-                                primaryTypographyProps={{ variant: 'body2' }}
-                                secondaryTypographyProps={{ variant: 'caption', color: 'text.secondary' }}
-                            />
+                                slotProps={{
+                                    primary: { variant: 'body2' },
+                                    secondary: { variant: 'caption', color: 'text.secondary' }
+                                }} />
                         </ListItemButton>
                     );
                 })}
@@ -138,9 +139,13 @@ const FoodSearchResultsList: React.FC<Props> = ({
                     }}
                 >
                     {isLoadingMore ? (
-                        <Stack direction="row" spacing={1} alignItems="center">
+                        <Stack direction="row" spacing={1} sx={{
+                            alignItems: "center"
+                        }}>
                             <CircularProgress size={18} />
-                            <Typography variant="caption" color="text.secondary">
+                            <Typography variant="caption" sx={{
+                                color: "text.secondary"
+                            }}>
                                 Loading more...
                             </Typography>
                         </Stack>
@@ -149,7 +154,9 @@ const FoodSearchResultsList: React.FC<Props> = ({
                             Load more
                         </Button>
                     ) : (
-                        <Typography variant="caption" color="text.secondary">
+                        <Typography variant="caption" sx={{
+                            color: "text.secondary"
+                        }}>
                             End of results
                         </Typography>
                     )}

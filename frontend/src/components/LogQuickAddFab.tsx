@@ -75,23 +75,30 @@ const LogQuickAddFab: React.FC<LogQuickAddFabProps> = ({ date }) => {
                 <SpeedDialAction
                     key="add-food"
                     icon={<RestaurantIcon />}
-                    tooltipTitle={t('log.speedDial.addFood')}
                     onClick={() => {
                         haptic.tap();
                         openFoodDialogForMeal(null);
+                    }}
+                    slotProps={{
+                        tooltip: {
+                            title: t('log.speedDial.addFood')
+                        }
                     }}
                 />
                 <SpeedDialAction
                     key="add-weight"
                     icon={<MonitorWeightIcon />}
-                    tooltipTitle={t('log.speedDial.addWeight')}
                     onClick={() => {
                         haptic.tap();
                         openWeightDialogFromFab();
                     }}
+                    slotProps={{
+                        tooltip: {
+                            title: t('log.speedDial.addWeight')
+                        }
+                    }}
                 />
             </SpeedDial>
-
             <Dialog
                 open={dialogs.isFoodDialogOpen}
                 onClose={dialogs.closeFoodDialog}
@@ -99,14 +106,16 @@ const LogQuickAddFab: React.FC<LogQuickAddFabProps> = ({ date }) => {
                 fullWidth={!isFoodDialogFullScreen}
                 maxWidth={isFoodDialogFullScreen ? false : 'sm'}
                 scroll="paper"
-                PaperProps={{
-                    sx: {
-                        height: isFoodDialogFullScreen ? '100dvh' : 'min(90dvh, 860px)',
-                        maxHeight: isFoodDialogFullScreen ? '100dvh' : 'min(90dvh, 860px)',
-                        m: isFoodDialogFullScreen ? 0 : 2,
-                        borderRadius: isFoodDialogFullScreen ? 0 : 2,
-                        display: 'flex',
-                        flexDirection: 'column'
+                slotProps={{
+                    paper: {
+                        sx: {
+                            height: isFoodDialogFullScreen ? '100dvh' : 'min(90dvh, 860px)',
+                            maxHeight: isFoodDialogFullScreen ? '100dvh' : 'min(90dvh, 860px)',
+                            m: isFoodDialogFullScreen ? 0 : 2,
+                            borderRadius: isFoodDialogFullScreen ? 0 : 2,
+                            display: 'flex',
+                            flexDirection: 'column'
+                        }
                     }
                 }}
             >
@@ -135,12 +144,16 @@ const LogQuickAddFab: React.FC<LogQuickAddFabProps> = ({ date }) => {
                     }}
                 />
             </Dialog>
-
             <Dialog open={dialogs.isWeightDialogOpen} onClose={dialogs.closeWeightDialog} fullWidth maxWidth="sm">
                 <DialogTitle sx={{ position: 'relative', pr: 6 }}>
                     <Box sx={{ display: 'flex', flexDirection: 'column' }}>
                         <Box component="span">{t('log.dialog.trackWeight')}</Box>
-                        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25 }}>
+                        <Typography
+                            variant="body2"
+                            sx={{
+                                color: "text.secondary",
+                                mt: 0.25
+                            }}>
                             {t(subtitleKey, { date: weightDateLabel })}
                         </Typography>
                     </Box>

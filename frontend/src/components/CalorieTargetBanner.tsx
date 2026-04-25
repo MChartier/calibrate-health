@@ -85,7 +85,9 @@ const CalorieTargetBanner: React.FC<CalorieTargetBannerProps> = ({ isDashboard =
             <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 1 }}>
                 <Box>
                     <Typography variant="body2">{t('calorieTarget.breakdown.bmr.title')}</Typography>
-                    <Typography variant="caption" color="text.secondary">
+                    <Typography variant="caption" sx={{
+                        color: "text.secondary"
+                    }}>
                         {t('calorieTarget.breakdown.bmr.caption')}
                     </Typography>
                 </Box>
@@ -99,7 +101,9 @@ const CalorieTargetBanner: React.FC<CalorieTargetBannerProps> = ({ isDashboard =
             <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 1 }}>
                 <Box>
                     <Typography variant="body2">{t('calorieTarget.breakdown.activity.title')}</Typography>
-                    <Typography variant="caption" color="text.secondary">
+                    <Typography variant="caption" sx={{
+                        color: "text.secondary"
+                    }}>
                         {t('calorieTarget.breakdown.activity.caption', {
                             level: activityLevelTitle ?? '—',
                             multiplier: activityMultiplier ?? '—'
@@ -116,7 +120,9 @@ const CalorieTargetBanner: React.FC<CalorieTargetBannerProps> = ({ isDashboard =
             <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 1 }}>
                 <Box>
                     <Typography variant="body2">{t('calorieTarget.breakdown.goal.title')}</Typography>
-                    <Typography variant="caption" color="text.secondary">
+                    <Typography variant="caption" sx={{
+                        color: "text.secondary"
+                    }}>
                         {t('calorieTarget.breakdown.goal.caption')}
                     </Typography>
                 </Box>
@@ -133,10 +139,19 @@ const CalorieTargetBanner: React.FC<CalorieTargetBannerProps> = ({ isDashboard =
                 </Typography>
             </Box>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 1 }}>
-                <Typography variant="body2" fontWeight={600}>
+                <Typography variant="body2" sx={{
+                    fontWeight: 600
+                }}>
                     {t('calorieTarget.breakdown.target.title')}
                 </Typography>
-                <Typography variant="body2" fontWeight={600} color="text.primary" sx={{ textAlign: 'right', minWidth: 96 }}>
+                <Typography
+                    variant="body2"
+                    sx={{
+                        fontWeight: 600,
+                        color: "text.primary",
+                        textAlign: 'right',
+                        minWidth: 96
+                    }}>
                     {dailyTarget !== undefined ? `${Math.round(dailyTarget)} kcal` : '—'}
                 </Typography>
             </Box>
@@ -166,7 +181,9 @@ const CalorieTargetBanner: React.FC<CalorieTargetBannerProps> = ({ isDashboard =
                         </Typography>
                     )}
                     {missing.some((field) => field !== 'latest_weight') && (
-                        <Typography variant="body2" color="text.secondary">
+                        <Typography variant="body2" sx={{
+                            color: "text.secondary"
+                        }}>
                             {t('calorieTarget.missing.fillProfileHint')}
                         </Typography>
                     )}
@@ -211,7 +228,9 @@ const CalorieTargetBanner: React.FC<CalorieTargetBannerProps> = ({ isDashboard =
                 <Typography variant="h4" color="primary">
                     {Math.round(dailyTarget!)} kcal/day
                 </Typography>
-                <Typography variant="body2" color="text.secondary">
+                <Typography variant="body2" sx={{
+                    color: "text.secondary"
+                }}>
                     {t('calorieTarget.summaryLine', { tdee: tdee ?? '—', deficit: deficit ?? '—' })}
                     {!isDashboard && (
                         <>
@@ -270,7 +289,12 @@ const CalorieTargetBanner: React.FC<CalorieTargetBannerProps> = ({ isDashboard =
                 </AccordionSummary>
                 <AccordionDetails>
                     <Box sx={{ maxWidth: INLINE_DETAILS_MAX_WIDTH_PX }}>
-                        <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                        <Typography
+                            variant="body2"
+                            sx={{
+                                color: "text.secondary",
+                                mb: 1
+                            }}>
                             {t('calorieTarget.details.accordionCaption')}
                         </Typography>
                         {breakdownDetails}
@@ -308,7 +332,9 @@ const CalorieTargetBanner: React.FC<CalorieTargetBannerProps> = ({ isDashboard =
                 {cardBody}
 
                 {!hasTarget && !isLoading && !isError && missing.length > 0 && (
-                    <Typography variant="body2" color="text.secondary">
+                    <Typography variant="body2" sx={{
+                        color: "text.secondary"
+                    }}>
                         {t('calorieTarget.missingFieldsLine', { fields: missing.join(', ') })}
                     </Typography>
                 )}

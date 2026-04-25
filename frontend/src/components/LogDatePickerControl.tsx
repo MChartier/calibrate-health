@@ -325,18 +325,19 @@ const LogDatePickerControl: React.FC<LogDatePickerControlProps> = ({
                 label={label}
                 value={controlDisplayValue}
                 size={isNavbarPlacement ? 'small' : undefined}
-                InputLabelProps={label ? { shrink: true } : undefined}
-                inputProps={{
-                    readOnly: true,
-                    tabIndex: -1
-                }}
                 sx={{
                     width: '100%',
                     ...(isNavbarPlacement ? { '& .MuiInputLabel-root': { display: 'none' } } : null),
                     '& input': { textAlign: 'center' }
                 }}
-            />
+                slotProps={{
+                    htmlInput: {
+                        readOnly: true,
+                        tabIndex: -1
+                    },
 
+                    inputLabel: label ? { shrink: true } : undefined
+                }} />
             {/*
                 Overlay button: keeps a large click/tap target and avoids text-selection interactions
                 inside the read-only input field.
@@ -373,7 +374,6 @@ const LogDatePickerControl: React.FC<LogDatePickerControlProps> = ({
                     }
                 })}
             />
-
             <Popover
                 open={calendarOpen}
                 anchorEl={anchorElement}
@@ -551,13 +551,17 @@ const LogDatePickerControl: React.FC<LogDatePickerControlProps> = ({
                                 flexShrink: 0
                             }}
                         />
-                        <Typography variant="caption" color="text.secondary">
+                        <Typography variant="caption" sx={{
+                            color: "text.secondary"
+                        }}>
                             {t('log.datePicker.completeLegend')}
                         </Typography>
                     </Box>
 
                     {monthCompletionQuery.isError && (
-                        <Typography variant="caption" color="text.secondary">
+                        <Typography variant="caption" sx={{
+                            color: "text.secondary"
+                        }}>
                             {t('log.completion.actionUnavailable')}
                         </Typography>
                     )}
