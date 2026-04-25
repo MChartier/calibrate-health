@@ -89,7 +89,9 @@ const ProfilePhotoCard: React.FC<Props> = ({
                 <Stack spacing={2}>
                     <Box>
                         <Typography variant="h6">{resolvedTitle}</Typography>
-                        <Typography variant="body2" color="text.secondary">
+                        <Typography variant="body2" sx={{
+                            color: "text.secondary"
+                        }}>
                             {resolvedDescription}
                         </Typography>
                     </Box>
@@ -97,7 +99,9 @@ const ProfilePhotoCard: React.FC<Props> = ({
                     {error && <Alert severity="error">{error}</Alert>}
                     {success && <Alert severity="success">{success}</Alert>}
 
-                    <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems={{ sm: 'center' }}>
+                    <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{
+                        alignItems: { sm: 'center' }
+                    }}>
                         <Avatar
                             src={user?.profile_image_url ?? undefined}
                             sx={{
@@ -111,7 +115,9 @@ const ProfilePhotoCard: React.FC<Props> = ({
                             {avatarLabel}
                         </Avatar>
 
-                        <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+                        <Stack direction="row" spacing={1} useFlexGap sx={{
+                            flexWrap: "wrap"
+                        }}>
                             <Button
                                 variant={hasPhoto ? 'outlined' : 'contained'}
                                 component="label"
@@ -146,7 +152,6 @@ const ProfilePhotoCard: React.FC<Props> = ({
                     </Stack>
                 </Stack>
             </AppCard>
-
             <ProfilePhotoCropDialog
                 open={cropOpen}
                 imageUrl={selectedImageUrl}

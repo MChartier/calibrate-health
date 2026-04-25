@@ -801,10 +801,16 @@ const Onboarding: React.FC = () => {
                 <Typography variant="h4" gutterBottom>
                     Welcome to calibrate
                 </Typography>
-                <Typography color="text.secondary">
+                <Typography sx={{
+                    color: "text.secondary"
+                }}>
                     Let&apos;s set a daily calorie target that helps you reach your weight goal.
                 </Typography>
-                <Typography color="text.secondary" sx={{ mt: 1 }}>
+                <Typography
+                    sx={{
+                        color: "text.secondary",
+                        mt: 1
+                    }}>
                     Three quick steps: set your target weight, estimate calorie burn, and optionally import history.
                 </Typography>
             </Box>
@@ -889,7 +895,14 @@ const Onboarding: React.FC = () => {
         );
     } else if (stage === 'summary') {
         cardFooterContent = (
-            <Stack direction="row" spacing={2} justifyContent="space-between" alignItems="center" sx={{ pt: 2 }}>
+            <Stack
+                direction="row"
+                spacing={2}
+                sx={{
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    pt: 2
+                }}>
                 <Button variant="text" onClick={editSetupFromSummary} disabled={isSaving}>
                     Edit setup
                 </Button>
@@ -906,7 +919,13 @@ const Onboarding: React.FC = () => {
                     <Box>{footerQuestionControl}</Box>
                 </Fade>
 
-                <Stack direction="row" spacing={2} justifyContent="space-between" alignItems="center">
+                <Stack
+                    direction="row"
+                    spacing={2}
+                    sx={{
+                        justifyContent: "space-between",
+                        alignItems: "center"
+                    }}>
                     <Button variant="text" onClick={goBack} disabled={isSaving}>
                         Back
                     </Button>

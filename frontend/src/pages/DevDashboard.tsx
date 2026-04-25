@@ -790,11 +790,12 @@ const DevDashboard: React.FC = () => {
     return (
         <Box>
             <Stack spacing={1} sx={{ mb: 3 }}>
-                <Typography variant="body1" color="text.secondary">
+                <Typography variant="body1" sx={{
+                    color: "text.secondary"
+                }}>
                     Compare search output across providers to tune query quality.
                 </Typography>
             </Stack>
-
             <Card variant="outlined" sx={{ mb: 3 }}>
                 <CardContent>
                     <Stack spacing={2}>
@@ -802,7 +803,9 @@ const DevDashboard: React.FC = () => {
                             <Typography variant="subtitle1" gutterBottom>
                                 Test user tools
                             </Typography>
-                            <Typography variant="body2" color="text.secondary">
+                            <Typography variant="body2" sx={{
+                                color: "text.secondary"
+                            }}>
                                 Reset the seeded dev account back to a pre-onboarding state (clears profile fields, goals,
                                 metrics, and food logs) without changing your session.
                             </Typography>
@@ -834,7 +837,6 @@ const DevDashboard: React.FC = () => {
                     </Stack>
                 </CardContent>
             </Card>
-
             <Card variant="outlined" sx={{ mb: 3 }}>
                 <CardContent>
                     <Stack spacing={2}>
@@ -842,19 +844,27 @@ const DevDashboard: React.FC = () => {
                             <Typography variant="subtitle1" gutterBottom>
                                 Vibration API
                             </Typography>
-                            <Typography variant="body2" color="text.secondary">
+                            <Typography variant="body2" sx={{
+                                color: "text.secondary"
+                            }}>
                                 Test the exact haptic patterns used in product interactions.
                             </Typography>
                         </Box>
 
                         <Stack spacing={0.5}>
-                            <Typography variant="body2" color="text.secondary">
+                            <Typography variant="body2" sx={{
+                                color: "text.secondary"
+                            }}>
                                 Vibrate API: {supportsVibrationApi ? 'supported' : 'unsupported'}
                             </Typography>
-                            <Typography variant="body2" color="text.secondary">
+                            <Typography variant="body2" sx={{
+                                color: "text.secondary"
+                            }}>
                                 Account haptics setting: {user?.haptics_enabled ?? true ? 'enabled' : 'disabled'}
                             </Typography>
-                            <Typography variant="body2" color="text.secondary">
+                            <Typography variant="body2" sx={{
+                                color: "text.secondary"
+                            }}>
                                 Prefers reduced motion: {prefersReducedMotion ? 'yes' : 'no'}
                             </Typography>
                         </Stack>
@@ -899,7 +909,6 @@ const DevDashboard: React.FC = () => {
                     </Stack>
                 </CardContent>
             </Card>
-
             <Card variant="outlined" sx={{ mb: 3 }}>
                 <CardContent>
                     <Stack spacing={2}>
@@ -907,7 +916,9 @@ const DevDashboard: React.FC = () => {
                             <Typography variant="subtitle1" gutterBottom>
                                 App badge
                             </Typography>
-                            <Typography variant="body2" color="text.secondary">
+                            <Typography variant="body2" sx={{
+                                color: "text.secondary"
+                            }}>
                                 Set or clear the app badge to validate Badging API support.
                             </Typography>
                         </Box>
@@ -948,7 +959,6 @@ const DevDashboard: React.FC = () => {
                     </Stack>
                 </CardContent>
             </Card>
-
             <Card variant="outlined" sx={{ mb: 3 }}>
                 <CardContent>
                     <Stack spacing={2}>
@@ -956,22 +966,32 @@ const DevDashboard: React.FC = () => {
                             <Typography variant="subtitle1" gutterBottom>
                                 Notifications
                             </Typography>
-                            <Typography variant="body2" color="text.secondary">
+                            <Typography variant="body2" sx={{
+                                color: "text.secondary"
+                            }}>
                                 Register a push subscription, then choose push and/or in-app delivery for each dev send.
                             </Typography>
                         </Box>
 
                         <Stack spacing={0.5}>
-                            <Typography variant="body2" color="text.secondary">
+                            <Typography variant="body2" sx={{
+                                color: "text.secondary"
+                            }}>
                                 Notifications permission: {notificationPermission}
                             </Typography>
-                            <Typography variant="body2" color="text.secondary">
+                            <Typography variant="body2" sx={{
+                                color: "text.secondary"
+                            }}>
                                 Service worker: {supportsServiceWorker ? 'supported' : 'unsupported'}
                             </Typography>
-                            <Typography variant="body2" color="text.secondary">
+                            <Typography variant="body2" sx={{
+                                color: "text.secondary"
+                            }}>
                                 PushManager: {supportsPushManager ? 'supported' : 'unsupported'}
                             </Typography>
-                            <Typography variant="body2" color="text.secondary">
+                            <Typography variant="body2" sx={{
+                                color: "text.secondary"
+                            }}>
                                 Subscription: {hasPushSubscription ? 'active' : 'none'}
                             </Typography>
                         </Stack>
@@ -991,7 +1011,9 @@ const DevDashboard: React.FC = () => {
                         </TextField>
 
                         {isLoadingNotificationStatus && (
-                            <Typography variant="body2" color="text.secondary">
+                            <Typography variant="body2" sx={{
+                                color: "text.secondary"
+                            }}>
                                 Loading notification state...
                             </Typography>
                         )}
@@ -1000,28 +1022,40 @@ const DevDashboard: React.FC = () => {
 
                         {notificationStatus && (
                             <Stack spacing={0.5}>
-                                <Typography variant="body2" color="text.secondary">
+                                <Typography variant="body2" sx={{
+                                    color: "text.secondary"
+                                }}>
                                     Local day: {notificationStatus.local_date}
                                 </Typography>
-                                <Typography variant="body2" color="text.secondary">
+                                <Typography variant="body2" sx={{
+                                    color: "text.secondary"
+                                }}>
                                     Push subscriptions in scope: {pushStatusRow?.matching_subscription_count ?? 0} (total{' '}
                                     {pushStatusRow?.total_subscription_count ?? 0})
                                 </Typography>
-                                <Typography variant="body2" color="text.secondary">
+                                <Typography variant="body2" sx={{
+                                    color: "text.secondary"
+                                }}>
                                     Push last sent local date: {pushStatusRow?.last_sent_local_date || 'none'}
                                 </Typography>
-                                <Typography variant="body2" color="text.secondary">
+                                <Typography variant="body2" sx={{
+                                    color: "text.secondary"
+                                }}>
                                     {pushStatusRow?.delivery_dedupe_applies
                                         ? `Push delivered for local day: ${pushStatusRow?.delivered_for_local_day ? 'yes' : 'no'}`
                                         : 'Push delivery dedupe is not used for this notification type.'}
                                 </Typography>
-                                <Typography variant="body2" color="text.secondary">
+                                <Typography variant="body2" sx={{
+                                    color: "text.secondary"
+                                }}>
                                     In-app rows today: {inAppStatusRow?.today_total_count ?? 0} (active{' '}
                                     {inAppStatusRow?.today_active_count ?? 0}, read {inAppStatusRow?.today_read_count ?? 0},
                                     dismissed {inAppStatusRow?.today_dismissed_count ?? 0}, resolved{' '}
                                     {inAppStatusRow?.today_resolved_count ?? 0})
                                 </Typography>
-                                <Typography variant="body2" color="text.secondary">
+                                <Typography variant="body2" sx={{
+                                    color: "text.secondary"
+                                }}>
                                     {inAppStatusRow?.delivery_dedupe_applies
                                         ? `In-app dedupe key ${inAppStatusRow?.dedupe_key || 'n/a'} is ${
                                               inAppStatusRow?.deduped_for_local_day ? 'already used today' : 'not used today'
@@ -1081,7 +1115,6 @@ const DevDashboard: React.FC = () => {
                     </Stack>
                 </CardContent>
             </Card>
-
             <Card variant="outlined" sx={{ mb: 3 }}>
                 <CardContent>
                     <Stack spacing={2}>
@@ -1100,7 +1133,9 @@ const DevDashboard: React.FC = () => {
                                             />
                                         }
                                         label={
-                                            <Stack direction="row" spacing={1} alignItems="center">
+                                            <Stack direction="row" spacing={1} sx={{
+                                                alignItems: "center"
+                                            }}>
                                                 <Typography variant="body2">{provider.label}</Typography>
                                                 {!provider.ready && (
                                                     <Chip
@@ -1115,12 +1150,16 @@ const DevDashboard: React.FC = () => {
                                     />
                                 ))}
                                 {isLoadingProviders && (
-                                    <Typography variant="body2" color="text.secondary">
+                                    <Typography variant="body2" sx={{
+                                        color: "text.secondary"
+                                    }}>
                                         Loading providers...
                                     </Typography>
                                 )}
                                 {providers.length === 0 && !isLoadingProviders && (
-                                    <Typography variant="body2" color="text.secondary">
+                                    <Typography variant="body2" sx={{
+                                        color: "text.secondary"
+                                    }}>
                                         No providers available.
                                     </Typography>
                                 )}
@@ -1129,7 +1168,9 @@ const DevDashboard: React.FC = () => {
 
                         <Divider />
 
-                        <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} alignItems="flex-start">
+                        <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} sx={{
+                            alignItems: "flex-start"
+                        }}>
                             <TextField
                                 label="Search foods"
                                 placeholder="e.g. greek yogurt, oat milk, chicken breast"
@@ -1142,21 +1183,23 @@ const DevDashboard: React.FC = () => {
                                         void handleSearch();
                                     }
                                 }}
-                                InputProps={{
-                                    endAdornment: (
-                                        <InputAdornment position="end">
-                                            <IconButton
-                                                aria-label="Scan barcode"
-                                                title="Scan barcode"
-                                                onClick={() => setIsScannerOpen(true)}
-                                                size="small"
-                                                edge="end"
-                                                disabled={isSearching || isLoadingProviders}
-                                            >
-                                                <QrCodeScannerIcon />
-                                            </IconButton>
-                                        </InputAdornment>
-                                    )
+                                slotProps={{
+                                    input: {
+                                        endAdornment: (
+                                            <InputAdornment position="end">
+                                                <IconButton
+                                                    aria-label="Scan barcode"
+                                                    title="Scan barcode"
+                                                    onClick={() => setIsScannerOpen(true)}
+                                                    size="small"
+                                                    edge="end"
+                                                    disabled={isSearching || isLoadingProviders}
+                                                >
+                                                    <QrCodeScannerIcon />
+                                                </IconButton>
+                                            </InputAdornment>
+                                        )
+                                    }
                                 }}
                             />
                             <Stack direction="row" spacing={2}>
@@ -1188,7 +1231,9 @@ const DevDashboard: React.FC = () => {
                             }}
                         />
 
-                        <Typography variant="caption" color="text.secondary">
+                        <Typography variant="caption" sx={{
+                            color: "text.secondary"
+                        }}>
                             Tip: Use the barcode scan button to test UPC/EAN lookups (camera or manual entry).
                         </Typography>
 
@@ -1196,9 +1241,10 @@ const DevDashboard: React.FC = () => {
                     </Stack>
                 </CardContent>
             </Card>
-
             {results.length === 0 ? (
-                <Typography variant="body2" color="text.secondary">
+                <Typography variant="body2" sx={{
+                    color: "text.secondary"
+                }}>
                     No results yet. Run a query to see provider comparisons.
                 </Typography>
             ) : (
@@ -1210,7 +1256,9 @@ const DevDashboard: React.FC = () => {
                                     <Stack spacing={1.5}>
                                         <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 1, flexWrap: 'wrap' }}>
                                             <Typography variant="h6">{providerResult.label}</Typography>
-                                            <Stack direction="row" spacing={1} alignItems="center">
+                                            <Stack direction="row" spacing={1} sx={{
+                                                alignItems: "center"
+                                            }}>
                                                 {providerResult.elapsedMs !== undefined && (
                                                     <Chip label={`${providerResult.elapsedMs} ms`} size="small" />
                                                 )}
@@ -1225,7 +1273,9 @@ const DevDashboard: React.FC = () => {
                                         {providerResult.error && <Alert severity="error">{providerResult.error}</Alert>}
 
                                         {!providerResult.error && providerResult.items.length === 0 && (
-                                            <Typography variant="body2" color="text.secondary">
+                                            <Typography variant="body2" sx={{
+                                                color: "text.secondary"
+                                            }}>
                                                 No matches returned by this provider.
                                             </Typography>
                                         )}
@@ -1235,7 +1285,9 @@ const DevDashboard: React.FC = () => {
                                                 {providerResult.items.map((item) => (
                                                     <Box key={`${providerResult.name}-${item.id}`}>
                                                         <Typography variant="subtitle2">{item.description}</Typography>
-                                                        <Typography variant="caption" color="text.secondary">
+                                                        <Typography variant="caption" sx={{
+                                                            color: "text.secondary"
+                                                        }}>
                                                             {buildItemDetails(item)}
                                                         </Typography>
                                                         <Divider sx={{ mt: 1 }} />

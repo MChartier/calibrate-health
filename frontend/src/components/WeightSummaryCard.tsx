@@ -134,7 +134,9 @@ const WeightSummaryCard: React.FC<WeightSummaryCardProps> = ({ date, onOpenWeigh
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.25, flexGrow: 1, minWidth: 0 }}>
                         <Skeleton width="40%" height={32} />
                         <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 0.75 }}>
-                            <Typography variant="body2" color="text.secondary">
+                            <Typography variant="body2" sx={{
+                                color: "text.secondary"
+                            }}>
                                 {t('weightSummary.asOf')}
                             </Typography>
                             <Skeleton width="35%" height={20} />
@@ -190,7 +192,9 @@ const WeightSummaryCard: React.FC<WeightSummaryCardProps> = ({ date, onOpenWeigh
                         <Typography variant={valueVariant} sx={{ lineHeight: 1.1 }}>
                             {displayedWeightLabel}
                         </Typography>
-                        <Typography variant="body2" color="text.secondary">
+                        <Typography variant="body2" sx={{
+                            color: "text.secondary"
+                        }}>
                             {t('weightSummary.asOfWithDate', { date: asOfLabel })}
                         </Typography>
                     </Box>

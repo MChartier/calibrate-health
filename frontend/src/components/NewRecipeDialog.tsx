@@ -456,10 +456,12 @@ const NewRecipeDialog: React.FC<Props> = ({ open, date, mealPeriod, onClose, onS
                             type="number"
                             value={servingSizeQuantity}
                             onChange={(e) => setServingSizeQuantity(e.target.value)}
-                            inputProps={{ min: 0, step: 0.1 }}
                             fullWidth
                             disabled={isSubmitting}
                             required
+                            slotProps={{
+                                htmlInput: { min: 0, step: 0.1 }
+                            }}
                         />
                         <Autocomplete
                             freeSolo
@@ -476,10 +478,12 @@ const NewRecipeDialog: React.FC<Props> = ({ open, date, mealPeriod, onClose, onS
                             type="number"
                             value={yieldServings}
                             onChange={(e) => setYieldServings(e.target.value)}
-                            inputProps={{ min: 0, step: 0.1 }}
                             fullWidth
                             disabled={isSubmitting}
                             required
+                            slotProps={{
+                                htmlInput: { min: 0, step: 0.1 }
+                            }}
                         />
                     </Stack>
 
@@ -493,7 +497,9 @@ const NewRecipeDialog: React.FC<Props> = ({ open, date, mealPeriod, onClose, onS
                     >
                         <Typography variant="subtitle2">Ingredients</Typography>
                         {ingredients.length === 0 ? (
-                            <Typography variant="body2" color="text.secondary">
+                            <Typography variant="body2" sx={{
+                                color: "text.secondary"
+                            }}>
                                 Add ingredients from your My Foods library or by searching the food database.
                             </Typography>
                         ) : (
@@ -523,7 +529,13 @@ const NewRecipeDialog: React.FC<Props> = ({ open, date, mealPeriod, onClose, onS
                                                 primary={ing.source === 'MY_FOOD' ? ing.name_snapshot : ing.name}
                                                 secondary={secondary}
                                             />
-                                            <Typography variant="body2" color="text.secondary" sx={{ ml: 2, whiteSpace: 'nowrap' }}>
+                                            <Typography
+                                                variant="body2"
+                                                sx={{
+                                                    color: "text.secondary",
+                                                    ml: 2,
+                                                    whiteSpace: 'nowrap'
+                                                }}>
                                                 {Math.round(ing.calories_total)} kcal
                                             </Typography>
                                         </ListItem>
@@ -537,12 +549,21 @@ const NewRecipeDialog: React.FC<Props> = ({ open, date, mealPeriod, onClose, onS
                         <Stack
                             direction={{ xs: 'column', sm: 'row' }}
                             spacing={1}
-                            alignItems={{ xs: 'stretch', sm: 'center' }}
+                            sx={{
+                                alignItems: { xs: 'stretch', sm: 'center' }
+                            }}
                         >
-                            <Typography variant="body2" color="text.secondary" sx={{ flexGrow: 1 }}>
+                            <Typography
+                                variant="body2"
+                                sx={{
+                                    color: "text.secondary",
+                                    flexGrow: 1
+                                }}>
                                 Total: {Math.round(recipeTotals.totalCalories)} kcal
                             </Typography>
-                            <Typography variant="body2" color="text.secondary">
+                            <Typography variant="body2" sx={{
+                                color: "text.secondary"
+                            }}>
                                 {recipeTotals.caloriesPerServing !== null
                                     ? `${Math.round(recipeTotals.caloriesPerServing)} kcal/serving`
                                     : '—'}
@@ -576,15 +597,19 @@ const NewRecipeDialog: React.FC<Props> = ({ open, date, mealPeriod, onClose, onS
                                         />
                                     )}
                                 />
-                                <Stack direction="row" spacing={1} alignItems="center">
+                                <Stack direction="row" spacing={1} sx={{
+                                    alignItems: "center"
+                                }}>
                                     <TextField
                                         label="Quantity (servings)"
                                         type="number"
                                         value={myFoodQuantityServings}
                                         onChange={(e) => setMyFoodQuantityServings(e.target.value)}
-                                        inputProps={{ min: 0, step: 0.1 }}
                                         disabled={isSubmitting || !selectedMyFood}
                                         fullWidth
+                                        slotProps={{
+                                            htmlInput: { min: 0, step: 0.1 }
+                                        }}
                                     />
                                     <Button
                                         variant="outlined"
@@ -596,7 +621,9 @@ const NewRecipeDialog: React.FC<Props> = ({ open, date, mealPeriod, onClose, onS
                                     </Button>
                                 </Stack>
                                 {selectedMyFood && myFoodIngredientCaloriesTotal !== null && (
-                                    <Typography variant="caption" color="text.secondary">
+                                    <Typography variant="caption" sx={{
+                                        color: "text.secondary"
+                                    }}>
                                         Adds {Math.round(myFoodIngredientCaloriesTotal)} kcal
                                     </Typography>
                                 )}
@@ -620,7 +647,9 @@ const NewRecipeDialog: React.FC<Props> = ({ open, date, mealPeriod, onClose, onS
                                 />
 
                                 {searchResults.length === 0 ? (
-                                    <Typography variant="body2" color="text.secondary">
+                                    <Typography variant="body2" sx={{
+                                        color: "text.secondary"
+                                    }}>
                                         {isSearching
                                             ? 'Searching...'
                                             : 'Type a search term to find an ingredient and add it to the recipe.'}
@@ -670,12 +699,22 @@ const NewRecipeDialog: React.FC<Props> = ({ open, date, mealPeriod, onClose, onS
                                                 value={measureQuantity}
                                                 onChange={(e) => setMeasureQuantity(parseFloat(e.target.value) || 0)}
                                                 disabled={externalPanelDisabled || !selectedMeasure}
-                                                inputProps={{ min: 0, step: 0.5 }}
+                                                slotProps={{
+                                                    htmlInput: { min: 0, step: 0.5 }
+                                                }}
                                             />
 
                                             {computedExternal ? (
-                                                <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between">
-                                                    <Typography variant="body2" color="text.secondary">
+                                                <Stack
+                                                    direction="row"
+                                                    spacing={1}
+                                                    sx={{
+                                                        alignItems: "center",
+                                                        justifyContent: "space-between"
+                                                    }}>
+                                                    <Typography variant="body2" sx={{
+                                                        color: "text.secondary"
+                                                    }}>
                                                         Adds {Math.round(computedExternal.calories)} kcal
                                                     </Typography>
                                                     <Button
@@ -687,7 +726,9 @@ const NewRecipeDialog: React.FC<Props> = ({ open, date, mealPeriod, onClose, onS
                                                     </Button>
                                                 </Stack>
                                             ) : (
-                                                <Typography variant="body2" color="text.secondary">
+                                                <Typography variant="body2" sx={{
+                                                    color: "text.secondary"
+                                                }}>
                                                     Calories unavailable for this item.
                                                 </Typography>
                                             )}

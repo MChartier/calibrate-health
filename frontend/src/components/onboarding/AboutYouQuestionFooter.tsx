@@ -91,7 +91,6 @@ const AboutYouQuestionFooter: React.FC<AboutYouQuestionFooterProps> = (props) =>
                 type="date"
                 value={props.dob}
                 onChange={(e) => props.onDobChange(e.target.value)}
-                InputLabelProps={{ shrink: true }}
                 required
                 disabled={props.disabled}
                 size="small"
@@ -100,6 +99,9 @@ const AboutYouQuestionFooter: React.FC<AboutYouQuestionFooterProps> = (props) =>
                 error={props.showErrors && !props.dob}
                 helperText={props.showErrors && !props.dob ? 'Required.' : undefined}
                 onKeyDown={handleEnterToSubmit}
+                slotProps={{
+                    inputLabel: { shrink: true }
+                }}
             />
         );
     } else if (props.questionKey === 'sex') {
@@ -145,10 +147,14 @@ const AboutYouQuestionFooter: React.FC<AboutYouQuestionFooterProps> = (props) =>
                             }}
                         >
                             <Box>
-                                <Typography variant="body2" fontWeight={800}>
+                                <Typography variant="body2" sx={{
+                                    fontWeight: 800
+                                }}>
                                     {option.title}
                                 </Typography>
-                                <Typography variant="caption" color="text.secondary">
+                                <Typography variant="caption" sx={{
+                                    color: "text.secondary"
+                                }}>
                                     {option.description}
                                 </Typography>
                             </Box>
@@ -166,10 +172,6 @@ const AboutYouQuestionFooter: React.FC<AboutYouQuestionFooterProps> = (props) =>
                     type="number"
                     value={props.heightCm}
                     onChange={(e) => props.onHeightCmChange(e.target.value)}
-                    inputProps={{ min: 50, max: 272, step: 0.1, inputMode: 'decimal' }}
-                    InputProps={{
-                        endAdornment: <InputAdornment position="end">cm</InputAdornment>
-                    }}
                     required
                     disabled={props.disabled}
                     size="small"
@@ -178,7 +180,13 @@ const AboutYouQuestionFooter: React.FC<AboutYouQuestionFooterProps> = (props) =>
                     error={props.showErrors && !heightFieldsValid}
                     helperText={props.showErrors && !heightFieldsValid ? 'Please enter your height.' : ' '}
                     onKeyDown={handleEnterToSubmit}
-                />
+                    slotProps={{
+                        input: {
+                            endAdornment: <InputAdornment position="end">cm</InputAdornment>
+                        },
+
+                        htmlInput: { min: 50, max: 272, step: 0.1, inputMode: 'decimal' }
+                    }} />
             ) : (
                 <Box sx={{ display: 'flex', gap: 2 }}>
                     <TextField
@@ -186,7 +194,6 @@ const AboutYouQuestionFooter: React.FC<AboutYouQuestionFooterProps> = (props) =>
                         type="number"
                         value={props.heightFeet}
                         onChange={(e) => props.onHeightFeetChange(e.target.value)}
-                        inputProps={{ min: 1, max: 8, step: 1, inputMode: 'numeric' }}
                         required
                         disabled={props.disabled}
                         size="small"
@@ -196,18 +203,23 @@ const AboutYouQuestionFooter: React.FC<AboutYouQuestionFooterProps> = (props) =>
                         error={props.showErrors && !heightFieldsValid}
                         helperText={props.showErrors && !heightFieldsValid ? 'Enter feet.' : ' '}
                         onKeyDown={handleEnterToSubmit}
+                        slotProps={{
+                            htmlInput: { min: 1, max: 8, step: 1, inputMode: 'numeric' }
+                        }}
                     />
                     <TextField
                         label="Inches"
                         type="number"
                         value={props.heightInches}
                         onChange={(e) => props.onHeightInchesChange(e.target.value)}
-                        inputProps={{ min: 0, max: 11.9, step: 0.1, inputMode: 'decimal' }}
                         disabled={props.disabled}
                         size="small"
                         fullWidth
                         sx={{ flex: 1 }}
                         onKeyDown={handleEnterToSubmit}
+                        slotProps={{
+                            htmlInput: { min: 0, max: 11.9, step: 0.1, inputMode: 'decimal' }
+                        }}
                     />
                 </Box>
             );

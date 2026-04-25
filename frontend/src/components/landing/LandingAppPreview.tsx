@@ -86,7 +86,9 @@ function LandingMockLogSummaryCard() {
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, minWidth: 0 }}>
                         <Typography variant="subtitle1">Calories remaining</Typography>
                         <Typography variant="h5">{remaining.toLocaleString()} Calories</Typography>
-                        <Typography variant="body2" color="text.secondary">
+                        <Typography variant="body2" sx={{
+                            color: "text.secondary"
+                        }}>
                             Logged: {totalCalories.toLocaleString()} Calories of {dailyTarget.toLocaleString()} Calories target
                         </Typography>
                         <Typography variant="body2" color="primary">
@@ -124,18 +126,26 @@ function LandingMockGoalTrackerCard() {
 
                 <Box>
                     <Stack spacing={0.5} sx={{ mb: 1 }}>
-                        <Typography variant="body2" color="text.secondary">
+                        <Typography variant="body2" sx={{
+                            color: "text.secondary"
+                        }}>
                             Started: Aug 12, 2025
                         </Typography>
-                        <Typography variant="body2" color="text.secondary">
+                        <Typography variant="body2" sx={{
+                            color: "text.secondary"
+                        }}>
                             Projected target date: Oct 18, 2025
                         </Typography>
-                        <Typography variant="caption" color="text.secondary">
+                        <Typography variant="caption" sx={{
+                            color: "text.secondary"
+                        }}>
                             Projection uses your selected deficit and a steady-rate model.
                         </Typography>
                     </Stack>
 
-                    <Typography variant="body2" color="text.secondary">
+                    <Typography variant="body2" sx={{
+                        color: "text.secondary"
+                    }}>
                         Start: {startWeight.toFixed(1)} lb · Target: {targetWeight.toFixed(1)} lb
                     </Typography>
                     <Typography variant="body1" sx={{ mt: 0.5 }}>
@@ -182,7 +192,13 @@ function LandingMockGoalTrackerCard() {
                             </Box>
                         </Box>
 
-                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.75 }}>
+                        <Typography
+                            variant="caption"
+                            sx={{
+                                color: "text.secondary",
+                                display: 'block',
+                                mt: 0.75
+                            }}>
                             {progressPercent}% toward goal
                         </Typography>
                     </Box>

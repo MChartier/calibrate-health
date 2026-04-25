@@ -300,7 +300,7 @@ const LogSummaryCard: React.FC<LogSummaryCardProps> = ({ dashboardMode = false, 
                     checked={isCompletionComplete}
                     onChange={(_event, checked) => void handleCompletionToggle(checked)}
                     disabled={isCompletionLoading || completionStatus === 'unknown' || isCompletionPending}
-                    inputProps={{ 'aria-label': completionActionLabel }}
+                    slotProps={{ input: { 'aria-label': completionActionLabel } }}
                 />
             )
             : (isCompletionLoading ? <Skeleton width={LOG_SUMMARY_COMPLETION_CHIP_MIN_WIDTH_PX} height={24} /> : statusChip);
@@ -321,7 +321,9 @@ const LogSummaryCard: React.FC<LogSummaryCardProps> = ({ dashboardMode = false, 
                         isCompletionLoading ? (
                             <Skeleton width="45%" height={16} />
                         ) : (
-                            <Typography variant="caption" color="text.secondary">
+                            <Typography variant="caption" sx={{
+                                color: "text.secondary"
+                            }}>
                                 {completionStatusLabel}
                             </Typography>
                         )
@@ -375,7 +377,9 @@ const LogSummaryCard: React.FC<LogSummaryCardProps> = ({ dashboardMode = false, 
                     <Typography variant="subtitle1">{t('logSummary.caloriesRemaining')}</Typography>
                     <Skeleton width="40%" height={SUMMARY_SKELETON_VALUE_HEIGHT} />
                     <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1 }}>
-                        <Typography variant="body2" color="text.secondary">
+                        <Typography variant="body2" sx={{
+                            color: "text.secondary"
+                        }}>
                             {t('logSummary.loggedLabel')}
                         </Typography>
                         <Skeleton width="55%" height={20} />
@@ -392,7 +396,9 @@ const LogSummaryCard: React.FC<LogSummaryCardProps> = ({ dashboardMode = false, 
     } else if (isError) {
         cardBody = (
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-                <Typography variant="body2" color="text.secondary">
+                <Typography variant="body2" sx={{
+                    color: "text.secondary"
+                }}>
                     {t('logSummary.error.unableToLoad')}
                 </Typography>
                 {dashboardMode && (
@@ -454,7 +460,9 @@ const LogSummaryCard: React.FC<LogSummaryCardProps> = ({ dashboardMode = false, 
                             ? t('logSummary.caloriesValue', { value: displayedRemainingCaloriesLabel })
                             : '—'}
                     </Typography>
-                    <Typography variant="body2" color="text.secondary">
+                    <Typography variant="body2" sx={{
+                        color: "text.secondary"
+                    }}>
                         {loggedLine}
                     </Typography>
                     {completionControl}

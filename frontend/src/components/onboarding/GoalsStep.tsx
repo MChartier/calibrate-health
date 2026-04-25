@@ -57,11 +57,12 @@ const GoalsStep: React.FC<GoalsStepProps> = (props) => {
                 <Typography variant="h5" gutterBottom>
                     Set your goal
                 </Typography>
-                <Typography color="text.secondary">
+                <Typography sx={{
+                    color: "text.secondary"
+                }}>
                     Answer a few quick questions and we&apos;ll set a daily calorie target that matches your plan.
                 </Typography>
             </Box>
-
             {hasAnySummary ? (
                 <Stack spacing={ONBOARDING_FIELD_SPACING}>
                     {props.completedKeys.includes('currentWeight') && props.currentWeight.trim() && (
@@ -104,7 +105,9 @@ const GoalsStep: React.FC<GoalsStepProps> = (props) => {
                     )}
                 </Stack>
             ) : (
-                <Typography color="text.secondary">
+                <Typography sx={{
+                    color: "text.secondary"
+                }}>
                     Start with your current weight. You can always tweak this later.
                 </Typography>
             )}

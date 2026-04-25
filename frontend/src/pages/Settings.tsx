@@ -425,7 +425,9 @@ const Settings: React.FC = () => {
                     <Stack spacing={1.5} useFlexGap>
                         <SectionHeader title={t('settings.feedbackTitle')} />
 
-                        <Typography variant="body2" color="text.secondary">
+                        <Typography variant="body2" sx={{
+                            color: "text.secondary"
+                        }}>
                             {t('settings.feedbackDescription')}
                         </Typography>
 
@@ -455,7 +457,9 @@ const Settings: React.FC = () => {
                     <Stack spacing={1.5} useFlexGap>
                         <SectionHeader title={t('settings.remindersTitle')} />
 
-                        <Typography variant="body2" color="text.secondary">
+                        <Typography variant="body2" sx={{
+                            color: "text.secondary"
+                        }}>
                             {t('settings.remindersDescription')}
                         </Typography>
 
@@ -475,7 +479,9 @@ const Settings: React.FC = () => {
                             <FormHelperText>{reminderSupport.message}</FormHelperText>
                         </FormControl>
 
-                        <Typography variant="body2" color="text.secondary">
+                        <Typography variant="body2" sx={{
+                            color: "text.secondary"
+                        }}>
                             {t('settings.remindersPreferencesHelper')}
                         </Typography>
 
