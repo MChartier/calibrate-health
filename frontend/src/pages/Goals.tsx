@@ -621,6 +621,7 @@ const Goals: React.FC = () => {
                                 label: rawWeightSeriesLabel,
                                 color: rawLineColor,
                                 showMark: true,
+                                shape: 'circle',
                                 connectNulls: false,
                                 valueFormatter: (value) => (value == null ? null : `${value.toFixed(1)} ${unitLabel}`)
                             }
