@@ -665,6 +665,9 @@ async function ci() {
   await timed("Run backend tests", () => {
     run("npm", ["--prefix", "backend", "test"]);
   });
+  await timed("Run frontend tests", () => {
+    run("npm", ["--prefix", "frontend", "test"]);
+  });
   printDone("Full local CI passed.");
 }
 
