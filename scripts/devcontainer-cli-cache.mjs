@@ -62,6 +62,27 @@ export function resolveDevcontainerCliCache(repoRoot = defaultRepoRoot) {
 }
 
 /**
+ * Run npm in a way that also works in Windows Codex-hosted Node processes.
+ * Directly spawning npm.cmd can fail with EINVAL in that environment.
+ * @param {string[]} args - npm arguments.
+ * @param {string} cwd - Working directory for npm.
+ * @returns {import("node:child_process").SpawnSyncReturns<Buffer>} Spawn result.
+ */
+function runNpm(args, cwd) {
+  if (process.platform === "win32") {
+    return spawnSync("cmd.exe", ["/d", "/s", "/c", "npm", ...args], {
+      cwd,
+      stdio: "inherit",
+    });
+  }
+
+  return spawnSync("npm", args, {
+    cwd,
+    stdio: "inherit",
+  });
+}
+
+/**
  * Install the devcontainers CLI into a user-level cache when it is missing.
  * @param {string} repoRoot - Repository root to inspect.
  * @returns {{ cacheDir: string, cliJs: string, version: string }} Cache paths.
@@ -73,9 +94,7 @@ export function ensureDevcontainerCliCache(repoRoot = defaultRepoRoot) {
   }
 
   fs.mkdirSync(cache.cacheDir, { recursive: true });
-  const npmBin = process.platform === "win32" ? "npm.cmd" : "npm";
-  const result = spawnSync(
-    npmBin,
+  const result = runNpm(
     [
       "install",
       "--prefix",
@@ -85,10 +104,7 @@ export function ensureDevcontainerCliCache(repoRoot = defaultRepoRoot) {
       "--no-audit",
       "--fund=false",
     ],
-    {
-      cwd: repoRoot,
-      stdio: "inherit",
-    }
+    repoRoot
   );
   if (result.error) {
     throw result.error;
