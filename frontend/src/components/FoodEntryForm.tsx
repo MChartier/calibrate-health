@@ -31,7 +31,6 @@ import BarcodeScannerDialog from './BarcodeScannerDialog';
 import FatSecretAttributionLink from './FatSecretAttributionLink';
 import FoodSearchResultsList from './FoodSearchResultsList';
 import MealPeriodIcon from './MealPeriodIcon';
-import NewMyFoodDialog from './NewMyFoodDialog';
 import NewRecipeDialog from './NewRecipeDialog';
 import type { NormalizedFoodItem } from '../types/food';
 import { getMealPeriodLabel, MEAL_PERIOD_ORDER, type MealPeriod } from '../types/mealPeriod';
@@ -54,7 +53,7 @@ import { haptic } from '../utils/haptics';
 /**
  * Food entry form used in the log dialog.
  *
- * Supports manual entries, "My Foods"/recipes, and provider search in one flow.
+ * Supports manual calorie entries, recipe logging, and provider/recent-food search in one flow.
  */
 type Props = {
     onSuccess?: (result?: { closeDialog?: boolean }) => void;
@@ -64,10 +63,9 @@ type Props = {
 
 const SEARCH_PAGE_SIZE = 10;
 const MY_FOODS_LIST_HEIGHT = { xs: 220, sm: 260 } as const; // Keeps the list usable inside the dialog without pushing actions off-screen.
-const RECENT_FOODS_LIST_HEIGHT = { xs: 180, sm: 220 } as const; // Keeps repeat suggestions visible without hiding search results.
 
 type FoodSearchView = 'results' | 'selected';
-type FoodEntryMode = 'quick' | 'search' | 'myFoods' | 'myRecipes';
+type FoodEntryMode = 'quick' | 'search' | 'recipes';
 
 type FoodSearchParams = {
     query?: string;
@@ -195,7 +193,6 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date, initialMealPeriod }) 
     const [selectedRecentFoodId, setSelectedRecentFoodId] = useState<string | null>(null);
     const [recentFoodServingsConsumed, setRecentFoodServingsConsumed] = useState<string>('1');
 
-    const [isNewFoodDialogOpen, setIsNewFoodDialogOpen] = useState(false);
     const [isNewRecipeDialogOpen, setIsNewRecipeDialogOpen] = useState(false);
 
     const [myFoodsQueryText, setMyFoodsQueryText] = useState('');
@@ -224,22 +221,15 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date, initialMealPeriod }) 
         [searchResults, selectedItemId]
     );
 
-    const quickRecentFoodsQuery = useRecentFoodsQuery({ limit: 8 }, { enabled: mode === 'quick' });
     const searchRecentFoodsQuery = useRecentFoodsQuery(
         { q: searchRecentQueryText, limit: 6 },
         { enabled: mode === 'search' && searchView === 'results' && searchRecentQueryText.length >= 2 }
     );
-    const quickRecentFoods = useMemo(() => quickRecentFoodsQuery.data ?? [], [quickRecentFoodsQuery.data]);
     const searchRecentFoods = useMemo(() => searchRecentFoodsQuery.data ?? [], [searchRecentFoodsQuery.data]);
-    const allRecentFoods = useMemo(() => {
-        const byId = new Map<string, RecentFood>();
-        [...quickRecentFoods, ...searchRecentFoods].forEach((food) => byId.set(food.id, food));
-        return Array.from(byId.values());
-    }, [quickRecentFoods, searchRecentFoods]);
     const selectedRecentFood = useMemo(() => {
         if (!selectedRecentFoodId) return null;
-        return allRecentFoods.find((food) => food.id === selectedRecentFoodId) ?? null;
-    }, [allRecentFoods, selectedRecentFoodId]);
+        return searchRecentFoods.find((food) => food.id === selectedRecentFoodId) ?? null;
+    }, [searchRecentFoods, selectedRecentFoodId]);
     const searchRecentProviderKeys = useMemo(() => {
         const keys = new Set<string>();
         searchRecentFoods.forEach((food) => {
@@ -256,10 +246,9 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date, initialMealPeriod }) 
         });
     }, [searchRecentProviderKeys, searchResults]);
 
-    const myFoodsTypeForMode = mode === 'myFoods' ? 'FOOD' : mode === 'myRecipes' ? 'RECIPE' : 'ALL';
     const myFoodsQuery = useMyFoodsQuery(
-        { q: debouncedMyFoodsQueryText, type: myFoodsTypeForMode },
-        { enabled: mode === 'myFoods' || mode === 'myRecipes' }
+        { q: debouncedMyFoodsQueryText, type: 'RECIPE' },
+        { enabled: mode === 'recipes' }
     );
 
     const myFoods = useMemo(() => myFoodsQuery.data ?? [], [myFoodsQuery.data]);
@@ -296,7 +285,7 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date, initialMealPeriod }) 
         setMealPeriod(initialMealPeriod);
     }, [initialMealPeriod]);
 
-    // Avoid stale selections if users switch between "My Foods" and "My Recipes".
+    // Avoid stale recipe selections if users leave and return to the Recipes tab.
     useEffect(() => {
         setSelectedMyFoodId(null);
         setMyFoodServingsConsumed('1');
@@ -363,9 +352,7 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date, initialMealPeriod }) 
             );
             setMealPeriod(initialMealPeriod ?? food.meal_period);
             clearSelectedSearchItem();
-            setQuickEntryName('');
-            setQuickEntryCalories('');
-            setSearchView('results');
+            setSearchView('selected');
         },
         [clearSelectedSearchItem, initialMealPeriod, isSubmitting]
     );
@@ -745,7 +732,67 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date, initialMealPeriod }) 
     // Compute the search panel body outside JSX so the layout stays readable.
     let searchResultsContent: React.ReactNode;
 
-    if (searchView === 'selected' && selectedItem) {
+    if (searchView === 'selected' && selectedRecentFood) {
+        const servingUnit = selectedRecentFood.serving_unit_label_snapshot ?? t('foodEntry.recent.servingFallback');
+        const canEditRecentServings =
+            typeof selectedRecentFood.calories_per_serving_snapshot === 'number' &&
+            Number.isFinite(selectedRecentFood.calories_per_serving_snapshot);
+
+        searchResultsContent = (
+            <Stack spacing={2}>
+                <Box
+                    sx={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'flex-start',
+                        gap: 2,
+                        border: 1,
+                        borderColor: 'divider',
+                        borderRadius: 1,
+                        p: 1.5
+                    }}
+                >
+                    <Box sx={{ minWidth: 0 }}>
+                        <Typography variant="subtitle2">{t('foodEntry.recent.selected')}</Typography>
+                        <Typography variant="body2" sx={{ wordBreak: 'break-word' }}>
+                            {selectedRecentFood.name}
+                            {selectedRecentFood.brand_snapshot ? ` (${selectedRecentFood.brand_snapshot})` : ''}
+                        </Typography>
+                    </Box>
+                    <Button
+                        variant="text"
+                        type="button"
+                        size="small"
+                        startIcon={<ArrowBackIcon />}
+                        onClick={() => {
+                            clearSelectedRecentFood();
+                            setSearchView('results');
+                        }}
+                    >
+                        {t('foodEntry.search.selected.back')}
+                    </Button>
+                </Box>
+
+                {canEditRecentServings && (
+                    <TextField
+                        label={t('foodEntry.myFoods.servingsConsumed', { serving: servingUnit })}
+                        type="number"
+                        value={recentFoodServingsConsumed}
+                        onChange={(e) => setRecentFoodServingsConsumed(e.target.value)}
+                        disabled={isSubmitting}
+                        slotProps={{
+                            htmlInput: { min: 0, step: 0.1 }
+                        }}
+                    />
+                )}
+                {recentFoodCaloriesPreview !== null && (
+                    <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                        {t('foodEntry.myFoods.caloriesPreview', { calories: recentFoodCaloriesPreview })}
+                    </Typography>
+                )}
+            </Stack>
+        );
+    } else if (searchView === 'selected' && selectedItem) {
         searchResultsContent = (
             <Stack spacing={2}>
                 <Box
@@ -872,104 +919,11 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date, initialMealPeriod }) 
         );
     }
 
-    let quickRecentFoodsContent: React.ReactNode = null;
-    if (mode === 'quick') {
-        if (quickRecentFoodsQuery.isLoading && quickRecentFoods.length === 0) {
-            quickRecentFoodsContent = (
-                <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
-                    <CircularProgress size={18} />
-                    <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                        {t('foodEntry.recent.loading')}
-                    </Typography>
-                </Stack>
-            );
-        } else if (quickRecentFoods.length > 0) {
-            quickRecentFoodsContent = (
-                <Stack spacing={1}>
-                    <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
-                        <HistoryIcon fontSize="small" color="action" />
-                        <Typography variant="subtitle2">{t('foodEntry.recent.title')}</Typography>
-                    </Stack>
-                    <Box
-                        sx={{
-                            border: 1,
-                            borderColor: 'divider',
-                            borderRadius: 1,
-                            overflow: 'hidden',
-                            maxHeight: RECENT_FOODS_LIST_HEIGHT,
-                            overflowY: 'auto'
-                        }}
-                    >
-                        <List dense disablePadding>
-                            {quickRecentFoods.map((food) => (
-                                <ListItemButton
-                                    key={food.id}
-                                    selected={food.id === selectedRecentFoodId}
-                                    onClick={() => selectRecentFood(food)}
-                                    disabled={isSubmitting}
-                                >
-                                    <ListItemText
-                                        primary={food.name}
-                                        secondary={buildRecentFoodSecondaryText(food)}
-                                        slotProps={{
-                                            primary: { variant: 'body2' },
-                                            secondary: { variant: 'caption', sx: { color: 'text.secondary' } }
-                                        }}
-                                    />
-                                </ListItemButton>
-                            ))}
-                        </List>
-                    </Box>
-                </Stack>
-            );
-        }
-    }
-
-    let selectedRecentFoodContent: React.ReactNode = null;
-    if (selectedRecentFood) {
-        const servingUnit = selectedRecentFood.serving_unit_label_snapshot ?? t('foodEntry.recent.servingFallback');
-        const canEditRecentServings =
-            typeof selectedRecentFood.calories_per_serving_snapshot === 'number' &&
-            Number.isFinite(selectedRecentFood.calories_per_serving_snapshot);
-
-        selectedRecentFoodContent = (
-            <Box sx={{ border: 1, borderColor: 'divider', borderRadius: 1, p: 1.5 }}>
-                <Stack spacing={1.5}>
-                    <Box>
-                        <Typography variant="subtitle2">{t('foodEntry.recent.selected')}</Typography>
-                        <Typography variant="body2" sx={{ wordBreak: 'break-word' }}>
-                            {selectedRecentFood.name}
-                            {selectedRecentFood.brand_snapshot ? ` (${selectedRecentFood.brand_snapshot})` : ''}
-                        </Typography>
-                    </Box>
-                    {canEditRecentServings && (
-                        <TextField
-                            label={t('foodEntry.myFoods.servingsConsumed', { serving: servingUnit })}
-                            type="number"
-                            value={recentFoodServingsConsumed}
-                            onChange={(e) => setRecentFoodServingsConsumed(e.target.value)}
-                            disabled={isSubmitting}
-                            slotProps={{
-                                htmlInput: { min: 0, step: 0.1 }
-                            }}
-                        />
-                    )}
-                    {recentFoodCaloriesPreview !== null && (
-                        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                            {t('foodEntry.myFoods.caloriesPreview', { calories: recentFoodCaloriesPreview })}
-                        </Typography>
-                    )}
-                </Stack>
-            </Box>
-        );
-    }
-
     const canAddSelectedSearch =
         (Boolean(selectedItem) && Boolean(computed) && searchView === 'selected') ||
         (Boolean(selectedRecentFood) && recentFoodCaloriesPreview !== null);
     const canAddSelectedMyFood = Boolean(selectedMyFood) && myFoodCaloriesPreview !== null;
     const canAddQuickEntry = Boolean(quickEntryName.trim()) && Boolean(quickEntryCalories.trim());
-    const canAddQuickMode = selectedRecentFood ? recentFoodCaloriesPreview !== null : canAddQuickEntry;
 
     return (
         <>
@@ -990,8 +944,7 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date, initialMealPeriod }) 
                     >
                         <ToggleButton value="quick">{t('foodEntry.mode.quick')}</ToggleButton>
                         <ToggleButton value="search">{t('foodEntry.mode.search')}</ToggleButton>
-                        <ToggleButton value="myFoods">{t('foodEntry.mode.myFoods')}</ToggleButton>
-                        <ToggleButton value="myRecipes">{t('foodEntry.mode.myRecipes')}</ToggleButton>
+                        <ToggleButton value="recipes">{t('foodEntry.mode.myRecipes')}</ToggleButton>
                     </ToggleButtonGroup>
 
                     {error && <Alert severity="error">{error}</Alert>}
@@ -1005,10 +958,7 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date, initialMealPeriod }) 
                                     label={t('foodEntry.quickEntry.foodName')}
                                     fullWidth
                                     value={quickEntryName}
-                                    onChange={(e) => {
-                                        clearSelectedRecentFood();
-                                        setQuickEntryName(e.target.value);
-                                    }}
+                                    onChange={(e) => setQuickEntryName(e.target.value)}
                                     disabled={isSubmitting}
                                     autoFocus
                                 />
@@ -1017,19 +967,13 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date, initialMealPeriod }) 
                                     type="number"
                                     fullWidth
                                     value={quickEntryCalories}
-                                    onChange={(e) => {
-                                        clearSelectedRecentFood();
-                                        setQuickEntryCalories(e.target.value);
-                                    }}
+                                    onChange={(e) => setQuickEntryCalories(e.target.value)}
                                     disabled={isSubmitting}
                                     slotProps={{
                                         htmlInput: { min: 0, step: 1 }
                                     }}
                                 />
                             </Stack>
-
-                            {selectedRecentFoodContent}
-                            {quickRecentFoodsContent}
                         </Stack>
                     ) : mode === 'search' ? (
                         <Stack spacing={2}>
@@ -1065,7 +1009,6 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date, initialMealPeriod }) 
                                     }
                                 }}
                             />
-                            {selectedRecentFoodContent}
                             {providerName && (
                                 <Typography variant="caption" sx={{
                                     color: "text.secondary"
@@ -1095,140 +1038,6 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date, initialMealPeriod }) 
                             />
 
                             {searchResultsContent}
-                        </Stack>
-                    ) : mode === 'myFoods' ? (
-                        <Stack spacing={2}>
-                            <Stack
-                                direction={{ xs: 'column', sm: 'row' }}
-                                spacing={1}
-                                sx={{
-                                    alignItems: { xs: 'stretch', sm: 'center' }
-                                }}
-                            >
-                                <Button
-                                    variant="outlined"
-                                    type="button"
-                                    onClick={() => setIsNewFoodDialogOpen(true)}
-                                    disabled={isSubmitting}
-                                >
-                                    {t('foodEntry.myFoods.newFood')}
-                                </Button>
-                            </Stack>
-
-                            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} sx={{
-                                alignItems: { sm: 'flex-end' }
-                            }}>
-                                <TextField
-                                    label={t('foodEntry.myFoods.searchLabel')}
-                                    placeholder={t('foodEntry.myFoods.searchPlaceholder')}
-                                    fullWidth
-                                    value={myFoodsQueryText}
-                                    onChange={(e) => setMyFoodsQueryText(e.target.value)}
-                                    disabled={isSubmitting}
-                                />
-                            </Stack>
-
-                            {myFoodsQuery.isLoading ? (
-                                <Stack direction="row" spacing={1} sx={{
-                                    alignItems: "center"
-                                }}>
-                                    <CircularProgress size={18} />
-                                    <Typography variant="body2" sx={{
-                                        color: "text.secondary"
-                                    }}>
-                                        {t('common.loading')}
-                                    </Typography>
-                                </Stack>
-                            ) : myFoodsQuery.isError ? (
-                                <Typography variant="body2" sx={{
-                                    color: "text.secondary"
-                                }}>
-                                    {t('foodEntry.myFoods.error.unableToLoad')}
-                                </Typography>
-                            ) : myFoods.length === 0 ? (
-                                <Typography variant="body2" sx={{
-                                    color: "text.secondary"
-                                }}>
-                                    {t('foodEntry.myFoods.empty', { newFood: t('foodEntry.myFoods.newFood') })}
-                                </Typography>
-                            ) : (
-                                <Box
-                                    sx={{
-                                        border: 1,
-                                        borderColor: 'divider',
-                                        borderRadius: 1,
-                                        overflow: 'hidden',
-                                        maxHeight: MY_FOODS_LIST_HEIGHT,
-                                        overflowY: 'auto'
-                                    }}
-                                >
-                                    <List dense disablePadding>
-                                        {myFoods.map((food) => {
-                                            const secondary = `${Math.round(food.calories_per_serving)} kcal per ${food.serving_size_quantity} ${food.serving_unit_label}`;
-                                            return (
-                                                <ListItemButton
-                                                    key={food.id}
-                                                    selected={food.id === selectedMyFoodId}
-                                                    onClick={() => setSelectedMyFoodId(food.id)}
-                                                    disabled={isSubmitting}
-                                                >
-                                                    <ListItemText
-                                                        primary={food.name}
-                                                        secondary={secondary}
-                                                        slotProps={{
-                                                            primary: { variant: 'body2' },
-                                                            secondary: { variant: 'caption', color: 'text.secondary' }
-                                                        }} />
-                                                </ListItemButton>
-                                            );
-                                        })}
-                                    </List>
-                                </Box>
-                            )}
-
-                            {selectedMyFood && (
-                                <Stack spacing={1.5}>
-                                    {(() => {
-                                        const servingDescriptor = `${selectedMyFood.serving_size_quantity} ${selectedMyFood.serving_unit_label}`;
-                                        return (
-                                            <TextField
-                                                label={t('foodEntry.myFoods.servingsConsumed', { serving: servingDescriptor })}
-                                                type="number"
-                                                value={myFoodServingsConsumed}
-                                                onChange={(e) => setMyFoodServingsConsumed(e.target.value)}
-                                                disabled={isSubmitting}
-                                                slotProps={{
-                                                    htmlInput: { min: 0, step: 0.1 }
-                                                }}
-                                            />
-                                        );
-                                    })()}
-                                    {myFoodCaloriesPreview !== null && (
-                                        <Typography variant="body2" sx={{
-                                            color: "text.secondary"
-                                        }}>
-                                            {t('foodEntry.myFoods.caloriesPreview', { calories: myFoodCaloriesPreview })}
-                                        </Typography>
-                                    )}
-                                </Stack>
-                            )}
-
-                            <NewMyFoodDialog
-                                open={isNewFoodDialogOpen}
-                                date={entryLocalDate}
-                                mealPeriod={mealPeriod}
-                                onClose={() => setIsNewFoodDialogOpen(false)}
-                                onSaved={(created) => {
-                                    void queryClient.invalidateQueries({ queryKey: ['my-foods'] });
-                                    setSelectedMyFoodId(created.id);
-                                }}
-                                onLogged={() => {
-                                    void queryClient.invalidateQueries({ queryKey: ['food'] });
-                                    void queryClient.invalidateQueries({ queryKey: ['recent-foods'] });
-                                    void queryClient.invalidateQueries({ queryKey: inAppNotificationsQueryKey() });
-                                    onSuccess?.({ closeDialog: true });
-                                }}
-                            />
                         </Stack>
                     ) : (
                         <Stack spacing={2}>
@@ -1388,24 +1197,16 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date, initialMealPeriod }) 
                         <Button
                             variant="outlined"
                             type="button"
-                            onClick={() =>
-                                void (selectedRecentFood
-                                    ? handleAddFromSearch({ closeDialog: false })
-                                    : handleAddQuickEntry({ closeDialog: false }))
-                            }
-                            disabled={isSubmitting || !canAddQuickMode}
+                            onClick={() => void handleAddQuickEntry({ closeDialog: false })}
+                            disabled={isSubmitting || !canAddQuickEntry}
                         >
                             {isSubmitting ? t('common.adding') : t('foodEntry.actions.addAnother')}
                         </Button>
                         <Button
                             variant="contained"
                             type="button"
-                            onClick={() =>
-                                void (selectedRecentFood
-                                    ? handleAddFromSearch({ closeDialog: true })
-                                    : handleAddQuickEntry({ closeDialog: true }))
-                            }
-                            disabled={isSubmitting || !canAddQuickMode}
+                            onClick={() => void handleAddQuickEntry({ closeDialog: true })}
+                            disabled={isSubmitting || !canAddQuickEntry}
                         >
                             {isSubmitting ? t('common.adding') : t('foodEntry.actions.addAndClose')}
                         </Button>

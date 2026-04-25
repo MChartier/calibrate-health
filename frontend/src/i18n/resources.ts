@@ -355,7 +355,7 @@ export const en = {
     'foodEntry.mode.quick': 'Quick',
     'foodEntry.mode.search': 'Search',
     'foodEntry.mode.myFoods': 'My Foods',
-    'foodEntry.mode.myRecipes': 'My Recipes',
+    'foodEntry.mode.myRecipes': 'Recipes',
     'foodEntry.search.label': 'Search foods',
     'foodEntry.search.placeholder': 'e.g. apple, chicken breast',
     'foodEntry.search.scanBarcode': 'Scan barcode',
