@@ -12,7 +12,7 @@ const devcontainerScript = path.join(
 );
 
 const commandMap = new Map([
-  ["devcontainer:start", { type: "up" }],
+  ["devcontainer:start", { type: "up", skipPostCreate: true }],
   ["setup-app", { type: "exec", command: ["npm", "run", "setup"] }],
   ["db:migrate", { type: "exec", command: ["npm", "run", "db:migrate:dev"] }],
   ["db:reset", { type: "exec", command: ["npm", "run", "db:reset:dev"] }],
@@ -122,6 +122,7 @@ if (commandName === "down") {
       "up",
       "--path",
       workspacePath,
+      ...(command.skipPostCreate ? ["--skip-post-create"] : []),
       ...(command.removeExistingContainer ? ["--remove-existing-container"] : []),
     ]);
   } else if (command.type === "shell") {

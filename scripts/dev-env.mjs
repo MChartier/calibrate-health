@@ -287,6 +287,12 @@ async function ensurePackageDependencies(packageConfig) {
  * Install all app dependencies with shared-volume locking.
  */
 async function ensureDependencies() {
+  if (process.platform !== "win32" && fs.existsSync(path.join(repoRoot, ".devcontainer", "prepare-volumes.sh"))) {
+    await timed("Prepare devcontainer volumes", () => {
+      run("bash", [".devcontainer/prepare-volumes.sh"]);
+    });
+  }
+
   await timed("Install dependencies", async () => {
     for (const packageConfig of packages) {
       await ensurePackageDependencies(packageConfig);

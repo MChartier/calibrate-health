@@ -142,7 +142,8 @@ node .codex/local-environment.setup.mjs
 The script targets `CODEX_WORKTREE_PATH` when the Codex app provides it, installs the repo-local Dev Containers CLI if
 needed into a host-level tool cache, copies the source checkout's ignored `.env` into the new worktree when needed, and
 starts that worktree's devcontainer with isolated Compose services and ports. It intentionally does not install app
-dependencies, migrate the database, or seed data; those steps are exposed as Codex actions.
+dependencies, run devcontainer post-create hooks, migrate the database, or seed data; those steps are exposed as Codex
+actions.
 For Codex-managed worktrees whose folder is still named `calibrate-health`, the devcontainer identity is derived from
 the full worktree path so concurrent app-created worktrees do not share a Compose project, database volume, or dev ports.
 Backend and frontend `node_modules` are mounted as shared lockfile-hashed Docker volumes, so sibling worktrees with the

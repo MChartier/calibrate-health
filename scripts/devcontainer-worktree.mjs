@@ -131,7 +131,7 @@ function isPathLike(value) {
 /**
  * Resolve the target workspace folder path based on CLI args.
  * @param {string[]} args - Positional/flag args (without subcommand).
- * @returns {{ workspacePath: string, devcontainerArgs: string[], commandArgs: string[], removeExistingContainer: boolean }} Resolved path + passthrough args.
+ * @returns {{ workspacePath: string, devcontainerArgs: string[], commandArgs: string[], removeExistingContainer: boolean, skipPostCreate: boolean }} Resolved path + passthrough args.
  */
 function resolveTarget(args) {
   const passthroughIndex = args.indexOf("--");
@@ -146,6 +146,7 @@ function resolveTarget(args) {
   let positional = null;
   const devcontainerArgs = [];
   let removeExistingContainer = false;
+  let skipPostCreate = false;
 
   for (let i = 0; i < inputArgs.length; i += 1) {
     const arg = inputArgs[i];
@@ -169,6 +170,11 @@ function resolveTarget(args) {
 
     if (arg === "--remove-existing-container") {
       removeExistingContainer = true;
+      continue;
+    }
+
+    if (arg === "--skip-post-create") {
+      skipPostCreate = true;
       continue;
     }
 
@@ -216,7 +222,7 @@ function resolveTarget(args) {
     );
   }
 
-  return { workspacePath: resolved, devcontainerArgs, commandArgs, removeExistingContainer };
+  return { workspacePath: resolved, devcontainerArgs, commandArgs, removeExistingContainer, skipPostCreate };
 }
 
 /**
@@ -370,6 +376,7 @@ function printHelp() {
       "  --branch <name>  Resolve a worktree by branch name.",
       "  --cwd            Use the current working directory.",
       "  --remove-existing-container  Recreate the container before exec.",
+      "  --skip-post-create  Skip devcontainer lifecycle hooks during up.",
       "",
       "Notes:",
       "  - Run from any worktree in the repo when resolving by branch.",
@@ -412,6 +419,7 @@ if (subcommand === "up") {
     "--workspace-folder",
     target.workspacePath,
     ...(target.removeExistingContainer ? ["--remove-existing-container"] : []),
+    ...(target.skipPostCreate ? ["--skip-post-create"] : []),
     ...target.devcontainerArgs,
     ...target.commandArgs,
   ]);
@@ -430,6 +438,7 @@ if (subcommand === "exec") {
     "--workspace-folder",
     target.workspacePath,
     ...(target.removeExistingContainer ? ["--remove-existing-container"] : []),
+    ...(target.skipPostCreate ? ["--skip-post-create"] : []),
   ]);
   const execArgs = [
     "exec",
@@ -450,6 +459,7 @@ const containerId = await runDevcontainerUp([
   "--workspace-folder",
   target.workspacePath,
   ...(target.removeExistingContainer ? ["--remove-existing-container"] : []),
+  ...(target.skipPostCreate ? ["--skip-post-create"] : []),
 ]);
 const execArgs = [
   "exec",
