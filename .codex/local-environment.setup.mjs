@@ -8,7 +8,6 @@ const workspacePath = path.resolve(process.env.CODEX_WORKTREE_PATH || process.cw
 const sourceTreePath = process.env.CODEX_SOURCE_TREE_PATH
   ? path.resolve(process.env.CODEX_SOURCE_TREE_PATH)
   : "";
-const npmBin = process.platform === "win32" ? "npm.cmd" : "npm";
 
 /**
  * Run a setup command with inherited stdio so Codex shows actionable logs.
@@ -45,7 +44,8 @@ if (sourceTreePath && sourceTreePath !== workspacePath) {
 }
 
 const devcontainerCli = ensureDevcontainerCliCache(workspacePath);
+const codexWorktreeEnvScript = path.join(workspacePath, "scripts", "codex-worktree-env.mjs");
 
-run(npmBin, ["run", "codex:devcontainer:start"], {
+run(process.execPath, [codexWorktreeEnvScript, "devcontainer:start"], {
   DEVCONTAINER_CLI_JS: devcontainerCli.cliJs,
 });
