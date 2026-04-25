@@ -225,7 +225,9 @@ const LoseItImportDialog: React.FC<LoseItImportDialogProps> = ({ open, onClose, 
     if (step === 'select') {
         dialogBody = (
             <Stack spacing={DIALOG_CONTENT_SPACING}>
-                <Typography color="text.secondary">
+                <Typography sx={{
+                    color: "text.secondary"
+                }}>
                     {t('import.loseit.dialogDescription')}
                 </Typography>
                 <Box>
@@ -257,7 +259,9 @@ const LoseItImportDialog: React.FC<LoseItImportDialogProps> = ({ open, onClose, 
                             })}
                         </Typography>
                         {preview.summary.startDate && preview.summary.endDate && (
-                            <Typography variant="body2" color="text.secondary">
+                            <Typography variant="body2" sx={{
+                                color: "text.secondary"
+                            }}>
                                 {t('import.loseit.dateRange', {
                                     start: preview.summary.startDate,
                                     end: preview.summary.endDate
@@ -274,12 +278,16 @@ const LoseItImportDialog: React.FC<LoseItImportDialogProps> = ({ open, onClose, 
                         </Typography>
                         <Stack spacing={0.5}>
                             {preview.conflicts.foodLogDays > 0 && (
-                                <Typography variant="body2" color="text.secondary">
+                                <Typography variant="body2" sx={{
+                                    color: "text.secondary"
+                                }}>
                                     {t('import.loseit.conflicts.foodDays', { count: preview.conflicts.foodLogDays })}
                                 </Typography>
                             )}
                             {preview.conflicts.weightDays > 0 && (
-                                <Typography variant="body2" color="text.secondary">
+                                <Typography variant="body2" sx={{
+                                    color: "text.secondary"
+                                }}>
                                     {t('import.loseit.conflicts.weightDays', { count: preview.conflicts.weightDays })}
                                 </Typography>
                             )}
@@ -340,7 +348,13 @@ const LoseItImportDialog: React.FC<LoseItImportDialogProps> = ({ open, onClose, 
                                 <ToggleButton value={WEIGHT_UNITS.KG}>kg</ToggleButton>
                             </ToggleButtonGroup>
                             {weightUnitHint && (
-                                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
+                                <Typography
+                                    variant="caption"
+                                    sx={{
+                                        color: "text.secondary",
+                                        display: 'block',
+                                        mt: 0.5
+                                    }}>
                                     {weightUnitHint} ({weightUnitLabel})
                                 </Typography>
                             )}
@@ -365,7 +379,9 @@ const LoseItImportDialog: React.FC<LoseItImportDialogProps> = ({ open, onClose, 
                         </Typography>
                         <Stack spacing={WARNING_LIST_SPACING}>
                             {preview.warnings.map((warning, idx) => (
-                                <Typography key={`${warning}-${idx}`} variant="body2" color="text.secondary">
+                                <Typography key={`${warning}-${idx}`} variant="body2" sx={{
+                                    color: "text.secondary"
+                                }}>
                                     {warning}
                                 </Typography>
                             ))}
@@ -388,7 +404,9 @@ const LoseItImportDialog: React.FC<LoseItImportDialogProps> = ({ open, onClose, 
                     })}
                 </Typography>
                 {(result.skippedFoodLogs > 0 || result.skippedWeights > 0) && (
-                    <Typography variant="body2" color="text.secondary">
+                    <Typography variant="body2" sx={{
+                        color: "text.secondary"
+                    }}>
                         {t('import.loseit.completeSkipped', {
                             foods: result.skippedFoodLogs,
                             weights: result.skippedWeights
@@ -396,7 +414,9 @@ const LoseItImportDialog: React.FC<LoseItImportDialogProps> = ({ open, onClose, 
                     </Typography>
                 )}
                 {result.updatedBodyFat > 0 && (
-                    <Typography variant="body2" color="text.secondary">
+                    <Typography variant="body2" sx={{
+                        color: "text.secondary"
+                    }}>
                         {t('import.loseit.completeBodyFat', { count: result.updatedBodyFat })}
                     </Typography>
                 )}
@@ -407,7 +427,9 @@ const LoseItImportDialog: React.FC<LoseItImportDialogProps> = ({ open, onClose, 
                         </Typography>
                         <Stack spacing={WARNING_LIST_SPACING}>
                             {result.warnings.map((warning, idx) => (
-                                <Typography key={`${warning}-${idx}`} variant="body2" color="text.secondary">
+                                <Typography key={`${warning}-${idx}`} variant="body2" sx={{
+                                    color: "text.secondary"
+                                }}>
                                     {warning}
                                 </Typography>
                             ))}

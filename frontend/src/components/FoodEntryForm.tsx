@@ -504,7 +504,9 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
         }
 
         searchResultsContent = (
-            <Typography variant="body2" color="text.secondary">
+            <Typography variant="body2" sx={{
+                color: "text.secondary"
+            }}>
                 {emptyMessage}
             </Typography>
         );
@@ -521,7 +523,9 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
                     onLoadMore={() => void loadMoreSearchResults()}
                     onSelect={selectSearchResult}
                 />
-                <Typography variant="caption" color="text.secondary">
+                <Typography variant="caption" sx={{
+                    color: "text.secondary"
+                }}>
                     {t('foodEntry.search.results.tapHint')}
                 </Typography>
             </Stack>
@@ -583,11 +587,15 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
                     value={quantity}
                     onChange={(e) => setQuantity(parseFloat(e.target.value) || 0)}
                     disabled={!selectedMeasure || isSubmitting}
-                    inputProps={{ min: 0, step: 0.5 }}
+                    slotProps={{
+                        htmlInput: { min: 0, step: 0.5 }
+                    }}
                 />
 
                 <Box>
-                    <Typography variant="body2" color="text.secondary">
+                    <Typography variant="body2" sx={{
+                        color: "text.secondary"
+                    }}>
                         {selectedItem.nutrientsPer100g
                             ? t('foodEntry.search.caloriesEstimated')
                             : t('foodEntry.search.caloriesUnavailable')}
@@ -605,7 +613,9 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
         );
     } else {
         searchResultsContent = (
-            <Typography variant="body2" color="text.secondary">
+            <Typography variant="body2" sx={{
+                color: "text.secondary"
+            }}>
                 {t('foodEntry.search.selectToContinue')}
             </Typography>
         );
@@ -653,25 +663,29 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
                                         void performFoodSearch({ query: searchQuery });
                                     }
                                 }}
-                                InputProps={{
-                                    endAdornment: canUseBarcodeScanner ? (
-                                        <InputAdornment position="end">
-                                            <IconButton
-                                                aria-label={t('foodEntry.search.scanBarcode')}
-                                                title={t('foodEntry.search.scanBarcode')}
-                                                onClick={() => setIsScannerOpen(true)}
-                                                size="small"
-                                                edge="end"
-                                                disabled={isSearching || isSubmitting}
-                                            >
-                                                <QrCodeScannerIcon />
-                                            </IconButton>
-                                        </InputAdornment>
-                                    ) : undefined
+                                slotProps={{
+                                    input: {
+                                        endAdornment: canUseBarcodeScanner ? (
+                                            <InputAdornment position="end">
+                                                <IconButton
+                                                    aria-label={t('foodEntry.search.scanBarcode')}
+                                                    title={t('foodEntry.search.scanBarcode')}
+                                                    onClick={() => setIsScannerOpen(true)}
+                                                    size="small"
+                                                    edge="end"
+                                                    disabled={isSearching || isSubmitting}
+                                                >
+                                                    <QrCodeScannerIcon />
+                                                </IconButton>
+                                            </InputAdornment>
+                                        ) : undefined
+                                    }
                                 }}
                             />
                             {providerName && (
-                                <Typography variant="caption" color="text.secondary">
+                                <Typography variant="caption" sx={{
+                                    color: "text.secondary"
+                                }}>
                                     {t('foodEntry.search.providerLabel', { provider: providerName })}
                                     {providerLookupNote}
                                 </Typography>
@@ -703,7 +717,9 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
                             <Stack
                                 direction={{ xs: 'column', sm: 'row' }}
                                 spacing={1}
-                                alignItems={{ xs: 'stretch', sm: 'center' }}
+                                sx={{
+                                    alignItems: { xs: 'stretch', sm: 'center' }
+                                }}
                             >
                                 <Button
                                     variant="outlined"
@@ -715,7 +731,9 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
                                 </Button>
                             </Stack>
 
-                            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems={{ sm: 'flex-end' }}>
+                            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} sx={{
+                                alignItems: { sm: 'flex-end' }
+                            }}>
                                 <TextField
                                     label={t('foodEntry.myFoods.searchLabel')}
                                     placeholder={t('foodEntry.myFoods.searchPlaceholder')}
@@ -727,18 +745,26 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
                             </Stack>
 
                             {myFoodsQuery.isLoading ? (
-                                <Stack direction="row" spacing={1} alignItems="center">
+                                <Stack direction="row" spacing={1} sx={{
+                                    alignItems: "center"
+                                }}>
                                     <CircularProgress size={18} />
-                                    <Typography variant="body2" color="text.secondary">
+                                    <Typography variant="body2" sx={{
+                                        color: "text.secondary"
+                                    }}>
                                         {t('common.loading')}
                                     </Typography>
                                 </Stack>
                             ) : myFoodsQuery.isError ? (
-                                <Typography variant="body2" color="text.secondary">
+                                <Typography variant="body2" sx={{
+                                    color: "text.secondary"
+                                }}>
                                     {t('foodEntry.myFoods.error.unableToLoad')}
                                 </Typography>
                             ) : myFoods.length === 0 ? (
-                                <Typography variant="body2" color="text.secondary">
+                                <Typography variant="body2" sx={{
+                                    color: "text.secondary"
+                                }}>
                                     {t('foodEntry.myFoods.empty', { newFood: t('foodEntry.myFoods.newFood') })}
                                 </Typography>
                             ) : (
@@ -765,9 +791,10 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
                                                     <ListItemText
                                                         primary={food.name}
                                                         secondary={secondary}
-                                                        primaryTypographyProps={{ variant: 'body2' }}
-                                                        secondaryTypographyProps={{ variant: 'caption', color: 'text.secondary' }}
-                                                    />
+                                                        slotProps={{
+                                                            primary: { variant: 'body2' },
+                                                            secondary: { variant: 'caption', color: 'text.secondary' }
+                                                        }} />
                                                 </ListItemButton>
                                             );
                                         })}
@@ -786,12 +813,16 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
                                                 value={myFoodServingsConsumed}
                                                 onChange={(e) => setMyFoodServingsConsumed(e.target.value)}
                                                 disabled={isSubmitting}
-                                                inputProps={{ min: 0, step: 0.1 }}
+                                                slotProps={{
+                                                    htmlInput: { min: 0, step: 0.1 }
+                                                }}
                                             />
                                         );
                                     })()}
                                     {myFoodCaloriesPreview !== null && (
-                                        <Typography variant="body2" color="text.secondary">
+                                        <Typography variant="body2" sx={{
+                                            color: "text.secondary"
+                                        }}>
                                             {t('foodEntry.myFoods.caloriesPreview', { calories: myFoodCaloriesPreview })}
                                         </Typography>
                                     )}
@@ -819,7 +850,9 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
                             <Stack
                                 direction={{ xs: 'column', sm: 'row' }}
                                 spacing={1}
-                                alignItems={{ xs: 'stretch', sm: 'center' }}
+                                sx={{
+                                    alignItems: { xs: 'stretch', sm: 'center' }
+                                }}
                             >
                                 <Button
                                     variant="outlined"
@@ -841,18 +874,26 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
                             />
 
                             {myFoodsQuery.isLoading ? (
-                                <Stack direction="row" spacing={1} alignItems="center">
+                                <Stack direction="row" spacing={1} sx={{
+                                    alignItems: "center"
+                                }}>
                                     <CircularProgress size={18} />
-                                    <Typography variant="body2" color="text.secondary">
+                                    <Typography variant="body2" sx={{
+                                        color: "text.secondary"
+                                    }}>
                                         {t('common.loading')}
                                     </Typography>
                                 </Stack>
                             ) : myFoodsQuery.isError ? (
-                                <Typography variant="body2" color="text.secondary">
+                                <Typography variant="body2" sx={{
+                                    color: "text.secondary"
+                                }}>
                                     {t('foodEntry.myRecipes.error.unableToLoad')}
                                 </Typography>
                             ) : myFoods.length === 0 ? (
-                                <Typography variant="body2" color="text.secondary">
+                                <Typography variant="body2" sx={{
+                                    color: "text.secondary"
+                                }}>
                                     {t('foodEntry.myRecipes.empty', { newRecipe: t('foodEntry.myRecipes.newRecipe') })}
                                 </Typography>
                             ) : (
@@ -879,9 +920,10 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
                                                     <ListItemText
                                                         primary={recipe.name}
                                                         secondary={secondary}
-                                                        primaryTypographyProps={{ variant: 'body2' }}
-                                                        secondaryTypographyProps={{ variant: 'caption', color: 'text.secondary' }}
-                                                    />
+                                                        slotProps={{
+                                                            primary: { variant: 'body2' },
+                                                            secondary: { variant: 'caption', color: 'text.secondary' }
+                                                        }} />
                                                 </ListItemButton>
                                             );
                                         })}
@@ -900,12 +942,16 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
                                                 value={myFoodServingsConsumed}
                                                 onChange={(e) => setMyFoodServingsConsumed(e.target.value)}
                                                 disabled={isSubmitting}
-                                                inputProps={{ min: 0, step: 0.1 }}
+                                                slotProps={{
+                                                    htmlInput: { min: 0, step: 0.1 }
+                                                }}
                                             />
                                         );
                                     })()}
                                     {myFoodCaloriesPreview !== null && (
-                                        <Typography variant="body2" color="text.secondary">
+                                        <Typography variant="body2" sx={{
+                                            color: "text.secondary"
+                                        }}>
                                             {t('foodEntry.myFoods.caloriesPreview', { calories: myFoodCaloriesPreview })}
                                         </Typography>
                                     )}
@@ -970,14 +1016,15 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
                                     value={quickEntryCalories}
                                     onChange={(e) => setQuickEntryCalories(e.target.value)}
                                     disabled={isSubmitting}
-                                    inputProps={{ min: 0, step: 1 }}
+                                    slotProps={{
+                                        htmlInput: { min: 0, step: 1 }
+                                    }}
                                 />
                             </Stack>
                         </>
                     )}
                 </Stack>
             </DialogContent>
-
             <DialogActions>
                 {mode === 'myFoods' && (
                     <Button

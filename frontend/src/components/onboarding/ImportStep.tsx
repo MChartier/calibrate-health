@@ -27,7 +27,9 @@ const ImportStep: React.FC<ImportStepProps> = ({ onOpenImport, summary }) => {
                 <Typography variant="h5">{t('onboarding.import.title')}</Typography>
                 <Chip size="small" label={t('onboarding.import.optional')} />
             </Box>
-            <Typography color="text.secondary">
+            <Typography sx={{
+                color: "text.secondary"
+            }}>
                 {t('onboarding.import.body')}
             </Typography>
             <Button variant="outlined" onClick={onOpenImport}>

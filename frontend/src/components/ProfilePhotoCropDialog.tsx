@@ -172,7 +172,9 @@ const ProfilePhotoCropDialog: React.FC<Props> = ({ open, imageUrl, onCancel, onC
             <DialogContent>
                 <Stack spacing={2}>
                     {error && <Alert severity="error">{error}</Alert>}
-                    <Typography variant="body2" color="text.secondary">
+                    <Typography variant="body2" sx={{
+                        color: "text.secondary"
+                    }}>
                         {helperText}
                     </Typography>
 

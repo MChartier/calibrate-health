@@ -144,10 +144,12 @@ const NewMyFoodDialog: React.FC<Props> = ({ open, date, mealPeriod, onClose, onS
                             type="number"
                             value={servingSizeQuantity}
                             onChange={(e) => setServingSizeQuantity(e.target.value)}
-                            inputProps={{ min: 0, step: 0.1 }}
                             fullWidth
                             disabled={isSubmitting}
                             required
+                            slotProps={{
+                                htmlInput: { min: 0, step: 0.1 }
+                            }}
                         />
 
                         <Autocomplete
@@ -175,10 +177,12 @@ const NewMyFoodDialog: React.FC<Props> = ({ open, date, mealPeriod, onClose, onS
                         type="number"
                         value={caloriesPerServing}
                         onChange={(e) => setCaloriesPerServing(e.target.value)}
-                        inputProps={{ min: 0, step: 1 }}
                         fullWidth
                         disabled={isSubmitting}
                         required
+                        slotProps={{
+                            htmlInput: { min: 0, step: 1 }
+                        }}
                     />
                 </Stack>
             </DialogContent>

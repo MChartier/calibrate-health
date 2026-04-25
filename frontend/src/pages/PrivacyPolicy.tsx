@@ -33,7 +33,12 @@ const PrivacyPolicy: React.FC = () => {
                         <Typography variant="h3" component="h1">
                             {t('legal.privacyPolicy')}
                         </Typography>
-                        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.75 }}>
+                        <Typography
+                            variant="body2"
+                            sx={{
+                                color: "text.secondary",
+                                mt: 0.75
+                            }}>
                             <Box component="span" sx={{ fontWeight: 700 }}>
                                 Last updated:
                             </Box>{' '}
@@ -48,7 +53,12 @@ const PrivacyPolicy: React.FC = () => {
                             </Link>{' '}
                             (the "Service").
                         </Typography>
-                        <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                        <Typography
+                            variant="body2"
+                            sx={{
+                                color: "text.secondary",
+                                mt: 1
+                            }}>
                             Calibrate Health is a calorie and weight-tracking tool. It is not a medical service and does
                             not provide medical advice.
                         </Typography>
@@ -70,7 +80,9 @@ const PrivacyPolicy: React.FC = () => {
                                     </Typography>
                                     <Box component="ul" sx={LIST_SX}>
                                         <Box component="li">
-                                            <Typography variant="body2" fontWeight={700}>
+                                            <Typography variant="body2" sx={{
+                                                fontWeight: 700
+                                            }}>
                                                 Account information
                                             </Typography>
                                             <Box component="ul" sx={NESTED_LIST_SX}>
@@ -83,7 +95,9 @@ const PrivacyPolicy: React.FC = () => {
                                             </Box>
                                         </Box>
                                         <Box component="li">
-                                            <Typography variant="body2" fontWeight={700}>
+                                            <Typography variant="body2" sx={{
+                                                fontWeight: 700
+                                            }}>
                                                 Profile information
                                             </Typography>
                                             <Box component="ul" sx={NESTED_LIST_SX}>
@@ -108,7 +122,9 @@ const PrivacyPolicy: React.FC = () => {
                                             </Box>
                                         </Box>
                                         <Box component="li">
-                                            <Typography variant="body2" fontWeight={700}>
+                                            <Typography variant="body2" sx={{
+                                                fontWeight: 700
+                                            }}>
                                                 Health-related data you choose to enter
                                             </Typography>
                                             <Box component="ul" sx={NESTED_LIST_SX}>
@@ -124,7 +140,9 @@ const PrivacyPolicy: React.FC = () => {
                                             </Box>
                                         </Box>
                                         <Box component="li">
-                                            <Typography variant="body2" fontWeight={700}>
+                                            <Typography variant="body2" sx={{
+                                                fontWeight: 700
+                                            }}>
                                                 Imported data
                                             </Typography>
                                             <Box component="ul" sx={NESTED_LIST_SX}>
@@ -134,7 +152,9 @@ const PrivacyPolicy: React.FC = () => {
                                             </Box>
                                         </Box>
                                     </Box>
-                                    <Typography variant="body2" color="text.secondary">
+                                    <Typography variant="body2" sx={{
+                                        color: "text.secondary"
+                                    }}>
                                         All health-related data is entered voluntarily and is stored solely to provide the
                                         core functionality of the Service.
                                     </Typography>
@@ -167,7 +187,9 @@ const PrivacyPolicy: React.FC = () => {
                                             Application usage necessary for authentication and session management
                                         </Typography>
                                     </Box>
-                                    <Typography variant="body2" color="text.secondary">
+                                    <Typography variant="body2" sx={{
+                                        color: "text.secondary"
+                                    }}>
                                         We do not use this data for advertising or behavioral profiling.
                                     </Typography>
                                 </Stack>
@@ -189,7 +211,9 @@ const PrivacyPolicy: React.FC = () => {
                                             USDA FoodData Central (when enabled)
                                         </Typography>
                                     </Box>
-                                    <Typography variant="body2" color="text.secondary">
+                                    <Typography variant="body2" sx={{
+                                        color: "text.secondary"
+                                    }}>
                                         When you search for foods or scan barcodes, your query may be sent to these
                                         providers. Calibrate does not send personally identifiable information (such as your
                                         email address or account ID) to these services.
@@ -227,7 +251,9 @@ const PrivacyPolicy: React.FC = () => {
                                     Diagnose bugs and maintain system reliability
                                 </Typography>
                             </Box>
-                            <Typography variant="body2" color="text.secondary">
+                            <Typography variant="body2" sx={{
+                                color: "text.secondary"
+                            }}>
                                 We do not sell your data, rent it, or use it for targeted advertising.
                             </Typography>
                         </Stack>
@@ -252,7 +278,9 @@ const PrivacyPolicy: React.FC = () => {
                                     Security
                                 </Typography>
                             </Box>
-                            <Typography variant="body2" color="text.secondary">
+                            <Typography variant="body2" sx={{
+                                color: "text.secondary"
+                            }}>
                                 We do not use third-party advertising cookies or tracking pixels.
                             </Typography>
                         </Stack>
@@ -277,7 +305,9 @@ const PrivacyPolicy: React.FC = () => {
                                     Access-controlled databases
                                 </Typography>
                             </Box>
-                            <Typography variant="body2" color="text.secondary">
+                            <Typography variant="body2" sx={{
+                                color: "text.secondary"
+                            }}>
                                 While no system can guarantee absolute security, we take reasonable measures to protect your
                                 information against unauthorized access, loss, or misuse.
                             </Typography>
@@ -341,7 +371,9 @@ const PrivacyPolicy: React.FC = () => {
                                     Export your data
                                 </Typography>
                             </Box>
-                            <Typography variant="body2" color="text.secondary">
+                            <Typography variant="body2" sx={{
+                                color: "text.secondary"
+                            }}>
                                 You can exercise most of these rights directly within the Service. If you need assistance,
                                 contact us using the information below.
                             </Typography>
@@ -356,7 +388,9 @@ const PrivacyPolicy: React.FC = () => {
                             <Typography variant="body1">
                                 Calibrate Health is not intended for use by children under the age of 13.
                             </Typography>
-                            <Typography variant="body2" color="text.secondary">
+                            <Typography variant="body2" sx={{
+                                color: "text.secondary"
+                            }}>
                                 We do not knowingly collect personal data from children. If you believe a child has provided
                                 personal information, please contact us and we will delete it.
                             </Typography>
@@ -369,7 +403,9 @@ const PrivacyPolicy: React.FC = () => {
                         </Typography>
                         <Stack spacing={PARAGRAPH_SPACING} sx={{ mt: 1.5 }} useFlexGap>
                             <Typography variant="body1">We may update this Privacy Policy from time to time.</Typography>
-                            <Typography variant="body2" color="text.secondary">
+                            <Typography variant="body2" sx={{
+                                color: "text.secondary"
+                            }}>
                                 If we make material changes, we will notify users by updating the "Last updated" date and,
                                 when appropriate, by providing notice within the Service.
                             </Typography>

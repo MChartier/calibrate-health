@@ -144,7 +144,9 @@ const InAppNotificationsDrawer: React.FC<InAppNotificationsDrawerProps> = ({
         );
     } else if (notificationRows.length === 0) {
         bodyContent = (
-            <Typography variant="body2" color="text.secondary">
+            <Typography variant="body2" sx={{
+                color: "text.secondary"
+            }}>
                 {t('notifications.empty')}
             </Typography>
         );
@@ -176,19 +178,31 @@ const InAppNotificationsDrawer: React.FC<InAppNotificationsDrawerProps> = ({
                                     opacity: 1
                                 }}
                             >
-                                <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={1}>
+                                <Stack
+                                    direction="row"
+                                    spacing={1}
+                                    sx={{
+                                        alignItems: "center",
+                                        justifyContent: "space-between"
+                                    }}>
                                     <Typography variant="subtitle2">{copy.title}</Typography>
-                                    <Stack direction="row" spacing={0.75} alignItems="center">
+                                    <Stack direction="row" spacing={0.75} sx={{
+                                        alignItems: "center"
+                                    }}>
                                         <Chip size="small" label={t('notifications.unreadBadge')} />
                                         {timestamp ? (
-                                            <Typography variant="caption" color="text.secondary">
+                                            <Typography variant="caption" sx={{
+                                                color: "text.secondary"
+                                            }}>
                                                 {timestamp}
                                             </Typography>
                                         ) : null}
                                     </Stack>
                                 </Stack>
 
-                                <Typography variant="body2" color="text.secondary">
+                                <Typography variant="body2" sx={{
+                                    color: "text.secondary"
+                                }}>
                                     {copy.body}
                                 </Typography>
 
@@ -222,7 +236,12 @@ const InAppNotificationsDrawer: React.FC<InAppNotificationsDrawerProps> = ({
         <Drawer anchor="right" open={open} onClose={onClose}>
             <Box sx={{ width: PANEL_WIDTH_PX, px: PANEL_PADDING, py: PANEL_PADDING }}>
                 <Stack spacing={1.5}>
-                    <Stack direction="row" alignItems="center" justifyContent="space-between">
+                    <Stack
+                        direction="row"
+                        sx={{
+                            alignItems: "center",
+                            justifyContent: "space-between"
+                        }}>
                         <Typography variant="h6">{t('notifications.panelTitle')}</Typography>
                         <Chip
                             size="small"

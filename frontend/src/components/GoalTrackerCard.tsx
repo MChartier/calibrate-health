@@ -133,14 +133,23 @@ const GoalTrackerBody: React.FC<{
         return (
             <Box>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', mb: 0.5, gap: 1 }}>
-                    <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 600 }}>
+                    <Typography
+                        variant="body2"
+                        sx={{
+                            color: "text.secondary",
+                            fontWeight: 600
+                        }}>
                         {t('goalTracker.label.target', { value: targetWeight.toFixed(1), unit: unitLabel })}
                     </Typography>
-                    <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 600 }}>
+                    <Typography
+                        variant="body2"
+                        sx={{
+                            color: "text.secondary",
+                            fontWeight: 600
+                        }}>
                         {t('goalTracker.label.tolerance', { value: tolerance.toFixed(1), unit: unitLabel })}
                     </Typography>
                 </Box>
-
                 <Box sx={{ position: 'relative' }}>
                     <Box
                         sx={{
@@ -201,10 +210,14 @@ const GoalTrackerBody: React.FC<{
                         </Box>
                     )}
                 </Box>
-
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', mt: 1, gap: 1 }}>
                     <Typography variant="body2">{t('goalTracker.label.current', { weight: currentWeightLabel })}</Typography>
-                    <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 600 }}>
+                    <Typography
+                        variant="body2"
+                        sx={{
+                            color: "text.secondary",
+                            fontWeight: 600
+                        }}>
                         {statusLabel}
                     </Typography>
                 </Box>
@@ -227,14 +240,23 @@ const GoalTrackerBody: React.FC<{
     return (
         <Box>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', mb: 0.5, gap: 1 }}>
-                <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 600 }}>
+                <Typography
+                    variant="body2"
+                    sx={{
+                        color: "text.secondary",
+                        fontWeight: 600
+                    }}>
                     {t('goalTracker.label.start', { value: startWeight.toFixed(1), unit: unitLabel })}
                 </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 600 }}>
+                <Typography
+                    variant="body2"
+                    sx={{
+                        color: "text.secondary",
+                        fontWeight: 600
+                    }}>
                     {t('goalTracker.label.goal', { value: targetWeight.toFixed(1), unit: unitLabel })}
                 </Typography>
             </Box>
-
             <Box sx={{ position: 'relative' }}>
                 {progress && (
                     <Box
@@ -278,25 +300,29 @@ const GoalTrackerBody: React.FC<{
                     )}
                 </Box>
             </Box>
-
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', mt: 1, gap: 1 }}>
                 <Typography variant="body2">{t('goalTracker.label.current', { weight: currentWeightLabel })}</Typography>
                 {progress ? (
                     <Typography
                         variant="body2"
-                        color="text.secondary"
-                        sx={{ fontWeight: 600 }}
                         aria-label={t('goalTracker.aria.progressPercent')}
-                    >
+                        sx={{
+                            color: "text.secondary",
+                            fontWeight: 600
+                        }}>
                         {progress.percent.toFixed(0)}%
                     </Typography>
                 ) : (
-                    <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 600 }}>
+                    <Typography
+                        variant="body2"
+                        sx={{
+                            color: "text.secondary",
+                            fontWeight: 600
+                        }}>
                         {t('goalTracker.status.logWeighIn')}
                     </Typography>
                 )}
             </Box>
-
             <Typography
                 variant="subtitle2"
                 sx={{ fontWeight: 800, mt: 1 }}
@@ -410,7 +436,9 @@ const GoalTrackerCard: React.FC<GoalTrackerCardProps> = ({ isDashboard = false }
     } else if (isError) {
         cardBody = (
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-                <Typography variant="body2" color="text.secondary">
+                <Typography variant="body2" sx={{
+                    color: "text.secondary"
+                }}>
                     {t('goalTracker.error.unableToLoad')}
                 </Typography>
                 {isDashboard && (
@@ -423,10 +451,14 @@ const GoalTrackerCard: React.FC<GoalTrackerCardProps> = ({ isDashboard = false }
     } else if (!goal || !goalMode) {
         cardBody = (
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-                <Typography variant="body2" color="text.secondary">
+                <Typography variant="body2" sx={{
+                    color: "text.secondary"
+                }}>
                     {t('goalTracker.empty.noGoal')}
                 </Typography>
-                <Typography variant="body2" color="text.secondary">
+                <Typography variant="body2" sx={{
+                    color: "text.secondary"
+                }}>
                     {t('goalTracker.empty.setTargetHint')}
                 </Typography>
                 {isDashboard && (
