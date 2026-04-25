@@ -14,6 +14,16 @@ icon = "run"
 command = "node scripts/codex-worktree-env.mjs setup-app"
 
 [[actions]]
+name = "Recreate Devcontainer"
+icon = "run"
+command = "node scripts/codex-worktree-env.mjs devcontainer:recreate"
+
+[[actions]]
+name = "Stop Devcontainer"
+icon = "run"
+command = "node scripts/codex-worktree-env.mjs down"
+
+[[actions]]
 name = "Migrate DB"
 icon = "run"
 command = "node scripts/codex-worktree-env.mjs db:migrate"

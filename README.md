@@ -152,6 +152,8 @@ same lockfiles can reuse installed dependencies without writing them into the Wi
 Recommended Codex app actions:
 
 - Setup: `npm run codex:setup-app`
+- Recreate Devcontainer: `npm run codex:devcontainer:recreate`
+- Stop Devcontainer: `npm run codex:devcontainer:down`
 - Migrate DB: `npm run codex:db:migrate`
 - Reset DB: `npm run codex:db:reset`
 - Dev server with test-user auto-login: `npm run codex:dev`
@@ -162,6 +164,9 @@ Recommended Codex app actions:
 
 The Dev action runs the same setup checks as Setup first, but cached dependencies, already-applied migrations, and
 existing seed data are skipped. After the preflight passes, it starts `npm run dev:test`.
+Use Recreate Devcontainer after changing devcontainer config or when the worktree's container state needs a clean
+replacement. It tears down the generated Compose stack for the current worktree before starting a fresh container.
+Use Stop Devcontainer to remove the current worktree's generated devcontainer stack during cleanup.
 
 When using VS Code with a Codex-created worktree container, use **Dev Containers: Attach to Running Container** and open
 `/workspaces/calibrate-health` inside the container. **Reopen in Container** follows VS Code's own devcontainer flow and
