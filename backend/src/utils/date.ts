@@ -89,7 +89,23 @@ export function parseLocalDateOnly(input: unknown): Date {
     throw new Error('Invalid local date');
   }
 
-  return normalizeToUtcDateOnly(datePart);
+  const [yearPart, monthPart, dayPart] = datePart.split('-');
+  const year = Number(yearPart);
+  const month = Number(monthPart);
+  const day = Number(dayPart);
+  const date = new Date(Date.UTC(year, month - 1, day));
+
+  // `Date` normalizes impossible days (e.g. 2024-02-31 -> 2024-03-02), so
+  // round-trip the parts before accepting a user-provided local date.
+  if (
+    date.getUTCFullYear() !== year ||
+    date.getUTCMonth() !== month - 1 ||
+    date.getUTCDate() !== day
+  ) {
+    throw new Error('Invalid date');
+  }
+
+  return date;
 }
 
 /**

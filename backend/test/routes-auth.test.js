@@ -85,6 +85,31 @@ test('auth route: POST /register returns 400 when the email already exists', asy
   assert.deepEqual(res.body, { message: 'User already exists' });
 });
 
+test('auth route: POST /register validates email and password before lookup', async () => {
+  const prismaStub = {
+    user: {
+      findUnique: async () => {
+        throw new Error('should not be called');
+      }
+    }
+  };
+  const passportStub = { authenticate: () => () => {} };
+  const bcryptStub = { genSalt: async () => 'salt', hash: async () => 'hash' };
+
+  const router = loadAuthRouter({ prismaStub, passportStub, bcryptStub });
+  const [handler] = getRouteHandlers(router, 'post', '/register');
+
+  const invalidEmailRes = createRes();
+  await handler({ body: { email: 'not-an-email', password: 'password123' } }, invalidEmailRes);
+  assert.equal(invalidEmailRes.statusCode, 400);
+  assert.deepEqual(invalidEmailRes.body, { message: 'Invalid email' });
+
+  const shortPasswordRes = createRes();
+  await handler({ body: { email: 'test@example.com', password: 'short' } }, shortPasswordRes);
+  assert.equal(shortPasswordRes.statusCode, 400);
+  assert.deepEqual(shortPasswordRes.body, { message: 'Password must be at least 8 characters' });
+});
+
 test('auth route: POST /register creates a user and logs them in', async () => {
   const createdUser = {
     id: 42,
@@ -104,10 +129,18 @@ test('auth route: POST /register creates a user and logs them in', async () => {
     profile_image_mime_type: null
   };
 
+  let findUniqueArgs = null;
+  let createArgs = null;
   const prismaStub = {
     user: {
-      findUnique: async () => null,
-      create: async () => createdUser
+      findUnique: async (args) => {
+        findUniqueArgs = args;
+        return null;
+      },
+      create: async (args) => {
+        createArgs = args;
+        return createdUser;
+      }
     }
   };
   const passportStub = { authenticate: () => () => {} };
@@ -117,13 +150,15 @@ test('auth route: POST /register creates a user and logs them in', async () => {
   const [handler] = getRouteHandlers(router, 'post', '/register');
 
   const req = {
-    body: { email: createdUser.email, password: 'password123' },
+    body: { email: ' Test@Example.COM ', password: 'password123' },
     login: (_user, cb) => cb(null)
   };
   const res = createRes();
 
   await handler(req, res);
   assert.equal(res.statusCode, 200);
+  assert.equal(findUniqueArgs.where.email, 'test@example.com');
+  assert.equal(createArgs.data.email, 'test@example.com');
   assert.deepEqual(res.body, {
     user: {
       id: createdUser.id,

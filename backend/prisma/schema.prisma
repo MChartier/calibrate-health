@@ -106,6 +106,8 @@ model Goal {
   target_date   DateTime?
   daily_deficit Int       @default(500)
   created_at    DateTime  @default(now())
+
+  @@index([user_id, created_at(sort: Desc), id(sort: Desc)])
 }
 
 model BodyMetric {
