@@ -11,11 +11,19 @@ React + TypeScript + Vite UI for calibrate. Uses MUI and React Query.
 - The Vite dev server expects the backend at `http://localhost:3000` and proxies `/auth`, `/api`, and `/dev/test`.
 - Use `VITE_DEV_SERVER_PORT` to change the dev server port (the backend CORS default follows this port).
 - If file watching is flaky in containers, set `VITE_USE_POLLING=1`.
+- Run `npm run dev:storybook` from the repo root, or `npm run storybook` in this directory, to test custom React components in isolation. Local runs default to port 6006; devcontainer worktrees use the generated `STORYBOOK_PORT`.
 
 ## Build
 
 - `npm --prefix frontend run build` (or `npm run build` from the repo root).
 - `npm --prefix frontend run preview` to smoke-test the production build locally.
+- `npm --prefix frontend run storybook:build` (or `npm run build:storybook` from the repo root) to build the static Storybook.
+
+## Storybook
+
+- Stories live next to components as `*.stories.tsx`.
+- `.storybook/preview.tsx` applies the app theme, global CSS, English i18n, React Router, and React Query providers so component stories render in the same UI shell as the app.
+- Use the Storybook toolbar to switch between light and dark palette modes.
 
 ## PWA
 

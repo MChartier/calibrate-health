@@ -152,15 +152,21 @@ same lockfiles can reuse installed dependencies without writing them into the Wi
 Recommended Codex app actions:
 
 - Setup: `npm run codex:setup-app`
+- Recreate Devcontainer: `npm run codex:devcontainer:recreate`
+- Stop Devcontainer: `npm run codex:devcontainer:down`
 - Migrate DB: `npm run codex:db:migrate`
 - Reset DB: `npm run codex:db:reset`
 - Dev server with test-user auto-login: `npm run codex:dev`
+- Storybook component workbench: `npm run codex:storybook`
 - Test: `npm run codex:test`
 - Full CI: `npm run codex:ci`
 - Shell: `npm run codex:shell`
 
 The Dev action runs the same setup checks as Setup first, but cached dependencies, already-applied migrations, and
 existing seed data are skipped. After the preflight passes, it starts `npm run dev:test`.
+Use Recreate Devcontainer after changing devcontainer config or when the worktree's container state needs a clean
+replacement. It tears down the generated Compose stack for the current worktree before starting a fresh container.
+Use Stop Devcontainer to remove the current worktree's generated devcontainer stack during cleanup.
 
 When using VS Code with a Codex-created worktree container, use **Dev Containers: Attach to Running Container** and open
 `/workspaces/calibrate-health` inside the container. **Reopen in Container** follows VS Code's own devcontainer flow and
@@ -170,6 +176,7 @@ may create or recreate a separate container.
 2. Frontend: `http://localhost:5173` (proxies `/auth` and `/api` to the backend)
 3. Backend/API: `http://localhost:3000`
 4. Dev dashboard (dev-only): `http://localhost:5173/dev` (compare providers + test barcode scanning)
+5. Component workbench: `npm run dev:storybook` (local Storybook defaults to `http://localhost:6006`; devcontainer worktrees use the generated `STORYBOOK_PORT` in `.devcontainer/.env`)
 
 #### FatSecret provider (devcontainer)
 
@@ -231,6 +238,7 @@ If you see Prisma errors like "The table `public.User` does not exist", you have
 - `npm run dev:reset-test-user-onboarding`: reset the dev test user to pre-onboarding.
 - `npm run dev:backend`: runs only the backend (`http://localhost:3000`).
 - `npm run dev:frontend`: runs only the frontend (`http://localhost:5173`).
+- `npm run dev:storybook`: runs Storybook for isolated React component development. Local runs default to `http://localhost:6006`; devcontainer worktrees use the generated `STORYBOOK_PORT` so concurrent worktrees do not collide.
 - `npm run setup`: installs deps, runs `prisma generate`, applies migrations, and seeds dev data when missing.
 - `npm run db:migrate`: applies committed migrations (use for fresh DBs, CI, and prod).
 - `npm test`: runs backend unit tests (Node.js test runner).
@@ -246,6 +254,7 @@ More:
 - `npm --prefix backend run db:push:reset`: dev-only schema reset using `prisma db push` (fast, skips migrations).
 - `npm run db:studio`: Prisma Studio (DB browser).
 - `npm run build`: build the frontend.
+- `npm run build:storybook`: build the static Storybook.
 - `npm run lint`: lint the frontend.
 - `npm run ci:local`: run the local equivalent of PR CI (backend build, frontend build, frontend lint, backend tests).
 - `npm run test:coverage`: print coverage + write `backend/coverage/index.html`.

@@ -9,9 +9,11 @@ lerna-debug.log*
 
 node_modules
 dist
+storybook-static
 dev-dist
 dist-ssr
 *.local
+.storybook/*.log
 
 # Editor directories and files
 .vscode/*
