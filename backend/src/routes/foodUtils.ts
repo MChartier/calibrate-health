@@ -7,6 +7,7 @@ import {
   parsePositiveNumber,
   resolveLanguageCode,
 } from '../utils/requestParsing';
+import { normalizeOptionalString, normalizeServingUnitLabel } from './myFoodsUtils';
 
 /**
  * Parsing/validation helpers for food search and food log endpoints.
@@ -112,6 +113,19 @@ export type FoodLogCreateParseResult =
       entryTimestamp: Date;
       name: string;
       calories: number;
+      servingsConsumed: number | null;
+      servingSizeQuantitySnapshot: number | null;
+      servingUnitLabelSnapshot: string | null;
+      caloriesPerServingSnapshot: number | null;
+      externalSource: string | null;
+      externalId: string | null;
+      brandSnapshot: string | null;
+      localeSnapshot: string | null;
+      barcodeSnapshot: string | null;
+      measureLabelSnapshot: string | null;
+      gramsPerMeasureSnapshot: number | null;
+      measureQuantitySnapshot: number | null;
+      gramsTotalSnapshot: number | null;
     }
   | { ok: false; statusCode: number; message: string };
 
@@ -197,6 +211,88 @@ export function parseFoodLogCreateBody(opts: {
   if (caloriesNumber === null) {
     return { ok: false, statusCode: 400, message: 'Invalid calories' };
   }
+  const calories = Math.round(caloriesNumber);
+
+  const servingsConsumed =
+    body.servings_consumed !== undefined && body.servings_consumed !== null && String(body.servings_consumed).trim().length > 0
+      ? parsePositiveNumber(body.servings_consumed)
+      : null;
+  if (body.servings_consumed !== undefined && body.servings_consumed !== null && servingsConsumed === null) {
+    return { ok: false, statusCode: 400, message: 'Invalid servings consumed' };
+  }
+
+  const servingSizeQuantitySnapshot =
+    body.serving_size_quantity_snapshot !== undefined &&
+    body.serving_size_quantity_snapshot !== null &&
+    String(body.serving_size_quantity_snapshot).trim().length > 0
+      ? parsePositiveNumber(body.serving_size_quantity_snapshot)
+      : null;
+  if (
+    body.serving_size_quantity_snapshot !== undefined &&
+    body.serving_size_quantity_snapshot !== null &&
+    servingSizeQuantitySnapshot === null
+  ) {
+    return { ok: false, statusCode: 400, message: 'Invalid serving size quantity snapshot' };
+  }
+
+  const servingUnitLabelSnapshot =
+    body.serving_unit_label_snapshot !== undefined && body.serving_unit_label_snapshot !== null
+      ? normalizeServingUnitLabel(body.serving_unit_label_snapshot)
+      : null;
+  if (
+    body.serving_unit_label_snapshot !== undefined &&
+    body.serving_unit_label_snapshot !== null &&
+    servingUnitLabelSnapshot === null
+  ) {
+    return { ok: false, statusCode: 400, message: 'Invalid serving unit label snapshot' };
+  }
+
+  const caloriesPerServingRaw = body.calories_per_serving_snapshot;
+  const parsedCaloriesPerServing =
+    caloriesPerServingRaw !== undefined && caloriesPerServingRaw !== null && String(caloriesPerServingRaw).trim().length > 0
+      ? parseNonNegativeNumber(caloriesPerServingRaw)
+      : null;
+  if (caloriesPerServingRaw !== undefined && caloriesPerServingRaw !== null && parsedCaloriesPerServing === null) {
+    return { ok: false, statusCode: 400, message: 'Invalid calories per serving snapshot' };
+  }
+  const caloriesPerServingSnapshot =
+    parsedCaloriesPerServing ?? (servingsConsumed && servingsConsumed > 0 ? calories / servingsConsumed : null);
+
+  const gramsPerMeasureSnapshot =
+    body.grams_per_measure_snapshot !== undefined &&
+    body.grams_per_measure_snapshot !== null &&
+    String(body.grams_per_measure_snapshot).trim().length > 0
+      ? parsePositiveNumber(body.grams_per_measure_snapshot)
+      : null;
+  if (
+    body.grams_per_measure_snapshot !== undefined &&
+    body.grams_per_measure_snapshot !== null &&
+    gramsPerMeasureSnapshot === null
+  ) {
+    return { ok: false, statusCode: 400, message: 'Invalid grams per measure snapshot' };
+  }
+
+  const measureQuantitySnapshot =
+    body.measure_quantity_snapshot !== undefined &&
+    body.measure_quantity_snapshot !== null &&
+    String(body.measure_quantity_snapshot).trim().length > 0
+      ? parsePositiveNumber(body.measure_quantity_snapshot)
+      : null;
+  if (
+    body.measure_quantity_snapshot !== undefined &&
+    body.measure_quantity_snapshot !== null &&
+    measureQuantitySnapshot === null
+  ) {
+    return { ok: false, statusCode: 400, message: 'Invalid measure quantity snapshot' };
+  }
+
+  const gramsTotalSnapshot =
+    body.grams_total_snapshot !== undefined && body.grams_total_snapshot !== null && String(body.grams_total_snapshot).trim().length > 0
+      ? parsePositiveNumber(body.grams_total_snapshot)
+      : null;
+  if (body.grams_total_snapshot !== undefined && body.grams_total_snapshot !== null && gramsTotalSnapshot === null) {
+    return { ok: false, statusCode: 400, message: 'Invalid grams total snapshot' };
+  }
 
   return {
     ok: true,
@@ -205,7 +301,20 @@ export function parseFoodLogCreateBody(opts: {
     localDate,
     entryTimestamp,
     name: trimmedName,
-    calories: Math.round(caloriesNumber),
+    calories,
+    servingsConsumed,
+    servingSizeQuantitySnapshot,
+    servingUnitLabelSnapshot,
+    caloriesPerServingSnapshot,
+    externalSource: normalizeOptionalString(body.external_source),
+    externalId: normalizeOptionalString(body.external_id),
+    brandSnapshot: normalizeOptionalString(body.brand),
+    localeSnapshot: normalizeOptionalString(body.locale),
+    barcodeSnapshot: normalizeOptionalString(body.barcode),
+    measureLabelSnapshot: normalizeOptionalString(body.measure_label),
+    gramsPerMeasureSnapshot,
+    measureQuantitySnapshot,
+    gramsTotalSnapshot,
   };
 }
 

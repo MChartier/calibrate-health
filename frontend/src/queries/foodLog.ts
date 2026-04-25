@@ -15,6 +15,15 @@ export type FoodLogEntry = {
     serving_size_quantity_snapshot?: number | null;
     serving_unit_label_snapshot?: string | null;
     calories_per_serving_snapshot?: number | null;
+    external_source?: string | null;
+    external_id?: string | null;
+    brand_snapshot?: string | null;
+    locale_snapshot?: string | null;
+    barcode_snapshot?: string | null;
+    measure_label_snapshot?: string | null;
+    grams_per_measure_snapshot?: number | null;
+    measure_quantity_snapshot?: number | null;
+    grams_total_snapshot?: number | null;
 };
 
 /**

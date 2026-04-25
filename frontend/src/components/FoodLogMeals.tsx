@@ -27,6 +27,7 @@ import {
 import ExpandMoreIcon from '@mui/icons-material/ExpandMoreRounded';
 import EditIcon from '@mui/icons-material/EditRounded';
 import DeleteIcon from '@mui/icons-material/DeleteRounded';
+import AddIcon from '@mui/icons-material/AddRounded';
 import { alpha, useTheme } from '@mui/material/styles';
 import axios from 'axios';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -119,6 +120,7 @@ function parseServingsInput(value: string): number | null {
 
 export type FoodLogMealsProps = {
     logs: FoodLogEntry[];
+    onAddMeal?: (mealPeriod: MealPeriod) => void;
     /**
      * When true, render shaped skeleton placeholders in place of dynamic totals/entries.
      *
@@ -131,7 +133,7 @@ export type FoodLogMealsProps = {
 /**
  * FoodLogMeals renders the day log grouped by meal and supports inline edits/deletes.
  */
-const FoodLogMeals: React.FC<FoodLogMealsProps> = ({ logs, isLoading = false }) => {
+const FoodLogMeals: React.FC<FoodLogMealsProps> = ({ logs, onAddMeal, isLoading = false }) => {
     const queryClient = useQueryClient();
     const theme = useTheme();
     const isXs = useMediaQuery(theme.breakpoints.down('sm'));
@@ -207,6 +209,7 @@ const FoodLogMeals: React.FC<FoodLogMealsProps> = ({ logs, isLoading = false }) 
     const [editCalories, setEditCalories] = useState('');
     const [editMealPeriod, setEditMealPeriod] = useState<MealPeriod>('BREAKFAST');
     const [editServingsConsumed, setEditServingsConsumed] = useState('');
+    const [editOriginalCalories, setEditOriginalCalories] = useState('');
     const [editError, setEditError] = useState<string | null>(null);
 
     const [deleteEntry, setDeleteEntry] = useState<FoodLogEntry | null>(null);
@@ -215,7 +218,7 @@ const FoodLogMeals: React.FC<FoodLogMealsProps> = ({ logs, isLoading = false }) 
     const updateMutation = useMutation({
         mutationFn: async (vars: {
             id: number | string;
-            data: { name: string; calories: number; meal_period: MealPeriod; servings_consumed?: number };
+            data: { name: string; calories?: number; meal_period: MealPeriod; servings_consumed?: number };
         }) => {
             const res = await axios.patch(`/api/food/${encodeURIComponent(String(vars.id))}`, vars.data);
             return res.data;
@@ -240,6 +243,7 @@ const FoodLogMeals: React.FC<FoodLogMealsProps> = ({ logs, isLoading = false }) 
         setEditEntry(entry);
         setEditName(typeof entry.name === 'string' ? entry.name : '');
         setEditCalories(typeof entry.calories === 'number' ? String(entry.calories) : '');
+        setEditOriginalCalories(typeof entry.calories === 'number' ? String(entry.calories) : '');
         setEditMealPeriod(normalizeMealPeriod(entry.meal_period) ?? 'BREAKFAST');
         setEditServingsConsumed(
             typeof entry.servings_consumed === 'number' && Number.isFinite(entry.servings_consumed)
@@ -280,12 +284,14 @@ const FoodLogMeals: React.FC<FoodLogMealsProps> = ({ logs, isLoading = false }) 
         }
 
         try {
+            const caloriesChanged = editCalories.trim() !== editOriginalCalories;
+            const shouldSendCalories = !hasServingSnapshot || caloriesChanged || servingsValue === null;
             await updateMutation.mutateAsync({
                 id: editEntry.id,
                 data: {
                     name: trimmedName,
-                    calories: parsedCalories,
                     meal_period: editMealPeriod,
+                    ...(shouldSendCalories ? { calories: parsedCalories } : {}),
                     ...(servingsValue !== null ? { servings_consumed: servingsValue } : {})
                 }
             });
@@ -383,13 +389,30 @@ const FoodLogMeals: React.FC<FoodLogMealsProps> = ({ logs, isLoading = false }) 
                                 </Avatar>
                                 <Typography sx={{ fontWeight: 'bold' }}>{meal.label}</Typography>
                             </Box>
-                            {isLoading ? (
-                                <Skeleton width={FOOD_LOG_SKELETON_TOTAL_WIDTH_PX} height={FOOD_LOG_SKELETON_TOTAL_HEIGHT_PX} />
-                            ) : (
-                                <Typography color="text.secondary">
-                                    {t('foodLog.totalCalories', { calories: total })}
-                                </Typography>
-                            )}
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                {isLoading ? (
+                                    <Skeleton width={FOOD_LOG_SKELETON_TOTAL_WIDTH_PX} height={FOOD_LOG_SKELETON_TOTAL_HEIGHT_PX} />
+                                ) : (
+                                    <Typography color="text.secondary">
+                                        {t('foodLog.totalCalories', { calories: total })}
+                                    </Typography>
+                                )}
+                                {onAddMeal && (
+                                    <Tooltip title={t('foodLog.addToMeal', { meal: meal.label })}>
+                                        <IconButton
+                                            size="small"
+                                            onClick={(event) => {
+                                                event.stopPropagation();
+                                                onAddMeal(meal.key);
+                                            }}
+                                            onFocus={(event) => event.stopPropagation()}
+                                            aria-label={t('foodLog.addToMeal', { meal: meal.label })}
+                                        >
+                                            <AddIcon fontSize="small" />
+                                        </IconButton>
+                                    </Tooltip>
+                                )}
+                            </Box>
                         </AccordionSummary>
                         <AccordionDetails sx={{ px: detailsPadding, py: detailsPadding }}>
                             {isLoading ? (
@@ -416,7 +439,14 @@ const FoodLogMeals: React.FC<FoodLogMealsProps> = ({ logs, isLoading = false }) 
                                     ))}
                                 </Stack>
                             ) : entries.length === 0 ? (
-                                <Typography color="text.secondary">{t('foodLog.noEntries')}</Typography>
+                                <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between">
+                                    <Typography color="text.secondary">{t('foodLog.noEntries')}</Typography>
+                                    {onAddMeal && (
+                                        <Button size="small" startIcon={<AddIcon />} onClick={() => onAddMeal(meal.key)}>
+                                            {t('foodLog.addEntry')}
+                                        </Button>
+                                    )}
+                                </Stack>
                             ) : (
                                 <Stack divider={<Divider flexItem />} spacing={1}>
                                     {entries.map((entry) => (

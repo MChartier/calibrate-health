@@ -21,6 +21,7 @@ type Props = {
     hasMore: boolean;
     isLoading: boolean;
     isLoadingMore: boolean;
+    leadingItems?: React.ReactNode;
     onLoadMore: () => void;
     onSelect: (item: NormalizedFoodItem) => void;
 };
@@ -53,6 +54,7 @@ const FoodSearchResultsList: React.FC<Props> = ({
     hasMore,
     isLoading,
     isLoadingMore,
+    leadingItems,
     onLoadMore,
     onSelect
 }) => {
@@ -105,6 +107,7 @@ const FoodSearchResultsList: React.FC<Props> = ({
             }}
         >
             <List dense disablePadding>
+                {leadingItems}
                 {items.map((item) => {
                     const secondary = buildSecondaryText(item);
                     return (
