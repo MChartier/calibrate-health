@@ -213,6 +213,15 @@ function installSentinelPath(packageDirectory) {
 }
 
 /**
+ * Return the package's shared node_modules volume mount path.
+ * @param {string} packageDirectory - Package directory.
+ * @returns {string} node_modules path.
+ */
+function nodeModulesPath(packageDirectory) {
+  return path.join(packageDirectory, "node_modules");
+}
+
+/**
  * Read the dependency install sentinel from a shared node_modules volume.
  * @param {string} packageDirectory - Package directory.
  * @returns {Record<string, unknown> | null} Sentinel data when present and valid.
@@ -243,6 +252,37 @@ function installLockDirectory(packageDirectory) {
     "_calibrate-dev-env-locks",
     `${packageName}-${packageLockHash(packageDirectory)}.lock`
   );
+}
+
+/**
+ * Repair stale shared-volume ownership before npm removes existing files.
+ *
+ * Older setup flows and failed installs can leave root-owned files in a shared
+ * node_modules volume. On an install cache miss, npm ci needs to unlink those
+ * files, so fix ownership only on the cold/stale path and leave cache hits fast.
+ * @param {{ name: string, directory: string }} packageConfig - Package config.
+ */
+function repairDependencyVolumeOwnership(packageConfig) {
+  if (process.platform === "win32") {
+    return;
+  }
+
+  const uid = typeof process.getuid === "function" ? process.getuid() : null;
+  const gid = typeof process.getgid === "function" ? process.getgid() : null;
+  if (uid === null || gid === null) {
+    return;
+  }
+
+  const nodeModulesDirectory = nodeModulesPath(packageConfig.directory);
+  fs.mkdirSync(nodeModulesDirectory, { recursive: true });
+
+  console.log(`[dev-env] Repairing ${packageConfig.name} node_modules volume ownership before install.`);
+  const chownCommand = uid === 0 ? "chown" : "sudo";
+  const chownArgs =
+    uid === 0
+      ? ["-R", `${uid}:${gid}`, nodeModulesDirectory]
+      : ["chown", "-R", `${uid}:${gid}`, nodeModulesDirectory];
+  run(chownCommand, chownArgs);
 }
 
 /**
@@ -319,7 +359,7 @@ function writeInstallSentinel(packageConfig) {
  * @returns {Promise<() => void>} Release callback.
  */
 async function acquireInstallLock(packageConfig) {
-  const nodeModulesDirectory = path.join(packageConfig.directory, "node_modules");
+  const nodeModulesDirectory = nodeModulesPath(packageConfig.directory);
   const lockDirectory = installLockDirectory(packageConfig.directory);
   fs.mkdirSync(nodeModulesDirectory, { recursive: true });
   fs.mkdirSync(path.dirname(lockDirectory), { recursive: true });
@@ -377,6 +417,7 @@ async function ensurePackageDependencies(packageConfig) {
       return;
     }
 
+    repairDependencyVolumeOwnership(packageConfig);
     console.log(`[dev-env] Installing ${packageConfig.name} dependencies: npm ${packageConfig.installArgs.join(" ")}`);
     await runAsync("npm", packageConfig.installArgs, { cwd: packageConfig.directory });
     writeInstallSentinel(packageConfig);
