@@ -2,6 +2,8 @@ import { InAppNotificationType, Prisma } from '@prisma/client';
 import prisma from '../config/database';
 import { getSafeUtcTodayDateOnlyInTimeZone } from '../utils/date';
 import { IN_APP_NOTIFICATION_ACTION_URLS, IN_APP_NOTIFICATION_TYPES, type InAppNotificationType as SharedInAppNotificationType } from '../../../shared/inAppNotifications';
+import { NOTIFICATION_REALTIME_REASONS } from '../../../shared/notificationRealtime';
+import { publishNotificationRealtimeUpdate } from './notificationRealtime';
 
 const REMINDER_TYPES: readonly InAppNotificationType[] = [
     InAppNotificationType.LOG_WEIGHT_REMINDER,
@@ -58,6 +60,14 @@ type ReminderMissingStatusArgs = {
     localDate: Date;
     reminderLogWeightEnabled: boolean;
     reminderLogFoodEnabled: boolean;
+    db?: InAppNotificationClient;
+};
+
+type EnsureReminderNotificationsArgs = {
+    userId: number;
+    localDate: Date;
+    missingWeight: boolean;
+    missingFood: boolean;
     db?: InAppNotificationClient;
 };
 
@@ -174,6 +184,55 @@ export const getReminderMissingStatusForDate = async ({
 };
 
 /**
+ * Create in-app reminder entries for missing logs, without re-opening dismissed items.
+ */
+export const ensureReminderInAppNotificationsForDate = async ({
+    userId,
+    localDate,
+    missingWeight,
+    missingFood,
+    db = prisma
+}: EnsureReminderNotificationsArgs): Promise<number> => {
+    const rows: Prisma.InAppNotificationCreateManyInput[] = [];
+
+    if (missingWeight) {
+        rows.push({
+            user_id: userId,
+            type: InAppNotificationType.LOG_WEIGHT_REMINDER,
+            local_date: localDate,
+            dedupe_key: buildReminderInAppDedupeKey(InAppNotificationType.LOG_WEIGHT_REMINDER, localDate)
+        });
+    }
+
+    if (missingFood) {
+        rows.push({
+            user_id: userId,
+            type: InAppNotificationType.LOG_FOOD_REMINDER,
+            local_date: localDate,
+            dedupe_key: buildReminderInAppDedupeKey(InAppNotificationType.LOG_FOOD_REMINDER, localDate)
+        });
+    }
+
+    if (rows.length === 0) {
+        return 0;
+    }
+
+    const result = await db.inAppNotification.createMany({
+        data: rows,
+        skipDuplicates: true
+    });
+
+    if (result.count > 0) {
+        publishNotificationRealtimeUpdate({
+            userId,
+            reason: NOTIFICATION_REALTIME_REASONS.CREATED
+        });
+    }
+
+    return result.count;
+};
+
+/**
  * Resolve active reminders when the user completes a log or when the local day has passed.
  */
 export const resolveInactiveReminderNotificationsForUser = async ({
@@ -279,6 +338,14 @@ export const resolveInactiveReminderNotificationsForUser = async ({
         }
     });
 
+    if (result.count > 0) {
+        publishNotificationRealtimeUpdate({
+            userId,
+            reason: NOTIFICATION_REALTIME_REASONS.RESOLVED,
+            now
+        });
+    }
+
     return result.count;
 };
 
@@ -323,8 +390,8 @@ export const markInAppNotificationRead = async ({
     notificationId,
     now = new Date(),
     db = prisma
-}: MarkInAppNotificationArgs): Promise<void> => {
-    await db.inAppNotification.updateMany({
+}: MarkInAppNotificationArgs): Promise<number> => {
+    const result = await db.inAppNotification.updateMany({
         where: {
             id: notificationId,
             user_id: userId,
@@ -336,6 +403,16 @@ export const markInAppNotificationRead = async ({
             read_at: now
         }
     });
+
+    if (result.count > 0) {
+        publishNotificationRealtimeUpdate({
+            userId,
+            reason: NOTIFICATION_REALTIME_REASONS.READ,
+            now
+        });
+    }
+
+    return result.count;
 };
 
 /**
@@ -346,8 +423,8 @@ export const markInAppNotificationDismissed = async ({
     notificationId,
     now = new Date(),
     db = prisma
-}: MarkInAppNotificationArgs): Promise<void> => {
-    await db.inAppNotification.updateMany({
+}: MarkInAppNotificationArgs): Promise<number> => {
+    const result = await db.inAppNotification.updateMany({
         where: {
             id: notificationId,
             user_id: userId,
@@ -359,4 +436,14 @@ export const markInAppNotificationDismissed = async ({
             read_at: now
         }
     });
+
+    if (result.count > 0) {
+        publishNotificationRealtimeUpdate({
+            userId,
+            reason: NOTIFICATION_REALTIME_REASONS.DISMISSED,
+            now
+        });
+    }
+
+    return result.count;
 };

@@ -6,6 +6,8 @@ import {
     resolveNotificationDeliveryChannels,
     type NotificationDeliveryChannel
 } from '../../../shared/notificationDelivery';
+import { NOTIFICATION_REALTIME_REASONS } from '../../../shared/notificationRealtime';
+import { publishNotificationRealtimeUpdate } from './notificationRealtime';
 import { type PushNotificationPayload } from './pushNotificationPayloads';
 import { ensureWebPushConfigured, sendWebPushNotification } from './webPush';
 
@@ -142,6 +144,13 @@ const createInAppNotifications = async (
         });
 
         created += 1;
+    }
+
+    if (created > 0) {
+        publishNotificationRealtimeUpdate({
+            userId,
+            reason: NOTIFICATION_REALTIME_REASONS.CREATED
+        });
     }
 
     if (created === 0 && dedupeSkipCount > 0) {
