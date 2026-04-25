@@ -10,6 +10,8 @@ Configured Codex app actions:
 
 | Name | Script |
 | --- | --- |
+| Recreate Devcontainer | `node scripts/codex-worktree-env.mjs devcontainer:recreate` |
+| Stop Devcontainer | `node scripts/codex-worktree-env.mjs down` |
 | Dev | `node scripts/codex-worktree-env.mjs dev` |
 | Dev test | `node scripts/codex-worktree-env.mjs dev:test` |
 | Test | `node scripts/codex-worktree-env.mjs test` |

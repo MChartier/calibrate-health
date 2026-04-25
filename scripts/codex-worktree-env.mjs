@@ -13,6 +13,7 @@ const devcontainerScript = path.join(
 
 const commandMap = new Map([
   ["devcontainer:start", { type: "up", skipPostCreate: true }],
+  ["devcontainer:recreate", { type: "recreate", skipPostCreate: true }],
   ["setup-app", { type: "exec", command: ["npm", "run", "setup"] }],
   ["db:migrate", { type: "exec", command: ["npm", "run", "db:migrate:dev"] }],
   ["db:reset", { type: "exec", command: ["npm", "run", "db:reset:dev"] }],
@@ -52,6 +53,8 @@ function printHelp() {
     [
       "Usage:",
       "  npm run codex:devcontainer:start",
+      "  npm run codex:devcontainer:recreate",
+      "  npm run codex:devcontainer:down",
       "  npm run codex:setup-app",
       "  npm run codex:db:migrate",
       "  npm run codex:db:reset",
@@ -61,7 +64,6 @@ function printHelp() {
       "  npm run codex:build",
       "  npm run codex:dev",
       "  npm run codex:shell",
-      "  npm run codex:down",
       "",
       "The target worktree is CODEX_WORKTREE_PATH when Codex provides it; otherwise",
       "the current directory is used. Commands run through the worktree devcontainer.",
@@ -71,6 +73,7 @@ function printHelp() {
 
 /**
  * Run docker compose down for the current worktree's generated devcontainer stack.
+ * @returns {boolean} True when the stack was removed successfully.
  */
 function runComposeDown() {
   const initScript = path.join(workspacePath, ".devcontainer", "init-devcontainer-env.mjs");
@@ -84,10 +87,11 @@ function runComposeDown() {
 
   run(process.execPath, [initScript]);
   if (process.exitCode) {
-    return;
+    return false;
   }
 
   run("docker", ["compose", "--env-file", envFile, "-f", composeFile, "down"]);
+  return !process.exitCode;
 }
 
 const commandName = process.argv[2];
@@ -124,6 +128,19 @@ if (commandName === "down") {
       workspacePath,
       ...(command.skipPostCreate ? ["--skip-post-create"] : []),
       ...(command.removeExistingContainer ? ["--remove-existing-container"] : []),
+    ]);
+  } else if (command.type === "recreate") {
+    if (!runComposeDown()) {
+      process.exit(process.exitCode || 1);
+    }
+
+    run(process.execPath, [
+      devcontainerScript,
+      "up",
+      "--path",
+      workspacePath,
+      "--remove-existing-container",
+      ...(command.skipPostCreate ? ["--skip-post-create"] : []),
     ]);
   } else if (command.type === "shell") {
     run(process.execPath, [devcontainerScript, "shell", "--path", workspacePath]);
