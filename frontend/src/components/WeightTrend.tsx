@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
     Alert,
     Box,
@@ -26,6 +26,7 @@ import { parseDateOnlyToLocalDate, startOfLocalDay } from '../utils/goalTracking
 import { addDaysToIsoDate, MS_PER_DAY } from '../utils/date';
 import AppCard from '../ui/AppCard';
 import { useI18n } from '../i18n/useI18n';
+import { mergeSx } from '../ui/sx';
 
 type GoalResponse = {
     target_weight: number;
@@ -132,6 +133,207 @@ function getAxisLabelOptions(spanDays: number): Intl.DateTimeFormatOptions {
 }
 
 /**
+ * Select chart margins for the current card mode without burying layout logic in JSX.
+ */
+function getTrendChartMargin(args: { fillAvailableHeight: boolean; isCompactViewport: boolean }) {
+    if (args.fillAvailableHeight) return TODAY_TREND_MARGIN_FILL;
+    return args.isCompactViewport ? TODAY_TREND_MARGIN_COMPACT : TODAY_TREND_MARGIN_DEFAULT;
+}
+
+type WeightTrendControlsProps = {
+    selectedRange: MetricsRange;
+    isCompactViewport: boolean;
+    fillAvailableHeight: boolean;
+    requestedWindow: RequestedWindow | null;
+    visibleWindowLabel: string | null;
+    canPanBackward: boolean;
+    canPanForward: boolean;
+    onRangeChange: (nextRange: MetricsRange) => void;
+    onPanBackward: () => void;
+    onPanForward: () => void;
+};
+
+/**
+ * Range and panning controls for the trend chart.
+ */
+const WeightTrendControls: React.FC<WeightTrendControlsProps> = ({
+    selectedRange,
+    isCompactViewport,
+    fillAvailableHeight,
+    requestedWindow,
+    visibleWindowLabel,
+    canPanBackward,
+    canPanForward,
+    onRangeChange,
+    onPanBackward,
+    onPanForward
+}) => {
+    const { t } = useI18n();
+    const controlsDirection = fillAvailableHeight ? 'column' : { xs: 'column', md: 'row' };
+    const controlsAlignment = fillAvailableHeight ? 'stretch' : { xs: 'stretch', md: 'center' };
+    const controlsJustification = fillAvailableHeight ? 'flex-start' : 'space-between';
+    const rangeControlWidth = fillAvailableHeight ? '100%' : { xs: '100%', md: 'auto' };
+    const panControlWidth = fillAvailableHeight ? '100%' : { xs: '100%', md: 'auto' };
+    const panControlJustification = fillAvailableHeight ? 'space-between' : { xs: 'center', md: 'flex-end' };
+
+    return (
+        <Box
+            sx={{
+                display: 'flex',
+                flexDirection: controlsDirection,
+                gap: fillAvailableHeight ? TODAY_TREND_CONTROL_WRAP_GAP : CONTROLS_ROW_GAP,
+                alignItems: controlsAlignment,
+                justifyContent: controlsJustification
+            }}
+        >
+            <ToggleButtonGroup
+                color="primary"
+                exclusive
+                size={isCompactViewport ? 'medium' : 'small'}
+                value={selectedRange}
+                onChange={(_event, nextRange) => {
+                    if (!nextRange) return;
+                    onRangeChange(nextRange as MetricsRange);
+                }}
+                aria-label={t('goals.weightHistoryRangeLabel')}
+                sx={{
+                    width: rangeControlWidth,
+                    '& .MuiToggleButton-root': {
+                        flex: fillAvailableHeight ? 1 : { xs: 1, md: 'initial' },
+                        minHeight: { xs: RANGE_TOGGLE_TOUCH_HEIGHT_PX, md: 'auto' }
+                    }
+                }}
+            >
+                <ToggleButton value={METRICS_RANGE_OPTIONS.WEEK}>{t('goals.weightHistoryRangeWeek')}</ToggleButton>
+                <ToggleButton value={METRICS_RANGE_OPTIONS.MONTH}>{t('goals.weightHistoryRangeMonth')}</ToggleButton>
+                <ToggleButton value={METRICS_RANGE_OPTIONS.YEAR}>{t('goals.weightHistoryRangeYear')}</ToggleButton>
+                <ToggleButton value={METRICS_RANGE_OPTIONS.ALL}>{t('goals.weightHistoryRangeAll')}</ToggleButton>
+            </ToggleButtonGroup>
+
+            <Box
+                sx={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: panControlJustification,
+                    gap: PAN_WINDOW_CONTROLS_GAP,
+                    minHeight: 32,
+                    width: panControlWidth
+                }}
+            >
+                {requestedWindow && (
+                    <>
+                        <Tooltip title={t('goals.weightHistoryPanPrevious')}>
+                            <span>
+                                <IconButton
+                                    size="small"
+                                    onClick={onPanBackward}
+                                    disabled={!canPanBackward}
+                                    aria-label={t('goals.weightHistoryPanPrevious')}
+                                >
+                                    <ChevronLeftRoundedIcon fontSize="small" />
+                                </IconButton>
+                            </span>
+                        </Tooltip>
+                        <Typography
+                            variant="caption"
+                            sx={{
+                                color: 'text.secondary',
+                                minWidth: `${PAN_WINDOW_LABEL_MIN_WIDTH_CH}ch`,
+                                textAlign: 'center'
+                            }}
+                        >
+                            {visibleWindowLabel}
+                        </Typography>
+                        <Tooltip title={t('goals.weightHistoryPanNext')}>
+                            <span>
+                                <IconButton
+                                    size="small"
+                                    onClick={onPanForward}
+                                    disabled={!canPanForward}
+                                    aria-label={t('goals.weightHistoryPanNext')}
+                                >
+                                    <ChevronRightRoundedIcon fontSize="small" />
+                                </IconButton>
+                            </span>
+                        </Tooltip>
+                    </>
+                )}
+            </Box>
+        </Box>
+    );
+};
+
+type WeightTrendLegendProps = {
+    rawWeightSeriesLabel: string;
+    trendSeriesLabel: string;
+    expectedRangeLabel: string;
+    rawLineColor: string;
+    trendLineColor: string;
+    expectedRangeFillColor: string;
+    expectedRangeEdgeColor: string;
+};
+
+/**
+ * Compact legend for the Today trend chart.
+ */
+const WeightTrendLegend: React.FC<WeightTrendLegendProps> = ({
+    rawWeightSeriesLabel,
+    trendSeriesLabel,
+    expectedRangeLabel,
+    rawLineColor,
+    trendLineColor,
+    expectedRangeFillColor,
+    expectedRangeEdgeColor
+}) => (
+    <Box sx={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: 1.25, alignItems: 'center' }}>
+        <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.75 }}>
+            <Box
+                aria-hidden
+                sx={{
+                    width: LEGEND_SWATCH_SIZE_PX,
+                    height: LEGEND_SWATCH_SIZE_PX,
+                    borderRadius: '50%',
+                    backgroundColor: rawLineColor
+                }}
+            />
+            <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                {rawWeightSeriesLabel}
+            </Typography>
+        </Box>
+
+        <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.75 }}>
+            <Box
+                aria-hidden
+                sx={{
+                    width: LEGEND_SWATCH_SIZE_PX + 6,
+                    height: 3,
+                    backgroundColor: trendLineColor
+                }}
+            />
+            <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                {trendSeriesLabel}
+            </Typography>
+        </Box>
+
+        <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.75 }}>
+            <Box
+                aria-hidden
+                sx={{
+                    width: LEGEND_SWATCH_SIZE_PX + 8,
+                    height: LEGEND_SWATCH_SIZE_PX - 2,
+                    borderRadius: 999,
+                    backgroundColor: expectedRangeFillColor,
+                    border: `1px solid ${expectedRangeEdgeColor}`
+                }}
+            />
+            <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                {expectedRangeLabel}
+            </Typography>
+        </Box>
+    </Box>
+);
+
+/**
  * Full-featured weight trend panel for the Today workspace and mobile goal views.
  */
 const WeightTrend: React.FC<WeightTrendProps> = ({ fillAvailableHeight = false, sx }) => {
@@ -151,11 +353,7 @@ const WeightTrend: React.FC<WeightTrendProps> = ({ fillAvailableHeight = false, 
     const rawLineColor = alpha(theme.palette.primary.main, RAW_LINE_ALPHA);
     const expectedRangeFillColor = alpha(theme.palette.primary.main, EXPECTED_RANGE_FILL_ALPHA);
     const expectedRangeEdgeColor = alpha(theme.palette.primary.main, EXPECTED_RANGE_EDGE_ALPHA);
-    const chartMargin = fillAvailableHeight
-        ? TODAY_TREND_MARGIN_FILL
-        : isCompactViewport
-            ? TODAY_TREND_MARGIN_COMPACT
-            : TODAY_TREND_MARGIN_DEFAULT;
+    const chartMargin = getTrendChartMargin({ fillAvailableHeight, isCompactViewport });
 
     const goalQuery = useQuery({
         queryKey: ['goal'],
@@ -211,7 +409,7 @@ const WeightTrend: React.FC<WeightTrendProps> = ({ fillAvailableHeight = false, 
         return parsed;
     }, [trendMetrics]);
 
-    const scheduleRawMarkReveal = () => {
+    const scheduleRawMarkReveal = useCallback(() => {
         if (markRevealTimeoutRef.current !== null) {
             window.clearTimeout(markRevealTimeoutRef.current);
             markRevealTimeoutRef.current = null;
@@ -227,7 +425,7 @@ const WeightTrend: React.FC<WeightTrendProps> = ({ fillAvailableHeight = false, 
             setRawMarksVisible(true);
             markRevealTimeoutRef.current = null;
         }, CHART_LINE_ANIMATION_DURATION_MS + RAW_MARK_REVEAL_BUFFER_MS);
-    };
+    }, [points.length]);
 
     useEffect(() => {
         return () => {
@@ -377,12 +575,6 @@ const WeightTrend: React.FC<WeightTrendProps> = ({ fillAvailableHeight = false, 
     }, [t, trendMeta?.volatility]);
     const defaultChartHeight = isCompactViewport ? TODAY_TREND_CHART_HEIGHT_PX.xs : TODAY_TREND_CHART_HEIGHT_PX.md;
     const chartHeight = fillAvailableHeight ? undefined : defaultChartHeight;
-    const controlsDirection = fillAvailableHeight ? 'column' : { xs: 'column', md: 'row' };
-    const controlsAlignment = fillAvailableHeight ? 'stretch' : { xs: 'stretch', md: 'center' };
-    const controlsJustification = fillAvailableHeight ? 'flex-start' : 'space-between';
-    const rangeControlWidth = fillAvailableHeight ? '100%' : { xs: '100%', md: 'auto' };
-    const panControlWidth = fillAvailableHeight ? '100%' : { xs: '100%', md: 'auto' };
-    const panControlJustification = fillAvailableHeight ? 'space-between' : { xs: 'center', md: 'flex-end' };
 
     const weightHistoryTooltipContent = (
         <Box sx={{ maxWidth: WEIGHT_HISTORY_TOOLTIP_MAX_WIDTH_PX, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
@@ -393,98 +585,38 @@ const WeightTrend: React.FC<WeightTrendProps> = ({ fillAvailableHeight = false, 
         </Box>
     );
 
-    const controlsRow = points.length > 0 ? (
-        <Box
-            sx={{
-                display: 'flex',
-                flexDirection: controlsDirection,
-                gap: fillAvailableHeight ? TODAY_TREND_CONTROL_WRAP_GAP : CONTROLS_ROW_GAP,
-                alignItems: controlsAlignment,
-                justifyContent: controlsJustification
-            }}
-        >
-            <ToggleButtonGroup
-                color="primary"
-                exclusive
-                size={isCompactViewport ? 'medium' : 'small'}
-                value={selectedRange}
-                onChange={(_event, nextRange) => {
-                    if (!nextRange) return;
-                    scheduleRawMarkReveal();
-                    setSelectedRange(nextRange as MetricsRange);
-                    setPanWindowIndex(0);
-                }}
-                aria-label={t('goals.weightHistoryRangeLabel')}
-                sx={{
-                    width: rangeControlWidth,
-                    '& .MuiToggleButton-root': {
-                        flex: fillAvailableHeight ? 1 : { xs: 1, md: 'initial' },
-                        minHeight: { xs: RANGE_TOGGLE_TOUCH_HEIGHT_PX, md: 'auto' }
-                    }
-                }}
-            >
-                <ToggleButton value={METRICS_RANGE_OPTIONS.WEEK}>{t('goals.weightHistoryRangeWeek')}</ToggleButton>
-                <ToggleButton value={METRICS_RANGE_OPTIONS.MONTH}>{t('goals.weightHistoryRangeMonth')}</ToggleButton>
-                <ToggleButton value={METRICS_RANGE_OPTIONS.YEAR}>{t('goals.weightHistoryRangeYear')}</ToggleButton>
-                <ToggleButton value={METRICS_RANGE_OPTIONS.ALL}>{t('goals.weightHistoryRangeAll')}</ToggleButton>
-            </ToggleButtonGroup>
+    const handleRangeChange = useCallback(
+        (nextRange: MetricsRange) => {
+            scheduleRawMarkReveal();
+            setSelectedRange(nextRange);
+            setPanWindowIndex(0);
+        },
+        [scheduleRawMarkReveal]
+    );
 
-            <Box
-                sx={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    justifyContent: panControlJustification,
-                    gap: PAN_WINDOW_CONTROLS_GAP,
-                    minHeight: 32,
-                    width: panControlWidth
-                }}
-            >
-                {requestedWindow ? (
-                    <>
-                        <Tooltip title={t('goals.weightHistoryPanPrevious')}>
-                            <span>
-                                <IconButton
-                                    size="small"
-                                    onClick={() => {
-                                        scheduleRawMarkReveal();
-                                        setPanWindowIndex((current) => current + 1);
-                                    }}
-                                    disabled={!canPanBackward}
-                                    aria-label={t('goals.weightHistoryPanPrevious')}
-                                >
-                                    <ChevronLeftRoundedIcon fontSize="small" />
-                                </IconButton>
-                            </span>
-                        </Tooltip>
-                        <Typography
-                            variant="caption"
-                            sx={{
-                                color: 'text.secondary',
-                                minWidth: `${PAN_WINDOW_LABEL_MIN_WIDTH_CH}ch`,
-                                textAlign: 'center'
-                            }}
-                        >
-                            {visibleWindowLabel}
-                        </Typography>
-                        <Tooltip title={t('goals.weightHistoryPanNext')}>
-                            <span>
-                                <IconButton
-                                    size="small"
-                                    onClick={() => {
-                                        scheduleRawMarkReveal();
-                                        setPanWindowIndex((current) => Math.max(0, current - 1));
-                                    }}
-                                    disabled={!canPanForward}
-                                    aria-label={t('goals.weightHistoryPanNext')}
-                                >
-                                    <ChevronRightRoundedIcon fontSize="small" />
-                                </IconButton>
-                            </span>
-                        </Tooltip>
-                    </>
-                ) : null}
-            </Box>
-        </Box>
+    const handlePanBackward = useCallback(() => {
+        scheduleRawMarkReveal();
+        setPanWindowIndex((current) => current + 1);
+    }, [scheduleRawMarkReveal]);
+
+    const handlePanForward = useCallback(() => {
+        scheduleRawMarkReveal();
+        setPanWindowIndex((current) => Math.max(0, current - 1));
+    }, [scheduleRawMarkReveal]);
+
+    const controlsRow = points.length > 0 ? (
+        <WeightTrendControls
+            selectedRange={selectedRange}
+            isCompactViewport={isCompactViewport}
+            fillAvailableHeight={fillAvailableHeight}
+            requestedWindow={requestedWindow}
+            visibleWindowLabel={visibleWindowLabel}
+            canPanBackward={canPanBackward}
+            canPanForward={canPanForward}
+            onRangeChange={handleRangeChange}
+            onPanBackward={handlePanBackward}
+            onPanForward={handlePanForward}
+        />
     ) : null;
 
     const summaryLine = trendMeta ? (
@@ -667,52 +799,15 @@ const WeightTrend: React.FC<WeightTrendProps> = ({ fillAvailableHeight = false, 
                     </LineChart>
                 </Box>
 
-                <Box sx={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: 1.25, alignItems: 'center' }}>
-                    <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.75 }}>
-                        <Box
-                            aria-hidden
-                            sx={{
-                                width: LEGEND_SWATCH_SIZE_PX,
-                                height: LEGEND_SWATCH_SIZE_PX,
-                                borderRadius: '50%',
-                                backgroundColor: rawLineColor
-                            }}
-                        />
-                        <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                            {rawWeightSeriesLabel}
-                        </Typography>
-                    </Box>
-
-                    <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.75 }}>
-                        <Box
-                            aria-hidden
-                            sx={{
-                                width: LEGEND_SWATCH_SIZE_PX + 6,
-                                height: 3,
-                                backgroundColor: trendLineColor
-                            }}
-                        />
-                        <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                            {trendSeriesLabel}
-                        </Typography>
-                    </Box>
-
-                    <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.75 }}>
-                        <Box
-                            aria-hidden
-                            sx={{
-                                width: LEGEND_SWATCH_SIZE_PX + 8,
-                                height: LEGEND_SWATCH_SIZE_PX - 2,
-                                borderRadius: 999,
-                                backgroundColor: expectedRangeFillColor,
-                                border: `1px solid ${expectedRangeEdgeColor}`
-                            }}
-                        />
-                        <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                            {expectedRangeLabel}
-                        </Typography>
-                    </Box>
-                </Box>
+                <WeightTrendLegend
+                    rawWeightSeriesLabel={rawWeightSeriesLabel}
+                    trendSeriesLabel={trendSeriesLabel}
+                    expectedRangeLabel={expectedRangeLabel}
+                    rawLineColor={rawLineColor}
+                    trendLineColor={trendLineColor}
+                    expectedRangeFillColor={expectedRangeFillColor}
+                    expectedRangeEdgeColor={expectedRangeEdgeColor}
+                />
 
                 {summaryLine}
             </Stack>
@@ -721,7 +816,7 @@ const WeightTrend: React.FC<WeightTrendProps> = ({ fillAvailableHeight = false, 
 
     return (
         <AppCard
-            sx={[fillAvailableHeight ? { height: '100%' } : null, ...(Array.isArray(sx) ? sx : sx ? [sx] : [])]}
+            sx={mergeSx(fillAvailableHeight ? { height: '100%' } : null, sx)}
             contentSx={{
                 p: { xs: 1.25, sm: 1.5 },
                 '&:last-child': { pb: { xs: 1.25, sm: 1.5 } },

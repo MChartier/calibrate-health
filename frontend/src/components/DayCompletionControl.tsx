@@ -34,6 +34,15 @@ const DayCompletionControl: React.FC<DayCompletionControlProps> = ({ date }) => 
     const isBusy = completionQuery.isLoading || completionMutation.isPending;
     const nextIsComplete = !isComplete;
     const StatusIcon = isComplete ? CheckCircleRoundedIcon : RadioButtonUncheckedRoundedIcon;
+    const statusLabel = isComplete ? t('today.completion.status.complete') : t('today.completion.status.incomplete');
+    const helperText = isComplete ? t('today.completion.helper.complete') : t('today.completion.helper.incomplete');
+
+    let actionLabel = isComplete ? t('today.completion.markIncomplete') : t('today.completion.markComplete');
+    let actionIcon: React.ReactNode = isComplete ? <LockOpenRoundedIcon /> : <CheckCircleRoundedIcon />;
+    if (isBusy) {
+        actionLabel = t('common.loading');
+        actionIcon = <CircularProgress size={16} color="inherit" />;
+    }
 
     const handleToggleComplete = async () => {
         try {
@@ -92,17 +101,11 @@ const DayCompletionControl: React.FC<DayCompletionControlProps> = ({ date }) => 
                                     size="small"
                                     color={isComplete ? 'success' : 'default'}
                                     variant="outlined"
-                                    label={
-                                        isComplete
-                                            ? t('today.completion.status.complete')
-                                            : t('today.completion.status.incomplete')
-                                    }
+                                    label={statusLabel}
                                 />
                             </Box>
                             <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                                {isComplete
-                                    ? t('today.completion.helper.complete')
-                                    : t('today.completion.helper.incomplete')}
+                                {helperText}
                             </Typography>
                         </Box>
                     </Box>
@@ -110,25 +113,13 @@ const DayCompletionControl: React.FC<DayCompletionControlProps> = ({ date }) => 
                     <Button
                         variant={isComplete ? 'outlined' : 'contained'}
                         color={isComplete ? 'inherit' : 'primary'}
-                        startIcon={
-                            isBusy ? (
-                                <CircularProgress size={16} color="inherit" />
-                            ) : isComplete ? (
-                                <LockOpenRoundedIcon />
-                            ) : (
-                                <CheckCircleRoundedIcon />
-                            )
-                        }
+                        startIcon={actionIcon}
                         onClick={() => void handleToggleComplete()}
                         disabled={isBusy || completionQuery.isError}
                         aria-pressed={isComplete}
                         sx={{ flexShrink: 0 }}
                     >
-                        {isBusy
-                            ? t('common.loading')
-                            : isComplete
-                            ? t('today.completion.markIncomplete')
-                            : t('today.completion.markComplete')}
+                        {actionLabel}
                     </Button>
                 </Box>
 

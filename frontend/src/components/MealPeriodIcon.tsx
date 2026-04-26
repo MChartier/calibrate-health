@@ -10,6 +10,7 @@ import DinnerDiningIcon from '@mui/icons-material/DinnerDiningRounded';
 import NightlifeIcon from '@mui/icons-material/NightlifeRounded';
 import type { MealPeriod } from '../types/mealPeriod';
 import { getMealPeriodAccentColor } from '../utils/mealColors';
+import { mergeSx } from '../ui/sx';
 
 const MEAL_PERIOD_ICON_COMPONENTS: Record<MealPeriod, React.ElementType<SvgIconProps>> = {
     BREAKFAST: EggAltIcon,
@@ -35,13 +36,7 @@ const MealPeriodIcon: React.FC<MealPeriodIconProps> = ({ mealPeriod, sx, ...icon
     const theme = useTheme();
     const Icon = MEAL_PERIOD_ICON_COMPONENTS[mealPeriod];
 
-    const mergedSx: SxProps<Theme> = [
-        { color: getMealPeriodAccentColor(theme, mealPeriod) },
-        ...(Array.isArray(sx) ? sx : sx ? [sx] : [])
-    ];
-
-    return <Icon {...iconProps} sx={mergedSx} />;
+    return <Icon {...iconProps} sx={mergeSx({ color: getMealPeriodAccentColor(theme, mealPeriod) }, sx)} />;
 };
 
 export default MealPeriodIcon;
-

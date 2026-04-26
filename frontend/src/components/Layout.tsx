@@ -302,6 +302,10 @@ const LayoutShell: React.FC = () => {
                                 xs: 'auto minmax(0, 1fr) auto',
                                 sm: 'minmax(0, 1fr) auto minmax(0, 1fr)'
                             },
+                            gridTemplateAreas: {
+                                xs: '"brand spacer actions"',
+                                sm: '"brand date actions"'
+                            },
                             columnGap: { xs: 0.75, sm: 1.25 },
                             alignItems: 'center'
                         }
@@ -319,7 +323,8 @@ const LayoutShell: React.FC = () => {
                             textDecoration: 'none',
                             flexShrink: 0,
                             minWidth: 0,
-                            justifySelf: 'start'
+                            justifySelf: 'start',
+                            gridArea: 'brand'
                         }}
                     >
                         <CalibrateLogo showWordmark={false} size={34} />
@@ -333,11 +338,20 @@ const LayoutShell: React.FC = () => {
                             navigation={logDateNavigation}
                             placement="navbar"
                             showTodayShortcut
-                            sx={{ display: { xs: 'none', sm: 'inline-flex' }, justifySelf: 'center' }}
+                            sx={{ display: { xs: 'none', sm: 'inline-flex' }, justifySelf: 'center', gridArea: 'date' }}
                         />
                     )}
 
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexShrink: 0, justifySelf: 'end' }}>
+                    <Box
+                        sx={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 1,
+                            flexShrink: 0,
+                            justifySelf: 'end',
+                            gridArea: 'actions'
+                        }}
+                    >
                         {(showLoginCta || showRegisterCta) && (
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                 {showLoginCta && (

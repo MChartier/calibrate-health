@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { Alert, Box, Button, Card, CardContent, Chip, Skeleton, Typography, useMediaQuery } from '@mui/material';
+import { Alert, Box, Button, Chip, Skeleton, Typography, useMediaQuery } from '@mui/material';
 import type { SxProps, Theme } from '@mui/material/styles';
 import AddRoundedIcon from '@mui/icons-material/AddRounded';
 import EditRoundedIcon from '@mui/icons-material/EditRounded';
@@ -11,13 +11,14 @@ import { parseDateOnlyToLocalDate } from '../utils/goalTracking';
 import { usePrefersReducedMotion } from '../hooks/usePrefersReducedMotion';
 import { useTweenedNumber } from '../hooks/useTweenedNumber';
 import SectionHeader from '../ui/SectionHeader';
+import AppCard from '../ui/AppCard';
 import { findMetricOnOrBeforeDate, toDatePart, useMetricsQuery } from '../queries/metrics';
 import { useI18n } from '../i18n/useI18n';
 
 /**
  * Log weight summary card with "as of" context and quick entry CTA.
  */
-const EM_DASH = '\u2014';
+const EMPTY_VALUE_LABEL = '-';
 // Duration used for "date switch" value transitions.
 const WEIGHT_SUMMARY_TWEEN_DURATION_MS = 520;
 const WEIGHT_ICON_TILE_SIZE_PX = { xs: 48, sm: 56 }; // Icon tile size shrinks slightly on xs to keep the row compact without hurting tap targets.
@@ -52,11 +53,29 @@ export type WeightSummaryCardProps = {
  * Format a Postgres DATE-ish string for display, falling back to an em dash for invalid inputs.
  */
 function formatMetricDateLabel(value: string | null): string {
-    if (!value) return EM_DASH;
+    if (!value) return EMPTY_VALUE_LABEL;
     const parsed = parseDateOnlyToLocalDate(value);
-    if (!parsed || Number.isNaN(parsed.getTime())) return EM_DASH;
+    if (!parsed || Number.isNaN(parsed.getTime())) return EMPTY_VALUE_LABEL;
     return new Intl.DateTimeFormat(undefined, { year: 'numeric', month: 'short', day: 'numeric' }).format(parsed);
 }
+
+const WeightIconTile: React.FC<{ sizePx: number }> = ({ sizePx }) => (
+    <Box
+        sx={{
+            width: sizePx,
+            height: sizePx,
+            borderRadius: 2,
+            backgroundColor: (theme) => alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.18 : 0.08),
+            border: (theme) => `1px solid ${theme.palette.divider}`,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+        }}
+        aria-hidden
+    >
+        <MonitorWeightIcon color="primary" />
+    </Box>
+);
 
 /**
  * WeightSummaryCard
@@ -108,7 +127,7 @@ const WeightSummaryCard: React.FC<WeightSummaryCardProps> = ({ date, onOpenWeigh
         return metricForSelectedDate ? t('weightSummary.cta.edit') : t('weightSummary.cta.log');
     }, [isToday, metricForSelectedDate, t]);
 
-    const displayedWeightLabel = displayedWeight !== null ? `${animatedWeight.toFixed(1)} ${unitLabel}` : EM_DASH;
+    const displayedWeightLabel = displayedWeight !== null ? `${animatedWeight.toFixed(1)} ${unitLabel}` : EMPTY_VALUE_LABEL;
     const asOfLabel = formatMetricDateLabel(displayedMetric?.date ?? null);
     const WeightCtaIcon = metricForSelectedDate ? EditRoundedIcon : AddRoundedIcon;
 
@@ -124,22 +143,7 @@ const WeightSummaryCard: React.FC<WeightSummaryCardProps> = ({ date, onOpenWeigh
                         flexDirection: 'row'
                     }}
                 >
-                    <Box
-                        sx={{
-                            width: iconTileSizePx,
-                            height: iconTileSizePx,
-                            borderRadius: 2,
-                            backgroundColor: (theme) =>
-                                alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.18 : 0.08),
-                            border: (theme) => `1px solid ${theme.palette.divider}`,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center'
-                        }}
-                        aria-hidden
-                    >
-                        <MonitorWeightIcon color="primary" />
-                    </Box>
+                    <WeightIconTile sizePx={iconTileSizePx} />
 
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.25, flexGrow: 1, minWidth: 0 }}>
                         <Skeleton width="40%" height={32} />
@@ -187,22 +191,7 @@ const WeightSummaryCard: React.FC<WeightSummaryCardProps> = ({ date, onOpenWeigh
                         flexDirection: 'row'
                     }}
                 >
-                    <Box
-                        sx={{
-                            width: iconTileSizePx,
-                            height: iconTileSizePx,
-                            borderRadius: 2,
-                            backgroundColor: (theme) =>
-                                alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.18 : 0.08),
-                            border: (theme) => `1px solid ${theme.palette.divider}`,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center'
-                        }}
-                        aria-hidden
-                    >
-                        <MonitorWeightIcon color="primary" />
-                    </Box>
+                    <WeightIconTile sizePx={iconTileSizePx} />
 
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.25, flexGrow: 1, minWidth: 0 }}>
                         <Typography variant={valueVariant} sx={{ lineHeight: 1.1 }}>
@@ -232,13 +221,13 @@ const WeightSummaryCard: React.FC<WeightSummaryCardProps> = ({ date, onOpenWeigh
     }
 
     return (
-        <Card sx={[{ width: '100%' }, ...(Array.isArray(sx) ? sx : sx ? [sx] : [])]}>
-            <CardContent
-                sx={{
-                    p: WEIGHT_CARD_PADDING_SPACING,
-                    '&:last-child': { pb: WEIGHT_CARD_PADDING_SPACING }
-                }}
-            >
+        <AppCard
+            sx={sx}
+            contentSx={{
+                p: WEIGHT_CARD_PADDING_SPACING,
+                '&:last-child': { pb: WEIGHT_CARD_PADDING_SPACING }
+            }}
+        >
                 <SectionHeader
                     title={t('weightSummary.title')}
                     align="center"
@@ -259,8 +248,7 @@ const WeightSummaryCard: React.FC<WeightSummaryCardProps> = ({ date, onOpenWeigh
                 />
 
                 <Box sx={{ mt: bodyMarginTop }}>{cardBody}</Box>
-            </CardContent>
-        </Card>
+        </AppCard>
     );
 };
 

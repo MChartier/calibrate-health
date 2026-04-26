@@ -8,6 +8,7 @@ import { useUserProfileQuery } from '../queries/userProfile';
 import { getDailyCalorieSummary, type DailyCalorieStatus } from '../utils/dailyCalories';
 import AppCard from '../ui/AppCard';
 import { useI18n } from '../i18n/useI18n';
+import { mergeSx } from '../ui/sx';
 
 export type CalorieSummaryProps = {
     date: string;
@@ -43,6 +44,34 @@ function getStatusChipColor(status: DailyCalorieStatus): 'success' | 'warning' |
 
 function getPaletteColor(theme: Theme, color: 'success' | 'warning' | 'error' | 'default') {
     return color === 'default' ? theme.palette.text.secondary : theme.palette[color].main;
+}
+
+function getStatusLabel(status: DailyCalorieStatus, t: ReturnType<typeof useI18n>['t']): string {
+    switch (status) {
+        case 'onTrack':
+            return t('today.status.onTrack');
+        case 'warning':
+            return t('today.status.warning');
+        case 'over':
+            return t('today.status.over');
+        default:
+            return t('today.status.unknown');
+    }
+}
+
+function getRemainingSupportText(args: {
+    isError: boolean;
+    isSelectedToday: boolean;
+    remainingCalories: number | null;
+    status: DailyCalorieStatus;
+    t: ReturnType<typeof useI18n>['t'];
+}): string {
+    if (args.isError) return args.t('today.feedback.error');
+    if (args.remainingCalories === null) return args.t('today.feedback.missingTarget');
+    if (args.status === 'over') {
+        return args.isSelectedToday ? args.t('today.calories.overToday') : args.t('today.calories.overSelectedDay');
+    }
+    return args.isSelectedToday ? args.t('today.calories.remainingToday') : args.t('today.calories.remainingSelectedDay');
 }
 
 const BudgetBar: React.FC<BudgetBarProps> = ({ value, status, ariaLabel }) => {
@@ -119,28 +148,18 @@ const CalorieSummary: React.FC<CalorieSummaryProps> = ({ date, isSelectedToday, 
     const eatenLabel = t('today.calories.eatenValue', { value: loggedCaloriesLabel });
     const targetLabel = t('today.calories.targetValue', { value: targetCaloriesLabel });
 
-    let supportText = t('today.feedback.missingTarget');
-    if (summary.remainingCalories !== null) {
-        if (summary.status === 'over') {
-            supportText = isSelectedToday ? t('today.calories.overToday') : t('today.calories.overSelectedDay');
-        } else if (summary.status === 'warning') {
-            supportText = isSelectedToday ? t('today.calories.remainingToday') : t('today.calories.remainingSelectedDay');
-        } else {
-            supportText = isSelectedToday ? t('today.calories.remainingToday') : t('today.calories.remainingSelectedDay');
-        }
-    }
-    if (isError) {
-        supportText = t('today.feedback.error');
-    }
-
-    let statusLabel = t('today.status.unknown');
-    if (summary.status === 'onTrack') statusLabel = t('today.status.onTrack');
-    if (summary.status === 'warning') statusLabel = t('today.status.warning');
-    if (summary.status === 'over') statusLabel = t('today.status.over');
+    const supportText = getRemainingSupportText({
+        isError,
+        isSelectedToday,
+        remainingCalories: summary.remainingCalories,
+        status: summary.status,
+        t
+    });
+    const statusLabel = getStatusLabel(summary.status, t);
 
     return (
         <AppCard
-            sx={[{ height: { md: '100%' }, minHeight: CALORIE_SUMMARY_MIN_HEIGHT_PX }, ...(Array.isArray(sx) ? sx : sx ? [sx] : [])]}
+            sx={mergeSx({ height: { md: '100%' }, minHeight: CALORIE_SUMMARY_MIN_HEIGHT_PX }, sx)}
             contentSx={{
                 p: { xs: 1.5, sm: 2, lg: 2.75 },
                 '&:last-child': { pb: { xs: 1.5, sm: 2, lg: 2.75 } },

@@ -56,6 +56,124 @@ const TIMELINE_ICON_RADIUS_VAR = '--today-meal-icon-radius'; // Stops timeline s
 const TIMELINE_ROW_PADDING_VAR = '--today-meal-row-padding-y'; // Lets the connector align to the icon center across breakpoints.
 const EMPTY_MEAL_CHEVRON_SLOT_PX = 32; // Reserves the disclosure slot so empty meals align with expanded meals.
 
+type FoodLogEntryRowProps = {
+    entry: FoodLogMealEntry;
+    disabled: boolean;
+    onEdit: (entry: FoodLogMealEntry) => void;
+    onDelete: (entry: FoodLogMealEntry) => void;
+};
+
+/**
+ * Quiet inline food entry row. Desktop edit/delete affordances reveal on hover/focus.
+ */
+const FoodLogEntryRow: React.FC<FoodLogEntryRowProps> = ({ entry, disabled, onEdit, onDelete }) => {
+    const { t } = useI18n();
+    const servingLabel = formatServingSnapshotLabel({
+        servingsConsumed: entry.servings_consumed ?? null,
+        servingSizeQuantity: entry.serving_size_quantity_snapshot ?? null,
+        servingUnitLabel: entry.serving_unit_label_snapshot ?? null
+    });
+
+    const caloriesValue = typeof entry.calories === 'number' ? entry.calories : '-';
+    const caloriesLabel = t('foodLog.entryCalories', { calories: caloriesValue });
+
+    return (
+        <Box
+            sx={{
+                display: 'grid',
+                gridTemplateColumns: 'minmax(0, 1fr) auto',
+                alignItems: 'center',
+                gap: { xs: 0.75, sm: 1 },
+                py: 0.65,
+                borderTop: (theme) =>
+                    `1px solid ${alpha(theme.palette.text.primary, theme.palette.mode === 'dark' ? 0.1 : 0.08)}`,
+                '&:hover .food-entry-actions, &:focus-within .food-entry-actions': {
+                    opacity: 1
+                },
+                '&:hover .food-entry-delete, &:focus-within .food-entry-delete': {
+                    color: disabled ? 'action.disabled' : 'error.main'
+                }
+            }}
+        >
+            <Box sx={{ minWidth: 0 }}>
+                <Typography noWrap sx={{ fontWeight: 580 }}>
+                    {entry.name}
+                </Typography>
+                {servingLabel && (
+                    <Typography variant="caption" noWrap sx={{ color: 'text.secondary', display: 'block' }}>
+                        {servingLabel}
+                    </Typography>
+                )}
+            </Box>
+
+            <Box
+                sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'flex-end',
+                    flexDirection: { xs: 'column', sm: 'row' },
+                    gap: { xs: 0.25, sm: 0.5 },
+                    minWidth: 0
+                }}
+            >
+                <Typography
+                    variant="body2"
+                    aria-label={caloriesLabel}
+                    sx={{
+                        color: 'text.secondary',
+                        whiteSpace: 'nowrap',
+                        textAlign: 'right',
+                        fontSize: { xs: '0.8rem', sm: '0.875rem' }
+                    }}
+                >
+                    {caloriesLabel}
+                </Typography>
+                <Box
+                    className="food-entry-actions"
+                    sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 0.25,
+                        opacity: ENTRY_ROW_ACTION_FADE,
+                        transition: 'opacity 120ms ease',
+                        '& .MuiIconButton-root': {
+                            width: { xs: 28, sm: 32 },
+                            height: { xs: 28, sm: 32 }
+                        }
+                    }}
+                >
+                    <Tooltip title={t('foodLog.editEntry')}>
+                        <span>
+                            <IconButton size={ENTRY_ACTION_ICON_SIZE} onClick={() => onEdit(entry)} disabled={disabled}>
+                                <EditRoundedIcon fontSize="small" />
+                            </IconButton>
+                        </span>
+                    </Tooltip>
+                    <Tooltip title={t('foodLog.deleteEntry')}>
+                        <span>
+                            <IconButton
+                                className="food-entry-delete"
+                                size={ENTRY_ACTION_ICON_SIZE}
+                                onClick={() => onDelete(entry)}
+                                disabled={disabled}
+                                sx={{
+                                    color: (theme) =>
+                                        disabled
+                                            ? theme.palette.action.disabled
+                                            : alpha(theme.palette.error.main, theme.palette.mode === 'dark' ? 0.5 : 0.42),
+                                    transition: 'color 120ms ease'
+                                }}
+                            >
+                                <DeleteRoundedIcon fontSize="small" />
+                            </IconButton>
+                        </span>
+                    </Tooltip>
+                </Box>
+            </Box>
+        </Box>
+    );
+};
+
 /**
  * One meal row inside the daily food timeline.
  */
@@ -221,120 +339,15 @@ const FoodLogMealRow: React.FC<FoodLogMealRowProps> = ({
                 ) : hasEntries ? (
                     <Collapse in={isExpanded} timeout="auto" unmountOnExit>
                         <Stack sx={{ mt: 0.75 }}>
-                            {entries.map((entry) => {
-                                const servingLabel = formatServingSnapshotLabel({
-                                    servingsConsumed: entry.servings_consumed ?? null,
-                                    servingSizeQuantity: entry.serving_size_quantity_snapshot ?? null,
-                                    servingUnitLabel: entry.serving_unit_label_snapshot ?? null
-                                });
-
-                                const caloriesValue = typeof entry.calories === 'number' ? entry.calories : '-';
-                                const caloriesLabel = t('foodLog.entryCalories', { calories: caloriesValue });
-
-                                return (
-                                    <Box
-                                        key={entry.id}
-                                        sx={{
-                                            display: 'grid',
-                                            gridTemplateColumns: 'minmax(0, 1fr) auto',
-                                            alignItems: 'center',
-                                            gap: { xs: 0.75, sm: 1 },
-                                            py: 0.65,
-                                            borderTop: (theme) =>
-                                                `1px solid ${alpha(theme.palette.text.primary, theme.palette.mode === 'dark' ? 0.1 : 0.08)}`,
-                                            '&:hover .food-entry-actions, &:focus-within .food-entry-actions': {
-                                                opacity: 1
-                                            },
-                                            '&:hover .food-entry-delete, &:focus-within .food-entry-delete': {
-                                                color: disabled ? 'action.disabled' : 'error.main'
-                                            }
-                                        }}
-                                    >
-                                        <Box sx={{ minWidth: 0 }}>
-                                            <Typography noWrap sx={{ fontWeight: 580 }}>
-                                                {entry.name}
-                                            </Typography>
-                                            {servingLabel && (
-                                                <Typography variant="caption" noWrap sx={{ color: 'text.secondary', display: 'block' }}>
-                                                    {servingLabel}
-                                                </Typography>
-                                            )}
-                                        </Box>
-
-                                        <Box
-                                            sx={{
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'flex-end',
-                                                flexDirection: { xs: 'column', sm: 'row' },
-                                                gap: { xs: 0.25, sm: 0.5 },
-                                                minWidth: 0
-                                            }}
-                                        >
-                                            <Typography
-                                                variant="body2"
-                                                aria-label={caloriesLabel}
-                                                sx={{
-                                                    color: 'text.secondary',
-                                                    whiteSpace: 'nowrap',
-                                                    textAlign: 'right',
-                                                    fontSize: { xs: '0.8rem', sm: '0.875rem' }
-                                                }}
-                                            >
-                                                {caloriesLabel}
-                                            </Typography>
-                                            <Box
-                                                className="food-entry-actions"
-                                                sx={{
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    gap: 0.25,
-                                                    opacity: ENTRY_ROW_ACTION_FADE,
-                                                    transition: 'opacity 120ms ease',
-                                                    '& .MuiIconButton-root': {
-                                                        width: { xs: 28, sm: 32 },
-                                                        height: { xs: 28, sm: 32 }
-                                                    }
-                                                }}
-                                            >
-                                                <Tooltip title={t('foodLog.editEntry')}>
-                                                    <span>
-                                                        <IconButton
-                                                            size={ENTRY_ACTION_ICON_SIZE}
-                                                            onClick={() => onEdit(entry)}
-                                                            disabled={disabled}
-                                                        >
-                                                            <EditRoundedIcon fontSize="small" />
-                                                        </IconButton>
-                                                    </span>
-                                                </Tooltip>
-                                                <Tooltip title={t('foodLog.deleteEntry')}>
-                                                    <span>
-                                                        <IconButton
-                                                            className="food-entry-delete"
-                                                            size={ENTRY_ACTION_ICON_SIZE}
-                                                            onClick={() => onDelete(entry)}
-                                                            disabled={disabled}
-                                                            sx={{
-                                                                color: (theme) =>
-                                                                    disabled
-                                                                        ? theme.palette.action.disabled
-                                                                        : alpha(
-                                                                              theme.palette.error.main,
-                                                                              theme.palette.mode === 'dark' ? 0.5 : 0.42
-                                                                          ),
-                                                                transition: 'color 120ms ease'
-                                                            }}
-                                                        >
-                                                            <DeleteRoundedIcon fontSize="small" />
-                                                        </IconButton>
-                                                    </span>
-                                                </Tooltip>
-                                            </Box>
-                                        </Box>
-                                    </Box>
-                                );
-                            })}
+                            {entries.map((entry) => (
+                                <FoodLogEntryRow
+                                    key={entry.id}
+                                    entry={entry}
+                                    disabled={disabled}
+                                    onEdit={onEdit}
+                                    onDelete={onDelete}
+                                />
+                            ))}
                         </Stack>
                     </Collapse>
                 ) : null}

@@ -6,6 +6,7 @@ import ChevronRightRoundedIcon from '@mui/icons-material/ChevronRightRounded';
 import TodayRoundedIcon from '@mui/icons-material/TodayRounded';
 import type { LogDateNavigationState } from '../context/quickAddFabState';
 import { useI18n } from '../i18n/useI18n';
+import { mergeSx } from '../ui/sx';
 import LogDatePickerControl from './LogDatePickerControl';
 
 type LogDateNavigationClusterProps = {
@@ -35,7 +36,7 @@ const LogDateNavigationCluster: React.FC<LogDateNavigationClusterProps> = ({
 
     return (
         <Box
-            sx={[
+            sx={mergeSx(
                 {
                     display: 'inline-flex',
                     alignItems: 'center',
@@ -43,8 +44,8 @@ const LogDateNavigationCluster: React.FC<LogDateNavigationClusterProps> = ({
                     gap: DATE_CLUSTER_GAP_SPACING,
                     minWidth: 0
                 },
-                ...(Array.isArray(sx) ? sx : sx ? [sx] : [])
-            ]}
+                sx
+            )}
         >
             <Tooltip title={t('log.nav.prevDay')}>
                 <span>

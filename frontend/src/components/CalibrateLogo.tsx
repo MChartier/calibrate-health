@@ -1,6 +1,7 @@
 import React from 'react';
 import { Box, Typography } from '@mui/material';
 import type { SxProps, Theme } from '@mui/material/styles';
+import { mergeSx } from '../ui/sx';
 
 const LOGO_VIEW_BOX = '0 0 64 64';
 const LOGO_GAUGE_STROKE_WIDTH = 9; // Controls the weight of the dial ring in the brand mark.
@@ -20,7 +21,7 @@ const CalibrateLogo: React.FC<CalibrateLogoProps> = ({ showWordmark = true, size
     const needleGradientId = React.useId().replace(/:/g, '');
 
     return (
-        <Box sx={[{ display: 'inline-flex', alignItems: 'center', gap: 1, minWidth: 0 }, ...(Array.isArray(sx) ? sx : sx ? [sx] : [])]}>
+        <Box sx={mergeSx({ display: 'inline-flex', alignItems: 'center', gap: 1, minWidth: 0 }, sx)}>
             {size > 0 && (
                 <Box
                     component="svg"
