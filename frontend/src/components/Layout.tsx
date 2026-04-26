@@ -51,11 +51,15 @@ import { useIncompleteTodayBadge } from '../hooks/useIncompleteTodayBadge';
 import { useInstallState } from '../hooks/useInstallState';
 import CalibrateLogo from './CalibrateLogo';
 import LogDateNavigationCluster from './LogDateNavigationCluster';
+import PwaStatusToasts from './PwaStatusToasts';
 
 const SAFE_AREA_INSET_TOP = 'var(--safe-area-inset-top, 0px)';
 const SAFE_AREA_INSET_BOTTOM = 'var(--safe-area-inset-bottom, 0px)';
 const SAFE_AREA_INSET_LEFT = 'var(--safe-area-inset-left, 0px)';
 const SAFE_AREA_INSET_RIGHT = 'var(--safe-area-inset-right, 0px)';
+const TITLEBAR_AREA_X = 'env(titlebar-area-x, 0px)';
+const TITLEBAR_AREA_WIDTH = 'env(titlebar-area-width, 100vw)';
+const TITLEBAR_AREA_RIGHT_INSET = `calc(100vw - ${TITLEBAR_AREA_X} - ${TITLEBAR_AREA_WIDTH})`; // Keeps toolbar actions clear of desktop PWA window controls.
 const TOOLBAR_HORIZONTAL_PADDING_SPACING = { xs: 1.25, sm: 2.5 }; // Header gutter including safe-area insets.
 const DEFAULT_TOOLBAR_MIN_HEIGHT_SPACING = 7; // MUI default toolbar height in spacing units (56px).
 const NAV_NOTIFICATION_BADGE_MAX = 99; // Prevent oversized badge strings from crowding the header controls.
@@ -92,16 +96,18 @@ function buildSafeAreaToolbarSx(theme: Theme) {
     const baseMinHeight = normalizeToolbarMinHeight(theme.mixins.toolbar.minHeight, fallbackMinHeight);
     const toolbarMixins = theme.mixins.toolbar as Record<string, { minHeight?: number | string } | undefined>;
     const smMinHeight = normalizeToolbarMinHeight(toolbarMixins[theme.breakpoints.up('sm')]?.minHeight, baseMinHeight);
+    const leadingInset = `max(${SAFE_AREA_INSET_LEFT}, ${TITLEBAR_AREA_X})`;
+    const trailingInset = `max(${SAFE_AREA_INSET_RIGHT}, ${TITLEBAR_AREA_RIGHT_INSET})`;
 
     return {
         pt: SAFE_AREA_INSET_TOP,
-        pl: `calc(${theme.spacing(TOOLBAR_HORIZONTAL_PADDING_SPACING.xs)} + ${SAFE_AREA_INSET_LEFT})`,
-        pr: `calc(${theme.spacing(TOOLBAR_HORIZONTAL_PADDING_SPACING.xs)} + ${SAFE_AREA_INSET_RIGHT})`,
+        pl: `calc(${theme.spacing(TOOLBAR_HORIZONTAL_PADDING_SPACING.xs)} + ${leadingInset})`,
+        pr: `calc(${theme.spacing(TOOLBAR_HORIZONTAL_PADDING_SPACING.xs)} + ${trailingInset})`,
         minHeight: `calc(${baseMinHeight} + ${SAFE_AREA_INSET_TOP})`,
         [theme.breakpoints.up('sm')]: {
             minHeight: `calc(${smMinHeight} + ${SAFE_AREA_INSET_TOP})`,
-            pl: `calc(${theme.spacing(TOOLBAR_HORIZONTAL_PADDING_SPACING.sm)} + ${SAFE_AREA_INSET_LEFT})`,
-            pr: `calc(${theme.spacing(TOOLBAR_HORIZONTAL_PADDING_SPACING.sm)} + ${SAFE_AREA_INSET_RIGHT})`
+            pl: `calc(${theme.spacing(TOOLBAR_HORIZONTAL_PADDING_SPACING.sm)} + ${leadingInset})`,
+            pr: `calc(${theme.spacing(TOOLBAR_HORIZONTAL_PADDING_SPACING.sm)} + ${trailingInset})`
         }
     };
 }
@@ -307,7 +313,8 @@ const LayoutShell: React.FC = () => {
                                 sm: '"brand date actions"'
                             },
                             columnGap: { xs: 0.75, sm: 1.25 },
-                            alignItems: 'center'
+                            alignItems: 'center',
+                            WebkitAppRegion: 'drag'
                         }
                     ]}
                 >
@@ -324,7 +331,8 @@ const LayoutShell: React.FC = () => {
                             flexShrink: 0,
                             minWidth: 0,
                             justifySelf: 'start',
-                            gridArea: 'brand'
+                            gridArea: 'brand',
+                            WebkitAppRegion: 'no-drag'
                         }}
                     >
                         <CalibrateLogo showWordmark={false} size={34} />
@@ -338,7 +346,12 @@ const LayoutShell: React.FC = () => {
                             navigation={logDateNavigation}
                             placement="navbar"
                             showTodayShortcut
-                            sx={{ display: { xs: 'none', sm: 'inline-flex' }, justifySelf: 'center', gridArea: 'date' }}
+                            sx={{
+                                display: { xs: 'none', sm: 'inline-flex' },
+                                justifySelf: 'center',
+                                gridArea: 'date',
+                                WebkitAppRegion: 'no-drag'
+                            }}
                         />
                     )}
 
@@ -349,7 +362,8 @@ const LayoutShell: React.FC = () => {
                             gap: 1,
                             flexShrink: 0,
                             justifySelf: 'end',
-                            gridArea: 'actions'
+                            gridArea: 'actions',
+                            WebkitAppRegion: 'no-drag'
                         }}
                     >
                         {(showLoginCta || showRegisterCta) && (
@@ -510,6 +524,7 @@ const LayoutShell: React.FC = () => {
             )}
 
             {showAppNav && <LogQuickAddFab date={fabDate} />}
+            <PwaStatusToasts />
 
             <Dialog
                 open={isIosInstallDialogOpen && !isInstalled}

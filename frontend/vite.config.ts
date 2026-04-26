@@ -145,7 +145,7 @@ function getWorktreeNameFromRepoRoot(repoRootName: string) {
 function getPwaOptions(enableServiceWorkerInDev: boolean): Partial<VitePWAOptions> {
   return {
     strategies: 'injectManifest',
-    registerType: 'autoUpdate',
+    registerType: 'prompt',
     srcDir: 'src',
     filename: 'service-worker.ts',
     devOptions: {
@@ -165,9 +165,12 @@ function getPwaOptions(enableServiceWorkerInDev: boolean): Partial<VitePWAOption
       ...PWA_SCREENSHOT_ASSETS,
     ],
     manifest: {
+      id: '/',
       name: 'calibrate',
       short_name: 'calibrate',
       description: 'A responsive calorie tracker.',
+      lang: 'en',
+      dir: 'ltr',
       theme_color: PWA_THEME_COLOR,
       background_color: PWA_BACKGROUND_COLOR,
       categories: ['health', 'fitness', 'lifestyle'],

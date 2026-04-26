@@ -38,6 +38,11 @@ export const en = {
     'install.ios.step1': 'Tap the Share button in Safari.',
     'install.ios.step2': 'Choose Add to Home Screen.',
     'install.ios.step3': 'Tap Add to finish installing.',
+    'pwa.offline': 'Offline. You can keep viewing cached screens; saving needs a connection.',
+    'pwa.backOnline': 'Back online.',
+    'pwa.updateReady': 'Update ready.',
+    'pwa.updateAction': 'Reload',
+    'pwa.updateFailed': 'Unable to update. Try refreshing.',
 
     'legal.privacyPolicy': 'Privacy policy',
 
@@ -615,6 +620,11 @@ export const es: Record<TranslationKey, string> = {
     'install.ios.step1': 'Toca el boton Compartir en Safari.',
     'install.ios.step2': 'Elige Agregar a pantalla de inicio.',
     'install.ios.step3': 'Toca Agregar para terminar la instalacion.',
+    'pwa.offline': 'Sin conexion. Puedes seguir viendo pantallas en cache; guardar necesita conexion.',
+    'pwa.backOnline': 'En linea de nuevo.',
+    'pwa.updateReady': 'Actualizacion lista.',
+    'pwa.updateAction': 'Recargar',
+    'pwa.updateFailed': 'No se pudo actualizar. Intenta recargar.',
 
     'legal.privacyPolicy': 'Política de privacidad',
 
@@ -1190,6 +1200,11 @@ export const fr: Record<TranslationKey, string> = {
     'install.ios.step1': 'Touchez le bouton Partager dans Safari.',
     'install.ios.step2': "Choisissez Ajouter a l'ecran d'accueil.",
     'install.ios.step3': "Touchez Ajouter pour terminer l'installation.",
+    'pwa.offline': "Hors ligne. Vous pouvez consulter les ecrans en cache; l'enregistrement necessite une connexion.",
+    'pwa.backOnline': 'Connexion retablie.',
+    'pwa.updateReady': 'Mise a jour prete.',
+    'pwa.updateAction': 'Recharger',
+    'pwa.updateFailed': 'Impossible de mettre a jour. Essayez de recharger.',
 
     'legal.privacyPolicy': 'Politique de confidentialité',
 
@@ -1765,6 +1780,11 @@ export const ru: Record<TranslationKey, string> = {
     'install.ios.step1': 'Нажмите кнопку Поделиться в Safari.',
     'install.ios.step2': 'Выберите На экран Домой.',
     'install.ios.step3': 'Нажмите Добавить для завершения установки.',
+    'pwa.offline': 'Нет соединения. Можно просматривать кешированные экраны; для сохранения нужно подключение.',
+    'pwa.backOnline': 'Соединение восстановлено.',
+    'pwa.updateReady': 'Обновление готово.',
+    'pwa.updateAction': 'Перезагрузить',
+    'pwa.updateFailed': 'Не удалось обновить. Попробуйте перезагрузить.',
 
     'legal.privacyPolicy': 'Политика конфиденциальности',
 
