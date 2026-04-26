@@ -1,5 +1,8 @@
 import React, { useMemo } from 'react';
-import { Alert, Box, Button, Card, CardContent, Chip, Skeleton, Typography, useMediaQuery } from '@mui/material';
+import { Alert, Box, Button, Chip, Skeleton, Typography, useMediaQuery } from '@mui/material';
+import type { SxProps, Theme } from '@mui/material/styles';
+import AddRoundedIcon from '@mui/icons-material/AddRounded';
+import EditRoundedIcon from '@mui/icons-material/EditRounded';
 import MonitorWeightIcon from '@mui/icons-material/MonitorWeightRounded';
 import { alpha, useTheme } from '@mui/material/styles';
 import { useAuth } from '../context/useAuth';
@@ -8,13 +11,14 @@ import { parseDateOnlyToLocalDate } from '../utils/goalTracking';
 import { usePrefersReducedMotion } from '../hooks/usePrefersReducedMotion';
 import { useTweenedNumber } from '../hooks/useTweenedNumber';
 import SectionHeader from '../ui/SectionHeader';
+import AppCard from '../ui/AppCard';
 import { findMetricOnOrBeforeDate, toDatePart, useMetricsQuery } from '../queries/metrics';
 import { useI18n } from '../i18n/useI18n';
 
 /**
  * Log weight summary card with "as of" context and quick entry CTA.
  */
-const EM_DASH = '\u2014';
+const EMPTY_VALUE_LABEL = '-';
 // Duration used for "date switch" value transitions.
 const WEIGHT_SUMMARY_TWEEN_DURATION_MS = 520;
 const WEIGHT_ICON_TILE_SIZE_PX = { xs: 48, sm: 56 }; // Icon tile size shrinks slightly on xs to keep the row compact without hurting tap targets.
@@ -37,17 +41,41 @@ export type WeightSummaryCardProps = {
      * The parent controls the actual modal dialog (WeightEntryForm), so this is just a trigger.
      */
     onOpenWeightEntry: () => void;
+    /**
+     * Locks the daily weight CTA when the selected day has been completed.
+     */
+    disabled?: boolean;
+    /** Optional wrapper styles used by dashboard grid alignment. */
+    sx?: SxProps<Theme>;
 };
 
 /**
  * Format a Postgres DATE-ish string for display, falling back to an em dash for invalid inputs.
  */
 function formatMetricDateLabel(value: string | null): string {
-    if (!value) return EM_DASH;
+    if (!value) return EMPTY_VALUE_LABEL;
     const parsed = parseDateOnlyToLocalDate(value);
-    if (!parsed || Number.isNaN(parsed.getTime())) return EM_DASH;
+    if (!parsed || Number.isNaN(parsed.getTime())) return EMPTY_VALUE_LABEL;
     return new Intl.DateTimeFormat(undefined, { year: 'numeric', month: 'short', day: 'numeric' }).format(parsed);
 }
+
+const WeightIconTile: React.FC<{ sizePx: number }> = ({ sizePx }) => (
+    <Box
+        sx={{
+            width: sizePx,
+            height: sizePx,
+            borderRadius: 2,
+            backgroundColor: (theme) => alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.18 : 0.08),
+            border: (theme) => `1px solid ${theme.palette.divider}`,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+        }}
+        aria-hidden
+    >
+        <MonitorWeightIcon color="primary" />
+    </Box>
+);
 
 /**
  * WeightSummaryCard
@@ -57,7 +85,7 @@ function formatMetricDateLabel(value: string | null): string {
  * - Shows a large "current weight" value plus an "As of {date}" line to make recency obvious.
  * - When viewing today, surfaces a clear "Due today" / "Done for today" state and adjusts CTA text.
  */
-const WeightSummaryCard: React.FC<WeightSummaryCardProps> = ({ date, onOpenWeightEntry }) => {
+const WeightSummaryCard: React.FC<WeightSummaryCardProps> = ({ date, onOpenWeightEntry, disabled = false, sx }) => {
     const { user } = useAuth();
     const { t } = useI18n();
     const theme = useTheme();
@@ -99,8 +127,9 @@ const WeightSummaryCard: React.FC<WeightSummaryCardProps> = ({ date, onOpenWeigh
         return metricForSelectedDate ? t('weightSummary.cta.edit') : t('weightSummary.cta.log');
     }, [isToday, metricForSelectedDate, t]);
 
-    const displayedWeightLabel = displayedWeight !== null ? `${animatedWeight.toFixed(1)} ${unitLabel}` : EM_DASH;
+    const displayedWeightLabel = displayedWeight !== null ? `${animatedWeight.toFixed(1)} ${unitLabel}` : EMPTY_VALUE_LABEL;
     const asOfLabel = formatMetricDateLabel(displayedMetric?.date ?? null);
+    const WeightCtaIcon = metricForSelectedDate ? EditRoundedIcon : AddRoundedIcon;
 
     let cardBody: React.ReactNode;
     if (metricsQuery.isLoading) {
@@ -114,22 +143,7 @@ const WeightSummaryCard: React.FC<WeightSummaryCardProps> = ({ date, onOpenWeigh
                         flexDirection: 'row'
                     }}
                 >
-                    <Box
-                        sx={{
-                            width: iconTileSizePx,
-                            height: iconTileSizePx,
-                            borderRadius: 2,
-                            backgroundColor: (theme) =>
-                                alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.18 : 0.08),
-                            border: (theme) => `1px solid ${theme.palette.divider}`,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center'
-                        }}
-                        aria-hidden
-                    >
-                        <MonitorWeightIcon color="primary" />
-                    </Box>
+                    <WeightIconTile sizePx={iconTileSizePx} />
 
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.25, flexGrow: 1, minWidth: 0 }}>
                         <Skeleton width="40%" height={32} />
@@ -154,7 +168,13 @@ const WeightSummaryCard: React.FC<WeightSummaryCardProps> = ({ date, onOpenWeigh
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                 <Alert severity="warning">{t('weightSummary.error.unableToLoad')}</Alert>
                 <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-                    <Button variant="outlined" size={ctaSize} onClick={onOpenWeightEntry}>
+                    <Button
+                        variant="outlined"
+                        size={ctaSize}
+                        startIcon={<WeightCtaIcon />}
+                        onClick={onOpenWeightEntry}
+                        disabled={disabled}
+                    >
                         {ctaLabel}
                     </Button>
                 </Box>
@@ -171,22 +191,7 @@ const WeightSummaryCard: React.FC<WeightSummaryCardProps> = ({ date, onOpenWeigh
                         flexDirection: 'row'
                     }}
                 >
-                    <Box
-                        sx={{
-                            width: iconTileSizePx,
-                            height: iconTileSizePx,
-                            borderRadius: 2,
-                            backgroundColor: (theme) =>
-                                alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.18 : 0.08),
-                            border: (theme) => `1px solid ${theme.palette.divider}`,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center'
-                        }}
-                        aria-hidden
-                    >
-                        <MonitorWeightIcon color="primary" />
-                    </Box>
+                    <WeightIconTile sizePx={iconTileSizePx} />
 
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.25, flexGrow: 1, minWidth: 0 }}>
                         <Typography variant={valueVariant} sx={{ lineHeight: 1.1 }}>
@@ -201,7 +206,13 @@ const WeightSummaryCard: React.FC<WeightSummaryCardProps> = ({ date, onOpenWeigh
                 </Box>
 
                 <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-                    <Button variant="outlined" size={ctaSize} onClick={onOpenWeightEntry}>
+                    <Button
+                        variant="outlined"
+                        size={ctaSize}
+                        startIcon={<WeightCtaIcon />}
+                        onClick={onOpenWeightEntry}
+                        disabled={disabled}
+                    >
                         {ctaLabel}
                     </Button>
                 </Box>
@@ -210,13 +221,13 @@ const WeightSummaryCard: React.FC<WeightSummaryCardProps> = ({ date, onOpenWeigh
     }
 
     return (
-        <Card sx={{ height: '100%', width: '100%' }}>
-            <CardContent
-                sx={{
-                    p: WEIGHT_CARD_PADDING_SPACING,
-                    '&:last-child': { pb: WEIGHT_CARD_PADDING_SPACING }
-                }}
-            >
+        <AppCard
+            sx={sx}
+            contentSx={{
+                p: WEIGHT_CARD_PADDING_SPACING,
+                '&:last-child': { pb: WEIGHT_CARD_PADDING_SPACING }
+            }}
+        >
                 <SectionHeader
                     title={t('weightSummary.title')}
                     align="center"
@@ -237,8 +248,7 @@ const WeightSummaryCard: React.FC<WeightSummaryCardProps> = ({ date, onOpenWeigh
                 />
 
                 <Box sx={{ mt: bodyMarginTop }}>{cardBody}</Box>
-            </CardContent>
-        </Card>
+        </AppCard>
     );
 };
 

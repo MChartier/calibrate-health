@@ -27,8 +27,10 @@ import {
     computeGoalProgress,
     computeGoalProjection,
     getGoalModeFromDailyDeficit,
-    getMaintenanceTolerance
+    getMaintenanceTolerance,
+    startOfLocalDay
 } from '../utils/goalTracking';
+import { MS_PER_DAY } from '../utils/date';
 
 /**
  * Goal tracker card UI shared by the dashboard and goals page.
@@ -76,6 +78,10 @@ export type GoalTrackerCardProps = {
      * and includes a call-to-action line.
      */
     isDashboard?: boolean;
+    /**
+     * Optional localized title key for contexts where this card is presented as a projection panel.
+     */
+    titleKey?: TranslationKey;
 };
 
 /**
@@ -234,6 +240,20 @@ const GoalTrackerBody: React.FC<{
         projection.projectedDateLabel === EM_DASH
             ? t('goalTracker.label.projectedMissing')
             : t('goalTracker.label.projected', { date: projection.projectedDateLabel });
+    const projectedPaceLabel = (() => {
+        if (!projection.projectedDate) return projectedLabel;
+
+        const todayTime = startOfLocalDay(new Date()).getTime();
+        const projectedTime = startOfLocalDay(projection.projectedDate).getTime();
+        const daysUntilGoal = Math.max(0, Math.ceil((projectedTime - todayTime) / MS_PER_DAY));
+
+        if (daysUntilGoal <= 1) return t('goalTracker.label.projectedPaceToday');
+        if (daysUntilGoal < 14) return t('goalTracker.label.projectedPaceDays', { count: daysUntilGoal });
+
+        return t('goalTracker.label.projectedPaceWeeks', {
+            count: Math.max(2, Math.round(daysUntilGoal / 7))
+        });
+    })();
     const currentWeightLabel =
         typeof currentWeight === 'number' && Number.isFinite(currentWeight) ? `${currentWeight.toFixed(1)} ${unitLabel}` : EM_DASH;
 
@@ -328,8 +348,13 @@ const GoalTrackerBody: React.FC<{
                 sx={{ fontWeight: 800, mt: 1 }}
                 title={projection.detail ?? undefined}
             >
-                {projectedLabel}
+                {projectedPaceLabel}
             </Typography>
+            {projection.projectedDate && (
+                <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mt: 0.25 }}>
+                    {projectedLabel}
+                </Typography>
+            )}
         </Box>
     );
 };
@@ -340,7 +365,7 @@ const GoalTrackerBody: React.FC<{
  * Shared card used on the Dashboard and on `/goals` to visualize goal progress consistently.
  * Use `isDashboard` to control whether it links to the Goals page and shows link text.
  */
-const GoalTrackerCard: React.FC<GoalTrackerCardProps> = ({ isDashboard = false }) => {
+const GoalTrackerCard: React.FC<GoalTrackerCardProps> = ({ isDashboard = false, titleKey = 'goalTracker.title' }) => {
     const { user } = useAuth();
     const { t } = useI18n();
     const theme = useTheme();
@@ -502,7 +527,7 @@ const GoalTrackerCard: React.FC<GoalTrackerCardProps> = ({ isDashboard = false }
     const content = (
         <CardContent>
             <SectionHeader
-                title={t('goalTracker.title')}
+                title={t(titleKey)}
                 actions={
                     !isDashboard ? (
                         <Button variant="outlined" size="small" onClick={handleOpenGoalEditor} disabled={isLoading}>
@@ -520,7 +545,6 @@ const GoalTrackerCard: React.FC<GoalTrackerCardProps> = ({ isDashboard = false }
         <>
             <Card
                 sx={{
-                    height: '100%',
                     width: '100%',
                     ...(isDashboard
                         ? {

@@ -39,7 +39,7 @@ const PWA_BACKGROUND_COLOR = '#f8fafc' // Android may use this behind transparen
 const PWA_LAUNCH_HANDLER = {
   client_mode: 'navigate-existing',
 } as const
-// Placeholder PWA asset paths; replace with real files under frontend/public/.
+// Install icon variants copied from frontend/public into the production build.
 const PWA_ICON_ASSETS: string[] = [
   'pwa/icons/app-maskable-192.png',
   'pwa/icons/app-maskable-512.png',

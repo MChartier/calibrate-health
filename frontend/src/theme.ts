@@ -1,12 +1,9 @@
 import type { PaletteMode } from '@mui/material';
-import { alpha, createTheme, darken } from '@mui/material/styles';
+import { alpha, createTheme } from '@mui/material/styles';
 import type { Theme } from '@mui/material/styles';
 import type {} from '@mui/x-charts/themeAugmentation';
 
-const worktreeColor = import.meta.env.VITE_WORKTREE_COLOR?.trim();
-const isMainWorktree = import.meta.env.VITE_WORKTREE_IS_MAIN === 'true';
-const appBarColor = !isMainWorktree && worktreeColor ? worktreeColor : undefined;
-const PAGE_SECTION_GAP_SPACING = 0.75; // Base vertical gap between stacked cards (theme spacing units).
+const PAGE_SECTION_GAP_SPACING = 1.5; // Base vertical gap between stacked Today workspace surfaces (theme spacing units).
 
 type ShadowRampOptions = {
     /** Base RGB hex used to tint shadows. */
@@ -53,7 +50,6 @@ function resolveStatusColor(theme: Theme, color: unknown): string {
  * Notes:
  * - We keep light/dark theme differences mostly limited to palette/background so MUI components
  *   can do the heavy lifting.
- * - Worktree AppBar overrides (dev) are applied across modes.
  */
 export function createAppTheme(mode: PaletteMode) {
     const isDark = mode === 'dark';
@@ -62,30 +58,49 @@ export function createAppTheme(mode: PaletteMode) {
         palette: {
             mode,
             primary: {
-                main: isDark ? '#2DE2E6' : '#0077FF'
+                main: isDark ? '#A3E635' : '#2E7D32',
+                light: isDark ? '#BEF264' : '#43A047',
+                dark: isDark ? '#65A30D' : '#1B5E20',
+                contrastText: isDark ? '#111827' : '#FFFFFF'
             },
             secondary: {
-                main: isDark ? '#A3FF12' : '#16A34A'
+                main: isDark ? '#E5E7EB' : '#1F2937',
+                light: isDark ? '#F9FAFB' : '#334155',
+                dark: isDark ? '#CBD5E1' : '#111827',
+                contrastText: isDark ? '#111827' : '#FFFFFF'
+            },
+            success: {
+                main: '#2E7D32'
+            },
+            warning: {
+                main: '#F59E0B'
+            },
+            error: {
+                main: '#DC2626'
             },
             background: {
-                default: isDark ? '#070A10' : '#F4F7FF',
-                paper: isDark ? '#0B1020' : '#FFFFFF'
+                default: isDark ? '#0B1117' : '#F6F8F4',
+                paper: isDark ? '#111827' : '#FFFFFF'
             },
-            divider: alpha(isDark ? '#FFFFFF' : '#0B1020', isDark ? 0.16 : 0.1)
+            text: {
+                primary: isDark ? '#F8FAFC' : '#1F2937',
+                secondary: isDark ? '#CBD5E1' : '#64748B'
+            },
+            divider: alpha(isDark ? '#FFFFFF' : '#1F2937', isDark ? 0.14 : 0.11)
         },
         shape: {
-            borderRadius: 14
+            borderRadius: 8
         },
-        shadows: buildShadowRamp({ shadowColor: '#000000', intensity: isDark ? 0.9 : 0.8 }),
+        shadows: buildShadowRamp({ shadowColor: isDark ? '#000000' : '#1F2937', intensity: isDark ? 0.9 : 0.42 }),
         typography: {
             fontFamily: '"DIN Alternate", "Avenir Next", Avenir, "Segoe UI Variable", "Segoe UI", sans-serif',
-            h1: { fontWeight: 800, letterSpacing: '-0.03em' },
-            h2: { fontWeight: 800, letterSpacing: '-0.025em' },
-            h3: { fontWeight: 800, letterSpacing: '-0.02em' },
-            h4: { fontWeight: 800, letterSpacing: '-0.015em' },
+            h1: { fontWeight: 850, letterSpacing: 0 },
+            h2: { fontWeight: 850, letterSpacing: 0 },
+            h3: { fontWeight: 850, letterSpacing: 0 },
+            h4: { fontWeight: 850, letterSpacing: 0 },
             h5: { fontWeight: 800 },
             h6: { fontWeight: 800 },
-            subtitle2: { fontWeight: 800, letterSpacing: '0.02em' },
+            subtitle2: { fontWeight: 800, letterSpacing: 0 },
             button: { textTransform: 'none', fontWeight: 800 }
         },
         custom: {
@@ -128,10 +143,6 @@ export function createAppTheme(mode: PaletteMode) {
             },
             MuiCssBaseline: {
                 styleOverrides: (theme) => {
-                    const accentA = alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.14 : 0.1);
-                    const accentB = alpha(theme.palette.secondary.main, theme.palette.mode === 'dark' ? 0.12 : 0.08);
-                    const bottom = darken(theme.palette.background.default, theme.palette.mode === 'dark' ? 0.18 : 0.05);
-
                     return {
                         ':root': {
                             '--safe-area-inset-top': 'env(safe-area-inset-top)',
@@ -140,18 +151,18 @@ export function createAppTheme(mode: PaletteMode) {
                             '--safe-area-inset-left': 'env(safe-area-inset-left)'
                         },
                         html: {
-                            height: '100%'
+                            minHeight: '100%',
+                            backgroundColor: theme.palette.background.default
                         },
                         body: {
-                            minHeight: '100vh',
+                            minHeight: '100svh',
                             fontVariantNumeric: 'tabular-nums',
-                            // Digital-feeling "glow" instead of a physical grid/paper texture.
-                            backgroundImage: `radial-gradient(1000px 560px at 20% -10%, ${accentA}, transparent 60%),
-                                radial-gradient(920px 520px at 110% 0%, ${accentB}, transparent 55%),
-                                linear-gradient(180deg, ${theme.palette.background.default}, ${bottom})`
+                            backgroundColor: theme.palette.background.default,
+                            backgroundImage: 'none'
                         },
                         '#root': {
-                            minHeight: '100vh'
+                            minHeight: '100svh',
+                            backgroundColor: theme.palette.background.default
                         }
                     };
                 }
@@ -174,32 +185,20 @@ export function createAppTheme(mode: PaletteMode) {
                 styleOverrides: {
                     root: ({ theme }) => ({
                         fontWeight: 800,
-                        letterSpacing: '0.02em',
+                        letterSpacing: 0,
                         color: theme.palette.text.secondary
                     })
                 }
             },
             MuiAppBar: {
                 styleOverrides: {
-                    root: ({ theme }) => {
-                        const gradient =
-                            theme.palette.mode === 'dark'
-                                ? `linear-gradient(90deg, ${alpha(theme.palette.primary.main, 0.16)}, transparent 44%, ${alpha(
-                                    theme.palette.secondary.main,
-                                    0.12
-                                )})`
-                                : `linear-gradient(90deg, ${alpha(theme.palette.primary.main, 0.08)}, transparent 44%, ${alpha(
-                                    theme.palette.secondary.main,
-                                    0.06
-                                )})`;
-
-                        return {
-                            backgroundColor: appBarColor ?? theme.palette.background.paper,
-                            color: appBarColor ? theme.palette.getContrastText(appBarColor) : theme.palette.text.primary,
-                            borderBottom: `1px solid ${theme.palette.divider}`,
-                            backgroundImage: appBarColor ? 'none' : gradient
-                        };
-                    }
+                    root: ({ theme }) => ({
+                        backgroundColor: alpha(theme.palette.background.paper, theme.palette.mode === 'dark' ? 0.92 : 0.94),
+                        color: theme.palette.text.primary,
+                        borderBottom: `1px solid ${theme.palette.divider}`,
+                        backgroundImage: 'none',
+                        backdropFilter: 'blur(16px)'
+                    })
                 }
             },
             MuiPaper: {
@@ -441,7 +440,7 @@ export function createAppTheme(mode: PaletteMode) {
             MuiMenuItem: {
                 styleOverrides: {
                     root: ({ theme }) => ({
-                        borderRadius: 10,
+                        borderRadius: 8,
                         margin: theme.spacing(0.5),
                         '&.Mui-selected': {
                             backgroundColor: alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.2 : 0.12)
@@ -477,7 +476,7 @@ export function createAppTheme(mode: PaletteMode) {
             MuiIconButton: {
                 styleOverrides: {
                     root: ({ theme }) => ({
-                        borderRadius: 12,
+                        borderRadius: 8,
                         transition: 'transform 120ms ease, background-color 120ms ease, box-shadow 120ms ease',
                         '&.MuiIconButton-sizeSmall .MuiSvgIcon-root': {
                             fontSize: theme.custom.icon.size.action.small
@@ -501,7 +500,7 @@ export function createAppTheme(mode: PaletteMode) {
             MuiListItemButton: {
                 styleOverrides: {
                     root: ({ theme }) => ({
-                        borderRadius: 12,
+                        borderRadius: 8,
                         '&:hover': {
                             backgroundColor: alpha(theme.palette.text.primary, theme.palette.mode === 'dark' ? 0.08 : 0.05)
                         },
@@ -521,7 +520,7 @@ export function createAppTheme(mode: PaletteMode) {
                 styleOverrides: {
                     root: ({ theme }) => ({
                         fontWeight: 800,
-                        borderRadius: 12,
+                        borderRadius: 8,
                         '&.Mui-selected': {
                             borderColor: alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.5 : 0.35),
                             backgroundColor: alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.22 : 0.14),
@@ -536,7 +535,7 @@ export function createAppTheme(mode: PaletteMode) {
             MuiFab: {
                 styleOverrides: {
                     root: ({ theme }) => ({
-                        borderRadius: 16,
+                        borderRadius: 8,
                         boxShadow: theme.shadows[8],
                         transition: 'transform 120ms ease, box-shadow 120ms ease',
                         '& .MuiSvgIcon-root': { fontSize: theme.custom.icon.size.fab },
@@ -550,7 +549,7 @@ export function createAppTheme(mode: PaletteMode) {
             MuiButton: {
                 styleOverrides: {
                     root: ({ theme }) => ({
-                        borderRadius: 12,
+                        borderRadius: 8,
                         transition: 'transform 120ms ease, box-shadow 120ms ease',
                         '&:active': { transform: 'translateY(1px)' },
                         '&.Mui-focusVisible': {
@@ -565,7 +564,7 @@ export function createAppTheme(mode: PaletteMode) {
             MuiOutlinedInput: {
                 styleOverrides: {
                     root: ({ theme }) => ({
-                        borderRadius: 12,
+                        borderRadius: 8,
                         backgroundColor: alpha(theme.palette.text.primary, theme.palette.mode === 'dark' ? 0.04 : 0.02),
                         '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
                             borderColor: theme.palette.primary.main,

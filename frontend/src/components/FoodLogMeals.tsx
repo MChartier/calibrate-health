@@ -1,77 +1,35 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
-    Accordion,
-    AccordionDetails,
-    AccordionSummary,
     Alert,
-    Avatar,
-    Box,
     Button,
     Dialog,
     DialogActions,
     DialogContent,
     DialogTitle,
-    Divider,
     FormControl,
-    IconButton,
     InputLabel,
     MenuItem,
     Select,
-    Skeleton,
     Stack,
     TextField,
-    Tooltip,
-    Typography,
-    useMediaQuery
+    Typography
 } from '@mui/material';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMoreRounded';
-import EditIcon from '@mui/icons-material/EditRounded';
-import DeleteIcon from '@mui/icons-material/DeleteRounded';
-import AddIcon from '@mui/icons-material/AddRounded';
-import { alpha, useTheme } from '@mui/material/styles';
 import axios from 'axios';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { getMealPeriodLabel, MEAL_PERIOD_ORDER, type MealPeriod } from '../types/mealPeriod';
-import { getMealPeriodAccentColor } from '../utils/mealColors';
-import { formatServingSnapshotLabel } from '../utils/servingDisplay';
 import { inAppNotificationsQueryKey } from '../queries/inAppNotifications';
-import SectionHeader from '../ui/SectionHeader';
-import MealPeriodIcon from './MealPeriodIcon';
 import { useI18n } from '../i18n/useI18n';
 import { haptic } from '../utils/haptics';
+import FoodLogMealRow, { type FoodLogMealEntry } from './FoodLogMealRow';
 
 /**
- * Food log UI grouped by meal period with edit/delete controls.
- *
- * Handles shaped loading placeholders to keep layout stable between day switches.
+ * Food log UI grouped by meal period with meal-level add actions plus edit/delete controls.
  */
-type FoodLogEntry = {
-    id: number | string;
+type FoodLogEntry = FoodLogMealEntry & {
     meal_period?: MealPeriod;
-    name?: string;
-    calories?: number;
-    servings_consumed?: number | null;
-    serving_size_quantity_snapshot?: number | null;
-    serving_unit_label_snapshot?: string | null;
-    calories_per_serving_snapshot?: number | null;
 };
 
 const MEAL_PERIOD_SET = new Set<MealPeriod>(MEAL_PERIOD_ORDER);
-
-// Number of placeholder entry rows shown per meal while switching dates with no cached food data yet.
-const FOOD_LOG_SKELETON_ROW_COUNT = 2;
-// Placeholder size knobs for the shaped loading UI.
-const FOOD_LOG_SKELETON_TOTAL_WIDTH_PX = 88; // Approx width of the "{N} Calories" summary text.
-const FOOD_LOG_SKELETON_TOTAL_HEIGHT_PX = 24; // Keeps the placeholder aligned with Typography metrics.
-const FOOD_LOG_SKELETON_ROW_HEIGHT_PX = 22; // Height for each placeholder row in AccordionDetails.
-const FOOD_LOG_SKELETON_ROW_CALORIES_WIDTH_PX = 76; // Approx width of a "{N} Calories" entry label.
-const FOOD_LOG_SKELETON_ROW_NAME_WIDTH_BASE_PERCENT = 58; // Base width for the entry name skeleton (varied per row).
-const FOOD_LOG_SKELETON_ROW_NAME_WIDTH_STEP_PERCENT = 10; // Step size for varying each skeleton row width.
-const FOOD_LOG_ACCORDION_SUMMARY_MIN_HEIGHT_PX = { xs: 44, sm: 48 }; // Keep headers touch-friendly while trimming excess height on xs screens.
-const FOOD_LOG_ACCORDION_SUMMARY_PADDING_X_SPACING = { xs: 1.25, sm: 1.75 }; // Horizontal padding for meal headers at each breakpoint.
-const FOOD_LOG_ACCORDION_SUMMARY_PADDING_Y_SPACING = { xs: 0.5, sm: 0.75 }; // Vertical padding/margins inside the summary row.
-const FOOD_LOG_ACCORDION_DETAILS_PADDING_SPACING = { xs: 1.25, sm: 1.75 }; // Inner padding for the accordion body.
-const FOOD_LOG_MEAL_AVATAR_SIZE_PX = { xs: 26, sm: 28 }; // Slightly smaller meal avatars on xs helps keep headers compact.
 
 /**
  * Build a Record keyed by MealPeriod using the canonical MEAL_PERIOD_ORDER sequence.
@@ -120,36 +78,26 @@ function parseServingsInput(value: string): number | null {
 
 export type FoodLogMealsProps = {
     logs: FoodLogEntry[];
-    onAddMeal?: (mealPeriod: MealPeriod) => void;
     /**
      * When true, render shaped skeleton placeholders in place of dynamic totals/entries.
-     *
-     * This prevents the UI from flashing misleading empty states (e.g. "No entries yet") while
-     * switching dates and waiting for the new day's data to load.
      */
     isLoading?: boolean;
+    /**
+     * Opens the shared add-food dialog with the selected meal prefilled.
+     */
+    onAddMeal: (mealPeriod: MealPeriod) => void;
+    /**
+     * Locks meal-level add/edit/delete controls while keeping accordion viewing available.
+     */
+    disabled?: boolean;
 };
 
 /**
- * FoodLogMeals renders the day log grouped by meal and supports inline edits/deletes.
+ * FoodLogMeals renders the day log as a timeline grouped by meal and supports inline edits/deletes.
  */
-const FoodLogMeals: React.FC<FoodLogMealsProps> = ({ logs, onAddMeal, isLoading = false }) => {
+const FoodLogMeals: React.FC<FoodLogMealsProps> = ({ logs, isLoading = false, onAddMeal, disabled = false }) => {
     const queryClient = useQueryClient();
-    const theme = useTheme();
-    const isXs = useMediaQuery(theme.breakpoints.down('sm'));
     const { t } = useI18n();
-    const sectionGap = theme.custom.layout.page.sectionGap;
-    const summaryMinHeightPx = isXs ? FOOD_LOG_ACCORDION_SUMMARY_MIN_HEIGHT_PX.xs : FOOD_LOG_ACCORDION_SUMMARY_MIN_HEIGHT_PX.sm;
-    const summaryPaddingX = isXs
-        ? FOOD_LOG_ACCORDION_SUMMARY_PADDING_X_SPACING.xs
-        : FOOD_LOG_ACCORDION_SUMMARY_PADDING_X_SPACING.sm;
-    const summaryPaddingY = isXs
-        ? FOOD_LOG_ACCORDION_SUMMARY_PADDING_Y_SPACING.xs
-        : FOOD_LOG_ACCORDION_SUMMARY_PADDING_Y_SPACING.sm;
-    const detailsPadding = isXs
-        ? FOOD_LOG_ACCORDION_DETAILS_PADDING_SPACING.xs
-        : FOOD_LOG_ACCORDION_DETAILS_PADDING_SPACING.sm;
-    const mealAvatarSizePx = isXs ? FOOD_LOG_MEAL_AVATAR_SIZE_PX.xs : FOOD_LOG_MEAL_AVATAR_SIZE_PX.sm;
 
     const meals = useMemo(() => {
         return MEAL_PERIOD_ORDER.map((key) => ({
@@ -170,40 +118,6 @@ const FoodLogMeals: React.FC<FoodLogMealsProps> = ({ logs, onAddMeal, isLoading 
         return groups;
     }, [logs]);
 
-    const [expanded, setExpanded] = useState<Record<MealPeriod, boolean>>(() => createMealPeriodRecord(() => true));
-
-    const previousCountsRef = useRef<Record<MealPeriod, number> | null>(null);
-
-    useEffect(() => {
-        // Auto-expand meal sections when a previously empty meal gains entries.
-        const counts = createMealPeriodRecord((mealPeriod) => grouped[mealPeriod].length);
-
-        const previousCounts = previousCountsRef.current;
-        previousCountsRef.current = counts;
-        if (!previousCounts) return;
-
-        setExpanded((prev) => {
-            let changed = false;
-            const next = { ...prev };
-            for (const mealPeriod of MEAL_PERIOD_ORDER) {
-                if (previousCounts[mealPeriod] === 0 && counts[mealPeriod] > 0) {
-                    next[mealPeriod] = true;
-                    changed = true;
-                }
-            }
-
-            return changed ? next : prev;
-        });
-    }, [grouped]);
-
-    const handleExpandAll = () => {
-        setExpanded(createMealPeriodRecord(() => true));
-    };
-
-    const handleCollapseAll = () => {
-        setExpanded(createMealPeriodRecord(() => false));
-    };
-
     const [editEntry, setEditEntry] = useState<FoodLogEntry | null>(null);
     const [editName, setEditName] = useState('');
     const [editCalories, setEditCalories] = useState('');
@@ -211,6 +125,7 @@ const FoodLogMeals: React.FC<FoodLogMealsProps> = ({ logs, onAddMeal, isLoading 
     const [editServingsConsumed, setEditServingsConsumed] = useState('');
     const [editOriginalCalories, setEditOriginalCalories] = useState('');
     const [editError, setEditError] = useState<string | null>(null);
+    const [expandedMeals, setExpandedMeals] = useState(() => createMealPeriodRecord(() => true));
 
     const [deleteEntry, setDeleteEntry] = useState<FoodLogEntry | null>(null);
     const [deleteError, setDeleteError] = useState<string | null>(null);
@@ -239,7 +154,15 @@ const FoodLogMeals: React.FC<FoodLogMealsProps> = ({ logs, onAddMeal, isLoading 
         }
     });
 
+    const handleToggleMeal = useCallback((mealPeriod: MealPeriod) => {
+        setExpandedMeals((current) => ({
+            ...current,
+            [mealPeriod]: !current[mealPeriod]
+        }));
+    }, []);
+
     const handleOpenEdit = (entry: FoodLogEntry) => {
+        if (disabled) return;
         setEditEntry(entry);
         setEditName(typeof entry.name === 'string' ? entry.name : '');
         setEditCalories(typeof entry.calories === 'number' ? String(entry.calories) : '');
@@ -260,6 +183,7 @@ const FoodLogMeals: React.FC<FoodLogMealsProps> = ({ logs, onAddMeal, isLoading 
     };
 
     const handleSaveEdit = async () => {
+        if (disabled) return;
         if (!editEntry) return;
         setEditError(null);
 
@@ -305,6 +229,7 @@ const FoodLogMeals: React.FC<FoodLogMealsProps> = ({ logs, onAddMeal, isLoading 
     };
 
     const handleOpenDelete = (entry: FoodLogEntry) => {
+        if (disabled) return;
         setDeleteEntry(entry);
         setDeleteError(null);
     };
@@ -316,6 +241,7 @@ const FoodLogMeals: React.FC<FoodLogMealsProps> = ({ logs, onAddMeal, isLoading 
     };
 
     const handleConfirmDelete = async () => {
+        if (disabled) return;
         if (!deleteEntry) return;
         setDeleteError(null);
         try {
@@ -330,181 +256,31 @@ const FoodLogMeals: React.FC<FoodLogMealsProps> = ({ logs, onAddMeal, isLoading 
     };
 
     return (
-        <Stack spacing={sectionGap} useFlexGap>
-            <SectionHeader
-                title={t('foodLog.title')}
-                align="center"
-                actions={
-                    <>
-                        <Tooltip title={t('foodLog.collapseAll')}>
-                            <IconButton size="small" onClick={handleCollapseAll}>
-                                <ExpandMoreIcon sx={{ transform: 'rotate(180deg)' }} />
-                            </IconButton>
-                        </Tooltip>
-                        <Tooltip title={t('foodLog.expandAll')}>
-                            <IconButton size="small" onClick={handleExpandAll}>
-                                <ExpandMoreIcon />
-                            </IconButton>
-                        </Tooltip>
-                    </>
-                }
-            />
-            {meals.map((meal) => {
-                const entries = grouped[meal.key];
-                const total = sumCalories(entries);
-                const isExpanded = expanded[meal.key];
-                const accentColor = getMealPeriodAccentColor(theme, meal.key);
-                const avatarBg = alpha(accentColor, theme.palette.mode === 'dark' ? 0.16 : 0.1);
+        <>
+            <Stack sx={{ mt: 0.5 }}>
+                {meals.map((meal, index) => {
+                    const entries = grouped[meal.key];
+                    return (
+                        <FoodLogMealRow
+                            key={meal.key}
+                            mealPeriod={meal.key}
+                            label={meal.label}
+                            entries={entries}
+                            totalCalories={sumCalories(entries)}
+                            isLoading={isLoading}
+                            isFirst={index === 0}
+                            isLast={index === meals.length - 1}
+                            onAdd={onAddMeal}
+                            onEdit={handleOpenEdit}
+                            onDelete={handleOpenDelete}
+                            isExpanded={expandedMeals[meal.key]}
+                            onToggleExpanded={handleToggleMeal}
+                            disabled={disabled}
+                        />
+                    );
+                })}
+            </Stack>
 
-                return (
-                    <Accordion
-                        key={meal.key}
-                        expanded={isExpanded}
-                        onChange={(_, nextExpanded) => setExpanded((prev) => ({ ...prev, [meal.key]: nextExpanded }))}
-                        variant="outlined"
-                        disableGutters
-                    >
-                        <AccordionSummary
-                            expandIcon={<ExpandMoreIcon />}
-                            sx={{
-                                px: summaryPaddingX,
-                                py: summaryPaddingY,
-                                minHeight: summaryMinHeightPx,
-                                '&.Mui-expanded': { minHeight: summaryMinHeightPx },
-                                '& .MuiAccordionSummary-content': { my: summaryPaddingY },
-                                '& .MuiAccordionSummary-content.Mui-expanded': { my: summaryPaddingY }
-                            }}
-                        >
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexGrow: 1 }}>
-                                <Avatar
-                                    sx={{
-                                        width: mealAvatarSizePx,
-                                        height: mealAvatarSizePx,
-                                        bgcolor: avatarBg,
-                                        border: (t) => `1px solid ${t.palette.divider}`
-                                    }}
-                                    variant="rounded"
-                                >
-                                    <MealPeriodIcon mealPeriod={meal.key} />
-                                </Avatar>
-                                <Typography sx={{ fontWeight: 'bold' }}>{meal.label}</Typography>
-                            </Box>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                {isLoading ? (
-                                    <Skeleton width={FOOD_LOG_SKELETON_TOTAL_WIDTH_PX} height={FOOD_LOG_SKELETON_TOTAL_HEIGHT_PX} />
-                                ) : (
-                                    <Typography sx={{ color: 'text.secondary' }}>
-                                        {t('foodLog.totalCalories', { calories: total })}
-                                    </Typography>
-                                )}
-                                {onAddMeal && (
-                                    <Tooltip title={t('foodLog.addToMeal', { meal: meal.label })}>
-                                        <IconButton
-                                            size="small"
-                                            onClick={(event) => {
-                                                event.stopPropagation();
-                                                onAddMeal(meal.key);
-                                            }}
-                                            onFocus={(event) => event.stopPropagation()}
-                                            aria-label={t('foodLog.addToMeal', { meal: meal.label })}
-                                        >
-                                            <AddIcon fontSize="small" />
-                                        </IconButton>
-                                    </Tooltip>
-                                )}
-                            </Box>
-                        </AccordionSummary>
-                        <AccordionDetails sx={{ px: detailsPadding, py: detailsPadding }}>
-                            {isLoading ? (
-                                <Stack divider={<Divider flexItem />} spacing={1}>
-                                    {Array.from({ length: FOOD_LOG_SKELETON_ROW_COUNT }).map((_, idx) => (
-                                        <Box
-                                            key={idx}
-                                            sx={{
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'space-between',
-                                                gap: 1
-                                            }}
-                                        >
-                                            <Skeleton
-                                                width={`${FOOD_LOG_SKELETON_ROW_NAME_WIDTH_BASE_PERCENT + idx * FOOD_LOG_SKELETON_ROW_NAME_WIDTH_STEP_PERCENT}%`}
-                                                height={FOOD_LOG_SKELETON_ROW_HEIGHT_PX}
-                                            />
-                                            <Skeleton
-                                                width={FOOD_LOG_SKELETON_ROW_CALORIES_WIDTH_PX}
-                                                height={FOOD_LOG_SKELETON_ROW_HEIGHT_PX}
-                                            />
-                                        </Box>
-                                    ))}
-                                </Stack>
-                            ) : entries.length === 0 ? (
-                                <Stack direction="row" spacing={1} sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
-                                    <Typography sx={{ color: 'text.secondary' }}>{t('foodLog.noEntries')}</Typography>
-                                    {onAddMeal && (
-                                        <Button size="small" startIcon={<AddIcon />} onClick={() => onAddMeal(meal.key)}>
-                                            {t('foodLog.addEntry')}
-                                        </Button>
-                                    )}
-                                </Stack>
-                            ) : (
-                                <Stack divider={<Divider flexItem />} spacing={1}>
-                                    {entries.map((entry) => (
-                                        <Box
-                                            key={entry.id}
-                                            sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1 }}
-                                        >
-                                            <Box sx={{ flexGrow: 1, minWidth: 0 }}>
-                                                <Typography noWrap>{entry.name}</Typography>
-                                                {(() => {
-                                                    const servingLabel = formatServingSnapshotLabel({
-                                                        servingsConsumed: entry.servings_consumed ?? null,
-                                                        servingSizeQuantity: entry.serving_size_quantity_snapshot ?? null,
-                                                        servingUnitLabel: entry.serving_unit_label_snapshot ?? null
-                                                    });
-                                                    if (!servingLabel) return null;
-                                                    return (
-                                                        <Typography variant="caption" noWrap sx={{
-                                                            color: "text.secondary"
-                                                        }}>
-                                                            {servingLabel}
-                                                        </Typography>
-                                                    );
-                                                })()}
-                                            </Box>
-                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                                <Typography
-                                                    sx={{
-                                                        color: "text.secondary",
-                                                        whiteSpace: 'nowrap'
-                                                    }}>
-                                                    {t('foodLog.entryCalories', {
-                                                        calories: typeof entry.calories === 'number' ? entry.calories : '-'
-                                                    })}
-                                                </Typography>
-                                                <Tooltip title={t('foodLog.editEntry')}>
-                                                    <IconButton size="small" onClick={() => handleOpenEdit(entry)}>
-                                                        <EditIcon fontSize="small" />
-                                                    </IconButton>
-                                                </Tooltip>
-                                                <Tooltip title={t('foodLog.deleteEntry')}>
-                                                    <IconButton
-                                                        size="small"
-                                                        onClick={() => handleOpenDelete(entry)}
-                                                        sx={{ color: (theme) => theme.palette.error.main }}
-                                                    >
-                                                        <DeleteIcon fontSize="small" />
-                                                    </IconButton>
-                                                </Tooltip>
-                                            </Box>
-                                        </Box>
-                                    ))}
-                                </Stack>
-                            )}
-                        </AccordionDetails>
-                    </Accordion>
-                );
-            })}
             <Dialog open={!!editEntry} onClose={handleCloseEdit} fullWidth maxWidth="xs">
                 <DialogTitle>{t('foodLog.editDialog.title')}</DialogTitle>
                 <DialogContent>
@@ -516,6 +292,7 @@ const FoodLogMeals: React.FC<FoodLogMealsProps> = ({ logs, onAddMeal, isLoading 
                             onChange={(e) => setEditName(e.target.value)}
                             fullWidth
                             autoFocus
+                            disabled={disabled}
                         />
                         <TextField
                             label={t('foodLog.field.calories')}
@@ -523,6 +300,7 @@ const FoodLogMeals: React.FC<FoodLogMealsProps> = ({ logs, onAddMeal, isLoading 
                             value={editCalories}
                             onChange={(e) => setEditCalories(e.target.value)}
                             fullWidth
+                            disabled={disabled}
                             slotProps={{
                                 htmlInput: { min: 0, step: 1 }
                             }}
@@ -534,6 +312,7 @@ const FoodLogMeals: React.FC<FoodLogMealsProps> = ({ logs, onAddMeal, isLoading 
                                 value={editServingsConsumed}
                                 onChange={(e) => setEditServingsConsumed(e.target.value)}
                                 fullWidth
+                                disabled={disabled}
                                 slotProps={{
                                     htmlInput: { min: 0, step: 0.1 }
                                 }}
@@ -546,6 +325,7 @@ const FoodLogMeals: React.FC<FoodLogMealsProps> = ({ logs, onAddMeal, isLoading 
                                 label={t('foodLog.field.meal')}
                                 value={editMealPeriod}
                                 onChange={(e) => setEditMealPeriod(e.target.value as MealPeriod)}
+                                disabled={disabled}
                             >
                                 {meals.map((meal) => (
                                     <MenuItem key={meal.key} value={meal.key}>
@@ -560,11 +340,12 @@ const FoodLogMeals: React.FC<FoodLogMealsProps> = ({ logs, onAddMeal, isLoading 
                     <Button onClick={handleCloseEdit} disabled={updateMutation.isPending}>
                         {t('common.cancel')}
                     </Button>
-                    <Button variant="contained" onClick={handleSaveEdit} disabled={updateMutation.isPending}>
+                    <Button variant="contained" onClick={handleSaveEdit} disabled={disabled || updateMutation.isPending}>
                         {t('common.save')}
                     </Button>
                 </DialogActions>
             </Dialog>
+
             <Dialog open={!!deleteEntry} onClose={handleCloseDelete} fullWidth maxWidth="xs">
                 <DialogTitle>{t('foodLog.deleteDialog.title')}</DialogTitle>
                 <DialogContent>
@@ -585,13 +366,13 @@ const FoodLogMeals: React.FC<FoodLogMealsProps> = ({ logs, onAddMeal, isLoading 
                         variant="contained"
                         color="error"
                         onClick={handleConfirmDelete}
-                        disabled={deleteMutation.isPending}
+                        disabled={disabled || deleteMutation.isPending}
                     >
                         {t('common.delete')}
                     </Button>
                 </DialogActions>
             </Dialog>
-        </Stack>
+        </>
     );
 };
 

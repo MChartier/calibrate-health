@@ -1,37 +1,41 @@
-import React, { useEffect } from 'react';
-import { Stack } from '@mui/material';
-import { useTheme } from '@mui/material/styles';
+import React, { useCallback, useEffect } from 'react';
+import { Button, Stack } from '@mui/material';
+import AddRoundedIcon from '@mui/icons-material/AddRounded';
 import { useSearchParams } from 'react-router-dom';
-import FoodLog from '../components/FoodLog';
+import CalorieSummary from '../components/CalorieSummary';
+import DayCompletionControl from '../components/DayCompletionControl';
 import TodayHeader from '../components/TodayHeader';
+import WeightSummaryCard from '../components/WeightSummaryCard';
+import { QUICK_ADD_SHORTCUT_ACTIONS, QUICK_ADD_SHORTCUT_QUERY_PARAM } from '../constants/pwaShortcuts';
 import { useQuickAddFab } from '../context/useQuickAddFab';
+import { useI18n } from '../i18n/useI18n';
 import { useLogDateNavigationState } from '../hooks/useLogDateNavigationState';
 import { useSelectedAndTodayDayCompletion } from '../hooks/useSelectedAndTodayDayCompletion';
-import { QUICK_ADD_SHORTCUT_ACTIONS, QUICK_ADD_SHORTCUT_QUERY_PARAM } from '../constants/pwaShortcuts';
 import { getQuickAddAction } from '../utils/quickAddShortcut';
-import DayCompletionControl from '../components/DayCompletionControl';
 
 /**
- * Full daily log route for users who want a focused food/weight editing view.
+ * Mobile Today route: a glanceable answer plus top-level logging actions.
  */
-const Log: React.FC = () => {
-    const theme = useTheme();
-    const { sectionGap, sectionGapCompact } = theme.custom.layout.page;
-    const sectionSpacing = { xs: sectionGapCompact, sm: sectionGapCompact, md: sectionGap + 0.75 };
+const MobileToday: React.FC = () => {
+    const { t } = useI18n();
     const [searchParams, setSearchParams] = useSearchParams();
     const { selectedDate, today, navigation } = useLogDateNavigationState();
     const isSelectedToday = selectedDate === today;
-    const { isSelectedDayComplete: isDayComplete, isTodayComplete, isTodayCompletionLoading } =
-        useSelectedAndTodayDayCompletion(selectedDate, today);
     const {
         dialogs,
+        openWeightDialogForLogDate,
         openWeightDialogFromFab,
         setLogDateNavigation,
         setLogDateOverride
     } = useQuickAddFab();
+    const { isSelectedDayComplete: isDayComplete, isTodayComplete, isTodayCompletionLoading } =
+        useSelectedAndTodayDayCompletion(selectedDate, today);
 
     useEffect(() => {
         setLogDateOverride(selectedDate);
+        return () => {
+            setLogDateOverride(null);
+        };
     }, [selectedDate, setLogDateOverride]);
 
     useEffect(() => {
@@ -40,12 +44,6 @@ const Log: React.FC = () => {
             setLogDateNavigation(null);
         };
     }, [navigation, setLogDateNavigation]);
-
-    useEffect(() => {
-        return () => {
-            setLogDateOverride(null);
-        };
-    }, [setLogDateOverride]);
 
     const quickAddAction = getQuickAddAction(searchParams);
 
@@ -90,21 +88,29 @@ const Log: React.FC = () => {
         today
     ]);
 
+    const handleAddFood = useCallback(() => {
+        if (isDayComplete) return;
+        dialogs.openFoodDialog(null);
+    }, [dialogs, isDayComplete]);
+
     return (
-        <Stack spacing={sectionSpacing} useFlexGap>
+        <Stack spacing={1.5} useFlexGap>
             <TodayHeader navigation={navigation} />
-            <FoodLog
-                date={selectedDate}
-                isSelectedToday={isSelectedToday}
-                onAddFood={(mealPeriod) => {
-                    if (isDayComplete) return;
-                    dialogs.openFoodDialog(mealPeriod ?? null);
-                }}
+            <CalorieSummary date={selectedDate} isSelectedToday={isSelectedToday} />
+            <Button
+                variant="contained"
+                size="large"
+                startIcon={<AddRoundedIcon />}
+                onClick={handleAddFood}
                 disabled={isDayComplete}
-            />
+                sx={{ py: 1.35 }}
+            >
+                {t('today.addFood')}
+            </Button>
+            <WeightSummaryCard date={selectedDate} onOpenWeightEntry={openWeightDialogForLogDate} disabled={isDayComplete} />
             <DayCompletionControl date={selectedDate} />
         </Stack>
     );
 };
 
-export default Log;
+export default MobileToday;

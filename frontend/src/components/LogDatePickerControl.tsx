@@ -18,10 +18,13 @@ import { useFoodLogDayRangeQuery } from '../queries/foodLogDay';
 
 const LOG_DATE_CONTROL_HEIGHT_SPACING = { xs: 9, sm: 9, md: 7 }; // Include top inset on compact layouts without shrinking the inner field height.
 const LOG_DATE_CONTROL_TOP_PADDING_SPACING = { xs: 2, sm: 2, md: 0 }; // Keep the floating label inside the control when page padding is minimal.
+const LOG_DATE_CONTROL_UNLABELED_HEIGHT_SPACING = { xs: 7, sm: 7, md: 7 }; // Default outlined input height when no floating label is rendered.
+const LOG_DATE_CONTROL_UNLABELED_TOP_PADDING_SPACING = { xs: 0, sm: 0, md: 0 }; // Remove label-only inset so adjacent buttons align to the field center.
 const NAVBAR_LOG_DATE_CONTROL_HEIGHT_SPACING = { xs: 5, sm: 5, md: 5 }; // Match the small TextField height (40px) so the control stays within the AppBar.
 const NAVBAR_LOG_DATE_CONTROL_TOP_PADDING_SPACING = { xs: 0, sm: 0, md: 0 }; // The navbar already provides vertical padding; do not add extra top inset.
 const LOG_DATE_PICKER_OVERLAY_FOCUS_OUTLINE_PX = 2; // Thickness of the keyboard focus ring on the date control overlay.
 const LOG_DATE_PICKER_OVERLAY_FOCUS_OUTLINE_OFFSET_PX = 2; // Gap between the overlay outline and the field chrome.
+const LOG_DATE_PICKER_CONTROL_RADIUS_SPACING = 1; // Matches app input/button radius so pressed states clip to the field chrome.
 const LOG_DATE_PICKER_POPOVER_WIDTH_PX = 300; // Fixed popover width keeps the 7-column calendar grid stable.
 const LOG_DATE_PICKER_POPOVER_PADDING_SPACING = 1.5; // Inner popover spacing for month controls, week labels, and day grid.
 const LOG_DATE_PICKER_DAY_CELL_SIZE_PX = 34; // Square size for each day button to keep touch targets consistent.
@@ -241,6 +244,9 @@ const LogDatePickerControl: React.FC<LogDatePickerControlProps> = ({
     const isNavbarPlacement = placement === 'navbar';
     const calendarOpen = Boolean(anchorElement);
     const dateBounds = useMemo(() => ({ min, max }), [max, min]);
+    const heightSpacing =
+        label || isNavbarPlacement ? metrics.heightSpacing : LOG_DATE_CONTROL_UNLABELED_HEIGHT_SPACING;
+    const topPaddingSpacing = label ? metrics.topPaddingSpacing : LOG_DATE_CONTROL_UNLABELED_TOP_PADDING_SPACING;
 
     const monthLabel = useMemo(() => formatMonthLabel(visibleMonthIso, language), [language, visibleMonthIso]);
     const weekdayLabels = useMemo(() => buildWeekdayLabels(language), [language]);
@@ -310,14 +316,14 @@ const LogDatePickerControl: React.FC<LogDatePickerControlProps> = ({
                 flexGrow: 1,
                 minWidth: 0,
                 height: {
-                    xs: themeForSizing.spacing(metrics.heightSpacing.xs),
-                    sm: themeForSizing.spacing(metrics.heightSpacing.sm),
-                    md: themeForSizing.spacing(metrics.heightSpacing.md)
+                    xs: themeForSizing.spacing(heightSpacing.xs),
+                    sm: themeForSizing.spacing(heightSpacing.sm),
+                    md: themeForSizing.spacing(heightSpacing.md)
                 },
                 pt: {
-                    xs: themeForSizing.spacing(metrics.topPaddingSpacing.xs),
-                    sm: themeForSizing.spacing(metrics.topPaddingSpacing.sm),
-                    md: themeForSizing.spacing(metrics.topPaddingSpacing.md)
+                    xs: themeForSizing.spacing(topPaddingSpacing.xs),
+                    sm: themeForSizing.spacing(topPaddingSpacing.sm),
+                    md: themeForSizing.spacing(topPaddingSpacing.md)
                 }
             })}
         >
@@ -328,7 +334,11 @@ const LogDatePickerControl: React.FC<LogDatePickerControlProps> = ({
                 sx={{
                     width: '100%',
                     ...(isNavbarPlacement ? { '& .MuiInputLabel-root': { display: 'none' } } : null),
-                    '& input': { textAlign: 'center' }
+                    '& input': { textAlign: 'center' },
+                    '& .MuiOutlinedInput-root': {
+                        borderRadius: LOG_DATE_PICKER_CONTROL_RADIUS_SPACING,
+                        overflow: 'hidden'
+                    }
                 }}
                 slotProps={{
                     htmlInput: {
@@ -351,23 +361,36 @@ const LogDatePickerControl: React.FC<LogDatePickerControlProps> = ({
                 sx={(themeForButton) => ({
                     position: 'absolute',
                     top: {
-                        xs: themeForButton.spacing(metrics.topPaddingSpacing.xs),
-                        sm: themeForButton.spacing(metrics.topPaddingSpacing.sm),
-                        md: themeForButton.spacing(metrics.topPaddingSpacing.md)
+                        xs: themeForButton.spacing(topPaddingSpacing.xs),
+                        sm: themeForButton.spacing(topPaddingSpacing.sm),
+                        md: themeForButton.spacing(topPaddingSpacing.md)
                     },
                     left: 0,
                     right: 0,
                     bottom: 0,
                     zIndex: 1,
                     cursor: 'pointer',
-                    borderRadius: themeForButton.shape.borderRadius,
+                    borderRadius: LOG_DATE_PICKER_CONTROL_RADIUS_SPACING,
+                    overflow: 'hidden',
                     WebkitTapHighlightColor: 'transparent',
                     background: 'transparent',
                     border: 0,
                     padding: 0,
                     margin: 0,
                     outline: 'none',
-                    '&:active': { backgroundColor: themeForButton.palette.action.hover },
+                    '&::before': {
+                        content: '""',
+                        position: 'absolute',
+                        inset: 0,
+                        borderRadius: 'inherit',
+                        backgroundColor: themeForButton.palette.action.hover,
+                        opacity: 0,
+                        transition: themeForButton.transitions.create('opacity', {
+                            duration: themeForButton.transitions.duration.shortest
+                        })
+                    },
+                    '&:hover::before': { opacity: 1 },
+                    '&:active::before': { opacity: 1 },
                     '&:focus-visible': {
                         outline: `${LOG_DATE_PICKER_OVERLAY_FOCUS_OUTLINE_PX}px solid ${themeForButton.palette.primary.main}`,
                         outlineOffset: `${LOG_DATE_PICKER_OVERLAY_FOCUS_OUTLINE_OFFSET_PX}px`

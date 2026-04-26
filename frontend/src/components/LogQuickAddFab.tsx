@@ -9,44 +9,30 @@ import {
     useMediaQuery,
     useTheme
 } from '@mui/material';
-import SpeedDial from '@mui/material/SpeedDial';
-import SpeedDialAction from '@mui/material/SpeedDialAction';
-import AddIcon from '@mui/icons-material/AddRounded';
 import CloseIcon from '@mui/icons-material/CloseRounded';
-import MonitorWeightIcon from '@mui/icons-material/MonitorWeightRounded';
-import RestaurantIcon from '@mui/icons-material/RestaurantRounded';
 import { useQueryClient } from '@tanstack/react-query';
 import FoodEntryForm from './FoodEntryForm';
 import WeightEntryForm from './WeightEntryForm';
-import {
-    QUICK_ADD_FAB_BOTTOM_NAV_GAP_SPACING,
-    QUICK_ADD_FAB_EDGE_OFFSET_SPACING
-} from '../constants/quickAddFab';
 import { useAuth } from '../context/useAuth';
 import { useQuickAddFab } from '../context/useQuickAddFab';
 import { useI18n } from '../i18n/useI18n';
 import { inAppNotificationsQueryKey } from '../queries/inAppNotifications';
-import { haptic } from '../utils/haptics';
 import { formatIsoDateForDisplay, getTodayIsoDate } from '../utils/date';
 
 /**
- * Floating action button for adding food or weight logs from the log view.
+ * Shared add/edit dialogs for daily food and weight logging.
  */
 type LogQuickAddFabProps = {
     date: string;
 };
 
 /**
- * LogQuickAddFab
- *
- * Floating speed dial that opens food and weight dialogs.
- *
- * Note: food entries target the currently viewed log day; weight entries from the FAB always target today.
+ * Food entries target the currently viewed log day; weight entries use the caller's selected date mode.
  */
 const LogQuickAddFab: React.FC<LogQuickAddFabProps> = ({ date }) => {
     const queryClient = useQueryClient();
     const { user } = useAuth();
-    const { dialogs, foodDialogMealPeriod, openFoodDialogForMeal, openWeightDialogFromFab, weightDialogDateMode } = useQuickAddFab();
+    const { dialogs, weightDialogDateMode } = useQuickAddFab();
     const theme = useTheme();
     const { t } = useI18n();
     const isFoodDialogFullScreen = useMediaQuery(theme.breakpoints.down('sm'));
@@ -60,45 +46,6 @@ const LogQuickAddFab: React.FC<LogQuickAddFabProps> = ({ date }) => {
 
     return (
         <>
-            <SpeedDial
-                ariaLabel={t('log.speedDial.aria')}
-                icon={<AddIcon />}
-                sx={(theme) => ({
-                    position: 'fixed',
-                    right: theme.spacing(QUICK_ADD_FAB_EDGE_OFFSET_SPACING),
-                    bottom: {
-                        xs: `calc(${theme.custom.layout.page.paddingBottomWithBottomNav} + ${theme.spacing(QUICK_ADD_FAB_BOTTOM_NAV_GAP_SPACING)})`,
-                        md: theme.spacing(QUICK_ADD_FAB_EDGE_OFFSET_SPACING)
-                    }
-                })}
-            >
-                <SpeedDialAction
-                    key="add-food"
-                    icon={<RestaurantIcon />}
-                    onClick={() => {
-                        haptic.tap();
-                        openFoodDialogForMeal(null);
-                    }}
-                    slotProps={{
-                        tooltip: {
-                            title: t('log.speedDial.addFood')
-                        }
-                    }}
-                />
-                <SpeedDialAction
-                    key="add-weight"
-                    icon={<MonitorWeightIcon />}
-                    onClick={() => {
-                        haptic.tap();
-                        openWeightDialogFromFab();
-                    }}
-                    slotProps={{
-                        tooltip: {
-                            title: t('log.speedDial.addWeight')
-                        }
-                    }}
-                />
-            </SpeedDial>
             <Dialog
                 open={dialogs.isFoodDialogOpen}
                 onClose={dialogs.closeFoodDialog}
@@ -133,7 +80,7 @@ const LogQuickAddFab: React.FC<LogQuickAddFabProps> = ({ date }) => {
                 </DialogTitle>
                 <FoodEntryForm
                     date={date}
-                    initialMealPeriod={foodDialogMealPeriod}
+                    initialMealPeriod={dialogs.foodDialogMealPeriod}
                     onSuccess={(result) => {
                         void queryClient.invalidateQueries({ queryKey: ['food'] });
                         void queryClient.invalidateQueries({ queryKey: ['recent-foods'] });
