@@ -10,7 +10,7 @@ import { QUICK_ADD_SHORTCUT_ACTIONS, QUICK_ADD_SHORTCUT_QUERY_PARAM } from '../c
 import { useQuickAddFab } from '../context/useQuickAddFab';
 import { useI18n } from '../i18n/useI18n';
 import { useLogDateNavigationState } from '../hooks/useLogDateNavigationState';
-import { useFoodLogDayQuery } from '../queries/foodLogDay';
+import { useSelectedAndTodayDayCompletion } from '../hooks/useSelectedAndTodayDayCompletion';
 import { getQuickAddAction } from '../utils/quickAddShortcut';
 
 /**
@@ -28,8 +28,8 @@ const MobileToday: React.FC = () => {
         setLogDateNavigation,
         setLogDateOverride
     } = useQuickAddFab();
-    const completionQuery = useFoodLogDayQuery(selectedDate);
-    const isDayComplete = Boolean(completionQuery.data?.is_complete);
+    const { isSelectedDayComplete: isDayComplete, isTodayComplete, isTodayCompletionLoading } =
+        useSelectedAndTodayDayCompletion(selectedDate, today);
 
     useEffect(() => {
         setLogDateOverride(selectedDate);
@@ -49,9 +49,9 @@ const MobileToday: React.FC = () => {
 
     useEffect(() => {
         if (!quickAddAction) return;
-        if (completionQuery.isLoading) return;
+        if (isTodayCompletionLoading) return;
 
-        if (isDayComplete) {
+        if (isTodayComplete) {
             const nextParams = new URLSearchParams(searchParams);
             nextParams.delete(QUICK_ADD_SHORTCUT_QUERY_PARAM);
             setSearchParams(nextParams, { replace: true });
@@ -77,9 +77,9 @@ const MobileToday: React.FC = () => {
             setSearchParams(nextParams, { replace: true });
         }
     }, [
-        completionQuery.isLoading,
         dialogs,
-        isDayComplete,
+        isTodayComplete,
+        isTodayCompletionLoading,
         navigation,
         openWeightDialogFromFab,
         quickAddAction,

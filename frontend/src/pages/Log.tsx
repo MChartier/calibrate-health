@@ -6,10 +6,10 @@ import FoodLog from '../components/FoodLog';
 import TodayHeader from '../components/TodayHeader';
 import { useQuickAddFab } from '../context/useQuickAddFab';
 import { useLogDateNavigationState } from '../hooks/useLogDateNavigationState';
+import { useSelectedAndTodayDayCompletion } from '../hooks/useSelectedAndTodayDayCompletion';
 import { QUICK_ADD_SHORTCUT_ACTIONS, QUICK_ADD_SHORTCUT_QUERY_PARAM } from '../constants/pwaShortcuts';
 import { getQuickAddAction } from '../utils/quickAddShortcut';
 import DayCompletionControl from '../components/DayCompletionControl';
-import { useFoodLogDayQuery } from '../queries/foodLogDay';
 
 /**
  * Full daily log route for users who want a focused food/weight editing view.
@@ -21,8 +21,8 @@ const Log: React.FC = () => {
     const [searchParams, setSearchParams] = useSearchParams();
     const { selectedDate, today, navigation } = useLogDateNavigationState();
     const isSelectedToday = selectedDate === today;
-    const completionQuery = useFoodLogDayQuery(selectedDate);
-    const isDayComplete = Boolean(completionQuery.data?.is_complete);
+    const { isSelectedDayComplete: isDayComplete, isTodayComplete, isTodayCompletionLoading } =
+        useSelectedAndTodayDayCompletion(selectedDate, today);
     const {
         dialogs,
         openWeightDialogFromFab,
@@ -51,9 +51,9 @@ const Log: React.FC = () => {
 
     useEffect(() => {
         if (!quickAddAction) return;
-        if (completionQuery.isLoading) return;
+        if (isTodayCompletionLoading) return;
 
-        if (isDayComplete) {
+        if (isTodayComplete) {
             const nextParams = new URLSearchParams(searchParams);
             nextParams.delete(QUICK_ADD_SHORTCUT_QUERY_PARAM);
             setSearchParams(nextParams, { replace: true });
@@ -79,9 +79,9 @@ const Log: React.FC = () => {
             setSearchParams(nextParams, { replace: true });
         }
     }, [
-        completionQuery.isLoading,
         dialogs,
-        isDayComplete,
+        isTodayComplete,
+        isTodayCompletionLoading,
         navigation,
         openWeightDialogFromFab,
         quickAddAction,

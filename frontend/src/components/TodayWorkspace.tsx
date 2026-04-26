@@ -5,6 +5,7 @@ import { useSearchParams } from 'react-router-dom';
 import type { MealPeriod } from '../types/mealPeriod';
 import { useQuickAddFab } from '../context/useQuickAddFab';
 import { useLogDateNavigationState } from '../hooks/useLogDateNavigationState';
+import { useSelectedAndTodayDayCompletion } from '../hooks/useSelectedAndTodayDayCompletion';
 import { QUICK_ADD_SHORTCUT_ACTIONS, QUICK_ADD_SHORTCUT_QUERY_PARAM } from '../constants/pwaShortcuts';
 import { getQuickAddAction } from '../utils/quickAddShortcut';
 import CalorieSummary from './CalorieSummary';
@@ -14,7 +15,6 @@ import GoalProjection from './GoalProjection';
 import TodayHeader from './TodayHeader';
 import WeightSummaryCard from './WeightSummaryCard';
 import WeightTrend from './WeightTrend';
-import { useFoodLogDayQuery } from '../queries/foodLogDay';
 
 const TODAY_WORKSPACE_COLUMNS = {
     xs: '1fr',
@@ -40,8 +40,8 @@ const TodayWorkspace: React.FC = () => {
     const [searchParams, setSearchParams] = useSearchParams();
     const { selectedDate, today, navigation } = useLogDateNavigationState();
     const isSelectedToday = selectedDate === today;
-    const completionQuery = useFoodLogDayQuery(selectedDate);
-    const isDayComplete = Boolean(completionQuery.data?.is_complete);
+    const { isSelectedDayComplete: isDayComplete, isTodayComplete, isTodayCompletionLoading } =
+        useSelectedAndTodayDayCompletion(selectedDate, today);
     const {
         dialogs,
         openWeightDialogFromFab,
@@ -71,9 +71,9 @@ const TodayWorkspace: React.FC = () => {
 
     useEffect(() => {
         if (!quickAddAction) return;
-        if (completionQuery.isLoading) return;
+        if (isTodayCompletionLoading) return;
 
-        if (isDayComplete) {
+        if (isTodayComplete) {
             const nextParams = new URLSearchParams(searchParams);
             nextParams.delete(QUICK_ADD_SHORTCUT_QUERY_PARAM);
             setSearchParams(nextParams, { replace: true });
@@ -99,9 +99,9 @@ const TodayWorkspace: React.FC = () => {
             setSearchParams(nextParams, { replace: true });
         }
     }, [
-        completionQuery.isLoading,
         dialogs,
-        isDayComplete,
+        isTodayComplete,
+        isTodayCompletionLoading,
         navigation,
         openWeightDialogFromFab,
         quickAddAction,
