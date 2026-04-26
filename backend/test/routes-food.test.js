@@ -152,7 +152,7 @@ test('food route: GET /search calls provider.searchFoods and returns provider me
   assert.equal(Array.isArray(res.body.items), true);
 });
 
-test('food route: GET /search falls back to the next provider when text search returns no matches', async () => {
+test('food route: GET /search keeps text pagination pinned when a provider returns no matches', async () => {
   const callOrder = [];
   const providerA = {
     name: 'fatsecret',
@@ -190,15 +190,15 @@ test('food route: GET /search falls back to the next provider when text search r
   });
 
   const handler = getRouteHandler(router, 'get', '/search');
-  const req = { query: { q: 'apple' }, headers: {} };
+  const req = { query: { q: 'apple', page: '2' }, headers: {} };
   const res = createRes();
 
   await handler(req, res);
 
   assert.equal(res.statusCode, 200);
-  assert.equal(res.body.provider, 'usda');
-  assert.equal(res.body.items.length, 1);
-  assert.deepEqual(callOrder, ['fatsecret', 'usda']);
+  assert.equal(res.body.provider, 'fatsecret');
+  assert.equal(res.body.items.length, 0);
+  assert.deepEqual(callOrder, ['fatsecret']);
 });
 
 test('food route: GET /search falls back to the next provider when text search errors', async () => {

@@ -130,11 +130,11 @@ const buildRecentFoodAccumulator = (log: any, key: string): RecentFoodAccumulato
 });
 
 /**
- * Search ready providers in configured order, stopping at the first provider with results.
+ * Search ready providers in configured order, stopping at the first usable provider response.
  */
 const searchEnabledProviders = async (
     params: FoodSearchRequest,
-    opts: { requireBarcodeLookup: boolean }
+    opts: { fallbackOnEmpty: boolean; requireBarcodeLookup: boolean }
 ): Promise<ProviderSearchOutcome> => {
     const { primary, providers } = getEnabledFoodDataProviders();
     const attempts: ProviderSearchAttempt[] = [];
@@ -191,7 +191,7 @@ const searchEnabledProviders = async (
             }
 
             sawSuccessfulResponse = true;
-            if (result.items.length > 0) {
+            if (result.items.length > 0 || !opts.fallbackOnEmpty) {
                 return {
                     found: true,
                     provider: resolution.provider,
@@ -277,6 +277,7 @@ router.get('/search', async (req, res) => {
     }
 
     const searchOutcome = await searchEnabledProviders(parsed.params, {
+        fallbackOnEmpty: Boolean(parsed.params.barcode),
         requireBarcodeLookup: Boolean(parsed.params.barcode)
     });
 
