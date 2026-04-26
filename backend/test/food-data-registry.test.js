@@ -148,7 +148,12 @@ test('foodData registry: getFoodDataProvider falls back when FatSecret credentia
 
   try {
     withFoodDataModule(
-      { FOOD_DATA_PROVIDER: undefined, FATSECRET_CLIENT_ID: undefined, FATSECRET_CLIENT_SECRET: undefined },
+      {
+        FOOD_DATA_PROVIDER: undefined,
+        FATSECRET_CLIENT_ID: undefined,
+        FATSECRET_CLIENT_SECRET: undefined,
+        USDA_API_KEY: undefined
+      },
       ({ getFoodDataProvider }) => {
         const provider = getFoodDataProvider();
         assert.equal(provider.name, 'openFoodFacts');
@@ -161,6 +166,33 @@ test('foodData registry: getFoodDataProvider falls back when FatSecret credentia
   assert.equal(warnCalls.length > 0, true);
 });
 
+test('foodData registry: getFoodDataProvider falls back to USDA when FatSecret is missing but USDA is configured', () => {
+  const warnCalls = [];
+  const originalWarn = console.warn;
+  console.warn = (...args) => {
+    warnCalls.push(args.join(' '));
+  };
+
+  try {
+    withFoodDataModule(
+      {
+        FOOD_DATA_PROVIDER: undefined,
+        FATSECRET_CLIENT_ID: undefined,
+        FATSECRET_CLIENT_SECRET: undefined,
+        USDA_API_KEY: 'test-key'
+      },
+      ({ getFoodDataProvider }) => {
+        const provider = getFoodDataProvider();
+        assert.equal(provider.name, 'usda');
+      }
+    );
+  } finally {
+    console.warn = originalWarn;
+  }
+
+  assert.equal(warnCalls.some((message) => message.includes('Falling back to USDA FoodData Central')), true);
+});
+
 test('foodData registry: getFoodDataProvider falls back when configured for USDA without an API key', () => {
   const warnCalls = [];
   const originalWarn = console.warn;
@@ -169,10 +201,18 @@ test('foodData registry: getFoodDataProvider falls back when configured for USDA
   };
 
   try {
-    withFoodDataModule({ FOOD_DATA_PROVIDER: 'usda', USDA_API_KEY: undefined }, ({ getFoodDataProvider }) => {
-      const provider = getFoodDataProvider();
-      assert.equal(provider.name, 'openFoodFacts');
-    });
+    withFoodDataModule(
+      {
+        FOOD_DATA_PROVIDER: 'usda',
+        FATSECRET_CLIENT_ID: undefined,
+        FATSECRET_CLIENT_SECRET: undefined,
+        USDA_API_KEY: undefined
+      },
+      ({ getFoodDataProvider }) => {
+        const provider = getFoodDataProvider();
+        assert.equal(provider.name, 'openFoodFacts');
+      }
+    );
   } finally {
     console.warn = originalWarn;
   }

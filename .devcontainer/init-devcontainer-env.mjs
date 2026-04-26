@@ -228,6 +228,45 @@ function readRepoDotenvValue(key) {
 }
 
 /**
+ * Normalize the food provider value used by backend provider selection.
+ * @param {string} value - Raw provider value from env/dotenv.
+ * @returns {string} Provider key accepted by the backend, or an empty string.
+ */
+function normalizeFoodDataProvider(value) {
+  const normalized = value.trim().toLowerCase();
+  if (normalized === "fatsecret" || normalized === "usda") {
+    return normalized;
+  }
+  if (normalized === "openfoodfacts") {
+    return "openfoodfacts";
+  }
+  return "";
+}
+
+/**
+ * Choose a local-dev provider based on explicit config first, then available credentials.
+ * USDA's public DEMO_KEY keeps fresh devcontainers searchable when OFF anonymous access is throttled.
+ * @param {{ fatsecretClientId: string, fatsecretClientSecret: string, usdaApiKey: string }} credentials
+ * @returns {string} Provider key to pass into the devcontainer.
+ */
+function resolveFoodDataProvider(credentials) {
+  const explicitProvider = normalizeFoodDataProvider(
+    process.env.FOOD_DATA_PROVIDER || readRepoDotenvValue("FOOD_DATA_PROVIDER")
+  );
+  if (explicitProvider) {
+    return explicitProvider;
+  }
+
+  if (credentials.fatsecretClientId && credentials.fatsecretClientSecret) {
+    return "fatsecret";
+  }
+  if (credentials.usdaApiKey) {
+    return "usda";
+  }
+  return "usda";
+}
+
+/**
  * Generate VAPID keys in the same URL-safe format used by web-push.
  * @returns {{ publicKey: string, privateKey: string }} Generated keys.
  */
@@ -341,7 +380,13 @@ const fatsecretClientId =
   process.env.FATSECRET_CLIENT_ID || readRepoDotenvValue("FATSECRET_CLIENT_ID");
 const fatsecretClientSecret =
   process.env.FATSECRET_CLIENT_SECRET || readRepoDotenvValue("FATSECRET_CLIENT_SECRET");
-const usdaApiKey = process.env.USDA_API_KEY || readRepoDotenvValue("USDA_API_KEY");
+const configuredUsdaApiKey = process.env.USDA_API_KEY || readRepoDotenvValue("USDA_API_KEY");
+const foodDataProvider = resolveFoodDataProvider({
+  fatsecretClientId,
+  fatsecretClientSecret,
+  usdaApiKey: configuredUsdaApiKey,
+});
+const usdaApiKey = configuredUsdaApiKey || (foodDataProvider === "usda" ? "DEMO_KEY" : "");
 
 let webPushPublicKey =
   process.env.WEB_PUSH_PUBLIC_KEY ||
@@ -389,6 +434,7 @@ const lines = [
   `VITE_WORKTREE_NAME=${workspaceName}`,
   `VITE_WORKTREE_IS_MAIN=${isMainWorktree ? "true" : "false"}`,
   "# Sourced from the host environment or repo-local .env during devcontainer init so Docker can pass it into the container.",
+  `FOOD_DATA_PROVIDER=${foodDataProvider}`,
   `FATSECRET_CLIENT_ID=${fatsecretClientId}`,
   `FATSECRET_CLIENT_SECRET=${fatsecretClientSecret}`,
   `USDA_API_KEY=${usdaApiKey}`,
@@ -398,10 +444,10 @@ const lines = [
   "",
 ].join("\n");
 
-const tmpPath = `${devcontainerDotenvPath}.tmp`;
+const tmpPath = `${devcontainerDotenvPath}.${process.pid}.tmp`;
 fs.writeFileSync(tmpPath, lines, "utf8");
 if (fs.existsSync(devcontainerDotenvPath) && fs.readFileSync(devcontainerDotenvPath, "utf8") === lines) {
-  fs.rmSync(tmpPath);
+  fs.rmSync(tmpPath, { force: true });
 } else {
   fs.renameSync(tmpPath, devcontainerDotenvPath);
 }
