@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
     Box,
     Dialog,
@@ -9,6 +9,7 @@ import {
     useMediaQuery,
     useTheme
 } from '@mui/material';
+import type { SxProps, Theme } from '@mui/material/styles';
 import CloseIcon from '@mui/icons-material/CloseRounded';
 import { useQueryClient } from '@tanstack/react-query';
 import FoodEntryForm from './FoodEntryForm';
@@ -26,6 +27,71 @@ type LogQuickAddFabProps = {
     date: string;
 };
 
+type VisualViewportDialogFrame = {
+    height: number | null;
+    offsetTop: number;
+};
+
+const WEIGHT_DIALOG_MOBILE_GUTTER_PX = 16; // Keeps compact dialogs clear of viewport edges and the keyboard frame.
+
+/**
+ * Read the visible viewport, not the layout viewport, so dialogs can stay above mobile keyboards.
+ */
+function getVisualViewportDialogFrame(): VisualViewportDialogFrame {
+    if (typeof window === 'undefined' || !window.visualViewport) {
+        return { height: null, offsetTop: 0 };
+    }
+
+    return {
+        height: window.visualViewport.height,
+        offsetTop: window.visualViewport.offsetTop
+    };
+}
+
+/**
+ * Subscribe while a compact dialog is open so Android/iOS keyboard resize events reposition the paper.
+ */
+function useVisualViewportDialogFrame(enabled: boolean): VisualViewportDialogFrame {
+    const [frame, setFrame] = useState<VisualViewportDialogFrame>(() => getVisualViewportDialogFrame());
+
+    useEffect(() => {
+        if (!enabled || typeof window === 'undefined' || !window.visualViewport) {
+            return undefined;
+        }
+
+        const viewport = window.visualViewport;
+        let animationFrame: number | null = null;
+
+        const updateFrame = () => {
+            if (animationFrame !== null) {
+                window.cancelAnimationFrame(animationFrame);
+            }
+
+            animationFrame = window.requestAnimationFrame(() => {
+                setFrame(getVisualViewportDialogFrame());
+                animationFrame = null;
+            });
+        };
+
+        updateFrame();
+        viewport.addEventListener('resize', updateFrame);
+        viewport.addEventListener('scroll', updateFrame);
+        window.addEventListener('orientationchange', updateFrame);
+
+        return () => {
+            if (animationFrame !== null) {
+                window.cancelAnimationFrame(animationFrame);
+            }
+
+            viewport.removeEventListener('resize', updateFrame);
+            viewport.removeEventListener('scroll', updateFrame);
+            window.removeEventListener('orientationchange', updateFrame);
+        };
+    }, [enabled]);
+
+    return frame;
+}
+
 /**
  * Food entries target the currently viewed log day; weight entries use the caller's selected date mode.
  */
@@ -36,6 +102,8 @@ const LogQuickAddFab: React.FC<LogQuickAddFabProps> = ({ date }) => {
     const theme = useTheme();
     const { t } = useI18n();
     const isFoodDialogFullScreen = useMediaQuery(theme.breakpoints.down('sm'));
+    const isWeightDialogMobile = useMediaQuery(theme.breakpoints.down('sm'));
+    const weightDialogViewportFrame = useVisualViewportDialogFrame(dialogs.isWeightDialogOpen && isWeightDialogMobile);
     const todayIso = useMemo(() => getTodayIsoDate(user?.timezone), [user?.timezone]);
     const weightEntryDate = weightDialogDateMode === 'today' ? todayIso : date;
     const weightDateLabel = useMemo(() => formatIsoDateForDisplay(weightEntryDate), [weightEntryDate]);
@@ -43,6 +111,29 @@ const LogQuickAddFab: React.FC<LogQuickAddFabProps> = ({ date }) => {
     const subtitleKey = showTodaySubtitle
         ? 'log.dialog.trackWeight.subtitleToday'
         : 'log.dialog.trackWeight.subtitle';
+    const weightDialogVisibleHeight = weightDialogViewportFrame.height === null
+        ? '100dvh'
+        : `${weightDialogViewportFrame.height}px`;
+    const weightDialogMobileMaxHeight = `calc(${weightDialogVisibleHeight} - ${WEIGHT_DIALOG_MOBILE_GUTTER_PX * 2}px)`;
+    const weightDialogContainerSx: SxProps<Theme> | undefined = isWeightDialogMobile
+        ? {
+            alignItems: 'center',
+            height: weightDialogVisibleHeight,
+            minHeight: 0,
+            transform: `translateY(${weightDialogViewportFrame.offsetTop}px)`
+        }
+        : undefined;
+    const weightDialogPaperSx: SxProps<Theme> = {
+        display: 'flex',
+        flexDirection: 'column',
+        ...(isWeightDialogMobile
+            ? {
+                m: `${WEIGHT_DIALOG_MOBILE_GUTTER_PX}px`,
+                maxHeight: weightDialogMobileMaxHeight,
+                width: `calc(100% - ${WEIGHT_DIALOG_MOBILE_GUTTER_PX * 2}px)`
+            }
+            : {})
+    };
 
     return (
         <>
@@ -91,7 +182,21 @@ const LogQuickAddFab: React.FC<LogQuickAddFabProps> = ({ date }) => {
                     }}
                 />
             </Dialog>
-            <Dialog open={dialogs.isWeightDialogOpen} onClose={dialogs.closeWeightDialog} fullWidth maxWidth="sm">
+            <Dialog
+                open={dialogs.isWeightDialogOpen}
+                onClose={dialogs.closeWeightDialog}
+                fullWidth
+                maxWidth="sm"
+                scroll="paper"
+                slotProps={{
+                    container: {
+                        sx: weightDialogContainerSx
+                    },
+                    paper: {
+                        sx: weightDialogPaperSx
+                    }
+                }}
+            >
                 <DialogTitle sx={{ position: 'relative', pr: 6 }}>
                     <Box sx={{ display: 'flex', flexDirection: 'column' }}>
                         <Box component="span">{t('log.dialog.trackWeight')}</Box>
