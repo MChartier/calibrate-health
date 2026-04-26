@@ -178,14 +178,18 @@ may create or recreate a separate container.
 4. Dev dashboard (dev-only): `http://localhost:5173/dev` (compare providers + test barcode scanning)
 5. Component workbench: `npm run dev:storybook` (local Storybook defaults to `http://localhost:6006`; devcontainer worktrees use the generated `STORYBOOK_PORT` in `.devcontainer/.env`)
 
-#### FatSecret provider (devcontainer)
+#### Food data provider (devcontainer)
 
-The backend supports multiple food search providers. The devcontainer defaults to the FatSecret provider
-(`FOOD_DATA_PROVIDER=fatsecret`).
+The backend supports multiple food search providers. During devcontainer initialization, the repo writes
+`FOOD_DATA_PROVIDER` into `.devcontainer/.env` from explicit config first, then from available credentials:
+FatSecret when both FatSecret credentials are set, USDA when `USDA_API_KEY` is set, and USDA with api.data.gov's
+public `DEMO_KEY` when no provider credentials are available. This keeps local search usable when Open Food Facts
+anonymous access is throttled.
 
-To make this work, you must have `FATSECRET_CLIENT_ID` and `FATSECRET_CLIENT_SECRET` set (either in the host environment
-or in the repo-local `.env`) before the devcontainer is created/rebuilt. During devcontainer initialization we copy the
-credentials into `.devcontainer/.env` (gitignored), and `docker compose` uses them to pass the values into the container.
+To use FatSecret, set `FOOD_DATA_PROVIDER=fatsecret` with `FATSECRET_CLIENT_ID` and `FATSECRET_CLIENT_SECRET` (either in
+the host environment or in the repo-local `.env`) before the devcontainer is created/rebuilt. During devcontainer
+initialization we copy the provider config into `.devcontainer/.env` (gitignored), and `docker compose` uses it to pass
+the values into the container.
 
 Example (host machine):
 
@@ -196,7 +200,9 @@ export FATSECRET_CLIENT_SECRET="your-client-secret"
 
 If you add/change the credentials, rebuild the devcontainer so the generated `.devcontainer/.env` is refreshed.
 
-To use USDA instead, set `FOOD_DATA_PROVIDER=usda` and supply `USDA_API_KEY` before rebuilding the devcontainer.
+To use USDA with your own quota, set `FOOD_DATA_PROVIDER=usda` and supply `USDA_API_KEY` before rebuilding the
+devcontainer. To test Open Food Facts specifically, set `FOOD_DATA_PROVIDER=openfoodfacts`; that path depends on the
+public Open Food Facts API allowing anonymous requests.
 
 #### Codex app usage
 
@@ -220,7 +226,7 @@ Prereqs: Node.js `20.19+` or `22.12+`, npm, and a Postgres database.
    - `DATABASE_URL=postgresql://user:password@localhost:5432/fitness_app?schema=public`
    - `SESSION_SECRET=some-secret`
    - `PORT=3000` (optional)
-   - `FOOD_DATA_PROVIDER=fatsecret` (optional; defaults to FatSecret)
+   - `FOOD_DATA_PROVIDER=fatsecret` (optional; defaults by available credentials in the devcontainer)
    - `FATSECRET_CLIENT_ID=your-client-id` (required when `FOOD_DATA_PROVIDER=fatsecret`)
    - `FATSECRET_CLIENT_SECRET=your-client-secret` (required when `FOOD_DATA_PROVIDER=fatsecret`)
    - `USDA_API_KEY=your-usda-key` (required when `FOOD_DATA_PROVIDER=usda`)
