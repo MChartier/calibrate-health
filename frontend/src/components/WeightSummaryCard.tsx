@@ -1,5 +1,8 @@
 import React, { useMemo } from 'react';
 import { Alert, Box, Button, Card, CardContent, Chip, Skeleton, Typography, useMediaQuery } from '@mui/material';
+import type { SxProps, Theme } from '@mui/material/styles';
+import AddRoundedIcon from '@mui/icons-material/AddRounded';
+import EditRoundedIcon from '@mui/icons-material/EditRounded';
 import MonitorWeightIcon from '@mui/icons-material/MonitorWeightRounded';
 import { alpha, useTheme } from '@mui/material/styles';
 import { useAuth } from '../context/useAuth';
@@ -37,6 +40,12 @@ export type WeightSummaryCardProps = {
      * The parent controls the actual modal dialog (WeightEntryForm), so this is just a trigger.
      */
     onOpenWeightEntry: () => void;
+    /**
+     * Locks the daily weight CTA when the selected day has been completed.
+     */
+    disabled?: boolean;
+    /** Optional wrapper styles used by dashboard grid alignment. */
+    sx?: SxProps<Theme>;
 };
 
 /**
@@ -57,7 +66,7 @@ function formatMetricDateLabel(value: string | null): string {
  * - Shows a large "current weight" value plus an "As of {date}" line to make recency obvious.
  * - When viewing today, surfaces a clear "Due today" / "Done for today" state and adjusts CTA text.
  */
-const WeightSummaryCard: React.FC<WeightSummaryCardProps> = ({ date, onOpenWeightEntry }) => {
+const WeightSummaryCard: React.FC<WeightSummaryCardProps> = ({ date, onOpenWeightEntry, disabled = false, sx }) => {
     const { user } = useAuth();
     const { t } = useI18n();
     const theme = useTheme();
@@ -101,6 +110,7 @@ const WeightSummaryCard: React.FC<WeightSummaryCardProps> = ({ date, onOpenWeigh
 
     const displayedWeightLabel = displayedWeight !== null ? `${animatedWeight.toFixed(1)} ${unitLabel}` : EM_DASH;
     const asOfLabel = formatMetricDateLabel(displayedMetric?.date ?? null);
+    const WeightCtaIcon = metricForSelectedDate ? EditRoundedIcon : AddRoundedIcon;
 
     let cardBody: React.ReactNode;
     if (metricsQuery.isLoading) {
@@ -154,7 +164,13 @@ const WeightSummaryCard: React.FC<WeightSummaryCardProps> = ({ date, onOpenWeigh
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                 <Alert severity="warning">{t('weightSummary.error.unableToLoad')}</Alert>
                 <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-                    <Button variant="outlined" size={ctaSize} onClick={onOpenWeightEntry}>
+                    <Button
+                        variant="outlined"
+                        size={ctaSize}
+                        startIcon={<WeightCtaIcon />}
+                        onClick={onOpenWeightEntry}
+                        disabled={disabled}
+                    >
                         {ctaLabel}
                     </Button>
                 </Box>
@@ -201,7 +217,13 @@ const WeightSummaryCard: React.FC<WeightSummaryCardProps> = ({ date, onOpenWeigh
                 </Box>
 
                 <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-                    <Button variant="outlined" size={ctaSize} onClick={onOpenWeightEntry}>
+                    <Button
+                        variant="outlined"
+                        size={ctaSize}
+                        startIcon={<WeightCtaIcon />}
+                        onClick={onOpenWeightEntry}
+                        disabled={disabled}
+                    >
                         {ctaLabel}
                     </Button>
                 </Box>
@@ -210,7 +232,7 @@ const WeightSummaryCard: React.FC<WeightSummaryCardProps> = ({ date, onOpenWeigh
     }
 
     return (
-        <Card sx={{ height: '100%', width: '100%' }}>
+        <Card sx={[{ width: '100%' }, ...(Array.isArray(sx) ? sx : sx ? [sx] : [])]}>
             <CardContent
                 sx={{
                     p: WEIGHT_CARD_PADDING_SPACING,

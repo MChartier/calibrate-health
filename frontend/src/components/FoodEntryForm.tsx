@@ -163,7 +163,7 @@ const getProviderResultKey = (item: NormalizedFoodItem): string | null => {
 /**
  * FoodEntryForm orchestrates search, selection, and submission for a single log entry.
  */
-const FoodEntryForm: React.FC<Props> = ({ onSuccess, date, initialMealPeriod }) => {
+const FoodEntryForm: React.FC<Props> = ({ onSuccess, date, initialMealPeriod = null }) => {
     const queryClient = useQueryClient();
     const { t } = useI18n();
 
@@ -171,7 +171,7 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date, initialMealPeriod }) 
 
     const [quickEntryName, setQuickEntryName] = useState('');
     const [quickEntryCalories, setQuickEntryCalories] = useState('');
-    const [mealPeriod, setMealPeriod] = useState<MealPeriod>(() => getDefaultMealPeriodForTime(new Date()));
+    const [mealPeriod, setMealPeriod] = useState<MealPeriod>(() => initialMealPeriod ?? getDefaultMealPeriodForTime(new Date()));
 
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState<NormalizedFoodItem[]>([]);
@@ -215,6 +215,12 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date, initialMealPeriod }) 
             icon: <MealPeriodIcon mealPeriod={value} />
         }));
     }, [t]);
+
+    useEffect(() => {
+        if (initialMealPeriod) {
+            setMealPeriod(initialMealPeriod);
+        }
+    }, [initialMealPeriod]);
 
     const selectedItem = useMemo(
         () => searchResults.find((item) => item.id === selectedItemId) || null,

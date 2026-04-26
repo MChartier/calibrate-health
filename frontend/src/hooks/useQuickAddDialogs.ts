@@ -1,9 +1,11 @@
 import { useCallback, useMemo, useState } from 'react';
+import type { MealPeriod } from '../types/mealPeriod';
 
 export type QuickAddDialogs = {
     isFoodDialogOpen: boolean;
     isWeightDialogOpen: boolean;
-    openFoodDialog: () => void;
+    foodDialogMealPeriod: MealPeriod | null;
+    openFoodDialog: (mealPeriod?: MealPeriod | null) => void;
     closeFoodDialog: () => void;
     openWeightDialog: () => void;
     closeWeightDialog: () => void;
@@ -17,9 +19,16 @@ export type QuickAddDialogs = {
 export function useQuickAddDialogs(): QuickAddDialogs {
     const [isFoodDialogOpen, setIsFoodDialogOpen] = useState(false);
     const [isWeightDialogOpen, setIsWeightDialogOpen] = useState(false);
+    const [foodDialogMealPeriod, setFoodDialogMealPeriod] = useState<MealPeriod | null>(null);
 
-    const openFoodDialog = useCallback(() => setIsFoodDialogOpen(true), []);
-    const closeFoodDialog = useCallback(() => setIsFoodDialogOpen(false), []);
+    const openFoodDialog = useCallback((mealPeriod?: MealPeriod | null) => {
+        setFoodDialogMealPeriod(mealPeriod ?? null);
+        setIsFoodDialogOpen(true);
+    }, []);
+    const closeFoodDialog = useCallback(() => {
+        setIsFoodDialogOpen(false);
+        setFoodDialogMealPeriod(null);
+    }, []);
     const openWeightDialog = useCallback(() => setIsWeightDialogOpen(true), []);
     const closeWeightDialog = useCallback(() => setIsWeightDialogOpen(false), []);
 
@@ -27,11 +36,20 @@ export function useQuickAddDialogs(): QuickAddDialogs {
         () => ({
             isFoodDialogOpen,
             isWeightDialogOpen,
+            foodDialogMealPeriod,
             openFoodDialog,
             closeFoodDialog,
             openWeightDialog,
             closeWeightDialog
         }),
-        [closeFoodDialog, closeWeightDialog, isFoodDialogOpen, isWeightDialogOpen, openFoodDialog, openWeightDialog]
+        [
+            closeFoodDialog,
+            closeWeightDialog,
+            foodDialogMealPeriod,
+            isFoodDialogOpen,
+            isWeightDialogOpen,
+            openFoodDialog,
+            openWeightDialog
+        ]
     );
 }

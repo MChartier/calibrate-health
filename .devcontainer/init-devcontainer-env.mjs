@@ -334,7 +334,6 @@ const colorIndex =
   greekLetterIndex === -1 ? hash % worktreeColors.length : greekLetterIndex % worktreeColors.length;
 const derivedColor = worktreeColors[colorIndex];
 const worktreeColor = isMainWorktree ? basePeacockColor : derivedColor;
-const viteWorktreeColor = isMainWorktree ? "" : derivedColor;
 const backendNodeModulesVolume = buildNodeModulesVolumeName("backend", "backend/package-lock.json");
 const frontendNodeModulesVolume = buildNodeModulesVolumeName("frontend", "frontend/package-lock.json");
 
@@ -387,7 +386,6 @@ const lines = [
   `WORKTREE_NAME=${workspaceName}`,
   `WORKTREE_IS_MAIN=${isMainWorktree ? "true" : "false"}`,
   `WORKTREE_COLOR=${worktreeColor}`,
-  `VITE_WORKTREE_COLOR=${viteWorktreeColor}`,
   `VITE_WORKTREE_NAME=${workspaceName}`,
   `VITE_WORKTREE_IS_MAIN=${isMainWorktree ? "true" : "false"}`,
   "# Sourced from the host environment or repo-local .env during devcontainer init so Docker can pass it into the container.",
