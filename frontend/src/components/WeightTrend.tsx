@@ -63,6 +63,7 @@ const RANGE_WINDOW_DAYS: Record<PannableMetricsRange, number> = {
 
 const TODAY_TREND_CHART_HEIGHT_PX = { xs: 200, md: 226 }; // Compact height keeps the trend contextual rather than competing with food logging.
 const TODAY_TREND_CHART_FILL_MIN_HEIGHT_PX = 226; // Minimum chart body when the Today rail stretches to match the food log.
+const WEIGHT_TREND_FULLSCREEN_CHART_MIN_HEIGHT_PX = { xs: 360, sm: 440 }; // Full-screen history keeps the chart dominant in portrait and landscape.
 const TODAY_TREND_MARGIN_COMPACT = { top: 8, right: 6, bottom: 26, left: 30 }; // Compact margin maximizes chart width in narrow panels.
 const TODAY_TREND_MARGIN_DEFAULT = { top: 6, right: 6, bottom: 26, left: 30 }; // Desktop margin avoids the oversized left gutter from the full goals page.
 const TODAY_TREND_MARGIN_FILL = { top: 4, right: 12, bottom: 2, left: 2 }; // Flexible Today chart keeps a small right buffer so edge markers do not clip.
@@ -93,6 +94,12 @@ export type WeightTrendProps = {
      * Stretch the Today workspace trend card so the right rail can align with the food log.
      */
     fillAvailableHeight?: boolean;
+    /**
+     * Expand the history card to fill its route container for the dedicated history view.
+     */
+    fullScreen?: boolean;
+    /** Optional header action, such as a link from the compact Today preview to full history. */
+    action?: React.ReactNode;
     /** Optional wrapper styles used by dashboard grid alignment. */
     sx?: SxProps<Theme>;
 };
@@ -334,16 +341,19 @@ const WeightTrendLegend: React.FC<WeightTrendLegendProps> = ({
 );
 
 /**
- * Full-featured weight trend panel for the Today workspace and mobile goal views.
+ * Full-featured weight trend panel for Today previews and the dedicated history route.
  */
-const WeightTrend: React.FC<WeightTrendProps> = ({ fillAvailableHeight = false, sx }) => {
+const WeightTrend: React.FC<WeightTrendProps> = ({ fillAvailableHeight = false, fullScreen = false, action, sx }) => {
     const { user } = useAuth();
     const { t } = useI18n();
     const theme = useTheme();
     const isCompactViewport = useMediaQuery(theme.breakpoints.down('sm'));
+    const shouldStretchChart = fillAvailableHeight || fullScreen;
     const [selectedRange, setSelectedRange] = useState<MetricsRange>(METRICS_RANGE_OPTIONS.MONTH);
     const [panWindowIndex, setPanWindowIndex] = useState(0);
     const [rawMarksVisible, setRawMarksVisible] = useState(true);
+    const [chartContainerHeight, setChartContainerHeight] = useState<number | null>(null);
+    const chartContainerRef = useRef<HTMLDivElement | null>(null);
     const markRevealTimeoutRef = useRef<number | null>(null);
     const unitLabel = user?.weight_unit === 'LB' ? 'lb' : 'kg';
     const rawWeightSeriesLabel = t('goals.weightSeriesLabel', { unit: unitLabel });
@@ -546,6 +556,11 @@ const WeightTrend: React.FC<WeightTrendProps> = ({ fillAvailableHeight = false, 
         const padding = range * 0.1;
         return { min: min - padding, max: max + padding };
     }, [targetIsValid, targetWeight, visiblePoints]);
+    const canRenderTargetLine =
+        targetIsValid &&
+        yDomain !== null &&
+        xDomain !== null &&
+        xDomain.max.getTime() > xDomain.min.getTime();
 
     const canPanBackward = useMemo(() => {
         if (!requestedWindow || !earliestMetricDateIso) return false;
@@ -574,7 +589,82 @@ const WeightTrend: React.FC<WeightTrendProps> = ({ fillAvailableHeight = false, 
         }
     }, [t, trendMeta?.volatility]);
     const defaultChartHeight = isCompactViewport ? TODAY_TREND_CHART_HEIGHT_PX.xs : TODAY_TREND_CHART_HEIGHT_PX.md;
-    const chartHeight = fillAvailableHeight ? undefined : defaultChartHeight;
+    const fullScreenMinChartHeight = isCompactViewport
+        ? WEIGHT_TREND_FULLSCREEN_CHART_MIN_HEIGHT_PX.xs
+        : WEIGHT_TREND_FULLSCREEN_CHART_MIN_HEIGHT_PX.sm;
+    const stretchedMinChartHeight = fullScreen ? fullScreenMinChartHeight : TODAY_TREND_CHART_FILL_MIN_HEIGHT_PX;
+    const chartHeight = shouldStretchChart ? chartContainerHeight ?? stretchedMinChartHeight : defaultChartHeight;
+    const cardTitle = fullScreen ? t('goals.weightHistoryTitle') : t('today.weightTrend.title');
+    const chartContainerSx: SxProps<Theme> | undefined = (() => {
+        if (fillAvailableHeight) {
+            return {
+                flex: 1,
+                minHeight: TODAY_TREND_CHART_FILL_MIN_HEIGHT_PX,
+                minWidth: 0,
+                width: '100%',
+                height: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                '& > *': {
+                    width: '100%',
+                    height: '100%'
+                }
+            };
+        }
+
+        if (fullScreen) {
+            return {
+                flex: 1,
+                minHeight: WEIGHT_TREND_FULLSCREEN_CHART_MIN_HEIGHT_PX,
+                minWidth: 0,
+                width: '100%',
+                height: '100%',
+                display: 'flex',
+                alignItems: 'stretch',
+                justifyContent: 'center',
+                '& > *': {
+                    width: '100%',
+                    height: '100%'
+                }
+            };
+        }
+
+        return undefined;
+    })();
+
+    useEffect(() => {
+        if (!shouldStretchChart) {
+            return;
+        }
+
+        const node = chartContainerRef.current;
+        if (!node) return;
+
+        let animationFrame: number | null = null;
+        const measureHeight = () => {
+            if (animationFrame !== null) {
+                window.cancelAnimationFrame(animationFrame);
+            }
+
+            animationFrame = window.requestAnimationFrame(() => {
+                const nextHeight = Math.max(stretchedMinChartHeight, Math.floor(node.getBoundingClientRect().height));
+                setChartContainerHeight((currentHeight) => (currentHeight === nextHeight ? currentHeight : nextHeight));
+                animationFrame = null;
+            });
+        };
+
+        measureHeight();
+        const observer = new ResizeObserver(measureHeight);
+        observer.observe(node);
+
+        return () => {
+            if (animationFrame !== null) {
+                window.cancelAnimationFrame(animationFrame);
+            }
+            observer.disconnect();
+        };
+    }, [shouldStretchChart, stretchedMinChartHeight]);
 
     const weightHistoryTooltipContent = (
         <Box sx={{ maxWidth: WEIGHT_HISTORY_TOOLTIP_MAX_WIDTH_PX, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
@@ -636,35 +726,16 @@ const WeightTrend: React.FC<WeightTrendProps> = ({ fillAvailableHeight = false, 
         content = (
             <Stack spacing={1}>
                 <Skeleton variant="rounded" height={36} />
-                <Skeleton variant="rounded" height={chartHeight} />
+                <Skeleton variant="rounded" height={chartHeight ?? TODAY_TREND_CHART_FILL_MIN_HEIGHT_PX} />
             </Stack>
         );
     } else if (points.length === 0) {
         content = <Typography sx={{ color: 'text.secondary' }}>{t('goals.noWeightEntries')}</Typography>;
     } else {
         content = (
-            <Stack spacing={1} sx={fillAvailableHeight ? { minHeight: 0, height: '100%' } : undefined}>
+            <Stack spacing={1} sx={shouldStretchChart ? { minHeight: 0, height: '100%', flex: 1 } : undefined}>
                 {controlsRow}
-                <Box
-                    sx={
-                        fillAvailableHeight
-                            ? {
-                                flex: 1,
-                                minHeight: TODAY_TREND_CHART_FILL_MIN_HEIGHT_PX,
-                                minWidth: 0,
-                                width: '100%',
-                                height: '100%',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                '& > *': {
-                                    width: '100%',
-                                    height: '100%'
-                                }
-                            }
-                            : undefined
-                    }
-                >
+                <Box ref={chartContainerRef} sx={chartContainerSx}>
                     <LineChart
                         xAxis={[
                             {
@@ -756,7 +827,7 @@ const WeightTrend: React.FC<WeightTrendProps> = ({ fillAvailableHeight = false, 
                         slotProps={{ tooltip: { trigger: 'axis' } }}
                         sx={{
                             width: '100%',
-                            ...(fillAvailableHeight ? { height: '100%' } : null),
+                            ...(shouldStretchChart ? { height: '100%' } : null),
                             [`& .${lineClasses.area}[data-series="expectedRangeBand"]`]: {
                                 fill: expectedRangeFillColor,
                                 fillOpacity: 1
@@ -781,7 +852,7 @@ const WeightTrend: React.FC<WeightTrendProps> = ({ fillAvailableHeight = false, 
                             }
                         }}
                     >
-                        {targetIsValid && (
+                        {canRenderTargetLine && (
                             <ChartsReferenceLine
                                 y={targetWeight}
                                 label={t('goals.targetLineLabel', {
@@ -816,11 +887,11 @@ const WeightTrend: React.FC<WeightTrendProps> = ({ fillAvailableHeight = false, 
 
     return (
         <AppCard
-            sx={mergeSx(fillAvailableHeight ? { height: '100%' } : null, sx)}
+            sx={mergeSx(shouldStretchChart ? { height: '100%', minHeight: 0 } : null, sx)}
             contentSx={{
                 p: { xs: 1.25, sm: 1.5 },
                 '&:last-child': { pb: { xs: 1.25, sm: 1.5 } },
-                ...(fillAvailableHeight
+                ...(shouldStretchChart
                     ? {
                         height: '100%',
                         display: 'flex',
@@ -830,21 +901,25 @@ const WeightTrend: React.FC<WeightTrendProps> = ({ fillAvailableHeight = false, 
                     : null)
             }}
         >
-            <Stack spacing={1.25} sx={fillAvailableHeight ? { height: '100%', minHeight: 0 } : undefined}>
+            <Stack spacing={1.25} sx={shouldStretchChart ? { height: '100%', minHeight: 0, flex: 1 } : undefined}>
                 <Box
                     sx={{
                         display: 'flex',
                         alignItems: 'flex-start',
                         justifyContent: 'space-between',
-                        gap: 1
+                        gap: 1,
+                        flexWrap: { xs: 'wrap', sm: 'nowrap' }
                     }}
                 >
-                    <Typography variant="h6">{t('today.weightTrend.title')}</Typography>
-                    <Tooltip title={weightHistoryTooltipContent} arrow enterTouchDelay={0}>
-                        <IconButton size="small" aria-label={t('goals.weightHistoryExplainer.tooltipAria')}>
-                            <InfoOutlinedIcon fontSize="small" />
-                        </IconButton>
-                    </Tooltip>
+                    <Typography variant="h6" sx={{ minWidth: 0, flexGrow: 1 }}>{cardTitle}</Typography>
+                    <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5, ml: 'auto' }}>
+                        {action}
+                        <Tooltip title={weightHistoryTooltipContent} arrow enterTouchDelay={0}>
+                            <IconButton size="small" aria-label={t('goals.weightHistoryExplainer.tooltipAria')}>
+                                <InfoOutlinedIcon fontSize="small" />
+                            </IconButton>
+                        </Tooltip>
+                    </Box>
                 </Box>
                 {content}
             </Stack>

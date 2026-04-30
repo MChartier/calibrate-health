@@ -1,17 +1,28 @@
-import React, { useCallback, useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { Button, Stack } from '@mui/material';
 import AddRoundedIcon from '@mui/icons-material/AddRounded';
-import { useSearchParams } from 'react-router-dom';
+import { Link as RouterLink, useSearchParams } from 'react-router-dom';
 import CalorieSummary from '../components/CalorieSummary';
 import DayCompletionControl from '../components/DayCompletionControl';
+import GoalTrackerCard from '../components/GoalTrackerCard';
 import TodayHeader from '../components/TodayHeader';
 import WeightSummaryCard from '../components/WeightSummaryCard';
+import WeightTrend from '../components/WeightTrend';
 import { QUICK_ADD_SHORTCUT_ACTIONS, QUICK_ADD_SHORTCUT_QUERY_PARAM } from '../constants/pwaShortcuts';
 import { useQuickAddFab } from '../context/useQuickAddFab';
 import { useI18n } from '../i18n/useI18n';
-import { useLogDateNavigationState } from '../hooks/useLogDateNavigationState';
+import { LOG_DATE_QUERY_PARAM, useLogDateNavigationState } from '../hooks/useLogDateNavigationState';
 import { useSelectedAndTodayDayCompletion } from '../hooks/useSelectedAndTodayDayCompletion';
 import { getQuickAddAction } from '../utils/quickAddShortcut';
+
+/**
+ * Build the Food route while preserving a non-today selected day.
+ */
+function getFoodLogPath(selectedDate: string, today: string): string {
+    if (selectedDate === today) return '/log';
+    const params = new URLSearchParams({ [LOG_DATE_QUERY_PARAM]: selectedDate });
+    return `/log?${params.toString()}`;
+}
 
 /**
  * Mobile Today route: a glanceable answer plus top-level logging actions.
@@ -88,27 +99,32 @@ const MobileToday: React.FC = () => {
         today
     ]);
 
-    const handleAddFood = useCallback(() => {
-        if (isDayComplete) return;
-        dialogs.openFoodDialog(null);
-    }, [dialogs, isDayComplete]);
+    const foodLogPath = useMemo(() => getFoodLogPath(selectedDate, today), [selectedDate, today]);
 
     return (
         <Stack spacing={1.5} useFlexGap>
             <TodayHeader navigation={navigation} />
             <CalorieSummary date={selectedDate} isSelectedToday={isSelectedToday} />
             <Button
+                component={RouterLink}
+                to={foodLogPath}
                 variant="contained"
                 size="large"
                 startIcon={<AddRoundedIcon />}
-                onClick={handleAddFood}
-                disabled={isDayComplete}
                 sx={{ py: 1.35 }}
             >
-                {t('today.addFood')}
+                {isDayComplete ? t('today.viewFoodLog') : t('today.addFood')}
             </Button>
             <WeightSummaryCard date={selectedDate} onOpenWeightEntry={openWeightDialogForLogDate} disabled={isDayComplete} />
             <DayCompletionControl date={selectedDate} />
+            <GoalTrackerCard isDashboard />
+            <WeightTrend
+                action={
+                    <Button component={RouterLink} to="/weight/history" size="small" variant="text">
+                        {t('today.weightTrend.viewFullHistory')}
+                    </Button>
+                }
+            />
         </Stack>
     );
 };

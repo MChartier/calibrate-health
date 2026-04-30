@@ -213,9 +213,9 @@ export const en = {
     'calorieTarget.missing.intro1':
         'Provide birthday, sex, height, activity level, and a recent weigh-in to compute your baseline burn (TDEE).',
     'calorieTarget.missing.intro2': 'Then set a goal deficit/surplus to turn that into a daily calorie target.',
-    'calorieTarget.missing.addWeighInLink': 'Add a weigh-in in {log}',
+    'calorieTarget.missing.addWeighInLink': 'Add a weigh-in from {log}',
     'calorieTarget.missing.setDeficitLink': 'Set your deficit in {goals}',
-    'calorieTarget.missing.fillProfileHint': 'Fill out the profile fields below to recalculate.',
+    'calorieTarget.missing.fillProfileHint': 'Open Profile to fill out missing profile fields.',
     'calorieTarget.infoMissing':
         'Add birthday, sex, height, activity level, a recent weigh-in, and a goal deficit to see a daily calorie target.',
 
@@ -245,6 +245,7 @@ export const en = {
     'today.calories.targetValue': '{value} target',
     'today.calories.progress': 'Progress',
     'today.addFood': 'Add food',
+    'today.viewFoodLog': 'View food log',
     'today.foodLog.title': "Today's food log",
     'today.foodLog.titleForDate': 'Food log',
     'today.foodLog.subtitle': 'Meal-by-meal timeline for this local day.',
@@ -256,6 +257,7 @@ export const en = {
     'today.quickAdd.emptySavedFoods': 'Save foods or recipes to reuse them here.',
     'today.weightTrend.title': 'Weight trend',
     'today.weightTrend.subtitle': 'Trend context for your recent weigh-ins.',
+    'today.weightTrend.viewFullHistory': 'View full history',
     'today.goalProjection.title': 'Goal projection',
     'today.completion.title': 'Day status',
     'today.completion.status.complete': 'Complete',
@@ -790,9 +792,9 @@ export const es: Record<TranslationKey, string> = {
     'calorieTarget.missing.intro1':
         'Indica fecha de nacimiento, sexo, altura, nivel de actividad y un pesaje reciente para calcular tu gasto basal (TDEE).',
     'calorieTarget.missing.intro2': 'Luego define un déficit/superávit para convertirlo en un objetivo diario de calorías.',
-    'calorieTarget.missing.addWeighInLink': 'Añade un pesaje en {log}',
+    'calorieTarget.missing.addWeighInLink': 'Añade un pesaje desde {log}',
     'calorieTarget.missing.setDeficitLink': 'Configura tu déficit en {goals}',
-    'calorieTarget.missing.fillProfileHint': 'Completa los campos del perfil para recalcular.',
+    'calorieTarget.missing.fillProfileHint': 'Abre Perfil para completar los campos que faltan.',
     'calorieTarget.infoMissing':
         'Añade fecha de nacimiento, sexo, altura, nivel de actividad, un pesaje reciente y un déficit para ver un objetivo diario de calorías.',
 
@@ -822,6 +824,7 @@ export const es: Record<TranslationKey, string> = {
     'today.calories.targetValue': '{value} objetivo',
     'today.calories.progress': 'Progreso',
     'today.addFood': 'Agregar comida',
+    'today.viewFoodLog': 'Ver registro de comida',
     'today.foodLog.title': 'Registro de comida de hoy',
     'today.foodLog.titleForDate': 'Registro de comida',
     'today.foodLog.subtitle': 'Linea diaria por comidas para este dia local.',
@@ -833,6 +836,7 @@ export const es: Record<TranslationKey, string> = {
     'today.quickAdd.emptySavedFoods': 'Guarda alimentos o recetas para reutilizarlos aqui.',
     'today.weightTrend.title': 'Tendencia de peso',
     'today.weightTrend.subtitle': 'Contexto de tendencia para tus pesajes recientes.',
+    'today.weightTrend.viewFullHistory': 'Ver historial completo',
     'today.goalProjection.title': 'Proyeccion de objetivo',
     'today.completion.title': 'Estado del dia',
     'today.completion.status.complete': 'Completo',
@@ -1365,9 +1369,9 @@ export const fr: Record<TranslationKey, string> = {
     'calorieTarget.missing.intro1':
         "Renseignez date de naissance, sexe, taille, niveau d'activité et une pesée récente pour calculer votre dépense de base (TDEE).",
     'calorieTarget.missing.intro2': 'Ensuite, définissez un déficit/surplus pour obtenir un objectif calorique quotidien.',
-    'calorieTarget.missing.addWeighInLink': 'Ajoutez une pesée dans {log}',
+    'calorieTarget.missing.addWeighInLink': 'Ajoutez une pesée depuis {log}',
     'calorieTarget.missing.setDeficitLink': 'Définissez votre déficit dans {goals}',
-    'calorieTarget.missing.fillProfileHint': 'Complétez les champs du profil pour recalculer.',
+    'calorieTarget.missing.fillProfileHint': 'Ouvrez Profil pour compléter les champs manquants.',
     'calorieTarget.infoMissing':
         "Ajoutez date de naissance, sexe, taille, niveau d'activité, une pesée récente et un déficit pour voir un objectif calorique quotidien.",
 
@@ -1397,6 +1401,7 @@ export const fr: Record<TranslationKey, string> = {
     'today.calories.targetValue': '{value} objectif',
     'today.calories.progress': 'Progression',
     'today.addFood': 'Ajouter un aliment',
+    'today.viewFoodLog': 'Voir le journal alimentaire',
     'today.foodLog.title': "Journal alimentaire d'aujourd'hui",
     'today.foodLog.titleForDate': 'Journal alimentaire',
     'today.foodLog.subtitle': 'Chronologie repas par repas pour cette journee locale.',
@@ -1408,6 +1413,7 @@ export const fr: Record<TranslationKey, string> = {
     'today.quickAdd.emptySavedFoods': 'Enregistrez des aliments ou recettes pour les reutiliser ici.',
     'today.weightTrend.title': 'Tendance du poids',
     'today.weightTrend.subtitle': 'Contexte de tendance pour vos pesees recentes.',
+    'today.weightTrend.viewFullHistory': "Voir l'historique complet",
     'today.goalProjection.title': "Projection d'objectif",
     'today.completion.title': 'Etat du jour',
     'today.completion.status.complete': 'Complet',
@@ -1940,9 +1946,9 @@ export const ru: Record<TranslationKey, string> = {
     'calorieTarget.missing.intro1':
         'Укажите дату рождения, пол, рост, уровень активности и недавнее взвешивание, чтобы посчитать ваш базовый расход (TDEE).',
     'calorieTarget.missing.intro2': 'Затем задайте дефицит/профицит, чтобы получить цель по калориям на день.',
-    'calorieTarget.missing.addWeighInLink': 'Добавьте взвешивание в {log}',
+    'calorieTarget.missing.addWeighInLink': 'Добавьте взвешивание из {log}',
     'calorieTarget.missing.setDeficitLink': 'Задайте дефицит в {goals}',
-    'calorieTarget.missing.fillProfileHint': 'Заполните поля профиля ниже, чтобы пересчитать.',
+    'calorieTarget.missing.fillProfileHint': 'Откройте профиль, чтобы заполнить недостающие поля.',
     'calorieTarget.infoMissing':
         'Добавьте дату рождения, пол, рост, уровень активности, недавнее взвешивание и дефицит, чтобы увидеть цель по калориям на день.',
 
@@ -1972,6 +1978,7 @@ export const ru: Record<TranslationKey, string> = {
     'today.calories.targetValue': '{value} target',
     'today.calories.progress': 'Progress',
     'today.addFood': 'Add food',
+    'today.viewFoodLog': 'Открыть журнал еды',
     'today.foodLog.title': "Today's food log",
     'today.foodLog.titleForDate': 'Food log',
     'today.foodLog.subtitle': 'Meal-by-meal timeline for this local day.',
@@ -1983,6 +1990,7 @@ export const ru: Record<TranslationKey, string> = {
     'today.quickAdd.emptySavedFoods': 'Save foods or recipes to reuse them here.',
     'today.weightTrend.title': 'Weight trend',
     'today.weightTrend.subtitle': 'Trend context for your recent weigh-ins.',
+    'today.weightTrend.viewFullHistory': 'Открыть всю историю',
     'today.goalProjection.title': 'Goal projection',
     'today.completion.title': 'Day status',
     'today.completion.status.complete': 'Complete',

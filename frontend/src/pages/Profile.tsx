@@ -12,7 +12,6 @@ import {
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { Link as RouterLink } from 'react-router-dom';
-import CalorieTargetBanner from '../components/CalorieTargetBanner';
 import { getActivityLevelOptions } from '../constants/activityLevels';
 import type { UserProfilePatchPayload } from '../context/authContext';
 import { useAuth } from '../context/useAuth';
@@ -241,8 +240,6 @@ const Profile: React.FC = () => {
     return (
         <AppPage>
             <Stack spacing={sectionSpacing} useFlexGap>
-                <CalorieTargetBanner />
-
                 <AppCard>
                     <SectionHeader
                         title={t('profile.bodyProfile.title')}

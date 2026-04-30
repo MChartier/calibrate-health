@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { Stack } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { useSearchParams } from 'react-router-dom';
+import CalorieSummary from '../components/CalorieSummary';
 import FoodLog from '../components/FoodLog';
 import TodayHeader from '../components/TodayHeader';
 import { useQuickAddFab } from '../context/useQuickAddFab';
@@ -9,10 +10,9 @@ import { useLogDateNavigationState } from '../hooks/useLogDateNavigationState';
 import { useSelectedAndTodayDayCompletion } from '../hooks/useSelectedAndTodayDayCompletion';
 import { QUICK_ADD_SHORTCUT_ACTIONS, QUICK_ADD_SHORTCUT_QUERY_PARAM } from '../constants/pwaShortcuts';
 import { getQuickAddAction } from '../utils/quickAddShortcut';
-import DayCompletionControl from '../components/DayCompletionControl';
 
 /**
- * Full daily log route for users who want a focused food/weight editing view.
+ * Full daily log route for users who want calorie context plus focused food editing.
  */
 const Log: React.FC = () => {
     const theme = useTheme();
@@ -93,6 +93,7 @@ const Log: React.FC = () => {
     return (
         <Stack spacing={sectionSpacing} useFlexGap>
             <TodayHeader navigation={navigation} />
+            <CalorieSummary date={selectedDate} isSelectedToday={isSelectedToday} />
             <FoodLog
                 date={selectedDate}
                 isSelectedToday={isSelectedToday}
@@ -102,7 +103,6 @@ const Log: React.FC = () => {
                 }}
                 disabled={isDayComplete}
             />
-            <DayCompletionControl date={selectedDate} />
         </Stack>
     );
 };
