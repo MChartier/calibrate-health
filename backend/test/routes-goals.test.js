@@ -114,9 +114,13 @@ test('goals route: GET / maps stored gram weights into the user unit', async () 
     daily_deficit: 500
   };
 
+  let findFirstArgs = null;
   const prismaStub = {
     goal: {
-      findFirst: async () => goalRow
+      findFirst: async (args) => {
+        findFirstArgs = args;
+        return goalRow;
+      }
     }
   };
   const router = loadGoalsRouter(prismaStub);
@@ -129,6 +133,7 @@ test('goals route: GET / maps stored gram weights into the user unit', async () 
 
   await handler(req, res);
   assert.equal(res.statusCode, 200);
+  assert.deepEqual(findFirstArgs.orderBy, [{ created_at: 'desc' }, { id: 'desc' }]);
   assert.deepEqual(res.body, {
     id: goalRow.id,
     user_id: goalRow.user_id,
@@ -226,4 +231,3 @@ test('goals route: POST / creates a goal and returns weights in user units', asy
     target_weight: 76
   });
 });
-

@@ -7,6 +7,7 @@ import { buildCalorieSummary, isActivityLevel, isSex } from '../utils/profile';
 import { isValidIanaTimeZone } from '../utils/date';
 import { resolveHeightMmUpdate } from '../utils/height';
 import { isSupportedLanguage, type SupportedLanguage } from '../utils/language';
+import { validatePasswordPolicy } from '../utils/passwordPolicy';
 import { MAX_PROFILE_IMAGE_BYTES, parseBase64DataUrl } from '../utils/profileImage';
 import { serializeUserForClient, USER_CLIENT_SELECT } from '../utils/userSerialization';
 
@@ -16,10 +17,6 @@ import { serializeUserForClient, USER_CLIENT_SELECT } from '../utils/userSeriali
  * These endpoints keep the session user payload aligned with the latest stored profile fields.
  */
 const router = express.Router();
-
-const MIN_PASSWORD_LENGTH = 8;
-// bcrypt truncates long passwords; keep a conservative cap to avoid surprises.
-const MAX_PASSWORD_LENGTH = 72;
 
 type PasswordChangeParseResult =
   | { ok: true; currentPassword: string; newPassword: string }
@@ -44,19 +41,10 @@ const parsePasswordChangePayload = (body: unknown): PasswordChangeParseResult =>
     return { ok: false, message: 'Current password is required' };
   }
 
-  if (typeof newPassword !== 'string' || newPassword.length === 0) {
-    return { ok: false, message: 'New password is required' };
-  }
+  const newPasswordError = validatePasswordPolicy(newPassword, 'New password');
+  if (newPasswordError) return { ok: false, message: newPasswordError };
 
-  if (newPassword.length < MIN_PASSWORD_LENGTH) {
-    return { ok: false, message: `New password must be at least ${MIN_PASSWORD_LENGTH} characters` };
-  }
-
-  if (newPassword.length > MAX_PASSWORD_LENGTH) {
-    return { ok: false, message: `New password must be at most ${MAX_PASSWORD_LENGTH} characters` };
-  }
-
-  return { ok: true, currentPassword, newPassword };
+  return { ok: true, currentPassword, newPassword: newPassword as string };
 };
 
 /**
@@ -276,7 +264,7 @@ router.get('/profile', async (req, res) => {
 
     const latestGoal = await prisma.goal.findFirst({
       where: { user_id: user.id },
-      orderBy: { created_at: 'desc' },
+      orderBy: [{ created_at: 'desc' }, { id: 'desc' }],
       select: { daily_deficit: true }
     });
 
