@@ -95,7 +95,7 @@ const WeightSummaryCard: React.FC<WeightSummaryCardProps> = ({ date, onOpenWeigh
     const rowGap = isXs ? WEIGHT_CARD_ROW_GAP.xs : WEIGHT_CARD_ROW_GAP.sm;
     const bodyMarginTop = isXs ? WEIGHT_CARD_BODY_MARGIN_TOP.xs : WEIGHT_CARD_BODY_MARGIN_TOP.sm;
     const valueVariant = isXs ? WEIGHT_CARD_VALUE_VARIANT.xs : WEIGHT_CARD_VALUE_VARIANT.sm;
-    const ctaSize = isXs ? 'small' : 'medium';
+    const ctaSize = isXs ? 'large' : 'medium';
     const unitLabel = user?.weight_unit === 'LB' ? 'lb' : 'kg';
     const today = useMemo(() => getTodayIsoDate(user?.timezone), [user?.timezone]);
     const isToday = date === today;
@@ -130,6 +130,7 @@ const WeightSummaryCard: React.FC<WeightSummaryCardProps> = ({ date, onOpenWeigh
     const displayedWeightLabel = displayedWeight !== null ? `${animatedWeight.toFixed(1)} ${unitLabel}` : EMPTY_VALUE_LABEL;
     const asOfLabel = formatMetricDateLabel(displayedMetric?.date ?? null);
     const WeightCtaIcon = metricForSelectedDate ? EditRoundedIcon : AddRoundedIcon;
+    const ctaVariant = metricForSelectedDate ? 'outlined' : 'contained';
 
     let cardBody: React.ReactNode;
     if (metricsQuery.isLoading) {
@@ -158,8 +159,8 @@ const WeightSummaryCard: React.FC<WeightSummaryCardProps> = ({ date, onOpenWeigh
                     </Box>
                 </Box>
 
-                <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-                    <Skeleton variant="rounded" height={36} width={156} />
+                <Box sx={{ display: 'flex', justifyContent: isXs ? 'stretch' : 'flex-end', width: '100%' }}>
+                    <Skeleton variant="rounded" height={isXs ? 44 : 36} width={isXs ? '100%' : 156} />
                 </Box>
             </Box>
         );
@@ -167,13 +168,14 @@ const WeightSummaryCard: React.FC<WeightSummaryCardProps> = ({ date, onOpenWeigh
         cardBody = (
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                 <Alert severity="warning">{t('weightSummary.error.unableToLoad')}</Alert>
-                <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                <Box sx={{ display: 'flex', justifyContent: isXs ? 'stretch' : 'flex-end', width: '100%' }}>
                     <Button
-                        variant="outlined"
+                        variant={ctaVariant}
                         size={ctaSize}
                         startIcon={<WeightCtaIcon />}
                         onClick={onOpenWeightEntry}
                         disabled={disabled}
+                        fullWidth={isXs}
                     >
                         {ctaLabel}
                     </Button>
@@ -205,13 +207,14 @@ const WeightSummaryCard: React.FC<WeightSummaryCardProps> = ({ date, onOpenWeigh
                     </Box>
                 </Box>
 
-                <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                <Box sx={{ display: 'flex', justifyContent: isXs ? 'stretch' : 'flex-end', width: '100%' }}>
                     <Button
-                        variant="outlined"
+                        variant={ctaVariant}
                         size={ctaSize}
                         startIcon={<WeightCtaIcon />}
                         onClick={onOpenWeightEntry}
                         disabled={disabled}
+                        fullWidth={isXs}
                     >
                         {ctaLabel}
                     </Button>

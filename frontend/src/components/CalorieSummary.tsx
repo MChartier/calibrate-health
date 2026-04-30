@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { Box, Chip, Skeleton, Stack, Typography } from '@mui/material';
+import { Box, Skeleton, Stack, Typography } from '@mui/material';
 import { alpha, useTheme } from '@mui/material/styles';
 import type { SxProps } from '@mui/material/styles';
 import type { Theme } from '@mui/material/styles';
@@ -22,6 +22,7 @@ const CALORIE_BUDGET_BAR_HEIGHT_PX = 10; // Thin secondary target indicator bene
 const CALORIE_BUDGET_STATUS_CAP_WIDTH_PX = 18; // Small warning/over cap keeps the in-budget portion green.
 const CALORIE_SUMMARY_MIN_HEIGHT_PX = { md: 166, lg: 178 }; // Matches the weight card row without forcing mobile height.
 const CALORIE_BIG_NUMBER_WIDTH_CH = 3.25; // Stable numeric width without forcing the primary phrase to wrap early.
+const CALORIE_LABEL_LINE_HEIGHT = 1.05; // Tightens the two-line calorie label so it centers beside the large number.
 
 type BudgetBarProps = {
     value: number;
@@ -29,7 +30,7 @@ type BudgetBarProps = {
     ariaLabel: string;
 };
 
-function getStatusChipColor(status: DailyCalorieStatus): 'success' | 'warning' | 'error' | 'default' {
+function getStatusColor(status: DailyCalorieStatus): 'success' | 'warning' | 'error' | 'default' {
     switch (status) {
         case 'onTrack':
             return 'success';
@@ -44,19 +45,6 @@ function getStatusChipColor(status: DailyCalorieStatus): 'success' | 'warning' |
 
 function getPaletteColor(theme: Theme, color: 'success' | 'warning' | 'error' | 'default') {
     return color === 'default' ? theme.palette.text.secondary : theme.palette[color].main;
-}
-
-function getStatusLabel(status: DailyCalorieStatus, t: ReturnType<typeof useI18n>['t']): string {
-    switch (status) {
-        case 'onTrack':
-            return t('today.status.onTrack');
-        case 'warning':
-            return t('today.status.warning');
-        case 'over':
-            return t('today.status.over');
-        default:
-            return t('today.status.unknown');
-    }
 }
 
 function getRemainingSupportText(args: {
@@ -134,7 +122,7 @@ const CalorieSummary: React.FC<CalorieSummaryProps> = ({ date, isSelectedToday, 
     }, [foodQuery.data]);
 
     const summary = getDailyCalorieSummary(totalCalories, profileQuery.data?.calorieSummary?.dailyCalorieTarget);
-    const statusColor = getStatusChipColor(summary.status);
+    const statusColor = getStatusColor(summary.status);
     const statusPaletteColor = getPaletteColor(theme, statusColor);
     const isLoading = foodQuery.isLoading || profileQuery.isLoading;
     const isError = foodQuery.isError || profileQuery.isError;
@@ -155,8 +143,6 @@ const CalorieSummary: React.FC<CalorieSummaryProps> = ({ date, isSelectedToday, 
         status: summary.status,
         t
     });
-    const statusLabel = getStatusLabel(summary.status, t);
-
     return (
         <AppCard
             sx={mergeSx({ height: { md: '100%' }, minHeight: CALORIE_SUMMARY_MIN_HEIGHT_PX }, sx)}
@@ -194,9 +180,9 @@ const CalorieSummary: React.FC<CalorieSummaryProps> = ({ date, isSelectedToday, 
                         <Box
                             sx={{
                                 display: 'flex',
-                                alignItems: 'baseline',
+                                alignItems: 'center',
                                 justifyContent: { xs: 'flex-start', sm: 'center' },
-                                gap: 1,
+                                gap: 1.15,
                                 flexWrap: 'wrap'
                             }}
                         >
@@ -214,46 +200,28 @@ const CalorieSummary: React.FC<CalorieSummaryProps> = ({ date, isSelectedToday, 
                             <Box
                                 sx={{
                                     display: 'inline-flex',
-                                    alignItems: 'baseline',
-                                    gap: 0.75,
-                                    whiteSpace: 'nowrap',
+                                    flexDirection: 'column',
+                                    justifyContent: 'center',
+                                    alignItems: 'flex-start',
+                                    gap: 0.25,
                                     minWidth: 0
                                 }}
                             >
-                                <Typography variant="h6" sx={{ color: 'text.secondary', fontWeight: 850 }}>
+                                <Typography
+                                    variant="h6"
+                                    sx={{ color: 'text.secondary', fontWeight: 850, lineHeight: CALORIE_LABEL_LINE_HEIGHT }}
+                                >
                                     {t('today.calories.unit')}
                                 </Typography>
-                                <Typography variant="body1" sx={{ color: 'text.secondary', fontWeight: 750 }}>
+                                <Typography
+                                    variant="body1"
+                                    sx={{ color: 'text.secondary', fontWeight: 750, lineHeight: CALORIE_LABEL_LINE_HEIGHT }}
+                                >
                                     {supportText}
                                 </Typography>
                             </Box>
                         </Box>
                     )}
-
-                    <Box
-                        sx={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: { xs: 'flex-start', sm: 'flex-start' },
-                            gap: 1,
-                            flexWrap: 'wrap'
-                        }}
-                    >
-                        <Chip
-                            size="small"
-                            color={statusColor}
-                            variant={summary.status === 'unknown' ? 'outlined' : 'filled'}
-                            label={statusLabel}
-                            sx={
-                                summary.status === 'warning'
-                                    ? {
-                                        bgcolor: 'warning.main',
-                                        color: (theme) => theme.palette.getContrastText(theme.palette.warning.main)
-                                    }
-                                    : undefined
-                            }
-                        />
-                    </Box>
                 </Stack>
 
                 <Stack spacing={1.25} sx={{ minWidth: 0 }}>

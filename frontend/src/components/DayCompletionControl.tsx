@@ -1,10 +1,7 @@
 import React from 'react';
 import { Alert, Box, Button, Chip, CircularProgress, Stack, Typography } from '@mui/material';
-import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded';
-import RadioButtonUncheckedRoundedIcon from '@mui/icons-material/RadioButtonUncheckedRounded';
 import LockOpenRoundedIcon from '@mui/icons-material/LockOpenRounded';
 import { useQueryClient } from '@tanstack/react-query';
-import { alpha } from '@mui/material/styles';
 import AppCard from '../ui/AppCard';
 import { useI18n } from '../i18n/useI18n';
 import {
@@ -18,7 +15,7 @@ export type DayCompletionControlProps = {
     date: string;
 };
 
-const COMPLETION_CONTROL_ICON_SIZE_PX = 38; // Status icon tile size for the full-width day completion control.
+const DAY_COMPLETION_ACTION_WIDTH = { xs: '100%', sm: 'auto' }; // Full-width on phones so the action reads as a clear row CTA.
 
 /**
  * Full-width completion state for the selected local day.
@@ -33,12 +30,10 @@ const DayCompletionControl: React.FC<DayCompletionControlProps> = ({ date }) => 
     const isComplete = Boolean(completionQuery.data?.is_complete);
     const isBusy = completionQuery.isLoading || completionMutation.isPending;
     const nextIsComplete = !isComplete;
-    const StatusIcon = isComplete ? CheckCircleRoundedIcon : RadioButtonUncheckedRoundedIcon;
-    const statusLabel = isComplete ? t('today.completion.status.complete') : t('today.completion.status.incomplete');
-    const helperText = isComplete ? t('today.completion.helper.complete') : t('today.completion.helper.incomplete');
+    const completedStatusLabel = t('today.completion.status.complete');
 
     let actionLabel = isComplete ? t('today.completion.markIncomplete') : t('today.completion.markComplete');
-    let actionIcon: React.ReactNode = isComplete ? <LockOpenRoundedIcon /> : <CheckCircleRoundedIcon />;
+    let actionIcon: React.ReactNode = isComplete ? <LockOpenRoundedIcon /> : null;
     if (isBusy) {
         actionLabel = t('common.loading');
         actionIcon = <CircularProgress size={16} color="inherit" />;
@@ -71,53 +66,23 @@ const DayCompletionControl: React.FC<DayCompletionControlProps> = ({ date }) => 
                         flexDirection: { xs: 'column', sm: 'row' }
                     }}
                 >
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25, minWidth: 0 }}>
-                        <Box
-                            aria-hidden
-                            sx={{
-                                width: COMPLETION_CONTROL_ICON_SIZE_PX,
-                                height: COMPLETION_CONTROL_ICON_SIZE_PX,
-                                borderRadius: 2,
-                                display: 'grid',
-                                placeItems: 'center',
-                                flexShrink: 0,
-                                color: isComplete ? 'success.main' : 'text.secondary',
-                                bgcolor: (theme) =>
-                                    alpha(
-                                        isComplete ? theme.palette.success.main : theme.palette.text.primary,
-                                        theme.palette.mode === 'dark' ? 0.16 : 0.08
-                                    )
-                            }}
-                        >
-                            {isBusy ? <CircularProgress size={20} /> : <StatusIcon fontSize="small" />}
-                        </Box>
-
-                        <Box sx={{ minWidth: 0 }}>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
-                                <Typography variant="subtitle1" sx={{ fontWeight: 850 }}>
-                                    {t('today.completion.title')}
-                                </Typography>
-                                <Chip
-                                    size="small"
-                                    color={isComplete ? 'success' : 'default'}
-                                    variant="outlined"
-                                    label={statusLabel}
-                                />
-                            </Box>
-                            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                                {helperText}
+                    <Box sx={{ minWidth: 0 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+                            <Typography variant="subtitle1" sx={{ fontWeight: 850 }}>
+                                {t('today.completion.title')}
                             </Typography>
+                            {isComplete ? <Chip size="small" color="success" variant="outlined" label={completedStatusLabel} /> : null}
                         </Box>
                     </Box>
 
                     <Button
-                        variant={isComplete ? 'outlined' : 'contained'}
+                        variant="outlined"
                         color={isComplete ? 'inherit' : 'primary'}
                         startIcon={actionIcon}
                         onClick={() => void handleToggleComplete()}
                         disabled={isBusy || completionQuery.isError}
                         aria-pressed={isComplete}
-                        sx={{ flexShrink: 0 }}
+                        sx={{ flexShrink: 0, width: DAY_COMPLETION_ACTION_WIDTH }}
                     >
                         {actionLabel}
                     </Button>
