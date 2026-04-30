@@ -130,6 +130,13 @@ const buildProviderOrder = (primary: FoodDataSource): FoodDataSource[] => {
     return order;
 };
 
+/**
+ * Pick the first provider in fallback order that has the environment it needs.
+ */
+const getFirstReadyProviderName = (primary: FoodDataSource): FoodDataSource | null => {
+    return buildProviderOrder(primary).find((name) => getMissingProviderEnvVars(name).length === 0) ?? null;
+};
+
 export type EnabledFoodDataProviders = {
     primary: FoodDataProviderInfo;
     providers: FoodDataProviderInfo[];
@@ -259,6 +266,8 @@ export const getFoodDataProvider = (): FoodDataProvider => {
         return providerInstance;
     }
 
+    const fallbackName = getFirstReadyProviderName(normalized) ?? 'openFoodFacts';
+    const fallbackLabel = providerRegistry[fallbackName].label;
     const missing = getMissingProviderEnvVars(normalized);
     if (missing.length > 0) {
         const config = providerRegistry[normalized];
@@ -267,16 +276,16 @@ export const getFoodDataProvider = (): FoodDataProvider => {
             : `Set ${missing.join(', ')} to enable ${config.label}.`;
         console.warn(
             `FOOD_DATA_PROVIDER=${requestedRaw ?? requestedValue}, but ${formatMissingEnvSentence(missing)}. ` +
-                `${action} Falling back to Open Food Facts.`
+                `${action} Falling back to ${fallbackLabel}.`
         );
     } else {
         console.warn(
             `FOOD_DATA_PROVIDER=${requestedRaw ?? requestedValue} failed to initialize. ` +
-                'Check the provider configuration and credentials. Falling back to Open Food Facts.'
+                `Check the provider configuration and credentials. Falling back to ${fallbackLabel}.`
         );
     }
 
-    const fallback = getFoodDataProviderByName('openFoodFacts');
+    const fallback = getFoodDataProviderByName(fallbackName);
     providerInstance = fallback.provider ?? new OpenFoodFactsProvider();
     return providerInstance;
 };

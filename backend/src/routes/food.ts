@@ -2,10 +2,10 @@ import express from 'express';
 import prisma from '../config/database';
 import {
     getEnabledFoodDataProviders,
-    getFoodDataProvider,
     getFoodDataProviderByName,
     type FoodDataSource
 } from '../services/foodData';
+import type { FoodDataProvider, FoodSearchRequest, FoodSearchResult } from '../services/foodData';
 import { parseLocalDateOnly } from '../utils/date';
 import { parsePositiveInteger } from '../utils/requestParsing';
 import { parseFoodLogCreateBody, parseFoodLogUpdateBody, parseFoodSearchParams } from './foodUtils';
@@ -17,16 +17,30 @@ import { parseFoodLogCreateBody, parseFoodLogUpdateBody, parseFoodSearchParams }
  */
 const router = express.Router();
 
-type BarcodeProviderAttempt = {
+type ProviderSearchAttempt = {
     name: FoodDataSource;
     status: 'skipped' | 'error' | 'empty';
     detail?: string;
 };
 
+type ProviderSearchOutcome =
+    | {
+          found: true;
+          provider: FoodDataProvider;
+          result: FoodSearchResult;
+          attempts: ProviderSearchAttempt[];
+      }
+    | {
+          found: false;
+          attempts: ProviderSearchAttempt[];
+          sawSuccessfulResponse: boolean;
+          lastError: Error | null;
+      };
+
 /**
- * Summarize barcode lookup attempts for logs without leaking request details.
+ * Summarize provider search attempts for logs without leaking request details.
  */
-const formatBarcodeAttemptSummary = (attempts: BarcodeProviderAttempt[]): string => {
+const formatProviderAttemptSummary = (attempts: ProviderSearchAttempt[]): string => {
     return attempts
         .map((attempt) => {
             const detail = attempt.detail ? ` - ${attempt.detail}` : '';
@@ -116,6 +130,88 @@ const buildRecentFoodAccumulator = (log: any, key: string): RecentFoodAccumulato
 });
 
 /**
+ * Search ready providers in configured order, stopping at the first usable provider response.
+ */
+const searchEnabledProviders = async (
+    params: FoodSearchRequest,
+    opts: { fallbackOnEmpty: boolean; requireBarcodeLookup: boolean }
+): Promise<ProviderSearchOutcome> => {
+    const { primary, providers } = getEnabledFoodDataProviders();
+    const attempts: ProviderSearchAttempt[] = [];
+
+    if (!primary.ready) {
+        attempts.push({
+            name: primary.name,
+            status: 'skipped',
+            detail: primary.detail || 'Provider is not ready.'
+        });
+    }
+
+    let sawSuccessfulResponse = false;
+    let lastError: Error | null = null;
+
+    for (const providerInfo of providers) {
+        if (opts.requireBarcodeLookup && !providerInfo.supportsBarcodeLookup) {
+            attempts.push({
+                name: providerInfo.name,
+                status: 'skipped',
+                detail: 'Barcode lookup is disabled for this provider.'
+            });
+            continue;
+        }
+
+        const resolution = getFoodDataProviderByName(providerInfo.name);
+        if (!resolution.provider) {
+            attempts.push({
+                name: providerInfo.name,
+                status: 'skipped',
+                detail: resolution.error || providerInfo.detail || 'Provider is not available.'
+            });
+            continue;
+        }
+
+        if (opts.requireBarcodeLookup && !resolution.provider.supportsBarcodeLookup) {
+            attempts.push({
+                name: providerInfo.name,
+                status: 'skipped',
+                detail: 'Barcode lookup is disabled for this provider.'
+            });
+            continue;
+        }
+
+        try {
+            const result = await resolution.provider.searchFoods(params);
+            if (opts.requireBarcodeLookup && !resolution.provider.supportsBarcodeLookup) {
+                attempts.push({
+                    name: providerInfo.name,
+                    status: 'skipped',
+                    detail: 'Barcode lookup is disabled for this provider.'
+                });
+                continue;
+            }
+
+            sawSuccessfulResponse = true;
+            if (result.items.length > 0 || !opts.fallbackOnEmpty) {
+                return {
+                    found: true,
+                    provider: resolution.provider,
+                    result,
+                    attempts
+                };
+            }
+
+            attempts.push({ name: providerInfo.name, status: 'empty' });
+        } catch (err) {
+            const message = err instanceof Error ? err.message : 'Search failed.';
+            attempts.push({ name: providerInfo.name, status: 'error', detail: message });
+            lastError = err instanceof Error ? err : new Error(message);
+        }
+    }
+
+    return { found: false, attempts, sawSuccessfulResponse, lastError };
+};
+
+/**
  * Ensure the session is authenticated before accessing food data.
  */
 const isAuthenticated = (req: express.Request, res: express.Response, next: express.NextFunction) => {
@@ -180,98 +276,33 @@ router.get('/search', async (req, res) => {
         return res.status(parsed.statusCode).json({ message: parsed.message });
     }
 
-    if (!parsed.params.barcode) {
-        const provider = getFoodDataProvider();
+    const searchOutcome = await searchEnabledProviders(parsed.params, {
+        fallbackOnEmpty: Boolean(parsed.params.barcode),
+        requireBarcodeLookup: Boolean(parsed.params.barcode)
+    });
 
-        try {
-            // Providers return normalized items so the frontend can show a consistent search UI.
-            const result = await provider.searchFoods(parsed.params);
-
-            res.json({
-                provider: provider.name,
-                supportsBarcodeLookup: provider.supportsBarcodeLookup,
-                ...result
-            });
-        } catch (err) {
-            console.error(err);
-            res.status(500).json({ message: 'Unable to search foods right now.' });
-        }
-        return;
-    }
-
-    const { primary, providers } = getEnabledFoodDataProviders();
-    const barcodeProviders = providers.filter((provider) => provider.supportsBarcodeLookup);
-    const attempts: BarcodeProviderAttempt[] = [];
-
-    if (!primary.ready) {
-        attempts.push({
-            name: primary.name,
-            status: 'skipped',
-            detail: primary.detail || 'Provider is not ready.'
+    if (searchOutcome.found) {
+        return res.json({
+            provider: searchOutcome.provider.name,
+            supportsBarcodeLookup: searchOutcome.provider.supportsBarcodeLookup,
+            ...searchOutcome.result
         });
     }
 
-    let sawSuccessfulResponse = false;
-    let lastError: Error | null = null;
-
-    for (const providerInfo of barcodeProviders) {
-        const resolution = getFoodDataProviderByName(providerInfo.name);
-        if (!resolution.provider) {
-            attempts.push({
-                name: providerInfo.name,
-                status: 'skipped',
-                detail: resolution.error || providerInfo.detail || 'Provider is not available.'
-            });
-            continue;
-        }
-
-        if (!resolution.provider.supportsBarcodeLookup) {
-            attempts.push({
-                name: providerInfo.name,
-                status: 'skipped',
-                detail: 'Barcode lookup is disabled for this provider.'
-            });
-            continue;
-        }
-
-        try {
-            const result = await resolution.provider.searchFoods(parsed.params);
-            if (!resolution.provider.supportsBarcodeLookup) {
-                attempts.push({
-                    name: providerInfo.name,
-                    status: 'skipped',
-                    detail: 'Barcode lookup is disabled for this provider.'
-                });
-                continue;
-            }
-
-            sawSuccessfulResponse = true;
-            if (result.items.length > 0) {
-                return res.json({
-                    provider: resolution.provider.name,
-                    supportsBarcodeLookup: resolution.provider.supportsBarcodeLookup,
-                    ...result
-                });
-            }
-
-            attempts.push({ name: providerInfo.name, status: 'empty' });
-        } catch (err) {
-            const message = err instanceof Error ? err.message : 'Search failed.';
-            attempts.push({ name: providerInfo.name, status: 'error', detail: message });
-            lastError = err instanceof Error ? err : new Error(message);
-        }
-    }
-
-    if (!sawSuccessfulResponse && lastError) {
-        console.error(lastError);
-        if (attempts.length > 0) {
-            console.info(`Barcode lookup failed for all providers. Attempts: ${formatBarcodeAttemptSummary(attempts)}`);
+    if (!searchOutcome.sawSuccessfulResponse && searchOutcome.lastError) {
+        console.error(searchOutcome.lastError);
+        if (searchOutcome.attempts.length > 0) {
+            console.info(
+                `Food search failed for all providers. Attempts: ${formatProviderAttemptSummary(searchOutcome.attempts)}`
+            );
         }
         return res.status(500).json({ message: 'Unable to search foods right now.' });
     }
 
-    if (attempts.length > 0) {
-        console.info(`Barcode lookup returned no results. Attempts: ${formatBarcodeAttemptSummary(attempts)}`);
+    if (searchOutcome.attempts.length > 0) {
+        console.info(
+            `Food search returned no results. Attempts: ${formatProviderAttemptSummary(searchOutcome.attempts)}`
+        );
     }
 
     return res.json({ items: [] });
