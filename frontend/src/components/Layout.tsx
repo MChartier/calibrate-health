@@ -26,7 +26,6 @@ import ShowChartIcon from '@mui/icons-material/ShowChartRounded';
 import PersonIcon from '@mui/icons-material/PersonRounded';
 import RestaurantRoundedIcon from '@mui/icons-material/RestaurantRounded';
 import MonitorWeightRoundedIcon from '@mui/icons-material/MonitorWeightRounded';
-import MoreHorizRoundedIcon from '@mui/icons-material/MoreHorizRounded';
 import NotificationsIcon from '@mui/icons-material/NotificationsRounded';
 import SettingsIcon from '@mui/icons-material/SettingsRounded';
 import LogoutIcon from '@mui/icons-material/LogoutRounded';
@@ -70,8 +69,6 @@ function getActiveNavigationValue(pathname: string): string | null {
     if (pathname.startsWith('/log')) return '/log';
     if (pathname.startsWith('/weight')) return '/weight';
     if (pathname.startsWith('/goals')) return '/goals';
-    if (pathname.startsWith('/settings')) return '/profile';
-    if (pathname.startsWith('/profile')) return '/profile';
     return null;
 }
 
@@ -148,7 +145,6 @@ const ResponsiveBottomNav: React.FC<ResponsiveBottomNavProps> = ({ value, onChan
                 <BottomNavigationAction value="/log" label={t('nav.food')} icon={<RestaurantRoundedIcon />} />
                 <BottomNavigationAction value="/weight" label={t('nav.weight')} icon={<MonitorWeightRoundedIcon />} />
                 <BottomNavigationAction value="/goals" label={t('nav.goals')} icon={<ShowChartIcon />} />
-                <BottomNavigationAction value="/profile" label={t('nav.more')} icon={<MoreHorizRoundedIcon />} />
             </BottomNavigation>
         </Box>
     );
