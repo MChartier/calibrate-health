@@ -1,20 +1,29 @@
-import React, { useEffect } from 'react';
-import { Stack } from '@mui/material';
+import React, { useEffect, useMemo } from 'react';
+import { Button, Stack } from '@mui/material';
+import ArrowBackRoundedIcon from '@mui/icons-material/ArrowBackRounded';
 import { useTheme } from '@mui/material/styles';
-import { useSearchParams } from 'react-router-dom';
+import { Link as RouterLink, useSearchParams } from 'react-router-dom';
 import CalorieSummary from '../components/CalorieSummary';
 import FoodLog from '../components/FoodLog';
 import TodayHeader from '../components/TodayHeader';
+import { useI18n } from '../i18n/useI18n';
 import { useQuickAddFab } from '../context/useQuickAddFab';
-import { useLogDateNavigationState } from '../hooks/useLogDateNavigationState';
+import { LOG_DATE_QUERY_PARAM, useLogDateNavigationState } from '../hooks/useLogDateNavigationState';
 import { QUICK_ADD_SHORTCUT_ACTIONS, QUICK_ADD_SHORTCUT_QUERY_PARAM } from '../constants/pwaShortcuts';
 import { getQuickAddAction } from '../utils/quickAddShortcut';
+
+function getDashboardPath(selectedDate: string, today: string): string {
+    if (selectedDate === today) return '/dashboard';
+    const params = new URLSearchParams({ [LOG_DATE_QUERY_PARAM]: selectedDate });
+    return `/dashboard?${params.toString()}`;
+}
 
 /**
  * Full daily log route for users who want calorie context plus focused food editing.
  */
 const Log: React.FC = () => {
     const theme = useTheme();
+    const { t } = useI18n();
     const { sectionGap, sectionGapCompact } = theme.custom.layout.page;
     const sectionSpacing = { xs: sectionGapCompact, sm: sectionGapCompact, md: sectionGap + 0.75 };
     const [searchParams, setSearchParams] = useSearchParams();
@@ -45,6 +54,7 @@ const Log: React.FC = () => {
     }, [setLogDateOverride]);
 
     const quickAddAction = getQuickAddAction(searchParams);
+    const dashboardPath = useMemo(() => getDashboardPath(selectedDate, today), [selectedDate, today]);
 
     useEffect(() => {
         if (!quickAddAction) return;
@@ -79,6 +89,15 @@ const Log: React.FC = () => {
 
     return (
         <Stack spacing={sectionSpacing} useFlexGap>
+            <Button
+                component={RouterLink}
+                to={dashboardPath}
+                variant="text"
+                startIcon={<ArrowBackRoundedIcon />}
+                sx={{ alignSelf: 'flex-start' }}
+            >
+                {t('log.nav.backToToday')}
+            </Button>
             <TodayHeader navigation={navigation} />
             <CalorieSummary date={selectedDate} isSelectedToday={isSelectedToday} />
             <FoodLog

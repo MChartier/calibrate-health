@@ -31,9 +31,11 @@ const WEIGHT_CARD_VALUE_VARIANT = { xs: 'h6', sm: 'h5' } as const; // Use a slig
 const WEIGHT_CARD_PADDING_SPACING = { xs: 1.25, sm: 1.5 }; // Reduce padding on xs to free up more space for the log content below.
 const TREND_SNAPSHOT_TRACK_HEIGHT_PX = 8; // Thin baseline keeps the range graphic compact inside the log card.
 const TREND_SNAPSHOT_RANGE_HEIGHT_PX = 20; // Range band height is large enough to read without feeling like a full chart.
-const TREND_SNAPSHOT_MARKER_SIZE_PX = 10; // Small point marker reads as a measurement, not an interactive slider handle.
+const TREND_SNAPSHOT_MARKER_SIZE_PX = 8; // Small diamond marker reads as a measurement, not an interactive slider handle.
 const TREND_SNAPSHOT_TREND_MARKER_WIDTH_PX = 3; // Trend marker is a vertical estimate line, distinct from the raw point.
 const TREND_SNAPSHOT_DOMAIN_PADDING_RATIO = 0.12; // Adds breathing room when the raw point sits near the range edge.
+const TREND_SNAPSHOT_GRAPH_HEIGHT_PX = 44; // Keeps the one-dimensional trend view compact and avoids looking like a control.
+const TREND_SNAPSHOT_LEGEND_SWATCH_SIZE_PX = 9; // Small labels clarify the marks without dominating the card.
 
 export type WeightSummaryCardProps = {
     /**
@@ -82,7 +84,7 @@ function findTrendMetricOnOrBeforeDate(metrics: MetricTrendEntry[], targetDate: 
 
 function getTrendSnapshotPosition(value: number, min: number, max: number): number {
     if (max <= min) return 50;
-    return ((value - min) / (max - min)) * 100;
+    return Math.max(0, Math.min(100, ((value - min) / (max - min)) * 100));
 }
 
 const WeightTrendSnapshot: React.FC<{
@@ -152,69 +154,110 @@ const WeightTrendSnapshot: React.FC<{
                 })}
                 sx={{
                     position: 'relative',
-                    height: 52,
-                    borderRadius: 2,
-                    bgcolor: alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.1 : 0.055),
-                    border: `1px solid ${alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.18 : 0.12)}`,
-                    px: 1.5
+                    height: TREND_SNAPSHOT_GRAPH_HEIGHT_PX
                 }}
             >
                 <Box
                     sx={{
                         position: 'absolute',
-                        left: 12,
-                        right: 12,
-                        top: '50%',
-                        height: TREND_SNAPSHOT_TRACK_HEIGHT_PX,
-                        mt: `-${TREND_SNAPSHOT_TRACK_HEIGHT_PX / 2}px`,
-                        borderRadius: 999,
-                        bgcolor: 'divider'
+                        inset: `0 ${TREND_SNAPSHOT_MARKER_SIZE_PX / 2}px`,
+                        top: 0,
+                        bottom: 0
                     }}
-                />
-                <Box
-                    sx={{
-                        position: 'absolute',
-                        left: `calc(12px + ${rangeLeft}% * (100% - 24px) / 100)`,
-                        width: `calc(${Math.max(2, rangeRight - rangeLeft)}% * (100% - 24px) / 100)`,
-                        top: '50%',
-                        height: TREND_SNAPSHOT_RANGE_HEIGHT_PX,
-                        mt: `-${TREND_SNAPSHOT_RANGE_HEIGHT_PX / 2}px`,
-                        borderRadius: 999,
-                        bgcolor: alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.42 : 0.24),
-                        border: `1px solid ${alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.52 : 0.3)}`
-                    }}
-                />
-                <Box
-                    sx={{
-                        position: 'absolute',
-                        left: `calc(12px + ${trendPosition}% * (100% - 24px) / 100 - ${TREND_SNAPSHOT_TREND_MARKER_WIDTH_PX / 2}px)`,
-                        top: 13,
-                        bottom: 13,
-                        width: TREND_SNAPSHOT_TREND_MARKER_WIDTH_PX,
-                        borderRadius: 999,
-                        bgcolor: 'primary.dark'
-                    }}
-                />
-                <Box
-                    sx={{
-                        position: 'absolute',
-                        left: `calc(12px + ${pointPosition}% * (100% - 24px) / 100 - ${TREND_SNAPSHOT_MARKER_SIZE_PX / 2}px)`,
-                        top: '50%',
-                        width: TREND_SNAPSHOT_MARKER_SIZE_PX,
-                        height: TREND_SNAPSHOT_MARKER_SIZE_PX,
-                        mt: `-${TREND_SNAPSHOT_MARKER_SIZE_PX / 2}px`,
-                        borderRadius: '50%',
-                        bgcolor: 'secondary.main',
-                        border: `1px solid ${theme.palette.background.paper}`
-                    }}
-                />
+                >
+                    <Box
+                        sx={{
+                            position: 'absolute',
+                            left: 0,
+                            right: 0,
+                            top: '50%',
+                            height: TREND_SNAPSHOT_TRACK_HEIGHT_PX,
+                            transform: 'translateY(-50%)',
+                            borderRadius: 999,
+                            bgcolor: 'divider'
+                        }}
+                    />
+                    <Box
+                        sx={{
+                            position: 'absolute',
+                            left: `${rangeLeft}%`,
+                            width: `${Math.max(2, rangeRight - rangeLeft)}%`,
+                            top: '50%',
+                            height: TREND_SNAPSHOT_RANGE_HEIGHT_PX,
+                            transform: 'translateY(-50%)',
+                            borderRadius: 999,
+                            bgcolor: alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.42 : 0.24),
+                            border: `1px solid ${alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.52 : 0.3)}`
+                        }}
+                    />
+                    <Box
+                        sx={{
+                            position: 'absolute',
+                            left: `${trendPosition}%`,
+                            top: 6,
+                            bottom: 6,
+                            width: TREND_SNAPSHOT_TREND_MARKER_WIDTH_PX,
+                            transform: 'translateX(-50%)',
+                            borderRadius: 999,
+                            bgcolor: 'primary.dark'
+                        }}
+                    />
+                    <Box
+                        sx={{
+                            position: 'absolute',
+                            left: `${pointPosition}%`,
+                            top: '50%',
+                            width: TREND_SNAPSHOT_MARKER_SIZE_PX,
+                            height: TREND_SNAPSHOT_MARKER_SIZE_PX,
+                            transform: 'translate(-50%, -50%) rotate(45deg)',
+                            bgcolor: 'secondary.main'
+                        }}
+                    />
+                </Box>
             </Box>
-            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(3, 1fr)' }, gap: 0.5 }}>
-                {[rangeLabel, trendLabel, pointLabel].map((label) => (
-                    <Typography key={label} variant="caption" sx={{ color: 'text.secondary', fontWeight: 700 }}>
-                        {label}
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: { xs: 0.75, sm: 1.25 }, alignItems: 'center' }}>
+                <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5 }}>
+                    <Box
+                        aria-hidden
+                        sx={{
+                            width: TREND_SNAPSHOT_LEGEND_SWATCH_SIZE_PX + 8,
+                            height: TREND_SNAPSHOT_LEGEND_SWATCH_SIZE_PX,
+                            borderRadius: 999,
+                            bgcolor: alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.42 : 0.24)
+                        }}
+                    />
+                    <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 700 }}>
+                        {rangeLabel}
                     </Typography>
-                ))}
+                </Box>
+                <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5 }}>
+                    <Box
+                        aria-hidden
+                        sx={{
+                            width: TREND_SNAPSHOT_TREND_MARKER_WIDTH_PX,
+                            height: TREND_SNAPSHOT_LEGEND_SWATCH_SIZE_PX + 5,
+                            borderRadius: 999,
+                            bgcolor: 'primary.dark'
+                        }}
+                    />
+                    <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 700 }}>
+                        {trendLabel}
+                    </Typography>
+                </Box>
+                <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5 }}>
+                    <Box
+                        aria-hidden
+                        sx={{
+                            width: TREND_SNAPSHOT_LEGEND_SWATCH_SIZE_PX,
+                            height: TREND_SNAPSHOT_LEGEND_SWATCH_SIZE_PX,
+                            transform: 'rotate(45deg)',
+                            bgcolor: 'secondary.main'
+                        }}
+                    />
+                    <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 700 }}>
+                        {pointLabel}
+                    </Typography>
+                </Box>
             </Box>
         </Box>
     );

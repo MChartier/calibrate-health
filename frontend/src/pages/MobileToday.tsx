@@ -117,14 +117,16 @@ const MobileToday: React.FC = () => {
                             <TodayHeader navigation={navigation} />
                             <CalorieSummary date={selectedDate} isSelectedToday={isSelectedToday} />
                             <Button
-                                component={RouterLink}
-                                to={foodLogPath}
                                 variant="contained"
                                 size="large"
                                 startIcon={<AddRoundedIcon />}
+                                onClick={() => dialogs.openFoodDialog()}
                                 sx={{ py: 1.35 }}
                             >
                                 {t('today.addFood')}
+                            </Button>
+                            <Button component={RouterLink} to={foodLogPath} variant="text" size="small">
+                                {t('today.viewFoodLog')}
                             </Button>
                             <WeightSummaryCard date={selectedDate} onOpenWeightEntry={openWeightDialogForLogDate} />
                         </Stack>

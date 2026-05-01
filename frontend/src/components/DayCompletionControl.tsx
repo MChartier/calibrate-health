@@ -98,12 +98,12 @@ const DayCompletionControl: React.FC<DayCompletionControlProps> = ({ date }) => 
                     aria-pressed={isComplete}
                     sx={(theme) => ({
                         width: DAY_COMPLETION_ACTION_WIDTH,
-                        color: 'text.primary',
-                        borderColor: alpha(theme.palette.text.primary, 0.24),
-                        bgcolor: 'background.paper',
+                        color: isComplete ? theme.palette.grey[900] : theme.palette.text.primary,
+                        borderColor: isComplete ? alpha(theme.palette.common.white, 0.9) : alpha(theme.palette.text.primary, 0.24),
+                        bgcolor: isComplete ? theme.palette.common.white : theme.palette.background.paper,
                         '&:hover': {
-                            borderColor: alpha(theme.palette.text.primary, 0.44),
-                            bgcolor: 'action.hover'
+                            borderColor: isComplete ? theme.palette.common.white : alpha(theme.palette.text.primary, 0.44),
+                            bgcolor: isComplete ? alpha(theme.palette.common.white, 0.88) : theme.palette.action.hover
                         }
                     })}
                 >

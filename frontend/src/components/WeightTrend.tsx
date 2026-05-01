@@ -597,6 +597,7 @@ const WeightTrend: React.FC<WeightTrendProps> = ({ fillAvailableHeight = false, 
         : WEIGHT_TREND_FULLSCREEN_CHART_MIN_HEIGHT_PX.sm;
     const stretchedMinChartHeight = fullScreen ? fullScreenMinChartHeight : TODAY_TREND_CHART_FILL_MIN_HEIGHT_PX;
     const chartHeight = shouldStretchChart ? chartContainerHeight ?? stretchedMinChartHeight : defaultChartHeight;
+    const chartHasMeasuredContainer = !shouldStretchChart || chartContainerHeight !== null; // Stretch charts need one measured frame before MUI can compute stable SVG coordinates.
     const cardTitle = fullScreen ? t('goals.weightHistoryTitle') : t('today.weightTrend.title');
     const chartContainerSx: SxProps<Theme> | undefined = (() => {
         if (fillAvailableHeight) {
@@ -739,141 +740,152 @@ const WeightTrend: React.FC<WeightTrendProps> = ({ fillAvailableHeight = false, 
             <Stack spacing={1} sx={shouldStretchChart ? { minHeight: 0, height: '100%', flex: 1 } : undefined}>
                 {controlsRow}
                 <Box ref={chartContainerRef} sx={chartContainerSx}>
-                    <LineChart
-                        xAxis={[
-                            {
-                                data: xData,
-                                scaleType: 'time',
-                                domainLimit: 'strict',
-                                min: xDomain?.min,
-                                max: xDomain?.max,
-                                height: fillAvailableHeight ? TODAY_TREND_X_AXIS_HEIGHT_PX : undefined,
-                                tickSize: fillAvailableHeight ? 0 : undefined,
-                                valueFormatter: (value, context) =>
-                                    context?.location === 'tooltip'
-                                        ? tooltipDateFormatter.format(value)
-                                        : xAxisFormatter.format(value)
-                            }
-                        ]}
-                        yAxis={[
-                            {
-                                min: yDomain?.min,
-                                max: yDomain?.max,
-                                width: fillAvailableHeight ? TODAY_TREND_Y_AXIS_WIDTH_PX : undefined,
-                                tickSize: fillAvailableHeight ? 0 : undefined
-                            }
-                        ]}
-                        series={[
-                            {
-                                id: 'expectedRangeBaseline',
-                                data: rangeLowerData,
-                                stack: 'expectedRange',
-                                color: 'transparent',
-                                showMark: false,
-                                connectNulls: false,
-                                valueFormatter: () => null
-                            },
-                            {
-                                id: 'expectedRangeBand',
-                                data: rangeBandData,
-                                stack: 'expectedRange',
-                                area: true,
-                                color: expectedRangeFillColor,
-                                showMark: false,
-                                connectNulls: false,
-                                valueFormatter: () => null
-                            },
-                            {
-                                id: 'expectedRangeTooltip',
-                                data: trendData,
-                                label: expectedRangeLabel,
-                                color: 'transparent',
-                                showMark: false,
-                                connectNulls: false,
-                                valueFormatter: (_value, context) => {
-                                    const lower = rangeLowerData[context.dataIndex];
-                                    const upper = rangeUpperData[context.dataIndex];
-                                    if (
-                                        typeof lower !== 'number' ||
-                                        !Number.isFinite(lower) ||
-                                        typeof upper !== 'number' ||
-                                        !Number.isFinite(upper)
-                                    ) {
-                                        return null;
-                                    }
-                                    return `${lower.toFixed(1)} - ${upper.toFixed(1)} ${unitLabel}`;
+                    {chartHasMeasuredContainer ? (
+                        <LineChart
+                            xAxis={[
+                                {
+                                    data: xData,
+                                    scaleType: 'time',
+                                    domainLimit: 'strict',
+                                    min: xDomain?.min,
+                                    max: xDomain?.max,
+                                    height: fillAvailableHeight ? TODAY_TREND_X_AXIS_HEIGHT_PX : undefined,
+                                    tickSize: fillAvailableHeight ? 0 : undefined,
+                                    valueFormatter: (value, context) =>
+                                        context?.location === 'tooltip'
+                                            ? tooltipDateFormatter.format(value)
+                                            : xAxisFormatter.format(value)
                                 }
-                            },
-                            {
-                                id: 'trend',
-                                data: trendData,
-                                label: trendSeriesLabel,
-                                color: trendLineColor,
-                                showMark: false,
-                                connectNulls: false,
-                                valueFormatter: (value) => (value == null ? null : `${value.toFixed(1)} ${unitLabel}`)
-                            },
-                            {
-                                id: 'raw',
-                                data: rawData,
-                                label: rawWeightSeriesLabel,
-                                color: rawLineColor,
-                                showMark: true,
-                                shape: 'circle',
-                                connectNulls: false,
-                                valueFormatter: (value) => (value == null ? null : `${value.toFixed(1)} ${unitLabel}`)
-                            }
-                        ]}
-                        height={chartHeight}
-                        margin={chartMargin}
-                        hideLegend
-                        skipAnimation={chartLibraryAnimationSkipped}
-                        axisHighlight={chartAxisHighlight}
-                        disableLineItemHighlight={chartLibraryAnimationSkipped}
-                        slotProps={{ tooltip: { trigger: tooltipTrigger } }}
-                        sx={{
-                            width: '100%',
-                            ...(shouldStretchChart ? { height: '100%' } : null),
-                            [`& .${lineClasses.area}[data-series="expectedRangeBand"]`]: {
-                                fill: expectedRangeFillColor,
-                                fillOpacity: 1
-                            },
-                            [`& .${lineClasses.line}[data-series="expectedRangeBand"]`]: {
-                                stroke: expectedRangeEdgeColor,
-                                strokeWidth: 1
-                            },
-                            [`& .${lineClasses.line}[data-series="trend"]`]: {
-                                strokeWidth: TREND_LINE_STROKE_WIDTH_PX
-                            },
-                            [`& .${lineClasses.line}[data-series="raw"]`]: {
-                                strokeWidth: RAW_LINE_STROKE_WIDTH_PX
-                            },
-                            [`& .${lineClasses.mark}[data-series="raw"]`]: {
-                                stroke: rawLineColor,
-                                strokeWidth: RAW_MARK_STROKE_WIDTH_PX,
-                                opacity: rawMarksVisible ? 1 : 0,
-                                transform: rawMarksVisible ? 'scale(1)' : `scale(${RAW_MARK_HIDDEN_SCALE})`,
-                                transformOrigin: 'center',
-                                transition: `opacity ${RAW_MARK_FADE_IN_DURATION_MS}ms ${RAW_MARK_FADE_EASING}, transform ${RAW_MARK_FADE_IN_DURATION_MS}ms ${RAW_MARK_FADE_EASING}`
-                            }
-                        }}
-                    >
-                        {canRenderTargetLine && (
-                            <ChartsReferenceLine
-                                y={targetWeight}
-                                label={t('goals.targetLineLabel', {
-                                    value: targetWeight.toFixed(1),
-                                    unit: unitLabel
-                                })}
-                                lineStyle={{
-                                    stroke: theme.palette.secondary.main,
-                                    strokeDasharray: '6 6',
-                                    strokeWidth: 2
-                                }}
-                                labelStyle={{ fill: theme.palette.text.secondary, fontWeight: 700 }}
-                            />
-                        )}
-                    </LineChart>
+                            ]}
+                            yAxis={[
+                                {
+                                    min: yDomain?.min,
+                                    max: yDomain?.max,
+                                    width: fillAvailableHeight ? TODAY_TREND_Y_AXIS_WIDTH_PX : undefined,
+                                    tickSize: fillAvailableHeight ? 0 : undefined
+                                }
+                            ]}
+                            series={[
+                                {
+                                    id: 'expectedRangeBaseline',
+                                    data: rangeLowerData,
+                                    stack: 'expectedRange',
+                                    color: 'transparent',
+                                    showMark: false,
+                                    connectNulls: false,
+                                    valueFormatter: () => null
+                                },
+                                {
+                                    id: 'expectedRangeBand',
+                                    data: rangeBandData,
+                                    stack: 'expectedRange',
+                                    area: true,
+                                    color: expectedRangeFillColor,
+                                    showMark: false,
+                                    connectNulls: false,
+                                    valueFormatter: () => null
+                                },
+                                {
+                                    id: 'expectedRangeTooltip',
+                                    data: trendData,
+                                    label: expectedRangeLabel,
+                                    color: 'transparent',
+                                    showMark: false,
+                                    connectNulls: false,
+                                    valueFormatter: (_value, context) => {
+                                        const lower = rangeLowerData[context.dataIndex];
+                                        const upper = rangeUpperData[context.dataIndex];
+                                        if (
+                                            typeof lower !== 'number' ||
+                                            !Number.isFinite(lower) ||
+                                            typeof upper !== 'number' ||
+                                            !Number.isFinite(upper)
+                                        ) {
+                                            return null;
+                                        }
+                                        return `${lower.toFixed(1)} - ${upper.toFixed(1)} ${unitLabel}`;
+                                    }
+                                },
+                                {
+                                    id: 'trend',
+                                    data: trendData,
+                                    label: trendSeriesLabel,
+                                    color: trendLineColor,
+                                    showMark: false,
+                                    connectNulls: false,
+                                    valueFormatter: (value) => (value == null ? null : `${value.toFixed(1)} ${unitLabel}`)
+                                },
+                                {
+                                    id: 'raw',
+                                    data: rawData,
+                                    label: rawWeightSeriesLabel,
+                                    color: rawLineColor,
+                                    showMark: true,
+                                    shape: 'circle',
+                                    connectNulls: false,
+                                    valueFormatter: (value) => (value == null ? null : `${value.toFixed(1)} ${unitLabel}`)
+                                }
+                            ]}
+                            height={chartHeight}
+                            margin={chartMargin}
+                            hideLegend
+                            skipAnimation={chartLibraryAnimationSkipped}
+                            axisHighlight={chartAxisHighlight}
+                            disableLineItemHighlight={chartLibraryAnimationSkipped}
+                            slotProps={{ tooltip: { trigger: tooltipTrigger } }}
+                            sx={{
+                                width: '100%',
+                                ...(shouldStretchChart ? { height: '100%' } : null),
+                                [`& .${lineClasses.area}[data-series="expectedRangeBand"]`]: {
+                                    fill: expectedRangeFillColor,
+                                    fillOpacity: 1
+                                },
+                                [`& .${lineClasses.line}[data-series="expectedRangeBand"]`]: {
+                                    stroke: expectedRangeEdgeColor,
+                                    strokeWidth: 1
+                                },
+                                [`& .${lineClasses.line}[data-series="trend"]`]: {
+                                    strokeWidth: TREND_LINE_STROKE_WIDTH_PX
+                                },
+                                [`& .${lineClasses.line}[data-series="raw"]`]: {
+                                    strokeWidth: RAW_LINE_STROKE_WIDTH_PX
+                                },
+                                [`& .${lineClasses.mark}[data-series="raw"]`]: {
+                                    stroke: rawLineColor,
+                                    strokeWidth: RAW_MARK_STROKE_WIDTH_PX,
+                                    opacity: rawMarksVisible ? 1 : 0,
+                                    transform: rawMarksVisible ? 'scale(1)' : `scale(${RAW_MARK_HIDDEN_SCALE})`,
+                                    transformOrigin: 'center',
+                                    transition: `opacity ${RAW_MARK_FADE_IN_DURATION_MS}ms ${RAW_MARK_FADE_EASING}, transform ${RAW_MARK_FADE_IN_DURATION_MS}ms ${RAW_MARK_FADE_EASING}`
+                                }
+                            }}
+                        >
+                            {canRenderTargetLine && (
+                                <ChartsReferenceLine
+                                    y={targetWeight}
+                                    label={t('goals.targetLineLabel', {
+                                        value: targetWeight.toFixed(1),
+                                        unit: unitLabel
+                                    })}
+                                    lineStyle={{
+                                        stroke: theme.palette.secondary.main,
+                                        strokeDasharray: '6 6',
+                                        strokeWidth: 2
+                                    }}
+                                    labelStyle={{ fill: theme.palette.text.secondary, fontWeight: 700 }}
+                                />
+                            )}
+                        </LineChart>
+                    ) : (
+                        <Skeleton
+                            variant="rounded"
+                            height="100%"
+                            sx={{
+                                width: '100%',
+                                minHeight: stretchedMinChartHeight
+                            }}
+                        />
+                    )}
                 </Box>
 
                 <WeightTrendLegend
