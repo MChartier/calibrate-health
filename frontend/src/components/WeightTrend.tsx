@@ -349,6 +349,9 @@ const WeightTrend: React.FC<WeightTrendProps> = ({ fillAvailableHeight = false, 
     const theme = useTheme();
     const isCompactViewport = useMediaQuery(theme.breakpoints.down('sm'));
     const shouldStretchChart = fillAvailableHeight || fullScreen;
+    const chartLibraryAnimationSkipped = !fullScreen; // Compact previews mount in tabs; skipping chart tween avoids transient SVG NaN coordinates.
+    const chartAxisHighlight = chartLibraryAnimationSkipped ? { x: 'none' as const, y: 'none' as const } : undefined;
+    const tooltipTrigger = chartLibraryAnimationSkipped ? 'none' as const : 'axis' as const; // Compact previews do not need pointer tooltips, and disabling them prevents hidden-tab axis math warnings.
     const [selectedRange, setSelectedRange] = useState<MetricsRange>(METRICS_RANGE_OPTIONS.MONTH);
     const [panWindowIndex, setPanWindowIndex] = useState(0);
     const [rawMarksVisible, setRawMarksVisible] = useState(true);
@@ -425,7 +428,7 @@ const WeightTrend: React.FC<WeightTrendProps> = ({ fillAvailableHeight = false, 
             markRevealTimeoutRef.current = null;
         }
 
-        if (points.length === 0) {
+        if (points.length === 0 || chartLibraryAnimationSkipped) {
             setRawMarksVisible(true);
             return;
         }
@@ -435,7 +438,7 @@ const WeightTrend: React.FC<WeightTrendProps> = ({ fillAvailableHeight = false, 
             setRawMarksVisible(true);
             markRevealTimeoutRef.current = null;
         }, CHART_LINE_ANIMATION_DURATION_MS + RAW_MARK_REVEAL_BUFFER_MS);
-    }, [points.length]);
+    }, [chartLibraryAnimationSkipped, points.length]);
 
     useEffect(() => {
         return () => {
@@ -444,49 +447,6 @@ const WeightTrend: React.FC<WeightTrendProps> = ({ fillAvailableHeight = false, 
             }
         };
     }, []);
-
-    const chartPoints = useMemo(() => {
-        if (points.length === 0) return [];
-
-        const rows: ChartPoint[] = [
-            {
-                date: points[0].date,
-                rawWeight: points[0].rawWeight,
-                trendWeight: points[0].trendWeight,
-                rangeLower: points[0].rangeLower,
-                rangeUpper: points[0].rangeUpper
-            }
-        ];
-
-        for (let index = 1; index < points.length; index += 1) {
-            const previousPoint = points[index - 1];
-            const currentPoint = points[index];
-            const gapDays = Math.round(
-                (startOfLocalDay(currentPoint.date).getTime() - startOfLocalDay(previousPoint.date).getTime()) / MS_PER_DAY
-            );
-
-            if (gapDays > CHART_GAP_BREAK_DAYS) {
-                const midpointDate = new Date(previousPoint.date.getTime() + (currentPoint.date.getTime() - previousPoint.date.getTime()) / 2);
-                rows.push({
-                    date: midpointDate,
-                    rawWeight: null,
-                    trendWeight: null,
-                    rangeLower: null,
-                    rangeUpper: null
-                });
-            }
-
-            rows.push({
-                date: currentPoint.date,
-                rawWeight: currentPoint.rawWeight,
-                trendWeight: currentPoint.trendWeight,
-                rangeLower: currentPoint.rangeLower,
-                rangeUpper: currentPoint.rangeUpper
-            });
-        }
-
-        return rows;
-    }, [points]);
 
     const dataDomain = useMemo(() => {
         if (points.length === 0) return null;
@@ -520,6 +480,57 @@ const WeightTrend: React.FC<WeightTrendProps> = ({ fillAvailableHeight = false, 
         []
     );
 
+    const visiblePoints = useMemo(() => {
+        if (!xDomain) return points;
+        const minMs = startOfLocalDay(xDomain.min).getTime();
+        const maxMs = startOfLocalDay(xDomain.max).getTime();
+        return points.filter((point) => {
+            const pointMs = startOfLocalDay(point.date).getTime();
+            return pointMs >= minMs && pointMs <= maxMs;
+        });
+    }, [points, xDomain]);
+    const chartPoints = useMemo(() => {
+        if (visiblePoints.length === 0) return [];
+
+        const rows: ChartPoint[] = [
+            {
+                date: visiblePoints[0].date,
+                rawWeight: visiblePoints[0].rawWeight,
+                trendWeight: visiblePoints[0].trendWeight,
+                rangeLower: visiblePoints[0].rangeLower,
+                rangeUpper: visiblePoints[0].rangeUpper
+            }
+        ];
+
+        for (let index = 1; index < visiblePoints.length; index += 1) {
+            const previousPoint = visiblePoints[index - 1];
+            const currentPoint = visiblePoints[index];
+            const gapDays = Math.round(
+                (startOfLocalDay(currentPoint.date).getTime() - startOfLocalDay(previousPoint.date).getTime()) / MS_PER_DAY
+            );
+
+            if (gapDays > CHART_GAP_BREAK_DAYS) {
+                const midpointDate = new Date(previousPoint.date.getTime() + (currentPoint.date.getTime() - previousPoint.date.getTime()) / 2);
+                rows.push({
+                    date: midpointDate,
+                    rawWeight: null,
+                    trendWeight: null,
+                    rangeLower: null,
+                    rangeUpper: null
+                });
+            }
+
+            rows.push({
+                date: currentPoint.date,
+                rawWeight: currentPoint.rawWeight,
+                trendWeight: currentPoint.trendWeight,
+                rangeLower: currentPoint.rangeLower,
+                rangeUpper: currentPoint.rangeUpper
+            });
+        }
+
+        return rows;
+    }, [visiblePoints]);
     const xData = useMemo(() => chartPoints.map((point) => point.date), [chartPoints]);
     const rawData = useMemo(() => chartPoints.map((point) => point.rawWeight), [chartPoints]);
     const trendData = useMemo(() => chartPoints.map((point) => point.trendWeight), [chartPoints]);
@@ -532,15 +543,6 @@ const WeightTrend: React.FC<WeightTrendProps> = ({ fillAvailableHeight = false, 
             ),
         [chartPoints]
     );
-    const visiblePoints = useMemo(() => {
-        if (!xDomain) return points;
-        const minMs = startOfLocalDay(xDomain.min).getTime();
-        const maxMs = startOfLocalDay(xDomain.max).getTime();
-        return points.filter((point) => {
-            const pointMs = startOfLocalDay(point.date).getTime();
-            return pointMs >= minMs && pointMs <= maxMs;
-        });
-    }, [points, xDomain]);
 
     const targetWeight = goalQuery.data?.target_weight;
     const targetIsValid = typeof targetWeight === 'number' && Number.isFinite(targetWeight);
@@ -557,6 +559,7 @@ const WeightTrend: React.FC<WeightTrendProps> = ({ fillAvailableHeight = false, 
         return { min: min - padding, max: max + padding };
     }, [targetIsValid, targetWeight, visiblePoints]);
     const canRenderTargetLine =
+        fullScreen &&
         targetIsValid &&
         yDomain !== null &&
         xDomain !== null &&
@@ -824,7 +827,10 @@ const WeightTrend: React.FC<WeightTrendProps> = ({ fillAvailableHeight = false, 
                         height={chartHeight}
                         margin={chartMargin}
                         hideLegend
-                        slotProps={{ tooltip: { trigger: 'axis' } }}
+                        skipAnimation={chartLibraryAnimationSkipped}
+                        axisHighlight={chartAxisHighlight}
+                        disableLineItemHighlight={chartLibraryAnimationSkipped}
+                        slotProps={{ tooltip: { trigger: tooltipTrigger } }}
                         sx={{
                             width: '100%',
                             ...(shouldStretchChart ? { height: '100%' } : null),

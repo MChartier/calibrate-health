@@ -1,6 +1,6 @@
 import React from 'react';
-import { Alert, Box, Button, Chip, CircularProgress, Stack, Typography } from '@mui/material';
-import LockOpenRoundedIcon from '@mui/icons-material/LockOpenRounded';
+import { Alert, Box, Button, CircularProgress, Stack, Typography } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import { useQueryClient } from '@tanstack/react-query';
 import AppCard from '../ui/AppCard';
 import { useI18n } from '../i18n/useI18n';
@@ -15,12 +15,12 @@ export type DayCompletionControlProps = {
     date: string;
 };
 
-const DAY_COMPLETION_ACTION_WIDTH = { xs: '100%', sm: 'auto' }; // Full-width on phones so the action reads as a clear row CTA.
+const DAY_COMPLETION_ACTION_WIDTH = '100%'; // Treat the status action as a full-row toggle instead of a small form control.
 
 /**
  * Full-width completion state for the selected local day.
  *
- * Marking the day complete intentionally locks day-specific edits elsewhere on the Today screen.
+ * Completion is a lightweight "done for now" marker; users can still add or edit logs afterward.
  */
 const DayCompletionControl: React.FC<DayCompletionControlProps> = ({ date }) => {
     const { t } = useI18n();
@@ -30,14 +30,14 @@ const DayCompletionControl: React.FC<DayCompletionControlProps> = ({ date }) => 
     const isComplete = Boolean(completionQuery.data?.is_complete);
     const isBusy = completionQuery.isLoading || completionMutation.isPending;
     const nextIsComplete = !isComplete;
-    const completedStatusLabel = t('today.completion.status.complete');
 
     let actionLabel = isComplete ? t('today.completion.markIncomplete') : t('today.completion.markComplete');
-    let actionIcon: React.ReactNode = isComplete ? <LockOpenRoundedIcon /> : null;
+    let actionIcon: React.ReactNode = undefined;
     if (isBusy) {
         actionLabel = t('common.loading');
         actionIcon = <CircularProgress size={16} color="inherit" />;
     }
+    const statusLabel = isComplete ? t('today.completion.status.complete') : t('today.completion.status.incomplete');
 
     const handleToggleComplete = async () => {
         try {
@@ -51,42 +51,64 @@ const DayCompletionControl: React.FC<DayCompletionControlProps> = ({ date }) => 
 
     return (
         <AppCard
+            sx={(theme) =>
+                isComplete
+                    ? {
+                        bgcolor: 'success.main',
+                        color: 'success.contrastText',
+                        borderColor: 'success.dark',
+                        boxShadow: `0 12px 28px ${alpha(theme.palette.success.dark, theme.palette.mode === 'dark' ? 0.34 : 0.18)}`
+                    }
+                    : null
+            }
             contentSx={{
                 p: { xs: 1.25, sm: 1.5 },
                 '&:last-child': { pb: { xs: 1.25, sm: 1.5 } }
             }}
         >
-            <Stack spacing={1}>
+            <Stack spacing={1.25}>
                 <Box
                     sx={{
+                        minWidth: 0,
                         display: 'flex',
-                        alignItems: { xs: 'stretch', sm: 'center' },
-                        justifyContent: 'space-between',
-                        gap: { xs: 1.25, sm: 1.5 },
-                        flexDirection: { xs: 'column', sm: 'row' }
+                        flexDirection: 'column',
+                        gap: 0.25
                     }}
                 >
-                    <Box sx={{ minWidth: 0 }}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
-                            <Typography variant="subtitle1" sx={{ fontWeight: 850 }}>
-                                {t('today.completion.title')}
-                            </Typography>
-                            {isComplete ? <Chip size="small" color="success" variant="outlined" label={completedStatusLabel} /> : null}
-                        </Box>
-                    </Box>
-
-                    <Button
-                        variant="outlined"
-                        color={isComplete ? 'inherit' : 'primary'}
-                        startIcon={actionIcon}
-                        onClick={() => void handleToggleComplete()}
-                        disabled={isBusy || completionQuery.isError}
-                        aria-pressed={isComplete}
-                        sx={{ flexShrink: 0, width: DAY_COMPLETION_ACTION_WIDTH }}
+                    <Typography variant="subtitle1" sx={{ fontWeight: 850 }}>
+                        {t('today.completion.title')}
+                    </Typography>
+                    <Typography
+                        variant="body2"
+                        sx={{
+                            color: isComplete ? 'inherit' : 'text.secondary',
+                            opacity: isComplete ? 0.9 : 1
+                        }}
                     >
-                        {actionLabel}
-                    </Button>
+                        {statusLabel}
+                    </Typography>
                 </Box>
+
+                <Button
+                    variant="outlined"
+                    color="inherit"
+                    startIcon={actionIcon}
+                    onClick={() => void handleToggleComplete()}
+                    disabled={isBusy || completionQuery.isError}
+                    aria-pressed={isComplete}
+                    sx={(theme) => ({
+                        width: DAY_COMPLETION_ACTION_WIDTH,
+                        color: 'text.primary',
+                        borderColor: alpha(theme.palette.text.primary, 0.24),
+                        bgcolor: 'background.paper',
+                        '&:hover': {
+                            borderColor: alpha(theme.palette.text.primary, 0.44),
+                            bgcolor: 'action.hover'
+                        }
+                    })}
+                >
+                    {actionLabel}
+                </Button>
 
                 {completionQuery.isError && <Alert severity="warning">{t('today.completion.error')}</Alert>}
                 {completionMutation.isError && <Alert severity="warning">{t('today.completion.saveError')}</Alert>}

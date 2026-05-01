@@ -7,7 +7,6 @@ import FoodLog from '../components/FoodLog';
 import TodayHeader from '../components/TodayHeader';
 import { useQuickAddFab } from '../context/useQuickAddFab';
 import { useLogDateNavigationState } from '../hooks/useLogDateNavigationState';
-import { useSelectedAndTodayDayCompletion } from '../hooks/useSelectedAndTodayDayCompletion';
 import { QUICK_ADD_SHORTCUT_ACTIONS, QUICK_ADD_SHORTCUT_QUERY_PARAM } from '../constants/pwaShortcuts';
 import { getQuickAddAction } from '../utils/quickAddShortcut';
 
@@ -21,8 +20,6 @@ const Log: React.FC = () => {
     const [searchParams, setSearchParams] = useSearchParams();
     const { selectedDate, today, navigation } = useLogDateNavigationState();
     const isSelectedToday = selectedDate === today;
-    const { isSelectedDayComplete: isDayComplete, isTodayComplete, isTodayCompletionLoading } =
-        useSelectedAndTodayDayCompletion(selectedDate, today);
     const {
         dialogs,
         openWeightDialogFromFab,
@@ -51,14 +48,6 @@ const Log: React.FC = () => {
 
     useEffect(() => {
         if (!quickAddAction) return;
-        if (isTodayCompletionLoading) return;
-
-        if (isTodayComplete) {
-            const nextParams = new URLSearchParams(searchParams);
-            nextParams.delete(QUICK_ADD_SHORTCUT_QUERY_PARAM);
-            setSearchParams(nextParams, { replace: true });
-            return;
-        }
 
         navigation.setDate(today);
 
@@ -80,8 +69,6 @@ const Log: React.FC = () => {
         }
     }, [
         dialogs,
-        isTodayComplete,
-        isTodayCompletionLoading,
         navigation,
         openWeightDialogFromFab,
         quickAddAction,
@@ -98,10 +85,8 @@ const Log: React.FC = () => {
                 date={selectedDate}
                 isSelectedToday={isSelectedToday}
                 onAddFood={(mealPeriod) => {
-                    if (isDayComplete) return;
                     dialogs.openFoodDialog(mealPeriod ?? null);
                 }}
-                disabled={isDayComplete}
             />
         </Stack>
     );

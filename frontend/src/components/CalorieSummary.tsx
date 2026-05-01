@@ -17,55 +17,60 @@ export type CalorieSummaryProps = {
     sx?: SxProps<Theme>;
 };
 
-const CALORIE_SUMMARY_GRID_GAP = { xs: 1.5, sm: 2, lg: 2.75 }; // Gap between the primary remaining number and supporting budget context.
-const CALORIE_BUDGET_BAR_HEIGHT_PX = 10; // Thin secondary target indicator beneath logged/target values.
-const CALORIE_BUDGET_STATUS_CAP_WIDTH_PX = 18; // Small warning/over cap keeps the in-budget portion green.
-const CALORIE_SUMMARY_MIN_HEIGHT_PX = { md: 166, lg: 178 }; // Matches the weight card row without forcing mobile height.
+const CALORIE_SUMMARY_STACK_GAP = { xs: 1.25, sm: 1.5 }; // Keeps the calorie card as one statement: value, bar, support line.
+const CALORIE_BUDGET_BAR_HEIGHT_PX = 12; // Slightly thicker so state color carries meaning without a separate chip.
+const CALORIE_SUMMARY_MIN_HEIGHT_PX = { md: 144, lg: 154 }; // Keeps desktop first row useful without overpowering the food log below.
 const CALORIE_BIG_NUMBER_WIDTH_CH = 3.25; // Stable numeric width without forcing the primary phrase to wrap early.
-const CALORIE_LABEL_LINE_HEIGHT = 1.05; // Tightens the two-line calorie label so it centers beside the large number.
+const CALORIE_PROGRESS_WARNING_PERCENT = 80; // Budget shifts from "plenty left" into caution as the user passes 80% consumed.
+const CALORIE_PROGRESS_NEAR_LIMIT_PERCENT = 95; // Near-limit state starts before the target is fully consumed.
+const CALORIE_PROGRESS_WARNING_COLOR = '#EAB308'; // Yellow caution distinct from the app's warmer warning orange.
+const CALORIE_PROGRESS_NEAR_LIMIT_COLOR = '#F97316'; // Orange communicates the final stretch before over-target red.
+
+type CalorieBudgetTone = 'success' | 'warning' | 'nearLimit' | 'error' | 'default';
 
 type BudgetBarProps = {
     value: number;
-    status: DailyCalorieStatus;
+    tone: CalorieBudgetTone;
     ariaLabel: string;
 };
 
-function getStatusColor(status: DailyCalorieStatus): 'success' | 'warning' | 'error' | 'default' {
-    switch (status) {
-        case 'onTrack':
-            return 'success';
+function getBudgetTone(args: { progressPercent: number; status: DailyCalorieStatus }): CalorieBudgetTone {
+    if (args.status === 'unknown') return 'default';
+    if (args.status === 'over') return 'error';
+    if (args.progressPercent >= CALORIE_PROGRESS_NEAR_LIMIT_PERCENT) return 'nearLimit';
+    if (args.progressPercent >= CALORIE_PROGRESS_WARNING_PERCENT) return 'warning';
+    return 'success';
+}
+
+function getToneColor(theme: Theme, tone: CalorieBudgetTone): string {
+    switch (tone) {
+        case 'success':
+            return theme.palette.success.main;
         case 'warning':
-            return 'warning';
-        case 'over':
-            return 'error';
+            return CALORIE_PROGRESS_WARNING_COLOR;
+        case 'nearLimit':
+            return CALORIE_PROGRESS_NEAR_LIMIT_COLOR;
+        case 'error':
+            return theme.palette.error.main;
         default:
-            return 'default';
+            return theme.palette.text.secondary;
     }
 }
 
-function getPaletteColor(theme: Theme, color: 'success' | 'warning' | 'error' | 'default') {
-    return color === 'default' ? theme.palette.text.secondary : theme.palette[color].main;
-}
-
-function getRemainingSupportText(args: {
+function getRemainingLabel(args: {
     isError: boolean;
-    isSelectedToday: boolean;
     remainingCalories: number | null;
     status: DailyCalorieStatus;
     t: ReturnType<typeof useI18n>['t'];
 }): string {
     if (args.isError) return args.t('today.feedback.error');
     if (args.remainingCalories === null) return args.t('today.feedback.missingTarget');
-    if (args.status === 'over') {
-        return args.isSelectedToday ? args.t('today.calories.overToday') : args.t('today.calories.overSelectedDay');
-    }
-    return args.isSelectedToday ? args.t('today.calories.remainingToday') : args.t('today.calories.remainingSelectedDay');
+    if (args.status === 'over') return args.t('today.calories.over');
+    return args.t('today.calories.left');
 }
 
-const BudgetBar: React.FC<BudgetBarProps> = ({ value, status, ariaLabel }) => {
+const BudgetBar: React.FC<BudgetBarProps> = ({ value, tone, ariaLabel }) => {
     const boundedValue = Math.max(0, Math.min(100, value));
-    const showStateCap = status === 'warning' || status === 'over';
-    const stateCapColor = status === 'over' ? 'error.main' : 'warning.main';
 
     return (
         <Box
@@ -87,23 +92,9 @@ const BudgetBar: React.FC<BudgetBarProps> = ({ value, status, ariaLabel }) => {
                     width: `${boundedValue}%`,
                     height: '100%',
                     borderRadius: 999,
-                    bgcolor: 'success.main'
+                    bgcolor: (theme) => getToneColor(theme, tone)
                 }}
             />
-            {showStateCap && (
-                <Box
-                    aria-hidden
-                    sx={{
-                        position: 'absolute',
-                        top: 0,
-                        right: 0,
-                        width: CALORIE_BUDGET_STATUS_CAP_WIDTH_PX,
-                        maxWidth: '18%',
-                        height: '100%',
-                        bgcolor: stateCapColor
-                    }}
-                />
-            )}
         </Box>
     );
 };
@@ -111,7 +102,7 @@ const BudgetBar: React.FC<BudgetBarProps> = ({ value, status, ariaLabel }) => {
 /**
  * Dominant daily calorie feedback for the Today workspace.
  */
-const CalorieSummary: React.FC<CalorieSummaryProps> = ({ date, isSelectedToday, sx }) => {
+const CalorieSummary: React.FC<CalorieSummaryProps> = ({ date, sx }) => {
     const { t } = useI18n();
     const theme = useTheme();
     const foodQuery = useFoodLogQuery(date);
@@ -122,23 +113,20 @@ const CalorieSummary: React.FC<CalorieSummaryProps> = ({ date, isSelectedToday, 
     }, [foodQuery.data]);
 
     const summary = getDailyCalorieSummary(totalCalories, profileQuery.data?.calorieSummary?.dailyCalorieTarget);
-    const statusColor = getStatusColor(summary.status);
-    const statusPaletteColor = getPaletteColor(theme, statusColor);
     const isLoading = foodQuery.isLoading || profileQuery.isLoading;
     const isError = foodQuery.isError || profileQuery.isError;
     const gaugeValue = isLoading || isError || summary.dailyTarget === null ? 0 : summary.progressPercent;
+    const budgetTone = getBudgetTone({ progressPercent: gaugeValue, status: summary.status });
+    const statusPaletteColor = getToneColor(theme, budgetTone);
     const loggedCaloriesLabel = isLoading || isError ? '-' : totalCalories.toLocaleString();
     const targetCaloriesLabel = summary.dailyTarget !== null ? summary.dailyTarget.toLocaleString() : '-';
     const loggedTargetLine = t('today.calories.loggedTargetLine', {
         logged: loggedCaloriesLabel,
         target: targetCaloriesLabel
     });
-    const eatenLabel = t('today.calories.eatenValue', { value: loggedCaloriesLabel });
-    const targetLabel = t('today.calories.targetValue', { value: targetCaloriesLabel });
 
-    const supportText = getRemainingSupportText({
+    const remainingLabel = getRemainingLabel({
         isError,
-        isSelectedToday,
         remainingCalories: summary.remainingCalories,
         status: summary.status,
         t
@@ -147,108 +135,51 @@ const CalorieSummary: React.FC<CalorieSummaryProps> = ({ date, isSelectedToday, 
         <AppCard
             sx={mergeSx({ height: { md: '100%' }, minHeight: CALORIE_SUMMARY_MIN_HEIGHT_PX }, sx)}
             contentSx={{
-                p: { xs: 1.5, sm: 2, lg: 2.75 },
-                '&:last-child': { pb: { xs: 1.5, sm: 2, lg: 2.75 } },
+                p: { xs: 1.5, sm: 1.75, lg: 2.25 },
+                '&:last-child': { pb: { xs: 1.5, sm: 1.75, lg: 2.25 } },
                 height: { md: '100%' },
                 display: { md: 'flex' },
                 flexDirection: { md: 'column' },
                 justifyContent: { md: 'center' }
             }}
         >
-            <Box
-                sx={{
-                    display: 'grid',
-                    gridTemplateColumns: {
-                        xs: '1fr',
-                        sm: 'minmax(220px, 0.82fr) minmax(260px, 1fr)'
-                    },
-                    alignItems: 'center',
-                    gap: CALORIE_SUMMARY_GRID_GAP
-                }}
-            >
-                <Stack
-                    spacing={1.1}
-                    sx={{
-                        minWidth: 0,
-                        alignItems: 'flex-start',
-                        textAlign: 'left'
-                    }}
-                >
-                    {isLoading ? (
-                        <Skeleton width="62%" height={72} />
-                    ) : (
-                        <Box
-                            sx={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: { xs: 'flex-start', sm: 'center' },
-                                gap: 1.15,
-                                flexWrap: 'wrap'
-                            }}
-                        >
-                            <Typography
-                                variant="h1"
-                                sx={{
-                                    color: statusPaletteColor,
-                                    lineHeight: 1,
-                                    minWidth: `${CALORIE_BIG_NUMBER_WIDTH_CH}ch`,
-                                    fontSize: { xs: '3.65rem', sm: '4.6rem', lg: '5.2rem' }
-                                }}
-                            >
-                                {summary.remainingCalories !== null ? Math.abs(summary.remainingCalories).toLocaleString() : '-'}
-                            </Typography>
-                            <Box
-                                sx={{
-                                    display: 'inline-flex',
-                                    flexDirection: 'column',
-                                    justifyContent: 'center',
-                                    alignItems: 'flex-start',
-                                    gap: 0.25,
-                                    minWidth: 0
-                                }}
-                            >
-                                <Typography
-                                    variant="h6"
-                                    sx={{ color: 'text.secondary', fontWeight: 850, lineHeight: CALORIE_LABEL_LINE_HEIGHT }}
-                                >
-                                    {t('today.calories.unit')}
-                                </Typography>
-                                <Typography
-                                    variant="body1"
-                                    sx={{ color: 'text.secondary', fontWeight: 750, lineHeight: CALORIE_LABEL_LINE_HEIGHT }}
-                                >
-                                    {supportText}
-                                </Typography>
-                            </Box>
-                        </Box>
-                    )}
-                </Stack>
-
-                <Stack spacing={1.25} sx={{ minWidth: 0 }}>
+            <Stack spacing={CALORIE_SUMMARY_STACK_GAP} useFlexGap sx={{ minWidth: 0 }}>
+                {isLoading ? (
+                    <Skeleton width="62%" height={72} />
+                ) : (
                     <Box
                         sx={{
-                            display: 'grid',
-                            gridTemplateColumns: '1fr 1fr',
-                            gap: { xs: 1.25, sm: 2 }
+                            display: 'flex',
+                            alignItems: 'baseline',
+                            gap: { xs: 0.8, sm: 1 },
+                            flexWrap: 'wrap'
                         }}
                     >
-                        <Box sx={{ minWidth: 0 }}>
-                            <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 800 }}>
-                                {t('today.calories.logged')}
-                            </Typography>
-                            <Typography variant="subtitle2">{eatenLabel}</Typography>
-                        </Box>
-                        <Box sx={{ minWidth: 0, textAlign: 'right' }}>
-                            <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 800 }}>
-                                {t('today.calories.target')}
-                            </Typography>
-                            <Typography variant="subtitle2">{targetLabel}</Typography>
-                        </Box>
+                        <Typography
+                            variant="h1"
+                            sx={{
+                                color: statusPaletteColor,
+                                lineHeight: 1,
+                                minWidth: `${CALORIE_BIG_NUMBER_WIDTH_CH}ch`,
+                                fontSize: { xs: '3.55rem', sm: '4.15rem', lg: '4.7rem' }
+                            }}
+                        >
+                            {summary.remainingCalories !== null ? Math.abs(summary.remainingCalories).toLocaleString() : '-'}
+                        </Typography>
+                        <Typography variant="h5" sx={{ color: statusPaletteColor, fontWeight: 850, lineHeight: 1 }}>
+                            {t('today.calories.unit')}
+                        </Typography>
+                        <Typography variant="h5" sx={{ color: 'text.secondary', fontWeight: 800, lineHeight: 1 }}>
+                            {remainingLabel}
+                        </Typography>
                     </Box>
+                )}
 
-                    <BudgetBar value={gaugeValue} status={summary.status} ariaLabel={loggedTargetLine} />
-                </Stack>
-            </Box>
+                <BudgetBar value={gaugeValue} tone={budgetTone} ariaLabel={loggedTargetLine} />
+                <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 750, textAlign: 'center' }}>
+                    {loggedTargetLine}
+                </Typography>
+            </Stack>
         </AppCard>
     );
 };

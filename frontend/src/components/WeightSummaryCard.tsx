@@ -1,18 +1,20 @@
 import React, { useMemo } from 'react';
-import { Alert, Box, Button, Chip, Skeleton, Typography, useMediaQuery } from '@mui/material';
+import { Alert, Box, Button, Chip, Divider, Skeleton, Typography, useMediaQuery } from '@mui/material';
 import type { SxProps, Theme } from '@mui/material/styles';
 import AddRoundedIcon from '@mui/icons-material/AddRounded';
 import EditRoundedIcon from '@mui/icons-material/EditRounded';
 import MonitorWeightIcon from '@mui/icons-material/MonitorWeightRounded';
 import { alpha, useTheme } from '@mui/material/styles';
+import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../context/useAuth';
+import { METRICS_RANGE_OPTIONS } from '../constants/metricsRanges';
 import { getTodayIsoDate } from '../utils/date';
 import { parseDateOnlyToLocalDate } from '../utils/goalTracking';
 import { usePrefersReducedMotion } from '../hooks/usePrefersReducedMotion';
 import { useTweenedNumber } from '../hooks/useTweenedNumber';
 import SectionHeader from '../ui/SectionHeader';
 import AppCard from '../ui/AppCard';
-import { findMetricOnOrBeforeDate, toDatePart, useMetricsQuery } from '../queries/metrics';
+import { fetchTrendMetrics, findMetricOnOrBeforeDate, toDatePart, useMetricsQuery, type MetricTrendEntry } from '../queries/metrics';
 import { useI18n } from '../i18n/useI18n';
 
 /**
@@ -27,6 +29,11 @@ const WEIGHT_CARD_ROW_GAP = { xs: 1.25, sm: 2 }; // Gap between the icon tile an
 const WEIGHT_CARD_BODY_MARGIN_TOP = { xs: 1.25, sm: 1.5 }; // Space between the header and the card body content.
 const WEIGHT_CARD_VALUE_VARIANT = { xs: 'h6', sm: 'h5' } as const; // Use a slightly smaller headline on xs so the row layout stays compact.
 const WEIGHT_CARD_PADDING_SPACING = { xs: 1.25, sm: 1.5 }; // Reduce padding on xs to free up more space for the log content below.
+const TREND_SNAPSHOT_TRACK_HEIGHT_PX = 8; // Thin baseline keeps the range graphic compact inside the log card.
+const TREND_SNAPSHOT_RANGE_HEIGHT_PX = 20; // Range band height is large enough to read without feeling like a full chart.
+const TREND_SNAPSHOT_MARKER_SIZE_PX = 10; // Small point marker reads as a measurement, not an interactive slider handle.
+const TREND_SNAPSHOT_TREND_MARKER_WIDTH_PX = 3; // Trend marker is a vertical estimate line, distinct from the raw point.
+const TREND_SNAPSHOT_DOMAIN_PADDING_RATIO = 0.12; // Adds breathing room when the raw point sits near the range edge.
 
 export type WeightSummaryCardProps = {
     /**
@@ -41,10 +48,6 @@ export type WeightSummaryCardProps = {
      * The parent controls the actual modal dialog (WeightEntryForm), so this is just a trigger.
      */
     onOpenWeightEntry: () => void;
-    /**
-     * Locks the daily weight CTA when the selected day has been completed.
-     */
-    disabled?: boolean;
     /** Optional wrapper styles used by dashboard grid alignment. */
     sx?: SxProps<Theme>;
 };
@@ -58,6 +61,164 @@ function formatMetricDateLabel(value: string | null): string {
     if (!parsed || Number.isNaN(parsed.getTime())) return EMPTY_VALUE_LABEL;
     return new Intl.DateTimeFormat(undefined, { year: 'numeric', month: 'short', day: 'numeric' }).format(parsed);
 }
+
+function isValidTrendMetric(metric: MetricTrendEntry | null): metric is MetricTrendEntry {
+    return Boolean(
+        metric &&
+            Number.isFinite(metric.weight) &&
+            Number.isFinite(metric.trend_weight) &&
+            Number.isFinite(metric.trend_ci_lower) &&
+            Number.isFinite(metric.trend_ci_upper)
+    );
+}
+
+function findTrendMetricOnOrBeforeDate(metrics: MetricTrendEntry[], targetDate: string): MetricTrendEntry | null {
+    for (const metric of metrics) {
+        const metricDate = toDatePart(metric.date);
+        if (metricDate <= targetDate) return metric;
+    }
+    return null;
+}
+
+function getTrendSnapshotPosition(value: number, min: number, max: number): number {
+    if (max <= min) return 50;
+    return ((value - min) / (max - min)) * 100;
+}
+
+const WeightTrendSnapshot: React.FC<{
+    metric: MetricTrendEntry | null;
+    isLoading: boolean;
+    unitLabel: string;
+}> = ({ metric, isLoading, unitLabel }) => {
+    const { t } = useI18n();
+    const theme = useTheme();
+
+    if (isLoading) {
+        return (
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.75 }}>
+                <Skeleton width="38%" height={22} />
+                <Skeleton variant="rounded" height={50} />
+            </Box>
+        );
+    }
+
+    if (!isValidTrendMetric(metric)) return null;
+
+    const rangeLower = Math.min(metric.trend_ci_lower, metric.trend_ci_upper);
+    const rangeUpper = Math.max(metric.trend_ci_lower, metric.trend_ci_upper);
+    const rawWeight = metric.weight;
+    const trendWeight = metric.trend_weight;
+    const rawMin = Math.min(rangeLower, rangeUpper, rawWeight, trendWeight);
+    const rawMax = Math.max(rangeLower, rangeUpper, rawWeight, trendWeight);
+    const rawRange = Math.max(0.1, rawMax - rawMin);
+    const domainMin = rawMin - rawRange * TREND_SNAPSHOT_DOMAIN_PADDING_RATIO;
+    const domainMax = rawMax + rawRange * TREND_SNAPSHOT_DOMAIN_PADDING_RATIO;
+    const rangeLeft = getTrendSnapshotPosition(rangeLower, domainMin, domainMax);
+    const rangeRight = getTrendSnapshotPosition(rangeUpper, domainMin, domainMax);
+    const trendPosition = getTrendSnapshotPosition(trendWeight, domainMin, domainMax);
+    const pointPosition = getTrendSnapshotPosition(rawWeight, domainMin, domainMax);
+    const rangeLabel = t('weightSummary.trendSnapshot.range', {
+        low: rangeLower.toFixed(1),
+        high: rangeUpper.toFixed(1),
+        unit: unitLabel
+    });
+    const trendLabel = t('weightSummary.trendSnapshot.trend', {
+        value: trendWeight.toFixed(1),
+        unit: unitLabel
+    });
+    const pointLabel = t('weightSummary.trendSnapshot.point', {
+        value: rawWeight.toFixed(1),
+        unit: unitLabel
+    });
+
+    return (
+        <Box
+            sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 0.75,
+                pt: 0.5
+            }}
+        >
+            <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
+                {t('weightSummary.trendSnapshot.title')}
+            </Typography>
+            <Box
+                role="img"
+                aria-label={t('weightSummary.trendSnapshot.ariaLabel', {
+                    range: rangeLabel,
+                    trend: trendLabel,
+                    point: pointLabel
+                })}
+                sx={{
+                    position: 'relative',
+                    height: 52,
+                    borderRadius: 2,
+                    bgcolor: alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.1 : 0.055),
+                    border: `1px solid ${alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.18 : 0.12)}`,
+                    px: 1.5
+                }}
+            >
+                <Box
+                    sx={{
+                        position: 'absolute',
+                        left: 12,
+                        right: 12,
+                        top: '50%',
+                        height: TREND_SNAPSHOT_TRACK_HEIGHT_PX,
+                        mt: `-${TREND_SNAPSHOT_TRACK_HEIGHT_PX / 2}px`,
+                        borderRadius: 999,
+                        bgcolor: 'divider'
+                    }}
+                />
+                <Box
+                    sx={{
+                        position: 'absolute',
+                        left: `calc(12px + ${rangeLeft}% * (100% - 24px) / 100)`,
+                        width: `calc(${Math.max(2, rangeRight - rangeLeft)}% * (100% - 24px) / 100)`,
+                        top: '50%',
+                        height: TREND_SNAPSHOT_RANGE_HEIGHT_PX,
+                        mt: `-${TREND_SNAPSHOT_RANGE_HEIGHT_PX / 2}px`,
+                        borderRadius: 999,
+                        bgcolor: alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.42 : 0.24),
+                        border: `1px solid ${alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.52 : 0.3)}`
+                    }}
+                />
+                <Box
+                    sx={{
+                        position: 'absolute',
+                        left: `calc(12px + ${trendPosition}% * (100% - 24px) / 100 - ${TREND_SNAPSHOT_TREND_MARKER_WIDTH_PX / 2}px)`,
+                        top: 13,
+                        bottom: 13,
+                        width: TREND_SNAPSHOT_TREND_MARKER_WIDTH_PX,
+                        borderRadius: 999,
+                        bgcolor: 'primary.dark'
+                    }}
+                />
+                <Box
+                    sx={{
+                        position: 'absolute',
+                        left: `calc(12px + ${pointPosition}% * (100% - 24px) / 100 - ${TREND_SNAPSHOT_MARKER_SIZE_PX / 2}px)`,
+                        top: '50%',
+                        width: TREND_SNAPSHOT_MARKER_SIZE_PX,
+                        height: TREND_SNAPSHOT_MARKER_SIZE_PX,
+                        mt: `-${TREND_SNAPSHOT_MARKER_SIZE_PX / 2}px`,
+                        borderRadius: '50%',
+                        bgcolor: 'secondary.main',
+                        border: `1px solid ${theme.palette.background.paper}`
+                    }}
+                />
+            </Box>
+            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(3, 1fr)' }, gap: 0.5 }}>
+                {[rangeLabel, trendLabel, pointLabel].map((label) => (
+                    <Typography key={label} variant="caption" sx={{ color: 'text.secondary', fontWeight: 700 }}>
+                        {label}
+                    </Typography>
+                ))}
+            </Box>
+        </Box>
+    );
+};
 
 const WeightIconTile: React.FC<{ sizePx: number }> = ({ sizePx }) => (
     <Box
@@ -83,9 +244,9 @@ const WeightIconTile: React.FC<{ sizePx: number }> = ({ sizePx }) => (
  * Dense weight summary card for the Log page.
  *
  * - Shows a large "current weight" value plus an "As of {date}" line to make recency obvious.
- * - When viewing today, surfaces a clear "Due today" / "Done for today" state and adjusts CTA text.
+ * - Adds a compact trend snapshot so the Log tab carries the app's smoothing/range context.
  */
-const WeightSummaryCard: React.FC<WeightSummaryCardProps> = ({ date, onOpenWeightEntry, disabled = false, sx }) => {
+const WeightSummaryCard: React.FC<WeightSummaryCardProps> = ({ date, onOpenWeightEntry, sx }) => {
     const { user } = useAuth();
     const { t } = useI18n();
     const theme = useTheme();
@@ -103,6 +264,11 @@ const WeightSummaryCard: React.FC<WeightSummaryCardProps> = ({ date, onOpenWeigh
     const metricsQuery = useMetricsQuery();
 
     const metrics = useMemo(() => metricsQuery.data ?? [], [metricsQuery.data]);
+    const trendMetricsQuery = useQuery({
+        queryKey: ['metrics', 'trend', METRICS_RANGE_OPTIONS.ALL],
+        queryFn: async () => fetchTrendMetrics({ range: METRICS_RANGE_OPTIONS.ALL })
+    });
+    const trendMetrics = useMemo(() => trendMetricsQuery.data?.metrics ?? [], [trendMetricsQuery.data]);
 
     const metricForSelectedDate = useMemo(() => {
         return metrics.find((metric) => toDatePart(metric.date) === date) ?? null;
@@ -112,6 +278,10 @@ const WeightSummaryCard: React.FC<WeightSummaryCardProps> = ({ date, onOpenWeigh
         if (metricForSelectedDate) return metricForSelectedDate;
         return findMetricOnOrBeforeDate(metrics, date);
     }, [date, metricForSelectedDate, metrics]);
+    const displayedTrendMetric = useMemo(() => {
+        const exactMetric = trendMetrics.find((metric) => toDatePart(metric.date) === toDatePart(displayedMetric?.date ?? date)) ?? null;
+        return exactMetric ?? findTrendMetricOnOrBeforeDate(trendMetrics, date);
+    }, [date, displayedMetric?.date, trendMetrics]);
 
     const prefersReducedMotion = usePrefersReducedMotion();
     const displayedWeight = displayedMetric?.weight ?? null;
@@ -131,6 +301,14 @@ const WeightSummaryCard: React.FC<WeightSummaryCardProps> = ({ date, onOpenWeigh
     const asOfLabel = formatMetricDateLabel(displayedMetric?.date ?? null);
     const WeightCtaIcon = metricForSelectedDate ? EditRoundedIcon : AddRoundedIcon;
     const ctaVariant = metricForSelectedDate ? 'outlined' : 'contained';
+    const doneTodayChip = isToday && metricForSelectedDate && !metricsQuery.isLoading && !metricsQuery.isError ? (
+        <Chip
+            size="small"
+            color="success"
+            variant="outlined"
+            label={t('weightSummary.chip.doneToday')}
+        />
+    ) : null;
 
     let cardBody: React.ReactNode;
     if (metricsQuery.isLoading) {
@@ -162,6 +340,8 @@ const WeightSummaryCard: React.FC<WeightSummaryCardProps> = ({ date, onOpenWeigh
                 <Box sx={{ display: 'flex', justifyContent: isXs ? 'stretch' : 'flex-end', width: '100%' }}>
                     <Skeleton variant="rounded" height={isXs ? 44 : 36} width={isXs ? '100%' : 156} />
                 </Box>
+                <Divider />
+                <WeightTrendSnapshot metric={null} isLoading unitLabel={unitLabel} />
             </Box>
         );
     } else if (metricsQuery.isError) {
@@ -174,12 +354,13 @@ const WeightSummaryCard: React.FC<WeightSummaryCardProps> = ({ date, onOpenWeigh
                         size={ctaSize}
                         startIcon={<WeightCtaIcon />}
                         onClick={onOpenWeightEntry}
-                        disabled={disabled}
                         fullWidth={isXs}
                     >
                         {ctaLabel}
                     </Button>
                 </Box>
+                <Divider />
+                <WeightTrendSnapshot metric={displayedTrendMetric} isLoading={trendMetricsQuery.isLoading} unitLabel={unitLabel} />
             </Box>
         );
     } else {
@@ -196,9 +377,12 @@ const WeightSummaryCard: React.FC<WeightSummaryCardProps> = ({ date, onOpenWeigh
                     <WeightIconTile sizePx={iconTileSizePx} />
 
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.25, flexGrow: 1, minWidth: 0 }}>
-                        <Typography variant={valueVariant} sx={{ lineHeight: 1.1 }}>
-                            {displayedWeightLabel}
-                        </Typography>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+                            <Typography variant={valueVariant} sx={{ lineHeight: 1.1 }}>
+                                {displayedWeightLabel}
+                            </Typography>
+                            {doneTodayChip}
+                        </Box>
                         <Typography variant="body2" sx={{
                             color: "text.secondary"
                         }}>
@@ -213,12 +397,13 @@ const WeightSummaryCard: React.FC<WeightSummaryCardProps> = ({ date, onOpenWeigh
                         size={ctaSize}
                         startIcon={<WeightCtaIcon />}
                         onClick={onOpenWeightEntry}
-                        disabled={disabled}
                         fullWidth={isXs}
                     >
                         {ctaLabel}
                     </Button>
                 </Box>
+                <Divider />
+                <WeightTrendSnapshot metric={displayedTrendMetric} isLoading={trendMetricsQuery.isLoading} unitLabel={unitLabel} />
             </Box>
         );
     }
@@ -231,26 +416,9 @@ const WeightSummaryCard: React.FC<WeightSummaryCardProps> = ({ date, onOpenWeigh
                 '&:last-child': { pb: WEIGHT_CARD_PADDING_SPACING }
             }}
         >
-                <SectionHeader
-                    title={t('weightSummary.title')}
-                    align="center"
-                    actions={
-                        isToday && !metricsQuery.isLoading && !metricsQuery.isError ? (
-                            <Chip
-                                size="small"
-                                color={metricForSelectedDate ? 'success' : 'warning'}
-                                variant="outlined"
-                                label={
-                                    metricForSelectedDate
-                                        ? t('weightSummary.chip.doneToday')
-                                        : t('weightSummary.chip.dueToday')
-                                }
-                            />
-                        ) : null
-                    }
-                />
+            <SectionHeader title={t('weightSummary.title')} align="center" />
 
-                <Box sx={{ mt: bodyMarginTop }}>{cardBody}</Box>
+            <Box sx={{ mt: bodyMarginTop }}>{cardBody}</Box>
         </AppCard>
     );
 };

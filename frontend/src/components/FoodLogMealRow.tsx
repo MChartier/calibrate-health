@@ -40,7 +40,6 @@ export type FoodLogMealRowProps = {
     isFirst?: boolean;
     isLast?: boolean;
     isExpanded: boolean;
-    disabled?: boolean;
     onAdd: (mealPeriod: MealPeriod) => void;
     onEdit: (entry: FoodLogMealEntry) => void;
     onDelete: (entry: FoodLogMealEntry) => void;
@@ -58,7 +57,6 @@ const EMPTY_MEAL_CHEVRON_SLOT_PX = 32; // Reserves the disclosure slot so empty 
 
 type FoodLogEntryRowProps = {
     entry: FoodLogMealEntry;
-    disabled: boolean;
     onEdit: (entry: FoodLogMealEntry) => void;
     onDelete: (entry: FoodLogMealEntry) => void;
 };
@@ -66,7 +64,7 @@ type FoodLogEntryRowProps = {
 /**
  * Quiet inline food entry row. Desktop edit/delete affordances reveal on hover/focus.
  */
-const FoodLogEntryRow: React.FC<FoodLogEntryRowProps> = ({ entry, disabled, onEdit, onDelete }) => {
+const FoodLogEntryRow: React.FC<FoodLogEntryRowProps> = ({ entry, onEdit, onDelete }) => {
     const { t } = useI18n();
     const servingLabel = formatServingSnapshotLabel({
         servingsConsumed: entry.servings_consumed ?? null,
@@ -91,7 +89,7 @@ const FoodLogEntryRow: React.FC<FoodLogEntryRowProps> = ({ entry, disabled, onEd
                     opacity: 1
                 },
                 '&:hover .food-entry-delete, &:focus-within .food-entry-delete': {
-                    color: disabled ? 'action.disabled' : 'error.main'
+                    color: 'error.main'
                 }
             }}
         >
@@ -144,7 +142,7 @@ const FoodLogEntryRow: React.FC<FoodLogEntryRowProps> = ({ entry, disabled, onEd
                 >
                     <Tooltip title={t('foodLog.editEntry')}>
                         <span>
-                            <IconButton size={ENTRY_ACTION_ICON_SIZE} onClick={() => onEdit(entry)} disabled={disabled}>
+                            <IconButton size={ENTRY_ACTION_ICON_SIZE} onClick={() => onEdit(entry)}>
                                 <EditRoundedIcon fontSize="small" />
                             </IconButton>
                         </span>
@@ -155,12 +153,9 @@ const FoodLogEntryRow: React.FC<FoodLogEntryRowProps> = ({ entry, disabled, onEd
                                 className="food-entry-delete"
                                 size={ENTRY_ACTION_ICON_SIZE}
                                 onClick={() => onDelete(entry)}
-                                disabled={disabled}
                                 sx={{
                                     color: (theme) =>
-                                        disabled
-                                            ? theme.palette.action.disabled
-                                            : alpha(theme.palette.error.main, theme.palette.mode === 'dark' ? 0.5 : 0.42),
+                                        alpha(theme.palette.error.main, theme.palette.mode === 'dark' ? 0.5 : 0.42),
                                     transition: 'color 120ms ease'
                                 }}
                             >
@@ -186,7 +181,6 @@ const FoodLogMealRow: React.FC<FoodLogMealRowProps> = ({
     isFirst = false,
     isLast = false,
     isExpanded,
-    disabled = false,
     onAdd,
     onEdit,
     onDelete,
@@ -290,7 +284,6 @@ const FoodLogMealRow: React.FC<FoodLogMealRowProps> = ({
                         variant="text"
                         startIcon={<AddRoundedIcon />}
                         onClick={() => onAdd(mealPeriod)}
-                        disabled={disabled}
                         sx={{
                             flexShrink: 0,
                             color: { xs: 'primary.main', md: 'text.secondary' },
@@ -343,7 +336,6 @@ const FoodLogMealRow: React.FC<FoodLogMealRowProps> = ({
                                 <FoodLogEntryRow
                                     key={entry.id}
                                     entry={entry}
-                                    disabled={disabled}
                                     onEdit={onEdit}
                                     onDelete={onDelete}
                                 />
