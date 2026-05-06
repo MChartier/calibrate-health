@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
+import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/useAuth';
 import type { LogDateNavigationState } from '../context/quickAddFabState';
 import {
@@ -12,6 +13,10 @@ import {
 import { fetchFoodLog, foodLogQueryKey } from '../queries/foodLog';
 
 type LogDateBounds = { min: string; max: string };
+
+export const LOG_DATE_QUERY_PARAM = 'date';
+
+const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
 export type LogDateNavigationResult = {
     selectedDate: string;
@@ -40,10 +45,20 @@ function getLogDateBounds(args: { todayIso: string; createdAtIso?: string; timeZ
 }
 
 /**
+ * Read a route-level date param only when it has the app's date-only shape.
+ */
+function getRouteDateParam(searchParams: URLSearchParams): string | null {
+    const rawDate = searchParams.get(LOG_DATE_QUERY_PARAM);
+    if (!rawDate || !DATE_ONLY_PATTERN.test(rawDate)) return null;
+    return rawDate;
+}
+
+/**
  * Shared local-day navigation state for Today and Log views.
  */
 export function useLogDateNavigationState(): LogDateNavigationResult {
     const queryClient = useQueryClient();
+    const [searchParams, setSearchParams] = useSearchParams();
     const { user } = useAuth();
     const timeZone = useMemo(
         () => user?.timezone?.trim() || Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
@@ -55,17 +70,34 @@ export function useLogDateNavigationState(): LogDateNavigationResult {
         return getLogDateBounds({ todayIso: today, createdAtIso: user?.created_at, timeZone });
     }, [today, timeZone, user?.created_at]);
 
-    const [selectedDate, setSelectedDate] = useState(() => today);
+    const routeDate = useMemo(() => getRouteDateParam(searchParams), [searchParams]);
+    const [selectedDate, setSelectedDate] = useState(() => routeDate ?? today);
 
     useEffect(() => {
         setSelectedDate((prev) => {
-            const clamped = clampIsoDate(prev, dateBounds);
+            const clamped = clampIsoDate(routeDate ?? prev, dateBounds);
             return clamped === prev ? prev : clamped;
         });
-    }, [dateBounds]);
+    }, [dateBounds, routeDate]);
 
     const effectiveDate = clampIsoDate(selectedDate, dateBounds);
     const effectiveDateLabel = useMemo(() => formatIsoDateForDisplay(effectiveDate), [effectiveDate]);
+
+    useEffect(() => {
+        const rawRouteDate = searchParams.get(LOG_DATE_QUERY_PARAM);
+        const nextParams = new URLSearchParams(searchParams);
+
+        if (effectiveDate === today) {
+            if (!rawRouteDate) return;
+            nextParams.delete(LOG_DATE_QUERY_PARAM);
+            setSearchParams(nextParams, { replace: true });
+            return;
+        }
+
+        if (rawRouteDate === effectiveDate) return;
+        nextParams.set(LOG_DATE_QUERY_PARAM, effectiveDate);
+        setSearchParams(nextParams, { replace: true });
+    }, [effectiveDate, searchParams, setSearchParams, today]);
 
     useEffect(() => {
         const prevDate = addDaysToIsoDate(effectiveDate, -1);

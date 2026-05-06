@@ -7,6 +7,7 @@ import { AuthProvider } from './context/AuthContext.tsx'
 import { ThemeModeProvider } from './context/ThemeModeContext.tsx'
 import { registerSW } from 'virtual:pwa-register'
 import { I18nFromAuth } from './i18n/I18nFromAuth.tsx'
+import { publishPwaRuntimeState } from './pwa/runtime.ts'
 
 const queryClient = new QueryClient()
 
@@ -47,7 +48,15 @@ function shouldRegisterServiceWorker(): boolean {
  * Register the PWA service worker so production stays installable and opt-in dev can validate push.
  */
 function registerServiceWorker() {
-  registerSW({ immediate: true })
+  const updateServiceWorker = registerSW({
+    immediate: true,
+    onNeedRefresh() {
+      publishPwaRuntimeState({
+        updateAvailable: true,
+        updateServiceWorker: () => updateServiceWorker(true),
+      })
+    },
+  })
 }
 
 /**

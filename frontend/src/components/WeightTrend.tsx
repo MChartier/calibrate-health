@@ -63,6 +63,7 @@ const RANGE_WINDOW_DAYS: Record<PannableMetricsRange, number> = {
 
 const TODAY_TREND_CHART_HEIGHT_PX = { xs: 200, md: 226 }; // Compact height keeps the trend contextual rather than competing with food logging.
 const TODAY_TREND_CHART_FILL_MIN_HEIGHT_PX = 226; // Minimum chart body when the Today rail stretches to match the food log.
+const WEIGHT_TREND_FULLSCREEN_CHART_MIN_HEIGHT_PX = { xs: 360, sm: 440 }; // Full-screen history keeps the chart dominant in portrait and landscape.
 const TODAY_TREND_MARGIN_COMPACT = { top: 8, right: 6, bottom: 26, left: 30 }; // Compact margin maximizes chart width in narrow panels.
 const TODAY_TREND_MARGIN_DEFAULT = { top: 6, right: 6, bottom: 26, left: 30 }; // Desktop margin avoids the oversized left gutter from the full goals page.
 const TODAY_TREND_MARGIN_FILL = { top: 4, right: 12, bottom: 2, left: 2 }; // Flexible Today chart keeps a small right buffer so edge markers do not clip.
@@ -93,6 +94,12 @@ export type WeightTrendProps = {
      * Stretch the Today workspace trend card so the right rail can align with the food log.
      */
     fillAvailableHeight?: boolean;
+    /**
+     * Expand the history card to fill its route container for the dedicated history view.
+     */
+    fullScreen?: boolean;
+    /** Optional header action, such as a link from the compact Today preview to full history. */
+    action?: React.ReactNode;
     /** Optional wrapper styles used by dashboard grid alignment. */
     sx?: SxProps<Theme>;
 };
@@ -334,16 +341,23 @@ const WeightTrendLegend: React.FC<WeightTrendLegendProps> = ({
 );
 
 /**
- * Full-featured weight trend panel for the Today workspace and mobile goal views.
+ * Full-featured weight trend panel for Today previews and the dedicated history route.
  */
-const WeightTrend: React.FC<WeightTrendProps> = ({ fillAvailableHeight = false, sx }) => {
+const WeightTrend: React.FC<WeightTrendProps> = ({ fillAvailableHeight = false, fullScreen = false, action, sx }) => {
     const { user } = useAuth();
     const { t } = useI18n();
     const theme = useTheme();
     const isCompactViewport = useMediaQuery(theme.breakpoints.down('sm'));
+    const shouldStretchChart = fillAvailableHeight || fullScreen;
+    const chartLibraryAnimationSkipped = !fullScreen; // Compact previews mount in tabs; skipping chart tween avoids transient SVG NaN coordinates.
+    const chartAxisHighlight = chartLibraryAnimationSkipped ? { x: 'none' as const, y: 'none' as const } : undefined;
+    const tooltipTrigger = chartLibraryAnimationSkipped ? 'none' as const : 'axis' as const; // Compact previews do not need pointer tooltips, and disabling them prevents hidden-tab axis math warnings.
     const [selectedRange, setSelectedRange] = useState<MetricsRange>(METRICS_RANGE_OPTIONS.MONTH);
     const [panWindowIndex, setPanWindowIndex] = useState(0);
     const [rawMarksVisible, setRawMarksVisible] = useState(true);
+    const [chartContainerWidth, setChartContainerWidth] = useState<number | null>(null);
+    const [chartContainerHeight, setChartContainerHeight] = useState<number | null>(null);
+    const chartContainerRef = useRef<HTMLDivElement | null>(null);
     const markRevealTimeoutRef = useRef<number | null>(null);
     const unitLabel = user?.weight_unit === 'LB' ? 'lb' : 'kg';
     const rawWeightSeriesLabel = t('goals.weightSeriesLabel', { unit: unitLabel });
@@ -415,7 +429,7 @@ const WeightTrend: React.FC<WeightTrendProps> = ({ fillAvailableHeight = false, 
             markRevealTimeoutRef.current = null;
         }
 
-        if (points.length === 0) {
+        if (points.length === 0 || chartLibraryAnimationSkipped) {
             setRawMarksVisible(true);
             return;
         }
@@ -425,7 +439,7 @@ const WeightTrend: React.FC<WeightTrendProps> = ({ fillAvailableHeight = false, 
             setRawMarksVisible(true);
             markRevealTimeoutRef.current = null;
         }, CHART_LINE_ANIMATION_DURATION_MS + RAW_MARK_REVEAL_BUFFER_MS);
-    }, [points.length]);
+    }, [chartLibraryAnimationSkipped, points.length]);
 
     useEffect(() => {
         return () => {
@@ -434,49 +448,6 @@ const WeightTrend: React.FC<WeightTrendProps> = ({ fillAvailableHeight = false, 
             }
         };
     }, []);
-
-    const chartPoints = useMemo(() => {
-        if (points.length === 0) return [];
-
-        const rows: ChartPoint[] = [
-            {
-                date: points[0].date,
-                rawWeight: points[0].rawWeight,
-                trendWeight: points[0].trendWeight,
-                rangeLower: points[0].rangeLower,
-                rangeUpper: points[0].rangeUpper
-            }
-        ];
-
-        for (let index = 1; index < points.length; index += 1) {
-            const previousPoint = points[index - 1];
-            const currentPoint = points[index];
-            const gapDays = Math.round(
-                (startOfLocalDay(currentPoint.date).getTime() - startOfLocalDay(previousPoint.date).getTime()) / MS_PER_DAY
-            );
-
-            if (gapDays > CHART_GAP_BREAK_DAYS) {
-                const midpointDate = new Date(previousPoint.date.getTime() + (currentPoint.date.getTime() - previousPoint.date.getTime()) / 2);
-                rows.push({
-                    date: midpointDate,
-                    rawWeight: null,
-                    trendWeight: null,
-                    rangeLower: null,
-                    rangeUpper: null
-                });
-            }
-
-            rows.push({
-                date: currentPoint.date,
-                rawWeight: currentPoint.rawWeight,
-                trendWeight: currentPoint.trendWeight,
-                rangeLower: currentPoint.rangeLower,
-                rangeUpper: currentPoint.rangeUpper
-            });
-        }
-
-        return rows;
-    }, [points]);
 
     const dataDomain = useMemo(() => {
         if (points.length === 0) return null;
@@ -510,6 +481,57 @@ const WeightTrend: React.FC<WeightTrendProps> = ({ fillAvailableHeight = false, 
         []
     );
 
+    const visiblePoints = useMemo(() => {
+        if (!xDomain) return points;
+        const minMs = startOfLocalDay(xDomain.min).getTime();
+        const maxMs = startOfLocalDay(xDomain.max).getTime();
+        return points.filter((point) => {
+            const pointMs = startOfLocalDay(point.date).getTime();
+            return pointMs >= minMs && pointMs <= maxMs;
+        });
+    }, [points, xDomain]);
+    const chartPoints = useMemo(() => {
+        if (visiblePoints.length === 0) return [];
+
+        const rows: ChartPoint[] = [
+            {
+                date: visiblePoints[0].date,
+                rawWeight: visiblePoints[0].rawWeight,
+                trendWeight: visiblePoints[0].trendWeight,
+                rangeLower: visiblePoints[0].rangeLower,
+                rangeUpper: visiblePoints[0].rangeUpper
+            }
+        ];
+
+        for (let index = 1; index < visiblePoints.length; index += 1) {
+            const previousPoint = visiblePoints[index - 1];
+            const currentPoint = visiblePoints[index];
+            const gapDays = Math.round(
+                (startOfLocalDay(currentPoint.date).getTime() - startOfLocalDay(previousPoint.date).getTime()) / MS_PER_DAY
+            );
+
+            if (gapDays > CHART_GAP_BREAK_DAYS) {
+                const midpointDate = new Date(previousPoint.date.getTime() + (currentPoint.date.getTime() - previousPoint.date.getTime()) / 2);
+                rows.push({
+                    date: midpointDate,
+                    rawWeight: null,
+                    trendWeight: null,
+                    rangeLower: null,
+                    rangeUpper: null
+                });
+            }
+
+            rows.push({
+                date: currentPoint.date,
+                rawWeight: currentPoint.rawWeight,
+                trendWeight: currentPoint.trendWeight,
+                rangeLower: currentPoint.rangeLower,
+                rangeUpper: currentPoint.rangeUpper
+            });
+        }
+
+        return rows;
+    }, [visiblePoints]);
     const xData = useMemo(() => chartPoints.map((point) => point.date), [chartPoints]);
     const rawData = useMemo(() => chartPoints.map((point) => point.rawWeight), [chartPoints]);
     const trendData = useMemo(() => chartPoints.map((point) => point.trendWeight), [chartPoints]);
@@ -522,15 +544,6 @@ const WeightTrend: React.FC<WeightTrendProps> = ({ fillAvailableHeight = false, 
             ),
         [chartPoints]
     );
-    const visiblePoints = useMemo(() => {
-        if (!xDomain) return points;
-        const minMs = startOfLocalDay(xDomain.min).getTime();
-        const maxMs = startOfLocalDay(xDomain.max).getTime();
-        return points.filter((point) => {
-            const pointMs = startOfLocalDay(point.date).getTime();
-            return pointMs >= minMs && pointMs <= maxMs;
-        });
-    }, [points, xDomain]);
 
     const targetWeight = goalQuery.data?.target_weight;
     const targetIsValid = typeof targetWeight === 'number' && Number.isFinite(targetWeight);
@@ -546,6 +559,12 @@ const WeightTrend: React.FC<WeightTrendProps> = ({ fillAvailableHeight = false, 
         const padding = range * 0.1;
         return { min: min - padding, max: max + padding };
     }, [targetIsValid, targetWeight, visiblePoints]);
+    const canRenderTargetLine =
+        fullScreen &&
+        targetIsValid &&
+        yDomain !== null &&
+        xDomain !== null &&
+        xDomain.max.getTime() > xDomain.min.getTime();
 
     const canPanBackward = useMemo(() => {
         if (!requestedWindow || !earliestMetricDateIso) return false;
@@ -574,7 +593,92 @@ const WeightTrend: React.FC<WeightTrendProps> = ({ fillAvailableHeight = false, 
         }
     }, [t, trendMeta?.volatility]);
     const defaultChartHeight = isCompactViewport ? TODAY_TREND_CHART_HEIGHT_PX.xs : TODAY_TREND_CHART_HEIGHT_PX.md;
-    const chartHeight = fillAvailableHeight ? undefined : defaultChartHeight;
+    const fullScreenMinChartHeight = isCompactViewport
+        ? WEIGHT_TREND_FULLSCREEN_CHART_MIN_HEIGHT_PX.xs
+        : WEIGHT_TREND_FULLSCREEN_CHART_MIN_HEIGHT_PX.sm;
+    const stretchedMinChartHeight = fullScreen ? fullScreenMinChartHeight : TODAY_TREND_CHART_FILL_MIN_HEIGHT_PX;
+    const chartHeight = shouldStretchChart ? chartContainerHeight ?? stretchedMinChartHeight : defaultChartHeight;
+    const chartHasMeasuredContainer = chartContainerWidth !== null && (!shouldStretchChart || chartContainerHeight !== null); // MUI Charts needs real dimensions before it can compute stable SVG coordinates.
+    const cardTitle = fullScreen ? t('goals.weightHistoryTitle') : t('today.weightTrend.title');
+    const chartContainerSx: SxProps<Theme> | undefined = (() => {
+        if (fillAvailableHeight) {
+            return {
+                flex: 1,
+                minHeight: TODAY_TREND_CHART_FILL_MIN_HEIGHT_PX,
+                minWidth: 0,
+                width: '100%',
+                height: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                '& > *': {
+                    width: '100%',
+                    height: '100%'
+                }
+            };
+        }
+
+        if (fullScreen) {
+            return {
+                flex: 1,
+                minHeight: WEIGHT_TREND_FULLSCREEN_CHART_MIN_HEIGHT_PX,
+                minWidth: 0,
+                width: '100%',
+                height: '100%',
+                display: 'flex',
+                alignItems: 'stretch',
+                justifyContent: 'center',
+                '& > *': {
+                    width: '100%',
+                    height: '100%'
+                }
+            };
+        }
+
+        return {
+            minHeight: defaultChartHeight,
+            minWidth: 0,
+            width: '100%'
+        };
+    })();
+
+    useEffect(() => {
+        const node = chartContainerRef.current;
+        if (!node) return;
+
+        let animationFrame: number | null = null;
+        const measureHeight = () => {
+            if (animationFrame !== null) {
+                window.cancelAnimationFrame(animationFrame);
+            }
+
+            animationFrame = window.requestAnimationFrame(() => {
+                const rect = node.getBoundingClientRect();
+                const nextWidth = Math.floor(rect.width);
+                if (nextWidth > 0) {
+                    setChartContainerWidth((currentWidth) => (currentWidth === nextWidth ? currentWidth : nextWidth));
+                }
+                if (shouldStretchChart) {
+                    const nextHeight = Math.max(stretchedMinChartHeight, Math.floor(rect.height));
+                    setChartContainerHeight((currentHeight) => (currentHeight === nextHeight ? currentHeight : nextHeight));
+                } else {
+                    setChartContainerHeight(null);
+                }
+                animationFrame = null;
+            });
+        };
+
+        measureHeight();
+        const observer = new ResizeObserver(measureHeight);
+        observer.observe(node);
+
+        return () => {
+            if (animationFrame !== null) {
+                window.cancelAnimationFrame(animationFrame);
+            }
+            observer.disconnect();
+        };
+    }, [defaultChartHeight, shouldStretchChart, stretchedMinChartHeight]);
 
     const weightHistoryTooltipContent = (
         <Box sx={{ maxWidth: WEIGHT_HISTORY_TOOLTIP_MAX_WIDTH_PX, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
@@ -636,167 +740,163 @@ const WeightTrend: React.FC<WeightTrendProps> = ({ fillAvailableHeight = false, 
         content = (
             <Stack spacing={1}>
                 <Skeleton variant="rounded" height={36} />
-                <Skeleton variant="rounded" height={chartHeight} />
+                <Skeleton variant="rounded" height={chartHeight ?? TODAY_TREND_CHART_FILL_MIN_HEIGHT_PX} />
             </Stack>
         );
     } else if (points.length === 0) {
         content = <Typography sx={{ color: 'text.secondary' }}>{t('goals.noWeightEntries')}</Typography>;
     } else {
         content = (
-            <Stack spacing={1} sx={fillAvailableHeight ? { minHeight: 0, height: '100%' } : undefined}>
+            <Stack spacing={1} sx={shouldStretchChart ? { minHeight: 0, height: '100%', flex: 1 } : undefined}>
                 {controlsRow}
-                <Box
-                    sx={
-                        fillAvailableHeight
-                            ? {
-                                flex: 1,
-                                minHeight: TODAY_TREND_CHART_FILL_MIN_HEIGHT_PX,
-                                minWidth: 0,
-                                width: '100%',
-                                height: '100%',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                '& > *': {
-                                    width: '100%',
-                                    height: '100%'
+                <Box ref={chartContainerRef} sx={chartContainerSx}>
+                    {chartHasMeasuredContainer ? (
+                        <LineChart
+                            xAxis={[
+                                {
+                                    data: xData,
+                                    scaleType: 'time',
+                                    domainLimit: 'strict',
+                                    min: xDomain?.min,
+                                    max: xDomain?.max,
+                                    height: fillAvailableHeight ? TODAY_TREND_X_AXIS_HEIGHT_PX : undefined,
+                                    tickSize: fillAvailableHeight ? 0 : undefined,
+                                    valueFormatter: (value, context) =>
+                                        context?.location === 'tooltip'
+                                            ? tooltipDateFormatter.format(value)
+                                            : xAxisFormatter.format(value)
                                 }
-                            }
-                            : undefined
-                    }
-                >
-                    <LineChart
-                        xAxis={[
-                            {
-                                data: xData,
-                                scaleType: 'time',
-                                domainLimit: 'strict',
-                                min: xDomain?.min,
-                                max: xDomain?.max,
-                                height: fillAvailableHeight ? TODAY_TREND_X_AXIS_HEIGHT_PX : undefined,
-                                tickSize: fillAvailableHeight ? 0 : undefined,
-                                valueFormatter: (value, context) =>
-                                    context?.location === 'tooltip'
-                                        ? tooltipDateFormatter.format(value)
-                                        : xAxisFormatter.format(value)
-                            }
-                        ]}
-                        yAxis={[
-                            {
-                                min: yDomain?.min,
-                                max: yDomain?.max,
-                                width: fillAvailableHeight ? TODAY_TREND_Y_AXIS_WIDTH_PX : undefined,
-                                tickSize: fillAvailableHeight ? 0 : undefined
-                            }
-                        ]}
-                        series={[
-                            {
-                                id: 'expectedRangeBaseline',
-                                data: rangeLowerData,
-                                stack: 'expectedRange',
-                                color: 'transparent',
-                                showMark: false,
-                                connectNulls: false,
-                                valueFormatter: () => null
-                            },
-                            {
-                                id: 'expectedRangeBand',
-                                data: rangeBandData,
-                                stack: 'expectedRange',
-                                area: true,
-                                color: expectedRangeFillColor,
-                                showMark: false,
-                                connectNulls: false,
-                                valueFormatter: () => null
-                            },
-                            {
-                                id: 'expectedRangeTooltip',
-                                data: trendData,
-                                label: expectedRangeLabel,
-                                color: 'transparent',
-                                showMark: false,
-                                connectNulls: false,
-                                valueFormatter: (_value, context) => {
-                                    const lower = rangeLowerData[context.dataIndex];
-                                    const upper = rangeUpperData[context.dataIndex];
-                                    if (
-                                        typeof lower !== 'number' ||
-                                        !Number.isFinite(lower) ||
-                                        typeof upper !== 'number' ||
-                                        !Number.isFinite(upper)
-                                    ) {
-                                        return null;
+                            ]}
+                            yAxis={[
+                                {
+                                    min: yDomain?.min,
+                                    max: yDomain?.max,
+                                    width: fillAvailableHeight ? TODAY_TREND_Y_AXIS_WIDTH_PX : undefined,
+                                    tickSize: fillAvailableHeight ? 0 : undefined
+                                }
+                            ]}
+                            series={[
+                                {
+                                    id: 'expectedRangeBaseline',
+                                    data: rangeLowerData,
+                                    stack: 'expectedRange',
+                                    color: 'transparent',
+                                    showMark: false,
+                                    connectNulls: false,
+                                    valueFormatter: () => null
+                                },
+                                {
+                                    id: 'expectedRangeBand',
+                                    data: rangeBandData,
+                                    stack: 'expectedRange',
+                                    area: true,
+                                    color: expectedRangeFillColor,
+                                    showMark: false,
+                                    connectNulls: false,
+                                    valueFormatter: () => null
+                                },
+                                {
+                                    id: 'expectedRangeTooltip',
+                                    data: trendData,
+                                    label: expectedRangeLabel,
+                                    color: 'transparent',
+                                    showMark: false,
+                                    connectNulls: false,
+                                    valueFormatter: (_value, context) => {
+                                        const lower = rangeLowerData[context.dataIndex];
+                                        const upper = rangeUpperData[context.dataIndex];
+                                        if (
+                                            typeof lower !== 'number' ||
+                                            !Number.isFinite(lower) ||
+                                            typeof upper !== 'number' ||
+                                            !Number.isFinite(upper)
+                                        ) {
+                                            return null;
+                                        }
+                                        return `${lower.toFixed(1)} - ${upper.toFixed(1)} ${unitLabel}`;
                                     }
-                                    return `${lower.toFixed(1)} - ${upper.toFixed(1)} ${unitLabel}`;
+                                },
+                                {
+                                    id: 'trend',
+                                    data: trendData,
+                                    label: trendSeriesLabel,
+                                    color: trendLineColor,
+                                    showMark: false,
+                                    connectNulls: false,
+                                    valueFormatter: (value) => (value == null ? null : `${value.toFixed(1)} ${unitLabel}`)
+                                },
+                                {
+                                    id: 'raw',
+                                    data: rawData,
+                                    label: rawWeightSeriesLabel,
+                                    color: rawLineColor,
+                                    showMark: true,
+                                    shape: 'circle',
+                                    connectNulls: false,
+                                    valueFormatter: (value) => (value == null ? null : `${value.toFixed(1)} ${unitLabel}`)
                                 }
-                            },
-                            {
-                                id: 'trend',
-                                data: trendData,
-                                label: trendSeriesLabel,
-                                color: trendLineColor,
-                                showMark: false,
-                                connectNulls: false,
-                                valueFormatter: (value) => (value == null ? null : `${value.toFixed(1)} ${unitLabel}`)
-                            },
-                            {
-                                id: 'raw',
-                                data: rawData,
-                                label: rawWeightSeriesLabel,
-                                color: rawLineColor,
-                                showMark: true,
-                                shape: 'circle',
-                                connectNulls: false,
-                                valueFormatter: (value) => (value == null ? null : `${value.toFixed(1)} ${unitLabel}`)
-                            }
-                        ]}
-                        height={chartHeight}
-                        margin={chartMargin}
-                        hideLegend
-                        slotProps={{ tooltip: { trigger: 'axis' } }}
-                        sx={{
-                            width: '100%',
-                            ...(fillAvailableHeight ? { height: '100%' } : null),
-                            [`& .${lineClasses.area}[data-series="expectedRangeBand"]`]: {
-                                fill: expectedRangeFillColor,
-                                fillOpacity: 1
-                            },
-                            [`& .${lineClasses.line}[data-series="expectedRangeBand"]`]: {
-                                stroke: expectedRangeEdgeColor,
-                                strokeWidth: 1
-                            },
-                            [`& .${lineClasses.line}[data-series="trend"]`]: {
-                                strokeWidth: TREND_LINE_STROKE_WIDTH_PX
-                            },
-                            [`& .${lineClasses.line}[data-series="raw"]`]: {
-                                strokeWidth: RAW_LINE_STROKE_WIDTH_PX
-                            },
-                            [`& .${lineClasses.mark}[data-series="raw"]`]: {
-                                stroke: rawLineColor,
-                                strokeWidth: RAW_MARK_STROKE_WIDTH_PX,
-                                opacity: rawMarksVisible ? 1 : 0,
-                                transform: rawMarksVisible ? 'scale(1)' : `scale(${RAW_MARK_HIDDEN_SCALE})`,
-                                transformOrigin: 'center',
-                                transition: `opacity ${RAW_MARK_FADE_IN_DURATION_MS}ms ${RAW_MARK_FADE_EASING}, transform ${RAW_MARK_FADE_IN_DURATION_MS}ms ${RAW_MARK_FADE_EASING}`
-                            }
-                        }}
-                    >
-                        {targetIsValid && (
-                            <ChartsReferenceLine
-                                y={targetWeight}
-                                label={t('goals.targetLineLabel', {
-                                    value: targetWeight.toFixed(1),
-                                    unit: unitLabel
-                                })}
-                                lineStyle={{
-                                    stroke: theme.palette.secondary.main,
-                                    strokeDasharray: '6 6',
-                                    strokeWidth: 2
-                                }}
-                                labelStyle={{ fill: theme.palette.text.secondary, fontWeight: 700 }}
-                            />
-                        )}
-                    </LineChart>
+                            ]}
+                            width={chartContainerWidth ?? undefined}
+                            height={chartHeight}
+                            margin={chartMargin}
+                            hideLegend
+                            skipAnimation={chartLibraryAnimationSkipped}
+                            axisHighlight={chartAxisHighlight}
+                            disableLineItemHighlight={chartLibraryAnimationSkipped}
+                            slotProps={{ tooltip: { trigger: tooltipTrigger } }}
+                            sx={{
+                                width: '100%',
+                                ...(shouldStretchChart ? { height: '100%' } : null),
+                                [`& .${lineClasses.area}[data-series="expectedRangeBand"]`]: {
+                                    fill: expectedRangeFillColor,
+                                    fillOpacity: 1
+                                },
+                                [`& .${lineClasses.line}[data-series="expectedRangeBand"]`]: {
+                                    stroke: expectedRangeEdgeColor,
+                                    strokeWidth: 1
+                                },
+                                [`& .${lineClasses.line}[data-series="trend"]`]: {
+                                    strokeWidth: TREND_LINE_STROKE_WIDTH_PX
+                                },
+                                [`& .${lineClasses.line}[data-series="raw"]`]: {
+                                    strokeWidth: RAW_LINE_STROKE_WIDTH_PX
+                                },
+                                [`& .${lineClasses.mark}[data-series="raw"]`]: {
+                                    stroke: rawLineColor,
+                                    strokeWidth: RAW_MARK_STROKE_WIDTH_PX,
+                                    opacity: rawMarksVisible ? 1 : 0,
+                                    transform: rawMarksVisible ? 'scale(1)' : `scale(${RAW_MARK_HIDDEN_SCALE})`,
+                                    transformOrigin: 'center',
+                                    transition: `opacity ${RAW_MARK_FADE_IN_DURATION_MS}ms ${RAW_MARK_FADE_EASING}, transform ${RAW_MARK_FADE_IN_DURATION_MS}ms ${RAW_MARK_FADE_EASING}`
+                                }
+                            }}
+                        >
+                            {canRenderTargetLine && (
+                                <ChartsReferenceLine
+                                    y={targetWeight}
+                                    label={t('goals.targetLineLabel', {
+                                        value: targetWeight.toFixed(1),
+                                        unit: unitLabel
+                                    })}
+                                    lineStyle={{
+                                        stroke: theme.palette.secondary.main,
+                                        strokeDasharray: '6 6',
+                                        strokeWidth: 2
+                                    }}
+                                    labelStyle={{ fill: theme.palette.text.secondary, fontWeight: 700 }}
+                                />
+                            )}
+                        </LineChart>
+                    ) : (
+                        <Skeleton
+                            variant="rounded"
+                            height={shouldStretchChart ? '100%' : defaultChartHeight}
+                            sx={{
+                                width: '100%',
+                                minHeight: shouldStretchChart ? stretchedMinChartHeight : defaultChartHeight
+                            }}
+                        />
+                    )}
                 </Box>
 
                 <WeightTrendLegend
@@ -816,11 +916,11 @@ const WeightTrend: React.FC<WeightTrendProps> = ({ fillAvailableHeight = false, 
 
     return (
         <AppCard
-            sx={mergeSx(fillAvailableHeight ? { height: '100%' } : null, sx)}
+            sx={mergeSx(shouldStretchChart ? { height: '100%', minHeight: 0 } : null, sx)}
             contentSx={{
                 p: { xs: 1.25, sm: 1.5 },
                 '&:last-child': { pb: { xs: 1.25, sm: 1.5 } },
-                ...(fillAvailableHeight
+                ...(shouldStretchChart
                     ? {
                         height: '100%',
                         display: 'flex',
@@ -830,21 +930,25 @@ const WeightTrend: React.FC<WeightTrendProps> = ({ fillAvailableHeight = false, 
                     : null)
             }}
         >
-            <Stack spacing={1.25} sx={fillAvailableHeight ? { height: '100%', minHeight: 0 } : undefined}>
+            <Stack spacing={1.25} sx={shouldStretchChart ? { height: '100%', minHeight: 0, flex: 1 } : undefined}>
                 <Box
                     sx={{
                         display: 'flex',
                         alignItems: 'flex-start',
                         justifyContent: 'space-between',
-                        gap: 1
+                        gap: 1,
+                        flexWrap: { xs: 'wrap', sm: 'nowrap' }
                     }}
                 >
-                    <Typography variant="h6">{t('today.weightTrend.title')}</Typography>
-                    <Tooltip title={weightHistoryTooltipContent} arrow enterTouchDelay={0}>
-                        <IconButton size="small" aria-label={t('goals.weightHistoryExplainer.tooltipAria')}>
-                            <InfoOutlinedIcon fontSize="small" />
-                        </IconButton>
-                    </Tooltip>
+                    <Typography variant="h6" sx={{ minWidth: 0, flexGrow: 1 }}>{cardTitle}</Typography>
+                    <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5, ml: 'auto' }}>
+                        {action}
+                        <Tooltip title={weightHistoryTooltipContent} arrow enterTouchDelay={0}>
+                            <IconButton size="small" aria-label={t('goals.weightHistoryExplainer.tooltipAria')}>
+                                <InfoOutlinedIcon fontSize="small" />
+                            </IconButton>
+                        </Tooltip>
+                    </Box>
                 </Box>
                 {content}
             </Stack>

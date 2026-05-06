@@ -9,6 +9,7 @@ export type TodayHeaderProps = {
 };
 
 const TODAY_TITLE_ROW_MIN_HEIGHT_PX = 40; // Keeps the title aligned with the centered date navigation controls.
+const TODAY_TITLE_DISPLAY = { xs: 'none', md: 'flex' } as const; // Below desktop, the date picker is the visible date context.
 
 /**
  * Header for the Today workspace: selected-day title on the left, date controls centered.
@@ -21,7 +22,7 @@ const TodayHeader: React.FC<TodayHeaderProps> = ({ navigation }) => {
     return (
         <Box
             sx={{
-                display: 'grid',
+                display: { xs: 'grid', sm: 'none', md: 'grid' },
                 gridTemplateColumns: '1fr',
                 gap: { xs: 1, sm: 1.5, md: 2 },
                 alignItems: 'center'
@@ -30,7 +31,7 @@ const TodayHeader: React.FC<TodayHeaderProps> = ({ navigation }) => {
             <Stack spacing={0.75} sx={{ minWidth: 0 }}>
                 <Box
                     sx={{
-                        display: 'flex',
+                        display: TODAY_TITLE_DISPLAY,
                         alignItems: 'center',
                         gap: 1,
                         flexWrap: 'wrap',

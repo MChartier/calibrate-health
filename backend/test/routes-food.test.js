@@ -116,7 +116,16 @@ test('food route: GET /search calls provider.searchFoods and returns provider me
 
   const router = loadFoodRouter({
     prismaStub: {},
-    foodDataStub: { getFoodDataProvider: () => providerStub }
+    foodDataStub: {
+      getEnabledFoodDataProviders: () => ({
+        primary: { name: 'openFoodFacts', label: 'Open Food Facts', supportsBarcodeLookup: true, ready: true },
+        providers: [{ name: 'openFoodFacts', label: 'Open Food Facts', supportsBarcodeLookup: true, ready: true }]
+      }),
+      getFoodDataProviderByName: (name) => {
+        if (name === 'openFoodFacts') return { provider: providerStub };
+        return { error: 'unknown provider' };
+      }
+    }
   });
 
   const handler = getRouteHandler(router, 'get', '/search');
@@ -141,6 +150,104 @@ test('food route: GET /search calls provider.searchFoods and returns provider me
   assert.equal(res.body.provider, 'openFoodFacts');
   assert.equal(res.body.supportsBarcodeLookup, true);
   assert.equal(Array.isArray(res.body.items), true);
+});
+
+test('food route: GET /search keeps text pagination pinned when a provider returns no matches', async () => {
+  const callOrder = [];
+  const providerA = {
+    name: 'fatsecret',
+    supportsBarcodeLookup: true,
+    searchFoods: async () => {
+      callOrder.push('fatsecret');
+      return { items: [] };
+    }
+  };
+  const providerB = {
+    name: 'usda',
+    supportsBarcodeLookup: true,
+    searchFoods: async () => {
+      callOrder.push('usda');
+      return { items: [{ id: '2', source: 'usda', description: 'Apple', availableMeasures: [] }] };
+    }
+  };
+
+  const router = loadFoodRouter({
+    prismaStub: {},
+    foodDataStub: {
+      getEnabledFoodDataProviders: () => ({
+        primary: { name: 'fatsecret', label: 'FatSecret', supportsBarcodeLookup: true, ready: true },
+        providers: [
+          { name: 'fatsecret', label: 'FatSecret', supportsBarcodeLookup: true, ready: true },
+          { name: 'usda', label: 'USDA FoodData Central', supportsBarcodeLookup: true, ready: true }
+        ]
+      }),
+      getFoodDataProviderByName: (name) => {
+        if (name === 'fatsecret') return { provider: providerA };
+        if (name === 'usda') return { provider: providerB };
+        return { error: 'unknown provider' };
+      }
+    }
+  });
+
+  const handler = getRouteHandler(router, 'get', '/search');
+  const req = { query: { q: 'apple', page: '2' }, headers: {} };
+  const res = createRes();
+
+  await handler(req, res);
+
+  assert.equal(res.statusCode, 200);
+  assert.equal(res.body.provider, 'fatsecret');
+  assert.equal(res.body.items.length, 0);
+  assert.deepEqual(callOrder, ['fatsecret']);
+});
+
+test('food route: GET /search falls back to the next provider when text search errors', async () => {
+  const callOrder = [];
+  const providerA = {
+    name: 'fatsecret',
+    supportsBarcodeLookup: true,
+    searchFoods: async () => {
+      callOrder.push('fatsecret');
+      throw new Error('upstream unavailable');
+    }
+  };
+  const providerB = {
+    name: 'usda',
+    supportsBarcodeLookup: true,
+    searchFoods: async () => {
+      callOrder.push('usda');
+      return { items: [{ id: '2', source: 'usda', description: 'Apple', availableMeasures: [] }] };
+    }
+  };
+
+  const router = loadFoodRouter({
+    prismaStub: {},
+    foodDataStub: {
+      getEnabledFoodDataProviders: () => ({
+        primary: { name: 'fatsecret', label: 'FatSecret', supportsBarcodeLookup: true, ready: true },
+        providers: [
+          { name: 'fatsecret', label: 'FatSecret', supportsBarcodeLookup: true, ready: true },
+          { name: 'usda', label: 'USDA FoodData Central', supportsBarcodeLookup: true, ready: true }
+        ]
+      }),
+      getFoodDataProviderByName: (name) => {
+        if (name === 'fatsecret') return { provider: providerA };
+        if (name === 'usda') return { provider: providerB };
+        return { error: 'unknown provider' };
+      }
+    }
+  });
+
+  const handler = getRouteHandler(router, 'get', '/search');
+  const req = { query: { q: 'apple' }, headers: {} };
+  const res = createRes();
+
+  await handler(req, res);
+
+  assert.equal(res.statusCode, 200);
+  assert.equal(res.body.provider, 'usda');
+  assert.equal(res.body.items.length, 1);
+  assert.deepEqual(callOrder, ['fatsecret', 'usda']);
 });
 
 test('food route: GET /search falls back to the next provider for barcode lookups', async () => {

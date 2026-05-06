@@ -27,7 +27,7 @@ import { getActivityLevelOptions } from '../constants/activityLevels';
 /**
  * CalorieTargetBanner shows the daily target and a brief breakdown of how it was computed.
  *
- * Dashboard keeps details in a tooltip; Profile shows the full breakdown inline.
+ * Dashboard keeps details in a tooltip; Goals shows the full breakdown inline.
  */
 
 export type CalorieTargetBannerProps = {
@@ -168,8 +168,8 @@ const CalorieTargetBanner: React.FC<CalorieTargetBannerProps> = ({ isDashboard =
                 <Stack spacing={0.5} sx={{ mt: 1 }}>
                     {missing.includes('latest_weight') && (
                         <Typography variant="body2">
-                            <Link component={RouterLink} to="/log">
-                                {t('calorieTarget.missing.addWeighInLink', { log: t('nav.log') })}
+                            <Link component={RouterLink} to="/dashboard">
+                                {t('calorieTarget.missing.addWeighInLink', { log: t('nav.dashboard') })}
                             </Link>
                         </Typography>
                     )}
@@ -181,10 +181,10 @@ const CalorieTargetBanner: React.FC<CalorieTargetBannerProps> = ({ isDashboard =
                         </Typography>
                     )}
                     {missing.some((field) => field !== 'latest_weight') && (
-                        <Typography variant="body2" sx={{
-                            color: "text.secondary"
-                        }}>
-                            {t('calorieTarget.missing.fillProfileHint')}
+                        <Typography variant="body2">
+                            <Link component={RouterLink} to="/profile">
+                                {t('calorieTarget.missing.fillProfileHint')}
+                            </Link>
                         </Typography>
                     )}
                 </Stack>
@@ -232,14 +232,6 @@ const CalorieTargetBanner: React.FC<CalorieTargetBannerProps> = ({ isDashboard =
                     color: "text.secondary"
                 }}>
                     {t('calorieTarget.summaryLine', { tdee: tdee ?? '—', deficit: deficit ?? '—' })}
-                    {!isDashboard && (
-                        <>
-                            {' '}
-                            <Link component={RouterLink} to="/goals">
-                                {t('calorieTarget.changeDeficit')}
-                            </Link>
-                        </>
-                    )}
                 </Typography>
             </>
         );

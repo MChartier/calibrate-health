@@ -35,6 +35,8 @@ const QUICK_ADD_SHORTCUT_ICON = 'pwa-192x192.png' // Icon used for quick-add PWA
 const QUICK_ADD_SHORTCUT_BASE_PATH = '/log' // Base route for quick-add shortcuts.
 const PWA_THEME_COLOR = '#111827' // Browser UI color matching the dark app bar.
 const PWA_BACKGROUND_COLOR = '#f8fafc' // Android may use this behind transparent icons; keep it non-black for launcher tiles.
+// Keep the main SPA routes eagerly bundled for app-like first-click latency; warn only if that shell grows again.
+const EAGER_APP_CHUNK_WARNING_LIMIT_KB = 1600
 // Reuse an existing app window so PWA shortcuts navigate instead of spawning a new instance.
 const PWA_LAUNCH_HANDLER = {
   client_mode: 'navigate-existing',
@@ -145,9 +147,13 @@ function getWorktreeNameFromRepoRoot(repoRootName: string) {
 function getPwaOptions(enableServiceWorkerInDev: boolean): Partial<VitePWAOptions> {
   return {
     strategies: 'injectManifest',
-    registerType: 'autoUpdate',
+    registerType: 'prompt',
     srcDir: 'src',
     filename: 'service-worker.ts',
+    injectManifest: {
+      // The single-file service worker build avoids Vite 8's deprecated inlineDynamicImports path.
+      rollupFormat: 'iife',
+    },
     devOptions: {
       // Keep local service workers opt-in so regular dev mode stays HMR-friendly by default.
       enabled: enableServiceWorkerInDev,
@@ -165,9 +171,12 @@ function getPwaOptions(enableServiceWorkerInDev: boolean): Partial<VitePWAOption
       ...PWA_SCREENSHOT_ASSETS,
     ],
     manifest: {
+      id: '/',
       name: 'calibrate',
       short_name: 'calibrate',
       description: 'A responsive calorie tracker.',
+      lang: 'en',
+      dir: 'ltr',
       theme_color: PWA_THEME_COLOR,
       background_color: PWA_BACKGROUND_COLOR,
       categories: ['health', 'fitness', 'lifestyle'],
@@ -253,5 +262,8 @@ export default defineConfig({
   },
   preview: {
     proxy: backendProxy,
+  },
+  build: {
+    chunkSizeWarningLimit: EAGER_APP_CHUNK_WARNING_LIMIT_KB,
   },
 })

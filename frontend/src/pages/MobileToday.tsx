@@ -1,62 +1,64 @@
-import React, { useCallback, useEffect } from 'react';
-import { Button, Stack } from '@mui/material';
-import AddRoundedIcon from '@mui/icons-material/AddRounded';
+import React, { useEffect, useState } from 'react';
+import { Box, Paper, Stack, Tab, Tabs } from '@mui/material';
 import { useSearchParams } from 'react-router-dom';
 import CalorieSummary from '../components/CalorieSummary';
 import DayCompletionControl from '../components/DayCompletionControl';
+import FoodLog from '../components/FoodLog';
+import GoalProjection from '../components/GoalProjection';
 import TodayHeader from '../components/TodayHeader';
 import WeightSummaryCard from '../components/WeightSummaryCard';
+import WeightTrend from '../components/WeightTrend';
 import { QUICK_ADD_SHORTCUT_ACTIONS, QUICK_ADD_SHORTCUT_QUERY_PARAM } from '../constants/pwaShortcuts';
 import { useQuickAddFab } from '../context/useQuickAddFab';
 import { useI18n } from '../i18n/useI18n';
 import { useLogDateNavigationState } from '../hooks/useLogDateNavigationState';
-import { useSelectedAndTodayDayCompletion } from '../hooks/useSelectedAndTodayDayCompletion';
 import { getQuickAddAction } from '../utils/quickAddShortcut';
+
+const MOBILE_DASHBOARD_TABS = {
+    log: 'log',
+    goals: 'goals'
+} as const;
+
+type MobileDashboardTab = (typeof MOBILE_DASHBOARD_TABS)[keyof typeof MOBILE_DASHBOARD_TABS];
+const MOBILE_DASHBOARD_TAB_BAR_HEIGHT_PX = 64; // Fixed local switcher height reserved at the bottom of the mobile hub.
+const MOBILE_DASHBOARD_TAB_MIN_HEIGHT_PX = 48; // Compact but thumb-friendly tab target for the two hub modes.
 
 /**
  * Mobile Today route: a glanceable answer plus top-level logging actions.
  */
 const MobileToday: React.FC = () => {
     const { t } = useI18n();
+    const [activeTab, setActiveTab] = useState<MobileDashboardTab>(MOBILE_DASHBOARD_TABS.log);
     const [searchParams, setSearchParams] = useSearchParams();
     const { selectedDate, today, navigation } = useLogDateNavigationState();
     const isSelectedToday = selectedDate === today;
     const {
         dialogs,
-        openWeightDialogForLogDate,
         openWeightDialogFromFab,
         setLogDateNavigation,
         setLogDateOverride
     } = useQuickAddFab();
-    const { isSelectedDayComplete: isDayComplete, isTodayComplete, isTodayCompletionLoading } =
-        useSelectedAndTodayDayCompletion(selectedDate, today);
+    const isLogTabActive = activeTab === MOBILE_DASHBOARD_TABS.log;
+    const isGoalsTabActive = activeTab === MOBILE_DASHBOARD_TABS.goals;
 
     useEffect(() => {
-        setLogDateOverride(selectedDate);
+        setLogDateOverride(isLogTabActive ? selectedDate : null);
         return () => {
             setLogDateOverride(null);
         };
-    }, [selectedDate, setLogDateOverride]);
+    }, [isLogTabActive, selectedDate, setLogDateOverride]);
 
     useEffect(() => {
-        setLogDateNavigation(navigation);
+        setLogDateNavigation(isLogTabActive ? navigation : null);
         return () => {
             setLogDateNavigation(null);
         };
-    }, [navigation, setLogDateNavigation]);
+    }, [isLogTabActive, navigation, setLogDateNavigation]);
 
     const quickAddAction = getQuickAddAction(searchParams);
 
     useEffect(() => {
         if (!quickAddAction) return;
-        if (isTodayCompletionLoading) return;
-
-        if (isTodayComplete) {
-            const nextParams = new URLSearchParams(searchParams);
-            nextParams.delete(QUICK_ADD_SHORTCUT_QUERY_PARAM);
-            setSearchParams(nextParams, { replace: true });
-            return;
-        }
 
         navigation.setDate(today);
 
@@ -78,8 +80,6 @@ const MobileToday: React.FC = () => {
         }
     }, [
         dialogs,
-        isTodayComplete,
-        isTodayCompletionLoading,
         navigation,
         openWeightDialogFromFab,
         quickAddAction,
@@ -88,27 +88,71 @@ const MobileToday: React.FC = () => {
         today
     ]);
 
-    const handleAddFood = useCallback(() => {
-        if (isDayComplete) return;
-        dialogs.openFoodDialog(null);
-    }, [dialogs, isDayComplete]);
+    const handleTabChange = (_event: React.SyntheticEvent, nextTab: MobileDashboardTab) => {
+        setActiveTab(nextTab);
+    };
 
     return (
-        <Stack spacing={1.5} useFlexGap>
-            <TodayHeader navigation={navigation} />
-            <CalorieSummary date={selectedDate} isSelectedToday={isSelectedToday} />
-            <Button
-                variant="contained"
-                size="large"
-                startIcon={<AddRoundedIcon />}
-                onClick={handleAddFood}
-                disabled={isDayComplete}
-                sx={{ py: 1.35 }}
+        <Stack spacing={1.5} useFlexGap sx={{ pb: `calc(${MOBILE_DASHBOARD_TAB_BAR_HEIGHT_PX}px + var(--safe-area-inset-bottom, 0px))` }}>
+            <Box role="tabpanel" hidden={!isLogTabActive} aria-label={t('today.tabs.today')}>
+                {isLogTabActive && (
+                    <Stack spacing={1.5} useFlexGap>
+                        <TodayHeader navigation={navigation} />
+                        <CalorieSummary date={selectedDate} isSelectedToday={isSelectedToday} />
+                        <FoodLog
+                            date={selectedDate}
+                            isSelectedToday={isSelectedToday}
+                            onAddFood={(mealPeriod) => dialogs.openFoodDialog(mealPeriod ?? null)}
+                        />
+                        <DayCompletionControl date={selectedDate} />
+                    </Stack>
+                )}
+            </Box>
+
+            <Box role="tabpanel" hidden={!isGoalsTabActive} aria-label={t('today.tabs.progress')}>
+                {isGoalsTabActive && (
+                    <Stack spacing={1.5} useFlexGap>
+                        <WeightSummaryCard date={today} onOpenWeightEntry={openWeightDialogFromFab} />
+                        <WeightTrend />
+                        <GoalProjection />
+                    </Stack>
+                )}
+            </Box>
+
+            <Paper
+                elevation={8}
+                sx={(theme) => ({
+                    position: 'fixed',
+                    right: 0,
+                    bottom: 0,
+                    left: 0,
+                    zIndex: theme.zIndex.appBar,
+                    borderRadius: 0,
+                    borderTop: 1,
+                    borderColor: 'divider',
+                    px: `calc(${theme.spacing(1)} + var(--safe-area-inset-left, 0px))`,
+                    pt: 0.75,
+                    pb: `calc(${theme.spacing(0.75)} + var(--safe-area-inset-bottom, 0px))`,
+                    bgcolor: 'background.paper'
+                })}
             >
-                {t('today.addFood')}
-            </Button>
-            <WeightSummaryCard date={selectedDate} onOpenWeightEntry={openWeightDialogForLogDate} disabled={isDayComplete} />
-            <DayCompletionControl date={selectedDate} />
+                <Tabs
+                    value={activeTab}
+                    onChange={handleTabChange}
+                    variant="fullWidth"
+                    aria-label={t('today.tabs.ariaLabel')}
+                    sx={{
+                        minHeight: MOBILE_DASHBOARD_TAB_MIN_HEIGHT_PX,
+                        '& .MuiTab-root': {
+                            minHeight: MOBILE_DASHBOARD_TAB_MIN_HEIGHT_PX,
+                            fontWeight: 'bold'
+                        }
+                    }}
+                >
+                    <Tab value={MOBILE_DASHBOARD_TABS.log} label={t('today.tabs.today')} />
+                    <Tab value={MOBILE_DASHBOARD_TABS.goals} label={t('today.tabs.progress')} />
+                </Tabs>
+            </Paper>
         </Stack>
     );
 };

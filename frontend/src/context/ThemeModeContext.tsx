@@ -6,6 +6,8 @@ import { ThemeModeContext, type ThemeModeContextValue, type ThemePreference } fr
 
 const THEME_PREFERENCE_STORAGE_KEY = 'calibrate.themePreference';
 const LEGACY_THEME_PREFERENCE_STORAGE_KEY = 'calio.themePreference';
+const LIGHT_THEME_COLOR = '#FFFFFF'; // Browser chrome color for the installed app in light mode.
+const DARK_THEME_COLOR = '#111827'; // Browser chrome color for the installed app in dark mode.
 
 /**
  * Type guard for values we allow to be stored/used as theme preferences.
@@ -47,6 +49,15 @@ function persistThemePreference(preference: ThemePreference) {
     }
 }
 
+/**
+ * Keep the browser/PWA title bar color aligned with the active in-app theme.
+ */
+function syncThemeColorMeta(mode: PaletteMode) {
+    const meta = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
+    if (!meta) return;
+    meta.content = mode === 'dark' ? DARK_THEME_COLOR : LIGHT_THEME_COLOR;
+}
+
 export const ThemeModeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const systemPrefersDark = useMediaQuery('(prefers-color-scheme: dark)', { noSsr: true });
 
@@ -64,6 +75,10 @@ export const ThemeModeProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     }, [preference, systemPrefersDark]);
 
     const theme = useMemo(() => createAppTheme(mode), [mode]);
+
+    useEffect(() => {
+        syncThemeColorMeta(mode);
+    }, [mode]);
 
     const value: ThemeModeContextValue = useMemo(
         () => ({

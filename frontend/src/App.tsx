@@ -10,7 +10,7 @@ import Dashboard from './pages/Dashboard';
 import Log from './pages/Log';
 import Goals from './pages/Goals';
 import MobileToday from './pages/MobileToday';
-import Weight from './pages/Weight';
+import WeightHistory from './pages/WeightHistory';
 import Settings from './pages/Settings';
 import Profile from './pages/Profile';
 import Onboarding from './pages/Onboarding';
@@ -66,15 +66,16 @@ function App() {
                         path="log"
                         element={<ResponsiveModeRoute desktopElement={<RedirectWithSearch to="/dashboard" />} mobileElement={<Log />} />}
                     />
+                    <Route path="weight/history" element={<WeightHistory />} />
                     <Route
                         path="weight"
-                        element={<ResponsiveModeRoute desktopElement={<RedirectWithSearch to="/dashboard" />} mobileElement={<Weight />} />}
+                        element={<RedirectWithSearch to="/dashboard" />}
                     />
                     <Route
                         path="goals"
                         element={<Goals />}
                     />
-                    <Route path="history" element={<Navigate to="/goals" replace />} />
+                    <Route path="history" element={<Navigate to="/weight/history" replace />} />
                     <Route path="settings" element={<Settings />} />
                     <Route path="profile" element={<Profile />} />
                 </Route>

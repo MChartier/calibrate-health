@@ -17,12 +17,6 @@ type AppPageProps = {
      * Only the outermost AppPage applies this rule so nested AppPages can safely set maxWidth.
      */
     fullBleedOnXs?: boolean;
-    /**
-     * When true, reserve bottom space so content doesn't sit under the mobile bottom navigation bar.
-     *
-     * Only the outermost AppPage applies this rule so nested AppPages can focus on maxWidth.
-     */
-    reserveBottomNavSpace?: boolean;
     /** Additional styles applied to the content container (the element that receives `maxWidth`). */
     sx?: SxProps<Theme>;
 };
@@ -77,7 +71,6 @@ const AppPage: React.FC<AppPageProps> = ({
     children,
     maxWidth = false,
     fullBleedOnXs = false,
-    reserveBottomNavSpace = false,
     sx
 }) => {
     const isNested = useContext(AppPageNestingContext);
@@ -101,14 +94,10 @@ const AppPage: React.FC<AppPageProps> = ({
         <AppPageNestingContext.Provider value={true}>
             <Box
                 sx={(theme) => {
-                    const paddingBottom = reserveBottomNavSpace
-                        ? theme.custom.layout.page.paddingBottomWithBottomNav
-                        : addBottomSafeAreaInset(theme, theme.custom.layout.page.paddingBottom);
-
                     return {
                         px: fullBleedOnXs ? { ...theme.custom.layout.page.gutterX, xs: 0 } : theme.custom.layout.page.gutterX,
                         pt: fullBleedOnXs ? theme.custom.layout.page.paddingTopCompact : theme.custom.layout.page.paddingTop,
-                        pb: paddingBottom,
+                        pb: addBottomSafeAreaInset(theme, theme.custom.layout.page.paddingBottom),
                         ...(fullBleedOnXs
                             ? {
                                 [theme.breakpoints.down('sm')]: {

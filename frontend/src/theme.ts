@@ -111,7 +111,6 @@ export function createAppTheme(mode: PaletteMode) {
                     // Keep xs full-bleed, but add a small top inset on sm so rounded cards do not touch the app bar.
                     paddingTopCompact: { xs: 0, sm: PAGE_SECTION_GAP_SPACING, md: 3 },
                     paddingBottom: { xs: 2, sm: 3, md: 3 },
-                    paddingBottomWithBottomNav: 'calc(80px + var(--safe-area-inset-bottom, 0px))',
                     sectionGap: PAGE_SECTION_GAP_SPACING,
                     sectionGapCompact: PAGE_SECTION_GAP_SPACING
                 },
@@ -124,7 +123,6 @@ export function createAppTheme(mode: PaletteMode) {
             },
             icon: {
                 size: {
-                    nav: 22,
                     action: { small: 20, medium: 22, large: 24 },
                     avatar: 20,
                     fab: 22
@@ -569,43 +567,6 @@ export function createAppTheme(mode: PaletteMode) {
                         '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
                             borderColor: theme.palette.primary.main,
                             boxShadow: `0 0 0 4px ${alpha(theme.palette.primary.main, 0.18)}`
-                        }
-                    })
-                }
-            },
-            MuiBottomNavigation: {
-                styleOverrides: {
-                    root: () => ({
-                        height: 64,
-                        borderRadius: 0,
-                        backgroundColor: 'transparent'
-                    })
-                }
-            },
-            MuiBottomNavigationAction: {
-                styleOverrides: {
-                    root: ({ theme }) => ({
-                        minWidth: 0,
-                        maxWidth: 'none',
-                        position: 'relative',
-                        paddingTop: theme.spacing(1),
-                        paddingBottom: theme.spacing(1.25),
-                        '& .MuiSvgIcon-root': { fontSize: theme.custom.icon.size.nav },
-                        '&.Mui-selected': {
-                            color: theme.palette.primary.main
-                        },
-                        '&.Mui-selected .MuiBottomNavigationAction-label': {
-                            fontWeight: 800
-                        },
-                        '&.Mui-selected::after': {
-                            content: '""',
-                            position: 'absolute',
-                            top: 0,
-                            left: '18%',
-                            right: '18%',
-                            height: 3,
-                            borderRadius: 3,
-                            backgroundColor: theme.palette.primary.main
                         }
                     })
                 }
