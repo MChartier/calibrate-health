@@ -221,8 +221,8 @@ export const en = {
 
     'today.title': 'Today',
     'today.tabs.ariaLabel': 'Dashboard sections',
-    'today.tabs.today': 'Food',
-    'today.tabs.progress': 'Progress',
+    'today.tabs.today': 'Log',
+    'today.tabs.progress': 'Goals',
     'today.status.onTrack': 'On track',
     'today.status.warning': 'Approaching limit',
     'today.status.over': 'Over target',
@@ -808,8 +808,8 @@ export const es: Record<TranslationKey, string> = {
 
     'today.title': 'Hoy',
     'today.tabs.ariaLabel': 'Secciones del panel',
-    'today.tabs.today': 'Comida',
-    'today.tabs.progress': 'Progreso',
+    'today.tabs.today': 'Registro',
+    'today.tabs.progress': 'Objetivos',
     'today.status.onTrack': 'En camino',
     'today.status.warning': 'Cerca del limite',
     'today.status.over': 'Sobre el objetivo',
@@ -1393,8 +1393,8 @@ export const fr: Record<TranslationKey, string> = {
 
     'today.title': "Aujourd'hui",
     'today.tabs.ariaLabel': 'Sections du tableau de bord',
-    'today.tabs.today': 'Aliments',
-    'today.tabs.progress': 'Progres',
+    'today.tabs.today': 'Journal',
+    'today.tabs.progress': 'Objectifs',
     'today.status.onTrack': 'Sur la bonne voie',
     'today.status.warning': 'Pres de la limite',
     'today.status.over': "Au-dessus de l'objectif",
@@ -1978,8 +1978,8 @@ export const ru: Record<TranslationKey, string> = {
 
     'today.title': 'Today',
     'today.tabs.ariaLabel': 'Разделы панели',
-    'today.tabs.today': 'Еда',
-    'today.tabs.progress': 'Прогресс',
+    'today.tabs.today': 'Журнал',
+    'today.tabs.progress': 'Цели',
     'today.status.onTrack': 'On track',
     'today.status.warning': 'Approaching limit',
     'today.status.over': 'Over target',

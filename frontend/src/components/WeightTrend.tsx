@@ -355,6 +355,7 @@ const WeightTrend: React.FC<WeightTrendProps> = ({ fillAvailableHeight = false, 
     const [selectedRange, setSelectedRange] = useState<MetricsRange>(METRICS_RANGE_OPTIONS.MONTH);
     const [panWindowIndex, setPanWindowIndex] = useState(0);
     const [rawMarksVisible, setRawMarksVisible] = useState(true);
+    const [chartContainerWidth, setChartContainerWidth] = useState<number | null>(null);
     const [chartContainerHeight, setChartContainerHeight] = useState<number | null>(null);
     const chartContainerRef = useRef<HTMLDivElement | null>(null);
     const markRevealTimeoutRef = useRef<number | null>(null);
@@ -597,7 +598,7 @@ const WeightTrend: React.FC<WeightTrendProps> = ({ fillAvailableHeight = false, 
         : WEIGHT_TREND_FULLSCREEN_CHART_MIN_HEIGHT_PX.sm;
     const stretchedMinChartHeight = fullScreen ? fullScreenMinChartHeight : TODAY_TREND_CHART_FILL_MIN_HEIGHT_PX;
     const chartHeight = shouldStretchChart ? chartContainerHeight ?? stretchedMinChartHeight : defaultChartHeight;
-    const chartHasMeasuredContainer = !shouldStretchChart || chartContainerHeight !== null; // Stretch charts need one measured frame before MUI can compute stable SVG coordinates.
+    const chartHasMeasuredContainer = chartContainerWidth !== null && (!shouldStretchChart || chartContainerHeight !== null); // MUI Charts needs real dimensions before it can compute stable SVG coordinates.
     const cardTitle = fullScreen ? t('goals.weightHistoryTitle') : t('today.weightTrend.title');
     const chartContainerSx: SxProps<Theme> | undefined = (() => {
         if (fillAvailableHeight) {
@@ -634,14 +635,14 @@ const WeightTrend: React.FC<WeightTrendProps> = ({ fillAvailableHeight = false, 
             };
         }
 
-        return undefined;
+        return {
+            minHeight: defaultChartHeight,
+            minWidth: 0,
+            width: '100%'
+        };
     })();
 
     useEffect(() => {
-        if (!shouldStretchChart) {
-            return;
-        }
-
         const node = chartContainerRef.current;
         if (!node) return;
 
@@ -652,8 +653,17 @@ const WeightTrend: React.FC<WeightTrendProps> = ({ fillAvailableHeight = false, 
             }
 
             animationFrame = window.requestAnimationFrame(() => {
-                const nextHeight = Math.max(stretchedMinChartHeight, Math.floor(node.getBoundingClientRect().height));
-                setChartContainerHeight((currentHeight) => (currentHeight === nextHeight ? currentHeight : nextHeight));
+                const rect = node.getBoundingClientRect();
+                const nextWidth = Math.floor(rect.width);
+                if (nextWidth > 0) {
+                    setChartContainerWidth((currentWidth) => (currentWidth === nextWidth ? currentWidth : nextWidth));
+                }
+                if (shouldStretchChart) {
+                    const nextHeight = Math.max(stretchedMinChartHeight, Math.floor(rect.height));
+                    setChartContainerHeight((currentHeight) => (currentHeight === nextHeight ? currentHeight : nextHeight));
+                } else {
+                    setChartContainerHeight(null);
+                }
                 animationFrame = null;
             });
         };
@@ -668,7 +678,7 @@ const WeightTrend: React.FC<WeightTrendProps> = ({ fillAvailableHeight = false, 
             }
             observer.disconnect();
         };
-    }, [shouldStretchChart, stretchedMinChartHeight]);
+    }, [defaultChartHeight, shouldStretchChart, stretchedMinChartHeight]);
 
     const weightHistoryTooltipContent = (
         <Box sx={{ maxWidth: WEIGHT_HISTORY_TOOLTIP_MAX_WIDTH_PX, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
@@ -826,6 +836,7 @@ const WeightTrend: React.FC<WeightTrendProps> = ({ fillAvailableHeight = false, 
                                     valueFormatter: (value) => (value == null ? null : `${value.toFixed(1)} ${unitLabel}`)
                                 }
                             ]}
+                            width={chartContainerWidth ?? undefined}
                             height={chartHeight}
                             margin={chartMargin}
                             hideLegend
@@ -879,10 +890,10 @@ const WeightTrend: React.FC<WeightTrendProps> = ({ fillAvailableHeight = false, 
                     ) : (
                         <Skeleton
                             variant="rounded"
-                            height="100%"
+                            height={shouldStretchChart ? '100%' : defaultChartHeight}
                             sx={{
                                 width: '100%',
-                                minHeight: stretchedMinChartHeight
+                                minHeight: shouldStretchChart ? stretchedMinChartHeight : defaultChartHeight
                             }}
                         />
                     )}

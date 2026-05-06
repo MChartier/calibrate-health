@@ -1,5 +1,6 @@
 import React from 'react';
-import { Alert, Box, Button, CircularProgress, Stack, Typography } from '@mui/material';
+import { Alert, Box, Stack, Switch, Typography } from '@mui/material';
+import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded';
 import { alpha } from '@mui/material/styles';
 import { useQueryClient } from '@tanstack/react-query';
 import AppCard from '../ui/AppCard';
@@ -15,7 +16,7 @@ export type DayCompletionControlProps = {
     date: string;
 };
 
-const DAY_COMPLETION_ACTION_WIDTH = '100%'; // Treat the status action as a full-row toggle instead of a small form control.
+const DAY_COMPLETION_STATUS_ICON_SIZE_PX = 28; // The icon is large enough to read as state without competing with the switch.
 
 /**
  * Full-width completion state for the selected local day.
@@ -29,17 +30,9 @@ const DayCompletionControl: React.FC<DayCompletionControlProps> = ({ date }) => 
     const completionMutation = useFoodLogDayMutation();
     const isComplete = Boolean(completionQuery.data?.is_complete);
     const isBusy = completionQuery.isLoading || completionMutation.isPending;
-    const nextIsComplete = !isComplete;
+    const toggleLabel = isComplete ? t('today.completion.markIncomplete') : t('today.completion.markComplete');
 
-    let actionLabel = isComplete ? t('today.completion.markIncomplete') : t('today.completion.markComplete');
-    let actionIcon: React.ReactNode = undefined;
-    if (isBusy) {
-        actionLabel = t('common.loading');
-        actionIcon = <CircularProgress size={16} color="inherit" />;
-    }
-    const statusLabel = isComplete ? t('today.completion.status.complete') : t('today.completion.status.incomplete');
-
-    const handleToggleComplete = async () => {
+    const handleToggleComplete = async (nextIsComplete: boolean) => {
         try {
             await completionMutation.mutateAsync({ date, is_complete: nextIsComplete });
             await queryClient.invalidateQueries({ queryKey: foodLogDayQueryKey(date) });
@@ -54,10 +47,8 @@ const DayCompletionControl: React.FC<DayCompletionControlProps> = ({ date }) => 
             sx={(theme) =>
                 isComplete
                     ? {
-                        bgcolor: 'success.main',
-                        color: 'success.contrastText',
-                        borderColor: 'success.dark',
-                        boxShadow: `0 12px 28px ${alpha(theme.palette.success.dark, theme.palette.mode === 'dark' ? 0.34 : 0.18)}`
+                        bgcolor: alpha(theme.palette.success.main, theme.palette.mode === 'dark' ? 0.16 : 0.08),
+                        borderColor: alpha(theme.palette.success.main, theme.palette.mode === 'dark' ? 0.38 : 0.28)
                     }
                     : null
             }
@@ -66,49 +57,44 @@ const DayCompletionControl: React.FC<DayCompletionControlProps> = ({ date }) => 
                 '&:last-child': { pb: { xs: 1.25, sm: 1.5 } }
             }}
         >
-            <Stack spacing={1.25}>
+            <Stack spacing={1}>
                 <Box
                     sx={{
-                        minWidth: 0,
                         display: 'flex',
-                        flexDirection: 'column',
-                        gap: 0.25
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        gap: 1
                     }}
                 >
-                    <Typography variant="subtitle1" sx={{ fontWeight: 850 }}>
-                        {t('today.completion.title')}
-                    </Typography>
-                    <Typography
-                        variant="body2"
+                    <Box
                         sx={{
-                            color: isComplete ? 'inherit' : 'text.secondary',
-                            opacity: isComplete ? 0.9 : 1
+                            minWidth: 0,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 1
                         }}
                     >
-                        {statusLabel}
-                    </Typography>
-                </Box>
+                        <CheckCircleRoundedIcon
+                            aria-hidden
+                            sx={{
+                                flexShrink: 0,
+                                fontSize: DAY_COMPLETION_STATUS_ICON_SIZE_PX,
+                                color: isComplete ? 'success.main' : 'action.disabled'
+                            }}
+                        />
+                        <Typography variant="subtitle1" sx={{ fontWeight: 850 }}>
+                            {t('today.completion.title')}
+                        </Typography>
+                    </Box>
 
-                <Button
-                    variant="outlined"
-                    color="inherit"
-                    startIcon={actionIcon}
-                    onClick={() => void handleToggleComplete()}
-                    disabled={isBusy || completionQuery.isError}
-                    aria-pressed={isComplete}
-                    sx={(theme) => ({
-                        width: DAY_COMPLETION_ACTION_WIDTH,
-                        color: isComplete ? theme.palette.grey[900] : theme.palette.text.primary,
-                        borderColor: isComplete ? alpha(theme.palette.common.white, 0.9) : alpha(theme.palette.text.primary, 0.24),
-                        bgcolor: isComplete ? theme.palette.common.white : theme.palette.background.paper,
-                        '&:hover': {
-                            borderColor: isComplete ? theme.palette.common.white : alpha(theme.palette.text.primary, 0.44),
-                            bgcolor: isComplete ? alpha(theme.palette.common.white, 0.88) : theme.palette.action.hover
-                        }
-                    })}
-                >
-                    {actionLabel}
-                </Button>
+                    <Switch
+                        checked={isComplete}
+                        onChange={(_event, checked) => void handleToggleComplete(checked)}
+                        disabled={isBusy || completionQuery.isError}
+                        color="success"
+                        slotProps={{ input: { 'aria-label': toggleLabel } }}
+                    />
+                </Box>
 
                 {completionQuery.isError && <Alert severity="warning">{t('today.completion.error')}</Alert>}
                 {completionMutation.isError && <Alert severity="warning">{t('today.completion.saveError')}</Alert>}
