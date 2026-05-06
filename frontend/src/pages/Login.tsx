@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
-import { Alert, Box, Button, Link, Stack, TextField, Typography } from '@mui/material';
+import { Alert, Box, Button, Link, TextField, Typography } from '@mui/material';
+import LoginRoundedIcon from '@mui/icons-material/LoginRounded';
 import { useAuth } from '../context/useAuth';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
-import AppPage from '../ui/AppPage';
-import AppCard from '../ui/AppCard';
-import SectionHeader from '../ui/SectionHeader';
+import AuthPageFrame from '../components/auth/AuthPageFrame';
 import { useI18n } from '../i18n/useI18n';
 
 /**
@@ -35,53 +34,53 @@ const Login: React.FC = () => {
     };
 
     return (
-        <AppPage maxWidth="form">
-            <AppCard>
-                <Stack component="form" spacing={2} onSubmit={handleSubmit}>
-                    <SectionHeader title={t('auth.login')} />
+        <AuthPageFrame title={t('auth.login')} subtitle={t('auth.loginSubtitle')} onSubmit={handleSubmit}>
+            {error && (
+                <Alert severity="error">
+                    {error}
+                </Alert>
+            )}
 
-                    {error && (
-                        <Alert severity="error">
-                            {error}
-                        </Alert>
-                    )}
-
-                    <TextField
-                        label={t('auth.email')}
-                        type="email"
-                        autoComplete="email"
-                        inputMode="email"
-                        autoFocus
-                        fullWidth
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        disabled={isSubmitting}
-                        required
-                    />
-                    <TextField
-                        label={t('auth.password')}
-                        type="password"
-                        autoComplete="current-password"
-                        fullWidth
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        disabled={isSubmitting}
-                        required
-                    />
-                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                        <Button type="submit" variant="contained" fullWidth disabled={isSubmitting}>
-                            {isSubmitting ? t('auth.loggingIn') : t('auth.login')}
-                        </Button>
-                        <Typography variant="body2">
-                            {t('auth.noAccountPrompt')}{' '}
-                            <Link component={RouterLink} to="/register">
-                                {t('auth.register')}
-                            </Link>
-                        </Typography>
-                    </Box>
-                </Stack>
-            </AppCard>
-        </AppPage>
+            <TextField
+                label={t('auth.email')}
+                type="email"
+                autoComplete="email"
+                inputMode="email"
+                autoFocus
+                fullWidth
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                disabled={isSubmitting}
+                required
+            />
+            <TextField
+                label={t('auth.password')}
+                type="password"
+                autoComplete="current-password"
+                fullWidth
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                disabled={isSubmitting}
+                required
+            />
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                <Button
+                    type="submit"
+                    variant="contained"
+                    fullWidth
+                    disabled={isSubmitting}
+                    startIcon={<LoginRoundedIcon />}
+                >
+                    {isSubmitting ? t('auth.loggingIn') : t('auth.login')}
+                </Button>
+                <Typography variant="body2">
+                    {t('auth.noAccountPrompt')}{' '}
+                    <Link component={RouterLink} to="/register">
+                        {t('auth.register')}
+                    </Link>
+                </Typography>
+            </Box>
+        </AuthPageFrame>
     );
 };
 

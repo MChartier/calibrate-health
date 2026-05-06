@@ -3,13 +3,14 @@ import {
     Alert,
     Box,
     Button,
+    Chip,
     Snackbar,
     Fade,
     Divider,
     Stack,
     Typography
 } from '@mui/material';
-import { useTheme, type Theme } from '@mui/material/styles';
+import { alpha, useTheme, type Theme } from '@mui/material/styles';
 import { useAuth } from '../context/useAuth';
 import { HEIGHT_UNITS, WEIGHT_UNITS, type HeightUnit, type WeightUnit } from '../context/authContext';
 import axios from 'axios';
@@ -42,6 +43,8 @@ import {
     inferGoalModeFromWeights,
     parseFiniteNumber
 } from '../utils/onboardingConversions';
+import { useI18n } from '../i18n/useI18n';
+import type { TranslationKey } from '../i18n/resources';
 
 /**
  * Onboarding wizard page that collects goal + profile details and computes a plan summary.
@@ -173,6 +176,31 @@ function getGoalsQuestionSequence(goalMode: GoalMode | null): GoalsQuestionKey[]
 
 const ABOUT_QUESTION_SEQUENCE: AboutQuestionKey[] = ['dob', 'sex', 'activityLevel', 'height'];
 const SUMMARY_HIGHLIGHT_DURATION_MS = 900; // Duration for "just confirmed" answer highlight before returning to normal.
+const ONBOARDING_PAGE_COLUMNS = {
+    xs: '1fr',
+    md: 'minmax(220px, 0.42fr) minmax(0, 0.9fr)'
+}; // Desktop setup rail plus focused wizard card.
+const ONBOARDING_RAIL_STEP_SIZE_PX = 32; // Number badge size in the desktop onboarding rail.
+
+type OnboardingIntroItem = {
+    titleKey: TranslationKey;
+    bodyKey: TranslationKey;
+};
+
+const ONBOARDING_INTRO_ITEMS: OnboardingIntroItem[] = [
+    {
+        titleKey: 'onboarding.intro.goalTitle',
+        bodyKey: 'onboarding.intro.goalBody'
+    },
+    {
+        titleKey: 'onboarding.intro.burnTitle',
+        bodyKey: 'onboarding.intro.burnBody'
+    },
+    {
+        titleKey: 'onboarding.intro.importTitle',
+        bodyKey: 'onboarding.intro.importBody'
+    }
+];
 
 const INITIAL_ATTEMPTED_GOALS_QUESTIONS: Record<GoalsQuestionKey, boolean> = {
     currentWeight: false,
@@ -187,11 +215,98 @@ const INITIAL_ATTEMPTED_ABOUT_QUESTIONS: Record<AboutQuestionKey, boolean> = {
     height: false
 };
 
+type OnboardingSetupRailProps = {
+    steps: OnboardingStep[];
+    activeStepIndex: number;
+    stage: OnboardingStage;
+};
+
+/**
+ * Desktop setup rail that keeps the onboarding flow oriented without taking space from the active question.
+ */
+const OnboardingSetupRail: React.FC<OnboardingSetupRailProps> = ({ steps, activeStepIndex, stage }) => {
+    const { t } = useI18n();
+
+    return (
+        <Box
+            sx={(theme) => ({
+                display: { xs: 'none', md: 'block' },
+                position: 'sticky',
+                top: theme.spacing(3),
+                alignSelf: 'start',
+                borderLeft: `3px solid ${alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.5 : 0.32)}`,
+                pl: 2.5
+            })}
+        >
+            <Stack spacing={2.5}>
+                <Box>
+                    <Typography variant="overline" sx={{ color: 'text.secondary' }}>
+                        {t('onboarding.rail.overline')}
+                    </Typography>
+                    <Typography variant="h4">{t('onboarding.rail.title')}</Typography>
+                    <Typography variant="body2" sx={{ color: 'text.secondary', mt: 1 }}>
+                        {t('onboarding.rail.body')}
+                    </Typography>
+                </Box>
+
+                <Stack spacing={1.25}>
+                    {steps.map((step, index) => {
+                        const isIntroActive = stage === 'intro' && index === 0;
+                        const isWizardActive = stage === 'wizard' && index === activeStepIndex;
+                        const isComplete = stage === 'summary' || (stage === 'wizard' && index < activeStepIndex);
+                        const isActive = isIntroActive || isWizardActive;
+
+                        return (
+                            <Box
+                                key={step.key}
+                                sx={{
+                                    display: 'grid',
+                                    gridTemplateColumns: `${ONBOARDING_RAIL_STEP_SIZE_PX}px minmax(0, 1fr)`,
+                                    gap: 1.25,
+                                    alignItems: 'center'
+                                }}
+                            >
+                                <Box
+                                    sx={(theme) => ({
+                                        width: ONBOARDING_RAIL_STEP_SIZE_PX,
+                                        height: ONBOARDING_RAIL_STEP_SIZE_PX,
+                                        borderRadius: 1,
+                                        display: 'grid',
+                                        placeItems: 'center',
+                                        fontWeight: 900,
+                                        border: `1px solid ${
+                                            isComplete || isActive ? theme.palette.primary.main : theme.palette.divider
+                                        }`,
+                                        color: isComplete || isActive ? 'primary.contrastText' : 'text.secondary',
+                                        backgroundColor: isComplete || isActive ? 'primary.main' : 'transparent'
+                                    })}
+                                >
+                                    {index + 1}
+                                </Box>
+                                <Typography
+                                    variant="body2"
+                                    sx={{
+                                        fontWeight: isActive ? 900 : 800,
+                                        color: isComplete || isActive ? 'text.primary' : 'text.secondary'
+                                    }}
+                                >
+                                    {step.label}
+                                </Typography>
+                            </Box>
+                        );
+                    })}
+                </Stack>
+            </Stack>
+        </Box>
+    );
+};
+
 /**
  * Onboarding orchestrates the multi-step setup flow and persists profile/goal data.
  */
 const Onboarding: React.FC = () => {
     const theme = useTheme();
+    const { t } = useI18n();
     const { user, updateProfile, updateUnitPreferences } = useAuth();
     const navigate = useNavigate();
     const prefersReducedMotion = usePrefersReducedMotion();
@@ -203,18 +318,18 @@ const Onboarding: React.FC = () => {
         () => [
             {
                 key: 'goals',
-                label: 'Goal'
+                label: t('onboarding.step.goals')
             },
             {
                 key: 'about',
-                label: 'Calorie burn'
+                label: t('onboarding.step.about')
             },
             {
                 key: 'import',
-                label: 'Import'
+                label: t('onboarding.step.import')
             }
         ],
-        []
+        [t]
     );
 
     const [stage, setStage] = useState<OnboardingStage>('intro');
@@ -698,13 +813,13 @@ const Onboarding: React.FC = () => {
         return getSignedDailyDeficit(inferredGoalMode, deficitAbs);
     }, [dailyDeficit, inferredGoalMode]);
 
-    let primaryCtaLabel = 'Continue';
+    let primaryCtaLabel = t('common.continue');
     if (activeStep.key === 'import') {
-        primaryCtaLabel = isSaving ? 'Saving...' : 'See my plan';
+        primaryCtaLabel = isSaving ? t('common.saving') : t('onboarding.cta.seePlan');
     } else if (activeStep.key === 'about' && isLastAboutQuestion) {
-        primaryCtaLabel = 'Next: Import';
+        primaryCtaLabel = t('onboarding.cta.nextImport');
     } else if (willAdvanceToCalorieBurn) {
-        primaryCtaLabel = 'Next: Calorie burn';
+        primaryCtaLabel = t('onboarding.cta.nextAbout');
     }
 
     const isWizardPrimaryDisabled = useMemo(() => {
@@ -797,23 +912,56 @@ const Onboarding: React.FC = () => {
     let cardBodyContent: React.ReactNode = null;
     if (stage === 'intro') {
         cardBodyContent = (
-            <Box>
-                <Typography variant="h4" gutterBottom>
-                    Welcome to calibrate
-                </Typography>
-                <Typography sx={{
-                    color: "text.secondary"
-                }}>
-                    Let&apos;s set a daily calorie target that helps you reach your weight goal.
-                </Typography>
-                <Typography
-                    sx={{
-                        color: "text.secondary",
-                        mt: 1
-                    }}>
-                    Three quick steps: set your target weight, estimate calorie burn, and optionally import history.
-                </Typography>
-            </Box>
+            <Stack spacing={2.5}>
+                <Box>
+                    <Chip label={t('onboarding.intro.pill')} size="small" variant="outlined" sx={{ mb: 1.25 }} />
+                    <Typography variant="h4" gutterBottom>
+                        {t('onboarding.intro.title')}
+                    </Typography>
+                    <Typography sx={{ color: 'text.secondary' }}>
+                        {t('onboarding.intro.body')}
+                    </Typography>
+                </Box>
+
+                <Stack spacing={1.25}>
+                    {ONBOARDING_INTRO_ITEMS.map((item, index) => (
+                        <Box
+                            key={item.titleKey}
+                            sx={{
+                                display: 'grid',
+                                gridTemplateColumns: `${ONBOARDING_RAIL_STEP_SIZE_PX}px minmax(0, 1fr)`,
+                                gap: 1.25,
+                                alignItems: 'start'
+                            }}
+                        >
+                            <Box
+                                sx={(theme) => ({
+                                    width: ONBOARDING_RAIL_STEP_SIZE_PX,
+                                    height: ONBOARDING_RAIL_STEP_SIZE_PX,
+                                    borderRadius: 1,
+                                    display: 'grid',
+                                    placeItems: 'center',
+                                    fontWeight: 900,
+                                    color: 'primary.main',
+                                    backgroundColor: alpha(
+                                        theme.palette.primary.main,
+                                        theme.palette.mode === 'dark' ? 0.18 : 0.1
+                                    )
+                                })}
+                                aria-hidden
+                            >
+                                {index + 1}
+                            </Box>
+                            <Box sx={{ minWidth: 0 }}>
+                                <Typography variant="subtitle1">{t(item.titleKey)}</Typography>
+                                <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                                    {t(item.bodyKey)}
+                                </Typography>
+                            </Box>
+                        </Box>
+                    ))}
+                </Stack>
+            </Stack>
         );
     } else if (stage === 'summary') {
         cardBodyContent = (
@@ -889,7 +1037,7 @@ const Onboarding: React.FC = () => {
         cardFooterContent = (
             <Box sx={{ pt: 2 }}>
                 <Button variant="contained" onClick={enterWizard} fullWidth>
-                    Let&apos;s get started
+                    {t('onboarding.intro.action')}
                 </Button>
             </Box>
         );
@@ -904,10 +1052,10 @@ const Onboarding: React.FC = () => {
                     pt: 2
                 }}>
                 <Button variant="text" onClick={editSetupFromSummary} disabled={isSaving}>
-                    Edit setup
+                    {t('onboarding.summary.editSetup')}
                 </Button>
                 <Button variant="contained" onClick={goToLog} disabled={isSaving}>
-                    Start logging
+                    {t('onboarding.summary.startLogging')}
                 </Button>
             </Stack>
         );
@@ -927,7 +1075,7 @@ const Onboarding: React.FC = () => {
                         alignItems: "center"
                     }}>
                     <Button variant="text" onClick={goBack} disabled={isSaving}>
-                        Back
+                        {t('common.back')}
                     </Button>
 
                     <Button variant="contained" onClick={goContinue} disabled={isWizardPrimaryDisabled}>
@@ -940,43 +1088,55 @@ const Onboarding: React.FC = () => {
 
     return (
         <AppPage
-            maxWidth="content"
+            maxWidth="wide"
             sx={{
-                display: 'flex',
-                flexDirection: 'column',
                 minHeight: onboardingCardMinHeight
             }}
         >
-            <Box sx={{ mb: 2 }}>
-                <OnboardingStepDots
-                    steps={steps}
-                    activeStepIndex={stepDotsActiveIndex}
-                />
-            </Box>
-
-            <AppCard
+            <Box
                 sx={{
-                    flex: 1,
-                    display: 'flex',
-                    flexDirection: 'column'
-                }}
-                contentSx={{
-                    flex: 1,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    minHeight: 0
+                    display: 'grid',
+                    gridTemplateColumns: ONBOARDING_PAGE_COLUMNS,
+                    gap: { xs: 2, md: 4 },
+                    alignItems: 'stretch',
+                    minHeight: onboardingCardMinHeight
                 }}
             >
-                <Box ref={scrollContainerRef} sx={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
-                    <Stack spacing={ONBOARDING_CARD_CONTENT_SPACING}>
-                        {cardBodyContent}
-                    </Stack>
+                <OnboardingSetupRail steps={steps} activeStepIndex={activeStepIndex} stage={stage} />
+
+                <Box sx={{ minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+                    <Box sx={{ mb: 2, display: { md: 'none' } }}>
+                        <OnboardingStepDots
+                            steps={steps}
+                            activeStepIndex={stepDotsActiveIndex}
+                        />
+                    </Box>
+
+                    <AppCard
+                        sx={{
+                            flex: 1,
+                            display: 'flex',
+                            flexDirection: 'column'
+                        }}
+                        contentSx={{
+                            flex: 1,
+                            display: 'flex',
+                            flexDirection: 'column',
+                            minHeight: 0
+                        }}
+                    >
+                        <Box ref={scrollContainerRef} sx={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
+                            <Stack spacing={ONBOARDING_CARD_CONTENT_SPACING}>
+                                {cardBodyContent}
+                            </Stack>
+                        </Box>
+
+                        <Divider sx={{ mt: 2 }} />
+
+                        {cardFooterContent}
+                    </AppCard>
                 </Box>
-
-                <Divider sx={{ mt: 2 }} />
-
-                {cardFooterContent}
-            </AppCard>
+            </Box>
 
             <LoseItImportDialog
                 open={isImportDialogOpen}

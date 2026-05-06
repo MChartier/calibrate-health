@@ -104,12 +104,12 @@ const AboutYouStep: React.FC<AboutYouStepProps> = (props) => {
         <Stack spacing={ONBOARDING_CARD_CONTENT_SPACING}>
             <Box>
                 <Typography variant="h5" gutterBottom>
-                    Estimate your calorie burn
+                    {t('onboarding.about.title')}
                 </Typography>
                 <Typography sx={{
                     color: "text.secondary"
                 }}>
-                    We can estimate your TDEE (calories burned on a typical day) from a few quick details so your calorie target is realistic.
+                    {t('onboarding.about.body')}
                 </Typography>
             </Box>
             {hasAnySummary ? (
@@ -118,7 +118,7 @@ const AboutYouStep: React.FC<AboutYouStepProps> = (props) => {
                         <Collapse in appear timeout={props.prefersReducedMotion ? 0 : 180}>
                             <Box>
                                 <OnboardingSummaryRow
-                                    label="Date of birth"
+                                    label={t('profile.dateOfBirth')}
                                     value={formattedDob || props.dob.trim()}
                                     onEdit={() => props.onEditQuestion('dob')}
                                     highlight={props.highlightKey === 'dob'}
@@ -131,7 +131,7 @@ const AboutYouStep: React.FC<AboutYouStepProps> = (props) => {
                         <Collapse in appear timeout={props.prefersReducedMotion ? 0 : 180}>
                             <Box>
                                 <OnboardingSummaryRow
-                                    label="Sex at birth"
+                                    label={t('onboarding.about.sexAtBirth')}
                                     value={sexLabel}
                                     onEdit={() => props.onEditQuestion('sex')}
                                     highlight={props.highlightKey === 'sex'}
@@ -144,7 +144,7 @@ const AboutYouStep: React.FC<AboutYouStepProps> = (props) => {
                         <Collapse in appear timeout={props.prefersReducedMotion ? 0 : 180}>
                             <Box>
                                 <OnboardingSummaryRow
-                                    label="Activity"
+                                    label={t('profile.activityLevel')}
                                     value={activityTitle}
                                     onEdit={() => props.onEditQuestion('activityLevel')}
                                     highlight={props.highlightKey === 'activityLevel'}
@@ -157,7 +157,7 @@ const AboutYouStep: React.FC<AboutYouStepProps> = (props) => {
                         <Collapse in appear timeout={props.prefersReducedMotion ? 0 : 180}>
                             <Box>
                                 <OnboardingSummaryRow
-                                    label="Height"
+                                    label={t('onboarding.about.height')}
                                     value={heightValue}
                                     onEdit={() => props.onEditQuestion('height')}
                                     highlight={props.highlightKey === 'height'}
@@ -170,7 +170,7 @@ const AboutYouStep: React.FC<AboutYouStepProps> = (props) => {
                 <Typography sx={{
                     color: "text.secondary"
                 }}>
-                    These details help us estimate your calorie burn. You can update them later in your profile.
+                    {t('onboarding.about.emptyHint')}
                 </Typography>
             )}
         </Stack>

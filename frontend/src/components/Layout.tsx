@@ -26,7 +26,6 @@ import ShowChartIcon from '@mui/icons-material/ShowChartRounded';
 import PersonIcon from '@mui/icons-material/PersonRounded';
 import RestaurantRoundedIcon from '@mui/icons-material/RestaurantRounded';
 import MonitorWeightRoundedIcon from '@mui/icons-material/MonitorWeightRounded';
-import MoreHorizRoundedIcon from '@mui/icons-material/MoreHorizRounded';
 import NotificationsIcon from '@mui/icons-material/NotificationsRounded';
 import SettingsIcon from '@mui/icons-material/SettingsRounded';
 import LogoutIcon from '@mui/icons-material/LogoutRounded';
@@ -60,7 +59,7 @@ const TOOLBAR_HORIZONTAL_PADDING_SPACING = { xs: 1.25, sm: 2.5 }; // Header gutt
 const DEFAULT_TOOLBAR_MIN_HEIGHT_SPACING = 7; // MUI default toolbar height in spacing units (56px).
 const NAV_NOTIFICATION_BADGE_MAX = 99; // Prevent oversized badge strings from crowding the header controls.
 const NAV_BRAND_WORDMARK_DISPLAY = { xs: 'none', sm: 'inline-flex' } as const; // Preserve xs toolbar room while keeping the logo visible.
-const MOBILE_BOTTOM_NAV_ACTION_MIN_WIDTH_PX = 0; // Lets three mobile tabs share narrow screens without horizontal overflow.
+const MOBILE_BOTTOM_NAV_ACTION_MIN_WIDTH_PX = 0; // Lets the four primary mobile tabs share narrow screens without horizontal overflow.
 
 /**
  * Map the current pathname to a navigation value so nested routes keep the correct tab highlighted.
@@ -70,8 +69,6 @@ function getActiveNavigationValue(pathname: string): string | null {
     if (pathname.startsWith('/log')) return '/log';
     if (pathname.startsWith('/weight')) return '/weight';
     if (pathname.startsWith('/goals')) return '/goals';
-    if (pathname.startsWith('/settings')) return '/profile';
-    if (pathname.startsWith('/profile')) return '/profile';
     return null;
 }
 
@@ -148,7 +145,6 @@ const ResponsiveBottomNav: React.FC<ResponsiveBottomNavProps> = ({ value, onChan
                 <BottomNavigationAction value="/log" label={t('nav.food')} icon={<RestaurantRoundedIcon />} />
                 <BottomNavigationAction value="/weight" label={t('nav.weight')} icon={<MonitorWeightRoundedIcon />} />
                 <BottomNavigationAction value="/goals" label={t('nav.goals')} icon={<ShowChartIcon />} />
-                <BottomNavigationAction value="/profile" label={t('nav.more')} icon={<MoreHorizRoundedIcon />} />
             </BottomNavigation>
         </Box>
     );

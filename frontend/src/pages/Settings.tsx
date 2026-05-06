@@ -39,6 +39,10 @@ import { resolveServiceWorkerRegistration, urlBase64ToUint8Array } from '../util
 
 const ABOUT_PARAGRAPH_SPACING = 1.5; // Spacing between About card paragraphs.
 const ABOUT_LINK_SPACING = 1; // Spacing between About card action buttons.
+const SETTINGS_PAGE_COLUMNS = {
+    xs: '1fr',
+    md: 'minmax(0, 1fr) minmax(0, 1fr)'
+}; // Two balanced settings columns on desktop; single task flow on mobile.
 const IOS_USER_AGENT_REGEX = /iphone|ipad|ipod/i;
 
 const isIosDevice = (): boolean => {
@@ -413,163 +417,188 @@ const Settings: React.FC = () => {
     const resolvedThemeModeLabel = resolvedThemeMode === 'dark' ? t('themeMode.dark') : t('themeMode.light');
 
     return (
-        <AppPage maxWidth="content">
+        <AppPage maxWidth="wide">
             <Stack spacing={sectionSpacing} useFlexGap>
-                <ProfilePhotoCard description={t('settings.profilePhotoDescription')} />
+                <Box>
+                    <Typography variant="overline" sx={{ color: 'text.secondary' }}>
+                        {t('nav.settings')}
+                    </Typography>
+                    <Typography variant="h3" component="h1">
+                        {t('settings.pageTitle')}
+                    </Typography>
+                    <Typography variant="body1" sx={{ color: 'text.secondary', maxWidth: '72ch', mt: 0.75 }}>
+                        {t('settings.pageSubtitle')}
+                    </Typography>
+                </Box>
 
-                <AccountSecurityCard />
+                <Box
+                    sx={{
+                        display: 'grid',
+                        gridTemplateColumns: SETTINGS_PAGE_COLUMNS,
+                        gap: sectionSpacing,
+                        alignItems: 'start'
+                    }}
+                >
+                    <Stack spacing={sectionSpacing} useFlexGap sx={{ minWidth: 0 }}>
+                        <ProfilePhotoCard description={t('settings.profilePhotoDescription')} />
 
-                <LoseItImportCard />
+                        <AccountSecurityCard />
 
-                <AppCard>
-                    <Stack spacing={1.5} useFlexGap>
-                        <SectionHeader title={t('settings.feedbackTitle')} />
-
-                        <Typography variant="body2" sx={{
-                            color: "text.secondary"
-                        }}>
-                            {t('settings.feedbackDescription')}
-                        </Typography>
-
-                        <InlineStatusLine status={feedbackStatus} />
-
-                        <FormControl>
-                            <FormControlLabel
-                                control={
-                                    <Switch
-                                        checked={hapticsEnabled}
-                                        onChange={(e) => void handleHapticsToggle(e.target.checked)}
-                                        disabled={!user || isUpdatingFeedbackPreferences}
-                                    />
-                                }
-                                label={t('settings.feedbackHapticsLabel')}
-                            />
-                            <FormHelperText>
-                                {hapticsSupportAvailable
-                                    ? t('settings.feedbackHapticsHelper')
-                                    : t('settings.feedbackHapticsUnsupported')}
-                            </FormHelperText>
-                        </FormControl>
+                        <LoseItImportCard />
                     </Stack>
-                </AppCard>
 
-                <AppCard>
-                    <Stack spacing={1.5} useFlexGap>
-                        <SectionHeader title={t('settings.remindersTitle')} />
+                    <Stack spacing={sectionSpacing} useFlexGap sx={{ minWidth: 0 }}>
+                        <AppCard>
+                            <Stack spacing={1.5} useFlexGap>
+                                <SectionHeader title={t('settings.feedbackTitle')} />
 
-                        <Typography variant="body2" sx={{
-                            color: "text.secondary"
-                        }}>
-                            {t('settings.remindersDescription')}
-                        </Typography>
+                                <Typography variant="body2" sx={{
+                                    color: "text.secondary"
+                                }}>
+                                    {t('settings.feedbackDescription')}
+                                </Typography>
 
-                        <InlineStatusLine status={remindersStatus} />
+                                <InlineStatusLine status={feedbackStatus} />
 
-                        <FormControl>
-                            <FormControlLabel
-                                control={
-                                    <Switch
-                                        checked={remindersEnabled}
-                                        onChange={(e) => void handleRemindersToggle(e.target.checked)}
-                                        disabled={!reminderSupport.supported || isUpdatingReminders}
+                                <FormControl>
+                                    <FormControlLabel
+                                        control={
+                                            <Switch
+                                                checked={hapticsEnabled}
+                                                onChange={(e) => void handleHapticsToggle(e.target.checked)}
+                                                disabled={!user || isUpdatingFeedbackPreferences}
+                                            />
+                                        }
+                                        label={t('settings.feedbackHapticsLabel')}
                                     />
-                                }
-                                label={t('settings.remindersDeviceToggleLabel')}
-                            />
-                            <FormHelperText>{reminderSupport.message}</FormHelperText>
-                        </FormControl>
+                                    <FormHelperText>
+                                        {hapticsSupportAvailable
+                                            ? t('settings.feedbackHapticsHelper')
+                                            : t('settings.feedbackHapticsUnsupported')}
+                                    </FormHelperText>
+                                </FormControl>
+                            </Stack>
+                        </AppCard>
 
-                        <Typography variant="body2" sx={{
-                            color: "text.secondary"
-                        }}>
-                            {t('settings.remindersPreferencesHelper')}
-                        </Typography>
+                        <AppCard>
+                            <Stack spacing={1.5} useFlexGap>
+                                <SectionHeader title={t('settings.remindersTitle')} />
 
-                        <FormControl>
-                            <FormControlLabel
-                                control={
-                                    <Switch
-                                        checked={reminderLogWeightEnabled}
-                                        onChange={(e) => void handleReminderPreferenceToggle('weight', e.target.checked)}
-                                        disabled={!user || isUpdatingReminderPreferences}
+                                <Typography variant="body2" sx={{
+                                    color: "text.secondary"
+                                }}>
+                                    {t('settings.remindersDescription')}
+                                </Typography>
+
+                                <InlineStatusLine status={remindersStatus} />
+
+                                <FormControl>
+                                    <FormControlLabel
+                                        control={
+                                            <Switch
+                                                checked={remindersEnabled}
+                                                onChange={(e) => void handleRemindersToggle(e.target.checked)}
+                                                disabled={!reminderSupport.supported || isUpdatingReminders}
+                                            />
+                                        }
+                                        label={t('settings.remindersDeviceToggleLabel')}
                                     />
-                                }
-                                label={t('settings.remindersLogWeightToggleLabel')}
-                            />
-                            <FormControlLabel
-                                control={
-                                    <Switch
-                                        checked={reminderLogFoodEnabled}
-                                        onChange={(e) => void handleReminderPreferenceToggle('food', e.target.checked)}
-                                        disabled={!user || isUpdatingReminderPreferences}
+                                    <FormHelperText>{reminderSupport.message}</FormHelperText>
+                                </FormControl>
+
+                                <Typography variant="body2" sx={{
+                                    color: "text.secondary"
+                                }}>
+                                    {t('settings.remindersPreferencesHelper')}
+                                </Typography>
+
+                                <FormControl>
+                                    <FormControlLabel
+                                        control={
+                                            <Switch
+                                                checked={reminderLogWeightEnabled}
+                                                onChange={(e) => void handleReminderPreferenceToggle('weight', e.target.checked)}
+                                                disabled={!user || isUpdatingReminderPreferences}
+                                            />
+                                        }
+                                        label={t('settings.remindersLogWeightToggleLabel')}
                                     />
-                                }
-                                label={t('settings.remindersLogFoodToggleLabel')}
-                            />
-                        </FormControl>
+                                    <FormControlLabel
+                                        control={
+                                            <Switch
+                                                checked={reminderLogFoodEnabled}
+                                                onChange={(e) => void handleReminderPreferenceToggle('food', e.target.checked)}
+                                                disabled={!user || isUpdatingReminderPreferences}
+                                            />
+                                        }
+                                        label={t('settings.remindersLogFoodToggleLabel')}
+                                    />
+                                </FormControl>
+                            </Stack>
+                        </AppCard>
+
+                        <AppCard>
+                            <SectionHeader title={t('settings.unitsAndLocalization')} sx={{ mb: 0.5 }} />
+
+                            <InlineStatusLine status={unitsStatus} sx={{ mb: 1 }} />
+
+                            <Box sx={{ mt: 1 }}>
+                                <UnitPreferenceToggles
+                                    weightUnit={weightUnit}
+                                    heightUnit={heightUnit}
+                                    onWeightUnitChange={(next) => void handleWeightUnitChange(next)}
+                                    onHeightUnitChange={(next) => void handleHeightUnitChange(next)}
+                                />
+                            </Box>
+
+                            <Box sx={{ mt: 2 }}>
+                                <FormControl fullWidth margin="normal">
+                                    <InputLabel>{t('settings.language')}</InputLabel>
+                                    <Select
+                                        value={languageValue}
+                                        label={t('settings.language')}
+                                        onChange={(e) => void handleLanguageChange(e.target.value as AppLanguage)}
+                                    >
+                                        <MenuItem value={APP_LANGUAGES.EN}>{t('language.en')}</MenuItem>
+                                        <MenuItem value={APP_LANGUAGES.ES}>{t('language.es')}</MenuItem>
+                                        <MenuItem value={APP_LANGUAGES.FR}>{t('language.fr')}</MenuItem>
+                                        <MenuItem value={APP_LANGUAGES.RU}>{t('language.ru')}</MenuItem>
+                                    </Select>
+                                </FormControl>
+                            </Box>
+
+                            <Box sx={{ mt: 2 }}>
+                                <TimeZonePicker
+                                    value={timezoneValue}
+                                    onChange={(next) => void handleTimezoneChange(next)}
+                                    helperText={t('settings.timezoneHelper')}
+                                />
+                            </Box>
+                        </AppCard>
+
+                        <AppCard>
+                            <SectionHeader title={t('settings.appearance')} sx={{ mb: 1.5 }} />
+
+                            <FormControl fullWidth margin="normal">
+                                <InputLabel>{t('settings.theme')}</InputLabel>
+                                <Select
+                                    value={themePreference}
+                                    label={t('settings.theme')}
+                                    onChange={(e) => setThemePreference(e.target.value as ThemePreference)}
+                                >
+                                    <MenuItem value="system">{t('themePreference.system')}</MenuItem>
+                                    <MenuItem value="light">{t('themePreference.light')}</MenuItem>
+                                    <MenuItem value="dark">{t('themePreference.dark')}</MenuItem>
+                                </Select>
+                                <FormHelperText>
+                                    {themePreference === 'system'
+                                        ? t('settings.themeHelper.system', { mode: resolvedThemeModeLabel })
+                                        : t('settings.themeHelper.persisted')}
+                                </FormHelperText>
+                            </FormControl>
+                        </AppCard>
                     </Stack>
-                </AppCard>
-
-                <AppCard>
-                    <SectionHeader title={t('settings.unitsAndLocalization')} sx={{ mb: 0.5 }} />
-
-                    <InlineStatusLine status={unitsStatus} sx={{ mb: 1 }} />
-
-                    <Box sx={{ mt: 1 }}>
-                        <UnitPreferenceToggles
-                            weightUnit={weightUnit}
-                            heightUnit={heightUnit}
-                            onWeightUnitChange={(next) => void handleWeightUnitChange(next)}
-                            onHeightUnitChange={(next) => void handleHeightUnitChange(next)}
-                        />
-                    </Box>
-
-                    <Box sx={{ mt: 2 }}>
-                        <FormControl fullWidth margin="normal">
-                            <InputLabel>{t('settings.language')}</InputLabel>
-                            <Select
-                                value={languageValue}
-                                label={t('settings.language')}
-                                onChange={(e) => void handleLanguageChange(e.target.value as AppLanguage)}
-                            >
-                                <MenuItem value={APP_LANGUAGES.EN}>{t('language.en')}</MenuItem>
-                                <MenuItem value={APP_LANGUAGES.ES}>{t('language.es')}</MenuItem>
-                                <MenuItem value={APP_LANGUAGES.FR}>{t('language.fr')}</MenuItem>
-                                <MenuItem value={APP_LANGUAGES.RU}>{t('language.ru')}</MenuItem>
-                            </Select>
-                        </FormControl>
-                    </Box>
-
-                    <Box sx={{ mt: 2 }}>
-                        <TimeZonePicker
-                            value={timezoneValue}
-                            onChange={(next) => void handleTimezoneChange(next)}
-                            helperText={t('settings.timezoneHelper')}
-                        />
-                    </Box>
-                </AppCard>
-
-                <AppCard>
-                    <SectionHeader title={t('settings.appearance')} sx={{ mb: 1.5 }} />
-
-                    <FormControl fullWidth margin="normal">
-                        <InputLabel>{t('settings.theme')}</InputLabel>
-                        <Select
-                            value={themePreference}
-                            label={t('settings.theme')}
-                            onChange={(e) => setThemePreference(e.target.value as ThemePreference)}
-                        >
-                            <MenuItem value="system">{t('themePreference.system')}</MenuItem>
-                            <MenuItem value="light">{t('themePreference.light')}</MenuItem>
-                            <MenuItem value="dark">{t('themePreference.dark')}</MenuItem>
-                        </Select>
-                        <FormHelperText>
-                            {themePreference === 'system'
-                                ? t('settings.themeHelper.system', { mode: resolvedThemeModeLabel })
-                                : t('settings.themeHelper.persisted')}
-                        </FormHelperText>
-                    </FormControl>
-                </AppCard>
+                </Box>
 
                 <AppCard>
                     <Stack spacing={2} useFlexGap>

@@ -3,12 +3,11 @@ import { Navigate } from 'react-router-dom';
 import { Box, CircularProgress, useMediaQuery } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { useAuth } from '../context/useAuth';
-import Landing from './Landing';
 
 const HOME_SIGNED_IN_BREAKPOINT = 'md'; // Match the app shell mode: desktop opens the combined workspace, mobile opens the Today tab.
 
 /**
- * Public index route that routes signed-in users to /log and shows landing for guests.
+ * Public index route that sends guests to the focused sign-in entry point.
  */
 const Home: React.FC = () => {
     const { user, isLoading } = useAuth();
@@ -27,7 +26,7 @@ const Home: React.FC = () => {
         return <Navigate to={isDesktopWorkspace ? '/dashboard' : '/log'} replace />;
     }
 
-    return <Landing />;
+    return <Navigate to="/login" replace />;
 };
 
 export default Home;
