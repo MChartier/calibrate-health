@@ -12,6 +12,7 @@ import {
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { Link as RouterLink } from 'react-router-dom';
+import CalorieTargetBanner from '../components/CalorieTargetBanner';
 import { getActivityLevelOptions } from '../constants/activityLevels';
 import type { UserProfilePatchPayload } from '../context/authContext';
 import { useAuth } from '../context/useAuth';
@@ -27,6 +28,14 @@ import { useI18n } from '../i18n/useI18n';
  * Profile page helpers and autosaved form logic for BMR/TDEE inputs.
  */
 const AUTOSAVE_DELAY_MS = 450;
+const PROFILE_PAGE_COLUMNS = {
+    xs: '1fr',
+    md: 'minmax(0, 1fr) minmax(320px, 0.78fr)'
+}; // Keeps editable profile fields primary while leaving target math visible on desktop.
+const PROFILE_PAGE_AREAS = {
+    xs: '"target" "profile"',
+    md: '"profile target"'
+}; // Mobile shows the current target before the form; desktop keeps it as context.
 
 type ParsedHeight = {
     cm: number;
@@ -238,150 +247,170 @@ const Profile: React.FC = () => {
     );
 
     return (
-        <AppPage>
+        <AppPage maxWidth="wide">
             <Stack spacing={sectionSpacing} useFlexGap>
-                <AppCard>
-                    <SectionHeader
-                        title={t('profile.bodyProfile.title')}
-                        subtitle={t('profile.bodyProfile.subtitle')}
-                        sx={{ mb: 0.5 }}
-                    />
+                <Box>
+                    <Typography variant="overline" sx={{ color: 'text.secondary' }}>
+                        {t('nav.profile')}
+                    </Typography>
+                    <Typography variant="h3" component="h1">
+                        {t('profile.pageTitle')}
+                    </Typography>
+                    <Typography variant="body1" sx={{ color: 'text.secondary', maxWidth: '72ch', mt: 0.75 }}>
+                        {t('profile.pageSubtitle')}
+                    </Typography>
+                </Box>
 
-                    <InlineStatusLine status={autosaveStatusLine} sx={{ mb: 1 }} ariaLive="off" />
+                <Box
+                    sx={{
+                        display: 'grid',
+                        gridTemplateColumns: PROFILE_PAGE_COLUMNS,
+                        gridTemplateAreas: PROFILE_PAGE_AREAS,
+                        gap: sectionSpacing,
+                        alignItems: 'start'
+                    }}
+                >
+                    <Box sx={{ gridArea: 'target', minWidth: 0 }}>
+                        <CalorieTargetBanner />
+                    </Box>
 
-                    <Stack spacing={2}>
-                        <TextField
-                            label={t('profile.dateOfBirth')}
-                            type="date"
-                            value={dobValue}
-                            onChange={(e) => {
-                                const next = e.target.value;
-                                setDateOfBirth(next);
-                                queueAutosave({ date_of_birth: normalizePatchString(next) });
-                            }}
-                            fullWidth
-                            slotProps={{
-                                inputLabel: { shrink: true }
-                            }}
+                    <AppCard sx={{ gridArea: 'profile' }}>
+                        <SectionHeader
+                            title={t('profile.bodyProfile.title')}
+                            subtitle={t('profile.bodyProfile.subtitle')}
+                            sx={{ mb: 0.5 }}
                         />
 
-                        <FormControl fullWidth>
-                            <InputLabel>{t('profile.sex')}</InputLabel>
-                            <Select
-                                value={sexValue}
-                                label={t('profile.sex')}
-                                onChange={(e) => {
-                                    const next = String(e.target.value);
-                                    setSex(next);
-                                    queueAutosave({ sex: normalizePatchString(next) });
-                                }}
-                            >
-                                <MenuItem value="MALE">{t('profile.sex.male')}</MenuItem>
-                                <MenuItem value="FEMALE">{t('profile.sex.female')}</MenuItem>
-                            </Select>
-                        </FormControl>
+                        <InlineStatusLine status={autosaveStatusLine} sx={{ mb: 1 }} ariaLive="off" />
 
-                        {heightUnit === 'CM' ? (
+                        <Stack spacing={2}>
                             <TextField
-                                label={t('profile.heightCm')}
-                                type="number"
-                                value={heightCmValue}
+                                label={t('profile.dateOfBirth')}
+                                type="date"
+                                value={dobValue}
                                 onChange={(e) => {
                                     const next = e.target.value;
-                                    setHeightCm(next);
-                                    queueAutosave({ height_cm: normalizePatchString(next) });
+                                    setDateOfBirth(next);
+                                    queueAutosave({ date_of_birth: normalizePatchString(next) });
                                 }}
                                 fullWidth
                                 slotProps={{
-                                    htmlInput: { min: 50, max: 272, step: 0.1 }
+                                    inputLabel: { shrink: true }
                                 }}
                             />
-                        ) : (
-                            <Box sx={{ display: 'flex', gap: 2 }}>
+
+                            <FormControl fullWidth>
+                                <InputLabel>{t('profile.sex')}</InputLabel>
+                                <Select
+                                    value={sexValue}
+                                    label={t('profile.sex')}
+                                    onChange={(e) => {
+                                        const next = String(e.target.value);
+                                        setSex(next);
+                                        queueAutosave({ sex: normalizePatchString(next) });
+                                    }}
+                                >
+                                    <MenuItem value="MALE">{t('profile.sex.male')}</MenuItem>
+                                    <MenuItem value="FEMALE">{t('profile.sex.female')}</MenuItem>
+                                </Select>
+                            </FormControl>
+
+                            {heightUnit === 'CM' ? (
                                 <TextField
-                                    label={t('profile.feet')}
+                                    label={t('profile.heightCm')}
                                     type="number"
-                                    value={heightFeetValue}
+                                    value={heightCmValue}
                                     onChange={(e) => {
                                         const next = e.target.value;
-                                        setHeightFeet(next);
-                                        queueAutosave(buildFeetInchesHeightPatch(next, heightInchesValue));
+                                        setHeightCm(next);
+                                        queueAutosave({ height_cm: normalizePatchString(next) });
                                     }}
                                     fullWidth
                                     slotProps={{
-                                        htmlInput: { min: 1, max: 8, step: 1 }
+                                        htmlInput: { min: 50, max: 272, step: 0.1 }
                                     }}
                                 />
-                                <TextField
-                                    label={t('profile.inches')}
-                                    type="number"
-                                    value={heightInchesValue}
-                                    onChange={(e) => {
-                                        const next = e.target.value;
-                                        setHeightInches(next);
-                                        queueAutosave(buildFeetInchesHeightPatch(heightFeetValue, next));
-                                    }}
-                                    fullWidth
-                                    slotProps={{
-                                        htmlInput: { min: 0, max: 11.9, step: 0.1 }
-                                    }}
-                                />
-                            </Box>
-                        )}
-
-                        <Typography variant="caption" sx={{
-                            color: "text.secondary"
-                        }}>
-                            {t('profile.unitsTimezoneHint.prefix')}{' '}
-                            <Link component={RouterLink} to="/settings">
-                                {t('nav.settings')}
-                            </Link>
-                            {t('profile.unitsTimezoneHint.suffix')}
-                        </Typography>
-
-                        <FormControl fullWidth>
-                            <InputLabel>{t('profile.activityLevel')}</InputLabel>
-                            <Select
-                                value={activityValue}
-                                label={t('profile.activityLevel')}
-                                renderValue={(selected) => {
-                                    const value = typeof selected === 'string' ? selected : '';
-                                    return activityLevelOptions.find((option) => option.value === value)?.title ?? '';
-                                }}
-                                onChange={(e) => {
-                                    const next = String(e.target.value);
-                                    setActivityLevel(next);
-                                    queueAutosave({ activity_level: normalizePatchString(next) });
-                                }}
-                            >
-                                {activityLevelOptions.map((option) => (
-                                    <MenuItem
-                                        key={option.value}
-                                        value={option.value}
-                                        sx={{
-                                            alignItems: 'flex-start',
-                                            whiteSpace: 'normal',
-                                            py: 1
+                            ) : (
+                                <Box sx={{ display: 'flex', gap: 2 }}>
+                                    <TextField
+                                        label={t('profile.feet')}
+                                        type="number"
+                                        value={heightFeetValue}
+                                        onChange={(e) => {
+                                            const next = e.target.value;
+                                            setHeightFeet(next);
+                                            queueAutosave(buildFeetInchesHeightPatch(next, heightInchesValue));
                                         }}
-                                    >
-                                        <Box>
-                                            <Typography variant="body2" sx={{
-                                                fontWeight: 800
-                                            }}>
-                                                {option.title}
-                                            </Typography>
-                                            <Typography variant="caption" sx={{
-                                                color: "text.secondary"
-                                            }}>
-                                                {option.description}
-                                            </Typography>
-                                        </Box>
-                                    </MenuItem>
-                                ))}
-                            </Select>
-                        </FormControl>
-                    </Stack>
-                </AppCard>
+                                        fullWidth
+                                        slotProps={{
+                                            htmlInput: { min: 1, max: 8, step: 1 }
+                                        }}
+                                    />
+                                    <TextField
+                                        label={t('profile.inches')}
+                                        type="number"
+                                        value={heightInchesValue}
+                                        onChange={(e) => {
+                                            const next = e.target.value;
+                                            setHeightInches(next);
+                                            queueAutosave(buildFeetInchesHeightPatch(heightFeetValue, next));
+                                        }}
+                                        fullWidth
+                                        slotProps={{
+                                            htmlInput: { min: 0, max: 11.9, step: 0.1 }
+                                        }}
+                                    />
+                                </Box>
+                            )}
+
+                            <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                {t('profile.unitsTimezoneHint.prefix')}{' '}
+                                <Link component={RouterLink} to="/settings">
+                                    {t('nav.settings')}
+                                </Link>
+                                {t('profile.unitsTimezoneHint.suffix')}
+                            </Typography>
+
+                            <FormControl fullWidth>
+                                <InputLabel>{t('profile.activityLevel')}</InputLabel>
+                                <Select
+                                    value={activityValue}
+                                    label={t('profile.activityLevel')}
+                                    renderValue={(selected) => {
+                                        const value = typeof selected === 'string' ? selected : '';
+                                        return activityLevelOptions.find((option) => option.value === value)?.title ?? '';
+                                    }}
+                                    onChange={(e) => {
+                                        const next = String(e.target.value);
+                                        setActivityLevel(next);
+                                        queueAutosave({ activity_level: normalizePatchString(next) });
+                                    }}
+                                >
+                                    {activityLevelOptions.map((option) => (
+                                        <MenuItem
+                                            key={option.value}
+                                            value={option.value}
+                                            sx={{
+                                                alignItems: 'flex-start',
+                                                whiteSpace: 'normal',
+                                                py: 1
+                                            }}
+                                        >
+                                            <Box>
+                                                <Typography variant="body2" sx={{ fontWeight: 800 }}>
+                                                    {option.title}
+                                                </Typography>
+                                                <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                                    {option.description}
+                                                </Typography>
+                                            </Box>
+                                        </MenuItem>
+                                    ))}
+                                </Select>
+                            </FormControl>
+                        </Stack>
+                    </AppCard>
+                </Box>
             </Stack>
         </AppPage>
     );

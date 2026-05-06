@@ -2,10 +2,9 @@ import React from 'react';
 import { Navigate } from 'react-router-dom';
 import { Box, CircularProgress } from '@mui/material';
 import { useAuth } from '../context/useAuth';
-import Landing from './Landing';
 
 /**
- * Public index route that routes signed-in users to the responsive dashboard and shows landing for guests.
+ * Public index route that sends signed-in users to the responsive dashboard and guests to the focused sign-in entry point.
  */
 const Home: React.FC = () => {
     const { user, isLoading } = useAuth();
@@ -22,7 +21,7 @@ const Home: React.FC = () => {
         return <Navigate to="/dashboard" replace />;
     }
 
-    return <Landing />;
+    return <Navigate to="/login" replace />;
 };
 
 export default Home;

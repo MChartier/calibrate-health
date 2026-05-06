@@ -6,6 +6,7 @@ import { ONBOARDING_CARD_CONTENT_SPACING, ONBOARDING_FIELD_SPACING } from './lay
 import type { GoalsQuestionKey } from './types';
 import { formatWeeklyWeightChange, inferGoalModeFromWeights, parseFiniteNumber } from '../../utils/onboardingConversions';
 import OnboardingSummaryRow from './OnboardingSummaryRow';
+import { useI18n } from '../../i18n/useI18n';
 
 /**
  * Onboarding "Goals" step summary display.
@@ -28,6 +29,7 @@ export type GoalsStepProps = {
  * one question at a time, confirm, then see the result accumulate here.
  */
 const GoalsStep: React.FC<GoalsStepProps> = (props) => {
+    const { t } = useI18n();
     const weightUnitLabel = props.weightUnit === WEIGHT_UNITS.LB ? 'lb' : 'kg';
 
     const currentWeightNumber = parseFiniteNumber(props.currentWeight);
@@ -55,12 +57,12 @@ const GoalsStep: React.FC<GoalsStepProps> = (props) => {
         <Stack spacing={ONBOARDING_CARD_CONTENT_SPACING}>
             <Box>
                 <Typography variant="h5" gutterBottom>
-                    Set your goal
+                    {t('onboarding.goals.title')}
                 </Typography>
                 <Typography sx={{
                     color: "text.secondary"
                 }}>
-                    Answer a few quick questions and we&apos;ll set a daily calorie target that matches your plan.
+                    {t('onboarding.goals.body')}
                 </Typography>
             </Box>
             {hasAnySummary ? (
@@ -69,7 +71,7 @@ const GoalsStep: React.FC<GoalsStepProps> = (props) => {
                         <Collapse in appear timeout={props.prefersReducedMotion ? 0 : 180}>
                             <Box>
                                 <OnboardingSummaryRow
-                                    label="Current weight"
+                                    label={t('onboarding.goals.currentWeight')}
                                     value={`${props.currentWeight.trim()} ${weightUnitLabel}`}
                                     onEdit={() => props.onEditQuestion('currentWeight')}
                                     highlight={props.highlightKey === 'currentWeight'}
@@ -82,7 +84,7 @@ const GoalsStep: React.FC<GoalsStepProps> = (props) => {
                         <Collapse in appear timeout={props.prefersReducedMotion ? 0 : 180}>
                             <Box>
                                 <OnboardingSummaryRow
-                                    label="Target weight"
+                                    label={t('onboarding.goals.targetWeight')}
                                     value={`${props.targetWeight.trim()} ${weightUnitLabel}`}
                                     onEdit={() => props.onEditQuestion('targetWeight')}
                                     highlight={props.highlightKey === 'targetWeight'}
@@ -95,7 +97,7 @@ const GoalsStep: React.FC<GoalsStepProps> = (props) => {
                         <Collapse in appear timeout={props.prefersReducedMotion ? 0 : 180}>
                             <Box>
                                 <OnboardingSummaryRow
-                                    label="Pace"
+                                    label={t('onboarding.goals.pace')}
                                     value={paceValue}
                                     onEdit={() => props.onEditQuestion('pace')}
                                     highlight={props.highlightKey === 'pace'}
@@ -108,7 +110,7 @@ const GoalsStep: React.FC<GoalsStepProps> = (props) => {
                 <Typography sx={{
                     color: "text.secondary"
                 }}>
-                    Start with your current weight. You can always tweak this later.
+                    {t('onboarding.goals.emptyHint')}
                 </Typography>
             )}
         </Stack>

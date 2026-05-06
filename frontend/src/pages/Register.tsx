@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
-import { Alert, Box, Button, Link, Stack, TextField, Typography } from '@mui/material';
+import { Alert, Box, Button, Link, TextField, Typography } from '@mui/material';
+import PersonAddAltRoundedIcon from '@mui/icons-material/PersonAddAltRounded';
 import { useAuth } from '../context/useAuth';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
-import AppPage from '../ui/AppPage';
-import AppCard from '../ui/AppCard';
-import SectionHeader from '../ui/SectionHeader';
+import AuthPageFrame from '../components/auth/AuthPageFrame';
 import { useI18n } from '../i18n/useI18n';
 
 /**
@@ -35,53 +34,53 @@ const Register: React.FC = () => {
     };
 
     return (
-        <AppPage maxWidth="form">
-            <AppCard>
-                <Stack component="form" spacing={2} onSubmit={handleSubmit}>
-                    <SectionHeader title={t('auth.createAccount')} />
+        <AuthPageFrame title={t('auth.createAccount')} subtitle={t('auth.registerSubtitle')} onSubmit={handleSubmit}>
+            {error && (
+                <Alert severity="error">
+                    {error}
+                </Alert>
+            )}
 
-                    {error && (
-                        <Alert severity="error">
-                            {error}
-                        </Alert>
-                    )}
-
-                    <TextField
-                        label={t('auth.email')}
-                        type="email"
-                        autoComplete="email"
-                        inputMode="email"
-                        autoFocus
-                        fullWidth
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        disabled={isSubmitting}
-                        required
-                    />
-                    <TextField
-                        label={t('auth.password')}
-                        type="password"
-                        autoComplete="new-password"
-                        fullWidth
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        disabled={isSubmitting}
-                        required
-                    />
-                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                        <Button type="submit" variant="contained" fullWidth disabled={isSubmitting}>
-                            {isSubmitting ? t('auth.creatingAccount') : t('auth.register')}
-                        </Button>
-                        <Typography variant="body2">
-                            {t('auth.haveAccountPrompt')}{' '}
-                            <Link component={RouterLink} to="/login">
-                                {t('auth.login')}
-                            </Link>
-                        </Typography>
-                    </Box>
-                </Stack>
-            </AppCard>
-        </AppPage>
+            <TextField
+                label={t('auth.email')}
+                type="email"
+                autoComplete="email"
+                inputMode="email"
+                autoFocus
+                fullWidth
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                disabled={isSubmitting}
+                required
+            />
+            <TextField
+                label={t('auth.password')}
+                type="password"
+                autoComplete="new-password"
+                fullWidth
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                disabled={isSubmitting}
+                required
+            />
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                <Button
+                    type="submit"
+                    variant="contained"
+                    fullWidth
+                    disabled={isSubmitting}
+                    startIcon={<PersonAddAltRoundedIcon />}
+                >
+                    {isSubmitting ? t('auth.creatingAccount') : t('auth.register')}
+                </Button>
+                <Typography variant="body2">
+                    {t('auth.haveAccountPrompt')}{' '}
+                    <Link component={RouterLink} to="/login">
+                        {t('auth.login')}
+                    </Link>
+                </Typography>
+            </Box>
+        </AuthPageFrame>
     );
 };
 
