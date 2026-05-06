@@ -20,10 +20,15 @@ const SPA_ENTRY_URL = '/index.html';
 const NAVIGATION_DENYLIST = [/^\/api\//, /^\/auth\//, /^\/dev\/test\//];
 
 /**
- * Ensure new service worker versions take control quickly.
+ * Claim pages once a user-approved update activates.
  */
-self.skipWaiting();
 clientsClaim();
+
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
+});
 
 cleanupOutdatedCaches();
 precacheAndRoute(self.__WB_MANIFEST);
