@@ -5,7 +5,6 @@ import { useSearchParams } from 'react-router-dom';
 import type { MealPeriod } from '../types/mealPeriod';
 import { useQuickAddFab } from '../context/useQuickAddFab';
 import { useLogDateNavigationState } from '../hooks/useLogDateNavigationState';
-import { useSelectedAndTodayDayCompletion } from '../hooks/useSelectedAndTodayDayCompletion';
 import { QUICK_ADD_SHORTCUT_ACTIONS, QUICK_ADD_SHORTCUT_QUERY_PARAM } from '../constants/pwaShortcuts';
 import { getQuickAddAction } from '../utils/quickAddShortcut';
 import CalorieSummary from './CalorieSummary';
@@ -40,8 +39,6 @@ const TodayWorkspace: React.FC = () => {
     const [searchParams, setSearchParams] = useSearchParams();
     const { selectedDate, today, navigation } = useLogDateNavigationState();
     const isSelectedToday = selectedDate === today;
-    const { isSelectedDayComplete: isDayComplete, isTodayComplete, isTodayCompletionLoading } =
-        useSelectedAndTodayDayCompletion(selectedDate, today);
     const {
         dialogs,
         openWeightDialogFromFab,
@@ -71,14 +68,6 @@ const TodayWorkspace: React.FC = () => {
 
     useEffect(() => {
         if (!quickAddAction) return;
-        if (isTodayCompletionLoading) return;
-
-        if (isTodayComplete) {
-            const nextParams = new URLSearchParams(searchParams);
-            nextParams.delete(QUICK_ADD_SHORTCUT_QUERY_PARAM);
-            setSearchParams(nextParams, { replace: true });
-            return;
-        }
 
         navigation.setDate(today);
 
@@ -100,8 +89,6 @@ const TodayWorkspace: React.FC = () => {
         }
     }, [
         dialogs,
-        isTodayComplete,
-        isTodayCompletionLoading,
         navigation,
         openWeightDialogFromFab,
         quickAddAction,
@@ -112,10 +99,9 @@ const TodayWorkspace: React.FC = () => {
 
     const handleAddFood = useCallback(
         (mealPeriod?: MealPeriod | null) => {
-            if (isDayComplete) return;
             dialogs.openFoodDialog(mealPeriod ?? null);
         },
-        [dialogs, isDayComplete]
+        [dialogs]
     );
 
     return (
@@ -144,7 +130,6 @@ const TodayWorkspace: React.FC = () => {
                         <WeightSummaryCard
                             date={selectedDate}
                             onOpenWeightEntry={openWeightDialogForLogDate}
-                            disabled={isDayComplete}
                             sx={{ height: '100%' }}
                         />
                     </Box>
@@ -155,7 +140,6 @@ const TodayWorkspace: React.FC = () => {
                             isSelectedToday={isSelectedToday}
                             onAddFood={handleAddFood}
                             fillAvailableHeight
-                            disabled={isDayComplete}
                         />
                     </Box>
 

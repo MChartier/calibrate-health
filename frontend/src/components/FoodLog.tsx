@@ -21,10 +21,6 @@ export type FoodLogProps = {
      * Stretch the card to fill an assigned grid row and scroll the meal timeline internally.
      */
     fillAvailableHeight?: boolean;
-    /**
-     * Locks add/edit/delete controls when a day has been marked complete.
-     */
-    disabled?: boolean;
 };
 
 const TODAY_WORKSPACE_FOOD_LOG_HEIGHT = {
@@ -42,8 +38,7 @@ const FoodLog: React.FC<FoodLogProps> = ({
     isSelectedToday,
     onAddFood,
     constrainTimelineOnDesktop = false,
-    fillAvailableHeight = false,
-    disabled = false
+    fillAvailableHeight = false
 }) => {
     const { t } = useI18n();
     const foodQuery = useFoodLogQuery(date);
@@ -135,7 +130,6 @@ const FoodLog: React.FC<FoodLogProps> = ({
                             logs={foodQuery.data ?? []}
                             isLoading={foodQuery.isLoading}
                             onAddMeal={(mealPeriod) => onAddFood(mealPeriod)}
-                            disabled={disabled}
                         />
                     </Box>
                 )}
@@ -145,7 +139,6 @@ const FoodLog: React.FC<FoodLogProps> = ({
                     size="large"
                     startIcon={<AddRoundedIcon />}
                     onClick={() => onAddFood(null)}
-                    disabled={disabled}
                     fullWidth
                     sx={{
                         mt: 0.25,

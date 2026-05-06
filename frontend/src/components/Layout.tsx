@@ -5,8 +5,6 @@ import {
     Avatar,
     Badge,
     Box,
-    BottomNavigation,
-    BottomNavigationAction,
     Button,
     Dialog,
     DialogActions,
@@ -21,12 +19,7 @@ import {
     useMediaQuery
 } from '@mui/material';
 import { Outlet, Link as RouterLink, useLocation, useNavigate } from 'react-router-dom';
-import TodayIcon from '@mui/icons-material/TodayRounded';
-import ShowChartIcon from '@mui/icons-material/ShowChartRounded';
 import PersonIcon from '@mui/icons-material/PersonRounded';
-import RestaurantRoundedIcon from '@mui/icons-material/RestaurantRounded';
-import MonitorWeightRoundedIcon from '@mui/icons-material/MonitorWeightRounded';
-import MoreHorizRoundedIcon from '@mui/icons-material/MoreHorizRounded';
 import NotificationsIcon from '@mui/icons-material/NotificationsRounded';
 import SettingsIcon from '@mui/icons-material/SettingsRounded';
 import LogoutIcon from '@mui/icons-material/LogoutRounded';
@@ -54,7 +47,6 @@ import LogDateNavigationCluster from './LogDateNavigationCluster';
 import PwaStatusToasts from './PwaStatusToasts';
 
 const SAFE_AREA_INSET_TOP = 'var(--safe-area-inset-top, 0px)';
-const SAFE_AREA_INSET_BOTTOM = 'var(--safe-area-inset-bottom, 0px)';
 const SAFE_AREA_INSET_LEFT = 'var(--safe-area-inset-left, 0px)';
 const SAFE_AREA_INSET_RIGHT = 'var(--safe-area-inset-right, 0px)';
 const TITLEBAR_AREA_X = 'env(titlebar-area-x, 0px)';
@@ -64,20 +56,6 @@ const TOOLBAR_HORIZONTAL_PADDING_SPACING = { xs: 1.25, sm: 2.5 }; // Header gutt
 const DEFAULT_TOOLBAR_MIN_HEIGHT_SPACING = 7; // MUI default toolbar height in spacing units (56px).
 const NAV_NOTIFICATION_BADGE_MAX = 99; // Prevent oversized badge strings from crowding the header controls.
 const NAV_BRAND_WORDMARK_DISPLAY = { xs: 'none', sm: 'inline-flex' } as const; // Preserve xs toolbar room while keeping the logo visible.
-const MOBILE_BOTTOM_NAV_ACTION_MIN_WIDTH_PX = 0; // Lets three mobile tabs share narrow screens without horizontal overflow.
-
-/**
- * Map the current pathname to a navigation value so nested routes keep the correct tab highlighted.
- */
-function getActiveNavigationValue(pathname: string): string | null {
-    if (pathname.startsWith('/dashboard')) return '/dashboard';
-    if (pathname.startsWith('/log')) return '/log';
-    if (pathname.startsWith('/weight')) return '/weight';
-    if (pathname.startsWith('/goals')) return '/goals';
-    if (pathname.startsWith('/settings')) return '/profile';
-    if (pathname.startsWith('/profile')) return '/profile';
-    return null;
-}
 
 /**
  * Normalize MUI toolbar min-heights into CSS length strings for safe-area math.
@@ -112,54 +90,6 @@ function buildSafeAreaToolbarSx(theme: Theme) {
     };
 }
 
-type ResponsiveBottomNavProps = {
-    value: string | null;
-    onChange: (nextValue: string) => void;
-};
-
-/**
- * Mobile PWA bottom navigation for focused narrow-screen routes.
- */
-const ResponsiveBottomNav: React.FC<ResponsiveBottomNavProps> = ({ value, onChange }) => {
-    const { t } = useI18n();
-
-    return (
-        <Box
-            sx={{
-                position: 'fixed',
-                left: 0,
-                right: 0,
-                bottom: 0,
-                borderTop: (theme) => `1px solid ${theme.palette.divider}`,
-                bgcolor: 'background.paper',
-                pb: SAFE_AREA_INSET_BOTTOM,
-                zIndex: (theme) => theme.zIndex.appBar
-            }}
-        >
-            <BottomNavigation
-                showLabels
-                value={value}
-                onChange={(_, next) => {
-                    if (typeof next === 'string') onChange(next);
-                }}
-                sx={{
-                    width: '100%',
-                    '& .MuiBottomNavigationAction-root': {
-                        minWidth: MOBILE_BOTTOM_NAV_ACTION_MIN_WIDTH_PX,
-                        px: 0.5
-                    }
-                }}
-            >
-                <BottomNavigationAction value="/dashboard" label={t('nav.dashboard')} icon={<TodayIcon />} />
-                <BottomNavigationAction value="/log" label={t('nav.food')} icon={<RestaurantRoundedIcon />} />
-                <BottomNavigationAction value="/weight" label={t('nav.weight')} icon={<MonitorWeightRoundedIcon />} />
-                <BottomNavigationAction value="/goals" label={t('nav.goals')} icon={<ShowChartIcon />} />
-                <BottomNavigationAction value="/profile" label={t('nav.more')} icon={<MoreHorizRoundedIcon />} />
-            </BottomNavigation>
-        </Box>
-    );
-};
-
 const LayoutShell: React.FC = () => {
     const { user, logout, isLoading } = useAuth();
     const queryClient = useQueryClient();
@@ -188,7 +118,6 @@ const LayoutShell: React.FC = () => {
     const showRegisterCta = showAuthActions && !isRegisterRoute;
     const showNotificationsShortcut = showAppNav;
     const showInstallShortcut = showInstallCta && !hideNav && !(showAppNav && isXs);
-    const showBottomNav = showAppNav && !isDesktop;
     const authCtaSize = isDesktop ? 'medium' : 'small';
     const registerCtaLabel = isDesktop ? t('auth.createAccount') : t('auth.register');
     const today = useMemo(() => getTodayIsoDate(user?.timezone), [user?.timezone]);
@@ -272,7 +201,6 @@ const LayoutShell: React.FC = () => {
         [refetchInAppNotifications]
     );
 
-    const navigationValue = getActiveNavigationValue(location.pathname);
     const fabDate = logDateOverride ?? today;
     const { closeFoodDialog, closeWeightDialog } = dialogs;
 
@@ -493,19 +421,10 @@ const LayoutShell: React.FC = () => {
 
             <Box component="main" sx={{ minWidth: 0, minHeight: '100svh', bgcolor: 'background.default' }}>
                 <Toolbar sx={safeAreaToolbarSx} />
-                <AppPage reserveBottomNavSpace={showBottomNav}>
+                <AppPage>
                     <Outlet />
                 </AppPage>
             </Box>
-
-            {showBottomNav && (
-                <ResponsiveBottomNav
-                    value={navigationValue}
-                    onChange={(nextValue) => {
-                        navigate(nextValue);
-                    }}
-                />
-            )}
 
             {showAppNav && (
                 <InAppNotificationsDrawer

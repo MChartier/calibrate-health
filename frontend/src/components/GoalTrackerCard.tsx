@@ -4,11 +4,11 @@ import {
     Box,
     Button,
     Card,
-    CardActionArea,
     CardContent,
     Dialog,
     DialogContent,
     DialogTitle,
+    Link,
     Skeleton,
     Typography,
     useMediaQuery
@@ -74,8 +74,8 @@ type MetricEntry = {
 
 export type GoalTrackerCardProps = {
     /**
-     * When true, the card behaves like the Dashboard version: it is clickable (navigates to `/goals`)
-     * and includes a call-to-action line.
+     * When true, the card uses the Dashboard version: editor controls are hidden
+     * and an explicit link points users to `/goals`.
      */
     isDashboard?: boolean;
     /**
@@ -363,7 +363,7 @@ const GoalTrackerBody: React.FC<{
  * GoalTrackerCard
  *
  * Shared card used on the Dashboard and on `/goals` to visualize goal progress consistently.
- * Use `isDashboard` to control whether it links to the Goals page and shows link text.
+ * Use `isDashboard` to show the lightweight Dashboard link instead of the full editor controls.
  */
 const GoalTrackerCard: React.FC<GoalTrackerCardProps> = ({ isDashboard = false, titleKey = 'goalTracker.title' }) => {
     const { user } = useAuth();
@@ -426,6 +426,11 @@ const GoalTrackerCard: React.FC<GoalTrackerCardProps> = ({ isDashboard = false, 
     const isError = goalQuery.isError || metricsQuery.isError;
 
     const goalEditorCtaLabel = goal ? t('goalTracker.cta.setNewGoal') : t('goalTracker.cta.setGoal');
+    const dashboardDetailsLink = isDashboard ? (
+        <Link component={RouterLink} to="/goals" variant="body2" sx={{ alignSelf: 'flex-start', fontWeight: 700 }}>
+            {t('goalTracker.cta.viewGoalsDetails')}
+        </Link>
+    ) : null;
 
     const handleOpenGoalEditor = () => {
         const initialStartWeight = typeof currentWeight === 'number' && Number.isFinite(currentWeight) ? currentWeight : goal?.start_weight ?? null;
@@ -466,11 +471,7 @@ const GoalTrackerCard: React.FC<GoalTrackerCardProps> = ({ isDashboard = false, 
                 }}>
                     {t('goalTracker.error.unableToLoad')}
                 </Typography>
-                {isDashboard && (
-                    <Typography variant="body2" color="primary">
-                        {t('goalTracker.cta.viewGoalsDetails')}
-                    </Typography>
-                )}
+                {dashboardDetailsLink}
             </Box>
         );
     } else if (!goal || !goalMode) {
@@ -487,9 +488,9 @@ const GoalTrackerCard: React.FC<GoalTrackerCardProps> = ({ isDashboard = false, 
                     {t('goalTracker.empty.setTargetHint')}
                 </Typography>
                 {isDashboard && (
-                    <Typography variant="body2" color="primary">
+                    <Link component={RouterLink} to="/goals" variant="body2" sx={{ alignSelf: 'flex-start', fontWeight: 700 }}>
                         {t('goalTracker.cta.setGoal')}
-                    </Typography>
+                    </Link>
                 )}
             </Box>
         );
@@ -515,11 +516,7 @@ const GoalTrackerCard: React.FC<GoalTrackerCardProps> = ({ isDashboard = false, 
                     currentWeightDate={currentWeightDate}
                 />
 
-                {isDashboard && (
-                    <Typography variant="body2" color="primary">
-                        {t('goalTracker.cta.viewGoalsDetails')}
-                    </Typography>
-                )}
+                {dashboardDetailsLink}
             </Box>
         );
     }
@@ -545,22 +542,10 @@ const GoalTrackerCard: React.FC<GoalTrackerCardProps> = ({ isDashboard = false, 
         <>
             <Card
                 sx={{
-                    width: '100%',
-                    ...(isDashboard
-                        ? {
-                            transition: 'transform 120ms ease',
-                            '&:hover': { transform: 'translateY(-2px)' }
-                        }
-                        : null)
+                    width: '100%'
                 }}
             >
-                {isDashboard ? (
-                    <CardActionArea component={RouterLink} to="/goals" sx={{ height: '100%' }}>
-                        {content}
-                    </CardActionArea>
-                ) : (
-                    content
-                )}
+                {content}
             </Card>
 
             <Dialog

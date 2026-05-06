@@ -6,7 +6,6 @@ import WeightSummaryCard from '../components/WeightSummaryCard';
 import WeightTrend from '../components/WeightTrend';
 import { useQuickAddFab } from '../context/useQuickAddFab';
 import { useLogDateNavigationState } from '../hooks/useLogDateNavigationState';
-import { useFoodLogDayQuery } from '../queries/foodLogDay';
 
 /**
  * Mobile Weight route for the daily check-in and trend context.
@@ -18,8 +17,6 @@ const Weight: React.FC = () => {
         setLogDateNavigation,
         setLogDateOverride
     } = useQuickAddFab();
-    const completionQuery = useFoodLogDayQuery(selectedDate);
-    const isDayComplete = Boolean(completionQuery.data?.is_complete);
 
     useEffect(() => {
         setLogDateOverride(selectedDate);
@@ -38,7 +35,7 @@ const Weight: React.FC = () => {
     return (
         <Stack spacing={1.5} useFlexGap>
             <TodayHeader navigation={navigation} />
-            <WeightSummaryCard date={selectedDate} onOpenWeightEntry={openWeightDialogForLogDate} disabled={isDayComplete} />
+            <WeightSummaryCard date={selectedDate} onOpenWeightEntry={openWeightDialogForLogDate} />
             <WeightTrend />
             <DayCompletionControl date={selectedDate} />
         </Stack>

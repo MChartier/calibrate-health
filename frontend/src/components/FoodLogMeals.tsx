@@ -86,16 +86,12 @@ export type FoodLogMealsProps = {
      * Opens the shared add-food dialog with the selected meal prefilled.
      */
     onAddMeal: (mealPeriod: MealPeriod) => void;
-    /**
-     * Locks meal-level add/edit/delete controls while keeping accordion viewing available.
-     */
-    disabled?: boolean;
 };
 
 /**
  * FoodLogMeals renders the day log as a timeline grouped by meal and supports inline edits/deletes.
  */
-const FoodLogMeals: React.FC<FoodLogMealsProps> = ({ logs, isLoading = false, onAddMeal, disabled = false }) => {
+const FoodLogMeals: React.FC<FoodLogMealsProps> = ({ logs, isLoading = false, onAddMeal }) => {
     const queryClient = useQueryClient();
     const { t } = useI18n();
 
@@ -162,7 +158,6 @@ const FoodLogMeals: React.FC<FoodLogMealsProps> = ({ logs, isLoading = false, on
     }, []);
 
     const handleOpenEdit = (entry: FoodLogEntry) => {
-        if (disabled) return;
         setEditEntry(entry);
         setEditName(typeof entry.name === 'string' ? entry.name : '');
         setEditCalories(typeof entry.calories === 'number' ? String(entry.calories) : '');
@@ -183,7 +178,6 @@ const FoodLogMeals: React.FC<FoodLogMealsProps> = ({ logs, isLoading = false, on
     };
 
     const handleSaveEdit = async () => {
-        if (disabled) return;
         if (!editEntry) return;
         setEditError(null);
 
@@ -229,7 +223,6 @@ const FoodLogMeals: React.FC<FoodLogMealsProps> = ({ logs, isLoading = false, on
     };
 
     const handleOpenDelete = (entry: FoodLogEntry) => {
-        if (disabled) return;
         setDeleteEntry(entry);
         setDeleteError(null);
     };
@@ -241,7 +234,6 @@ const FoodLogMeals: React.FC<FoodLogMealsProps> = ({ logs, isLoading = false, on
     };
 
     const handleConfirmDelete = async () => {
-        if (disabled) return;
         if (!deleteEntry) return;
         setDeleteError(null);
         try {
@@ -275,7 +267,6 @@ const FoodLogMeals: React.FC<FoodLogMealsProps> = ({ logs, isLoading = false, on
                             onDelete={handleOpenDelete}
                             isExpanded={expandedMeals[meal.key]}
                             onToggleExpanded={handleToggleMeal}
-                            disabled={disabled}
                         />
                     );
                 })}
@@ -292,7 +283,6 @@ const FoodLogMeals: React.FC<FoodLogMealsProps> = ({ logs, isLoading = false, on
                             onChange={(e) => setEditName(e.target.value)}
                             fullWidth
                             autoFocus
-                            disabled={disabled}
                         />
                         <TextField
                             label={t('foodLog.field.calories')}
@@ -300,7 +290,6 @@ const FoodLogMeals: React.FC<FoodLogMealsProps> = ({ logs, isLoading = false, on
                             value={editCalories}
                             onChange={(e) => setEditCalories(e.target.value)}
                             fullWidth
-                            disabled={disabled}
                             slotProps={{
                                 htmlInput: { min: 0, step: 1 }
                             }}
@@ -312,7 +301,6 @@ const FoodLogMeals: React.FC<FoodLogMealsProps> = ({ logs, isLoading = false, on
                                 value={editServingsConsumed}
                                 onChange={(e) => setEditServingsConsumed(e.target.value)}
                                 fullWidth
-                                disabled={disabled}
                                 slotProps={{
                                     htmlInput: { min: 0, step: 0.1 }
                                 }}
@@ -325,7 +313,6 @@ const FoodLogMeals: React.FC<FoodLogMealsProps> = ({ logs, isLoading = false, on
                                 label={t('foodLog.field.meal')}
                                 value={editMealPeriod}
                                 onChange={(e) => setEditMealPeriod(e.target.value as MealPeriod)}
-                                disabled={disabled}
                             >
                                 {meals.map((meal) => (
                                     <MenuItem key={meal.key} value={meal.key}>
@@ -340,7 +327,7 @@ const FoodLogMeals: React.FC<FoodLogMealsProps> = ({ logs, isLoading = false, on
                     <Button onClick={handleCloseEdit} disabled={updateMutation.isPending}>
                         {t('common.cancel')}
                     </Button>
-                    <Button variant="contained" onClick={handleSaveEdit} disabled={disabled || updateMutation.isPending}>
+                    <Button variant="contained" onClick={handleSaveEdit} disabled={updateMutation.isPending}>
                         {t('common.save')}
                     </Button>
                 </DialogActions>
@@ -366,7 +353,7 @@ const FoodLogMeals: React.FC<FoodLogMealsProps> = ({ logs, isLoading = false, on
                         variant="contained"
                         color="error"
                         onClick={handleConfirmDelete}
-                        disabled={disabled || deleteMutation.isPending}
+                        disabled={deleteMutation.isPending}
                     >
                         {t('common.delete')}
                     </Button>
