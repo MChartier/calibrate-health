@@ -4,7 +4,7 @@ import { useSearchParams } from 'react-router-dom';
 import CalorieSummary from '../components/CalorieSummary';
 import DayCompletionControl from '../components/DayCompletionControl';
 import FoodLog from '../components/FoodLog';
-import GoalTrackerCard from '../components/GoalTrackerCard';
+import GoalProjection from '../components/GoalProjection';
 import TodayHeader from '../components/TodayHeader';
 import WeightSummaryCard from '../components/WeightSummaryCard';
 import WeightTrend from '../components/WeightTrend';
@@ -112,9 +112,9 @@ const MobileToday: React.FC = () => {
             <Box role="tabpanel" hidden={!isGoalsTabActive} aria-label={t('today.tabs.progress')}>
                 {isGoalsTabActive && (
                     <Stack spacing={1.5} useFlexGap>
-                        <GoalTrackerCard isDashboard />
                         <WeightSummaryCard date={today} onOpenWeightEntry={openWeightDialogFromFab} />
                         <WeightTrend />
+                        <GoalProjection />
                     </Stack>
                 )}
             </Box>

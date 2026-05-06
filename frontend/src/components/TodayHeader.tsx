@@ -22,7 +22,7 @@ const TodayHeader: React.FC<TodayHeaderProps> = ({ navigation }) => {
     return (
         <Box
             sx={{
-                display: 'grid',
+                display: { xs: 'grid', sm: 'none', md: 'grid' },
                 gridTemplateColumns: '1fr',
                 gap: { xs: 1, sm: 1.5, md: 2 },
                 alignItems: 'center'

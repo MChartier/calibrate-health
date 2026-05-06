@@ -17,6 +17,8 @@ export type DayCompletionControlProps = {
 };
 
 const DAY_COMPLETION_STATUS_ICON_SIZE_PX = 28; // The icon is large enough to read as state without competing with the switch.
+const DAY_COMPLETION_SWITCH_OFF_TRACK_ALPHA = 0.24; // Off-state track contrast keeps the toggle visible on white cards.
+const DAY_COMPLETION_SWITCH_OFF_BORDER_ALPHA = 0.38; // Border separates the off-state track from the card background.
 
 /**
  * Full-width completion state for the selected local day.
@@ -93,6 +95,32 @@ const DayCompletionControl: React.FC<DayCompletionControlProps> = ({ date }) => 
                         disabled={isBusy || completionQuery.isError}
                         color="success"
                         slotProps={{ input: { 'aria-label': toggleLabel } }}
+                        sx={(theme) => ({
+                            '& .MuiSwitch-switchBase': {
+                                color: isComplete ? theme.palette.common.white : theme.palette.text.secondary,
+                                '&.Mui-checked': {
+                                    color: theme.palette.common.white,
+                                    '& + .MuiSwitch-track': {
+                                        opacity: 1,
+                                        backgroundColor: theme.palette.success.main,
+                                        borderColor: theme.palette.success.dark
+                                    }
+                                },
+                                '&.Mui-disabled': {
+                                    color: isComplete
+                                        ? alpha(theme.palette.common.white, 0.8)
+                                        : alpha(theme.palette.text.primary, 0.42)
+                                },
+                                '&.Mui-disabled + .MuiSwitch-track': {
+                                    opacity: 1
+                                }
+                            },
+                            '& .MuiSwitch-track': {
+                                opacity: 1,
+                                backgroundColor: alpha(theme.palette.text.primary, DAY_COMPLETION_SWITCH_OFF_TRACK_ALPHA),
+                                border: `1px solid ${alpha(theme.palette.text.primary, DAY_COMPLETION_SWITCH_OFF_BORDER_ALPHA)}`
+                            }
+                        })}
                     />
                 </Box>
 
