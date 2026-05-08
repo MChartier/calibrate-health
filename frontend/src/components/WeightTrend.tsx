@@ -62,7 +62,7 @@ const RANGE_WINDOW_DAYS: Record<PannableMetricsRange, number> = {
 };
 
 const TODAY_TREND_CHART_HEIGHT_PX = { xs: 200, md: 226 }; // Compact height keeps the trend contextual rather than competing with food logging.
-const TODAY_TREND_CHART_FILL_MIN_HEIGHT_PX = 226; // Minimum chart body when the Today rail stretches to match the food log.
+const TODAY_TREND_CHART_FILL_MIN_HEIGHT_PX = 176; // Right-rail preview floor leaves room for controls on shorter desktop screens.
 const WEIGHT_TREND_FULLSCREEN_CHART_MIN_HEIGHT_PX = { xs: 360, sm: 440 }; // Full-screen history keeps the chart dominant in portrait and landscape.
 const TODAY_TREND_MARGIN_COMPACT = { top: 8, right: 6, bottom: 26, left: 30 }; // Compact margin maximizes chart width in narrow panels.
 const TODAY_TREND_MARGIN_DEFAULT = { top: 6, right: 6, bottom: 26, left: 30 }; // Desktop margin avoids the oversized left gutter from the full goals page.
@@ -83,6 +83,9 @@ const RANGE_TOGGLE_TOUCH_HEIGHT_PX = 40; // Mobile touch target for the range co
 const PAN_WINDOW_LABEL_MIN_WIDTH_CH = 19; // Stable pan label width prevents control shifting.
 const PAN_WINDOW_CONTROLS_GAP = 0.75; // Compact pan controls fit narrow context panels.
 const TODAY_TREND_CONTROL_WRAP_GAP = 0.75; // Today rail stacks chart controls so narrow context columns do not truncate dates.
+const TODAY_TREND_PREVIEW_STACK_GAP = 0.75; // Tighter right-rail spacing keeps the chart preview usable on short desktop viewports.
+const TODAY_TREND_CONTENT_STACK_GAP = 1; // Default chart content spacing leaves air for full and standalone trend cards.
+const TODAY_TREND_CARD_STACK_GAP = 1.25; // Default header-to-content spacing matches the surrounding dashboard cards.
 const CHART_LINE_ANIMATION_DURATION_MS = 420; // Approximate domain transition duration for panning/range changes.
 const RAW_MARK_REVEAL_BUFFER_MS = 190; // Delay raw marks until the line has settled.
 const RAW_MARK_FADE_IN_DURATION_MS = 640; // Soft marker reveal after range changes.
@@ -357,7 +360,7 @@ const WeightTrend: React.FC<WeightTrendProps> = ({ fillAvailableHeight = false, 
     const [rawMarksVisible, setRawMarksVisible] = useState(true);
     const [chartContainerWidth, setChartContainerWidth] = useState<number | null>(null);
     const [chartContainerHeight, setChartContainerHeight] = useState<number | null>(null);
-    const chartContainerRef = useRef<HTMLDivElement | null>(null);
+    const [chartContainerNode, setChartContainerNode] = useState<HTMLDivElement | null>(null);
     const markRevealTimeoutRef = useRef<number | null>(null);
     const unitLabel = user?.weight_unit === 'LB' ? 'lb' : 'kg';
     const rawWeightSeriesLabel = t('goals.weightSeriesLabel', { unit: unitLabel });
@@ -600,6 +603,9 @@ const WeightTrend: React.FC<WeightTrendProps> = ({ fillAvailableHeight = false, 
     const chartHeight = shouldStretchChart ? chartContainerHeight ?? stretchedMinChartHeight : defaultChartHeight;
     const chartHasMeasuredContainer = chartContainerWidth !== null && (!shouldStretchChart || chartContainerHeight !== null); // MUI Charts needs real dimensions before it can compute stable SVG coordinates.
     const cardTitle = fullScreen ? t('goals.weightHistoryTitle') : t('today.weightTrend.title');
+    const shouldShowChartMeta = !fillAvailableHeight; // Today right-rail preview prioritizes the chart; the tooltip still explains the series.
+    const contentStackSpacing = fillAvailableHeight ? TODAY_TREND_PREVIEW_STACK_GAP : TODAY_TREND_CONTENT_STACK_GAP;
+    const cardStackSpacing = fillAvailableHeight ? TODAY_TREND_CONTENT_STACK_GAP : TODAY_TREND_CARD_STACK_GAP;
     const chartContainerSx: SxProps<Theme> | undefined = (() => {
         if (fillAvailableHeight) {
             return {
@@ -642,9 +648,13 @@ const WeightTrend: React.FC<WeightTrendProps> = ({ fillAvailableHeight = false, 
         };
     })();
 
+    // Track the mounted chart box so measurement starts after loading resolves and the chart branch appears.
+    const handleChartContainerRef = useCallback((node: HTMLDivElement | null) => {
+        setChartContainerNode(node);
+    }, []);
+
     useEffect(() => {
-        const node = chartContainerRef.current;
-        if (!node) return;
+        if (!chartContainerNode) return;
 
         let animationFrame: number | null = null;
         const measureHeight = () => {
@@ -653,7 +663,7 @@ const WeightTrend: React.FC<WeightTrendProps> = ({ fillAvailableHeight = false, 
             }
 
             animationFrame = window.requestAnimationFrame(() => {
-                const rect = node.getBoundingClientRect();
+                const rect = chartContainerNode.getBoundingClientRect();
                 const nextWidth = Math.floor(rect.width);
                 if (nextWidth > 0) {
                     setChartContainerWidth((currentWidth) => (currentWidth === nextWidth ? currentWidth : nextWidth));
@@ -670,7 +680,7 @@ const WeightTrend: React.FC<WeightTrendProps> = ({ fillAvailableHeight = false, 
 
         measureHeight();
         const observer = new ResizeObserver(measureHeight);
-        observer.observe(node);
+        observer.observe(chartContainerNode);
 
         return () => {
             if (animationFrame !== null) {
@@ -678,7 +688,7 @@ const WeightTrend: React.FC<WeightTrendProps> = ({ fillAvailableHeight = false, 
             }
             observer.disconnect();
         };
-    }, [defaultChartHeight, shouldStretchChart, stretchedMinChartHeight]);
+    }, [chartContainerNode, defaultChartHeight, shouldStretchChart, stretchedMinChartHeight]);
 
     const weightHistoryTooltipContent = (
         <Box sx={{ maxWidth: WEIGHT_HISTORY_TOOLTIP_MAX_WIDTH_PX, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
@@ -747,9 +757,9 @@ const WeightTrend: React.FC<WeightTrendProps> = ({ fillAvailableHeight = false, 
         content = <Typography sx={{ color: 'text.secondary' }}>{t('goals.noWeightEntries')}</Typography>;
     } else {
         content = (
-            <Stack spacing={1} sx={shouldStretchChart ? { minHeight: 0, height: '100%', flex: 1 } : undefined}>
+            <Stack spacing={contentStackSpacing} sx={shouldStretchChart ? { minHeight: 0, height: '100%', flex: 1 } : undefined}>
                 {controlsRow}
-                <Box ref={chartContainerRef} sx={chartContainerSx}>
+                <Box ref={handleChartContainerRef} sx={chartContainerSx}>
                     {chartHasMeasuredContainer ? (
                         <LineChart
                             xAxis={[
@@ -899,17 +909,19 @@ const WeightTrend: React.FC<WeightTrendProps> = ({ fillAvailableHeight = false, 
                     )}
                 </Box>
 
-                <WeightTrendLegend
-                    rawWeightSeriesLabel={rawWeightSeriesLabel}
-                    trendSeriesLabel={trendSeriesLabel}
-                    expectedRangeLabel={expectedRangeLabel}
-                    rawLineColor={rawLineColor}
-                    trendLineColor={trendLineColor}
-                    expectedRangeFillColor={expectedRangeFillColor}
-                    expectedRangeEdgeColor={expectedRangeEdgeColor}
-                />
+                {shouldShowChartMeta ? (
+                    <WeightTrendLegend
+                        rawWeightSeriesLabel={rawWeightSeriesLabel}
+                        trendSeriesLabel={trendSeriesLabel}
+                        expectedRangeLabel={expectedRangeLabel}
+                        rawLineColor={rawLineColor}
+                        trendLineColor={trendLineColor}
+                        expectedRangeFillColor={expectedRangeFillColor}
+                        expectedRangeEdgeColor={expectedRangeEdgeColor}
+                    />
+                ) : null}
 
-                {summaryLine}
+                {shouldShowChartMeta ? summaryLine : null}
             </Stack>
         );
     }
@@ -930,7 +942,7 @@ const WeightTrend: React.FC<WeightTrendProps> = ({ fillAvailableHeight = false, 
                     : null)
             }}
         >
-            <Stack spacing={1.25} sx={shouldStretchChart ? { height: '100%', minHeight: 0, flex: 1 } : undefined}>
+            <Stack spacing={cardStackSpacing} sx={shouldStretchChart ? { height: '100%', minHeight: 0, flex: 1 } : undefined}>
                 <Box
                     sx={{
                         display: 'flex',
