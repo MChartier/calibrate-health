@@ -17,6 +17,14 @@ export type DayCompletionControlProps = {
 };
 
 const DAY_COMPLETION_STATUS_ICON_SIZE_PX = 28; // The icon is large enough to read as state without competing with the switch.
+const DAY_COMPLETION_CARD_COMPLETE_BG_ALPHA = { light: 0.08, dark: 0.16 } as const; // Success tint marks a completed day without overpowering the row.
+const DAY_COMPLETION_CARD_COMPLETE_BORDER_ALPHA = { light: 0.28, dark: 0.38 } as const; // Border tint makes the completed card read as selected.
+const DAY_COMPLETION_CARD_COMPLETE_HOVER_BG_ALPHA = { light: 0.12, dark: 0.22 } as const; // Slightly stronger tint confirms the full card is clickable.
+const DAY_COMPLETION_CARD_FOCUS_RING_WIDTH_PX = 2; // The hidden full-card input needs a visible keyboard focus target.
+const DAY_COMPLETION_CARD_FOCUS_RING_OFFSET_PX = 2; // Keep the focus ring outside the card border so content does not shift.
+const DAY_COMPLETION_CARD_FOCUS_RING_ALPHA = 0.48; // Match MUI focus visibility without creating a heavy outline.
+const DAY_COMPLETION_CARD_CONTENT_Z_INDEX = 1; // Visible content stays above the card surface while the input owns the hit target.
+const DAY_COMPLETION_CARD_INPUT_Z_INDEX = 2; // The transparent input covers the card so any click/tap toggles the day state.
 const DAY_COMPLETION_SWITCH_OFF_TRACK_ALPHA = 0.24; // Off-state track contrast keeps the toggle visible on white cards.
 const DAY_COMPLETION_SWITCH_OFF_BORDER_ALPHA = 0.38; // Border separates the off-state track from the card background.
 
@@ -32,6 +40,7 @@ const DayCompletionControl: React.FC<DayCompletionControlProps> = ({ date }) => 
     const completionMutation = useFoodLogDayMutation();
     const isComplete = Boolean(completionQuery.data?.is_complete);
     const isBusy = completionQuery.isLoading || completionMutation.isPending;
+    const isToggleDisabled = isBusy || completionQuery.isError;
     const toggleLabel = isComplete ? t('today.completion.markIncomplete') : t('today.completion.markComplete');
 
     const handleToggleComplete = async (nextIsComplete: boolean) => {
@@ -44,22 +53,73 @@ const DayCompletionControl: React.FC<DayCompletionControlProps> = ({ date }) => 
         }
     };
 
+    const handleCompletionInputChange = () => {
+        if (isToggleDisabled) return;
+        void handleToggleComplete(!isComplete);
+    };
+
     return (
         <AppCard
-            sx={(theme) =>
-                isComplete
-                    ? {
-                        bgcolor: alpha(theme.palette.success.main, theme.palette.mode === 'dark' ? 0.16 : 0.08),
-                        borderColor: alpha(theme.palette.success.main, theme.palette.mode === 'dark' ? 0.38 : 0.28)
-                    }
-                    : null
-            }
+            sx={(theme) => {
+                const colorMode = theme.palette.mode === 'dark' ? 'dark' : 'light';
+                return {
+                    position: 'relative',
+                    cursor: isToggleDisabled ? 'default' : 'pointer',
+                    ...(isComplete
+                        ? {
+                            bgcolor: alpha(theme.palette.success.main, DAY_COMPLETION_CARD_COMPLETE_BG_ALPHA[colorMode]),
+                            borderColor: alpha(
+                                theme.palette.success.main,
+                                DAY_COMPLETION_CARD_COMPLETE_BORDER_ALPHA[colorMode]
+                            )
+                        }
+                        : null),
+                    ...(!isToggleDisabled
+                        ? {
+                            '&:hover': {
+                                bgcolor: isComplete
+                                    ? alpha(
+                                        theme.palette.success.main,
+                                        DAY_COMPLETION_CARD_COMPLETE_HOVER_BG_ALPHA[colorMode]
+                                    )
+                                    : theme.palette.action.hover
+                            },
+                            '&:focus-within': {
+                                outline: `${DAY_COMPLETION_CARD_FOCUS_RING_WIDTH_PX}px solid ${alpha(
+                                    theme.palette.primary.main,
+                                    DAY_COMPLETION_CARD_FOCUS_RING_ALPHA
+                                )}`,
+                                outlineOffset: DAY_COMPLETION_CARD_FOCUS_RING_OFFSET_PX
+                            }
+                        }
+                        : null)
+                };
+            }}
             contentSx={{
                 p: { xs: 1.25, sm: 1.5 },
                 '&:last-child': { pb: { xs: 1.25, sm: 1.5 } }
             }}
         >
-            <Stack spacing={1}>
+            <Box
+                component="input"
+                type="checkbox"
+                role="switch"
+                aria-label={toggleLabel}
+                checked={isComplete}
+                disabled={isToggleDisabled}
+                onChange={handleCompletionInputChange}
+                sx={{
+                    position: 'absolute',
+                    inset: 0,
+                    zIndex: DAY_COMPLETION_CARD_INPUT_Z_INDEX,
+                    width: '100%',
+                    height: '100%',
+                    m: 0,
+                    cursor: 'inherit',
+                    opacity: 0
+                }}
+            />
+            <Stack spacing={1} sx={{ position: 'relative', zIndex: DAY_COMPLETION_CARD_CONTENT_Z_INDEX }}>
                 <Box
                     sx={{
                         display: 'flex',
@@ -91,10 +151,9 @@ const DayCompletionControl: React.FC<DayCompletionControlProps> = ({ date }) => 
 
                     <Switch
                         checked={isComplete}
-                        onChange={(_event, checked) => void handleToggleComplete(checked)}
-                        disabled={isBusy || completionQuery.isError}
+                        disabled={isToggleDisabled}
                         color="success"
-                        slotProps={{ input: { 'aria-label': toggleLabel } }}
+                        slotProps={{ input: { 'aria-hidden': true, readOnly: true, tabIndex: -1 } }}
                         sx={(theme) => ({
                             '& .MuiSwitch-switchBase': {
                                 color: isComplete ? theme.palette.common.white : theme.palette.text.secondary,
