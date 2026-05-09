@@ -48,12 +48,14 @@ const WEIGHT_CONTEXT_DOMAIN_PADDING_RATIO = 0.05; // Adds breathing room when th
 const WEIGHT_CONTEXT_MIN_SPAN_BY_UNIT = { lb: 2, kg: 0.8 }; // Minimum visible domain so tiny fluctuations do not make markers collapse.
 const WEIGHT_CONTEXT_MIN_RANGE_WIDTH_PERCENT = 18; // Minimum drawn range width so the band remains visible behind the latest marker.
 const WEIGHT_CONTEXT_TREND_MARKER_EXTENSION_PX = 8; // Extends the trend marker beyond the band so it reads as the central estimate.
-const WEIGHT_CONTEXT_MARKER_RING_WIDTH_PX = 4; // White halo keeps markers legible over the band and dashed line.
+const WEIGHT_CONTEXT_MARKER_RING_WIDTH_PX = 4; // White halo keeps markers legible over the range band.
 const WEIGHT_CONTEXT_LABEL_MIN_PERCENT = 8; // Floating label clamp prevents edge text from spilling outside the scale.
 const WEIGHT_CONTEXT_LABEL_MAX_PERCENT = 92; // Right-side match for the floating label clamp.
 const WEIGHT_CONTEXT_MARKER_LABEL_MIN_GAP_PERCENT = 28; // Keeps close trend/latest labels readable on narrow cards.
 const WEIGHT_CONTEXT_MARKER_LABEL_TOP_OFFSET_PX = 54; // Distance from the range band to lower marker labels after axis ticks.
 const WEIGHT_CONTEXT_AXIS_TICK_HEIGHT_PX = 12; // Short axis ticks make the scale feel measured without becoming a full chart.
+const WEIGHT_CONTEXT_MARKER_STEM_HEIGHT_PX =
+    WEIGHT_CONTEXT_RANGE_HEIGHT_PX + WEIGHT_CONTEXT_TREND_MARKER_EXTENSION_PX + WEIGHT_CONTEXT_AXIS_TICK_HEIGHT_PX; // Stem bottoms align with axis tick bottoms so overlaps read as intentional.
 
 export type WeightSummaryCardProps = {
     /**
@@ -427,26 +429,6 @@ const WeightTrendSnapshot: React.FC<{
                                 border: `1px solid ${alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.5 : 0.24)}`
                             }}
                         />
-                        {[
-                            { key: 'lower', position: rangeLeft },
-                            { key: 'upper', position: rangeRight }
-                        ].map((rangeBoundary) => (
-                            <Box
-                                key={rangeBoundary.key}
-                                sx={{
-                                    position: 'absolute',
-                                    left: `${rangeBoundary.position}%`,
-                                    top: {
-                                        xs: `calc(${WEIGHT_CONTEXT_TRACK_TOP_PX.xs}px - ${WEIGHT_CONTEXT_RANGE_HEIGHT_PX / 2}px)`,
-                                        sm: `calc(${WEIGHT_CONTEXT_TRACK_TOP_PX.sm}px - ${WEIGHT_CONTEXT_RANGE_HEIGHT_PX / 2}px)`
-                                    },
-                                    height: WEIGHT_CONTEXT_RANGE_HEIGHT_PX,
-                                    borderLeft: `2px dashed ${alpha(theme.palette.primary.dark, theme.palette.mode === 'dark' ? 0.72 : 0.58)}`,
-                                    transform: 'translateX(-50%)',
-                                    zIndex: 2
-                                }}
-                            />
-                        ))}
                         <Box
                             sx={{
                                 position: 'absolute',
@@ -455,7 +437,7 @@ const WeightTrendSnapshot: React.FC<{
                                     xs: `calc(${WEIGHT_CONTEXT_TRACK_TOP_PX.xs}px - ${WEIGHT_CONTEXT_RANGE_HEIGHT_PX / 2 + WEIGHT_CONTEXT_TREND_MARKER_EXTENSION_PX}px)`,
                                     sm: `calc(${WEIGHT_CONTEXT_TRACK_TOP_PX.sm}px - ${WEIGHT_CONTEXT_RANGE_HEIGHT_PX / 2 + WEIGHT_CONTEXT_TREND_MARKER_EXTENSION_PX}px)`
                                 },
-                                height: WEIGHT_CONTEXT_RANGE_HEIGHT_PX + WEIGHT_CONTEXT_TREND_MARKER_EXTENSION_PX * 2,
+                                height: WEIGHT_CONTEXT_MARKER_STEM_HEIGHT_PX,
                                 width: WEIGHT_CONTEXT_TREND_MARKER_WIDTH_PX,
                                 transform: 'translateX(-50%)',
                                 borderRadius: 999,
@@ -486,7 +468,7 @@ const WeightTrendSnapshot: React.FC<{
                                     xs: `calc(${WEIGHT_CONTEXT_TRACK_TOP_PX.xs}px - ${WEIGHT_CONTEXT_RANGE_HEIGHT_PX / 2 + WEIGHT_CONTEXT_TREND_MARKER_EXTENSION_PX}px)`,
                                     sm: `calc(${WEIGHT_CONTEXT_TRACK_TOP_PX.sm}px - ${WEIGHT_CONTEXT_RANGE_HEIGHT_PX / 2 + WEIGHT_CONTEXT_TREND_MARKER_EXTENSION_PX}px)`
                                 },
-                                height: WEIGHT_CONTEXT_RANGE_HEIGHT_PX + WEIGHT_CONTEXT_TREND_MARKER_EXTENSION_PX * 2,
+                                height: WEIGHT_CONTEXT_MARKER_STEM_HEIGHT_PX,
                                 width: WEIGHT_CONTEXT_TREND_MARKER_WIDTH_PX - 1,
                                 transform: 'translateX(-50%)',
                                 borderRadius: 999,
@@ -572,7 +554,6 @@ const WeightTrendSnapshot: React.FC<{
                                 key: 'trend',
                                 label: t('weightSummary.trendSnapshot.trendMarkerLabel'),
                                 labelPosition: trendLabelPosition,
-                                markerPosition: trendPosition,
                                 value: trendWeightLabel,
                                 color: theme.palette.primary.dark
                             },
@@ -580,31 +561,11 @@ const WeightTrendSnapshot: React.FC<{
                                 key: 'point',
                                 label: measurementLabel,
                                 labelPosition: pointLabelPosition,
-                                markerPosition: pointPosition,
                                 value: latestWeightLabel,
                                 color: theme.palette.secondary.dark
                             }
                         ].map((marker) => (
                             <React.Fragment key={marker.key}>
-                                <Box
-                                    sx={{
-                                        position: 'absolute',
-                                        left: `${marker.markerPosition}%`,
-                                        top: {
-                                            xs: `calc(${WEIGHT_CONTEXT_TRACK_TOP_PX.xs}px + ${WEIGHT_CONTEXT_LATEST_MARKER_SIZE_PX / 2}px)`,
-                                            sm: `calc(${WEIGHT_CONTEXT_TRACK_TOP_PX.sm}px + ${WEIGHT_CONTEXT_LATEST_MARKER_SIZE_PX / 2}px)`
-                                        },
-                                        height: {
-                                            xs: `calc(${WEIGHT_CONTEXT_MARKER_LABEL_TOP_OFFSET_PX}px - ${WEIGHT_CONTEXT_LATEST_MARKER_SIZE_PX / 2}px)`,
-                                            sm: `calc(${WEIGHT_CONTEXT_MARKER_LABEL_TOP_OFFSET_PX}px - ${WEIGHT_CONTEXT_LATEST_MARKER_SIZE_PX / 2}px)`
-                                        },
-                                        width: WEIGHT_CONTEXT_TREND_MARKER_WIDTH_PX,
-                                        transform: 'translateX(-50%)',
-                                        borderRadius: 999,
-                                        bgcolor: marker.color,
-                                        zIndex: 3
-                                    }}
-                                />
                                 <Box
                                     sx={{
                                         position: 'absolute',
