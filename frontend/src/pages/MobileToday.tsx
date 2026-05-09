@@ -113,7 +113,7 @@ const MobileToday: React.FC = () => {
                 {isGoalsTabActive && (
                     <Stack spacing={1.5} useFlexGap>
                         <WeightSummaryCard date={today} onOpenWeightEntry={openWeightDialogFromFab} />
-                        <WeightTrend />
+                        <WeightTrend compactPreview />
                         <GoalProjection />
                     </Stack>
                 )}

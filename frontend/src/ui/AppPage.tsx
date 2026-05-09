@@ -1,6 +1,12 @@
 import React, { createContext, useContext } from 'react';
 import { Box } from '@mui/material';
 import type { SxProps, Theme } from '@mui/material/styles';
+import {
+    APP_PAGE_AVAILABLE_HEIGHT_CSS_VAR,
+    APP_PAGE_PADDING_BOTTOM_CSS_VAR,
+    APP_PAGE_PADDING_TOP_CSS_VAR,
+    APP_TOOLBAR_HEIGHT_CSS_VAR
+} from './layoutCssVars';
 
 type AppPageProps = {
     children: React.ReactNode;
@@ -32,6 +38,8 @@ const APP_PAGE_MAX_WIDTH: Record<AppPageMaxWidth, number> = {
 };
 
 const SAFE_AREA_INSET_BOTTOM = 'var(--safe-area-inset-bottom, 0px)';
+type ResponsivePageSpacing = { xs: number; sm: number; md: number };
+type ResponsiveCssLength = { xs: string; sm: string; md: string };
 
 /**
  * Resolve AppPage max-width presets into pixel values.
@@ -44,12 +52,23 @@ function resolveAppPageMaxWidth(maxWidth: AppPageProps['maxWidth']): number | fa
 }
 
 /**
+ * Convert theme spacing-unit page padding into CSS lengths that can also back layout variables.
+ */
+function toSpacingLengths(theme: Theme, padding: ResponsivePageSpacing): ResponsiveCssLength {
+    return {
+        xs: theme.spacing(padding.xs),
+        sm: theme.spacing(padding.sm),
+        md: theme.spacing(padding.md)
+    };
+}
+
+/**
  * Add the bottom safe-area inset to responsive spacing tokens.
  */
 function addBottomSafeAreaInset(
     theme: Theme,
-    paddingBottom: Theme['custom']['layout']['page']['paddingBottom']
-): { xs: string; sm: string; md: string } {
+    paddingBottom: ResponsivePageSpacing
+): ResponsiveCssLength {
     return {
         xs: `calc(${theme.spacing(paddingBottom.xs)} + ${SAFE_AREA_INSET_BOTTOM})`,
         sm: `calc(${theme.spacing(paddingBottom.sm)} + ${SAFE_AREA_INSET_BOTTOM})`,
@@ -94,10 +113,18 @@ const AppPage: React.FC<AppPageProps> = ({
         <AppPageNestingContext.Provider value={true}>
             <Box
                 sx={(theme) => {
+                    const paddingTop = fullBleedOnXs
+                        ? toSpacingLengths(theme, theme.custom.layout.page.paddingTopCompact)
+                        : toSpacingLengths(theme, theme.custom.layout.page.paddingTop);
+                    const paddingBottom = addBottomSafeAreaInset(theme, theme.custom.layout.page.paddingBottom);
+
                     return {
+                        [APP_PAGE_PADDING_TOP_CSS_VAR]: paddingTop,
+                        [APP_PAGE_PADDING_BOTTOM_CSS_VAR]: paddingBottom,
+                        [APP_PAGE_AVAILABLE_HEIGHT_CSS_VAR]: `calc(100svh - var(${APP_TOOLBAR_HEIGHT_CSS_VAR}, 0px) - var(${APP_PAGE_PADDING_TOP_CSS_VAR}, 0px) - var(${APP_PAGE_PADDING_BOTTOM_CSS_VAR}, 0px))`,
                         px: fullBleedOnXs ? { ...theme.custom.layout.page.gutterX, xs: 0 } : theme.custom.layout.page.gutterX,
-                        pt: fullBleedOnXs ? theme.custom.layout.page.paddingTopCompact : theme.custom.layout.page.paddingTop,
-                        pb: addBottomSafeAreaInset(theme, theme.custom.layout.page.paddingBottom),
+                        pt: `var(${APP_PAGE_PADDING_TOP_CSS_VAR})`,
+                        pb: `var(${APP_PAGE_PADDING_BOTTOM_CSS_VAR})`,
                         ...(fullBleedOnXs
                             ? {
                                 [theme.breakpoints.down('sm')]: {
