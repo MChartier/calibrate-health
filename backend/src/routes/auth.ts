@@ -2,6 +2,7 @@ import express from 'express';
 import passport from 'passport';
 import bcrypt from 'bcryptjs';
 import prisma from '../config/database';
+import { normalizeEmailCredential, validatePasswordCredential } from '../utils/authCredentials';
 import { serializeUserForClient, USER_CLIENT_SELECT } from '../utils/userSerialization';
 
 /**
@@ -11,10 +12,28 @@ import { serializeUserForClient, USER_CLIENT_SELECT } from '../utils/userSeriali
  */
 const router = express.Router();
 
+const INVALID_LOGIN_MESSAGE = 'Invalid email or password';
+
+const isUniqueConstraintError = (err: unknown): boolean =>
+    Boolean(err && typeof err === 'object' && (err as { code?: unknown }).code === 'P2002');
+
 router.post('/register', async (req, res) => {
-    const { email, password } = req.body;
+    const email = normalizeEmailCredential(req.body?.email);
+    if (!email) {
+        return res.status(400).json({ message: 'Invalid email' });
+    }
+
+    const password = req.body?.password;
+    const passwordError = validatePasswordCredential(password);
+    if (passwordError) {
+        return res.status(400).json({ message: passwordError });
+    }
+
     try {
-        const existingUser = await prisma.user.findUnique({ where: { email } });
+        const existingUser = await prisma.user.findFirst({
+            where: { email: { equals: email, mode: 'insensitive' } },
+            select: { id: true }
+        });
         if (existingUser) {
             return res.status(400).json({ message: 'User already exists' });
         }
@@ -43,17 +62,37 @@ router.post('/register', async (req, res) => {
             });
         });
     } catch (err) {
+        if (isUniqueConstraintError(err)) {
+            return res.status(400).json({ message: 'User already exists' });
+        }
         console.error('Auth register failed:', err);
-        res.status(500).json({ message: 'Server error' });
+        return res.status(500).json({ message: 'Server error' });
     }
 });
 
-router.post('/login', passport.authenticate('local'), (req, res) => {
-    // Passport already attached the authenticated user to req.user.
-    const user = req.user as any;
-    res.json({
-        user: serializeUserForClient(user)
-    });
+router.post('/login', (req, res, next) => {
+    const email = normalizeEmailCredential(req.body?.email);
+    const password = req.body?.password;
+    if (!email || typeof password !== 'string' || password.length === 0) {
+        return res.status(400).json({ message: INVALID_LOGIN_MESSAGE });
+    }
+
+    // Keep LocalStrategy lookup normalized while still letting Passport own session establishment.
+    req.body.email = email;
+
+    passport.authenticate('local', (err: Error | null, user: Express.User | false | null) => {
+        if (err) return next(err);
+        if (!user) {
+            return res.status(401).json({ message: INVALID_LOGIN_MESSAGE });
+        }
+
+        req.login(user, (loginErr) => {
+            if (loginErr) return next(loginErr);
+            return res.json({
+                user: serializeUserForClient(user as any)
+            });
+        });
+    })(req, res, next);
 });
 
 router.post('/logout', (req, res, next) => {

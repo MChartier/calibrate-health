@@ -17,7 +17,8 @@ test('parseLocalDateOnly rejects invalid inputs', () => {
   assert.throws(() => parseLocalDateOnly(''), /Invalid local date/);
   assert.throws(() => parseLocalDateOnly('2025-12'), /Invalid local date/);
   assert.throws(() => parseLocalDateOnly('not-a-date'), /Invalid local date/);
-  assert.throws(() => parseLocalDateOnly('2025-99-99'), /Invalid date/);
+  assert.throws(() => parseLocalDateOnly('2025-99-99'), /Invalid local date/);
+  assert.throws(() => parseLocalDateOnly('2025-02-31'), /Invalid local date/);
 
   assert.throws(() => parseLocalDateOnly(null), /Invalid local date/);
   assert.throws(() => parseLocalDateOnly(123), /Invalid local date/);

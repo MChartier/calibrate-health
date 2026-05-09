@@ -30,7 +30,7 @@ router.get('/', async (req, res) => {
         // Goals are append-only; the latest row is treated as the active goal.
         const goal = await prisma.goal.findFirst({
             where: { user_id: user.id },
-            orderBy: { created_at: 'desc' }
+            orderBy: [{ created_at: 'desc' }, { id: 'desc' }]
         });
         if (!goal) {
             return res.json(null);
@@ -55,7 +55,7 @@ router.post('/', async (req, res) => {
         // Validate allowed deficit choices to keep projections and targets consistent with the UI.
         const parsedDailyDeficit = parseDailyDeficit(daily_deficit);
         if (parsedDailyDeficit === null) {
-            return res.status(400).json({ message: 'daily_deficit must be one of 0, ±250, ±500, ±750, or ±1000' });
+            return res.status(400).json({ message: 'daily_deficit must be one of 0, +/-250, +/-500, +/-750, or +/-1000' });
         }
 
         let start_weight_grams: number;

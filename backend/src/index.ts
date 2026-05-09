@@ -23,6 +23,7 @@ import myFoodsRoutes from './routes/myFoods';
 import notificationRoutes from './routes/notifications';
 import userRoutes from './routes/user';
 import { startReminderScheduler } from './services/reminderScheduler';
+import { normalizeEmailCredential } from './utils/authCredentials';
 import { autoLoginTestUser } from './utils/devAuth';
 import { DEFAULT_SESSION_TTL_MS, PostgresSessionStore } from './utils/postgresSessionStore';
 import { USER_CLIENT_SELECT } from './utils/userSerialization';
@@ -130,6 +131,46 @@ function getHeaderValue(headers: IncomingHttpHeaders, name: string): string | un
   return typeof value === 'string' ? value : undefined;
 }
 
+type HttpError = Error & { statusCode?: number; status?: number; expose?: boolean };
+
+/**
+ * Create a request error that the final Express error handler can safely expose.
+ */
+function createRequestError(message: string, statusCode: number): HttpError {
+  const error = new Error(message) as HttpError;
+  error.statusCode = statusCode;
+  error.expose = true;
+  return error;
+}
+
+/**
+ * Final JSON error response mapper for middleware and async route failures.
+ */
+const requestErrorHandler: express.ErrorRequestHandler = (err: HttpError, _req, res, next) => {
+  if (res.headersSent) {
+    next(err);
+    return;
+  }
+
+  const rawStatus = err.statusCode ?? err.status;
+  const statusCode = typeof rawStatus === 'number' && rawStatus >= 400 && rawStatus < 600 ? rawStatus : 500;
+  if (statusCode >= 500) {
+    console.error('Unhandled request error:', err);
+  }
+
+  if (statusCode === 413) {
+    res.status(statusCode).json({ message: 'Request body is too large' });
+    return;
+  }
+
+  if (statusCode >= 400 && statusCode < 500) {
+    res.status(statusCode).json({ message: err.expose ? err.message : 'Invalid request' });
+    return;
+  }
+
+  res.status(500).json({ message: 'Server error' });
+};
+
 type SameSiteSetting = 'lax' | 'none' | 'strict';
 
 /**
@@ -213,7 +254,7 @@ const bootstrap = async (): Promise<void> => {
 
     const normalizedOrigin = normalizeOrigin(requestOrigin);
     if (!normalizedOrigin) {
-      callback(new Error('Not allowed by CORS'));
+      callback(createRequestError('Not allowed by CORS', 403));
       return;
     }
 
@@ -224,7 +265,7 @@ const bootstrap = async (): Promise<void> => {
     const isSameOrigin = normalizedRequestOrigin !== null && normalizedOrigin === normalizedRequestOrigin;
 
     if (!isSameOrigin && !allowedOriginSet.has(normalizedOrigin)) {
-      callback(new Error('Not allowed by CORS'));
+      callback(createRequestError('Not allowed by CORS', 403));
       return;
     }
 
@@ -262,15 +303,21 @@ const bootstrap = async (): Promise<void> => {
   passport.use(
     new LocalStrategy({ usernameField: 'email' }, async (email, password, done) => {
       try {
-        const user = await prisma.user.findUnique({
-          where: { email },
+        const normalizedEmail = normalizeEmailCredential(email);
+        if (!normalizedEmail || typeof password !== 'string' || password.length === 0) {
+          return done(null, false, { message: 'Invalid email or password' });
+        }
+
+        const user = await prisma.user.findFirst({
+          where: { email: { equals: normalizedEmail, mode: 'insensitive' } },
+          orderBy: { id: 'asc' },
           select: { ...USER_CLIENT_SELECT, password_hash: true },
         });
-        if (!user) return done(null, false, { message: 'Incorrect email.' });
+        if (!user) return done(null, false, { message: 'Invalid email or password' });
 
         const isMatch = await bcrypt.compare(password, user.password_hash);
         if (!isMatch) {
-          return done(null, false, { message: 'Incorrect password.' });
+          return done(null, false, { message: 'Invalid email or password' });
         }
 
         // Avoid keeping password hashes on req.user or in the session.
@@ -333,6 +380,7 @@ const bootstrap = async (): Promise<void> => {
   }
 
   configureSpaStaticAssets(app, isProductionOrStaging);
+  app.use(requestErrorHandler);
 
   app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);

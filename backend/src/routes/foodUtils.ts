@@ -50,9 +50,9 @@ export function parseFoodSearchParams(opts: {
 }): FoodSearchParamsParseResult {
   const queryParam =
     typeof opts.query.q === 'string'
-      ? opts.query.q
+      ? opts.query.q.trim()
       : typeof opts.query.query === 'string'
-        ? opts.query.query
+        ? opts.query.query.trim()
         : undefined;
   const rawBarcode = typeof opts.query.barcode === 'string' ? opts.query.barcode : undefined;
   const barcode = normalizeBarcodeDigits(rawBarcode);
@@ -68,14 +68,32 @@ export function parseFoodSearchParams(opts: {
     return { ok: false, statusCode: 400, message: 'Provide a search query or barcode.' };
   }
 
-  const pageRaw = typeof opts.query.page === 'string' ? Number.parseInt(opts.query.page, 10) : undefined;
-  const page = typeof pageRaw === 'number' && Number.isFinite(pageRaw) ? pageRaw : undefined;
+  let page: number | undefined;
+  if (opts.query.page !== undefined) {
+    const parsedPage = parsePositiveInteger(opts.query.page);
+    if (parsedPage === null) {
+      return { ok: false, statusCode: 400, message: 'Invalid page' };
+    }
+    page = parsedPage;
+  }
 
-  const pageSizeRaw = typeof opts.query.pageSize === 'string' ? Number.parseInt(opts.query.pageSize, 10) : undefined;
-  const pageSize = typeof pageSizeRaw === 'number' && Number.isFinite(pageSizeRaw) ? pageSizeRaw : undefined;
+  let pageSize: number | undefined;
+  if (opts.query.pageSize !== undefined) {
+    const parsedPageSize = parsePositiveInteger(opts.query.pageSize);
+    if (parsedPageSize === null) {
+      return { ok: false, statusCode: 400, message: 'Invalid page size' };
+    }
+    pageSize = parsedPageSize;
+  }
 
-  const gramsRaw = typeof opts.query.grams === 'string' ? Number.parseFloat(opts.query.grams) : undefined;
-  const quantityInGrams = typeof gramsRaw === 'number' && Number.isFinite(gramsRaw) ? gramsRaw : undefined;
+  let quantityInGrams: number | undefined;
+  if (opts.query.grams !== undefined) {
+    const parsedGrams = parsePositiveNumber(opts.query.grams);
+    if (parsedGrams === null) {
+      return { ok: false, statusCode: 400, message: 'Invalid grams' };
+    }
+    quantityInGrams = parsedGrams;
+  }
 
   const languageCode = resolveLanguageCode({
     queryLanguageCode: opts.query.lc,

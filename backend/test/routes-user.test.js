@@ -412,3 +412,45 @@ test('user route: PATCH /preferences updates haptics_enabled field', async () =>
   assert.deepEqual(updateArgs.data, { haptics_enabled: false });
   assert.equal(res.body.user.haptics_enabled, false);
 });
+
+test('user route: GET /profile reads the latest goal with deterministic ordering', async () => {
+  let goalFindFirstArgs = null;
+  const dbUser = {
+    id: 7,
+    timezone: 'UTC',
+    date_of_birth: null,
+    sex: null,
+    height_mm: null,
+    activity_level: null,
+    weight_unit: 'KG',
+    height_unit: 'CM'
+  };
+
+  const prismaStub = {
+    user: {
+      findUnique: async () => dbUser
+    },
+    goal: {
+      findFirst: async (args) => {
+        goalFindFirstArgs = args;
+        return { daily_deficit: 500 };
+      }
+    },
+    bodyMetric: {
+      findFirst: async () => ({ weight_grams: 70000 })
+    }
+  };
+  const bcryptStub = {};
+
+  const router = loadUserRouter({ prismaStub, bcryptStub });
+  const handler = getRouteHandler(router, 'get', '/profile');
+
+  const req = { user: { id: 7 } };
+  const res = createRes();
+
+  await handler(req, res);
+
+  assert.equal(res.statusCode, 200);
+  assert.deepEqual(goalFindFirstArgs.orderBy, [{ created_at: 'desc' }, { id: 'desc' }]);
+  assert.equal(res.body.goal_daily_deficit, 500);
+});
