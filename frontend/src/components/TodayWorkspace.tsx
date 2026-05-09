@@ -17,8 +17,8 @@ import WeightTrend from './WeightTrend';
 
 const TODAY_WORKSPACE_COLUMNS = {
     xs: '1fr',
-    md: 'minmax(0, 1.4fr) minmax(320px, 0.8fr)',
-    lg: 'minmax(0, 1.55fr) minmax(360px, 0.9fr)'
+    md: 'minmax(0, 1.25fr) minmax(360px, 0.95fr)',
+    lg: 'minmax(0, 1.35fr) minmax(420px, 1fr)'
 }; // Responsive Today workspace grid: work area first, context panels second.
 const TODAY_WORKSPACE_AREAS = {
     xs: '"calories" "food" "weight" "trend" "goal" "completion"',
