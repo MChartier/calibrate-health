@@ -286,11 +286,6 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date, initialMealPeriod = n
     const shouldShowMealPeriod =
         mode !== 'search' || (mode === 'search' && ((searchView === 'selected' && !!selectedItem) || !!selectedRecentFood));
 
-    useEffect(() => {
-        if (!initialMealPeriod) return;
-        setMealPeriod(initialMealPeriod);
-    }, [initialMealPeriod]);
-
     // Avoid stale recipe selections if users leave and return to the Recipes tab.
     useEffect(() => {
         setSelectedMyFoodId(null);

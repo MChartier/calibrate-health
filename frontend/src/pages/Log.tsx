@@ -1,16 +1,16 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { Button, Stack } from '@mui/material';
 import ArrowBackRoundedIcon from '@mui/icons-material/ArrowBackRounded';
 import { useTheme } from '@mui/material/styles';
-import { Link as RouterLink, useSearchParams } from 'react-router-dom';
+import { Link as RouterLink } from 'react-router-dom';
 import CalorieSummary from '../components/CalorieSummary';
 import FoodLog from '../components/FoodLog';
 import TodayHeader from '../components/TodayHeader';
 import { useI18n } from '../i18n/useI18n';
 import { useQuickAddFab } from '../context/useQuickAddFab';
 import { LOG_DATE_QUERY_PARAM, useLogDateNavigationState } from '../hooks/useLogDateNavigationState';
-import { QUICK_ADD_SHORTCUT_ACTIONS, QUICK_ADD_SHORTCUT_QUERY_PARAM } from '../constants/pwaShortcuts';
-import { getQuickAddAction } from '../utils/quickAddShortcut';
+import { useQuickAddLogDateBridge, useQuickAddShortcutAction } from '../hooks/useQuickAddRouteState';
+import type { MealPeriod } from '../types/mealPeriod';
 
 function getDashboardPath(selectedDate: string, today: string): string {
     if (selectedDate === today) return '/dashboard';
@@ -26,7 +26,6 @@ const Log: React.FC = () => {
     const { t } = useI18n();
     const { sectionGap, sectionGapCompact } = theme.custom.layout.page;
     const sectionSpacing = { xs: sectionGapCompact, sm: sectionGapCompact, md: sectionGap + 0.75 };
-    const [searchParams, setSearchParams] = useSearchParams();
     const { selectedDate, today, navigation } = useLogDateNavigationState();
     const isSelectedToday = selectedDate === today;
     const {
@@ -35,57 +34,30 @@ const Log: React.FC = () => {
         setLogDateNavigation,
         setLogDateOverride
     } = useQuickAddFab();
+    const { openFoodDialog } = dialogs;
 
-    useEffect(() => {
-        setLogDateOverride(selectedDate);
-    }, [selectedDate, setLogDateOverride]);
-
-    useEffect(() => {
-        setLogDateNavigation(navigation);
-        return () => {
-            setLogDateNavigation(null);
-        };
-    }, [navigation, setLogDateNavigation]);
-
-    useEffect(() => {
-        return () => {
-            setLogDateOverride(null);
-        };
-    }, [setLogDateOverride]);
-
-    const quickAddAction = getQuickAddAction(searchParams);
     const dashboardPath = useMemo(() => getDashboardPath(selectedDate, today), [selectedDate, today]);
 
-    useEffect(() => {
-        if (!quickAddAction) return;
-
-        navigation.setDate(today);
-
-        switch (quickAddAction) {
-            case QUICK_ADD_SHORTCUT_ACTIONS.food:
-                dialogs.openFoodDialog();
-                break;
-            case QUICK_ADD_SHORTCUT_ACTIONS.weight:
-                openWeightDialogFromFab();
-                break;
-            default:
-                break;
-        }
-
-        if (searchParams.has(QUICK_ADD_SHORTCUT_QUERY_PARAM)) {
-            const nextParams = new URLSearchParams(searchParams);
-            nextParams.delete(QUICK_ADD_SHORTCUT_QUERY_PARAM);
-            setSearchParams(nextParams, { replace: true });
-        }
-    }, [
-        dialogs,
+    useQuickAddLogDateBridge({
+        selectedDate,
         navigation,
-        openWeightDialogFromFab,
-        quickAddAction,
-        searchParams,
-        setSearchParams,
-        today
-    ]);
+        setLogDateNavigation,
+        setLogDateOverride
+    });
+
+    useQuickAddShortcutAction({
+        navigation,
+        today,
+        openFoodDialog,
+        openWeightDialog: openWeightDialogFromFab
+    });
+
+    const handleAddFood = useCallback(
+        (mealPeriod?: MealPeriod | null) => {
+            openFoodDialog(mealPeriod ?? null);
+        },
+        [openFoodDialog]
+    );
 
     return (
         <Stack spacing={sectionSpacing} useFlexGap>
@@ -103,9 +75,7 @@ const Log: React.FC = () => {
             <FoodLog
                 date={selectedDate}
                 isSelectedToday={isSelectedToday}
-                onAddFood={(mealPeriod) => {
-                    dialogs.openFoodDialog(mealPeriod ?? null);
-                }}
+                onAddFood={handleAddFood}
             />
         </Stack>
     );

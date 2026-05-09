@@ -228,11 +228,18 @@ const Settings: React.FC = () => {
     };
 
     const handleTimezoneChange = async (nextTimezone: string) => {
+        if (!user) {
+            showUnitsStatus(t('status.failedToSaveChanges'), 'error');
+            return;
+        }
+
+        const previous = timezoneValue;
         setTimezoneValue(nextTimezone);
         try {
             await updateTimezone(nextTimezone);
             showUnitsStatus(t('status.changesSaved'), 'success');
         } catch {
+            setTimezoneValue(previous);
             showUnitsStatus(t('status.failedToSaveChanges'), 'error');
         }
     };
