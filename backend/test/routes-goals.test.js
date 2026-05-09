@@ -77,9 +77,13 @@ test('goals route: rejects unauthenticated requests via router.use middleware', 
 });
 
 test('goals route: GET / returns null when the user has no goal', async () => {
+  let findFirstArgs = null;
   const prismaStub = {
     goal: {
-      findFirst: async () => null
+      findFirst: async (args) => {
+        findFirstArgs = args;
+        return null;
+      }
     }
   };
   const router = loadGoalsRouter(prismaStub);
@@ -101,6 +105,7 @@ test('goals route: GET / returns null when the user has no goal', async () => {
   await handler(req, res);
   assert.equal(res.statusCode, 200);
   assert.equal(res.body, null);
+  assert.deepEqual(findFirstArgs.orderBy, [{ created_at: 'desc' }, { id: 'desc' }]);
 });
 
 test('goals route: GET / maps stored gram weights into the user unit', async () => {
@@ -160,7 +165,7 @@ test('goals route: POST / validates daily_deficit and weight inputs before writi
   await handler(req, res);
   assert.equal(res.statusCode, 400);
   assert.deepEqual(res.body, {
-    message: 'daily_deficit must be one of 0, ±250, ±500, ±750, or ±1000'
+    message: 'daily_deficit must be one of 0, +/-250, +/-500, +/-750, or +/-1000'
   });
 });
 
@@ -226,4 +231,3 @@ test('goals route: POST / creates a goal and returns weights in user units', asy
     target_weight: 76
   });
 });
-

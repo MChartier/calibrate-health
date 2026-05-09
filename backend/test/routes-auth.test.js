@@ -65,7 +65,7 @@ function getRouteHandlers(router, method, path) {
 test('auth route: POST /register returns 400 when the email already exists', async () => {
   const prismaStub = {
     user: {
-      findUnique: async () => ({ id: 1 }),
+      findFirst: async () => ({ id: 1 }),
       create: async () => {
         throw new Error('should not be called');
       }
@@ -83,6 +83,41 @@ test('auth route: POST /register returns 400 when the email already exists', asy
   await handler(req, res);
   assert.equal(res.statusCode, 400);
   assert.deepEqual(res.body, { message: 'User already exists' });
+});
+
+test('auth route: POST /register validates email and password inputs', async () => {
+  const prismaStub = {
+    user: {
+      findFirst: async () => {
+        throw new Error('should not be called');
+      },
+      create: async () => {
+        throw new Error('should not be called');
+      }
+    }
+  };
+  const passportStub = { authenticate: () => () => {} };
+  const bcryptStub = {
+    genSalt: async () => {
+      throw new Error('should not be called');
+    },
+    hash: async () => {
+      throw new Error('should not be called');
+    }
+  };
+
+  const router = loadAuthRouter({ prismaStub, passportStub, bcryptStub });
+  const [handler] = getRouteHandlers(router, 'post', '/register');
+
+  const invalidEmailRes = createRes();
+  await handler({ body: { email: 'not-an-email', password: 'password123' } }, invalidEmailRes);
+  assert.equal(invalidEmailRes.statusCode, 400);
+  assert.deepEqual(invalidEmailRes.body, { message: 'Invalid email' });
+
+  const shortPasswordRes = createRes();
+  await handler({ body: { email: 'test@example.com', password: 'short' } }, shortPasswordRes);
+  assert.equal(shortPasswordRes.statusCode, 400);
+  assert.deepEqual(shortPasswordRes.body, { message: 'Password must be at least 8 characters' });
 });
 
 test('auth route: POST /register creates a user and logs them in', async () => {
@@ -104,10 +139,18 @@ test('auth route: POST /register creates a user and logs them in', async () => {
     profile_image_mime_type: null
   };
 
+  let findFirstArgs = null;
+  let createArgs = null;
   const prismaStub = {
     user: {
-      findUnique: async () => null,
-      create: async () => createdUser
+      findFirst: async (args) => {
+        findFirstArgs = args;
+        return null;
+      },
+      create: async (args) => {
+        createArgs = args;
+        return createdUser;
+      }
     }
   };
   const passportStub = { authenticate: () => () => {} };
@@ -117,13 +160,15 @@ test('auth route: POST /register creates a user and logs them in', async () => {
   const [handler] = getRouteHandlers(router, 'post', '/register');
 
   const req = {
-    body: { email: createdUser.email, password: 'password123' },
+    body: { email: ' TEST@Example.COM ', password: 'password123' },
     login: (_user, cb) => cb(null)
   };
   const res = createRes();
 
   await handler(req, res);
   assert.equal(res.statusCode, 200);
+  assert.deepEqual(findFirstArgs.where, { email: { equals: createdUser.email, mode: 'insensitive' } });
+  assert.equal(createArgs.data.email, createdUser.email);
   assert.deepEqual(res.body, {
     user: {
       id: createdUser.id,
@@ -145,7 +190,7 @@ test('auth route: POST /register creates a user and logs them in', async () => {
   });
 });
 
-test('auth route: POST /login uses passport middleware and returns the serialized user', async () => {
+test('auth route: POST /login normalizes credentials, logs in, and returns the serialized user', async () => {
   const authedUser = {
     id: 7,
     email: 'test@example.com',
@@ -165,32 +210,80 @@ test('auth route: POST /login uses passport middleware and returns the serialize
   };
 
   const prismaStub = { user: {} };
+  let authenticateStrategy = null;
+  let loggedInUser = null;
   const passportStub = {
-    authenticate: () => (req, _res, next) => {
-      req.user = authedUser;
-      next();
+    authenticate: (strategy, callback) => {
+      authenticateStrategy = strategy;
+      return (_req, _res, _next) => {
+        callback(null, authedUser);
+      };
     }
   };
   const bcryptStub = { genSalt: async () => 'salt', hash: async () => 'hash' };
 
   const router = loadAuthRouter({ prismaStub, passportStub, bcryptStub });
-  const [passportMiddleware, handler] = getRouteHandlers(router, 'post', '/login');
+  const [handler] = getRouteHandlers(router, 'post', '/login');
 
-  const req = {};
+  const req = {
+    body: { email: ' TEST@Example.COM ', password: 'password123' },
+    login: (user, cb) => {
+      loggedInUser = user;
+      cb(null);
+    }
+  };
   const res = createRes();
 
-  await new Promise((resolve, reject) => {
-    passportMiddleware(req, res, (err) => {
-      if (err) reject(err);
-      else resolve();
-    });
+  let nextError = null;
+  await handler(req, res, (err) => {
+    nextError = err;
   });
 
-  handler(req, res);
-
+  assert.equal(nextError, null);
+  assert.equal(authenticateStrategy, 'local');
+  assert.equal(req.body.email, 'test@example.com');
+  assert.equal(loggedInUser, authedUser);
   assert.equal(res.statusCode, 200);
   assert.equal(res.body.user.id, authedUser.id);
   assert.equal(res.body.user.email, authedUser.email);
+});
+
+test('auth route: POST /login returns JSON errors for invalid or rejected credentials', async () => {
+  let authenticateCalls = 0;
+  const prismaStub = { user: {} };
+  const passportStub = {
+    authenticate: (_strategy, callback) => {
+      authenticateCalls += 1;
+      return (_req, _res, _next) => {
+        callback(null, false);
+      };
+    }
+  };
+  const bcryptStub = { genSalt: async () => 'salt', hash: async () => 'hash' };
+
+  const router = loadAuthRouter({ prismaStub, passportStub, bcryptStub });
+  const [handler] = getRouteHandlers(router, 'post', '/login');
+
+  const invalidShapeRes = createRes();
+  await handler({ body: { email: 'not-an-email', password: 'password123' } }, invalidShapeRes, () => {});
+  assert.equal(invalidShapeRes.statusCode, 400);
+  assert.deepEqual(invalidShapeRes.body, { message: 'Invalid email or password' });
+  assert.equal(authenticateCalls, 0);
+
+  const rejectedRes = createRes();
+  await handler(
+    {
+      body: { email: 'test@example.com', password: 'wrong-password' },
+      login: () => {
+        throw new Error('should not be called');
+      }
+    },
+    rejectedRes,
+    () => {}
+  );
+  assert.equal(rejectedRes.statusCode, 401);
+  assert.deepEqual(rejectedRes.body, { message: 'Invalid email or password' });
+  assert.equal(authenticateCalls, 1);
 });
 
 test('auth route: POST /logout forwards errors from req.logout', async () => {

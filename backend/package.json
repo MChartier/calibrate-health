@@ -33,7 +33,7 @@
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
     "express-session": "^1.18.2",
-    "multer": "^1.4.5-lts.1",
+    "multer": "^2.1.1",
     "passport": "^0.7.0",
     "passport-local": "^1.0.0",
     "pg": "^8.14.1",
@@ -45,7 +45,7 @@
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.5",
     "@types/express-session": "^1.18.2",
-    "@types/multer": "^1.4.12",
+    "@types/multer": "^2.1.0",
     "@types/node": "^24.10.1",
     "@types/passport": "^1.0.17",
     "@types/passport-local": "^1.0.38",
@@ -75,5 +75,9 @@
       ".ts"
     ],
     "exclude-after-remap": true
+  },
+  "overrides": {
+    "@hono/node-server": "1.19.13",
+    "hono": "4.12.18"
   }
 }

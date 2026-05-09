@@ -9,6 +9,7 @@ import { resolveHeightMmUpdate } from '../utils/height';
 import { isSupportedLanguage, type SupportedLanguage } from '../utils/language';
 import { MAX_PROFILE_IMAGE_BYTES, parseBase64DataUrl } from '../utils/profileImage';
 import { serializeUserForClient, USER_CLIENT_SELECT } from '../utils/userSerialization';
+import { MAX_AUTH_PASSWORD_LENGTH, MIN_AUTH_PASSWORD_LENGTH } from '../utils/authCredentials';
 
 /**
  * Authenticated user account routes (profile, preferences, password, avatar).
@@ -16,10 +17,6 @@ import { serializeUserForClient, USER_CLIENT_SELECT } from '../utils/userSeriali
  * These endpoints keep the session user payload aligned with the latest stored profile fields.
  */
 const router = express.Router();
-
-const MIN_PASSWORD_LENGTH = 8;
-// bcrypt truncates long passwords; keep a conservative cap to avoid surprises.
-const MAX_PASSWORD_LENGTH = 72;
 
 type PasswordChangeParseResult =
   | { ok: true; currentPassword: string; newPassword: string }
@@ -48,12 +45,12 @@ const parsePasswordChangePayload = (body: unknown): PasswordChangeParseResult =>
     return { ok: false, message: 'New password is required' };
   }
 
-  if (newPassword.length < MIN_PASSWORD_LENGTH) {
-    return { ok: false, message: `New password must be at least ${MIN_PASSWORD_LENGTH} characters` };
+  if (newPassword.length < MIN_AUTH_PASSWORD_LENGTH) {
+    return { ok: false, message: `New password must be at least ${MIN_AUTH_PASSWORD_LENGTH} characters` };
   }
 
-  if (newPassword.length > MAX_PASSWORD_LENGTH) {
-    return { ok: false, message: `New password must be at most ${MAX_PASSWORD_LENGTH} characters` };
+  if (newPassword.length > MAX_AUTH_PASSWORD_LENGTH) {
+    return { ok: false, message: `New password must be at most ${MAX_AUTH_PASSWORD_LENGTH} characters` };
   }
 
   return { ok: true, currentPassword, newPassword };
@@ -276,7 +273,7 @@ router.get('/profile', async (req, res) => {
 
     const latestGoal = await prisma.goal.findFirst({
       where: { user_id: user.id },
-      orderBy: { created_at: 'desc' },
+      orderBy: [{ created_at: 'desc' }, { id: 'desc' }],
       select: { daily_deficit: true }
     });
 

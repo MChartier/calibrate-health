@@ -129,6 +129,17 @@ test('metrics route: GET / validates start/end query params when provided', asyn
   await handler(req, res);
   assert.equal(res.statusCode, 400);
   assert.deepEqual(res.body, { message: 'Invalid date range' });
+
+  const impossibleDateRes = createRes();
+  await handler(
+    {
+      user: { id: 7, weight_unit: 'KG' },
+      query: { start: '2025-02-31' }
+    },
+    impossibleDateRes
+  );
+  assert.equal(impossibleDateRes.statusCode, 400);
+  assert.deepEqual(impossibleDateRes.body, { message: 'Invalid date range' });
 });
 
 test('metrics route: GET / validates include_trend query values', async () => {
@@ -477,6 +488,45 @@ test('metrics route: POST / rejects invalid date values', async () => {
   await handler(req, res);
   assert.equal(res.statusCode, 400);
   assert.deepEqual(res.body, { message: 'Invalid date' });
+
+  const impossibleDateRes = createRes();
+  await handler(
+    {
+      user: { id: 7, weight_unit: 'KG', timezone: 'UTC' },
+      body: { date: '2025-02-31', weight: 70 }
+    },
+    impossibleDateRes
+  );
+  assert.equal(impossibleDateRes.statusCode, 400);
+  assert.deepEqual(impossibleDateRes.body, { message: 'Invalid date' });
+});
+
+test('metrics route: POST / rejects malformed or out-of-range body fat percentages', async () => {
+  const prismaStub = { bodyMetric: {} };
+  const router = loadMetricsRouter(prismaStub);
+  const handler = getRouteHandler(router, 'post', '/');
+
+  const malformedRes = createRes();
+  await handler(
+    {
+      user: { id: 7, weight_unit: 'KG', timezone: 'UTC' },
+      body: { date: '2025-01-01', weight: 70, body_fat_percent: '12abc' }
+    },
+    malformedRes
+  );
+  assert.equal(malformedRes.statusCode, 400);
+  assert.deepEqual(malformedRes.body, { message: 'Invalid body_fat_percent' });
+
+  const outOfRangeRes = createRes();
+  await handler(
+    {
+      user: { id: 7, weight_unit: 'KG', timezone: 'UTC' },
+      body: { date: '2025-01-01', weight: 70, body_fat_percent: 101 }
+    },
+    outOfRangeRes
+  );
+  assert.equal(outOfRangeRes.statusCode, 400);
+  assert.deepEqual(outOfRangeRes.body, { message: 'Invalid body_fat_percent' });
 });
 
 test('metrics route: POST / rejects empty updates', async () => {
