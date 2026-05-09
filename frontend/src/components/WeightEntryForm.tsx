@@ -337,7 +337,7 @@ const WeightEntryForm: React.FC<Props> = ({ onSuccess, date }) => {
         return findMetricOnOrBeforeDate(metrics, entryDate);
     }, [entryDate, existingMetric, metrics]);
 
-    const contentKey = `${entryDate}:${existingMetric?.id ?? 'new'}:${prefillMetric?.id ?? 'none'}`;
+    const contentKey = `${entryDate}:${weightUnitLabel}:${existingMetric?.id ?? 'new'}:${prefillMetric?.id ?? 'none'}`;
 
     return (
         <WeightEntryFormContent
