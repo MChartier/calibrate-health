@@ -4,6 +4,10 @@ import type { Theme } from '@mui/material/styles';
 import type {} from '@mui/x-charts/themeAugmentation';
 
 const PAGE_SECTION_GAP_SPACING = 1.5; // Base vertical gap between stacked Today workspace surfaces (theme spacing units).
+const FOCUS_RING_WIDTH_PX = 3; // Keyboard focus ring thickness shared by MUI controls.
+const FOCUS_RING_ALPHA = 0.28; // Ring is visible on light/dark surfaces without overpowering selected states.
+const FOCUS_RING_ALPHA_SUBTLE = 0.22; // Softer ring for dense icon and list controls.
+const FOCUS_RING_BG_ALPHA = 0.08; // Light focused fill replaces MUI's pulsing focus ripple.
 
 type ShadowRampOptions = {
     /** Base RGB hex used to tint shadows. */
@@ -42,6 +46,13 @@ function resolveStatusColor(theme: Theme, color: unknown): string {
     if (!name) return theme.palette.text.secondary;
     if (!(name in theme.palette)) return theme.palette.text.secondary;
     return theme.palette[name].main;
+}
+
+/**
+ * Build one keyboard focus treatment so controls do not combine browser outlines and MUI ripples.
+ */
+function buildFocusRing(theme: Theme, ringAlpha = FOCUS_RING_ALPHA): string {
+    return `0 0 0 ${FOCUS_RING_WIDTH_PX}px ${alpha(theme.palette.primary.main, ringAlpha)}`;
 }
 
 /**
@@ -130,6 +141,18 @@ export function createAppTheme(mode: PaletteMode) {
             }
         },
         components: {
+            MuiButtonBase: {
+                styleOverrides: {
+                    root: {
+                        '&.Mui-focusVisible': {
+                            outline: 0
+                        },
+                        '&.Mui-focusVisible .MuiTouchRipple-root': {
+                            display: 'none'
+                        }
+                    }
+                }
+            },
             MuiChartsSurface: {
                 styleOverrides: {
                     root: {
@@ -472,6 +495,9 @@ export function createAppTheme(mode: PaletteMode) {
                 }
             },
             MuiIconButton: {
+                defaultProps: {
+                    disableFocusRipple: true
+                },
                 styleOverrides: {
                     root: ({ theme }) => ({
                         borderRadius: 8,
@@ -490,7 +516,8 @@ export function createAppTheme(mode: PaletteMode) {
                         },
                         '&:active': { transform: 'translateY(1px)' },
                         '&.Mui-focusVisible': {
-                            boxShadow: `0 0 0 4px ${alpha(theme.palette.primary.main, 0.22)}`
+                            backgroundColor: alpha(theme.palette.primary.main, FOCUS_RING_BG_ALPHA),
+                            boxShadow: buildFocusRing(theme, FOCUS_RING_ALPHA_SUBTLE)
                         }
                     })
                 }
@@ -509,12 +536,15 @@ export function createAppTheme(mode: PaletteMode) {
                             backgroundColor: alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.24 : 0.14)
                         },
                         '&.Mui-focusVisible': {
-                            boxShadow: `0 0 0 4px ${alpha(theme.palette.primary.main, 0.18)}`
+                            boxShadow: buildFocusRing(theme, FOCUS_RING_ALPHA_SUBTLE)
                         }
                     })
                 }
             },
             MuiToggleButton: {
+                defaultProps: {
+                    disableFocusRipple: true
+                },
                 styleOverrides: {
                     root: ({ theme }) => ({
                         fontWeight: 800,
@@ -526,11 +556,31 @@ export function createAppTheme(mode: PaletteMode) {
                         },
                         '&.Mui-selected:hover': {
                             backgroundColor: alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.28 : 0.18)
+                        },
+                        '&.Mui-focusVisible': {
+                            boxShadow: buildFocusRing(theme)
+                        }
+                    })
+                }
+            },
+            MuiTab: {
+                defaultProps: {
+                    disableFocusRipple: true
+                },
+                styleOverrides: {
+                    root: ({ theme }) => ({
+                        borderRadius: 8,
+                        '&.Mui-focusVisible': {
+                            backgroundColor: alpha(theme.palette.primary.main, FOCUS_RING_BG_ALPHA),
+                            boxShadow: `inset ${buildFocusRing(theme)}`
                         }
                     })
                 }
             },
             MuiFab: {
+                defaultProps: {
+                    disableFocusRipple: true
+                },
                 styleOverrides: {
                     root: ({ theme }) => ({
                         borderRadius: 8,
@@ -539,23 +589,70 @@ export function createAppTheme(mode: PaletteMode) {
                         '& .MuiSvgIcon-root': { fontSize: theme.custom.icon.size.fab },
                         '&:active': { transform: 'translateY(1px)' },
                         '&.Mui-focusVisible': {
-                            boxShadow: `0 0 0 4px ${alpha(theme.palette.primary.main, 0.22)}`
+                            boxShadow: `${theme.shadows[8]}, ${buildFocusRing(theme)}`
                         }
                     })
                 }
             },
             MuiButton: {
+                defaultProps: {
+                    disableFocusRipple: true
+                },
                 styleOverrides: {
                     root: ({ theme }) => ({
                         borderRadius: 8,
                         transition: 'transform 120ms ease, box-shadow 120ms ease',
                         '&:active': { transform: 'translateY(1px)' },
                         '&.Mui-focusVisible': {
-                            boxShadow: `0 0 0 4px ${alpha(theme.palette.primary.main, 0.22)}`
+                            boxShadow: buildFocusRing(theme)
                         }
                     }),
                     contained: ({ theme }) => ({
                         boxShadow: theme.shadows[5]
+                    })
+                }
+            },
+            MuiButtonGroup: {
+                defaultProps: {
+                    disableFocusRipple: true
+                }
+            },
+            MuiCheckbox: {
+                defaultProps: {
+                    disableFocusRipple: true
+                },
+                styleOverrides: {
+                    root: ({ theme }) => ({
+                        '&.Mui-focusVisible': {
+                            backgroundColor: alpha(theme.palette.primary.main, FOCUS_RING_BG_ALPHA),
+                            boxShadow: buildFocusRing(theme, FOCUS_RING_ALPHA_SUBTLE)
+                        }
+                    })
+                }
+            },
+            MuiRadio: {
+                defaultProps: {
+                    disableFocusRipple: true
+                },
+                styleOverrides: {
+                    root: ({ theme }) => ({
+                        '&.Mui-focusVisible': {
+                            backgroundColor: alpha(theme.palette.primary.main, FOCUS_RING_BG_ALPHA),
+                            boxShadow: buildFocusRing(theme, FOCUS_RING_ALPHA_SUBTLE)
+                        }
+                    })
+                }
+            },
+            MuiSwitch: {
+                defaultProps: {
+                    disableFocusRipple: true
+                },
+                styleOverrides: {
+                    switchBase: ({ theme }) => ({
+                        '&.Mui-focusVisible + .MuiSwitch-track': {
+                            borderColor: alpha(theme.palette.primary.main, FOCUS_RING_ALPHA),
+                            boxShadow: buildFocusRing(theme)
+                        }
                     })
                 }
             },
