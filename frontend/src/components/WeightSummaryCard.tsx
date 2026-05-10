@@ -37,6 +37,11 @@ const WEIGHT_CARD_ROW_GAP = { xs: 1.25, sm: 2 }; // Gap between the icon tile an
 const WEIGHT_CARD_BODY_MARGIN_TOP = { xs: 1.25, sm: 1.5 }; // Space between the header and the card body content.
 const WEIGHT_CARD_VALUE_VARIANT = { xs: 'h5', sm: 'h4' } as const; // Larger value treatment makes the latest weigh-in the card anchor.
 const WEIGHT_CARD_PADDING_SPACING = { xs: 1.5, sm: 2 }; // Slightly roomier than dense cards so the context scale has enough breathing room.
+const WEIGHT_CARD_SUMMARY_CONTAINER_NAME = 'weight-summary-card';
+const WEIGHT_CARD_SUMMARY_STACK_MAX_WIDTH_REM = 36; // Card-width cutoff where the CTA moves below the weight value to avoid overlap in desktop sidebars.
+const WEIGHT_CARD_SUMMARY_STACK_QUERY =
+    `@container ${WEIGHT_CARD_SUMMARY_CONTAINER_NAME} (max-width: ${WEIGHT_CARD_SUMMARY_STACK_MAX_WIDTH_REM}rem)`;
+const WEIGHT_CARD_CTA_MIN_WIDTH_PX = 224; // Keeps the action stable when there is enough inline card space.
 const WEIGHT_CONTEXT_METRIC_ICON_SIZE_PX = { xs: 18, sm: 20 }; // Metric tile icons shrink on 320px screens so two tiles stay on one row.
 const WEIGHT_CONTEXT_TRACK_HEIGHT_PX = 4; // Hairline baseline keeps the range band and markers visually dominant.
 const WEIGHT_CONTEXT_RANGE_HEIGHT_PX = 28; // Tall trend band reads as a zone rather than a thin chart series.
@@ -680,6 +685,25 @@ const WeightSummaryCard: React.FC<WeightSummaryCardProps> = ({ date, onOpenWeigh
     const asOfLabel = formatMetricDateLabel(displayedMetric?.date ?? null);
     const WeightCtaIcon = metricForSelectedDate ? EditRoundedIcon : AddRoundedIcon;
     const ctaVariant = metricForSelectedDate ? 'outlined' : 'contained';
+    const summaryHeaderSx = {
+        display: 'grid',
+        alignItems: 'center',
+        gap: { xs: 1.25, sm: rowGap },
+        gridTemplateColumns: { xs: '1fr', sm: 'minmax(0, 1fr) auto' },
+        [WEIGHT_CARD_SUMMARY_STACK_QUERY]: {
+            alignItems: 'stretch',
+            gridTemplateColumns: '1fr'
+        }
+    };
+    const summaryCtaSx = {
+        justifySelf: { xs: 'stretch', sm: 'end' },
+        maxWidth: '100%',
+        minWidth: { sm: WEIGHT_CARD_CTA_MIN_WIDTH_PX },
+        [WEIGHT_CARD_SUMMARY_STACK_QUERY]: {
+            justifySelf: 'stretch',
+            width: '100%'
+        }
+    };
     const trendSnapshotSection = trendMetricsQuery.isLoading || isValidTrendMetric(displayedTrendMetric) ? (
         <>
             <Divider />
@@ -697,12 +721,7 @@ const WeightSummaryCard: React.FC<WeightSummaryCardProps> = ({ date, onOpenWeigh
         cardBody = (
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: stackGap }}>
                 <Box
-                    sx={{
-                        display: 'grid',
-                        alignItems: 'center',
-                        gap: { xs: 1.25, sm: rowGap },
-                        gridTemplateColumns: { xs: '1fr', sm: 'minmax(0, 1fr) auto' }
-                    }}
+                    sx={summaryHeaderSx}
                 >
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: rowGap, minWidth: 0 }}>
                         <WeightIconTile sizePx={iconTileSizePx} />
@@ -720,7 +739,12 @@ const WeightSummaryCard: React.FC<WeightSummaryCardProps> = ({ date, onOpenWeigh
                         </Box>
                     </Box>
 
-                    <Skeleton variant="rounded" height={isXs ? 44 : 40} width={isXs ? '100%' : 184} />
+                    <Skeleton
+                        variant="rounded"
+                        height={isXs ? 44 : 40}
+                        width={isXs ? '100%' : WEIGHT_CARD_CTA_MIN_WIDTH_PX}
+                        sx={summaryCtaSx}
+                    />
                 </Box>
                 {trendSnapshotSection}
             </Box>
@@ -747,18 +771,13 @@ const WeightSummaryCard: React.FC<WeightSummaryCardProps> = ({ date, onOpenWeigh
         cardBody = (
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: stackGap }}>
                 <Box
-                    sx={{
-                        display: 'grid',
-                        alignItems: 'center',
-                        gap: { xs: 1.25, sm: rowGap },
-                        gridTemplateColumns: { xs: '1fr', sm: 'minmax(0, 1fr) auto' }
-                    }}
+                    sx={summaryHeaderSx}
                 >
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: rowGap, minWidth: 0 }}>
                         <WeightIconTile sizePx={iconTileSizePx} />
 
                         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.25, flexGrow: 1, minWidth: 0 }}>
-                            <Typography variant={valueVariant} sx={{ lineHeight: 1.1, whiteSpace: 'nowrap' }}>
+                            <Typography variant={valueVariant} sx={{ lineHeight: 1.1 }}>
                                 {displayedWeightLabel}
                             </Typography>
                             <Typography variant="body2" sx={{
@@ -775,7 +794,7 @@ const WeightSummaryCard: React.FC<WeightSummaryCardProps> = ({ date, onOpenWeigh
                         startIcon={<WeightCtaIcon />}
                         onClick={onOpenWeightEntry}
                         fullWidth={isXs}
-                        sx={{ justifySelf: { xs: 'stretch', sm: 'end' } }}
+                        sx={summaryCtaSx}
                     >
                         {ctaLabel}
                     </Button>
@@ -795,7 +814,15 @@ const WeightSummaryCard: React.FC<WeightSummaryCardProps> = ({ date, onOpenWeigh
         >
             <SectionHeader title={t('weightSummary.title')} titleVariant="h5" align="center" />
 
-            <Box sx={{ mt: bodyMarginTop }}>{cardBody}</Box>
+            <Box
+                sx={{
+                    mt: bodyMarginTop,
+                    containerType: 'inline-size',
+                    containerName: WEIGHT_CARD_SUMMARY_CONTAINER_NAME
+                }}
+            >
+                {cardBody}
+            </Box>
         </AppCard>
     );
 };
