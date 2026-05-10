@@ -5,6 +5,7 @@ import type { MealPeriod } from '../types/mealPeriod';
 import { useQuickAddFab } from '../context/useQuickAddFab';
 import { useLogDateNavigationState } from '../hooks/useLogDateNavigationState';
 import { useQuickAddLogDateBridge, useQuickAddShortcutAction } from '../hooks/useQuickAddRouteState';
+import { APP_PAGE_AVAILABLE_HEIGHT_CSS_VAR } from '../ui/layoutCssVars';
 import CalorieSummary from './CalorieSummary';
 import DayCompletionControl from './DayCompletionControl';
 import FoodLog from './FoodLog';
@@ -22,10 +23,12 @@ const TODAY_WORKSPACE_AREAS = {
     xs: '"calories" "food" "weight" "trend" "goal" "completion"',
     md: '"calories weight" "food context" "completion completion"'
 }; // Named areas keep the mobile task flow and desktop workspace mode explicit.
+const TODAY_WORKSPACE_STATIC_HEIGHT_PX = 560; // Header, summary row, completion row, and grid gaps outside the flexible desktop work row.
+const TODAY_WORKSPACE_AVAILABLE_HEIGHT = `var(${APP_PAGE_AVAILABLE_HEIGHT_CSS_VAR}, 100svh)`;
 const TODAY_WORKSPACE_MAIN_ROW_HEIGHT = {
-    md: 'clamp(540px, calc(100svh - 560px), 640px)',
-    lg: 'clamp(580px, calc(100svh - 560px), 680px)'
-}; // Caps the desktop work row so large monitors do not force page-height overflow; food log scrolls inside this track.
+    md: `clamp(540px, calc(${TODAY_WORKSPACE_AVAILABLE_HEIGHT} - ${TODAY_WORKSPACE_STATIC_HEIGHT_PX}px), 640px)`,
+    lg: `clamp(580px, calc(${TODAY_WORKSPACE_AVAILABLE_HEIGHT} - ${TODAY_WORKSPACE_STATIC_HEIGHT_PX}px), 680px)`
+}; // Caps the desktop work row against AppPage's content viewport; food log scrolls inside this track.
 
 /**
  * Main logged-in workspace centered around the selected local day.

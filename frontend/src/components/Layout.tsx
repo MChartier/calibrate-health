@@ -45,6 +45,7 @@ import { useInstallState } from '../hooks/useInstallState';
 import CalibrateLogo from './CalibrateLogo';
 import LogDateNavigationCluster from './LogDateNavigationCluster';
 import PwaStatusToasts from './PwaStatusToasts';
+import { APP_TOOLBAR_HEIGHT_CSS_VAR } from '../ui/layoutCssVars';
 
 const SAFE_AREA_INSET_TOP = 'var(--safe-area-inset-top, 0px)';
 const SAFE_AREA_INSET_LEFT = 'var(--safe-area-inset-left, 0px)';
@@ -67,13 +68,22 @@ function normalizeToolbarMinHeight(minHeight: number | string | undefined, fallb
 }
 
 /**
- * Build Toolbar sizing that includes safe-area padding so fixed headers and their spacers align.
+ * Read the responsive toolbar heights once so the fixed AppBar, spacer, and page sizing vars stay aligned.
  */
-function buildSafeAreaToolbarSx(theme: Theme) {
+function getToolbarMinHeights(theme: Theme) {
     const fallbackMinHeight = theme.spacing(DEFAULT_TOOLBAR_MIN_HEIGHT_SPACING);
     const baseMinHeight = normalizeToolbarMinHeight(theme.mixins.toolbar.minHeight, fallbackMinHeight);
     const toolbarMixins = theme.mixins.toolbar as Record<string, { minHeight?: number | string } | undefined>;
     const smMinHeight = normalizeToolbarMinHeight(toolbarMixins[theme.breakpoints.up('sm')]?.minHeight, baseMinHeight);
+
+    return { baseMinHeight, smMinHeight };
+}
+
+/**
+ * Build Toolbar sizing that includes safe-area padding so fixed headers and their spacers align.
+ */
+function buildSafeAreaToolbarSx(theme: Theme) {
+    const { baseMinHeight, smMinHeight } = getToolbarMinHeights(theme);
     const leadingInset = `max(${SAFE_AREA_INSET_LEFT}, ${TITLEBAR_AREA_X})`;
     const trailingInset = `max(${SAFE_AREA_INSET_RIGHT}, ${TITLEBAR_AREA_RIGHT_INSET})`;
 
@@ -86,6 +96,23 @@ function buildSafeAreaToolbarSx(theme: Theme) {
             minHeight: `calc(${smMinHeight} + ${SAFE_AREA_INSET_TOP})`,
             pl: `calc(${theme.spacing(TOOLBAR_HORIZONTAL_PADDING_SPACING.sm)} + ${leadingInset})`,
             pr: `calc(${theme.spacing(TOOLBAR_HORIZONTAL_PADDING_SPACING.sm)} + ${trailingInset})`
+        }
+    };
+}
+
+/**
+ * Publish the shell toolbar height for page-level viewport calculations.
+ */
+function buildAppShellSx(theme: Theme) {
+    const { baseMinHeight, smMinHeight } = getToolbarMinHeights(theme);
+
+    return {
+        [APP_TOOLBAR_HEIGHT_CSS_VAR]: `calc(${baseMinHeight} + ${SAFE_AREA_INSET_TOP})`,
+        minHeight: '100svh',
+        width: '100%',
+        bgcolor: 'background.default',
+        [theme.breakpoints.up('sm')]: {
+            [APP_TOOLBAR_HEIGHT_CSS_VAR]: `calc(${smMinHeight} + ${SAFE_AREA_INSET_TOP})`
         }
     };
 }
@@ -103,6 +130,7 @@ const LayoutShell: React.FC = () => {
     const { isInstalled, canInstallPrompt, platformHint, showInstallCta, promptInstall } = useInstallState();
     useIncompleteTodayBadge();
     const safeAreaToolbarSx = useMemo(() => buildSafeAreaToolbarSx(theme), [theme]);
+    const appShellSx = useMemo(() => buildAppShellSx(theme), [theme]);
     const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
     const isXs = useMediaQuery(theme.breakpoints.down('sm'));
     const navigate = useNavigate();
@@ -225,7 +253,7 @@ const LayoutShell: React.FC = () => {
     const brandHomePath = user ? '/dashboard' : '/';
 
     return (
-        <Box sx={{ minHeight: '100svh', width: '100%', bgcolor: 'background.default' }}>
+        <Box sx={appShellSx}>
             <AppBar position="fixed">
                 <Toolbar
                     sx={[

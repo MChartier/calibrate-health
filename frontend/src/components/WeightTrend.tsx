@@ -98,6 +98,10 @@ export type WeightTrendProps = {
      */
     fillAvailableHeight?: boolean;
     /**
+     * Use the dashboard preview chart layout without requiring a parent-assigned height.
+     */
+    compactPreview?: boolean;
+    /**
      * Expand the history card to fill its route container for the dedicated history view.
      */
     fullScreen?: boolean;
@@ -145,15 +149,15 @@ function getAxisLabelOptions(spanDays: number): Intl.DateTimeFormatOptions {
 /**
  * Select chart margins for the current card mode without burying layout logic in JSX.
  */
-function getTrendChartMargin(args: { fillAvailableHeight: boolean; isCompactViewport: boolean }) {
-    if (args.fillAvailableHeight) return TODAY_TREND_MARGIN_FILL;
+function getTrendChartMargin(args: { useCompactLayout: boolean; isCompactViewport: boolean }) {
+    if (args.useCompactLayout) return TODAY_TREND_MARGIN_FILL;
     return args.isCompactViewport ? TODAY_TREND_MARGIN_COMPACT : TODAY_TREND_MARGIN_DEFAULT;
 }
 
 type WeightTrendControlsProps = {
     selectedRange: MetricsRange;
     isCompactViewport: boolean;
-    fillAvailableHeight: boolean;
+    useCompactLayout: boolean;
     requestedWindow: RequestedWindow | null;
     visibleWindowLabel: string | null;
     canPanBackward: boolean;
@@ -169,7 +173,7 @@ type WeightTrendControlsProps = {
 const WeightTrendControls: React.FC<WeightTrendControlsProps> = ({
     selectedRange,
     isCompactViewport,
-    fillAvailableHeight,
+    useCompactLayout,
     requestedWindow,
     visibleWindowLabel,
     canPanBackward,
@@ -179,19 +183,19 @@ const WeightTrendControls: React.FC<WeightTrendControlsProps> = ({
     onPanForward
 }) => {
     const { t } = useI18n();
-    const controlsDirection = fillAvailableHeight ? 'column' : { xs: 'column', md: 'row' };
-    const controlsAlignment = fillAvailableHeight ? 'stretch' : { xs: 'stretch', md: 'center' };
-    const controlsJustification = fillAvailableHeight ? 'flex-start' : 'space-between';
-    const rangeControlWidth = fillAvailableHeight ? '100%' : { xs: '100%', md: 'auto' };
-    const panControlWidth = fillAvailableHeight ? '100%' : { xs: '100%', md: 'auto' };
-    const panControlJustification = fillAvailableHeight ? 'space-between' : { xs: 'center', md: 'flex-end' };
+    const controlsDirection = useCompactLayout ? 'column' : { xs: 'column', md: 'row' };
+    const controlsAlignment = useCompactLayout ? 'stretch' : { xs: 'stretch', md: 'center' };
+    const controlsJustification = useCompactLayout ? 'flex-start' : 'space-between';
+    const rangeControlWidth = useCompactLayout ? '100%' : { xs: '100%', md: 'auto' };
+    const panControlWidth = useCompactLayout ? '100%' : { xs: '100%', md: 'auto' };
+    const panControlJustification = useCompactLayout ? 'space-between' : { xs: 'center', md: 'flex-end' };
 
     return (
         <Box
             sx={{
                 display: 'flex',
                 flexDirection: controlsDirection,
-                gap: fillAvailableHeight ? TODAY_TREND_CONTROL_WRAP_GAP : CONTROLS_ROW_GAP,
+                gap: useCompactLayout ? TODAY_TREND_CONTROL_WRAP_GAP : CONTROLS_ROW_GAP,
                 alignItems: controlsAlignment,
                 justifyContent: controlsJustification
             }}
@@ -209,7 +213,7 @@ const WeightTrendControls: React.FC<WeightTrendControlsProps> = ({
                 sx={{
                     width: rangeControlWidth,
                     '& .MuiToggleButton-root': {
-                        flex: fillAvailableHeight ? 1 : { xs: 1, md: 'initial' },
+                        flex: useCompactLayout ? 1 : { xs: 1, md: 'initial' },
                         minHeight: { xs: RANGE_TOGGLE_TOUCH_HEIGHT_PX, md: 'auto' }
                     }
                 }}
@@ -346,11 +350,18 @@ const WeightTrendLegend: React.FC<WeightTrendLegendProps> = ({
 /**
  * Full-featured weight trend panel for Today previews and the dedicated history route.
  */
-const WeightTrend: React.FC<WeightTrendProps> = ({ fillAvailableHeight = false, fullScreen = false, action, sx }) => {
+const WeightTrend: React.FC<WeightTrendProps> = ({
+    fillAvailableHeight = false,
+    compactPreview = false,
+    fullScreen = false,
+    action,
+    sx
+}) => {
     const { user } = useAuth();
     const { t } = useI18n();
     const theme = useTheme();
     const isCompactViewport = useMediaQuery(theme.breakpoints.down('sm'));
+    const useCompactLayout = fillAvailableHeight || compactPreview;
     const shouldStretchChart = fillAvailableHeight || fullScreen;
     const chartLibraryAnimationSkipped = !fullScreen; // Compact previews mount in tabs; skipping chart tween avoids transient SVG NaN coordinates.
     const chartAxisHighlight = chartLibraryAnimationSkipped ? { x: 'none' as const, y: 'none' as const } : undefined;
@@ -370,7 +381,7 @@ const WeightTrend: React.FC<WeightTrendProps> = ({ fillAvailableHeight = false, 
     const rawLineColor = alpha(theme.palette.primary.main, RAW_LINE_ALPHA);
     const expectedRangeFillColor = alpha(theme.palette.primary.main, EXPECTED_RANGE_FILL_ALPHA);
     const expectedRangeEdgeColor = alpha(theme.palette.primary.main, EXPECTED_RANGE_EDGE_ALPHA);
-    const chartMargin = getTrendChartMargin({ fillAvailableHeight, isCompactViewport });
+    const chartMargin = getTrendChartMargin({ useCompactLayout, isCompactViewport });
 
     const goalQuery = useQuery({
         queryKey: ['goal'],
@@ -603,9 +614,9 @@ const WeightTrend: React.FC<WeightTrendProps> = ({ fillAvailableHeight = false, 
     const chartHeight = shouldStretchChart ? chartContainerHeight ?? stretchedMinChartHeight : defaultChartHeight;
     const chartHasMeasuredContainer = chartContainerWidth !== null && (!shouldStretchChart || chartContainerHeight !== null); // MUI Charts needs real dimensions before it can compute stable SVG coordinates.
     const cardTitle = fullScreen ? t('goals.weightHistoryTitle') : t('today.weightTrend.title');
-    const shouldShowChartMeta = !fillAvailableHeight; // Today right-rail preview prioritizes the chart; the tooltip still explains the series.
-    const contentStackSpacing = fillAvailableHeight ? TODAY_TREND_PREVIEW_STACK_GAP : TODAY_TREND_CONTENT_STACK_GAP;
-    const cardStackSpacing = fillAvailableHeight ? TODAY_TREND_CONTENT_STACK_GAP : TODAY_TREND_CARD_STACK_GAP;
+    const shouldShowChartMeta = !useCompactLayout; // Preview cards prioritize axes and trend shape; the tooltip still explains the series.
+    const contentStackSpacing = useCompactLayout ? TODAY_TREND_PREVIEW_STACK_GAP : TODAY_TREND_CONTENT_STACK_GAP;
+    const cardStackSpacing = useCompactLayout ? TODAY_TREND_CONTENT_STACK_GAP : TODAY_TREND_CARD_STACK_GAP;
     const chartContainerSx: SxProps<Theme> | undefined = (() => {
         if (fillAvailableHeight) {
             return {
@@ -722,7 +733,7 @@ const WeightTrend: React.FC<WeightTrendProps> = ({ fillAvailableHeight = false, 
         <WeightTrendControls
             selectedRange={selectedRange}
             isCompactViewport={isCompactViewport}
-            fillAvailableHeight={fillAvailableHeight}
+            useCompactLayout={useCompactLayout}
             requestedWindow={requestedWindow}
             visibleWindowLabel={visibleWindowLabel}
             canPanBackward={canPanBackward}
@@ -769,8 +780,8 @@ const WeightTrend: React.FC<WeightTrendProps> = ({ fillAvailableHeight = false, 
                                     domainLimit: 'strict',
                                     min: xDomain?.min,
                                     max: xDomain?.max,
-                                    height: fillAvailableHeight ? TODAY_TREND_X_AXIS_HEIGHT_PX : undefined,
-                                    tickSize: fillAvailableHeight ? 0 : undefined,
+                                    height: useCompactLayout ? TODAY_TREND_X_AXIS_HEIGHT_PX : undefined,
+                                    tickSize: useCompactLayout ? 0 : undefined,
                                     valueFormatter: (value, context) =>
                                         context?.location === 'tooltip'
                                             ? tooltipDateFormatter.format(value)
@@ -781,8 +792,8 @@ const WeightTrend: React.FC<WeightTrendProps> = ({ fillAvailableHeight = false, 
                                 {
                                     min: yDomain?.min,
                                     max: yDomain?.max,
-                                    width: fillAvailableHeight ? TODAY_TREND_Y_AXIS_WIDTH_PX : undefined,
-                                    tickSize: fillAvailableHeight ? 0 : undefined
+                                    width: useCompactLayout ? TODAY_TREND_Y_AXIS_WIDTH_PX : undefined,
+                                    tickSize: useCompactLayout ? 0 : undefined
                                 }
                             ]}
                             series={[

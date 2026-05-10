@@ -7,6 +7,7 @@ import { useFoodLogQuery } from '../queries/foodLog';
 import AppCard from '../ui/AppCard';
 import FoodLogMeals from './FoodLogMeals';
 import { useI18n } from '../i18n/useI18n';
+import { APP_PAGE_AVAILABLE_HEIGHT_CSS_VAR } from '../ui/layoutCssVars';
 
 export type FoodLogProps = {
     date: string;
@@ -24,9 +25,9 @@ export type FoodLogProps = {
 };
 
 const TODAY_WORKSPACE_FOOD_LOG_HEIGHT = {
-    md: 'clamp(430px, calc(100svh - 360px), 560px)',
-    lg: 'clamp(480px, calc(100svh - 360px), 620px)',
-    xl: 'clamp(520px, calc(100svh - 370px), 660px)'
+    md: `clamp(430px, calc(var(${APP_PAGE_AVAILABLE_HEIGHT_CSS_VAR}, 100svh) - 360px), 560px)`,
+    lg: `clamp(480px, calc(var(${APP_PAGE_AVAILABLE_HEIGHT_CSS_VAR}, 100svh) - 360px), 620px)`,
+    xl: `clamp(520px, calc(var(${APP_PAGE_AVAILABLE_HEIGHT_CSS_VAR}, 100svh) - 370px), 660px)`
 }; // Bounds the desktop food log so the page stays compact while the meal list scrolls internally.
 const FOOD_LOG_MIN_FILL_HEIGHT_PX = { md: 360, lg: 400 }; // Minimum useful timeline height when the dashboard grid assigns available space.
 
