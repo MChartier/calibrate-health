@@ -11,28 +11,23 @@ import LogDatePickerControl from './LogDatePickerControl';
 
 type LogDateNavigationClusterProps = {
     navigation: LogDateNavigationState;
-    placement: 'navbar' | 'page';
     showTodayShortcut?: boolean;
     sx?: SxProps<Theme>;
 };
 
 const DATE_CLUSTER_GAP_SPACING = 0.5; // Horizontal gap between date navigation controls.
-const NAVBAR_DATE_CONTROL_WIDTH_PX = { xs: 148, sm: 188, md: 220 }; // Keeps the app-bar date picker centered without crowding actions.
-const PAGE_DATE_CONTROL_WIDTH_PX = { xs: 176, sm: 196, md: 220 }; // Larger page control width for the mobile header fallback.
+const NAVBAR_DATE_CONTROL_WIDTH_PX = { xs: 136, sm: 188, md: 220 }; // Compact xs width keeps the date in the app bar after the wordmark collapses.
+const NAVBAR_AUXILIARY_CONTROL_DISPLAY = { xs: 'none', sm: 'inline-flex' } as const; // xs app bars reserve the center slot for the date field itself.
 
 /**
- * Shared selected-day navigation controls for the app bar and compact page header.
+ * App-bar selected-day navigation controls.
  */
 const LogDateNavigationCluster: React.FC<LogDateNavigationClusterProps> = ({
     navigation,
-    placement,
     showTodayShortcut = false,
     sx
 }) => {
     const { t } = useI18n();
-    const isNavbarPlacement = placement === 'navbar';
-    const iconButtonSize = isNavbarPlacement ? 'small' : 'medium';
-    const pickerWidth = isNavbarPlacement ? NAVBAR_DATE_CONTROL_WIDTH_PX : PAGE_DATE_CONTROL_WIDTH_PX;
 
     return (
         <Box
@@ -42,27 +37,30 @@ const LogDateNavigationCluster: React.FC<LogDateNavigationClusterProps> = ({
                     alignItems: 'center',
                     justifyContent: 'center',
                     gap: DATE_CLUSTER_GAP_SPACING,
-                    minWidth: 0
+                    minWidth: 0,
+                    width: '100%'
                 },
                 sx
             )}
         >
-            <Tooltip title={t('log.nav.prevDay')}>
-                <span>
-                    <IconButton
-                        size={iconButtonSize}
-                        aria-label={t('log.nav.prevDay')}
-                        onClick={navigation.goToPreviousDate}
-                        disabled={!navigation.canGoBack}
-                    >
-                        <ChevronLeftRoundedIcon fontSize="small" />
-                    </IconButton>
-                </span>
-            </Tooltip>
+            <Box component="span" sx={{ display: NAVBAR_AUXILIARY_CONTROL_DISPLAY }}>
+                <Tooltip title={t('log.nav.prevDay')}>
+                    <span>
+                        <IconButton
+                            size="small"
+                            aria-label={t('log.nav.prevDay')}
+                            onClick={navigation.goToPreviousDate}
+                            disabled={!navigation.canGoBack}
+                        >
+                            <ChevronLeftRoundedIcon fontSize="small" />
+                        </IconButton>
+                    </span>
+                </Tooltip>
+            </Box>
 
-            <Box sx={{ width: pickerWidth, maxWidth: '100%' }}>
+            <Box sx={{ width: NAVBAR_DATE_CONTROL_WIDTH_PX, maxWidth: '100%' }}>
                 <LogDatePickerControl
-                    placement={placement}
+                    placement="navbar"
                     value={navigation.date}
                     ariaLabel={t('log.datePicker.aria', { date: navigation.dateLabel })}
                     min={navigation.minDate}
@@ -71,54 +69,46 @@ const LogDateNavigationCluster: React.FC<LogDateNavigationClusterProps> = ({
                 />
             </Box>
 
-            <Tooltip title={t('log.nav.nextDay')}>
-                <span>
-                    <IconButton
-                        size={iconButtonSize}
-                        aria-label={t('log.nav.nextDay')}
-                        onClick={navigation.goToNextDate}
-                        disabled={!navigation.canGoForward}
-                    >
-                        <ChevronRightRoundedIcon fontSize="small" />
-                    </IconButton>
-                </span>
-            </Tooltip>
+            <Box component="span" sx={{ display: NAVBAR_AUXILIARY_CONTROL_DISPLAY }}>
+                <Tooltip title={t('log.nav.nextDay')}>
+                    <span>
+                        <IconButton
+                            size="small"
+                            aria-label={t('log.nav.nextDay')}
+                            onClick={navigation.goToNextDate}
+                            disabled={!navigation.canGoForward}
+                        >
+                            <ChevronRightRoundedIcon fontSize="small" />
+                        </IconButton>
+                    </span>
+                </Tooltip>
+            </Box>
 
             {showTodayShortcut && (
-                <Tooltip title={t('log.nav.jumpToToday')}>
-                    <span>
-                        {isNavbarPlacement ? (
-                            <>
-                                <IconButton
-                                    size={iconButtonSize}
-                                    aria-label={t('log.nav.jumpToToday')}
-                                    onClick={navigation.goToToday}
-                                    disabled={navigation.date === navigation.maxDate}
-                                    sx={{ display: { xs: 'inline-flex', md: 'none' } }}
-                                >
-                                    <TodayRoundedIcon fontSize="small" />
-                                </IconButton>
-                                <Button
-                                    size="small"
-                                    variant="outlined"
-                                    onClick={navigation.goToToday}
-                                    disabled={navigation.date === navigation.maxDate}
-                                    sx={{ display: { xs: 'none', md: 'inline-flex' } }}
-                                >
-                                    {t('today.title')}
-                                </Button>
-                            </>
-                        ) : (
+                <Box component="span" sx={{ display: NAVBAR_AUXILIARY_CONTROL_DISPLAY }}>
+                    <Tooltip title={t('log.nav.jumpToToday')}>
+                        <span>
                             <IconButton
+                                size="small"
                                 aria-label={t('log.nav.jumpToToday')}
                                 onClick={navigation.goToToday}
                                 disabled={navigation.date === navigation.maxDate}
+                                sx={{ display: { xs: 'none', sm: 'inline-flex', md: 'none' } }}
                             >
-                                <TodayRoundedIcon />
+                                <TodayRoundedIcon fontSize="small" />
                             </IconButton>
-                        )}
-                    </span>
-                </Tooltip>
+                            <Button
+                                size="small"
+                                variant="outlined"
+                                onClick={navigation.goToToday}
+                                disabled={navigation.date === navigation.maxDate}
+                                sx={{ display: { xs: 'none', md: 'inline-flex' } }}
+                            >
+                                {t('today.title')}
+                            </Button>
+                        </span>
+                    </Tooltip>
+                </Box>
             )}
         </Box>
     );

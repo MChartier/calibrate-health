@@ -265,7 +265,7 @@ const LayoutShell: React.FC = () => {
                                 sm: 'minmax(0, 1fr) auto minmax(0, 1fr)'
                             },
                             gridTemplateAreas: {
-                                xs: '"brand spacer actions"',
+                                xs: '"brand date actions"',
                                 sm: '"brand date actions"'
                             },
                             columnGap: { xs: 0.75, sm: 1.25 },
@@ -300,12 +300,12 @@ const LayoutShell: React.FC = () => {
                     {showAppNav && logDateNavigation && (
                         <LogDateNavigationCluster
                             navigation={logDateNavigation}
-                            placement="navbar"
                             showTodayShortcut
                             sx={{
-                                display: { xs: 'none', sm: 'inline-flex' },
+                                display: 'inline-flex',
                                 justifySelf: 'center',
                                 gridArea: 'date',
+                                minWidth: 0,
                                 WebkitAppRegion: 'no-drag'
                             }}
                         />
