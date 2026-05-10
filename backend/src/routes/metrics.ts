@@ -7,8 +7,8 @@ import {
     parseWeightToGrams,
     type WeightUnit
 } from '../utils/units';
-import { MS_PER_DAY, addUtcDays, getUtcTodayDateOnlyInTimeZone, normalizeToUtcDateOnly } from '../utils/date';
-import { parsePositiveInteger } from '../utils/requestParsing';
+import { MS_PER_DAY, addUtcDays, getUtcTodayDateOnlyInTimeZone, parseLocalDateOnly } from '../utils/date';
+import { parseNonNegativeNumber, parsePositiveInteger } from '../utils/requestParsing';
 import { summarizeWeightTrend, type VolatilityLevel } from '../services/weightTrend';
 import {
     ensureMaterializedWeightTrends,
@@ -321,8 +321,8 @@ router.get('/', async (req, res) => {
 
         if (start || end) {
             try {
-                if (start) requestedStart = normalizeToUtcDateOnly(start);
-                if (end) requestedEnd = normalizeToUtcDateOnly(end);
+                if (start) requestedStart = parseLocalDateOnly(start);
+                if (end) requestedEnd = parseLocalDateOnly(end);
             } catch {
                 return res.status(400).json({ message: 'Invalid date range' });
             }
@@ -397,7 +397,7 @@ router.post('/', async (req, res) => {
             const timeZone = typeof user.timezone === 'string' ? user.timezone : 'UTC';
             // Store date-only values in UTC, derived from the user's local day.
             metricDate = date
-                ? normalizeToUtcDateOnly(date)
+                ? parseLocalDateOnly(date)
                 : (() => {
                       try {
                           return getUtcTodayDateOnlyInTimeZone(timeZone);
@@ -423,8 +423,8 @@ router.post('/', async (req, res) => {
             if (body_fat_percent === '' || body_fat_percent === null) {
                 updateData.body_fat_percent = null;
             } else {
-                const parsedBodyFat = parseFloat(body_fat_percent);
-                if (!Number.isFinite(parsedBodyFat)) {
+                const parsedBodyFat = parseNonNegativeNumber(body_fat_percent);
+                if (parsedBodyFat === null || parsedBodyFat > 100) {
                     return res.status(400).json({ message: 'Invalid body_fat_percent' });
                 }
                 updateData.body_fat_percent = parsedBodyFat;

@@ -28,6 +28,34 @@ test('foodUtils: parseFoodSearchParams requires a query or barcode', () => {
   });
 });
 
+test('foodUtils: parseFoodSearchParams trims queries and rejects invalid numeric filters', () => {
+  const blank = parseFoodSearchParams({ query: { q: '   ' }, acceptLanguageHeader: undefined });
+  assert.equal(blank.ok, false);
+  assert.equal(blank.message, 'Provide a search query or barcode.');
+
+  const trimmed = parseFoodSearchParams({
+    query: { query: '  apple  ', page: '1', pageSize: '5', grams: '50' },
+    acceptLanguageHeader: undefined
+  });
+  assert.equal(trimmed.ok, true);
+  assert.equal(trimmed.params.query, 'apple');
+  assert.equal(trimmed.params.page, 1);
+  assert.equal(trimmed.params.pageSize, 5);
+  assert.equal(trimmed.params.quantityInGrams, 50);
+
+  const invalidPage = parseFoodSearchParams({ query: { q: 'apple', page: '0' }, acceptLanguageHeader: undefined });
+  assert.equal(invalidPage.ok, false);
+  assert.equal(invalidPage.message, 'Invalid page');
+
+  const invalidPageSize = parseFoodSearchParams({ query: { q: 'apple', pageSize: '-1' }, acceptLanguageHeader: undefined });
+  assert.equal(invalidPageSize.ok, false);
+  assert.equal(invalidPageSize.message, 'Invalid page size');
+
+  const invalidGrams = parseFoodSearchParams({ query: { q: 'apple', grams: '50g' }, acceptLanguageHeader: undefined });
+  assert.equal(invalidGrams.ok, false);
+  assert.equal(invalidGrams.message, 'Invalid grams');
+});
+
 test('foodUtils: parseFoodLogCreateBody rejects invalid bodies and meal periods', () => {
   assert.equal(parseFoodLogCreateBody({ body: null, userTimeZone: 'UTC' }).ok, false);
 

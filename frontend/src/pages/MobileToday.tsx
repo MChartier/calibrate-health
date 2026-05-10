@@ -1,6 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { Box, Paper, Stack, Tab, Tabs } from '@mui/material';
-import { useSearchParams } from 'react-router-dom';
 import CalorieSummary from '../components/CalorieSummary';
 import DayCompletionControl from '../components/DayCompletionControl';
 import FoodLog from '../components/FoodLog';
@@ -8,11 +7,11 @@ import GoalProjection from '../components/GoalProjection';
 import TodayHeader from '../components/TodayHeader';
 import WeightSummaryCard from '../components/WeightSummaryCard';
 import WeightTrend from '../components/WeightTrend';
-import { QUICK_ADD_SHORTCUT_ACTIONS, QUICK_ADD_SHORTCUT_QUERY_PARAM } from '../constants/pwaShortcuts';
 import { useQuickAddFab } from '../context/useQuickAddFab';
 import { useI18n } from '../i18n/useI18n';
 import { useLogDateNavigationState } from '../hooks/useLogDateNavigationState';
-import { getQuickAddAction } from '../utils/quickAddShortcut';
+import { useQuickAddLogDateBridge, useQuickAddShortcutAction } from '../hooks/useQuickAddRouteState';
+import type { MealPeriod } from '../types/mealPeriod';
 
 const MOBILE_DASHBOARD_TABS = {
     log: 'log',
@@ -29,7 +28,6 @@ const MOBILE_DASHBOARD_TAB_MIN_HEIGHT_PX = 48; // Compact but thumb-friendly tab
 const MobileToday: React.FC = () => {
     const { t } = useI18n();
     const [activeTab, setActiveTab] = useState<MobileDashboardTab>(MOBILE_DASHBOARD_TABS.log);
-    const [searchParams, setSearchParams] = useSearchParams();
     const { selectedDate, today, navigation } = useLogDateNavigationState();
     const isSelectedToday = selectedDate === today;
     const {
@@ -38,55 +36,31 @@ const MobileToday: React.FC = () => {
         setLogDateNavigation,
         setLogDateOverride
     } = useQuickAddFab();
+    const { openFoodDialog } = dialogs;
     const isLogTabActive = activeTab === MOBILE_DASHBOARD_TABS.log;
     const isGoalsTabActive = activeTab === MOBILE_DASHBOARD_TABS.goals;
 
-    useEffect(() => {
-        setLogDateOverride(isLogTabActive ? selectedDate : null);
-        return () => {
-            setLogDateOverride(null);
-        };
-    }, [isLogTabActive, selectedDate, setLogDateOverride]);
-
-    useEffect(() => {
-        setLogDateNavigation(isLogTabActive ? navigation : null);
-        return () => {
-            setLogDateNavigation(null);
-        };
-    }, [isLogTabActive, navigation, setLogDateNavigation]);
-
-    const quickAddAction = getQuickAddAction(searchParams);
-
-    useEffect(() => {
-        if (!quickAddAction) return;
-
-        navigation.setDate(today);
-
-        switch (quickAddAction) {
-            case QUICK_ADD_SHORTCUT_ACTIONS.food:
-                dialogs.openFoodDialog();
-                break;
-            case QUICK_ADD_SHORTCUT_ACTIONS.weight:
-                openWeightDialogFromFab();
-                break;
-            default:
-                break;
-        }
-
-        if (searchParams.has(QUICK_ADD_SHORTCUT_QUERY_PARAM)) {
-            const nextParams = new URLSearchParams(searchParams);
-            nextParams.delete(QUICK_ADD_SHORTCUT_QUERY_PARAM);
-            setSearchParams(nextParams, { replace: true });
-        }
-    }, [
-        dialogs,
+    useQuickAddLogDateBridge({
+        selectedDate,
         navigation,
-        openWeightDialogFromFab,
-        quickAddAction,
-        searchParams,
-        setSearchParams,
-        today
-    ]);
+        setLogDateNavigation,
+        setLogDateOverride,
+        isActive: isLogTabActive
+    });
+
+    useQuickAddShortcutAction({
+        navigation,
+        today,
+        openFoodDialog,
+        openWeightDialog: openWeightDialogFromFab
+    });
+
+    const handleAddFood = useCallback(
+        (mealPeriod?: MealPeriod | null) => {
+            openFoodDialog(mealPeriod ?? null);
+        },
+        [openFoodDialog]
+    );
 
     const handleTabChange = (_event: React.SyntheticEvent, nextTab: MobileDashboardTab) => {
         setActiveTab(nextTab);
@@ -102,7 +76,7 @@ const MobileToday: React.FC = () => {
                         <FoodLog
                             date={selectedDate}
                             isSelectedToday={isSelectedToday}
-                            onAddFood={(mealPeriod) => dialogs.openFoodDialog(mealPeriod ?? null)}
+                            onAddFood={handleAddFood}
                         />
                         <DayCompletionControl date={selectedDate} />
                     </Stack>

@@ -29,7 +29,21 @@ export const autoLoginTestUser = async (
     console.warn('Dev auto-login: unable to ensure seed data:', error);
   }
 
-  const user = await prisma.user.findUnique({ where: { email: TEST_USER_EMAIL } });
+  const user = await prisma.user.findUnique({
+    where: { email: TEST_USER_EMAIL },
+    // Keep the one-request auto-login payload aligned with the normal deserialized session user.
+    select: {
+      id: true,
+      email: true,
+      weight_unit: true,
+      height_unit: true,
+      timezone: true,
+      date_of_birth: true,
+      sex: true,
+      height_mm: true,
+      activity_level: true,
+    },
+  });
   if (!user) {
     next();
     return;
