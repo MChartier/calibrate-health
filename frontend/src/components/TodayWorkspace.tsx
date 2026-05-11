@@ -23,12 +23,11 @@ const TODAY_WORKSPACE_AREAS = {
     xs: '"calories" "food" "weight" "trend" "goal" "completion"',
     md: '"calories weight" "food context" "completion completion"'
 }; // Named areas keep the mobile task flow and desktop workspace mode explicit.
-const TODAY_WORKSPACE_STATIC_HEIGHT_PX = 560; // Header, summary row, completion row, and grid gaps outside the flexible desktop work row.
 const TODAY_WORKSPACE_AVAILABLE_HEIGHT = `var(${APP_PAGE_AVAILABLE_HEIGHT_CSS_VAR}, 100svh)`;
-const TODAY_WORKSPACE_MAIN_ROW_HEIGHT = {
-    md: `clamp(540px, calc(${TODAY_WORKSPACE_AVAILABLE_HEIGHT} - ${TODAY_WORKSPACE_STATIC_HEIGHT_PX}px), 640px)`,
-    lg: `clamp(580px, calc(${TODAY_WORKSPACE_AVAILABLE_HEIGHT} - ${TODAY_WORKSPACE_STATIC_HEIGHT_PX}px), 680px)`
-}; // Caps the desktop work row against AppPage's content viewport; food log scrolls inside this track.
+const TODAY_WORKSPACE_GRID_ROWS = {
+    xs: 'auto',
+    md: 'auto minmax(0, 1fr) auto'
+}; // Desktop rows consume the measured AppPage viewport instead of relying on a static-height estimate.
 
 /**
  * Main logged-in workspace centered around the selected local day.
@@ -70,21 +69,20 @@ const TodayWorkspace: React.FC = () => {
     );
 
     return (
-        <Container maxWidth="xl" disableGutters>
-            <Stack spacing={sectionSpacing} useFlexGap>
+        <Container maxWidth="xl" disableGutters sx={{ height: { md: TODAY_WORKSPACE_AVAILABLE_HEIGHT }, minHeight: { md: 0 } }}>
+            <Stack spacing={sectionSpacing} useFlexGap sx={{ height: { md: '100%' }, minHeight: { md: 0 } }}>
                 <TodayHeader navigation={navigation} />
 
                 <Box
                     sx={{
+                        flex: { md: 1 },
+                        minHeight: { md: 0 },
                         display: 'grid',
                         gap: sectionSpacing,
                         gridTemplateColumns: TODAY_WORKSPACE_COLUMNS,
                         gridTemplateAreas: TODAY_WORKSPACE_AREAS,
-                        gridTemplateRows: { xs: 'auto', md: `auto ${TODAY_WORKSPACE_MAIN_ROW_HEIGHT.md} auto` },
-                        alignItems: { xs: 'start', md: 'stretch' },
-                        [theme.breakpoints.up('lg')]: {
-                            gridTemplateRows: `auto ${TODAY_WORKSPACE_MAIN_ROW_HEIGHT.lg} auto`
-                        }
+                        gridTemplateRows: TODAY_WORKSPACE_GRID_ROWS,
+                        alignItems: { xs: 'start', md: 'stretch' }
                     }}
                 >
                     <Box sx={{ gridArea: 'calories', minWidth: 0, display: 'flex' }}>

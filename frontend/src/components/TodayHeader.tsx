@@ -2,17 +2,15 @@ import React from 'react';
 import { Box, Stack, Typography } from '@mui/material';
 import type { LogDateNavigationState } from '../context/quickAddFabState';
 import { useI18n } from '../i18n/useI18n';
-import LogDateNavigationCluster from './LogDateNavigationCluster';
 
 export type TodayHeaderProps = {
     navigation: LogDateNavigationState;
 };
 
 const TODAY_TITLE_ROW_MIN_HEIGHT_PX = 40; // Keeps the title aligned with the centered date navigation controls.
-const TODAY_TITLE_DISPLAY = { xs: 'none', md: 'flex' } as const; // Below desktop, the date picker is the visible date context.
 
 /**
- * Header for the Today workspace: selected-day title on the left, date controls centered.
+ * Header for the Today workspace. Date controls live in the app bar at all widths.
  */
 const TodayHeader: React.FC<TodayHeaderProps> = ({ navigation }) => {
     const { t } = useI18n();
@@ -22,7 +20,7 @@ const TodayHeader: React.FC<TodayHeaderProps> = ({ navigation }) => {
     return (
         <Box
             sx={{
-                display: { xs: 'grid', sm: 'none', md: 'grid' },
+                display: { xs: 'none', md: 'grid' },
                 gridTemplateColumns: '1fr',
                 gap: { xs: 1, sm: 1.5, md: 2 },
                 alignItems: 'center'
@@ -31,7 +29,7 @@ const TodayHeader: React.FC<TodayHeaderProps> = ({ navigation }) => {
             <Stack spacing={0.75} sx={{ minWidth: 0 }}>
                 <Box
                     sx={{
-                        display: TODAY_TITLE_DISPLAY,
+                        display: 'flex',
                         alignItems: 'center',
                         gap: 1,
                         flexWrap: 'wrap',
@@ -43,13 +41,6 @@ const TodayHeader: React.FC<TodayHeaderProps> = ({ navigation }) => {
                     </Typography>
                 </Box>
             </Stack>
-
-            <LogDateNavigationCluster
-                navigation={navigation}
-                placement="page"
-                showTodayShortcut
-                sx={{ display: { xs: 'inline-flex', sm: 'none' }, justifySelf: 'center', width: '100%' }}
-            />
         </Box>
     );
 };
