@@ -1,8 +1,14 @@
 {
   "name": "cal-io",
   "version": "1.0.0",
+  "private": true,
   "description": "",
   "main": "index.js",
+  "workspaces": [
+    "mobile",
+    "shared",
+    "packages/*"
+  ],
   "scripts": {
     "dev": "VITE_ENABLE_SW_DEV=1 node scripts/dev.mjs",
     "dev:test": "AUTO_LOGIN_TEST_USER=true VITE_ENABLE_SW_DEV=1 node scripts/dev.mjs",
@@ -47,11 +53,14 @@
     "codex:down": "node scripts/codex-worktree-env.mjs down",
     "ci:local": "node scripts/dev-env.mjs ci",
     "build": "npm --prefix frontend run build",
+    "build:mobile": "npm --prefix mobile run typecheck",
     "build:storybook": "npm --prefix frontend run storybook:build",
     "lint": "npm --prefix frontend run lint",
+    "lint:mobile": "npm --prefix mobile run typecheck",
     "test": "npm run test:backend && npm run test:frontend",
     "test:backend": "npm --prefix backend test",
     "test:frontend": "npm --prefix frontend test",
+    "test:mobile": "npm --prefix mobile test",
     "test:coverage": "npm run test:coverage:backend && npm run test:coverage:frontend",
     "test:coverage:backend": "npm --prefix backend run test:coverage",
     "test:coverage:frontend": "npm --prefix frontend run test:coverage"
