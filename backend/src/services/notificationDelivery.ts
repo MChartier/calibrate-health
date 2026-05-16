@@ -1,4 +1,5 @@
 import { InAppNotificationType } from '@prisma/client';
+import type { NativePushProvider } from '@prisma/client';
 import prisma from '../config/database';
 import {
     DEFAULT_NOTIFICATION_DELIVERY_CHANNELS,
@@ -7,6 +8,7 @@ import {
     type NotificationDeliveryChannel
 } from '../../../shared/notificationDelivery';
 import { type PushNotificationPayload } from './pushNotificationPayloads';
+import { sendNativePushNotification } from './nativePush';
 import { ensureWebPushConfigured, sendWebPushNotification } from './webPush';
 
 export type InAppNotificationDeliveryRequest = {
@@ -60,6 +62,13 @@ type NormalizedPushSubscription = {
     endpoint: string;
     p256dh: string;
     auth: string;
+    last_sent_local_date: Date | null;
+};
+
+type NormalizedNativePushSubscription = {
+    id: number;
+    provider: NativePushProvider;
+    token: string;
     last_sent_local_date: Date | null;
 };
 
@@ -199,6 +208,38 @@ const resolvePushSubscriptions = async (
     });
 };
 
+const resolveNativePushSubscriptions = async (
+    userId: number,
+    endpoint: string | undefined
+): Promise<NormalizedNativePushSubscription[]> => {
+    // Endpoint-specific dev sends target a browser subscription only.
+    if (endpoint) {
+        return [];
+    }
+
+    const nativePushSubscription = (prisma as typeof prisma & {
+        nativePushSubscription?: {
+            findMany: (args: unknown) => Promise<NormalizedNativePushSubscription[]>;
+        };
+    }).nativePushSubscription;
+    if (!nativePushSubscription) {
+        return [];
+    }
+
+    return nativePushSubscription.findMany({
+        where: {
+            user_id: userId,
+            revoked_at: null
+        },
+        select: {
+            id: true,
+            provider: true,
+            token: true,
+            last_sent_local_date: true
+        }
+    });
+};
+
 const sendPushNotifications = async (
     userId: number,
     pushRequest: PushNotificationDeliveryRequest | undefined
@@ -214,20 +255,9 @@ const sendPushNotifications = async (
         };
     }
 
-    const pushConfig = ensureWebPushConfigured();
-    if (!pushConfig.ok) {
-        return {
-            attempted: true,
-            sent: 0,
-            failed: 0,
-            skipped: true,
-            deduped: false,
-            message: pushConfig.error ?? 'Web push is not configured.'
-        };
-    }
-
     const subscriptions = await resolvePushSubscriptions(userId, pushRequest.endpoint);
-    if (subscriptions.length === 0) {
+    const nativeSubscriptions = await resolveNativePushSubscriptions(userId, pushRequest.endpoint);
+    if (subscriptions.length === 0 && nativeSubscriptions.length === 0) {
         return {
             attempted: true,
             sent: 0,
@@ -240,22 +270,34 @@ const sendPushNotifications = async (
         };
     }
 
+    const pushConfig = ensureWebPushConfigured();
+    const deliverableWebSubscriptions = pushConfig.ok ? subscriptions : [];
+
     const skipIfLastSentLocalDate = pushRequest.skipIfLastSentLocalDate;
-    const filteredSubscriptions =
+    const filteredWebSubscriptions =
         skipIfLastSentLocalDate instanceof Date
-            ? subscriptions.filter(
+            ? deliverableWebSubscriptions.filter(
                   (subscription) => !isSameUtcDate(subscription.last_sent_local_date, skipIfLastSentLocalDate)
               )
-            : subscriptions;
+            : deliverableWebSubscriptions;
+    const filteredNativeSubscriptions =
+        skipIfLastSentLocalDate instanceof Date
+            ? nativeSubscriptions.filter(
+                  (subscription) => !isSameUtcDate(subscription.last_sent_local_date, skipIfLastSentLocalDate)
+              )
+            : nativeSubscriptions;
 
-    if (filteredSubscriptions.length === 0) {
+    if (filteredWebSubscriptions.length === 0 && filteredNativeSubscriptions.length === 0) {
+        const noConfiguredWebPush = subscriptions.length > 0 && !pushConfig.ok && nativeSubscriptions.length === 0;
         return {
             attempted: true,
             sent: 0,
             failed: 0,
             skipped: true,
-            deduped: true,
-            message: 'All push subscriptions already received this reminder for the local day.'
+            deduped: !noConfiguredWebPush,
+            message: noConfiguredWebPush
+                ? pushConfig.error ?? 'Web push is not configured.'
+                : 'All push subscriptions already received this reminder for the local day.'
         };
     }
 
@@ -263,7 +305,7 @@ const sendPushNotifications = async (
     let failed = 0;
     const payloadString = JSON.stringify(pushRequest.payload);
 
-    for (const subscription of filteredSubscriptions) {
+    for (const subscription of filteredWebSubscriptions) {
         try {
             await sendWebPushNotification(
                 {
@@ -294,6 +336,40 @@ const sendPushNotifications = async (
 
             const message = error instanceof Error ? error.message : 'Unknown error';
             console.warn(`Failed to send notification for subscription ${subscription.id}: ${message}`);
+        }
+    }
+
+    const nativePushSubscription = (prisma as typeof prisma & {
+        nativePushSubscription?: {
+            update: (args: unknown) => Promise<unknown>;
+            updateMany: (args: unknown) => Promise<unknown>;
+        };
+    }).nativePushSubscription;
+
+    for (const subscription of filteredNativeSubscriptions) {
+        try {
+            await sendNativePushNotification(subscription, pushRequest.payload);
+            sent += 1;
+
+            if (pushRequest.markSentLocalDate instanceof Date && nativePushSubscription) {
+                await nativePushSubscription.update({
+                    where: { id: subscription.id },
+                    data: { last_sent_local_date: pushRequest.markSentLocalDate }
+                });
+            }
+        } catch (error) {
+            failed += 1;
+
+            if (shouldDeleteSubscription(error) && nativePushSubscription) {
+                await nativePushSubscription.updateMany({
+                    where: { id: subscription.id },
+                    data: { revoked_at: new Date() }
+                });
+                continue;
+            }
+
+            const message = error instanceof Error ? error.message : 'Unknown error';
+            console.warn(`Failed to send native notification for subscription ${subscription.id}: ${message}`);
         }
     }
 

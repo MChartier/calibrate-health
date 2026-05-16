@@ -12,6 +12,7 @@ import { Strategy as LocalStrategy } from 'passport-local';
 import prisma, { pgPool } from './config/database';
 import { isProductionOrStagingEnv } from './config/environment';
 import authRoutes from './routes/auth';
+import clientConfigRoutes from './routes/clientConfig';
 import devRoutes from './routes/dev';
 import devTestRoutes from './routes/devTest';
 import foodRoutes from './routes/food';
@@ -22,6 +23,7 @@ import metricRoutes from './routes/metrics';
 import myFoodsRoutes from './routes/myFoods';
 import notificationRoutes from './routes/notifications';
 import userRoutes from './routes/user';
+import { authenticateMobileBearerToken } from './middleware/mobileAuth';
 import { startReminderScheduler } from './services/reminderScheduler';
 import { autoLoginTestUser } from './utils/devAuth';
 import { DEFAULT_SESSION_TTL_MS, PostgresSessionStore } from './utils/postgresSessionStore';
@@ -257,6 +259,7 @@ const bootstrap = async (): Promise<void> => {
   );
   app.use(passport.initialize());
   app.use(passport.session());
+  app.use(authenticateMobileBearerToken);
   app.use(autoLoginTestUser);
 
   passport.use(
@@ -317,6 +320,7 @@ const bootstrap = async (): Promise<void> => {
     res.json({ ok: true });
   });
 
+  apiRouter.use('/client-config', clientConfigRoutes);
   apiRouter.use('/goals', goalRoutes);
   apiRouter.use('/metrics', metricRoutes);
   apiRouter.use('/food', foodRoutes);

@@ -6,7 +6,7 @@ If you self-host, your data stays in your own database.
 
 - Hosted instance: https://calibratehealth.app
 - Stack: React + TypeScript + Vite (MUI), Node.js + TypeScript + Express, Postgres (Prisma)
-- Installable PWA: add it to your home screen / desktop like an app
+- Clients: installable PWA plus an Expo React Native Android client in `mobile/`
 
 Note: calibrate is not medical advice.
 
@@ -34,6 +34,7 @@ attribution requirements: https://platform.fatsecret.com/docs/guides
 - Deployment (Compose self-hosting): `deploy/README.md`
 - AWS infra (ECS Fargate): `infra/README.md`
 - Frontend dev/build/PWA: `frontend/README.md`
+- Android native client: `mobile/README.md`
 
 ## Self-hosting
 
@@ -254,6 +255,8 @@ More:
 - `npm --prefix backend run db:push:reset`: dev-only schema reset using `prisma db push` (fast, skips migrations).
 - `npm run db:studio`: Prisma Studio (DB browser).
 - `npm run build`: build the frontend.
+- `npm run build:mobile`: type-check the Expo React Native Android client.
+- `npm run test:mobile`: run mobile unit tests.
 - `npm run build:storybook`: build the static Storybook.
 - `npm run lint`: lint the frontend.
 - `npm run ci:local`: run the local equivalent of PR CI (backend build, frontend build, frontend lint, backend tests).
@@ -283,6 +286,25 @@ Push notes:
 - Browser push registration and delivery require backend VAPID env vars: `WEB_PUSH_PUBLIC_KEY`, `WEB_PUSH_PRIVATE_KEY`, and `WEB_PUSH_SUBJECT`.
 - In the devcontainer workflow, `.devcontainer/init-devcontainer-env.mjs` auto-generates missing VAPID keys and writes them into `.devcontainer/.env` during container initialization.
 - For local backend runs outside the devcontainer (or for plain `docker compose`), set `WEB_PUSH_*` values explicitly (see `.env.example` and `backend/.env.example`).
+
+## Android native client
+
+The `mobile/` workspace is an Expo development-build React Native app. It uses native navigation, secure token storage,
+Expo push notifications, haptics, camera barcode scanning, and the shared Calibrate API client.
+
+Quick start:
+
+```sh
+npm install
+npm --prefix mobile run dev
+```
+
+For Android emulator development, the app defaults to `http://10.0.2.2:3000` in dev builds so it can reach the local
+backend. Production builds default to `https://calibratehealth.app`, and the sign-in screen allows a custom self-hosted
+server URL.
+
+Native auth is bearer-token based and additive to the existing browser cookie session flow. Mobile tokens are opaque to
+the client, hashed at rest on the server, and stored on-device through Expo SecureStore.
 
 ## Production / staging (single origin)
 
