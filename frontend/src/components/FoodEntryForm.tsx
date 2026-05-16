@@ -10,10 +10,12 @@ import {
     IconButton,
     InputAdornment,
     InputLabel,
+    LinearProgress,
     List,
     ListItemIcon,
     ListItemButton,
     ListItemText,
+    ListSubheader,
     MenuItem,
     Select,
     Stack,
@@ -33,6 +35,7 @@ import FoodSearchResultsList from './FoodSearchResultsList';
 import MealPeriodIcon from './MealPeriodIcon';
 import NewRecipeDialog from './NewRecipeDialog';
 import type { NormalizedFoodItem } from '../types/food';
+import type { MyFood } from '../types/myFoods';
 import { getMealPeriodLabel, MEAL_PERIOD_ORDER, type MealPeriod } from '../types/mealPeriod';
 import { inAppNotificationsQueryKey } from '../queries/inAppNotifications';
 import { useMyFoodsQuery } from '../queries/myFoods';
@@ -65,7 +68,7 @@ const SEARCH_PAGE_SIZE = 10;
 const MY_FOODS_LIST_HEIGHT = { xs: 220, sm: 260 } as const; // Keeps the list usable inside the dialog without pushing actions off-screen.
 
 type FoodSearchView = 'results' | 'selected';
-type FoodEntryMode = 'quick' | 'search' | 'recipes';
+type FoodEntryMode = 'food' | 'recipes';
 
 type FoodSearchParams = {
     query?: string;
@@ -167,9 +170,8 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date, initialMealPeriod = n
     const queryClient = useQueryClient();
     const { t } = useI18n();
 
-    const [mode, setMode] = useState<FoodEntryMode>('quick');
+    const [mode, setMode] = useState<FoodEntryMode>('food');
 
-    const [quickEntryName, setQuickEntryName] = useState('');
     const [quickEntryCalories, setQuickEntryCalories] = useState('');
     const [mealPeriod, setMealPeriod] = useState<MealPeriod>(() => initialMealPeriod ?? getDefaultMealPeriodForTime(new Date()));
 
@@ -192,6 +194,8 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date, initialMealPeriod = n
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [selectedRecentFoodId, setSelectedRecentFoodId] = useState<string | null>(null);
     const [recentFoodServingsConsumed, setRecentFoodServingsConsumed] = useState<string>('1');
+    const [selectedSearchMyFoodId, setSelectedSearchMyFoodId] = useState<number | null>(null);
+    const [searchMyFoodServingsConsumed, setSearchMyFoodServingsConsumed] = useState<string>('1');
 
     const [isNewRecipeDialogOpen, setIsNewRecipeDialogOpen] = useState(false);
 
@@ -207,6 +211,7 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date, initialMealPeriod = n
     const debouncedSearchQuery = useDebouncedValue(searchQuery, 350);
     const debouncedMyFoodsQueryText = useDebouncedValue(myFoodsQueryText, 250);
     const searchRecentQueryText = debouncedSearchQuery.trim();
+    const quickEntryName = searchQuery.trim();
 
     const mealOptions = useMemo(() => {
         return MEAL_PERIOD_ORDER.map((value) => ({
@@ -229,9 +234,18 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date, initialMealPeriod = n
 
     const searchRecentFoodsQuery = useRecentFoodsQuery(
         { q: searchRecentQueryText, limit: 6 },
-        { enabled: mode === 'search' && searchView === 'results' && searchRecentQueryText.length >= 2 }
+        { enabled: mode === 'food' && searchView === 'results' && searchRecentQueryText.length >= 2 }
     );
     const searchRecentFoods = useMemo(() => searchRecentFoodsQuery.data ?? [], [searchRecentFoodsQuery.data]);
+    const searchMyFoodsQuery = useMyFoodsQuery(
+        { q: searchRecentQueryText, type: 'FOOD' },
+        { enabled: mode === 'food' && searchView === 'results' && searchRecentQueryText.length > 0 }
+    );
+    const searchMyFoods = useMemo(() => searchMyFoodsQuery.data ?? [], [searchMyFoodsQuery.data]);
+    const selectedSearchMyFood = useMemo(() => {
+        if (selectedSearchMyFoodId === null) return null;
+        return searchMyFoods.find((food) => food.id === selectedSearchMyFoodId) ?? null;
+    }, [searchMyFoods, selectedSearchMyFoodId]);
     const selectedRecentFood = useMemo(() => {
         if (!selectedRecentFoodId) return null;
         return searchRecentFoods.find((food) => food.id === selectedRecentFoodId) ?? null;
@@ -283,8 +297,14 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date, initialMealPeriod = n
         return Math.round(servings * caloriesPerServing);
     }, [recentFoodServingsConsumed, selectedRecentFood]);
 
-    const shouldShowMealPeriod =
-        mode !== 'search' || (mode === 'search' && ((searchView === 'selected' && !!selectedItem) || !!selectedRecentFood));
+    const searchMyFoodCaloriesPreview = useMemo(() => {
+        if (!selectedSearchMyFood) return null;
+        const servings = Number(searchMyFoodServingsConsumed);
+        if (!Number.isFinite(servings) || servings <= 0) return null;
+        return Math.round(servings * selectedSearchMyFood.calories_per_serving);
+    }, [searchMyFoodServingsConsumed, selectedSearchMyFood]);
+
+    const shouldShowMealPeriod = mode === 'food' || mode === 'recipes';
 
     // Avoid stale recipe selections if users leave and return to the Recipes tab.
     useEffect(() => {
@@ -327,6 +347,11 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date, initialMealPeriod = n
         setRecentFoodServingsConsumed('1');
     }, []);
 
+    const clearSelectedSearchMyFood = useCallback(() => {
+        setSelectedSearchMyFoodId(null);
+        setSearchMyFoodServingsConsumed('1');
+    }, []);
+
     /**
      * Select a search result and prime measure/quantity controls for quick logging.
      */
@@ -338,8 +363,9 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date, initialMealPeriod = n
             setQuantity(1);
             setSearchView('selected');
             clearSelectedRecentFood();
+            clearSelectedSearchMyFood();
         },
-        [clearSelectedRecentFood, isSubmitting]
+        [clearSelectedRecentFood, clearSelectedSearchMyFood, isSubmitting]
     );
 
     const selectRecentFood = useCallback(
@@ -353,9 +379,22 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date, initialMealPeriod = n
             );
             setMealPeriod(initialMealPeriod ?? food.meal_period);
             clearSelectedSearchItem();
+            clearSelectedSearchMyFood();
             setSearchView('selected');
         },
-        [clearSelectedSearchItem, initialMealPeriod, isSubmitting]
+        [clearSelectedSearchItem, clearSelectedSearchMyFood, initialMealPeriod, isSubmitting]
+    );
+
+    const selectSearchMyFood = useCallback(
+        (food: MyFood) => {
+            if (isSubmitting) return;
+            setSelectedSearchMyFoodId(food.id);
+            setSearchMyFoodServingsConsumed('1');
+            clearSelectedSearchItem();
+            clearSelectedRecentFood();
+            setSearchView('selected');
+        },
+        [clearSelectedRecentFood, clearSelectedSearchItem, isSubmitting]
     );
 
     type FoodSearchResponse = {
@@ -422,6 +461,7 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date, initialMealPeriod = n
             setSearchView('results');
             clearSelectedSearchItem();
             clearSelectedRecentFood();
+            clearSelectedSearchMyFood();
 
             try {
                 const firstPage = await fetchFoodSearchPage(params, 1);
@@ -454,12 +494,20 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date, initialMealPeriod = n
                 }
             }
         },
-        [clearSelectedRecentFood, clearSelectedSearchItem, fetchFoodSearchPage, isSubmitting, selectSearchResult, t]
+        [
+            clearSelectedRecentFood,
+            clearSelectedSearchItem,
+            clearSelectedSearchMyFood,
+            fetchFoodSearchPage,
+            isSubmitting,
+            selectSearchResult,
+            t
+        ]
     );
 
     // Trigger provider searches automatically while typing, and keep the Search tab stable when the input is cleared.
     useEffect(() => {
-        if (mode !== 'search') {
+        if (mode !== 'food') {
             return;
         }
 
@@ -475,6 +523,7 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date, initialMealPeriod = n
             setSelectedMeasureLabel(null);
             setQuantity(1);
             clearSelectedRecentFood();
+            clearSelectedSearchMyFood();
             setSearchView('results');
             setSearchPage(1);
             setHasMoreResults(false);
@@ -497,7 +546,7 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date, initialMealPeriod = n
         }
 
         void performFoodSearch({ query });
-    }, [activeSearch, clearSelectedRecentFood, debouncedSearchQuery, mode, performFoodSearch]);
+    }, [activeSearch, clearSelectedRecentFood, clearSelectedSearchMyFood, debouncedSearchQuery, mode, performFoodSearch]);
 
     /**
      * Load the next page of search results and append them to the list view.
@@ -551,8 +600,17 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date, initialMealPeriod = n
                 ...(entryLocalDate ? { date: entryLocalDate } : {})
             });
             haptic.success();
-            setQuickEntryName('');
+            setSearchQuery('');
             setQuickEntryCalories('');
+            setSearchResults([]);
+            setHasSearched(false);
+            setActiveSearch(null);
+            setProviderName('');
+            setSupportsBarcodeLookup(null);
+            setSearchView('results');
+            clearSelectedSearchItem();
+            clearSelectedRecentFood();
+            clearSelectedSearchMyFood();
             onSuccess?.({ closeDialog: opts.closeDialog });
         } catch (err) {
             haptic.error();
@@ -658,6 +716,32 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date, initialMealPeriod = n
     };
 
     const handleAddFromSearch = async (opts: { closeDialog: boolean }) => {
+        if (selectedSearchMyFood) {
+            const servings = Number(searchMyFoodServingsConsumed);
+            if (!Number.isFinite(servings) || servings <= 0) return;
+
+            setIsSubmitting(true);
+            setError(null);
+            try {
+                await axios.post('/api/food', {
+                    my_food_id: selectedSearchMyFood.id,
+                    servings_consumed: servings,
+                    meal_period: mealPeriod,
+                    ...(entryLocalDate ? { date: entryLocalDate } : {})
+                });
+
+                haptic.success();
+                setSearchMyFoodServingsConsumed('1');
+                onSuccess?.({ closeDialog: opts.closeDialog });
+            } catch (err) {
+                haptic.error();
+                setError(getApiErrorMessage(err) ?? t('foodEntry.error.unableToAdd'));
+            } finally {
+                setIsSubmitting(false);
+            }
+            return;
+        }
+
         if (selectedRecentFood) {
             const recentPayload = buildRecentFoodPayload(selectedRecentFood);
             setIsSubmitting(true);
@@ -708,6 +792,8 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date, initialMealPeriod = n
     const showFatSecretAttribution = providerName.trim().toLowerCase() === 'fatsecret';
 
     const isSearchRecentLoading = searchRecentFoodsQuery.isLoading && searchRecentFoods.length === 0;
+    const isSearchMyFoodsLoading = searchMyFoodsQuery.isLoading && searchMyFoods.length === 0;
+    const isUnifiedSearchPending = isSearching || isSearchRecentLoading || isSearchMyFoodsLoading;
     const searchRecentRows = searchRecentFoods.map((food) => (
         <ListItemButton
             key={`recent-${food.id}`}
@@ -729,11 +815,95 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date, initialMealPeriod = n
             />
         </ListItemButton>
     ));
+    const searchMyFoodRows =
+        searchMyFoods.length > 0
+            ? [
+                  <ListSubheader key="my-foods-heading" component="div" disableSticky>
+                      {t('foodEntry.mode.myFoods')}
+                  </ListSubheader>,
+                  ...searchMyFoods.map((food) => (
+                      <ListItemButton
+                          key={`my-food-${food.id}`}
+                          selected={food.id === selectedSearchMyFoodId}
+                          onClick={() => selectSearchMyFood(food)}
+                          disabled={isSubmitting}
+                          sx={{ alignItems: 'flex-start' }}
+                      >
+                          <ListItemText
+                              primary={food.name}
+                              secondary={`${Math.round(food.calories_per_serving)} kcal per ${food.serving_size_quantity} ${food.serving_unit_label}`}
+                              slotProps={{
+                                  primary: { variant: 'body2' },
+                                  secondary: { variant: 'caption', sx: { color: 'text.secondary' } }
+                              }}
+                          />
+                      </ListItemButton>
+                  ))
+              ]
+            : [];
+    const leadingSearchRows = [...searchRecentRows, ...searchMyFoodRows];
 
     // Compute the search panel body outside JSX so the layout stays readable.
     let searchResultsContent: React.ReactNode;
 
-    if (searchView === 'selected' && selectedRecentFood) {
+    if (searchView === 'selected' && selectedSearchMyFood) {
+        const servingDescriptor = `${selectedSearchMyFood.serving_size_quantity} ${selectedSearchMyFood.serving_unit_label}`;
+
+        searchResultsContent = (
+            <Stack spacing={2}>
+                <Box
+                    sx={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'flex-start',
+                        gap: 2,
+                        border: 1,
+                        borderColor: 'divider',
+                        borderRadius: 1,
+                        p: 1.5
+                    }}
+                >
+                    <Box sx={{ minWidth: 0 }}>
+                        <Typography variant="subtitle2">{t('foodEntry.search.selected.title')}</Typography>
+                        <Typography variant="body2" sx={{ wordBreak: 'break-word' }}>
+                            {selectedSearchMyFood.name}
+                        </Typography>
+                        <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                            {`${Math.round(selectedSearchMyFood.calories_per_serving)} kcal per ${servingDescriptor}`}
+                        </Typography>
+                    </Box>
+                    <Button
+                        variant="text"
+                        type="button"
+                        size="small"
+                        startIcon={<ArrowBackIcon />}
+                        onClick={() => {
+                            clearSelectedSearchMyFood();
+                            setSearchView('results');
+                        }}
+                    >
+                        {t('foodEntry.search.selected.back')}
+                    </Button>
+                </Box>
+
+                <TextField
+                    label={t('foodEntry.myFoods.servingsConsumed', { serving: servingDescriptor })}
+                    type="number"
+                    value={searchMyFoodServingsConsumed}
+                    onChange={(e) => setSearchMyFoodServingsConsumed(e.target.value)}
+                    disabled={isSubmitting}
+                    slotProps={{
+                        htmlInput: { min: 0, step: 0.1 }
+                    }}
+                />
+                {searchMyFoodCaloriesPreview !== null && (
+                    <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                        {t('foodEntry.myFoods.caloriesPreview', { calories: searchMyFoodCaloriesPreview })}
+                    </Typography>
+                )}
+            </Stack>
+        );
+    } else if (searchView === 'selected' && selectedRecentFood) {
         const servingUnit = selectedRecentFood.serving_unit_label_snapshot ?? t('foodEntry.recent.servingFallback');
         const canEditRecentServings =
             typeof selectedRecentFood.calories_per_serving_snapshot === 'number' &&
@@ -875,13 +1045,13 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date, initialMealPeriod = n
             </Stack>
         );
     } else if (searchView === 'results') {
-        const hasUnifiedSearchRows = searchRecentFoods.length > 0 || dedupedSearchResults.length > 0;
+        const hasUnifiedSearchRows = leadingSearchRows.length > 0 || dedupedSearchResults.length > 0;
 
-        if (!hasUnifiedSearchRows) {
+        if (!hasUnifiedSearchRows && isUnifiedSearchPending) {
+            searchResultsContent = <LinearProgress aria-label={t('foodEntry.search.empty.searching')} />;
+        } else if (!hasUnifiedSearchRows) {
             let emptyMessage = t('foodEntry.search.empty.start');
-            if (isSearching || isSearchRecentLoading) {
-                emptyMessage = t('foodEntry.search.empty.searching');
-            } else if (hasSearched) {
+            if (hasSearched) {
                 emptyMessage = t('foodEntry.search.empty.noMatches');
             }
 
@@ -898,9 +1068,9 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date, initialMealPeriod = n
                         items={dedupedSearchResults}
                         selectedItemId={selectedItemId}
                         hasMore={hasMoreResults}
-                        isLoading={isSearching || isSearchRecentLoading}
+                        isLoading={isUnifiedSearchPending}
                         isLoadingMore={isLoadingMoreResults}
-                        leadingItems={searchRecentRows}
+                        leadingItems={leadingSearchRows}
                         onLoadMore={() => void loadMoreSearchResults()}
                         onSelect={selectSearchResult}
                     />
@@ -922,9 +1092,17 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date, initialMealPeriod = n
 
     const canAddSelectedSearch =
         (Boolean(selectedItem) && Boolean(computed) && searchView === 'selected') ||
-        (Boolean(selectedRecentFood) && recentFoodCaloriesPreview !== null);
+        (Boolean(selectedRecentFood) && recentFoodCaloriesPreview !== null) ||
+        (Boolean(selectedSearchMyFood) && searchMyFoodCaloriesPreview !== null);
     const canAddSelectedMyFood = Boolean(selectedMyFood) && myFoodCaloriesPreview !== null;
     const canAddQuickEntry = Boolean(quickEntryName.trim()) && Boolean(quickEntryCalories.trim());
+    const canAddFoodEntry = canAddSelectedSearch || canAddQuickEntry;
+    const handleAddFoodEntry = (opts: { closeDialog: boolean }) => {
+        if (canAddSelectedSearch) {
+            return handleAddFromSearch(opts);
+        }
+        return handleAddQuickEntry(opts);
+    };
 
     return (
         <>
@@ -943,40 +1121,13 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date, initialMealPeriod = n
                             '& .MuiToggleButton-root': { flex: { xs: '1 1 45%', sm: 1 } }
                         }}
                     >
-                        <ToggleButton value="quick">{t('foodEntry.mode.quick')}</ToggleButton>
-                        <ToggleButton value="search">{t('foodEntry.mode.search')}</ToggleButton>
+                        <ToggleButton value="food">{t('foodEntry.mode.food')}</ToggleButton>
                         <ToggleButton value="recipes">{t('foodEntry.mode.myRecipes')}</ToggleButton>
                     </ToggleButtonGroup>
 
                     {error && <Alert severity="error">{error}</Alert>}
 
-                    {mode === 'quick' ? (
-                        <Stack spacing={2}>
-                            <Typography variant="subtitle2">{t('foodEntry.quickEntry.title')}</Typography>
-
-                            <Stack spacing={2}>
-                                <TextField
-                                    label={t('foodEntry.quickEntry.foodName')}
-                                    fullWidth
-                                    value={quickEntryName}
-                                    onChange={(e) => setQuickEntryName(e.target.value)}
-                                    disabled={isSubmitting}
-                                    autoFocus
-                                />
-                                <TextField
-                                    label={t('foodEntry.quickEntry.calories')}
-                                    type="number"
-                                    fullWidth
-                                    value={quickEntryCalories}
-                                    onChange={(e) => setQuickEntryCalories(e.target.value)}
-                                    disabled={isSubmitting}
-                                    slotProps={{
-                                        htmlInput: { min: 0, step: 1 }
-                                    }}
-                                />
-                            </Stack>
-                        </Stack>
-                    ) : mode === 'search' ? (
+                    {mode === 'food' ? (
                         <Stack spacing={2}>
                             <TextField
                                 label={t('foodEntry.search.label')}
@@ -1010,6 +1161,33 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date, initialMealPeriod = n
                                     }
                                 }}
                             />
+                            {searchView === 'results' && quickEntryName && (
+                                <Box sx={{ border: 1, borderColor: 'divider', borderRadius: 1, p: 1.5 }}>
+                                    <Stack
+                                        direction={{ xs: 'column', sm: 'row' }}
+                                        spacing={1}
+                                        sx={{ alignItems: { xs: 'stretch', sm: 'center' } }}
+                                    >
+                                        <Typography
+                                            variant="subtitle2"
+                                            sx={{ flexGrow: 1, minWidth: 0, overflowWrap: 'anywhere' }}
+                                        >
+                                            {t('foodEntry.quickEntry.inlineTitle', { name: quickEntryName })}
+                                        </Typography>
+                                        <TextField
+                                            label={t('foodEntry.quickEntry.calories')}
+                                            type="number"
+                                            value={quickEntryCalories}
+                                            onChange={(e) => setQuickEntryCalories(e.target.value)}
+                                            disabled={isSubmitting}
+                                            sx={{ minWidth: { sm: 160 } }}
+                                            slotProps={{
+                                                htmlInput: { min: 0, step: 1 }
+                                            }}
+                                        />
+                                    </Stack>
+                                </Box>
+                            )}
                             {providerName && (
                                 <Typography variant="caption" sx={{
                                     color: "text.secondary"
@@ -1193,62 +1371,43 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date, initialMealPeriod = n
                 </Stack>
             </DialogContent>
             <DialogActions>
-                {mode === 'quick' ? (
+                {mode === 'food' ? (
                     <>
                         <Button
                             variant="outlined"
                             type="button"
-                            onClick={() => void handleAddQuickEntry({ closeDialog: false })}
-                            disabled={isSubmitting || !canAddQuickEntry}
+                            onClick={() => void handleAddFoodEntry({ closeDialog: false })}
+                            disabled={isSubmitting || !canAddFoodEntry}
                         >
                             {isSubmitting ? t('common.adding') : t('foodEntry.actions.addAnother')}
                         </Button>
                         <Button
                             variant="contained"
                             type="button"
-                            onClick={() => void handleAddQuickEntry({ closeDialog: true })}
-                            disabled={isSubmitting || !canAddQuickEntry}
-                        >
-                            {isSubmitting ? t('common.adding') : t('foodEntry.actions.addAndClose')}
-                        </Button>
-                    </>
-                ) : mode === 'search' ? (
-                    <>
-                        <Button
-                            variant="outlined"
-                            type="button"
-                            onClick={() => void handleAddFromSearch({ closeDialog: false })}
-                            disabled={isSubmitting || !canAddSelectedSearch}
-                        >
-                            {isSubmitting ? t('common.adding') : t('foodEntry.actions.addAnother')}
-                        </Button>
-                        <Button
-                            variant="contained"
-                            type="button"
-                            onClick={() => void handleAddFromSearch({ closeDialog: true })}
-                            disabled={isSubmitting || !canAddSelectedSearch}
+                            onClick={() => void handleAddFoodEntry({ closeDialog: true })}
+                            disabled={isSubmitting || !canAddFoodEntry}
                         >
                             {isSubmitting ? t('common.adding') : t('foodEntry.actions.addAndClose')}
                         </Button>
                     </>
                 ) : (
                     <>
-                    <Button
-                        variant="outlined"
-                        type="button"
-                        onClick={() => void handleAddFromMyFoods({ closeDialog: false })}
-                        disabled={isSubmitting || !canAddSelectedMyFood}
-                    >
-                        {isSubmitting ? t('common.adding') : t('foodEntry.actions.addAnother')}
-                    </Button>
-                    <Button
-                        variant="contained"
-                        type="button"
-                        onClick={() => void handleAddFromMyFoods({ closeDialog: true })}
-                        disabled={isSubmitting || !canAddSelectedMyFood}
-                    >
-                        {isSubmitting ? t('common.adding') : t('foodEntry.actions.addAndClose')}
-                    </Button>
+                        <Button
+                            variant="outlined"
+                            type="button"
+                            onClick={() => void handleAddFromMyFoods({ closeDialog: false })}
+                            disabled={isSubmitting || !canAddSelectedMyFood}
+                        >
+                            {isSubmitting ? t('common.adding') : t('foodEntry.actions.addAnother')}
+                        </Button>
+                        <Button
+                            variant="contained"
+                            type="button"
+                            onClick={() => void handleAddFromMyFoods({ closeDialog: true })}
+                            disabled={isSubmitting || !canAddSelectedMyFood}
+                        >
+                            {isSubmitting ? t('common.adding') : t('foodEntry.actions.addAndClose')}
+                        </Button>
                     </>
                 )}
             </DialogActions>
