@@ -1,87 +1,277 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { useQuery } from '@tanstack/react-query';
-import { router } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import * as Haptics from 'expo-haptics';
+import type { FoodLogEntry } from '@calibrate/api-client';
+import type { MealPeriod } from '@calibrate/shared';
+import { AddFoodSheet } from '../../src/components/AddFoodSheet';
 import { AppButton } from '../../src/components/AppButton';
-import { AppCard } from '../../src/components/AppCard';
+import { AppChip } from '../../src/components/AppChip';
 import { AppText } from '../../src/components/AppText';
-import { LoadingState } from '../../src/components/LoadingState';
+import { BottomSheetModal } from '../../src/components/BottomSheetModal';
+import { CalorieBalanceCard } from '../../src/components/CalorieBalanceCard';
+import { DateNavigation } from '../../src/components/DateNavigation';
+import { DayCompletionCard } from '../../src/components/DayCompletionCard';
+import { FoodLogTimelineCard } from '../../src/components/FoodLogTimelineCard';
+import { LogContentSkeleton } from '../../src/components/LogContentSkeleton';
+import { NumberStepperField } from '../../src/components/NumberStepperField';
 import { Screen } from '../../src/components/Screen';
+import { SectionHeader } from '../../src/components/SectionHeader';
+import { TextField } from '../../src/components/TextField';
 import { useAuth } from '../../src/auth/AuthContext';
-import { getTodayDate } from '../../src/utils/dates';
+import { useSharedLogDateNavigation } from '../../src/context/LogDateContext';
+import { addDaysToDateOnly } from '../../src/utils/dates';
+import { formatMealChipLabel } from '../../src/utils/format';
+import { MEAL_OPTIONS } from '../../src/utils/meals';
 import { colors, spacing } from '../../src/theme';
 
 export default function TodayScreen() {
-    const { api, user } = useAuth();
-    const today = useMemo(() => getTodayDate(user?.timezone), [user?.timezone]);
-    const profileQuery = useQuery({ queryKey: ['mobile-profile'], queryFn: () => api.getUserProfile() });
-    const foodQuery = useQuery({ queryKey: ['mobile-food', today], queryFn: () => api.getFoodLog(today) });
-    const metricsQuery = useQuery({ queryKey: ['mobile-metrics'], queryFn: () => api.getMetrics() });
-    const foodDayQuery = useQuery({ queryKey: ['mobile-food-day', today], queryFn: () => api.getFoodDay(today) });
+    const { api } = useAuth();
+    const queryClient = useQueryClient();
+    const dateNavigation = useSharedLogDateNavigation();
+    const selectedDate = dateNavigation.selectedDate;
+    const [editEntry, setEditEntry] = useState<FoodLogEntry | null>(null);
+    const [editName, setEditName] = useState('');
+    const [editCalories, setEditCalories] = useState('');
+    const [editMeal, setEditMeal] = useState<MealPeriod>('BREAKFAST');
+    const [editServings, setEditServings] = useState('');
+    const [editError, setEditError] = useState<string | null>(null);
+    const [addFoodMeal, setAddFoodMeal] = useState<MealPeriod | null | undefined>(undefined);
 
-    if (profileQuery.isLoading || foodQuery.isLoading || metricsQuery.isLoading) {
-        return <LoadingState label="Loading today..." />;
+    const profileQuery = useQuery({ queryKey: ['mobile-profile'], queryFn: () => api.getUserProfile() });
+    const foodQuery = useQuery({ queryKey: ['mobile-food', selectedDate], queryFn: () => api.getFoodLog(selectedDate) });
+    const foodDayQuery = useQuery({ queryKey: ['mobile-food-day', selectedDate], queryFn: () => api.getFoodDay(selectedDate) });
+    const isFoodDayComplete = foodDayQuery.data?.is_complete ?? false;
+
+    useEffect(() => {
+        const previousDate = addDaysToDateOnly(selectedDate, -1);
+        if (previousDate < dateNavigation.minDate) return;
+
+        void queryClient.prefetchQuery({
+            queryKey: ['mobile-food', previousDate],
+            queryFn: () => api.getFoodLog(previousDate)
+        });
+        void queryClient.prefetchQuery({
+            queryKey: ['mobile-food-day', previousDate],
+            queryFn: () => api.getFoodDay(previousDate)
+        });
+    }, [api, dateNavigation.minDate, queryClient, selectedDate]);
+
+    async function invalidateLogQueries() {
+        await Promise.all([
+            queryClient.invalidateQueries({ queryKey: ['mobile-food', selectedDate] }),
+            queryClient.invalidateQueries({ queryKey: ['mobile-food-day', selectedDate] }),
+            queryClient.invalidateQueries({ queryKey: ['mobile-profile'] }),
+            queryClient.invalidateQueries({ queryKey: ['mobile-recent-foods'] })
+        ]);
     }
 
-    const calories = (foodQuery.data ?? []).reduce((total, entry) => total + entry.calories, 0);
+    const toggleFoodDay = useMutation({
+        mutationFn: () =>
+            api.updateFoodDay({
+                date: selectedDate,
+                is_complete: !isFoodDayComplete
+            }),
+        onSuccess: async () => {
+            await Haptics.selectionAsync();
+            await invalidateLogQueries();
+        }
+    });
+
+    const deleteFood = useMutation({
+        mutationFn: (id: number) => api.deleteFoodLog(id),
+        onSuccess: async () => {
+            await Haptics.selectionAsync();
+            await invalidateLogQueries();
+        }
+    });
+
+    const updateFood = useMutation({
+        mutationFn: () => {
+            if (!editEntry) {
+                throw new Error('Choose a food entry to edit.');
+            }
+
+            const payload: {
+                name: string;
+                calories: number;
+                meal_period: MealPeriod;
+                servings_consumed?: number;
+            } = {
+                name: editName.trim(),
+                calories: Number(editCalories),
+                meal_period: editMeal
+            };
+
+            if (editServings.trim()) {
+                payload.servings_consumed = Number(editServings);
+            }
+
+            return api.updateFoodLog(editEntry.id, payload);
+        },
+        onSuccess: async () => {
+            setEditEntry(null);
+            await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            await invalidateLogQueries();
+        },
+        onError: (error) => {
+            setEditError(error instanceof Error ? error.message : 'Unable to update food entry.');
+        }
+    });
+
+    const entries = foodQuery.data ?? [];
+    const calories = entries.reduce((total, entry) => total + entry.calories, 0);
     const target = profileQuery.data?.calorieSummary.dailyCalorieTarget ?? null;
-    const remaining = target === null ? null : target - calories;
-    const latestWeight = metricsQuery.data?.[0]?.weight ?? null;
+    const showContentSkeleton =
+        (!profileQuery.data || !foodQuery.data || !foodDayQuery.data) &&
+        (profileQuery.isLoading || foodQuery.isLoading || foodDayQuery.isLoading);
+
+    function openAddFood(meal?: MealPeriod) {
+        setAddFoodMeal(meal ?? null);
+    }
+
+    function openEditEntry(entry: FoodLogEntry) {
+        setEditEntry(entry);
+        setEditName(entry.name);
+        setEditCalories(String(entry.calories));
+        setEditMeal(entry.meal_period);
+        setEditServings(
+            typeof entry.servings_consumed === 'number' && Number.isFinite(entry.servings_consumed)
+                ? String(entry.servings_consumed)
+                : ''
+        );
+        setEditError(null);
+    }
+
+    function handleSaveEdit() {
+        if (!editName.trim()) {
+            setEditError('Food name is required.');
+            return;
+        }
+
+        const parsedCalories = Number(editCalories);
+        if (!Number.isFinite(parsedCalories) || parsedCalories < 0) {
+            setEditError('Calories must be a non-negative number.');
+            return;
+        }
+
+        if (editServings.trim()) {
+            const parsedServings = Number(editServings);
+            if (!Number.isFinite(parsedServings) || parsedServings <= 0) {
+                setEditError('Servings must be a positive number.');
+                return;
+            }
+        }
+
+        setEditError(null);
+        updateFood.mutate();
+    }
 
     return (
         <Screen>
-            <View>
-                <AppText variant="title">Today</AppText>
-                <AppText variant="muted">{today}</AppText>
-            </View>
+            <DateNavigation navigation={dateNavigation} />
 
-            <AppCard>
-                <AppText variant="subtitle">Calories</AppText>
-                <View style={styles.metricRow}>
-                    <View>
-                        <AppText style={styles.metricValue}>{calories}</AppText>
-                        <AppText variant="muted">eaten</AppText>
-                    </View>
-                    <View>
-                        <AppText style={styles.metricValue}>{target ?? '-'}</AppText>
-                        <AppText variant="muted">target</AppText>
-                    </View>
-                    <View>
-                        <AppText style={[styles.metricValue, remaining !== null && remaining < 0 && styles.over]}>{remaining ?? '-'}</AppText>
-                        <AppText variant="muted">remaining</AppText>
-                    </View>
+            {showContentSkeleton ? (
+                <LogContentSkeleton />
+            ) : (
+                <>
+                    <CalorieBalanceCard
+                        totalCalories={calories}
+                        targetCalories={target}
+                        disabled={isFoodDayComplete}
+                        onAddFood={() => openAddFood()}
+                    />
+
+                    <FoodLogTimelineCard
+                        entries={entries}
+                        disabled={isFoodDayComplete}
+                        onAddFood={() => openAddFood()}
+                        onAddMeal={openAddFood}
+                        onEditEntry={openEditEntry}
+                        onDeleteEntry={(entry) => deleteFood.mutate(entry.id)}
+                    />
+
+                    <DayCompletionCard
+                        isComplete={isFoodDayComplete}
+                        isBusy={foodDayQuery.isLoading || toggleFoodDay.isPending}
+                        onToggle={() => toggleFoodDay.mutate()}
+                    />
+                </>
+            )}
+
+            {foodQuery.error && <AppText style={styles.error}>{foodQuery.error.message}</AppText>}
+            {foodDayQuery.error && <AppText style={styles.error}>{foodDayQuery.error.message}</AppText>}
+            {profileQuery.error && <AppText style={styles.error}>{profileQuery.error.message}</AppText>}
+            {deleteFood.error && <AppText style={styles.error}>{deleteFood.error.message}</AppText>}
+
+            <BottomSheetModal visible={Boolean(editEntry)} onRequestClose={() => setEditEntry(null)}>
+                <SectionHeader title="Edit food" description="Update this log entry snapshot." />
+                <TextField label="Food name" value={editName} onChangeText={setEditName} />
+                <NumberStepperField label="Calories" value={editCalories} onChangeText={setEditCalories} step={25} min={0} suffix="kcal" />
+                {editEntry?.serving_unit_label_snapshot && (
+                    <NumberStepperField
+                        label={`Servings (${editEntry.serving_unit_label_snapshot})`}
+                        value={editServings}
+                        onChangeText={setEditServings}
+                        step={0.5}
+                        min={0.5}
+                    />
+                )}
+                <AppText variant="label">Meal</AppText>
+                <View style={styles.chips}>
+                    {MEAL_OPTIONS.map((option) => (
+                        <AppChip
+                            key={option}
+                            label={formatMealChipLabel(option)}
+                            selected={option === editMeal}
+                            onPress={() => setEditMeal(option)}
+                        />
+                    ))}
                 </View>
-                <AppText variant="muted">{foodDayQuery.data?.is_complete ? 'Food log complete' : 'Food log still open'}</AppText>
-            </AppCard>
+                {(editError || updateFood.error) && <AppText style={styles.error}>{editError ?? updateFood.error?.message}</AppText>}
+                <View style={styles.row}>
+                    <AppButton
+                        title="Cancel"
+                        variant="secondary"
+                        leftIcon={<Ionicons name="close" size={18} color={colors.text} />}
+                        onPress={() => setEditEntry(null)}
+                        style={styles.rowButton}
+                    />
+                    <AppButton
+                        title={updateFood.isPending ? 'Saving...' : 'Save'}
+                        disabled={updateFood.isPending}
+                        leftIcon={<Ionicons name="checkmark" size={18} color="#ffffff" />}
+                        onPress={handleSaveEdit}
+                        style={styles.rowButton}
+                    />
+                </View>
+            </BottomSheetModal>
 
-            <AppCard>
-                <AppText variant="subtitle">Latest weight</AppText>
-                <AppText style={styles.metricValue}>{latestWeight ?? '-'}</AppText>
-                <AppText variant="muted">{user?.weight_unit ?? 'KG'}</AppText>
-            </AppCard>
-
-            <View style={styles.actions}>
-                <AppButton title="Log food" onPress={() => router.push('/(tabs)/log')} />
-                <AppButton title="Log weight" variant="secondary" onPress={() => router.push('/(tabs)/weight')} />
-            </View>
+            <AddFoodSheet
+                visible={addFoodMeal !== undefined}
+                date={selectedDate}
+                initialMeal={addFoodMeal}
+                onClose={() => setAddFoodMeal(undefined)}
+            />
         </Screen>
     );
 }
 
 const styles = StyleSheet.create({
-    metricRow: {
+    row: {
         flexDirection: 'row',
-        justifyContent: 'space-between',
         gap: spacing.md
     },
-    metricValue: {
-        fontSize: 28,
-        fontWeight: '900'
+    rowButton: {
+        flex: 1
     },
-    over: {
+    chips: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: spacing.sm
+    },
+    error: {
         color: colors.danger
-    },
-    actions: {
-        gap: spacing.md
     }
 });

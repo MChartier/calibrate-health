@@ -1,18 +1,40 @@
-import React from 'react';
-import { StyleSheet, TextInput, type TextInputProps, View } from 'react-native';
+import React, { useState } from 'react';
+import { StyleSheet, TextInput, type StyleProp, type TextInputProps, type ViewStyle, View } from 'react-native';
 import { colors, radius, spacing } from '../theme';
 import { AppText } from './AppText';
 
-export const TextField: React.FC<TextInputProps & { label: string }> = ({ label, style, ...props }) => (
-    <View style={styles.group}>
-        <AppText variant="muted">{label}</AppText>
-        <TextInput
-            {...props}
-            placeholderTextColor={colors.muted}
-            style={[styles.input, style]}
-        />
-    </View>
-);
+export const TextField: React.FC<TextInputProps & { label: string; helperText?: string; hideLabel?: boolean; containerStyle?: StyleProp<ViewStyle> }> = ({
+    label,
+    helperText,
+    hideLabel = false,
+    containerStyle,
+    style,
+    onBlur,
+    onFocus,
+    ...props
+}) => {
+    const [isFocused, setIsFocused] = useState(false);
+
+    return (
+        <View style={[styles.group, containerStyle]}>
+            {!hideLabel && <AppText variant="label">{label}</AppText>}
+            <TextInput
+                {...props}
+                onBlur={(event) => {
+                    setIsFocused(false);
+                    onBlur?.(event);
+                }}
+                onFocus={(event) => {
+                    setIsFocused(true);
+                    onFocus?.(event);
+                }}
+                placeholderTextColor={colors.muted}
+                style={[styles.input, isFocused && styles.inputFocused, style]}
+            />
+            {helperText && <AppText variant="caption">{helperText}</AppText>}
+        </View>
+    );
+};
 
 const styles = StyleSheet.create({
     group: {
@@ -23,9 +45,14 @@ const styles = StyleSheet.create({
         borderRadius: radius.md,
         borderWidth: StyleSheet.hairlineWidth,
         borderColor: colors.border,
-        backgroundColor: colors.surface,
+        backgroundColor: '#FBFCFA',
         paddingHorizontal: spacing.md,
         color: colors.text,
-        fontSize: 16
+        fontSize: 16,
+        fontWeight: '600'
+    },
+    inputFocused: {
+        borderColor: colors.primary,
+        backgroundColor: colors.surface
     }
 });

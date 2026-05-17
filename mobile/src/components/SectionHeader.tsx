@@ -1,0 +1,27 @@
+import React from 'react';
+import { StyleSheet, View, type ViewProps } from 'react-native';
+import { spacing } from '../theme';
+import { AppText } from './AppText';
+
+type SectionHeaderProps = ViewProps & {
+    title: string;
+    eyebrow?: string;
+    description?: string;
+};
+
+/**
+ * Compact header pattern shared by native screens and cards.
+ */
+export const SectionHeader: React.FC<SectionHeaderProps> = ({ title, eyebrow, description, style, ...props }) => (
+    <View {...props} style={[styles.root, style]}>
+        {eyebrow && <AppText variant="label">{eyebrow}</AppText>}
+        <AppText variant="screenTitle">{title}</AppText>
+        {description && <AppText variant="muted">{description}</AppText>}
+    </View>
+);
+
+const styles = StyleSheet.create({
+    root: {
+        gap: spacing.xs
+    }
+});

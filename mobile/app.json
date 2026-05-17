@@ -14,7 +14,7 @@
       "package": "app.calibratehealth.mobile",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#f8fafc"
+        "backgroundColor": "#F6F8F4"
       },
       "intentFilters": [
         {
@@ -51,9 +51,10 @@
         "expo-notifications",
         {
           "icon": "./assets/notification-icon.png",
-          "color": "#2563eb"
+          "color": "#2E7D32"
         }
-      ]
+      ],
+      "@react-native-community/datetimepicker"
     ],
     "extra": {
       "router": {

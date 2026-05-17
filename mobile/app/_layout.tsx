@@ -6,6 +6,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { AuthProvider } from '../src/auth/AuthContext';
 import { useNativePushRegistration } from '../src/hooks/useNativePushRegistration';
+import { colors } from '../src/theme';
 
 const queryClient = new QueryClient();
 
@@ -20,7 +21,7 @@ export default function RootLayout() {
             <QueryClientProvider client={queryClient}>
                 <AuthProvider>
                     <NativeRuntimeHooks />
-                    <StatusBar style="dark" />
+                    <StatusBar style="dark" backgroundColor={colors.surface} />
                     <Slot />
                 </AuthProvider>
             </QueryClientProvider>

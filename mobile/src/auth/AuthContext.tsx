@@ -22,6 +22,7 @@ type AuthContextValue = {
     serverUrl: string;
     isLoading: boolean;
     authError: string | null;
+    updateCurrentUser: (user: UserClientPayload) => void;
     setServerUrl: (value: string) => Promise<boolean>;
     login: (email: string, password: string) => Promise<void>;
     register: (email: string, password: string) => Promise<void>;
@@ -136,6 +137,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return true;
     }, []);
 
+    const updateCurrentUser = useCallback((nextUser: UserClientPayload) => {
+        setUser(nextUser);
+    }, []);
+
     const login = useCallback(
         async (email: string, password: string) => {
             const nextDeviceId = deviceId ?? (await getOrCreateDeviceId());
@@ -186,12 +191,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             serverUrl,
             isLoading,
             authError,
+            updateCurrentUser,
             setServerUrl: updateServerUrl,
             login,
             register,
             logout
         }),
-        [accessToken, api, authError, deviceId, isLoading, login, logout, refreshToken, register, serverUrl, updateServerUrl, user]
+        [accessToken, api, authError, deviceId, isLoading, login, logout, refreshToken, register, serverUrl, updateCurrentUser, updateServerUrl, user]
     );
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

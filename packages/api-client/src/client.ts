@@ -3,6 +3,7 @@ import type {
     FoodLogCreatePayload,
     FoodLogDay,
     FoodLogEntry,
+    FoodLogUpdatePayload,
     FoodSearchResponse,
     GoalEntry,
     InAppNotificationsResponse,
@@ -10,9 +11,13 @@ import type {
     MetricEntry,
     MobileAuthRequest,
     MobileAuthResponse,
+    CreateRecipePayload,
+    MyFoodDetail,
     MyFoodSummary,
     MobileRefreshResponse,
     NativePushSubscriptionPayload,
+    RecentFoodsResponse,
+    TrendMetricsResponse,
     UserClientPayload,
     UserProfileResponse
 } from './types';
@@ -213,6 +218,15 @@ export class CalibrateApiClient {
         return this.request<MetricEntry[]>('/api/metrics');
     }
 
+    getTrendMetrics(params: { range?: 'week' | 'month' | 'year' | 'all'; start?: string; end?: string } = {}): Promise<TrendMetricsResponse> {
+        const query = new URLSearchParams();
+        query.set('include_trend', 'true');
+        if (params.range) query.set('range', params.range);
+        if (params.start) query.set('start', params.start);
+        if (params.end) query.set('end', params.end);
+        return this.request<TrendMetricsResponse>(`/api/metrics?${query.toString()}`);
+    }
+
     addMetric(payload: { weight: number; date: string }): Promise<MetricEntry> {
         return this.request<MetricEntry>('/api/metrics', {
             method: 'POST',
@@ -243,6 +257,13 @@ export class CalibrateApiClient {
         });
     }
 
+    updateFoodLog(id: number, payload: FoodLogUpdatePayload): Promise<FoodLogEntry> {
+        return this.request<FoodLogEntry>(`/api/food/${encodeURIComponent(String(id))}`, {
+            method: 'PATCH',
+            json: payload
+        });
+    }
+
     searchFood(query: string, barcode?: string): Promise<FoodSearchResponse> {
         const params = new URLSearchParams();
         if (query.trim()) params.set('q', query.trim());
@@ -250,12 +271,31 @@ export class CalibrateApiClient {
         return this.request<FoodSearchResponse>(`/api/food/search?${params.toString()}`);
     }
 
+    getRecentFoods(params: { q?: string; limit?: number } = {}): Promise<RecentFoodsResponse> {
+        const query = new URLSearchParams();
+        if (params.q?.trim()) query.set('q', params.q.trim());
+        if (typeof params.limit === 'number') query.set('limit', String(params.limit));
+        const suffix = query.toString() ? `?${query.toString()}` : '';
+        return this.request<RecentFoodsResponse>(`/api/food/recent${suffix}`);
+    }
+
     getMyFoods(): Promise<MyFoodSummary[]> {
         return this.request<MyFoodSummary[]>('/api/my-foods');
     }
 
+    getMyFood(id: number): Promise<MyFoodDetail> {
+        return this.request<MyFoodDetail>(`/api/my-foods/${encodeURIComponent(String(id))}`);
+    }
+
     createMyFood(payload: Record<string, unknown>): Promise<MyFoodSummary> {
         return this.request<MyFoodSummary>('/api/my-foods/foods', {
+            method: 'POST',
+            json: payload
+        });
+    }
+
+    createRecipe(payload: CreateRecipePayload): Promise<MyFoodSummary> {
+        return this.request<MyFoodSummary>('/api/my-foods/recipes', {
             method: 'POST',
             json: payload
         });
@@ -291,6 +331,32 @@ export class CalibrateApiClient {
     dismissInAppNotification(id: number): Promise<{ ok: true }> {
         return this.request<{ ok: true }>(`/api/notifications/in-app/${encodeURIComponent(String(id))}/dismiss`, {
             method: 'PATCH'
+        });
+    }
+
+    markInAppNotificationRead(id: number): Promise<{ ok: true }> {
+        return this.request<{ ok: true }>(`/api/notifications/in-app/${encodeURIComponent(String(id))}/read`, {
+            method: 'PATCH'
+        });
+    }
+
+    updateProfileImage(dataUrl: string): Promise<{ user: UserClientPayload }> {
+        return this.request<{ user: UserClientPayload }>('/api/user/profile-image', {
+            method: 'PUT',
+            json: { data_url: dataUrl }
+        });
+    }
+
+    deleteProfileImage(): Promise<{ user: UserClientPayload }> {
+        return this.request<{ user: UserClientPayload }>('/api/user/profile-image', {
+            method: 'DELETE'
+        });
+    }
+
+    changePassword(payload: { current_password: string; new_password: string }): Promise<{ message: string }> {
+        return this.request<{ message: string }>('/api/user/password', {
+            method: 'PATCH',
+            json: payload
         });
     }
 

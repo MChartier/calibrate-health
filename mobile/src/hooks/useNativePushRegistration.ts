@@ -1,19 +1,13 @@
 import { useEffect } from 'react';
-import * as Notifications from 'expo-notifications';
+import Constants from 'expo-constants';
 import { NATIVE_PUSH_PLATFORMS, NATIVE_PUSH_PROVIDERS } from '@calibrate/shared';
 import { useAuth } from '../auth/AuthContext';
 
-Notifications.setNotificationHandler({
-    handleNotification: async () => ({
-        shouldShowBanner: true,
-        shouldShowList: true,
-        shouldPlaySound: false,
-        shouldSetBadge: true
-    })
-});
-
 /**
  * Register the current Android install with the backend for native reminder push.
+ *
+ * Expo Go no longer supports Android remote push, so we skip registration there
+ * and keep the code path for development builds and release builds.
  */
 export function useNativePushRegistration() {
     const { api, user, deviceId } = useAuth();
@@ -26,6 +20,20 @@ export function useNativePushRegistration() {
         const registerDeviceId = currentDeviceId;
 
         async function register() {
+            if (Constants.appOwnership === 'expo') {
+                return;
+            }
+
+            const Notifications = await import('expo-notifications');
+            Notifications.setNotificationHandler({
+                handleNotification: async () => ({
+                    shouldShowBanner: true,
+                    shouldShowList: true,
+                    shouldPlaySound: false,
+                    shouldSetBadge: true
+                })
+            });
+
             const permissions = await Notifications.requestPermissionsAsync();
             if (permissions.status !== 'granted') return;
 
