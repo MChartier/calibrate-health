@@ -129,7 +129,6 @@ export default function ProgressScreen() {
 
             <WeightTrendCard
                 title="Weight trend"
-                description="Range controls, raw weigh-ins, trend, expected range, and target."
                 targetWeight={goalQuery.data?.target_weight}
             />
 

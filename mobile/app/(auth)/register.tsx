@@ -5,6 +5,7 @@ import { AppButton } from '../../src/components/AppButton';
 import { AppCard } from '../../src/components/AppCard';
 import { AppText } from '../../src/components/AppText';
 import { Screen } from '../../src/components/Screen';
+import { ServerUrlControl } from '../../src/components/ServerUrlControl';
 import { SectionHeader } from '../../src/components/SectionHeader';
 import { TextField } from '../../src/components/TextField';
 import { useAuth } from '../../src/auth/AuthContext';
@@ -40,14 +41,7 @@ export default function RegisterScreen() {
             </View>
 
             <AppCard>
-                <SectionHeader title="Create account" description="Start with email, password, and the backend URL for this install." />
-                <TextField
-                    label="Server"
-                    autoCapitalize="none"
-                    value={serverInput}
-                    onChangeText={setServerInput}
-                    helperText="Use the hosted URL by default, or enter a LAN/self-hosted backend URL."
-                />
+                <SectionHeader title="Create account" description="Use email and password for this Calibrate server." />
                 <TextField
                     label="Email"
                     autoCapitalize="none"
@@ -56,6 +50,7 @@ export default function RegisterScreen() {
                     onChangeText={setEmail}
                 />
                 <TextField label="Password" secureTextEntry value={password} onChangeText={setPassword} />
+                <ServerUrlControl value={serverInput} onChangeText={setServerInput} />
                 {error && <AppText style={styles.error}>{error}</AppText>}
                 <AppButton title={isSubmitting ? 'Creating...' : 'Create account'} disabled={isSubmitting} onPress={() => void handleRegister()} />
             </AppCard>

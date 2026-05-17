@@ -174,8 +174,8 @@ export type InAppNotification = {
     id: number;
     type: InAppNotificationType;
     local_date: string;
-    title: string;
-    body: string;
+    title: string | null;
+    body: string | null;
     action_url: string;
     read_at: string | null;
     dismissed_at: string | null;

@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import type { InAppNotification } from '@calibrate/api-client';
+import { IN_APP_NOTIFICATION_TYPES } from '@calibrate/shared/inAppNotifications';
 import { AppButton } from '../src/components/AppButton';
 import { AppCard } from '../src/components/AppCard';
 import { AppText } from '../src/components/AppText';
@@ -26,6 +27,30 @@ function getNotificationAction(notification: InAppNotification): { label: string
         return { label: 'Log food', route: '/(tabs)/log' };
     }
     return { label: 'Open log', route: '/(tabs)/today' };
+}
+
+function getNotificationText(notification: InAppNotification): { title: string; body: string } {
+    const title = notification.title?.trim();
+    const body = notification.body?.trim();
+    if (title && body) return { title, body };
+
+    switch (notification.type) {
+        case IN_APP_NOTIFICATION_TYPES.LOG_WEIGHT_REMINDER:
+            return {
+                title: title || 'Log weight',
+                body: body || 'Add today\'s weigh-in to keep your trend current.'
+            };
+        case IN_APP_NOTIFICATION_TYPES.LOG_FOOD_REMINDER:
+            return {
+                title: title || 'Finish food log',
+                body: body || 'Log today\'s food or mark the day complete.'
+            };
+        default:
+            return {
+                title: title || 'calibrate',
+                body: body || 'Open Calibrate to review this reminder.'
+            };
+    }
 }
 
 function formatNotificationDate(value: string): string {
@@ -92,6 +117,7 @@ export default function NotificationsScreen() {
 
             {notifications.map((notification) => {
                 const action = getNotificationAction(notification);
+                const text = getNotificationText(notification);
                 const isUnread = !notification.read_at;
 
                 return (
@@ -107,12 +133,12 @@ export default function NotificationsScreen() {
                             <View style={styles.notificationBody}>
                                 <View style={styles.titleRow}>
                                     <AppText variant="subtitle" numberOfLines={2} style={styles.notificationTitle}>
-                                        {notification.title}
+                                        {text.title}
                                     </AppText>
                                     {isUnread && <View style={styles.unreadDot} />}
                                 </View>
                                 <AppText variant="caption">{formatNotificationDate(notification.local_date)}</AppText>
-                                <AppText variant="muted">{notification.body}</AppText>
+                                <AppText variant="muted">{text.body}</AppText>
                             </View>
                         </View>
                         <View style={styles.actions}>
@@ -124,7 +150,7 @@ export default function NotificationsScreen() {
                             />
                             <Pressable
                                 accessibilityRole="button"
-                                accessibilityLabel={`Dismiss ${notification.title}`}
+                                accessibilityLabel={`Dismiss ${text.title}`}
                                 onPress={() => dismissNotification.mutate(notification.id)}
                                 style={({ pressed }) => [styles.dismissButton, pressed && styles.pressed]}
                             >

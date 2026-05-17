@@ -107,7 +107,7 @@ function getChartPoints(metrics: TrendMetricEntry[], targetWeight?: number | nul
  */
 export const WeightTrendCard: React.FC<WeightTrendCardProps> = ({
     title = 'Weight trend',
-    description = 'Raw weigh-ins, smoothed trend, and expected range.',
+    description,
     targetWeight,
     footer,
     style,
