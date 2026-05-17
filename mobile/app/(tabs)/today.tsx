@@ -26,6 +26,8 @@ import { formatMealChipLabel } from '../../src/utils/format';
 import { MEAL_OPTIONS } from '../../src/utils/meals';
 import { colors, spacing } from '../../src/theme';
 
+const SERVINGS_STEP = 0.1; // Edit servings with the same precision as the add-food flow.
+
 export default function TodayScreen() {
     const { api } = useAuth();
     const queryClient = useQueryClient();
@@ -179,8 +181,6 @@ export default function TodayScreen() {
                     <CalorieBalanceCard
                         totalCalories={calories}
                         targetCalories={target}
-                        disabled={isFoodDayComplete}
-                        onAddFood={() => openAddFood()}
                     />
 
                     <FoodLogTimelineCard
@@ -214,8 +214,8 @@ export default function TodayScreen() {
                         label={`Servings (${editEntry.serving_unit_label_snapshot})`}
                         value={editServings}
                         onChangeText={setEditServings}
-                        step={0.5}
-                        min={0.5}
+                        step={SERVINGS_STEP}
+                        min={SERVINGS_STEP}
                     />
                 )}
                 <AppText variant="label">Meal</AppText>

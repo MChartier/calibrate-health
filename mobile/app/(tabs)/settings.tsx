@@ -9,6 +9,7 @@ import { AppButton } from '../../src/components/AppButton';
 import { AppCard } from '../../src/components/AppCard';
 import { AppChip } from '../../src/components/AppChip';
 import { AppText } from '../../src/components/AppText';
+import { DatePickerField } from '../../src/components/DatePickerField';
 import { NumberStepperField } from '../../src/components/NumberStepperField';
 import { Screen } from '../../src/components/Screen';
 import { SectionHeader } from '../../src/components/SectionHeader';
@@ -16,6 +17,7 @@ import { SegmentedControl } from '../../src/components/SegmentedControl';
 import { TextField } from '../../src/components/TextField';
 import { useAuth } from '../../src/auth/AuthContext';
 import { millimetersToCentimeters, millimetersToFeetInches } from '../../src/utils/bodyMeasurements';
+import { getTodayDate } from '../../src/utils/dates';
 import { formatCalories } from '../../src/utils/format';
 import { ACTIVITY_OPTIONS, HEIGHT_UNIT_OPTIONS, SEX_OPTIONS, WEIGHT_UNIT_OPTIONS } from '../../src/utils/profileOptions';
 import { colors, spacing } from '../../src/theme';
@@ -257,7 +259,13 @@ export default function SettingsScreen() {
             <AppCard>
                 <SectionHeader title="Profile" description="Timezone and body details used for calorie targets." />
                 <TextField label="Timezone" value={timezone} onChangeText={setTimezone} autoCapitalize="none" />
-                <TextField label="Date of birth" value={dateOfBirth} onChangeText={setDateOfBirth} placeholder="YYYY-MM-DD" keyboardType="numbers-and-punctuation" />
+                <DatePickerField
+                    label="Date of birth"
+                    value={dateOfBirth}
+                    onChangeDate={setDateOfBirth}
+                    maximumDate={getTodayDate(user?.timezone)}
+                    fallbackDate="1990-01-01"
+                />
                 <AppText variant="label">Sex</AppText>
                 <View style={styles.chips}>
                     {SEX_OPTIONS.map((option) => (
@@ -359,11 +367,6 @@ export default function SettingsScreen() {
                     leftIcon={<Ionicons name="cloud-upload-outline" size={18} color={colors.text} />}
                     onPress={() => importMutation.mutate()}
                 />
-            </AppCard>
-
-            <AppCard>
-                <SectionHeader title="WearOS readiness" description="The first release ships phone UI only." />
-                <AppText variant="muted">Native bearer sessions and device identifiers are in place so a future watch app can pair and sync without changing the core data model.</AppText>
             </AppCard>
 
             <AppButton

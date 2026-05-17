@@ -30,6 +30,7 @@ const GOAL_MODES: Array<{ value: GoalMode; label: string }> = [
 ];
 
 const DAILY_CHANGE_OPTIONS = ALLOWED_DAILY_DEFICIT_ABS_VALUES.filter((value) => value !== 0);
+const WEIGHT_GOAL_STEP = 0.1; // Goal weights should match daily weigh-in precision.
 
 function getGoalValidationError(goalMode: GoalMode, startWeight: number, targetWeight: number): string | null {
     if (!Number.isFinite(startWeight) || startWeight <= 0 || !Number.isFinite(targetWeight) || targetWeight <= 0) {
@@ -151,8 +152,8 @@ export default function ProgressScreen() {
                         label="Start"
                         value={startWeight}
                         onChangeText={setStartWeight}
-                        step={0.5}
-                        min={0}
+                        step={WEIGHT_GOAL_STEP}
+                        min={WEIGHT_GOAL_STEP}
                         suffix={formatWeightUnit(user?.weight_unit)}
                         containerStyle={styles.rowField}
                     />
@@ -160,8 +161,8 @@ export default function ProgressScreen() {
                         label="Target"
                         value={targetWeight}
                         onChangeText={setTargetWeight}
-                        step={0.5}
-                        min={0}
+                        step={WEIGHT_GOAL_STEP}
+                        min={WEIGHT_GOAL_STEP}
                         suffix={formatWeightUnit(user?.weight_unit)}
                         containerStyle={styles.rowField}
                     />

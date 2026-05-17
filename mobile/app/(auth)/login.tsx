@@ -12,8 +12,8 @@ import { colors, spacing } from '../../src/theme';
 
 export default function LoginScreen() {
     const { login, serverUrl, setServerUrl, authError } = useAuth();
-    const [email, setEmail] = useState('test@calibratehealth.app');
-    const [password, setPassword] = useState('password123');
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
     const [serverInput, setServerInput] = useState(serverUrl);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -40,13 +40,13 @@ export default function LoginScreen() {
             </View>
 
             <AppCard>
-                <SectionHeader title="Sign in" description="Use your Calibrate account or local dev seed user." />
+                <SectionHeader title="Sign in" description="Use your Calibrate account on the hosted service or your own server." />
                 <TextField
                     label="Server"
                     autoCapitalize="none"
                     value={serverInput}
                     onChangeText={setServerInput}
-                    helperText="Use the devcontainer host port from .devcontainer/.env for local testing."
+                    helperText="Use the hosted URL by default, or enter a LAN/self-hosted backend URL."
                 />
                 <TextField
                     label="Email"

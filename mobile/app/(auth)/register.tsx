@@ -46,7 +46,7 @@ export default function RegisterScreen() {
                     autoCapitalize="none"
                     value={serverInput}
                     onChangeText={setServerInput}
-                    helperText="Use the LAN host port when testing against the devcontainer."
+                    helperText="Use the hosted URL by default, or enter a LAN/self-hosted backend URL."
                 />
                 <TextField
                     label="Email"

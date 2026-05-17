@@ -7,6 +7,7 @@ import { AppButton } from '../src/components/AppButton';
 import { AppCard } from '../src/components/AppCard';
 import { AppChip } from '../src/components/AppChip';
 import { AppText } from '../src/components/AppText';
+import { BottomSheetModal } from '../src/components/BottomSheetModal';
 import { NumberStepperField } from '../src/components/NumberStepperField';
 import { Screen } from '../src/components/Screen';
 import { SectionHeader } from '../src/components/SectionHeader';
@@ -20,10 +21,16 @@ type RecipeIngredientDraft = {
     servings: number;
 };
 
+type MyFoodSheet = 'food' | 'recipe' | null;
+
+const SERVING_STEP = 0.1; // Saved food and recipe servings use the same precision as food logging.
+const INGREDIENT_STEP = 0.1;
+
 export default function MyFoodsScreen() {
     const { api } = useAuth();
     const queryClient = useQueryClient();
     const myFoodsQuery = useQuery({ queryKey: ['mobile-my-foods'], queryFn: () => api.getMyFoods() });
+    const [activeSheet, setActiveSheet] = useState<MyFoodSheet>(null);
     const [foodName, setFoodName] = useState('');
     const [servingQuantity, setServingQuantity] = useState('1');
     const [servingUnit, setServingUnit] = useState('serving');
@@ -32,9 +39,10 @@ export default function MyFoodsScreen() {
     const [recipeYield, setRecipeYield] = useState('1');
     const [recipeIngredients, setRecipeIngredients] = useState<RecipeIngredientDraft[]>([]);
 
+    const allFoods = myFoodsQuery.data ?? [];
     const savedFoods = useMemo(
-        () => (myFoodsQuery.data ?? []).filter((item) => item.type === 'FOOD'),
-        [myFoodsQuery.data]
+        () => allFoods.filter((item) => item.type === 'FOOD'),
+        [allFoods]
     );
 
     const createFood = useMutation({
@@ -50,6 +58,7 @@ export default function MyFoodsScreen() {
             setServingQuantity('1');
             setServingUnit('serving');
             setCaloriesPerServing('');
+            setActiveSheet(null);
             await queryClient.invalidateQueries({ queryKey: ['mobile-my-foods'] });
         }
     });
@@ -72,6 +81,7 @@ export default function MyFoodsScreen() {
             setRecipeName('');
             setRecipeYield('1');
             setRecipeIngredients([]);
+            setActiveSheet(null);
             await queryClient.invalidateQueries({ queryKey: ['mobile-my-foods'] });
         }
     });
@@ -92,7 +102,7 @@ export default function MyFoodsScreen() {
                 if (currentIndex !== index) return ingredient;
                 return {
                     ...ingredient,
-                    servings: Math.max(0.5, ingredient.servings + delta)
+                    servings: Math.max(SERVING_STEP, Math.round((ingredient.servings + delta) * 10) / 10)
                 };
             })
         );
@@ -103,60 +113,115 @@ export default function MyFoodsScreen() {
             <SectionHeader title="My Foods" description="Saved foods and recipes for fast logging." />
 
             <AppCard>
-                <SectionHeader title="Saved library" description={`${myFoodsQuery.data?.length ?? 0} foods and recipes.`} />
-                {(myFoodsQuery.data ?? []).map((item) => (
-                    <View key={item.id} style={styles.libraryRow}>
-                        <View style={styles.libraryText}>
-                            <AppText variant="body">{item.name}</AppText>
-                            <AppText variant="caption">
-                                {item.type === 'RECIPE' ? 'Recipe' : 'Food'} | {formatCalories(item.calories_per_serving)} per {item.serving_size_quantity} {item.serving_unit_label}
-                            </AppText>
-                        </View>
-                        <AppText variant="label">{item.type}</AppText>
+                <View style={styles.cardHeader}>
+                    <View style={styles.headerText}>
+                        <AppText variant="screenTitle">Saved library</AppText>
+                        <AppText variant="caption">{allFoods.length} foods and recipes</AppText>
                     </View>
-                ))}
-                {(myFoodsQuery.data ?? []).length === 0 && <AppText variant="muted">No saved foods yet.</AppText>}
+                    <View style={styles.headerActions}>
+                        <Pressable
+                            accessibilityRole="button"
+                            accessibilityLabel="Create saved food"
+                            onPress={() => setActiveSheet('food')}
+                            style={({ pressed }) => [styles.iconButton, pressed && styles.pressed]}
+                        >
+                            <Ionicons name="add" size={20} color={colors.primaryDark} />
+                        </Pressable>
+                        <Pressable
+                            accessibilityRole="button"
+                            accessibilityLabel="Create recipe"
+                            onPress={() => setActiveSheet('recipe')}
+                            style={({ pressed }) => [styles.iconButton, pressed && styles.pressed]}
+                        >
+                            <Ionicons name="restaurant-outline" size={20} color={colors.primaryDark} />
+                        </Pressable>
+                    </View>
+                </View>
+
+                <View style={styles.libraryList}>
+                    {allFoods.map((item) => (
+                        <View key={item.id} style={styles.libraryRow}>
+                            <View style={styles.libraryText}>
+                                <AppText variant="body" numberOfLines={1}>{item.name}</AppText>
+                                <AppText variant="caption" numberOfLines={1}>
+                                    {formatCalories(item.calories_per_serving)} per {item.serving_size_quantity} {item.serving_unit_label}
+                                </AppText>
+                            </View>
+                            <View style={styles.typePill}>
+                                <AppText style={styles.typeText}>{item.type === 'RECIPE' ? 'Recipe' : 'Food'}</AppText>
+                            </View>
+                        </View>
+                    ))}
+                    {myFoodsQuery.isLoading && <AppText variant="muted">Loading saved foods...</AppText>}
+                    {!myFoodsQuery.isLoading && allFoods.length === 0 && <AppText variant="muted">No saved foods yet.</AppText>}
+                    {myFoodsQuery.error && <AppText style={styles.error}>{myFoodsQuery.error.message}</AppText>}
+                </View>
             </AppCard>
 
-            <AppCard>
+            <BottomSheetModal visible={activeSheet === 'food'} onRequestClose={() => setActiveSheet(null)}>
                 <SectionHeader title="New food" description="Create a reusable food with calories per serving." />
                 <TextField label="Name" value={foodName} onChangeText={setFoodName} />
                 <View style={styles.row}>
-                    <NumberStepperField label="Serving" value={servingQuantity} onChangeText={setServingQuantity} step={0.5} min={0.5} containerStyle={styles.field} />
+                    <NumberStepperField
+                        label="Serving"
+                        value={servingQuantity}
+                        onChangeText={setServingQuantity}
+                        step={SERVING_STEP}
+                        min={SERVING_STEP}
+                        containerStyle={styles.field}
+                    />
                     <TextField label="Unit" value={servingUnit} onChangeText={setServingUnit} containerStyle={styles.field} />
                 </View>
-                <NumberStepperField label="Calories per serving" value={caloriesPerServing} onChangeText={setCaloriesPerServing} step={25} min={0} suffix="kcal" />
-                {createFood.error && <AppText style={styles.error}>{createFood.error.message}</AppText>}
-                <AppButton
-                    title={createFood.isPending ? 'Saving...' : 'Save food'}
-                    disabled={!canCreateFood || createFood.isPending}
-                    leftIcon={<Ionicons name="add" size={18} color="#ffffff" />}
-                    onPress={() => createFood.mutate()}
+                <NumberStepperField
+                    label="Calories per serving"
+                    value={caloriesPerServing}
+                    onChangeText={setCaloriesPerServing}
+                    step={25}
+                    min={0}
+                    suffix="kcal"
                 />
-            </AppCard>
+                {createFood.error && <AppText style={styles.error}>{createFood.error.message}</AppText>}
+                <View style={styles.row}>
+                    <AppButton
+                        title="Cancel"
+                        variant="secondary"
+                        leftIcon={<Ionicons name="close" size={18} color={colors.text} />}
+                        onPress={() => setActiveSheet(null)}
+                        style={styles.field}
+                    />
+                    <AppButton
+                        title={createFood.isPending ? 'Saving...' : 'Save food'}
+                        disabled={!canCreateFood || createFood.isPending}
+                        leftIcon={<Ionicons name="checkmark" size={18} color="#ffffff" />}
+                        onPress={() => createFood.mutate()}
+                        style={styles.field}
+                    />
+                </View>
+            </BottomSheetModal>
 
-            <AppCard>
-                <SectionHeader title="Recipe builder" description="Combine saved foods into a reusable recipe snapshot." />
+            <BottomSheetModal visible={activeSheet === 'recipe'} onRequestClose={() => setActiveSheet(null)}>
+                <SectionHeader title="Recipe builder" description="Combine saved foods into a reusable recipe." />
                 <TextField label="Recipe name" value={recipeName} onChangeText={setRecipeName} />
                 <NumberStepperField label="Yield servings" value={recipeYield} onChangeText={setRecipeYield} step={1} min={1} />
-                <AppText variant="label">Add ingredients</AppText>
+                <AppText variant="label">Ingredients</AppText>
                 <View style={styles.chips}>
                     {savedFoods.slice(0, 12).map((item) => (
                         <AppChip key={item.id} label={item.name} onPress={() => addRecipeIngredient(item)} />
                     ))}
                 </View>
+                {savedFoods.length === 0 && <AppText variant="muted">Create a saved food first, then add it to a recipe.</AppText>}
                 {recipeIngredients.map((ingredient, index) => (
                     <View key={`${ingredient.myFood.id}-${index}`} style={styles.ingredientRow}>
                         <View style={styles.libraryText}>
-                            <AppText variant="body">{ingredient.myFood.name}</AppText>
+                            <AppText variant="body" numberOfLines={1}>{ingredient.myFood.name}</AppText>
                             <AppText variant="caption">{formatCalories(ingredient.myFood.calories_per_serving * ingredient.servings)}</AppText>
                         </View>
                         <View style={styles.stepper}>
                             <Pressable
                                 accessibilityRole="button"
                                 accessibilityLabel={`Decrease ${ingredient.myFood.name} servings`}
-                                onPress={() => adjustRecipeIngredientServings(index, -0.5)}
-                                style={styles.stepperButton}
+                                onPress={() => adjustRecipeIngredientServings(index, -INGREDIENT_STEP)}
+                                style={({ pressed }) => [styles.stepperButton, pressed && styles.pressed]}
                             >
                                 <Ionicons name="remove" size={16} color={colors.text} />
                             </Pressable>
@@ -164,8 +229,8 @@ export default function MyFoodsScreen() {
                             <Pressable
                                 accessibilityRole="button"
                                 accessibilityLabel={`Increase ${ingredient.myFood.name} servings`}
-                                onPress={() => adjustRecipeIngredientServings(index, 0.5)}
-                                style={styles.stepperButton}
+                                onPress={() => adjustRecipeIngredientServings(index, INGREDIENT_STEP)}
+                                style={({ pressed }) => [styles.stepperButton, pressed && styles.pressed]}
                             >
                                 <Ionicons name="add" size={16} color={colors.text} />
                             </Pressable>
@@ -174,26 +239,65 @@ export default function MyFoodsScreen() {
                             accessibilityRole="button"
                             accessibilityLabel={`Remove ${ingredient.myFood.name}`}
                             onPress={() => setRecipeIngredients((current) => current.filter((_, currentIndex) => currentIndex !== index))}
-                            style={styles.removeButton}
+                            style={({ pressed }) => [styles.removeButton, pressed && styles.pressed]}
                         >
                             <Ionicons name="close" size={18} color={colors.danger} />
                         </Pressable>
                     </View>
                 ))}
                 {createRecipe.error && <AppText style={styles.error}>{createRecipe.error.message}</AppText>}
-                <AppButton
-                    title={createRecipe.isPending ? 'Saving...' : 'Save recipe'}
-                    disabled={!canCreateRecipe || createRecipe.isPending}
-                    leftIcon={<Ionicons name="restaurant-outline" size={18} color="#ffffff" />}
-                    onPress={() => createRecipe.mutate()}
-                />
-            </AppCard>
+                <View style={styles.row}>
+                    <AppButton
+                        title="Cancel"
+                        variant="secondary"
+                        leftIcon={<Ionicons name="close" size={18} color={colors.text} />}
+                        onPress={() => setActiveSheet(null)}
+                        style={styles.field}
+                    />
+                    <AppButton
+                        title={createRecipe.isPending ? 'Saving...' : 'Save recipe'}
+                        disabled={!canCreateRecipe || createRecipe.isPending}
+                        leftIcon={<Ionicons name="checkmark" size={18} color="#ffffff" />}
+                        onPress={() => createRecipe.mutate()}
+                        style={styles.field}
+                    />
+                </View>
+            </BottomSheetModal>
         </Screen>
     );
 }
 
 const styles = StyleSheet.create({
+    cardHeader: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        justifyContent: 'space-between',
+        gap: spacing.md
+    },
+    headerText: {
+        flex: 1,
+        minWidth: 0,
+        gap: spacing.xs
+    },
+    headerActions: {
+        flexDirection: 'row',
+        gap: spacing.sm
+    },
+    iconButton: {
+        width: 42,
+        height: 42,
+        borderRadius: radius.md,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: colors.primarySoft,
+        borderColor: colors.border,
+        borderWidth: StyleSheet.hairlineWidth
+    },
+    libraryList: {
+        gap: spacing.sm
+    },
     libraryRow: {
+        minHeight: 58,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
@@ -206,6 +310,17 @@ const styles = StyleSheet.create({
         flex: 1,
         minWidth: 0,
         gap: spacing.xs
+    },
+    typePill: {
+        borderRadius: radius.pill,
+        backgroundColor: colors.surfaceAlt,
+        paddingHorizontal: spacing.md,
+        paddingVertical: spacing.xs
+    },
+    typeText: {
+        color: colors.muted,
+        fontSize: 12,
+        fontWeight: '800'
     },
     row: {
         flexDirection: 'row',
@@ -247,6 +362,9 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         backgroundColor: colors.surface
+    },
+    pressed: {
+        backgroundColor: colors.surfacePressed
     },
     error: {
         color: colors.danger

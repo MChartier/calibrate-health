@@ -14,6 +14,7 @@ type NumberStepperFieldProps = {
     max?: number;
     suffix?: string;
     helperText?: string;
+    editable?: boolean;
     containerStyle?: StyleProp<ViewStyle>;
 };
 
@@ -34,6 +35,7 @@ export const NumberStepperField: React.FC<NumberStepperFieldProps> = ({
     max,
     suffix,
     helperText,
+    editable = true,
     containerStyle
 }) => {
     const parsed = Number(value);
@@ -56,8 +58,9 @@ export const NumberStepperField: React.FC<NumberStepperFieldProps> = ({
                 <Pressable
                     accessibilityRole="button"
                     accessibilityLabel={`Decrease ${label}`}
+                    disabled={!editable}
                     onPress={() => adjust(-step)}
-                    style={({ pressed }) => [styles.stepperButton, pressed && styles.pressed]}
+                    style={({ pressed }) => [styles.stepperButton, !editable && styles.disabled, pressed && editable && styles.pressed]}
                 >
                     <Ionicons name="remove" size={18} color={colors.text} />
                 </Pressable>
@@ -70,12 +73,14 @@ export const NumberStepperField: React.FC<NumberStepperFieldProps> = ({
                     containerStyle={styles.field}
                     style={styles.input}
                     accessibilityLabel={label}
+                    editable={editable}
                 />
                 <Pressable
                     accessibilityRole="button"
                     accessibilityLabel={`Increase ${label}`}
+                    disabled={!editable}
                     onPress={() => adjust(step)}
-                    style={({ pressed }) => [styles.stepperButton, pressed && styles.pressed]}
+                    style={({ pressed }) => [styles.stepperButton, !editable && styles.disabled, pressed && editable && styles.pressed]}
                 >
                     <Ionicons name="add" size={18} color={colors.text} />
                 </Pressable>
@@ -118,5 +123,8 @@ const styles = StyleSheet.create({
     },
     pressed: {
         backgroundColor: colors.surfacePressed
+    },
+    disabled: {
+        opacity: 0.5
     }
 });
