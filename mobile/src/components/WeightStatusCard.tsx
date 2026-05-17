@@ -73,21 +73,18 @@ export const WeightStatusCard: React.FC<WeightStatusCardProps> = ({
                 </View>
             </View>
             <View style={styles.divider} />
-            <AppText variant="subtitle">Weight context</AppText>
-            <View style={styles.contextGrid}>
-                <View style={styles.contextPill}>
-                    <Ionicons name="trending-up" size={18} color={colors.primaryDark} />
-                    <View>
-                        <AppText style={styles.contextValue}>{formatSignedWeight(deltaVsTrend, unit)}</AppText>
-                        <AppText variant="caption">vs trend</AppText>
-                    </View>
-                </View>
-                <View style={styles.contextPill}>
+            <View style={styles.trendPanel}>
+                <View style={styles.trendPanelHeader}>
                     <Ionicons name="analytics-outline" size={18} color={colors.primaryDark} />
-                    <View>
-                        <AppText style={styles.contextValue}>{expectedRange}</AppText>
-                        <AppText variant="caption">expected range</AppText>
-                    </View>
+                    <AppText variant="subtitle">Compared with trend</AppText>
+                </View>
+                <View style={styles.contextLine}>
+                    <AppText variant="caption">Latest</AppText>
+                    <AppText style={styles.contextValue}>{formatSignedWeight(deltaVsTrend, unit)} vs trend</AppText>
+                </View>
+                <View style={styles.contextLine}>
+                    <AppText variant="caption">Expected range</AppText>
+                    <AppText style={styles.contextValue}>{expectedRange}</AppText>
                 </View>
             </View>
         </AppCard>
@@ -134,22 +131,30 @@ const styles = StyleSheet.create({
         height: StyleSheet.hairlineWidth,
         backgroundColor: colors.border
     },
-    contextGrid: {
-        gap: spacing.md
-    },
-    contextPill: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: spacing.md,
+    trendPanel: {
         borderRadius: radius.md,
         backgroundColor: colors.primarySoft,
         borderColor: colors.border,
         borderWidth: StyleSheet.hairlineWidth,
-        padding: spacing.md
+        padding: spacing.md,
+        gap: spacing.sm
+    },
+    trendPanelHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.sm
+    },
+    contextLine: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: spacing.md
     },
     contextValue: {
         color: colors.primaryDark,
-        fontSize: 18,
+        flexShrink: 1,
+        textAlign: 'right',
+        fontSize: 16,
         fontWeight: '900'
     }
 });

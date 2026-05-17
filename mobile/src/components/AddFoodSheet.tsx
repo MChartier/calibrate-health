@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -31,7 +31,7 @@ type AddFoodSheetProps = {
 type AddFoodMode = 'quick' | 'search' | 'saved';
 
 const ADD_FOOD_MODES: Array<{ value: AddFoodMode; label: string }> = [
-    { value: 'quick', label: 'Quick' },
+    { value: 'quick', label: 'Manual' },
     { value: 'search', label: 'Search' },
     { value: 'saved', label: 'Saved' }
 ];
@@ -118,6 +118,9 @@ function buildRecentFoodPayload(
 
 /**
  * Focused add-food bottom sheet used by the Log tab and add-food route.
+ *
+ * The first tab is intentionally labeled Manual because it is a direct entry
+ * form; recent and reusable foods live under Saved.
  */
 export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
     visible,
@@ -388,7 +391,7 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
 
     return (
         <BottomSheetModal visible={visible} onRequestClose={onClose}>
-            <SectionHeader title="Add food" description={formatDateOnlyForDisplay(date)} />
+            <SectionHeader title="Add food" description={`${formatDateOnlyForDisplay(date)} | ${formatMealChipLabel(meal)}`} />
 
             {isDayComplete && (
                 <AppText variant="muted">This day is marked done. Reopen it from Log before adding more food.</AppText>
@@ -396,7 +399,11 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
 
             <View style={styles.section}>
                 <AppText variant="label">Meal</AppText>
-                <View style={styles.chips}>
+                <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.mealScroller}
+                >
                     {MEAL_OPTIONS.map((option) => (
                         <AppChip
                             key={option}
@@ -405,7 +412,7 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
                             onPress={() => setMeal(option)}
                         />
                     ))}
-                </View>
+                </ScrollView>
             </View>
 
             <SegmentedControl options={ADD_FOOD_MODES} value={mode} onChange={setMode} />
@@ -449,9 +456,8 @@ const styles = StyleSheet.create({
     section: {
         gap: spacing.md
     },
-    chips: {
+    mealScroller: {
         flexDirection: 'row',
-        flexWrap: 'wrap',
         gap: spacing.sm
     },
     list: {

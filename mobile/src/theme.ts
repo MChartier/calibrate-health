@@ -17,11 +17,11 @@ export const colors = {
 
 export const spacing = {
     xs: 4,
-    sm: 8,
-    md: 12,
-    lg: 16,
-    xl: 24,
-    xxl: 32
+    sm: 7,
+    md: 10,
+    lg: 14,
+    xl: 20,
+    xxl: 28
 };
 
 export const radius = {
@@ -31,11 +31,11 @@ export const radius = {
 };
 
 export const typography = {
-    title: 28,
-    screenTitle: 24,
-    subtitle: 18,
-    body: 16,
-    small: 14,
+    title: 26,
+    screenTitle: 22,
+    subtitle: 17,
+    body: 15,
+    small: 13,
     caption: 12
 };
 

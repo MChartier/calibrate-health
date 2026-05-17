@@ -171,7 +171,7 @@ export default function TodayScreen() {
     }
 
     return (
-        <Screen>
+        <Screen reserveBottomTabs>
             <DateNavigation navigation={dateNavigation} />
 
             {showContentSkeleton ? (

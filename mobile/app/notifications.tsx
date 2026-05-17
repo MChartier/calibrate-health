@@ -154,7 +154,7 @@ export default function NotificationsScreen() {
                                 onPress={() => dismissNotification.mutate(notification.id)}
                                 style={({ pressed }) => [styles.dismissButton, pressed && styles.pressed]}
                             >
-                                <Ionicons name="close" size={18} color={colors.danger} />
+                                <Ionicons name="close" size={18} color={colors.muted} />
                             </Pressable>
                         </View>
                     </AppCard>
@@ -231,7 +231,7 @@ const styles = StyleSheet.create({
         width: 10,
         height: 10,
         borderRadius: 5,
-        backgroundColor: colors.danger
+        backgroundColor: colors.primary
     },
     actions: {
         flexDirection: 'row',
@@ -246,7 +246,9 @@ const styles = StyleSheet.create({
         borderRadius: radius.md,
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: colors.surfaceAlt
+        backgroundColor: colors.surfaceAlt,
+        borderColor: colors.border,
+        borderWidth: StyleSheet.hairlineWidth
     },
     skeletonRow: {
         minHeight: 58,

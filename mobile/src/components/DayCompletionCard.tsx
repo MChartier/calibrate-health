@@ -12,7 +12,8 @@ type DayCompletionCardProps = ViewProps & {
 };
 
 /**
- * Compact day-completion control that mirrors the PWA "Done logging" row.
+ * Compact day-completion control that mirrors the PWA completion row while
+ * making the reminder-suppression behavior explicit on mobile.
  */
 export const DayCompletionCard: React.FC<DayCompletionCardProps> = ({
     isComplete,
@@ -39,8 +40,10 @@ export const DayCompletionCard: React.FC<DayCompletionCardProps> = ({
                     />
                 </View>
                 <View style={styles.textGroup}>
-                    <AppText variant="subtitle">Done logging</AppText>
-                    <AppText variant="caption">{isComplete ? 'Edits are locked.' : 'Food log remains open.'}</AppText>
+                    <AppText variant="subtitle">{isComplete ? 'Today complete' : 'Mark today complete'}</AppText>
+                    <AppText variant="caption">
+                        {isComplete ? 'Food-log reminders are paused.' : 'Stops food-log reminders for today.'}
+                    </AppText>
                 </View>
             </View>
             <Switch

@@ -203,25 +203,12 @@ export default function SettingsScreen() {
     }
 
     return (
-        <Screen>
-            <SectionHeader
-                title="Account"
-                description={user?.email ?? 'Account and app settings.'}
-            />
-
+        <Screen reserveBottomTabs>
             <AppCard>
-                <SectionHeader title="Server" description="Choose the hosted service or a self-hosted backend." />
-                <TextField label="Base URL" value={serverInput} onChangeText={setServerInput} autoCapitalize="none" />
-                <AppButton
-                    title="Save server URL"
-                    variant="secondary"
-                    leftIcon={<Ionicons name="server-outline" size={18} color={colors.text} />}
-                    onPress={() => void handleSaveServer()}
+                <SectionHeader
+                    title="Profile photo"
+                    description={user?.email ? `Signed in as ${user.email}.` : 'Used for your avatar across the app.'}
                 />
-            </AppCard>
-
-            <AppCard>
-                <SectionHeader title="Profile photo" description="Used for your avatar across the app." />
                 <View style={styles.avatarRow}>
                     <View style={styles.avatar}>
                         {user?.profile_image_url ? (
@@ -366,6 +353,17 @@ export default function SettingsScreen() {
                     variant="secondary"
                     leftIcon={<Ionicons name="cloud-upload-outline" size={18} color={colors.text} />}
                     onPress={() => importMutation.mutate()}
+                />
+            </AppCard>
+
+            <AppCard>
+                <SectionHeader title="Advanced" description="Hosted and self-hosted server connection." />
+                <TextField label="Server URL" value={serverInput} onChangeText={setServerInput} autoCapitalize="none" />
+                <AppButton
+                    title="Save connection"
+                    variant="secondary"
+                    leftIcon={<Ionicons name="server-outline" size={18} color={colors.text} />}
+                    onPress={() => void handleSaveServer()}
                 />
             </AppCard>
 

@@ -20,15 +20,16 @@ type GoalProgressCardProps = ViewProps & {
     onEditGoal?: () => void;
 };
 
-function describeGoalMode(goal: GoalEntry): string {
+function describeGoalPlan(goal: GoalEntry): string {
     const mode = getGoalModeFromDailyDeficit(goal.daily_deficit);
+    const dailyChange = formatSignedCalories(-goal.daily_deficit);
     switch (mode) {
         case 'gain':
-            return 'Gain goal';
+            return `Gaining weight with a ${dailyChange}/day plan.`;
         case 'maintain':
-            return 'Maintenance goal';
+            return 'Maintaining weight with a steady calorie target.';
         default:
-            return 'Loss goal';
+            return `Losing weight with a ${dailyChange}/day plan.`;
     }
 }
 
@@ -75,7 +76,7 @@ export const GoalProgressCard: React.FC<GoalProgressCardProps> = ({
     return (
         <AppCard {...props} style={style}>
             <View style={styles.headerRow}>
-                <SectionHeader title={title} description={`${describeGoalMode(goal)} | ${formatSignedCalories(-goal.daily_deficit)}/day intake change.`} style={styles.headerText} />
+                <SectionHeader title={title} description={describeGoalPlan(goal)} style={styles.headerText} />
                 {onEditGoal && <GoalActionButton label="Set a new goal" onPress={onEditGoal} />}
             </View>
             <View style={styles.goalEndpoints}>
@@ -87,7 +88,10 @@ export const GoalProgressCard: React.FC<GoalProgressCardProps> = ({
                 <AppText variant="body">Current {formatWeight(currentWeight, user?.weight_unit)}</AppText>
                 <AppText variant="body">{progress ? `${Math.round(progress.percent)}%` : 'Log weight'}</AppText>
             </View>
-            <AppText variant="subtitle">{projection}</AppText>
+            <View style={styles.projectionBlock}>
+                <AppText variant="caption">Projected goal date</AppText>
+                <AppText variant="subtitle">{projection}</AppText>
+            </View>
             {typeof targetCalories === 'number' && (
                 <AppText variant="caption">Current target: {Math.round(targetCalories).toLocaleString()} kcal/day</AppText>
             )}
@@ -142,5 +146,8 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'space-between',
         gap: spacing.md
+    },
+    projectionBlock: {
+        gap: spacing.xs
     }
 });

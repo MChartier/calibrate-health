@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -19,7 +19,7 @@ import { useAuth } from '../../src/auth/AuthContext';
 import { gramsToDisplayWeight } from '../../src/utils/bodyMeasurements';
 import { getTodayDate } from '../../src/utils/dates';
 import { formatSignedCalories, formatWeightUnit } from '../../src/utils/format';
-import { colors, spacing } from '../../src/theme';
+import { colors, radius, spacing } from '../../src/theme';
 
 type GoalMode = 'lose' | 'maintain' | 'gain';
 
@@ -31,6 +31,10 @@ const GOAL_MODES: Array<{ value: GoalMode; label: string }> = [
 
 const DAILY_CHANGE_OPTIONS = ALLOWED_DAILY_DEFICIT_ABS_VALUES.filter((value) => value !== 0);
 const WEIGHT_GOAL_STEP = 0.1; // Goal weights should match daily weigh-in precision.
+
+function formatWeightInput(value: number): string {
+    return value.toFixed(1).replace(/\.0$/, '');
+}
 
 function getGoalValidationError(goalMode: GoalMode, startWeight: number, targetWeight: number): string | null {
     if (!Number.isFinite(startWeight) || startWeight <= 0 || !Number.isFinite(targetWeight) || targetWeight <= 0) {
@@ -77,19 +81,6 @@ export default function ProgressScreen() {
     const [dailyChangeAbs, setDailyChangeAbs] = useState('500');
     const [validationError, setValidationError] = useState<string | null>(null);
 
-    useEffect(() => {
-        if (!goalQuery.data) return;
-        setStartWeight(String(goalQuery.data.start_weight));
-        setTargetWeight(String(goalQuery.data.target_weight));
-        setGoalMode(inferGoalMode(goalQuery.data.daily_deficit));
-        setDailyChangeAbs(String(Math.abs(goalQuery.data.daily_deficit) || 500));
-    }, [goalQuery.data]);
-
-    useEffect(() => {
-        if (startWeight.trim() || !profileQuery.data?.latest_weight_grams || !user?.weight_unit) return;
-        setStartWeight(gramsToDisplayWeight(profileQuery.data.latest_weight_grams, user.weight_unit));
-    }, [profileQuery.data?.latest_weight_grams, startWeight, user?.weight_unit]);
-
     const signedDailyDeficit = getSignedDailyDeficit(goalMode, dailyChangeAbs);
     const canSave = Number(startWeight) > 0 && Number(targetWeight) > 0 && Number.isFinite(Number(dailyChangeAbs));
 
@@ -118,8 +109,36 @@ export default function ProgressScreen() {
         saveGoal.mutate();
     }
 
+    function getDefaultStartWeight(): string {
+        const latestWeight = metricsQuery.data?.[0]?.weight;
+        if (typeof latestWeight === 'number' && Number.isFinite(latestWeight)) {
+            return formatWeightInput(latestWeight);
+        }
+
+        const trendWeight = trendSummaryQuery.data?.metrics[0]?.trend_weight;
+        if (typeof trendWeight === 'number' && Number.isFinite(trendWeight)) {
+            return formatWeightInput(trendWeight);
+        }
+
+        if (profileQuery.data?.latest_weight_grams && user?.weight_unit) {
+            return gramsToDisplayWeight(profileQuery.data.latest_weight_grams, user.weight_unit);
+        }
+
+        return goalQuery.data ? formatWeightInput(goalQuery.data.start_weight) : '';
+    }
+
+    function openGoalEditor() {
+        const currentGoal = goalQuery.data;
+        setStartWeight(getDefaultStartWeight());
+        setTargetWeight(currentGoal ? formatWeightInput(currentGoal.target_weight) : '');
+        setGoalMode(inferGoalMode(currentGoal?.daily_deficit));
+        setDailyChangeAbs(String(Math.abs(currentGoal?.daily_deficit ?? 500) || 500));
+        setValidationError(null);
+        setIsGoalEditorOpen(true);
+    }
+
     return (
-        <Screen>
+        <Screen reserveBottomTabs>
             <WeightStatusCard
                 latestMetric={metricsQuery.data?.[0]}
                 latestTrendMetric={trendSummaryQuery.data?.metrics[0]}
@@ -127,17 +146,14 @@ export default function ProgressScreen() {
                 onEditWeight={() => setIsWeightEditorOpen(true)}
             />
 
-            <WeightTrendCard
-                title="Weight trend"
-                targetWeight={goalQuery.data?.target_weight}
-            />
+            <WeightTrendCard title="Weight trend" />
 
             <GoalProgressCard
                 title="Goal projection"
                 goal={goalQuery.data}
                 latestMetric={metricsQuery.data?.[0]}
                 user={user}
-                onEditGoal={() => setIsGoalEditorOpen(true)}
+                onEditGoal={openGoalEditor}
             />
 
             <BottomSheetModal visible={isGoalEditorOpen} onRequestClose={() => setIsGoalEditorOpen(false)}>
@@ -146,26 +162,23 @@ export default function ProgressScreen() {
                     description={`Weights are entered in ${formatWeightUnit(user?.weight_unit)}.`}
                 />
                 <SegmentedControl options={GOAL_MODES} value={goalMode} onChange={setGoalMode} />
-                <View style={styles.row}>
-                    <NumberStepperField
-                        label="Start"
-                        value={startWeight}
-                        onChangeText={setStartWeight}
-                        step={WEIGHT_GOAL_STEP}
-                        min={WEIGHT_GOAL_STEP}
-                        suffix={formatWeightUnit(user?.weight_unit)}
-                        containerStyle={styles.rowField}
-                    />
-                    <NumberStepperField
-                        label="Target"
-                        value={targetWeight}
-                        onChangeText={setTargetWeight}
-                        step={WEIGHT_GOAL_STEP}
-                        min={WEIGHT_GOAL_STEP}
-                        suffix={formatWeightUnit(user?.weight_unit)}
-                        containerStyle={styles.rowField}
-                    />
+                <View style={styles.startingContext}>
+                    <Ionicons name="scale-outline" size={18} color={colors.primaryDark} />
+                    <View style={styles.startingText}>
+                        <AppText variant="label">Starting from</AppText>
+                        <AppText style={styles.startingValue}>
+                            {startWeight ? `${startWeight} ${formatWeightUnit(user?.weight_unit)}` : 'Log a current weight first'}
+                        </AppText>
+                    </View>
                 </View>
+                <NumberStepperField
+                    label="Target"
+                    value={targetWeight}
+                    onChangeText={setTargetWeight}
+                    step={WEIGHT_GOAL_STEP}
+                    min={WEIGHT_GOAL_STEP}
+                    suffix={formatWeightUnit(user?.weight_unit)}
+                />
                 {goalMode !== 'maintain' && (
                     <>
                         <AppText variant="label">Daily calorie change</AppText>
@@ -226,6 +239,24 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         flexWrap: 'wrap',
         gap: spacing.sm
+    },
+    startingContext: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.md,
+        borderRadius: radius.md,
+        backgroundColor: colors.primarySoft,
+        borderColor: colors.border,
+        borderWidth: StyleSheet.hairlineWidth,
+        padding: spacing.md
+    },
+    startingText: {
+        flex: 1,
+        minWidth: 0
+    },
+    startingValue: {
+        color: colors.primaryDark,
+        fontWeight: '900'
     },
     error: {
         color: colors.danger
