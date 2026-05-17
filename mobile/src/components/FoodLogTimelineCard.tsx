@@ -34,7 +34,7 @@ const MEAL_ICONS: Record<MealPeriod, keyof typeof Ionicons.glyphMap> = {
     EVENING_SNACK: 'wine-outline'
 };
 
-const TIMELINE_ICON_SIZE = 36; // Keeps meal icons aligned with the PWA-style vertical timeline.
+const TIMELINE_ICON_SIZE = 34; // Keeps meal icons aligned with the PWA-style vertical timeline without dominating phone rows.
 
 function getServingText(entry: FoodLogEntry): string | null {
     if (typeof entry.servings_consumed !== 'number' || !Number.isFinite(entry.servings_consumed)) return null;
@@ -167,8 +167,7 @@ const MealTimelineRow: React.FC<MealTimelineRowProps> = ({
                             onPress={() => onAddMeal(group.meal)}
                             style={({ pressed }) => [styles.addMealButton, disabled && styles.disabled, pressed && styles.pressed]}
                         >
-                            <Ionicons name="add" size={17} color={disabled ? colors.muted : colors.primaryDark} />
-                            <AppText style={[styles.addMealText, disabled && styles.disabledText]}>Add</AppText>
+                            <Ionicons name="add" size={20} color={disabled ? colors.muted : colors.primaryDark} />
                         </Pressable>
                         {hasEntries ? (
                             <Pressable
@@ -255,7 +254,7 @@ const styles = StyleSheet.create({
     },
     mealRow: {
         flexDirection: 'row',
-        minHeight: 68
+        minHeight: 64
     },
     rail: {
         width: TIMELINE_ICON_SIZE,
@@ -293,7 +292,7 @@ const styles = StyleSheet.create({
     mealContent: {
         flex: 1,
         minWidth: 0,
-        paddingLeft: spacing.sm,
+        paddingLeft: spacing.md,
         paddingBottom: spacing.md
     },
     mealHeader: {
@@ -318,24 +317,23 @@ const styles = StyleSheet.create({
     mealMetaRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: spacing.sm
+        gap: spacing.xs,
+        flexShrink: 0
     },
     mealCalories: {
         color: colors.muted,
         fontWeight: '800',
-        textAlign: 'right'
+        textAlign: 'right',
+        fontSize: 15
     },
     addMealButton: {
-        minHeight: 36,
+        width: 34,
+        height: 34,
         flexDirection: 'row',
         alignItems: 'center',
-        gap: spacing.xs,
-        paddingHorizontal: spacing.sm,
-        borderRadius: radius.md
-    },
-    addMealText: {
-        color: colors.primaryDark,
-        fontWeight: '900'
+        justifyContent: 'center',
+        borderRadius: radius.md,
+        backgroundColor: colors.primarySoft
     },
     expandButton: {
         width: 32,
@@ -372,9 +370,6 @@ const styles = StyleSheet.create({
     },
     disabled: {
         opacity: 0.45
-    },
-    disabledText: {
-        color: colors.muted
     },
     pressed: {
         backgroundColor: colors.surfacePressed

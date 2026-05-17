@@ -37,7 +37,12 @@ export const Screen: React.FC<ScreenProps> = ({ children, scroll = true, safeTop
     }
 
     return (
-        <ScrollView contentContainerStyle={contentStyle} style={styles.scroller}>
+        <ScrollView
+            contentContainerStyle={contentStyle}
+            keyboardDismissMode="on-drag"
+            keyboardShouldPersistTaps="handled"
+            style={styles.scroller}
+        >
             {children}
         </ScrollView>
     );

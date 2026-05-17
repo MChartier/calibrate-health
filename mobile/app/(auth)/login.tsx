@@ -5,6 +5,7 @@ import { AppButton } from '../../src/components/AppButton';
 import { AppCard } from '../../src/components/AppCard';
 import { AppText } from '../../src/components/AppText';
 import { Screen } from '../../src/components/Screen';
+import { ServerUrlControl } from '../../src/components/ServerUrlControl';
 import { SectionHeader } from '../../src/components/SectionHeader';
 import { TextField } from '../../src/components/TextField';
 import { useAuth } from '../../src/auth/AuthContext';
@@ -40,14 +41,7 @@ export default function LoginScreen() {
             </View>
 
             <AppCard>
-                <SectionHeader title="Sign in" description="Use your Calibrate account on the hosted service or your own server." />
-                <TextField
-                    label="Server"
-                    autoCapitalize="none"
-                    value={serverInput}
-                    onChangeText={setServerInput}
-                    helperText="Use the hosted URL by default, or enter a LAN/self-hosted backend URL."
-                />
+                <SectionHeader title="Sign in" description="Use your Calibrate account." />
                 <TextField
                     label="Email"
                     autoCapitalize="none"
@@ -61,6 +55,7 @@ export default function LoginScreen() {
                     value={password}
                     onChangeText={setPassword}
                 />
+                <ServerUrlControl value={serverInput} onChangeText={setServerInput} />
                 {(error || authError) && <AppText style={styles.error}>{error ?? authError}</AppText>}
                 <AppButton title={isSubmitting ? 'Signing in...' : 'Sign in'} disabled={isSubmitting} onPress={() => void handleLogin()} />
             </AppCard>

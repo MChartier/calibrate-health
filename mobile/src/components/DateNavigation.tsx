@@ -13,6 +13,9 @@ type DateNavigationProps = ViewProps & {
 
 /**
  * In-content local-day navigation for log-focused screens.
+ *
+ * The date pill opens the native calendar, so the row stays compact on phones
+ * and avoids the separate calendar button that made the Log tab feel crowded.
  */
 export const DateNavigation: React.FC<DateNavigationProps> = ({
     navigation,
@@ -53,6 +56,7 @@ export const DateNavigation: React.FC<DateNavigationProps> = ({
                     <AppText variant="subtitle" numberOfLines={1} adjustsFontSizeToFit style={styles.dateText}>
                         {navigation.isToday ? 'Today' : navigation.selectedDateLabel}
                     </AppText>
+                    <Ionicons name="calendar-outline" size={18} color={colors.primaryDark} />
                 </Pressable>
                 <IconPressable
                     label="Next day"
@@ -60,14 +64,6 @@ export const DateNavigation: React.FC<DateNavigationProps> = ({
                     disabled={!navigation.canGoForward}
                     onPress={navigation.goToNextDate}
                 />
-                <Pressable
-                    accessibilityRole="button"
-                    accessibilityLabel="Open calendar"
-                    onPress={openPicker}
-                    style={({ pressed }) => [styles.todayButton, pressed && styles.pressed]}
-                >
-                    <Ionicons name="calendar-outline" size={18} color={colors.primaryDark} />
-                </Pressable>
             </View>
 
             {pickerDate && (
@@ -113,8 +109,8 @@ const styles = StyleSheet.create({
         gap: spacing.sm
     },
     iconButton: {
-        width: 44,
-        height: 44,
+        width: 42,
+        height: 42,
         borderRadius: radius.md,
         alignItems: 'center',
         justifyContent: 'center',
@@ -124,27 +120,20 @@ const styles = StyleSheet.create({
     },
     datePill: {
         flex: 1,
-        minHeight: 44,
+        minHeight: 42,
+        flexDirection: 'row',
         borderRadius: radius.md,
         alignItems: 'center',
         justifyContent: 'center',
+        gap: spacing.sm,
         backgroundColor: colors.surface,
         borderColor: colors.border,
         borderWidth: StyleSheet.hairlineWidth,
         paddingHorizontal: spacing.md
     },
     dateText: {
-        textAlign: 'center'
-    },
-    todayButton: {
-        width: 44,
-        minHeight: 44,
-        borderRadius: radius.md,
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: colors.primarySoft,
-        borderColor: colors.primary,
-        borderWidth: StyleSheet.hairlineWidth
+        textAlign: 'center',
+        flexShrink: 1
     },
     disabled: {
         opacity: 0.45
