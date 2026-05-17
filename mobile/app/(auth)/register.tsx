@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
-import { Pressable, StyleSheet } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { Link } from 'expo-router';
 import { AppButton } from '../../src/components/AppButton';
 import { AppCard } from '../../src/components/AppCard';
 import { AppText } from '../../src/components/AppText';
 import { Screen } from '../../src/components/Screen';
+import { SectionHeader } from '../../src/components/SectionHeader';
 import { TextField } from '../../src/components/TextField';
 import { useAuth } from '../../src/auth/AuthContext';
-import { colors } from '../../src/theme';
+import { colors, spacing } from '../../src/theme';
 
 export default function RegisterScreen() {
     const { register, serverUrl, setServerUrl } = useAuth();
@@ -32,15 +33,33 @@ export default function RegisterScreen() {
     }
 
     return (
-        <Screen>
-            <AppText variant="title">Create account</AppText>
+        <Screen style={styles.screen}>
+            <View style={styles.header}>
+                <AppText variant="title">calibrate</AppText>
+                <AppText variant="muted">Create an account on the hosted service or your self-hosted Calibrate server.</AppText>
+            </View>
+
             <AppCard>
-                <TextField label="Server" autoCapitalize="none" value={serverInput} onChangeText={setServerInput} />
-                <TextField label="Email" autoCapitalize="none" keyboardType="email-address" value={email} onChangeText={setEmail} />
+                <SectionHeader title="Create account" description="Start with email, password, and the backend URL for this install." />
+                <TextField
+                    label="Server"
+                    autoCapitalize="none"
+                    value={serverInput}
+                    onChangeText={setServerInput}
+                    helperText="Use the LAN host port when testing against the devcontainer."
+                />
+                <TextField
+                    label="Email"
+                    autoCapitalize="none"
+                    keyboardType="email-address"
+                    value={email}
+                    onChangeText={setEmail}
+                />
                 <TextField label="Password" secureTextEntry value={password} onChangeText={setPassword} />
                 {error && <AppText style={styles.error}>{error}</AppText>}
                 <AppButton title={isSubmitting ? 'Creating...' : 'Create account'} disabled={isSubmitting} onPress={() => void handleRegister()} />
             </AppCard>
+
             <Pressable>
                 <Link href="/(auth)/login" asChild>
                     <AppText style={styles.link}>Back to sign in</AppText>
@@ -51,12 +70,22 @@ export default function RegisterScreen() {
 }
 
 const styles = StyleSheet.create({
+    screen: {
+        justifyContent: 'center',
+        flexGrow: 1,
+        maxWidth: 520,
+        width: '100%',
+        alignSelf: 'center'
+    },
+    header: {
+        gap: spacing.sm
+    },
     error: {
         color: colors.danger
     },
     link: {
         color: colors.primary,
-        fontWeight: '700',
+        fontWeight: '800',
         textAlign: 'center'
     }
 });

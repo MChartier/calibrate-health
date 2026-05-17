@@ -1,14 +1,43 @@
 import React from 'react';
 import { ScrollView, StyleSheet, View, type ViewProps } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, spacing } from '../theme';
 
-export const Screen: React.FC<ViewProps & { scroll?: boolean }> = ({ children, scroll = true, style }) => {
+type ScreenProps = ViewProps & {
+    scroll?: boolean;
+    safeTop?: boolean;
+};
+
+export const Screen: React.FC<ScreenProps> = ({ children, scroll = true, safeTop = false, style }) => {
+    const insets = useSafeAreaInsets();
+    const contentStyle = [
+        styles.content,
+        {
+            paddingTop: safeTop ? insets.top + spacing.lg : spacing.lg,
+            paddingBottom: spacing.xl + (safeTop ? insets.bottom : 0)
+        },
+        style
+    ];
+
     if (!scroll) {
-        return <View style={[styles.root, style]}>{children}</View>;
+        return (
+            <View
+                style={[
+                    styles.root,
+                    {
+                        paddingTop: safeTop ? insets.top + spacing.lg : spacing.lg,
+                        paddingBottom: spacing.xl + (safeTop ? insets.bottom : 0)
+                    },
+                    style
+                ]}
+            >
+                {children}
+            </View>
+        );
     }
 
     return (
-        <ScrollView contentContainerStyle={[styles.content, style]} style={styles.scroller}>
+        <ScrollView contentContainerStyle={contentStyle} style={styles.scroller}>
             {children}
         </ScrollView>
     );
@@ -26,7 +55,7 @@ const styles = StyleSheet.create({
         backgroundColor: colors.background
     },
     content: {
-        padding: spacing.lg,
+        paddingHorizontal: spacing.lg,
         gap: spacing.lg
     }
 });

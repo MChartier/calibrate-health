@@ -122,11 +122,30 @@ export type FoodLogEntry = {
 export type FoodLogCreatePayload = {
     date: string;
     meal_period: MealPeriod;
-    name: string;
-    calories: number;
+    name?: string;
+    calories?: number;
     my_food_id?: number | null;
     servings_consumed?: number | null;
+    serving_size_quantity_snapshot?: number | null;
+    serving_unit_label_snapshot?: string | null;
+    calories_per_serving_snapshot?: number | null;
+    external_source?: string | null;
+    external_id?: string | null;
+    brand?: string | null;
+    locale?: string | null;
+    barcode?: string | null;
+    measure_label?: string | null;
+    grams_per_measure_snapshot?: number | null;
+    measure_quantity_snapshot?: number | null;
+    grams_total_snapshot?: number | null;
 };
+
+export type FoodLogUpdatePayload = Partial<{
+    name: string;
+    calories: number;
+    meal_period: MealPeriod;
+    servings_consumed: number | null;
+}>;
 
 export type FoodSearchResult = {
     id: string;
@@ -175,6 +194,33 @@ export type NativePushSubscriptionPayload = {
     provider?: NativePushProvider;
 };
 
+export type RecentFoodSummary = {
+    id: string;
+    name: string;
+    meal_period: MealPeriod;
+    calories: number;
+    my_food_id: number | null;
+    servings_consumed: number | null;
+    serving_size_quantity_snapshot: number | null;
+    serving_unit_label_snapshot: string | null;
+    calories_per_serving_snapshot: number | null;
+    external_source: string | null;
+    external_id: string | null;
+    brand_snapshot: string | null;
+    locale_snapshot: string | null;
+    barcode_snapshot: string | null;
+    measure_label_snapshot: string | null;
+    grams_per_measure_snapshot: number | null;
+    measure_quantity_snapshot: number | null;
+    grams_total_snapshot: number | null;
+    last_logged_at: string;
+    times_logged: number;
+};
+
+export type RecentFoodsResponse = {
+    items: RecentFoodSummary[];
+};
+
 export type MyFoodSummary = {
     id: number;
     type: 'FOOD' | 'RECIPE';
@@ -184,6 +230,70 @@ export type MyFoodSummary = {
     calories_per_serving: number;
     recipe_total_calories?: number | null;
     yield_servings?: number | null;
+};
+
+export type RecipeIngredientSource = 'MY_FOOD' | 'EXTERNAL';
+
+export type RecipeIngredientSummary = {
+    id: number;
+    recipe_id: number;
+    sort_order: number;
+    source: RecipeIngredientSource;
+    name_snapshot: string;
+    calories_total_snapshot: number;
+};
+
+export type MyFoodDetail = MyFoodSummary & {
+    recipe_ingredients?: RecipeIngredientSummary[];
+};
+
+export type CreateRecipePayload = {
+    name: string;
+    serving_size_quantity: number;
+    serving_unit_label: string;
+    yield_servings: number;
+    ingredients: Array<
+        | {
+              source: 'MY_FOOD';
+              sort_order?: number;
+              my_food_id: number;
+              quantity_servings: number;
+          }
+        | {
+              source: 'EXTERNAL';
+              sort_order?: number;
+              name: string;
+              calories_total: number;
+              external_source?: string | null;
+              external_id?: string | null;
+              brand?: string | null;
+              locale?: string | null;
+              barcode?: string | null;
+              measure_label?: string | null;
+              grams_per_measure?: number | null;
+              measure_quantity?: number | null;
+              grams_total?: number | null;
+          }
+    >;
+};
+
+export type TrendMetricEntry = MetricEntry & {
+    user_id: number;
+    body_fat_percent: number | null;
+    trend_weight: number;
+    trend_ci_lower: number;
+    trend_ci_upper: number;
+    trend_std: number;
+};
+
+export type TrendMetricsResponse = {
+    metrics: TrendMetricEntry[];
+    meta: {
+        weekly_rate: number;
+        volatility: 'low' | 'medium' | 'high';
+        total_points: number;
+        total_span_days: number;
+    };
 };
 
 export type LoseItImportSummary = {

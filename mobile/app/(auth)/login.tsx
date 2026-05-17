@@ -5,6 +5,7 @@ import { AppButton } from '../../src/components/AppButton';
 import { AppCard } from '../../src/components/AppCard';
 import { AppText } from '../../src/components/AppText';
 import { Screen } from '../../src/components/Screen';
+import { SectionHeader } from '../../src/components/SectionHeader';
 import { TextField } from '../../src/components/TextField';
 import { useAuth } from '../../src/auth/AuthContext';
 import { colors, spacing } from '../../src/theme';
@@ -35,15 +36,17 @@ export default function LoginScreen() {
         <Screen style={styles.screen}>
             <View style={styles.header}>
                 <AppText variant="title">calibrate</AppText>
-                <AppText variant="muted">Native Android client for fast daily logging.</AppText>
+                <AppText variant="muted">Fast daily logging with the same food, weight, and goal data as the web app.</AppText>
             </View>
 
             <AppCard>
+                <SectionHeader title="Sign in" description="Use your Calibrate account or local dev seed user." />
                 <TextField
                     label="Server"
                     autoCapitalize="none"
                     value={serverInput}
                     onChangeText={setServerInput}
+                    helperText="Use the devcontainer host port from .devcontainer/.env for local testing."
                 />
                 <TextField
                     label="Email"
@@ -74,7 +77,10 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
     screen: {
         justifyContent: 'center',
-        flexGrow: 1
+        flexGrow: 1,
+        maxWidth: 520,
+        width: '100%',
+        alignSelf: 'center'
     },
     header: {
         gap: spacing.sm

@@ -1,8 +1,8 @@
 import React from 'react';
 import { Text, type TextProps, StyleSheet } from 'react-native';
-import { colors } from '../theme';
+import { colors, typography } from '../theme';
 
-export const AppText: React.FC<TextProps & { variant?: 'title' | 'subtitle' | 'body' | 'muted' }> = ({
+export const AppText: React.FC<TextProps & { variant?: 'title' | 'screenTitle' | 'subtitle' | 'body' | 'muted' | 'label' | 'metric' | 'caption' }> = ({
     style,
     variant = 'body',
     ...props
@@ -10,21 +10,48 @@ export const AppText: React.FC<TextProps & { variant?: 'title' | 'subtitle' | 'b
 
 const styles = StyleSheet.create({
     base: {
-        color: colors.text
+        color: colors.text,
+        fontVariant: ['tabular-nums']
     },
     title: {
-        fontSize: 28,
-        fontWeight: '800'
+        fontSize: typography.title,
+        fontWeight: '900',
+        letterSpacing: 0
+    },
+    screenTitle: {
+        fontSize: typography.screenTitle,
+        fontWeight: '900',
+        letterSpacing: 0
     },
     subtitle: {
-        fontSize: 18,
-        fontWeight: '700'
+        fontSize: typography.subtitle,
+        fontWeight: '800',
+        letterSpacing: 0
     },
     body: {
-        fontSize: 16
+        fontSize: typography.body,
+        lineHeight: 22
     },
     muted: {
         color: colors.muted,
-        fontSize: 14
+        fontSize: typography.small,
+        lineHeight: 20
+    },
+    label: {
+        color: colors.muted,
+        fontSize: typography.caption,
+        fontWeight: '800',
+        letterSpacing: 0,
+        textTransform: 'uppercase'
+    },
+    metric: {
+        fontSize: 32,
+        fontWeight: '900',
+        letterSpacing: 0
+    },
+    caption: {
+        color: colors.muted,
+        fontSize: typography.caption,
+        lineHeight: 16
     }
 });
