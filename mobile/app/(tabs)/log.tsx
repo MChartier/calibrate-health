@@ -17,7 +17,7 @@ export default function LogScreen() {
     }
 
     return (
-        <Screen>
+        <Screen reserveBottomTabs>
             <DateNavigation navigation={dateNavigation} />
 
             <AddFoodSheet

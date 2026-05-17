@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { StyleSheet, View, type ViewProps } from 'react-native';
-import Svg, { Circle, Line, Path, Polygon, Text as SvgText } from 'react-native-svg';
+import Svg, { Circle, Line, Path, Polygon } from 'react-native-svg';
 import { useQuery } from '@tanstack/react-query';
 import type { TrendMetricEntry } from '@calibrate/api-client';
 import { AppCard } from './AppCard';
@@ -17,7 +17,6 @@ type TrendRange = 'week' | 'month' | 'year' | 'all';
 type WeightTrendCardProps = ViewProps & {
     title?: string;
     description?: string;
-    targetWeight?: number | null;
     footer?: React.ReactNode;
 };
 
@@ -58,7 +57,7 @@ function buildBandPoints(points: ChartPoint[]): string {
     return [...upper, ...lower].join(' ');
 }
 
-function getChartPoints(metrics: TrendMetricEntry[], targetWeight?: number | null): ChartPoint[] {
+function getChartPoints(metrics: TrendMetricEntry[]): ChartPoint[] {
     const chronologicalMetrics = metrics
         .slice()
         .filter((metric) => Number.isFinite(metric.weight))
@@ -74,10 +73,6 @@ function getChartPoints(metrics: TrendMetricEntry[], targetWeight?: number | nul
         metric.trend_ci_lower,
         metric.trend_ci_upper
     ]);
-    if (typeof targetWeight === 'number' && Number.isFinite(targetWeight)) {
-        values.push(targetWeight);
-    }
-
     const minValue = Math.min(...values);
     const maxValue = Math.max(...values);
     const range = Math.max(maxValue - minValue, 0.1);
@@ -108,7 +103,6 @@ function getChartPoints(metrics: TrendMetricEntry[], targetWeight?: number | nul
 export const WeightTrendCard: React.FC<WeightTrendCardProps> = ({
     title = 'Weight trend',
     description,
-    targetWeight,
     footer,
     style,
     ...props
@@ -120,33 +114,12 @@ export const WeightTrendCard: React.FC<WeightTrendCardProps> = ({
         queryFn: () => api.getTrendMetrics({ range })
     });
 
-    const chartPoints = useMemo(
-        () => getChartPoints(trendQuery.data?.metrics ?? [], targetWeight),
-        [targetWeight, trendQuery.data?.metrics]
-    );
+    const chartPoints = useMemo(() => getChartPoints(trendQuery.data?.metrics ?? []), [trendQuery.data?.metrics]);
 
     const latest = trendQuery.data?.metrics[0] ?? null;
     const trendPath = chartPoints.length > 0 ? buildPath(chartPoints.map((point) => ({ x: point.x, y: point.trendY }))) : '';
     const rawPath = chartPoints.length > 0 ? buildPath(chartPoints.map((point) => ({ x: point.x, y: point.rawY }))) : '';
     const bandPoints = chartPoints.length > 1 ? buildBandPoints(chartPoints) : '';
-    const targetY = useMemo(() => {
-        if (typeof targetWeight !== 'number' || !Number.isFinite(targetWeight) || chartPoints.length === 0) return null;
-        const allValues = chartPoints.flatMap((point) => [
-            point.metric.weight,
-            point.metric.trend_weight,
-            point.metric.trend_ci_lower,
-            point.metric.trend_ci_upper,
-            targetWeight
-        ]);
-        const minValue = Math.min(...allValues);
-        const maxValue = Math.max(...allValues);
-        const rangeValue = Math.max(maxValue - minValue, 0.1);
-        const paddedMin = minValue - rangeValue * 0.08;
-        const paddedMax = maxValue + rangeValue * 0.08;
-        const drawableHeight = CHART_HEIGHT - CHART_PADDING_TOP - CHART_PADDING_BOTTOM;
-        return CHART_PADDING_TOP + drawableHeight - ((targetWeight - paddedMin) / (paddedMax - paddedMin)) * drawableHeight;
-    }, [chartPoints, targetWeight]);
-
     return (
         <AppCard {...props} style={style}>
             <View style={styles.headerRow}>
@@ -182,22 +155,6 @@ export const WeightTrendCard: React.FC<WeightTrendCardProps> = ({
                             strokeWidth={1}
                         />
                         {bandPoints.length > 0 && <Polygon points={bandPoints} fill={colors.primarySoft} opacity={0.72} />}
-                        {targetY !== null && (
-                            <>
-                                <Line
-                                    x1={CHART_PADDING_LEFT}
-                                    y1={targetY}
-                                    x2={CHART_WIDTH - CHART_PADDING_RIGHT}
-                                    y2={targetY}
-                                    stroke={colors.warning}
-                                    strokeDasharray="6 5"
-                                    strokeWidth={2}
-                                />
-                                <SvgText x={CHART_WIDTH - CHART_PADDING_RIGHT} y={Math.max(12, targetY - 4)} textAnchor="end" fill={colors.muted} fontSize="11" fontWeight="700">
-                                    target
-                                </SvgText>
-                            </>
-                        )}
                         {rawPath.length > 0 && (
                             <Path d={rawPath} stroke={colors.muted} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" fill="none" opacity={0.42} />
                         )}

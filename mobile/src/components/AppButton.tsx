@@ -64,7 +64,7 @@ const styles = StyleSheet.create({
         backgroundColor: 'transparent'
     },
     disabled: {
-        opacity: 0.55
+        opacity: 0.36
     },
     pressed: {
         transform: [{ translateY: 1 }],

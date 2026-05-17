@@ -2,11 +2,11 @@ import { MEAL_PERIODS, type MealPeriod, type WeightUnit } from '@calibrate/share
 
 const MEAL_LABELS: Record<MealPeriod, string> = {
     [MEAL_PERIODS.BREAKFAST]: 'Breakfast',
-    [MEAL_PERIODS.MORNING_SNACK]: 'Morning Snack',
+    [MEAL_PERIODS.MORNING_SNACK]: 'AM snack',
     [MEAL_PERIODS.LUNCH]: 'Lunch',
-    [MEAL_PERIODS.AFTERNOON_SNACK]: 'Afternoon Snack',
+    [MEAL_PERIODS.AFTERNOON_SNACK]: 'PM snack',
     [MEAL_PERIODS.DINNER]: 'Dinner',
-    [MEAL_PERIODS.EVENING_SNACK]: 'Evening Snack'
+    [MEAL_PERIODS.EVENING_SNACK]: 'Evening'
 };
 
 const MEAL_CHIP_LABELS: Record<MealPeriod, string> = {

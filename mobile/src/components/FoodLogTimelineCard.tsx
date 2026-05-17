@@ -34,7 +34,7 @@ const MEAL_ICONS: Record<MealPeriod, keyof typeof Ionicons.glyphMap> = {
     EVENING_SNACK: 'wine-outline'
 };
 
-const TIMELINE_ICON_SIZE = 34; // Keeps meal icons aligned with the PWA-style vertical timeline without dominating phone rows.
+const TIMELINE_ICON_SIZE = 30; // Keeps meal icons aligned with the PWA-style vertical timeline without dominating phone rows.
 
 function getServingText(entry: FoodLogEntry): string | null {
     if (typeof entry.servings_consumed !== 'number' || !Number.isFinite(entry.servings_consumed)) return null;
@@ -105,8 +105,9 @@ export const FoodLogTimelineCard: React.FC<FoodLogTimelineCardProps> = ({
 
             <AppButton
                 title="Add food"
+                variant={entries.length > 0 ? 'secondary' : 'primary'}
                 disabled={disabled}
-                leftIcon={<Ionicons name="add" size={18} color="#ffffff" />}
+                leftIcon={<Ionicons name="add" size={18} color={entries.length > 0 ? colors.text : '#ffffff'} />}
                 onPress={onAddFood}
             />
         </AppCard>
@@ -154,7 +155,7 @@ const MealTimelineRow: React.FC<MealTimelineRowProps> = ({
             <View style={styles.mealContent}>
                 <View style={styles.mealHeader}>
                     <View style={styles.mealTitleRow}>
-                        <AppText variant="subtitle" numberOfLines={1} adjustsFontSizeToFit style={styles.mealTitle}>
+                        <AppText variant="body" numberOfLines={1} adjustsFontSizeToFit style={styles.mealTitle}>
                             {formatMealPeriod(group.meal)}
                         </AppText>
                     </View>
@@ -254,7 +255,7 @@ const styles = StyleSheet.create({
     },
     mealRow: {
         flexDirection: 'row',
-        minHeight: 64
+        minHeight: 54
     },
     rail: {
         width: TIMELINE_ICON_SIZE,
@@ -292,16 +293,16 @@ const styles = StyleSheet.create({
     mealContent: {
         flex: 1,
         minWidth: 0,
-        paddingLeft: spacing.md,
-        paddingBottom: spacing.md
+        paddingLeft: spacing.sm,
+        paddingBottom: spacing.sm
     },
     mealHeader: {
         minHeight: TIMELINE_ICON_SIZE,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        gap: spacing.sm,
-        paddingBottom: spacing.sm
+        gap: spacing.xs,
+        paddingBottom: spacing.xs
     },
     mealTitleRow: {
         flex: 1,
@@ -312,7 +313,8 @@ const styles = StyleSheet.create({
     },
     mealTitle: {
         flex: 1,
-        minWidth: 0
+        minWidth: 0,
+        fontWeight: '900'
     },
     mealMetaRow: {
         flexDirection: 'row',
@@ -324,11 +326,11 @@ const styles = StyleSheet.create({
         color: colors.muted,
         fontWeight: '800',
         textAlign: 'right',
-        fontSize: 15
+        fontSize: 14
     },
     addMealButton: {
-        width: 34,
-        height: 34,
+        width: 32,
+        height: 32,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
@@ -336,8 +338,8 @@ const styles = StyleSheet.create({
         backgroundColor: colors.primarySoft
     },
     expandButton: {
-        width: 32,
-        height: 32,
+        width: 28,
+        height: 28,
         alignItems: 'center',
         justifyContent: 'center'
     },
@@ -346,7 +348,7 @@ const styles = StyleSheet.create({
         borderTopWidth: StyleSheet.hairlineWidth
     },
     entryRow: {
-        minHeight: 50,
+        minHeight: 44,
         flexDirection: 'row',
         alignItems: 'center',
         gap: spacing.sm,

@@ -3,7 +3,7 @@ import { StyleSheet, View, type ViewProps } from 'react-native';
 import { AppCard } from './AppCard';
 import { AppText } from './AppText';
 import { ProgressBar } from './ProgressBar';
-import { colors, spacing } from '../theme';
+import { colors, radius, spacing } from '../theme';
 import { formatNumber } from '../utils/format';
 
 type CalorieBalanceCardProps = ViewProps & {
@@ -21,7 +21,10 @@ function getBalanceTone(remaining: number | null): 'primary' | 'warning' | 'dang
 }
 
 /**
- * Native log summary modeled after the PWA calorie card: one large balance, one labeled bar, one logged/target line.
+ * Native log summary modeled after the PWA calorie card.
+ *
+ * Empty days keep the large motivating balance; once food is logged, the card
+ * becomes more scannable by surfacing eaten, remaining, and target together.
  */
 export const CalorieBalanceCard: React.FC<CalorieBalanceCardProps> = ({
     totalCalories,
@@ -37,13 +40,14 @@ export const CalorieBalanceCard: React.FC<CalorieBalanceCardProps> = ({
     const progressValue = hasTarget ? Math.min(totalCalories, targetCalories) / gaugeMax : 0;
     const balanceValue = remaining === null ? '-' : formatNumber(Math.abs(remaining), 0);
     const balanceLabel = remaining === null ? 'kcal target unavailable' : isOver ? 'kcal over' : 'kcal left';
+    const hasLoggedFood = totalCalories > 0;
 
     return (
         <AppCard {...props} style={style}>
-            <View style={styles.balanceLine}>
-                <AppText style={[styles.balanceNumber, styles[`${tone}Text`]]}>{balanceValue}</AppText>
-                <AppText style={styles.balanceUnit}>kcal</AppText>
-                <AppText style={styles.balanceLabel}>{balanceLabel.replace('kcal ', '')}</AppText>
+            <View style={[styles.balanceLine, hasLoggedFood && styles.balanceLineCompact]}>
+                <AppText style={[styles.balanceNumber, hasLoggedFood && styles.balanceNumberLogged, styles[`${tone}Text`]]}>{balanceValue}</AppText>
+                <AppText style={[styles.balanceUnit, hasLoggedFood && styles.balanceUnitLogged]}>kcal</AppText>
+                <AppText style={[styles.balanceLabel, hasLoggedFood && styles.balanceUnitLogged]}>{balanceLabel.replace('kcal ', '')}</AppText>
             </View>
             <View style={styles.progressGroup}>
                 <ProgressBar
@@ -52,13 +56,26 @@ export const CalorieBalanceCard: React.FC<CalorieBalanceCardProps> = ({
                     tone={tone}
                     style={styles.progress}
                 />
-                <AppText variant="label" style={styles.loggedLine}>
-                    {formatNumber(totalCalories, 0)} eaten | {hasTarget ? formatNumber(targetCalories, 0) : '-'} target
-                </AppText>
+                <View style={styles.statRow}>
+                    <CalorieStat label="Eaten" value={formatNumber(totalCalories, 0)} />
+                    <CalorieStat label={isOver ? 'Over' : 'Left'} value={remaining === null ? '-' : formatNumber(Math.abs(remaining), 0)} tone={tone} />
+                    <CalorieStat label="Target" value={hasTarget ? formatNumber(targetCalories, 0) : '-'} />
+                </View>
             </View>
         </AppCard>
     );
 };
+
+const CalorieStat: React.FC<{ label: string; value: string; tone?: 'primary' | 'warning' | 'danger' }> = ({
+    label,
+    value,
+    tone
+}) => (
+    <View style={styles.stat}>
+        <AppText variant="caption">{label}</AppText>
+        <AppText style={[styles.statValue, tone && styles[`${tone}Text`]]}>{value}</AppText>
+    </View>
+);
 
 const styles = StyleSheet.create({
     balanceLine: {
@@ -68,20 +85,30 @@ const styles = StyleSheet.create({
         gap: spacing.sm
     },
     balanceNumber: {
-        fontSize: 56,
-        lineHeight: 64,
+        fontSize: 48,
+        lineHeight: 56,
         fontWeight: '900',
         letterSpacing: 0
     },
+    balanceNumberLogged: {
+        fontSize: 38,
+        lineHeight: 44
+    },
     balanceUnit: {
         color: colors.warning,
-        fontSize: 24,
+        fontSize: 22,
         fontWeight: '900'
+    },
+    balanceUnitLogged: {
+        fontSize: 18
     },
     balanceLabel: {
         color: colors.muted,
-        fontSize: 24,
+        fontSize: 22,
         fontWeight: '900'
+    },
+    balanceLineCompact: {
+        marginBottom: -spacing.xs
     },
     primaryText: {
         color: colors.primary
@@ -98,7 +125,22 @@ const styles = StyleSheet.create({
     progress: {
         height: 10
     },
-    loggedLine: {
-        textAlign: 'center'
+    statRow: {
+        flexDirection: 'row',
+        gap: spacing.sm
+    },
+    stat: {
+        flex: 1,
+        minWidth: 0,
+        alignItems: 'center',
+        borderRadius: radius.md,
+        backgroundColor: colors.surfaceAlt,
+        paddingVertical: spacing.sm,
+        paddingHorizontal: spacing.xs
+    },
+    statValue: {
+        color: colors.text,
+        fontSize: 16,
+        fontWeight: '900'
     }
 });

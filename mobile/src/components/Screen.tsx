@@ -6,15 +6,25 @@ import { colors, spacing } from '../theme';
 type ScreenProps = ViewProps & {
     scroll?: boolean;
     safeTop?: boolean;
+    reserveBottomTabs?: boolean;
 };
 
-export const Screen: React.FC<ScreenProps> = ({ children, scroll = true, safeTop = false, style }) => {
+const BOTTOM_TAB_RESERVED_SPACE = 56; // Keeps tab-owned scroll content clear of the native bottom navigation bar.
+
+export const Screen: React.FC<ScreenProps> = ({
+    children,
+    scroll = true,
+    safeTop = false,
+    reserveBottomTabs = false,
+    style
+}) => {
     const insets = useSafeAreaInsets();
+    const bottomPadding = spacing.xl + (safeTop ? insets.bottom : 0) + (reserveBottomTabs ? BOTTOM_TAB_RESERVED_SPACE : 0);
     const contentStyle = [
         styles.content,
         {
             paddingTop: safeTop ? insets.top + spacing.lg : spacing.lg,
-            paddingBottom: spacing.xl + (safeTop ? insets.bottom : 0)
+            paddingBottom: bottomPadding
         },
         style
     ];
@@ -26,7 +36,7 @@ export const Screen: React.FC<ScreenProps> = ({ children, scroll = true, safeTop
                     styles.root,
                     {
                         paddingTop: safeTop ? insets.top + spacing.lg : spacing.lg,
-                        paddingBottom: spacing.xl + (safeTop ? insets.bottom : 0)
+                        paddingBottom: bottomPadding
                     },
                     style
                 ]}

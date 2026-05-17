@@ -16,7 +16,7 @@ export default function WeightScreen() {
     }
 
     return (
-        <Screen>
+        <Screen reserveBottomTabs>
             <DateNavigation navigation={dateNavigation} />
 
             <WeightEntrySheet
