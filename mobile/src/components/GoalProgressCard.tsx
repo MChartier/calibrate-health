@@ -103,7 +103,7 @@ const GoalActionButton: React.FC<{ label: string; onPress: () => void }> = ({ la
         style={({ pressed }) => [styles.actionButton, pressed && styles.pressed]}
     >
         <Ionicons name="flag-outline" size={16} color={colors.primaryDark} />
-        <AppText style={styles.actionText}>{label}</AppText>
+        <AppText numberOfLines={1} adjustsFontSizeToFit style={styles.actionText}>{label}</AppText>
     </Pressable>
 );
 
@@ -131,7 +131,8 @@ const styles = StyleSheet.create({
     },
     actionText: {
         color: colors.primaryDark,
-        fontWeight: '900'
+        fontWeight: '900',
+        flexShrink: 1
     },
     pressed: {
         backgroundColor: colors.surfacePressed

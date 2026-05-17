@@ -157,18 +157,6 @@ const MealTimelineRow: React.FC<MealTimelineRowProps> = ({
                         <AppText variant="subtitle" numberOfLines={1} adjustsFontSizeToFit style={styles.mealTitle}>
                             {formatMealPeriod(group.meal)}
                         </AppText>
-                        {hasEntries ? (
-                            <Pressable
-                                accessibilityRole="button"
-                                accessibilityLabel={`${isExpanded ? 'Collapse' : 'Expand'} ${formatMealPeriod(group.meal)}`}
-                                onPress={() => onToggleMeal(group.meal)}
-                                style={({ pressed }) => [styles.expandButton, pressed && styles.pressed]}
-                            >
-                                <Ionicons name={isExpanded ? 'chevron-up' : 'chevron-down'} size={18} color={colors.muted} />
-                            </Pressable>
-                        ) : (
-                            <View style={styles.expandButton} />
-                        )}
                     </View>
                     <View style={styles.mealMetaRow}>
                         <AppText variant="body" style={styles.mealCalories}>{formatCalories(group.calories)}</AppText>
@@ -182,6 +170,18 @@ const MealTimelineRow: React.FC<MealTimelineRowProps> = ({
                             <Ionicons name="add" size={17} color={disabled ? colors.muted : colors.primaryDark} />
                             <AppText style={[styles.addMealText, disabled && styles.disabledText]}>Add</AppText>
                         </Pressable>
+                        {hasEntries ? (
+                            <Pressable
+                                accessibilityRole="button"
+                                accessibilityLabel={`${isExpanded ? 'Collapse' : 'Expand'} ${formatMealPeriod(group.meal)}`}
+                                onPress={() => onToggleMeal(group.meal)}
+                                style={({ pressed }) => [styles.expandButton, pressed && styles.pressed]}
+                            >
+                                <Ionicons name={isExpanded ? 'chevron-up' : 'chevron-down'} size={18} color={colors.muted} />
+                            </Pressable>
+                        ) : (
+                            <View style={styles.expandButton} />
+                        )}
                     </View>
                 </View>
                 {hasEntries && isExpanded && (
@@ -298,11 +298,15 @@ const styles = StyleSheet.create({
     },
     mealHeader: {
         minHeight: TIMELINE_ICON_SIZE,
-        justifyContent: 'center',
-        gap: spacing.xs,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: spacing.sm,
         paddingBottom: spacing.sm
     },
     mealTitleRow: {
+        flex: 1,
+        minWidth: 0,
         flexDirection: 'row',
         alignItems: 'center',
         gap: spacing.sm
@@ -314,12 +318,12 @@ const styles = StyleSheet.create({
     mealMetaRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'space-between',
         gap: spacing.sm
     },
     mealCalories: {
         color: colors.muted,
-        fontWeight: '800'
+        fontWeight: '800',
+        textAlign: 'right'
     },
     addMealButton: {
         minHeight: 36,

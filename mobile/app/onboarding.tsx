@@ -17,6 +17,7 @@ import { AppButton } from '../src/components/AppButton';
 import { AppCard } from '../src/components/AppCard';
 import { AppChip } from '../src/components/AppChip';
 import { AppText } from '../src/components/AppText';
+import { DatePickerField } from '../src/components/DatePickerField';
 import { LoadingState } from '../src/components/LoadingState';
 import { NumberStepperField } from '../src/components/NumberStepperField';
 import { Screen } from '../src/components/Screen';
@@ -40,6 +41,7 @@ const GOAL_MODES: Array<{ value: GoalMode; label: string }> = [
 ];
 
 const DAILY_CHANGE_OPTIONS = ALLOWED_DAILY_DEFICIT_ABS_VALUES.filter((value) => value !== 0);
+const WEIGHT_ENTRY_STEP = 0.1; // Keep setup weights aligned with the log-weight dialog.
 
 function getDetectedTimezone(): string {
     try {
@@ -231,8 +233,8 @@ export default function OnboardingScreen() {
                         label="Current"
                         value={currentWeight}
                         onChangeText={setCurrentWeight}
-                        step={0.5}
-                        min={0}
+                        step={WEIGHT_ENTRY_STEP}
+                        min={WEIGHT_ENTRY_STEP}
                         suffix={formatWeightUnit(weightUnit)}
                         containerStyle={styles.rowButton}
                     />
@@ -240,8 +242,8 @@ export default function OnboardingScreen() {
                         label="Target"
                         value={targetWeight}
                         onChangeText={setTargetWeight}
-                        step={0.5}
-                        min={0}
+                        step={WEIGHT_ENTRY_STEP}
+                        min={WEIGHT_ENTRY_STEP}
                         suffix={formatWeightUnit(weightUnit)}
                         containerStyle={styles.rowButton}
                     />
@@ -266,7 +268,13 @@ export default function OnboardingScreen() {
 
             <AppCard>
                 <SectionHeader title="Calorie burn" description="These fields power BMR, TDEE, and daily targets." />
-                <TextField label="Date of birth" value={dateOfBirth} onChangeText={setDateOfBirth} placeholder="YYYY-MM-DD" keyboardType="numbers-and-punctuation" />
+                <DatePickerField
+                    label="Date of birth"
+                    value={dateOfBirth}
+                    onChangeDate={setDateOfBirth}
+                    maximumDate={getTodayDate(timezone)}
+                    fallbackDate="1990-01-01"
+                />
                 <AppText variant="label">Sex</AppText>
                 <View style={styles.chips}>
                     {SEX_OPTIONS.map((option) => (
@@ -304,7 +312,7 @@ export default function OnboardingScreen() {
             </AppCard>
 
             <AppCard>
-                <SectionHeader title="Optional import" description="Bring in Lose It food logs and weights now or later from More." />
+                <SectionHeader title="Optional import" description="Bring in Lose It food logs and weights now or later from Account." />
                 {importMutation.data && (
                     <AppText variant="muted">
                         Imported {importMutation.data.food_logs.valid} food rows and {importMutation.data.weights.valid} weights.

@@ -28,7 +28,13 @@ export const AppButton: React.FC<PressableProps & {
     >
         <View style={styles.content}>
             {leftIcon}
-            <AppText style={[styles.label, variant !== 'primary' && variant !== 'danger' && styles.secondaryLabel]}>{title}</AppText>
+            <AppText
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                style={[styles.label, variant !== 'primary' && variant !== 'danger' && styles.secondaryLabel]}
+            >
+                {title}
+            </AppText>
         </View>
     </Pressable>
 );
@@ -68,11 +74,13 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        gap: spacing.sm
+        gap: spacing.sm,
+        minWidth: 0
     },
     label: {
         color: '#ffffff',
-        fontWeight: '800'
+        fontWeight: '800',
+        flexShrink: 1
     },
     secondaryLabel: {
         color: colors.text

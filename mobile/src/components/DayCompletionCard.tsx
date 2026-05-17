@@ -40,7 +40,7 @@ export const DayCompletionCard: React.FC<DayCompletionCardProps> = ({
                 </View>
                 <View style={styles.textGroup}>
                     <AppText variant="subtitle">Done logging</AppText>
-                    <AppText variant="caption">{isComplete ? 'Edits are locked until reopened.' : 'Tap when food logging is complete.'}</AppText>
+                    <AppText variant="caption">{isComplete ? 'Edits are locked.' : 'Food log remains open.'}</AppText>
                 </View>
             </View>
             <Switch

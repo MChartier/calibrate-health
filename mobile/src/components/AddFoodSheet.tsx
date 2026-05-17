@@ -12,6 +12,7 @@ import { AppText } from './AppText';
 import { BottomSheetModal } from './BottomSheetModal';
 import { NumberStepperField } from './NumberStepperField';
 import { SectionHeader } from './SectionHeader';
+import { SegmentedControl } from './SegmentedControl';
 import { TextField } from './TextField';
 import { useAuth } from '../auth/AuthContext';
 import { formatDateOnlyForDisplay } from '../utils/dates';
@@ -27,8 +28,39 @@ type AddFoodSheetProps = {
     onLogged?: () => void;
 };
 
+type AddFoodMode = 'quick' | 'search' | 'saved';
+
+const ADD_FOOD_MODES: Array<{ value: AddFoodMode; label: string }> = [
+    { value: 'quick', label: 'Quick' },
+    { value: 'search', label: 'Search' },
+    { value: 'saved', label: 'Saved' }
+];
+
+const SERVINGS_STEP = 0.1; // Food servings match the PWA precision and provider serving snapshots.
+const DEFAULT_RECENT_LIMIT = 8;
+const DEFAULT_SAVED_LIMIT = 8;
+
 function foodResultCalories(result: FoodSearchResult): string {
     return typeof result.calories === 'number' ? formatCalories(result.calories) : 'Calories not listed';
+}
+
+function parsePositiveServings(value: string): number {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
+}
+
+/**
+ * Choose the same time-aware default meal used by the PWA add-food dialog.
+ */
+function getDefaultMealPeriodForTime(now: Date): MealPeriod {
+    const minutesSinceMidnight = now.getHours() * 60 + now.getMinutes();
+
+    if (minutesSinceMidnight >= 21 * 60) return MEAL_PERIODS.EVENING_SNACK;
+    if (minutesSinceMidnight >= 16 * 60 + 30) return MEAL_PERIODS.DINNER;
+    if (minutesSinceMidnight >= 14 * 60) return MEAL_PERIODS.AFTERNOON_SNACK;
+    if (minutesSinceMidnight >= 11 * 60 + 30) return MEAL_PERIODS.LUNCH;
+    if (minutesSinceMidnight >= 9 * 60) return MEAL_PERIODS.MORNING_SNACK;
+    return MEAL_PERIODS.BREAKFAST;
 }
 
 function buildSearchFoodPayload(result: FoodSearchResult, date: string, meal: MealPeriod, servings: number): FoodLogCreatePayload {
@@ -49,7 +81,11 @@ function buildSearchFoodPayload(result: FoodSearchResult, date: string, meal: Me
     };
 }
 
-function buildRecentFoodPayload(recent: RecentFoodSummary, date: string, meal: MealPeriod): FoodLogCreatePayload {
+function buildRecentFoodPayload(
+    recent: RecentFoodSummary,
+    date: string,
+    meal: MealPeriod
+): FoodLogCreatePayload {
     if (recent.my_food_id) {
         return {
             date,
@@ -92,9 +128,10 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
 }) => {
     const { api } = useAuth();
     const queryClient = useQueryClient();
+    const [mode, setMode] = useState<AddFoodMode>('quick');
     const [name, setName] = useState('');
     const [calories, setCalories] = useState('');
-    const [meal, setMeal] = useState<MealPeriod>(initialMeal ?? MEAL_PERIODS.BREAKFAST);
+    const [meal, setMeal] = useState<MealPeriod>(initialMeal ?? getDefaultMealPeriodForTime(new Date()));
     const [servings, setServings] = useState('1');
     const [query, setQuery] = useState('');
     const [searchError, setSearchError] = useState<string | null>(null);
@@ -105,7 +142,7 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
     });
     const recentFoodsQuery = useQuery({
         queryKey: ['mobile-recent-foods'],
-        queryFn: () => api.getRecentFoods({ limit: 6 }),
+        queryFn: () => api.getRecentFoods({ limit: DEFAULT_RECENT_LIMIT }),
         enabled: visible
     });
     const myFoodsQuery = useQuery({
@@ -126,35 +163,39 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
             queryClient.invalidateQueries({ queryKey: ['mobile-food', date] }),
             queryClient.invalidateQueries({ queryKey: ['mobile-food-day', date] }),
             queryClient.invalidateQueries({ queryKey: ['mobile-profile'] }),
-            queryClient.invalidateQueries({ queryKey: ['mobile-recent-foods'] })
+            queryClient.invalidateQueries({ queryKey: ['mobile-recent-foods'] }),
+            queryClient.invalidateQueries({ queryKey: ['mobile-in-app-notifications'] })
         ]);
     }
 
-    async function confirmLogged() {
+    async function confirmLogged(closeDialog: boolean) {
         await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         await invalidateLogQueries();
         onLogged?.();
-        onClose();
+        if (closeDialog) {
+            onClose();
+        }
     }
 
     const addFood = useMutation({
-        mutationFn: () =>
+        mutationFn: (closeDialog: boolean) =>
             api.createFoodLog({
                 date,
                 meal_period: meal,
                 name: name.trim(),
                 calories: Number(calories)
-            }),
-        onSuccess: async () => {
+            }).then(() => closeDialog),
+        onSuccess: async (closeDialog) => {
             setName('');
             setCalories('');
-            await confirmLogged();
+            await confirmLogged(closeDialog);
         }
     });
 
     const logRecentFood = useMutation({
-        mutationFn: (recent: RecentFoodSummary) => api.createFoodLog(buildRecentFoodPayload(recent, date, meal)),
-        onSuccess: confirmLogged
+        mutationFn: (recent: RecentFoodSummary) =>
+            api.createFoodLog(buildRecentFoodPayload(recent, date, meal)),
+        onSuccess: () => confirmLogged(true)
     });
 
     const logMyFood = useMutation({
@@ -163,43 +204,186 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
                 date,
                 meal_period: meal,
                 my_food_id: item.id,
-                servings_consumed: Number(servings) > 0 ? Number(servings) : 1
+                servings_consumed: parsePositiveServings(servings)
             }),
-        onSuccess: confirmLogged
+        onSuccess: () => confirmLogged(true)
     });
 
     const logSearchResult = useMutation({
         mutationFn: (result: FoodSearchResult) =>
-            api.createFoodLog(buildSearchFoodPayload(result, date, meal, Number(servings) > 0 ? Number(servings) : 1)),
-        onSuccess: confirmLogged
+            api.createFoodLog(buildSearchFoodPayload(result, date, meal, parsePositiveServings(servings))),
+        onSuccess: () => confirmLogged(true)
     });
 
     const searchFood = useMutation({
         mutationFn: () => api.searchFood(query),
         onSuccess: (response) => {
             setSearchError(response.items.length === 0 ? 'No matching foods found.' : null);
-            const first = response.items[0];
-            if (first) {
-                applySearchResult(first);
-            }
         },
         onError: (error) => {
             setSearchError(error instanceof Error ? error.message : 'Food search failed.');
         }
     });
 
-    const canAdd = !isDayComplete && name.trim().length > 0 && Number.isFinite(Number(calories)) && Number(calories) >= 0;
-
-    function applySearchResult(result: FoodSearchResult) {
-        setName(result.name);
-        if (typeof result.calories === 'number') {
-            setCalories(String(Math.round(result.calories)));
-        }
-    }
+    const canAddQuick =
+        !isDayComplete &&
+        name.trim().length > 0 &&
+        Number.isFinite(Number(calories)) &&
+        Number(calories) >= 0;
+    const isSubmitting =
+        addFood.isPending || logRecentFood.isPending || logMyFood.isPending || logSearchResult.isPending;
+    const hasValidServings = Number.isFinite(Number(servings)) && Number(servings) > 0;
+    const servingsError = servings.trim().length > 0 && !hasValidServings ? 'Servings must be a positive number.' : null;
+    const recentFoods = recentFoodsQuery.data?.items ?? [];
+    const savedFoods = myFoodsQuery.data ?? [];
+    const visibleSavedFoods = savedFoods.slice(0, DEFAULT_SAVED_LIMIT);
 
     function openBarcodeScanner() {
         onClose();
         router.push({ pathname: '/barcode', params: { date, meal } });
+    }
+
+    function renderModeContent() {
+        if (mode === 'quick') {
+            return (
+                <View style={styles.section}>
+                    <TextField label="Food name" value={name} onChangeText={setName} editable={!isDayComplete && !isSubmitting} />
+                    <NumberStepperField
+                        label="Calories"
+                        value={calories}
+                        onChangeText={setCalories}
+                        step={25}
+                        min={0}
+                        suffix="kcal"
+                        editable={!isDayComplete && !isSubmitting}
+                    />
+                    {addFood.error && <AppText style={styles.error}>{addFood.error.message}</AppText>}
+                    <View style={styles.row}>
+                        <AppButton
+                            title={addFood.isPending ? 'Adding...' : 'Add another'}
+                            variant="secondary"
+                            disabled={!canAddQuick || addFood.isPending}
+                            leftIcon={<Ionicons name="add" size={18} color={colors.text} />}
+                            onPress={() => addFood.mutate(false)}
+                            style={styles.rowButton}
+                        />
+                        <AppButton
+                            title={addFood.isPending ? 'Adding...' : 'Add & close'}
+                            disabled={!canAddQuick || addFood.isPending}
+                            leftIcon={<Ionicons name="checkmark" size={18} color="#ffffff" />}
+                            onPress={() => addFood.mutate(true)}
+                            style={styles.rowButton}
+                        />
+                    </View>
+                </View>
+            );
+        }
+
+        if (mode === 'search') {
+            const results = searchFood.data?.items ?? [];
+            return (
+                <View style={styles.section}>
+                    <TextField
+                        label="Search foods"
+                        value={query}
+                        onChangeText={setQuery}
+                        returnKeyType="search"
+                        editable={!isDayComplete && !isSubmitting}
+                        onSubmitEditing={() => {
+                            if (query.trim()) searchFood.mutate();
+                        }}
+                    />
+                    <NumberStepperField
+                        label="Servings"
+                        value={servings}
+                        onChangeText={setServings}
+                        step={SERVINGS_STEP}
+                        min={SERVINGS_STEP}
+                        editable={!isDayComplete && !isSubmitting}
+                    />
+                    {servingsError && <AppText style={styles.error}>{servingsError}</AppText>}
+                    {searchError && <AppText style={styles.error}>{searchError}</AppText>}
+                    <View style={styles.row}>
+                        <AppButton
+                            title={searchFood.isPending ? 'Searching...' : 'Search'}
+                            disabled={isDayComplete || !query.trim() || searchFood.isPending}
+                            leftIcon={<Ionicons name="search" size={18} color="#ffffff" />}
+                            onPress={() => searchFood.mutate()}
+                            style={styles.rowButton}
+                        />
+                        <AppButton
+                            title="Scan"
+                            variant="secondary"
+                            disabled={isDayComplete || isSubmitting}
+                            leftIcon={<Ionicons name="barcode-outline" size={18} color={colors.text} />}
+                            onPress={openBarcodeScanner}
+                            style={styles.rowButton}
+                        />
+                    </View>
+                    {searchFood.data?.provider && (
+                        <AppText variant="caption">Results from {searchFood.data.provider}</AppText>
+                    )}
+                    <View style={styles.list}>
+                        {results.slice(0, 8).map((result) => (
+                            <FoodActionRow
+                                key={`${result.source ?? 'food'}-${result.id}`}
+                                title={result.name}
+                                subtitle={[result.brand, result.servingSize, foodResultCalories(result)].filter(Boolean).join(' | ')}
+                                disabled={isDayComplete || isSubmitting || !hasValidServings}
+                                onPress={() => logSearchResult.mutate(result)}
+                            />
+                        ))}
+                    </View>
+                </View>
+            );
+        }
+
+        return (
+            <View style={styles.section}>
+                <AppText variant="label">Recent foods</AppText>
+                <View style={styles.list}>
+                    {recentFoods.map((recent) => (
+                        <FoodActionRow
+                            key={recent.id}
+                            title={recent.name}
+                            subtitle={`${formatCalories(recent.calories)} | ${recent.times_logged}x`}
+                            disabled={isDayComplete || isSubmitting}
+                            onPress={() => logRecentFood.mutate(recent)}
+                        />
+                    ))}
+                    {recentFoodsQuery.isLoading && <AppText variant="muted">Loading recent foods...</AppText>}
+                    {!recentFoodsQuery.isLoading && recentFoods.length === 0 && (
+                        <AppText variant="muted">Recently logged foods will appear here.</AppText>
+                    )}
+                </View>
+
+                <NumberStepperField
+                    label="Saved food servings"
+                    value={servings}
+                    onChangeText={setServings}
+                    step={SERVINGS_STEP}
+                    min={SERVINGS_STEP}
+                    editable={!isDayComplete && !isSubmitting}
+                />
+                {servingsError && <AppText style={styles.error}>{servingsError}</AppText>}
+                <AppText variant="label">Saved foods and recipes</AppText>
+                <View style={styles.list}>
+                    {visibleSavedFoods.map((item) => (
+                        <FoodActionRow
+                            key={`my-food-${item.id}`}
+                            title={item.name}
+                            subtitle={`${item.type === 'RECIPE' ? 'Recipe' : 'Food'} | ${formatCalories(item.calories_per_serving)}`}
+                            disabled={isDayComplete || isSubmitting || !hasValidServings}
+                            onPress={() => logMyFood.mutate(item)}
+                        />
+                    ))}
+                    {myFoodsQuery.isLoading && <AppText variant="muted">Loading saved foods...</AppText>}
+                    {!myFoodsQuery.isLoading && savedFoods.length === 0 && (
+                        <AppText variant="muted">Create saved foods from My Foods to reuse them here.</AppText>
+                    )}
+                </View>
+            </View>
+        );
     }
 
     return (
@@ -210,126 +394,47 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
                 <AppText variant="muted">This day is marked done. Reopen it from Log before adding more food.</AppText>
             )}
 
-            <AppText variant="label">Meal</AppText>
-            <View style={styles.chips}>
-                {MEAL_OPTIONS.map((option) => (
-                    <AppChip
-                        key={option}
-                        label={formatMealChipLabel(option)}
-                        selected={option === meal}
-                        onPress={() => setMeal(option)}
-                    />
-                ))}
-            </View>
-
             <View style={styles.section}>
-                <SectionHeader title="Manual entry" />
-                <TextField label="Food name" value={name} onChangeText={setName} editable={!isDayComplete} />
-                <NumberStepperField label="Calories" value={calories} onChangeText={setCalories} step={25} min={0} suffix="kcal" />
-                {addFood.error && <AppText style={styles.error}>{addFood.error.message}</AppText>}
-                <AppButton
-                    title={addFood.isPending ? 'Adding...' : 'Add food'}
-                    disabled={!canAdd || addFood.isPending}
-                    leftIcon={<Ionicons name="add" size={18} color="#ffffff" />}
-                    onPress={() => addFood.mutate()}
-                />
-            </View>
-
-            <View style={styles.section}>
-                <SectionHeader title="Search or scan" />
-                <TextField label="Search foods" value={query} onChangeText={setQuery} returnKeyType="search" editable={!isDayComplete} />
-                <NumberStepperField label="Servings" value={servings} onChangeText={setServings} step={0.5} min={0.5} />
-                {searchError && <AppText style={styles.error}>{searchError}</AppText>}
-                <View style={styles.row}>
-                    <AppButton
-                        title={searchFood.isPending ? 'Searching...' : 'Search'}
-                        disabled={isDayComplete || !query.trim() || searchFood.isPending}
-                        leftIcon={<Ionicons name="search" size={18} color="#ffffff" />}
-                        onPress={() => searchFood.mutate()}
-                        style={styles.rowButton}
-                    />
-                    <AppButton
-                        title="Scan"
-                        variant="secondary"
-                        disabled={isDayComplete}
-                        leftIcon={<Ionicons name="barcode-outline" size={18} color={colors.text} />}
-                        onPress={openBarcodeScanner}
-                        style={styles.rowButton}
-                    />
-                </View>
-                {(searchFood.data?.items ?? []).slice(0, 3).map((result) => (
-                    <View key={`${result.source ?? 'food'}-${result.id}`} style={styles.searchResult}>
-                        <Pressable
-                            accessibilityRole="button"
-                            accessibilityLabel={`Use ${result.name} in manual entry`}
-                            onPress={() => applySearchResult(result)}
-                            style={({ pressed }) => [styles.searchText, pressed && styles.pressed]}
-                        >
-                            <AppText variant="body" numberOfLines={1}>{result.name}</AppText>
-                            <AppText variant="caption" numberOfLines={1}>{result.brand ?? result.servingSize ?? 'Food provider result'}</AppText>
-                        </Pressable>
-                        <View style={styles.searchActions}>
-                            <AppText variant="label">{foodResultCalories(result)}</AppText>
-                            <Pressable
-                                accessibilityRole="button"
-                                accessibilityLabel={`Log ${result.name}`}
-                                disabled={isDayComplete || logSearchResult.isPending}
-                                onPress={() => logSearchResult.mutate(result)}
-                                style={({ pressed }) => [styles.smallAddButton, (isDayComplete || logSearchResult.isPending) && styles.disabledButton, pressed && styles.pressed]}
-                            >
-                                <Ionicons name="add" size={18} color="#ffffff" />
-                            </Pressable>
-                        </View>
-                    </View>
-                ))}
-            </View>
-
-            <View style={styles.section}>
-                <SectionHeader title="Recent and saved" />
-                <View style={styles.quickGrid}>
-                    {(recentFoodsQuery.data?.items ?? []).slice(0, 3).map((recent) => (
-                        <QuickFoodButton
-                            key={recent.id}
-                            title={recent.name}
-                            subtitle={`${formatCalories(recent.calories)} | ${recent.times_logged}x`}
-                            disabled={isDayComplete || logRecentFood.isPending}
-                            onPress={() => logRecentFood.mutate(recent)}
-                        />
-                    ))}
-                    {(myFoodsQuery.data ?? []).slice(0, 3).map((item) => (
-                        <QuickFoodButton
-                            key={`my-food-${item.id}`}
-                            title={item.name}
-                            subtitle={`${item.type === 'RECIPE' ? 'Recipe' : 'Food'} | ${formatCalories(item.calories_per_serving)}`}
-                            disabled={isDayComplete || logMyFood.isPending}
-                            onPress={() => logMyFood.mutate(item)}
+                <AppText variant="label">Meal</AppText>
+                <View style={styles.chips}>
+                    {MEAL_OPTIONS.map((option) => (
+                        <AppChip
+                            key={option}
+                            label={formatMealChipLabel(option)}
+                            selected={option === meal}
+                            onPress={() => setMeal(option)}
                         />
                     ))}
                 </View>
-                {recentFoodsQuery.data?.items.length === 0 && myFoodsQuery.data?.length === 0 && (
-                    <AppText variant="muted">Log foods or create saved foods to reuse them here.</AppText>
-                )}
             </View>
+
+            <SegmentedControl options={ADD_FOOD_MODES} value={mode} onChange={setMode} />
+            {renderModeContent()}
         </BottomSheetModal>
     );
 };
 
-type QuickFoodButtonProps = {
+type FoodActionRowProps = {
     title: string;
     subtitle: string;
     disabled?: boolean;
     onPress: () => void;
 };
 
-const QuickFoodButton: React.FC<QuickFoodButtonProps> = ({ title, subtitle, disabled, onPress }) => (
+const FoodActionRow: React.FC<FoodActionRowProps> = ({ title, subtitle, disabled, onPress }) => (
     <Pressable
         accessibilityRole="button"
         disabled={disabled}
         onPress={onPress}
-        style={({ pressed }) => [styles.quickFood, disabled && styles.disabledButton, pressed && styles.pressed]}
+        style={({ pressed }) => [styles.foodRow, disabled && styles.disabledButton, pressed && styles.pressed]}
     >
-        <AppText variant="body" numberOfLines={1}>{title}</AppText>
-        <AppText variant="caption" numberOfLines={1}>{subtitle}</AppText>
+        <View style={styles.foodText}>
+            <AppText variant="body" numberOfLines={1}>{title}</AppText>
+            <AppText variant="caption" numberOfLines={1}>{subtitle}</AppText>
+        </View>
+        <View style={styles.addIcon}>
+            <Ionicons name="add" size={18} color="#ffffff" />
+        </View>
     </Pressable>
 );
 
@@ -349,36 +454,26 @@ const styles = StyleSheet.create({
         flexWrap: 'wrap',
         gap: spacing.sm
     },
-    quickGrid: {
+    list: {
         gap: spacing.sm
     },
-    quickFood: {
-        borderRadius: radius.md,
-        backgroundColor: colors.surfaceAlt,
-        padding: spacing.md,
-        gap: spacing.xs
-    },
-    searchResult: {
+    foodRow: {
+        minHeight: 58,
         flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'space-between',
         gap: spacing.md,
         borderRadius: radius.md,
         backgroundColor: colors.surfaceAlt,
         padding: spacing.md
     },
-    searchText: {
+    foodText: {
         flex: 1,
         minWidth: 0,
         gap: spacing.xs
     },
-    searchActions: {
-        alignItems: 'flex-end',
-        gap: spacing.sm
-    },
-    smallAddButton: {
-        width: 36,
-        height: 36,
+    addIcon: {
+        width: 34,
+        height: 34,
         borderRadius: radius.md,
         alignItems: 'center',
         justifyContent: 'center',

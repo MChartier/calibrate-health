@@ -1,7 +1,5 @@
 import React from 'react';
 import { StyleSheet, View, type ViewProps } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { AppButton } from './AppButton';
 import { AppCard } from './AppCard';
 import { AppText } from './AppText';
 import { ProgressBar } from './ProgressBar';
@@ -11,8 +9,6 @@ import { formatNumber } from '../utils/format';
 type CalorieBalanceCardProps = ViewProps & {
     totalCalories: number;
     targetCalories: number | null | undefined;
-    disabled?: boolean;
-    onAddFood: () => void;
 };
 
 const LOW_REMAINING_CALORIE_THRESHOLD = 125; // Warn near the target where the remaining number is most actionable.
@@ -30,8 +26,6 @@ function getBalanceTone(remaining: number | null): 'primary' | 'warning' | 'dang
 export const CalorieBalanceCard: React.FC<CalorieBalanceCardProps> = ({
     totalCalories,
     targetCalories,
-    disabled,
-    onAddFood,
     style,
     ...props
 }) => {
@@ -62,12 +56,6 @@ export const CalorieBalanceCard: React.FC<CalorieBalanceCardProps> = ({
                     {formatNumber(totalCalories, 0)} eaten | {hasTarget ? formatNumber(targetCalories, 0) : '-'} target
                 </AppText>
             </View>
-            <AppButton
-                title="Add food"
-                disabled={disabled}
-                leftIcon={<Ionicons name="add" size={18} color="#ffffff" />}
-                onPress={onAddFood}
-            />
         </AppCard>
     );
 };

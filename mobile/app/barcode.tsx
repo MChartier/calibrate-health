@@ -67,7 +67,8 @@ export default function BarcodeScreen() {
             await queryClient.invalidateQueries({ queryKey: ['mobile-food-day', selectedDate] });
             await queryClient.invalidateQueries({ queryKey: ['mobile-profile'] });
             await queryClient.invalidateQueries({ queryKey: ['mobile-recent-foods'] });
-            router.replace({ pathname: '/(tabs)/log', params: { date: selectedDate } });
+            await queryClient.invalidateQueries({ queryKey: ['mobile-in-app-notifications'] });
+            router.replace('/(tabs)/today');
         }
     });
 

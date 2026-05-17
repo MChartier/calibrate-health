@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Animated, Easing, Modal, Pressable, ScrollView, StyleSheet, View, type ViewStyle } from 'react-native';
+import { Animated, Easing, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, View, type ViewStyle } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, radius, shadows, spacing } from '../theme';
 
 type BottomSheetModalProps = {
@@ -20,6 +21,7 @@ export const BottomSheetModal: React.FC<BottomSheetModalProps> = ({
     children,
     maxHeight = '88%'
 }) => {
+    const insets = useSafeAreaInsets();
     const [shouldRender, setShouldRender] = useState(visible);
     const backdropOpacity = useRef(new Animated.Value(0)).current;
     const sheetProgress = useRef(new Animated.Value(1)).current;
@@ -77,16 +79,29 @@ export const BottomSheetModal: React.FC<BottomSheetModalProps> = ({
 
     return (
         <Modal visible transparent animationType="none" onRequestClose={onRequestClose}>
-            <View style={styles.root}>
+            <KeyboardAvoidingView
+                behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+                style={styles.root}
+            >
                 <Pressable accessibilityRole="button" accessibilityLabel="Close dialog" style={StyleSheet.absoluteFill} onPress={onRequestClose}>
                     <Animated.View style={[styles.backdrop, { opacity: backdropOpacity }]} />
                 </Pressable>
-                <Animated.View style={[styles.sheet, { maxHeight, transform: [{ translateY }] }]}>
+                <Animated.View
+                    style={[
+                        styles.sheet,
+                        {
+                            maxHeight,
+                            marginBottom: spacing.lg + insets.bottom,
+                            transform: [{ translateY }]
+                        }
+                    ]}
+                >
                     <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+                        <View style={styles.handle} />
                         {children}
                     </ScrollView>
                 </Animated.View>
-            </View>
+            </KeyboardAvoidingView>
         </Modal>
     );
 };
@@ -112,5 +127,13 @@ const styles = StyleSheet.create({
     content: {
         gap: spacing.md,
         padding: spacing.lg
+    },
+    handle: {
+        alignSelf: 'center',
+        width: 44,
+        height: 4,
+        borderRadius: radius.pill,
+        backgroundColor: colors.border,
+        marginBottom: spacing.xs
     }
 });
