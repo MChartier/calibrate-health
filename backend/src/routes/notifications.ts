@@ -8,12 +8,17 @@ import {
   resolveInactiveReminderNotificationsForUser
 } from '../services/inAppNotifications';
 import { getWebPushPublicKey } from '../services/webPush';
+import {
+  NOTIFICATION_REALTIME_EVENT_NAME,
+  subscribeToNotificationRealtimeUpdates
+} from '../services/notificationRealtime';
 import { parsePositiveInteger } from '../utils/requestParsing';
 
 /**
  * Push notification subscription endpoints plus in-app reminder feed endpoints.
  */
 const router = express.Router();
+const SSE_HEARTBEAT_INTERVAL_MS = 25_000; // Keep intermediaries from closing otherwise-idle notification streams.
 
 /**
  * Ensure the session is authenticated before accessing notification settings.
@@ -26,6 +31,43 @@ const isAuthenticated = (req: express.Request, res: express.Response, next: expr
 };
 
 router.use(isAuthenticated);
+
+/**
+ * Stream per-user notification state changes to the authenticated browser session.
+ */
+router.get('/stream', (req, res) => {
+  const user = req.user as { id: number };
+
+  res.status(200);
+  res.set({
+    'Content-Type': 'text/event-stream',
+    'Cache-Control': 'no-cache, no-transform',
+    Connection: 'keep-alive',
+    'X-Accel-Buffering': 'no'
+  });
+  res.flushHeaders?.();
+  res.write(': connected\n\n');
+
+  const writeEvent = (payload: unknown) => {
+    res.write(`event: ${NOTIFICATION_REALTIME_EVENT_NAME}\n`);
+    res.write(`data: ${JSON.stringify(payload)}\n\n`);
+  };
+
+  const unsubscribe = subscribeToNotificationRealtimeUpdates({
+    userId: user.id,
+    onUpdate: writeEvent
+  });
+
+  const heartbeatId = setInterval(() => {
+    res.write(': heartbeat\n\n');
+  }, SSE_HEARTBEAT_INTERVAL_MS);
+
+  req.on('close', () => {
+    clearInterval(heartbeatId);
+    unsubscribe();
+    res.end();
+  });
+});
 
 router.get('/public-key', (_req, res) => {
   const { publicKey, error } = getWebPushPublicKey();

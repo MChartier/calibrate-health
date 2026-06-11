@@ -13,17 +13,22 @@ function stubModule(resolvedPath, exports) {
   require.cache[resolvedPath] = moduleInstance;
 }
 
-function loadNotificationDeliveryService({ prismaStub, webPushStub }) {
+function loadNotificationDeliveryService({ prismaStub, webPushStub, notificationRealtimeStub }) {
   const dbPath = require.resolve('../src/config/database');
   const webPushPath = require.resolve('../src/services/webPush');
+  const notificationRealtimePath = require.resolve('../src/services/notificationRealtime');
   const servicePath = require.resolve('../src/services/notificationDelivery');
 
   const previousDbModule = require.cache[dbPath];
   const previousWebPushModule = require.cache[webPushPath];
+  const previousNotificationRealtimeModule = require.cache[notificationRealtimePath];
   delete require.cache[servicePath];
 
   stubModule(dbPath, prismaStub);
   stubModule(webPushPath, webPushStub);
+  if (notificationRealtimeStub) {
+    stubModule(notificationRealtimePath, notificationRealtimeStub);
+  }
 
   const loaded = require('../src/services/notificationDelivery');
 
@@ -32,6 +37,9 @@ function loadNotificationDeliveryService({ prismaStub, webPushStub }) {
 
   if (previousWebPushModule) require.cache[webPushPath] = previousWebPushModule;
   else delete require.cache[webPushPath];
+
+  if (previousNotificationRealtimeModule) require.cache[notificationRealtimePath] = previousNotificationRealtimeModule;
+  else delete require.cache[notificationRealtimePath];
 
   return loaded;
 }
@@ -116,6 +124,57 @@ test('deliverUserNotification creates one in-app notification and dedupes repeat
   assert.equal(createdRows[0].title, 'Test title');
   assert.equal(createdRows[0].body, 'Test body');
   assert.equal(createdRows[0].action_url, '/dashboard');
+});
+
+test('deliverUserNotification publishes realtime update when in-app notification is created', async () => {
+  const publishCalls = [];
+  const prismaStub = {
+    inAppNotification: {
+      findUnique: async () => null,
+      create: async ({ data }) => ({ id: 1, ...data })
+    },
+    pushSubscription: {
+      findUnique: async () => null,
+      findMany: async () => [],
+      update: async () => {
+        throw new Error('should not be called');
+      },
+      delete: async () => {
+        throw new Error('should not be called');
+      }
+    }
+  };
+
+  const webPushStub = {
+    ensureWebPushConfigured: () => ({ ok: true }),
+    sendWebPushNotification: async () => {
+      throw new Error('should not be called');
+    }
+  };
+
+  const { deliverUserNotification } = loadNotificationDeliveryService({
+    prismaStub,
+    webPushStub,
+    notificationRealtimeStub: {
+      publishNotificationRealtimeUpdate: (args) => {
+        publishCalls.push(args);
+      }
+    }
+  });
+
+  const result = await deliverUserNotification({
+    userId: 4,
+    channels: [NOTIFICATION_DELIVERY_CHANNELS.IN_APP],
+    inApp: {
+      type: 'GENERIC',
+      localDate: new Date('2026-02-08T00:00:00.000Z')
+    }
+  });
+
+  assert.equal(result.inApp.created, 1);
+  assert.equal(publishCalls.length, 1);
+  assert.equal(publishCalls[0].userId, 4);
+  assert.equal(publishCalls[0].reason, 'created');
 });
 
 test('deliverUserNotification skips push when endpoint lookup fails', async () => {
