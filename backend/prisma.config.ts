@@ -31,8 +31,8 @@ function getDatabaseUrlForPrisma(): string {
 /**
  * Compose a Postgres connection string from DB_* environment variables.
  *
- * ECS-hosted deployments inject DB host/name as plaintext and DB credentials as secrets, avoiding
- * the need to store a full DATABASE_URL string in Secrets Manager.
+ * Hosted deployments can inject DB host/name as plaintext and DB credentials as secrets, avoiding
+ * the need to store a full DATABASE_URL string in one secret.
  */
 function composeDatabaseUrlFromDbEnv(): string {
   const host = process.env.DB_HOST;

@@ -54,13 +54,7 @@
     "test:frontend": "npm --prefix frontend test",
     "test:coverage": "npm run test:coverage:backend && npm run test:coverage:frontend",
     "test:coverage:backend": "npm --prefix backend run test:coverage",
-    "test:coverage:frontend": "npm --prefix frontend run test:coverage",
-    "terraform:bootstrap:plan": "node scripts/terraform.mjs bootstrap plan",
-    "terraform:bootstrap:apply": "node scripts/terraform.mjs bootstrap apply",
-    "terraform:staging:plan": "node scripts/terraform.mjs staging plan",
-    "terraform:staging:apply": "node scripts/terraform.mjs staging apply",
-    "terraform:prod:plan": "node scripts/terraform.mjs prod plan",
-    "terraform:prod:apply": "node scripts/terraform.mjs prod apply"
+    "test:coverage:frontend": "npm --prefix frontend run test:coverage"
   },
   "keywords": [],
   "author": "",

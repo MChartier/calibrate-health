@@ -19,9 +19,7 @@ services:
       - app
 
   app:
-    # Full image reference, e.g.:
-    # - ECR: 123456789012.dkr.ecr.us-west-2.amazonaws.com/calibratehealth:staging
-    # - GHCR: ghcr.io/mchartier/calibratehealth:main
+    # Full image reference, e.g. ghcr.io/mchartier/calibratehealth:main
     image: ${APP_IMAGE}
     restart: unless-stopped
     environment:
