@@ -5,7 +5,5 @@
 .github
 .vscode
 .devcontainer
-infra
 coverage
 **/*.log
-
