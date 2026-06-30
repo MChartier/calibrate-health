@@ -32,14 +32,11 @@ attribution requirements: https://platform.fatsecret.com/docs/guides
 
 - Weight trend model: `docs/weight-trend-model.md`
 - Deployment (Compose self-hosting): `deploy/README.md`
-- AWS infra (ECS Fargate): `infra/README.md`
 - Frontend dev/build/PWA: `frontend/README.md`
 
 ## Self-hosting
 
-Two supported paths:
-
-### Option A: Docker Compose (single machine)
+### Docker Compose (single machine)
 
 For a production-oriented Compose stack (Caddy for HTTPS + reverse proxy, plus the app container), use the files in
 `deploy/`.
@@ -90,22 +87,6 @@ Notes:
   (see the repo root `docker-compose.yml` for a dev example).
 
 See [deploy/README.md](deploy/README.md) for required env vars, staging options, and notes.
-
-### Option B: AWS (Terraform)
-
-The `infra/` folder contains the Terraform + GitHub Actions workflow used to deploy `calibratehealth.app`
-(ECS Fargate + ALB, RDS Postgres, Route 53, and deploys via GitHub Actions).
-It is a good starting point for deploying to your own AWS account, but it is opinionated and you'll likely want to
-customize names/domains to match your setup.
-
-High-level steps:
-
-1. Install prereqs: Terraform + AWS CLI (and an AWS account to deploy into).
-2. Run `terraform apply` in `infra/bootstrap` once to create shared resources (state, IAM/OIDC, ECR, Route 53).
-3. Run `terraform apply` in `infra/envs/staging` and/or `infra/envs/prod` to create the app environment(s).
-4. Populate the required Secrets Manager JSON and configure the GitHub Actions secrets for CI/CD.
-
-Full guide (including required secrets and exact commands): [infra/README.md](infra/README.md)
 
 ## Development
 

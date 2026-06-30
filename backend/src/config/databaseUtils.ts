@@ -8,7 +8,7 @@ type PgConnectionConfig = Pick<PoolConfig, 'host' | 'port' | 'database' | 'user'
  * Resolve the Prisma/pg connection string for the current runtime.
  *
  * Local development prefers `DATABASE_URL` directly (via `.env`). For hosted
- * runtimes like ECS we often inject DB components (host/user/password/name) as
+ * runtimes we often inject DB components (host/user/password/name) as
  * separate environment variables, so we can compose a URL without storing the
  * full connection string as a secret.
  */
@@ -100,7 +100,7 @@ export function buildPgOptionsForSchema(schema: string | undefined): Pick<PoolCo
  * Parse a Postgres connection string into discrete node-postgres connection fields.
  *
  * We intentionally avoid passing `connectionString` to node-postgres because query params like
- * `sslmode=require` overwrite the explicit `ssl` config we need for RDS compatibility.
+ * `sslmode=require` overwrite the explicit `ssl` config we need for managed Postgres compatibility.
  *
  * Note: Query params are not forwarded to pg (except via explicit config elsewhere). For Prisma,
  * the `schema` param is handled separately via the adapter options (see resolvePrismaSchema) and
@@ -137,7 +137,7 @@ export function parseDatabaseUrlToPgConfig(databaseUrl: string): PgConnectionCon
  *
  * libpq treats `sslmode=require` as "encrypt the connection, but do not verify
  * certificates". node-postgres verifies by default when SSL is enabled, which
- * can fail against RDS unless you provide the RDS CA bundle. For `require` we
+ * can fail against managed Postgres unless you provide the provider CA bundle. For `require` we
  * intentionally disable verification to match libpq semantics.
  */
 export function resolvePgSslConfig(

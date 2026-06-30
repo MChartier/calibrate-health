@@ -1,9 +1,7 @@
 # Deployment Compose Stack
 
-This folder contains a small production-oriented Docker Compose stack for:
-
-- self-hosting setups (swap the image registry/tag as desired), and
-- optional EC2 Compose hosts (the primary AWS infra in `infra/` uses ECS Fargate instead).
+This folder contains a small production-oriented Docker Compose stack for self-hosting setups (swap the image
+registry/tag as desired).
 
 ## Files
 
@@ -17,7 +15,7 @@ For actual use, the Caddy container expects a `Caddyfile` next to `docker-compos
 
 ## Required Environment Variables
 
-- `APP_IMAGE`: Full image reference (ECR or GHCR) including tag.
+- `APP_IMAGE`: Full image reference, such as a GHCR image including tag.
 - `DATABASE_URL`: Postgres connection string.
 - `SESSION_SECRET`: Express session signing secret.
 
