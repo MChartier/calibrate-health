@@ -51,7 +51,3 @@ export const resolveNotificationDeliveryChannels = (
     const parsed = parseNotificationDeliveryChannels(value);
     return parsed.length > 0 ? parsed : [...fallback];
 };
-
-export const isNotificationDeliveryChannel = (value: unknown): value is NotificationDeliveryChannel => {
-    return typeof value === 'string' && DELIVERY_CHANNEL_VALUES.has(value.trim());
-};

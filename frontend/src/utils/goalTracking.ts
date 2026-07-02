@@ -34,16 +34,6 @@ export function parseDateOnlyToLocalDate(value: string): Date | null {
 }
 
 /**
- * Format a date-like string for display, falling back to an em dash for invalid inputs.
- */
-export function formatDateLabel(value: string | null | undefined): string {
-    if (!value) return EM_DASH;
-    const parsed = new Date(value);
-    if (Number.isNaN(parsed.getTime())) return EM_DASH;
-    return new Intl.DateTimeFormat(undefined, { year: 'numeric', month: 'short', day: 'numeric' }).format(parsed);
-}
-
-/**
  * Format a Date instance for display, falling back to an em dash for null/invalid dates.
  */
 export function formatDateValue(value: Date | null | undefined): string {

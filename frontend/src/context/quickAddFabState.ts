@@ -1,6 +1,5 @@
 import { createContext } from 'react';
 import type { QuickAddDialogs } from '../hooks/useQuickAddDialogs';
-import type { MealPeriod } from '../types/mealPeriod';
 
 export type WeightDialogDateMode = 'today' | 'logDate';
 
@@ -26,9 +25,7 @@ export type QuickAddFabContextValue = {
     setLogDateOverride: (date: string | null) => void;
     logDateNavigation: LogDateNavigationState | null;
     setLogDateNavigation: (state: LogDateNavigationState | null) => void;
-    foodDialogMealPeriod: MealPeriod | null;
     weightDialogDateMode: WeightDialogDateMode;
-    openFoodDialogForMeal: (mealPeriod?: MealPeriod | null) => void;
     openWeightDialogFromFab: () => void;
     openWeightDialogForLogDate: () => void;
 };
