@@ -446,6 +446,7 @@ export const en = {
     'weightEntry.deleteDialog.body': 'Delete the weight entry for {date}? This cannot be undone.',
 
     'foodEntry.mode.quick': 'Quick',
+    'foodEntry.mode.food': 'Food',
     'foodEntry.mode.search': 'Search',
     'foodEntry.mode.myFoods': 'My Foods',
     'foodEntry.mode.myRecipes': 'Recipes',
@@ -488,6 +489,7 @@ export const en = {
     'foodEntry.myRecipes.empty': 'No saved recipes yet. Create one with "{newRecipe}" to reuse it later.',
     'foodEntry.mealPeriod.label': 'Meal Period',
     'foodEntry.quickEntry.title': 'Quick entry (not saved)',
+    'foodEntry.quickEntry.inlineTitle': 'Quick add "{name}"',
     'foodEntry.quickEntry.foodName': 'Food Name',
     'foodEntry.quickEntry.calories': 'Calories',
     'foodEntry.quickEntry.addOnce': 'Add Once',
@@ -1094,6 +1096,7 @@ export const es: Record<TranslationKey, string> = {
     'weightEntry.deleteDialog.body': '¿Eliminar el registro de peso para {date}? Esto no se puede deshacer.',
 
     'foodEntry.mode.quick': 'Rápido',
+    'foodEntry.mode.food': 'Comida',
     'foodEntry.mode.search': 'Buscar',
     'foodEntry.mode.myFoods': 'Mis alimentos',
     'foodEntry.mode.myRecipes': 'Mis recetas',
@@ -1136,6 +1139,7 @@ export const es: Record<TranslationKey, string> = {
     'foodEntry.myRecipes.empty': 'Aún no hay recetas guardadas. Crea una con "{newRecipe}" para reutilizarla luego.',
     'foodEntry.mealPeriod.label': 'Periodo de comida',
     'foodEntry.quickEntry.title': 'Entrada rápida (no guardada)',
+    'foodEntry.quickEntry.inlineTitle': 'Agregar rápido "{name}"',
     'foodEntry.quickEntry.foodName': 'Nombre de alimento',
     'foodEntry.quickEntry.calories': 'Calorías',
     'foodEntry.quickEntry.addOnce': 'Agregar una vez',
@@ -1740,6 +1744,7 @@ export const fr: Record<TranslationKey, string> = {
     'weightEntry.deleteDialog.body': "Supprimer l'entrée de poids pour {date} ? Ceci est irréversible.",
 
     'foodEntry.mode.quick': 'Rapide',
+    'foodEntry.mode.food': 'Aliments',
     'foodEntry.mode.search': 'Rechercher',
     'foodEntry.mode.myFoods': 'Mes aliments',
     'foodEntry.mode.myRecipes': 'Mes recettes',
@@ -1782,6 +1787,7 @@ export const fr: Record<TranslationKey, string> = {
     'foodEntry.myRecipes.empty': 'Aucune recette enregistrée. Créez-en une avec "{newRecipe}" pour la réutiliser plus tard.',
     'foodEntry.mealPeriod.label': 'Période du repas',
     'foodEntry.quickEntry.title': 'Saisie rapide (non enregistrée)',
+    'foodEntry.quickEntry.inlineTitle': 'Ajout rapide "{name}"',
     'foodEntry.quickEntry.foodName': "Nom de l'aliment",
     'foodEntry.quickEntry.calories': 'Calories',
     'foodEntry.quickEntry.addOnce': 'Ajouter une fois',
@@ -2386,6 +2392,7 @@ export const ru: Record<TranslationKey, string> = {
     'weightEntry.deleteDialog.body': 'Удалить запись веса за {date}? Это нельзя отменить.',
 
     'foodEntry.mode.quick': 'Быстро',
+    'foodEntry.mode.food': 'Food',
     'foodEntry.mode.search': 'Поиск',
     'foodEntry.mode.myFoods': 'Мои продукты',
     'foodEntry.mode.myRecipes': 'Мои рецепты',
@@ -2428,6 +2435,7 @@ export const ru: Record<TranslationKey, string> = {
     'foodEntry.myRecipes.empty': 'Пока нет сохраненных рецептов. Создайте один через "{newRecipe}", чтобы использовать позже.',
     'foodEntry.mealPeriod.label': 'Период приема пищи',
     'foodEntry.quickEntry.title': 'Быстрая запись (не сохраняется)',
+    'foodEntry.quickEntry.inlineTitle': 'Quick add "{name}"',
     'foodEntry.quickEntry.foodName': 'Название',
     'foodEntry.quickEntry.calories': 'Калории',
     'foodEntry.quickEntry.addOnce': 'Добавить один раз',

@@ -1,8 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-    Accordion,
-    AccordionDetails,
-    AccordionSummary,
     Alert,
     Autocomplete,
     Box,
@@ -13,31 +10,52 @@ import {
     DialogTitle,
     Divider,
     FormControl,
+    IconButton,
     InputLabel,
+    LinearProgress,
     List,
     ListItem,
+    ListItemButton,
     ListItemText,
     MenuItem,
     Select,
     Stack,
     TextField,
+    Tooltip,
     Typography
 } from '@mui/material';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMoreRounded';
+import AddIcon from '@mui/icons-material/AddRounded';
+import ArrowBackIcon from '@mui/icons-material/ArrowBackRounded';
+import DeleteIcon from '@mui/icons-material/DeleteOutlineRounded';
 import axios from 'axios';
 import type { MealPeriod } from '../types/mealPeriod';
 import type { MyFood } from '../types/myFoods';
 import type { NormalizedFoodItem } from '../types/food';
+import FatSecretAttributionLink from './FatSecretAttributionLink';
 import FoodSearchResultsList from './FoodSearchResultsList';
 import { useMyFoodsQuery } from '../queries/myFoods';
 import { getApiErrorMessage } from '../utils/apiError';
 import { useDebouncedValue } from '../hooks/useDebouncedValue';
-import { getMeasureCalories, getPreferredMeasure, getPreferredMeasureLabel } from '../utils/foodMeasure';
+import {
+    formatMeasureLabelWithQuantity,
+    getMeasureCalories,
+    getPreferredMeasure,
+    getPreferredMeasureLabel
+} from '../utils/foodMeasure';
+import { useI18n } from '../i18n/useI18n';
 
 /**
  * Dialog for creating a recipe from ingredient snapshots.
  */
 const SEARCH_PAGE_SIZE = 10;
+const RECIPE_DIALOG_WIDTH_PX = 720; // Gives the ingredient workflow room without turning the dialog into a full page.
+const DIALOG_VIEWPORT_GUTTER_PX = { xs: 32, sm: 64 } as const; // Matches MUI dialog edge gutters at compact and desktop sizes.
+const RECIPE_META_GRID_COLUMNS = {
+    xs: '1fr',
+    sm: 'minmax(7.5rem, 0.8fr) minmax(11rem, 1.15fr) minmax(9rem, 1fr)'
+} as const; // Keeps the Unit field readable while preventing Serving size from dominating the row.
+const INGREDIENT_ROW_GRID_COLUMNS = { xs: '1fr auto', sm: 'minmax(0, 1fr) auto auto' } as const; // Separates name, calories, and delete action.
+const SAVED_FOODS_LIST_HEIGHT = { xs: 160, sm: 180 } as const; // Keeps saved matches visible without burying provider results.
 
 const COMMON_SERVING_UNIT_LABELS = [
     'serving',
@@ -56,6 +74,8 @@ const COMMON_SERVING_UNIT_LABELS = [
     'scoop',
     'bar'
 ];
+
+type IngredientSearchView = 'results' | 'selected';
 
 type ExternalIngredientDraft = {
     source: 'EXTERNAL';
@@ -84,6 +104,11 @@ type MyFoodIngredientDraft = {
 
 type IngredientDraft = ExternalIngredientDraft | MyFoodIngredientDraft;
 
+type FoodSearchResponse = {
+    provider?: string;
+    items: NormalizedFoodItem[];
+};
+
 type Props = {
     open: boolean;
     date?: string;
@@ -93,7 +118,13 @@ type Props = {
     onLogged?: () => void;
 };
 
+const buildSavedFoodSecondaryText = (food: MyFood): string => {
+    return `${Math.round(food.calories_per_serving)} kcal per ${food.serving_size_quantity} ${food.serving_unit_label}`;
+};
+
 const NewRecipeDialog: React.FC<Props> = ({ open, date, mealPeriod, onClose, onSaved, onLogged }) => {
+    const { t } = useI18n();
+
     const [name, setName] = useState('');
     const [servingSizeQuantity, setServingSizeQuantity] = useState('1');
     const [servingUnitLabel, setServingUnitLabel] = useState('serving');
@@ -101,8 +132,37 @@ const NewRecipeDialog: React.FC<Props> = ({ open, date, mealPeriod, onClose, onS
 
     const [ingredients, setIngredients] = useState<IngredientDraft[]>([]);
 
+    const [quickIngredientCalories, setQuickIngredientCalories] = useState('');
+
+    const [ingredientSearchQuery, setIngredientSearchQuery] = useState('');
+    const debouncedIngredientSearchQuery = useDebouncedValue(ingredientSearchQuery, 350);
+    const ingredientSearchText = debouncedIngredientSearchQuery.trim();
+    const [ingredientSearchView, setIngredientSearchView] = useState<IngredientSearchView>('results');
+
+    const myFoodsQuery = useMyFoodsQuery(
+        { q: ingredientSearchText, type: 'FOOD' },
+        { enabled: open && ingredientSearchText.length > 0 }
+    );
+    const savedFoodOptions = useMemo(() => myFoodsQuery.data ?? [], [myFoodsQuery.data]);
+    const [selectedMyFood, setSelectedMyFood] = useState<MyFood | null>(null);
+    const [myFoodQuantityServings, setMyFoodQuantityServings] = useState('1');
+
+    const [searchResults, setSearchResults] = useState<NormalizedFoodItem[]>([]);
+    const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
+    const [selectedMeasureLabel, setSelectedMeasureLabel] = useState<string | null>(null);
+    const [measureQuantity, setMeasureQuantity] = useState<number>(1);
+    const [searchPage, setSearchPage] = useState<number>(1);
+    const [hasMoreResults, setHasMoreResults] = useState(false);
+    const [isSearching, setIsSearching] = useState(false);
+    const [isLoadingMoreResults, setIsLoadingMoreResults] = useState(false);
+    const [hasSearched, setHasSearched] = useState(false);
+    const [providerName, setProviderName] = useState('');
+
     const [error, setError] = useState<string | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const searchSessionRef = useRef(0);
+    const loadMoreLockRef = useRef(false);
 
     const recipeTotals = useMemo(() => {
         const totalCalories = ingredients.reduce((sum, ing) => sum + (Number.isFinite(ing.calories_total) ? ing.calories_total : 0), 0);
@@ -122,66 +182,14 @@ const NewRecipeDialog: React.FC<Props> = ({ open, date, mealPeriod, onClose, onS
         return true;
     }, [ingredients.length, name, servingSizeQuantity, servingUnitLabel, yieldServings]);
 
-    const handleClose = () => {
-        if (isSubmitting) return;
-        setError(null);
-        onClose();
-    };
-
-    // --- Add ingredient from My Foods ---
-    const [myFoodQuery, setMyFoodQuery] = useState('');
-    const debouncedMyFoodQuery = useDebouncedValue(myFoodQuery, 250);
-    const myFoodsQuery = useMyFoodsQuery({ q: debouncedMyFoodQuery, type: 'FOOD' }, { enabled: open });
-    const myFoodOptions = myFoodsQuery.data ?? [];
-    const [selectedMyFood, setSelectedMyFood] = useState<MyFood | null>(null);
-    const [myFoodQuantityServings, setMyFoodQuantityServings] = useState('1');
-
-    const myFoodIngredientCaloriesTotal = useMemo(() => {
-        if (!selectedMyFood) return null;
-        const qty = Number(myFoodQuantityServings);
-        if (!Number.isFinite(qty) || qty <= 0) return null;
-        return qty * selectedMyFood.calories_per_serving;
-    }, [myFoodQuantityServings, selectedMyFood]);
-
-    const addMyFoodIngredient = () => {
-        if (!selectedMyFood) return;
-        const qty = Number(myFoodQuantityServings);
-        if (!Number.isFinite(qty) || qty <= 0) return;
-
-        setIngredients((current) => {
-            const sort_order = current.length + 1;
-            const calories_total = qty * selectedMyFood.calories_per_serving;
-            return [
-                ...current,
-                {
-                    source: 'MY_FOOD',
-                    sort_order,
-                    my_food_id: selectedMyFood.id,
-                    quantity_servings: qty,
-                    name_snapshot: selectedMyFood.name,
-                    calories_total
-                }
-            ];
-        });
-
-        setSelectedMyFood(null);
-        setMyFoodQuantityServings('1');
-    };
-
-    // --- Add ingredient from external search ---
-    const [externalQuery, setExternalQuery] = useState('');
-    const debouncedExternalQuery = useDebouncedValue(externalQuery, 350);
-    const [searchResults, setSearchResults] = useState<NormalizedFoodItem[]>([]);
-    const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
-    const [selectedMeasureLabel, setSelectedMeasureLabel] = useState<string | null>(null);
-    const [measureQuantity, setMeasureQuantity] = useState<number>(1);
-    const [searchPage, setSearchPage] = useState<number>(1);
-    const [hasMoreResults, setHasMoreResults] = useState(false);
-    const [isSearching, setIsSearching] = useState(false);
-    const [isLoadingMoreResults, setIsLoadingMoreResults] = useState(false);
-
-    const searchSessionRef = useRef(0);
-    const loadMoreLockRef = useRef(false);
+    const quickIngredientCaloriesTotal = useMemo(() => {
+        const ingredientName = ingredientSearchQuery.trim();
+        const calories = Number(quickIngredientCalories);
+        if (!ingredientName || !quickIngredientCalories.trim() || !Number.isFinite(calories) || calories < 0) {
+            return null;
+        }
+        return calories;
+    }, [ingredientSearchQuery, quickIngredientCalories]);
 
     const selectedItem = useMemo(
         () => searchResults.find((item) => item.id === selectedItemId) || null,
@@ -202,94 +210,122 @@ const NewRecipeDialog: React.FC<Props> = ({ open, date, mealPeriod, onClose, onS
         return getMeasureCalories(selectedItem, selectedMeasure, measureQuantity);
     }, [measureQuantity, selectedItem, selectedMeasure]);
 
-    /**
-     * Merge paginated results without duplicating items when upstream providers repeat IDs across pages.
-     */
+    const computedMeasureLabel = useMemo(() => {
+        if (!selectedMeasure) {
+            return '';
+        }
+        return formatMeasureLabelWithQuantity(selectedMeasure.label, measureQuantity);
+    }, [measureQuantity, selectedMeasure]);
+
+    const myFoodIngredientCaloriesTotal = useMemo(() => {
+        if (!selectedMyFood) return null;
+        const qty = Number(myFoodQuantityServings);
+        if (!Number.isFinite(qty) || qty <= 0) return null;
+        return qty * selectedMyFood.calories_per_serving;
+    }, [myFoodQuantityServings, selectedMyFood]);
+
+    const hasSavedFoodRows = savedFoodOptions.length > 0;
+    const hasProviderRows = searchResults.length > 0;
+    const hasCombinedSearchRows = hasSavedFoodRows || hasProviderRows;
+    const isSavedFoodLoading = myFoodsQuery.isLoading && ingredientSearchText.length > 0;
+    const isIngredientSearchPending = isSearching || isSavedFoodLoading;
+    const showFatSecretAttribution = providerName.trim().toLowerCase() === 'fatsecret';
+
+    const handleClose = () => {
+        if (isSubmitting) return;
+        setError(null);
+        onClose();
+    };
+
     const mergeUniqueResults = useCallback((current: NormalizedFoodItem[], nextPage: NormalizedFoodItem[]) => {
         const nextById = new Map(current.map((item) => [item.id, item]));
         nextPage.forEach((item) => nextById.set(item.id, item));
         return Array.from(nextById.values());
     }, []);
 
-    /**
-     * Pick a reasonable default measure label so the dropdown is pre-populated after selection.
-     */
-    const getDefaultMeasureLabel = useCallback((item: NormalizedFoodItem): string | null => {
-        return getPreferredMeasureLabel(item);
-    }, []);
-
-    const fetchFoodSearchPage = useCallback(async (query: string, page: number) => {
+    const fetchFoodSearchPage = useCallback(async (query: string, page: number): Promise<FoodSearchResponse> => {
         const response = await axios.get('/api/food/search', {
             params: { q: query, page, pageSize: SEARCH_PAGE_SIZE }
         });
         return {
+            provider: typeof response.data?.provider === 'string' ? response.data.provider : undefined,
             items: Array.isArray(response.data?.items) ? (response.data.items as NormalizedFoodItem[]) : []
         };
     }, []);
 
+    const clearIngredientSelection = useCallback(() => {
+        setSelectedMyFood(null);
+        setMyFoodQuantityServings('1');
+        setSelectedItemId(null);
+        setSelectedMeasureLabel(null);
+        setMeasureQuantity(1);
+        setIngredientSearchView('results');
+    }, []);
+
+    const clearSearchResults = useCallback(() => {
+        searchSessionRef.current += 1;
+        loadMoreLockRef.current = false;
+        setSearchResults([]);
+        setSearchPage(1);
+        setHasMoreResults(false);
+        setIsSearching(false);
+        setIsLoadingMoreResults(false);
+        setHasSearched(false);
+        setProviderName('');
+        clearIngredientSelection();
+    }, [clearIngredientSelection]);
+
     const performExternalSearch = useCallback(
         async (query: string) => {
             const trimmedQuery = query.trim();
-            if (!trimmedQuery) return;
+            if (!trimmedQuery || isSubmitting) return;
 
             searchSessionRef.current += 1;
             const sessionId = searchSessionRef.current;
             loadMoreLockRef.current = false;
 
+            setHasSearched(true);
             setIsSearching(true);
+            setError(null);
             setSearchResults([]);
             setSearchPage(1);
             setHasMoreResults(false);
             setIsLoadingMoreResults(false);
-            setSelectedItemId(null);
-            setSelectedMeasureLabel(null);
-            setMeasureQuantity(1);
+            setProviderName('');
+            clearIngredientSelection();
 
             try {
                 const firstPage = await fetchFoodSearchPage(trimmedQuery, 1);
                 if (searchSessionRef.current !== sessionId) return;
 
+                setProviderName(firstPage.provider || '');
                 setSearchResults(firstPage.items);
                 setHasMoreResults(firstPage.items.length === SEARCH_PAGE_SIZE);
             } catch (err) {
-                setError(getApiErrorMessage(err) ?? 'Search failed. Please try again.');
+                setError(getApiErrorMessage(err) ?? t('foodEntry.search.error.searchFailed'));
             } finally {
                 if (searchSessionRef.current === sessionId) {
                     setIsSearching(false);
                 }
             }
         },
-        [fetchFoodSearchPage]
+        [clearIngredientSelection, fetchFoodSearchPage, isSubmitting, t]
     );
 
-    const clearExternalSearchState = useCallback(() => {
-        searchSessionRef.current += 1;
-        loadMoreLockRef.current = false;
-        setSearchResults([]);
-        setSelectedItemId(null);
-        setSelectedMeasureLabel(null);
-        setMeasureQuantity(1);
-        setSearchPage(1);
-        setHasMoreResults(false);
-        setIsSearching(false);
-        setIsLoadingMoreResults(false);
-    }, []);
-
-    // Trigger external ingredient searches automatically while typing.
     useEffect(() => {
         if (!open) return;
 
-        const query = debouncedExternalQuery.trim();
-        if (!query) {
-            clearExternalSearchState();
+        if (!ingredientSearchText) {
+            clearSearchResults();
             return;
         }
 
-        void performExternalSearch(query);
-    }, [clearExternalSearchState, debouncedExternalQuery, open, performExternalSearch]);
+        void performExternalSearch(ingredientSearchText);
+    }, [clearSearchResults, ingredientSearchText, open, performExternalSearch]);
 
     const loadMoreExternalResults = useCallback(async () => {
-        if (!externalQuery.trim() || !hasMoreResults || isSearching || isLoadingMoreResults) {
+        const query = ingredientSearchQuery.trim();
+        if (!query || !hasMoreResults || isSearching || isLoadingMoreResults || isSubmitting) {
             return;
         }
         if (loadMoreLockRef.current) {
@@ -303,7 +339,7 @@ const NewRecipeDialog: React.FC<Props> = ({ open, date, mealPeriod, onClose, onS
         const nextPageNumber = searchPage + 1;
 
         try {
-            const nextPage = await fetchFoodSearchPage(externalQuery.trim(), nextPageNumber);
+            const nextPage = await fetchFoodSearchPage(query, nextPageNumber);
             if (searchSessionRef.current !== sessionId) {
                 return;
             }
@@ -312,30 +348,98 @@ const NewRecipeDialog: React.FC<Props> = ({ open, date, mealPeriod, onClose, onS
             setSearchPage(nextPageNumber);
             setHasMoreResults(nextPage.items.length === SEARCH_PAGE_SIZE);
         } catch (err) {
-            setError(getApiErrorMessage(err) ?? 'Unable to load more results right now.');
+            setError(getApiErrorMessage(err) ?? t('foodEntry.search.error.loadMoreFailed'));
         } finally {
             if (searchSessionRef.current === sessionId) {
                 setIsLoadingMoreResults(false);
                 loadMoreLockRef.current = false;
             }
         }
-    }, [externalQuery, fetchFoodSearchPage, hasMoreResults, isLoadingMoreResults, isSearching, mergeUniqueResults, searchPage]);
+    }, [
+        fetchFoodSearchPage,
+        hasMoreResults,
+        ingredientSearchQuery,
+        isLoadingMoreResults,
+        isSearching,
+        isSubmitting,
+        mergeUniqueResults,
+        searchPage,
+        t
+    ]);
 
-    const selectExternalResult = (item: NormalizedFoodItem) => {
-        setSelectedItemId(item.id);
-        setSelectedMeasureLabel(getDefaultMeasureLabel(item));
-        setMeasureQuantity(1);
-    };
+    const selectSavedFood = useCallback(
+        (food: MyFood) => {
+            if (isSubmitting) return;
+            setSelectedMyFood(food);
+            setMyFoodQuantityServings('1');
+            setSelectedItemId(null);
+            setSelectedMeasureLabel(null);
+            setMeasureQuantity(1);
+            setIngredientSearchView('selected');
+        },
+        [isSubmitting]
+    );
 
-    const addExternalIngredient = () => {
-        if (!selectedItem || !selectedMeasure || !computedExternal) return;
-        const sort_order = ingredients.length + 1;
+    const selectExternalResult = useCallback(
+        (item: NormalizedFoodItem) => {
+            if (isSubmitting) return;
+            setSelectedItemId(item.id);
+            setSelectedMeasureLabel(getPreferredMeasureLabel(item));
+            setMeasureQuantity(1);
+            setSelectedMyFood(null);
+            setMyFoodQuantityServings('1');
+            setIngredientSearchView('selected');
+        },
+        [isSubmitting]
+    );
+
+    const addQuickIngredient = () => {
+        const trimmedName = ingredientSearchQuery.trim();
+        if (!trimmedName || quickIngredientCaloriesTotal === null) return;
 
         setIngredients((current) => [
             ...current,
             {
                 source: 'EXTERNAL',
-                sort_order,
+                sort_order: current.length + 1,
+                name: trimmedName,
+                calories_total: quickIngredientCaloriesTotal
+            }
+        ]);
+
+        setQuickIngredientCalories('');
+        setIngredientSearchQuery('');
+        clearSearchResults();
+    };
+
+    const addMyFoodIngredient = () => {
+        if (!selectedMyFood) return;
+        const qty = Number(myFoodQuantityServings);
+        if (!Number.isFinite(qty) || qty <= 0) return;
+
+        setIngredients((current) => [
+            ...current,
+            {
+                source: 'MY_FOOD',
+                sort_order: current.length + 1,
+                my_food_id: selectedMyFood.id,
+                quantity_servings: qty,
+                name_snapshot: selectedMyFood.name,
+                calories_total: qty * selectedMyFood.calories_per_serving
+            }
+        ]);
+
+        clearIngredientSelection();
+    };
+
+    const addExternalIngredient = () => {
+        if (!selectedItem || !selectedMeasure || !computedExternal) return;
+
+        setIngredients((current) => [
+            ...current,
+            {
+                source: 'EXTERNAL',
+                sort_order: current.length + 1,
                 name: selectedItem.description,
                 calories_total: computedExternal.calories,
                 external_source: selectedItem.source,
@@ -350,9 +454,7 @@ const NewRecipeDialog: React.FC<Props> = ({ open, date, mealPeriod, onClose, onS
             }
         ]);
 
-        setSelectedItemId(null);
-        setSelectedMeasureLabel(null);
-        setMeasureQuantity(1);
+        clearIngredientSelection();
     };
 
     const removeIngredient = (idx: number) => {
@@ -423,6 +525,9 @@ const NewRecipeDialog: React.FC<Props> = ({ open, date, mealPeriod, onClose, onS
             setServingUnitLabel('serving');
             setYieldServings('1');
             setIngredients([]);
+            setQuickIngredientCalories('');
+            setIngredientSearchQuery('');
+            clearSearchResults();
             onClose();
         } catch (err) {
             setError(getApiErrorMessage(err) ?? 'Unable to save this recipe right now.');
@@ -431,12 +536,201 @@ const NewRecipeDialog: React.FC<Props> = ({ open, date, mealPeriod, onClose, onS
         }
     };
 
-    const externalPanelDisabled = isSubmitting;
+    const renderSearchEmptyState = () => {
+        let emptyMessage = t('foodEntry.search.empty.start');
+        if (hasSearched || ingredientSearchText) {
+            emptyMessage = t('foodEntry.search.empty.noMatches');
+        }
+
+        return (
+            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                {emptyMessage}
+            </Typography>
+        );
+    };
+
+    const renderSelectedSavedFood = () => {
+        if (!selectedMyFood) return null;
+        const servingDescriptor = `${selectedMyFood.serving_size_quantity} ${selectedMyFood.serving_unit_label}`;
+
+        return (
+            <Stack spacing={1.5}>
+                <Box
+                    sx={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'flex-start',
+                        gap: 2,
+                        border: 1,
+                        borderColor: 'divider',
+                        borderRadius: 1,
+                        p: 1.5
+                    }}
+                >
+                    <Box sx={{ minWidth: 0 }}>
+                        <Typography variant="subtitle2">{t('foodEntry.search.selected.title')}</Typography>
+                        <Typography variant="body2" sx={{ wordBreak: 'break-word' }}>
+                            {selectedMyFood.name}
+                        </Typography>
+                        <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                            {buildSavedFoodSecondaryText(selectedMyFood)}
+                        </Typography>
+                    </Box>
+                    <Button
+                        variant="text"
+                        type="button"
+                        size="small"
+                        startIcon={<ArrowBackIcon />}
+                        onClick={clearIngredientSelection}
+                    >
+                        {t('foodEntry.search.selected.back')}
+                    </Button>
+                </Box>
+
+                <TextField
+                    label={t('foodEntry.myFoods.servingsConsumed', { serving: servingDescriptor })}
+                    type="number"
+                    value={myFoodQuantityServings}
+                    onChange={(e) => setMyFoodQuantityServings(e.target.value)}
+                    disabled={isSubmitting}
+                    slotProps={{
+                        htmlInput: { min: 0, step: 0.1 }
+                    }}
+                />
+                <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} sx={{ alignItems: { xs: 'stretch', sm: 'center' } }}>
+                    {myFoodIngredientCaloriesTotal !== null && (
+                        <Typography variant="body2" sx={{ color: 'text.secondary', flexGrow: 1 }}>
+                            Adds {Math.round(myFoodIngredientCaloriesTotal)} kcal
+                        </Typography>
+                    )}
+                    <Button
+                        variant="outlined"
+                        startIcon={<AddIcon />}
+                        onClick={addMyFoodIngredient}
+                        disabled={isSubmitting || myFoodIngredientCaloriesTotal === null}
+                    >
+                        Add ingredient
+                    </Button>
+                </Stack>
+            </Stack>
+        );
+    };
+
+    const renderSelectedProviderFood = () => {
+        if (!selectedItem) return null;
+
+        return (
+            <Stack spacing={1.5}>
+                <Box
+                    sx={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'flex-start',
+                        gap: 2,
+                        border: 1,
+                        borderColor: 'divider',
+                        borderRadius: 1,
+                        p: 1.5
+                    }}
+                >
+                    <Box sx={{ minWidth: 0 }}>
+                        <Typography variant="subtitle2">{t('foodEntry.search.selected.title')}</Typography>
+                        <Typography variant="body2" sx={{ wordBreak: 'break-word' }}>
+                            {selectedItem.description}
+                            {selectedItem.brand ? ` (${selectedItem.brand})` : ''}
+                        </Typography>
+                    </Box>
+                    <Button
+                        variant="text"
+                        type="button"
+                        size="small"
+                        startIcon={<ArrowBackIcon />}
+                        onClick={clearIngredientSelection}
+                    >
+                        {t('foodEntry.search.selected.back')}
+                    </Button>
+                </Box>
+
+                <FormControl fullWidth>
+                    <InputLabel>{t('foodEntry.search.measure')}</InputLabel>
+                    <Select
+                        value={selectedMeasure?.label || ''}
+                        label={t('foodEntry.search.measure')}
+                        onChange={(e) => setSelectedMeasureLabel(e.target.value)}
+                        disabled={isSubmitting}
+                    >
+                        {(selectedItem.availableMeasures || [])
+                            .filter((m) => m.gramWeight)
+                            .map((measure) => (
+                                <MenuItem key={measure.label} value={measure.label}>
+                                    {measure.label} {measure.gramWeight ? `(${measure.gramWeight} g)` : ''}
+                                </MenuItem>
+                            ))}
+                    </Select>
+                </FormControl>
+
+                <TextField
+                    label={t('foodEntry.search.quantity')}
+                    type="number"
+                    value={measureQuantity}
+                    onChange={(e) => setMeasureQuantity(parseFloat(e.target.value) || 0)}
+                    disabled={isSubmitting || !selectedMeasure}
+                    slotProps={{
+                        htmlInput: { min: 0, step: 0.5 }
+                    }}
+                />
+
+                {computedExternal ? (
+                    <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} sx={{ alignItems: { xs: 'stretch', sm: 'center' } }}>
+                        <Box sx={{ flexGrow: 1 }}>
+                            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                                {selectedItem.nutrientsPer100g
+                                    ? t('foodEntry.search.caloriesEstimated')
+                                    : t('foodEntry.search.caloriesUnavailable')}
+                            </Typography>
+                            <Typography variant="subtitle1" sx={{ mt: 0.5 }}>
+                                {t('foodEntry.search.computedSummary', {
+                                    calories: computedExternal.calories,
+                                    measureLabel: computedMeasureLabel
+                                })}
+                            </Typography>
+                        </Box>
+                        <Button
+                            variant="outlined"
+                            startIcon={<AddIcon />}
+                            onClick={addExternalIngredient}
+                            disabled={isSubmitting}
+                        >
+                            Add ingredient
+                        </Button>
+                    </Stack>
+                ) : (
+                    <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                        {t('foodEntry.search.caloriesUnavailable')}
+                    </Typography>
+                )}
+            </Stack>
+        );
+    };
 
     return (
-        <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm">
-            <DialogTitle>New Recipe</DialogTitle>
-            <DialogContent>
+        <Dialog
+            open={open}
+            onClose={handleClose}
+            fullWidth
+            maxWidth="md"
+            sx={{
+                '& .MuiDialog-paper': {
+                    width: { sm: RECIPE_DIALOG_WIDTH_PX },
+                    maxHeight: {
+                        xs: `calc(100% - ${DIALOG_VIEWPORT_GUTTER_PX.xs}px)`,
+                        sm: `calc(100% - ${DIALOG_VIEWPORT_GUTTER_PX.sm}px)`
+                    }
+                }
+            }}
+        >
+            <DialogTitle>{t('foodEntry.myRecipes.newRecipe')}</DialogTitle>
+            <DialogContent dividers sx={{ flex: 1, overflowY: 'auto' }}>
                 <Stack spacing={2} sx={{ mt: 1 }}>
                     {error && <Alert severity="error">{error}</Alert>}
 
@@ -450,7 +744,13 @@ const NewRecipeDialog: React.FC<Props> = ({ open, date, mealPeriod, onClose, onS
                         required
                     />
 
-                    <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
+                    <Box
+                        sx={{
+                            display: 'grid',
+                            gridTemplateColumns: RECIPE_META_GRID_COLUMNS,
+                            gap: 1
+                        }}
+                    >
                         <TextField
                             label="Serving size"
                             type="number"
@@ -469,6 +769,7 @@ const NewRecipeDialog: React.FC<Props> = ({ open, date, mealPeriod, onClose, onS
                             value={servingUnitLabel}
                             onChange={(_, next) => setServingUnitLabel(typeof next === 'string' ? next : '')}
                             onInputChange={(_, next) => setServingUnitLabel(next)}
+                            sx={{ minWidth: 0 }}
                             renderInput={(params) => (
                                 <TextField {...params} label="Unit" fullWidth disabled={isSubmitting} required />
                             )}
@@ -485,7 +786,7 @@ const NewRecipeDialog: React.FC<Props> = ({ open, date, mealPeriod, onClose, onS
                                 htmlInput: { min: 0, step: 0.1 }
                             }}
                         />
-                    </Stack>
+                    </Box>
 
                     <Box
                         sx={{
@@ -497,47 +798,64 @@ const NewRecipeDialog: React.FC<Props> = ({ open, date, mealPeriod, onClose, onS
                     >
                         <Typography variant="subtitle2">Ingredients</Typography>
                         {ingredients.length === 0 ? (
-                            <Typography variant="body2" sx={{
-                                color: "text.secondary"
-                            }}>
+                            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
                                 Add ingredients from your My Foods library or by searching the food database.
                             </Typography>
                         ) : (
-                            <List dense disablePadding>
+                            <List dense disablePadding sx={{ mt: 0.5 }}>
                                 {ingredients.map((ing, idx) => {
+                                    const ingredientName = ing.source === 'MY_FOOD' ? ing.name_snapshot : ing.name;
                                     const secondary =
                                         ing.source === 'MY_FOOD'
                                             ? `${ing.quantity_servings} servings`
                                             : ing.measure_label
                                               ? `${ing.measure_quantity ?? 1} x ${ing.measure_label}`
                                               : undefined;
+
                                     return (
                                         <ListItem
                                             key={`${ing.source}-${idx}`}
-                                            secondaryAction={
-                                                <Button
-                                                    size="small"
-                                                    onClick={() => removeIngredient(idx)}
-                                                    disabled={isSubmitting}
-                                                >
-                                                    Remove
-                                                </Button>
-                                            }
-                                            sx={{ px: 0 }}
+                                            disableGutters
+                                            sx={{
+                                                display: 'grid',
+                                                gridTemplateColumns: INGREDIENT_ROW_GRID_COLUMNS,
+                                                gap: { xs: 0.5, sm: 1.5 },
+                                                alignItems: 'center',
+                                                py: 0.75
+                                            }}
                                         >
-                                            <ListItemText
-                                                primary={ing.source === 'MY_FOOD' ? ing.name_snapshot : ing.name}
-                                                secondary={secondary}
-                                            />
+                                            <Box sx={{ minWidth: 0 }}>
+                                                <Typography variant="body2" sx={{ wordBreak: 'break-word' }}>
+                                                    {ingredientName}
+                                                </Typography>
+                                                {secondary && (
+                                                    <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                                        {secondary}
+                                                    </Typography>
+                                                )}
+                                            </Box>
                                             <Typography
                                                 variant="body2"
                                                 sx={{
-                                                    color: "text.secondary",
-                                                    ml: 2,
+                                                    color: 'text.secondary',
+                                                    gridColumn: { xs: '1 / 2', sm: 'auto' },
                                                     whiteSpace: 'nowrap'
-                                                }}>
+                                                }}
+                                            >
                                                 {Math.round(ing.calories_total)} kcal
                                             </Typography>
+                                            <Tooltip title={t('common.delete')}>
+                                                <span>
+                                                    <IconButton
+                                                        aria-label={t('common.delete')}
+                                                        size="small"
+                                                        onClick={() => removeIngredient(idx)}
+                                                        disabled={isSubmitting}
+                                                    >
+                                                        <DeleteIcon fontSize="small" />
+                                                    </IconButton>
+                                                </span>
+                                            </Tooltip>
                                         </ListItem>
                                     );
                                 })}
@@ -556,200 +874,183 @@ const NewRecipeDialog: React.FC<Props> = ({ open, date, mealPeriod, onClose, onS
                             <Typography
                                 variant="body2"
                                 sx={{
-                                    color: "text.secondary",
+                                    color: 'text.secondary',
                                     flexGrow: 1
-                                }}>
+                                }}
+                            >
                                 Total: {Math.round(recipeTotals.totalCalories)} kcal
                             </Typography>
-                            <Typography variant="body2" sx={{
-                                color: "text.secondary"
-                            }}>
+                            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
                                 {recipeTotals.caloriesPerServing !== null
                                     ? `${Math.round(recipeTotals.caloriesPerServing)} kcal/serving`
-                                    : '—'}
+                                    : '-'}
                             </Typography>
                         </Stack>
                     </Box>
 
-                    <Accordion defaultExpanded>
-                        <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                            <Typography variant="subtitle2">Add from My Foods</Typography>
-                        </AccordionSummary>
-                        <AccordionDetails>
-                            <Stack spacing={1.5}>
-                                <TextField
-                                    label="Search My Foods"
-                                    value={myFoodQuery}
-                                    onChange={(e) => setMyFoodQuery(e.target.value)}
-                                    disabled={isSubmitting}
-                                />
-                                <Autocomplete
-                                    options={myFoodOptions}
-                                    value={selectedMyFood}
-                                    onChange={(_, next) => setSelectedMyFood(next)}
-                                    getOptionLabel={(option) => option.name}
-                                    isOptionEqualToValue={(a, b) => a.id === b.id}
-                                    renderInput={(params) => (
-                                        <TextField
-                                            {...params}
-                                            label="Select a food"
-                                            disabled={isSubmitting || myFoodsQuery.isLoading}
-                                        />
-                                    )}
-                                />
-                                <Stack direction="row" spacing={1} sx={{
-                                    alignItems: "center"
-                                }}>
-                                    <TextField
-                                        label="Quantity (servings)"
-                                        type="number"
-                                        value={myFoodQuantityServings}
-                                        onChange={(e) => setMyFoodQuantityServings(e.target.value)}
-                                        disabled={isSubmitting || !selectedMyFood}
-                                        fullWidth
-                                        slotProps={{
-                                            htmlInput: { min: 0, step: 0.1 }
-                                        }}
-                                    />
-                                    <Button
-                                        variant="outlined"
-                                        onClick={addMyFoodIngredient}
-                                        disabled={isSubmitting || !selectedMyFood || myFoodIngredientCaloriesTotal === null}
-                                        sx={{ whiteSpace: 'nowrap' }}
+                    <Box
+                        sx={{
+                            border: 1,
+                            borderColor: 'divider',
+                            borderRadius: 1,
+                            p: 1.5
+                        }}
+                    >
+                        <Stack spacing={1.5}>
+                            <Typography variant="subtitle2">Add ingredient</Typography>
+                            <TextField
+                                label={t('foodEntry.search.label')}
+                                placeholder={t('foodEntry.search.placeholder')}
+                                value={ingredientSearchQuery}
+                                onChange={(e) => setIngredientSearchQuery(e.target.value)}
+                                disabled={isSubmitting}
+                                fullWidth
+                            />
+
+                            {ingredientSearchView === 'results' && ingredientSearchQuery.trim() && (
+                                <Box sx={{ border: 1, borderColor: 'divider', borderRadius: 1, p: 1.5 }}>
+                                    <Stack
+                                        direction={{ xs: 'column', sm: 'row' }}
+                                        spacing={1}
+                                        sx={{ alignItems: { xs: 'stretch', sm: 'center' } }}
                                     >
-                                        Add
-                                    </Button>
-                                </Stack>
-                                {selectedMyFood && myFoodIngredientCaloriesTotal !== null && (
-                                    <Typography variant="caption" sx={{
-                                        color: "text.secondary"
-                                    }}>
-                                        Adds {Math.round(myFoodIngredientCaloriesTotal)} kcal
-                                    </Typography>
-                                )}
-                            </Stack>
-                        </AccordionDetails>
-                    </Accordion>
-
-                    <Accordion>
-                        <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                            <Typography variant="subtitle2">Add from Search</Typography>
-                        </AccordionSummary>
-                        <AccordionDetails>
-                            <Stack spacing={1.5}>
-                                <TextField
-                                    label="Search foods"
-                                    placeholder="Start typing to search (e.g. chicken breast)"
-                                    value={externalQuery}
-                                    onChange={(e) => setExternalQuery(e.target.value)}
-                                    disabled={externalPanelDisabled}
-                                    fullWidth
-                                />
-
-                                {searchResults.length === 0 ? (
-                                    <Typography variant="body2" sx={{
-                                        color: "text.secondary"
-                                    }}>
-                                        {isSearching
-                                            ? 'Searching...'
-                                            : 'Type a search term to find an ingredient and add it to the recipe.'}
-                                    </Typography>
-                                ) : (
-                                    <FoodSearchResultsList
-                                        items={searchResults}
-                                        selectedItemId={selectedItemId}
-                                        hasMore={hasMoreResults}
-                                        isLoading={isSearching}
-                                        isLoadingMore={isLoadingMoreResults}
-                                        onLoadMore={() => void loadMoreExternalResults()}
-                                        onSelect={selectExternalResult}
-                                    />
-                                )}
-
-                                {selectedItem && (
-                                    <Box sx={{ border: 1, borderColor: 'divider', borderRadius: 1, p: 1.5 }}>
-                                        <Typography variant="subtitle2">Selected</Typography>
-                                        <Typography variant="body2" sx={{ wordBreak: 'break-word' }}>
-                                            {selectedItem.description}
-                                            {selectedItem.brand ? ` (${selectedItem.brand})` : ''}
+                                        <Typography
+                                            variant="subtitle2"
+                                            sx={{ flexGrow: 1, minWidth: 0, overflowWrap: 'anywhere' }}
+                                        >
+                                            {t('foodEntry.quickEntry.inlineTitle', { name: ingredientSearchQuery.trim() })}
                                         </Typography>
+                                        <TextField
+                                            label={t('foodEntry.quickEntry.calories')}
+                                            type="number"
+                                            value={quickIngredientCalories}
+                                            onChange={(e) => setQuickIngredientCalories(e.target.value)}
+                                            disabled={isSubmitting}
+                                            sx={{ minWidth: { sm: 160 } }}
+                                            slotProps={{
+                                                htmlInput: { min: 0, step: 1 }
+                                            }}
+                                        />
+                                        <Button
+                                            variant="outlined"
+                                            startIcon={<AddIcon />}
+                                            onClick={addQuickIngredient}
+                                            disabled={isSubmitting || quickIngredientCaloriesTotal === null}
+                                            sx={{ whiteSpace: 'nowrap' }}
+                                        >
+                                            Add ingredient
+                                        </Button>
+                                    </Stack>
+                                    {quickIngredientCaloriesTotal !== null && (
+                                        <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                            Adds {Math.round(quickIngredientCaloriesTotal)} kcal
+                                        </Typography>
+                                    )}
+                                </Box>
+                            )}
 
-                                        <Stack spacing={1.5} sx={{ mt: 1.5 }}>
-                                            <FormControl fullWidth>
-                                                <InputLabel>Measure</InputLabel>
-                                                <Select
-                                                    value={selectedMeasure?.label || ''}
-                                                    label="Measure"
-                                                    onChange={(e) => setSelectedMeasureLabel(e.target.value)}
-                                                    disabled={externalPanelDisabled}
-                                                >
-                                                    {(selectedItem.availableMeasures || [])
-                                                        .filter((m) => m.gramWeight)
-                                                        .map((measure) => (
-                                                            <MenuItem key={measure.label} value={measure.label}>
-                                                                {measure.label} {measure.gramWeight ? `(${measure.gramWeight} g)` : ''}
-                                                            </MenuItem>
-                                                        ))}
-                                                </Select>
-                                            </FormControl>
+                            {providerName && (
+                                <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                    {t('foodEntry.search.providerLabel', { provider: providerName })}
+                                </Typography>
+                            )}
+                            {showFatSecretAttribution && (
+                                <Box
+                                    sx={(theme) => ({
+                                        mt: -0.5,
+                                        fontSize: theme.typography.caption.fontSize
+                                    })}
+                                >
+                                    <FatSecretAttributionLink />
+                                </Box>
+                            )}
 
-                                            <TextField
-                                                label="Quantity"
-                                                type="number"
-                                                value={measureQuantity}
-                                                onChange={(e) => setMeasureQuantity(parseFloat(e.target.value) || 0)}
-                                                disabled={externalPanelDisabled || !selectedMeasure}
-                                                slotProps={{
-                                                    htmlInput: { min: 0, step: 0.5 }
-                                                }}
-                                            />
+                            {ingredientSearchView === 'selected' && selectedMyFood ? (
+                                renderSelectedSavedFood()
+                            ) : ingredientSearchView === 'selected' && selectedItem ? (
+                                renderSelectedProviderFood()
+                            ) : (
+                                <Stack spacing={1.25}>
+                                    {isIngredientSearchPending && !hasCombinedSearchRows && (
+                                        <LinearProgress aria-label={t('foodEntry.search.empty.searching')} />
+                                    )}
 
-                                            {computedExternal ? (
-                                                <Stack
-                                                    direction="row"
-                                                    spacing={1}
-                                                    sx={{
-                                                        alignItems: "center",
-                                                        justifyContent: "space-between"
-                                                    }}>
-                                                    <Typography variant="body2" sx={{
-                                                        color: "text.secondary"
-                                                    }}>
-                                                        Adds {Math.round(computedExternal.calories)} kcal
-                                                    </Typography>
-                                                    <Button
-                                                        variant="outlined"
-                                                        onClick={addExternalIngredient}
-                                                        disabled={externalPanelDisabled}
+                                    {!hasCombinedSearchRows && !isIngredientSearchPending ? (
+                                        renderSearchEmptyState()
+                                    ) : (
+                                        <>
+                                            {hasSavedFoodRows && (
+                                                <Stack spacing={1}>
+                                                    <Typography variant="subtitle2">{t('foodEntry.mode.myFoods')}</Typography>
+                                                    <Box
+                                                        sx={{
+                                                            border: 1,
+                                                            borderColor: 'divider',
+                                                            borderRadius: 1,
+                                                            overflow: 'hidden',
+                                                            maxHeight: SAVED_FOODS_LIST_HEIGHT,
+                                                            overflowY: 'auto'
+                                                        }}
                                                     >
-                                                        Add ingredient
-                                                    </Button>
+                                                        <List dense disablePadding>
+                                                            {savedFoodOptions.map((food) => (
+                                                                <ListItemButton
+                                                                    key={food.id}
+                                                                    selected={selectedMyFood?.id === food.id}
+                                                                    onClick={() => selectSavedFood(food)}
+                                                                    disabled={isSubmitting}
+                                                                    sx={{ alignItems: 'flex-start' }}
+                                                                >
+                                                                    <ListItemText
+                                                                        primary={food.name}
+                                                                        secondary={buildSavedFoodSecondaryText(food)}
+                                                                        slotProps={{
+                                                                            primary: { variant: 'body2' },
+                                                                            secondary: {
+                                                                                variant: 'caption',
+                                                                                color: 'text.secondary'
+                                                                            }
+                                                                        }}
+                                                                    />
+                                                                </ListItemButton>
+                                                            ))}
+                                                        </List>
+                                                    </Box>
                                                 </Stack>
-                                            ) : (
-                                                <Typography variant="body2" sx={{
-                                                    color: "text.secondary"
-                                                }}>
-                                                    Calories unavailable for this item.
-                                                </Typography>
                                             )}
-                                        </Stack>
-                                    </Box>
-                                )}
-                            </Stack>
-                        </AccordionDetails>
-                    </Accordion>
+
+                                            {hasProviderRows && (
+                                                <Stack spacing={1}>
+                                                    <Typography variant="subtitle2">{t('foodEntry.search.results.title')}</Typography>
+                                                    <FoodSearchResultsList
+                                                        items={searchResults}
+                                                        selectedItemId={selectedItemId}
+                                                        hasMore={hasMoreResults}
+                                                        isLoading={isSearching}
+                                                        isLoadingMore={isLoadingMoreResults}
+                                                        onLoadMore={() => void loadMoreExternalResults()}
+                                                        onSelect={selectExternalResult}
+                                                    />
+                                                </Stack>
+                                            )}
+                                        </>
+                                    )}
+                                </Stack>
+                            )}
+                        </Stack>
+                    </Box>
                 </Stack>
             </DialogContent>
             <DialogActions>
                 <Button onClick={handleClose} disabled={isSubmitting}>
-                    Cancel
+                    {t('common.cancel')}
                 </Button>
                 <Button
                     variant="outlined"
                     onClick={() => void handleSave({ logAfterSave: false })}
                     disabled={!canSubmitRecipe || isSubmitting}
                 >
-                    Save
+                    {t('common.save')}
                 </Button>
                 <Button
                     variant="contained"
