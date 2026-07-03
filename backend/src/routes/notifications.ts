@@ -1,5 +1,4 @@
 import express from 'express';
-import { Prisma } from '@prisma/client';
 import prisma from '../config/database';
 import {
   listActiveInAppNotificationsForUser,
@@ -52,26 +51,36 @@ router.post('/subscription', async (req, res) => {
     return res.status(400).json({ message: 'Invalid subscription payload.' });
   }
 
-  await prisma.pushSubscription.upsert({
-    where: {
-      user_id_endpoint: {
-        user_id: user.id,
-        endpoint
-      }
-    },
-    update: {
-      p256dh,
-      auth,
-      expiration_time: expirationTime
-    },
-    create: {
-      user_id: user.id,
-      endpoint,
-      p256dh,
-      auth,
-      expiration_time: expirationTime
-    }
-  });
+  // Keep ownership handoff + dedupe reset in one write to avoid races between separate read/update steps.
+  await prisma.$executeRaw`
+    INSERT INTO "PushSubscription" (
+      "user_id",
+      "endpoint",
+      "p256dh",
+      "auth",
+      "expiration_time",
+      "last_sent_local_date"
+    )
+    VALUES (
+      ${user.id},
+      ${endpoint},
+      ${p256dh},
+      ${auth},
+      ${expirationTime},
+      NULL
+    )
+    ON CONFLICT ("endpoint")
+    DO UPDATE SET
+      "user_id" = EXCLUDED."user_id",
+      "p256dh" = EXCLUDED."p256dh",
+      "auth" = EXCLUDED."auth",
+      "expiration_time" = EXCLUDED."expiration_time",
+      "last_sent_local_date" = CASE
+        WHEN "PushSubscription"."user_id" IS DISTINCT FROM EXCLUDED."user_id" THEN NULL
+        ELSE "PushSubscription"."last_sent_local_date"
+      END,
+      "updated_at" = NOW()
+  `;
 
   res.json({ ok: true });
 });
@@ -84,25 +93,13 @@ router.delete('/subscription', async (req, res) => {
     return res.status(400).json({ message: 'Endpoint is required.' });
   }
 
-  try {
-    await prisma.pushSubscription.delete({
-      where: {
-        user_id_endpoint: {
-          user_id: user.id,
-          endpoint
-        }
-      }
-    });
-  } catch (error) {
-    // Treat repeated unsubscribe calls as success so this endpoint stays idempotent.
-    if (
-      error instanceof Prisma.PrismaClientKnownRequestError &&
-      error.code === 'P2025'
-    ) {
-      return res.json({ ok: true });
+  // Delete only rows owned by this user so repeated unsubscribe calls stay idempotent.
+  await prisma.pushSubscription.deleteMany({
+    where: {
+      user_id: user.id,
+      endpoint
     }
-    throw error;
-  }
+  });
 
   res.json({ ok: true });
 });
