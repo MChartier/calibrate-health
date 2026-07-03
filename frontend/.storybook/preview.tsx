@@ -5,8 +5,6 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router-dom';
 import { I18nProvider } from '../src/i18n/I18nContext.tsx';
 import { createAppTheme } from '../src/theme';
-import '../src/index.css';
-import '../src/App.css';
 
 /**
  * Keep each story isolated from query cache writes triggered by interactive components.

@@ -24,8 +24,3 @@ export type RecipeIngredient = {
     name_snapshot: string;
     calories_total_snapshot: number;
 };
-
-export type MyFoodWithIngredients = MyFood & {
-    recipe_ingredients?: RecipeIngredient[];
-};
-

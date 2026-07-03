@@ -65,7 +65,6 @@
   "devDependencies": {
     "@devcontainers/cli": "^0.86.0",
     "@types/node": "^20.0.0",
-    "baseline-browser-mapping": "^2.9.19",
     "typescript": "^5.0.0"
   }
 }

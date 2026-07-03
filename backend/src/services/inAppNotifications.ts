@@ -61,14 +61,6 @@ type ReminderMissingStatusArgs = {
     db?: InAppNotificationClient;
 };
 
-type EnsureReminderNotificationsArgs = {
-    userId: number;
-    localDate: Date;
-    missingWeight: boolean;
-    missingFood: boolean;
-    db?: InAppNotificationClient;
-};
-
 type ResolveInactiveReminderNotificationsArgs = {
     userId: number;
     timeZone: string;
@@ -179,46 +171,6 @@ export const getReminderMissingStatusForDate = async ({
         missingWeight: reminderLogWeightEnabled && weightCount === 0,
         missingFood: reminderLogFoodEnabled && foodCount === 0
     };
-};
-
-/**
- * Create in-app reminder entries for missing logs, without re-opening dismissed items.
- */
-export const ensureReminderInAppNotificationsForDate = async ({
-    userId,
-    localDate,
-    missingWeight,
-    missingFood,
-    db = prisma
-}: EnsureReminderNotificationsArgs): Promise<void> => {
-    const rows: Prisma.InAppNotificationCreateManyInput[] = [];
-
-    if (missingWeight) {
-        rows.push({
-            user_id: userId,
-            type: InAppNotificationType.LOG_WEIGHT_REMINDER,
-            local_date: localDate,
-            dedupe_key: buildReminderInAppDedupeKey(InAppNotificationType.LOG_WEIGHT_REMINDER, localDate)
-        });
-    }
-
-    if (missingFood) {
-        rows.push({
-            user_id: userId,
-            type: InAppNotificationType.LOG_FOOD_REMINDER,
-            local_date: localDate,
-            dedupe_key: buildReminderInAppDedupeKey(InAppNotificationType.LOG_FOOD_REMINDER, localDate)
-        });
-    }
-
-    if (rows.length === 0) {
-        return;
-    }
-
-    await db.inAppNotification.createMany({
-        data: rows,
-        skipDuplicates: true
-    });
 };
 
 /**
