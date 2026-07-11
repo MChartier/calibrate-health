@@ -35,6 +35,12 @@ function getAvatarLabel(email?: string | null): string {
     return email?.trim().charAt(0).toUpperCase() || 'C';
 }
 
+function formatSessionActivity(value: string | null, fallback: string): string {
+    const timestamp = value ?? fallback;
+    const parsed = new Date(timestamp);
+    return Number.isNaN(parsed.getTime()) ? 'Unknown activity' : `Active ${parsed.toLocaleDateString()}`;
+}
+
 export default function SettingsScreen() {
     const { api, user, logout, serverUrl, setServerUrl, updateCurrentUser } = useAuth();
     const queryClient = useQueryClient();
@@ -59,6 +65,10 @@ export default function SettingsScreen() {
     const [passwordError, setPasswordError] = useState<string | null>(null);
     const [passwordStatus, setPasswordStatus] = useState<string | null>(null);
     const profileQuery = useQuery({ queryKey: ['mobile-profile'], queryFn: () => api.getUserProfile() });
+    const sessionsQuery = useQuery({
+        queryKey: ['mobile-sessions'],
+        queryFn: () => api.getMobileSessions()
+    });
 
     useEffect(() => {
         if (!user) return;
@@ -162,6 +172,27 @@ export default function SettingsScreen() {
         onError: (error) => {
             setPasswordStatus(null);
             setPasswordError(error instanceof Error ? error.message : 'Unable to update password.');
+        }
+    });
+
+    const revokeSession = useMutation({
+        mutationFn: (sessionId: number) => api.revokeMobileSession(sessionId),
+        onSuccess: async (_response, sessionId) => {
+            const revokedCurrentSession = sessionsQuery.data?.sessions.some(
+                (session) => session.id === sessionId && session.current
+            );
+            if (revokedCurrentSession) {
+                await logout();
+                return;
+            }
+            await queryClient.invalidateQueries({ queryKey: ['mobile-sessions'] });
+        }
+    });
+
+    const revokeOtherSessions = useMutation({
+        mutationFn: () => api.revokeOtherMobileSessions(),
+        onSuccess: async () => {
+            await queryClient.invalidateQueries({ queryKey: ['mobile-sessions'] });
         }
     });
 
@@ -344,6 +375,40 @@ export default function SettingsScreen() {
                     leftIcon={<Ionicons name="key-outline" size={18} color={colors.text} />}
                     onPress={handleChangePassword}
                 />
+            </AppCard>
+
+            <AppCard>
+                <SectionHeader title="Devices" description="Review and revoke active phone and watch sessions." />
+                {sessionsQuery.isLoading && <AppText variant="muted">Loading active devices...</AppText>}
+                {sessionsQuery.error && <AppText style={styles.error}>{sessionsQuery.error.message}</AppText>}
+                {sessionsQuery.data?.sessions.map((session) => (
+                    <View key={session.id} style={styles.deviceRow}>
+                        <View style={styles.deviceText}>
+                            <AppText variant="body" style={styles.deviceName}>
+                                {session.device_name || (session.device_platform === 'wear_os' ? 'Wear OS device' : 'Android device')}
+                            </AppText>
+                            <AppText variant="caption">
+                                {session.current ? 'This device | ' : ''}
+                                {formatSessionActivity(session.last_used_at, session.created_at)}
+                            </AppText>
+                        </View>
+                        <AppButton
+                            title={revokeSession.isPending && revokeSession.variables === session.id ? 'Revoking...' : 'Revoke'}
+                            variant={session.current ? 'danger' : 'ghost'}
+                            disabled={revokeSession.isPending || revokeOtherSessions.isPending}
+                            onPress={() => revokeSession.mutate(session.id)}
+                        />
+                    </View>
+                ))}
+                {(sessionsQuery.data?.sessions.length ?? 0) > 1 && (
+                    <AppButton
+                        title={revokeOtherSessions.isPending ? 'Revoking...' : 'Revoke other devices'}
+                        variant="secondary"
+                        disabled={revokeSession.isPending || revokeOtherSessions.isPending}
+                        leftIcon={<Ionicons name="phone-portrait-outline" size={18} color={colors.text} />}
+                        onPress={() => revokeOtherSessions.mutate()}
+                    />
+                )}
             </AppCard>
 
             <AppCard>
@@ -556,6 +621,21 @@ const styles = StyleSheet.create({
     avatarActions: {
         flex: 1,
         gap: spacing.sm
+    },
+    deviceRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.md,
+        paddingVertical: spacing.sm,
+        borderBottomWidth: StyleSheet.hairlineWidth,
+        borderBottomColor: colors.border
+    },
+    deviceText: {
+        flex: 1,
+        minWidth: 0
+    },
+    deviceName: {
+        fontWeight: '800'
     },
     chips: {
         flexDirection: 'row',

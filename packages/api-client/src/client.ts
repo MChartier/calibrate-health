@@ -11,6 +11,7 @@ import type {
     MetricEntry,
     MobileAuthRequest,
     MobileAuthResponse,
+    MobileSessionSummary,
     CreateRecipePayload,
     MyFoodDetail,
     MyFoodSummary,
@@ -205,6 +206,22 @@ export class CalibrateApiClient {
             method: 'POST',
             auth: false,
             json: refreshToken ? { refresh_token: refreshToken } : {}
+        });
+    }
+
+    getMobileSessions(): Promise<{ sessions: MobileSessionSummary[] }> {
+        return this.request<{ sessions: MobileSessionSummary[] }>('/auth/mobile/sessions');
+    }
+
+    revokeMobileSession(sessionId: number): Promise<{ ok: true; revoked: boolean }> {
+        return this.request<{ ok: true; revoked: boolean }>(`/auth/mobile/sessions/${sessionId}`, {
+            method: 'DELETE'
+        });
+    }
+
+    revokeOtherMobileSessions(): Promise<{ ok: true; revoked: number }> {
+        return this.request<{ ok: true; revoked: number }>('/auth/mobile/sessions/revoke-others', {
+            method: 'POST'
         });
     }
 

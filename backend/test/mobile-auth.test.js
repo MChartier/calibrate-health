@@ -192,3 +192,51 @@ test('mobile auth logout revokes push subscriptions bound to the session', async
   assert.deepEqual(pushSubscriptionUpdate.where.mobile_auth_session_id, { in: [31] });
   assert.equal(mobileSessionUpdate.data.revoked_at, pushSubscriptionUpdate.data.revoked_at);
 });
+
+test('mobile auth lists only safe session metadata and marks the current device', async () => {
+  const prismaStub = {
+    mobileAuthSession: {
+      findMany: async () => [{
+        id: 44,
+        device_id: 'device-44',
+        device_platform: 'ANDROID_PHONE',
+        device_name: 'Pixel',
+        created_at: new Date('2026-01-01T00:00:00.000Z'),
+        last_used_at: new Date('2026-01-02T00:00:00.000Z'),
+        refresh_expires_at: new Date('2026-02-01T00:00:00.000Z')
+      }]
+    }
+  };
+
+  const { listMobileSessionsForUser } = loadMobileAuthService({ prismaStub });
+  const sessions = await listMobileSessionsForUser(7, 44);
+
+  assert.deepEqual(sessions, [{
+    id: 44,
+    device_id: 'device-44',
+    device_platform: 'android_phone',
+    device_name: 'Pixel',
+    created_at: '2026-01-01T00:00:00.000Z',
+    last_used_at: '2026-01-02T00:00:00.000Z',
+    refresh_expires_at: '2026-02-01T00:00:00.000Z',
+    current: true
+  }]);
+});
+
+test('mobile auth cannot revoke a session owned by another user', async () => {
+  let transactionCalled = false;
+  const prismaStub = {
+    $transaction: async () => {
+      transactionCalled = true;
+    },
+    mobileAuthSession: {
+      findFirst: async () => null
+    }
+  };
+
+  const { revokeMobileSessionForUser } = loadMobileAuthService({ prismaStub });
+  const revoked = await revokeMobileSessionForUser(7, 999);
+
+  assert.equal(revoked, false);
+  assert.equal(transactionCalled, false);
+});

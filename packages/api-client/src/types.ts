@@ -46,6 +46,17 @@ export type MobileAuthResponse = {
 
 export type MobileRefreshResponse = MobileAuthResponse;
 
+export type MobileSessionSummary = {
+    id: number;
+    device_id: string;
+    device_platform: MobileDevicePlatform;
+    device_name: string | null;
+    created_at: string;
+    last_used_at: string | null;
+    refresh_expires_at: string;
+    current: boolean;
+};
+
 export type ClientConfigResponse = {
     api_version: number;
     server_version: string;

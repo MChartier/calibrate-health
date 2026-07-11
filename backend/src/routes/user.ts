@@ -10,6 +10,7 @@ import { isSupportedLanguage, type SupportedLanguage } from '../utils/language';
 import { MAX_PROFILE_IMAGE_BYTES, parseBase64DataUrl } from '../utils/profileImage';
 import { serializeUserForClient, USER_CLIENT_SELECT } from '../utils/userSerialization';
 import { MAX_AUTH_PASSWORD_LENGTH, MIN_AUTH_PASSWORD_LENGTH } from '../utils/authCredentials';
+import { revokeOtherMobileSessionsForUser } from '../services/mobileAuth';
 
 /**
  * Authenticated user account routes (profile, preferences, password, avatar).
@@ -168,6 +169,7 @@ router.patch('/password', async (req, res) => {
       where: { id: dbUser.id },
       data: { password_hash }
     });
+    await revokeOtherMobileSessionsForUser(dbUser.id, res.locals.mobileAuthSessionId);
 
     res.json({ message: 'Password updated' });
   } catch (err) {

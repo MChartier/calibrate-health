@@ -22,6 +22,17 @@ export type MobileAuthSessionPayload = TokenPair & {
   user: UserClientPayload;
 };
 
+export type MobileSessionSummary = {
+  id: number;
+  device_id: string;
+  device_platform: MobileDevicePlatformWire;
+  device_name: string | null;
+  created_at: string;
+  last_used_at: string | null;
+  refresh_expires_at: string;
+  current: boolean;
+};
+
 type ParsedMobileDevice = {
   deviceId: string;
   devicePlatform: MobileDevicePlatform;
@@ -224,11 +235,14 @@ async function revokeMobileSessionsAndPushSubscriptions(tokenWhere: {
     },
     select: { id: true }
   });
-  if (sessions.length === 0) return;
+  await revokeMobileSessionIds(sessions.map((session) => session.id));
+}
 
-  const sessionIds = sessions.map((session) => session.id);
+/** Revoke a known set of owned sessions and their notification endpoints atomically. */
+async function revokeMobileSessionIds(sessionIds: number[]): Promise<number> {
+  if (sessionIds.length === 0) return 0;
   const revokedAt = new Date();
-  await prisma.$transaction([
+  const [sessionResult] = await prisma.$transaction([
     prisma.mobileAuthSession.updateMany({
       where: { id: { in: sessionIds }, revoked_at: null },
       data: { revoked_at: revokedAt }
@@ -238,6 +252,7 @@ async function revokeMobileSessionsAndPushSubscriptions(tokenWhere: {
       data: { revoked_at: revokedAt }
     })
   ]);
+  return sessionResult.count;
 }
 
 /**
@@ -246,6 +261,67 @@ async function revokeMobileSessionsAndPushSubscriptions(tokenWhere: {
 export async function revokeMobileSessionByAccessToken(accessToken: string): Promise<void> {
   const tokenHash = hashMobileToken(accessToken);
   await revokeMobileSessionsAndPushSubscriptions({ access_token_hash: tokenHash });
+}
+
+/** List active native sessions without exposing credential hashes. */
+export async function listMobileSessionsForUser(
+  userId: number,
+  currentSessionId?: number
+): Promise<MobileSessionSummary[]> {
+  const sessions = await prisma.mobileAuthSession.findMany({
+    where: {
+      user_id: userId,
+      revoked_at: null,
+      refresh_expires_at: { gt: new Date() }
+    },
+    orderBy: [{ last_used_at: 'desc' }, { created_at: 'desc' }, { id: 'desc' }],
+    select: {
+      id: true,
+      device_id: true,
+      device_platform: true,
+      device_name: true,
+      created_at: true,
+      last_used_at: true,
+      refresh_expires_at: true
+    }
+  });
+
+  return sessions.map((session) => ({
+    id: session.id,
+    device_id: session.device_id,
+    device_platform: serializeMobileDevicePlatform(session.device_platform),
+    device_name: session.device_name,
+    created_at: session.created_at.toISOString(),
+    last_used_at: session.last_used_at?.toISOString() ?? null,
+    refresh_expires_at: session.refresh_expires_at.toISOString(),
+    current: session.id === currentSessionId
+  }));
+}
+
+/** Revoke one session only when it belongs to the authenticated account. */
+export async function revokeMobileSessionForUser(userId: number, sessionId: number): Promise<boolean> {
+  const owned = await prisma.mobileAuthSession.findFirst({
+    where: { id: sessionId, user_id: userId, revoked_at: null },
+    select: { id: true }
+  });
+  if (!owned) return false;
+  return (await revokeMobileSessionIds([owned.id])) === 1;
+}
+
+/** Revoke every active native session except the caller's current bearer session, when present. */
+export async function revokeOtherMobileSessionsForUser(
+  userId: number,
+  currentSessionId?: number
+): Promise<number> {
+  const sessions = await prisma.mobileAuthSession.findMany({
+    where: {
+      user_id: userId,
+      revoked_at: null,
+      ...(currentSessionId ? { id: { not: currentSessionId } } : {})
+    },
+    select: { id: true }
+  });
+  return revokeMobileSessionIds(sessions.map((session) => session.id));
 }
 
 /**

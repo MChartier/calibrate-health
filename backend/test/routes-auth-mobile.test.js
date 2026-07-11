@@ -41,10 +41,11 @@ function loadAuthRouter({ prismaStub, passportStub, bcryptStub }) {
   return loaded.default ?? loaded;
 }
 
-function createRes() {
+function createRes(locals = {}) {
   return {
     statusCode: 200,
     body: undefined,
+    locals,
     status(code) {
       this.statusCode = code;
       return this;
@@ -145,4 +146,33 @@ test('auth route: POST /mobile/refresh rejects missing refresh token', async () 
 
   assert.equal(res.statusCode, 400);
   assert.deepEqual(res.body, { message: 'refresh_token is required' });
+});
+
+test('auth route: GET /mobile/sessions returns owned active devices', async () => {
+  const router = loadAuthRouter({
+    prismaStub: {
+      mobileAuthSession: {
+        findMany: async () => [{
+          id: 8,
+          device_id: 'pixel-install',
+          device_platform: 'ANDROID_PHONE',
+          device_name: 'Pixel',
+          created_at: new Date('2026-01-01T00:00:00.000Z'),
+          last_used_at: null,
+          refresh_expires_at: new Date('2026-02-01T00:00:00.000Z')
+        }]
+      }
+    },
+    passportStub: { authenticate: () => () => {} },
+    bcryptStub: { compare: async () => false, genSalt: async () => 'salt', hash: async () => 'hash' }
+  });
+  const handler = getRouteHandler(router, 'get', '/mobile/sessions');
+  const res = createRes({ mobileAuthSessionId: 8 });
+
+  await handler({ isAuthenticated: () => true, user: { id: 7 } }, res);
+
+  assert.equal(res.statusCode, 200);
+  assert.equal(res.body.sessions.length, 1);
+  assert.equal(res.body.sessions[0].current, true);
+  assert.equal(res.body.sessions[0].device_platform, 'android_phone');
 });

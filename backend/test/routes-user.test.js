@@ -12,12 +12,15 @@ function stubModule(resolvedPath, exports) {
 function loadUserRouter({ prismaStub, bcryptStub }) {
   const dbPath = require.resolve('../src/config/database');
   const bcryptPath = require.resolve('bcryptjs');
+  const mobileAuthPath = require.resolve('../src/services/mobileAuth');
   const userPath = require.resolve('../src/routes/user');
 
   const previousDbModule = require.cache[dbPath];
   const previousBcryptModule = require.cache[bcryptPath];
+  const previousMobileAuthModule = require.cache[mobileAuthPath];
 
   delete require.cache[userPath];
+  delete require.cache[mobileAuthPath];
 
   stubModule(dbPath, prismaStub);
   stubModule(bcryptPath, bcryptStub);
@@ -30,13 +33,17 @@ function loadUserRouter({ prismaStub, bcryptStub }) {
   if (previousBcryptModule) require.cache[bcryptPath] = previousBcryptModule;
   else delete require.cache[bcryptPath];
 
+  if (previousMobileAuthModule) require.cache[mobileAuthPath] = previousMobileAuthModule;
+  else delete require.cache[mobileAuthPath];
+
   return loaded.default ?? loaded;
 }
 
-function createRes() {
+function createRes(locals = {}) {
   return {
     statusCode: 200,
     body: undefined,
+    locals,
     status(code) {
       this.statusCode = code;
       return this;
@@ -250,13 +257,25 @@ test('user route: PATCH /password validates request shape and rejects identical 
 
 test('user route: PATCH /password updates password when current password matches', async () => {
   let updated = false;
+  let sessionLookup = null;
 
   const prismaStub = {
+    $transaction: async (operations) => Promise.all(operations),
     user: {
       findUnique: async () => ({ id: 7, password_hash: 'old-hash' }),
       update: async () => {
         updated = true;
       }
+    },
+    mobileAuthSession: {
+      findMany: async (args) => {
+        sessionLookup = args;
+        return [{ id: 12 }];
+      },
+      updateMany: async () => ({ count: 1 })
+    },
+    nativePushSubscription: {
+      updateMany: async () => ({ count: 1 })
     }
   };
   const bcryptStub = {
@@ -271,11 +290,12 @@ test('user route: PATCH /password updates password when current password matches
     user: { id: 7 },
     body: { current_password: 'current', new_password: 'new-password' }
   };
-  const res = createRes();
+  const res = createRes({ mobileAuthSessionId: 11 });
 
   await handler(req, res);
 
   assert.equal(updated, true);
+  assert.deepEqual(sessionLookup.where.id, { not: 11 });
   assert.equal(res.statusCode, 200);
   assert.deepEqual(res.body, { message: 'Password updated' });
 });

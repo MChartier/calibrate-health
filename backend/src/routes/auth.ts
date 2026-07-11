@@ -7,10 +7,13 @@ import { serializeUserForClient, USER_CLIENT_SELECT } from '../utils/userSeriali
 import {
     formatMobileAuthResponse,
     issueMobileAuthPayload,
+    listMobileSessionsForUser,
     parseMobileDevicePayload,
     refreshMobileSession,
     revokeMobileSessionByAccessToken,
-    revokeMobileSessionByRefreshToken
+    revokeMobileSessionByRefreshToken,
+    revokeMobileSessionForUser,
+    revokeOtherMobileSessionsForUser
 } from '../services/mobileAuth';
 
 /**
@@ -248,6 +251,41 @@ router.post('/mobile/logout', async (req, res) => {
         console.error('Mobile auth logout failed:', err);
         res.status(500).json({ message: 'Server error' });
     }
+});
+
+router.get('/mobile/sessions', async (req, res) => {
+    if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: 'Not authenticated' });
+    }
+
+    const user = req.user as { id: number };
+    const sessions = await listMobileSessionsForUser(user.id, res.locals.mobileAuthSessionId);
+    res.json({ sessions });
+});
+
+router.delete('/mobile/sessions/:sessionId', async (req, res) => {
+    if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: 'Not authenticated' });
+    }
+
+    const sessionId = Number(req.params.sessionId);
+    if (!Number.isSafeInteger(sessionId) || sessionId <= 0) {
+        return res.status(400).json({ message: 'Invalid mobile session id' });
+    }
+
+    const user = req.user as { id: number };
+    const revoked = await revokeMobileSessionForUser(user.id, sessionId);
+    res.json({ ok: true, revoked });
+});
+
+router.post('/mobile/sessions/revoke-others', async (req, res) => {
+    if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: 'Not authenticated' });
+    }
+
+    const user = req.user as { id: number };
+    const revoked = await revokeOtherMobileSessionsForUser(user.id, res.locals.mobileAuthSessionId);
+    res.json({ ok: true, revoked });
 });
 
 router.get('/me', async (req, res) => {
