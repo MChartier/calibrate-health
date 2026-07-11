@@ -19,6 +19,10 @@ export const authenticateMobileBearerToken = async (
 
   const result = await authenticateMobileAccessToken(authorization);
   if (!result.ok) {
+    // Logout can revoke by refresh token even after the short-lived bearer token expires.
+    if (req.method === 'POST' && req.path === '/auth/mobile/logout') {
+      return next();
+    }
     return res.status(result.status).json({ message: result.message });
   }
 

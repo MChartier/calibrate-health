@@ -161,33 +161,42 @@ export async function refreshMobileSession(refreshToken: string): Promise<Mobile
   const now = new Date();
   const existing = await prisma.mobileAuthSession.findUnique({
     where: { refresh_token_hash: tokenHash },
-    include: {
-      user: {
-        select: USER_CLIENT_SELECT
-      }
-    }
+    select: { id: true }
   });
 
-  if (!existing || existing.revoked_at || existing.refresh_expires_at <= now) {
-    return null;
-  }
+  if (!existing) return null;
 
   const tokens = buildTokenPair(now);
-  const updated = await prisma.mobileAuthSession.update({
-    where: { id: existing.id },
+  // Claim the presented refresh token in one database write. Concurrent replays can read the
+  // same session, but only one can replace the matching hash and create a valid successor chain.
+  const claimed = await prisma.mobileAuthSession.updateMany({
+    where: {
+      id: existing.id,
+      refresh_token_hash: tokenHash,
+      revoked_at: null,
+      refresh_expires_at: { gt: now }
+    },
     data: {
       access_token_hash: hashMobileToken(tokens.accessToken),
       refresh_token_hash: hashMobileToken(tokens.refreshToken),
       access_expires_at: tokens.accessExpiresAt,
       refresh_expires_at: tokens.refreshExpiresAt,
       last_used_at: now
-    },
+    }
+  });
+
+  if (claimed.count !== 1) return null;
+
+  const updated = await prisma.mobileAuthSession.findUnique({
+    where: { id: existing.id },
     include: {
       user: {
         select: USER_CLIENT_SELECT
       }
     }
   });
+
+  if (!updated) return null;
 
   return {
     user: serializeUserForClient(updated.user),

@@ -120,3 +120,47 @@ test('mobile auth validates bearer access tokens and hydrates the client user', 
   assert.equal(updateCall.where.id, 12);
   assert.ok(updateCall.data.last_used_at instanceof Date);
 });
+
+test('mobile auth allows exactly one successor for concurrent refresh-token replays', async () => {
+  const presentedToken = 'shared-refresh-token';
+  let storedRefreshHash = null;
+  let initialReadCount = 0;
+  const waitingInitialReads = [];
+  const prismaStub = {
+    mobileAuthSession: {
+      findUnique: async (args) => {
+        if (args.where.refresh_token_hash) {
+          initialReadCount += 1;
+          if (initialReadCount < 2) {
+            await new Promise((resolve) => waitingInitialReads.push(resolve));
+          } else {
+            waitingInitialReads.splice(0).forEach((resolve) => resolve());
+          }
+          return { id: 22 };
+        }
+
+        return { id: 22, user: baseUser };
+      },
+      updateMany: async (args) => {
+        if (args.where.refresh_token_hash !== storedRefreshHash) {
+          return { count: 0 };
+        }
+        storedRefreshHash = args.data.refresh_token_hash;
+        return { count: 1 };
+      }
+    }
+  };
+
+  const { hashMobileToken, refreshMobileSession } = loadMobileAuthService({ prismaStub });
+  storedRefreshHash = hashMobileToken(presentedToken);
+
+  const results = await Promise.all([
+    refreshMobileSession(presentedToken),
+    refreshMobileSession(presentedToken)
+  ]);
+
+  assert.equal(results.filter(Boolean).length, 1);
+  assert.equal(results.filter((result) => result === null).length, 1);
+  const successfulResult = results.find(Boolean);
+  assert.equal(storedRefreshHash, hashMobileToken(successfulResult.refreshToken));
+});

@@ -25,6 +25,8 @@ import type {
 export type ApiClientOptions = {
     baseUrl: string;
     getAccessToken?: () => string | null | Promise<string | null>;
+    /** Refresh native credentials after a protected request returns 401. */
+    refreshAccessToken?: () => boolean | Promise<boolean>;
     onUnauthorized?: () => void | Promise<void>;
     fetchImpl?: typeof fetch;
     requestTimeoutMs?: number;
@@ -73,25 +75,43 @@ const getErrorMessage = (body: unknown, fallback: string): string => {
 export class CalibrateApiClient {
     private readonly baseUrl: string;
     private readonly getAccessToken?: ApiClientOptions['getAccessToken'];
+    private readonly refreshAccessToken?: ApiClientOptions['refreshAccessToken'];
     private readonly onUnauthorized?: ApiClientOptions['onUnauthorized'];
     private readonly fetchImpl: typeof fetch;
     private readonly requestTimeoutMs: number;
+    private refreshPromise: Promise<boolean> | null = null;
 
     constructor(options: ApiClientOptions) {
         this.baseUrl = options.baseUrl;
         this.getAccessToken = options.getAccessToken;
+        this.refreshAccessToken = options.refreshAccessToken;
         this.onUnauthorized = options.onUnauthorized;
         this.fetchImpl = options.fetchImpl ?? fetch;
         this.requestTimeoutMs = options.requestTimeoutMs ?? DEFAULT_REQUEST_TIMEOUT_MS;
     }
 
-    private async request<T>(path: string, options: RequestOptions = {}): Promise<T> {
+    /** Share one refresh across concurrent 401 responses to avoid rotating the same token twice. */
+    private async refreshAccessTokenOnce(): Promise<boolean> {
+        if (!this.refreshAccessToken) return false;
+
+        if (!this.refreshPromise) {
+            this.refreshPromise = Promise.resolve(this.refreshAccessToken())
+                .finally(() => {
+                    this.refreshPromise = null;
+                });
+        }
+
+        return this.refreshPromise;
+    }
+
+    private async request<T>(path: string, options: RequestOptions = {}, allowRefresh = true): Promise<T> {
+        const { auth = true, json, ...fetchOptions } = options;
         const headers = new Headers(options.headers);
-        if (options.json !== undefined) {
+        if (json !== undefined) {
             headers.set('content-type', 'application/json');
         }
 
-        if (options.auth !== false && this.getAccessToken) {
+        if (auth && this.getAccessToken) {
             const token = await this.getAccessToken();
             if (token) {
                 headers.set('authorization', `Bearer ${token}`);
@@ -111,10 +131,10 @@ export class CalibrateApiClient {
         let response: Response;
         try {
             response = await this.fetchImpl(buildUrl(this.baseUrl, path), {
-                ...options,
+                ...fetchOptions,
                 headers,
                 signal: timeoutController.signal,
-                body: options.json !== undefined ? JSON.stringify(options.json) : options.body
+                body: json !== undefined ? JSON.stringify(json) : options.body
             });
         } catch (error) {
             if (timedOut) {
@@ -130,7 +150,13 @@ export class CalibrateApiClient {
         const body = text.length > 0 ? JSON.parse(text) : null;
 
         if (!response.ok) {
-            if (response.status === 401) {
+            if (response.status === 401 && auth && allowRefresh && this.refreshAccessToken) {
+                const refreshed = await this.refreshAccessTokenOnce();
+                if (refreshed) {
+                    return this.request<T>(path, options, false);
+                }
+            }
+            if (response.status === 401 && auth) {
                 await this.onUnauthorized?.();
             }
             throw new ApiError(getErrorMessage(body, `Request failed with status ${response.status}`), response.status, body);
@@ -177,6 +203,7 @@ export class CalibrateApiClient {
     logoutMobile(refreshToken?: string): Promise<{ ok: true }> {
         return this.request<{ ok: true }>('/auth/mobile/logout', {
             method: 'POST',
+            auth: false,
             json: refreshToken ? { refresh_token: refreshToken } : {}
         });
     }
