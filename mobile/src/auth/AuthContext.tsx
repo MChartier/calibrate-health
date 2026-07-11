@@ -27,6 +27,7 @@ type AuthContextValue = {
     login: (email: string, password: string) => Promise<void>;
     register: (email: string, password: string) => Promise<void>;
     logout: () => Promise<void>;
+    clearLocalSession: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -285,9 +286,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setServerUrl: updateServerUrl,
             login,
             register,
-            logout
+            logout,
+            clearLocalSession: clearSession
         }),
-        [accessToken, api, authError, deviceId, isLoading, login, logout, refreshToken, register, serverUrl, updateCurrentUser, updateServerUrl, user]
+        [accessToken, api, authError, clearSession, deviceId, isLoading, login, logout, refreshToken, register, serverUrl, updateCurrentUser, updateServerUrl, user]
     );
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

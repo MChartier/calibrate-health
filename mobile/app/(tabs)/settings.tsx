@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Image, Pressable, StyleSheet, Switch, View } from 'react-native';
+import { Alert, Image, Pressable, StyleSheet, Switch, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as DocumentPicker from 'expo-document-picker';
@@ -17,6 +17,14 @@ import { SectionHeader } from '../../src/components/SectionHeader';
 import { SegmentedControl } from '../../src/components/SegmentedControl';
 import { TextField } from '../../src/components/TextField';
 import { useAuth } from '../../src/auth/AuthContext';
+import {
+    canSubmitAccountDeletion,
+    deleteAccountAndClearLocalData,
+    DELETE_ACCOUNT_CONFIRMATION,
+    shareAccountExport
+} from '../../src/account/accountData';
+import { OUTBOX_MUTATION_STATES } from '../../src/offline/queuedMutation';
+import { useOfflineOutbox } from '../../src/offline/provider';
 import { millimetersToCentimeters, millimetersToFeetInches } from '../../src/utils/bodyMeasurements';
 import { getTodayDate } from '../../src/utils/dates';
 import { formatCalories } from '../../src/utils/format';
@@ -42,7 +50,15 @@ function formatSessionActivity(value: string | null, fallback: string): string {
 }
 
 export default function SettingsScreen() {
-    const { api, user, logout, serverUrl, setServerUrl, updateCurrentUser } = useAuth();
+    const { api, user, clearLocalSession, logout, serverUrl, setServerUrl, updateCurrentUser } = useAuth();
+    const {
+        isReady: isOutboxReady,
+        initializationError: outboxInitializationError,
+        mutations: queuedMutations,
+        discardAll: discardOfflineChanges,
+        reconcile: reconcileOutbox,
+        retryFailed: retryFailedOutbox
+    } = useOfflineOutbox();
     const queryClient = useQueryClient();
     const [serverInput, setServerInput] = useState(serverUrl);
     const [timezone, setTimezone] = useState(user?.timezone ?? 'UTC');
@@ -62,12 +78,39 @@ export default function SettingsScreen() {
     const [newPassword, setNewPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [isProfileEditorOpen, setIsProfileEditorOpen] = useState(false);
+    const [isDeleteAccountOpen, setIsDeleteAccountOpen] = useState(false);
+    const [deleteAccountPassword, setDeleteAccountPassword] = useState('');
+    const [deleteAccountConfirmation, setDeleteAccountConfirmation] = useState('');
     const [passwordError, setPasswordError] = useState<string | null>(null);
     const [passwordStatus, setPasswordStatus] = useState<string | null>(null);
     const profileQuery = useQuery({ queryKey: ['mobile-profile'], queryFn: () => api.getUserProfile() });
     const sessionsQuery = useQuery({
         queryKey: ['mobile-sessions'],
         queryFn: () => api.getMobileSessions()
+    });
+    const pendingMutationCount = queuedMutations.filter(
+        ({ state }) => state === OUTBOX_MUTATION_STATES.PENDING || state === OUTBOX_MUTATION_STATES.REPLAYING
+    ).length;
+    const failedMutations = queuedMutations.filter(({ state }) => state === OUTBOX_MUTATION_STATES.FAILED);
+    const syncOutbox = useMutation({ mutationFn: () => reconcileOutbox() });
+    const retryOutbox = useMutation({ mutationFn: () => retryFailedOutbox() });
+    const outboxActionError = syncOutbox.error ?? retryOutbox.error;
+    const exportAccount = useMutation({
+        mutationFn: async () => {
+            const accountExport = await api.exportAccount();
+            await shareAccountExport(accountExport);
+        }
+    });
+    const deleteAccount = useMutation({
+        mutationFn: async () => {
+            await deleteAccountAndClearLocalData(deleteAccountPassword, {
+                deleteRemoteAccount: (currentPassword) => api.deleteAccount(currentPassword),
+                discardOfflineChanges,
+                clearLocalSession
+            });
+            setDeleteAccountPassword('');
+            setDeleteAccountConfirmation('');
+        }
     });
 
     useEffect(() => {
@@ -242,6 +285,22 @@ export default function SettingsScreen() {
         changePassword.mutate();
     }
 
+    function confirmDeleteAccount() {
+        if (!canSubmitAccountDeletion(deleteAccountPassword, deleteAccountConfirmation)) return;
+        Alert.alert(
+            'Permanently delete account?',
+            'This permanently deletes your profile, food logs, weigh-ins, goals, saved foods, and device sessions.',
+            [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                    text: 'Delete forever',
+                    style: 'destructive',
+                    onPress: () => deleteAccount.mutate()
+                }
+            ]
+        );
+    }
+
     return (
         <Screen reserveBottomTabs>
             <AppCard>
@@ -412,6 +471,73 @@ export default function SettingsScreen() {
             </AppCard>
 
             <AppCard>
+                <SectionHeader
+                    title="Offline changes"
+                    description="Writes saved on this device replay in order when the server is reachable."
+                />
+                <View style={styles.summaryRows}>
+                    <SummaryRow label="Pending" value={String(pendingMutationCount)} />
+                    <SummaryRow label="Failed" value={String(failedMutations.length)} />
+                </View>
+                {failedMutations[0]?.lastError && (
+                    <AppText style={styles.error}>Last failure: {failedMutations[0].lastError}</AppText>
+                )}
+                {(outboxInitializationError || outboxActionError) && (
+                    <AppText style={styles.error}>
+                        {outboxInitializationError ?? (outboxActionError instanceof Error
+                            ? outboxActionError.message
+                            : 'Unable to sync offline changes.')}
+                    </AppText>
+                )}
+                <View style={styles.row}>
+                    <AppButton
+                        title={syncOutbox.isPending ? 'Syncing...' : 'Sync now'}
+                        variant="secondary"
+                        disabled={!isOutboxReady || pendingMutationCount === 0 || failedMutations.length > 0 || syncOutbox.isPending || retryOutbox.isPending}
+                        leftIcon={<Ionicons name="sync-outline" size={18} color={colors.text} />}
+                        onPress={() => syncOutbox.mutate()}
+                        style={styles.rowButton}
+                    />
+                    {failedMutations.length > 0 && (
+                        <AppButton
+                            title={retryOutbox.isPending ? 'Retrying...' : 'Retry failed'}
+                            variant="secondary"
+                            disabled={!isOutboxReady || syncOutbox.isPending || retryOutbox.isPending}
+                            leftIcon={<Ionicons name="refresh-outline" size={18} color={colors.text} />}
+                            onPress={() => retryOutbox.mutate()}
+                            style={styles.rowButton}
+                        />
+                    )}
+                </View>
+            </AppCard>
+
+            <AppCard>
+                <SectionHeader
+                    title="Your data"
+                    description="Export a portable JSON copy or permanently delete this account."
+                />
+                {exportAccount.error && (
+                    <AppText style={styles.error}>
+                        {exportAccount.error instanceof Error ? exportAccount.error.message : 'Unable to export account data.'}
+                    </AppText>
+                )}
+                <AppButton
+                    title={exportAccount.isPending ? 'Preparing export...' : 'Export account data'}
+                    variant="secondary"
+                    disabled={exportAccount.isPending || deleteAccount.isPending}
+                    leftIcon={<Ionicons name="share-outline" size={18} color={colors.text} />}
+                    onPress={() => exportAccount.mutate()}
+                />
+                <AppButton
+                    title="Delete account"
+                    variant="danger"
+                    disabled={exportAccount.isPending || deleteAccount.isPending}
+                    leftIcon={<Ionicons name="trash-outline" size={18} color="#ffffff" />}
+                    onPress={() => setIsDeleteAccountOpen(true)}
+                />
+            </AppCard>
+
+            <AppCard>
                 <SectionHeader title="Advanced" description="Hosted and self-hosted server connection." />
                 <TextField label="Server URL" value={serverInput} onChangeText={setServerInput} autoCapitalize="none" />
                 <AppButton
@@ -505,6 +631,54 @@ export default function SettingsScreen() {
                         disabled={saveProfile.isPending}
                         leftIcon={<Ionicons name="checkmark" size={18} color="#ffffff" />}
                         onPress={() => saveProfile.mutate()}
+                        style={styles.rowButton}
+                    />
+                </View>
+            </BottomSheetModal>
+
+            <BottomSheetModal
+                visible={isDeleteAccountOpen}
+                onRequestClose={() => setIsDeleteAccountOpen(false)}
+            >
+                <SectionHeader
+                    title="Delete account permanently"
+                    description="This cannot be undone. Pending offline changes on this device will also be discarded."
+                />
+                <TextField
+                    label="Current password"
+                    secureTextEntry
+                    value={deleteAccountPassword}
+                    onChangeText={setDeleteAccountPassword}
+                    editable={!deleteAccount.isPending}
+                />
+                <TextField
+                    label={`Type ${DELETE_ACCOUNT_CONFIRMATION}`}
+                    value={deleteAccountConfirmation}
+                    onChangeText={setDeleteAccountConfirmation}
+                    autoCapitalize="characters"
+                    editable={!deleteAccount.isPending}
+                />
+                {deleteAccount.error && (
+                    <AppText style={styles.error}>
+                        {deleteAccount.error instanceof Error ? deleteAccount.error.message : 'Unable to delete account.'}
+                    </AppText>
+                )}
+                <View style={styles.row}>
+                    <AppButton
+                        title="Cancel"
+                        variant="secondary"
+                        disabled={deleteAccount.isPending}
+                        onPress={() => setIsDeleteAccountOpen(false)}
+                        style={styles.rowButton}
+                    />
+                    <AppButton
+                        title={deleteAccount.isPending ? 'Deleting...' : 'Delete forever'}
+                        variant="danger"
+                        disabled={
+                            deleteAccount.isPending ||
+                            !canSubmitAccountDeletion(deleteAccountPassword, deleteAccountConfirmation)
+                        }
+                        onPress={confirmDeleteAccount}
                         style={styles.rowButton}
                     />
                 </View>

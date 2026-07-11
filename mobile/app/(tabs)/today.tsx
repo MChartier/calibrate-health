@@ -20,6 +20,8 @@ import { Screen } from '../../src/components/Screen';
 import { SectionHeader } from '../../src/components/SectionHeader';
 import { TextField } from '../../src/components/TextField';
 import { useAuth } from '../../src/auth/AuthContext';
+import { executeOrQueueMutation, OFFLINE_MUTATION_OPERATIONS } from '../../src/offline/operations';
+import { useOfflineOutbox } from '../../src/offline/provider';
 import { useSharedLogDateNavigation } from '../../src/context/LogDateContext';
 import { addDaysToDateOnly } from '../../src/utils/dates';
 import { formatMealPeriod } from '../../src/utils/format';
@@ -34,6 +36,7 @@ const MEAL_SELECTOR_OPTIONS: Array<OverlaySelectOption<MealPeriod>> = MEAL_OPTIO
 
 export default function TodayScreen() {
     const { api } = useAuth();
+    const { enqueue } = useOfflineOutbox();
     const queryClient = useQueryClient();
     const dateNavigation = useSharedLogDateNavigation();
     const selectedDate = dateNavigation.selectedDate;
@@ -75,11 +78,18 @@ export default function TodayScreen() {
     }
 
     const toggleFoodDay = useMutation({
-        mutationFn: () =>
-            api.updateFoodDay({
+        mutationFn: () => {
+            const payload = {
                 date: selectedDate,
                 is_complete: !isFoodDayComplete
-            }),
+            };
+            return executeOrQueueMutation({
+                operation: OFFLINE_MUTATION_OPERATIONS.UPDATE_FOOD_DAY,
+                payload,
+                execute: (operationId) => api.updateFoodDay(payload, operationId),
+                enqueue
+            });
+        },
         onSuccess: async () => {
             await Haptics.selectionAsync();
             await invalidateLogQueries();

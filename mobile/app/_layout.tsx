@@ -4,8 +4,10 @@ import { Slot } from 'expo-router';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
-import { AuthProvider } from '../src/auth/AuthContext';
+import { AuthProvider, useAuth } from '../src/auth/AuthContext';
 import { useNativePushRegistration } from '../src/hooks/useNativePushRegistration';
+import { createQueuedMutationExecutor } from '../src/offline/operations';
+import { OfflineOutboxProvider } from '../src/offline/provider';
 import { colors } from '../src/theme';
 
 const queryClient = new QueryClient();
@@ -15,14 +17,22 @@ const NativeRuntimeHooks: React.FC = () => {
     return null;
 };
 
+const AuthenticatedRuntime: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+    const { api } = useAuth();
+    const executeMutation = React.useMemo(() => createQueuedMutationExecutor(api), [api]);
+    return <OfflineOutboxProvider executeMutation={executeMutation}>{children}</OfflineOutboxProvider>;
+};
+
 export default function RootLayout() {
     return (
         <SafeAreaProvider>
             <QueryClientProvider client={queryClient}>
                 <AuthProvider>
-                    <NativeRuntimeHooks />
-                    <StatusBar style="dark" backgroundColor={colors.surface} />
-                    <Slot />
+                    <AuthenticatedRuntime>
+                        <NativeRuntimeHooks />
+                        <StatusBar style="dark" backgroundColor={colors.surface} />
+                        <Slot />
+                    </AuthenticatedRuntime>
                 </AuthProvider>
             </QueryClientProvider>
         </SafeAreaProvider>
