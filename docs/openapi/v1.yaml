@@ -82,6 +82,7 @@ paths:
       operationId: deleteFoodLog
       parameters:
         - $ref: '#/components/parameters/FoodLogId'
+        - $ref: '#/components/parameters/ClientOperationId'
       responses:
         '204':
           description: Food log deleted; response has no body.
@@ -92,9 +93,36 @@ paths:
       operationId: deleteMetric
       parameters:
         - $ref: '#/components/parameters/MetricId'
+        - $ref: '#/components/parameters/ClientOperationId'
       responses:
         '204':
           description: Weight metric deleted; response has no body.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /api/v1/sync/changes:
+    get:
+      operationId: getSyncChanges
+      parameters:
+        - name: after
+          in: query
+          schema:
+            type: string
+            pattern: '^\d+$'
+            default: '0'
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 500
+            default: 200
+      responses:
+        '200':
+          description: Ordered account changes after the supplied cursor.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SyncChangesResponse'
         '401':
           $ref: '#/components/responses/Unauthorized'
 components:
@@ -117,6 +145,15 @@ components:
       schema:
         type: integer
         minimum: 1
+    ClientOperationId:
+      name: x-client-operation-id
+      in: header
+      required: false
+      description: Stable client-generated identifier used to safely replay a mutation.
+      schema:
+        type: string
+        minLength: 8
+        maxLength: 128
   responses:
     Unauthorized:
       description: Authentication is missing, expired, or rejected.
@@ -256,6 +293,39 @@ components:
     MobileDevicePlatform:
       type: string
       enum: [android_phone, wear_os]
+    SyncChange:
+      type: object
+      required: [cursor, entity_type, entity_id, action, operation_id, payload, created_at]
+      properties:
+        cursor:
+          type: string
+          pattern: '^\d+$'
+        entity_type:
+          type: string
+        entity_id:
+          type: string
+        action:
+          type: string
+          enum: [upsert, delete]
+        operation_id:
+          type: [string, 'null']
+        payload: {}
+        created_at:
+          type: string
+          format: date-time
+    SyncChangesResponse:
+      type: object
+      required: [changes, next_cursor, has_more]
+      properties:
+        changes:
+          type: array
+          items:
+            $ref: '#/components/schemas/SyncChange'
+        next_cursor:
+          type: string
+          pattern: '^\d+$'
+        has_more:
+          type: boolean
     UserClientPayload:
       type: object
       required:

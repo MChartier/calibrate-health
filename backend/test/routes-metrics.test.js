@@ -16,14 +16,18 @@ function loadMetricsRouter(prismaStub) {
   const dbPath = require.resolve('../src/config/database');
   const metricsPath = require.resolve('../src/routes/metrics');
   const materializedTrendPath = require.resolve('../src/services/materializedWeightTrend');
+  const clientOperationsPath = require.resolve('../src/services/clientOperations');
 
   const previousDbModule = require.cache[dbPath];
   const previousMaterializedTrendModule = require.cache[materializedTrendPath];
+  const previousClientOperationsModule = require.cache[clientOperationsPath];
   delete require.cache[metricsPath];
   delete require.cache[materializedTrendPath];
+  delete require.cache[clientOperationsPath];
 
   const normalizedPrismaStub = {
     ...prismaStub,
+    $transaction: prismaStub.$transaction ?? (async (callback) => callback(normalizedPrismaStub)),
     bodyMetric: {
       findFirst: async () => null,
       findMany: async () => [],
@@ -32,6 +36,10 @@ function loadMetricsRouter(prismaStub) {
     bodyMetricTrend: {
       deleteMany: async () => ({ count: 0 }),
       ...(prismaStub.bodyMetricTrend ?? {})
+    },
+    syncChange: {
+      create: async () => ({ id: 1n }),
+      ...(prismaStub.syncChange ?? {})
     }
   };
 
@@ -48,6 +56,12 @@ function loadMetricsRouter(prismaStub) {
     require.cache[dbPath] = previousDbModule;
   } else {
     delete require.cache[dbPath];
+  }
+
+  if (previousClientOperationsModule) {
+    require.cache[clientOperationsPath] = previousClientOperationsModule;
+  } else {
+    delete require.cache[clientOperationsPath];
   }
 
   return loaded.default ?? loaded;

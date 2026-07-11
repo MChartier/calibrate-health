@@ -18,6 +18,7 @@ import type {
     MobileRefreshResponse,
     NativePushSubscriptionPayload,
     RecentFoodsResponse,
+    SyncChangesResponse,
     TrendMetricsResponse,
     UserClientPayload,
     UserProfileResponse
@@ -51,6 +52,11 @@ type RequestOptions = RequestInit & {
 };
 
 const DEFAULT_REQUEST_TIMEOUT_MS = 15000;
+const CLIENT_OPERATION_ID_HEADER = 'x-client-operation-id';
+
+/** Attach an operation identifier only when the caller is opting into idempotent replay. */
+const buildOperationHeaders = (operationId?: string): HeadersInit | undefined =>
+    operationId ? { [CLIENT_OPERATION_ID_HEADER]: operationId } : undefined;
 
 const trimTrailingSlash = (value: string): string => value.replace(/\/+$/, '');
 
@@ -284,16 +290,18 @@ export class CalibrateApiClient {
         return this.request<TrendMetricsResponse>(`/api/metrics?${query.toString()}`);
     }
 
-    addMetric(payload: { weight: number; date: string }): Promise<MetricEntry> {
+    addMetric(payload: { weight: number; date: string }, operationId?: string): Promise<MetricEntry> {
         return this.request<MetricEntry>('/api/metrics', {
             method: 'POST',
+            headers: buildOperationHeaders(operationId),
             json: payload
         });
     }
 
-    deleteMetric(id: number): Promise<void> {
+    deleteMetric(id: number, operationId?: string): Promise<void> {
         return this.request<void>(`/api/metrics/${encodeURIComponent(String(id))}`, {
-            method: 'DELETE'
+            method: 'DELETE',
+            headers: buildOperationHeaders(operationId)
         });
     }
 
@@ -301,22 +309,25 @@ export class CalibrateApiClient {
         return this.request<FoodLogEntry[]>(`/api/food?date=${encodeURIComponent(date)}`);
     }
 
-    createFoodLog(payload: FoodLogCreatePayload): Promise<FoodLogEntry> {
+    createFoodLog(payload: FoodLogCreatePayload, operationId?: string): Promise<FoodLogEntry> {
         return this.request<FoodLogEntry>('/api/food', {
             method: 'POST',
+            headers: buildOperationHeaders(operationId),
             json: payload
         });
     }
 
-    deleteFoodLog(id: number): Promise<void> {
+    deleteFoodLog(id: number, operationId?: string): Promise<void> {
         return this.request<void>(`/api/food/${encodeURIComponent(String(id))}`, {
-            method: 'DELETE'
+            method: 'DELETE',
+            headers: buildOperationHeaders(operationId)
         });
     }
 
-    updateFoodLog(id: number, payload: FoodLogUpdatePayload): Promise<FoodLogEntry> {
+    updateFoodLog(id: number, payload: FoodLogUpdatePayload, operationId?: string): Promise<FoodLogEntry> {
         return this.request<FoodLogEntry>(`/api/food/${encodeURIComponent(String(id))}`, {
             method: 'PATCH',
+            headers: buildOperationHeaders(operationId),
             json: payload
         });
     }
@@ -374,11 +385,18 @@ export class CalibrateApiClient {
         return this.request<FoodLogDay>(`/api/food-days?date=${encodeURIComponent(date)}`);
     }
 
-    updateFoodDay(payload: { date: string; is_complete: boolean }): Promise<FoodLogDay> {
+    updateFoodDay(payload: { date: string; is_complete: boolean }, operationId?: string): Promise<FoodLogDay> {
         return this.request<FoodLogDay>('/api/food-days', {
             method: 'PATCH',
+            headers: buildOperationHeaders(operationId),
             json: payload
         });
+    }
+
+    getSyncChanges(after = '0', limit?: number): Promise<SyncChangesResponse> {
+        const query = new URLSearchParams({ after });
+        if (limit !== undefined) query.set('limit', String(limit));
+        return this.request<SyncChangesResponse>(`/api/sync/changes?${query.toString()}`);
     }
 
     getInAppNotifications(): Promise<InAppNotificationsResponse> {

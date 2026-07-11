@@ -326,3 +326,19 @@ export type LoseItImportSummary = {
     };
     warnings: string[];
 };
+
+export type SyncChange = {
+    cursor: string;
+    entity_type: string;
+    entity_id: string;
+    action: 'upsert' | 'delete';
+    operation_id: string | null;
+    payload: unknown;
+    created_at: string;
+};
+
+export type SyncChangesResponse = {
+    changes: SyncChange[];
+    next_cursor: string;
+    has_more: boolean;
+};

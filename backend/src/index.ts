@@ -23,6 +23,7 @@ import importRoutes from './routes/imports';
 import metricRoutes from './routes/metrics';
 import myFoodsRoutes from './routes/myFoods';
 import notificationRoutes from './routes/notifications';
+import syncRoutes from './routes/sync';
 import userRoutes from './routes/user';
 import { authenticateMobileBearerToken } from './middleware/mobileAuth';
 import { createAuthRateLimiters } from './middleware/security';
@@ -388,6 +389,7 @@ const bootstrap = async (): Promise<void> => {
   apiRouter.use('/my-foods', myFoodsRoutes);
   apiRouter.use('/imports', importRoutes);
   apiRouter.use('/notifications', notificationRoutes);
+  apiRouter.use('/sync', syncRoutes);
   apiRouter.use('/user/password', authRateLimiters.passwordChange);
   apiRouter.use('/user', userRoutes);
 

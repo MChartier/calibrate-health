@@ -1,6 +1,12 @@
 import express from 'express';
 import prisma from '../config/database';
 import { MS_PER_DAY, addUtcDays, parseLocalDateOnly } from '../utils/date';
+import {
+    ClientOperationConflictError,
+    executeIdempotentMutation,
+    parseClientOperationId,
+    recordSyncChange
+} from '../services/clientOperations';
 
 /**
  * Daily food log completion status endpoints.
@@ -237,23 +243,56 @@ router.patch('/', async (req, res) => {
     const completedAt = is_complete ? new Date() : null;
 
     try {
-        const updated = await prisma.foodLogDay.upsert({
-            where: { user_id_local_date: { user_id: user.id, local_date: parsedDate.dateValue } },
-            update: { is_complete, completed_at: completedAt },
-            create: {
-                user_id: user.id,
-                local_date: parsedDate.dateValue,
-                is_complete,
-                completed_at: completedAt
+        const operationId = parseClientOperationId(
+            req.get?.('x-client-operation-id') ?? req.headers?.['x-client-operation-id']
+        );
+        if (operationId === null) {
+            return res.status(400).json({ message: 'Invalid x-client-operation-id' });
+        }
+
+        const result = await executeIdempotentMutation<unknown>({
+            userId: user.id,
+            operationId,
+            operationKind: 'food_log_day.set_complete',
+            requestPayload: req.body,
+            mutate: async (tx, claimedOperationId) => {
+                const updated = await tx.foodLogDay.upsert({
+                    where: { user_id_local_date: { user_id: user.id, local_date: parsedDate.dateValue } },
+                    update: { is_complete, completed_at: completedAt },
+                    create: {
+                        user_id: user.id,
+                        local_date: parsedDate.dateValue,
+                        is_complete,
+                        completed_at: completedAt
+                    }
+                });
+                const body = {
+                    date: parsedDate.dateKey,
+                    is_complete: updated.is_complete,
+                    completed_at: updated.completed_at
+                };
+                await recordSyncChange({
+                    tx,
+                    userId: user.id,
+                    entityType: 'food_log_day',
+                    entityId: parsedDate.dateKey,
+                    action: 'upsert',
+                    operationId: claimedOperationId,
+                    payload: body
+                });
+                return { status: 200, body };
             }
         });
 
-        return res.json({
-            date: parsedDate.dateKey,
-            is_complete: updated.is_complete,
-            completed_at: updated.completed_at
-        });
+        return res.status(result.status).json(result.body);
     } catch (err) {
+        if (err instanceof ClientOperationConflictError) {
+            return res.status(409).json({
+                message: err.message,
+                code: err.code,
+                retryable: err.code === 'OPERATION_IN_PROGRESS'
+            });
+        }
         return res.status(500).json({ message: 'Server error' });
     }
 });

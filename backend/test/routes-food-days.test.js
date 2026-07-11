@@ -12,15 +12,29 @@ function stubModule(resolvedPath, exports) {
 function loadFoodDaysRouter(prismaStub) {
   const dbPath = require.resolve('../src/config/database');
   const routePath = require.resolve('../src/routes/foodDays');
+  const clientOperationsPath = require.resolve('../src/services/clientOperations');
 
   const previousDbModule = require.cache[dbPath];
+  const previousClientOperationsModule = require.cache[clientOperationsPath];
   delete require.cache[routePath];
+  delete require.cache[clientOperationsPath];
 
-  stubModule(dbPath, prismaStub);
+  const normalizedPrismaStub = {
+    ...prismaStub,
+    syncChange: {
+      create: async () => ({ id: 1n }),
+      ...(prismaStub.syncChange ?? {})
+    }
+  };
+  normalizedPrismaStub.$transaction ??= async (callback) => callback(normalizedPrismaStub);
+  stubModule(dbPath, normalizedPrismaStub);
   const loaded = require('../src/routes/foodDays');
 
   if (previousDbModule) require.cache[dbPath] = previousDbModule;
   else delete require.cache[dbPath];
+
+  if (previousClientOperationsModule) require.cache[clientOperationsPath] = previousClientOperationsModule;
+  else delete require.cache[clientOperationsPath];
 
   return loaded.default ?? loaded;
 }
@@ -188,4 +202,3 @@ test('food-days route: GET /range validates query shape', async () => {
   assert.equal(missingStartRes.statusCode, 400);
   assert.deepEqual(missingStartRes.body, { message: 'Provide start and end dates' });
 });
-

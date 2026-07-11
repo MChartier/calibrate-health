@@ -111,6 +111,10 @@ model User {
   mobile_sessions MobileAuthSession[]
   /// Native push tokens for Android app builds.
   native_push_subscriptions NativePushSubscription[]
+  /// Durable idempotency records for native/offline mutation replay.
+  client_operations ClientOperation[]
+  /// Ordered mutation feed used by reconnecting clients.
+  sync_changes SyncChange[]
   /// In-app reminder feed entries rendered in the notifications panel.
   in_app_notifications InAppNotification[]
 }
@@ -376,6 +380,37 @@ model NativePushSubscription {
   @@index([user_id])
   @@index([user_id, device_id])
   @@index([mobile_auth_session_id])
+}
+
+model ClientOperation {
+  id               Int       @id @default(autoincrement())
+  user_id          Int
+  user             User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  operation_id     String
+  operation_kind   String
+  request_hash     String
+  response_status  Int?
+  response_body    Json?
+  created_at       DateTime  @default(now())
+  completed_at     DateTime?
+
+  @@unique([user_id, operation_id])
+  @@index([user_id, created_at])
+}
+
+model SyncChange {
+  id             BigInt    @id @default(autoincrement())
+  user_id        Int
+  user           User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  entity_type    String
+  entity_id      String
+  action         String
+  operation_id   String?
+  payload        Json?
+  created_at     DateTime  @default(now())
+
+  @@index([user_id, id])
+  @@index([user_id, entity_type, entity_id])
 }
 
 model InAppNotification {

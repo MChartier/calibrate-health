@@ -6,6 +6,12 @@ import {
     type FoodDataSource
 } from '../services/foodData';
 import type { FoodDataProvider, FoodSearchRequest, FoodSearchResult } from '../services/foodData';
+import {
+    ClientOperationConflictError,
+    executeIdempotentMutation,
+    parseClientOperationId,
+    recordSyncChange
+} from '../services/clientOperations';
 import { parseLocalDateOnly } from '../utils/date';
 import { parsePositiveInteger } from '../utils/requestParsing';
 import { parseFoodLogCreateBody, parseFoodLogUpdateBody, parseFoodSearchParams } from './foodUtils';
@@ -338,6 +344,13 @@ router.get('/', async (req, res) => {
 router.post('/', async (req, res) => {
     const user = req.user as any;
     try {
+        const operationId = parseClientOperationId(
+            req.get?.('x-client-operation-id') ?? req.headers?.['x-client-operation-id']
+        );
+        if (operationId === null) {
+            return res.status(400).json({ message: 'Invalid x-client-operation-id' });
+        }
+
         // Supports either manual entries or a "my food" reference with servings.
         const parsedBody = parseFoodLogCreateBody({
             body: req.body,
@@ -348,60 +361,94 @@ router.post('/', async (req, res) => {
             return res.status(parsedBody.statusCode).json({ message: parsedBody.message });
         }
 
-        if (parsedBody.kind === 'MY_FOOD') {
-            // Snapshot serving details so later edits to "my foods" do not mutate historical logs.
-            const myFood = await prisma.myFood.findFirst({
-                where: { id: parsedBody.myFoodId, user_id: user.id }
-            });
-            if (!myFood) {
-                return res.status(404).json({ message: 'My food not found' });
-            }
+        const result = await executeIdempotentMutation<unknown>({
+            userId: user.id,
+            operationId,
+            operationKind: 'food_log.create',
+            requestPayload: req.body,
+            mutate: async (tx, claimedOperationId) => {
+                if (parsedBody.kind === 'MY_FOOD') {
+                    // Snapshot serving details so later edits to "my foods" do not mutate historical logs.
+                    const myFood = await tx.myFood.findFirst({
+                        where: { id: parsedBody.myFoodId, user_id: user.id }
+                    });
+                    if (!myFood) {
+                        return { status: 404, body: { message: 'My food not found' } };
+                    }
 
-            const caloriesTotal = Math.round(parsedBody.servingsConsumed * myFood.calories_per_serving);
-
-            const log = await prisma.foodLog.create({
-                data: {
-                    user_id: user.id,
-                    my_food_id: myFood.id,
-                    name: myFood.name,
-                    calories: caloriesTotal,
-                    meal_period: parsedBody.mealPeriod,
-                    date: parsedBody.entryTimestamp,
-                    local_date: parsedBody.localDate,
-                    servings_consumed: parsedBody.servingsConsumed,
-                    serving_size_quantity_snapshot: myFood.serving_size_quantity,
-                    serving_unit_label_snapshot: myFood.serving_unit_label,
-                    calories_per_serving_snapshot: myFood.calories_per_serving
+                    const caloriesTotal = Math.round(parsedBody.servingsConsumed * myFood.calories_per_serving);
+                    const log = await tx.foodLog.create({
+                        data: {
+                            user_id: user.id,
+                            my_food_id: myFood.id,
+                            name: myFood.name,
+                            calories: caloriesTotal,
+                            meal_period: parsedBody.mealPeriod,
+                            date: parsedBody.entryTimestamp,
+                            local_date: parsedBody.localDate,
+                            servings_consumed: parsedBody.servingsConsumed,
+                            serving_size_quantity_snapshot: myFood.serving_size_quantity,
+                            serving_unit_label_snapshot: myFood.serving_unit_label,
+                            calories_per_serving_snapshot: myFood.calories_per_serving
+                        }
+                    });
+                    await recordSyncChange({
+                        tx,
+                        userId: user.id,
+                        entityType: 'food_log',
+                        entityId: log.id,
+                        action: 'upsert',
+                        operationId: claimedOperationId,
+                        payload: log
+                    });
+                    return { status: 200, body: log };
                 }
-            });
-            return res.json(log);
-        }
 
-        const log = await prisma.foodLog.create({
-            data: {
-                user_id: user.id,
-                name: parsedBody.name,
-                calories: parsedBody.calories,
-                meal_period: parsedBody.mealPeriod,
-                date: parsedBody.entryTimestamp,
-                local_date: parsedBody.localDate,
-                servings_consumed: parsedBody.servingsConsumed,
-                serving_size_quantity_snapshot: parsedBody.servingSizeQuantitySnapshot,
-                serving_unit_label_snapshot: parsedBody.servingUnitLabelSnapshot,
-                calories_per_serving_snapshot: parsedBody.caloriesPerServingSnapshot,
-                external_source: parsedBody.externalSource,
-                external_id: parsedBody.externalId,
-                brand_snapshot: parsedBody.brandSnapshot,
-                locale_snapshot: parsedBody.localeSnapshot,
-                barcode_snapshot: parsedBody.barcodeSnapshot,
-                measure_label_snapshot: parsedBody.measureLabelSnapshot,
-                grams_per_measure_snapshot: parsedBody.gramsPerMeasureSnapshot,
-                measure_quantity_snapshot: parsedBody.measureQuantitySnapshot,
-                grams_total_snapshot: parsedBody.gramsTotalSnapshot
+                const log = await tx.foodLog.create({
+                    data: {
+                        user_id: user.id,
+                        name: parsedBody.name,
+                        calories: parsedBody.calories,
+                        meal_period: parsedBody.mealPeriod,
+                        date: parsedBody.entryTimestamp,
+                        local_date: parsedBody.localDate,
+                        servings_consumed: parsedBody.servingsConsumed,
+                        serving_size_quantity_snapshot: parsedBody.servingSizeQuantitySnapshot,
+                        serving_unit_label_snapshot: parsedBody.servingUnitLabelSnapshot,
+                        calories_per_serving_snapshot: parsedBody.caloriesPerServingSnapshot,
+                        external_source: parsedBody.externalSource,
+                        external_id: parsedBody.externalId,
+                        brand_snapshot: parsedBody.brandSnapshot,
+                        locale_snapshot: parsedBody.localeSnapshot,
+                        barcode_snapshot: parsedBody.barcodeSnapshot,
+                        measure_label_snapshot: parsedBody.measureLabelSnapshot,
+                        grams_per_measure_snapshot: parsedBody.gramsPerMeasureSnapshot,
+                        measure_quantity_snapshot: parsedBody.measureQuantitySnapshot,
+                        grams_total_snapshot: parsedBody.gramsTotalSnapshot
+                    }
+                });
+                await recordSyncChange({
+                    tx,
+                    userId: user.id,
+                    entityType: 'food_log',
+                    entityId: log.id,
+                    action: 'upsert',
+                    operationId: claimedOperationId,
+                    payload: log
+                });
+                return { status: 200, body: log };
             }
         });
-        return res.json(log);
+
+        return res.status(result.status).json(result.body);
     } catch (err) {
+        if (err instanceof ClientOperationConflictError) {
+            return res.status(409).json({
+                message: err.message,
+                code: err.code,
+                retryable: err.code === 'OPERATION_IN_PROGRESS'
+            });
+        }
         res.status(500).json({ message: 'Server error' });
     }
 });
@@ -413,24 +460,55 @@ router.patch('/:id', async (req, res) => {
         return res.status(400).json({ message: 'Invalid food log id' });
     }
 
-    const existing = await prisma.foodLog.findFirst({ where: { id, user_id: user.id } });
-    if (!existing) {
-        return res.status(404).json({ message: 'Food log not found' });
-    }
-
-    const parsedUpdate = parseFoodLogUpdateBody({ body: req.body, existing });
-    if (!parsedUpdate.ok) {
-        return res.status(parsedUpdate.statusCode).json({ message: parsedUpdate.message });
-    }
-
     try {
-        const updated = await prisma.foodLog.update({
-            where: { id },
-            data: parsedUpdate.updateData
+        const operationId = parseClientOperationId(
+            req.get?.('x-client-operation-id') ?? req.headers?.['x-client-operation-id']
+        );
+        if (operationId === null) {
+            return res.status(400).json({ message: 'Invalid x-client-operation-id' });
+        }
+
+        const existing = await prisma.foodLog.findFirst({ where: { id, user_id: user.id } });
+        if (!existing) {
+            return res.status(404).json({ message: 'Food log not found' });
+        }
+        const parsedUpdate = parseFoodLogUpdateBody({ body: req.body, existing });
+        if (!parsedUpdate.ok) {
+            return res.status(parsedUpdate.statusCode).json({ message: parsedUpdate.message });
+        }
+
+        const result = await executeIdempotentMutation<unknown>({
+            userId: user.id,
+            operationId,
+            operationKind: 'food_log.update',
+            requestPayload: { id, ...req.body },
+            mutate: async (tx, claimedOperationId) => {
+                const updated = await tx.foodLog.update({
+                    where: { id },
+                    data: parsedUpdate.updateData
+                });
+                await recordSyncChange({
+                    tx,
+                    userId: user.id,
+                    entityType: 'food_log',
+                    entityId: id,
+                    action: 'upsert',
+                    operationId: claimedOperationId,
+                    payload: updated
+                });
+                return { status: 200, body: updated };
+            }
         });
 
-        res.json(updated);
+        return res.status(result.status).json(result.body);
     } catch (err) {
+        if (err instanceof ClientOperationConflictError) {
+            return res.status(409).json({
+                message: err.message,
+                code: err.code,
+                retryable: err.code === 'OPERATION_IN_PROGRESS'
+            });
+        }
         res.status(500).json({ message: 'Server error' });
     }
 });
@@ -443,13 +521,45 @@ router.delete('/:id', async (req, res) => {
     }
 
     try {
-        const deleteResult = await prisma.foodLog.deleteMany({ where: { id, user_id: user.id } });
-        if (deleteResult.count === 0) {
-            return res.status(404).json({ message: 'Food log not found' });
+        const operationId = parseClientOperationId(
+            req.get?.('x-client-operation-id') ?? req.headers?.['x-client-operation-id']
+        );
+        if (operationId === null) {
+            return res.status(400).json({ message: 'Invalid x-client-operation-id' });
         }
 
-        res.status(204).send();
+        const result = await executeIdempotentMutation<unknown>({
+            userId: user.id,
+            operationId,
+            operationKind: 'food_log.delete',
+            requestPayload: { id },
+            mutate: async (tx, claimedOperationId) => {
+                const deleteResult = await tx.foodLog.deleteMany({ where: { id, user_id: user.id } });
+                if (deleteResult.count === 0) {
+                    return { status: 404, body: { message: 'Food log not found' } };
+                }
+                await recordSyncChange({
+                    tx,
+                    userId: user.id,
+                    entityType: 'food_log',
+                    entityId: id,
+                    action: 'delete',
+                    operationId: claimedOperationId
+                });
+                return { status: 204, body: null };
+            }
+        });
+
+        if (result.status === 204) return res.status(204).send();
+        return res.status(result.status).json(result.body);
     } catch (err) {
+        if (err instanceof ClientOperationConflictError) {
+            return res.status(409).json({
+                message: err.message,
+                code: err.code,
+                retryable: err.code === 'OPERATION_IN_PROGRESS'
+            });
+        }
         res.status(500).json({ message: 'Server error' });
     }
 });
