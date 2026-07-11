@@ -133,6 +133,39 @@ test('auth route: POST /mobile/login returns mobile tokens for valid credentials
   assert.equal(sessionCreates[0].data.device_id, 'device-1');
 });
 
+test('auth route: POST /mobile/login performs a dummy hash comparison for unknown accounts', async () => {
+  let comparedHash = null;
+  const router = loadAuthRouter({
+    prismaStub: {
+      user: { findFirst: async () => null },
+      mobileAuthSession: {}
+    },
+    passportStub: { authenticate: () => () => {} },
+    bcryptStub: {
+      compare: async (_password, hash) => {
+        comparedHash = hash;
+        return false;
+      },
+      genSalt: async () => 'salt',
+      hash: async () => 'hash'
+    }
+  });
+  const handler = getRouteHandler(router, 'post', '/mobile/login');
+  const res = createRes();
+
+  await handler({
+    body: {
+      email: 'missing@example.com',
+      password: 'password123',
+      device_id: 'device-1'
+    }
+  }, res);
+
+  assert.equal(res.statusCode, 401);
+  assert.deepEqual(res.body, { message: 'Invalid email or password' });
+  assert.match(comparedHash, /^\$2[aby]\$/);
+});
+
 test('auth route: POST /mobile/refresh rejects missing refresh token', async () => {
   const router = loadAuthRouter({
     prismaStub: { user: {}, mobileAuthSession: {} },

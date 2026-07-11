@@ -6,6 +6,7 @@ import path from 'node:path';
 import bcrypt from 'bcryptjs';
 import cors, { type CorsOptionsDelegate } from 'cors';
 import express from 'express';
+import helmet from 'helmet';
 import session from 'express-session';
 import passport from 'passport';
 import { Strategy as LocalStrategy } from 'passport-local';
@@ -24,8 +25,9 @@ import myFoodsRoutes from './routes/myFoods';
 import notificationRoutes from './routes/notifications';
 import userRoutes from './routes/user';
 import { authenticateMobileBearerToken } from './middleware/mobileAuth';
+import { createAuthRateLimiters } from './middleware/security';
 import { startReminderScheduler } from './services/reminderScheduler';
-import { normalizeEmailCredential } from './utils/authCredentials';
+import { DUMMY_AUTH_PASSWORD_HASH, normalizeEmailCredential } from './utils/authCredentials';
 import { autoLoginTestUser } from './utils/devAuth';
 import { DEFAULT_SESSION_TTL_MS, PostgresSessionStore } from './utils/postgresSessionStore';
 import { USER_CLIENT_SELECT } from './utils/userSerialization';
@@ -219,6 +221,12 @@ const bootstrap = async (): Promise<void> => {
 
   // Reduce fingerprinting surface for minimal Express signature.
   app.disable('x-powered-by');
+  app.use(helmet({
+    // A deployment-aware CSP needs to account for self-hosted proxy and food-image origins.
+    contentSecurityPolicy: false,
+    ...(isProductionOrStaging ? {} : { strictTransportSecurity: false })
+  }));
+  const authRateLimiters = createAuthRateLimiters();
 
   const secureCookieEnv = process.env.SESSION_COOKIE_SECURE;
   const useSecureCookies = secureCookieEnv ? secureCookieEnv === 'true' : isProductionOrStaging;
@@ -275,6 +283,11 @@ const bootstrap = async (): Promise<void> => {
   };
 
   app.use(cors(corsDelegate));
+  app.use('/auth/register', authRateLimiters.registration);
+  app.use('/auth/mobile/register', authRateLimiters.registration);
+  app.use('/auth/login', authRateLimiters.login);
+  app.use('/auth/mobile/login', authRateLimiters.login);
+  app.use('/auth/mobile/refresh', authRateLimiters.refresh);
   app.use(express.json({ limit: '2mb' }));
   app.use(express.urlencoded({ extended: true, limit: '2mb' }));
 
@@ -316,10 +329,8 @@ const bootstrap = async (): Promise<void> => {
           orderBy: { id: 'asc' },
           select: { ...USER_CLIENT_SELECT, password_hash: true },
         });
-        if (!user) return done(null, false, { message: 'Invalid email or password' });
-
-        const isMatch = await bcrypt.compare(password, user.password_hash);
-        if (!isMatch) {
+        const isMatch = await bcrypt.compare(password, user?.password_hash ?? DUMMY_AUTH_PASSWORD_HASH);
+        if (!user || !isMatch) {
           return done(null, false, { message: 'Invalid email or password' });
         }
 
@@ -375,6 +386,7 @@ const bootstrap = async (): Promise<void> => {
   apiRouter.use('/my-foods', myFoodsRoutes);
   apiRouter.use('/imports', importRoutes);
   apiRouter.use('/notifications', notificationRoutes);
+  apiRouter.use('/user/password', authRateLimiters.passwordChange);
   apiRouter.use('/user', userRoutes);
 
   // Keep debug/prototype routes (food provider comparisons, etc.) out of production deployments.
