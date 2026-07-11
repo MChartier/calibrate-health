@@ -25,11 +25,11 @@
     "@mui/x-charts": "^9.0.2",
     "@tanstack/react-query": "^5.90.10",
     "@zxing/library": "^0.21.3",
-    "axios": "^1.13.2",
+    "axios": "^1.18.1",
     "cropperjs": "^1.5.13",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
-    "react-router-dom": "^7.9.6",
+    "react-router-dom": "^7.18.1",
     "react-select": "^5.10.2",
     "react-timezone-select": "^3.2.8"
   },
