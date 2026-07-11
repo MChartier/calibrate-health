@@ -118,7 +118,7 @@ export const WeightEntrySheet: React.FC<WeightEntrySheetProps> = ({ visible, dat
             )}
             {!existingMetric && prefillMetric && (
                 <AppText variant="muted">
-                    Defaulted from {formatDateOnlyForDisplay(toDatePart(prefillMetric.date))}.
+                    Using your last weigh-in from {formatDateOnlyForDisplay(toDatePart(prefillMetric.date))}.
                 </AppText>
             )}
             <NumberStepperField

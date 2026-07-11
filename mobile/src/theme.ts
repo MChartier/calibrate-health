@@ -2,6 +2,7 @@ export const colors = {
     background: '#F6F8F4',
     surface: '#ffffff',
     surfaceAlt: '#EEF4EA',
+    surfaceMuted: '#F8FAFC',
     surfacePressed: '#E5EDDF',
     text: '#1F2937',
     muted: '#64748b',
@@ -9,19 +10,25 @@ export const colors = {
     primaryDark: '#1B5E20',
     primarySoft: '#E7F3E5',
     border: '#DDE5D8',
+    controlTrack: '#CBD5E1',
+    info: '#2563EB',
+    infoSoft: '#EAF1FF',
     danger: '#dc2626',
+    dangerMuted: '#9F1239',
     success: '#2E7D32',
     warning: '#F59E0B',
+    warningDark: '#B45309',
+    warningSoft: '#FFF7E6',
     nav: '#111827'
 };
 
 export const spacing = {
     xs: 4,
-    sm: 7,
-    md: 10,
-    lg: 14,
-    xl: 20,
-    xxl: 28
+    sm: 6,
+    md: 9,
+    lg: 12,
+    xl: 18,
+    xxl: 24
 };
 
 export const radius = {
@@ -31,12 +38,12 @@ export const radius = {
 };
 
 export const typography = {
-    title: 26,
-    screenTitle: 22,
-    subtitle: 17,
-    body: 15,
-    small: 13,
-    caption: 12
+    title: 24,
+    screenTitle: 20,
+    subtitle: 16,
+    body: 14,
+    small: 12,
+    caption: 11
 };
 
 export const shadows = {

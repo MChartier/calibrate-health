@@ -14,6 +14,7 @@ type NumberStepperFieldProps = {
     max?: number;
     suffix?: string;
     helperText?: string;
+    placeholder?: string;
     editable?: boolean;
     containerStyle?: StyleProp<ViewStyle>;
 };
@@ -35,6 +36,7 @@ export const NumberStepperField: React.FC<NumberStepperFieldProps> = ({
     max,
     suffix,
     helperText,
+    placeholder,
     editable = true,
     containerStyle
 }) => {
@@ -69,6 +71,7 @@ export const NumberStepperField: React.FC<NumberStepperFieldProps> = ({
                     hideLabel
                     value={value}
                     onChangeText={onChangeText}
+                    placeholder={placeholder}
                     keyboardType="decimal-pad"
                     containerStyle={styles.field}
                     style={styles.input}

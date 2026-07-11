@@ -21,13 +21,15 @@ export const AppChip: React.FC<AppChipProps> = ({ label, selected = false, style
             typeof style === 'function' ? style({ pressed }) : style
         ]}
     >
-        <AppText style={[styles.label, selected && styles.selectedLabel]}>{label}</AppText>
+        <AppText numberOfLines={1} adjustsFontSizeToFit style={[styles.label, selected && styles.selectedLabel]}>
+            {label}
+        </AppText>
     </Pressable>
 );
 
 const styles = StyleSheet.create({
     root: {
-        minHeight: 42,
+        minHeight: 38,
         borderColor: colors.border,
         borderWidth: StyleSheet.hairlineWidth,
         borderRadius: radius.pill,
@@ -46,8 +48,8 @@ const styles = StyleSheet.create({
     },
     label: {
         color: colors.text,
-        fontSize: 14,
-        lineHeight: 18,
+        fontSize: 13,
+        lineHeight: 17,
         fontWeight: '800'
     },
     selectedLabel: {

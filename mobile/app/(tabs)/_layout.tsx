@@ -1,11 +1,12 @@
 import React from 'react';
-import { Image, Pressable, StyleSheet, View } from 'react-native';
+import { Image, Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { Redirect, router, Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import type { UserClientPayload } from '@calibrate/api-client';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppText } from '../../src/components/AppText';
+import { CalibrateLogo } from '../../src/components/CalibrateLogo';
 import { LoadingState } from '../../src/components/LoadingState';
 import { useAuth } from '../../src/auth/AuthContext';
 import { LogDateProvider } from '../../src/context/LogDateContext';
@@ -17,7 +18,11 @@ const HIDDEN_TAB_OPTIONS = {
     href: null
 } as const;
 
-const TAB_BAR_BASE_HEIGHT = 64; // Bottom tab height before Android gesture/navigation safe-area padding.
+const TAB_BAR_BASE_HEIGHT = 58; // Bottom tab height before Android gesture/navigation safe-area padding.
+const HEADER_ACCOUNT_GAP = 2; // Keeps the avatar affordance compact while still showing a menu chevron.
+const HEADER_ROW_HEIGHT = 48; // Custom app chrome height after the Android status bar safe area.
+const HEADER_TITLE_SIDE_OFFSET = 136; // Reserves space for brand and account actions around a centered route title.
+const HEADER_WORDMARK_MIN_WIDTH = 350; // Below this, keep the brand mark but hide the wordmark to protect action/title space.
 
 export default function TabsLayout() {
     const { api, user, isLoading } = useAuth();
@@ -62,18 +67,16 @@ export default function TabsLayout() {
                         height: TAB_BAR_BASE_HEIGHT + insets.bottom,
                         paddingBottom: Math.max(insets.bottom, spacing.sm),
                         paddingTop: spacing.xs,
-                        paddingHorizontal: spacing.xxl
+                        paddingHorizontal: spacing.xl
                     },
                     tabBarLabelStyle: { fontWeight: '800' },
-                    headerStyle: { backgroundColor: colors.surface },
-                    headerShadowVisible: true,
-                    headerTintColor: colors.text,
-                    headerTitleAlign: 'center',
-                    headerLeftContainerStyle: { width: 104 },
-                    headerRightContainerStyle: { paddingRight: spacing.xs },
-                    headerLeft: () => <HeaderBrand />,
-                    headerRight: () => (
-                        <HeaderActions user={user} unreadCount={notificationsQuery.data?.unread_count ?? 0} />
+                    header: ({ options }) => (
+                        <TabHeader
+                            topInset={insets.top}
+                            title={typeof options.headerTitle === 'string' ? options.headerTitle : ''}
+                            user={user}
+                            unreadCount={notificationsQuery.data?.unread_count ?? 0}
+                        />
                     )
                 }}
             >
@@ -102,16 +105,49 @@ export default function TabsLayout() {
     );
 }
 
-const HeaderBrand: React.FC = () => (
-    <Pressable
-        accessibilityRole="button"
-        accessibilityLabel="Go to log"
-        onPress={() => router.push('/(tabs)/today')}
-        style={({ pressed }) => [styles.brand, pressed && styles.pressed]}
-    >
-        <AppText numberOfLines={1} style={styles.brandText}>calibrate</AppText>
-    </Pressable>
+const TabHeader: React.FC<{
+    topInset: number;
+    title: string;
+    user: UserClientPayload | null;
+    unreadCount: number;
+}> = ({ topInset, title, user, unreadCount }) => (
+    <View style={[styles.headerRoot, { paddingTop: topInset }]}>
+        <View style={styles.headerRow}>
+            <HeaderBrand />
+            {title.length > 0 && (
+                <View pointerEvents="none" style={styles.headerTitle}>
+                    <AppText numberOfLines={1} style={styles.headerTitleText}>{title}</AppText>
+                </View>
+            )}
+            <HeaderActions user={user} unreadCount={unreadCount} />
+        </View>
+    </View>
 );
+
+const HeaderBrand: React.FC = () => {
+    const { width } = useWindowDimensions();
+    const showWordmark = width >= HEADER_WORDMARK_MIN_WIDTH;
+
+    return (
+        <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Go to log"
+            onPress={() => router.push('/(tabs)/today')}
+            style={({ pressed }) => [
+                styles.brand,
+                !showWordmark && styles.brandIconOnly,
+                pressed && styles.pressed
+            ]}
+        >
+            <CalibrateLogo size={32} />
+            {showWordmark && (
+                <AppText numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.82} style={styles.brandText}>
+                    calibrate
+                </AppText>
+            )}
+        </Pressable>
+    );
+};
 
 function getAvatarLabel(email?: string | null): string {
     return email?.trim().charAt(0).toUpperCase() || 'C';
@@ -136,7 +172,7 @@ const HeaderActions: React.FC<{ user: UserClientPayload | null; unreadCount: num
             accessibilityRole="button"
             accessibilityLabel="Open settings"
             onPress={() => router.push('/(tabs)/settings')}
-            style={({ pressed }) => [styles.headerButton, pressed && styles.pressed]}
+            style={({ pressed }) => [styles.accountButton, pressed && styles.pressed]}
         >
             {user?.profile_image_url ? (
                 <Image source={{ uri: user.profile_image_url }} style={styles.avatarImage} />
@@ -145,22 +181,57 @@ const HeaderActions: React.FC<{ user: UserClientPayload | null; unreadCount: num
                     <AppText style={styles.avatarText}>{getAvatarLabel(user?.email)}</AppText>
                 </View>
             )}
+            <Ionicons name="chevron-down" size={13} color={colors.muted} />
         </Pressable>
     </View>
 );
 
 const styles = StyleSheet.create({
+    headerRoot: {
+        backgroundColor: colors.surface,
+        borderBottomColor: colors.border,
+        borderBottomWidth: StyleSheet.hairlineWidth
+    },
+    headerRow: {
+        height: HEADER_ROW_HEIGHT,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingHorizontal: spacing.md
+    },
+    headerTitle: {
+        position: 'absolute',
+        left: HEADER_TITLE_SIDE_OFFSET,
+        right: HEADER_TITLE_SIDE_OFFSET,
+        top: 0,
+        bottom: 0,
+        alignItems: 'center',
+        justifyContent: 'center'
+    },
+    headerTitleText: {
+        color: colors.text,
+        fontSize: 20,
+        fontWeight: '900'
+    },
     brand: {
-        width: 96,
-        minHeight: 40,
+        minWidth: 126,
+        maxWidth: 160,
+        minHeight: 36,
+        flexDirection: 'row',
+        alignItems: 'center',
         justifyContent: 'center',
-        paddingLeft: spacing.sm,
+        gap: spacing.sm,
+        paddingLeft: spacing.xs,
         paddingRight: spacing.xs,
         borderRadius: radius.md
     },
+    brandIconOnly: {
+        minWidth: 42,
+        maxWidth: 42
+    },
     brandText: {
         color: colors.text,
-        fontSize: 19,
+        fontSize: 18,
         fontWeight: '900',
         letterSpacing: 0
     },
@@ -171,11 +242,20 @@ const styles = StyleSheet.create({
         paddingRight: spacing.sm
     },
     headerButton: {
-        width: 40,
-        height: 40,
+        width: 36,
+        height: 36,
         borderRadius: radius.md,
         alignItems: 'center',
         justifyContent: 'center'
+    },
+    accountButton: {
+        width: 50,
+        height: 36,
+        borderRadius: radius.md,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: HEADER_ACCOUNT_GAP
     },
     pressed: {
         backgroundColor: colors.surfaceAlt
@@ -189,7 +269,7 @@ const styles = StyleSheet.create({
         borderRadius: radius.pill,
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: colors.danger,
+        backgroundColor: colors.primary,
         paddingHorizontal: 4
     },
     badgeText: {
@@ -201,14 +281,14 @@ const styles = StyleSheet.create({
         includeFontPadding: false
     },
     avatarImage: {
-        width: 30,
-        height: 30,
-        borderRadius: 15
+        width: 28,
+        height: 28,
+        borderRadius: 14
     },
     avatarFallback: {
-        width: 30,
-        height: 30,
-        borderRadius: 15,
+        width: 28,
+        height: 28,
+        borderRadius: 14,
         alignItems: 'center',
         justifyContent: 'center',
         backgroundColor: colors.primarySoft,

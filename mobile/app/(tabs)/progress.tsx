@@ -4,11 +4,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ALLOWED_DAILY_DEFICIT_ABS_VALUES } from '@calibrate/shared';
 import { AppButton } from '../../src/components/AppButton';
-import { AppChip } from '../../src/components/AppChip';
 import { AppText } from '../../src/components/AppText';
 import { BottomSheetModal } from '../../src/components/BottomSheetModal';
 import { GoalProgressCard } from '../../src/components/GoalProgressCard';
 import { NumberStepperField } from '../../src/components/NumberStepperField';
+import { OverlaySelect, type OverlaySelectOption } from '../../src/components/OverlaySelect';
 import { Screen } from '../../src/components/Screen';
 import { SectionHeader } from '../../src/components/SectionHeader';
 import { SegmentedControl } from '../../src/components/SegmentedControl';
@@ -18,7 +18,7 @@ import { WeightTrendCard } from '../../src/components/WeightTrendCard';
 import { useAuth } from '../../src/auth/AuthContext';
 import { gramsToDisplayWeight } from '../../src/utils/bodyMeasurements';
 import { getTodayDate } from '../../src/utils/dates';
-import { formatSignedCalories, formatWeightUnit } from '../../src/utils/format';
+import { formatWeightUnit } from '../../src/utils/format';
 import { colors, radius, spacing } from '../../src/theme';
 
 type GoalMode = 'lose' | 'maintain' | 'gain';
@@ -58,6 +58,23 @@ function getSignedDailyDeficit(goalMode: GoalMode, dailyChangeAbs: string): numb
     return goalMode === 'gain' ? -magnitude : magnitude;
 }
 
+function getDailyChangeCopy(goalMode: GoalMode, dailyChangeAbs: string): { label: string; description: string } {
+    const magnitude = Math.abs(Number(dailyChangeAbs));
+    const formattedMagnitude = Number.isFinite(magnitude) ? magnitude.toLocaleString() : dailyChangeAbs;
+
+    if (goalMode === 'gain') {
+        return {
+            label: `${formattedMagnitude} kcal/day surplus`,
+            description: `Targets eating ${formattedMagnitude} kcal above estimated burn.`
+        };
+    }
+
+    return {
+        label: `${formattedMagnitude} kcal/day deficit`,
+        description: `Targets eating ${formattedMagnitude} kcal below estimated burn.`
+    };
+}
+
 function inferGoalMode(dailyDeficit?: number | null): GoalMode {
     if (typeof dailyDeficit !== 'number' || dailyDeficit === 0) return 'maintain';
     return dailyDeficit > 0 ? 'lose' : 'gain';
@@ -80,6 +97,7 @@ export default function ProgressScreen() {
     const [goalMode, setGoalMode] = useState<GoalMode>('lose');
     const [dailyChangeAbs, setDailyChangeAbs] = useState('500');
     const [validationError, setValidationError] = useState<string | null>(null);
+    const [isDailyChangeSelectorOpen, setIsDailyChangeSelectorOpen] = useState(false);
 
     const signedDailyDeficit = getSignedDailyDeficit(goalMode, dailyChangeAbs);
     const canSave = Number(startWeight) > 0 && Number(targetWeight) > 0 && Number.isFinite(Number(dailyChangeAbs));
@@ -134,14 +152,19 @@ export default function ProgressScreen() {
         setGoalMode(inferGoalMode(currentGoal?.daily_deficit));
         setDailyChangeAbs(String(Math.abs(currentGoal?.daily_deficit ?? 500) || 500));
         setValidationError(null);
+        setIsDailyChangeSelectorOpen(false);
         setIsGoalEditorOpen(true);
+    }
+
+    function handleGoalModeChange(nextMode: GoalMode) {
+        setGoalMode(nextMode);
+        setIsDailyChangeSelectorOpen(false);
     }
 
     return (
         <Screen reserveBottomTabs>
             <WeightStatusCard
                 latestMetric={metricsQuery.data?.[0]}
-                latestTrendMetric={trendSummaryQuery.data?.metrics[0]}
                 user={user}
                 onEditWeight={() => setIsWeightEditorOpen(true)}
             />
@@ -161,42 +184,45 @@ export default function ProgressScreen() {
                     title="Set a new goal"
                     description={`Weights are entered in ${formatWeightUnit(user?.weight_unit)}.`}
                 />
-                <SegmentedControl options={GOAL_MODES} value={goalMode} onChange={setGoalMode} />
-                <View style={styles.startingContext}>
-                    <Ionicons name="scale-outline" size={18} color={colors.primaryDark} />
-                    <View style={styles.startingText}>
-                        <AppText variant="label">Starting from</AppText>
-                        <AppText style={styles.startingValue}>
-                            {startWeight ? `${startWeight} ${formatWeightUnit(user?.weight_unit)}` : 'Log a current weight first'}
-                        </AppText>
+                <SegmentedControl options={GOAL_MODES} value={goalMode} onChange={handleGoalModeChange} />
+                <View style={styles.goalEditorBody}>
+                    <View style={styles.startingContext}>
+                        <Ionicons name="scale-outline" size={18} color={colors.primaryDark} />
+                        <View style={styles.startingText}>
+                            <AppText variant="label">Starting from</AppText>
+                            <AppText style={styles.startingValue}>
+                                {startWeight ? `${startWeight} ${formatWeightUnit(user?.weight_unit)}` : 'Log a current weight first'}
+                            </AppText>
+                        </View>
+                    </View>
+                    <NumberStepperField
+                        label="Target"
+                        value={targetWeight}
+                        onChangeText={setTargetWeight}
+                        step={WEIGHT_GOAL_STEP}
+                        min={WEIGHT_GOAL_STEP}
+                        suffix={formatWeightUnit(user?.weight_unit)}
+                    />
+                    <View style={styles.dailyChangeSlot}>
+                        <AppText variant="label">Daily calorie change</AppText>
+                        {goalMode === 'maintain' ? (
+                            <View style={styles.maintenanceNote}>
+                                <AppText variant="muted">Maintenance goals use a steady calorie target with no daily deficit or surplus.</AppText>
+                            </View>
+                        ) : (
+                            <DailyChangeSelector
+                                goalMode={goalMode}
+                                value={dailyChangeAbs}
+                                isOpen={isDailyChangeSelectorOpen}
+                                onToggle={() => setIsDailyChangeSelectorOpen((current) => !current)}
+                                onSelect={(nextValue) => {
+                                    setDailyChangeAbs(nextValue);
+                                    setIsDailyChangeSelectorOpen(false);
+                                }}
+                            />
+                        )}
                     </View>
                 </View>
-                <NumberStepperField
-                    label="Target"
-                    value={targetWeight}
-                    onChangeText={setTargetWeight}
-                    step={WEIGHT_GOAL_STEP}
-                    min={WEIGHT_GOAL_STEP}
-                    suffix={formatWeightUnit(user?.weight_unit)}
-                />
-                {goalMode !== 'maintain' && (
-                    <>
-                        <AppText variant="label">Daily calorie change</AppText>
-                        <View style={styles.chips}>
-                            {DAILY_CHANGE_OPTIONS.map((value) => {
-                                const signedValue = goalMode === 'gain' ? value : -value;
-                                return (
-                                    <AppChip
-                                        key={value}
-                                        label={formatSignedCalories(signedValue)}
-                                        selected={dailyChangeAbs === String(value)}
-                                        onPress={() => setDailyChangeAbs(String(value))}
-                                    />
-                                );
-                            })}
-                        </View>
-                    </>
-                )}
                 {(validationError || saveGoal.error) && (
                     <AppText style={styles.error}>{validationError ?? saveGoal.error?.message}</AppText>
                 )}
@@ -227,6 +253,43 @@ export default function ProgressScreen() {
     );
 }
 
+type DailyChangeSelectorProps = {
+    goalMode: Exclude<GoalMode, 'maintain'>;
+    value: string;
+    isOpen: boolean;
+    onToggle: () => void;
+    onSelect: (value: string) => void;
+};
+
+const DailyChangeSelector: React.FC<DailyChangeSelectorProps> = ({
+    goalMode,
+    value,
+    isOpen,
+    onToggle,
+    onSelect
+}) => {
+    const options: Array<OverlaySelectOption<string>> = DAILY_CHANGE_OPTIONS.map((option) => {
+        const optionValue = String(option);
+        const optionCopy = getDailyChangeCopy(goalMode, optionValue);
+        return {
+            value: optionValue,
+            label: optionCopy.label,
+            description: optionCopy.description
+        };
+    });
+
+    return (
+        <OverlaySelect
+            accessibilityLabel="Select daily calorie change"
+            value={value}
+            options={options}
+            isOpen={isOpen}
+            onToggle={onToggle}
+            onChange={onSelect}
+        />
+    );
+};
+
 const styles = StyleSheet.create({
     row: {
         flexDirection: 'row',
@@ -235,10 +298,18 @@ const styles = StyleSheet.create({
     rowField: {
         flex: 1
     },
-    chips: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
+    goalEditorBody: {
+        minHeight: 254,
+        gap: spacing.md
+    },
+    dailyChangeSlot: {
+        minHeight: 98,
         gap: spacing.sm
+    },
+    maintenanceNote: {
+        borderRadius: radius.md,
+        backgroundColor: colors.surfaceAlt,
+        padding: spacing.md
     },
     startingContext: {
         flexDirection: 'row',

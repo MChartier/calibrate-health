@@ -9,7 +9,7 @@ type ScreenProps = ViewProps & {
     reserveBottomTabs?: boolean;
 };
 
-const BOTTOM_TAB_RESERVED_SPACE = 56; // Keeps tab-owned scroll content clear of the native bottom navigation bar.
+const BOTTOM_TAB_RESERVED_SPACE = 9; // Leaves about two card gaps of scroll breathing room above the tab bar without long empty gutters.
 
 export const Screen: React.FC<ScreenProps> = ({
     children,

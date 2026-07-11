@@ -25,16 +25,15 @@ type MealGroup = {
     calories: number;
 };
 
-const MEAL_ICONS: Record<MealPeriod, keyof typeof Ionicons.glyphMap> = {
-    BREAKFAST: 'egg-outline',
-    MORNING_SNACK: 'cafe-outline',
-    LUNCH: 'fast-food-outline',
-    AFTERNOON_SNACK: 'ice-cream-outline',
-    DINNER: 'restaurant-outline',
-    EVENING_SNACK: 'wine-outline'
+// Start collapsed so a populated food log remains scannable on phone screens.
+const DEFAULT_EXPANDED_MEALS: Record<MealPeriod, boolean> = {
+    BREAKFAST: false,
+    MORNING_SNACK: false,
+    LUNCH: false,
+    AFTERNOON_SNACK: false,
+    DINNER: false,
+    EVENING_SNACK: false
 };
-
-const TIMELINE_ICON_SIZE = 30; // Keeps meal icons aligned with the PWA-style vertical timeline without dominating phone rows.
 
 function getServingText(entry: FoodLogEntry): string | null {
     if (typeof entry.servings_consumed !== 'number' || !Number.isFinite(entry.servings_consumed)) return null;
@@ -42,7 +41,7 @@ function getServingText(entry: FoodLogEntry): string | null {
 }
 
 /**
- * Interactive meal timeline for the Log tab, matching the PWA's meal grouping and add/edit/delete affordances.
+ * Compact meal log for the Log tab, matching the PWA's meal grouping and add/edit/delete affordances.
  */
 export const FoodLogTimelineCard: React.FC<FoodLogTimelineCardProps> = ({
     entries,
@@ -54,14 +53,7 @@ export const FoodLogTimelineCard: React.FC<FoodLogTimelineCardProps> = ({
     style,
     ...props
 }) => {
-    const [expandedMeals, setExpandedMeals] = useState<Record<MealPeriod, boolean>>({
-        BREAKFAST: true,
-        MORNING_SNACK: true,
-        LUNCH: true,
-        AFTERNOON_SNACK: true,
-        DINNER: true,
-        EVENING_SNACK: true
-    });
+    const [expandedMeals, setExpandedMeals] = useState<Record<MealPeriod, boolean>>(DEFAULT_EXPANDED_MEALS);
 
     const mealGroups = useMemo<MealGroup[]>(() => {
         return MEAL_OPTIONS.map((meal) => {
@@ -86,13 +78,12 @@ export const FoodLogTimelineCard: React.FC<FoodLogTimelineCardProps> = ({
                 </View>
             </View>
 
-            <View>
+            <View style={styles.mealList}>
                 {mealGroups.map((group, index) => (
                     <MealTimelineRow
                         key={group.meal}
                         group={group}
                         isFirst={index === 0}
-                        isLast={index === mealGroups.length - 1}
                         isExpanded={expandedMeals[group.meal]}
                         disabled={disabled}
                         onAddMeal={onAddMeal}
@@ -105,9 +96,9 @@ export const FoodLogTimelineCard: React.FC<FoodLogTimelineCardProps> = ({
 
             <AppButton
                 title="Add food"
-                variant={entries.length > 0 ? 'secondary' : 'primary'}
+                variant="secondary"
                 disabled={disabled}
-                leftIcon={<Ionicons name="add" size={18} color={entries.length > 0 ? colors.text : '#ffffff'} />}
+                leftIcon={<Ionicons name="add" size={18} color={colors.text} />}
                 onPress={onAddFood}
             />
         </AppCard>
@@ -117,7 +108,6 @@ export const FoodLogTimelineCard: React.FC<FoodLogTimelineCardProps> = ({
 type MealTimelineRowProps = {
     group: MealGroup;
     isFirst: boolean;
-    isLast: boolean;
     isExpanded: boolean;
     disabled?: boolean;
     onAddMeal: (meal: MealPeriod) => void;
@@ -129,7 +119,6 @@ type MealTimelineRowProps = {
 const MealTimelineRow: React.FC<MealTimelineRowProps> = ({
     group,
     isFirst,
-    isLast,
     isExpanded,
     disabled,
     onAddMeal,
@@ -141,19 +130,8 @@ const MealTimelineRow: React.FC<MealTimelineRowProps> = ({
 
     return (
         <View style={styles.mealRow}>
-            <View style={styles.rail}>
-                {!isFirst && <View style={[styles.railLine, styles.railLineTop]} />}
-                {!isLast && <View style={[styles.railLine, styles.railLineBottom]} />}
-                <View style={[styles.mealIcon, hasEntries && styles.mealIconActive]}>
-                    <Ionicons
-                        name={MEAL_ICONS[group.meal]}
-                        size={18}
-                        color={hasEntries ? colors.primaryDark : colors.muted}
-                    />
-                </View>
-            </View>
             <View style={styles.mealContent}>
-                <View style={styles.mealHeader}>
+                <View style={[styles.mealHeader, !isFirst && styles.mealDivider]}>
                     <View style={styles.mealTitleRow}>
                         <AppText variant="body" numberOfLines={1} adjustsFontSizeToFit style={styles.mealTitle}>
                             {formatMealPeriod(group.meal)}
@@ -179,9 +157,7 @@ const MealTimelineRow: React.FC<MealTimelineRowProps> = ({
                             >
                                 <Ionicons name={isExpanded ? 'chevron-up' : 'chevron-down'} size={18} color={colors.muted} />
                             </Pressable>
-                        ) : (
-                            <View style={styles.expandButton} />
-                        )}
+                        ) : null}
                     </View>
                 </View>
                 {hasEntries && isExpanded && (
@@ -235,7 +211,7 @@ const FoodEntryRow: React.FC<FoodEntryRowProps> = ({ entry, disabled, onEditEntr
                 onPress={() => onDeleteEntry(entry)}
                 style={({ pressed }) => [styles.entryAction, disabled && styles.disabled, pressed && styles.pressed]}
             >
-                <Ionicons name="trash" size={18} color={disabled ? colors.muted : colors.danger} />
+                <Ionicons name="trash-outline" size={18} color={colors.muted} />
             </Pressable>
         </View>
     );
@@ -253,56 +229,26 @@ const styles = StyleSheet.create({
         minWidth: 0,
         gap: spacing.xs
     },
+    mealList: {
+        marginTop: spacing.xs
+    },
     mealRow: {
-        flexDirection: 'row',
-        minHeight: 54
-    },
-    rail: {
-        width: TIMELINE_ICON_SIZE,
-        alignItems: 'center',
-        position: 'relative'
-    },
-    railLine: {
-        position: 'absolute',
-        width: StyleSheet.hairlineWidth,
-        backgroundColor: colors.border
-    },
-    railLineTop: {
-        top: 0,
-        bottom: '50%'
-    },
-    railLineBottom: {
-        top: '50%',
-        bottom: 0
-    },
-    mealIcon: {
-        width: TIMELINE_ICON_SIZE,
-        height: TIMELINE_ICON_SIZE,
-        borderRadius: TIMELINE_ICON_SIZE / 2,
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: colors.surfaceAlt,
-        borderColor: colors.border,
-        borderWidth: StyleSheet.hairlineWidth,
-        zIndex: 1
-    },
-    mealIconActive: {
-        backgroundColor: colors.primarySoft,
-        borderColor: colors.primary
+        minHeight: 0
     },
     mealContent: {
         flex: 1,
-        minWidth: 0,
-        paddingLeft: spacing.sm,
-        paddingBottom: spacing.sm
+        minWidth: 0
     },
     mealHeader: {
-        minHeight: TIMELINE_ICON_SIZE,
+        minHeight: 36,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        gap: spacing.xs,
-        paddingBottom: spacing.xs
+        gap: spacing.xs
+    },
+    mealDivider: {
+        borderTopColor: colors.border,
+        borderTopWidth: StyleSheet.hairlineWidth
     },
     mealTitleRow: {
         flex: 1,
@@ -329,8 +275,8 @@ const styles = StyleSheet.create({
         fontSize: 14
     },
     addMealButton: {
-        width: 32,
-        height: 32,
+        width: 30,
+        height: 30,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
@@ -338,8 +284,8 @@ const styles = StyleSheet.create({
         backgroundColor: colors.primarySoft
     },
     expandButton: {
-        width: 28,
-        height: 28,
+        width: 26,
+        height: 26,
         alignItems: 'center',
         justifyContent: 'center'
     },
@@ -348,7 +294,7 @@ const styles = StyleSheet.create({
         borderTopWidth: StyleSheet.hairlineWidth
     },
     entryRow: {
-        minHeight: 44,
+        minHeight: 40,
         flexDirection: 'row',
         alignItems: 'center',
         gap: spacing.sm,

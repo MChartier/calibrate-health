@@ -14,6 +14,8 @@ available through the normal store channel.
 - The Android emulator dev default server is `http://10.0.2.2:3000`.
 - For Expo Go on a physical Android phone, start Expo with a LAN-reachable backend URL:
   `$env:EXPO_PUBLIC_CALIBRATE_SERVER_URL='http://<host-lan-ip>:3000'; npm --prefix mobile run start -- --go --lan`.
+- In Expo dev builds pointed at localhost, the emulator loopback, or a LAN backend, the app auto-mints a mobile
+  session for `test@calibratehealth.app` when no stored session can be restored.
 - Production and internal builds default to `https://calibratehealth.app`.
 - Self-hosted users can set a custom server URL on the sign-in screen.
 
