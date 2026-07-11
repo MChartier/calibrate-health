@@ -78,3 +78,30 @@ test('mobile auth middleware still rejects expired bearer tokens on protected ro
   assert.equal(res.statusCode, 401);
   assert.deepEqual(res.body, { message: 'Invalid or expired access token' });
 });
+
+test('mobile auth middleware exposes trusted session and device identity', async () => {
+  const middleware = loadMiddleware(async () => ({
+    ok: true,
+    user: { id: 9 },
+    sessionId: 73,
+    deviceId: 'trusted-device'
+  }));
+  const req = {
+    method: 'POST',
+    path: '/api/notifications/native-subscription',
+    get: () => 'Bearer valid'
+  };
+  const res = createResponse();
+  res.locals = {};
+  let nextCount = 0;
+
+  await middleware(req, res, () => {
+    nextCount += 1;
+  });
+
+  assert.equal(nextCount, 1);
+  assert.equal(req.user.id, 9);
+  assert.equal(req.isAuthenticated(), true);
+  assert.equal(res.locals.mobileAuthSessionId, 73);
+  assert.equal(res.locals.mobileDeviceId, 'trusted-device');
+});

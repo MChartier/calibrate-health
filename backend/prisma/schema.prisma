@@ -345,6 +345,8 @@ model MobileAuthSession {
   last_used_at        DateTime?
   created_at          DateTime             @default(now())
   updated_at          DateTime             @updatedAt
+  /// Push endpoints authenticated and registered by this native session.
+  native_push_subscriptions NativePushSubscription[]
 
   @@index([user_id])
   @@index([user_id, device_id, revoked_at])
@@ -354,6 +356,8 @@ model NativePushSubscription {
   id                    Int                @id @default(autoincrement())
   user_id               Int
   user                  User               @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  mobile_auth_session_id Int?
+  mobile_auth_session    MobileAuthSession? @relation(fields: [mobile_auth_session_id], references: [id], onDelete: Cascade)
   /// Stable per-install identifier supplied by the native client.
   device_id             String
   /// Native OS platform for this token.
@@ -368,9 +372,10 @@ model NativePushSubscription {
   created_at            DateTime           @default(now())
   updated_at            DateTime           @updatedAt
 
-  @@unique([user_id, provider, token])
+  @@unique([provider, token])
   @@index([user_id])
   @@index([user_id, device_id])
+  @@index([mobile_auth_session_id])
 }
 
 model InAppNotification {

@@ -164,3 +164,31 @@ test('mobile auth allows exactly one successor for concurrent refresh-token repl
   const successfulResult = results.find(Boolean);
   assert.equal(storedRefreshHash, hashMobileToken(successfulResult.refreshToken));
 });
+
+test('mobile auth logout revokes push subscriptions bound to the session', async () => {
+  let mobileSessionUpdate = null;
+  let pushSubscriptionUpdate = null;
+  const prismaStub = {
+    $transaction: async (operations) => Promise.all(operations),
+    mobileAuthSession: {
+      findMany: async () => [{ id: 31 }],
+      updateMany: async (args) => {
+        mobileSessionUpdate = args;
+        return { count: 1 };
+      }
+    },
+    nativePushSubscription: {
+      updateMany: async (args) => {
+        pushSubscriptionUpdate = args;
+        return { count: 1 };
+      }
+    }
+  };
+
+  const { revokeMobileSessionByRefreshToken } = loadMobileAuthService({ prismaStub });
+  await revokeMobileSessionByRefreshToken('logout-refresh-token');
+
+  assert.deepEqual(mobileSessionUpdate.where.id, { in: [31] });
+  assert.deepEqual(pushSubscriptionUpdate.where.mobile_auth_session_id, { in: [31] });
+  assert.equal(mobileSessionUpdate.data.revoked_at, pushSubscriptionUpdate.data.revoked_at);
+});

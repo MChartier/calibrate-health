@@ -28,5 +28,7 @@ export const authenticateMobileBearerToken = async (
 
   req.user = result.user;
   req.isAuthenticated = (() => true) as Request['isAuthenticated'];
+  res.locals.mobileAuthSessionId = result.sessionId;
+  res.locals.mobileDeviceId = result.deviceId;
   return next();
 };

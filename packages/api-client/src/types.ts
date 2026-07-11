@@ -189,7 +189,7 @@ export type InAppNotificationsResponse = {
 
 export type NativePushSubscriptionPayload = {
     token: string;
-    device_id: string;
+    device_id?: string;
     platform?: NativePushPlatform;
     provider?: NativePushProvider;
 };

@@ -33,7 +33,7 @@ type ParseMobileDeviceResult =
   | { ok: false; message: string };
 
 type AuthenticateAccessTokenResult =
-  | { ok: true; user: UserClientPayload; sessionId: number }
+  | { ok: true; user: UserClientPayload; sessionId: number; deviceId: string }
   | { ok: false; status: number; message: string };
 
 const randomToken = (): string => crypto.randomBytes(TOKEN_BYTES).toString('base64url');
@@ -209,15 +209,35 @@ export async function refreshMobileSession(refreshToken: string): Promise<Mobile
  */
 export async function revokeMobileSessionByRefreshToken(refreshToken: string): Promise<void> {
   const tokenHash = hashMobileToken(refreshToken);
-  await prisma.mobileAuthSession.updateMany({
+  await revokeMobileSessionsAndPushSubscriptions({ refresh_token_hash: tokenHash });
+}
+
+/** Revoke sessions and every push endpoint authorized by them in the same database transaction. */
+async function revokeMobileSessionsAndPushSubscriptions(tokenWhere: {
+  access_token_hash?: string;
+  refresh_token_hash?: string;
+}): Promise<void> {
+  const sessions = await prisma.mobileAuthSession.findMany({
     where: {
-      refresh_token_hash: tokenHash,
+      ...tokenWhere,
       revoked_at: null
     },
-    data: {
-      revoked_at: new Date()
-    }
+    select: { id: true }
   });
+  if (sessions.length === 0) return;
+
+  const sessionIds = sessions.map((session) => session.id);
+  const revokedAt = new Date();
+  await prisma.$transaction([
+    prisma.mobileAuthSession.updateMany({
+      where: { id: { in: sessionIds }, revoked_at: null },
+      data: { revoked_at: revokedAt }
+    }),
+    prisma.nativePushSubscription.updateMany({
+      where: { mobile_auth_session_id: { in: sessionIds }, revoked_at: null },
+      data: { revoked_at: revokedAt }
+    })
+  ]);
 }
 
 /**
@@ -225,15 +245,7 @@ export async function revokeMobileSessionByRefreshToken(refreshToken: string): P
  */
 export async function revokeMobileSessionByAccessToken(accessToken: string): Promise<void> {
   const tokenHash = hashMobileToken(accessToken);
-  await prisma.mobileAuthSession.updateMany({
-    where: {
-      access_token_hash: tokenHash,
-      revoked_at: null
-    },
-    data: {
-      revoked_at: new Date()
-    }
-  });
+  await revokeMobileSessionsAndPushSubscriptions({ access_token_hash: tokenHash });
 }
 
 /**
@@ -274,7 +286,8 @@ export async function authenticateMobileAccessToken(
   return {
     ok: true,
     user: serializeUserForClient(session.user),
-    sessionId: session.id
+    sessionId: session.id,
+    deviceId: session.device_id
   };
 }
 
