@@ -59,6 +59,12 @@ export type MobileSessionSummary = {
 
 export type ClientConfigResponse = {
     api_version: number;
+    api_versions: {
+        current: 'v1';
+        supported: string[];
+        legacy_alias: string;
+        legacy_deprecation: string;
+    };
     server_version: string;
     hosted_origin: string;
     min_supported_mobile_version: string;

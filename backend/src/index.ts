@@ -372,6 +372,8 @@ const bootstrap = async (): Promise<void> => {
 
   app.use('/auth', authRoutes);
   const apiRouter = express.Router();
+  // Versioned clients use /api/v1; /api remains a compatibility alias during migration.
+  app.use('/api/v1', apiRouter);
   app.use('/api', apiRouter);
 
   apiRouter.get('/healthz', (_req, res) => {

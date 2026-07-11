@@ -316,3 +316,7 @@ Notes:
 
 See [docs/security.md](docs/security.md) for the browser CSRF posture, native bearer-token model,
 authentication rate limits, and device-session behavior.
+
+The shared client uses the stable `/api/v1` resource API. See
+[docs/api-versioning.md](docs/api-versioning.md) and [docs/openapi/v1.yaml](docs/openapi/v1.yaml)
+for compatibility and wire-contract policy.

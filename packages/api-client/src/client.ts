@@ -55,7 +55,11 @@ const DEFAULT_REQUEST_TIMEOUT_MS = 15000;
 const trimTrailingSlash = (value: string): string => value.replace(/\/+$/, '');
 
 const buildUrl = (baseUrl: string, path: string): string => {
-    const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+    const requestedPath = path.startsWith('/') ? path : `/${path}`;
+    // Keep method declarations readable while ensuring all shared API calls use the stable v1 mount.
+    const normalizedPath = requestedPath.startsWith('/api/')
+        ? `/api/v1/${requestedPath.slice('/api/'.length)}`
+        : requestedPath;
     return `${trimTrailingSlash(baseUrl)}${normalizedPath}`;
 };
 
@@ -148,7 +152,15 @@ export class CalibrateApiClient {
         }
 
         const text = await response.text();
-        const body = text.length > 0 ? JSON.parse(text) : null;
+        let body: unknown = null;
+        if (text.length > 0) {
+            try {
+                body = JSON.parse(text);
+            } catch {
+                // Reverse proxies and self-hosted gateways can return plain text or HTML failures.
+                body = text;
+            }
+        }
 
         if (!response.ok) {
             if (response.status === 401 && auth && allowRefresh && this.refreshAccessToken) {
@@ -163,6 +175,7 @@ export class CalibrateApiClient {
             throw new ApiError(getErrorMessage(body, `Request failed with status ${response.status}`), response.status, body);
         }
 
+        if (response.status === 204) return undefined as T;
         return body as T;
     }
 
@@ -278,8 +291,8 @@ export class CalibrateApiClient {
         });
     }
 
-    deleteMetric(id: number): Promise<{ message: string }> {
-        return this.request<{ message: string }>(`/api/metrics/${encodeURIComponent(String(id))}`, {
+    deleteMetric(id: number): Promise<void> {
+        return this.request<void>(`/api/metrics/${encodeURIComponent(String(id))}`, {
             method: 'DELETE'
         });
     }
@@ -295,8 +308,8 @@ export class CalibrateApiClient {
         });
     }
 
-    deleteFoodLog(id: number): Promise<{ message: string }> {
-        return this.request<{ message: string }>(`/api/food/${encodeURIComponent(String(id))}`, {
+    deleteFoodLog(id: number): Promise<void> {
+        return this.request<void>(`/api/food/${encodeURIComponent(String(id))}`, {
             method: 'DELETE'
         });
     }

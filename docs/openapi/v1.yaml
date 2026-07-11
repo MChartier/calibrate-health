@@ -1,0 +1,311 @@
+openapi: 3.1.0
+info:
+  title: Calibrate API
+  version: 1.0.0
+  description: Stable wire contract shared by the self-hosted web, Android, and future Wear OS clients.
+servers:
+  - url: /
+paths:
+  /api/v1/client-config:
+    get:
+      operationId: getClientConfig
+      security: []
+      responses:
+        '200':
+          description: Server compatibility and capability document.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientConfigResponse'
+  /auth/mobile/login:
+    post:
+      operationId: loginMobile
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MobileAuthRequest'
+      responses:
+        '200':
+          description: Authenticated native session.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MobileAuthResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /auth/mobile/refresh:
+    post:
+      operationId: refreshMobile
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [refresh_token]
+              properties:
+                refresh_token:
+                  type: string
+      responses:
+        '200':
+          description: Rotated native session credentials.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MobileAuthResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /auth/mobile/sessions:
+    get:
+      operationId: listMobileSessions
+      responses:
+        '200':
+          description: Active native sessions owned by the account.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [sessions]
+                properties:
+                  sessions:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/MobileSessionSummary'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /api/v1/food/{foodLogId}:
+    delete:
+      operationId: deleteFoodLog
+      parameters:
+        - $ref: '#/components/parameters/FoodLogId'
+      responses:
+        '204':
+          description: Food log deleted; response has no body.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /api/v1/metrics/{metricId}:
+    delete:
+      operationId: deleteMetric
+      parameters:
+        - $ref: '#/components/parameters/MetricId'
+      responses:
+        '204':
+          description: Weight metric deleted; response has no body.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+components:
+  securitySchemes:
+    mobileBearer:
+      type: http
+      scheme: bearer
+  parameters:
+    FoodLogId:
+      name: foodLogId
+      in: path
+      required: true
+      schema:
+        type: integer
+        minimum: 1
+    MetricId:
+      name: metricId
+      in: path
+      required: true
+      schema:
+        type: integer
+        minimum: 1
+  responses:
+    Unauthorized:
+      description: Authentication is missing, expired, or rejected.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+  schemas:
+    ApiError:
+      type: object
+      required: [message]
+      properties:
+        message:
+          type: string
+        code:
+          type: [string, 'null']
+        field_errors:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+        retryable:
+          type: boolean
+    ClientConfigResponse:
+      type: object
+      required:
+        - api_version
+        - api_versions
+        - server_version
+        - hosted_origin
+        - min_supported_mobile_version
+        - capabilities
+      properties:
+        api_version:
+          type: integer
+          const: 1
+        api_versions:
+          type: object
+          required: [current, supported, legacy_alias, legacy_deprecation]
+          properties:
+            current:
+              type: string
+              const: v1
+            supported:
+              type: array
+              items:
+                type: string
+              minItems: 1
+            legacy_alias:
+              type: string
+            legacy_deprecation:
+              type: string
+        server_version:
+          type: string
+        hosted_origin:
+          type: string
+          format: uri
+        min_supported_mobile_version:
+          type: string
+        capabilities:
+          type: object
+          required: [self_hosted_server_url, native_push, wear_os_ready]
+          properties:
+            self_hosted_server_url:
+              type: boolean
+            native_push:
+              type: boolean
+            wear_os_ready:
+              type: boolean
+    MobileAuthRequest:
+      type: object
+      required: [email, password, device_id]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 8
+          maxLength: 72
+        device_id:
+          type: string
+          maxLength: 128
+        device_platform:
+          $ref: '#/components/schemas/MobileDevicePlatform'
+        device_name:
+          type: string
+          maxLength: 120
+    MobileAuthResponse:
+      type: object
+      required: [user, access_token, refresh_token, access_expires_at, refresh_expires_at]
+      properties:
+        user:
+          $ref: '#/components/schemas/UserClientPayload'
+        access_token:
+          type: string
+        refresh_token:
+          type: string
+        access_expires_at:
+          type: string
+          format: date-time
+        refresh_expires_at:
+          type: string
+          format: date-time
+    MobileSessionSummary:
+      type: object
+      required:
+        - id
+        - device_id
+        - device_platform
+        - device_name
+        - created_at
+        - last_used_at
+        - refresh_expires_at
+        - current
+      properties:
+        id:
+          type: integer
+        device_id:
+          type: string
+        device_platform:
+          $ref: '#/components/schemas/MobileDevicePlatform'
+        device_name:
+          type: [string, 'null']
+        created_at:
+          type: string
+          format: date-time
+        last_used_at:
+          type: [string, 'null']
+          format: date-time
+        refresh_expires_at:
+          type: string
+          format: date-time
+        current:
+          type: boolean
+    MobileDevicePlatform:
+      type: string
+      enum: [android_phone, wear_os]
+    UserClientPayload:
+      type: object
+      required:
+        - id
+        - email
+        - created_at
+        - weight_unit
+        - height_unit
+        - timezone
+        - language
+        - reminder_log_weight_enabled
+        - reminder_log_food_enabled
+        - haptics_enabled
+      properties:
+        id:
+          type: integer
+        email:
+          type: string
+          format: email
+        created_at:
+          type: string
+          format: date-time
+        weight_unit:
+          type: string
+          enum: [KG, LB]
+        height_unit:
+          type: string
+          enum: [CM, FT_IN]
+        timezone:
+          type: string
+        language:
+          type: string
+        reminder_log_weight_enabled:
+          type: boolean
+        reminder_log_food_enabled:
+          type: boolean
+        haptics_enabled:
+          type: boolean
+        date_of_birth:
+          type: [string, 'null']
+          format: date
+        sex:
+          type: [string, 'null']
+          enum: [MALE, FEMALE, null]
+        height_mm:
+          type: [integer, 'null']
+        activity_level:
+          type: [string, 'null']
+          enum: [SEDENTARY, LIGHT, MODERATE, ACTIVE, VERY_ACTIVE, null]
+        profile_image_url:
+          type: [string, 'null']
+security:
+  - mobileBearer: []

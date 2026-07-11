@@ -111,3 +111,33 @@ describe('CalibrateApiClient mobile authentication recovery', () => {
         expect(refreshCount).toBe(0);
     });
 });
+
+describe('CalibrateApiClient v1 wire behavior', () => {
+    it('uses the v1 API mount and resolves 204 responses as undefined', async () => {
+        let requestedUrl = '';
+        const client = new CalibrateApiClient({
+            baseUrl: 'https://example.test/',
+            fetchImpl: async (input) => {
+                requestedUrl = String(input);
+                return new Response(null, { status: 204 });
+            }
+        });
+
+        await expect(client.deleteFoodLog(17)).resolves.toBeUndefined();
+        expect(requestedUrl).toBe('https://example.test/api/v1/food/17');
+    });
+
+    it('surfaces non-JSON gateway failures as ApiError instead of a parse exception', async () => {
+        const client = new CalibrateApiClient({
+            baseUrl: 'https://example.test',
+            fetchImpl: async () => new Response('<html>bad gateway</html>', { status: 502 })
+        });
+
+        await expect(client.getClientConfig()).rejects.toMatchObject({
+            name: 'ApiError',
+            status: 502,
+            body: '<html>bad gateway</html>',
+            message: 'Request failed with status 502'
+        });
+    });
+});

@@ -6,6 +6,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: tests-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   backend-tests:
     name: Backend Tests
@@ -28,7 +32,7 @@ jobs:
           cache-dependency-path: backend/package-lock.json
 
       - name: Install deps
-        run: npm ci
+        run: npm ci --no-audit --fund=false
 
       - name: Run tests
         run: npm test
@@ -54,7 +58,7 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
 
       - name: Install deps
-        run: npm ci
+        run: npm ci --no-audit --fund=false
 
       - name: Run tests
         run: npm test
@@ -76,7 +80,10 @@ jobs:
           cache-dependency-path: package-lock.json
 
       - name: Install deps
-        run: npm ci
+        run: npm ci --no-audit --fund=false
+
+      - name: Validate API contract
+        run: npm run api:contract:check
 
       - name: Run mobile tests
         run: npm --prefix mobile test
