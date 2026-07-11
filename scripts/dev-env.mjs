@@ -19,6 +19,13 @@ const DATABASE_WAIT_RETRY_MS = 2000;
 
 const packages = [
   {
+    // Native/shared workspaces use the root lockfile and hoisted dependency tree.
+    name: "mobile-workspace",
+    directory: repoRoot,
+    installArgs: ["ci", "--prefer-offline", "--no-audit", "--fund=false"],
+    requiredPaths: ["node_modules/expo/package.json"],
+  },
+  {
     name: "backend",
     directory: path.join(repoRoot, "backend"),
     installArgs: ["ci", "--prefer-offline", "--no-audit", "--fund=false"],
@@ -677,11 +684,17 @@ async function ci() {
   await timed("Lint frontend", () => {
     run("npm", ["--prefix", "frontend", "run", "lint"]);
   });
+  await timed("Type-check mobile", () => {
+    run("npm", ["--prefix", "mobile", "run", "typecheck"]);
+  });
   await timed("Run backend tests", () => {
     run("npm", ["--prefix", "backend", "test"]);
   });
   await timed("Run frontend tests", () => {
     run("npm", ["--prefix", "frontend", "test"]);
+  });
+  await timed("Run mobile tests", () => {
+    run("npm", ["--prefix", "mobile", "test", "--", "--runInBand"]);
   });
   printDone("Full local CI passed.");
 }

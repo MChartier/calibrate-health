@@ -86,8 +86,13 @@ const dbUser = {
 
 test('auth route: POST /mobile/login returns mobile tokens for valid credentials', async () => {
   const sessionCreates = [];
+  const userLookups = [];
   const prismaStub = {
     user: {
+      findFirst: async (args) => {
+        userLookups.push(args);
+        return dbUser;
+      },
       findUnique: async () => dbUser
     },
     mobileAuthSession: {
@@ -121,6 +126,9 @@ test('auth route: POST /mobile/login returns mobile tokens for valid credentials
   assert.equal(res.body.user.email, dbUser.email);
   assert.ok(res.body.access_token);
   assert.ok(res.body.refresh_token);
+  assert.deepEqual(userLookups[0].where, {
+    email: { equals: 'native@example.com', mode: 'insensitive' }
+  });
   assert.equal(sessionCreates[0].data.device_id, 'device-1');
 });
 

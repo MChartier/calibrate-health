@@ -124,11 +124,15 @@ function resolveWorkspaceModuleRoot(moduleName) {
   const mobileModuleRoot = path.resolve(projectRoot, 'node_modules', ...modulePathParts);
   if (fs.existsSync(mobileModuleRoot)) return mobileModuleRoot;
 
-  return path.resolve(workspaceRoot, 'node_modules', ...modulePathParts);
+  const workspaceModuleRoot = path.resolve(workspaceRoot, 'node_modules', ...modulePathParts);
+  return fs.existsSync(workspaceModuleRoot) ? workspaceModuleRoot : null;
 }
 
 const hoistedRuntimeRoots = Object.fromEntries(
-  hoistedRuntimeModules.map((moduleName) => [moduleName, resolveWorkspaceModuleRoot(moduleName)])
+  // Nested-only dependencies resolve through their owning package and must not become invalid watch roots.
+  hoistedRuntimeModules
+    .map((moduleName) => [moduleName, resolveWorkspaceModuleRoot(moduleName)])
+    .filter((entry) => entry[1] !== null)
 );
 const config = getDefaultConfig(projectRoot);
 
