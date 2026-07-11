@@ -116,10 +116,200 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/user/account/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["exportAccount"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/user/account": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["deleteAccount"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        AccountExport: {
+            /** @constant */
+            format: "calibrate-account-export";
+            /** @constant */
+            version: 1;
+            /** Format: date-time */
+            exported_at: string;
+            account: components["schemas"]["AccountExportProfile"];
+            goals: components["schemas"]["AccountExportGoal"][];
+            body_metrics: components["schemas"]["AccountExportBodyMetric"][];
+            food_logs: components["schemas"]["AccountExportFoodLog"][];
+            food_log_days: components["schemas"]["AccountExportFoodLogDay"][];
+            my_foods: components["schemas"]["AccountExportMyFood"][];
+            in_app_notifications: components["schemas"]["AccountExportNotification"][];
+        };
+        AccountExportProfile: {
+            id: number;
+            /** Format: email */
+            email: string;
+            /** Format: date-time */
+            created_at: string;
+            /** @enum {string} */
+            weight_unit: "KG" | "LB";
+            /** @enum {string} */
+            height_unit: "CM" | "FT_IN";
+            timezone: string;
+            language: string;
+            reminder_log_weight_enabled: boolean;
+            reminder_log_food_enabled: boolean;
+            haptics_enabled: boolean;
+            /** Format: date */
+            date_of_birth: string | null;
+            /** @enum {string|null} */
+            sex: "MALE" | "FEMALE" | null;
+            height_mm: number | null;
+            /** @enum {string|null} */
+            activity_level: "SEDENTARY" | "LIGHT" | "MODERATE" | "ACTIVE" | "VERY_ACTIVE" | null;
+            profile_image: {
+                mime_type: string;
+                data_base64: string;
+            } | null;
+        };
+        AccountExportGoal: {
+            id: number;
+            start_weight_grams: number;
+            target_weight_grams: number;
+            /** Format: date-time */
+            target_date: string | null;
+            daily_deficit: number;
+            /** Format: date-time */
+            created_at: string;
+        };
+        AccountExportBodyMetric: {
+            id: number;
+            /** Format: date */
+            date: string;
+            weight_grams: number;
+            body_fat_percent: number | null;
+        };
+        AccountExportFoodLog: {
+            id: number;
+            my_food_id: number | null;
+            /** Format: date-time */
+            date: string;
+            /** Format: date */
+            local_date: string;
+            /** @enum {string} */
+            meal_period: "BREAKFAST" | "MORNING_SNACK" | "LUNCH" | "AFTERNOON_SNACK" | "DINNER" | "EVENING_SNACK";
+            name: string;
+            calories: number;
+            servings_consumed: number | null;
+            serving_size_quantity_snapshot: number | null;
+            serving_unit_label_snapshot: string | null;
+            calories_per_serving_snapshot: number | null;
+            external_source: string | null;
+            external_id: string | null;
+            brand_snapshot: string | null;
+            locale_snapshot: string | null;
+            barcode_snapshot: string | null;
+            measure_label_snapshot: string | null;
+            grams_per_measure_snapshot: number | null;
+            measure_quantity_snapshot: number | null;
+            grams_total_snapshot: number | null;
+            /** Format: date-time */
+            created_at: string;
+        };
+        AccountExportFoodLogDay: {
+            id: number;
+            /** Format: date */
+            local_date: string;
+            is_complete: boolean;
+            /** Format: date-time */
+            completed_at: string | null;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        AccountExportRecipeIngredient: {
+            id: number;
+            sort_order: number;
+            /** @enum {string} */
+            source: "MY_FOOD" | "EXTERNAL";
+            name_snapshot: string;
+            calories_total_snapshot: number;
+            source_my_food_id: number | null;
+            quantity_servings: number | null;
+            serving_size_quantity_snapshot: number | null;
+            serving_unit_label_snapshot: string | null;
+            calories_per_serving_snapshot: number | null;
+            external_source: string | null;
+            external_id: string | null;
+            brand_snapshot: string | null;
+            locale_snapshot: string | null;
+            barcode_snapshot: string | null;
+            measure_label_snapshot: string | null;
+            grams_per_measure_snapshot: number | null;
+            measure_quantity_snapshot: number | null;
+            grams_total_snapshot: number | null;
+            /** Format: date-time */
+            created_at: string;
+        };
+        AccountExportMyFood: {
+            id: number;
+            /** @enum {string} */
+            type: "FOOD" | "RECIPE";
+            name: string;
+            serving_size_quantity: number;
+            serving_unit_label: string;
+            calories_per_serving: number;
+            recipe_total_calories: number | null;
+            yield_servings: number | null;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+            recipe_ingredients: components["schemas"]["AccountExportRecipeIngredient"][];
+        };
+        AccountExportNotification: {
+            id: number;
+            /** @enum {string} */
+            type: "LOG_WEIGHT_REMINDER" | "LOG_FOOD_REMINDER" | "GENERIC";
+            /** Format: date */
+            local_date: string;
+            title: string | null;
+            body: string | null;
+            action_url: string | null;
+            /** Format: date-time */
+            read_at: string | null;
+            /** Format: date-time */
+            dismissed_at: string | null;
+            /** Format: date-time */
+            resolved_at: string | null;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
         ApiError: {
             message: string;
             code?: string | null;
@@ -406,6 +596,62 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SyncChangesResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    exportAccount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Canonical versioned export of user-authored account and tracking data. */
+            200: {
+                headers: {
+                    "Content-Disposition"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccountExport"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    deleteAccount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    current_password: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Account, sessions, and all user-owned data were deleted. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Current password is missing or incorrect. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
                 };
             };
             401: components["responses"]["Unauthorized"];

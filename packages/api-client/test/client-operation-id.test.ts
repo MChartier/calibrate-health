@@ -63,6 +63,27 @@ test('updateFoodDay sends the caller operation ID for completion changes', async
     assert.equal(getOperationId(requests[0]), 'food-day-operation-1');
 });
 
+test('createGoal sends the caller operation ID', async () => {
+    const requests: CapturedRequest[] = [];
+    const client = createClient(requests);
+
+    await client.createGoal(
+        { start_weight: 82, target_weight: 76, daily_deficit: 500 },
+        'goal-operation-1'
+    );
+
+    assert.equal(getOperationId(requests[0]), 'goal-operation-1');
+});
+
+test('updatePreferences sends the caller operation ID', async () => {
+    const requests: CapturedRequest[] = [];
+    const client = createClient(requests);
+
+    await client.updatePreferences({ weight_unit: 'KG' }, 'preferences-operation-1');
+
+    assert.equal(getOperationId(requests[0]), 'preferences-operation-1');
+});
+
 test('operation ID header is omitted when callers do not provide one', async () => {
     const requests: CapturedRequest[] = [];
     const client = createClient(requests);

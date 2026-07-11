@@ -117,12 +117,14 @@ model User {
   sync_changes SyncChange[]
   /// In-app reminder feed entries rendered in the notifications panel.
   in_app_notifications InAppNotification[]
+  /// Browser sessions are linked after login so account deletion can revoke them by foreign key.
+  browser_sessions SessionStore[]
 }
 
 model Goal {
   id            Int       @id @default(autoincrement())
   user_id       Int
-  user          User      @relation(fields: [user_id], references: [id])
+  user          User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
   start_weight_grams  Int
   target_weight_grams Int
   target_date   DateTime?
@@ -135,7 +137,7 @@ model Goal {
 model BodyMetric {
   id               Int      @id @default(autoincrement())
   user_id          Int
-  user             User     @relation(fields: [user_id], references: [id])
+  user             User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
   date             DateTime @default(dbgenerated("CURRENT_DATE")) @db.Date
   weight_grams     Int
   body_fat_percent Float?
@@ -172,7 +174,7 @@ model BodyMetricTrend {
 model FoodLog {
   id          Int      @id @default(autoincrement())
   user_id     Int
-  user        User     @relation(fields: [user_id], references: [id])
+  user        User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
   /// Optional link to a MyFood item (food/recipe) used to create this entry.
   /// This is informational only; the log remains a snapshot even if the MyFood changes later.
   my_food_id  Int?
@@ -215,7 +217,7 @@ model FoodLog {
 model FoodLogDay {
   id           Int      @id @default(autoincrement())
   user_id      Int
-  user         User     @relation(fields: [user_id], references: [id])
+  user         User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
   /// Calendar day for grouping logs, derived from the user's timezone at write time.
   local_date   DateTime @db.Date
   /// Whether the user has marked the day's log as complete.
@@ -231,7 +233,7 @@ model FoodLogDay {
 model MyFood {
   id          Int       @id @default(autoincrement())
   user_id     Int
-  user        User      @relation(fields: [user_id], references: [id])
+  user        User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
   /// Indicates whether this item is a simple food (manual definition) or a composed recipe.
   type        MyFoodType
   name        String
@@ -303,9 +305,13 @@ model SessionStore {
   sid    String   @id @db.Text
   sess   Json
   expire DateTime @db.Timestamptz(6)
+  /// Null before authentication; populated from Passport state once a user logs in.
+  user_id Int?
+  user    User?    @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
   @@map("session_store")
   @@index([expire], map: "session_store_expire_idx")
+  @@index([user_id], map: "session_store_user_id_idx")
 }
 
 model PushSubscription {

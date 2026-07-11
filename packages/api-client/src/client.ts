@@ -1,4 +1,5 @@
 import type {
+    AccountExport,
     ClientConfigResponse,
     FoodLogCreatePayload,
     FoodLogDay,
@@ -259,9 +260,10 @@ export class CalibrateApiClient {
         });
     }
 
-    updatePreferences(payload: Record<string, unknown>): Promise<{ user: UserClientPayload }> {
+    updatePreferences(payload: Record<string, unknown>, operationId?: string): Promise<{ user: UserClientPayload }> {
         return this.request<{ user: UserClientPayload }>('/api/user/preferences', {
             method: 'PATCH',
+            headers: buildOperationHeaders(operationId),
             json: payload
         });
     }
@@ -270,9 +272,10 @@ export class CalibrateApiClient {
         return this.request<GoalEntry | null>('/api/goals');
     }
 
-    createGoal(payload: Record<string, unknown>): Promise<GoalEntry> {
+    createGoal(payload: Record<string, unknown>, operationId?: string): Promise<GoalEntry> {
         return this.request<GoalEntry>('/api/goals', {
             method: 'POST',
+            headers: buildOperationHeaders(operationId),
             json: payload
         });
     }
@@ -432,6 +435,17 @@ export class CalibrateApiClient {
         return this.request<{ message: string }>('/api/user/password', {
             method: 'PATCH',
             json: payload
+        });
+    }
+
+    exportAccount(): Promise<AccountExport> {
+        return this.request<AccountExport>('/api/user/account/export');
+    }
+
+    deleteAccount(currentPassword: string): Promise<void> {
+        return this.request<void>('/api/user/account', {
+            method: 'DELETE',
+            json: { current_password: currentPassword }
         });
     }
 

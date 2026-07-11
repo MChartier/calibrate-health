@@ -125,6 +125,47 @@ paths:
                 $ref: '#/components/schemas/SyncChangesResponse'
         '401':
           $ref: '#/components/responses/Unauthorized'
+  /api/v1/user/account/export:
+    get:
+      operationId: exportAccount
+      responses:
+        '200':
+          description: Canonical versioned export of user-authored account and tracking data.
+          headers:
+            Content-Disposition:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountExport'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /api/v1/user/account:
+    delete:
+      operationId: deleteAccount
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [current_password]
+              properties:
+                current_password:
+                  type: string
+                  minLength: 1
+      responses:
+        '204':
+          description: Account, sessions, and all user-owned data were deleted.
+        '400':
+          description: Current password is missing or incorrect.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
 components:
   securitySchemes:
     mobileBearer:
@@ -162,6 +203,180 @@ components:
           schema:
             $ref: '#/components/schemas/ApiError'
   schemas:
+    AccountExport:
+      type: object
+      additionalProperties: false
+      required: [format, version, exported_at, account, goals, body_metrics, food_logs, food_log_days, my_foods, in_app_notifications]
+      properties:
+        format:
+          type: string
+          const: calibrate-account-export
+        version:
+          type: integer
+          const: 1
+        exported_at:
+          type: string
+          format: date-time
+        account:
+          $ref: '#/components/schemas/AccountExportProfile'
+        goals:
+          type: array
+          items:
+            $ref: '#/components/schemas/AccountExportGoal'
+        body_metrics:
+          type: array
+          items:
+            $ref: '#/components/schemas/AccountExportBodyMetric'
+        food_logs:
+          type: array
+          items:
+            $ref: '#/components/schemas/AccountExportFoodLog'
+        food_log_days:
+          type: array
+          items:
+            $ref: '#/components/schemas/AccountExportFoodLogDay'
+        my_foods:
+          type: array
+          items:
+            $ref: '#/components/schemas/AccountExportMyFood'
+        in_app_notifications:
+          type: array
+          items:
+            $ref: '#/components/schemas/AccountExportNotification'
+    AccountExportProfile:
+      type: object
+      required: [id, email, created_at, weight_unit, height_unit, timezone, language, reminder_log_weight_enabled, reminder_log_food_enabled, haptics_enabled, date_of_birth, sex, height_mm, activity_level, profile_image]
+      properties:
+        id: { type: integer }
+        email: { type: string, format: email }
+        created_at: { type: string, format: date-time }
+        weight_unit: { type: string, enum: [KG, LB] }
+        height_unit: { type: string, enum: [CM, FT_IN] }
+        timezone: { type: string }
+        language: { type: string }
+        reminder_log_weight_enabled: { type: boolean }
+        reminder_log_food_enabled: { type: boolean }
+        haptics_enabled: { type: boolean }
+        date_of_birth: { type: [string, 'null'], format: date }
+        sex: { type: [string, 'null'], enum: [MALE, FEMALE, null] }
+        height_mm: { type: [integer, 'null'] }
+        activity_level: { type: [string, 'null'], enum: [SEDENTARY, LIGHT, MODERATE, ACTIVE, VERY_ACTIVE, null] }
+        profile_image:
+          type: [object, 'null']
+          required: [mime_type, data_base64]
+          properties:
+            mime_type: { type: string }
+            data_base64: { type: string, contentEncoding: base64 }
+    AccountExportGoal:
+      type: object
+      required: [id, start_weight_grams, target_weight_grams, target_date, daily_deficit, created_at]
+      properties:
+        id: { type: integer }
+        start_weight_grams: { type: integer }
+        target_weight_grams: { type: integer }
+        target_date: { type: [string, 'null'], format: date-time }
+        daily_deficit: { type: integer }
+        created_at: { type: string, format: date-time }
+    AccountExportBodyMetric:
+      type: object
+      required: [id, date, weight_grams, body_fat_percent]
+      properties:
+        id: { type: integer }
+        date: { type: string, format: date }
+        weight_grams: { type: integer }
+        body_fat_percent: { type: [number, 'null'] }
+    AccountExportFoodLog:
+      type: object
+      required: [id, my_food_id, date, local_date, meal_period, name, calories, servings_consumed, serving_size_quantity_snapshot, serving_unit_label_snapshot, calories_per_serving_snapshot, external_source, external_id, brand_snapshot, locale_snapshot, barcode_snapshot, measure_label_snapshot, grams_per_measure_snapshot, measure_quantity_snapshot, grams_total_snapshot, created_at]
+      properties:
+        id: { type: integer }
+        my_food_id: { type: [integer, 'null'] }
+        date: { type: string, format: date-time }
+        local_date: { type: string, format: date }
+        meal_period: { type: string, enum: [BREAKFAST, MORNING_SNACK, LUNCH, AFTERNOON_SNACK, DINNER, EVENING_SNACK] }
+        name: { type: string }
+        calories: { type: integer }
+        servings_consumed: { type: [number, 'null'] }
+        serving_size_quantity_snapshot: { type: [number, 'null'] }
+        serving_unit_label_snapshot: { type: [string, 'null'] }
+        calories_per_serving_snapshot: { type: [number, 'null'] }
+        external_source: { type: [string, 'null'] }
+        external_id: { type: [string, 'null'] }
+        brand_snapshot: { type: [string, 'null'] }
+        locale_snapshot: { type: [string, 'null'] }
+        barcode_snapshot: { type: [string, 'null'] }
+        measure_label_snapshot: { type: [string, 'null'] }
+        grams_per_measure_snapshot: { type: [number, 'null'] }
+        measure_quantity_snapshot: { type: [number, 'null'] }
+        grams_total_snapshot: { type: [number, 'null'] }
+        created_at: { type: string, format: date-time }
+    AccountExportFoodLogDay:
+      type: object
+      required: [id, local_date, is_complete, completed_at, created_at, updated_at]
+      properties:
+        id: { type: integer }
+        local_date: { type: string, format: date }
+        is_complete: { type: boolean }
+        completed_at: { type: [string, 'null'], format: date-time }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+    AccountExportRecipeIngredient:
+      type: object
+      required: [id, sort_order, source, name_snapshot, calories_total_snapshot, source_my_food_id, quantity_servings, serving_size_quantity_snapshot, serving_unit_label_snapshot, calories_per_serving_snapshot, external_source, external_id, brand_snapshot, locale_snapshot, barcode_snapshot, measure_label_snapshot, grams_per_measure_snapshot, measure_quantity_snapshot, grams_total_snapshot, created_at]
+      properties:
+        id: { type: integer }
+        sort_order: { type: integer }
+        source: { type: string, enum: [MY_FOOD, EXTERNAL] }
+        name_snapshot: { type: string }
+        calories_total_snapshot: { type: number }
+        source_my_food_id: { type: [integer, 'null'] }
+        quantity_servings: { type: [number, 'null'] }
+        serving_size_quantity_snapshot: { type: [number, 'null'] }
+        serving_unit_label_snapshot: { type: [string, 'null'] }
+        calories_per_serving_snapshot: { type: [number, 'null'] }
+        external_source: { type: [string, 'null'] }
+        external_id: { type: [string, 'null'] }
+        brand_snapshot: { type: [string, 'null'] }
+        locale_snapshot: { type: [string, 'null'] }
+        barcode_snapshot: { type: [string, 'null'] }
+        measure_label_snapshot: { type: [string, 'null'] }
+        grams_per_measure_snapshot: { type: [number, 'null'] }
+        measure_quantity_snapshot: { type: [number, 'null'] }
+        grams_total_snapshot: { type: [number, 'null'] }
+        created_at: { type: string, format: date-time }
+    AccountExportMyFood:
+      type: object
+      required: [id, type, name, serving_size_quantity, serving_unit_label, calories_per_serving, recipe_total_calories, yield_servings, created_at, updated_at, recipe_ingredients]
+      properties:
+        id: { type: integer }
+        type: { type: string, enum: [FOOD, RECIPE] }
+        name: { type: string }
+        serving_size_quantity: { type: number }
+        serving_unit_label: { type: string }
+        calories_per_serving: { type: number }
+        recipe_total_calories: { type: [number, 'null'] }
+        yield_servings: { type: [number, 'null'] }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+        recipe_ingredients:
+          type: array
+          items:
+            $ref: '#/components/schemas/AccountExportRecipeIngredient'
+    AccountExportNotification:
+      type: object
+      required: [id, type, local_date, title, body, action_url, read_at, dismissed_at, resolved_at, created_at, updated_at]
+      properties:
+        id: { type: integer }
+        type: { type: string, enum: [LOG_WEIGHT_REMINDER, LOG_FOOD_REMINDER, GENERIC] }
+        local_date: { type: string, format: date }
+        title: { type: [string, 'null'] }
+        body: { type: [string, 'null'] }
+        action_url: { type: [string, 'null'] }
+        read_at: { type: [string, 'null'], format: date-time }
+        dismissed_at: { type: [string, 'null'], format: date-time }
+        resolved_at: { type: [string, 'null'], format: date-time }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
     ApiError:
       type: object
       required: [message]
