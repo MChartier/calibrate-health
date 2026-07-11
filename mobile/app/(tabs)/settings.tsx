@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Image, StyleSheet, Switch, View } from 'react-native';
+import { Image, Pressable, StyleSheet, Switch, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as DocumentPicker from 'expo-document-picker';
@@ -9,6 +9,7 @@ import { AppButton } from '../../src/components/AppButton';
 import { AppCard } from '../../src/components/AppCard';
 import { AppChip } from '../../src/components/AppChip';
 import { AppText } from '../../src/components/AppText';
+import { BottomSheetModal } from '../../src/components/BottomSheetModal';
 import { DatePickerField } from '../../src/components/DatePickerField';
 import { NumberStepperField } from '../../src/components/NumberStepperField';
 import { Screen } from '../../src/components/Screen';
@@ -20,9 +21,15 @@ import { millimetersToCentimeters, millimetersToFeetInches } from '../../src/uti
 import { getTodayDate } from '../../src/utils/dates';
 import { formatCalories } from '../../src/utils/format';
 import { ACTIVITY_OPTIONS, HEIGHT_UNIT_OPTIONS, SEX_OPTIONS, WEIGHT_UNIT_OPTIONS } from '../../src/utils/profileOptions';
-import { colors, spacing } from '../../src/theme';
+import { colors, radius, spacing } from '../../src/theme';
 
 const MIN_PASSWORD_LENGTH = 8;
+const COMMON_TIMEZONE_OPTIONS = [
+    { label: 'Los Angeles', value: 'America/Los_Angeles' },
+    { label: 'New York', value: 'America/New_York' },
+    { label: 'London', value: 'Europe/London' },
+    { label: 'UTC', value: 'UTC' }
+]; // Common shortcuts keep most users out of manual IANA timezone editing.
 
 function getAvatarLabel(email?: string | null): string {
     return email?.trim().charAt(0).toUpperCase() || 'C';
@@ -48,6 +55,7 @@ export default function SettingsScreen() {
     const [currentPassword, setCurrentPassword] = useState('');
     const [newPassword, setNewPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
+    const [isProfileEditorOpen, setIsProfileEditorOpen] = useState(false);
     const [passwordError, setPasswordError] = useState<string | null>(null);
     const [passwordStatus, setPasswordStatus] = useState<string | null>(null);
     const profileQuery = useQuery({ queryKey: ['mobile-profile'], queryFn: () => api.getUserProfile() });
@@ -83,6 +91,7 @@ export default function SettingsScreen() {
         onSuccess: async (response) => {
             updateCurrentUser(response.user);
             await queryClient.invalidateQueries({ queryKey: ['mobile-profile'] });
+            setIsProfileEditorOpen(false);
         }
     });
 
@@ -205,107 +214,33 @@ export default function SettingsScreen() {
     return (
         <Screen reserveBottomTabs>
             <AppCard>
-                <SectionHeader
-                    title="Profile photo"
-                    description={user?.email ? `Signed in as ${user.email}.` : 'Used for your avatar across the app.'}
-                />
-                <View style={styles.avatarRow}>
-                    <View style={styles.avatar}>
+                <View style={styles.accountSummary}>
+                    <View style={styles.summaryAvatar}>
                         {user?.profile_image_url ? (
                             <Image source={{ uri: user.profile_image_url }} style={styles.avatarImage} />
                         ) : (
                             <AppText variant="subtitle" style={styles.avatarLabel}>{getAvatarLabel(user?.email)}</AppText>
                         )}
                     </View>
-                    <View style={styles.avatarActions}>
-                        <AppButton
-                            title={updateProfileImage.isPending ? 'Opening...' : 'Choose photo'}
-                            variant="secondary"
-                            disabled={updateProfileImage.isPending || removeProfileImage.isPending}
-                            leftIcon={<Ionicons name="image-outline" size={18} color={colors.text} />}
-                            onPress={() => updateProfileImage.mutate()}
-                        />
-                        {user?.profile_image_url && (
-                            <AppButton
-                                title={removeProfileImage.isPending ? 'Removing...' : 'Remove photo'}
-                                variant="ghost"
-                                disabled={updateProfileImage.isPending || removeProfileImage.isPending}
-                                leftIcon={<Ionicons name="trash-outline" size={18} color={colors.text} />}
-                                onPress={() => removeProfileImage.mutate()}
-                            />
-                        )}
-                    </View>
+                    <SectionHeader
+                        title="Account"
+                        description={user?.email ?? 'Account and app settings.'}
+                        style={styles.summaryText}
+                    />
                 </View>
-                {(updateProfileImage.error || removeProfileImage.error) && (
-                    <AppText style={styles.error}>
-                        {updateProfileImage.error?.message ?? removeProfileImage.error?.message}
-                    </AppText>
-                )}
-            </AppCard>
-
-            <AppCard>
-                <SectionHeader title="Profile" description="Timezone and body details used for calorie targets." />
-                <TextField label="Timezone" value={timezone} onChangeText={setTimezone} autoCapitalize="none" />
-                <DatePickerField
-                    label="Date of birth"
-                    value={dateOfBirth}
-                    onChangeDate={setDateOfBirth}
-                    maximumDate={getTodayDate(user?.timezone)}
-                    fallbackDate="1990-01-01"
-                />
-                <AppText variant="label">Sex</AppText>
-                <View style={styles.chips}>
-                    {SEX_OPTIONS.map((option) => (
-                        <AppChip
-                            key={option.value}
-                            label={option.label}
-                            selected={sex === option.value}
-                            onPress={() => setSex(option.value)}
-                        />
-                    ))}
+                <View style={styles.summaryRows}>
+                    <SummaryRow label="Calorie target" value={formatCalories(profileQuery.data?.calorieSummary.dailyCalorieTarget)} />
+                    <SummaryRow
+                        label="Units"
+                        value={`${weightUnit === WEIGHT_UNITS.LB ? 'lb' : 'kg'} | ${heightUnit === HEIGHT_UNITS.FT_IN ? 'ft/in' : 'cm'}`}
+                    />
+                    <SummaryRow label="Timezone" value={timezone.replace(/_/g, ' ')} />
                 </View>
-                <AppText variant="label">Activity level</AppText>
-                <View style={styles.chips}>
-                    {ACTIVITY_OPTIONS.map((option) => (
-                        <AppChip
-                            key={option.value}
-                            label={option.label}
-                            selected={activityLevel === option.value}
-                            onPress={() => setActivityLevel(option.value)}
-                        />
-                    ))}
-                </View>
-                {heightUnit === HEIGHT_UNITS.CM ? (
-                    <NumberStepperField label="Height" value={heightCm} onChangeText={setHeightCm} step={1} min={0} suffix="cm" />
-                ) : (
-                    <View style={styles.row}>
-                        <NumberStepperField label="Feet" value={heightFeet} onChangeText={setHeightFeet} step={1} min={0} containerStyle={styles.rowButton} />
-                        <NumberStepperField label="Inches" value={heightInches} onChangeText={setHeightInches} step={1} min={0} max={11} containerStyle={styles.rowButton} />
-                    </View>
-                )}
-                <AppText variant="muted">Current calorie target: {formatCalories(profileQuery.data?.calorieSummary.dailyCalorieTarget)}</AppText>
-                {saveProfile.error && <AppText style={styles.error}>{saveProfile.error.message}</AppText>}
                 <AppButton
-                    title={saveProfile.isPending ? 'Saving...' : 'Save profile'}
-                    disabled={saveProfile.isPending}
-                    leftIcon={<Ionicons name="person-outline" size={18} color="#ffffff" />}
-                    onPress={() => saveProfile.mutate()}
-                />
-            </AppCard>
-
-            <AppCard>
-                <SectionHeader title="Password" description="Update the password for this account." />
-                <TextField label="Current password" secureTextEntry value={currentPassword} onChangeText={setCurrentPassword} />
-                <TextField label="New password" secureTextEntry value={newPassword} onChangeText={setNewPassword} helperText={`At least ${MIN_PASSWORD_LENGTH} characters.`} />
-                <TextField label="Confirm new password" secureTextEntry value={confirmPassword} onChangeText={setConfirmPassword} />
-                {passwordError && <AppText style={styles.error}>{passwordError}</AppText>}
-                {passwordStatus && <AppText style={styles.success}>{passwordStatus}</AppText>}
-                <AppButton
-                    title={changePassword.isPending ? 'Updating...' : 'Update password'}
-                    disabled={changePassword.isPending}
+                    title="Edit profile details"
                     variant="secondary"
-                    leftIcon={<Ionicons name="key-outline" size={18} color={colors.text} />}
-                    onPress={handleChangePassword}
+                    leftIcon={<Ionicons name="person-outline" size={18} color={colors.text} />}
+                    onPress={() => setIsProfileEditorOpen(true)}
                 />
             </AppCard>
 
@@ -357,6 +292,61 @@ export default function SettingsScreen() {
             </AppCard>
 
             <AppCard>
+                <SectionHeader
+                    title="Profile photo"
+                    description={user?.email ? `Signed in as ${user.email}.` : 'Used for your avatar across the app.'}
+                />
+                <View style={styles.avatarRow}>
+                    <View style={styles.avatar}>
+                        {user?.profile_image_url ? (
+                            <Image source={{ uri: user.profile_image_url }} style={styles.avatarImage} />
+                        ) : (
+                            <AppText variant="subtitle" style={styles.avatarLabel}>{getAvatarLabel(user?.email)}</AppText>
+                        )}
+                    </View>
+                    <View style={styles.avatarActions}>
+                        <AppButton
+                            title={updateProfileImage.isPending ? 'Opening...' : 'Choose photo'}
+                            variant="secondary"
+                            disabled={updateProfileImage.isPending || removeProfileImage.isPending}
+                            leftIcon={<Ionicons name="image-outline" size={18} color={colors.text} />}
+                            onPress={() => updateProfileImage.mutate()}
+                        />
+                        {user?.profile_image_url && (
+                            <AppButton
+                                title={removeProfileImage.isPending ? 'Removing...' : 'Remove photo'}
+                                variant="ghost"
+                                disabled={updateProfileImage.isPending || removeProfileImage.isPending}
+                                leftIcon={<Ionicons name="trash-outline" size={18} color={colors.text} />}
+                                onPress={() => removeProfileImage.mutate()}
+                            />
+                        )}
+                    </View>
+                </View>
+                {(updateProfileImage.error || removeProfileImage.error) && (
+                    <AppText style={styles.error}>
+                        {updateProfileImage.error?.message ?? removeProfileImage.error?.message}
+                    </AppText>
+                )}
+            </AppCard>
+
+            <AppCard>
+                <SectionHeader title="Password" description="Update the password for this account." />
+                <TextField label="Current password" secureTextEntry value={currentPassword} onChangeText={setCurrentPassword} />
+                <TextField label="New password" secureTextEntry value={newPassword} onChangeText={setNewPassword} helperText={`At least ${MIN_PASSWORD_LENGTH} characters.`} />
+                <TextField label="Confirm new password" secureTextEntry value={confirmPassword} onChangeText={setConfirmPassword} />
+                {passwordError && <AppText style={styles.error}>{passwordError}</AppText>}
+                {passwordStatus && <AppText style={styles.success}>{passwordStatus}</AppText>}
+                <AppButton
+                    title={changePassword.isPending ? 'Updating...' : 'Update password'}
+                    disabled={changePassword.isPending}
+                    variant="secondary"
+                    leftIcon={<Ionicons name="key-outline" size={18} color={colors.text} />}
+                    onPress={handleChangePassword}
+                />
+            </AppCard>
+
+            <AppCard>
                 <SectionHeader title="Advanced" description="Hosted and self-hosted server connection." />
                 <TextField label="Server URL" value={serverInput} onChangeText={setServerInput} autoCapitalize="none" />
                 <AppButton
@@ -373,6 +363,87 @@ export default function SettingsScreen() {
                 leftIcon={<Ionicons name="log-out-outline" size={18} color="#ffffff" />}
                 onPress={() => void logout()}
             />
+
+            <BottomSheetModal
+                visible={isProfileEditorOpen}
+                maxHeight="92%"
+                onRequestClose={() => setIsProfileEditorOpen(false)}
+            >
+                <SectionHeader title="Profile details" description="Timezone and body details used for calorie targets." />
+                <AppText variant="label">Timezone</AppText>
+                <View style={styles.chips}>
+                    {COMMON_TIMEZONE_OPTIONS.map((option) => (
+                        <AppChip
+                            key={option.value}
+                            label={option.label}
+                            selected={timezone === option.value}
+                            onPress={() => setTimezone(option.value)}
+                        />
+                    ))}
+                </View>
+                <TextField
+                    label="Custom timezone"
+                    value={timezone}
+                    onChangeText={setTimezone}
+                    autoCapitalize="none"
+                    helperText="Use an IANA timezone such as America/Los_Angeles."
+                />
+                <DatePickerField
+                    label="Date of birth"
+                    value={dateOfBirth}
+                    onChangeDate={setDateOfBirth}
+                    maximumDate={getTodayDate(user?.timezone)}
+                    fallbackDate="1990-01-01"
+                />
+                <AppText variant="label">Sex</AppText>
+                <View style={styles.chips}>
+                    {SEX_OPTIONS.map((option) => (
+                        <AppChip
+                            key={option.value}
+                            label={option.label}
+                            selected={sex === option.value}
+                            onPress={() => setSex(option.value)}
+                        />
+                    ))}
+                </View>
+                <AppText variant="label">Activity level</AppText>
+                <View style={styles.chips}>
+                    {ACTIVITY_OPTIONS.map((option) => (
+                        <AppChip
+                            key={option.value}
+                            label={option.label}
+                            selected={activityLevel === option.value}
+                            onPress={() => setActivityLevel(option.value)}
+                        />
+                    ))}
+                </View>
+                {heightUnit === HEIGHT_UNITS.CM ? (
+                    <NumberStepperField label="Height" value={heightCm} onChangeText={setHeightCm} step={1} min={0} suffix="cm" />
+                ) : (
+                    <View style={styles.row}>
+                        <NumberStepperField label="Feet" value={heightFeet} onChangeText={setHeightFeet} step={1} min={0} containerStyle={styles.rowButton} />
+                        <NumberStepperField label="Inches" value={heightInches} onChangeText={setHeightInches} step={1} min={0} max={11} containerStyle={styles.rowButton} />
+                    </View>
+                )}
+                <AppText variant="muted">Current calorie target: {formatCalories(profileQuery.data?.calorieSummary.dailyCalorieTarget)}</AppText>
+                {saveProfile.error && <AppText style={styles.error}>{saveProfile.error.message}</AppText>}
+                <View style={styles.row}>
+                    <AppButton
+                        title="Cancel"
+                        variant="secondary"
+                        leftIcon={<Ionicons name="close" size={18} color={colors.text} />}
+                        onPress={() => setIsProfileEditorOpen(false)}
+                        style={styles.rowButton}
+                    />
+                    <AppButton
+                        title={saveProfile.isPending ? 'Saving...' : 'Save'}
+                        disabled={saveProfile.isPending}
+                        leftIcon={<Ionicons name="checkmark" size={18} color="#ffffff" />}
+                        onPress={() => saveProfile.mutate()}
+                        style={styles.rowButton}
+                    />
+                </View>
+            </BottomSheetModal>
         </Screen>
     );
 }
@@ -384,14 +455,33 @@ type PreferenceSwitchProps = {
 };
 
 const PreferenceSwitch: React.FC<PreferenceSwitchProps> = ({ label, value, onValueChange }) => (
-    <View style={styles.switchRow}>
+    <Pressable
+        accessibilityRole="switch"
+        accessibilityState={{ checked: value }}
+        onPress={() => onValueChange(!value)}
+        style={({ pressed }) => [styles.switchRow, pressed && styles.pressedRow]}
+    >
         <AppText variant="body">{label}</AppText>
-        <Switch
-            value={value}
-            onValueChange={onValueChange}
-            trackColor={{ false: colors.border, true: colors.primarySoft }}
-            thumbColor={value ? colors.primary : colors.muted}
-        />
+        <View style={styles.switchControl}>
+            <View style={[styles.switchStatePill, value ? styles.switchStatePillOn : styles.switchStatePillOff]}>
+                <AppText variant="caption" style={[styles.switchStateText, value ? styles.switchStateTextOn : styles.switchStateTextOff]}>
+                    {value ? 'On' : 'Off'}
+                </AppText>
+            </View>
+            <Switch
+                value={value}
+                onValueChange={onValueChange}
+                trackColor={{ false: colors.controlTrack, true: colors.primarySoft }}
+                thumbColor={value ? colors.primary : colors.surface}
+            />
+        </View>
+    </Pressable>
+);
+
+const SummaryRow: React.FC<{ label: string; value: string }> = ({ label, value }) => (
+    <View style={styles.summaryRow}>
+        <AppText variant="caption">{label}</AppText>
+        <AppText variant="body" numberOfLines={1} style={styles.summaryValue}>{value}</AppText>
     </View>
 );
 
@@ -402,6 +492,43 @@ const styles = StyleSheet.create({
     },
     rowButton: {
         flex: 1
+    },
+    accountSummary: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.md
+    },
+    summaryAvatar: {
+        width: 54,
+        height: 54,
+        borderRadius: 27,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: colors.primarySoft,
+        overflow: 'hidden'
+    },
+    summaryText: {
+        flex: 1,
+        minWidth: 0
+    },
+    summaryRows: {
+        borderRadius: radius.md,
+        backgroundColor: colors.surfaceAlt,
+        paddingHorizontal: spacing.md,
+        paddingVertical: spacing.sm,
+        gap: spacing.xs
+    },
+    summaryRow: {
+        minHeight: 30,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: spacing.md
+    },
+    summaryValue: {
+        flexShrink: 1,
+        textAlign: 'right',
+        fontWeight: '800'
     },
     avatarRow: {
         flexDirection: 'row',
@@ -441,6 +568,40 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'space-between',
         gap: spacing.md
+    },
+    switchControl: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.sm
+    },
+    switchStatePill: {
+        minWidth: 44,
+        minHeight: 28,
+        borderRadius: radius.pill,
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingHorizontal: spacing.sm,
+        borderWidth: StyleSheet.hairlineWidth
+    },
+    switchStatePillOn: {
+        backgroundColor: colors.primarySoft,
+        borderColor: colors.primary
+    },
+    switchStatePillOff: {
+        backgroundColor: colors.surfaceMuted,
+        borderColor: colors.controlTrack
+    },
+    switchStateText: {
+        fontWeight: '800'
+    },
+    switchStateTextOn: {
+        color: colors.primaryDark
+    },
+    switchStateTextOff: {
+        color: colors.muted
+    },
+    pressedRow: {
+        opacity: 0.78
     },
     success: {
         color: colors.success

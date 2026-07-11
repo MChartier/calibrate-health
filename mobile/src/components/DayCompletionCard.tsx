@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pressable, StyleSheet, Switch, View, type ViewProps } from 'react-native';
+import { Pressable, StyleSheet, View, type ViewProps } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { AppCard } from './AppCard';
 import { AppText } from './AppText';
@@ -30,7 +30,7 @@ export const DayCompletionCard: React.FC<DayCompletionCardProps> = ({
         onPress={onToggle}
         style={({ pressed }) => [pressed && styles.pressed]}
     >
-        <AppCard {...props} style={[styles.card, style]}>
+        <AppCard {...props} style={[styles.card, isComplete && styles.cardComplete, style]}>
             <View style={styles.left}>
                 <View style={[styles.iconTile, isComplete && styles.iconTileComplete]}>
                     <Ionicons
@@ -40,28 +40,35 @@ export const DayCompletionCard: React.FC<DayCompletionCardProps> = ({
                     />
                 </View>
                 <View style={styles.textGroup}>
-                    <AppText variant="subtitle">{isComplete ? 'Today complete' : 'Mark today complete'}</AppText>
-                    <AppText variant="caption">
+                    <AppText variant="subtitle" numberOfLines={1} adjustsFontSizeToFit>
+                        {isComplete ? 'Today complete' : 'Mark today complete'}
+                    </AppText>
+                    <AppText variant="caption" numberOfLines={1} adjustsFontSizeToFit>
                         {isComplete ? 'Food-log reminders are paused.' : 'Stops food-log reminders for today.'}
                     </AppText>
                 </View>
             </View>
-            <Switch
-                pointerEvents="none"
-                value={isComplete}
-                trackColor={{ false: colors.border, true: colors.primarySoft }}
-                thumbColor={isComplete ? colors.primary : colors.muted}
-            />
+            <View style={[styles.statePill, isComplete && styles.statePillComplete]}>
+                <AppText style={[styles.statePillText, isComplete && styles.statePillTextComplete]}>
+                    {isComplete ? 'Complete' : 'Not complete'}
+                </AppText>
+            </View>
         </AppCard>
     </Pressable>
 );
 
 const styles = StyleSheet.create({
     card: {
-        minHeight: 64,
+        minHeight: 74,
         flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'space-between'
+        justifyContent: 'space-between',
+        borderColor: colors.border,
+        gap: spacing.md
+    },
+    cardComplete: {
+        borderColor: colors.primary,
+        backgroundColor: colors.primarySoft
     },
     left: {
         flex: 1,
@@ -84,6 +91,25 @@ const styles = StyleSheet.create({
     },
     iconTileComplete: {
         backgroundColor: colors.primary
+    },
+    statePill: {
+        width: 110,
+        alignItems: 'center',
+        borderRadius: radius.pill,
+        backgroundColor: colors.surfaceAlt,
+        paddingHorizontal: spacing.md,
+        paddingVertical: spacing.xs
+    },
+    statePillComplete: {
+        backgroundColor: colors.primary
+    },
+    statePillText: {
+        color: colors.muted,
+        fontSize: 12,
+        fontWeight: '900'
+    },
+    statePillTextComplete: {
+        color: '#ffffff'
     },
     pressed: {
         opacity: 0.84

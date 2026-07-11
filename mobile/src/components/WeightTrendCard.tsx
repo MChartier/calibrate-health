@@ -1,5 +1,5 @@
-import React, { useMemo, useState } from 'react';
-import { StyleSheet, View, type ViewProps } from 'react-native';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Pressable, StyleSheet, View, type ViewProps } from 'react-native';
 import Svg, { Circle, Line, Path, Polygon } from 'react-native-svg';
 import { useQuery } from '@tanstack/react-query';
 import type { TrendMetricEntry } from '@calibrate/api-client';
@@ -10,6 +10,7 @@ import { LoadingState } from './LoadingState';
 import { SectionHeader } from './SectionHeader';
 import { useAuth } from '../auth/AuthContext';
 import { colors, radius, spacing } from '../theme';
+import { formatDateOnlyForDisplay } from '../utils/dates';
 import { formatWeight, formatWeightUnit } from '../utils/format';
 
 type TrendRange = 'week' | 'month' | 'year' | 'all';
@@ -28,7 +29,7 @@ const RANGE_OPTIONS: Array<{ value: TrendRange; label: string }> = [
 ];
 
 const CHART_WIDTH = 340;
-const CHART_HEIGHT = 168;
+const CHART_HEIGHT = 154;
 const CHART_PADDING_LEFT = 18;
 const CHART_PADDING_RIGHT = 18;
 const CHART_PADDING_TOP = 16;
@@ -45,6 +46,10 @@ type ChartPoint = {
 
 function getDatePart(value: string): string {
     return value.split('T')[0] ?? value;
+}
+
+function getPointKey(point: ChartPoint): string {
+    return `${point.metric.id}-${getDatePart(point.metric.date)}`;
 }
 
 function buildPath(points: Array<{ x: number; y: number }>): string {
@@ -98,7 +103,7 @@ function getChartPoints(metrics: TrendMetricEntry[]): ChartPoint[] {
 }
 
 /**
- * Rich native weight trend card with range controls, trend line, raw points, and confidence band.
+ * Native weight trend card focused on observed weight, trend, and volatility.
  */
 export const WeightTrendCard: React.FC<WeightTrendCardProps> = ({
     title = 'Weight trend',
@@ -109,22 +114,65 @@ export const WeightTrendCard: React.FC<WeightTrendCardProps> = ({
 }) => {
     const { api, user } = useAuth();
     const [range, setRange] = useState<TrendRange>('month');
+    const [selectedPointKey, setSelectedPointKey] = useState<string | null>(null);
+    const [chartCanvasWidth, setChartCanvasWidth] = useState(CHART_WIDTH);
     const trendQuery = useQuery({
         queryKey: ['mobile-metrics-trend', range],
         queryFn: () => api.getTrendMetrics({ range })
     });
 
     const chartPoints = useMemo(() => getChartPoints(trendQuery.data?.metrics ?? []), [trendQuery.data?.metrics]);
+    const selectedPoint = useMemo(() => {
+        if (chartPoints.length === 0) return null;
+        const fallbackPoint = chartPoints[chartPoints.length - 1];
+        return chartPoints.find((point) => getPointKey(point) === selectedPointKey) ?? fallbackPoint;
+    }, [chartPoints, selectedPointKey]);
+
+    useEffect(() => {
+        if (chartPoints.length === 0) {
+            setSelectedPointKey(null);
+            return;
+        }
+        const currentSelectionExists = chartPoints.some((point) => getPointKey(point) === selectedPointKey);
+        if (!currentSelectionExists) {
+            setSelectedPointKey(getPointKey(chartPoints[chartPoints.length - 1]));
+        }
+    }, [chartPoints, selectedPointKey]);
 
     const latest = trendQuery.data?.metrics[0] ?? null;
     const trendPath = chartPoints.length > 0 ? buildPath(chartPoints.map((point) => ({ x: point.x, y: point.trendY }))) : '';
     const rawPath = chartPoints.length > 0 ? buildPath(chartPoints.map((point) => ({ x: point.x, y: point.rawY }))) : '';
     const bandPoints = chartPoints.length > 1 ? buildBandPoints(chartPoints) : '';
+    const chartRange = useMemo(() => {
+        if (chartPoints.length === 0) return null;
+        const values = chartPoints.flatMap((point) => [
+            point.metric.weight,
+            point.metric.trend_weight,
+            point.metric.trend_ci_lower,
+            point.metric.trend_ci_upper
+        ]);
+        return {
+            high: Math.max(...values),
+            low: Math.min(...values)
+        };
+    }, [chartPoints]);
+
+    function selectNearestPoint(locationX: number) {
+        if (chartPoints.length === 0) return;
+        const scaledX = (locationX / Math.max(chartCanvasWidth, 1)) * CHART_WIDTH;
+        const nearestPoint = chartPoints.reduce((nearest, point) => {
+            return Math.abs(point.x - scaledX) < Math.abs(nearest.x - scaledX) ? point : nearest;
+        }, chartPoints[0]);
+        setSelectedPointKey(getPointKey(nearestPoint));
+    }
+
     return (
         <AppCard {...props} style={style}>
             <View style={styles.headerRow}>
                 <SectionHeader title={title} description={description} style={styles.headerText} />
-                <AppText variant="label">{latest ? formatWeight(latest.weight, user?.weight_unit) : '-'}</AppText>
+                <AppText variant="caption" style={styles.latestLabel}>
+                    {latest ? `Latest ${formatWeight(latest.weight, user?.weight_unit)}` : 'Latest -'}
+                </AppText>
             </View>
             <View style={styles.rangeRow}>
                 {RANGE_OPTIONS.map((option) => (
@@ -145,34 +193,50 @@ export const WeightTrendCard: React.FC<WeightTrendCardProps> = ({
                 </View>
             ) : (
                 <View style={styles.chartShell}>
-                    <Svg width="100%" height={CHART_HEIGHT} viewBox={`0 0 ${CHART_WIDTH} ${CHART_HEIGHT}`}>
-                        <Line
-                            x1={CHART_PADDING_LEFT}
-                            y1={CHART_HEIGHT - CHART_PADDING_BOTTOM}
-                            x2={CHART_WIDTH - CHART_PADDING_RIGHT}
-                            y2={CHART_HEIGHT - CHART_PADDING_BOTTOM}
-                            stroke={colors.border}
-                            strokeWidth={1}
+                    {chartRange && (
+                        <View style={styles.chartRangeRow}>
+                            <AppText variant="caption">{formatWeight(chartRange.high, user?.weight_unit)}</AppText>
+                            <AppText variant="caption">{formatWeight(chartRange.low, user?.weight_unit)}</AppText>
+                        </View>
+                    )}
+                    <View
+                        style={styles.chartCanvas}
+                        onLayout={(event) => setChartCanvasWidth(event.nativeEvent.layout.width)}
+                    >
+                        <Svg width="100%" height={CHART_HEIGHT} viewBox={`0 0 ${CHART_WIDTH} ${CHART_HEIGHT}`}>
+                            <Line
+                                x1={CHART_PADDING_LEFT}
+                                y1={CHART_HEIGHT - CHART_PADDING_BOTTOM}
+                                x2={CHART_WIDTH - CHART_PADDING_RIGHT}
+                                y2={CHART_HEIGHT - CHART_PADDING_BOTTOM}
+                                stroke={colors.border}
+                                strokeWidth={1}
+                            />
+                            {bandPoints.length > 0 && <Polygon points={bandPoints} fill={colors.infoSoft} opacity={0.88} />}
+                            {rawPath.length > 0 && (
+                                <Path d={rawPath} stroke={colors.info} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" fill="none" opacity={0.42} />
+                            )}
+                            {trendPath.length > 0 && (
+                                <Path d={trendPath} stroke={colors.primary} strokeWidth={4} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+                            )}
+                            {chartPoints.map((point) => (
+                                <Circle key={getPointKey(point)} cx={point.x} cy={point.rawY} r={3.5} fill={colors.surface} stroke={colors.info} strokeWidth={1.5} />
+                            ))}
+                            {selectedPoint && (
+                                <Circle cx={selectedPoint.x} cy={selectedPoint.rawY} r={6} fill={colors.warningSoft} stroke={colors.warningDark} strokeWidth={2} />
+                            )}
+                        </Svg>
+                        <Pressable
+                            accessibilityRole="button"
+                            accessibilityLabel="Show nearest weigh-in details"
+                            onPress={(event) => selectNearestPoint(event.nativeEvent.locationX)}
+                            style={StyleSheet.absoluteFill}
                         />
-                        {bandPoints.length > 0 && <Polygon points={bandPoints} fill={colors.primarySoft} opacity={0.72} />}
-                        {rawPath.length > 0 && (
-                            <Path d={rawPath} stroke={colors.muted} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" fill="none" opacity={0.42} />
-                        )}
-                        {trendPath.length > 0 && (
-                            <Path d={trendPath} stroke={colors.primary} strokeWidth={4} strokeLinecap="round" strokeLinejoin="round" fill="none" />
-                        )}
-                        {chartPoints.map((point) => (
-                            <Circle key={`${point.metric.id}-${point.metric.date}`} cx={point.x} cy={point.rawY} r={3.5} fill={colors.surface} stroke={colors.primaryDark} strokeWidth={1.5} />
-                        ))}
-                    </Svg>
-                    <View style={styles.legend}>
-                        <LegendItem label="raw" color={colors.muted} />
-                        <LegendItem label="trend" color={colors.primary} />
-                        <LegendItem label="range" color={colors.primarySoft} />
                     </View>
+                    {selectedPoint && <TrendPointDetails point={selectedPoint} unit={user?.weight_unit} />}
                     {trendQuery.data?.meta && (
                         <AppText variant="caption" style={styles.summary}>
-                            {trendQuery.data.meta.weekly_rate.toFixed(2)} {formatWeightUnit(user?.weight_unit)}/week | {trendQuery.data.meta.volatility} volatility
+                            Trend {trendQuery.data.meta.weekly_rate.toFixed(2)} {formatWeightUnit(user?.weight_unit)}/week | {trendQuery.data.meta.volatility} volatility
                         </AppText>
                     )}
                 </View>
@@ -183,10 +247,31 @@ export const WeightTrendCard: React.FC<WeightTrendCardProps> = ({
     );
 };
 
-const LegendItem: React.FC<{ label: string; color: string }> = ({ label, color }) => (
-    <View style={styles.legendItem}>
-        <View style={[styles.legendSwatch, { backgroundColor: color }]} />
-        <AppText variant="caption">{label}</AppText>
+const TrendPointDetails: React.FC<{ point: ChartPoint; unit: Parameters<typeof formatWeight>[1] }> = ({ point, unit }) => (
+    <View style={styles.pointDetails}>
+        <View style={styles.pointDetailsHeader}>
+            <AppText variant="label">Selected weigh-in</AppText>
+            <AppText variant="caption">{formatDateOnlyForDisplay(getDatePart(point.metric.date))}</AppText>
+        </View>
+        <View style={styles.pointMetricRow}>
+            <PointMetric label="Measurement" value={formatWeight(point.metric.weight, unit)} tone="info" />
+            <PointMetric label="Trend" value={formatWeight(point.metric.trend_weight, unit)} tone="primary" />
+            <PointMetric
+                label="Expected range"
+                value={`${formatWeight(point.metric.trend_ci_lower, unit)} - ${formatWeight(point.metric.trend_ci_upper, unit)}`}
+                tone="range"
+            />
+        </View>
+    </View>
+);
+
+const PointMetric: React.FC<{ label: string; value: string; tone: 'info' | 'primary' | 'range' }> = ({ label, value, tone }) => (
+    <View style={styles.pointMetric}>
+        <View style={[styles.legendDot, styles[`${tone}Dot`]]} />
+        <View style={styles.pointMetricText}>
+            <AppText variant="caption">{label}</AppText>
+            <AppText variant="label" numberOfLines={1} adjustsFontSizeToFit>{value}</AppText>
+        </View>
     </View>
 );
 
@@ -200,6 +285,9 @@ const styles = StyleSheet.create({
     headerText: {
         flex: 1
     },
+    latestLabel: {
+        textAlign: 'right'
+    },
     rangeRow: {
         flexDirection: 'row',
         gap: spacing.sm
@@ -209,9 +297,20 @@ const styles = StyleSheet.create({
     },
     chartShell: {
         borderRadius: radius.md,
-        backgroundColor: colors.surfaceAlt,
+        backgroundColor: colors.surface,
+        borderColor: colors.border,
+        borderWidth: StyleSheet.hairlineWidth,
         padding: spacing.sm,
         gap: spacing.sm
+    },
+    chartRangeRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        gap: spacing.md
+    },
+    chartCanvas: {
+        position: 'relative',
+        minHeight: CHART_HEIGHT
     },
     emptyChart: {
         minHeight: CHART_HEIGHT,
@@ -221,23 +320,51 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         padding: spacing.lg
     },
-    legend: {
-        flexDirection: 'row',
-        justifyContent: 'center',
-        gap: spacing.md
-    },
-    legendItem: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: spacing.xs
-    },
-    legendSwatch: {
-        width: 12,
-        height: 8,
-        borderRadius: radius.pill
-    },
     summary: {
         textAlign: 'center'
+    },
+    pointDetails: {
+        borderRadius: radius.md,
+        backgroundColor: colors.surfaceMuted,
+        borderColor: colors.border,
+        borderWidth: StyleSheet.hairlineWidth,
+        padding: spacing.sm,
+        gap: spacing.sm
+    },
+    pointDetailsHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: spacing.md
+    },
+    pointMetricRow: {
+        gap: spacing.xs
+    },
+    pointMetric: {
+        minHeight: 30,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.sm
+    },
+    pointMetricText: {
+        flex: 1,
+        minWidth: 0
+    },
+    legendDot: {
+        width: 9,
+        height: 9,
+        borderRadius: radius.pill
+    },
+    infoDot: {
+        backgroundColor: colors.info
+    },
+    primaryDot: {
+        backgroundColor: colors.primary
+    },
+    rangeDot: {
+        backgroundColor: colors.infoSoft,
+        borderColor: colors.info,
+        borderWidth: StyleSheet.hairlineWidth
     },
     error: {
         color: colors.danger

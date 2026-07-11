@@ -21,7 +21,7 @@ export const AppButton: React.FC<PressableProps & {
         style={({ pressed }) => [
             styles.base,
             styles[variant],
-            disabled && styles.disabled,
+            disabled && (variant === 'primary' || variant === 'danger' ? styles.disabledSolid : styles.disabled),
             pressed && !disabled && styles.pressed,
             typeof style === 'function' ? style({ pressed }) : style
         ]}
@@ -31,7 +31,11 @@ export const AppButton: React.FC<PressableProps & {
             <AppText
                 numberOfLines={1}
                 adjustsFontSizeToFit
-                style={[styles.label, variant !== 'primary' && variant !== 'danger' && styles.secondaryLabel]}
+                style={[
+                    styles.label,
+                    variant !== 'primary' && variant !== 'danger' && styles.secondaryLabel,
+                    disabled && styles.disabledLabel
+                ]}
             >
                 {title}
             </AppText>
@@ -65,6 +69,17 @@ const styles = StyleSheet.create({
     },
     disabled: {
         opacity: 0.36
+    },
+    disabledSolid: {
+        backgroundColor: colors.surfaceMuted,
+        borderColor: colors.border,
+        borderWidth: StyleSheet.hairlineWidth,
+        shadowOpacity: 0,
+        elevation: 0,
+        opacity: 1
+    },
+    disabledLabel: {
+        color: colors.muted
     },
     pressed: {
         transform: [{ translateY: 1 }],

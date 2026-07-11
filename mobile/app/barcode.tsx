@@ -9,16 +9,21 @@ import { MEAL_PERIODS, type MealPeriod } from '@calibrate/shared';
 import type { FoodLogCreatePayload, FoodSearchResult } from '@calibrate/api-client';
 import { AppButton } from '../src/components/AppButton';
 import { AppCard } from '../src/components/AppCard';
-import { AppChip } from '../src/components/AppChip';
 import { AppText } from '../src/components/AppText';
 import { LoadingState } from '../src/components/LoadingState';
+import { OverlaySelect, type OverlaySelectOption } from '../src/components/OverlaySelect';
 import { Screen } from '../src/components/Screen';
 import { SectionHeader } from '../src/components/SectionHeader';
 import { useAuth } from '../src/auth/AuthContext';
 import { getTodayDate } from '../src/utils/dates';
-import { formatCalories, formatMealChipLabel } from '../src/utils/format';
+import { formatCalories, formatMealPeriod } from '../src/utils/format';
 import { MEAL_OPTIONS } from '../src/utils/meals';
 import { colors, radius, spacing } from '../src/theme';
+
+const MEAL_SELECTOR_OPTIONS: Array<OverlaySelectOption<MealPeriod>> = MEAL_OPTIONS.map((option) => ({
+    value: option,
+    label: formatMealPeriod(option)
+}));
 
 function parseMeal(value: unknown): MealPeriod {
     return typeof value === 'string' && MEAL_OPTIONS.includes(value as MealPeriod)
@@ -50,6 +55,7 @@ export default function BarcodeScreen() {
     const [permission, requestPermission] = useCameraPermissions();
     const [barcode, setBarcode] = useState<string | null>(null);
     const [meal, setMeal] = useState<MealPeriod>(() => parseMeal(mealParam));
+    const [isMealSelectorOpen, setIsMealSelectorOpen] = useState(false);
     const selectedDate = typeof date === 'string' ? date : getTodayDate(user?.timezone);
     const lookup = useMutation({
         mutationFn: (code: string) => api.searchFood('', code)
@@ -129,16 +135,17 @@ export default function BarcodeScreen() {
                     )}
                     {lookup.isSuccess && !first && <AppText variant="muted">No matching food found.</AppText>}
                     <AppText variant="label">Meal</AppText>
-                    <View style={styles.chips}>
-                        {MEAL_OPTIONS.map((option) => (
-                            <AppChip
-                                key={option}
-                                label={formatMealChipLabel(option)}
-                                selected={option === meal}
-                                onPress={() => setMeal(option)}
-                            />
-                        ))}
-                    </View>
+                    <OverlaySelect
+                        accessibilityLabel="Select meal"
+                        value={meal}
+                        options={MEAL_SELECTOR_OPTIONS}
+                        isOpen={isMealSelectorOpen}
+                        onToggle={() => setIsMealSelectorOpen((current) => !current)}
+                        onChange={(nextMeal) => {
+                            setMeal(nextMeal);
+                            setIsMealSelectorOpen(false);
+                        }}
+                    />
                     {(lookup.error || logFood.error) && <AppText style={styles.error}>{lookup.error?.message ?? logFood.error?.message}</AppText>}
                     <AppButton
                         title={logFood.isPending ? 'Logging...' : `Log to ${selectedDate}`}
@@ -206,11 +213,6 @@ const styles = StyleSheet.create({
     actions: {
         flexDirection: 'row',
         gap: spacing.md
-    },
-    chips: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        gap: spacing.sm
     },
     actionButton: {
         flex: 1

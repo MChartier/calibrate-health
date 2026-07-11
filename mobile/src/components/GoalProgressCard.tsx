@@ -79,18 +79,18 @@ export const GoalProgressCard: React.FC<GoalProgressCardProps> = ({
                 <SectionHeader title={title} description={describeGoalPlan(goal)} style={styles.headerText} />
                 {onEditGoal && <GoalActionButton label="Set a new goal" onPress={onEditGoal} />}
             </View>
+            <View style={styles.projectionBlock}>
+                <AppText variant="caption">Projected goal date</AppText>
+                <AppText variant="subtitle" style={styles.projectionValue}>{projection}</AppText>
+            </View>
             <View style={styles.goalEndpoints}>
                 <AppText variant="muted">Start {formatWeight(goal.start_weight, user?.weight_unit)}</AppText>
                 <AppText variant="muted">Goal {formatWeight(goal.target_weight, user?.weight_unit)}</AppText>
             </View>
-            <ProgressBar value={(progress?.percent ?? 0) / 100} tone={progress?.isComplete ? 'primary' : 'warning'} />
+            <ProgressBar value={(progress?.percent ?? 0) / 100} tone="primary" />
             <View style={styles.goalEndpoints}>
                 <AppText variant="body">Current {formatWeight(currentWeight, user?.weight_unit)}</AppText>
                 <AppText variant="body">{progress ? `${Math.round(progress.percent)}%` : 'Log weight'}</AppText>
-            </View>
-            <View style={styles.projectionBlock}>
-                <AppText variant="caption">Projected goal date</AppText>
-                <AppText variant="subtitle">{projection}</AppText>
             </View>
             {typeof targetCalories === 'number' && (
                 <AppText variant="caption">Current target: {Math.round(targetCalories).toLocaleString()} kcal/day</AppText>
@@ -148,6 +148,13 @@ const styles = StyleSheet.create({
         gap: spacing.md
     },
     projectionBlock: {
-        gap: spacing.xs
+        gap: spacing.xs,
+        borderRadius: radius.md,
+        backgroundColor: colors.warningSoft,
+        paddingHorizontal: spacing.md,
+        paddingVertical: spacing.sm
+    },
+    projectionValue: {
+        color: colors.warningDark
     }
 });

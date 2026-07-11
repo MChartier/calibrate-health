@@ -2,7 +2,7 @@ import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { router } from 'expo-router';
+import { router, type Href } from 'expo-router';
 import type { InAppNotification } from '@calibrate/api-client';
 import { IN_APP_NOTIFICATION_TYPES } from '@calibrate/shared/inAppNotifications';
 import { AppButton } from '../src/components/AppButton';
@@ -14,19 +14,22 @@ import { SkeletonBlock } from '../src/components/SkeletonBlock';
 import { useAuth } from '../src/auth/AuthContext';
 import { colors, radius, spacing } from '../src/theme';
 
-type NotificationRoute = '/(tabs)/log' | '/(tabs)/weight' | '/(tabs)/today' | '/(tabs)/progress';
+type NotificationAction = {
+    label: string;
+    href: Href;
+};
 
-function getNotificationAction(notification: InAppNotification): { label: string; route: NotificationRoute } {
+function getNotificationAction(notification: InAppNotification): NotificationAction {
     if (notification.action_url.includes('weight')) {
-        return { label: 'Log weight', route: '/(tabs)/weight' };
+        return { label: 'Log weight', href: { pathname: '/(tabs)/weight', params: { date: notification.local_date } } };
     }
     if (notification.action_url.includes('goal')) {
-        return { label: 'Open goals', route: '/(tabs)/progress' };
+        return { label: 'Open goals', href: '/(tabs)/progress' };
     }
     if (notification.action_url.includes('log') || notification.action_url.includes('food')) {
-        return { label: 'Log food', route: '/(tabs)/log' };
+        return { label: 'Log food', href: { pathname: '/(tabs)/log', params: { date: notification.local_date } } };
     }
-    return { label: 'Open log', route: '/(tabs)/today' };
+    return { label: 'Open log', href: '/(tabs)/today' };
 }
 
 function getNotificationText(notification: InAppNotification): { title: string; body: string } {
@@ -77,7 +80,7 @@ export default function NotificationsScreen() {
         mutationFn: (notification: InAppNotification) => api.markInAppNotificationRead(notification.id).then(() => notification),
         onSuccess: async (notification) => {
             await queryClient.invalidateQueries({ queryKey: ['mobile-in-app-notifications'] });
-            router.push(getNotificationAction(notification).route);
+            router.push(getNotificationAction(notification).href);
         }
     });
 
@@ -241,12 +244,12 @@ const styles = StyleSheet.create({
         flex: 1
     },
     dismissButton: {
-        width: 48,
-        height: 48,
+        width: 42,
+        height: 42,
         borderRadius: radius.md,
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: colors.surfaceAlt,
+        backgroundColor: colors.surfaceMuted,
         borderColor: colors.border,
         borderWidth: StyleSheet.hairlineWidth
     },

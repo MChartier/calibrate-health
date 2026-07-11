@@ -30,12 +30,12 @@ const styles = StyleSheet.create({
     },
     body: {
         fontSize: typography.body,
-        lineHeight: 22
+        lineHeight: 20
     },
     muted: {
         color: colors.muted,
         fontSize: typography.small,
-        lineHeight: 20
+        lineHeight: 18
     },
     label: {
         color: colors.muted,
@@ -45,7 +45,7 @@ const styles = StyleSheet.create({
         textTransform: 'uppercase'
     },
     metric: {
-        fontSize: 32,
+        fontSize: 30,
         fontWeight: '900',
         letterSpacing: 0
     },

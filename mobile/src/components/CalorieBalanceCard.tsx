@@ -11,20 +11,17 @@ type CalorieBalanceCardProps = ViewProps & {
     targetCalories: number | null | undefined;
 };
 
-const LOW_REMAINING_CALORIE_THRESHOLD = 125; // Warn near the target where the remaining number is most actionable.
-
 function getBalanceTone(remaining: number | null): 'primary' | 'warning' | 'danger' {
-    if (remaining === null) return 'primary';
+    if (remaining === null) return 'warning';
     if (remaining < 0) return 'danger';
-    if (remaining <= LOW_REMAINING_CALORIE_THRESHOLD) return 'warning';
-    return 'primary';
+    return 'warning';
 }
 
 /**
  * Native log summary modeled after the PWA calorie card.
  *
- * Empty days keep the large motivating balance; once food is logged, the card
- * becomes more scannable by surfacing eaten, remaining, and target together.
+ * Empty and populated days intentionally share one structure so changing dates
+ * does not shift the card height or move the Food Log below it.
  */
 export const CalorieBalanceCard: React.FC<CalorieBalanceCardProps> = ({
     totalCalories,
@@ -36,31 +33,30 @@ export const CalorieBalanceCard: React.FC<CalorieBalanceCardProps> = ({
     const remaining = hasTarget ? Math.round(targetCalories - totalCalories) : null;
     const isOver = remaining !== null && remaining < 0;
     const tone = getBalanceTone(remaining);
-    const gaugeMax = hasTarget ? Math.max(targetCalories, totalCalories, 1) : Math.max(totalCalories, 1);
-    const progressValue = hasTarget ? Math.min(totalCalories, targetCalories) / gaugeMax : 0;
+    const progressValue = hasTarget ? Math.min(totalCalories / targetCalories, 1) : 0;
     const balanceValue = remaining === null ? '-' : formatNumber(Math.abs(remaining), 0);
     const balanceLabel = remaining === null ? 'kcal target unavailable' : isOver ? 'kcal over' : 'kcal left';
-    const hasLoggedFood = totalCalories > 0;
+    const balanceSummary = remaining === null ? 'Target unavailable' : `${balanceValue} ${balanceLabel}`;
 
     return (
         <AppCard {...props} style={style}>
-            <View style={[styles.balanceLine, hasLoggedFood && styles.balanceLineCompact]}>
-                <AppText style={[styles.balanceNumber, hasLoggedFood && styles.balanceNumberLogged, styles[`${tone}Text`]]}>{balanceValue}</AppText>
-                <AppText style={[styles.balanceUnit, hasLoggedFood && styles.balanceUnitLogged]}>kcal</AppText>
-                <AppText style={[styles.balanceLabel, hasLoggedFood && styles.balanceUnitLogged]}>{balanceLabel.replace('kcal ', '')}</AppText>
-            </View>
-            <View style={styles.progressGroup}>
-                <ProgressBar
-                    accessibilityLabel={`${formatNumber(totalCalories, 0)} kcal eaten out of ${formatNumber(targetCalories, 0)} kcal target`}
-                    value={progressValue}
-                    tone={tone}
-                    style={styles.progress}
-                />
-                <View style={styles.statRow}>
-                    <CalorieStat label="Eaten" value={formatNumber(totalCalories, 0)} />
-                    <CalorieStat label={isOver ? 'Over' : 'Left'} value={remaining === null ? '-' : formatNumber(Math.abs(remaining), 0)} tone={tone} />
-                    <CalorieStat label="Target" value={hasTarget ? formatNumber(targetCalories, 0) : '-'} />
+            <View style={styles.compactHeader}>
+                <View>
+                    <AppText variant="caption">{isOver ? 'Over target' : 'Remaining'}</AppText>
+                    <AppText style={[styles.compactBalance, styles[`${tone}Text`]]}>{balanceSummary}</AppText>
                 </View>
+                <AppText variant="caption">{Math.round(progressValue * 100)}%</AppText>
+            </View>
+            <ProgressBar
+                accessibilityLabel={`${formatNumber(totalCalories, 0)} kcal eaten out of ${formatNumber(targetCalories, 0)} kcal target`}
+                value={progressValue}
+                tone={tone}
+                style={styles.progress}
+            />
+            <View style={styles.statRow}>
+                <CalorieStat label="Eaten" value={formatNumber(totalCalories, 0)} />
+                <CalorieStat label={isOver ? 'Over' : 'Left'} value={remaining === null ? '-' : formatNumber(Math.abs(remaining), 0)} tone={tone} />
+                <CalorieStat label="Target" value={hasTarget ? formatNumber(targetCalories, 0) : '-'} />
             </View>
         </AppCard>
     );
@@ -78,38 +74,6 @@ const CalorieStat: React.FC<{ label: string; value: string; tone?: 'primary' | '
 );
 
 const styles = StyleSheet.create({
-    balanceLine: {
-        flexDirection: 'row',
-        alignItems: 'baseline',
-        flexWrap: 'wrap',
-        gap: spacing.sm
-    },
-    balanceNumber: {
-        fontSize: 48,
-        lineHeight: 56,
-        fontWeight: '900',
-        letterSpacing: 0
-    },
-    balanceNumberLogged: {
-        fontSize: 38,
-        lineHeight: 44
-    },
-    balanceUnit: {
-        color: colors.warning,
-        fontSize: 22,
-        fontWeight: '900'
-    },
-    balanceUnitLogged: {
-        fontSize: 18
-    },
-    balanceLabel: {
-        color: colors.muted,
-        fontSize: 22,
-        fontWeight: '900'
-    },
-    balanceLineCompact: {
-        marginBottom: -spacing.xs
-    },
     primaryText: {
         color: colors.primary
     },
@@ -118,9 +82,6 @@ const styles = StyleSheet.create({
     },
     dangerText: {
         color: colors.danger
-    },
-    progressGroup: {
-        gap: spacing.md
     },
     progress: {
         height: 10
@@ -140,7 +101,18 @@ const styles = StyleSheet.create({
     },
     statValue: {
         color: colors.text,
-        fontSize: 16,
+        fontSize: 15,
+        fontWeight: '900'
+    },
+    compactHeader: {
+        flexDirection: 'row',
+        alignItems: 'flex-end',
+        justifyContent: 'space-between',
+        gap: spacing.md
+    },
+    compactBalance: {
+        fontSize: 24,
+        lineHeight: 30,
         fontWeight: '900'
     }
 });

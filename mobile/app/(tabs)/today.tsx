@@ -7,7 +7,6 @@ import type { FoodLogEntry } from '@calibrate/api-client';
 import type { MealPeriod } from '@calibrate/shared';
 import { AddFoodSheet } from '../../src/components/AddFoodSheet';
 import { AppButton } from '../../src/components/AppButton';
-import { AppChip } from '../../src/components/AppChip';
 import { AppText } from '../../src/components/AppText';
 import { BottomSheetModal } from '../../src/components/BottomSheetModal';
 import { CalorieBalanceCard } from '../../src/components/CalorieBalanceCard';
@@ -16,17 +15,22 @@ import { DayCompletionCard } from '../../src/components/DayCompletionCard';
 import { FoodLogTimelineCard } from '../../src/components/FoodLogTimelineCard';
 import { LogContentSkeleton } from '../../src/components/LogContentSkeleton';
 import { NumberStepperField } from '../../src/components/NumberStepperField';
+import { OverlaySelect, type OverlaySelectOption } from '../../src/components/OverlaySelect';
 import { Screen } from '../../src/components/Screen';
 import { SectionHeader } from '../../src/components/SectionHeader';
 import { TextField } from '../../src/components/TextField';
 import { useAuth } from '../../src/auth/AuthContext';
 import { useSharedLogDateNavigation } from '../../src/context/LogDateContext';
 import { addDaysToDateOnly } from '../../src/utils/dates';
-import { formatMealChipLabel } from '../../src/utils/format';
+import { formatMealPeriod } from '../../src/utils/format';
 import { MEAL_OPTIONS } from '../../src/utils/meals';
 import { colors, spacing } from '../../src/theme';
 
 const SERVINGS_STEP = 0.1; // Edit servings with the same precision as the add-food flow.
+const MEAL_SELECTOR_OPTIONS: Array<OverlaySelectOption<MealPeriod>> = MEAL_OPTIONS.map((option) => ({
+    value: option,
+    label: formatMealPeriod(option)
+}));
 
 export default function TodayScreen() {
     const { api } = useAuth();
@@ -39,6 +43,7 @@ export default function TodayScreen() {
     const [editMeal, setEditMeal] = useState<MealPeriod>('BREAKFAST');
     const [editServings, setEditServings] = useState('');
     const [editError, setEditError] = useState<string | null>(null);
+    const [isEditMealSelectorOpen, setIsEditMealSelectorOpen] = useState(false);
     const [addFoodMeal, setAddFoodMeal] = useState<MealPeriod | null | undefined>(undefined);
 
     const profileQuery = useQuery({ queryKey: ['mobile-profile'], queryFn: () => api.getUserProfile() });
@@ -144,6 +149,7 @@ export default function TodayScreen() {
                 : ''
         );
         setEditError(null);
+        setIsEditMealSelectorOpen(false);
     }
 
     function handleSaveEdit() {
@@ -205,7 +211,13 @@ export default function TodayScreen() {
             {profileQuery.error && <AppText style={styles.error}>{profileQuery.error.message}</AppText>}
             {deleteFood.error && <AppText style={styles.error}>{deleteFood.error.message}</AppText>}
 
-            <BottomSheetModal visible={Boolean(editEntry)} onRequestClose={() => setEditEntry(null)}>
+            <BottomSheetModal
+                visible={Boolean(editEntry)}
+                onRequestClose={() => {
+                    setIsEditMealSelectorOpen(false);
+                    setEditEntry(null);
+                }}
+            >
                 <SectionHeader title="Edit food" description="Update this log entry snapshot." />
                 <TextField label="Food name" value={editName} onChangeText={setEditName} />
                 <NumberStepperField label="Calories" value={editCalories} onChangeText={setEditCalories} step={25} min={0} suffix="kcal" />
@@ -219,23 +231,27 @@ export default function TodayScreen() {
                     />
                 )}
                 <AppText variant="label">Meal</AppText>
-                <View style={styles.chips}>
-                    {MEAL_OPTIONS.map((option) => (
-                        <AppChip
-                            key={option}
-                            label={formatMealChipLabel(option)}
-                            selected={option === editMeal}
-                            onPress={() => setEditMeal(option)}
-                        />
-                    ))}
-                </View>
+                <OverlaySelect
+                    accessibilityLabel="Select meal"
+                    value={editMeal}
+                    options={MEAL_SELECTOR_OPTIONS}
+                    isOpen={isEditMealSelectorOpen}
+                    onToggle={() => setIsEditMealSelectorOpen((current) => !current)}
+                    onChange={(nextMeal) => {
+                        setEditMeal(nextMeal);
+                        setIsEditMealSelectorOpen(false);
+                    }}
+                />
                 {(editError || updateFood.error) && <AppText style={styles.error}>{editError ?? updateFood.error?.message}</AppText>}
                 <View style={styles.row}>
                     <AppButton
                         title="Cancel"
                         variant="secondary"
                         leftIcon={<Ionicons name="close" size={18} color={colors.text} />}
-                        onPress={() => setEditEntry(null)}
+                        onPress={() => {
+                            setIsEditMealSelectorOpen(false);
+                            setEditEntry(null);
+                        }}
                         style={styles.rowButton}
                     />
                     <AppButton
@@ -265,11 +281,6 @@ const styles = StyleSheet.create({
     },
     rowButton: {
         flex: 1
-    },
-    chips: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        gap: spacing.sm
     },
     error: {
         color: colors.danger

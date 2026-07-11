@@ -30,6 +30,39 @@ type AuthContextValue = {
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
+const DEV_TEST_EMAIL = 'test@calibratehealth.app';
+const DEV_TEST_PASSWORD = 'password123';
+
+function isLanOrLoopbackHost(hostname: string): boolean {
+    const normalized = hostname.toLowerCase();
+    if (normalized === 'localhost' || normalized === '127.0.0.1' || normalized === '10.0.2.2') {
+        return true;
+    }
+
+    if (normalized.startsWith('192.168.') || normalized.startsWith('10.')) {
+        return true;
+    }
+
+    const private172Match = /^172\.(1[6-9]|2\d|3[01])\./.test(normalized);
+    return private172Match;
+}
+
+/**
+ * Native auth cannot inherit the backend's cookie-session dev auto-login, so
+ * local Expo builds mint a normal mobile token for the deterministic test user.
+ */
+function shouldDevAutoLoginMobile(serverUrl: string): boolean {
+    if (!__DEV__) {
+        return false;
+    }
+
+    try {
+        const url = new URL(serverUrl);
+        return isLanOrLoopbackHost(url.hostname);
+    } catch {
+        return false;
+    }
+}
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const queryClient = useQueryClient();
@@ -79,6 +112,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         });
     }, []);
 
+    const loginDevTestUser = useCallback(async (baseUrl: string, nextDeviceId: string) => {
+        const bootstrapClient = new CalibrateApiClient({ baseUrl });
+        try {
+            // Trigger the backend's existing dev auto-login/seed path when enabled.
+            await bootstrapClient.getMe();
+        } catch {
+            // If cookie auto-login is disabled, the deterministic password path can still work
+            // against an already-seeded local database.
+        }
+
+        const payload = await bootstrapClient.loginMobile({
+            email: DEV_TEST_EMAIL,
+            password: DEV_TEST_PASSWORD,
+            device_id: nextDeviceId,
+            device_platform: MOBILE_DEVICE_PLATFORMS.ANDROID_PHONE,
+            device_name: Application.applicationName ?? 'Android device'
+        });
+        await persistAuthPayload(payload);
+    }, [persistAuthPayload]);
+
     useEffect(() => {
         let isMounted = true;
 
@@ -100,10 +153,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
                 if (tokens.refreshToken) {
                     const bootstrapClient = new CalibrateApiClient({ baseUrl: storedServerUrl });
-                    const refreshed = await bootstrapClient.refreshMobile(tokens.refreshToken);
-                    if (isMounted) {
-                        await persistAuthPayload(refreshed);
+                    try {
+                        const refreshed = await bootstrapClient.refreshMobile(tokens.refreshToken);
+                        if (isMounted) {
+                            await persistAuthPayload(refreshed);
+                        }
+                        return;
+                    } catch (refreshError) {
+                        if (!shouldDevAutoLoginMobile(storedServerUrl)) {
+                            throw refreshError;
+                        }
+                        await clearStoredTokens();
                     }
+                }
+
+                if (shouldDevAutoLoginMobile(storedServerUrl)) {
+                    await loginDevTestUser(storedServerUrl, nextDeviceId);
                 }
             } catch (error) {
                 if (isMounted) {
@@ -122,7 +187,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return () => {
             isMounted = false;
         };
-    }, [clearSession, persistAuthPayload]);
+    }, [clearSession, loginDevTestUser, persistAuthPayload]);
 
     const updateServerUrl = useCallback(async (value: string): Promise<boolean> => {
         const normalized = normalizeServerUrl(value);

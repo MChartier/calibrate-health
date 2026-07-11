@@ -31,7 +31,9 @@ const styles = StyleSheet.create({
         height: 8,
         borderRadius: radius.pill,
         overflow: 'hidden',
-        backgroundColor: colors.surfaceAlt
+        backgroundColor: colors.surfaceAlt,
+        borderColor: colors.border,
+        borderWidth: StyleSheet.hairlineWidth
     },
     fill: {
         height: '100%',
