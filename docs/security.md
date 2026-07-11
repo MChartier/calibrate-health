@@ -34,3 +34,30 @@ Mobile access tokens are short lived and refresh tokens rotate through a databas
 so one presented refresh token can create at most one successor. Device sessions and their native
 push endpoints can be reviewed and revoked from Android settings. Password changes preserve the
 initiating mobile session and revoke other native sessions.
+
+Browser sessions are persisted in Postgres and linked to the authenticated account after login.
+Native push registrations are linked to the mobile session that registered them. Deleting an
+account therefore removes its browser sessions, mobile sessions, web push subscriptions, and
+native push tokens through database cascades rather than relying on a hosted cleanup service.
+
+## Account export and deletion
+
+Authenticated users can download a versioned `calibrate-account-export` JSON document. The export
+contains profile and preference data, the optional inline avatar as base64, goals, body metrics,
+food logs and completed-day state, My Foods and recipe snapshots, and in-app notification history.
+It deliberately excludes password hashes, browser/mobile session credentials, push endpoints and
+tokens, and internal idempotency/synchronization metadata.
+
+Permanent deletion requires the current account password. The user row is the transaction root;
+foreign-key cascades remove all directly owned tracking data, browser/mobile sessions, push
+subscriptions, notifications, and synchronization metadata. The request session cookie is also
+cleared. Both operations use only the instance's local API and Postgres database, so self-hosted
+deployments do not depend on `calibratehealth.app` to export or delete account data.
+
+Calibrate cannot remove copies maintained outside the active application database. Self-hosted
+operators remain responsible for reverse-proxy and application logs, database backups, backup
+expiration, and preventing a restored backup from unintentionally reactivating a deleted account.
+The Android client can also retain pending offline mutation payloads in app-local SQLite, scoped by
+server origin and account id. Server-side deletion cannot remotely erase those local records or an
+export file the user has already shared; users should clear app data and saved exports separately
+when removing data from a shared device.
