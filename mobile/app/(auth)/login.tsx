@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Link } from 'expo-router';
 import { AppButton } from '../../src/components/AppButton';
@@ -12,12 +12,16 @@ import { useAuth } from '../../src/auth/AuthContext';
 import { colors, spacing } from '../../src/theme';
 
 export default function LoginScreen() {
-    const { login, serverUrl, setServerUrl, authError } = useAuth();
+    const { login, serverUrl, setServerUrl, testServerUrl, serverConnection, authError } = useAuth();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [serverInput, setServerInput] = useState(serverUrl);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        setServerInput(serverUrl);
+    }, [serverUrl]);
 
     async function handleLogin() {
         setIsSubmitting(true);
@@ -55,7 +59,12 @@ export default function LoginScreen() {
                     value={password}
                     onChangeText={setPassword}
                 />
-                <ServerUrlControl value={serverInput} onChangeText={setServerInput} />
+                <ServerUrlControl
+                    value={serverInput}
+                    onChangeText={setServerInput}
+                    connection={serverConnection}
+                    onTestConnection={testServerUrl}
+                />
                 {(error || authError) && <AppText style={styles.error}>{error ?? authError}</AppText>}
                 <AppButton title={isSubmitting ? 'Signing in...' : 'Sign in'} disabled={isSubmitting} onPress={() => void handleLogin()} />
             </AppCard>

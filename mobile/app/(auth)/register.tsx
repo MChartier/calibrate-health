@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Link } from 'expo-router';
 import { AppButton } from '../../src/components/AppButton';
@@ -12,12 +12,16 @@ import { useAuth } from '../../src/auth/AuthContext';
 import { colors, spacing } from '../../src/theme';
 
 export default function RegisterScreen() {
-    const { register, serverUrl, setServerUrl } = useAuth();
+    const { register, serverUrl, setServerUrl, testServerUrl, serverConnection, authError } = useAuth();
     const [serverInput, setServerInput] = useState(serverUrl);
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        setServerInput(serverUrl);
+    }, [serverUrl]);
 
     async function handleRegister() {
         setIsSubmitting(true);
@@ -50,8 +54,13 @@ export default function RegisterScreen() {
                     onChangeText={setEmail}
                 />
                 <TextField label="Password" secureTextEntry value={password} onChangeText={setPassword} />
-                <ServerUrlControl value={serverInput} onChangeText={setServerInput} />
-                {error && <AppText style={styles.error}>{error}</AppText>}
+                <ServerUrlControl
+                    value={serverInput}
+                    onChangeText={setServerInput}
+                    connection={serverConnection}
+                    onTestConnection={testServerUrl}
+                />
+                {(error || authError) && <AppText style={styles.error}>{error ?? authError}</AppText>}
                 <AppButton title={isSubmitting ? 'Creating...' : 'Create account'} disabled={isSubmitting} onPress={() => void handleRegister()} />
             </AppCard>
 
