@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Alert, Pressable, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { MyFoodSummary } from '@calibrate/api-client';
@@ -15,12 +15,12 @@ import { TextField } from '../src/components/TextField';
 import { useAuth } from '../src/auth/AuthContext';
 import { formatCalories } from '../src/utils/format';
 import { sortMyFoodsPinnedFirst } from '../src/utils/myFoods';
+import {
+    hydrateRecipeIngredientDrafts,
+    serializeRecipeIngredientDrafts,
+    type RecipeIngredientDraft
+} from '../src/utils/myFoodEditing';
 import { colors, radius, spacing } from '../src/theme';
-
-type RecipeIngredientDraft = {
-    myFood: MyFoodSummary;
-    servings: number;
-};
 
 type MyFoodSheet = 'food' | 'recipe' | null;
 
@@ -32,12 +32,15 @@ export default function MyFoodsScreen() {
     const queryClient = useQueryClient();
     const myFoodsQuery = useQuery({ queryKey: ['mobile-my-foods'], queryFn: () => api.getMyFoods() });
     const [activeSheet, setActiveSheet] = useState<MyFoodSheet>(null);
+    const [editingItem, setEditingItem] = useState<MyFoodSummary | null>(null);
     const [foodName, setFoodName] = useState('');
     const [servingQuantity, setServingQuantity] = useState('1');
     const [servingUnit, setServingUnit] = useState('serving');
     const [caloriesPerServing, setCaloriesPerServing] = useState('');
     const [recipeName, setRecipeName] = useState('');
     const [recipeYield, setRecipeYield] = useState('1');
+    const [recipeServingQuantity, setRecipeServingQuantity] = useState('1');
+    const [recipeServingUnit, setRecipeServingUnit] = useState('serving');
     const [recipeIngredients, setRecipeIngredients] = useState<RecipeIngredientDraft[]>([]);
 
     const allFoods = myFoodsQuery.data ?? [];
@@ -46,43 +49,64 @@ export default function MyFoodsScreen() {
         [allFoods]
     );
 
-    const createFood = useMutation({
+    const saveFood = useMutation({
         mutationFn: () =>
-            api.createMyFood({
+            (editingItem ? api.updateMyFood(editingItem.id, {
                 name: foodName.trim(),
                 serving_size_quantity: Number(servingQuantity),
                 serving_unit_label: servingUnit.trim(),
                 calories_per_serving: Number(caloriesPerServing)
-            }),
+            }) : api.createMyFood({
+                name: foodName.trim(),
+                serving_size_quantity: Number(servingQuantity),
+                serving_unit_label: servingUnit.trim(),
+                calories_per_serving: Number(caloriesPerServing)
+            })),
         onSuccess: async () => {
-            setFoodName('');
-            setServingQuantity('1');
-            setServingUnit('serving');
-            setCaloriesPerServing('');
-            setActiveSheet(null);
+            closeEditor();
             await queryClient.invalidateQueries({ queryKey: ['mobile-my-foods'] });
         }
     });
 
-    const createRecipe = useMutation({
+    const saveRecipe = useMutation({
         mutationFn: () =>
-            api.createRecipe({
+            (editingItem ? api.updateMyFood(editingItem.id, {
                 name: recipeName.trim(),
-                serving_size_quantity: 1,
-                serving_unit_label: 'serving',
+                serving_size_quantity: Number(recipeServingQuantity),
+                serving_unit_label: recipeServingUnit.trim(),
                 yield_servings: Number(recipeYield),
-                ingredients: recipeIngredients.map((ingredient, index) => ({
-                    source: 'MY_FOOD',
-                    sort_order: index + 1,
-                    my_food_id: ingredient.myFood.id,
-                    quantity_servings: ingredient.servings
-                }))
-            }),
+                ingredients: serializeRecipeIngredientDrafts(recipeIngredients)
+            }) : api.createRecipe({
+                name: recipeName.trim(),
+                serving_size_quantity: Number(recipeServingQuantity),
+                serving_unit_label: recipeServingUnit.trim(),
+                yield_servings: Number(recipeYield),
+                ingredients: serializeRecipeIngredientDrafts(recipeIngredients)
+            })),
         onSuccess: async () => {
-            setRecipeName('');
-            setRecipeYield('1');
-            setRecipeIngredients([]);
-            setActiveSheet(null);
+            closeEditor();
+            await queryClient.invalidateQueries({ queryKey: ['mobile-my-foods'] });
+        }
+    });
+
+    const loadRecipe = useMutation({
+        mutationFn: (item: MyFoodSummary) => api.getMyFood(item.id),
+        onSuccess: (detail) => {
+            setRecipeName(detail.name);
+            setRecipeServingQuantity(String(detail.serving_size_quantity));
+            setRecipeServingUnit(detail.serving_unit_label);
+            setRecipeYield(String(detail.yield_servings ?? 1));
+            setRecipeIngredients(hydrateRecipeIngredientDrafts(detail, savedFoods));
+        }
+    });
+
+    const deleteItem = useMutation({
+        mutationFn: (item: MyFoodSummary) => api.deleteMyFood(item.id),
+        onSuccess: async (_result, item) => {
+            queryClient.setQueryData<MyFoodSummary[]>(['mobile-my-foods'], (current = []) =>
+                current.filter(({ id }) => id !== item.id)
+            );
+            closeEditor();
             await queryClient.invalidateQueries({ queryKey: ['mobile-my-foods'] });
         }
     });
@@ -99,20 +123,78 @@ export default function MyFoodsScreen() {
         }
     });
 
-    const canCreateFood = foodName.trim().length > 0 &&
+    const canSaveFood = foodName.trim().length > 0 &&
         Number(servingQuantity) > 0 &&
         servingUnit.trim().length > 0 &&
         Number(caloriesPerServing) >= 0;
-    const canCreateRecipe = recipeName.trim().length > 0 && Number(recipeYield) > 0 && recipeIngredients.length > 0;
+    const canSaveRecipe = recipeName.trim().length > 0 &&
+        Number(recipeServingQuantity) > 0 &&
+        recipeServingUnit.trim().length > 0 &&
+        Number(recipeYield) > 0 &&
+        recipeIngredients.length > 0;
+
+    function closeEditor() {
+        setActiveSheet(null);
+        setEditingItem(null);
+        setFoodName('');
+        setServingQuantity('1');
+        setServingUnit('serving');
+        setCaloriesPerServing('');
+        setRecipeName('');
+        setRecipeServingQuantity('1');
+        setRecipeServingUnit('serving');
+        setRecipeYield('1');
+        setRecipeIngredients([]);
+        saveFood.reset();
+        saveRecipe.reset();
+        loadRecipe.reset();
+    }
+
+    function openNew(sheet: Exclude<MyFoodSheet, null>) {
+        closeEditor();
+        setActiveSheet(sheet);
+    }
+
+    function openEditor(item: MyFoodSummary) {
+        closeEditor();
+        setEditingItem(item);
+        setActiveSheet(item.type === 'FOOD' ? 'food' : 'recipe');
+        if (item.type === 'FOOD') {
+            setFoodName(item.name);
+            setServingQuantity(String(item.serving_size_quantity));
+            setServingUnit(item.serving_unit_label);
+            setCaloriesPerServing(String(item.calories_per_serving));
+        } else {
+            loadRecipe.mutate(item);
+        }
+    }
+
+    function confirmDelete() {
+        if (!editingItem) return;
+        Alert.alert(
+            `Delete ${editingItem.name}?`,
+            'Past food logs keep their saved names, calories, and serving snapshots. This library item cannot be restored.',
+            [
+                { text: 'Cancel', style: 'cancel' },
+                { text: 'Delete', style: 'destructive', onPress: () => deleteItem.mutate(editingItem) }
+            ]
+        );
+    }
 
     function addRecipeIngredient(myFood: MyFoodSummary) {
-        setRecipeIngredients((current) => [...current, { myFood, servings: 1 }]);
+        setRecipeIngredients((current) => [...current, {
+            key: `new-${myFood.id}-${Date.now()}-${current.length}`,
+            source: 'MY_FOOD',
+            myFood,
+            servings: 1
+        }]);
     }
 
     function adjustRecipeIngredientServings(index: number, delta: number) {
         setRecipeIngredients((current) =>
             current.map((ingredient, currentIndex) => {
                 if (currentIndex !== index) return ingredient;
+                if (ingredient.source !== 'MY_FOOD') return ingredient;
                 return {
                     ...ingredient,
                     servings: Math.max(SERVING_STEP, Math.round((ingredient.servings + delta) * 10) / 10)
@@ -135,7 +217,7 @@ export default function MyFoodsScreen() {
                         <Pressable
                             accessibilityRole="button"
                             accessibilityLabel="Create saved food"
-                            onPress={() => setActiveSheet('food')}
+                            onPress={() => openNew('food')}
                             style={({ pressed }) => [styles.iconButton, pressed && styles.pressed]}
                         >
                             <Ionicons name="add" size={20} color={colors.primaryDark} />
@@ -143,7 +225,7 @@ export default function MyFoodsScreen() {
                         <Pressable
                             accessibilityRole="button"
                             accessibilityLabel="Create recipe"
-                            onPress={() => setActiveSheet('recipe')}
+                            onPress={() => openNew('recipe')}
                             style={({ pressed }) => [styles.iconButton, pressed && styles.pressed]}
                         >
                             <Ionicons name="restaurant-outline" size={20} color={colors.primaryDark} />
@@ -161,6 +243,14 @@ export default function MyFoodsScreen() {
                                 </AppText>
                             </View>
                             <View style={styles.libraryActions}>
+                                <Pressable
+                                    accessibilityRole="button"
+                                    accessibilityLabel={`Edit ${item.name}`}
+                                    onPress={() => openEditor(item)}
+                                    style={({ pressed }) => [styles.pinButton, pressed && styles.pressed]}
+                                >
+                                    <Ionicons name="create-outline" size={19} color={colors.text} />
+                                </Pressable>
                                 <Pressable
                                     accessibilityRole="button"
                                     accessibilityLabel={`${item.is_pinned ? 'Unpin' : 'Pin'} ${item.name}`}
@@ -187,8 +277,11 @@ export default function MyFoodsScreen() {
                 </View>
             </AppCard>
 
-            <BottomSheetModal visible={activeSheet === 'food'} onRequestClose={() => setActiveSheet(null)}>
-                <SectionHeader title="New food" description="Create a reusable food with calories per serving." />
+            <BottomSheetModal visible={activeSheet === 'food'} onRequestClose={closeEditor}>
+                <SectionHeader
+                    title={editingItem ? 'Edit food' : 'New food'}
+                    description="Saved food edits do not rewrite existing food logs."
+                />
                 <TextField label="Name" value={foodName} onChangeText={setFoodName} />
                 <View style={styles.row}>
                     <NumberStepperField
@@ -209,29 +302,60 @@ export default function MyFoodsScreen() {
                     min={0}
                     suffix="kcal"
                 />
-                {createFood.error && <AppText style={styles.error}>{createFood.error.message}</AppText>}
+                {saveFood.error && <AppText style={styles.error}>{saveFood.error.message}</AppText>}
+                {deleteItem.error && <AppText style={styles.error}>{deleteItem.error.message}</AppText>}
+                {editingItem && (
+                    <AppButton
+                        title={deleteItem.isPending ? 'Deleting...' : 'Delete food'}
+                        variant="danger"
+                        disabled={deleteItem.isPending || saveFood.isPending}
+                        leftIcon={<Ionicons name="trash-outline" size={18} color="#ffffff" />}
+                        onPress={confirmDelete}
+                    />
+                )}
                 <View style={styles.row}>
                     <AppButton
                         title="Cancel"
                         variant="secondary"
                         leftIcon={<Ionicons name="close" size={18} color={colors.text} />}
-                        onPress={() => setActiveSheet(null)}
+                        onPress={closeEditor}
                         style={styles.field}
                     />
                     <AppButton
-                        title={createFood.isPending ? 'Saving...' : 'Save food'}
-                        disabled={!canCreateFood || createFood.isPending}
+                        title={saveFood.isPending ? 'Saving...' : 'Save food'}
+                        disabled={!canSaveFood || saveFood.isPending || deleteItem.isPending}
                         leftIcon={<Ionicons name="checkmark" size={18} color="#ffffff" />}
-                        onPress={() => createFood.mutate()}
+                        onPress={() => saveFood.mutate()}
                         style={styles.field}
                     />
                 </View>
             </BottomSheetModal>
 
-            <BottomSheetModal visible={activeSheet === 'recipe'} onRequestClose={() => setActiveSheet(null)}>
-                <SectionHeader title="Recipe builder" description="Combine saved foods into a reusable recipe." />
+            <BottomSheetModal visible={activeSheet === 'recipe'} onRequestClose={closeEditor}>
+                <SectionHeader
+                    title={editingItem ? 'Edit recipe' : 'Recipe builder'}
+                    description="Recipe edits create new ingredient snapshots without changing past logs."
+                />
                 <TextField label="Recipe name" value={recipeName} onChangeText={setRecipeName} />
+                <View style={styles.row}>
+                    <NumberStepperField
+                        label="Serving"
+                        value={recipeServingQuantity}
+                        onChangeText={setRecipeServingQuantity}
+                        step={SERVING_STEP}
+                        min={SERVING_STEP}
+                        containerStyle={styles.field}
+                    />
+                    <TextField
+                        label="Unit"
+                        value={recipeServingUnit}
+                        onChangeText={setRecipeServingUnit}
+                        containerStyle={styles.field}
+                    />
+                </View>
                 <NumberStepperField label="Yield servings" value={recipeYield} onChangeText={setRecipeYield} step={1} min={1} />
+                {loadRecipe.isPending && <AppText variant="muted">Loading recipe snapshots...</AppText>}
+                {loadRecipe.error && <AppText style={styles.error}>{loadRecipe.error.message}</AppText>}
                 <AppText variant="label">Ingredients</AppText>
                 <View style={styles.chips}>
                     {savedFoods.slice(0, 12).map((item) => (
@@ -240,12 +364,18 @@ export default function MyFoodsScreen() {
                 </View>
                 {savedFoods.length === 0 && <AppText variant="muted">Create a saved food first, then add it to a recipe.</AppText>}
                 {recipeIngredients.map((ingredient, index) => (
-                    <View key={`${ingredient.myFood.id}-${index}`} style={styles.ingredientRow}>
+                    <View key={ingredient.key} style={styles.ingredientRow}>
                         <View style={styles.libraryText}>
-                            <AppText variant="body" numberOfLines={1}>{ingredient.myFood.name}</AppText>
-                            <AppText variant="caption">{formatCalories(ingredient.myFood.calories_per_serving * ingredient.servings)}</AppText>
+                            <AppText variant="body" numberOfLines={1}>
+                                {ingredient.source === 'MY_FOOD' ? ingredient.myFood.name : ingredient.name}
+                            </AppText>
+                            <AppText variant="caption">
+                                {formatCalories(ingredient.source === 'MY_FOOD'
+                                    ? ingredient.myFood.calories_per_serving * ingredient.servings
+                                    : ingredient.caloriesTotal)}
+                            </AppText>
                         </View>
-                        <View style={styles.stepper}>
+                        {ingredient.source === 'MY_FOOD' && <View style={styles.stepper}>
                             <Pressable
                                 accessibilityRole="button"
                                 accessibilityLabel={`Decrease ${ingredient.myFood.name} servings`}
@@ -263,10 +393,10 @@ export default function MyFoodsScreen() {
                             >
                                 <Ionicons name="add" size={16} color={colors.text} />
                             </Pressable>
-                        </View>
+                        </View>}
                         <Pressable
                             accessibilityRole="button"
-                            accessibilityLabel={`Remove ${ingredient.myFood.name}`}
+                            accessibilityLabel={`Remove ${ingredient.source === 'MY_FOOD' ? ingredient.myFood.name : ingredient.name}`}
                             onPress={() => setRecipeIngredients((current) => current.filter((_, currentIndex) => currentIndex !== index))}
                             style={({ pressed }) => [styles.removeButton, pressed && styles.pressed]}
                         >
@@ -274,20 +404,30 @@ export default function MyFoodsScreen() {
                         </Pressable>
                     </View>
                 ))}
-                {createRecipe.error && <AppText style={styles.error}>{createRecipe.error.message}</AppText>}
+                {saveRecipe.error && <AppText style={styles.error}>{saveRecipe.error.message}</AppText>}
+                {deleteItem.error && <AppText style={styles.error}>{deleteItem.error.message}</AppText>}
+                {editingItem && (
+                    <AppButton
+                        title={deleteItem.isPending ? 'Deleting...' : 'Delete recipe'}
+                        variant="danger"
+                        disabled={deleteItem.isPending || saveRecipe.isPending}
+                        leftIcon={<Ionicons name="trash-outline" size={18} color="#ffffff" />}
+                        onPress={confirmDelete}
+                    />
+                )}
                 <View style={styles.row}>
                     <AppButton
                         title="Cancel"
                         variant="secondary"
                         leftIcon={<Ionicons name="close" size={18} color={colors.text} />}
-                        onPress={() => setActiveSheet(null)}
+                        onPress={closeEditor}
                         style={styles.field}
                     />
                     <AppButton
-                        title={createRecipe.isPending ? 'Saving...' : 'Save recipe'}
-                        disabled={!canCreateRecipe || createRecipe.isPending}
+                        title={saveRecipe.isPending ? 'Saving...' : 'Save recipe'}
+                        disabled={!canSaveRecipe || saveRecipe.isPending || deleteItem.isPending || loadRecipe.isPending}
                         leftIcon={<Ionicons name="checkmark" size={18} color="#ffffff" />}
-                        onPress={() => createRecipe.mutate()}
+                        onPress={() => saveRecipe.mutate()}
                         style={styles.field}
                     />
                 </View>

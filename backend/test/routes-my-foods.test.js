@@ -36,6 +36,10 @@ function createRes() {
     json(payload) {
       this.body = payload;
       return this;
+    },
+    end() {
+      this.ended = true;
+      return this;
     }
   };
 }
@@ -337,4 +341,98 @@ test('myFoods route: POST /recipes creates a recipe and ingredient snapshots', a
   assert.equal(receivedIngredientData[0].name_snapshot, 'Tomato sauce');
   assert.equal(receivedIngredientData[0].brand_snapshot, 'Brand');
   assert.equal(receivedIngredientData[0].calories_total_snapshot, 100);
+});
+
+test('myFoods route: PATCH /:id updates an owned food without touching historical logs', async () => {
+  let readCount = 0;
+  let receivedUpdate = null;
+  const prismaStub = {
+    myFood: {
+      findFirst: async () => {
+        readCount += 1;
+        return readCount === 1
+          ? { id: 9, user_id: 7, type: 'FOOD' }
+          : { id: 9, user_id: 7, type: 'FOOD', name: 'New oats', calories_per_serving: 190 };
+      },
+      updateMany: async (args) => {
+        receivedUpdate = args;
+        return { count: 1 };
+      }
+    }
+  };
+  const handler = getRouteHandler(loadMyFoodsRouter(prismaStub), 'patch', '/:id');
+  const res = createRes();
+  await handler({
+    user: { id: 7 },
+    params: { id: '9' },
+    body: { name: ' New oats ', serving_size_quantity: 1, serving_unit_label: ' bowl ', calories_per_serving: 190 }
+  }, res);
+
+  assert.equal(res.statusCode, 200);
+  assert.deepEqual(receivedUpdate, {
+    where: { id: 9, user_id: 7, type: 'FOOD' },
+    data: { name: 'New oats', serving_size_quantity: 1, serving_unit_label: 'bowl', calories_per_serving: 190 }
+  });
+  assert.equal('foodLog' in prismaStub, false);
+});
+
+test('myFoods route: PATCH /:id atomically replaces only an owned recipe definition', async () => {
+  let deletedWhere = null;
+  let createdRows = null;
+  const txStub = {
+    myFood: { updateMany: async () => ({ count: 1 }) },
+    recipeIngredient: {
+      deleteMany: async ({ where }) => { deletedWhere = where; },
+      createMany: async ({ data }) => { createdRows = data; }
+    }
+  };
+  const prismaStub = {
+    myFood: {
+      findFirst: async () => ({ id: 10, user_id: 7, type: 'RECIPE', name: 'Soup' })
+    },
+    $transaction: async (fn) => fn(txStub)
+  };
+  const handler = getRouteHandler(loadMyFoodsRouter(prismaStub), 'patch', '/:id');
+  const res = createRes();
+  await handler({
+    user: { id: 7 },
+    params: { id: '10' },
+    body: {
+      name: 'Soup',
+      serving_size_quantity: 1,
+      serving_unit_label: 'bowl',
+      yield_servings: 2,
+      ingredients: [{ source: 'EXTERNAL', name: 'Broth', calories_total: 80 }]
+    }
+  }, res);
+
+  assert.equal(res.statusCode, 200);
+  assert.deepEqual(deletedWhere, { recipe_id: 10 });
+  assert.equal(createdRows.length, 1);
+  assert.equal(createdRows[0].recipe_id, 10);
+  assert.equal(createdRows[0].name_snapshot, 'Broth');
+  assert.equal('foodLog' in txStub, false);
+});
+
+test('myFoods route: DELETE /:id scopes deletion to the owner and returns 404 otherwise', async () => {
+  let receivedWhere = null;
+  const prismaStub = {
+    myFood: {
+      deleteMany: async ({ where }) => {
+        receivedWhere = where;
+        return { count: where.id === 11 ? 1 : 0 };
+      }
+    }
+  };
+  const handler = getRouteHandler(loadMyFoodsRouter(prismaStub), 'delete', '/:id');
+  const deleted = createRes();
+  await handler({ user: { id: 7 }, params: { id: '11' } }, deleted);
+  assert.equal(deleted.statusCode, 204);
+  assert.equal(deleted.ended, true);
+  assert.deepEqual(receivedWhere, { id: 11, user_id: 7 });
+
+  const missing = createRes();
+  await handler({ user: { id: 7 }, params: { id: '12' } }, missing);
+  assert.equal(missing.statusCode, 404);
+  assert.deepEqual(missing.body, { message: 'My food not found' });
 });

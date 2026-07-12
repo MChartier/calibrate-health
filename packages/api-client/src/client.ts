@@ -1,6 +1,7 @@
 import type {
     AccountExport,
     ClientConfigResponse,
+    CreateMyFoodPayload,
     FoodLogCreatePayload,
     FoodLogDay,
     FoodLogEntry,
@@ -21,6 +22,7 @@ import type {
     RecentFoodsResponse,
     SyncChangesResponse,
     TrendMetricsResponse,
+    UpdateMyFoodPayload,
     UserClientPayload,
     UserProfileResponse
 } from './types';
@@ -369,7 +371,7 @@ export class CalibrateApiClient {
         });
     }
 
-    createMyFood(payload: Record<string, unknown>): Promise<MyFoodSummary> {
+    createMyFood(payload: CreateMyFoodPayload): Promise<MyFoodSummary> {
         return this.request<MyFoodSummary>('/api/my-foods/foods', {
             method: 'POST',
             json: payload
@@ -380,6 +382,19 @@ export class CalibrateApiClient {
         return this.request<MyFoodSummary>('/api/my-foods/recipes', {
             method: 'POST',
             json: payload
+        });
+    }
+
+    updateMyFood(id: number, payload: UpdateMyFoodPayload): Promise<MyFoodSummary> {
+        return this.request<MyFoodSummary>(`/api/my-foods/${encodeURIComponent(String(id))}`, {
+            method: 'PATCH',
+            json: payload
+        });
+    }
+
+    deleteMyFood(id: number): Promise<void> {
+        return this.request<void>(`/api/my-foods/${encodeURIComponent(String(id))}`, {
+            method: 'DELETE'
         });
     }
 
