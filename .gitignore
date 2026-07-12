@@ -9,6 +9,7 @@ backend/prisma/*.db-wal
 mobile/.expo
 mobile/android
 mobile/dist
+mobile/modules/wear-pairing/android/build/
 .codex-screenshots/
 .DS_Store
 coverage

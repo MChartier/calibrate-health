@@ -18,5 +18,9 @@ describe('Android privacy configuration', () => {
             'expo-secure-store',
             { configureAndroidBackup: false }
         ]);
+        expect(appConfig.expo.plugins).toContainEqual([
+            'expo-build-properties',
+            { android: { minSdkVersion: 26, usesCleartextTraffic: false } }
+        ]);
     });
 });

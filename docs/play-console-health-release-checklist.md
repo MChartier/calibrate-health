@@ -45,7 +45,7 @@ Current requirements used by this worksheet:
 | Account deletion | Phone Settings requires the current password plus `DELETE MY ACCOUNT`. The server cascade-deletes account-owned rows and clears the session. The phone independently attempts to clear its outbox, Health Connect grants/state, Wear coordination state, and credentials; a reachable paired watch receives an account-bound local-disconnect command. Failures surface explicit device-cleanup guidance. The public `/account-deletion` page provides hosted-service email instructions without requiring sign-in or app installation. | `mobile/app/(tabs)/settings.tsx`, `mobile/src/account/accountData.ts`, `mobile/src/healthConnect/accountCleanup.ts`, `mobile/src/wear/accountCleanup.ts`, `frontend/src/pages/AccountDeletion.tsx`, `backend/src/routes/user.ts`, `backend/prisma/schema.prisma` |
 | Food providers | Search text, barcodes, language, and serving context can be relayed by the Calibrate server to FatSecret, USDA, or Open Food Facts. Account email and ID are not deliberately included in those requests. | `backend/src/routes/food.ts`, `backend/src/services/foodData/`, `frontend/src/pages/PrivacyPolicy.tsx` |
 | Lose It import | A selected ZIP is uploaded to the server and parsed in memory. Preview is not persisted; execute creates the selected food and weight records. | `backend/src/routes/imports.ts` |
-| Wear permissions | Wear requests internet, network-state, and notifications only. It does not request body sensors, activity recognition, location, camera, microphone, or Health Connect permissions. | `wear/app/src/main/AndroidManifest.xml` |
+| Wear permissions | The merged release requests internet, network state, notifications, and normal scheduling support (`WAKE_LOCK`, boot completed, and foreground service). It does not request body sensors, activity recognition, location, camera, microphone, or Health Connect permissions. | `wear/app/src/main/AndroidManifest.xml`, release merged manifest |
 | Wear data flow | The watch calls the selected server directly, stores bounded summary/quick-add/outbox state in Room, and stores tokens in a Keystore-encrypted envelope. Data Layer messages carry pairing, invalidation, and handoff metadata rather than server health summaries. | `wear/README.md`, `wear/app/src/main/java/app/calibratehealth/wear/` |
 | Wear Play classification | The watch requires the paired phone for initial authentication, so its manifest declares `com.google.android.wearable.standalone=false`. After pairing, normal data sync uses the selected server directly over Wi-Fi/LTE. | `wear/app/src/main/AndroidManifest.xml`, `wear/app/src/main/java/app/calibratehealth/wear/pairing/` |
 | Wear backups | The tracked Wear manifest disables Android backup. | `wear/app/src/main/AndroidManifest.xml` |
@@ -55,15 +55,14 @@ Current requirements used by this worksheet:
 
 These findings must not be silently converted into affirmative Play Console answers.
 
-1. **Blocker - phone backup state is not yet proven.** `mobile/app.json` says `allowBackup: false`, but
-   the currently generated and gitignored `mobile/android/app/src/main/AndroidManifest.xml` says
-   `android:allowBackup="true"` and references backup-rule resources that are not present in that generated
-   tree. Run a clean Expo prebuild, then inspect the release merged manifest and final AAB. The tracked Expo
-   config is the intent; the current generated tree is stale or incomplete evidence.
-2. **Blocker - final phone permission set is not yet proven.** The same generated manifest still contains
-   `READ_EXTERNAL_STORAGE`, `WRITE_EXTERNAL_STORAGE`, and `SYSTEM_ALERT_WINDOW`, although they are blocked in
-   `app.json`. A release cannot be declared from `app.json` alone. The final merged release manifest and Play
-   App Bundle Explorer must show that these permissions and `RECORD_AUDIO` are absent.
+1. **Resolved in local release build - phone backup state.** A clean Expo prebuild and test-signed release APK now
+   show `android:allowBackup="false"`. Repeat the inspection on the exact uploaded AAB and Play-generated APK; local
+   test signing is build-path evidence, not Play Console evidence.
+2. **Resolved in local release build - forbidden phone permissions.** The clean test-signed release APK excludes
+   `READ_EXTERNAL_STORAGE`, `WRITE_EXTERNAL_STORAGE`, `SYSTEM_ALERT_WINDOW`, and `RECORD_AUDIO`. Its complete
+   permission inventory also contains expected transitive infrastructure permissions from SecureStore,
+   notifications/FCM, install referrer, and launcher-badge compatibility. Review those normal permissions rather
+   than using an incorrect "only app-declared permissions" expectation, and repeat the check in App Bundle Explorer.
 3. **Required evidence - external account-deletion URL.** Source now provides a dedicated public
    `/account-deletion` page with signed-in instructions, a hosted-service email request path, verification and
    response timing, retention caveats, and self-hosted operator guidance. Before entering
@@ -114,13 +113,16 @@ internal-only listing does not display a Data Safety section.
 - [ ] Record Git commit, versions, version codes, SHA-256 hashes, build URLs, and release metadata.
 - [ ] Inspect both AABs in App Bundle Explorer; export the generated APKs for device inspection.
 - [ ] Save release merged manifests and `aapt2 dump permissions` output.
-- [ ] Confirm phone manifest includes only internet, camera, vibration, notifications, and the five read-only
-  Health Connect permissions needed by the release.
+- [ ] Review the complete phone permission inventory. Expected user-facing/runtime access is camera, notifications,
+  and the five read-only Health Connect permissions; expected infrastructure declarations include internet,
+  network state, vibration, wake/boot support, biometric-backed SecureStore, FCM, install referrer, and launcher
+  badge compatibility. Investigate any permission outside the reviewed artifact inventory.
 - [ ] Confirm phone manifest excludes microphone, storage, system-alert-window, location, contacts, body-sensor,
   activity-recognition, and Health Connect write/background/history permissions.
 - [ ] Confirm phone `allowBackup=false` in the installed release package.
-- [ ] Confirm Wear includes only internet, network-state, and notifications, with backup disabled.
-- [ ] Confirm both Play artifacts have cleartext disabled and reject an `http://` server origin.
+- [ ] Confirm Wear includes the reviewed internet, network-state, notifications, wake/boot, and foreground-service
+  declarations, with backup disabled and no unrelated runtime permission.
+- [ ] Confirm both Play artifacts explicitly disable cleartext and reject an `http://` server origin.
 - [ ] Confirm the installed phone and watch package names are both `app.calibratehealth.mobile`.
 - [ ] Confirm installed Play-generated phone and watch APKs have the same app-signing certificate fingerprint.
 - [ ] Distinguish the Play app-signing key from the upload key in the release record. Direct internal APK pairing
@@ -290,7 +292,9 @@ behavior does not support that purpose.
 - [ ] Confirm all server account relations, browser/mobile/watch sessions, pairings, subscriptions, notification
   delivery state, and Health Connect source/summaries are gone.
 - [ ] Confirm the deleted account cannot refresh phone or watch credentials.
-- [ ] Resolve and test cleanup of phone Health Connect permission/checkpoints/preferences and watch caches.
+- [x] Source implements independent cleanup of the phone outbox, Health Connect grants/state, Wear coordination
+  state, credentials, and reachable paired-watch cache/outbox. Device validation remains required for both reachable
+  and unreachable-watch paths.
 - [ ] Document operator backup/log retention and demonstrate a supported removal request path for the hosted service.
 - [ ] Publish a dedicated deletion webpage or anchored section that names Calibrate, accepts a request without the
   app, explains identity verification, explains backup/log retention, and gives an expected completion time.

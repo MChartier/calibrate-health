@@ -32,13 +32,14 @@ Compatibility changes follow these rules:
 | Channel | Phone artifact | Wear build type | Intended use |
 | --- | --- | --- | --- |
 | `debug` | Local Expo/Gradle debug | `debug` | Emulator and development devices only |
-| `internal` | EAS `internal` APK | `internal` | Owned-device validation before store release |
-| `production` | EAS `production` AAB | `release` | Store-distributed release |
+| `internal` | Locally signed release APK | `internal` | Owned-device validation before store release |
+| `production` | Locally signed release AAB | `release` | Store-distributed release |
 
 The internal Wear build uses shared release signing when all `CALIBRATE_ANDROID_SIGNING_*` values are supplied and
-falls back to the repository debug key for local phone-debug pairing. An EAS-signed internal phone APK can pair only
-with a Wear artifact signed by that same EAS certificate; export the EAS keystore securely and provide it through the
-documented environment variables. Never place signing material in `shared/release.json` or generated metadata.
+falls back to the repository debug key for local phone-debug pairing. `npm run build:native:release` supplies the same
+validated signing environment to the phone and Wear release builds. Any future EAS-built phone artifact can pair only
+with a Wear artifact signed by that same certificate. Never place signing material in `shared/release.json` or
+generated metadata.
 
 ## Version bump and fast validation
 

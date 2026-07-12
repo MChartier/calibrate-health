@@ -48,10 +48,16 @@ class WatchSnapshotMapperTest {
 
     @Test
     fun `rejects duplicate quick-add ids and malformed revisions`() {
-        val duplicated = validSnapshot().replace(
-            "          ],\n          \"reminders\"",
-            "            ,{\"id\":\"my-food:4\",\"source\":\"recent\",\"label\":\"Duplicate\",\"calories\":10,\"draft\":{\"date\":\"2026-07-11\",\"meal_period\":\"LUNCH\",\"name\":\"Duplicate\",\"calories\":10}}\n          ],\n          \"reminders\""
+        val snapshot = validSnapshot()
+        val quickAdd =
+            "{\"id\":\"my-food:4\",\"source\":\"pinned\",\"label\":\"Yogurt\",\"calories\":120," +
+                "\"draft\":{\"date\":\"2026-07-11\",\"meal_period\":\"LUNCH\",\"my_food_id\":4," +
+                "\"servings_consumed\":1}}"
+        val duplicated = snapshot.replace(
+            quickAdd,
+            "$quickAdd,$quickAdd"
         )
+        assertTrue(duplicated != snapshot)
         assertTrue(runCatching { WatchSnapshotMapper.map(duplicated, 42L) }.isFailure)
         assertTrue(runCatching {
             WatchSnapshotMapper.map(validSnapshot().replace("0123456789abcdef01234567", "bad"), 42L)

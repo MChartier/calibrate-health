@@ -39,6 +39,8 @@ test('backup pipeline encrypts before promotion and limits retention to complete
   assert.match(backup, /BACKUP_RETENTION_DAYS/);
   assert.match(backup, /-name 'calibrate-\*\.dump\.age'/);
   assert.match(backup, /trap cleanup EXIT INT TERM HUP/);
+  assert.match(backup, /mktemp \/tmp\/calibrate-postgres\.dump\.XXXXXX/);
+  assert.doesNotMatch(backup, /XXXXXX\.dump/);
   assert.ok(backup.indexOf('age --encrypt') < backup.indexOf('mv "$partial" "$destination"'));
 });
 

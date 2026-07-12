@@ -28,6 +28,9 @@ describe('ServerUrlControl', () => {
         fireEvent.press(view.getByLabelText('Test Calibrate server connection'));
 
         expect(view.getByLabelText('Server URL')).toHaveProp('keyboardType', 'url');
+        expect(
+            view.getByText('Release builds require HTTPS. Local HTTP is limited to development builds.')
+        ).toBeTruthy();
         expect(onTestConnection).toHaveBeenCalledWith('http://10.0.2.2:3000');
     });
 

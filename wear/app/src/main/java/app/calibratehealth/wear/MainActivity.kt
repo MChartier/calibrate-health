@@ -70,10 +70,12 @@ class MainActivity : ComponentActivity() {
         refreshPairingState()
         setContent {
             val homeState by homeController.uiState.collectAsState()
+            // Snapshot delegated state once so Kotlin can safely narrow the nullable summary.
+            val summary = homeState.summary
             val displayedAppState = if (
-                appState.value is WearAppState.Paired && homeState.summary != null
+                appState.value is WearAppState.Paired && summary != null
             ) {
-                WearAppState.Ready(homeState.summary)
+                WearAppState.Ready(summary)
             } else {
                 appState.value
             }
@@ -124,7 +126,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onRequestPermissionsResult(
         requestCode: Int,
-        permissions: Array<out String>,
+        permissions: Array<String>,
         grantResults: IntArray
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)

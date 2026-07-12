@@ -12,7 +12,9 @@ class CalibrateWearPairingModule : Module() {
     override fun definition() = ModuleDefinition {
         Name("CalibrateWearPairing")
 
-        AsyncFunction("getPairingNodes") Coroutine {
+        // The explicit zero-argument arrow selects Expo Modules' suspend overload;
+        // omitting it is ambiguous with the one-argument Coroutine builder.
+        AsyncFunction("getPairingNodes") Coroutine { ->
             val context = appContext.reactContext
                 ?: throw IllegalStateException("Android context is unavailable")
             val capability = Wearable.getCapabilityClient(context)

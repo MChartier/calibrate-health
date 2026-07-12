@@ -40,7 +40,8 @@ trap cleanup EXIT INT TERM HUP
 run_backup() {
   timestamp="$(date -u +%Y%m%dT%H%M%SZ)"
   destination="$BACKUP_DIRECTORY/calibrate-$timestamp.dump.age"
-  plaintext="$(mktemp /tmp/calibrate-postgres.XXXXXX.dump)"
+  # BusyBox mktemp requires the random X suffix at the end of the template.
+  plaintext="$(mktemp /tmp/calibrate-postgres.dump.XXXXXX)"
   partial="$destination.partial"
 
   if ! pg_dump \

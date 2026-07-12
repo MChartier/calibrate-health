@@ -1,6 +1,7 @@
 package app.calibratehealth.wear.pairing
 
 import app.calibratehealth.wear.data.security.ServerOriginPolicy
+import app.calibratehealth.wear.network.StrictJson
 import org.json.JSONObject
 import java.net.URI
 import java.time.Instant
@@ -99,15 +100,17 @@ internal fun parsePhoneAccountDisconnect(
 }
 
 /** Positive ACK is emitted only after WearLocalDisconnect reports complete watch-local cleanup. */
-internal fun buildAccountDisconnectResult(command: PhoneAccountDisconnect): String = JSONObject()
-    .put("kind", "watch_account_disconnected")
-    .put("request_id", command.requestId)
-    .put("protocol_version", WEAR_PAIRING_PROTOCOL_VERSION)
-    .put("server_origin", command.serverOrigin)
-    .put("user_id", command.userId)
-    .put("watch_device_id", command.watchDeviceId)
-    .put("ok", true)
-    .toString()
+internal fun buildAccountDisconnectResult(command: PhoneAccountDisconnect): String = StrictJson.stringify(
+    StrictJson.objectOf(
+        "kind" to StrictJson.string("watch_account_disconnected"),
+        "request_id" to StrictJson.string(command.requestId),
+        "protocol_version" to StrictJson.number(WEAR_PAIRING_PROTOCOL_VERSION),
+        "server_origin" to StrictJson.string(command.serverOrigin),
+        "user_id" to StrictJson.number(command.userId),
+        "watch_device_id" to StrictJson.string(command.watchDeviceId),
+        "ok" to StrictJson.boolean(true)
+    )
+)
 
 internal fun parsePhonePairingInvite(
     fields: PairingFields,
