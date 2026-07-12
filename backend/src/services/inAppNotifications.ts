@@ -23,7 +23,6 @@ const ACTION_URL_BY_TYPE: Record<InAppNotificationType, string> = {
 type InAppNotificationClient = {
     inAppNotification: {
         findMany: typeof prisma.inAppNotification.findMany;
-        createMany: typeof prisma.inAppNotification.createMany;
         updateMany: typeof prisma.inAppNotification.updateMany;
     };
     foodLog: {
@@ -60,14 +59,6 @@ type ReminderMissingStatusArgs = {
     localDate: Date;
     reminderLogWeightEnabled: boolean;
     reminderLogFoodEnabled: boolean;
-    db?: InAppNotificationClient;
-};
-
-type EnsureReminderNotificationsArgs = {
-    userId: number;
-    localDate: Date;
-    missingWeight: boolean;
-    missingFood: boolean;
     db?: InAppNotificationClient;
 };
 
@@ -181,55 +172,6 @@ export const getReminderMissingStatusForDate = async ({
         missingWeight: reminderLogWeightEnabled && weightCount === 0,
         missingFood: reminderLogFoodEnabled && foodCount === 0
     };
-};
-
-/**
- * Create in-app reminder entries for missing logs, without re-opening dismissed items.
- */
-export const ensureReminderInAppNotificationsForDate = async ({
-    userId,
-    localDate,
-    missingWeight,
-    missingFood,
-    db = prisma
-}: EnsureReminderNotificationsArgs): Promise<number> => {
-    const rows: Prisma.InAppNotificationCreateManyInput[] = [];
-
-    if (missingWeight) {
-        rows.push({
-            user_id: userId,
-            type: InAppNotificationType.LOG_WEIGHT_REMINDER,
-            local_date: localDate,
-            dedupe_key: buildReminderInAppDedupeKey(InAppNotificationType.LOG_WEIGHT_REMINDER, localDate)
-        });
-    }
-
-    if (missingFood) {
-        rows.push({
-            user_id: userId,
-            type: InAppNotificationType.LOG_FOOD_REMINDER,
-            local_date: localDate,
-            dedupe_key: buildReminderInAppDedupeKey(InAppNotificationType.LOG_FOOD_REMINDER, localDate)
-        });
-    }
-
-    if (rows.length === 0) {
-        return 0;
-    }
-
-    const result = await db.inAppNotification.createMany({
-        data: rows,
-        skipDuplicates: true
-    });
-
-    if (result.count > 0) {
-        publishNotificationRealtimeUpdate({
-            userId,
-            reason: NOTIFICATION_REALTIME_REASONS.CREATED
-        });
-    }
-
-    return result.count;
 };
 
 /**

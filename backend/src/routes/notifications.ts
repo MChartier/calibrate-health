@@ -63,11 +63,11 @@ router.get('/stream', (req, res) => {
   const heartbeatId = setInterval(() => {
     res.write(': heartbeat\n\n');
   }, SSE_HEARTBEAT_INTERVAL_MS);
+  heartbeatId.unref();
 
-  req.on('close', () => {
+  res.once('close', () => {
     clearInterval(heartbeatId);
     unsubscribe();
-    res.end();
   });
 });
 

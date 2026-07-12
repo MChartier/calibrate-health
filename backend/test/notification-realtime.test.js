@@ -1,6 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const Module = require('node:module');
+const { EventEmitter } = require('node:events');
 
 const {
   NOTIFICATION_REALTIME_REASONS,
@@ -37,6 +38,24 @@ function loadInAppNotificationService({ publishNotificationRealtimeUpdateStub })
   else delete require.cache[realtimePath];
 
   return loaded;
+}
+
+function loadNotificationsRouter() {
+  const dbPath = require.resolve('../src/config/database');
+  const routerPath = require.resolve('../src/routes/notifications');
+  const previousDbModule = require.cache[dbPath];
+  delete require.cache[routerPath];
+  stubModule(dbPath, {});
+  const router = require('../src/routes/notifications').default;
+  if (previousDbModule) require.cache[dbPath] = previousDbModule;
+  else delete require.cache[dbPath];
+  return router;
+}
+
+function routeHandler(router, path) {
+  const layer = router.stack.find((candidate) => candidate.route?.path === path);
+  assert.ok(layer, `Expected route ${path}`);
+  return layer.route.stack[0].handle;
 }
 
 test('notification realtime publisher fans out only to the subscribed user and cleans up', () => {
@@ -94,6 +113,55 @@ test('notification realtime payload guard accepts the shared SSE wire shape', ()
   );
   assert.equal(isNotificationRealtimePayload({ reason: 'other', updated_at: '2026-04-24T12:00:00.000Z' }), false);
   assert.equal(isNotificationRealtimePayload({ reason: NOTIFICATION_REALTIME_REASONS.READ, updated_at: '' }), false);
+});
+
+test('notification stream middleware rejects unauthenticated browser sessions', () => {
+  const router = loadNotificationsRouter();
+  const authLayer = router.stack.find((layer) => !layer.route);
+  const response = {
+    statusCode: null,
+    body: null,
+    status(code) { this.statusCode = code; return this; },
+    json(body) { this.body = body; return this; }
+  };
+
+  authLayer.handle({ isAuthenticated: () => false }, response, () => assert.fail('must not call next'));
+
+  assert.equal(response.statusCode, 401);
+  assert.deepEqual(response.body, { message: 'Not authenticated' });
+});
+
+test('notification stream writes user-scoped events and releases its subscription on close', () => {
+  delete require.cache[require.resolve('../src/services/notificationRealtime')];
+  const realtime = require('../src/services/notificationRealtime');
+  const router = loadNotificationsRouter();
+  const response = new EventEmitter();
+  const writes = [];
+  response.status = () => response;
+  response.set = () => response;
+  response.flushHeaders = () => {};
+  response.write = (chunk) => { writes.push(chunk); return true; };
+
+  routeHandler(router, '/stream')({ user: { id: 91 } }, response);
+  assert.equal(realtime.getNotificationRealtimeSubscriberCount(91), 1);
+
+  realtime.publishNotificationRealtimeUpdate({
+    userId: 91,
+    reason: NOTIFICATION_REALTIME_REASONS.CREATED,
+    now: new Date('2026-07-12T00:00:00.000Z')
+  });
+  realtime.publishNotificationRealtimeUpdate({
+    userId: 92,
+    reason: NOTIFICATION_REALTIME_REASONS.CREATED,
+    now: new Date('2026-07-12T00:00:00.000Z')
+  });
+
+  assert.match(writes.join(''), /event: notification-update/);
+  assert.match(writes.join(''), /2026-07-12T00:00:00.000Z/);
+  assert.equal((writes.join('').match(/event: notification-update/g) ?? []).length, 1);
+
+  response.emit('close');
+  assert.equal(realtime.getNotificationRealtimeSubscriberCount(91), 0);
 });
 
 test('in-app notification mutations publish realtime updates when rows change', async () => {
