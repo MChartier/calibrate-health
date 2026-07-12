@@ -33,9 +33,9 @@ tracked files:
 - `CALIBRATE_ANDROID_SIGNING_KEY_ALIAS`
 - `CALIBRATE_ANDROID_SIGNING_KEY_PASSWORD`
 
-All four values are required together. The generated phone release build currently falls back to debug signing; it
-must be configured to consume these same four values before shipping phone and watch release artifacts. Matching the
-application ID is not sufficient - Data Layer release discovery also requires matching signing certificates.
+All four values are required together. The phone's persisted Expo config plugin consumes the same values and refuses
+release work when they are absent. Matching the application ID is not sufficient - Data Layer release discovery also
+requires matching signing certificates.
 
 Internal and release builds can bootstrap a self-hosted origin with Gradle properties. The origin is validated and
 baked into `BuildConfig`; there is no runtime settings override that can silently retarget the watch. Do not put
@@ -65,11 +65,47 @@ $env:ANDROID_HOME="$env:LOCALAPPDATA\Android\Sdk"
 .\gradlew.bat :app:testWearServerOriginValidation --console=plain
 ```
 
-The runtime starts in an explicit unpaired state; deterministic health values are limited to Compose previews and
-tests. Phone-assisted pairing, authenticated API calls, offline reconciliation, complications, and tiles are
-intentionally separate follow-up work.
+The runtime derives unpaired, pairing, recovery, and paired states from durable storage; deterministic health values
+remain limited to tests. Summary actions, complications, and tiles are separate follow-up slices.
 
 `WearDataLayerContract` reserves versioned coordination paths for pairing, sync invalidation, and continue-on-phone
-handoffs. Health summaries do not travel over Data Layer: the paired watch will call the selected server directly and
-cache its own data with Room. No always-on listener service is registered before there is bounded message handling
-and persistence behavior to attach to it.
+handoffs. Health summaries do not travel over Data Layer: the paired watch calls the selected server directly and
+caches its own data with Room. A bounded listener handles only correlated pairing messages on a single-thread executor.
+
+The watch publishes the `calibrate_wear_pairing_v1` capability through `android_wear_capabilities`. This capability is
+only for phone-side discovery and short-lived coordination; server health data never travels through it.
+
+## Offline storage and outbox
+
+Room stores four deliberately small data sets:
+
+- Up to 21 daily summary snapshots, newest local date first.
+- A replacement snapshot of up to 24 ranked quick-add items with immutable mutation payloads; missing server IDs are
+  removed on refresh.
+- Pending mutations and up to 100 terminal operation tombstones for idempotency and diagnostics.
+- One sync metadata row containing the selected origin, cursor, invalidation time, and protocol version.
+
+Queued mutations receive a UUID operation ID once, before persistence. A single unique WorkManager chain drains the
+database head-first with a connected-network constraint and WorkManager's capped exponential backoff. A retry leaves
+the head in place, so later writes cannot overtake it after a process restart. Healthy batches schedule an immediate
+continuation instead of being mislabeled as failures. The worker rebuilds its Room, secure-session, and authenticated
+HTTP dependencies in every process. Conditional snapshot refreshes and mutation responses are committed only if the
+captured account scope is still current, preventing a re-pair race from crossing account data.
+
+Pairing credentials are not stored in Room. `AndroidKeystoreTokenStore` encrypts the session with an Android
+Keystore-backed AES-256-GCM key and stores access/refresh tokens only inside the authenticated ciphertext envelope in
+private preferences. The app has backups disabled so an encrypted blob cannot be restored without its non-exportable
+key. A stored credential must match the build-configured, validated server origin exactly. Changing accounts clears
+all account-scoped Room data before the replacement credential becomes visible; same-account token rotation retains
+the cache and outbox.
+
+Tiles and UI surfaces must read cached repositories. They must not call the server directly; WorkManager is the only
+background outbox entry point.
+
+Fast JVM contract tests cover cache bounds, FIFO ordering, stable IDs, retry behavior, and fake-store recreation.
+On-device instrumentation tests close and reopen the real Room database and Keystore token store to verify durable
+state across object/process recreation.
+
+The generated Room schema baseline is a release gate. `exportSchema` is enabled, but the schema JSON cannot be
+committed until the Room annotation processor dependencies are available locally and a real Gradle build generates
+and verifies it; do not hand-author its identity hash.

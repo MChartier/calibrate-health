@@ -13,6 +13,16 @@ data class WearSummary(
 sealed interface WearAppState {
     data object Unpaired : WearAppState
 
+    data object Pairing : WearAppState
+
+    data class PairingError(val message: String) : WearAppState
+
+    data class Paired(
+        val userId: Long,
+        val serverOrigin: String,
+        val confirmationPending: Boolean = false
+    ) : WearAppState
+
     data class Ready(val summary: WearSummary) : WearAppState
 }
 

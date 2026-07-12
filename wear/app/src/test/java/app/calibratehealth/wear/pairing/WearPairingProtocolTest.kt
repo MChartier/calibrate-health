@@ -1,0 +1,93 @@
+package app.calibratehealth.wear.pairing
+
+import org.junit.Assert.assertArrayEquals
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
+import org.junit.Test
+import java.time.Instant
+
+class WearPairingProtocolTest {
+    private val now = Instant.parse("2026-07-11T20:00:00Z").toEpochMilli()
+    private val origin = "https://health.example.com"
+
+    @Test
+    fun `invite parser binds request to exact build origin and short lifetime`() {
+        val fields = PairingFields(
+            kind = "phone_pairing_invite",
+            requestId = "b48ae280-4d9d-43d8-99cb-59c8c04ff766",
+            protocolVersion = 1,
+            serverOrigin = origin,
+            issuedAt = "2026-07-11T20:00:00Z",
+            expiresAt = "2026-07-11T20:05:00Z"
+        )
+
+        assertNotNull(parsePhonePairingInvite(fields, origin, now))
+        assertNull(parsePhonePairingInvite(fields.copy(serverOrigin = "https://other.example.com"), origin, now))
+        assertNull(parsePhonePairingInvite(fields.copy(expiresAt = "2026-07-11T20:10:00Z"), origin, now))
+        assertNull(parsePhonePairingInvite(fields, origin, now + MAX_PAIRING_WINDOW_MS))
+    }
+
+    @Test
+    fun `credential parser requires request node origin and device correlation`() {
+        val pending = pendingInvite()
+        val fields = PairingFields(
+            requestId = pending.requestId,
+            protocolVersion = 1,
+            serverOrigin = origin,
+            expiresAt = "2026-07-11T20:04:00Z",
+            pairingToken = "one-time-token",
+            watchDeviceId = pending.watchDeviceId,
+            challenge = "server-challenge"
+        )
+
+        assertNotNull(parseWearPairingCredential(fields, pending, "phone-node", now))
+        assertNull(parseWearPairingCredential(fields, pending, "other-node", now))
+        assertNull(parseWearPairingCredential(fields.copy(requestId = "other-request"), pending, "phone-node", now))
+        assertNull(parseWearPairingCredential(fields.copy(watchDeviceId = "other-watch"), pending, "phone-node", now))
+        assertTrue(isCorrelated(pending, pending.requestId, "phone-node", origin))
+    }
+
+    @Test
+    fun `signing payload exactly matches backend protocol bytes`() {
+        val payload = buildPairingSigningPayload(
+            origin,
+            "watch-id",
+            "0a253c17-2e4c-44a5-aa46-a67fa8b8a9c4",
+            "challenge"
+        )
+        assertArrayEquals(
+            (
+                "calibrate-wear-pairing-v1\nhttps://health.example.com\nwatch-id\n" +
+                    "0a253c17-2e4c-44a5-aa46-a67fa8b8a9c4\nchallenge"
+                ).toByteArray(Charsets.UTF_8),
+            payload
+        )
+    }
+
+    @Test
+    fun `exchange URL accepts only an origin and appends fixed API route`() {
+        assertEquals(
+            "https://health.example.com/auth/mobile/wear/pair",
+            buildPairingExchangeUrl(origin)
+        )
+        assertEquals(
+            "http://10.0.2.2:3000/auth/mobile/wear/pair",
+            buildPairingExchangeUrl("http://10.0.2.2:3000")
+        )
+        assertTrue(runCatching { buildPairingExchangeUrl("https://health.example.com/path") }.isFailure)
+        assertTrue(runCatching { buildPairingExchangeUrl("https://health.example.com?token=x") }.isFailure)
+        assertTrue(runCatching { buildPairingExchangeUrl("http://health.example.com") }.isFailure)
+    }
+
+    private fun pendingInvite() = PendingPairingInvite(
+        requestId = "b48ae280-4d9d-43d8-99cb-59c8c04ff766",
+        phoneNodeId = "phone-node",
+        serverOrigin = origin,
+        expiresAtEpochMs = now + MAX_PAIRING_WINDOW_MS,
+        watchDeviceId = "watch-id",
+        watchDeviceName = "Galaxy Watch",
+        keyAlias = "test-key"
+    )
+}

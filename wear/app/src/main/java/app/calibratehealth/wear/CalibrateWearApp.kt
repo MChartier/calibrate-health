@@ -47,7 +47,7 @@ fun CalibrateWearApp(
                     )
                 }
                 composable(CONNECTION_ROUTE) {
-                    ConnectionScreen(serverConfig = serverConfig)
+                    ConnectionScreen(appState = appState, serverConfig = serverConfig)
                 }
             }
         }
@@ -84,6 +84,30 @@ private fun SummaryScreen(
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
+                WearAppState.Pairing -> item {
+                    Text(
+                        text = "Pairing securely with your phone...",
+                        style = MaterialTheme.typography.bodySmall,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+                is WearAppState.PairingError -> item {
+                    Text(
+                        text = appState.message,
+                        style = MaterialTheme.typography.bodySmall,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+                is WearAppState.Paired -> item {
+                    Text(
+                        text = "Paired securely. Your health summary will appear after the first sync.",
+                        style = MaterialTheme.typography.bodySmall,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
                 is WearAppState.Ready -> item {
                     GlanceSummaryCard(summary = appState.summary)
                 }
@@ -104,6 +128,13 @@ private fun SummaryScreen(
 
 private fun connectionLabel(appState: WearAppState): String = when (appState) {
     WearAppState.Unpaired -> "Phone setup required"
+    WearAppState.Pairing -> "Pairing in progress"
+    is WearAppState.PairingError -> "Pairing needs attention"
+    is WearAppState.Paired -> if (appState.confirmationPending) {
+        "Paired - phone confirmation pending"
+    } else {
+        "Paired - sync pending"
+    }
     is WearAppState.Ready -> if (appState.summary.isSynced) "Synced" else "Sync pending"
 }
 
@@ -142,7 +173,7 @@ private fun GlanceMetric(label: String, value: String) {
 }
 
 @Composable
-private fun ConnectionScreen(serverConfig: WearServerConfig) {
+private fun ConnectionScreen(appState: WearAppState, serverConfig: WearServerConfig) {
     val listState = rememberTransformingLazyColumnState()
     ScreenScaffold(scrollState = listState) { contentPadding ->
         TransformingLazyColumn(
@@ -173,7 +204,7 @@ private fun ConnectionScreen(serverConfig: WearServerConfig) {
             }
             item {
                 Text(
-                    text = "Pairing and sign-in will use the phone app. No password is stored in this scaffold.",
+                    text = connectionDetail(appState),
                     style = MaterialTheme.typography.bodySmall,
                     textAlign = TextAlign.Center,
                     modifier = Modifier.fillMaxWidth()
@@ -183,20 +214,23 @@ private fun ConnectionScreen(serverConfig: WearServerConfig) {
     }
 }
 
+private fun connectionDetail(appState: WearAppState): String = when (appState) {
+    WearAppState.Unpaired -> "Open Calibrate settings on your phone and choose the nearby watch to begin."
+    WearAppState.Pairing -> "Keep the phone nearby while this one-time secure pairing completes."
+    is WearAppState.PairingError -> appState.message
+    is WearAppState.Paired -> if (appState.confirmationPending) {
+        "This watch is paired securely. Keep your phone nearby to confirm the connection."
+    } else {
+        "This watch is paired securely. No password is stored on the watch."
+    }
+    is WearAppState.Ready -> "Paired securely. Health data sync is available."
+}
+
 @Preview(name = "Round summary", device = "id:wearos_large_round", showSystemUi = true)
 @Composable
 private fun SummaryPreview() {
     CalibrateWearApp(
-        appState = WearAppState.Ready(
-            WearSummary(
-                caloriesRemaining = 640,
-                caloriesConsumed = 1_360,
-                calorieTarget = 2_000,
-                steps = 7_842,
-                latestWeight = "82.1 kg",
-                isSynced = true
-            )
-        ),
+        appState = WearAppState.Paired(42, "https://calibratehealth.app"),
         serverConfig = WearServerConfig("https://calibratehealth.app", "preview")
     )
 }
