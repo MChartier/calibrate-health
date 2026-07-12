@@ -41,6 +41,12 @@ class RepositoryContractsTest {
         val afterRestart = FakeMutationOutboxRepository(storage)
         assertEquals("b", afterRestart.head()?.operationId)
         assertEquals(1, afterRestart.head()?.attemptCount)
+
+        assertTrue(afterRestart.recordServerSuccess("b"))
+        assertEquals(listOf("b", "a", "c"), afterRestart.activeInFifoOrder().map { it.operationId })
+        assertEquals("a", afterRestart.head()?.operationId)
+        afterRestart.confirmSnapshotRefresh()
+        assertEquals(listOf("a", "c"), afterRestart.activeInFifoOrder().map { it.operationId })
     }
 
     @Test

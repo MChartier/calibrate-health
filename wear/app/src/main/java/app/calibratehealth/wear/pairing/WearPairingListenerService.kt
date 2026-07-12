@@ -7,6 +7,7 @@ import app.calibratehealth.wear.data.security.AccountSessionCoordinator
 import app.calibratehealth.wear.data.security.AndroidKeystoreTokenStore
 import app.calibratehealth.wear.data.security.RoomAccountDataStore
 import app.calibratehealth.wear.sync.WearSyncScheduler
+import app.calibratehealth.wear.tile.CalibrateTileUpdate
 import com.google.android.gms.tasks.Tasks
 import com.google.android.gms.wearable.MessageEvent
 import com.google.android.gms.wearable.Wearable
@@ -137,6 +138,9 @@ class WearPairingListenerService : WearableListenerService() {
                 )
                 val coordinator = sessionCoordinator(context)
                 runBlocking { coordinator.replace(session) }
+                // Account replacement may have cleared Room; invalidate the remotely cached Tile
+                // immediately so another account's summary is not retained while offline.
+                CalibrateTileUpdate.request(context)
                 stateStore.clearError()
                 runCatching { WearSyncScheduler.scheduleAfterPairing(context) }
                 resultPayload = JSONObject()

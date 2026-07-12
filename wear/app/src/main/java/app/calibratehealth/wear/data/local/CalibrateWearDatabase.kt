@@ -14,7 +14,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         QueuedMutationEntity::class,
         SyncMetadataEntity::class
     ],
-    version = 2,
+    version = 3,
     exportSchema = true
 )
 abstract class CalibrateWearDatabase : RoomDatabase() {
@@ -39,7 +39,7 @@ abstract class CalibrateWearDatabase : RoomDatabase() {
                 CalibrateWearDatabase::class.java,
                 name
             )
-                .addMigrations(MIGRATION_1_2)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
                 .build()
 
         /** Preserves the old outbox order while moving FIFO authority to a database-assigned row ID. */
@@ -85,6 +85,30 @@ abstract class CalibrateWearDatabase : RoomDatabase() {
                     "CREATE INDEX IF NOT EXISTS index_queued_mutations_state_attempt_count " +
                         "ON queued_mutations (state, attempt_count)"
                 )
+            }
+        }
+
+        /** Expands the cached daily row without inventing activity, weight, or undo data for v2 caches. */
+        val MIGRATION_2_3 = object : Migration(2, 3) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL("ALTER TABLE daily_snapshots ADD COLUMN calories_remaining INTEGER")
+                database.execSQL("ALTER TABLE daily_snapshots ADD COLUMN activity_total_calories INTEGER")
+                database.execSQL("ALTER TABLE daily_snapshots ADD COLUMN exercise_minutes INTEGER")
+                database.execSQL("ALTER TABLE daily_snapshots ADD COLUMN activity_observed_at_epoch_ms INTEGER")
+                database.execSQL("ALTER TABLE daily_snapshots ADD COLUMN activity_stale INTEGER NOT NULL DEFAULT 1")
+                database.execSQL("ALTER TABLE daily_snapshots ADD COLUMN activity_age_seconds INTEGER")
+                database.execSQL("ALTER TABLE daily_snapshots ADD COLUMN food_day_complete INTEGER NOT NULL DEFAULT 0")
+                database.execSQL("ALTER TABLE daily_snapshots ADD COLUMN food_day_completed_at_epoch_ms INTEGER")
+                database.execSQL("ALTER TABLE daily_snapshots ADD COLUMN food_day_revision TEXT")
+                database.execSQL("ALTER TABLE daily_snapshots ADD COLUMN today_weight_grams INTEGER")
+                database.execSQL("ALTER TABLE daily_snapshots ADD COLUMN today_weight_revision TEXT")
+                database.execSQL("ALTER TABLE daily_snapshots ADD COLUMN latest_weight_revision TEXT")
+                database.execSQL("ALTER TABLE daily_snapshots ADD COLUMN latest_weight_date TEXT")
+                database.execSQL("ALTER TABLE daily_snapshots ADD COLUMN weight_unit TEXT NOT NULL DEFAULT 'KG'")
+                database.execSQL("ALTER TABLE daily_snapshots ADD COLUMN undo_food_log_id INTEGER")
+                database.execSQL("ALTER TABLE daily_snapshots ADD COLUMN undo_name TEXT")
+                database.execSQL("ALTER TABLE daily_snapshots ADD COLUMN undo_calories INTEGER")
+                database.execSQL("ALTER TABLE daily_snapshots ADD COLUMN undo_created_at_epoch_ms INTEGER")
             }
         }
     }

@@ -101,6 +101,25 @@ interface QueuedMutationDao {
 
     @Query(
         """
+        SELECT * FROM queued_mutations
+        WHERE state IN ('pending', 'awaiting_snapshot')
+        ORDER BY sequence_id ASC
+        """
+    )
+    suspend fun activeInFifoOrder(): List<QueuedMutationEntity>
+
+    @Query(
+        """
+        SELECT * FROM queued_mutations
+        WHERE state IN ('succeeded', 'failed')
+        ORDER BY sequence_id DESC
+        LIMIT 1
+        """
+    )
+    suspend fun latestTerminal(): QueuedMutationEntity?
+
+    @Query(
+        """
         UPDATE queued_mutations
         SET attempt_count = attempt_count + 1,
             last_error = :error
@@ -112,11 +131,20 @@ interface QueuedMutationDao {
     @Query(
         """
         UPDATE queued_mutations
-        SET state = 'succeeded', last_error = NULL
+        SET state = 'awaiting_snapshot', last_error = NULL
         WHERE operation_id = :operationId AND state = 'pending'
         """
     )
-    suspend fun markSucceeded(operationId: String): Int
+    suspend fun markServerSucceeded(operationId: String): Int
+
+    @Query(
+        """
+        UPDATE queued_mutations
+        SET state = 'succeeded', last_error = NULL
+        WHERE state = 'awaiting_snapshot'
+        """
+    )
+    suspend fun confirmSnapshotRefresh(): Int
 
     @Query(
         """

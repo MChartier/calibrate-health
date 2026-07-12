@@ -88,6 +88,16 @@ class FakeMutationOutboxRepository(
             .filter { it.state == MutationState.PENDING }
             .sortedBy(QueuedMutationEntity::sequenceId)
 
+    override suspend fun activeInFifoOrder(): List<QueuedMutationEntity> =
+        storage.mutations.values
+            .filter { it.state == MutationState.PENDING || it.state == MutationState.AWAITING_SNAPSHOT }
+            .sortedBy(QueuedMutationEntity::sequenceId)
+
+    override suspend fun latestTerminal(): QueuedMutationEntity? =
+        storage.mutations.values
+            .filter { it.state == MutationState.SUCCEEDED || it.state == MutationState.FAILED }
+            .maxByOrNull(QueuedMutationEntity::sequenceId)
+
     override suspend fun recordRetry(
         operationId: String,
         error: String
@@ -98,12 +108,19 @@ class FakeMutationOutboxRepository(
         )
     }
 
-    override suspend fun recordSuccess(operationId: String): Boolean {
-        val updated = updatePending(operationId) {
-            it.copy(state = MutationState.SUCCEEDED, lastError = null)
+    override suspend fun recordServerSuccess(operationId: String): Boolean = updatePending(operationId) {
+        it.copy(state = MutationState.AWAITING_SNAPSHOT, lastError = null)
+    }
+
+    override suspend fun confirmSnapshotRefresh() {
+        storage.mutations.replaceAll { _, mutation ->
+            if (mutation.state == MutationState.AWAITING_SNAPSHOT) {
+                mutation.copy(state = MutationState.SUCCEEDED, lastError = null)
+            } else {
+                mutation
+            }
         }
-        if (updated) pruneTerminal()
-        return updated
+        pruneTerminal()
     }
 
     override suspend fun recordFailure(operationId: String, error: String): Boolean {
@@ -125,7 +142,7 @@ class FakeMutationOutboxRepository(
 
     private fun pruneTerminal() {
         storage.mutations.values
-            .filter { it.state != MutationState.PENDING }
+            .filter { it.state == MutationState.SUCCEEDED || it.state == MutationState.FAILED }
             .sortedByDescending(QueuedMutationEntity::sequenceId)
             .drop(terminalMutationLimit)
             .forEach { storage.mutations.remove(it.operationId) }

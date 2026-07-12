@@ -34,10 +34,13 @@ object WatchSnapshotMapper {
         val revision = root.requiredString("revision").also {
             require(REVISION_PATTERN.matches(it)) { "Invalid snapshot revision." }
         }
+        val weightUnit = root.requiredString("weight_unit").also {
+            require(it == "KG" || it == "LB") { "Invalid weight unit." }
+        }
         val calories = root.requiredObject("calories")
         val consumed = calories.requiredLong("consumed").boundedInt("calories.consumed", 0, MAX_CALORIES)
         val target = calories.optionalLong("target")?.boundedInt("calories.target", 0, MAX_CALORIES)
-        calories.optionalLong("remaining")?.boundedInt("calories.remaining", -MAX_CALORIES, MAX_CALORIES)
+        val remaining = calories.optionalLong("remaining")?.boundedInt("calories.remaining", -MAX_CALORIES, MAX_CALORIES)
 
         val activity = root.optionalObject("activity")
         val steps = activity?.optionalLong("steps")?.boundedInt("activity.steps", 0, MAX_STEPS)
@@ -45,24 +48,32 @@ object WatchSnapshotMapper {
             require(it in 0.0..MAX_CALORIES.toDouble()) { "activity.active_calories_kcal is outside its allowed range." }
             it.roundToInt()
         }
-        activity?.optionalDouble("total_calories_kcal")?.also {
+        val totalCalories = activity?.optionalDouble("total_calories_kcal")?.also {
             require(it in 0.0..MAX_CALORIES.toDouble()) { "activity.total_calories_kcal is outside its allowed range." }
-        }
-        activity?.optionalDouble("exercise_minutes")?.also {
+        }?.roundToInt()
+        val exerciseMinutes = activity?.optionalDouble("exercise_minutes")?.also {
             require(it in 0.0..1_440.0) { "activity.exercise_minutes is outside its allowed range." }
+        }?.roundToInt()
+        val activityObservedAt = activity?.requiredString("observed_at")?.let {
+            requireInstant(it, "activity.observed_at")
         }
-        activity?.requiredString("observed_at")?.also { requireInstant(it, "activity.observed_at") }
 
         val foodDay = root.requiredObject("food_day")
-        foodDay.requiredBoolean("is_complete")
-        foodDay.optionalString("completed_at")?.also { requireInstant(it, "food_day.completed_at") }
-        foodDay.optionalString("revision")?.also { require(REVISION_PATTERN.matches(it)) }
+        val foodDayComplete = foodDay.requiredBoolean("is_complete")
+        val foodDayCompletedAt = foodDay.optionalString("completed_at")?.let {
+            requireInstant(it, "food_day.completed_at")
+        }
+        val foodDayRevision = foodDay.optionalString("revision")?.also { require(REVISION_PATTERN.matches(it)) }
 
         val weight = root.requiredObject("weight")
         val todayWeight = weight.optionalLong("today_grams")?.also(::requireWeight)
-        weight.optionalString("today_revision")?.also { require(REVISION_PATTERN.matches(it)) }
+        val todayWeightRevision = weight.optionalString("today_revision")?.also { require(REVISION_PATTERN.matches(it)) }
         val latestWeight = weight.optionalLong("latest_grams")?.also(::requireWeight)
-        weight.optionalString("latest_date")?.also(::requireLocalDate)
+        val latestWeightRevision = weight.optionalString("latest_revision")?.also { require(REVISION_PATTERN.matches(it)) }
+        val latestWeightDate = weight.optionalString("latest_date")?.also(::requireLocalDate)
+        require((todayWeight == null) == (todayWeightRevision == null)) { "Today weight and revision must both be present or absent." }
+        require((latestWeight == null) == (latestWeightRevision == null)) { "Latest weight and revision must both be present or absent." }
+        require((latestWeight == null) == (latestWeightDate == null)) { "Latest weight and date must both be present or absent." }
 
         val quickAdds = root.requiredArray("quick_add")
         require(quickAdds.size <= WearCacheLimits.QUICK_ADD_ITEMS) { "Too many quick-add items." }
@@ -73,25 +84,44 @@ object WatchSnapshotMapper {
             "Quick-add IDs must be unique."
         }
 
-        // Validate the remaining bounded objects even though the current cache does not expose them yet.
-        root.optionalObject("undo_candidate")?.let { undo ->
-            require(undo.requiredLong("food_log_id") > 0)
-            requireLabel(undo.requiredString("name"), "undo_candidate.name")
-            undo.requiredLong("calories").boundedInt("undo_candidate.calories", 0, MAX_CALORIES)
-            requireInstant(undo.requiredString("created_at"), "undo_candidate.created_at")
+        val undo = root.optionalObject("undo_candidate")
+        val undoFoodLogId = undo?.requiredLong("food_log_id")?.also { require(it > 0) }
+        val undoName = undo?.requiredString("name")?.also { requireLabel(it, "undo_candidate.name") }
+        val undoCalories = undo?.requiredLong("calories")
+            ?.boundedInt("undo_candidate.calories", 0, MAX_CALORIES)
+        val undoCreatedAt = undo?.requiredString("created_at")?.let {
+            requireInstant(it, "undo_candidate.created_at")
         }
         val staleness = root.requiredObject("staleness")
-        staleness.requiredBoolean("activity_stale")
-        staleness.optionalLong("activity_age_seconds")?.also { require(it >= 0) }
+        val activityStale = staleness.requiredBoolean("activity_stale")
+        val activityAgeSeconds = staleness.optionalLong("activity_age_seconds")?.also { require(it >= 0) }
 
         return MappedWatchSnapshot(
             dailySnapshot = DailySnapshotEntity(
                 localDate = localDate,
                 caloriesConsumed = consumed,
                 calorieTarget = target,
+                caloriesRemaining = remaining,
                 steps = steps,
                 activityCalories = activeCalories,
-                latestWeightGrams = todayWeight ?: latestWeight,
+                activityTotalCalories = totalCalories,
+                exerciseMinutes = exerciseMinutes,
+                activityObservedAtEpochMs = activityObservedAt,
+                activityStale = activityStale,
+                activityAgeSeconds = activityAgeSeconds,
+                foodDayComplete = foodDayComplete,
+                foodDayCompletedAtEpochMs = foodDayCompletedAt,
+                foodDayRevision = foodDayRevision,
+                todayWeightGrams = todayWeight,
+                todayWeightRevision = todayWeightRevision,
+                latestWeightGrams = latestWeight,
+                latestWeightRevision = latestWeightRevision,
+                latestWeightDate = latestWeightDate,
+                weightUnit = weightUnit,
+                undoFoodLogId = undoFoodLogId,
+                undoName = undoName,
+                undoCalories = undoCalories,
+                undoCreatedAtEpochMs = undoCreatedAt,
                 serverRevision = revision,
                 fetchedAtEpochMs = fetchedAtEpochMs
             ),
@@ -162,9 +192,9 @@ object WatchSnapshotMapper {
         }
     }
 
-    private fun requireInstant(value: String, field: String) {
+    private fun requireInstant(value: String, field: String): Long {
         try {
-            Instant.parse(value)
+            return Instant.parse(value).toEpochMilli()
         } catch (error: Exception) {
             throw InvalidJsonException("$field must be an ISO-8601 instant.")
         }

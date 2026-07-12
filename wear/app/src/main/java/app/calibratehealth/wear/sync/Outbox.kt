@@ -1,6 +1,7 @@
 package app.calibratehealth.wear.sync
 
 import android.content.Context
+import android.os.SystemClock
 import androidx.work.BackoffPolicy
 import androidx.work.Constraints
 import androidx.work.CoroutineWorker
@@ -15,6 +16,7 @@ import app.calibratehealth.wear.data.security.AccountStateCriticalSection
 import app.calibratehealth.wear.data.security.SecureSession
 import app.calibratehealth.wear.data.security.SecureTokenStore
 import app.calibratehealth.wear.data.security.accountScope
+import app.calibratehealth.wear.tile.CalibrateTileUpdate
 import java.util.UUID
 import java.util.concurrent.TimeUnit
 
@@ -103,7 +105,7 @@ class FifoOutboxProcessor(
                     return@withLock OutboxCommit.AccountChanged
                 }
                 val updated = when (result) {
-                    MutationSendResult.Success -> repository.recordSuccess(work.mutation.operationId)
+                    MutationSendResult.Success -> repository.recordServerSuccess(work.mutation.operationId)
                     is MutationSendResult.Retryable -> repository.recordRetry(work.mutation.operationId, result.error)
                     is MutationSendResult.PermanentFailure -> repository.recordFailure(work.mutation.operationId, result.error)
                     is MutationSendResult.Conflict -> repository.recordFailure(work.mutation.operationId, result.error)
@@ -149,6 +151,11 @@ object OutboxWorkPolicy {
 class WorkManagerOutboxScheduler(context: Context) : OutboxScheduler {
     private val workManager = WorkManager.getInstance(context.applicationContext)
 
+    /** Avoids duplicate cold-start/onStart refreshes while still refreshing a surviving process. */
+    fun scheduleForegroundRefresh() {
+        if (foregroundRefreshGate.tryAcquire(SystemClock.elapsedRealtime())) schedule()
+    }
+
     override fun schedule() {
         workManager.enqueueUniqueWork(
             OutboxWorkPolicy.UNIQUE_WORK_NAME,
@@ -179,10 +186,33 @@ class WorkManagerOutboxScheduler(context: Context) : OutboxScheduler {
             .addTag(OutboxWorkPolicy.WORK_TAG)
             .build()
     }
+
+    private companion object {
+        val foregroundRefreshGate = ForegroundRefreshGate(minimumIntervalMs = 60_000L)
+    }
+}
+
+internal class ForegroundRefreshGate(private val minimumIntervalMs: Long) {
+    private var lastAcquiredAtMs: Long? = null
+
+    init {
+        require(minimumIntervalMs >= 0) { "Foreground refresh interval cannot be negative." }
+    }
+
+    @Synchronized
+    fun tryAcquire(nowElapsedMs: Long): Boolean {
+        require(nowElapsedMs >= 0) { "Elapsed time cannot be negative." }
+        val previous = lastAcquiredAtMs
+        if (previous != null && nowElapsedMs >= previous && nowElapsedMs - previous < minimumIntervalMs) {
+            return false
+        }
+        lastAcquiredAtMs = nowElapsedMs
+        return true
+    }
 }
 
 private object OutboxWorkerDependencies {
-    fun processor(context: Context): OutboxProcessor = WearSyncRuntime.create(context).outboxProcessor
+    fun create(context: Context): WearSyncDependencies = WearSyncRuntime.create(context)
 }
 
 class OutboxWorker(
@@ -190,10 +220,20 @@ class OutboxWorker(
     workerParameters: WorkerParameters
 ) : CoroutineWorker(appContext, workerParameters) {
     override suspend fun doWork(): Result {
-        return when (OutboxWorkerDependencies.processor(applicationContext).drain()) {
+        val dependencies = OutboxWorkerDependencies.create(applicationContext)
+        return when (dependencies.outboxProcessor.drain()) {
             OutboxDrainResult.Complete -> {
-                SnapshotRefreshScheduler(applicationContext).schedule()
-                Result.success()
+                when (dependencies.snapshotSynchronizer.refresh {
+                    dependencies.outboxRepository.confirmSnapshotRefresh()
+                }) {
+                    SnapshotSyncResult.Success, SnapshotSyncResult.NotModified -> {
+                        CalibrateTileUpdate.request(applicationContext)
+                        Result.success()
+                    }
+                    is SnapshotSyncResult.Retryable -> Result.retry()
+                    is SnapshotSyncResult.PermanentFailure -> Result.failure()
+                    SnapshotSyncResult.AccountChanged -> Result.success()
+                }
             }
             OutboxDrainResult.Continue -> {
                 WorkManagerOutboxScheduler(applicationContext).scheduleContinuation()

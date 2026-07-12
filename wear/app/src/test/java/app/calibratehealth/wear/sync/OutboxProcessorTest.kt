@@ -3,6 +3,7 @@ package app.calibratehealth.wear.sync
 import app.calibratehealth.wear.data.FakeMutationOutboxRepository
 import app.calibratehealth.wear.data.FakeWearStorage
 import app.calibratehealth.wear.data.local.QueuedMutationEntity
+import app.calibratehealth.wear.data.local.MutationState
 import app.calibratehealth.wear.data.FakeSecureTokenStore
 import app.calibratehealth.wear.data.security.SecureSession
 import kotlinx.coroutines.runBlocking
@@ -85,6 +86,24 @@ class OutboxProcessorTest {
 
         assertEquals(OutboxDrainResult.Complete, processor.drain())
         assertEquals(null, repository.head())
+    }
+
+    @Test
+    fun `server success stays action locked until a fresh snapshot is committed`() = runBlocking {
+        val repository = FakeMutationOutboxRepository(FakeWearStorage())
+        repository.enqueue(mutation("a", 100))
+        val processor = FifoOutboxProcessor(
+            repository = repository,
+            sender = MutationSender { _, _ -> MutationSendResult.Success },
+            tokenStore = tokenStore()
+        )
+
+        assertEquals(OutboxDrainResult.Complete, processor.drain())
+        assertEquals(MutationState.AWAITING_SNAPSHOT, repository.activeInFifoOrder().single().state)
+
+        repository.confirmSnapshotRefresh()
+        assertTrue(repository.activeInFifoOrder().isEmpty())
+        assertEquals(MutationState.SUCCEEDED, repository.latestTerminal()?.state)
     }
 
     @Test

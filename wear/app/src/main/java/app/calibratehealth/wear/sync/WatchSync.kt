@@ -1,20 +1,13 @@
 package app.calibratehealth.wear.sync
 
 import android.content.Context
-import androidx.work.BackoffPolicy
-import androidx.work.Constraints
-import androidx.work.CoroutineWorker
-import androidx.work.ExistingWorkPolicy
-import androidx.work.NetworkType
-import androidx.work.OneTimeWorkRequestBuilder
-import androidx.work.WorkManager
-import androidx.work.WorkerParameters
 import app.calibratehealth.wear.data.DailySnapshotRepository
 import app.calibratehealth.wear.data.QuickAddRepository
 import app.calibratehealth.wear.data.RoomDailySnapshotRepository
 import app.calibratehealth.wear.data.RoomMutationOutboxRepository
 import app.calibratehealth.wear.data.RoomQuickAddRepository
 import app.calibratehealth.wear.data.RoomSyncMetadataRepository
+import app.calibratehealth.wear.data.MutationOutboxRepository
 import app.calibratehealth.wear.data.SyncMetadataRepository
 import app.calibratehealth.wear.data.local.CalibrateWearDatabase
 import app.calibratehealth.wear.data.local.QueuedMutationEntity
@@ -35,7 +28,6 @@ import app.calibratehealth.wear.network.requireObject
 import app.calibratehealth.wear.network.WatchMutationApi
 import app.calibratehealth.wear.network.WatchSnapshotApi
 import app.calibratehealth.wear.pairing.PairingStateStore
-import java.util.concurrent.TimeUnit
 
 enum class HttpOutcome {
     SUCCESS,
@@ -107,7 +99,9 @@ class WatchSnapshotSynchronizer(
     private val onAuthenticationRequired: (String) -> Unit = {},
     private val nowEpochMs: () -> Long = System::currentTimeMillis
 ) {
-    suspend fun refresh(): SnapshotSyncResult {
+    suspend fun refresh(
+        onAuthoritativeSnapshotCommitted: suspend () -> Unit = {}
+    ): SnapshotSyncResult {
         val captured = accountState.withLock {
             val session = runCatching { tokenStore.read() }.getOrNull() ?: return@withLock null
             CapturedSnapshotWork(session, metadata.get())
@@ -126,16 +120,19 @@ class WatchSnapshotSynchronizer(
         }
         val fetchedAt = nowEpochMs()
         return when (classifyWatchHttpStatus(response.status)) {
-            HttpOutcome.NOT_MODIFIED -> {
+            HttpOutcome.NOT_MODIFIED -> try {
                 if (captured.metadata == null) {
                     SnapshotSyncResult.Retryable("Watch API returned 304 without a cached snapshot cursor.")
                 } else {
                     accountState.withLock {
                         if (!scopeStillCurrent(captured.session)) return@withLock SnapshotSyncResult.AccountChanged
                         metadata.store(captured.metadata.copy(lastSuccessAtEpochMs = fetchedAt))
+                        onAuthoritativeSnapshotCommitted()
                         SnapshotSyncResult.NotModified
                     }
                 }
+            } catch (error: Exception) {
+                SnapshotSyncResult.PermanentFailure(error.message ?: "Watch snapshot commit failed.")
             }
             HttpOutcome.SUCCESS -> try {
                 val mapped = WatchSnapshotMapper.map(response.body, fetchedAt)
@@ -158,6 +155,8 @@ class WatchSnapshotSynchronizer(
                             protocolVersion = WATCH_SYNC_PROTOCOL_VERSION
                         )
                     )
+                    // Keep cache replacement and action unlock in the same account critical section.
+                    onAuthoritativeSnapshotCommitted()
                     SnapshotSyncResult.Success
                 }
             } catch (error: Exception) {
@@ -185,54 +184,17 @@ private data class CapturedSnapshotWork(
     val metadata: SyncMetadataEntity?
 )
 
-object SnapshotWorkPolicy {
-    const val UNIQUE_WORK_NAME = "calibrate-wear-snapshot-v1"
-    const val WORK_TAG = "calibrate-wear-snapshot"
-}
-
-class SnapshotRefreshScheduler(context: Context) {
-    private val workManager = WorkManager.getInstance(context.applicationContext)
-
-    fun schedule() {
-        val constraints = Constraints.Builder()
-            .setRequiredNetworkType(NetworkType.CONNECTED)
-            .build()
-        val request = OneTimeWorkRequestBuilder<SnapshotRefreshWorker>()
-            .setConstraints(constraints)
-            .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, OutboxRetryPolicy.INITIAL_BACKOFF_MS, TimeUnit.MILLISECONDS)
-            .addTag(SnapshotWorkPolicy.WORK_TAG)
-            .build()
-        workManager.enqueueUniqueWork(
-            SnapshotWorkPolicy.UNIQUE_WORK_NAME,
-            ExistingWorkPolicy.REPLACE,
-            request
-        )
-    }
-}
-
 /** Explicit event hook used after pairing; no periodic worker is registered. */
 object WearSyncScheduler {
     fun scheduleAfterPairing(context: Context) {
         WorkManagerOutboxScheduler(context).schedule()
-        SnapshotRefreshScheduler(context).schedule()
-    }
-}
-
-class SnapshotRefreshWorker(
-    appContext: Context,
-    workerParameters: WorkerParameters
-) : CoroutineWorker(appContext, workerParameters) {
-    override suspend fun doWork(): Result = when (WearSyncRuntime.create(applicationContext).snapshotSynchronizer.refresh()) {
-        SnapshotSyncResult.Success, SnapshotSyncResult.NotModified -> Result.success()
-        is SnapshotSyncResult.Retryable -> Result.retry()
-        is SnapshotSyncResult.PermanentFailure -> Result.failure()
-        SnapshotSyncResult.AccountChanged -> Result.success()
     }
 }
 
 data class WearSyncDependencies(
     val outboxProcessor: OutboxProcessor,
-    val snapshotSynchronizer: WatchSnapshotSynchronizer
+    val snapshotSynchronizer: WatchSnapshotSynchronizer,
+    val outboxRepository: MutationOutboxRepository
 )
 
 /** Process-independent dependency graph used whenever WorkManager recreates a worker. */
@@ -265,7 +227,8 @@ object WearSyncRuntime {
                 metadata = RoomSyncMetadataRepository(database.syncMetadataDao()),
                 tokenStore = tokenStore,
                 onAuthenticationRequired = authenticationRequired
-            )
+            ),
+            outboxRepository = outbox
         )
     }
 }

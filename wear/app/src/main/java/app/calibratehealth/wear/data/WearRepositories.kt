@@ -29,8 +29,11 @@ interface MutationOutboxRepository {
     suspend fun enqueue(mutation: QueuedMutationEntity): Boolean
     suspend fun head(): QueuedMutationEntity?
     suspend fun pendingInFifoOrder(): List<QueuedMutationEntity>
+    suspend fun activeInFifoOrder(): List<QueuedMutationEntity>
+    suspend fun latestTerminal(): QueuedMutationEntity?
     suspend fun recordRetry(operationId: String, error: String): Boolean
-    suspend fun recordSuccess(operationId: String): Boolean
+    suspend fun recordServerSuccess(operationId: String): Boolean
+    suspend fun confirmSnapshotRefresh()
     suspend fun recordFailure(operationId: String, error: String): Boolean
 }
 
@@ -78,16 +81,19 @@ class RoomMutationOutboxRepository(
 
     override suspend fun head(): QueuedMutationEntity? = dao.head()
     override suspend fun pendingInFifoOrder(): List<QueuedMutationEntity> = dao.pendingInFifoOrder()
+    override suspend fun activeInFifoOrder(): List<QueuedMutationEntity> = dao.activeInFifoOrder()
+    override suspend fun latestTerminal(): QueuedMutationEntity? = dao.latestTerminal()
 
     override suspend fun recordRetry(
         operationId: String,
         error: String
     ): Boolean = dao.markRetry(operationId, error) == 1
 
-    override suspend fun recordSuccess(operationId: String): Boolean {
-        val updated = dao.markSucceeded(operationId) == 1
-        if (updated) dao.pruneTerminal(terminalMutationLimit)
-        return updated
+    override suspend fun recordServerSuccess(operationId: String): Boolean =
+        dao.markServerSucceeded(operationId) == 1
+
+    override suspend fun confirmSnapshotRefresh() {
+        if (dao.confirmSnapshotRefresh() > 0) dao.pruneTerminal(terminalMutationLimit)
     }
 
     override suspend fun recordFailure(operationId: String, error: String): Boolean {
