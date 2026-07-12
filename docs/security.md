@@ -45,6 +45,11 @@ Native push registrations are linked to the mobile session that registered them.
 account therefore removes its browser sessions, mobile sessions, web push subscriptions, and
 native push tokens through database cascades rather than relying on a hosted cleanup service.
 
+Wear mutations attach the trusted mobile-session ID to their internal idempotency receipt. This
+provenance is never accepted from request JSON or exposed by the watch API; it exists only so the
+watch can offer undo for its current session's latest still-existing food entry. Deleting a mobile
+session clears this optional receipt link rather than deleting food history.
+
 ## Account export and deletion
 
 Authenticated users can download a versioned `calibrate-account-export` JSON document. The export

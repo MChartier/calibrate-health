@@ -118,6 +118,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/watch": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Return one bounded account-local snapshot for the authenticated Wear OS session. */
+        get: operations["getWatchSnapshot"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/watch/mutations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Execute and exactly replay one restricted Wear mutation. */
+        post: operations["executeWatchMutation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/food/{foodLogId}": {
         parameters: {
             query?: never;
@@ -731,6 +765,179 @@ export interface components {
             /** @description Base64url DER SHA256withECDSA signature over the protocol v1 payload, including exchange_id. */
             challenge_signature: string;
         };
+        WatchMyFoodDraft: {
+            /** Format: date */
+            date: string;
+            /** @enum {string} */
+            meal_period: "BREAKFAST" | "MORNING_SNACK" | "LUNCH" | "AFTERNOON_SNACK" | "DINNER" | "EVENING_SNACK";
+            my_food_id: number;
+            servings_consumed: number;
+        };
+        WatchManualFoodDraft: {
+            /** Format: date */
+            date: string;
+            /** @enum {string} */
+            meal_period: "BREAKFAST" | "MORNING_SNACK" | "LUNCH" | "AFTERNOON_SNACK" | "DINNER" | "EVENING_SNACK";
+            name: string;
+            calories: number;
+            servings_consumed?: number | null;
+            serving_size_quantity_snapshot?: number | null;
+            serving_unit_label_snapshot?: string | null;
+            calories_per_serving_snapshot?: number | null;
+            external_source?: string | null;
+            external_id?: string | null;
+            brand?: string | null;
+            locale?: string | null;
+            barcode?: string | null;
+            measure_label?: string | null;
+            grams_per_measure_snapshot?: number | null;
+            measure_quantity_snapshot?: number | null;
+            grams_total_snapshot?: number | null;
+        };
+        WatchFoodDraft: components["schemas"]["WatchMyFoodDraft"] | components["schemas"]["WatchManualFoodDraft"];
+        WatchQuickAddDraft: {
+            id: string;
+            /** @enum {string} */
+            source: "pinned" | "recent";
+            label: string;
+            calories: number;
+            draft: components["schemas"]["WatchFoodDraft"];
+        };
+        WatchSnapshot: {
+            /** Format: date-time */
+            server_time: string;
+            timezone: string;
+            /** Format: date */
+            local_date: string;
+            revision: string;
+            calories: {
+                consumed: number;
+                target: number | null;
+                remaining: number | null;
+                missing: string[];
+            };
+            activity: null | {
+                steps: number | null;
+                active_calories_kcal: number | null;
+                total_calories_kcal: number | null;
+                exercise_minutes: number | null;
+                /** Format: date-time */
+                observed_at: string;
+            };
+            food_day: {
+                is_complete: boolean;
+                /** Format: date-time */
+                completed_at: string | null;
+                revision: string | null;
+            };
+            weight: {
+                today_grams: number | null;
+                today_revision: string | null;
+                latest_grams: number | null;
+                /** Format: date */
+                latest_date: string | null;
+            };
+            quick_add: components["schemas"]["WatchQuickAddDraft"][];
+            undo_candidate: null | {
+                food_log_id: number;
+                name: string;
+                calories: number;
+                /** Format: date-time */
+                created_at: string;
+            };
+            staleness: {
+                activity_stale: boolean;
+                activity_age_seconds: number | null;
+            };
+        };
+        WatchMutationRequest: {
+            /** @constant */
+            type: "food.create";
+            payload: components["schemas"]["WatchFoodDraft"];
+        } | {
+            /** @constant */
+            type: "food.delete";
+            payload: {
+                food_log_id: number;
+            };
+        } | {
+            /** @constant */
+            type: "metric.upsert";
+            payload: {
+                /** Format: date */
+                local_date: string;
+                weight_grams: number;
+                expected_revision: string | null;
+            };
+        } | {
+            /** @constant */
+            type: "food_day.set_complete";
+            payload: {
+                /** Format: date */
+                local_date: string;
+                is_complete: boolean;
+                expected_revision: string | null;
+            };
+        };
+        WatchFoodLog: {
+            id: number;
+            /** Format: date-time */
+            date: string;
+            /** Format: date */
+            local_date: string;
+            /** @enum {string} */
+            meal_period: "BREAKFAST" | "MORNING_SNACK" | "LUNCH" | "AFTERNOON_SNACK" | "DINNER" | "EVENING_SNACK";
+            name: string;
+            calories: number;
+            my_food_id: number | null;
+            servings_consumed: number | null;
+            serving_size_quantity_snapshot?: number | null;
+            serving_unit_label_snapshot?: string | null;
+            calories_per_serving_snapshot?: number | null;
+            external_source?: string | null;
+            external_id?: string | null;
+            brand_snapshot?: string | null;
+            locale_snapshot?: string | null;
+            barcode_snapshot?: string | null;
+            measure_label_snapshot?: string | null;
+            grams_per_measure_snapshot?: number | null;
+            measure_quantity_snapshot?: number | null;
+            grams_total_snapshot?: number | null;
+            /** Format: date-time */
+            created_at: string;
+        };
+        WatchMutationResponse: {
+            /** @constant */
+            type: "food.create";
+            food_log: components["schemas"]["WatchFoodLog"];
+        } | {
+            /** @constant */
+            type: "food.delete";
+            food_log_id: number;
+            /** @constant */
+            deleted: true;
+        } | {
+            /** @constant */
+            type: "metric.upsert";
+            metric: {
+                id: number;
+                /** Format: date */
+                local_date: string;
+                weight_grams: number;
+                revision: string;
+            };
+        } | {
+            /** @constant */
+            type: "food_day.set_complete";
+            food_day: {
+                /** Format: date */
+                date: string;
+                is_complete: boolean;
+                /** Format: date-time */
+                completed_at: string | null;
+                revision: string;
+            };
+        };
         /** @enum {string} */
         MobileDevicePlatform: "android_phone" | "wear_os";
         SyncChange: {
@@ -1019,6 +1226,132 @@ export interface operations {
             };
             /** @description Credential expired. */
             410: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    getWatchSnapshot: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Current watch snapshot. The weak ETag tracks semantic snapshot revisions. */
+            200: {
+                headers: {
+                    ETag?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WatchSnapshot"];
+                };
+            };
+            /** @description Snapshot semantics are unchanged for the supplied If-None-Match value. */
+            304: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Caller is not an authenticated Wear OS session. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Account no longer exists. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Snapshot generation failed. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    executeWatchMutation: {
+        parameters: {
+            query?: never;
+            header: {
+                "x-client-operation-id": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WatchMutationRequest"];
+            };
+        };
+        responses: {
+            /** @description Mutation result or exact replay of its committed result. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WatchMutationResponse"];
+                };
+            };
+            /** @description Invalid operation ID or mutation payload. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Caller is not an authenticated Wear OS session. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Referenced My Food or entity no longer exists. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Operation conflict or current-session undo restriction. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Mutation execution failed. */
+            500: {
                 headers: {
                     [name: string]: unknown;
                 };

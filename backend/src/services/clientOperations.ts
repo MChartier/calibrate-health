@@ -56,6 +56,7 @@ const hashRequest = (operationKind: string, payload: unknown): string =>
  */
 export async function executeIdempotentMutation<T>(options: {
   userId: number;
+  mobileAuthSessionId?: number;
   operationId?: string;
   operationKind: string;
   requestPayload: unknown;
@@ -72,6 +73,9 @@ export async function executeIdempotentMutation<T>(options: {
       await tx.clientOperation.create({
         data: {
           user_id: options.userId,
+          ...(options.mobileAuthSessionId === undefined
+            ? {}
+            : { mobile_auth_session_id: options.mobileAuthSessionId }),
           operation_id: options.operationId!,
           operation_kind: options.operationKind,
           request_hash: requestHash
@@ -109,7 +113,12 @@ export async function executeIdempotentMutation<T>(options: {
         }
       }
     });
-    if (!existing || existing.request_hash !== requestHash) {
+    if (
+      !existing ||
+      existing.request_hash !== requestHash ||
+      (options.mobileAuthSessionId !== undefined &&
+        existing.mobile_auth_session_id !== options.mobileAuthSessionId)
+    ) {
       throw new ClientOperationConflictError(
         'OPERATION_ID_REUSED',
         'Client operation id was already used for a different request.'

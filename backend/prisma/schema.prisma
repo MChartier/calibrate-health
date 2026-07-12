@@ -466,6 +466,8 @@ model MobileAuthSession {
   issued_wear_pairing_credentials WearPairingCredential[] @relation("WearPairingIssuer")
   /// Pairing exchange that created this Wear OS session, when applicable.
   created_from_wear_pairing_credential WearPairingCredential? @relation("WearPairingCreatedSession")
+  /// Idempotent mutations issued by this native session when provenance is required (for example Wear undo).
+  client_operations ClientOperation[]
 
   @@index([user_id])
   @@index([user_id, device_id, revoked_at])
@@ -530,6 +532,8 @@ model ClientOperation {
   id               Int       @id @default(autoincrement())
   user_id          Int
   user             User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  mobile_auth_session_id Int?
+  mobile_auth_session MobileAuthSession? @relation(fields: [mobile_auth_session_id], references: [id], onDelete: SetNull)
   operation_id     String
   operation_kind   String
   request_hash     String
@@ -540,6 +544,7 @@ model ClientOperation {
 
   @@unique([user_id, operation_id])
   @@index([user_id, created_at])
+  @@index([mobile_auth_session_id, operation_kind, completed_at, created_at], map: "ClientOperation_mobile_session_kind_completed_created_idx")
 }
 
 model SyncChange {

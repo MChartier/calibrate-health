@@ -250,6 +250,63 @@ export type WearPairingExchangeRequest = {
     challenge_signature: string;
 };
 
+export type WatchQuickAddDraft = {
+    id: string;
+    source: 'pinned' | 'recent';
+    label: string;
+    calories: number;
+    draft: FoodLogCreatePayload;
+};
+
+export type WatchSnapshot = {
+    server_time: string;
+    timezone: string;
+    local_date: string;
+    revision: string;
+    calories: {
+        consumed: number;
+        target: number | null;
+        remaining: number | null;
+        missing: string[];
+    };
+    activity: {
+        steps: number | null;
+        active_calories_kcal: number | null;
+        total_calories_kcal: number | null;
+        exercise_minutes: number | null;
+        observed_at: string;
+    } | null;
+    food_day: { is_complete: boolean; completed_at: string | null; revision: string | null };
+    weight: { today_grams: number | null; today_revision: string | null; latest_grams: number | null; latest_date: string | null };
+    quick_add: WatchQuickAddDraft[];
+    undo_candidate: { food_log_id: number; name: string; calories: number; created_at: string } | null;
+    staleness: { activity_stale: boolean; activity_age_seconds: number | null };
+};
+
+export type WatchSnapshotFetchResult = {
+    body: WatchSnapshot | null;
+    etag: string | null;
+    notModified: boolean;
+};
+
+export type WatchMutationRequest =
+    | { type: 'food.create'; payload: FoodLogCreatePayload }
+    | { type: 'food.delete'; payload: { food_log_id: number } }
+    | { type: 'metric.upsert'; payload: { local_date: string; weight_grams: number; expected_revision: string | null } }
+    | { type: 'food_day.set_complete'; payload: { local_date: string; is_complete: boolean; expected_revision: string | null } };
+
+export type WatchFoodLog = FoodLogEntry & {
+    date: string;
+    local_date: string;
+    created_at: string;
+};
+
+export type WatchMutationResponse =
+    | { type: 'food.create'; food_log: WatchFoodLog }
+    | { type: 'food.delete'; food_log_id: number; deleted: true }
+    | { type: 'metric.upsert'; metric: { id: number; local_date: string; weight_grams: number; revision: string } }
+    | { type: 'food_day.set_complete'; food_day: FoodLogDay & { revision: string } };
+
 export type ClientConfigResponse = {
     api_version: number;
     api_versions: {

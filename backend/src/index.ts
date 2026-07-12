@@ -26,6 +26,7 @@ import myFoodsRoutes from './routes/myFoods';
 import notificationRoutes from './routes/notifications';
 import syncRoutes from './routes/sync';
 import userRoutes from './routes/user';
+import watchRoutes from './routes/watch';
 import { authenticateMobileBearerToken } from './middleware/mobileAuth';
 import { createAuthRateLimiters } from './middleware/security';
 import { startReminderScheduler } from './services/reminderScheduler';
@@ -395,6 +396,7 @@ const bootstrap = async (): Promise<void> => {
   apiRouter.use('/imports', importRoutes);
   apiRouter.use('/notifications', notificationRoutes);
   apiRouter.use('/sync', syncRoutes);
+  apiRouter.use('/watch', watchRoutes);
   apiRouter.use('/user/password', authRateLimiters.passwordChange);
   apiRouter.use('/user', userRoutes);
 

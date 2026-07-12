@@ -166,6 +166,81 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/ApiError' }
+  /api/v1/watch:
+    get:
+      operationId: getWatchSnapshot
+      description: Return one bounded account-local snapshot for the authenticated Wear OS session.
+      responses:
+        '200':
+          description: Current watch snapshot. The weak ETag tracks semantic snapshot revisions.
+          headers:
+            ETag:
+              schema: { type: string }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/WatchSnapshot' }
+        '304':
+          description: Snapshot semantics are unchanged for the supplied If-None-Match value.
+        '403':
+          description: Caller is not an authenticated Wear OS session.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiError' }
+        '404':
+          description: Account no longer exists.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiError' }
+        '500':
+          description: Snapshot generation failed.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiError' }
+  /api/v1/watch/mutations:
+    post:
+      operationId: executeWatchMutation
+      description: Execute and exactly replay one restricted Wear mutation.
+      parameters:
+        - in: header
+          name: x-client-operation-id
+          required: true
+          schema: { type: string, minLength: 8, maxLength: 128 }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/WatchMutationRequest' }
+      responses:
+        '200':
+          description: Mutation result or exact replay of its committed result.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/WatchMutationResponse' }
+        '400':
+          description: Invalid operation ID or mutation payload.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiError' }
+        '403':
+          description: Caller is not an authenticated Wear OS session.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiError' }
+        '409':
+          description: Operation conflict or current-session undo restriction.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiError' }
+        '404':
+          description: Referenced My Food or entity no longer exists.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiError' }
+        '500':
+          description: Mutation execution failed.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiError' }
   /api/v1/food/{foodLogId}:
     delete:
       operationId: deleteFoodLog
@@ -1053,6 +1128,233 @@ components:
         challenge_signature:
           type: string
           description: Base64url DER SHA256withECDSA signature over the protocol v1 payload, including exchange_id.
+    WatchMyFoodDraft:
+      type: object
+      additionalProperties: false
+      required: [date, meal_period, my_food_id, servings_consumed]
+      properties:
+        date: { type: string, format: date }
+        meal_period:
+          type: string
+          enum: [BREAKFAST, MORNING_SNACK, LUNCH, AFTERNOON_SNACK, DINNER, EVENING_SNACK]
+        my_food_id: { type: integer }
+        servings_consumed: { type: number }
+    WatchManualFoodDraft:
+      type: object
+      additionalProperties: false
+      required: [date, meal_period, name, calories]
+      properties:
+        date: { type: string, format: date }
+        meal_period:
+          type: string
+          enum: [BREAKFAST, MORNING_SNACK, LUNCH, AFTERNOON_SNACK, DINNER, EVENING_SNACK]
+        name: { type: string }
+        calories: { type: number }
+        servings_consumed: { type: [number, 'null'] }
+        serving_size_quantity_snapshot: { type: [number, 'null'] }
+        serving_unit_label_snapshot: { type: [string, 'null'] }
+        calories_per_serving_snapshot: { type: [number, 'null'] }
+        external_source: { type: [string, 'null'] }
+        external_id: { type: [string, 'null'] }
+        brand: { type: [string, 'null'] }
+        locale: { type: [string, 'null'] }
+        barcode: { type: [string, 'null'] }
+        measure_label: { type: [string, 'null'] }
+        grams_per_measure_snapshot: { type: [number, 'null'] }
+        measure_quantity_snapshot: { type: [number, 'null'] }
+        grams_total_snapshot: { type: [number, 'null'] }
+    WatchFoodDraft:
+      oneOf:
+        - $ref: '#/components/schemas/WatchMyFoodDraft'
+        - $ref: '#/components/schemas/WatchManualFoodDraft'
+    WatchQuickAddDraft:
+      type: object
+      additionalProperties: false
+      required: [id, source, label, calories, draft]
+      properties:
+        id: { type: string }
+        source: { type: string, enum: [pinned, recent] }
+        label: { type: string }
+        calories: { type: number }
+        draft: { $ref: '#/components/schemas/WatchFoodDraft' }
+    WatchSnapshot:
+      type: object
+      additionalProperties: false
+      required: [server_time, timezone, local_date, revision, calories, activity, food_day, weight, quick_add, undo_candidate, staleness]
+      properties:
+        server_time: { type: string, format: date-time }
+        timezone: { type: string }
+        local_date: { type: string, format: date }
+        revision: { type: string }
+        calories:
+          type: object
+          required: [consumed, target, remaining, missing]
+          properties:
+            consumed: { type: integer }
+            target: { type: [integer, 'null'] }
+            remaining: { type: [integer, 'null'] }
+            missing: { type: array, items: { type: string } }
+        activity:
+          oneOf:
+            - type: 'null'
+            - type: object
+              required: [steps, active_calories_kcal, total_calories_kcal, exercise_minutes, observed_at]
+              properties:
+                steps: { type: [integer, 'null'] }
+                active_calories_kcal: { type: [number, 'null'] }
+                total_calories_kcal: { type: [number, 'null'] }
+                exercise_minutes: { type: [number, 'null'] }
+                observed_at: { type: string, format: date-time }
+        food_day:
+          type: object
+          required: [is_complete, completed_at, revision]
+          properties:
+            is_complete: { type: boolean }
+            completed_at: { type: [string, 'null'], format: date-time }
+            revision: { type: [string, 'null'] }
+        weight:
+          type: object
+          required: [today_grams, today_revision, latest_grams, latest_date]
+          properties:
+            today_grams: { type: [integer, 'null'] }
+            today_revision: { type: [string, 'null'] }
+            latest_grams: { type: [integer, 'null'] }
+            latest_date: { type: [string, 'null'], format: date }
+        quick_add:
+          type: array
+          maxItems: 12
+          items: { $ref: '#/components/schemas/WatchQuickAddDraft' }
+        undo_candidate:
+          oneOf:
+            - type: 'null'
+            - type: object
+              required: [food_log_id, name, calories, created_at]
+              properties:
+                food_log_id: { type: integer }
+                name: { type: string }
+                calories: { type: integer }
+                created_at: { type: string, format: date-time }
+        staleness:
+          type: object
+          required: [activity_stale, activity_age_seconds]
+          properties:
+            activity_stale: { type: boolean }
+            activity_age_seconds: { type: [integer, 'null'] }
+    WatchMutationRequest:
+      oneOf:
+        - type: object
+          additionalProperties: false
+          required: [type, payload]
+          properties:
+            type: { const: food.create }
+            payload: { $ref: '#/components/schemas/WatchFoodDraft' }
+        - type: object
+          additionalProperties: false
+          required: [type, payload]
+          properties:
+            type: { const: food.delete }
+            payload:
+              type: object
+              additionalProperties: false
+              required: [food_log_id]
+              properties: { food_log_id: { type: integer } }
+        - type: object
+          additionalProperties: false
+          required: [type, payload]
+          properties:
+            type: { const: metric.upsert }
+            payload:
+              type: object
+              additionalProperties: false
+              required: [local_date, weight_grams, expected_revision]
+              properties:
+                local_date: { type: string, format: date }
+                weight_grams: { type: integer, minimum: 1, maximum: 1000000 }
+                expected_revision: { type: [string, 'null'] }
+        - type: object
+          additionalProperties: false
+          required: [type, payload]
+          properties:
+            type: { const: food_day.set_complete }
+            payload:
+              type: object
+              additionalProperties: false
+              required: [local_date, is_complete, expected_revision]
+              properties:
+                local_date: { type: string, format: date }
+                is_complete: { type: boolean }
+                expected_revision: { type: [string, 'null'] }
+    WatchFoodLog:
+      type: object
+      additionalProperties: false
+      required: [id, date, local_date, meal_period, name, calories, my_food_id, servings_consumed, created_at]
+      properties:
+        id: { type: integer }
+        date: { type: string, format: date-time }
+        local_date: { type: string, format: date }
+        meal_period:
+          type: string
+          enum: [BREAKFAST, MORNING_SNACK, LUNCH, AFTERNOON_SNACK, DINNER, EVENING_SNACK]
+        name: { type: string }
+        calories: { type: integer }
+        my_food_id: { type: [integer, 'null'] }
+        servings_consumed: { type: [number, 'null'] }
+        serving_size_quantity_snapshot: { type: [number, 'null'] }
+        serving_unit_label_snapshot: { type: [string, 'null'] }
+        calories_per_serving_snapshot: { type: [number, 'null'] }
+        external_source: { type: [string, 'null'] }
+        external_id: { type: [string, 'null'] }
+        brand_snapshot: { type: [string, 'null'] }
+        locale_snapshot: { type: [string, 'null'] }
+        barcode_snapshot: { type: [string, 'null'] }
+        measure_label_snapshot: { type: [string, 'null'] }
+        grams_per_measure_snapshot: { type: [number, 'null'] }
+        measure_quantity_snapshot: { type: [number, 'null'] }
+        grams_total_snapshot: { type: [number, 'null'] }
+        created_at: { type: string, format: date-time }
+    WatchMutationResponse:
+      oneOf:
+        - type: object
+          additionalProperties: false
+          required: [type, food_log]
+          properties:
+            type: { const: food.create }
+            food_log: { $ref: '#/components/schemas/WatchFoodLog' }
+        - type: object
+          additionalProperties: false
+          required: [type, food_log_id, deleted]
+          properties:
+            type: { const: food.delete }
+            food_log_id: { type: integer }
+            deleted: { const: true }
+        - type: object
+          additionalProperties: false
+          required: [type, metric]
+          properties:
+            type: { const: metric.upsert }
+            metric:
+              type: object
+              additionalProperties: false
+              required: [id, local_date, weight_grams, revision]
+              properties:
+                id: { type: integer }
+                local_date: { type: string, format: date }
+                weight_grams: { type: integer }
+                revision: { type: string }
+        - type: object
+          additionalProperties: false
+          required: [type, food_day]
+          properties:
+            type: { const: food_day.set_complete }
+            food_day:
+              type: object
+              additionalProperties: false
+              required: [date, is_complete, completed_at, revision]
+              properties:
+                date: { type: string, format: date }
+                is_complete: { type: boolean }
+                completed_at: { type: [string, 'null'], format: date-time }
+                revision: { type: string }
     MobileDevicePlatform:
       type: string
       enum: [android_phone, wear_os]
