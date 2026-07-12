@@ -47,6 +47,15 @@
       "expo-secure-store",
       "expo-sqlite",
       [
+        "expo-build-properties",
+        {
+          "android": {
+            "minSdkVersion": 26
+          }
+        }
+      ],
+      "./plugins/withHealthConnect",
+      [
         "expo-camera",
         {
           "cameraPermission": "Allow calibrate to scan food barcodes."
