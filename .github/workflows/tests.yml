@@ -16,6 +16,21 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: calibrate_ci
+          POSTGRES_PASSWORD: calibrate_ci
+          POSTGRES_DB: calibrate_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U calibrate_ci -d calibrate_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
     defaults:
       run:
         working-directory: backend
@@ -33,6 +48,11 @@ jobs:
 
       - name: Install deps
         run: npm ci --no-audit --fund=false
+
+      - name: Verify fresh database migrations
+        env:
+          DATABASE_URL: postgresql://calibrate_ci:calibrate_ci@localhost:5432/calibrate_ci?schema=public
+        run: npm run db:migrate
 
       - name: Run tests
         run: npm test
