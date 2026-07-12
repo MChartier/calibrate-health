@@ -36,6 +36,38 @@ function loadNotificationDeliveryService({ prismaStub, webPushStub }) {
   return loaded;
 }
 
+test('native push delivery does not read or send stored tokens while operator mode is disabled', async () => {
+  const previousMode = process.env.NATIVE_PUSH_MODE;
+  delete process.env.NATIVE_PUSH_MODE;
+  let nativeLookupCount = 0;
+  try {
+    const { deliverUserNotification } = loadNotificationDeliveryService({
+      prismaStub: {
+        pushSubscription: { findMany: async () => [] },
+        nativePushSubscription: {
+          findMany: async () => { nativeLookupCount += 1; return [{ token: 'private' }]; }
+        }
+      },
+      webPushStub: {
+        ensureWebPushConfigured: () => ({ ok: false, error: 'not configured' }),
+        sendWebPushNotification: async () => { throw new Error('should not be called'); }
+      }
+    });
+
+    const result = await deliverUserNotification({
+      userId: 8,
+      channels: [NOTIFICATION_DELIVERY_CHANNELS.PUSH],
+      push: { payload: { title: 'calibrate', body: 'Reminder', url: '/' } }
+    });
+    assert.equal(nativeLookupCount, 0);
+    assert.equal(result.push.sent, 0);
+    assert.equal(result.push.skipped, true);
+  } finally {
+    if (previousMode === undefined) delete process.env.NATIVE_PUSH_MODE;
+    else process.env.NATIVE_PUSH_MODE = previousMode;
+  }
+});
+
 test('deliverUserNotification creates one in-app notification and dedupes repeated keys', async () => {
   const existingByKey = new Set();
   const createdRows = [];

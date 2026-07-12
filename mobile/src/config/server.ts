@@ -65,7 +65,10 @@ export function isLocalServerHostname(hostname: string): boolean {
  *
  * Scheme-less public hosts default to HTTPS, while local development hosts default to HTTP.
  */
-export function parseServerUrl(value: string): ServerUrlResult {
+export function parseServerUrl(
+    value: string,
+    options: { allowInsecureLocalHttp?: boolean } = {}
+): ServerUrlResult {
     const trimmed = value.trim();
     if (!trimmed) {
         return { ok: false, message: 'Enter a Calibrate server URL.' };
@@ -82,13 +85,14 @@ export function parseServerUrl(value: string): ServerUrlResult {
         }
 
         const isLocalHost = isLocalServerHostname(url.hostname);
-        if (!explicitScheme && isLocalHost) {
+        const allowInsecureLocalHttp = options.allowInsecureLocalHttp ?? __DEV__;
+        if (!explicitScheme && isLocalHost && allowInsecureLocalHttp) {
             url.protocol = 'http:';
         }
-        if (url.protocol === 'http:' && !isLocalHost) {
+        if (url.protocol === 'http:' && (!isLocalHost || !allowInsecureLocalHttp)) {
             return {
                 ok: false,
-                message: 'Use HTTPS for remote servers. HTTP is allowed only for local or private-network development.'
+                message: 'Use HTTPS for this server. HTTP is available only in local development builds.'
             };
         }
 
@@ -113,8 +117,11 @@ export function getDefaultServerUrl(): string {
 }
 
 /** Normalize self-hosted server input so API calls can safely append versioned paths. */
-export function normalizeServerUrl(value: string): string | null {
-    const result = parseServerUrl(value);
+export function normalizeServerUrl(
+    value: string,
+    options: { allowInsecureLocalHttp?: boolean } = {}
+): string | null {
+    const result = parseServerUrl(value, options);
     return result.ok ? result.url : null;
 }
 

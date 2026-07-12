@@ -1,5 +1,6 @@
 import express from 'express';
 import release from '../../../shared/release.json';
+import { NATIVE_PUSH_MODES, resolveNativePushMode } from '../config/nativePush';
 
 const router = express.Router();
 
@@ -11,6 +12,7 @@ const CURRENT_API_VERSION = release.server.api.current;
  * Lightweight capability document for native clients and self-hosted deployments.
  */
 router.get('/', (_req, res) => {
+  const nativePushMode = resolveNativePushMode();
   res.json({
     api_version: CLIENT_API_VERSION,
     api_versions: {
@@ -25,7 +27,7 @@ router.get('/', (_req, res) => {
     min_supported_wear_version: release.android.wear.minimum_supported_version,
     capabilities: {
       self_hosted_server_url: true,
-      native_push: true,
+      native_push: nativePushMode === NATIVE_PUSH_MODES.EXPO,
       health_connect_activity: true,
       wear_os_ready: false
     }

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { compareSemver, createReleaseMetadata, validateManifest } from './release-config.mjs';
+import { compareSemver, createReleaseMetadata, getReleaseTag, validateManifest } from './release-config.mjs';
 
 const validManifest = {
   schema_version: 1,
@@ -16,7 +16,16 @@ const validManifest = {
 
 test('semantic versions compare numerically', () => {
   assert.equal(compareSemver('1.10.0', '1.9.9'), 1);
-  assert.equal(compareSemver('2.0.0-internal', '2.0.0'), 0);
+  assert.equal(compareSemver('2.0.0-internal', '2.0.0'), -1);
+  assert.equal(compareSemver('2.0.0-internal.10', '2.0.0-internal.2'), 1);
+  assert.equal(compareSemver('999999999999999999999.0.0', '999999999999999999998.0.0'), 1);
+  assert.equal(compareSemver('2.0.0+build.2', '2.0.0+build.1'), 0);
+});
+
+test('manifest rejects malformed semantic versions', () => {
+  const manifest = structuredClone(validManifest);
+  manifest.android.mobile.version_name = '2.0.0-..';
+  assert.match(validateManifest(manifest).join('\n'), /must be a semantic version/);
 });
 
 test('manifest rejects a minimum client version newer than the release', () => {
@@ -47,4 +56,12 @@ test('release metadata rejects unknown channels', async () => {
     createReleaseMetadata({ manifest: validManifest, channel: 'nightly', root: process.cwd() }),
     /Unknown release channel/
   );
+});
+
+test('production tag comes from the manifest and must advance', () => {
+  assert.equal(getReleaseTag(validManifest, 'v1.2.2'), 'v1.2.3');
+  assert.throws(() => getReleaseTag(validManifest, 'v1.2.3'), /must be newer/);
+  const prerelease = structuredClone(validManifest);
+  prerelease.server.version = '1.2.4-internal';
+  assert.throws(() => getReleaseTag(prerelease), /stable server.version/);
 });

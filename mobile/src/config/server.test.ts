@@ -37,6 +37,13 @@ describe('server URL parsing', () => {
         expect(normalizeServerUrl('http://192.168.0.160:3000/api')).toBe('http://192.168.0.160:3000');
     });
 
+    it('requires HTTPS for private hosts in release policy', () => {
+        const releasePolicy = { allowInsecureLocalHttp: false };
+        expect(normalizeServerUrl('http://10.0.2.2:3000', releasePolicy)).toBeNull();
+        expect(normalizeServerUrl('http://192.168.0.160:3000', releasePolicy)).toBeNull();
+        expect(normalizeServerUrl('192.168.0.160:3443', releasePolicy)).toBe('https://192.168.0.160:3443');
+    });
+
     it('rejects unsafe remote HTTP, credentials, unsupported protocols, and empty input', () => {
         expect(parseServerUrl('http://public.example')).toEqual(expect.objectContaining({ ok: false }));
         expect(parseServerUrl('https://user:secret@calibrate.example')).toEqual(expect.objectContaining({ ok: false }));

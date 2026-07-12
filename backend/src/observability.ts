@@ -4,6 +4,8 @@ import type { RequestHandler } from 'express';
 // Accept only opaque trace-style IDs so caller-controlled prose or health values cannot enter logs.
 const REQUEST_ID_PATTERN = /^(?:[a-f0-9]{16,64}|[a-f0-9]{8}-[a-f0-9]{4}-[1-5][a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12})$/i;
 const FORBIDDEN_FIELD_PATTERN = /(authorization|cookie|token|secret|password|email|user_?id|payload|query|body|food|weight|calorie|barcode)/i;
+const ERROR_TYPE_PATTERN = /^[A-Za-z][A-Za-z0-9_.-]{0,63}$/;
+const ERROR_CONTEXT_PATTERN = /^[a-z][a-z0-9_.-]{0,63}$/;
 const LATENCY_BUCKETS_MS = [10, 50, 100, 500, 1_000, 5_000] as const;
 
 export type DiagnosticCategory =
@@ -184,6 +186,24 @@ export function safeRequestId(value: unknown, fallback: () => string = crypto.ra
     if (REQUEST_ID_PATTERN.test(normalized)) return normalized;
   }
   return fallback();
+}
+
+/** Return only a bounded class name; exception messages and stacks may contain credentials or health data. */
+export function safeErrorType(error: unknown): string {
+  const candidate = error instanceof Error ? error.name : '';
+  return ERROR_TYPE_PATTERN.test(candidate) ? candidate : 'UnknownError';
+}
+
+/** Write a correlation-friendly operational error without serializing the exception itself. */
+export function logSafeOperationalError(
+  context: string,
+  error: unknown,
+  requestId?: unknown,
+  write: (line: string) => void = console.error
+): void {
+  const safeContext = ERROR_CONTEXT_PATTERN.test(context) ? context : 'operation';
+  const safeId = typeof requestId === 'string' && REQUEST_ID_PATTERN.test(requestId) ? requestId : 'unavailable';
+  write(`${safeContext} failed (request_id=${safeId}, error_type=${safeErrorType(error)}).`);
 }
 
 function safeMethod(value: string): string {

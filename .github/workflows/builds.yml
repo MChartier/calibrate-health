@@ -11,6 +11,26 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  release-config:
+    name: Release Configuration
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Validate versions and quality-gate tests
+        run: |
+          npm run release:check
+          npm run test:release
+          npm run test:build-budget
+
   backend-build:
     name: Backend Build
     runs-on: ubuntu-latest

@@ -59,6 +59,7 @@
     "release:check": "node scripts/release-config.mjs check",
     "release:metadata": "node scripts/release-config.mjs metadata",
     "test:release": "node --test scripts/release-config.test.mjs",
+    "test:build-budget": "node --test scripts/frontend-build-budget.test.mjs",
     "build:storybook": "npm --prefix frontend run storybook:build",
     "lint": "npm --prefix frontend run lint",
     "lint:mobile": "npm --prefix mobile run typecheck",

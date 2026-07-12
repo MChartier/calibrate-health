@@ -18,6 +18,7 @@ import {
     revokeMobileSessionForUser,
     revokeOtherMobileSessionsForUser
 } from '../services/mobileAuth';
+import { logSafeOperationalError } from '../observability';
 
 /**
  * Session-based auth endpoints (register/login/logout/me).
@@ -68,7 +69,7 @@ router.post('/register', async (req, res) => {
         // Establish the session immediately after successful registration.
         req.login(newUser, (err) => {
             if (err) {
-                console.error('Auth register: unable to establish session:', err);
+                logSafeOperationalError('auth.register_session', err, res.locals?.requestId);
                 res.status(500).json({ message: 'Server error' });
                 return;
             }
@@ -80,7 +81,7 @@ router.post('/register', async (req, res) => {
         if (isUniqueConstraintError(err)) {
             return res.status(400).json({ message: REGISTRATION_FAILED_MESSAGE });
         }
-        console.error('Auth register failed:', err);
+        logSafeOperationalError('auth.register', err, res.locals?.requestId);
         return res.status(500).json({ message: 'Server error' });
     }
 });
@@ -137,7 +138,7 @@ router.post('/mobile/register', async (req, res) => {
         if (isUniqueConstraintError(err)) {
             return res.status(400).json({ message: REGISTRATION_FAILED_MESSAGE });
         }
-        console.error('Mobile auth register failed:', err);
+        logSafeOperationalError('auth.mobile_register', err, res.locals?.requestId);
         return res.status(500).json({ message: 'Server error' });
     }
 });
@@ -202,7 +203,7 @@ router.post('/mobile/login', async (req, res) => {
 
         res.json(formatMobileAuthResponse(authPayload));
     } catch (err) {
-        console.error('Mobile auth login failed:', err);
+        logSafeOperationalError('auth.mobile_login', err, res.locals?.requestId);
         res.status(500).json({ message: 'Server error' });
     }
 });
@@ -225,7 +226,7 @@ router.post('/mobile/refresh', async (req, res) => {
 
         res.json(formatMobileAuthResponse(authPayload));
     } catch (err) {
-        console.error('Mobile auth refresh failed:', err);
+        logSafeOperationalError('auth.mobile_refresh', err, res.locals?.requestId);
         res.status(500).json({ message: 'Server error' });
     }
 });
@@ -283,7 +284,7 @@ router.post('/mobile/wear/pairing-credential', async (req, res) => {
             expires_at: credential.expiresAt.toISOString()
         });
     } catch (error) {
-        console.error('Wear pairing credential issuance failed:', error);
+        logSafeOperationalError('auth.wear_pairing_issue', error, res.locals?.requestId);
         return res.status(500).json({ message: 'Server error' });
     }
 });
@@ -300,7 +301,7 @@ router.post('/mobile/wear/pair', async (req, res) => {
         }
         return res.json(formatMobileAuthResponse(result.payload));
     } catch (error) {
-        console.error('Wear pairing exchange failed:', error);
+        logSafeOperationalError('auth.wear_pairing_exchange', error, res.locals?.requestId);
         return res.status(500).json({ message: 'Server error' });
     }
 });
@@ -333,7 +334,7 @@ router.post('/mobile/logout', async (req, res) => {
 
         res.json({ ok: true });
     } catch (err) {
-        console.error('Mobile auth logout failed:', err);
+        logSafeOperationalError('auth.mobile_logout', err, res.locals?.requestId);
         res.status(500).json({ message: 'Server error' });
     }
 });
@@ -385,7 +386,7 @@ router.get('/me', async (req, res) => {
 
             res.json({ user: serializeUserForClient(dbUser) });
         } catch (err) {
-            console.error('Auth me failed:', err);
+            logSafeOperationalError('auth.me', err, res.locals?.requestId);
             res.status(500).json({ message: 'Server error' });
         }
     } else {

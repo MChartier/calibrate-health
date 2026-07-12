@@ -8,6 +8,8 @@ const {
   createDiagnosticsMetricsHandler,
   createRequestObservabilityMiddleware,
   resolveObservabilityConfig,
+  logSafeOperationalError,
+  safeErrorType,
   safeRequestId,
   sanitizeDiagnosticFields
 } = require('../src/observability');
@@ -84,6 +86,23 @@ test('request IDs, categories, and diagnostic fields are validated and redacted'
     access_token: '[REDACTED]',
     weight_grams: '[REDACTED]'
   });
+});
+
+test('operational errors omit messages, stacks, and unsafe caller-controlled names', () => {
+  const lines = [];
+  const error = new Error('password=hunter2 token=private weight=81234');
+  error.name = 'Error\npassword=hunter2';
+  logSafeOperationalError(
+    'auth.mobile_login',
+    error,
+    '123e4567-e89b-42d3-a456-426614174000',
+    (line) => lines.push(line)
+  );
+  assert.equal(safeErrorType(error), 'UnknownError');
+  assert.equal(lines.length, 1);
+  assert.match(lines[0], /auth\.mobile_login failed/);
+  assert.equal(lines[0].includes('hunter2'), false);
+  assert.equal(lines[0].includes('81234'), false);
 });
 
 test('metrics surface is opt-in, bearer protected, and contains only bounded aggregate counters', () => {

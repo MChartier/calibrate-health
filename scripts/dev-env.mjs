@@ -675,6 +675,11 @@ async function test() {
  */
 async function ci() {
   await ensureDependencies();
+  await timed("Validate release configuration", () => {
+    run("npm", ["run", "release:check"]);
+    run("npm", ["run", "test:release"]);
+    run("npm", ["run", "test:build-budget"]);
+  });
   await timed("Build backend", () => {
     run("npm", ["--prefix", "backend", "run", "build"]);
   });

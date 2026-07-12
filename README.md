@@ -34,6 +34,9 @@ attribution requirements: https://platform.fatsecret.com/docs/guides
 - Deployment (Compose self-hosting): `deploy/README.md`
 - Frontend dev/build/PWA: `frontend/README.md`
 - Android native client: `mobile/README.md`
+- First native release scope: `docs/release-scope.md`
+- Security model and release threat review: `docs/security.md`, `docs/security-release-threat-model.md`
+- Architecture decisions: `docs/architecture/`
 
 ## Self-hosting
 
@@ -260,6 +263,7 @@ screen.
 Push notes:
 
 - Browser push registration and delivery require backend VAPID env vars: `WEB_PUSH_PUBLIC_KEY`, `WEB_PUSH_PRIVATE_KEY`, and `WEB_PUSH_SUBJECT`.
+- Native Android push is disabled by default for self-hosting. Set `NATIVE_PUSH_MODE=expo` only when the instance intentionally uses Expo Push Service for private/internal builds.
 - In the devcontainer workflow, `.devcontainer/init-devcontainer-env.mjs` auto-generates missing VAPID keys and writes them into `.devcontainer/.env` during container initialization.
 - For local backend runs outside the devcontainer (or for plain `docker compose`), set `WEB_PUSH_*` values explicitly (see `.env.example` and `backend/.env.example`).
 

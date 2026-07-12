@@ -15,6 +15,7 @@ import {
 import { parseLocalDateOnly } from '../utils/date';
 import { parsePositiveInteger } from '../utils/requestParsing';
 import { parseFoodLogCreateBody, parseFoodLogUpdateBody, parseFoodSearchParams } from './foodUtils';
+import { safeErrorType } from '../observability';
 import {
     getRecentFoodSuggestions,
     RECENT_FOOD_DEFAULT_LIMIT,
@@ -164,7 +165,7 @@ router.get('/recent', async (req, res) => {
         const items = await getRecentFoodSuggestions({ userId: user.id, limit, query: q, database: prisma });
         return res.json({ items });
     } catch (err) {
-        const errorType = err instanceof Error ? err.name : 'UnknownError';
+        const errorType = safeErrorType(err);
         console.error(`Food lookup failed (request_id=${res.locals?.requestId ?? 'unavailable'}, error_type=${errorType}).`);
         return res.status(500).json({ message: 'Server error' });
     }
@@ -195,7 +196,7 @@ router.get('/search', async (req, res) => {
     }
 
     if (!searchOutcome.sawSuccessfulResponse && searchOutcome.lastError) {
-        const errorType = searchOutcome.lastError instanceof Error ? searchOutcome.lastError.name : 'UnknownError';
+        const errorType = safeErrorType(searchOutcome.lastError);
         console.error(`Food provider search failed (request_id=${res.locals?.requestId ?? 'unavailable'}, error_type=${errorType}).`);
         if (searchOutcome.attempts.length > 0) {
             console.info(

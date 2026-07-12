@@ -55,6 +55,11 @@ npm.cmd run test:release
 
 These checks parse configuration only. They do not invoke Gradle, Expo, Docker, or the full CI suite.
 
+The `Cut Release Tag` workflow does not calculate or mutate versions. It validates the repository and tags the exact
+stable `server.version` declared in `shared/release.json`. The workflow refuses an existing, prerelease, or
+non-monotonic version. This keeps the Git tag, published container version, and compatibility metadata on one release
+identity.
+
 ## Reproducible artifact metadata
 
 Generate metadata from the exact release commit. Set `SOURCE_DATE_EPOCH` to the commit timestamp so repeated runs over

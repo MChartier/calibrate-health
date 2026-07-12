@@ -2,7 +2,38 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const express = require('express');
 
-const { createAuthRateLimiters } = require('../src/middleware/security');
+const { createAuthRateLimiters, createBrowserMutationOriginGuard } = require('../src/middleware/security');
+
+test('browser mutation origin guard rejects cross-origin and same-site sibling requests', async (t) => {
+  const app = express();
+  app.use(createBrowserMutationOriginGuard({
+    trustedOrigins: new Set(['https://trusted-client.example']),
+    useSecureRequestOrigin: true
+  }));
+  app.post('/mutation', (_req, res) => res.json({ ok: true }));
+
+  const server = app.listen(0, '127.0.0.1');
+  await new Promise((resolve) => server.once('listening', resolve));
+  t.after(() => new Promise((resolve) => server.close(resolve)));
+  const address = server.address();
+  assert.ok(address && typeof address === 'object');
+  const url = `http://127.0.0.1:${address.port}/mutation`;
+  const secureApiOrigin = `https://127.0.0.1:${address.port}`;
+
+  assert.equal((await fetch(url, {
+    method: 'POST', headers: { origin: 'https://app.example' }
+  })).status, 403);
+  assert.equal((await fetch(url, {
+    method: 'POST', headers: { origin: secureApiOrigin }
+  })).status, 200);
+  assert.equal((await fetch(url, {
+    method: 'POST', headers: { origin: 'https://trusted-client.example' }
+  })).status, 200);
+  assert.equal((await fetch(url, {
+    method: 'POST', headers: { 'sec-fetch-site': 'cross-site' }
+  })).status, 403);
+  assert.equal((await fetch(url, { method: 'POST' })).status, 200);
+});
 
 test('auth rate limiting is narrow and returns a JSON 429 response', async (t) => {
   const app = express();

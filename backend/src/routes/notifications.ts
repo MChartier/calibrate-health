@@ -1,6 +1,7 @@
 import express from 'express';
 import { NativePushPlatform, NativePushProvider, Prisma } from '@prisma/client';
 import prisma from '../config/database';
+import { NATIVE_PUSH_MODES, resolveNativePushMode } from '../config/nativePush';
 import {
   listActiveInAppNotificationsForUser,
   markInAppNotificationDismissed,
@@ -153,6 +154,12 @@ router.post('/native-subscription', async (req, res) => {
   }
   if (provider === NativePushProvider.EXPO && !isExpoPushToken(token)) {
     return res.status(400).json({ message: 'Invalid Expo push token.' });
+  }
+  if (resolveNativePushMode() !== NATIVE_PUSH_MODES.EXPO) {
+    return res.status(503).json({
+      message: 'Native push is disabled by this server.',
+      code: 'NATIVE_PUSH_DISABLED'
+    });
   }
 
   await prisma.nativePushSubscription.upsert({

@@ -421,8 +421,8 @@ class OpenFoodFactsProvider implements FoodDataProvider {
             }
 
             return this.mergeUniqueItems(items, brandItems);
-        } catch (error) {
-            console.warn('Open Food Facts brand-scoped search failed; continuing with unscoped results.', error);
+        } catch {
+            console.warn('Open Food Facts brand-scoped search failed; continuing with unscoped results (details omitted).');
             return items;
         }
     }

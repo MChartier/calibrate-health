@@ -9,7 +9,8 @@ const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 export const REPOSITORY_ROOT = path.resolve(SCRIPT_DIR, '..');
 export const RELEASE_MANIFEST_PATH = path.join(REPOSITORY_ROOT, 'shared', 'release.json');
 
-const SEMVER_PATTERN = /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/;
+const SEMVER_PATTERN = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[A-Za-z-][0-9A-Za-z-]*)(?:\.(?:0|[1-9]\d*|\d*[A-Za-z-][0-9A-Za-z-]*))*))?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$/;
+const STABLE_SEMVER_PATTERN = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/;
 
 const readJson = async (filePath) => JSON.parse(await readFile(filePath, 'utf8'));
 
@@ -25,19 +26,61 @@ const readOptionalFile = async (filePath) => {
 const getPath = (value, dottedPath) => dottedPath.split('.').reduce((current, key) => current?.[key], value);
 
 const parseSemver = (value) => {
-  const core = value.split('-', 1)[0];
-  return core.split('.').map(Number);
+  const match = value.match(SEMVER_PATTERN);
+  if (!match) throw new Error(`Invalid semantic version: ${value}`);
+  return {
+    core: match.slice(1, 4),
+    prerelease: match[4]?.split('.') ?? null
+  };
+};
+
+const compareNumericIdentifier = (left, right) => {
+  if (left.length !== right.length) return left.length < right.length ? -1 : 1;
+  if (left === right) return 0;
+  return left < right ? -1 : 1;
 };
 
 export const compareSemver = (left, right) => {
-  const leftParts = parseSemver(left);
-  const rightParts = parseSemver(right);
+  const leftVersion = parseSemver(left);
+  const rightVersion = parseSemver(right);
   for (let index = 0; index < 3; index += 1) {
-    const difference = leftParts[index] - rightParts[index];
+    const difference = compareNumericIdentifier(leftVersion.core[index], rightVersion.core[index]);
     if (difference !== 0) return difference;
+  }
+
+  if (leftVersion.prerelease === null) return rightVersion.prerelease === null ? 0 : 1;
+  if (rightVersion.prerelease === null) return -1;
+  const identifierCount = Math.max(leftVersion.prerelease.length, rightVersion.prerelease.length);
+  for (let index = 0; index < identifierCount; index += 1) {
+    const leftIdentifier = leftVersion.prerelease[index];
+    const rightIdentifier = rightVersion.prerelease[index];
+    if (leftIdentifier === undefined) return -1;
+    if (rightIdentifier === undefined) return 1;
+    if (leftIdentifier === rightIdentifier) continue;
+    const leftNumeric = /^\d+$/.test(leftIdentifier);
+    const rightNumeric = /^\d+$/.test(rightIdentifier);
+    if (leftNumeric && rightNumeric) return compareNumericIdentifier(leftIdentifier, rightIdentifier);
+    if (leftNumeric) return -1;
+    if (rightNumeric) return 1;
+    return leftIdentifier < rightIdentifier ? -1 : 1;
   }
   return 0;
 };
+
+/** Return the production tag encoded by the canonical manifest and ensure it advances. */
+export function getReleaseTag(manifest, latestTag = null) {
+  const version = manifest?.server?.version;
+  if (typeof version !== 'string' || !STABLE_SEMVER_PATTERN.test(version)) {
+    throw new Error('Production release tags require a stable server.version in shared/release.json.');
+  }
+  if (latestTag !== null) {
+    if (!/^v\d+\.\d+\.\d+$/.test(latestTag)) throw new Error(`Invalid latest release tag: ${latestTag}`);
+    if (compareSemver(version, latestTag.slice(1)) <= 0) {
+      throw new Error(`Manifest version ${version} must be newer than ${latestTag}.`);
+    }
+  }
+  return `v${version}`;
+}
 
 export function validateManifest(manifest) {
   const errors = [];
@@ -203,10 +246,11 @@ export async function createReleaseMetadata({ manifest, channel, artifacts = [],
 }
 
 const parseArguments = (args) => {
-  const result = { command: args[0] ?? 'check', channel: null, artifacts: [] };
+  const result = { command: args[0] ?? 'check', channel: null, artifacts: [], latestTag: null };
   for (let index = 1; index < args.length; index += 1) {
     if (args[index] === '--channel') result.channel = args[++index];
     else if (args[index] === '--artifact') result.artifacts.push(args[++index]);
+    else if (args[index] === '--latest-tag') result.latestTag = args[++index];
     else throw new Error(`Unknown argument: ${args[index]}`);
   }
   return result;
@@ -227,6 +271,10 @@ async function main() {
   if (options.command === 'metadata') {
     if (!options.channel) throw new Error('metadata requires --channel debug, internal, or production.');
     console.log(`${JSON.stringify(await createReleaseMetadata({ manifest, channel: options.channel, artifacts: options.artifacts }), null, 2)}\n`);
+    return;
+  }
+  if (options.command === 'tag') {
+    console.log(getReleaseTag(manifest, options.latestTag));
     return;
   }
   throw new Error(`Unknown command: ${options.command}`);

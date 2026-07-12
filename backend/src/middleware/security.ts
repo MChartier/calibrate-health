@@ -1,6 +1,8 @@
+import type { RequestHandler } from 'express';
 import { rateLimit, type RateLimitRequestHandler } from 'express-rate-limit';
 
 const AUTH_RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000;
+const SAFE_HTTP_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
 
 type AuthRateLimiters = {
   login: RateLimitRequestHandler;
@@ -41,5 +43,51 @@ export function createAuthRateLimiters(): AuthRateLimiters {
       keyGenerator: (_req, res) => `mobile-session:${res.locals.mobileAuthSessionId}`
     }),
     pairingExchange: createLimiter(30, 'Too many Wear pairing attempts. Try again later.')
+  };
+}
+
+function normalizedOrigin(value: string | undefined): string | null {
+  if (!value) return null;
+  try {
+    return new URL(value).origin;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Reject browser cross-origin mutations before they reach cookie-authenticated routes.
+ *
+ * SameSite cookies remain the first CSRF boundary. This explicit Origin check also protects
+ * deployments that use SameSite=None and same-site sibling hosts that browsers do not classify
+ * as cross-site. Native clients do not send Origin and authenticate with bearer tokens.
+ */
+export function createBrowserMutationOriginGuard(options: {
+  trustedOrigins: ReadonlySet<string>;
+  useSecureRequestOrigin: boolean;
+}): RequestHandler {
+  return (req, res, next) => {
+    if (SAFE_HTTP_METHODS.has(req.method.toUpperCase())) return next();
+    if (typeof res.locals.mobileAuthSessionId === 'number') return next();
+
+    const requestOrigin = req.get('origin');
+    const fetchSite = req.get('sec-fetch-site')?.trim().toLowerCase();
+    if (!requestOrigin) {
+      // Browsers send Origin for fetch/form mutations. Keep non-browser self-host tooling working,
+      // while rejecting an explicit browser signal that says the request is cross-site.
+      if (fetchSite === 'cross-site') {
+        return res.status(403).json({ message: 'Cross-origin mutation is not allowed' });
+      }
+      return next();
+    }
+
+    const origin = normalizedOrigin(requestOrigin);
+    const host = req.get('host');
+    const forwardedProtocol = req.get('x-forwarded-proto')?.split(',')[0]?.trim();
+    const protocol = forwardedProtocol || (options.useSecureRequestOrigin ? 'https' : req.protocol);
+    const apiOrigin = host ? normalizedOrigin(`${protocol}://${host}`) : null;
+    if (origin && (origin === apiOrigin || options.trustedOrigins.has(origin))) return next();
+
+    return res.status(403).json({ message: 'Cross-origin mutation is not allowed' });
   };
 }

@@ -12,6 +12,7 @@ import passport from 'passport';
 import { Strategy as LocalStrategy } from 'passport-local';
 import prisma, { pgPool } from './config/database';
 import { isProductionOrStagingEnv } from './config/environment';
+import { getNativePushModeConfigurationWarning } from './config/nativePush';
 import authRoutes from './routes/auth';
 import clientConfigRoutes from './routes/clientConfig';
 import devRoutes from './routes/dev';
@@ -28,7 +29,7 @@ import syncRoutes from './routes/sync';
 import userRoutes from './routes/user';
 import watchRoutes from './routes/watch';
 import { authenticateMobileBearerToken } from './middleware/mobileAuth';
-import { createAuthRateLimiters } from './middleware/security';
+import { createAuthRateLimiters, createBrowserMutationOriginGuard } from './middleware/security';
 import { startReminderScheduler } from './services/reminderScheduler';
 import { checkDatabaseReadiness } from './services/readiness';
 import { DUMMY_AUTH_PASSWORD_HASH, normalizeEmailCredential } from './utils/authCredentials';
@@ -39,6 +40,8 @@ import {
   createDiagnosticsMetricsHandler,
   createRequestObservabilityMiddleware,
   emitDiagnosticEvent,
+  logSafeOperationalError,
+  safeErrorType,
   resolveObservabilityConfig
 } from './observability';
 
@@ -169,7 +172,7 @@ const requestErrorHandler: express.ErrorRequestHandler = (err: HttpError, _req, 
   const rawStatus = err.statusCode ?? err.status;
   const statusCode = typeof rawStatus === 'number' && rawStatus >= 400 && rawStatus < 600 ? rawStatus : 500;
   if (statusCode >= 500) {
-    console.error(`Unhandled request error (request_id=${res.locals.requestId ?? 'unavailable'}, error_type=${err.name}).`);
+    console.error(`Unhandled request error (request_id=${res.locals.requestId ?? 'unavailable'}, error_type=${safeErrorType(err)}).`);
   }
 
   if (statusCode === 413) {
@@ -229,6 +232,7 @@ const bootstrap = async (): Promise<void> => {
   const PORT = process.env.PORT || 3000;
   const isProductionOrStaging = isProductionOrStagingEnv(process.env.NODE_ENV);
   const observabilityConfig = resolveObservabilityConfig(process.env);
+  const nativePushConfigurationWarning = getNativePushModeConfigurationWarning(process.env);
 
   // Reduce fingerprinting surface for minimal Express signature.
   app.disable('x-powered-by');
@@ -254,6 +258,10 @@ const bootstrap = async (): Promise<void> => {
     console.warn(
       'CALIBRATE_DIAGNOSTICS_METRICS_TOKEN must contain at least 32 characters; the diagnostics metrics endpoint is disabled.'
     );
+  }
+
+  if (nativePushConfigurationWarning) {
+    console.warn(nativePushConfigurationWarning);
   }
 
   if (useSecureCookies) {
@@ -339,6 +347,10 @@ const bootstrap = async (): Promise<void> => {
   app.use(passport.initialize());
   app.use(passport.session());
   app.use(authenticateMobileBearerToken);
+  app.use(createBrowserMutationOriginGuard({
+    trustedOrigins: allowedOriginSet,
+    useSecureRequestOrigin: useSecureCookies
+  }));
   app.use('/auth/mobile/wear/pairing-credential', authRateLimiters.pairingIssue);
   app.use(autoLoginTestUser);
 
@@ -449,6 +461,6 @@ const bootstrap = async (): Promise<void> => {
 };
 
 void bootstrap().catch((err) => {
-  console.error('Failed to start server:', err);
+  logSafeOperationalError('backend.startup', err);
   process.exit(1);
 });

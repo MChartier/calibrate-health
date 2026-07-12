@@ -10,7 +10,8 @@ import {
 import { type PushNotificationPayload } from './pushNotificationPayloads';
 import { sendNativePushNotification } from './nativePush';
 import { ensureWebPushConfigured, sendWebPushNotification } from './webPush';
-import { diagnosticsRegistry } from '../observability';
+import { diagnosticsRegistry, safeErrorType } from '../observability';
+import { NATIVE_PUSH_MODES, resolveNativePushMode } from '../config/nativePush';
 
 export type InAppNotificationDeliveryRequest = {
     type: InAppNotificationType;
@@ -213,6 +214,9 @@ const resolveNativePushSubscriptions = async (
     userId: number,
     endpoint: string | undefined
 ): Promise<NormalizedNativePushSubscription[]> => {
+    if (resolveNativePushMode() !== NATIVE_PUSH_MODES.EXPO) {
+        return [];
+    }
     // Endpoint-specific dev sends target a browser subscription only.
     if (endpoint) {
         return [];
@@ -337,7 +341,7 @@ const sendPushNotifications = async (
                 continue;
             }
 
-            const errorType = error instanceof Error ? error.name : 'UnknownError';
+            const errorType = safeErrorType(error);
             console.warn(`Web push delivery failed; the subscription remains eligible for retry (error_type=${errorType}).`);
         }
     }
@@ -373,7 +377,7 @@ const sendPushNotifications = async (
                 continue;
             }
 
-            const errorType = error instanceof Error ? error.name : 'UnknownError';
+            const errorType = safeErrorType(error);
             console.warn(`Native push delivery failed; the subscription remains eligible for retry (error_type=${errorType}).`);
         }
     }
