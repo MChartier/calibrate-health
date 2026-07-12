@@ -1,5 +1,5 @@
 import express from 'express';
-import { NativePushPlatform, NativePushProvider, Prisma } from '@prisma/client';
+import { NativePushPlatform, NativePushProvider } from '@prisma/client';
 import prisma from '../config/database';
 import { NATIVE_PUSH_MODES, resolveNativePushMode } from '../config/nativePush';
 import {
@@ -30,6 +30,14 @@ const isAuthenticated = (req: express.Request, res: express.Response, next: expr
     return next();
   }
   res.status(401).json({ message: 'Not authenticated' });
+};
+
+/** Web Push is owned by a persisted cookie session, never by a native bearer session. */
+const isBrowserSession = (req: express.Request, res: express.Response, next: express.NextFunction) => {
+  if (typeof res.locals.mobileAuthSessionId === 'number' || !req.sessionID) {
+    return res.status(403).json({ message: 'Browser session required.' });
+  }
+  return next();
 };
 
 router.use(isAuthenticated);
@@ -80,7 +88,7 @@ router.get('/public-key', (_req, res) => {
   res.json({ publicKey });
 });
 
-router.post('/subscription', async (req, res) => {
+router.post('/subscription', isBrowserSession, async (req, res) => {
   const user = req.user as { id: number };
   const endpoint = typeof req.body?.endpoint === 'string' ? req.body.endpoint.trim() : '';
   const keys = req.body?.keys as { p256dh?: unknown; auth?: unknown } | undefined;
@@ -97,19 +105,22 @@ router.post('/subscription', async (req, res) => {
   }
 
   await prisma.pushSubscription.upsert({
-    where: {
-      user_id_endpoint: {
-        user_id: user.id,
-        endpoint
-      }
-    },
+    where: { endpoint },
     update: {
+      // A browser push endpoint belongs to one current account. Re-registering it
+      // after an account switch transfers delivery instead of duplicating it.
+      user_id: user.id,
+      session_sid: req.sessionID,
       p256dh,
       auth,
-      expiration_time: expirationTime
+      expiration_time: expirationTime,
+      // Registration is an explicit opt-in. Clear any delivery date inherited
+      // from a previous owner of this globally unique browser endpoint.
+      last_sent_local_date: null
     },
     create: {
       user_id: user.id,
+      session_sid: req.sessionID,
       endpoint,
       p256dh,
       auth,
@@ -120,7 +131,7 @@ router.post('/subscription', async (req, res) => {
   res.json({ ok: true });
 });
 
-router.delete('/subscription', async (req, res) => {
+router.delete('/subscription', isBrowserSession, async (req, res) => {
   const user = req.user as { id: number };
   const endpoint = typeof req.body?.endpoint === 'string' ? req.body.endpoint.trim() : '';
 
@@ -128,25 +139,11 @@ router.delete('/subscription', async (req, res) => {
     return res.status(400).json({ message: 'Endpoint is required.' });
   }
 
-  try {
-    await prisma.pushSubscription.delete({
-      where: {
-        user_id_endpoint: {
-          user_id: user.id,
-          endpoint
-        }
-      }
-    });
-  } catch (error) {
-    // Treat repeated unsubscribe calls as success so this endpoint stays idempotent.
-    if (
-      error instanceof Prisma.PrismaClientKnownRequestError &&
-      error.code === 'P2025'
-    ) {
-      return res.json({ ok: true });
-    }
-    throw error;
-  }
+  // Keep unsubscribe idempotent and owner-scoped. A stale account session must
+  // not delete an endpoint after another account has claimed it.
+  await prisma.pushSubscription.deleteMany({
+    where: { user_id: user.id, session_sid: req.sessionID, endpoint }
+  });
 
   res.json({ ok: true });
 });

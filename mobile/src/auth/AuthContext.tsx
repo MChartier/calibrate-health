@@ -25,6 +25,13 @@ import {
     writeServerUrl,
     writeStoredTokens
 } from './storage';
+import {
+    clearAccountDeletionCleanupNotice,
+    assertAccountDeletionCleanupAcknowledged,
+    readAccountDeletionCleanupNotice,
+    writeAccountDeletionCleanupNotice,
+    type AccountDeletionCleanupNotice
+} from '../account/accountDeletionNotice';
 
 type AuthContextValue = {
     api: CalibrateApiClient;
@@ -35,6 +42,7 @@ type AuthContextValue = {
     serverUrl: string;
     isLoading: boolean;
     authError: string | null;
+    accountDeletionCleanupNotice: AccountDeletionCleanupNotice | null;
     serverConnection: ServerConnectionState;
     updateCurrentUser: (user: UserClientPayload) => void;
     setServerUrl: (value: string) => Promise<boolean>;
@@ -43,6 +51,8 @@ type AuthContextValue = {
     register: (email: string, password: string) => Promise<void>;
     logout: () => Promise<void>;
     clearLocalSession: () => Promise<void>;
+    persistAccountDeletionCleanupNotice: (notice: AccountDeletionCleanupNotice) => Promise<void>;
+    acknowledgeAccountDeletionCleanupNotice: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -89,6 +99,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const [deviceId, setDeviceId] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [authError, setAuthError] = useState<string | null>(null);
+    const [accountDeletionCleanupNotice, setAccountDeletionCleanupNotice] =
+        useState<AccountDeletionCleanupNotice | null>(null);
     const [serverConnection, setServerConnection] = useState<ServerConnectionState>(INITIAL_SERVER_CONNECTION_STATE);
     const accessTokenRef = useRef<string | null>(null);
     const refreshTokenRef = useRef<string | null>(null);
@@ -173,15 +185,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         async function hydrate() {
             try {
-                const [storedServerUrl, tokens, nextDeviceId] = await Promise.all([
+                const [storedServerUrl, tokens, nextDeviceId, storedCleanupNotice] = await Promise.all([
                     readServerUrl(),
                     readStoredTokens(),
-                    getOrCreateDeviceId()
+                    getOrCreateDeviceId(),
+                    readAccountDeletionCleanupNotice().catch(() => null)
                 ]);
                 if (!isMounted) return;
 
                 setServerUrlState(storedServerUrl);
                 setDeviceId(nextDeviceId);
+                setAccountDeletionCleanupNotice(storedCleanupNotice);
+                if (storedCleanupNotice) {
+                    setAccessToken(null);
+                    setRefreshToken(null);
+                    accessTokenRef.current = null;
+                    refreshTokenRef.current = null;
+                    await clearStoredTokens().catch(() => undefined);
+                    return;
+                }
                 setAccessToken(tokens.accessToken);
                 setRefreshToken(tokens.refreshToken);
                 accessTokenRef.current = tokens.accessToken;
@@ -283,6 +305,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const login = useCallback(
         async (email: string, password: string) => {
+            assertAccountDeletionCleanupAcknowledged(accountDeletionCleanupNotice);
             const nextDeviceId = deviceId ?? (await getOrCreateDeviceId());
             setDeviceId(nextDeviceId);
             const payload = await api.loginMobile({
@@ -294,11 +317,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             });
             await persistAuthPayload(payload);
         },
-        [api, deviceId, persistAuthPayload]
+        [accountDeletionCleanupNotice, api, deviceId, persistAuthPayload]
     );
 
     const register = useCallback(
         async (email: string, password: string) => {
+            assertAccountDeletionCleanupAcknowledged(accountDeletionCleanupNotice);
             const nextDeviceId = deviceId ?? (await getOrCreateDeviceId());
             setDeviceId(nextDeviceId);
             const payload = await api.registerMobile({
@@ -310,7 +334,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             });
             await persistAuthPayload(payload);
         },
-        [api, deviceId, persistAuthPayload]
+        [accountDeletionCleanupNotice, api, deviceId, persistAuthPayload]
     );
 
     const logout = useCallback(async () => {
@@ -320,6 +344,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             await clearSession();
         }
     }, [api, clearSession]);
+
+    const persistAccountDeletionCleanupNotice = useCallback(async (notice: AccountDeletionCleanupNotice) => {
+        // Update the mounted auth shell first so guidance remains visible even if durable storage is unavailable.
+        setAccountDeletionCleanupNotice(notice);
+        await writeAccountDeletionCleanupNotice(notice);
+    }, []);
+
+    const acknowledgeAccountDeletionCleanupNotice = useCallback(async () => {
+        await clearAccountDeletionCleanupNotice();
+        setAccountDeletionCleanupNotice(null);
+    }, []);
 
     const value = useMemo<AuthContextValue>(
         () => ({
@@ -331,6 +366,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             serverUrl,
             isLoading,
             authError,
+            accountDeletionCleanupNotice,
             serverConnection,
             updateCurrentUser,
             setServerUrl: updateServerUrl,
@@ -338,9 +374,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             login,
             register,
             logout,
-            clearLocalSession: clearSession
+            clearLocalSession: clearSession,
+            persistAccountDeletionCleanupNotice,
+            acknowledgeAccountDeletionCleanupNotice
         }),
-        [accessToken, api, authError, clearSession, deviceId, isLoading, login, logout, refreshToken, register, serverConnection, serverUrl, testServerUrl, updateCurrentUser, updateServerUrl, user]
+        [accessToken, accountDeletionCleanupNotice, acknowledgeAccountDeletionCleanupNotice, api, authError, clearSession, deviceId, isLoading, login, logout, persistAccountDeletionCleanupNotice, refreshToken, register, serverConnection, serverUrl, testServerUrl, updateCurrentUser, updateServerUrl, user]
     );
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

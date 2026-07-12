@@ -14,6 +14,8 @@ import {
 } from './types';
 import {
     DEFAULT_HEALTH_CONNECT_PREFERENCES,
+    healthConnectLastSuccessStorageKey,
+    healthConnectPreferencesStorageKey,
     parseStoredHealthConnectPreferences,
     type StoredHealthConnectPreferences
 } from './preferences';
@@ -25,9 +27,8 @@ import {
 } from './sync';
 import { healthConnectAccountScope } from './storageScope';
 import { queueWearSyncInvalidation } from '../wear/syncInvalidation';
+import { clearHealthConnectAccountData } from './accountCleanup';
 
-const STORAGE_KEY_PREFIX = '@calibrate/health-connect/preferences/v1';
-const LAST_SUCCESS_STORAGE_KEY_PREFIX = '@calibrate/health-connect/last-success/v1';
 const HEALTH_CONNECT_PLAY_STORE_URL = 'https://play.google.com/store/apps/details?id=com.google.android.apps.healthdata';
 
 type HealthConnectContextValue = StoredHealthConnectPreferences & {
@@ -48,17 +49,10 @@ type HealthConnectContextValue = StoredHealthConnectPreferences & {
     manageAccess: () => Promise<void>;
     updateProvider: () => Promise<void>;
     disconnect: () => Promise<void>;
+    clearAccountData: () => Promise<void>;
 };
 
 const HealthConnectContext = createContext<HealthConnectContextValue | null>(null);
-
-function storageKey(serverUrl: string, userId: number): string {
-    return `${STORAGE_KEY_PREFIX}/${healthConnectAccountScope(serverUrl, userId)}`;
-}
-
-function lastSuccessStorageKey(serverUrl: string, userId: number): string {
-    return `${LAST_SUCCESS_STORAGE_KEY_PREFIX}/${healthConnectAccountScope(serverUrl, userId)}`;
-}
 
 function errorMessage(error: unknown, fallback: string): string {
     return error instanceof Error && error.message ? error.message : fallback;
@@ -103,7 +97,7 @@ export function HealthConnectProvider({ children }: { children: React.ReactNode 
         if (!user) return;
         preferencesRef.current = next;
         setPreferences(next);
-        await AsyncStorage.setItem(storageKey(serverUrl, user.id), JSON.stringify(next));
+        await AsyncStorage.setItem(healthConnectPreferencesStorageKey(serverUrl, user.id), JSON.stringify(next));
     }, [serverUrl, user]);
 
     const runForegroundSync = useCallback(async (
@@ -148,7 +142,7 @@ export function HealthConnectProvider({ children }: { children: React.ReactNode 
                 if (!shouldContinue()) return;
                 setLastSuccessfulSyncAt(result.lastSuccessfulSyncAt);
                 await AsyncStorage.setItem(
-                    lastSuccessStorageKey(serverUrl, currentUser.id),
+                    healthConnectLastSuccessStorageKey(serverUrl, currentUser.id),
                     result.lastSuccessfulSyncAt
                 );
                 if (!shouldContinue()) return;
@@ -221,8 +215,8 @@ export function HealthConnectProvider({ children }: { children: React.ReactNode 
         async function hydrate() {
             try {
                 const [stored, storedLastSuccessfulSync] = await Promise.all([
-                    AsyncStorage.getItem(storageKey(currentServerUrl, userId)),
-                    AsyncStorage.getItem(lastSuccessStorageKey(currentServerUrl, userId))
+                    AsyncStorage.getItem(healthConnectPreferencesStorageKey(currentServerUrl, userId)),
+                    AsyncStorage.getItem(healthConnectLastSuccessStorageKey(currentServerUrl, userId))
                 ]);
                 const nextPreferences = parseStoredHealthConnectPreferences(stored);
                 if (run !== activeRun.current) return;
@@ -343,7 +337,7 @@ export function HealthConnectProvider({ children }: { children: React.ReactNode 
             await syncPromiseRef.current?.promise;
             const response = await disconnectHealthConnect();
             await clearHealthConnectSyncStorage(serverUrl, user.id);
-            await AsyncStorage.removeItem(lastSuccessStorageKey(serverUrl, user.id));
+            await AsyncStorage.removeItem(healthConnectLastSuccessStorageKey(serverUrl, user.id));
             await persist({ ...preferencesRef.current, connected: false, paused: false });
             setConnection((current) => current ? { ...current, grantedFeatures: [] } : current);
             setSyncError(null);
@@ -363,6 +357,22 @@ export function HealthConnectProvider({ children }: { children: React.ReactNode 
         }
     }, [persist, serverUrl, user]);
 
+    const clearAccountData = useCallback(async () => {
+        if (!user) return;
+        syncGenerationRef.current += 1;
+        await Promise.allSettled(syncPromiseRef.current ? [syncPromiseRef.current.promise] : []);
+        try {
+            await clearHealthConnectAccountData(serverUrl, user.id);
+        } finally {
+            preferencesRef.current = DEFAULT_HEALTH_CONNECT_PREFERENCES;
+            setPreferences(DEFAULT_HEALTH_CONNECT_PREFERENCES);
+            setConnection((current) => current ? { ...current, grantedFeatures: [] } : current);
+            setSyncError(null);
+            setIsSyncing(false);
+            setLastSuccessfulSyncAt(null);
+        }
+    }, [serverUrl, user]);
+
     const value = useMemo<HealthConnectContextValue>(() => ({
         ...preferences,
         connection,
@@ -381,8 +391,9 @@ export function HealthConnectProvider({ children }: { children: React.ReactNode 
         setPaused,
         manageAccess,
         updateProvider,
-        disconnect
-    }), [connect, connection, disconnect, error, isBusy, isLoading, isSyncing, lastRefreshedAt, lastSuccessfulSyncAt, manageAccess, preferences, refresh, restartMessage, runForegroundSync, setFeatureEnabled, setPaused, syncError, updateProvider]);
+        disconnect,
+        clearAccountData
+    }), [clearAccountData, connect, connection, disconnect, error, isBusy, isLoading, isSyncing, lastRefreshedAt, lastSuccessfulSyncAt, manageAccess, preferences, refresh, restartMessage, runForegroundSync, setFeatureEnabled, setPaused, syncError, updateProvider]);
 
     return <HealthConnectContext.Provider value={value}>{children}</HealthConnectContext.Provider>;
 }

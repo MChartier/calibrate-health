@@ -727,11 +727,15 @@ test('food route: PATCH /:id validates and computes updateData', async () => {
   };
 
   let receivedUpdateData = null;
+  let receivedOwnershipLookup = null;
   const updatedRow = { id: 1, user_id: 7, calories: 220, servings_consumed: 2 };
 
   const prismaStub = {
     foodLog: {
-      findFirst: async () => existingRow,
+      findFirst: async (args) => {
+        receivedOwnershipLookup = args;
+        return existingRow;
+      },
       update: async ({ data }) => {
         receivedUpdateData = data;
         return updatedRow;
@@ -751,13 +755,18 @@ test('food route: PATCH /:id validates and computes updateData', async () => {
   await handler(req, res);
   assert.equal(res.statusCode, 200);
   assert.deepEqual(res.body, updatedRow);
+  assert.deepEqual(receivedOwnershipLookup.where, { id: 1, user_id: 7 });
   assert.deepEqual(receivedUpdateData, { servings_consumed: 2, calories: 220, calories_per_serving_snapshot: 110 });
 });
 
 test('food route: DELETE /:id validates ids and returns 204 on delete', async () => {
+  let receivedDeleteWhere = null;
   const prismaStub = {
     foodLog: {
-      deleteMany: async () => ({ count: 1 })
+      deleteMany: async ({ where }) => {
+        receivedDeleteWhere = where;
+        return { count: 1 };
+      }
     }
   };
 
@@ -770,4 +779,5 @@ test('food route: DELETE /:id validates ids and returns 204 on delete', async ()
   const res = createRes();
   await handler({ user: { id: 7 }, params: { id: '123' } }, res);
   assert.equal(res.statusCode, 204);
+  assert.deepEqual(receivedDeleteWhere, { id: 123, user_id: 7 });
 });

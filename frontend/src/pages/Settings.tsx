@@ -13,6 +13,7 @@ import {
     Typography
 } from '@mui/material';
 import DescriptionIcon from '@mui/icons-material/DescriptionRounded';
+import DeleteForeverRoundedIcon from '@mui/icons-material/DeleteForeverRounded';
 import GitHubIcon from '@mui/icons-material/GitHub';
 import { useTheme } from '@mui/material/styles';
 import { Link as RouterLink } from 'react-router-dom';
@@ -641,6 +642,14 @@ const Settings: React.FC = () => {
                                 startIcon={<DescriptionIcon />}
                             >
                                 {t('legal.privacyPolicy')}
+                            </Button>
+                            <Button
+                                component={RouterLink}
+                                to="/account-deletion"
+                                variant="outlined"
+                                startIcon={<DeleteForeverRoundedIcon />}
+                            >
+                                {t('legal.accountDeletion')}
                             </Button>
                             <Button
                                 component="a"

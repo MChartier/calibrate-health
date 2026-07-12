@@ -54,6 +54,9 @@ fun CalibrateWearApp(
     onContinueOnPhone: (WearSummary) -> Unit = {},
     disconnecting: Boolean = false,
     disconnectError: String? = null,
+    publicResourceHandoffStatus: String? = null,
+    onOpenPrivacyOnPhone: () -> Unit = {},
+    onOpenAccountDeletionOnPhone: () -> Unit = {},
     onDisconnect: () -> Unit = {},
     reminderDeepLink: WearReminderDeepLink? = null,
     reminderDeepLinkRequest: Long = 0,
@@ -90,6 +93,9 @@ fun CalibrateWearApp(
                         serverConfig = serverConfig,
                         disconnecting = disconnecting,
                         disconnectError = disconnectError,
+                        publicResourceHandoffStatus = publicResourceHandoffStatus,
+                        onOpenPrivacyOnPhone = onOpenPrivacyOnPhone,
+                        onOpenAccountDeletionOnPhone = onOpenAccountDeletionOnPhone,
                         onDisconnect = onDisconnect
                     )
                 }
@@ -361,6 +367,9 @@ private fun ConnectionScreen(
     serverConfig: WearServerConfig,
     disconnecting: Boolean,
     disconnectError: String?,
+    publicResourceHandoffStatus: String?,
+    onOpenPrivacyOnPhone: () -> Unit,
+    onOpenAccountDeletionOnPhone: () -> Unit,
     onDisconnect: () -> Unit
 ) {
     var confirmDisconnect by remember(appState) { mutableStateOf(false) }
@@ -384,6 +393,26 @@ private fun ConnectionScreen(
             }
             item { StatusText(connectionDetail(appState)) }
             disconnectError?.let { error -> item { StatusText(error) } }
+            if (appState is WearAppState.Paired || appState is WearAppState.Ready) {
+                item { SectionTitle("Privacy and account") }
+                item {
+                    Button(
+                        onClick = onOpenPrivacyOnPhone,
+                        label = { Text("Privacy policy") },
+                        secondaryLabel = { Text("Open public policy on phone") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+                item {
+                    Button(
+                        onClick = onOpenAccountDeletionOnPhone,
+                        label = { Text("Account deletion") },
+                        secondaryLabel = { Text("Open public request page on phone") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+                publicResourceHandoffStatus?.let { status -> item { StatusText(status) } }
+            }
             if (
                 appState is WearAppState.Paired || appState is WearAppState.Ready ||
                 appState is WearAppState.PairingError || disconnectError != null

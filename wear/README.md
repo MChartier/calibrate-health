@@ -6,15 +6,16 @@ Standalone native Kotlin/Compose application for the Calibrate Wear OS companion
 ## Variants
 
 - `debug`: debug-signed and defaults to the emulator host at `http://10.0.2.2:3000`.
-- `internal`: debug-signed for owned-device installs and defaults to the hosted server.
+- `internal`: uses shared release signing when all signing values are supplied, otherwise falls back to the phone debug key; defaults to the hosted server.
 - `release`: release signing is supplied outside the repository.
 
 Every variant uses `app.calibratehealth.mobile`, matching the phone app. Wear Data Layer requires the installed
-phone and watch artifacts to have both the same application ID and the same signing identity. Debug/internal builds
-therefore pair with a debug-signed phone build, while production phone and watch artifacts must use the same release
-key. The variants are alternatives and cannot be installed side by side on one device.
+phone and watch artifacts to have both the same application ID and the same signing identity. Debug builds and
+debug-fallback internal builds pair with a debug-signed phone build. A release-signed internal build pairs only with
+a phone artifact signed by that same release identity. Production phone and watch artifacts must also use the same
+release key. The variants are alternatives and cannot be installed side by side on one device.
 
-Debug and internal builds use the exact debug keystore generated for the phone at
+Debug builds, and internal builds without release-signing values, use the exact debug keystore generated for the phone at
 `mobile/android/app/debug.keystore`, with the standard `android` / `androiddebugkey` credentials. Generate it before
 configuring the Wear build:
 
@@ -77,6 +78,12 @@ only from the exact phone node stored during pairing, and schedule the same cons
 
 The watch publishes the `calibrate_wear_pairing_v1` capability through `android_wear_capabilities`. This capability is
 only for phone-side discovery and short-lived coordination; server health data never travels through it.
+
+After server-confirmed account deletion, the phone sends a short-lived, account-bound disconnect command to the exact
+paired node before erasing its own pairing metadata. The watch accepts it only from the retained phone node with an
+exact server, user, and watch-device match, then runs the same credential, cache, outbox, reminder, and pairing cleanup
+as watch-local disconnect. If the watch is unreachable during deletion, phone data is still cleared; disconnect from
+the watch UI before pairing or signing in again.
 
 ## Offline storage and outbox
 

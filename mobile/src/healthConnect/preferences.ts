@@ -3,6 +3,10 @@ import {
     HEALTH_CONNECT_FEATURES,
     type HealthConnectFeatureSelection
 } from './types';
+import { healthConnectAccountScope } from './storageScope';
+
+const STORAGE_KEY_PREFIX = '@calibrate/health-connect/preferences/v1';
+const LAST_SUCCESS_STORAGE_KEY_PREFIX = '@calibrate/health-connect/last-success/v1';
 
 export type StoredHealthConnectPreferences = {
     connected: boolean;
@@ -15,6 +19,14 @@ export const DEFAULT_HEALTH_CONNECT_PREFERENCES: StoredHealthConnectPreferences 
     paused: false,
     selection: DEFAULT_HEALTH_CONNECT_SELECTION
 };
+
+export function healthConnectPreferencesStorageKey(serverUrl: string, userId: number): string {
+    return `${STORAGE_KEY_PREFIX}/${healthConnectAccountScope(serverUrl, userId)}`;
+}
+
+export function healthConnectLastSuccessStorageKey(serverUrl: string, userId: number): string {
+    return `${LAST_SUCCESS_STORAGE_KEY_PREFIX}/${healthConnectAccountScope(serverUrl, userId)}`;
+}
 
 /** Safely hydrate preferences written by older or interrupted app versions. */
 export function parseStoredHealthConnectPreferences(value: string | null): StoredHealthConnectPreferences {

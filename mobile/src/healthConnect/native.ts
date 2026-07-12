@@ -113,6 +113,7 @@ export async function openHealthConnectAccess(): Promise<void> {
 }
 
 export async function disconnectHealthConnect(): Promise<RevokeAllPermissionsResponse | void> {
+    if (Platform.OS !== 'android') return;
     const native = await loadNativeModule();
     return native.revokeAllPermissions();
 }

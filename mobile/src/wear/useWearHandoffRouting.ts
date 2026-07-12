@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useRef } from 'react';
-import { AppState } from 'react-native';
+import { AppState, Linking } from 'react-native';
 import { router } from 'expo-router';
 import {
     getPendingWearHandoffs,
     getWearHandoffHref,
+    getWearHandoffPublicUrl,
     markWearHandoffsHandled,
-    processWearHandoffInbox
+    processWearHandoffInbox,
+    selectNextWearHandoffBatch
 } from './handoff';
 
 // The bridge persists messages but does not emit JS events; poll only while foregrounded for prompt handoff.
@@ -28,16 +30,17 @@ export function useWearHandoffRouting(options: {
                 userId: options.userId
             });
             const pending = await getPendingWearHandoffs(options.serverOrigin, options.userId);
-            if (pending.length === 0) return;
-            // A burst of watch taps represents the same user intent; route the newest request once.
-            const newest = pending.reduce((latest, handoff) =>
-                handoff.receivedAt > latest.receivedAt ? handoff : latest
-            );
-            router.push(getWearHandoffHref(newest));
+            const batch = selectNextWearHandoffBatch(pending);
+            if (!batch) return;
+            const publicUrl = getWearHandoffPublicUrl(batch.handoff);
+            const appHref = getWearHandoffHref(batch.handoff);
+            if (publicUrl) await Linking.openURL(publicUrl);
+            else if (appHref) router.push(appHref);
+            else return;
             await markWearHandoffsHandled(
                 options.serverOrigin,
                 options.userId,
-                pending.map((handoff) => handoff.messageId)
+                batch.messageIds
             );
         } catch {
             // Native inbox or AsyncStorage retains the request for the next foreground attempt.

@@ -19,15 +19,12 @@ export type WearHandoff = {
     nodeId: string;
     serverOrigin: string;
     userId: number;
-    destination: 'food_log';
-    localDate: string;
+    destination: 'food_log' | 'privacy' | 'account_deletion';
+    localDate: string | null;
     receivedAt: number;
 };
 
-type WearHandoffPayload = Pick<
-    WearHandoff,
-    'serverOrigin' | 'userId' | 'destination' | 'localDate'
->;
+type WearHandoffPayload = Pick<WearHandoff, 'serverOrigin' | 'userId' | 'destination' | 'localDate'>;
 
 type WearInboxTransport = {
     listMessages(): WearPairingMessage[];
@@ -77,22 +74,32 @@ export function parseWearHandoffPayload(payload: string): WearHandoffPayload | n
         const parsed = JSON.parse(payload) as unknown;
         if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return null;
         const value = parsed as Record<string, unknown>;
-        const allowedKeys = new Set([
-            'protocol_version', 'server_origin', 'user_id', 'destination', 'local_date'
-        ]);
+        const baseKeys = ['protocol_version', 'server_origin', 'user_id', 'destination'];
+        const allowedKeys = new Set([...baseKeys, 'local_date']);
         if (Object.keys(value).some((key) => !allowedKeys.has(key))) return null;
-        if (Object.keys(value).length !== allowedKeys.size) return null;
         if (value.protocol_version !== WEAR_PAIRING_PROTOCOL_VERSION) return null;
         if (!Number.isSafeInteger(value.user_id) || (value.user_id as number) <= 0) return null;
-        if (value.destination !== 'food_log' || !isDateOnly(value.local_date)) return null;
         if (typeof value.server_origin !== 'string') return null;
         const serverOrigin = canonicalOrigin(value.server_origin);
         if (!serverOrigin) return null;
+        const expectedKeys = value.destination === 'food_log' ? [...baseKeys, 'local_date'] : baseKeys;
+        if (Object.keys(value).length !== expectedKeys.length) return null;
+        if (expectedKeys.some((key) => !(key in value))) return null;
+        if (value.destination === 'food_log') {
+            if (!isDateOnly(value.local_date)) return null;
+            return {
+                serverOrigin,
+                userId: value.user_id as number,
+                destination: 'food_log',
+                localDate: value.local_date
+            };
+        }
+        if (value.destination !== 'privacy' && value.destination !== 'account_deletion') return null;
         return {
             serverOrigin,
             userId: value.user_id as number,
-            destination: 'food_log',
-            localDate: value.local_date
+            destination: value.destination,
+            localDate: null
         };
     } catch {
         return null;
@@ -108,8 +115,11 @@ function isStoredHandoff(value: unknown, serverOrigin: string, userId: number): 
         handoff.nodeId.length <= MAX_NODE_ID_LENGTH
         && handoff.serverOrigin === serverOrigin
         && handoff.userId === userId
-        && handoff.destination === 'food_log'
-        && isDateOnly(handoff.localDate)
+        && (
+            (handoff.destination === 'food_log' && isDateOnly(handoff.localDate)) ||
+            ((handoff.destination === 'privacy' || handoff.destination === 'account_deletion') &&
+                handoff.localDate === null)
+        )
         && typeof handoff.receivedAt === 'number' && Number.isFinite(handoff.receivedAt) && handoff.receivedAt > 0;
 }
 
@@ -162,6 +172,33 @@ export async function markWearHandoffsHandled(
     const key = storageKey(origin, userId);
     if (remaining.length === 0) await AsyncStorage.removeItem(key);
     else await AsyncStorage.setItem(key, JSON.stringify(remaining));
+}
+
+/**
+ * Route one distinct intent at a time while coalescing repeated taps for that same destination.
+ * This prevents a later legal handoff from discarding an earlier food-log request (and vice versa).
+ */
+export function selectNextWearHandoffBatch(handoffs: WearHandoff[]): {
+    handoff: WearHandoff;
+    messageIds: string[];
+} | null {
+    if (handoffs.length === 0) return null;
+    const handoff = handoffs.reduce((earliest, candidate) => {
+        if (candidate.receivedAt < earliest.receivedAt) return candidate;
+        if (candidate.receivedAt === earliest.receivedAt && candidate.messageId < earliest.messageId) return candidate;
+        return earliest;
+    });
+    const messageIds = handoffs
+        .filter((candidate) =>
+            candidate.destination === handoff.destination && candidate.localDate === handoff.localDate
+        )
+        .map(({ messageId }) => messageId);
+    return { handoff, messageIds };
+}
+
+/** Remove account-scoped phone handoffs during account deletion or explicit unpairing. */
+export async function clearWearHandoffStorage(serverOrigin: string, userId: number): Promise<void> {
+    await AsyncStorage.removeItem(storageKey(new URL(serverOrigin).origin, userId));
 }
 
 /**
@@ -232,9 +269,17 @@ export async function processWearHandoffInbox(options: {
     return { persisted, errors };
 }
 
-export function getWearHandoffHref(handoff: WearHandoff): Href {
+export function getWearHandoffHref(handoff: WearHandoff): Href | null {
+    if (handoff.destination !== 'food_log' || handoff.localDate === null) return null;
     return {
         pathname: '/(tabs)/log',
         params: { date: handoff.localDate }
     };
+}
+
+/** Legal handoffs are restricted to fixed public paths on the already-bound account server. */
+export function getWearHandoffPublicUrl(handoff: WearHandoff): string | null {
+    if (handoff.destination === 'privacy') return `${handoff.serverOrigin}/privacy`;
+    if (handoff.destination === 'account_deletion') return `${handoff.serverOrigin}/account-deletion`;
+    return null;
 }

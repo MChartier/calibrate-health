@@ -239,19 +239,29 @@ test('activity route rejects out-of-order token pages before domain writes', asy
 
 test('activity route returns every requested date with optional summary and records', async () => {
   const localDate = new Date('2026-07-11T00:00:00Z');
+  let summaryWhere;
+  let recordWhere;
   const router = loadActivityRouter({
     activityDaySummary: {
-      findMany: async () => [storedSummary({
-        source_device_id: 'phone-1',
-        local_date: localDate,
-        steps: 1000,
-        active_calories_kcal: null,
-        total_calories_kcal: null,
-        exercise_minutes: null,
-        observed_at: new Date('2026-07-11T20:00:00Z')
-      })]
+      findMany: async ({ where }) => {
+        summaryWhere = where;
+        return [storedSummary({
+          source_device_id: 'phone-1',
+          local_date: localDate,
+          steps: 1000,
+          active_calories_kcal: null,
+          total_calories_kcal: null,
+          exercise_minutes: null,
+          observed_at: new Date('2026-07-11T20:00:00Z')
+        })];
+      }
     },
-    activityRecord: { findMany: async () => [] }
+    activityRecord: {
+      findMany: async ({ where }) => {
+        recordWhere = where;
+        return [];
+      }
+    }
   });
   const res = createRes();
   await getRouteHandler(router, 'get', '/days')({
@@ -264,6 +274,8 @@ test('activity route returns every requested date with optional summary and reco
   assert.equal(res.body.days[0].summary.steps, 1000);
   assert.equal(res.body.days[0].summary.source_device_id, undefined);
   assert.equal(res.body.days[1].summary, null);
+  assert.equal(summaryWhere.user_id, 7);
+  assert.equal(recordWhere.user_id, 7);
 });
 
 test('activity route authoritatively replaces a reset window and replays without a second delete', async () => {

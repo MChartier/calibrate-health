@@ -12,9 +12,11 @@ jest.mock('expo-crypto', () => ({ randomUUID: jest.fn(() => 'generated-request')
 jest.mock('@calibrate/wear-pairing', () => ({ __esModule: true, default: null }));
 
 import {
+    parseWearAccountDisconnectAck,
     parsePairingHello,
     processWearPairingInbox,
     readStoredWearPairing,
+    sendWearAccountDisconnect,
     startWearPairing,
     WEAR_PAIRING_PATHS
 } from './pairing';
@@ -24,6 +26,13 @@ const ORIGIN = 'https://health.example';
 const USER_ID = 7;
 const NOW = new Date('2026-07-11T20:00:00.000Z');
 const EXPIRES_AT = '2026-07-11T20:05:00.000Z';
+const storedPairing = {
+    nodeId: 'node-1',
+    watchDeviceId: 'watch-1',
+    watchDeviceName: 'Galaxy Watch Ultra',
+    serverOrigin: ORIGIN,
+    pairedAt: NOW.toISOString()
+};
 
 function makeTransport(messages: Array<{
     id: string;
@@ -49,6 +58,19 @@ function helloPayload(overrides: Record<string, unknown> = {}) {
         watch_device_id: 'watch-1',
         watch_device_name: 'Galaxy Watch Ultra',
         watch_public_key_spki: 'public-key',
+        ...overrides
+    });
+}
+
+function disconnectAckPayload(overrides: Record<string, unknown> = {}) {
+    return JSON.stringify({
+        kind: 'watch_account_disconnected',
+        request_id: 'disconnect-request',
+        protocol_version: 1,
+        server_origin: ORIGIN,
+        user_id: USER_ID,
+        watch_device_id: 'watch-1',
+        ok: true,
         ...overrides
     });
 }
@@ -83,6 +105,71 @@ describe('Wear phone pairing coordinator', () => {
         expect(parsePairingHello(helloPayload({ protocol_version: 2 }))).toBeNull();
         expect(parsePairingHello(helloPayload({ server_origin: `${ORIGIN}/path` }))).toBeNull();
         expect(parsePairingHello(helloPayload({ watch_device_name: '' }))).toBeNull();
+    });
+
+    it('requires a positive correlated cleanup ACK from the exact stored node', async () => {
+        const transport = makeTransport([{
+            id: 'disconnect-result',
+            nodeId: 'node-1',
+            path: WEAR_PAIRING_PATHS.ACCOUNT_DISCONNECT_RESULT,
+            payload: disconnectAckPayload(),
+            receivedAt: NOW.getTime()
+        }]);
+        await sendWearAccountDisconnect({
+            pairing: storedPairing,
+            userId: USER_ID,
+            transport,
+            nowEpochMs: NOW.getTime(),
+            requestId: 'disconnect-request'
+        });
+
+        expect(transport.sendMessage).toHaveBeenCalledWith(
+            'node-1',
+            WEAR_PAIRING_PATHS.ACCOUNT_DISCONNECT,
+            JSON.stringify({
+                kind: 'phone_account_deleted',
+                request_id: 'disconnect-request',
+                protocol_version: 1,
+                server_origin: ORIGIN,
+                user_id: USER_ID,
+                watch_device_id: 'watch-1',
+                issued_at_epoch_ms: NOW.getTime()
+            })
+        );
+        expect(transport.acknowledgeMessages).toHaveBeenCalledWith(['disconnect-result']);
+    });
+
+    it('rejects negative malformed and extra-field cleanup acknowledgements', () => {
+        expect(parseWearAccountDisconnectAck(disconnectAckPayload())).toEqual({
+            requestId: 'disconnect-request',
+            serverOrigin: ORIGIN,
+            userId: USER_ID,
+            watchDeviceId: 'watch-1'
+        });
+        expect(parseWearAccountDisconnectAck(disconnectAckPayload({ ok: false }))).toBeNull();
+        expect(parseWearAccountDisconnectAck(disconnectAckPayload({ extra: true }))).toBeNull();
+        expect(parseWearAccountDisconnectAck(disconnectAckPayload({ server_origin: `${ORIGIN}/path` }))).toBeNull();
+    });
+
+    it('times out with a manual-watch fallback when the ACK is from another node', async () => {
+        const transport = makeTransport([{
+            id: 'foreign-result',
+            nodeId: 'other-node',
+            path: WEAR_PAIRING_PATHS.ACCOUNT_DISCONNECT_RESULT,
+            payload: disconnectAckPayload(),
+            receivedAt: NOW.getTime()
+        }]);
+
+        await expect(sendWearAccountDisconnect({
+            pairing: storedPairing,
+            userId: USER_ID,
+            transport,
+            nowEpochMs: NOW.getTime(),
+            requestId: 'disconnect-request',
+            timeoutMs: 3,
+            pollIntervalMs: 1
+        })).rejects.toThrow('Disconnect Calibrate on the watch');
+        expect(transport.acknowledgeMessages).not.toHaveBeenCalled();
     });
 
     it('persists a phone-owned invite before contacting the selected node', async () => {

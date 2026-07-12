@@ -12,6 +12,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
+import app.calibratehealth.wear.actions.ContinueOnPhoneRequest
 import app.calibratehealth.wear.actions.DataLayerContinueOnPhoneMessenger
 import app.calibratehealth.wear.actions.WearHomeController
 import app.calibratehealth.wear.actions.WearLocalDisconnect
@@ -37,9 +38,11 @@ class MainActivity : ComponentActivity() {
     private val controllerScope = MainScope()
     private val disconnecting = mutableStateOf(false)
     private val disconnectError = mutableStateOf<String?>(null)
+    private val publicResourceHandoffStatus = mutableStateOf<String?>(null)
     private val reminderDeepLink = mutableStateOf<WearReminderDeepLink?>(null)
     private val reminderDeepLinkRequest = mutableStateOf(0L)
     private lateinit var homeController: WearHomeController
+    private lateinit var continueOnPhoneMessenger: DataLayerContinueOnPhoneMessenger
     private lateinit var localDisconnect: WearLocalDisconnect
     private val pairingStateChanged: () -> Unit = {
         runOnUiThread { refreshPairingState() }
@@ -49,6 +52,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         val database = CalibrateWearDatabase.get(this)
         localDisconnect = WearLocalDisconnect(this)
+        continueOnPhoneMessenger = DataLayerContinueOnPhoneMessenger(this)
         homeController = WearHomeController(
             snapshots = RoomDailySnapshotRepository(database.dailySnapshotDao()),
             quickAdds = RoomQuickAddRepository(database.quickAddItemDao()),
@@ -58,7 +62,7 @@ class MainActivity : ComponentActivity() {
                 WorkManagerOutboxScheduler(this)
             ),
             mutationFactory = QueuedMutationFactory(),
-            continueOnPhone = DataLayerContinueOnPhoneMessenger(this),
+            continueOnPhone = continueOnPhoneMessenger,
             scope = controllerScope
         )
         observeOutboxWork()
@@ -84,6 +88,16 @@ class MainActivity : ComponentActivity() {
                 onContinueOnPhone = homeController::continueOnPhone,
                 disconnecting = disconnecting.value,
                 disconnectError = disconnectError.value,
+                publicResourceHandoffStatus = publicResourceHandoffStatus.value,
+                onOpenPrivacyOnPhone = {
+                    openPublicResourceOnPhone(ContinueOnPhoneRequest.Privacy, "Privacy policy opened on phone.")
+                },
+                onOpenAccountDeletionOnPhone = {
+                    openPublicResourceOnPhone(
+                        ContinueOnPhoneRequest.AccountDeletion,
+                        "Account deletion opened on phone."
+                    )
+                },
                 onDisconnect = ::disconnectThisWatch,
                 reminderDeepLink = reminderDeepLink.value,
                 reminderDeepLinkRequest = reminderDeepLinkRequest.value
@@ -154,7 +168,10 @@ class MainActivity : ComponentActivity() {
                 state.confirmationPending
             )
         }
-        if (nextState !is WearAppState.Paired) reminderDeepLink.value = null
+        if (nextState !is WearAppState.Paired) {
+            reminderDeepLink.value = null
+            publicResourceHandoffStatus.value = null
+        }
         appState.value = nextState
     }
 
@@ -169,6 +186,20 @@ class MainActivity : ComponentActivity() {
                 "Local data could not be fully cleared. Pairing access was removed; try again before re-pairing."
             }
             refreshPairingState()
+        }
+    }
+
+    /** Legal links use the paired phone browser; no watch credentials or free-form URL cross Data Layer. */
+    private fun openPublicResourceOnPhone(request: ContinueOnPhoneRequest, successMessage: String) {
+        publicResourceHandoffStatus.value = "Opening on phone..."
+        continueOnPhoneMessenger.send(request) { result ->
+            runOnUiThread {
+                publicResourceHandoffStatus.value = if (result.isSuccess) {
+                    successMessage
+                } else {
+                    "Phone is not reachable. Try again when it is connected."
+                }
+            }
         }
     }
 

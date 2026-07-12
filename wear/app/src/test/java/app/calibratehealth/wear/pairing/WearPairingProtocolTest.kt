@@ -50,6 +50,47 @@ class WearPairingProtocolTest {
     }
 
     @Test
+    fun `account disconnect requires the retained phone account and a fresh command`() {
+        val fields = PairingFields(
+            kind = "phone_account_deleted",
+            requestId = "disconnect-request",
+            protocolVersion = 1,
+            serverOrigin = origin,
+            userId = 7,
+            watchDeviceId = "watch-id",
+            issuedAtEpochMs = now
+        )
+        fun parse(value: PairingFields = fields, nodeId: String = "phone-node", at: Long = now) =
+            parsePhoneAccountDisconnect(value, nodeId, "phone-node", origin, 7, "watch-id", at)
+
+        assertNotNull(parse())
+        assertNull(parse(fields.copy(requestId = null)))
+        assertNull(parse(nodeId = "other-phone"))
+        assertNull(parse(fields.copy(userId = 8)))
+        assertNull(parse(fields.copy(serverOrigin = "https://other.example.com")))
+        assertNull(parse(fields.copy(watchDeviceId = "other-watch")))
+        assertNull(parse(at = now + MAX_PAIRING_WINDOW_MS + 1))
+    }
+
+    @Test
+    fun `account disconnect result is a positive correlated cleanup acknowledgement`() {
+        assertEquals(
+            "{\"kind\":\"watch_account_disconnected\",\"request_id\":\"disconnect-request\"," +
+                "\"protocol_version\":1,\"server_origin\":\"https://health.example.com\"," +
+                "\"user_id\":7,\"watch_device_id\":\"watch-id\",\"ok\":true}",
+            buildAccountDisconnectResult(
+                PhoneAccountDisconnect(
+                    requestId = "disconnect-request",
+                    serverOrigin = origin,
+                    userId = 7,
+                    watchDeviceId = "watch-id",
+                    issuedAtEpochMs = now
+                )
+            )
+        )
+    }
+
+    @Test
     fun `signing payload exactly matches backend protocol bytes`() {
         val payload = buildPairingSigningPayload(
             origin,

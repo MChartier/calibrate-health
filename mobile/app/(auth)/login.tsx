@@ -9,10 +9,14 @@ import { ServerUrlControl } from '../../src/components/ServerUrlControl';
 import { SectionHeader } from '../../src/components/SectionHeader';
 import { TextField } from '../../src/components/TextField';
 import { useAuth } from '../../src/auth/AuthContext';
+import { accountDeletionCleanupGuidance } from '../../src/account/accountDeletionNotice';
 import { colors, spacing } from '../../src/theme';
 
 export default function LoginScreen() {
-    const { login, serverUrl, setServerUrl, testServerUrl, serverConnection, authError } = useAuth();
+    const {
+        login, serverUrl, setServerUrl, testServerUrl, serverConnection, authError,
+        accountDeletionCleanupNotice, acknowledgeAccountDeletionCleanupNotice
+    } = useAuth();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [serverInput, setServerInput] = useState(serverUrl);
@@ -24,6 +28,7 @@ export default function LoginScreen() {
     }, [serverUrl]);
 
     async function handleLogin() {
+        if (accountDeletionCleanupNotice) return;
         setIsSubmitting(true);
         setError(null);
         try {
@@ -43,6 +48,20 @@ export default function LoginScreen() {
                 <AppText variant="title">calibrate</AppText>
                 <AppText variant="muted">Fast daily logging with the same food, weight, and goal data as the web app.</AppText>
             </View>
+
+            {accountDeletionCleanupNotice && (
+                <AppCard accessibilityLiveRegion="polite" style={styles.cleanupNotice}>
+                    <SectionHeader
+                        title="Account deleted - device cleanup needed"
+                        description={accountDeletionCleanupGuidance(accountDeletionCleanupNotice)}
+                    />
+                    <AppButton
+                        title="I completed these steps"
+                        variant="secondary"
+                        onPress={() => void acknowledgeAccountDeletionCleanupNotice()}
+                    />
+                </AppCard>
+            )}
 
             <AppCard>
                 <SectionHeader title="Sign in" description="Use your Calibrate account." />
@@ -66,14 +85,20 @@ export default function LoginScreen() {
                     onTestConnection={testServerUrl}
                 />
                 {(error || authError) && <AppText style={styles.error}>{error ?? authError}</AppText>}
-                <AppButton title={isSubmitting ? 'Signing in...' : 'Sign in'} disabled={isSubmitting} onPress={() => void handleLogin()} />
+                <AppButton
+                    title={isSubmitting ? 'Signing in...' : 'Sign in'}
+                    disabled={isSubmitting || Boolean(accountDeletionCleanupNotice)}
+                    onPress={() => void handleLogin()}
+                />
             </AppCard>
 
-            <Pressable>
-                <Link href="/(auth)/register" asChild>
-                    <AppText style={styles.link}>Create an account</AppText>
-                </Link>
-            </Pressable>
+            {!accountDeletionCleanupNotice && (
+                <Pressable>
+                    <Link href="/(auth)/register" asChild>
+                        <AppText style={styles.link}>Create an account</AppText>
+                    </Link>
+                </Pressable>
+            )}
         </Screen>
     );
 }
@@ -91,6 +116,9 @@ const styles = StyleSheet.create({
     },
     error: {
         color: colors.danger
+    },
+    cleanupNotice: {
+        borderColor: colors.warning
     },
     link: {
         color: colors.primary,

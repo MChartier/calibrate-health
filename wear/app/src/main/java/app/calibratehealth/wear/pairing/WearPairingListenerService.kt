@@ -2,14 +2,15 @@ package app.calibratehealth.wear.pairing
 
 import android.content.Context
 import app.calibratehealth.wear.BuildConfig
+import app.calibratehealth.wear.actions.WearLocalDisconnect
 import app.calibratehealth.wear.data.local.CalibrateWearDatabase
 import app.calibratehealth.wear.data.security.AccountSessionCoordinator
 import app.calibratehealth.wear.data.security.AndroidKeystoreTokenStore
 import app.calibratehealth.wear.data.security.RoomAccountDataStore
-import app.calibratehealth.wear.sync.WearSyncScheduler
-import app.calibratehealth.wear.tile.CalibrateTileUpdate
 import app.calibratehealth.wear.notifications.WearReminderNotifier
 import app.calibratehealth.wear.sync.SyncInvalidationInbox
+import app.calibratehealth.wear.sync.WearSyncScheduler
+import app.calibratehealth.wear.tile.CalibrateTileUpdate
 import com.google.android.gms.tasks.Tasks
 import com.google.android.gms.wearable.MessageEvent
 import com.google.android.gms.wearable.Wearable
@@ -26,7 +27,10 @@ import java.util.concurrent.TimeUnit
 class WearPairingListenerService : WearableListenerService() {
     override fun onMessageReceived(event: MessageEvent) {
         if (event.data.size > MAX_PAIRING_MESSAGE_BYTES) return
-        if (event.path != PAIR_HELLO_PATH && event.path != PAIR_CREDENTIAL_PATH) return
+        if (
+            event.path != PAIR_HELLO_PATH && event.path != PAIR_CREDENTIAL_PATH &&
+            event.path != ACCOUNT_DISCONNECT_PATH
+        ) return
         val path = event.path
         val nodeId = event.sourceNodeId.takeIf { it.isNotBlank() && it.length <= 256 } ?: return
         val payload = event.data.copyOf()
@@ -36,6 +40,7 @@ class WearPairingListenerService : WearableListenerService() {
                 when (path) {
                     PAIR_HELLO_PATH -> processInvite(context, nodeId, payload)
                     PAIR_CREDENTIAL_PATH -> processCredential(context, nodeId, payload)
+                    ACCOUNT_DISCONNECT_PATH -> processAccountDisconnect(context, nodeId, payload)
                 }
             }
         } catch (_: RejectedExecutionException) {
@@ -184,6 +189,39 @@ class WearPairingListenerService : WearableListenerService() {
             runCatching { sendMessage(context, pending.phoneNodeId, PAIR_RESULT_PATH, resultPayload) }
                 .onSuccess { stateStore.clearPendingResult() }
             // A lost phone confirmation never discards a valid server-backed session.
+            PairingStateEvents.notifyChanged()
+        }
+
+        fun processAccountDisconnect(context: Context, nodeId: String, bytes: ByteArray) {
+            val tokenStore = AndroidKeystoreTokenStore(context)
+            val session = runCatching { tokenStore.read() }.getOrNull() ?: return
+            val binding = TrustedPhoneBindingStore(context).read(session) ?: return
+            val fields = parseFields(bytes) ?: return
+            val command = parsePhoneAccountDisconnect(
+                fields = fields,
+                sourceNodeId = nodeId,
+                expectedNodeId = binding.nodeId,
+                expectedServerOrigin = binding.serverOrigin,
+                expectedUserId = binding.userId,
+                expectedWatchDeviceId = binding.watchDeviceId,
+                nowEpochMs = System.currentTimeMillis()
+            ) ?: return
+            val cleanup = runCatching { runBlocking { WearLocalDisconnect(context).disconnect().getOrThrow() } }
+            if (cleanup.isSuccess) {
+                // MessageClient delivery is insufficient; ACK only after the cleanup coordinator reports success.
+                runCatching {
+                    sendMessage(
+                        context,
+                        nodeId,
+                        ACCOUNT_DISCONNECT_RESULT_PATH,
+                        buildAccountDisconnectResult(command)
+                    )
+                }
+            } else {
+                PairingStateStore(context).setError(
+                    "This account was deleted, but watch cleanup was incomplete. Retry local cleanup."
+                )
+            }
             PairingStateEvents.notifyChanged()
         }
 

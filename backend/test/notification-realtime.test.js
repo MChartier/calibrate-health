@@ -166,6 +166,7 @@ test('notification stream writes user-scoped events and releases its subscriptio
 
 test('in-app notification mutations publish realtime updates when rows change', async () => {
   const publishCalls = [];
+  const updateCalls = [];
   const { markInAppNotificationDismissed, markInAppNotificationRead } = loadInAppNotificationService({
     publishNotificationRealtimeUpdateStub: (args) => {
       publishCalls.push(args);
@@ -176,7 +177,10 @@ test('in-app notification mutations publish realtime updates when rows change', 
   const now = new Date('2026-04-24T12:00:00.000Z');
   const db = {
     inAppNotification: {
-      updateMany: async () => ({ count: 1 })
+      updateMany: async (args) => {
+        updateCalls.push(args);
+        return { count: 1 };
+      }
     }
   };
 
@@ -195,6 +199,19 @@ test('in-app notification mutations publish realtime updates when rows change', 
 
   assert.equal(readCount, 1);
   assert.equal(dismissCount, 1);
+  assert.deepEqual(updateCalls[0].where, {
+    id: 10,
+    user_id: 7,
+    dismissed_at: null,
+    resolved_at: null,
+    read_at: null
+  });
+  assert.deepEqual(updateCalls[1].where, {
+    id: 10,
+    user_id: 7,
+    dismissed_at: null,
+    resolved_at: null
+  });
   assert.equal(publishCalls.length, 2);
   assert.deepEqual(
     publishCalls.map((call) => call.reason),

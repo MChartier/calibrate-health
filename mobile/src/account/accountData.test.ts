@@ -111,9 +111,15 @@ describe('account deletion confirmation', () => {
         await deleteAccountAndClearLocalData('current-password', {
             deleteRemoteAccount: async (password) => { events.push(`remote:${password}`); },
             discardOfflineChanges: async () => { events.push('offline'); },
+            clearHealthConnectData: async () => { events.push('health'); },
+            clearWearData: async () => { events.push('wear'); },
+            persistCleanupNotice: async () => { events.push('notice'); },
             clearLocalSession: async () => { events.push('session'); }
         });
-        expect(events).toEqual(['remote:current-password', 'offline', 'session']);
+        expect(events.slice(0, 4)).toEqual(expect.arrayContaining([
+            'remote:current-password', 'offline', 'health', 'wear'
+        ]));
+        expect(events.at(-1)).toBe('session');
     });
 
     it('preserves the session when the server rejects deletion', async () => {
@@ -122,6 +128,9 @@ describe('account deletion confirmation', () => {
         await expect(deleteAccountAndClearLocalData('wrong-password', {
             deleteRemoteAccount: async () => { throw new Error('incorrect password'); },
             discardOfflineChanges,
+            clearHealthConnectData: jest.fn(async () => undefined),
+            clearWearData: jest.fn(async () => undefined),
+            persistCleanupNotice: jest.fn(async () => undefined),
             clearLocalSession
         })).rejects.toThrow('incorrect password');
         expect(discardOfflineChanges).not.toHaveBeenCalled();
@@ -133,8 +142,64 @@ describe('account deletion confirmation', () => {
         await expect(deleteAccountAndClearLocalData('current-password', {
             deleteRemoteAccount: async () => undefined,
             discardOfflineChanges: async () => { throw new Error('database cleanup failed'); },
+            clearHealthConnectData: async () => undefined,
+            clearWearData: async () => undefined,
+            persistCleanupNotice: jest.fn(async () => undefined),
             clearLocalSession
-        })).rejects.toThrow('database cleanup failed');
+        })).resolves.toBeUndefined();
         expect(clearLocalSession).toHaveBeenCalledTimes(1);
+    });
+
+    it('attempts every cleanup and surfaces an unreachable watch after credentials are cleared', async () => {
+        const events: string[] = [];
+        const persistCleanupNotice = jest.fn(async () => undefined);
+        await expect(deleteAccountAndClearLocalData('current-password', {
+            deleteRemoteAccount: async () => undefined,
+            discardOfflineChanges: async () => { events.push('offline'); throw new Error('outbox failed'); },
+            clearHealthConnectData: async () => { events.push('health'); throw new Error('health failed'); },
+            clearWearData: async () => { events.push('wear'); throw new Error('Paired watch was unreachable. Disconnect Calibrate on the watch.'); },
+            persistCleanupNotice,
+            clearLocalSession: async () => { events.push('session'); }
+        })).resolves.toBeUndefined();
+        expect(events).toEqual(expect.arrayContaining(['offline', 'health', 'wear', 'session']));
+        expect(events.at(-1)).toBe('session');
+        expect(persistCleanupNotice).toHaveBeenCalledWith(expect.objectContaining({
+            watchCleanupRequired: true,
+            appDataCleanupRequired: true
+        }));
+    });
+
+    it('captures synchronous cleanup throws without skipping other cleanup or sign-out', async () => {
+        const events: string[] = [];
+        const persistCleanupNotice = jest.fn(async () => undefined);
+        await deleteAccountAndClearLocalData('current-password', {
+            deleteRemoteAccount: async () => undefined,
+            discardOfflineChanges: () => { throw new Error('sync outbox failure'); },
+            clearHealthConnectData: async () => { events.push('health'); },
+            clearWearData: async () => { events.push('wear'); },
+            persistCleanupNotice,
+            clearLocalSession: async () => { events.push('session'); }
+        });
+
+        expect(events).toEqual(expect.arrayContaining(['health', 'wear', 'session']));
+        expect(persistCleanupNotice).toHaveBeenCalledWith(expect.objectContaining({
+            appDataCleanupRequired: true
+        }));
+    });
+
+    it('persists credential recovery guidance when local-session clearing fails synchronously', async () => {
+        const persistCleanupNotice = jest.fn(async () => undefined);
+        await expect(deleteAccountAndClearLocalData('current-password', {
+            deleteRemoteAccount: async () => undefined,
+            discardOfflineChanges: async () => undefined,
+            clearHealthConnectData: async () => undefined,
+            clearWearData: async () => undefined,
+            persistCleanupNotice,
+            clearLocalSession: () => { throw new Error('secure storage unavailable'); }
+        })).rejects.toThrow('local sign-in credentials');
+        expect(persistCleanupNotice).toHaveBeenCalledWith(expect.objectContaining({
+            appDataCleanupRequired: true,
+            credentialCleanupRequired: true
+        }));
     });
 });

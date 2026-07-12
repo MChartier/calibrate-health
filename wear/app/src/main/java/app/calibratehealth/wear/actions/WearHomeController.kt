@@ -142,7 +142,7 @@ class WearHomeController(
     fun continueOnPhone(summary: WearSummary) {
         if (actionState.value.inProgress) return
         actionState.value = actionState.value.copy(inProgress = true)
-        continueOnPhone.send(summary.localDate) { result ->
+        continueOnPhone.send(ContinueOnPhoneRequest.FoodLog(summary.localDate)) { result ->
             scope.launch {
                 if (result.isSuccess) {
                     actionState.update { current -> current.copy(inProgress = false) }

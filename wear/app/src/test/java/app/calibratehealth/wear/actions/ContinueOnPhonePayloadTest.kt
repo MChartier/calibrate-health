@@ -11,14 +11,28 @@ class ContinueOnPhonePayloadTest {
         assertEquals(
             "{\"protocol_version\":1,\"server_origin\":\"https://health.example.com\"," +
                 "\"user_id\":42,\"destination\":\"food_log\",\"local_date\":\"2026-07-12\"}",
-            buildContinueOnPhonePayload(session(), "2026-07-12")
+            buildContinueOnPhonePayload(session(), ContinueOnPhoneRequest.FoodLog("2026-07-12"))
+        )
+    }
+
+    @Test
+    fun `public resource payloads contain only account scope and an allowlisted destination`() {
+        assertEquals(
+            "{\"protocol_version\":1,\"server_origin\":\"https://health.example.com\"," +
+                "\"user_id\":42,\"destination\":\"privacy\"}",
+            buildContinueOnPhonePayload(session(), ContinueOnPhoneRequest.Privacy)
+        )
+        assertEquals(
+            "{\"protocol_version\":1,\"server_origin\":\"https://health.example.com\"," +
+                "\"user_id\":42,\"destination\":\"account_deletion\"}",
+            buildContinueOnPhonePayload(session(), ContinueOnPhoneRequest.AccountDeletion)
         )
     }
 
     @Test
     fun `payload rejects noncanonical dates`() {
         assertThrows(IllegalArgumentException::class.java) {
-            buildContinueOnPhonePayload(session(), "2026-7-2")
+            buildContinueOnPhonePayload(session(), ContinueOnPhoneRequest.FoodLog("2026-7-2"))
         }
     }
 
