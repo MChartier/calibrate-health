@@ -130,10 +130,20 @@ test('watch snapshot is bounded, timezone-local, and derives current-session und
 
   assert.equal(isolationLevel, 'RepeatableRead');
   assert.equal(snapshot.local_date, '2026-07-11');
+  assert.equal(snapshot.weight_unit, 'KG');
   assert.equal(snapshot.calories.consumed, 1200);
   assert.equal(snapshot.calories.remaining, snapshot.calories.target - 1200);
   assert.equal(snapshot.weight.today_grams, null);
   assert.equal(snapshot.weight.latest_grams, 80000);
+  assert.match(snapshot.weight.latest_revision, /^[a-f0-9]{24}$/);
+  assert.equal(snapshot.weight.latest_date, '2026-07-10');
+  assert.equal(snapshot.activity.total_calories_kcal, 2200);
+  assert.equal(snapshot.activity.exercise_minutes, 25);
+  assert.equal(snapshot.activity.observed_at, '2026-07-11T18:30:00.000Z');
+  assert.equal(snapshot.staleness.activity_stale, false);
+  assert.equal(snapshot.staleness.activity_age_seconds, 5400);
+  assert.equal(snapshot.food_day.is_complete, true);
+  assert.equal(snapshot.food_day.completed_at, '2026-07-11T19:00:00.000Z');
   assert.equal(snapshot.quick_add.length, 3);
   assert.equal(snapshot.quick_add.filter((item) => item.id === 'my-food:12').length, 1);
   const refreshedRecipe = snapshot.quick_add.find((item) => item.id === 'my-food:13');
@@ -141,6 +151,9 @@ test('watch snapshot is bounded, timezone-local, and derives current-session und
   assert.equal(refreshedRecipe.calories, 700);
   assert.equal(refreshedRecipe.draft.my_food_id, 13);
   assert.equal(snapshot.undo_candidate.food_log_id, 88);
+  assert.equal(snapshot.undo_candidate.name, 'Oats');
+  assert.equal(snapshot.undo_candidate.calories, 300);
+  assert.equal(snapshot.undo_candidate.created_at, '2026-07-11T15:00:00.000Z');
   assert.ok(snapshot.food_day.revision);
   assert.equal(snapshot.weight.today_revision, null);
   assert.match(watchSnapshotEtag(snapshot.revision), /^W\/"watch-/);

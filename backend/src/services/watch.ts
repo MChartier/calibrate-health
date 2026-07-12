@@ -533,6 +533,7 @@ export async function buildWatchSnapshot(options: {
 
     const semantic = {
       local_date: localDateKey,
+      weight_unit: user.weight_unit,
       calories: { consumed: caloriesConsumed, target: calorieTarget, remaining: calorieTarget === null ? null : calorieTarget - caloriesConsumed, missing: calorieSummary.missing },
       activity: activity ? { steps: activity.steps, active_calories_kcal: activity.active_calories_kcal, total_calories_kcal: activity.total_calories_kcal, exercise_minutes: activity.exercise_minutes, observed_at: activity.observed_at.toISOString() } : null,
       food_day: {
@@ -544,6 +545,7 @@ export async function buildWatchSnapshot(options: {
         today_grams: todayWeight?.weight_grams ?? null,
         today_revision: todayWeight ? metricRevision(todayWeight) : null,
         latest_grams: latestWeight?.weight_grams ?? null,
+        latest_revision: latestWeight ? metricRevision(latestWeight) : null,
         latest_date: latestWeight?.date.toISOString().slice(0, 10) ?? null
       },
       quick_add: quickAdd,

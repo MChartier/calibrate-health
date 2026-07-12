@@ -1180,11 +1180,12 @@ components:
     WatchSnapshot:
       type: object
       additionalProperties: false
-      required: [server_time, timezone, local_date, revision, calories, activity, food_day, weight, quick_add, undo_candidate, staleness]
+      required: [server_time, timezone, local_date, weight_unit, revision, calories, activity, food_day, weight, quick_add, undo_candidate, staleness]
       properties:
         server_time: { type: string, format: date-time }
         timezone: { type: string }
         local_date: { type: string, format: date }
+        weight_unit: { type: string, enum: [KG, LB] }
         revision: { type: string }
         calories:
           type: object
@@ -1214,11 +1215,12 @@ components:
             revision: { type: [string, 'null'] }
         weight:
           type: object
-          required: [today_grams, today_revision, latest_grams, latest_date]
+          required: [today_grams, today_revision, latest_grams, latest_revision, latest_date]
           properties:
             today_grams: { type: [integer, 'null'] }
             today_revision: { type: [string, 'null'] }
             latest_grams: { type: [integer, 'null'] }
+            latest_revision: { type: [string, 'null'] }
             latest_date: { type: [string, 'null'], format: date }
         quick_add:
           type: array

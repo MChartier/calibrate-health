@@ -262,6 +262,7 @@ export type WatchSnapshot = {
     server_time: string;
     timezone: string;
     local_date: string;
+    weight_unit: 'KG' | 'LB';
     revision: string;
     calories: {
         consumed: number;
@@ -277,7 +278,13 @@ export type WatchSnapshot = {
         observed_at: string;
     } | null;
     food_day: { is_complete: boolean; completed_at: string | null; revision: string | null };
-    weight: { today_grams: number | null; today_revision: string | null; latest_grams: number | null; latest_date: string | null };
+    weight: {
+        today_grams: number | null;
+        today_revision: string | null;
+        latest_grams: number | null;
+        latest_revision: string | null;
+        latest_date: string | null;
+    };
     quick_add: WatchQuickAddDraft[];
     undo_candidate: { food_log_id: number; name: string; calories: number; created_at: string } | null;
     staleness: { activity_stale: boolean; activity_age_seconds: number | null };

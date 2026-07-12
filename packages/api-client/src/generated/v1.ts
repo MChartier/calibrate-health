@@ -809,6 +809,8 @@ export interface components {
             timezone: string;
             /** Format: date */
             local_date: string;
+            /** @enum {string} */
+            weight_unit: "KG" | "LB";
             revision: string;
             calories: {
                 consumed: number;
@@ -834,6 +836,7 @@ export interface components {
                 today_grams: number | null;
                 today_revision: string | null;
                 latest_grams: number | null;
+                latest_revision: string | null;
                 /** Format: date */
                 latest_date: string | null;
             };
