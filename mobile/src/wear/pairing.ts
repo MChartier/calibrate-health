@@ -10,7 +10,8 @@ export const WEAR_PAIRING_PROTOCOL_VERSION = 1;
 export const WEAR_PAIRING_PATHS = {
     HELLO: '/calibrate/v1/pair/hello',
     CREDENTIAL: '/calibrate/v1/pair/credential',
-    RESULT: '/calibrate/v1/pair/result'
+    RESULT: '/calibrate/v1/pair/result',
+    CONTINUE_ON_PHONE: '/calibrate/v1/continue-on-phone'
 } as const;
 
 type PairingHello = {
