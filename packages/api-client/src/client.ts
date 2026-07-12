@@ -362,6 +362,13 @@ export class CalibrateApiClient {
         return this.request<MyFoodDetail>(`/api/my-foods/${encodeURIComponent(String(id))}`);
     }
 
+    setMyFoodPinned(id: number, isPinned: boolean): Promise<MyFoodSummary> {
+        return this.request<MyFoodSummary>(`/api/my-foods/${encodeURIComponent(String(id))}/pin`, {
+            method: 'PATCH',
+            json: { is_pinned: isPinned }
+        });
+    }
+
     createMyFood(payload: Record<string, unknown>): Promise<MyFoodSummary> {
         return this.request<MyFoodSummary>('/api/my-foods/foods', {
             method: 'POST',

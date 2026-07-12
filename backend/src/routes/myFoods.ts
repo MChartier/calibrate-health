@@ -39,12 +39,44 @@ router.get('/', async (req, res) => {
     try {
         const items = await prisma.myFood.findMany({
             where,
-            orderBy: [{ name: 'asc' }, { id: 'asc' }]
+            // A stable final id tie-break keeps repeated mobile fetches deterministic.
+            orderBy: [{ is_pinned: 'desc' }, { name: 'asc' }, { id: 'asc' }]
         });
         res.json(items);
     } catch (err) {
         console.error(err);
         res.status(500).json({ message: 'Server error' });
+    }
+});
+
+router.patch('/:id/pin', async (req, res) => {
+    const user = req.user as any;
+    const id = parsePositiveInteger(req.params.id);
+    if (id === null) {
+        return res.status(400).json({ message: 'Invalid my food id' });
+    }
+    if (typeof req.body?.is_pinned !== 'boolean') {
+        return res.status(400).json({ message: 'is_pinned must be a boolean' });
+    }
+
+    try {
+        // updateMany keeps ownership in the write predicate and does not reveal another user's item.
+        const result = await prisma.myFood.updateMany({
+            where: { id, user_id: user.id },
+            data: { is_pinned: req.body.is_pinned }
+        });
+        if (result.count === 0) {
+            return res.status(404).json({ message: 'My food not found' });
+        }
+
+        const updated = await prisma.myFood.findFirst({ where: { id, user_id: user.id } });
+        if (!updated) {
+            return res.status(404).json({ message: 'My food not found' });
+        }
+        return res.json(updated);
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json({ message: 'Server error' });
     }
 });
 

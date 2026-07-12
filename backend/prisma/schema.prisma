@@ -243,6 +243,8 @@ model MyFood {
   serving_unit_label String
   /// Calories per serving. For recipes, this is computed from ingredient snapshots and yield.
   calories_per_serving Float
+  /// Per-user shortcut metadata; changing it never mutates recipe or food-log snapshots.
+  is_pinned   Boolean   @default(false)
   /// For recipes: total calories across all ingredient snapshots.
   recipe_total_calories Float?
   /// For recipes: number of servings yielded by the recipe (can be fractional).
@@ -257,6 +259,7 @@ model MyFood {
   food_logs   FoodLog[]
 
   @@index([user_id, name])
+  @@index([user_id, is_pinned(sort: Desc), name, id])
 }
 
 model RecipeIngredient {

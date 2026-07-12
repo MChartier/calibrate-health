@@ -20,6 +20,7 @@ import { useOfflineOutbox } from '../offline/provider';
 import { formatDateOnlyForDisplay } from '../utils/dates';
 import { formatCalories, formatMealPeriod } from '../utils/format';
 import { MEAL_OPTIONS } from '../utils/meals';
+import { selectQuickRecentFoods } from '../utils/myFoods';
 import { colors, radius, spacing } from '../theme';
 
 type AddFoodSheetProps = {
@@ -31,6 +32,7 @@ type AddFoodSheetProps = {
 };
 
 type AddFoodMode = 'quick' | 'search' | 'recipes';
+type SavedFoodLogRequest = { item: MyFoodSummary; servings: number };
 
 const ADD_FOOD_MODES: Array<{ value: AddFoodMode; label: string }> = [
     { value: 'quick', label: 'Quick' },
@@ -41,6 +43,7 @@ const ADD_FOOD_MODES: Array<{ value: AddFoodMode; label: string }> = [
 const SERVINGS_STEP = 0.1; // Food servings match the PWA precision and provider serving snapshots.
 const DEFAULT_RECENT_LIMIT = 5;
 const DEFAULT_RECIPE_LIMIT = 6;
+const DEFAULT_PINNED_LIMIT = 6;
 const ADD_FOOD_MODE_MIN_HEIGHT = 360; // Stabilizes the sheet while switching between Quick, Search, and Recipes.
 
 function foodResultCalories(result: FoodSearchResult): string {
@@ -154,10 +157,15 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
         queryFn: () => api.getRecentFoods({ q: query, limit: DEFAULT_RECENT_LIMIT }),
         enabled: visible && mode === 'search' && query.trim().length >= 2
     });
+    const quickRecentFoodsQuery = useQuery({
+        queryKey: ['mobile-recent-foods', 'quick'],
+        queryFn: () => api.getRecentFoods({ limit: DEFAULT_RECENT_LIMIT }),
+        enabled: visible && mode === 'quick'
+    });
     const myFoodsQuery = useQuery({
         queryKey: ['mobile-my-foods'],
         queryFn: () => api.getMyFoods(),
-        enabled: visible && mode === 'recipes'
+        enabled: visible && (mode === 'quick' || mode === 'recipes')
     });
     const isDayComplete = foodDayQuery.data?.is_complete ?? false;
 
@@ -218,12 +226,12 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
     });
 
     const logMyFood = useMutation({
-        mutationFn: (item: MyFoodSummary) =>
+        mutationFn: ({ item, servings: requestedServings }: SavedFoodLogRequest) =>
             createFoodLog({
                 date,
                 meal_period: meal,
                 my_food_id: item.id,
-                servings_consumed: parsePositiveServings(servings)
+                servings_consumed: requestedServings
             }),
         onSuccess: () => confirmLogged(true)
     });
@@ -255,6 +263,12 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
     const servingsError = servings.trim().length > 0 && !hasValidServings ? 'Servings must be a positive number.' : null;
     const recentFoodMatches = recentFoodsQuery.data?.items ?? [];
     const savedFoods = myFoodsQuery.data ?? [];
+    const pinnedFoods = savedFoods.filter((item) => item.is_pinned).slice(0, DEFAULT_PINNED_LIMIT);
+    const quickRecentFoods = selectQuickRecentFoods(
+        quickRecentFoodsQuery.data?.items ?? [],
+        pinnedFoods,
+        DEFAULT_RECENT_LIMIT
+    );
     const recipes = savedFoods.filter((item) => item.type === 'RECIPE');
     const recipeSearchText = recipeQuery.trim().toLowerCase();
     const visibleRecipes = recipes
@@ -270,6 +284,33 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
         if (mode === 'quick') {
             return (
                 <View style={styles.section}>
+                    {(pinnedFoods.length > 0 || quickRecentFoods.length > 0) && (
+                        <View style={styles.list}>
+                            {pinnedFoods.length > 0 && <AppText variant="label">Pinned</AppText>}
+                            {pinnedFoods.map((item) => (
+                                <FoodActionRow
+                                    key={`pinned-${item.id}`}
+                                    title={item.name}
+                                    subtitle={`${formatCalories(item.calories_per_serving)} per ${item.serving_size_quantity} ${item.serving_unit_label}`}
+                                    disabled={isDayComplete || isSubmitting}
+                                    onPress={() => logMyFood.mutate({ item, servings: 1 })}
+                                />
+                            ))}
+                            {quickRecentFoods.length > 0 && <AppText variant="label">Recent</AppText>}
+                            {quickRecentFoods.map((recent) => (
+                                <FoodActionRow
+                                    key={`quick-recent-${recent.id}`}
+                                    title={recent.name}
+                                    subtitle={`${formatCalories(recent.calories)} | ${recent.times_logged}x`}
+                                    disabled={isDayComplete || isSubmitting}
+                                    onPress={() => logRecentFood.mutate(recent)}
+                                />
+                            ))}
+                        </View>
+                    )}
+                    {(myFoodsQuery.isLoading || quickRecentFoodsQuery.isLoading) && (
+                        <AppText variant="muted">Loading pinned and recent foods...</AppText>
+                    )}
                     <AppText variant="label">Quick entry</AppText>
                     <TextField label="Food name" value={name} onChangeText={setName} editable={!isDayComplete && !isSubmitting} />
                     <NumberStepperField
@@ -411,7 +452,7 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
                             title={item.name}
                             subtitle={`${formatCalories(item.calories_per_serving)} per ${item.serving_size_quantity} ${item.serving_unit_label}`}
                             disabled={isDayComplete || isSubmitting || !hasValidServings}
-                            onPress={() => logMyFood.mutate(item)}
+                            onPress={() => logMyFood.mutate({ item, servings: parsePositiveServings(servings) })}
                         />
                     ))}
                     {myFoodsQuery.isLoading && <AppText variant="muted">Loading recipes...</AppText>}

@@ -14,6 +14,7 @@ import { SectionHeader } from '../src/components/SectionHeader';
 import { TextField } from '../src/components/TextField';
 import { useAuth } from '../src/auth/AuthContext';
 import { formatCalories } from '../src/utils/format';
+import { sortMyFoodsPinnedFirst } from '../src/utils/myFoods';
 import { colors, radius, spacing } from '../src/theme';
 
 type RecipeIngredientDraft = {
@@ -86,6 +87,18 @@ export default function MyFoodsScreen() {
         }
     });
 
+    const setPinned = useMutation({
+        mutationFn: (item: MyFoodSummary) => api.setMyFoodPinned(item.id, !item.is_pinned),
+        onSuccess: (updated) => {
+            queryClient.setQueryData<MyFoodSummary[]>(['mobile-my-foods'], (current = []) =>
+                sortMyFoodsPinnedFirst(current.map((item) => item.id === updated.id ? updated : item))
+            );
+        },
+        onSettled: async () => {
+            await queryClient.invalidateQueries({ queryKey: ['mobile-my-foods'] });
+        }
+    });
+
     const canCreateFood = foodName.trim().length > 0 &&
         Number(servingQuantity) > 0 &&
         servingUnit.trim().length > 0 &&
@@ -147,14 +160,30 @@ export default function MyFoodsScreen() {
                                     {formatCalories(item.calories_per_serving)} per {item.serving_size_quantity} {item.serving_unit_label}
                                 </AppText>
                             </View>
-                            <View style={styles.typePill}>
-                                <AppText style={styles.typeText}>{item.type === 'RECIPE' ? 'Recipe' : 'Food'}</AppText>
+                            <View style={styles.libraryActions}>
+                                <Pressable
+                                    accessibilityRole="button"
+                                    accessibilityLabel={`${item.is_pinned ? 'Unpin' : 'Pin'} ${item.name}`}
+                                    disabled={setPinned.isPending && setPinned.variables?.id === item.id}
+                                    onPress={() => setPinned.mutate(item)}
+                                    style={({ pressed }) => [styles.pinButton, pressed && styles.pressed]}
+                                >
+                                    <Ionicons
+                                        name={item.is_pinned ? 'star' : 'star-outline'}
+                                        size={19}
+                                        color={item.is_pinned ? colors.primary : colors.muted}
+                                    />
+                                </Pressable>
+                                <View style={styles.typePill}>
+                                    <AppText style={styles.typeText}>{item.type === 'RECIPE' ? 'Recipe' : 'Food'}</AppText>
+                                </View>
                             </View>
                         </View>
                     ))}
                     {myFoodsQuery.isLoading && <AppText variant="muted">Loading saved foods...</AppText>}
                     {!myFoodsQuery.isLoading && allFoods.length === 0 && <AppText variant="muted">No saved foods yet.</AppText>}
                     {myFoodsQuery.error && <AppText style={styles.error}>{myFoodsQuery.error.message}</AppText>}
+                    {setPinned.error && <AppText style={styles.error}>{setPinned.error.message}</AppText>}
                 </View>
             </AppCard>
 
@@ -310,6 +339,19 @@ const styles = StyleSheet.create({
         flex: 1,
         minWidth: 0,
         gap: spacing.xs
+    },
+    libraryActions: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.sm
+    },
+    pinButton: {
+        width: 38,
+        height: 38,
+        borderRadius: radius.md,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: colors.surfaceAlt
     },
     typePill: {
         borderRadius: radius.pill,

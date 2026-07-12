@@ -282,6 +282,7 @@ export interface components {
             serving_size_quantity: number;
             serving_unit_label: string;
             calories_per_serving: number;
+            is_pinned: boolean;
             recipe_total_calories: number | null;
             yield_servings: number | null;
             /** Format: date-time */

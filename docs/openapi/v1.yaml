@@ -346,7 +346,7 @@ components:
         created_at: { type: string, format: date-time }
     AccountExportMyFood:
       type: object
-      required: [id, type, name, serving_size_quantity, serving_unit_label, calories_per_serving, recipe_total_calories, yield_servings, created_at, updated_at, recipe_ingredients]
+      required: [id, type, name, serving_size_quantity, serving_unit_label, calories_per_serving, is_pinned, recipe_total_calories, yield_servings, created_at, updated_at, recipe_ingredients]
       properties:
         id: { type: integer }
         type: { type: string, enum: [FOOD, RECIPE] }
@@ -354,6 +354,7 @@ components:
         serving_size_quantity: { type: number }
         serving_unit_label: { type: string }
         calories_per_serving: { type: number }
+        is_pinned: { type: boolean }
         recipe_total_calories: { type: [number, 'null'] }
         yield_servings: { type: [number, 'null'] }
         created_at: { type: string, format: date-time }

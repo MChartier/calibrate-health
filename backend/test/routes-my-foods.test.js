@@ -74,10 +74,12 @@ test('myFoods route: rejects unauthenticated requests via router.use middleware'
 
 test('myFoods route: GET / builds filters from q + type', async () => {
   let receivedWhere = null;
+  let receivedOrderBy = null;
   const prismaStub = {
     myFood: {
-      findMany: async ({ where }) => {
+      findMany: async ({ where, orderBy }) => {
         receivedWhere = where;
+        receivedOrderBy = orderBy;
         return [{ id: 1, name: 'Apple' }];
       }
     }
@@ -98,6 +100,73 @@ test('myFoods route: GET / builds filters from q + type', async () => {
     name: { contains: 'app', mode: 'insensitive' },
     type: 'FOOD'
   });
+  assert.deepEqual(receivedOrderBy, [
+    { is_pinned: 'desc' },
+    { name: 'asc' },
+    { id: 'asc' }
+  ]);
+});
+
+test('myFoods route: PATCH /:id/pin validates id and boolean state', async () => {
+  const router = loadMyFoodsRouter({ myFood: {} });
+  const handler = getRouteHandler(router, 'patch', '/:id/pin');
+
+  const invalidIdRes = createRes();
+  await handler({ user: { id: 7 }, params: { id: 'bad' }, body: { is_pinned: true } }, invalidIdRes);
+  assert.equal(invalidIdRes.statusCode, 400);
+  assert.deepEqual(invalidIdRes.body, { message: 'Invalid my food id' });
+
+  const invalidStateRes = createRes();
+  await handler({ user: { id: 7 }, params: { id: '12' }, body: { is_pinned: 'true' } }, invalidStateRes);
+  assert.equal(invalidStateRes.statusCode, 400);
+  assert.deepEqual(invalidStateRes.body, { message: 'is_pinned must be a boolean' });
+});
+
+test('myFoods route: PATCH /:id/pin scopes writes to the authenticated user', async () => {
+  let receivedUpdate = null;
+  let receivedRead = null;
+  const updated = { id: 12, user_id: 7, name: 'Oats', is_pinned: true };
+  const prismaStub = {
+    myFood: {
+      updateMany: async (args) => {
+        receivedUpdate = args;
+        return { count: 1 };
+      },
+      findFirst: async (args) => {
+        receivedRead = args;
+        return updated;
+      }
+    }
+  };
+  const router = loadMyFoodsRouter(prismaStub);
+  const handler = getRouteHandler(router, 'patch', '/:id/pin');
+  const res = createRes();
+
+  await handler({ user: { id: 7 }, params: { id: '12' }, body: { is_pinned: true } }, res);
+
+  assert.equal(res.statusCode, 200);
+  assert.deepEqual(res.body, updated);
+  assert.deepEqual(receivedUpdate, {
+    where: { id: 12, user_id: 7 },
+    data: { is_pinned: true }
+  });
+  assert.deepEqual(receivedRead, { where: { id: 12, user_id: 7 } });
+});
+
+test('myFoods route: PATCH /:id/pin returns the same 404 for missing or other-user items', async () => {
+  const prismaStub = {
+    myFood: {
+      updateMany: async () => ({ count: 0 })
+    }
+  };
+  const router = loadMyFoodsRouter(prismaStub);
+  const handler = getRouteHandler(router, 'patch', '/:id/pin');
+  const res = createRes();
+
+  await handler({ user: { id: 7 }, params: { id: '12' }, body: { is_pinned: false } }, res);
+
+  assert.equal(res.statusCode, 404);
+  assert.deepEqual(res.body, { message: 'My food not found' });
 });
 
 test('myFoods route: GET /:id validates ids and returns 404 when missing', async () => {
@@ -269,4 +338,3 @@ test('myFoods route: POST /recipes creates a recipe and ingredient snapshots', a
   assert.equal(receivedIngredientData[0].brand_snapshot, 'Brand');
   assert.equal(receivedIngredientData[0].calories_total_snapshot, 100);
 });
-
