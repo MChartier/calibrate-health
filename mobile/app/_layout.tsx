@@ -5,7 +5,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { AuthProvider, useAuth } from '../src/auth/AuthContext';
-import { useNativePushRegistration } from '../src/hooks/useNativePushRegistration';
+import { NativePushRegistrationProvider } from '../src/hooks/useNativePushRegistration';
+import { useNotificationTapRouting } from '../src/notifications/useNotificationTapRouting';
 import { createQueuedMutationExecutor } from '../src/offline/operations';
 import { OfflineOutboxProvider } from '../src/offline/provider';
 import { colors } from '../src/theme';
@@ -14,7 +15,8 @@ import { AppErrorBoundary } from '../src/components/AppErrorBoundary';
 const queryClient = new QueryClient();
 
 const NativeRuntimeHooks: React.FC = () => {
-    useNativePushRegistration();
+    const { user } = useAuth();
+    useNotificationTapRouting(Boolean(user));
     return null;
 };
 
@@ -30,11 +32,13 @@ export default function RootLayout() {
             <SafeAreaProvider>
                 <QueryClientProvider client={queryClient}>
                     <AuthProvider>
-                        <AuthenticatedRuntime>
-                            <NativeRuntimeHooks />
-                            <StatusBar style="dark" backgroundColor={colors.surface} />
-                            <Slot />
-                        </AuthenticatedRuntime>
+                        <NativePushRegistrationProvider>
+                            <AuthenticatedRuntime>
+                                <NativeRuntimeHooks />
+                                <StatusBar style="dark" backgroundColor={colors.surface} />
+                                <Slot />
+                            </AuthenticatedRuntime>
+                        </NativePushRegistrationProvider>
                     </AuthProvider>
                 </QueryClientProvider>
             </SafeAreaProvider>
