@@ -1,5 +1,6 @@
 import type {
     AccountExport,
+    ActivityDaysResponse,
     ClientConfigResponse,
     CreateMyFoodPayload,
     FoodLogCreatePayload,
@@ -8,6 +9,8 @@ import type {
     FoodLogUpdatePayload,
     FoodSearchResponse,
     GoalEntry,
+    HealthConnectSyncPayload,
+    HealthConnectSyncResponse,
     InAppNotificationsResponse,
     LoseItImportSummary,
     MetricEntry,
@@ -426,6 +429,25 @@ export class CalibrateApiClient {
         const query = new URLSearchParams({ after });
         if (limit !== undefined) query.set('limit', String(limit));
         return this.request<SyncChangesResponse>(`/api/sync/changes?${query.toString()}`);
+    }
+
+    getActivityDays(params: { start?: string; end?: string } = {}): Promise<ActivityDaysResponse> {
+        const query = new URLSearchParams();
+        if (params.start) query.set('start', params.start);
+        if (params.end) query.set('end', params.end);
+        const suffix = query.toString() ? `?${query.toString()}` : '';
+        return this.request<ActivityDaysResponse>(`/api/activity/days${suffix}`);
+    }
+
+    syncHealthConnect(
+        payload: HealthConnectSyncPayload,
+        operationId: string
+    ): Promise<HealthConnectSyncResponse> {
+        return this.request<HealthConnectSyncResponse>('/api/activity/health-connect/sync', {
+            method: 'POST',
+            headers: buildOperationHeaders(operationId),
+            json: payload
+        });
     }
 
     getInAppNotifications(): Promise<InAppNotificationsResponse> {

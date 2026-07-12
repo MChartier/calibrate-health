@@ -26,6 +26,7 @@ router.get('/', (_req, res) => {
     capabilities: {
       self_hosted_server_url: true,
       native_push: true,
+      health_connect_activity: true,
       wear_os_ready: false
     }
   });

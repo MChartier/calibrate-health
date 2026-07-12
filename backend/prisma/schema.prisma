@@ -33,6 +33,14 @@ enum ActivityLevel {
   VERY_ACTIVE
 }
 
+enum ActivityRecordType {
+  STEPS
+  ACTIVE_CALORIES
+  TOTAL_CALORIES
+  EXERCISE_SESSION
+  WEIGHT
+}
+
 enum MealPeriod {
   BREAKFAST
   MORNING_SNACK
@@ -119,6 +127,98 @@ model User {
   in_app_notifications InAppNotification[]
   /// Browser sessions are linked after login so account deletion can revoke them by foreign key.
   browser_sessions SessionStore[]
+  /// Source records imported from trusted native Health Connect clients.
+  activity_records ActivityRecord[]
+  /// Health Connect aggregate totals materialized per account-local day.
+  activity_day_summaries ActivityDaySummary[]
+  /// Per-device Health Connect change-token checkpoints.
+  health_connect_sync_states HealthConnectSyncState[]
+  /// Deleted Health Connect ids retained to prevent stale replay resurrection.
+  health_connect_tombstones HealthConnectTombstone[]
+}
+
+model ActivityRecord {
+  id                        Int                @id @default(autoincrement())
+  user_id                   Int
+  user                      User               @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  /// Trusted device id from the bearer-authenticated mobile session.
+  source_device_id          String
+  record_type               ActivityRecordType
+  /// Health Connect Metadata.id within the source device's Health Connect store.
+  external_id               String
+  /// Stable attribution for the app that originally wrote the Health Connect record.
+  data_origin               String
+  client_record_id          String?
+  client_record_version     BigInt?
+  source_updated_at         DateTime
+  start_time                DateTime
+  end_time                  DateTime?
+  start_zone_offset_seconds Int?
+  end_zone_offset_seconds   Int?
+  /// Calendar day derived from start_time using the account timezone at ingestion.
+  local_date                DateTime           @db.Date
+  step_count                Int?
+  energy_kcal               Float?
+  weight_grams              Int?
+  exercise_type             Int?
+  title                     String?
+  notes                     String?
+  recording_method          Int?
+  device_type               Int?
+  device_manufacturer       String?
+  device_model              String?
+  created_at                DateTime           @default(now())
+  updated_at                DateTime           @updatedAt
+
+  @@unique([user_id, source_device_id, record_type, external_id])
+  @@index([user_id, local_date, start_time])
+  @@index([user_id, record_type, data_origin, client_record_id])
+}
+
+model ActivityDaySummary {
+  id                    Int      @id @default(autoincrement())
+  user_id               Int
+  user                  User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  /// Device whose Health Connect aggregate most recently supplied this canonical day.
+  source_device_id      String
+  local_date            DateTime @db.Date
+  steps                 Int?
+  active_calories_kcal  Float?
+  total_calories_kcal   Float?
+  exercise_minutes      Float?
+  observed_at           DateTime
+  created_at            DateTime @default(now())
+  updated_at            DateTime @updatedAt
+
+  @@unique([user_id, local_date])
+}
+
+model HealthConnectSyncState {
+  id               Int                @id @default(autoincrement())
+  user_id          Int
+  user             User               @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  source_device_id String
+  record_type      ActivityRecordType
+  changes_token    String             @db.Text
+  last_synced_at   DateTime
+  created_at       DateTime           @default(now())
+  updated_at       DateTime           @updatedAt
+
+  @@unique([user_id, source_device_id, record_type])
+  @@index([user_id, source_device_id])
+}
+
+model HealthConnectTombstone {
+  id               Int                @id @default(autoincrement())
+  user_id          Int
+  user             User               @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  source_device_id String
+  record_type      ActivityRecordType
+  external_id      String
+  deleted_at       DateTime           @default(now())
+
+  @@unique([user_id, source_device_id, record_type, external_id])
+  @@index([user_id, deleted_at])
 }
 
 model Goal {

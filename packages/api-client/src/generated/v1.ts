@@ -116,6 +116,39 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/activity/days": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getActivityDays"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/activity/health-connect/sync": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Atomically reconcile one record-type change page and advance its trusted mobile-device checkpoint. */
+        post: operations["syncHealthConnect"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/user/account/export": {
         parameters: {
             query?: never;
@@ -156,7 +189,7 @@ export interface components {
             /** @constant */
             format: "calibrate-account-export";
             /** @constant */
-            version: 1;
+            version: 2;
             /** Format: date-time */
             exported_at: string;
             account: components["schemas"]["AccountExportProfile"];
@@ -166,6 +199,8 @@ export interface components {
             food_log_days: components["schemas"]["AccountExportFoodLogDay"][];
             my_foods: components["schemas"]["AccountExportMyFood"][];
             in_app_notifications: components["schemas"]["AccountExportNotification"][];
+            activity_records: components["schemas"]["AccountExportActivityRecord"][];
+            activity_day_summaries: components["schemas"]["AccountExportActivityDaySummary"][];
         };
         AccountExportProfile: {
             id: number;
@@ -311,6 +346,222 @@ export interface components {
             /** Format: date-time */
             updated_at: string;
         };
+        /** @description User-visible Health Connect provenance; private source-device identifiers are omitted. */
+        AccountExportActivityRecord: {
+            id: number;
+            record_type: components["schemas"]["ActivityRecordType"];
+            external_id: string;
+            data_origin: string;
+            client_record_id: string | null;
+            client_record_version: string | null;
+            /** Format: date-time */
+            source_updated_at: string;
+            /** Format: date-time */
+            start_time: string;
+            /** Format: date-time */
+            end_time: string | null;
+            start_zone_offset_seconds: number | null;
+            end_zone_offset_seconds: number | null;
+            /** Format: date */
+            local_date: string;
+            step_count: number | null;
+            energy_kcal: number | null;
+            weight_grams: number | null;
+            exercise_type: number | null;
+            title: string | null;
+            notes: string | null;
+            recording_method: number | null;
+            device_type: number | null;
+            device_manufacturer: string | null;
+            device_model: string | null;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        AccountExportActivityDaySummary: {
+            id: number;
+            /** Format: date */
+            local_date: string;
+            steps: number | null;
+            active_calories_kcal: number | null;
+            total_calories_kcal: number | null;
+            exercise_minutes: number | null;
+            /** Format: date-time */
+            observed_at: string;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        /** @enum {string} */
+        ActivityRecordType: "STEPS" | "ACTIVE_CALORIES" | "TOTAL_CALORIES" | "EXERCISE_SESSION" | "WEIGHT";
+        HealthConnectRecordBase: {
+            record_id: string;
+            data_origin: string;
+            client_record_id?: string | null;
+            client_record_version?: string | null;
+            /** Format: date-time */
+            source_updated_at: string;
+            /** Format: date-time */
+            start_time: string;
+            /** Format: date-time */
+            end_time?: string | null;
+            start_zone_offset_seconds?: number | null;
+            end_zone_offset_seconds?: number | null;
+            title?: string | null;
+            notes?: string | null;
+            recording_method?: number | null;
+            device_type?: number | null;
+            device_manufacturer?: string | null;
+            device_model?: string | null;
+        };
+        HealthConnectStepUpsert: components["schemas"]["HealthConnectRecordBase"] & {
+            count: number;
+        };
+        HealthConnectEnergyUpsert: components["schemas"]["HealthConnectRecordBase"] & {
+            energy_kcal: number;
+        };
+        HealthConnectWeightUpsert: components["schemas"]["HealthConnectRecordBase"] & {
+            weight_grams: number;
+        };
+        HealthConnectExerciseUpsert: components["schemas"]["HealthConnectRecordBase"] & {
+            exercise_type: number;
+        };
+        ActivityDaySummaryPayloadBase: {
+            /** Format: date */
+            local_date: string;
+            steps?: number | null;
+            active_calories_kcal?: number | null;
+            total_calories_kcal?: number | null;
+            exercise_minutes?: number | null;
+            /** Format: date-time */
+            observed_at: string;
+        };
+        ActivityDaySummaryPayload: components["schemas"]["ActivityDaySummaryPayloadBase"] & ({
+            steps: number;
+        } | {
+            active_calories_kcal: number;
+        } | {
+            total_calories_kcal: number;
+        } | {
+            exercise_minutes: number;
+        });
+        HealthConnectReplaceWindow: {
+            /** Format: date */
+            start_date: string;
+            /** Format: date */
+            end_date: string;
+        };
+        /** @description At most 500 combined upserts and deleted_record_ids are accepted per page. */
+        HealthConnectSyncRequest: components["schemas"]["HealthConnectStepsSyncRequest"] | components["schemas"]["HealthConnectActiveCaloriesSyncRequest"] | components["schemas"]["HealthConnectTotalCaloriesSyncRequest"] | components["schemas"]["HealthConnectExerciseSyncRequest"] | components["schemas"]["HealthConnectWeightSyncRequest"];
+        HealthConnectSyncEnvelope: {
+            /** @enum {string} */
+            sync_mode: "incremental" | "reset";
+            previous_changes_token: string | null;
+            next_changes_token: string;
+            /** @description First reset page only; replaces this inclusive local-date window before applying the page. */
+            replace_window?: components["schemas"]["HealthConnectReplaceWindow"];
+            deleted_record_ids?: string[];
+            day_summaries?: components["schemas"]["ActivityDaySummaryPayload"][];
+        } & unknown;
+        HealthConnectStepsSyncRequest: components["schemas"]["HealthConnectSyncEnvelope"] & {
+            /** @constant */
+            record_type: "STEPS";
+            upserts?: components["schemas"]["HealthConnectStepUpsert"][];
+        };
+        HealthConnectActiveCaloriesSyncRequest: components["schemas"]["HealthConnectSyncEnvelope"] & {
+            /** @constant */
+            record_type: "ACTIVE_CALORIES";
+            upserts?: components["schemas"]["HealthConnectEnergyUpsert"][];
+        };
+        HealthConnectTotalCaloriesSyncRequest: components["schemas"]["HealthConnectSyncEnvelope"] & {
+            /** @constant */
+            record_type: "TOTAL_CALORIES";
+            upserts?: components["schemas"]["HealthConnectEnergyUpsert"][];
+        };
+        HealthConnectExerciseSyncRequest: components["schemas"]["HealthConnectSyncEnvelope"] & {
+            /** @constant */
+            record_type: "EXERCISE_SESSION";
+            upserts?: components["schemas"]["HealthConnectExerciseUpsert"][];
+        };
+        HealthConnectWeightSyncRequest: components["schemas"]["HealthConnectSyncEnvelope"] & {
+            /** @constant */
+            record_type: "WEIGHT";
+            upserts?: components["schemas"]["HealthConnectWeightUpsert"][];
+        };
+        HealthConnectSyncResponse: {
+            record_type: components["schemas"]["ActivityRecordType"];
+            upserted: number;
+            deleted: number;
+            reset_deleted: number;
+            stale_ignored: number;
+            tombstoned_ignored: number;
+            day_summaries_upserted: number;
+            day_summaries_stale_ignored: number;
+            /** @constant */
+            checkpoint_advanced: true;
+        };
+        ActivityRecord: {
+            id: number;
+            record_type: components["schemas"]["ActivityRecordType"];
+            record_id: string;
+            data_origin: string;
+            client_record_id: string | null;
+            client_record_version: string | null;
+            /** Format: date-time */
+            source_updated_at: string;
+            /** Format: date-time */
+            start_time: string;
+            /** Format: date-time */
+            end_time: string | null;
+            start_zone_offset_seconds: number | null;
+            end_zone_offset_seconds: number | null;
+            /** Format: date */
+            local_date: string;
+            count: number | null;
+            energy_kcal: number | null;
+            weight_grams: number | null;
+            exercise_type: number | null;
+            title: string | null;
+            notes: string | null;
+            recording_method: number | null;
+            device_type: number | null;
+            device_manufacturer: string | null;
+            device_model: string | null;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        ActivityDaySummary: {
+            id: number;
+            /** Format: date */
+            local_date: string;
+            steps: number | null;
+            active_calories_kcal: number | null;
+            total_calories_kcal: number | null;
+            exercise_minutes: number | null;
+            /** Format: date-time */
+            observed_at: string;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        ActivityDay: {
+            /** Format: date */
+            local_date: string;
+            summary: components["schemas"]["ActivityDaySummary"] | null;
+            records: components["schemas"]["ActivityRecord"][];
+        };
+        ActivityDaysResponse: {
+            /** Format: date */
+            start_date: string;
+            /** Format: date */
+            end_date: string;
+            days: components["schemas"]["ActivityDay"][];
+        };
         ApiError: {
             message: string;
             code?: string | null;
@@ -336,6 +587,7 @@ export interface components {
             capabilities: {
                 self_hosted_server_url: boolean;
                 native_push: boolean;
+                health_connect_activity: boolean;
                 wear_os_ready: boolean;
             };
         };
@@ -600,6 +852,94 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+        };
+    };
+    getActivityDays: {
+        parameters: {
+            query?: {
+                start?: string;
+                end?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Observational Health Connect summaries and provenance records grouped by account-local day. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ActivityDaysResponse"];
+                };
+            };
+            /** @description Invalid or excessive local-date range. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    syncHealthConnect: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Stable client-generated identifier used to safely replay this sync page. */
+                "x-client-operation-id": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["HealthConnectSyncRequest"];
+            };
+        };
+        responses: {
+            /** @description Source changes, summaries, and next checkpoint committed together. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HealthConnectSyncResponse"];
+                };
+            };
+            /** @description Invalid Health Connect change page. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            /** @description A bearer-authenticated Android installation is required. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Operation-id or Health Connect checkpoint conflict. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
         };
     };
     exportAccount: {

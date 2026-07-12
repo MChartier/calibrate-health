@@ -21,6 +21,7 @@ import foodDayRoutes from './routes/foodDays';
 import goalRoutes from './routes/goals';
 import importRoutes from './routes/imports';
 import metricRoutes from './routes/metrics';
+import activityRoutes from './routes/activity';
 import myFoodsRoutes from './routes/myFoods';
 import notificationRoutes from './routes/notifications';
 import syncRoutes from './routes/sync';
@@ -384,6 +385,7 @@ const bootstrap = async (): Promise<void> => {
   apiRouter.use('/client-config', clientConfigRoutes);
   apiRouter.use('/goals', goalRoutes);
   apiRouter.use('/metrics', metricRoutes);
+  apiRouter.use('/activity', activityRoutes);
   apiRouter.use('/food', foodRoutes);
   apiRouter.use('/food-days', foodDayRoutes);
   apiRouter.use('/my-foods', myFoodsRoutes);

@@ -2,7 +2,7 @@ import { Prisma } from '@prisma/client';
 import prisma from '../config/database';
 
 export const ACCOUNT_EXPORT_FORMAT = 'calibrate-account-export';
-export const ACCOUNT_EXPORT_VERSION = 1;
+export const ACCOUNT_EXPORT_VERSION = 2;
 
 // Auth sessions, password hashes, push endpoints/tokens, and internal replay metadata are
 // deliberately absent. Only account profile and user-authored tracking records are exported.
@@ -45,6 +45,12 @@ const ACCOUNT_EXPORT_SELECT = {
   },
   in_app_notifications: {
     orderBy: [{ created_at: 'asc' as const }, { id: 'asc' as const }]
+  },
+  activity_records: {
+    orderBy: [{ local_date: 'asc' as const }, { start_time: 'asc' as const }, { id: 'asc' as const }]
+  },
+  activity_day_summaries: {
+    orderBy: [{ local_date: 'asc' as const }, { id: 'asc' as const }]
   }
 } satisfies Prisma.UserSelect;
 
@@ -161,6 +167,43 @@ export type AccountExport = {
     read_at: string | null;
     dismissed_at: string | null;
     resolved_at: string | null;
+    created_at: string;
+    updated_at: string;
+  }>;
+  activity_records: Array<{
+    id: number;
+    record_type: string;
+    external_id: string;
+    data_origin: string;
+    client_record_id: string | null;
+    client_record_version: string | null;
+    source_updated_at: string;
+    start_time: string;
+    end_time: string | null;
+    start_zone_offset_seconds: number | null;
+    end_zone_offset_seconds: number | null;
+    local_date: string;
+    step_count: number | null;
+    energy_kcal: number | null;
+    weight_grams: number | null;
+    exercise_type: number | null;
+    title: string | null;
+    notes: string | null;
+    recording_method: number | null;
+    device_type: number | null;
+    device_manufacturer: string | null;
+    device_model: string | null;
+    created_at: string;
+    updated_at: string;
+  }>;
+  activity_day_summaries: Array<{
+    id: number;
+    local_date: string;
+    steps: number | null;
+    active_calories_kcal: number | null;
+    total_calories_kcal: number | null;
+    exercise_minutes: number | null;
+    observed_at: string;
     created_at: string;
     updated_at: string;
   }>;
@@ -301,6 +344,44 @@ export function serializeAccountExport(user: AccountExportRow, now = new Date())
       resolved_at: notification.resolved_at ? toIsoDateTime(notification.resolved_at) : null,
       created_at: toIsoDateTime(notification.created_at),
       updated_at: toIsoDateTime(notification.updated_at)
+    })),
+    // Export user-visible Health Connect provenance, but omit device ids, tokens, and tombstones.
+    activity_records: user.activity_records.map((record) => ({
+      id: record.id,
+      record_type: record.record_type,
+      external_id: record.external_id,
+      data_origin: record.data_origin,
+      client_record_id: record.client_record_id,
+      client_record_version: record.client_record_version?.toString() ?? null,
+      source_updated_at: toIsoDateTime(record.source_updated_at),
+      start_time: toIsoDateTime(record.start_time),
+      end_time: record.end_time ? toIsoDateTime(record.end_time) : null,
+      start_zone_offset_seconds: record.start_zone_offset_seconds,
+      end_zone_offset_seconds: record.end_zone_offset_seconds,
+      local_date: toIsoDate(record.local_date),
+      step_count: record.step_count,
+      energy_kcal: record.energy_kcal,
+      weight_grams: record.weight_grams,
+      exercise_type: record.exercise_type,
+      title: record.title,
+      notes: record.notes,
+      recording_method: record.recording_method,
+      device_type: record.device_type,
+      device_manufacturer: record.device_manufacturer,
+      device_model: record.device_model,
+      created_at: toIsoDateTime(record.created_at),
+      updated_at: toIsoDateTime(record.updated_at)
+    })),
+    activity_day_summaries: user.activity_day_summaries.map((summary) => ({
+      id: summary.id,
+      local_date: toIsoDate(summary.local_date),
+      steps: summary.steps,
+      active_calories_kcal: summary.active_calories_kcal,
+      total_calories_kcal: summary.total_calories_kcal,
+      exercise_minutes: summary.exercise_minutes,
+      observed_at: toIsoDateTime(summary.observed_at),
+      created_at: toIsoDateTime(summary.created_at),
+      updated_at: toIsoDateTime(summary.updated_at)
     }))
   };
 }
