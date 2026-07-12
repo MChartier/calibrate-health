@@ -87,7 +87,7 @@ function injectSharedAndroidSigning(source) {
   }
   const configuredRelease = releaseSource.replace(
     /signingConfig\s+signingConfigs\.debug/,
-    `signingConfig calibrateHasSharedReleaseSigning ? signingConfigs.${SIGNING_CONFIG_NAME} : null`,
+    `if (calibrateHasSharedReleaseSigning) {\n                signingConfig signingConfigs.${SIGNING_CONFIG_NAME}\n            }`,
   );
   let result = `${source.slice(0, androidBlock.start)}${SUPPORT_BLOCK}\n${source.slice(androidBlock.start)}`;
   const shiftedBuildTypes = findBlock(result, 'buildTypes', findBlock(result, 'android').open);

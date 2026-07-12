@@ -31,7 +31,8 @@ describe('withSharedAndroidSigning config plugin', () => {
 
         expect(twice).toBe(once);
         expect(twice).toContain('debug {\n            signingConfig signingConfigs.debug');
-        expect(twice).toContain('signingConfig calibrateHasSharedReleaseSigning ? signingConfigs.calibrateSharedRelease : null');
+        expect(twice).toContain('if (calibrateHasSharedReleaseSigning) {');
+        expect(twice).toContain('signingConfig signingConfigs.calibrateSharedRelease');
         expect(twice.match(/calibrate: shared phone\/watch release signing/g)).toHaveLength(1);
         expect(twice).toContain("task.name.toLowerCase().contains('release')");
         expect(twice).toContain('CALIBRATE_ANDROID_SIGNING_STORE_FILE');
