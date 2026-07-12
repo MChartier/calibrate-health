@@ -12,6 +12,7 @@
     ],
     "android": {
       "package": "app.calibratehealth.mobile",
+      "versionCode": 1,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#F6F8F4"
@@ -36,6 +37,9 @@
         "CAMERA",
         "VIBRATE",
         "POST_NOTIFICATIONS"
+      ],
+      "blockedPermissions": [
+        "android.permission.RECORD_AUDIO"
       ]
     },
     "plugins": [
