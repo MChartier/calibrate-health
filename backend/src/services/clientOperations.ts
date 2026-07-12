@@ -89,7 +89,7 @@ export async function executeIdempotentMutation<T>(options: {
         },
         data: {
           response_status: result.status,
-          response_body: normalizedBody,
+          response_body: normalizedBody === null ? Prisma.DbNull : normalizedBody,
           completed_at: new Date()
         }
       });
@@ -115,7 +115,9 @@ export async function executeIdempotentMutation<T>(options: {
         'Client operation id was already used for a different request.'
       );
     }
-    if (existing.response_status === null || existing.response_body === null || existing.completed_at === null) {
+    // A successful 204 receipt has a deliberately null response body. Completion is determined by
+    // the status/timestamp pair so that an uncertain delete can replay without repeating the write.
+    if (existing.response_status === null || existing.completed_at === null) {
       throw new ClientOperationConflictError(
         'OPERATION_IN_PROGRESS',
         'Client operation is still in progress; retry shortly.'

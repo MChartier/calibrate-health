@@ -36,6 +36,28 @@ paths:
                 $ref: '#/components/schemas/MobileAuthResponse'
         '401':
           $ref: '#/components/responses/Unauthorized'
+  /auth/mobile/register:
+    post:
+      operationId: registerMobile
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MobileAuthRequest'
+      responses:
+        '200':
+          description: Registered Android phone session.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MobileAuthResponse'
+        '400':
+          description: Invalid registration or Android phone device metadata.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiError' }
   /auth/mobile/refresh:
     post:
       operationId: refreshMobile
@@ -56,7 +78,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/MobileAuthResponse'
+                $ref: '#/components/schemas/MobileRefreshResponse'
         '401':
           $ref: '#/components/responses/Unauthorized'
   /auth/mobile/sessions:
@@ -77,6 +99,73 @@ paths:
                       $ref: '#/components/schemas/MobileSessionSummary'
         '401':
           $ref: '#/components/responses/Unauthorized'
+  /auth/mobile/wear/pairing-credential:
+    post:
+      operationId: issueWearPairingCredential
+      description: Issue a short-lived one-time credential from the current Android phone session.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WearPairingCredentialRequest'
+      responses:
+        '201':
+          description: Credential and exact self-hosted server origin to transfer to the paired watch.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WearPairingCredentialResponse'
+        '400':
+          description: Invalid server origin, watch identity, protocol, or public key.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiError' }
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Caller is not an active Android phone session.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiError' }
+  /auth/mobile/wear/pair:
+    post:
+      operationId: exchangeWearPairingCredential
+      security: []
+      description: Consume a server-bound one-time credential and create a revocable Wear OS session.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WearPairingExchangeRequest'
+      responses:
+        '200':
+          description: Authenticated Wear OS session credentials.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WearMobileAuthResponse'
+        '400':
+          description: Invalid exchange payload.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiError' }
+        '401':
+          description: Credential or challenge signature is invalid, or the issuing phone session is inactive.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiError' }
+        '409':
+          description: Credential was already used, its binding differs, or a same-exchange UUID retry within the credential TTL revoked the orphaned session and requires fresh pairing.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiError' }
+        '410':
+          description: Credential expired.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiError' }
   /api/v1/food/{foodLogId}:
     delete:
       operationId: deleteFoodLog
@@ -806,7 +895,8 @@ components:
           type: string
           maxLength: 128
         device_platform:
-          $ref: '#/components/schemas/MobileDevicePlatform'
+          type: string
+          enum: [android_phone]
         device_name:
           type: string
           maxLength: 120
@@ -826,6 +916,43 @@ components:
         refresh_expires_at:
           type: string
           format: date-time
+    WearAuthPrincipal:
+      type: object
+      additionalProperties: false
+      required: [id, timezone, language, weight_unit, height_unit]
+      properties:
+        id:
+          type: integer
+        timezone:
+          type: string
+        language:
+          type: string
+        weight_unit:
+          type: string
+          enum: [KG, LB]
+        height_unit:
+          type: string
+          enum: [CM, FT_IN]
+    WearMobileAuthResponse:
+      type: object
+      required: [user, access_token, refresh_token, access_expires_at, refresh_expires_at]
+      properties:
+        user:
+          $ref: '#/components/schemas/WearAuthPrincipal'
+        access_token:
+          type: string
+        refresh_token:
+          type: string
+        access_expires_at:
+          type: string
+          format: date-time
+        refresh_expires_at:
+          type: string
+          format: date-time
+    MobileRefreshResponse:
+      oneOf:
+        - $ref: '#/components/schemas/MobileAuthResponse'
+        - $ref: '#/components/schemas/WearMobileAuthResponse'
     MobileSessionSummary:
       type: object
       required:
@@ -857,6 +984,75 @@ components:
           format: date-time
         current:
           type: boolean
+    WearPairingCredentialRequest:
+      type: object
+      additionalProperties: false
+      required: [server_origin, watch_device_id, protocol_version, watch_public_key_spki]
+      properties:
+        server_origin:
+          type: string
+          format: uri
+          description: Exact Calibrate origin already selected and validated by the phone.
+        watch_device_id:
+          type: string
+          minLength: 1
+          maxLength: 128
+        watch_device_name:
+          type: string
+          maxLength: 120
+        protocol_version:
+          type: integer
+          enum: [1]
+        watch_public_key_spki:
+          type: string
+          description: Base64 DER SubjectPublicKeyInfo for a P-256 key held by Android Keystore.
+    WearPairingCredentialResponse:
+      type: object
+      additionalProperties: false
+      required: [pairing_token, server_origin, watch_device_id, protocol_version, challenge, expires_at]
+      properties:
+        pairing_token:
+          type: string
+        server_origin:
+          type: string
+          format: uri
+        watch_device_id:
+          type: string
+        protocol_version:
+          type: integer
+          enum: [1]
+        challenge:
+          type: string
+          description: Base64url server nonce the watch signs with SHA256withECDSA.
+        expires_at:
+          type: string
+          format: date-time
+    WearPairingExchangeRequest:
+      type: object
+      additionalProperties: false
+      required: [pairing_token, server_origin, watch_device_id, protocol_version, exchange_id, challenge_signature]
+      properties:
+        pairing_token:
+          type: string
+          minLength: 1
+          maxLength: 256
+        server_origin:
+          type: string
+          format: uri
+        watch_device_id:
+          type: string
+          minLength: 1
+          maxLength: 128
+        protocol_version:
+          type: integer
+          enum: [1]
+        exchange_id:
+          type: string
+          format: uuid
+          description: Client-generated UUID retained unchanged when retrying an exchange after response loss.
+        challenge_signature:
+          type: string
+          description: Base64url DER SHA256withECDSA signature over the protocol v1 payload, including exchange_id.
     MobileDevicePlatform:
       type: string
       enum: [android_phone, wear_os]

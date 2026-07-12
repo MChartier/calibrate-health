@@ -1,6 +1,20 @@
 import type { NextFunction, Request, Response } from 'express';
 import { authenticateMobileAccessToken } from '../services/mobileAuth';
 
+const isWearSessionEndpointAllowed = (req: Request, sessionId: number): boolean => {
+  if (req.method === 'POST' && (
+    req.path === '/auth/mobile/refresh' ||
+    req.path === '/auth/mobile/logout'
+  )) return true;
+  if (req.path === '/api/v1/watch' || req.path.startsWith('/api/v1/watch/')) return true;
+
+  if (req.method === 'DELETE') {
+    const match = req.path.match(/^\/auth\/mobile\/sessions\/(\d+)$/);
+    return Boolean(match && Number(match[1]) === sessionId);
+  }
+  return false;
+};
+
 /**
  * Authenticate native bearer tokens before route-level `req.isAuthenticated()` guards run.
  *
@@ -30,5 +44,13 @@ export const authenticateMobileBearerToken = async (
   req.isAuthenticated = (() => true) as Request['isAuthenticated'];
   res.locals.mobileAuthSessionId = result.sessionId;
   res.locals.mobileDeviceId = result.deviceId;
+  res.locals.mobileDevicePlatform = result.devicePlatform;
+  if (result.devicePlatform === 'wear_os' && !isWearSessionEndpointAllowed(req, result.sessionId)) {
+    return res.status(403).json({
+      message: 'Wear OS session is not allowed for this endpoint',
+      code: 'WEAR_SESSION_SCOPE_DENIED',
+      retryable: false
+    });
+  }
   return next();
 };

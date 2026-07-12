@@ -190,7 +190,7 @@ export type MobileAuthRequest = {
     email: string;
     password: string;
     device_id: string;
-    device_platform?: MobileDevicePlatform;
+    device_platform?: 'android_phone';
     device_name?: string;
 };
 
@@ -202,7 +202,16 @@ export type MobileAuthResponse = {
     refresh_expires_at: string;
 };
 
-export type MobileRefreshResponse = MobileAuthResponse;
+export type WearAuthPrincipal = Pick<
+    UserClientPayload,
+    'id' | 'timezone' | 'language' | 'weight_unit' | 'height_unit'
+>;
+
+export type WearMobileAuthResponse = Omit<MobileAuthResponse, 'user'> & {
+    user: WearAuthPrincipal;
+};
+
+export type MobileRefreshResponse = MobileAuthResponse | WearMobileAuthResponse;
 
 export type MobileSessionSummary = {
     id: number;
@@ -213,6 +222,32 @@ export type MobileSessionSummary = {
     last_used_at: string | null;
     refresh_expires_at: string;
     current: boolean;
+};
+
+export type WearPairingCredentialRequest = {
+    server_origin: string;
+    watch_device_id: string;
+    watch_device_name?: string;
+    protocol_version: 1;
+    watch_public_key_spki: string;
+};
+
+export type WearPairingCredentialResponse = {
+    pairing_token: string;
+    server_origin: string;
+    watch_device_id: string;
+    protocol_version: 1;
+    challenge: string;
+    expires_at: string;
+};
+
+export type WearPairingExchangeRequest = {
+    pairing_token: string;
+    server_origin: string;
+    watch_device_id: string;
+    protocol_version: 1;
+    exchange_id: string;
+    challenge_signature: string;
 };
 
 export type ClientConfigResponse = {

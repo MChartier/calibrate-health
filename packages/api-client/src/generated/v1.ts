@@ -36,6 +36,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/auth/mobile/register": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["registerMobile"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/auth/mobile/refresh": {
         parameters: {
             query?: never;
@@ -62,6 +78,40 @@ export interface paths {
         get: operations["listMobileSessions"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/mobile/wear/pairing-credential": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Issue a short-lived one-time credential from the current Android phone session. */
+        post: operations["issueWearPairingCredential"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/mobile/wear/pair": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Consume a server-bound one-time credential and create a revocable Wear OS session. */
+        post: operations["exchangeWearPairingCredential"];
         delete?: never;
         options?: never;
         head?: never;
@@ -596,7 +646,8 @@ export interface components {
             email: string;
             password: string;
             device_id: string;
-            device_platform?: components["schemas"]["MobileDevicePlatform"];
+            /** @enum {string} */
+            device_platform?: "android_phone";
             device_name?: string;
         };
         MobileAuthResponse: {
@@ -608,6 +659,25 @@ export interface components {
             /** Format: date-time */
             refresh_expires_at: string;
         };
+        WearAuthPrincipal: {
+            id: number;
+            timezone: string;
+            language: string;
+            /** @enum {string} */
+            weight_unit: "KG" | "LB";
+            /** @enum {string} */
+            height_unit: "CM" | "FT_IN";
+        };
+        WearMobileAuthResponse: {
+            user: components["schemas"]["WearAuthPrincipal"];
+            access_token: string;
+            refresh_token: string;
+            /** Format: date-time */
+            access_expires_at: string;
+            /** Format: date-time */
+            refresh_expires_at: string;
+        };
+        MobileRefreshResponse: components["schemas"]["MobileAuthResponse"] | components["schemas"]["WearMobileAuthResponse"];
         MobileSessionSummary: {
             id: number;
             device_id: string;
@@ -620,6 +690,46 @@ export interface components {
             /** Format: date-time */
             refresh_expires_at: string;
             current: boolean;
+        };
+        WearPairingCredentialRequest: {
+            /**
+             * Format: uri
+             * @description Exact Calibrate origin already selected and validated by the phone.
+             */
+            server_origin: string;
+            watch_device_id: string;
+            watch_device_name?: string;
+            /** @enum {integer} */
+            protocol_version: 1;
+            /** @description Base64 DER SubjectPublicKeyInfo for a P-256 key held by Android Keystore. */
+            watch_public_key_spki: string;
+        };
+        WearPairingCredentialResponse: {
+            pairing_token: string;
+            /** Format: uri */
+            server_origin: string;
+            watch_device_id: string;
+            /** @enum {integer} */
+            protocol_version: 1;
+            /** @description Base64url server nonce the watch signs with SHA256withECDSA. */
+            challenge: string;
+            /** Format: date-time */
+            expires_at: string;
+        };
+        WearPairingExchangeRequest: {
+            pairing_token: string;
+            /** Format: uri */
+            server_origin: string;
+            watch_device_id: string;
+            /** @enum {integer} */
+            protocol_version: 1;
+            /**
+             * Format: uuid
+             * @description Client-generated UUID retained unchanged when retrying an exchange after response loss.
+             */
+            exchange_id: string;
+            /** @description Base64url DER SHA256withECDSA signature over the protocol v1 payload, including exchange_id. */
+            challenge_signature: string;
         };
         /** @enum {string} */
         MobileDevicePlatform: "android_phone" | "wear_os";
@@ -732,6 +842,39 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
         };
     };
+    registerMobile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MobileAuthRequest"];
+            };
+        };
+        responses: {
+            /** @description Registered Android phone session. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MobileAuthResponse"];
+                };
+            };
+            /** @description Invalid registration or Android phone device metadata. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
     refreshMobile: {
         parameters: {
             query?: never;
@@ -753,7 +896,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["MobileAuthResponse"];
+                    "application/json": components["schemas"]["MobileRefreshResponse"];
                 };
             };
             401: components["responses"]["Unauthorized"];
@@ -780,6 +923,109 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+        };
+    };
+    issueWearPairingCredential: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WearPairingCredentialRequest"];
+            };
+        };
+        responses: {
+            /** @description Credential and exact self-hosted server origin to transfer to the paired watch. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WearPairingCredentialResponse"];
+                };
+            };
+            /** @description Invalid server origin, watch identity, protocol, or public key. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            /** @description Caller is not an active Android phone session. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    exchangeWearPairingCredential: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WearPairingExchangeRequest"];
+            };
+        };
+        responses: {
+            /** @description Authenticated Wear OS session credentials. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WearMobileAuthResponse"];
+                };
+            };
+            /** @description Invalid exchange payload. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Credential or challenge signature is invalid, or the issuing phone session is inactive. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Credential was already used, its binding differs, or a same-exchange UUID retry within the credential TTL revoked the orphaned session and requires fresh pairing. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Credential expired. */
+            410: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
         };
     };
     deleteFoodLog: {

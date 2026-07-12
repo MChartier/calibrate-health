@@ -30,3 +30,72 @@ test('auth rate limiting is narrow and returns a JSON 429 response', async (t) =
   const health = await fetch(`${origin}/healthz`);
   assert.equal(health.status, 200);
 });
+
+test('Wear pairing issuance and exchange have dedicated abuse limits', async (t) => {
+  const app = express();
+  const limiters = createAuthRateLimiters();
+  app.post(
+    '/pairing-credential',
+    (req, res, next) => {
+      const sessionId = Number(req.get('x-mobile-session-id'));
+      if (Number.isSafeInteger(sessionId) && sessionId > 0) res.locals.mobileAuthSessionId = sessionId;
+      next();
+    },
+    limiters.pairingIssue,
+    (_req, res) => res.json({ ok: true })
+  );
+  app.post('/pair', limiters.pairingExchange, (_req, res) => res.json({ ok: true }));
+
+  const server = app.listen(0, '127.0.0.1');
+  await new Promise((resolve) => server.once('listening', resolve));
+  t.after(() => new Promise((resolve) => server.close(resolve)));
+  const address = server.address();
+  assert.ok(address && typeof address === 'object');
+  const origin = `http://127.0.0.1:${address.port}`;
+
+  for (let requestNumber = 0; requestNumber < 25; requestNumber += 1) {
+    assert.equal((await fetch(`${origin}/pairing-credential`, { method: 'POST' })).status, 200);
+  }
+  for (let requestNumber = 0; requestNumber < 20; requestNumber += 1) {
+    assert.equal((await fetch(`${origin}/pairing-credential`, {
+      method: 'POST', headers: { 'x-mobile-session-id': '73' }
+    })).status, 200);
+  }
+  const issueLimited = await fetch(`${origin}/pairing-credential`, {
+    method: 'POST', headers: { 'x-mobile-session-id': '73' }
+  });
+  assert.equal(issueLimited.status, 429);
+  assert.deepEqual(await issueLimited.json(), { message: 'Too many Wear pairing requests. Try again later.' });
+  assert.equal((await fetch(`${origin}/pairing-credential`, {
+    method: 'POST', headers: { 'x-mobile-session-id': '74' }
+  })).status, 200);
+
+  for (let requestNumber = 0; requestNumber < 30; requestNumber += 1) {
+    assert.equal((await fetch(`${origin}/pair`, { method: 'POST' })).status, 200);
+  }
+  const exchangeLimited = await fetch(`${origin}/pair`, { method: 'POST' });
+  assert.equal(exchangeLimited.status, 429);
+  assert.deepEqual(await exchangeLimited.json(), { message: 'Too many Wear pairing attempts. Try again later.' });
+});
+
+test('Wear pairing issuance has a coarse pre-authentication IP limit', async (t) => {
+  const app = express();
+  const limiters = createAuthRateLimiters();
+  app.post('/pairing-credential', limiters.pairingIssueIp, (_req, res) => res.json({ ok: true }));
+
+  const server = app.listen(0, '127.0.0.1');
+  await new Promise((resolve) => server.once('listening', resolve));
+  t.after(() => new Promise((resolve) => server.close(resolve)));
+  const address = server.address();
+  assert.ok(address && typeof address === 'object');
+  const url = `http://127.0.0.1:${address.port}/pairing-credential`;
+
+  for (let requestNumber = 0; requestNumber < 60; requestNumber += 1) {
+    assert.equal((await fetch(url, { method: 'POST' })).status, 200);
+  }
+  const limited = await fetch(url, { method: 'POST' });
+  assert.equal(limited.status, 429);
+  assert.deepEqual(await limited.json(), {
+    message: 'Too many Wear pairing requests from this network. Try again later.'
+  });
+});

@@ -1,6 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const Module = require('node:module');
+const crypto = require('node:crypto');
 
 function stubModule(resolvedPath, exports) {
   const moduleInstance = new Module(resolvedPath);
@@ -131,6 +132,114 @@ test('auth route: POST /mobile/login returns mobile tokens for valid credentials
     email: { equals: 'native@example.com', mode: 'insensitive' }
   });
   assert.equal(sessionCreates[0].data.device_id, 'device-1');
+});
+
+test('auth route: POST /mobile/login refuses direct Wear OS password sessions', async () => {
+  let lookups = 0;
+  const router = loadAuthRouter({
+    prismaStub: {
+      user: { findFirst: async () => { lookups += 1; return dbUser; } },
+      mobileAuthSession: {}
+    },
+    passportStub: { authenticate: () => () => {} },
+    bcryptStub: { compare: async () => true, genSalt: async () => 'salt', hash: async () => 'hash' }
+  });
+  const handler = getRouteHandler(router, 'post', '/mobile/login');
+  const res = createRes();
+
+  await handler({
+    body: {
+      email: 'native@example.com',
+      password: 'password123',
+      device_id: 'watch-1',
+      device_platform: 'wear_os'
+    }
+  }, res);
+
+  assert.equal(res.statusCode, 400);
+  assert.match(res.body.message, /phone pairing/i);
+  assert.equal(lookups, 0);
+});
+
+test('auth route: Wear pairing credential issuance rejects browser-only authentication', async () => {
+  const router = loadAuthRouter({
+    prismaStub: { mobileAuthSession: {} },
+    passportStub: { authenticate: () => () => {} },
+    bcryptStub: { compare: async () => false, genSalt: async () => 'salt', hash: async () => 'hash' }
+  });
+  const handler = getRouteHandler(router, 'post', '/mobile/wear/pairing-credential');
+  const res = createRes();
+
+  await handler({
+    isAuthenticated: () => true,
+    user: { id: 7 },
+    body: { server_origin: 'https://health.example' }
+  }, res);
+
+  assert.equal(res.statusCode, 403);
+  assert.match(res.body.message, /Android phone session/);
+});
+
+test('auth route: Wear pairing credential issuance rejects non-origin server bindings', async () => {
+  const router = loadAuthRouter({
+    prismaStub: { mobileAuthSession: {} },
+    passportStub: { authenticate: () => () => {} },
+    bcryptStub: { compare: async () => false, genSalt: async () => 'salt', hash: async () => 'hash' }
+  });
+  const handler = getRouteHandler(router, 'post', '/mobile/wear/pairing-credential');
+  const res = createRes({ mobileAuthSessionId: 9 });
+
+  await handler({
+    isAuthenticated: () => true,
+    user: { id: 7 },
+    body: { server_origin: 'https://health.example/untrusted-path' }
+  }, res);
+
+  assert.equal(res.statusCode, 400);
+  assert.match(res.body.message, /server_origin/);
+});
+
+test('auth route: Wear pairing credential issuance binds the watch key and challenge', async () => {
+  let storedCredential;
+  const tx = {
+    mobileAuthSession: {
+      updateMany: async () => ({ count: 1 })
+    },
+    wearPairingCredential: {
+      deleteMany: async () => ({ count: 0 }),
+      findMany: async () => [],
+      create: async (args) => { storedCredential = args.data; return { id: 1 }; }
+    }
+  };
+  const router = loadAuthRouter({
+    prismaStub: { $transaction: async (callback) => callback(tx) },
+    passportStub: { authenticate: () => () => {} },
+    bcryptStub: { compare: async () => false, genSalt: async () => 'salt', hash: async () => 'hash' }
+  });
+  const handler = getRouteHandler(router, 'post', '/mobile/wear/pairing-credential');
+  const res = createRes({ mobileAuthSessionId: 9 });
+  const { publicKey } = crypto.generateKeyPairSync('ec', { namedCurve: 'prime256v1' });
+  const publicKeySpki = publicKey.export({ format: 'der', type: 'spki' }).toString('base64');
+
+  await handler({
+    isAuthenticated: () => true,
+    user: { id: 7 },
+    body: {
+      server_origin: 'https://health.example',
+      watch_device_id: 'watch-install-1',
+      watch_device_name: 'Galaxy Watch Ultra',
+      protocol_version: 1,
+      watch_public_key_spki: publicKeySpki
+    }
+  }, res);
+
+  assert.equal(res.statusCode, 201);
+  assert.match(res.body.pairing_token, /^wear_pair_/);
+  assert.equal(res.body.watch_device_id, 'watch-install-1');
+  assert.equal(res.body.protocol_version, 1);
+  assert.ok(res.body.challenge);
+  assert.equal(storedCredential.watch_public_key_spki, publicKeySpki);
+  assert.equal(storedCredential.watch_device_name, 'Galaxy Watch Ultra');
 });
 
 test('auth route: POST /mobile/login performs a dummy hash comparison for unknown accounts', async () => {

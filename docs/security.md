@@ -24,6 +24,11 @@ fixed-window limits. A limit response uses HTTP 429 with a JSON `message` and st
 headers; food, weight, health checks, and normal synchronization traffic are not throttled by
 these auth-specific limiters.
 
+Wear credential issuance has both a coarse pre-authentication IP limit and a post-authentication
+per-phone-session limit. Pairing origins require HTTPS in production and staging. Operators of an
+intentionally cleartext LAN/loopback self-host must set `ALLOW_INSECURE_WEAR_PAIRING=true`; the
+backend emits an actionable warning because pairing credentials and health data can be intercepted.
+
 Helmet supplies baseline browser security headers. Content Security Policy is intentionally
 deferred until allowed image and proxy origins can be configured without breaking self-hosted
 instances; do not treat the current header set as a substitute for a deployment-specific CSP.

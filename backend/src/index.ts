@@ -290,6 +290,8 @@ const bootstrap = async (): Promise<void> => {
   app.use('/auth/login', authRateLimiters.login);
   app.use('/auth/mobile/login', authRateLimiters.login);
   app.use('/auth/mobile/refresh', authRateLimiters.refresh);
+  app.use('/auth/mobile/wear/pairing-credential', authRateLimiters.pairingIssueIp);
+  app.use('/auth/mobile/wear/pair', authRateLimiters.pairingExchange);
   app.use(express.json({ limit: '2mb' }));
   app.use(express.urlencoded({ extended: true, limit: '2mb' }));
 
@@ -316,6 +318,7 @@ const bootstrap = async (): Promise<void> => {
   app.use(passport.initialize());
   app.use(passport.session());
   app.use(authenticateMobileBearerToken);
+  app.use('/auth/mobile/wear/pairing-credential', authRateLimiters.pairingIssue);
   app.use(autoLoginTestUser);
 
   passport.use(
