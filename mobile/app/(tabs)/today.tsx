@@ -97,7 +97,15 @@ export default function TodayScreen() {
     });
 
     const deleteFood = useMutation({
-        mutationFn: (id: number) => api.deleteFoodLog(id),
+        mutationFn: (id: number) => {
+            const payload = { id };
+            return executeOrQueueMutation({
+                operation: OFFLINE_MUTATION_OPERATIONS.DELETE_FOOD_LOG,
+                payload,
+                execute: (operationId) => api.deleteFoodLog(id, operationId),
+                enqueue
+            });
+        },
         onSuccess: async () => {
             await Haptics.selectionAsync();
             await invalidateLogQueries();
@@ -125,7 +133,13 @@ export default function TodayScreen() {
                 payload.servings_consumed = Number(editServings);
             }
 
-            return api.updateFoodLog(editEntry.id, payload);
+            const queuedPayload = { id: editEntry.id, update: payload };
+            return executeOrQueueMutation({
+                operation: OFFLINE_MUTATION_OPERATIONS.UPDATE_FOOD_LOG,
+                payload: queuedPayload,
+                execute: (operationId) => api.updateFoodLog(editEntry.id, payload, operationId),
+                enqueue
+            });
         },
         onSuccess: async () => {
             setEditEntry(null);

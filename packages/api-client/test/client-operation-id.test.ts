@@ -84,6 +84,39 @@ test('updatePreferences sends the caller operation ID', async () => {
     assert.equal(getOperationId(requests[0]), 'preferences-operation-1');
 });
 
+test('updateFoodLog sends the caller operation ID', async () => {
+    const requests: CapturedRequest[] = [];
+    const client = createClient(requests);
+
+    await client.updateFoodLog(42, { calories: 420 }, 'food-update-operation-1');
+
+    assert.equal(requests[0]?.url, 'https://calibrate.example/api/v1/food/42');
+    assert.equal(requests[0]?.init.method, 'PATCH');
+    assert.equal(getOperationId(requests[0]), 'food-update-operation-1');
+});
+
+test('deleteFoodLog sends the caller operation ID', async () => {
+    const requests: CapturedRequest[] = [];
+    const client = createClient(requests);
+
+    await client.deleteFoodLog(42, 'food-delete-operation-1');
+
+    assert.equal(requests[0]?.url, 'https://calibrate.example/api/v1/food/42');
+    assert.equal(requests[0]?.init.method, 'DELETE');
+    assert.equal(getOperationId(requests[0]), 'food-delete-operation-1');
+});
+
+test('deleteMetric sends the caller operation ID', async () => {
+    const requests: CapturedRequest[] = [];
+    const client = createClient(requests);
+
+    await client.deleteMetric(24, 'metric-delete-operation-1');
+
+    assert.equal(requests[0]?.url, 'https://calibrate.example/api/v1/metrics/24');
+    assert.equal(requests[0]?.init.method, 'DELETE');
+    assert.equal(getOperationId(requests[0]), 'metric-delete-operation-1');
+});
+
 test('operation ID header is omitted when callers do not provide one', async () => {
     const requests: CapturedRequest[] = [];
     const client = createClient(requests);

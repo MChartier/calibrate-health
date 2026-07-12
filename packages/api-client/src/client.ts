@@ -139,6 +139,10 @@ export class CalibrateApiClient {
         const callerSignal = options.signal;
         const abortFromCaller = () => timeoutController.abort();
         callerSignal?.addEventListener('abort', abortFromCaller, { once: true });
+        if (callerSignal?.aborted) {
+            // An abort event that fired before listener registration must still cancel this request.
+            abortFromCaller();
+        }
 
         let response: Response;
         try {

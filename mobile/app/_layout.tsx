@@ -9,6 +9,7 @@ import { useNativePushRegistration } from '../src/hooks/useNativePushRegistratio
 import { createQueuedMutationExecutor } from '../src/offline/operations';
 import { OfflineOutboxProvider } from '../src/offline/provider';
 import { colors } from '../src/theme';
+import { AppErrorBoundary } from '../src/components/AppErrorBoundary';
 
 const queryClient = new QueryClient();
 
@@ -25,16 +26,18 @@ const AuthenticatedRuntime: React.FC<{ children: React.ReactNode }> = ({ childre
 
 export default function RootLayout() {
     return (
-        <SafeAreaProvider>
-            <QueryClientProvider client={queryClient}>
-                <AuthProvider>
-                    <AuthenticatedRuntime>
-                        <NativeRuntimeHooks />
-                        <StatusBar style="dark" backgroundColor={colors.surface} />
-                        <Slot />
-                    </AuthenticatedRuntime>
-                </AuthProvider>
-            </QueryClientProvider>
-        </SafeAreaProvider>
+        <AppErrorBoundary>
+            <SafeAreaProvider>
+                <QueryClientProvider client={queryClient}>
+                    <AuthProvider>
+                        <AuthenticatedRuntime>
+                            <NativeRuntimeHooks />
+                            <StatusBar style="dark" backgroundColor={colors.surface} />
+                            <Slot />
+                        </AuthenticatedRuntime>
+                    </AuthProvider>
+                </QueryClientProvider>
+            </SafeAreaProvider>
+        </AppErrorBoundary>
     );
 }

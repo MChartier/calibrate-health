@@ -1,10 +1,18 @@
-import { ApiError, type CalibrateApiClient, type FoodLogCreatePayload } from '@calibrate/api-client';
+import {
+    ApiError,
+    type CalibrateApiClient,
+    type FoodLogCreatePayload,
+    type FoodLogUpdatePayload
+} from '@calibrate/api-client';
 import * as Crypto from 'expo-crypto';
 import type { QueuedMutationExecutor } from './reconciler';
 
 export const OFFLINE_MUTATION_OPERATIONS = {
     CREATE_FOOD_LOG: 'food.create',
+    UPDATE_FOOD_LOG: 'food.update',
+    DELETE_FOOD_LOG: 'food.delete',
     ADD_METRIC: 'metric.add',
+    DELETE_METRIC: 'metric.delete',
     UPDATE_FOOD_DAY: 'food-day.update'
 } as const;
 
@@ -29,6 +37,13 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function requireRecordPayload(value: unknown, operation: string): Record<string, unknown> {
     if (!isRecord(value)) throw new Error(`Queued ${operation} payload is invalid.`);
+    return value;
+}
+
+function requirePositiveInteger(value: unknown, operation: string): number {
+    if (typeof value !== 'number' || !Number.isInteger(value) || value < 1) {
+        throw new Error(`Queued ${operation} payload is invalid.`);
+    }
     return value;
 }
 
@@ -68,11 +83,23 @@ export function createQueuedMutationExecutor(api: CalibrateApiClient): QueuedMut
             case OFFLINE_MUTATION_OPERATIONS.CREATE_FOOD_LOG:
                 await api.createFoodLog(payload as FoodLogCreatePayload, mutation.id);
                 return;
+            case OFFLINE_MUTATION_OPERATIONS.UPDATE_FOOD_LOG: {
+                const id = requirePositiveInteger(payload.id, mutation.operation);
+                const update = requireRecordPayload(payload.update, mutation.operation) as FoodLogUpdatePayload;
+                await api.updateFoodLog(id, update, mutation.id);
+                return;
+            }
+            case OFFLINE_MUTATION_OPERATIONS.DELETE_FOOD_LOG:
+                await api.deleteFoodLog(requirePositiveInteger(payload.id, mutation.operation), mutation.id);
+                return;
             case OFFLINE_MUTATION_OPERATIONS.ADD_METRIC:
                 if (typeof payload.weight !== 'number' || typeof payload.date !== 'string') {
                     throw new Error('Queued metric.add payload is invalid.');
                 }
                 await api.addMetric({ weight: payload.weight, date: payload.date }, mutation.id);
+                return;
+            case OFFLINE_MUTATION_OPERATIONS.DELETE_METRIC:
+                await api.deleteMetric(requirePositiveInteger(payload.id, mutation.operation), mutation.id);
                 return;
             case OFFLINE_MUTATION_OPERATIONS.UPDATE_FOOD_DAY:
                 if (typeof payload.date !== 'string' || typeof payload.is_complete !== 'boolean') {
