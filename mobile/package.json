@@ -12,6 +12,7 @@
     "test": "jest"
   },
   "dependencies": {
+    "@calibrate/wear-pairing": "file:modules/wear-pairing",
     "@babel/runtime": "^7.29.2",
     "@calibrate/api-client": "file:../packages/api-client",
     "@calibrate/shared": "file:../shared",
