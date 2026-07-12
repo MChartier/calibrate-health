@@ -46,7 +46,8 @@ npx eas-cli@16.28.0 env:create --environment preview --name EXPO_PUBLIC_CALIBRAT
 
 ## Versioning
 
-`mobile/app.json` is the source of truth:
+`shared/release.json` is the cross-platform source of truth; see `docs/release-compatibility.md` for the compatibility
+policy and artifact metadata format. The native phone values mirror it in `mobile/app.json`:
 
 - `expo.version` is the user-visible semantic version.
 - `expo.android.versionCode` is the monotonically increasing Android build number.
@@ -55,6 +56,9 @@ npx eas-cli@16.28.0 env:create --environment preview --name EXPO_PUBLIC_CALIBRAT
 `versionCode`; increment `version` when the user-visible release changes. Commit both before building so an artifact
 can be traced to one Git commit. Google Play and Android reject an upgrade whose version code is not greater than the
 installed build.
+
+Run `npm.cmd run release:check` after every version change. It also verifies the backend package, generated Android
+project, Wear app, pairing module, application ID, and EAS profile names without invoking a native build.
 
 ## Validate from a clean checkout
 
@@ -118,6 +122,7 @@ SecureStore or SQLite changes.
 
 ## Internal release checklist
 
+- [ ] `npm.cmd run release:check` and `npm.cmd run test:release` pass.
 - [ ] Working tree is clean and the release commit is pushed.
 - [ ] `version` is correct and `versionCode` is greater than every distributed Android build.
 - [ ] Application ID is still `app.calibratehealth.mobile`.
@@ -134,4 +139,5 @@ SecureStore or SQLite changes.
 - [ ] Confirm a self-hosted HTTPS origin can be selected and survives an app restart.
 - [ ] Inspect the APK/AAB for an expected public server origin and absence of credentials.
 - [ ] Record artifact digest, EAS build URL, Git commit, version, version code, device/API level, and test results.
+- [ ] Generate and retain the deterministic release metadata described in `docs/release-compatibility.md`.
 - [ ] Keep the prior artifact and encrypted keystore backup, but distribute only the new higher-version build.

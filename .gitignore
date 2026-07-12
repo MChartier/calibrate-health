@@ -14,5 +14,7 @@ mobile/dist
 coverage
 .nyc_output
 .c8_output
+deploy/backups/
+deploy/*age-identity*
 .devcontainer/.env
 .vscode/settings.json

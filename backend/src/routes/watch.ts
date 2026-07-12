@@ -50,7 +50,8 @@ router.get('/', async (req, res) => {
     if (etagMatches(req.get('if-none-match'), etag)) return res.status(304).send();
     return res.json(snapshot);
   } catch (error) {
-    console.error('Watch snapshot failed:', error);
+    const errorType = error instanceof Error ? error.name : 'UnknownError';
+    console.error(`Watch snapshot failed (request_id=${res.locals?.requestId ?? 'unavailable'}, error_type=${errorType}).`);
     return res.status(500).json({ message: 'Server error' });
   }
 });
@@ -83,7 +84,8 @@ router.post('/mutations', async (req, res) => {
         retryable: error.code === 'OPERATION_IN_PROGRESS'
       });
     }
-    console.error('Watch mutation failed:', error);
+    const errorType = error instanceof Error ? error.name : 'UnknownError';
+    console.error(`Watch mutation failed (request_id=${res.locals?.requestId ?? 'unavailable'}, error_type=${errorType}).`);
     return res.status(500).json({ message: 'Server error' });
   }
 });

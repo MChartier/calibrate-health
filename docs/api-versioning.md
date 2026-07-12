@@ -12,7 +12,8 @@ conflict semantics requires a new API version.
 
 `GET /api/v1/client-config` advertises the current and supported API versions, the legacy alias,
 server version, minimum supported mobile version, and capabilities. A server that must reject an
-obsolete native client should raise `min_supported_mobile_version`; clients should compare it
+obsolete native client should raise the matching `min_supported_mobile_version` or `min_supported_wear_version`;
+clients should compare it
 before starting normal synchronization and present an actionable upgrade message.
 
 The OpenAPI source is executable project state. Run `npm run api:generate` after contract edits and

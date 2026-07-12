@@ -56,6 +56,9 @@
     "build:mobile": "npm --prefix mobile run typecheck",
     "api:generate": "openapi-typescript docs/openapi/v1.yaml -o packages/api-client/src/generated/v1.ts",
     "api:contract:check": "npm run api:generate && git diff --exit-code -- packages/api-client/src/generated/v1.ts",
+    "release:check": "node scripts/release-config.mjs check",
+    "release:metadata": "node scripts/release-config.mjs metadata",
+    "test:release": "node --test scripts/release-config.test.mjs",
     "build:storybook": "npm --prefix frontend run storybook:build",
     "lint": "npm --prefix frontend run lint",
     "lint:mobile": "npm --prefix mobile run typecheck",
@@ -64,6 +67,8 @@
     "test:frontend": "npm --prefix frontend test",
     "test:mobile": "npm --prefix mobile test",
     "test:android:e2e": "node scripts/android-e2e.mjs",
+    "test:deploy": "node --test deploy/test/*.test.mjs",
+    "deploy:config:check": "node deploy/scripts/validate-compose.mjs",
     "test:coverage": "npm run test:coverage:backend && npm run test:coverage:frontend",
     "test:coverage:backend": "npm --prefix backend run test:coverage",
     "test:coverage:frontend": "npm --prefix frontend run test:coverage"

@@ -18,5 +18,7 @@ test('client config advertises the stable v1 API and legacy migration alias', ()
   assert.equal(body.api_versions.current, 'v1');
   assert.deepEqual(body.api_versions.supported, ['v1']);
   assert.equal(body.api_versions.legacy_alias, '/api');
+  assert.equal(body.min_supported_mobile_version, '0.1.0');
+  assert.equal(body.min_supported_wear_version, '0.1.0');
   assert.match(body.api_versions.legacy_deprecation, /migrated/i);
 });

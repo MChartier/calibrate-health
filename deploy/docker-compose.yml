@@ -1,41 +1,71 @@
-version: "3.8"
+name: calibrate
 
 services:
   caddy:
     image: caddy:2.8-alpine
     restart: unless-stopped
+    init: true
     ports:
       - "80:80"
       - "443:443"
     environment:
-      CADDY_EMAIL: ${CADDY_EMAIL:-}
+      APP_HOST: ${APP_HOST:?Set APP_HOST in deploy/.env}
+      CADDY_EMAIL: ${CADDY_EMAIL:?Set CADDY_EMAIL in deploy/.env}
       BASIC_AUTH_USER: ${BASIC_AUTH_USER:-}
       BASIC_AUTH_HASH: ${BASIC_AUTH_HASH:-}
     volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ${CADDYFILE:-./Caddyfile.prod}:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
       - caddy_config:/config
     depends_on:
-      - app
+      app:
+        condition: service_healthy
+    networks:
+      - internal
 
   app:
-    # Full image reference, e.g. ghcr.io/mchartier/calibratehealth:main
-    image: ${APP_IMAGE}
+    image: ${APP_IMAGE:?Set APP_IMAGE in deploy/.env}
     restart: unless-stopped
+    init: true
+    stop_grace_period: 30s
     environment:
       NODE_ENV: production
-      PORT: 3000
+      PORT: "3000"
       FRONTEND_DIST_DIR: /app/frontend/dist
-
-      DATABASE_URL: ${DATABASE_URL}
-      SESSION_SECRET: ${SESSION_SECRET}
+      # Empty only when docker-compose.postgres.yml supplies DB_* components.
+      DATABASE_URL: ${DATABASE_URL:-}
+      SESSION_SECRET: ${SESSION_SECRET:?Set SESSION_SECRET in deploy/.env}
       AUTO_LOGIN_TEST_USER: "false"
-      WEB_PUSH_PUBLIC_KEY: ${WEB_PUSH_PUBLIC_KEY}
-      WEB_PUSH_PRIVATE_KEY: ${WEB_PUSH_PRIVATE_KEY}
-      WEB_PUSH_SUBJECT: ${WEB_PUSH_SUBJECT}
+      MIGRATION_MAX_ATTEMPTS: ${MIGRATION_MAX_ATTEMPTS:-30}
+      MIGRATION_RETRY_SECONDS: ${MIGRATION_RETRY_SECONDS:-5}
+      CALIBRATE_DIAGNOSTICS_ENABLED: ${CALIBRATE_DIAGNOSTICS_ENABLED:-false}
+      CALIBRATE_DIAGNOSTICS_METRICS_TOKEN: ${CALIBRATE_DIAGNOSTICS_METRICS_TOKEN:-}
+      WEB_PUSH_PUBLIC_KEY: ${WEB_PUSH_PUBLIC_KEY:-}
+      WEB_PUSH_PRIVATE_KEY: ${WEB_PUSH_PRIVATE_KEY:-}
+      WEB_PUSH_SUBJECT: ${WEB_PUSH_SUBJECT:-}
+      FOOD_DATA_PROVIDER: ${FOOD_DATA_PROVIDER:-fatsecret}
+      FATSECRET_CLIENT_ID: ${FATSECRET_CLIENT_ID:-}
+      FATSECRET_CLIENT_SECRET: ${FATSECRET_CLIENT_SECRET:-}
+      USDA_API_KEY: ${USDA_API_KEY:-}
     expose:
       - "3000"
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:3000/api/v1/readyz').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 45s
+    networks:
+      - internal
 
 volumes:
   caddy_data:
   caddy_config:
+
+networks:
+  internal:
+    driver: bridge

@@ -30,10 +30,17 @@ import watchRoutes from './routes/watch';
 import { authenticateMobileBearerToken } from './middleware/mobileAuth';
 import { createAuthRateLimiters } from './middleware/security';
 import { startReminderScheduler } from './services/reminderScheduler';
+import { checkDatabaseReadiness } from './services/readiness';
 import { DUMMY_AUTH_PASSWORD_HASH, normalizeEmailCredential } from './utils/authCredentials';
 import { autoLoginTestUser } from './utils/devAuth';
 import { DEFAULT_SESSION_TTL_MS, PostgresSessionStore } from './utils/postgresSessionStore';
 import { USER_CLIENT_SELECT } from './utils/userSerialization';
+import {
+  createDiagnosticsMetricsHandler,
+  createRequestObservabilityMiddleware,
+  emitDiagnosticEvent,
+  resolveObservabilityConfig
+} from './observability';
 
 const SESSION_TTL_MS = DEFAULT_SESSION_TTL_MS;
 
@@ -162,7 +169,7 @@ const requestErrorHandler: express.ErrorRequestHandler = (err: HttpError, _req, 
   const rawStatus = err.statusCode ?? err.status;
   const statusCode = typeof rawStatus === 'number' && rawStatus >= 400 && rawStatus < 600 ? rawStatus : 500;
   if (statusCode >= 500) {
-    console.error('Unhandled request error:', err);
+    console.error(`Unhandled request error (request_id=${res.locals.requestId ?? 'unavailable'}, error_type=${err.name}).`);
   }
 
   if (statusCode === 413) {
@@ -221,20 +228,33 @@ const bootstrap = async (): Promise<void> => {
   const app = express();
   const PORT = process.env.PORT || 3000;
   const isProductionOrStaging = isProductionOrStagingEnv(process.env.NODE_ENV);
+  const observabilityConfig = resolveObservabilityConfig(process.env);
 
   // Reduce fingerprinting surface for minimal Express signature.
   app.disable('x-powered-by');
+  app.use(createRequestObservabilityMiddleware({ config: observabilityConfig }));
   app.use(helmet({
     // A deployment-aware CSP needs to account for self-hosted proxy and food-image origins.
     contentSecurityPolicy: false,
     ...(isProductionOrStaging ? {} : { strictTransportSecurity: false })
   }));
+  app.get('/internal/diagnostics/metrics', createDiagnosticsMetricsHandler({ config: observabilityConfig }));
   const authRateLimiters = createAuthRateLimiters();
 
   const secureCookieEnv = process.env.SESSION_COOKIE_SECURE;
   const useSecureCookies = secureCookieEnv ? secureCookieEnv === 'true' : isProductionOrStaging;
   const sameSite = parseSameSite(process.env.SESSION_COOKIE_SAMESITE);
   const sessionSecret = resolveSessionSecret(isProductionOrStaging);
+
+  if (
+    observabilityConfig.enabled &&
+    observabilityConfig.metricsToken !== null &&
+    !observabilityConfig.metricsEnabled
+  ) {
+    console.warn(
+      'CALIBRATE_DIAGNOSTICS_METRICS_TOKEN must contain at least 32 characters; the diagnostics metrics endpoint is disabled.'
+    );
+  }
 
   if (useSecureCookies) {
     app.set('trust proxy', 1);
@@ -386,6 +406,11 @@ const bootstrap = async (): Promise<void> => {
     res.json({ ok: true });
   });
 
+  apiRouter.get('/readyz', async (_req, res) => {
+    const ready = await checkDatabaseReadiness(() => pgPool.query('SELECT 1'));
+    res.status(ready ? 200 : 503).json({ ok: ready });
+  });
+
   apiRouter.use('/client-config', clientConfigRoutes);
   apiRouter.use('/goals', goalRoutes);
   apiRouter.use('/metrics', metricRoutes);
@@ -411,6 +436,14 @@ const bootstrap = async (): Promise<void> => {
 
   app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
+    emitDiagnosticEvent(observabilityConfig, 'backend.ready', {
+      port: Number(PORT),
+      environment: process.env.NODE_ENV ?? 'development',
+      secure_cookies: useSecureCookies,
+      cors_origin_count: allowedOriginSet.size,
+      metrics_enabled: observabilityConfig.metricsEnabled,
+      reminder_scheduler_enabled: true
+    });
     startReminderScheduler();
   });
 };

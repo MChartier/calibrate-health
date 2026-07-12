@@ -14,12 +14,18 @@ import {
     DEFAULT_NOTIFICATION_DELIVERY_CHANNELS,
     NOTIFICATION_DELIVERY_CHANNELS
 } from '../../../shared/notificationDelivery';
+import {
+    diagnosticsRegistry,
+    emitDiagnosticEvent,
+    resolveObservabilityConfig
+} from '../observability';
 
 const DEFAULT_REMINDER_SEND_HOUR_LOCAL = 9; // Local hour (0-23) to begin sending reminders.
 const DEFAULT_REMINDER_JOB_INTERVAL_MINUTES = 15; // How often to scan for eligible reminders.
 
 let hasLoggedMissingConfig = false;
 let isReminderCheckInProgress = false;
+const observabilityConfig = resolveObservabilityConfig(process.env);
 
 const parseReminderHour = (value: string | undefined): number | null => {
     if (!value) return null;
@@ -164,7 +170,7 @@ const createAndSendScheduledReminders = async (reminderHour: number, now: Date):
         });
 
         if (result.push.failed > 0 && result.push.message) {
-            console.warn(`Reminder push delivery for user ${user.id} had failures. ${result.push.message}`);
+            console.warn(`Reminder push delivery had ${result.push.failed} failure(s); affected subscriptions remain eligible for retry.`);
         }
         if (result.push.skipped && result.push.message?.startsWith('Web push is disabled') && !hasLoggedMissingConfig) {
             console.warn(`${result.push.message} Native push delivery can still run when native tokens are registered.`);
@@ -186,14 +192,36 @@ const runReminderCheck = async (): Promise<void> => {
  */
 const runReminderCheckSafely = async (): Promise<void> => {
     if (isReminderCheckInProgress) {
+        diagnosticsRegistry.recordJob('reminder_scheduler', 'skipped', 0);
+        emitDiagnosticEvent(observabilityConfig, 'background_job.completed', {
+            job: 'reminder_scheduler',
+            outcome: 'skipped',
+            duration_ms: 0
+        });
         return;
     }
 
     isReminderCheckInProgress = true;
+    const startedAt = process.hrtime.bigint();
     try {
         await runReminderCheck();
+        const durationMs = Number(process.hrtime.bigint() - startedAt) / 1_000_000;
+        diagnosticsRegistry.recordJob('reminder_scheduler', 'success', durationMs);
+        emitDiagnosticEvent(observabilityConfig, 'background_job.completed', {
+            job: 'reminder_scheduler',
+            outcome: 'success',
+            duration_ms: Math.round(durationMs * 100) / 100
+        });
     } catch (error) {
-        console.error('Reminder scheduler run failed; the next interval will retry.', error);
+        const durationMs = Number(process.hrtime.bigint() - startedAt) / 1_000_000;
+        diagnosticsRegistry.recordJob('reminder_scheduler', 'failure', durationMs);
+        emitDiagnosticEvent(observabilityConfig, 'background_job.completed', {
+            job: 'reminder_scheduler',
+            outcome: 'failure',
+            duration_ms: Math.round(durationMs * 100) / 100,
+            error_type: error instanceof Error ? error.name : 'UnknownError'
+        });
+        console.error('Reminder scheduler run failed; the next interval will retry (details omitted from logs).');
     } finally {
         isReminderCheckInProgress = false;
     }
@@ -205,6 +233,12 @@ const runReminderCheckSafely = async (): Promise<void> => {
 export const startReminderScheduler = (): void => {
     const intervalMinutes = resolveJobIntervalMinutes();
     const intervalMs = intervalMinutes * MS_PER_MINUTE;
+
+    emitDiagnosticEvent(observabilityConfig, 'background_job.scheduled', {
+        job: 'reminder_scheduler',
+        interval_minutes: intervalMinutes,
+        local_send_hour: resolveReminderHour()
+    });
 
     void runReminderCheckSafely();
     setInterval(() => {

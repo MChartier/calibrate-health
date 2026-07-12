@@ -668,6 +668,7 @@ export interface components {
             /** Format: uri */
             hosted_origin: string;
             min_supported_mobile_version: string;
+            min_supported_wear_version: string;
             capabilities: {
                 self_hosted_server_url: boolean;
                 native_push: boolean;

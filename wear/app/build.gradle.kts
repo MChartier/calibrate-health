@@ -151,7 +151,12 @@ android {
         create("internal") {
             initWith(getByName("release"))
             versionNameSuffix = "-internal"
-            signingConfig = signingConfigs.getByName("debug")
+            // Pair with an EAS-signed phone when shared credentials are supplied; otherwise support local debug pairing.
+            signingConfig = if (hasReleaseSigning) {
+                signingConfigs.getByName("sharedRelease")
+            } else {
+                signingConfigs.getByName("debug")
+            }
             matchingFallbacks += listOf("release")
             buildConfigField("String", "DEFAULT_SERVER_URL", quoteBuildConfig(configuredServerOrigin))
             manifestPlaceholders["usesCleartextTraffic"] = configuredUsesCleartext

@@ -10,6 +10,7 @@ import {
 import { type PushNotificationPayload } from './pushNotificationPayloads';
 import { sendNativePushNotification } from './nativePush';
 import { ensureWebPushConfigured, sendWebPushNotification } from './webPush';
+import { diagnosticsRegistry } from '../observability';
 
 export type InAppNotificationDeliveryRequest = {
     type: InAppNotificationType;
@@ -319,6 +320,7 @@ const sendPushNotifications = async (
             );
 
             sent += 1;
+            diagnosticsRegistry.recordOperation('notification_delivery', 'success');
 
             if (pushRequest.markSentLocalDate instanceof Date) {
                 await prisma.pushSubscription.update({
@@ -328,14 +330,15 @@ const sendPushNotifications = async (
             }
         } catch (error) {
             failed += 1;
+            diagnosticsRegistry.recordOperation('notification_delivery', 'failure');
 
             if (shouldDeleteSubscription(error)) {
                 await prisma.pushSubscription.delete({ where: { id: subscription.id } });
                 continue;
             }
 
-            const message = error instanceof Error ? error.message : 'Unknown error';
-            console.warn(`Failed to send notification for subscription ${subscription.id}: ${message}`);
+            const errorType = error instanceof Error ? error.name : 'UnknownError';
+            console.warn(`Web push delivery failed; the subscription remains eligible for retry (error_type=${errorType}).`);
         }
     }
 
@@ -350,6 +353,7 @@ const sendPushNotifications = async (
         try {
             await sendNativePushNotification(subscription, pushRequest.payload);
             sent += 1;
+            diagnosticsRegistry.recordOperation('notification_delivery', 'success');
 
             if (pushRequest.markSentLocalDate instanceof Date && nativePushSubscription) {
                 await nativePushSubscription.update({
@@ -359,6 +363,7 @@ const sendPushNotifications = async (
             }
         } catch (error) {
             failed += 1;
+            diagnosticsRegistry.recordOperation('notification_delivery', 'failure');
 
             if (shouldDeleteSubscription(error) && nativePushSubscription) {
                 await nativePushSubscription.updateMany({
@@ -368,8 +373,8 @@ const sendPushNotifications = async (
                 continue;
             }
 
-            const message = error instanceof Error ? error.message : 'Unknown error';
-            console.warn(`Failed to send native notification for subscription ${subscription.id}: ${message}`);
+            const errorType = error instanceof Error ? error.name : 'UnknownError';
+            console.warn(`Native push delivery failed; the subscription remains eligible for retry (error_type=${errorType}).`);
         }
     }
 

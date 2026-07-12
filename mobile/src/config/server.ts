@@ -1,10 +1,11 @@
 import { Platform } from 'react-native';
 import type { ClientConfigResponse } from '@calibrate/api-client';
+import release from '../../../shared/release.json';
 
 export const HOSTED_SERVER_URL = 'https://calibratehealth.app';
 export const ANDROID_EMULATOR_SERVER_URL = 'http://10.0.2.2:3000';
 export const CALIBRATE_SERVER_URL_ENV = 'EXPO_PUBLIC_CALIBRATE_SERVER_URL';
-export const MOBILE_API_VERSION = 'v1';
+export const MOBILE_API_VERSION = release.server.api.current;
 
 const SERVER_CONNECTION_TIMEOUT_MS = 8000; // Fails quickly enough to keep sign-in setup responsive on bad LAN addresses.
 
