@@ -16,6 +16,7 @@ import app.calibratehealth.wear.data.security.AccountStateCriticalSection
 import app.calibratehealth.wear.data.security.SecureSession
 import app.calibratehealth.wear.data.security.SecureTokenStore
 import app.calibratehealth.wear.data.security.accountScope
+import app.calibratehealth.wear.notifications.WearReminderNotifier
 import app.calibratehealth.wear.tile.CalibrateTileUpdate
 import java.util.UUID
 import java.util.concurrent.TimeUnit
@@ -221,12 +222,16 @@ class OutboxWorker(
 ) : CoroutineWorker(appContext, workerParameters) {
     override suspend fun doWork(): Result {
         val dependencies = OutboxWorkerDependencies.create(applicationContext)
+        val capturedInvalidationId = SyncInvalidationInbox.pendingId(applicationContext)
         return when (dependencies.outboxProcessor.drain()) {
             OutboxDrainResult.Complete -> {
                 when (dependencies.snapshotSynchronizer.refresh {
                     dependencies.outboxRepository.confirmSnapshotRefresh()
+                    SyncInvalidationInbox.completeRefresh(applicationContext, capturedInvalidationId)
                 }) {
                     SnapshotSyncResult.Success, SnapshotSyncResult.NotModified -> {
+                        // Notification failures must never turn a committed health sync into failed work.
+                        runCatching { WearReminderNotifier(applicationContext).evaluate() }
                         CalibrateTileUpdate.request(applicationContext)
                         Result.success()
                     }

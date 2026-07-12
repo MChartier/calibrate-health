@@ -66,11 +66,14 @@ $env:ANDROID_HOME="$env:LOCALAPPDATA\Android\Sdk"
 ```
 
 The runtime derives unpaired, pairing, recovery, and paired states from durable storage; deterministic health values
-remain limited to tests. Summary actions, complications, and tiles are separate follow-up slices.
+remain limited to tests. The app renders the Room-cached daily summary and supports quick add, undo, completion,
+rotary weight entry, continue-on-phone, and watch-local disconnect. The cache-only Tile exposes calorie, activity,
+completion, and staleness state without initiating network work from the Tile service.
 
-`WearDataLayerContract` reserves versioned coordination paths for pairing, sync invalidation, and continue-on-phone
+`WearDataLayerContract` defines versioned coordination paths for pairing, sync invalidation, and continue-on-phone
 handoffs. Health summaries do not travel over Data Layer: the paired watch calls the selected server directly and
-caches its own data with Room. A bounded listener handles only correlated pairing messages on a single-thread executor.
+caches its own data with Room. Sync invalidations contain only bounded server/account/device metadata, are accepted
+only from the exact phone node stored during pairing, and schedule the same constrained WorkManager refresh chain.
 
 The watch publishes the `calibrate_wear_pairing_v1` capability through `android_wear_capabilities`. This capability is
 only for phone-side discovery and short-lived coordination; server health data never travels through it.
@@ -101,6 +104,41 @@ the cache and outbox.
 
 Tiles and UI surfaces must read cached repositories. They must not call the server directly; WorkManager is the only
 background outbox entry point.
+
+## Reminder delivery and disconnected behavior
+
+The self-hosted server remains authoritative for reminder preferences, local-day eligibility, and deduplication. The
+restricted Watch snapshot includes at most one active food reminder and one active weight reminder for the current
+local day. The watch combines those rows into one local notification with an allowlisted food-summary or weight-entry
+deep link; it never accepts arbitrary notification copy or URLs from the server.
+
+To avoid competing with Android's normal phone-to-watch notification bridging, the watch cancels its local reminder
+whenever a paired phone node is reachable. A paired watch with its own Wi-Fi or LTE connection performs a
+battery-not-low, network-constrained refresh approximately hourly. It may post the local reminder only when phone
+reachability is known to be absent. If the Data Layer reachability check fails, the watch fails closed and does not
+post a potentially duplicate notification.
+
+When both phone and watch are disconnected from every network, no new reminder can be delivered. The server's phone
+push remains the primary reminder and will follow the phone provider's normal retry behavior; the watch does not
+invent a reminder from stale calories or weight data. After the standalone watch regains network access, its next
+bounded refresh can obtain the current unresolved reminder. Completing the food or weight action resolves the server
+reminder; a later snapshot removes and cancels the watch-local notification.
+
+On Android 13 / Wear OS 4 and later, local watch reminders require the watch app's notification permission. Denying
+permission does not affect tracking, synchronization, or phone reminders, and the same server reminder remains
+eligible if permission is granted later.
+
+## Deferred sensors and complication evaluation
+
+The initial companion does not request continuous heart-rate, body-sensor, or workout permissions. Galaxy Watch
+activity reaches Calibrate through Samsung Health and the phone's Health Connect sync. A future Calibrate-owned
+workout feature would use Health Services `ExerciseClient` only after defining a concrete workout UX, sampling and
+battery budget, retention policy, and privacy value that justifies collecting sensor data directly on the watch.
+
+A complication is also deferred until the main app and Tile have completed device dogfood. The Tile already provides
+the useful glance surface without placing health progress on every watch face. Any later complication should be
+opt-in, limited to a concise remaining-calorie or daily-progress value, sourced only from the local cache, visibly
+safe when stale, and free of food names, weight values, or background network access.
 
 Fast JVM contract tests cover cache bounds, FIFO ordering, stable IDs, retry behavior, and fake-store recreation.
 On-device instrumentation tests close and reopen the real Room database and Keystore token store to verify durable

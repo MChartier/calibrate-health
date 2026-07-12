@@ -46,12 +46,19 @@ test('watch snapshot contract exposes unit and revisions needed for offline acti
             latest_date: '2026-07-11'
         },
         quick_add: [],
+        reminders: [{
+            id: 51,
+            type: 'food',
+            local_date: '2026-07-11',
+            created_at: '2026-07-11T17:00:00.000Z'
+        }],
         undo_candidate: { food_log_id: 88, name: 'Oats', calories: 300, created_at: '2026-07-11T15:00:00.000Z' },
         staleness: { activity_stale: false, activity_age_seconds: 5400 }
     };
 
     assert.equal(snapshot.weight_unit, 'LB');
     assert.equal(snapshot.weight.latest_revision, snapshot.weight.today_revision);
+    assert.equal(snapshot.reminders[0]?.type, 'food');
 });
 
 test('watch snapshot sends If-None-Match and returns 304 metadata without throwing', async () => {

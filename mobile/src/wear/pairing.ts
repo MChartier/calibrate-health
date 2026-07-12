@@ -11,6 +11,7 @@ export const WEAR_PAIRING_PATHS = {
     HELLO: '/calibrate/v1/pair/hello',
     CREDENTIAL: '/calibrate/v1/pair/credential',
     RESULT: '/calibrate/v1/pair/result',
+    SYNC_INVALIDATE: '/calibrate/v1/sync/invalidate',
     CONTINUE_ON_PHONE: '/calibrate/v1/continue-on-phone'
 } as const;
 

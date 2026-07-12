@@ -3,6 +3,7 @@ package app.calibratehealth.wear.network
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import app.calibratehealth.wear.notifications.WearReminderType
 
 class WatchSnapshotMapperTest {
     @Test
@@ -35,6 +36,8 @@ class WatchSnapshotMapperTest {
         assertEquals(1_783_731_900_000L, result.dailySnapshot.undoCreatedAtEpochMs)
         assertEquals(42L, result.dailySnapshot.fetchedAtEpochMs)
         assertEquals("0123456789abcdef01234567", result.revision)
+        assertEquals(2, result.reminders.size)
+        assertEquals(setOf(WearReminderType.FOOD, WearReminderType.WEIGHT), result.reminders.map { it.type }.toSet())
         assertEquals(1, result.quickAddItems.size)
         assertEquals("my-food:4", result.quickAddItems.single().quickAddId)
         assertEquals(
@@ -46,8 +49,8 @@ class WatchSnapshotMapperTest {
     @Test
     fun `rejects duplicate quick-add ids and malformed revisions`() {
         val duplicated = validSnapshot().replace(
-            "] ,\"undo_candidate\"",
-            ", {\"id\":\"my-food:4\",\"source\":\"recent\",\"label\":\"Duplicate\",\"calories\":10,\"draft\":{\"date\":\"2026-07-11\",\"meal_period\":\"LUNCH\",\"name\":\"Duplicate\",\"calories\":10}}] ,\"undo_candidate\""
+            "          ],\n          \"reminders\"",
+            "            ,{\"id\":\"my-food:4\",\"source\":\"recent\",\"label\":\"Duplicate\",\"calories\":10,\"draft\":{\"date\":\"2026-07-11\",\"meal_period\":\"LUNCH\",\"name\":\"Duplicate\",\"calories\":10}}\n          ],\n          \"reminders\""
         )
         assertTrue(runCatching { WatchSnapshotMapper.map(duplicated, 42L) }.isFailure)
         assertTrue(runCatching {
@@ -74,7 +77,12 @@ class WatchSnapshotMapperTest {
           "weight":{"today_grams":81500,"today_revision":"abcdef0123456789abcdef01","latest_grams":81500,"latest_revision":"abcdef0123456789abcdef01","latest_date":"2026-07-11"},
           "quick_add":[
             {"id":"my-food:4","source":"pinned","label":"Yogurt","calories":120,"draft":{"date":"2026-07-11","meal_period":"LUNCH","my_food_id":4,"servings_consumed":1}}
-          ] ,"undo_candidate":{"food_log_id":44,"name":"Yogurt","calories":120,"created_at":"2026-07-11T01:05:00Z"},
+          ],
+          "reminders":[
+            {"id":51,"type":"food","local_date":"2026-07-11","created_at":"2026-07-11T09:00:00Z"},
+            {"id":52,"type":"weight","local_date":"2026-07-11","created_at":"2026-07-11T09:00:00Z"}
+          ],
+          "undo_candidate":{"food_log_id":44,"name":"Yogurt","calories":120,"created_at":"2026-07-11T01:05:00Z"},
           "staleness":{"activity_stale":false,"activity_age_seconds":300}
         }
     """.trimIndent()

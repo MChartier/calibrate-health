@@ -8,6 +8,17 @@ import org.junit.Test
 
 class AccountSessionCoordinatorTest {
     @Test
+    fun `local clear removes credentials before account scoped data`() = runBlocking {
+        val events = mutableListOf<String>()
+        val tokenStore = RecordingTokenStore(session(userId = 1), events)
+
+        AccountSessionCoordinator(tokenStore, RecordingAccountDataStore(events)).clear()
+
+        assertEquals(listOf("token.clear", "data.clear"), events)
+        assertNull(tokenStore.session)
+    }
+
+    @Test
     fun `account replacement clears credentials then account data before writing session`() = runBlocking {
         val events = mutableListOf<String>()
         val tokenStore = RecordingTokenStore(session(userId = 1), events)

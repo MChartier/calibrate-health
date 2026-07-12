@@ -13,6 +13,7 @@ import { colors } from '../src/theme';
 import { AppErrorBoundary } from '../src/components/AppErrorBoundary';
 import { HealthConnectProvider } from '../src/healthConnect/provider';
 import { useWearHandoffRouting } from '../src/wear/useWearHandoffRouting';
+import { useWearSyncInvalidation } from '../src/wear/useWearSyncInvalidation';
 
 const queryClient = new QueryClient();
 
@@ -24,6 +25,7 @@ const NativeRuntimeHooks: React.FC = () => {
         serverOrigin: serverUrl,
         userId: user?.id ?? null
     });
+    useWearSyncInvalidation();
     return null;
 };
 

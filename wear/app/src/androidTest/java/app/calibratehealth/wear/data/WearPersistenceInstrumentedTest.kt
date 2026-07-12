@@ -191,6 +191,7 @@ class WearPersistenceInstrumentedTest {
         database.dailySnapshotDao().cacheBounded(snapshot("2026-07-11"), maxRows = 2)
         database.quickAddItemDao().cacheBounded(listOf(quickAdd("food-1", 1)), maxRows = 2)
         database.queuedMutationDao().insert(mutation("operation-1", 100))
+        database.queuedMutationDao().markServerSucceeded("operation-1")
         database.syncMetadataDao().upsert(
             SyncMetadataEntity(
                 serverOrigin = "https://health.example.com",
@@ -205,7 +206,8 @@ class WearPersistenceInstrumentedTest {
 
         assertEquals(emptyList<DailySnapshotEntity>(), database.dailySnapshotDao().allNewestFirst())
         assertEquals(emptyList<QuickAddItemEntity>(), database.quickAddItemDao().all())
-        assertNull(database.queuedMutationDao().head())
+        assertEquals(emptyList<QueuedMutationEntity>(), database.queuedMutationDao().activeInFifoOrder())
+        assertNull(database.queuedMutationDao().latestTerminal())
         assertNull(database.syncMetadataDao().get())
         database.close()
     }

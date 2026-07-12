@@ -6,6 +6,7 @@ import app.calibratehealth.wear.data.security.AndroidKeystoreTokenStore
 import app.calibratehealth.wear.data.security.SecureTokenCorruptedException
 import org.json.JSONObject
 import java.util.concurrent.CopyOnWriteArraySet
+import app.calibratehealth.wear.sync.SyncInvalidationInbox
 
 sealed interface PairingUiState {
     data object Unpaired : PairingUiState
@@ -133,6 +134,13 @@ internal class PairingStateStore(context: Context) {
     fun setSessionInvalid(message: String) {
         // A newly accepted invite owns recovery now; do not let a late worker response obscure it.
         if (readPending() != null) return
+        // Local disconnect clears credentials first; a late worker must not turn Unpaired into Error.
+        val sessionAbsent = try {
+            AndroidKeystoreTokenStore(appContext).read() == null
+        } catch (_: SecureTokenCorruptedException) {
+            false
+        }
+        if (sessionAbsent) return
         val bounded = message.trim().take(180).ifEmpty { SESSION_RECOVERY_MESSAGE }
         check(preferences.edit().putString(ERROR_KEY, bounded).commit()) {
             "Unable to persist Wear session recovery state."
@@ -188,6 +196,22 @@ internal class PairingStateStore(context: Context) {
 
     fun clearPendingResult() {
         preferences.edit().remove(PENDING_RESULT_KEY).commit()
+        PairingStateEvents.notifyChanged()
+    }
+
+    /** Removes only watch-local pairing metadata; server and other device sessions are untouched. */
+    @Synchronized
+    fun clearLocalPairingState() {
+        readPending()?.let { WearPairingKeyManager().deleteOwned(it.keyAlias) }
+        check(
+            preferences.edit()
+                .remove(PENDING_KEY)
+                .remove(PENDING_RESULT_KEY)
+                .remove(ERROR_KEY)
+                .commit()
+        ) { "Unable to clear local Wear pairing state." }
+        TrustedPhoneBindingStore(appContext).clear()
+        SyncInvalidationInbox.clear(appContext)
         PairingStateEvents.notifyChanged()
     }
 

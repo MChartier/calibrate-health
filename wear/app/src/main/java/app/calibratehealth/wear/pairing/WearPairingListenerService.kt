@@ -8,6 +8,8 @@ import app.calibratehealth.wear.data.security.AndroidKeystoreTokenStore
 import app.calibratehealth.wear.data.security.RoomAccountDataStore
 import app.calibratehealth.wear.sync.WearSyncScheduler
 import app.calibratehealth.wear.tile.CalibrateTileUpdate
+import app.calibratehealth.wear.notifications.WearReminderNotifier
+import app.calibratehealth.wear.sync.SyncInvalidationInbox
 import com.google.android.gms.tasks.Tasks
 import com.google.android.gms.wearable.MessageEvent
 import com.google.android.gms.wearable.Wearable
@@ -137,7 +139,19 @@ class WearPairingListenerService : WearableListenerService() {
                     )
                 )
                 val coordinator = sessionCoordinator(context)
+                // Notification state is account-scoped even though it is intentionally not stored in Room.
+                WearReminderNotifier(context).clear()
+                SyncInvalidationInbox.clear(context)
                 runBlocking { coordinator.replace(session) }
+                TrustedPhoneBindingStore(context).write(
+                    TrustedPhoneBinding(
+                        nodeId = nodeId,
+                        serverOrigin = session.serverOrigin,
+                        userId = session.userId,
+                        watchDeviceId = session.watchDeviceId
+                    ),
+                    session
+                )
                 // Account replacement may have cleared Room; invalidate the remotely cached Tile
                 // immediately so another account's summary is not retained while offline.
                 CalibrateTileUpdate.request(context)

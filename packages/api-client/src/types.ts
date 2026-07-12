@@ -286,6 +286,12 @@ export type WatchSnapshot = {
         latest_date: string | null;
     };
     quick_add: WatchQuickAddDraft[];
+    reminders: Array<{
+        id: number;
+        type: 'food' | 'weight';
+        local_date: string;
+        created_at: string;
+    }>;
     undo_candidate: { food_log_id: number; name: string; calories: number; created_at: string } | null;
     staleness: { activity_stale: boolean; activity_age_seconds: number | null };
 };

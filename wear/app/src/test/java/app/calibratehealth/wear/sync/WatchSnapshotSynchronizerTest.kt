@@ -42,12 +42,13 @@ class WatchSnapshotSynchronizerTest {
             quickAdds = RecordingQuickAddRepository(events),
             metadata = metadata,
             tokenStore = tokenStore,
+            onRemindersChanged = { events += "reminders.store" },
             nowEpochMs = { 42 }
         )
 
         assertTrue(synchronizer.refresh { events += "outbox.unlock" } is SnapshotSyncResult.Success)
         assertEquals(
-            listOf("metadata.clear", "snapshot.cache", "quick_add.cache", "metadata.store", "outbox.unlock"),
+            listOf("metadata.clear", "snapshot.cache", "quick_add.cache", "reminders.store", "metadata.store", "outbox.unlock"),
             events
         )
         assertEquals("W/\"watch-new\"", metadata.value?.syncCursor)
@@ -132,6 +133,7 @@ class WatchSnapshotSynchronizerTest {
           "food_day":{"is_complete":false,"completed_at":null,"revision":null},
           "weight":{"today_grams":null,"today_revision":null,"latest_grams":81500,"latest_revision":"abcdef0123456789abcdef01","latest_date":"2026-07-11"},
           "quick_add":[{"id":"my-food:4","source":"pinned","label":"Yogurt","calories":120,"draft":{"date":"2026-07-11","meal_period":"LUNCH","my_food_id":4,"servings_consumed":1}}],
+          "reminders":[],
           "undo_candidate":null,"staleness":{"activity_stale":true,"activity_age_seconds":null}
         }
     """.trimIndent()

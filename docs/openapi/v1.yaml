@@ -1180,7 +1180,7 @@ components:
     WatchSnapshot:
       type: object
       additionalProperties: false
-      required: [server_time, timezone, local_date, weight_unit, revision, calories, activity, food_day, weight, quick_add, undo_candidate, staleness]
+      required: [server_time, timezone, local_date, weight_unit, revision, calories, activity, food_day, weight, quick_add, reminders, undo_candidate, staleness]
       properties:
         server_time: { type: string, format: date-time }
         timezone: { type: string }
@@ -1226,6 +1226,18 @@ components:
           type: array
           maxItems: 12
           items: { $ref: '#/components/schemas/WatchQuickAddDraft' }
+        reminders:
+          type: array
+          maxItems: 2
+          items:
+            type: object
+            additionalProperties: false
+            required: [id, type, local_date, created_at]
+            properties:
+              id: { type: integer, minimum: 1 }
+              type: { type: string, enum: [food, weight] }
+              local_date: { type: string, format: date }
+              created_at: { type: string, format: date-time }
         undo_candidate:
           oneOf:
             - type: 'null'

@@ -27,6 +27,8 @@ import app.calibratehealth.wear.network.WatchSnapshotMapper
 import app.calibratehealth.wear.network.requireObject
 import app.calibratehealth.wear.network.WatchMutationApi
 import app.calibratehealth.wear.network.WatchSnapshotApi
+import app.calibratehealth.wear.notifications.WearReminderStateStore
+import app.calibratehealth.wear.notifications.WearReminderRefreshScheduler
 import app.calibratehealth.wear.pairing.PairingStateStore
 
 enum class HttpOutcome {
@@ -97,6 +99,7 @@ class WatchSnapshotSynchronizer(
     private val tokenStore: SecureTokenStore,
     private val accountState: AccountStateCriticalSection = AccountStateCriticalSection.Shared,
     private val onAuthenticationRequired: (String) -> Unit = {},
+    private val onRemindersChanged: (List<app.calibratehealth.wear.notifications.WearReminder>) -> Unit = {},
     private val nowEpochMs: () -> Long = System::currentTimeMillis
 ) {
     suspend fun refresh(
@@ -145,6 +148,7 @@ class WatchSnapshotSynchronizer(
                     metadata.clear()
                     snapshots.cache(mapped.dailySnapshot)
                     quickAdds.cache(mapped.quickAddItems)
+                    onRemindersChanged(mapped.reminders)
                     // Store the cursor last so a crash cannot advertise an ETag for data not fully cached.
                     metadata.store(
                         SyncMetadataEntity(
@@ -188,6 +192,7 @@ private data class CapturedSnapshotWork(
 object WearSyncScheduler {
     fun scheduleAfterPairing(context: Context) {
         WorkManagerOutboxScheduler(context).schedule()
+        WearReminderRefreshScheduler(context).schedule()
     }
 }
 
@@ -226,7 +231,8 @@ object WearSyncRuntime {
                 quickAdds = RoomQuickAddRepository(database.quickAddItemDao()),
                 metadata = RoomSyncMetadataRepository(database.syncMetadataDao()),
                 tokenStore = tokenStore,
-                onAuthenticationRequired = authenticationRequired
+                onAuthenticationRequired = authenticationRequired,
+                onRemindersChanged = WearReminderStateStore(appContext)::replace
             ),
             outboxRepository = outbox
         )

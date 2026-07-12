@@ -3,6 +3,8 @@ package app.calibratehealth.wear.network
 import app.calibratehealth.wear.data.local.DailySnapshotEntity
 import app.calibratehealth.wear.data.local.QuickAddItemEntity
 import app.calibratehealth.wear.data.local.WearCacheLimits
+import app.calibratehealth.wear.notifications.WearReminder
+import app.calibratehealth.wear.notifications.WearReminderType
 import java.time.Instant
 import java.time.LocalDate
 import kotlin.math.roundToInt
@@ -10,6 +12,7 @@ import kotlin.math.roundToInt
 data class MappedWatchSnapshot(
     val dailySnapshot: DailySnapshotEntity,
     val quickAddItems: List<QuickAddItemEntity>,
+    val reminders: List<WearReminder>,
     val revision: String
 )
 
@@ -24,6 +27,7 @@ object WatchSnapshotMapper {
     private const val MAX_CALORIES = 100_000
     private const val MAX_STEPS = 1_000_000
     private const val MAX_WEIGHT_GRAMS = 1_000_000L
+    private const val MAX_REMINDERS = 2
 
     fun map(body: String, fetchedAtEpochMs: Long): MappedWatchSnapshot {
         require(fetchedAtEpochMs > 0) { "Snapshot fetch time must be positive." }
@@ -83,6 +87,26 @@ object WatchSnapshotMapper {
         require(mappedQuickAdds.map(QuickAddItemEntity::quickAddId).toSet().size == mappedQuickAdds.size) {
             "Quick-add IDs must be unique."
         }
+        val reminders = root.requiredArray("reminders")
+        require(reminders.size <= MAX_REMINDERS) { "Too many watch reminders." }
+        val mappedReminders = reminders.mapIndexed { index, item ->
+            val reminder = item.requireObject("reminders[$index]")
+            val id = reminder.requiredLong("id").also { require(it > 0) }
+            val type = WearReminderType.fromWire(reminder.requiredString("type"))
+                ?: throw InvalidJsonException("Invalid reminder type.")
+            val reminderDate = reminder.requiredString("local_date").also(::requireLocalDate)
+            require(reminderDate == localDate) { "Watch reminders must belong to the snapshot local date." }
+            val createdAt = reminder.requiredString("created_at").let {
+                requireInstant(it, "reminders[$index].created_at")
+            }
+            WearReminder(id, type, reminderDate, createdAt)
+        }
+        require(mappedReminders.map(WearReminder::id).toSet().size == mappedReminders.size) {
+            "Watch reminder IDs must be unique."
+        }
+        require(mappedReminders.map(WearReminder::type).toSet().size == mappedReminders.size) {
+            "Only one watch reminder per action is allowed."
+        }
 
         val undo = root.optionalObject("undo_candidate")
         val undoFoodLogId = undo?.requiredLong("food_log_id")?.also { require(it > 0) }
@@ -126,6 +150,7 @@ object WatchSnapshotMapper {
                 fetchedAtEpochMs = fetchedAtEpochMs
             ),
             quickAddItems = mappedQuickAdds,
+            reminders = mappedReminders,
             revision = revision
         )
     }

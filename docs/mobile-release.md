@@ -129,6 +129,8 @@ SecureStore or SQLite changes.
 - [ ] Existing login survives the upgrade and logout/login still work.
 - [ ] Existing food, weight, settings, and pending/failed offline changes survive and reconcile correctly.
 - [ ] Test food entry, barcode entry, weigh-in, day completion, account export, and notification permission on a device.
+- [ ] With phone and watch connected, confirm a reminder appears only through normal phone/Wear bridging and no second watch-local alert is posted.
+- [ ] With the phone disconnected and watch networking available, confirm the bounded watch refresh posts one combined, deep-linked food/weight reminder.
 - [ ] Confirm a self-hosted HTTPS origin can be selected and survives an app restart.
 - [ ] Inspect the APK/AAB for an expected public server origin and absence of credentials.
 - [ ] Record artifact digest, EAS build URL, Git commit, version, version code, device/API level, and test results.

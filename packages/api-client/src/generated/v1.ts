@@ -841,6 +841,15 @@ export interface components {
                 latest_date: string | null;
             };
             quick_add: components["schemas"]["WatchQuickAddDraft"][];
+            reminders: {
+                id: number;
+                /** @enum {string} */
+                type: "food" | "weight";
+                /** Format: date */
+                local_date: string;
+                /** Format: date-time */
+                created_at: string;
+            }[];
             undo_candidate: null | {
                 food_log_id: number;
                 name: string;

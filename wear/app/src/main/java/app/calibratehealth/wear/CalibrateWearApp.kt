@@ -35,6 +35,8 @@ import androidx.wear.compose.navigation.composable
 import androidx.wear.compose.navigation.rememberSwipeDismissableNavController
 import app.calibratehealth.wear.actions.WearHomeUiState
 import app.calibratehealth.wear.data.local.QuickAddItemEntity
+import app.calibratehealth.wear.notifications.WearReminderDeepLink
+import app.calibratehealth.wear.notifications.WearReminderNotification
 
 private const val SUMMARY_ROUTE = "summary"
 private const val CONNECTION_ROUTE = "connection"
@@ -50,11 +52,25 @@ fun CalibrateWearApp(
     onUndo: (WearSummary) -> Unit = {},
     onSaveWeight: (WearSummary, Long) -> Unit = { _, _ -> },
     onContinueOnPhone: (WearSummary) -> Unit = {},
+    disconnecting: Boolean = false,
+    disconnectError: String? = null,
+    onDisconnect: () -> Unit = {},
+    reminderDeepLink: WearReminderDeepLink? = null,
+    reminderDeepLinkRequest: Long = 0,
     modifier: Modifier = Modifier
 ) {
     MaterialTheme {
         AppScaffold(modifier = modifier) {
             val navController = rememberSwipeDismissableNavController()
+            val reminderNavigationReady = appState is WearAppState.Ready
+            LaunchedEffect(reminderDeepLinkRequest, reminderDeepLink, reminderNavigationReady) {
+                if (reminderDeepLink == null || !reminderNavigationReady) return@LaunchedEffect
+                if (reminderDeepLink.destination == WearReminderNotification.DESTINATION_WEIGHT) {
+                    navController.navigate(WEIGHT_ROUTE) { launchSingleTop = true }
+                } else {
+                    navController.popBackStack(SUMMARY_ROUTE, inclusive = false)
+                }
+            }
             SwipeDismissableNavHost(navController = navController, startDestination = SUMMARY_ROUTE) {
                 composable(SUMMARY_ROUTE) {
                     SummaryScreen(
@@ -69,14 +85,21 @@ fun CalibrateWearApp(
                     )
                 }
                 composable(CONNECTION_ROUTE) {
-                    ConnectionScreen(appState = appState, serverConfig = serverConfig)
+                    ConnectionScreen(
+                        appState = appState,
+                        serverConfig = serverConfig,
+                        disconnecting = disconnecting,
+                        disconnectError = disconnectError,
+                        onDisconnect = onDisconnect
+                    )
                 }
                 composable(WEIGHT_ROUTE) {
                     val summary = homeState.summary
                     if (summary != null) {
                         WeightScreen(
                             summary = summary,
-                            saving = homeState.actionInProgress,
+                            saving = homeState.actionInProgress ||
+                                "metric.upsert" in homeState.pendingMutationTypes,
                             onSave = { grams ->
                                 onSaveWeight(summary, grams)
                                 navController.popBackStack()
@@ -227,9 +250,12 @@ private fun ActivityCard(summary: WearSummary) {
 private fun WeightCard(summary: WearSummary, enabled: Boolean, onOpenWeight: () -> Unit) {
     Card(onClick = onOpenWeight, enabled = enabled, modifier = Modifier.fillMaxWidth()) {
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(SummaryFormatter.weight(summary.editableWeightGrams, summary.weightUnit), style = MaterialTheme.typography.titleMedium)
+            val displayWeight = summary.editableWeightGrams ?: WeightEditorState.DEFAULT_FIRST_WEIGHT_GRAMS
+            Text(SummaryFormatter.weight(displayWeight, summary.weightUnit), style = MaterialTheme.typography.titleMedium)
             val detail = if (!enabled) {
                 "Weight change pending"
+            } else if (summary.editableWeightGrams == null) {
+                "No weight yet | Tap to adjust the ${SummaryFormatter.weight(displayWeight, summary.weightUnit)} start"
             } else if (summary.todayWeightGrams == null && summary.latestWeightDate != null) {
                 "Latest: ${summary.latestWeightDate} | Tap to log today"
             } else {
@@ -242,9 +268,10 @@ private fun WeightCard(summary: WearSummary, enabled: Boolean, onOpenWeight: () 
 
 @Composable
 private fun WeightScreen(summary: WearSummary, saving: Boolean, onSave: (Long) -> Unit) {
-    val startingWeight = summary.editableWeightGrams
-    var editor by remember(summary.localDate, startingWeight) {
-        mutableStateOf(startingWeight?.let { WeightEditorState(it, summary.weightUnit) })
+    val isFirstWeight = summary.editableWeightGrams == null
+    val startingWeight = summary.editableWeightGrams ?: WeightEditorState.DEFAULT_FIRST_WEIGHT_GRAMS
+    var editor by remember(summary.localDate, startingWeight, summary.weightUnit) {
+        mutableStateOf(WeightEditorState(startingWeight, summary.weightUnit))
     }
     var rotaryPixels by remember { mutableFloatStateOf(0f) }
     val focusRequester = remember { FocusRequester() }
@@ -260,20 +287,20 @@ private fun WeightScreen(summary: WearSummary, saving: Boolean, onSave: (Long) -
                 .onRotaryScrollEvent { event ->
                     val change = accumulateRotaryWeight(rotaryPixels, event.verticalScrollPixels)
                     rotaryPixels = change.remainingPixels
-                    if (change.steps != 0) editor = editor?.adjust(change.steps)
+                    if (change.steps != 0) editor = editor.adjust(change.steps)
                     true
                 }
                 .focusRequester(focusRequester)
                 .focusable()
         ) {
-            item { SectionTitle("Log weight") }
-            if (editor == null) {
-                item { StatusText("Log your first weight on the phone, then adjust it here.") }
-            } else {
-                item { Text(editor!!.label(), style = MaterialTheme.typography.titleLarge) }
+            item { SectionTitle(if (isFirstWeight) "Log first weight" else "Log weight") }
+            if (isFirstWeight) {
+                item { StatusText("Starting at ${SummaryFormatter.weight(startingWeight, summary.weightUnit)}. Adjust before saving.") }
+            }
+            item { Text(editor.label(), style = MaterialTheme.typography.titleLarge) }
                 item {
                     Button(
-                        onClick = { editor = editor?.adjust(-1) },
+                        onClick = { editor = editor.adjust(-1) },
                         enabled = !saving,
                         label = { Text("Decrease") },
                         secondaryLabel = { Text(if (summary.weightUnit.equals("lb", ignoreCase = true)) "0.1 lb" else "0.1 kg") },
@@ -282,7 +309,7 @@ private fun WeightScreen(summary: WearSummary, saving: Boolean, onSave: (Long) -
                 }
                 item {
                     Button(
-                        onClick = { editor = editor?.adjust(1) },
+                        onClick = { editor = editor.adjust(1) },
                         enabled = !saving,
                         label = { Text("Increase") },
                         secondaryLabel = { Text(if (summary.weightUnit.equals("lb", ignoreCase = true)) "0.1 lb" else "0.1 kg") },
@@ -291,14 +318,13 @@ private fun WeightScreen(summary: WearSummary, saving: Boolean, onSave: (Long) -
                 }
                 item {
                     Button(
-                        onClick = { editor?.grams?.let(onSave) },
+                        onClick = { onSave(editor.grams) },
                         enabled = !saving,
                         label = { Text("Save") },
                         secondaryLabel = { Text("Queue today's weigh-in") },
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
-            }
         }
     }
 }
@@ -330,7 +356,14 @@ private fun StatusText(text: String) {
 }
 
 @Composable
-private fun ConnectionScreen(appState: WearAppState, serverConfig: WearServerConfig) {
+private fun ConnectionScreen(
+    appState: WearAppState,
+    serverConfig: WearServerConfig,
+    disconnecting: Boolean,
+    disconnectError: String?,
+    onDisconnect: () -> Unit
+) {
+    var confirmDisconnect by remember(appState) { mutableStateOf(false) }
     val listState = rememberTransformingLazyColumnState()
     ScreenScaffold(scrollState = listState, edgeButton = {}) { contentPadding ->
         TransformingLazyColumn(
@@ -350,6 +383,41 @@ private fun ConnectionScreen(appState: WearAppState, serverConfig: WearServerCon
                 }
             }
             item { StatusText(connectionDetail(appState)) }
+            disconnectError?.let { error -> item { StatusText(error) } }
+            if (
+                appState is WearAppState.Paired || appState is WearAppState.Ready ||
+                appState is WearAppState.PairingError || disconnectError != null
+            ) {
+                if (confirmDisconnect) {
+                    item { StatusText("This clears Calibrate data and sign-in only from this watch.") }
+                    item {
+                        Button(
+                            onClick = onDisconnect,
+                            enabled = !disconnecting,
+                            label = { Text(if (disconnecting) "Disconnecting..." else "Confirm disconnect") },
+                            secondaryLabel = { Text("Phone and other devices stay signed in") },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                    item {
+                        Button(
+                            onClick = { confirmDisconnect = false },
+                            enabled = !disconnecting,
+                            label = { Text("Cancel") },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                } else {
+                    item {
+                        Button(
+                            onClick = { confirmDisconnect = true },
+                            label = { Text(if (disconnectError == null) "Disconnect this watch" else "Retry local cleanup") },
+                            secondaryLabel = { Text("Clear watch-local data only") },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                }
+            }
         }
     }
 }

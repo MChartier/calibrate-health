@@ -475,7 +475,22 @@ export async function buildWatchSnapshot(options: {
     const localDateKey = formatDateToLocalDateString(now, user.timezone);
     const localDate = parseLocalDateOnly(localDateKey);
 
-    const [goal, latestWeight, todayWeight, foodAggregate, activity, foodDay, pinned, recent, undoCandidate] = await Promise.all([
+    const activeReminderPromise = 'inAppNotification' in tx
+      ? tx.inAppNotification.findMany({
+          where: {
+            user_id: options.userId,
+            local_date: localDate,
+            type: { in: ['LOG_WEIGHT_REMINDER', 'LOG_FOOD_REMINDER'] },
+            read_at: null,
+            dismissed_at: null,
+            resolved_at: null
+          },
+          orderBy: [{ created_at: 'desc' }, { id: 'desc' }],
+          take: 10,
+          select: { id: true, type: true, local_date: true, created_at: true }
+        })
+      : Promise.resolve([]);
+    const [goal, latestWeight, todayWeight, foodAggregate, activity, foodDay, pinned, recent, undoCandidate, activeReminderRows] = await Promise.all([
       tx.goal.findFirst({ where: { user_id: options.userId }, orderBy: [{ created_at: 'desc' }, { id: 'desc' }] }),
       tx.bodyMetric.findFirst({ where: { user_id: options.userId, date: { lte: localDate } }, orderBy: [{ date: 'desc' }, { id: 'desc' }] }),
       tx.bodyMetric.findUnique({ where: { user_id_date: { user_id: options.userId, date: localDate } } }),
@@ -484,7 +499,8 @@ export async function buildWatchSnapshot(options: {
       tx.foodLogDay.findUnique({ where: { user_id_local_date: { user_id: options.userId, local_date: localDate } } }),
       tx.myFood.findMany({ where: { user_id: options.userId, is_pinned: true }, orderBy: [{ name: 'asc' }, { id: 'asc' }], take: WATCH_PINNED_LIMIT, select: { id: true, name: true, calories_per_serving: true } }),
       getRecentFoodSuggestions({ userId: options.userId, limit: WATCH_RECENT_LIMIT, database: tx }),
-      findCurrentSessionUndoCandidate({ tx, userId: options.userId, mobileAuthSessionId: options.mobileAuthSessionId })
+      findCurrentSessionUndoCandidate({ tx, userId: options.userId, mobileAuthSessionId: options.mobileAuthSessionId }),
+      activeReminderPromise
     ]);
 
     const calorieSummary = buildCalorieSummary({
@@ -530,6 +546,17 @@ export async function buildWatchSnapshot(options: {
       // Preserve the snapshot's intended local day when an offline watch submits after midnight.
       draft: { date: localDateKey, ...item.draft }
     }));
+    // One current reminder per action prevents dev/scheduler rows from creating duplicate watch notifications.
+    const reminderByType = new Map<string, (typeof activeReminderRows)[number]>();
+    for (const reminder of activeReminderRows) {
+      if (!reminderByType.has(reminder.type)) reminderByType.set(reminder.type, reminder);
+    }
+    const reminders = [...reminderByType.values()].map((reminder) => ({
+      id: reminder.id,
+      type: reminder.type === 'LOG_WEIGHT_REMINDER' ? 'weight' as const : 'food' as const,
+      local_date: reminder.local_date.toISOString().slice(0, 10),
+      created_at: reminder.created_at.toISOString()
+    }));
 
     const semantic = {
       local_date: localDateKey,
@@ -549,6 +576,7 @@ export async function buildWatchSnapshot(options: {
         latest_date: latestWeight?.date.toISOString().slice(0, 10) ?? null
       },
       quick_add: quickAdd,
+      reminders,
       undo_candidate: undoCandidate,
       staleness: { activity_stale: activityStale, activity_age_seconds: activityAgeSeconds }
     };

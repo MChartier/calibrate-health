@@ -24,6 +24,7 @@ import {
     synchronizeHealthConnect
 } from './sync';
 import { healthConnectAccountScope } from './storageScope';
+import { queueWearSyncInvalidation } from '../wear/syncInvalidation';
 
 const STORAGE_KEY_PREFIX = '@calibrate/health-connect/preferences/v1';
 const LAST_SUCCESS_STORAGE_KEY_PREFIX = '@calibrate/health-connect/last-success/v1';
@@ -151,6 +152,7 @@ export function HealthConnectProvider({ children }: { children: React.ReactNode 
                     result.lastSuccessfulSyncAt
                 );
                 if (!shouldContinue()) return;
+                void queueWearSyncInvalidation({ serverOrigin: serverUrl, userId: currentUser.id });
                 if (result.missingFeatures.length > 0) {
                     setSyncError(
                         `Some selected Health Connect access is missing (${result.missingFeatures.join(', ')}). Open Manage access to restore it.`

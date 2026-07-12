@@ -105,6 +105,8 @@ data class WeightEditorState(val grams: Long, val unit: String) {
     fun label(): String = SummaryFormatter.weight(grams, unit)
 
     companion object {
+        // A neutral starting point lets a first-time user log locally without inventing profile data.
+        const val DEFAULT_FIRST_WEIGHT_GRAMS = 70_000L
         const val MIN_WEIGHT_GRAMS = 20_000L
         const val MAX_WEIGHT_GRAMS = 500_000L
         private const val METRIC_STEP_GRAMS = 100L

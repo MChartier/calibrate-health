@@ -113,7 +113,12 @@ test('watch snapshot is bounded, timezone-local, and derives current-session und
     } },
     syncChange: { findFirst: async ({ where }) => where.operation_id
       ? { id: 10n }
-      : null }
+      : null },
+    inAppNotification: { findMany: async () => [
+      { id: 41, type: 'LOG_FOOD_REMINDER', local_date: new Date('2026-07-11T00:00:00.000Z'), created_at: new Date('2026-07-11T17:00:00.000Z') },
+      { id: 42, type: 'LOG_WEIGHT_REMINDER', local_date: new Date('2026-07-11T00:00:00.000Z'), created_at: new Date('2026-07-11T17:00:00.000Z') },
+      { id: 40, type: 'LOG_FOOD_REMINDER', local_date: new Date('2026-07-11T00:00:00.000Z'), created_at: new Date('2026-07-11T16:00:00.000Z') }
+    ] }
   };
   const prismaStub = { $transaction: async (callback, options) => {
     isolationLevel = options.isolationLevel;
@@ -145,6 +150,8 @@ test('watch snapshot is bounded, timezone-local, and derives current-session und
   assert.equal(snapshot.food_day.is_complete, true);
   assert.equal(snapshot.food_day.completed_at, '2026-07-11T19:00:00.000Z');
   assert.equal(snapshot.quick_add.length, 3);
+  assert.deepEqual(snapshot.reminders.map((reminder) => reminder.type).sort(), ['food', 'weight']);
+  assert.equal(snapshot.reminders.find((reminder) => reminder.type === 'food').id, 41);
   assert.equal(snapshot.quick_add.filter((item) => item.id === 'my-food:12').length, 1);
   const refreshedRecipe = snapshot.quick_add.find((item) => item.id === 'my-food:13');
   assert.equal(refreshedRecipe.label, 'Current recipe');
