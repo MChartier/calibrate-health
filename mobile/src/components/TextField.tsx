@@ -11,6 +11,7 @@ export const TextField: React.FC<TextInputProps & { label: string; helperText?: 
     style,
     onBlur,
     onFocus,
+    accessibilityLabel,
     ...props
 }) => {
     const [isFocused, setIsFocused] = useState(false);
@@ -20,6 +21,7 @@ export const TextField: React.FC<TextInputProps & { label: string; helperText?: 
             {!hideLabel && <AppText variant="label">{label}</AppText>}
             <TextInput
                 {...props}
+                accessibilityLabel={accessibilityLabel ?? label}
                 onBlur={(event) => {
                     setIsFocused(false);
                     onBlur?.(event);
