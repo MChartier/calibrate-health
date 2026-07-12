@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as Haptics from 'expo-haptics';
 import type { FoodLogEntry } from '@calibrate/api-client';
 import type { MealPeriod } from '@calibrate/shared';
 import { AddFoodSheet } from '../../src/components/AddFoodSheet';
+import { ActivitySummaryCard } from '../../src/components/ActivitySummaryCard';
 import { AppButton } from '../../src/components/AppButton';
 import { AppText } from '../../src/components/AppText';
 import { BottomSheetModal } from '../../src/components/BottomSheetModal';
@@ -52,6 +54,10 @@ export default function TodayScreen() {
     const profileQuery = useQuery({ queryKey: ['mobile-profile'], queryFn: () => api.getUserProfile() });
     const foodQuery = useQuery({ queryKey: ['mobile-food', selectedDate], queryFn: () => api.getFoodLog(selectedDate) });
     const foodDayQuery = useQuery({ queryKey: ['mobile-food-day', selectedDate], queryFn: () => api.getFoodDay(selectedDate) });
+    const activityQuery = useQuery({
+        queryKey: ['mobile-activity-days', selectedDate, selectedDate],
+        queryFn: () => api.getActivityDays({ start: selectedDate, end: selectedDate })
+    });
     const isFoodDayComplete = foodDayQuery.data?.is_complete ?? false;
 
     useEffect(() => {
@@ -211,6 +217,16 @@ export default function TodayScreen() {
                     <CalorieBalanceCard
                         totalCalories={calories}
                         targetCalories={target}
+                    />
+
+                    <ActivitySummaryCard
+                        day={activityQuery.data?.days[0]}
+                        isToday={dateNavigation.isToday}
+                        profileTdee={profileQuery.data?.calorieSummary.tdee}
+                        isLoading={activityQuery.isLoading}
+                        error={activityQuery.error}
+                        onRetry={() => void activityQuery.refetch()}
+                        onOpenDetails={() => router.push({ pathname: '/activity', params: { date: selectedDate } })}
                     />
 
                     <FoodLogTimelineCard

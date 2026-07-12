@@ -9,6 +9,7 @@ import { AppButton } from '../../src/components/AppButton';
 import { AppCard } from '../../src/components/AppCard';
 import { AppChip } from '../../src/components/AppChip';
 import { AppText } from '../../src/components/AppText';
+import { HealthConnectCard } from '../../src/components/HealthConnectCard';
 import { BottomSheetModal } from '../../src/components/BottomSheetModal';
 import { DatePickerField } from '../../src/components/DatePickerField';
 import { NumberStepperField } from '../../src/components/NumberStepperField';
@@ -415,6 +416,8 @@ export default function SettingsScreen() {
                     onPress={() => savePreferences.mutate()}
                 />
             </AppCard>
+
+            <HealthConnectCard />
 
             <AppCard>
                 <SectionHeader title="Import" description="Import a Lose It ZIP export into food logs and weigh-ins." />
