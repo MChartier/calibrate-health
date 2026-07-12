@@ -18,6 +18,7 @@ import {
     startWearPairing,
     WEAR_PAIRING_PATHS
 } from './pairing';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const ORIGIN = 'https://health.example';
 const USER_ID = 7;
@@ -93,6 +94,28 @@ describe('Wear phone pairing coordinator', () => {
             expect.stringContaining('"request_id":"request-1"')
         );
         expect([...mockStorage.values()].some((value) => value.includes('"userId":7'))).toBe(true);
+        expect([...mockStorage.values()].some((value) => value.includes('"issuedAt":"2026-07-11T20:00:00.000Z"'))).toBe(true);
+    });
+
+    it('re-sends the same unexpired invite so a queued watch result can be correlated', async () => {
+        const transport = await beginPairing();
+        transport.sendMessage.mockClear();
+
+        const pending = await startWearPairing({
+            node: { id: 'node-1', displayName: 'Galaxy Watch Ultra', isNearby: true },
+            serverOrigin: ORIGIN,
+            userId: USER_ID,
+            transport,
+            now: new Date('2026-07-11T20:01:00.000Z')
+        });
+
+        expect(pending.requestId).toBe('request-1');
+        expect(pending.expiresAt).toBe(EXPIRES_AT);
+        expect(transport.sendMessage).toHaveBeenCalledWith(
+            'node-1',
+            WEAR_PAIRING_PATHS.HELLO,
+            expect.stringContaining('"request_id":"request-1"')
+        );
     });
 
     it('removes the pending invite when sending it fails', async () => {
@@ -177,6 +200,26 @@ describe('Wear phone pairing coordinator', () => {
         });
 
         expect(result.errors).toEqual(['Server unavailable']);
+        expect(transport.acknowledgeMessages).toHaveBeenCalledWith([]);
+    });
+
+    it('retains a hello when result correlation cannot be persisted', async () => {
+        const transport = await beginPairing();
+        transport.listMessages.mockReturnValue([{
+            id: 'message-1', nodeId: 'node-1', path: WEAR_PAIRING_PATHS.HELLO,
+            payload: helloPayload(), receivedAt: NOW.getTime()
+        }]);
+        jest.mocked(AsyncStorage.setItem).mockRejectedValueOnce(new Error('Storage unavailable'));
+
+        const result = await processWearPairingInbox({
+            api: { issueWearPairingCredential: jest.fn().mockResolvedValue({ pairing_token: 'token' }) },
+            serverOrigin: ORIGIN,
+            userId: USER_ID,
+            transport,
+            now: NOW
+        });
+
+        expect(result.errors).toEqual(['Storage unavailable']);
         expect(transport.acknowledgeMessages).toHaveBeenCalledWith([]);
     });
 

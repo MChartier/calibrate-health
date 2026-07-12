@@ -35,6 +35,7 @@ export type PendingWearPairing = {
     nodeId: string;
     serverOrigin: string;
     userId: number;
+    issuedAt: string;
     expiresAt: string;
     watchDeviceId: string | null;
 };
@@ -178,6 +179,8 @@ async function readPendingWearPairing(serverOrigin: string, userId: number): Pro
             !requiredText(parsed.requestId, MAX_REQUEST_ID_LENGTH) ||
             !requiredText(parsed.nodeId, 256) ||
             !(parsed.watchDeviceId === null || requiredText(parsed.watchDeviceId, MAX_DEVICE_ID_LENGTH)) ||
+            !Number.isFinite(new Date(parsed.issuedAt).getTime()) ||
+            new Date(parsed.issuedAt) >= new Date(parsed.expiresAt) ||
             !Number.isFinite(new Date(parsed.expiresAt).getTime())
         ) throw new Error('Invalid pending pairing');
         return parsed;
@@ -199,13 +202,24 @@ export async function startWearPairing(options: {
     const transport = options.transport === undefined ? getNativeTransport() : options.transport;
     if (!transport) throw new Error('Wear pairing requires a native Android build.');
     const now = options.now ?? new Date();
-    const requestId = options.requestId ?? Crypto.randomUUID();
+    const origin = new URL(options.serverOrigin).origin;
+    const existing = options.requestId === undefined
+        ? await readPendingWearPairing(origin, options.userId)
+        : null;
+    const reusable = existing &&
+        existing.nodeId === options.node.id &&
+        existing.serverOrigin === origin &&
+        new Date(existing.expiresAt) > now
+        ? existing
+        : null;
+    const requestId = reusable?.requestId ?? options.requestId ?? Crypto.randomUUID();
     if (!requiredText(requestId, MAX_REQUEST_ID_LENGTH)) throw new Error('Invalid Wear pairing request ID.');
-    const pending: PendingWearPairing = {
+    const pending: PendingWearPairing = reusable ?? {
         requestId,
         nodeId: options.node.id,
-        serverOrigin: new URL(options.serverOrigin).origin,
+        serverOrigin: origin,
         userId: options.userId,
+        issuedAt: now.toISOString(),
         expiresAt: new Date(now.getTime() + PAIRING_REQUEST_TTL_MS).toISOString(),
         watchDeviceId: null
     };
@@ -216,7 +230,7 @@ export async function startWearPairing(options: {
             request_id: pending.requestId,
             protocol_version: WEAR_PAIRING_PROTOCOL_VERSION,
             server_origin: pending.serverOrigin,
-            issued_at: now.toISOString(),
+            issued_at: pending.issuedAt,
             expires_at: pending.expiresAt
         }));
     } catch (error) {
@@ -284,13 +298,14 @@ export async function processWearPairingInbox(options: {
                         ...credential
                     })
                 );
-                processed += 1;
-                acknowledgedMessageIds.push(message.id);
                 pending = { ...pending, watchDeviceId: hello.watchDeviceId };
                 await AsyncStorage.setItem(
                     pendingStorageKey(origin, options.userId),
                     JSON.stringify(pending)
                 );
+                // Persist result correlation before removing the durable native hello.
+                processed += 1;
+                acknowledgedMessageIds.push(message.id);
             } catch (error) {
                 errors.push(error instanceof Error ? error.message : 'Unable to create a watch pairing credential.');
             }
