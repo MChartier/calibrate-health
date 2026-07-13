@@ -13,6 +13,17 @@ targeted Kotlin/JVM and device checks for the Wear client:
 - `npm run test:db:upgrade` applies migrations through `0020` to an isolated schema, inserts
   representative account/goal/weight/food data, upgrades through current, verifies retention, and
   removes only that generated schema. Its helper tests run without Postgres.
+- `npm run test:web:e2e` launches the API and Vite directly, waits for Postgres-backed readiness,
+  and runs the critical browser path in the machine's installed Chrome. It does not download a
+  Playwright browser or add the suite to the long-running CI path.
+
+The browser suite resets only `test@calibratehealth.app`, completes onboarding, records food and
+weight, and then checks the narrow dashboard and Settings at a 390x844 touch viewport. It uses
+reduced-motion mode and keyboard activation for the mobile tabs. The managed server ignores the
+generic `DATABASE_URL`: its default and any `CALIBRATE_E2E_DATABASE_URL` override must target a
+loopback host and an E2E-named disposable database. Reusing a caller-owned loopback server also
+requires `CALIBRATE_E2E_ALLOW_DESTRUCTIVE_RESET=true`. `PLAYWRIGHT_CHROME_CHANNEL` or
+`PLAYWRIGHT_CHROME_PATH` can select another locally installed Chromium build.
 
 ## Current Coverage Shape
 
@@ -23,6 +34,7 @@ Frontend and mobile coverage focus on domain logic that has the highest risk of 
 - timezone-aware local-day helpers;
 - goal progress and projection math;
 - onboarding unit conversions and goal-mode inference;
+- web onboarding, food logging, goals, Settings, profile photo, notification, and PWA interactions;
 - serving snapshot label formatting;
 - locale-based unit defaults;
 - offline operation replay and account isolation;

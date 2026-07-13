@@ -238,6 +238,7 @@ More:
 - `npm run build`: build the frontend.
 - `npm run build:mobile`: type-check the Expo React Native Android client.
 - `npm run test:mobile`: run mobile unit tests.
+- `npm run test:web:e2e`: run the local Chrome E2E path for onboarding, food, weight, and narrow responsive behavior.
 - `npm run build:storybook`: build the static Storybook.
 - `npm run lint`: lint the frontend.
 - `npm run ci:local`: run the local equivalent of PR CI (backend build, frontend build, frontend lint, backend tests).

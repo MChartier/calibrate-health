@@ -169,6 +169,8 @@ const getProviderResultKey = (item: NormalizedFoodItem): string | null => {
 const FoodEntryForm: React.FC<Props> = ({ onSuccess, date, initialMealPeriod = null }) => {
     const queryClient = useQueryClient();
     const { t } = useI18n();
+    const measureLabelId = React.useId();
+    const mealPeriodLabelId = React.useId();
 
     const [mode, setMode] = useState<FoodEntryMode>('food');
 
@@ -997,8 +999,9 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date, initialMealPeriod = n
                 </Box>
 
                 <FormControl fullWidth>
-                    <InputLabel>{t('foodEntry.search.measure')}</InputLabel>
+                    <InputLabel id={measureLabelId}>{t('foodEntry.search.measure')}</InputLabel>
                     <Select
+                        labelId={measureLabelId}
                         value={selectedMeasure?.label || ''}
                         label={t('foodEntry.search.measure')}
                         onChange={(e) => setSelectedMeasureLabel(e.target.value)}
@@ -1352,8 +1355,9 @@ const FoodEntryForm: React.FC<Props> = ({ onSuccess, date, initialMealPeriod = n
 
                     {shouldShowMealPeriod && (
                         <FormControl fullWidth>
-                            <InputLabel>{t('foodEntry.mealPeriod.label')}</InputLabel>
+                            <InputLabel id={mealPeriodLabelId}>{t('foodEntry.mealPeriod.label')}</InputLabel>
                             <Select
+                                labelId={mealPeriodLabelId}
                                 value={mealPeriod}
                                 label={t('foodEntry.mealPeriod.label')}
                                 onChange={(e) => setMealPeriod(e.target.value as MealPeriod)}
