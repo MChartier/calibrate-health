@@ -148,6 +148,20 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
+      - name: Create shared phone and Wear debug keystore
+        shell: bash
+        run: |
+          mkdir -p mobile/android/app
+          keytool -genkeypair -noprompt \
+            -keystore mobile/android/app/debug.keystore \
+            -storepass android \
+            -keypass android \
+            -alias androiddebugkey \
+            -keyalg RSA \
+            -keysize 2048 \
+            -validity 10000 \
+            -dname "CN=Android Debug,O=Android,C=US"
+
       - name: Validate Wear source, resources, and tests
         working-directory: wear
         run: ./gradlew assembleDebug testDebugUnitTest --no-daemon --console=plain
