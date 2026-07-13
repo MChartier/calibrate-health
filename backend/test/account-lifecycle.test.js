@@ -140,6 +140,47 @@ const exportRow = {
     resolved_at: null,
     created_at: at('2025-01-03T08:00:00.000Z'),
     updated_at: at('2025-01-03T08:00:00.000Z')
+  }],
+  activity_records: [{
+    id: 10,
+    user_id: 7,
+    source_device_id: 'private-device-id',
+    record_type: 'STEPS',
+    external_id: 'health-record-1',
+    data_origin: 'com.sec.android.app.shealth',
+    client_record_id: null,
+    client_record_version: 2n,
+    source_updated_at: at('2025-01-03T20:00:00.000Z'),
+    start_time: at('2025-01-03T18:00:00.000Z'),
+    end_time: at('2025-01-03T19:00:00.000Z'),
+    start_zone_offset_seconds: -28800,
+    end_zone_offset_seconds: -28800,
+    local_date: at('2025-01-03T00:00:00.000Z'),
+    step_count: 1500,
+    energy_kcal: null,
+    weight_grams: null,
+    exercise_type: null,
+    title: null,
+    notes: null,
+    recording_method: 2,
+    device_type: 6,
+    device_manufacturer: 'Samsung',
+    device_model: 'Galaxy Watch Ultra',
+    created_at: at('2025-01-03T20:00:00.000Z'),
+    updated_at: at('2025-01-03T20:00:00.000Z')
+  }],
+  activity_day_summaries: [{
+    id: 11,
+    user_id: 7,
+    source_device_id: 'private-device-id',
+    local_date: at('2025-01-03T00:00:00.000Z'),
+    steps: 9000,
+    active_calories_kcal: 450,
+    total_calories_kcal: 2400,
+    exercise_minutes: 45,
+    observed_at: at('2025-01-04T01:00:00.000Z'),
+    created_at: at('2025-01-04T01:00:00.000Z'),
+    updated_at: at('2025-01-04T01:00:00.000Z')
   }]
 };
 
@@ -157,7 +198,7 @@ test('account export returns canonical versioned tracking data without credentia
   const result = await exportAccountData(7, at('2026-07-11T20:00:00.000Z'));
 
   assert.equal(result.format, 'calibrate-account-export');
-  assert.equal(result.version, 1);
+  assert.equal(result.version, 2);
   assert.equal(result.exported_at, '2026-07-11T20:00:00.000Z');
   assert.equal(result.account.date_of_birth, '1990-05-03');
   assert.deepEqual(result.account.profile_image, { mime_type: 'image/png', data_base64: 'AQID' });
@@ -165,6 +206,8 @@ test('account export returns canonical versioned tracking data without credentia
   assert.equal(result.food_logs[0].serving_unit_label_snapshot, 'bowl');
   assert.equal(result.my_foods[0].is_pinned, true);
   assert.equal(result.my_foods[0].recipe_ingredients[0].external_id, 'rice-1');
+  assert.equal(result.activity_records[0].client_record_version, '2');
+  assert.equal(result.activity_day_summaries[0].total_calories_kcal, 2400);
 
   assert.equal(findArgs.where.id, 7);
   assert.equal(findArgs.select.password_hash, undefined);
@@ -173,6 +216,8 @@ test('account export returns canonical versioned tracking data without credentia
   assert.equal(findArgs.select.native_push_subscriptions, undefined);
   assert.equal(findArgs.select.client_operations, undefined);
   assert.equal(findArgs.select.sync_changes, undefined);
+  assert.equal(findArgs.select.health_connect_sync_states, undefined);
+  assert.equal(findArgs.select.health_connect_tombstones, undefined);
   assert.deepEqual(findArgs.select.goals.orderBy, [{ created_at: 'asc' }, { id: 'asc' }]);
   assert.deepEqual(findArgs.select.food_logs.orderBy, [
     { local_date: 'asc' },
@@ -181,7 +226,7 @@ test('account export returns canonical versioned tracking data without credentia
   ]);
 
   const serialized = JSON.stringify(result);
-  assert.doesNotMatch(serialized, /password_hash|access_token|refresh_token|p256dh|private-internal-dedupe/);
+  assert.doesNotMatch(serialized, /password_hash|access_token|refresh_token|p256dh|private-internal-dedupe|private-device-id/);
 });
 
 test('account export returns null for a missing account', async () => {

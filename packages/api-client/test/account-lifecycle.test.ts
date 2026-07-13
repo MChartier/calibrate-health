@@ -13,7 +13,7 @@ const createClient = (requests: CapturedRequest[]): CalibrateApiClient =>
             const isDelete = init?.method === 'DELETE';
             return new Response(isDelete ? null : JSON.stringify({
                 format: 'calibrate-account-export',
-                version: 1
+                version: 2
             }), {
                 status: isDelete ? 204 : 200,
                 headers: isDelete ? undefined : { 'content-type': 'application/json' }

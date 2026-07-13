@@ -45,8 +45,10 @@ native push tokens through database cascades rather than relying on a hosted cle
 Authenticated users can download a versioned `calibrate-account-export` JSON document. The export
 contains profile and preference data, the optional inline avatar as base64, goals, body metrics,
 food logs and completed-day state, My Foods and recipe snapshots, and in-app notification history.
-It deliberately excludes password hashes, browser/mobile session credentials, push endpoints and
-tokens, and internal idempotency/synchronization metadata.
+When enabled, it also contains user-visible Health Connect source records and daily activity
+summaries. It deliberately excludes password hashes, browser/mobile session credentials, push
+endpoints and tokens, Health Connect changes tokens and device identifiers, tombstones, and
+internal idempotency/synchronization metadata.
 
 Permanent deletion requires the current account password. The user row is the transaction root;
 foreign-key cascades remove all directly owned tracking data, browser/mobile sessions, push

@@ -32,6 +32,18 @@ export const ACTIVITY_LEVELS = {
 
 export type ActivityLevel = (typeof ACTIVITY_LEVELS)[keyof typeof ACTIVITY_LEVELS];
 
+/** Health Connect record kinds persisted by the server reconciliation layer. */
+export const ACTIVITY_RECORD_TYPES = {
+    STEPS: 'STEPS',
+    ACTIVE_CALORIES: 'ACTIVE_CALORIES',
+    TOTAL_CALORIES: 'TOTAL_CALORIES',
+    EXERCISE_SESSION: 'EXERCISE_SESSION',
+    WEIGHT: 'WEIGHT'
+} as const;
+
+export type ActivityRecordType =
+    (typeof ACTIVITY_RECORD_TYPES)[keyof typeof ACTIVITY_RECORD_TYPES];
+
 export const MEAL_PERIODS = {
     BREAKFAST: 'BREAKFAST',
     MORNING_SNACK: 'MORNING_SNACK',

@@ -11,6 +11,7 @@ import { createQueuedMutationExecutor } from '../src/offline/operations';
 import { OfflineOutboxProvider } from '../src/offline/provider';
 import { colors } from '../src/theme';
 import { AppErrorBoundary } from '../src/components/AppErrorBoundary';
+import { HealthConnectProvider } from '../src/healthConnect/provider';
 
 const queryClient = new QueryClient();
 
@@ -23,7 +24,11 @@ const NativeRuntimeHooks: React.FC = () => {
 const AuthenticatedRuntime: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const { api } = useAuth();
     const executeMutation = React.useMemo(() => createQueuedMutationExecutor(api), [api]);
-    return <OfflineOutboxProvider executeMutation={executeMutation}>{children}</OfflineOutboxProvider>;
+    return (
+        <OfflineOutboxProvider executeMutation={executeMutation}>
+            <HealthConnectProvider>{children}</HealthConnectProvider>
+        </OfflineOutboxProvider>
+    );
 };
 
 export default function RootLayout() {

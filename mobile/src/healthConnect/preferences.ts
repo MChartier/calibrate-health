@@ -1,0 +1,39 @@
+import {
+    DEFAULT_HEALTH_CONNECT_SELECTION,
+    HEALTH_CONNECT_FEATURES,
+    type HealthConnectFeatureSelection
+} from './types';
+
+export type StoredHealthConnectPreferences = {
+    connected: boolean;
+    paused: boolean;
+    selection: HealthConnectFeatureSelection;
+};
+
+export const DEFAULT_HEALTH_CONNECT_PREFERENCES: StoredHealthConnectPreferences = {
+    connected: false,
+    paused: false,
+    selection: DEFAULT_HEALTH_CONNECT_SELECTION
+};
+
+/** Safely hydrate preferences written by older or interrupted app versions. */
+export function parseStoredHealthConnectPreferences(value: string | null): StoredHealthConnectPreferences {
+    if (!value) return DEFAULT_HEALTH_CONNECT_PREFERENCES;
+
+    try {
+        const parsed = JSON.parse(value) as Partial<StoredHealthConnectPreferences>;
+        const rawSelection = parsed.selection as Partial<HealthConnectFeatureSelection> | undefined;
+        const selection = { ...DEFAULT_HEALTH_CONNECT_SELECTION };
+        for (const feature of Object.values(HEALTH_CONNECT_FEATURES)) {
+            const storedValue = rawSelection?.[feature];
+            if (typeof storedValue === 'boolean') selection[feature] = storedValue;
+        }
+        return {
+            connected: typeof parsed.connected === 'boolean' ? parsed.connected : false,
+            paused: typeof parsed.paused === 'boolean' ? parsed.paused : false,
+            selection
+        };
+    } catch {
+        return DEFAULT_HEALTH_CONNECT_PREFERENCES;
+    }
+}

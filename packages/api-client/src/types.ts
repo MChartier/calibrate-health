@@ -1,5 +1,6 @@
 import type {
     ActivityLevel,
+    ActivityRecordType,
     HeightUnit,
     MealPeriod,
     MobileDevicePlatform,
@@ -30,7 +31,7 @@ export type UserClientPayload = {
 
 export type AccountExport = {
     format: 'calibrate-account-export';
-    version: 1;
+    version: 2;
     exported_at: string;
     account: {
         id: number;
@@ -142,6 +143,43 @@ export type AccountExport = {
         created_at: string;
         updated_at: string;
     }>;
+    activity_records: Array<{
+        id: number;
+        record_type: ActivityRecordType;
+        external_id: string;
+        data_origin: string;
+        client_record_id: string | null;
+        client_record_version: string | null;
+        source_updated_at: string;
+        start_time: string;
+        end_time: string | null;
+        start_zone_offset_seconds: number | null;
+        end_zone_offset_seconds: number | null;
+        local_date: string;
+        step_count: number | null;
+        energy_kcal: number | null;
+        weight_grams: number | null;
+        exercise_type: number | null;
+        title: string | null;
+        notes: string | null;
+        recording_method: number | null;
+        device_type: number | null;
+        device_manufacturer: string | null;
+        device_model: string | null;
+        created_at: string;
+        updated_at: string;
+    }>;
+    activity_day_summaries: Array<{
+        id: number;
+        local_date: string;
+        steps: number | null;
+        active_calories_kcal: number | null;
+        total_calories_kcal: number | null;
+        exercise_minutes: number | null;
+        observed_at: string;
+        created_at: string;
+        updated_at: string;
+    }>;
 };
 
 export type DeleteAccountRequest = {
@@ -191,8 +229,135 @@ export type ClientConfigResponse = {
     capabilities: {
         self_hosted_server_url: boolean;
         native_push: boolean;
+        health_connect_activity: boolean;
         wear_os_ready: boolean;
     };
+};
+
+type HealthConnectRecordBase = {
+    record_id: string;
+    data_origin: string;
+    client_record_id?: string | null;
+    client_record_version?: string | null;
+    source_updated_at: string;
+    start_time: string;
+    end_time?: string | null;
+    start_zone_offset_seconds?: number | null;
+    end_zone_offset_seconds?: number | null;
+    title?: string | null;
+    notes?: string | null;
+    recording_method?: number | null;
+    device_type?: number | null;
+    device_manufacturer?: string | null;
+    device_model?: string | null;
+};
+
+export type HealthConnectStepUpsert = HealthConnectRecordBase & { count: number };
+export type HealthConnectEnergyUpsert = HealthConnectRecordBase & { energy_kcal: number };
+export type HealthConnectWeightUpsert = HealthConnectRecordBase & { weight_grams: number };
+export type HealthConnectExerciseUpsert = HealthConnectRecordBase & { exercise_type: number };
+export type HealthConnectRecordUpsert =
+    | HealthConnectStepUpsert
+    | HealthConnectEnergyUpsert
+    | HealthConnectWeightUpsert
+    | HealthConnectExerciseUpsert;
+
+type ActivityDaySummaryBase = {
+    local_date: string;
+    steps?: number | null;
+    active_calories_kcal?: number | null;
+    total_calories_kcal?: number | null;
+    exercise_minutes?: number | null;
+    observed_at: string;
+};
+
+export type ActivityDaySummaryPayload = ActivityDaySummaryBase & (
+    | { steps: number }
+    | { active_calories_kcal: number }
+    | { total_calories_kcal: number }
+    | { exercise_minutes: number }
+);
+
+type HealthConnectSyncBase = {
+    next_changes_token: string;
+    deleted_record_ids?: string[];
+    day_summaries?: ActivityDaySummaryPayload[];
+};
+
+export type HealthConnectReplaceWindow = {
+    start_date: string;
+    end_date: string;
+};
+
+export type HealthConnectSyncPayload =
+    | (HealthConnectSyncBase & { sync_mode: 'incremental'; replace_window?: never; record_type: 'STEPS'; previous_changes_token: string | null; upserts?: HealthConnectStepUpsert[] })
+    | (HealthConnectSyncBase & { sync_mode: 'incremental'; replace_window?: never; record_type: 'ACTIVE_CALORIES' | 'TOTAL_CALORIES'; previous_changes_token: string | null; upserts?: HealthConnectEnergyUpsert[] })
+    | (HealthConnectSyncBase & { sync_mode: 'incremental'; replace_window?: never; record_type: 'EXERCISE_SESSION'; previous_changes_token: string | null; upserts?: HealthConnectExerciseUpsert[] })
+    | (HealthConnectSyncBase & { sync_mode: 'incremental'; replace_window?: never; record_type: 'WEIGHT'; previous_changes_token: string | null; upserts?: HealthConnectWeightUpsert[] })
+    | (HealthConnectSyncBase & { sync_mode: 'reset'; replace_window?: HealthConnectReplaceWindow; record_type: 'STEPS'; previous_changes_token: null; upserts?: HealthConnectStepUpsert[] })
+    | (HealthConnectSyncBase & { sync_mode: 'reset'; replace_window?: HealthConnectReplaceWindow; record_type: 'ACTIVE_CALORIES' | 'TOTAL_CALORIES'; previous_changes_token: null; upserts?: HealthConnectEnergyUpsert[] })
+    | (HealthConnectSyncBase & { sync_mode: 'reset'; replace_window?: HealthConnectReplaceWindow; record_type: 'EXERCISE_SESSION'; previous_changes_token: null; upserts?: HealthConnectExerciseUpsert[] })
+    | (HealthConnectSyncBase & { sync_mode: 'reset'; replace_window?: HealthConnectReplaceWindow; record_type: 'WEIGHT'; previous_changes_token: null; upserts?: HealthConnectWeightUpsert[] });
+
+export type HealthConnectSyncResponse = {
+    record_type: ActivityRecordType;
+    upserted: number;
+    deleted: number;
+    reset_deleted: number;
+    stale_ignored: number;
+    tombstoned_ignored: number;
+    day_summaries_upserted: number;
+    day_summaries_stale_ignored: number;
+    checkpoint_advanced: true;
+};
+
+export type ActivityRecordEntry = {
+    id: number;
+    record_type: ActivityRecordType;
+    record_id: string;
+    data_origin: string;
+    client_record_id: string | null;
+    client_record_version: string | null;
+    source_updated_at: string;
+    start_time: string;
+    end_time: string | null;
+    start_zone_offset_seconds: number | null;
+    end_zone_offset_seconds: number | null;
+    local_date: string;
+    count: number | null;
+    energy_kcal: number | null;
+    weight_grams: number | null;
+    exercise_type: number | null;
+    title: string | null;
+    notes: string | null;
+    recording_method: number | null;
+    device_type: number | null;
+    device_manufacturer: string | null;
+    device_model: string | null;
+    created_at: string;
+    updated_at: string;
+};
+
+export type ActivityDaySummary = {
+    id: number;
+    local_date: string;
+    steps: number | null;
+    active_calories_kcal: number | null;
+    total_calories_kcal: number | null;
+    exercise_minutes: number | null;
+    observed_at: string;
+    created_at: string;
+    updated_at: string;
+};
+
+export type ActivityDaysResponse = {
+    start_date: string;
+    end_date: string;
+    days: Array<{
+        local_date: string;
+        summary: ActivityDaySummary | null;
+        records: ActivityRecordEntry[];
+    }>;
 };
 
 export type UserProfile = {

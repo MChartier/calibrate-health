@@ -266,6 +266,36 @@ const PrivacyPolicy: React.FC = () => {
                                     </Typography>
                                 </Stack>
                             </Box>
+
+                            <Box component="section">
+                                <Typography variant="h6" component="h3">
+                                    1.5 Android Health Connect
+                                </Typography>
+                                <Stack spacing={PARAGRAPH_SPACING} sx={{ mt: 1 }} useFlexGap>
+                                    <Typography variant="body1">
+                                        If you explicitly connect Health Connect in the Android app, Calibrate may read
+                                        the data types you enable: steps, active calories burned, total calories burned,
+                                        exercise sessions, and, only when separately enabled, weight.
+                                    </Typography>
+                                    <Typography variant="body2">
+                                        Calibrate uses this information to show an observational activity history with
+                                        source attribution and to reconcile changes or deletions from Health Connect. It
+                                        does not write food or other records to Health Connect, use Health Connect data
+                                        for advertising, or automatically change your calorie target based on imported
+                                        activity.
+                                    </Typography>
+                                    <Typography variant="body2" sx={{ color: "text.secondary" }}>
+                                        Imported records and daily summaries are sent to the Calibrate server you chose,
+                                        including a self-hosted server, and are included in account export and deletion.
+                                        Changes tokens and permission state are associated with the Android installation
+                                        to support incremental synchronization. You can pause synchronization, manage
+                                        individual permissions in Health Connect, or disconnect at any time. Those controls
+                                        stop future imports; Health Connect records already sent to the selected Calibrate
+                                        server remain in activity history and exports until account deletion or operator
+                                        cleanup. Samsung Health and wearable data may appear after a synchronization delay.
+                                    </Typography>
+                                </Stack>
+                            </Box>
                         </Stack>
                     </Box>
 
@@ -286,6 +316,9 @@ const PrivacyPolicy: React.FC = () => {
                                 </Typography>
                                 <Typography component="li" variant="body2">
                                     Display trends and visualizations
+                                </Typography>
+                                <Typography component="li" variant="body2">
+                                    Display Health Connect activity and optional weight data you choose to import
                                 </Typography>
                                 <Typography component="li" variant="body2">
                                     Store and retrieve your logged data
@@ -320,8 +353,10 @@ const PrivacyPolicy: React.FC = () => {
                                 The web client uses an HttpOnly session cookie for authentication and session security.
                                 Browser storage may also retain app preferences and PWA state. The Android client stores
                                 its server address and may keep pending food, weight, or completed-day changes in an
-                                app-local SQLite queue until they are sent or discarded. Authentication tokens are kept in
-                                the operating system's secure credential storage.
+                                app-local SQLite queue until they are sent or discarded. When Health Connect is enabled,
+                                the Android app also stores selected data types, pause state, and per-type changes tokens
+                                needed for incremental synchronization. Authentication tokens are kept in the operating
+                                system's secure credential storage.
                             </Typography>
                             <Typography variant="body2" sx={{
                                 color: "text.secondary"

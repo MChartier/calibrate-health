@@ -338,7 +338,7 @@ test('user route: PATCH /password updates password when current password matches
 test('user route: GET /account/export returns a no-store attachment', async () => {
   const accountExport = {
     format: 'calibrate-account-export',
-    version: 1,
+    version: 2,
     exported_at: '2026-07-11T20:00:00.000Z'
   };
   const router = loadUserRouter({
