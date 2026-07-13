@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
-import { Link } from 'expo-router';
+import { Link, useLocalSearchParams } from 'expo-router';
 import { AppButton } from '../../src/components/AppButton';
 import { AppCard } from '../../src/components/AppCard';
 import { AppText } from '../../src/components/AppText';
@@ -9,19 +9,22 @@ import { ServerUrlControl } from '../../src/components/ServerUrlControl';
 import { SectionHeader } from '../../src/components/SectionHeader';
 import { TextField } from '../../src/components/TextField';
 import { useAuth } from '../../src/auth/AuthContext';
+import { readAuthServerDraft } from '../../src/auth/authServerDraft';
 import { colors, spacing } from '../../src/theme';
 
 export default function RegisterScreen() {
+    const params = useLocalSearchParams<{ serverUrl?: string | string[] }>();
     const { register, serverUrl, setServerUrl, testServerUrl, serverConnection, authError } = useAuth();
-    const [serverInput, setServerInput] = useState(serverUrl);
+    const routedServerDraft = readAuthServerDraft(params.serverUrl);
+    const [serverInput, setServerInput] = useState(routedServerDraft ?? serverUrl);
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
-        setServerInput(serverUrl);
-    }, [serverUrl]);
+        setServerInput(routedServerDraft ?? serverUrl);
+    }, [routedServerDraft, serverUrl]);
 
     async function handleRegister() {
         setIsSubmitting(true);
@@ -64,11 +67,14 @@ export default function RegisterScreen() {
                 <AppButton title={isSubmitting ? 'Creating...' : 'Create account'} disabled={isSubmitting} onPress={() => void handleRegister()} />
             </AppCard>
 
-            <Pressable>
-                <Link href="/(auth)/login" asChild>
+            <Link
+                href={{ pathname: '/(auth)/login', params: { serverUrl: serverInput } }}
+                asChild
+            >
+                <Pressable accessibilityRole="link">
                     <AppText style={styles.link}>Back to sign in</AppText>
-                </Link>
-            </Pressable>
+                </Pressable>
+            </Link>
         </Screen>
     );
 }
