@@ -16,7 +16,7 @@ import { colors, spacing } from '../../src/theme';
 export default function LoginScreen() {
     const params = useLocalSearchParams<{ serverUrl?: string | string[] }>();
     const {
-        login, serverUrl, setServerUrl, testServerUrl, serverConnection, authError,
+        login, serverUrl, testServerUrl, serverConnection, authError,
         accountDeletionCleanupNotice, acknowledgeAccountDeletionCleanupNotice
     } = useAuth();
     const [email, setEmail] = useState('');
@@ -35,9 +35,7 @@ export default function LoginScreen() {
         setIsSubmitting(true);
         setError(null);
         try {
-            const changedServer = await setServerUrl(serverInput);
-            if (!changedServer) return;
-            await login(email, password);
+            await login(email, password, serverInput);
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Unable to sign in.');
         } finally {

@@ -8,6 +8,12 @@ type ConfirmServerSwitchOptions = {
     persistServerUrl: (serverUrl: string) => Promise<void>;
 };
 
+type AuthenticateAgainstConfirmedServerOptions<T> = {
+    candidate: string;
+    confirmServer: (candidate: string) => Promise<ServerConnectionResult>;
+    authenticate: (confirmedServerUrl: string) => Promise<T>;
+};
+
 /**
  * Confirm the candidate before mutating server-scoped credentials or persisted settings.
  *
@@ -22,4 +28,19 @@ export async function confirmServerSwitch(options: ConfirmServerSwitchOptions): 
     }
     await options.persistServerUrl(connection.url);
     return connection;
+}
+
+/**
+ * Authenticate against the exact normalized origin that passed the server probe.
+ *
+ * React state updates do not refresh callbacks synchronously, so the credential
+ * request must consume the confirmation result instead of a state-backed client.
+ */
+export async function authenticateAgainstConfirmedServer<T>(
+    options: AuthenticateAgainstConfirmedServerOptions<T>
+): Promise<T | null> {
+    const connection = await options.confirmServer(options.candidate);
+    if (!connection.ok) return null;
+
+    return options.authenticate(connection.url);
 }

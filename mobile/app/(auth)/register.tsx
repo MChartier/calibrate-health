@@ -14,7 +14,7 @@ import { colors, spacing } from '../../src/theme';
 
 export default function RegisterScreen() {
     const params = useLocalSearchParams<{ serverUrl?: string | string[] }>();
-    const { register, serverUrl, setServerUrl, testServerUrl, serverConnection, authError } = useAuth();
+    const { register, serverUrl, testServerUrl, serverConnection, authError } = useAuth();
     const routedServerDraft = readAuthServerDraft(params.serverUrl);
     const [serverInput, setServerInput] = useState(routedServerDraft ?? serverUrl);
     const [email, setEmail] = useState('');
@@ -30,9 +30,7 @@ export default function RegisterScreen() {
         setIsSubmitting(true);
         setError(null);
         try {
-            const changedServer = await setServerUrl(serverInput);
-            if (!changedServer) return;
-            await register(email, password);
+            await register(email, password, serverInput);
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Unable to create account.');
         } finally {

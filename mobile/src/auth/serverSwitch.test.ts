@@ -1,4 +1,4 @@
-import { confirmServerSwitch } from './serverSwitch';
+import { authenticateAgainstConfirmedServer, confirmServerSwitch } from './serverSwitch';
 import type { ServerConnectionResult } from '../config/server';
 
 const failedConnection: ServerConnectionResult = {
@@ -82,5 +82,44 @@ describe('confirmServerSwitch', () => {
 
         expect(clearCurrentSession).not.toHaveBeenCalled();
         expect(persistServerUrl).toHaveBeenCalledWith('https://new.example');
+    });
+});
+
+describe('authenticateAgainstConfirmedServer', () => {
+    it('authenticates against the normalized URL returned by confirmation', async () => {
+        const events: string[] = [];
+        const authenticate = jest.fn(async (confirmedServerUrl: string) => {
+            events.push(`authenticated:${confirmedServerUrl}`);
+            return 'session';
+        });
+
+        const result = await authenticateAgainstConfirmedServer({
+            candidate: 'https://new.example/',
+            confirmServer: async (candidate) => {
+                events.push(`confirmed:${candidate}`);
+                return successfulConnection;
+            },
+            authenticate
+        });
+
+        expect(result).toBe('session');
+        expect(events).toEqual([
+            'confirmed:https://new.example/',
+            'authenticated:https://new.example'
+        ]);
+        expect(authenticate).toHaveBeenCalledWith(successfulConnection.url);
+    });
+
+    it('does not send credentials when server confirmation fails', async () => {
+        const authenticate = jest.fn(async () => 'session');
+
+        const result = await authenticateAgainstConfirmedServer({
+            candidate: 'https://new.example',
+            confirmServer: async () => failedConnection,
+            authenticate
+        });
+
+        expect(result).toBeNull();
+        expect(authenticate).not.toHaveBeenCalled();
     });
 });
