@@ -24,6 +24,11 @@ fixed-window limits. A limit response uses HTTP 429 with a JSON `message` and st
 headers; food, weight, health checks, and normal synchronization traffic are not throttled by
 these auth-specific limiters.
 
+Wear credential issuance has both a coarse pre-authentication IP limit and a post-authentication
+per-phone-session limit. Pairing origins require HTTPS in production and staging. Operators of an
+intentionally cleartext LAN/loopback self-host must set `ALLOW_INSECURE_WEAR_PAIRING=true`; the
+backend emits an actionable warning because pairing credentials and health data can be intercepted.
+
 Helmet supplies baseline browser security headers. Content Security Policy is intentionally
 deferred until allowed image and proxy origins can be configured without breaking self-hosted
 instances; do not treat the current header set as a substitute for a deployment-specific CSP.
@@ -39,6 +44,11 @@ Browser sessions are persisted in Postgres and linked to the authenticated accou
 Native push registrations are linked to the mobile session that registered them. Deleting an
 account therefore removes its browser sessions, mobile sessions, web push subscriptions, and
 native push tokens through database cascades rather than relying on a hosted cleanup service.
+
+Wear mutations attach the trusted mobile-session ID to their internal idempotency receipt. This
+provenance is never accepted from request JSON or exposed by the watch API; it exists only so the
+watch can offer undo for its current session's latest still-existing food entry. Deleting a mobile
+session clears this optional receipt link rather than deleting food history.
 
 ## Account export and deletion
 

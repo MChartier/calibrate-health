@@ -26,6 +26,7 @@ import myFoodsRoutes from './routes/myFoods';
 import notificationRoutes from './routes/notifications';
 import syncRoutes from './routes/sync';
 import userRoutes from './routes/user';
+import watchRoutes from './routes/watch';
 import { authenticateMobileBearerToken } from './middleware/mobileAuth';
 import { createAuthRateLimiters } from './middleware/security';
 import { startReminderScheduler } from './services/reminderScheduler';
@@ -290,6 +291,8 @@ const bootstrap = async (): Promise<void> => {
   app.use('/auth/login', authRateLimiters.login);
   app.use('/auth/mobile/login', authRateLimiters.login);
   app.use('/auth/mobile/refresh', authRateLimiters.refresh);
+  app.use('/auth/mobile/wear/pairing-credential', authRateLimiters.pairingIssueIp);
+  app.use('/auth/mobile/wear/pair', authRateLimiters.pairingExchange);
   app.use(express.json({ limit: '2mb' }));
   app.use(express.urlencoded({ extended: true, limit: '2mb' }));
 
@@ -316,6 +319,7 @@ const bootstrap = async (): Promise<void> => {
   app.use(passport.initialize());
   app.use(passport.session());
   app.use(authenticateMobileBearerToken);
+  app.use('/auth/mobile/wear/pairing-credential', authRateLimiters.pairingIssue);
   app.use(autoLoginTestUser);
 
   passport.use(
@@ -392,6 +396,7 @@ const bootstrap = async (): Promise<void> => {
   apiRouter.use('/imports', importRoutes);
   apiRouter.use('/notifications', notificationRoutes);
   apiRouter.use('/sync', syncRoutes);
+  apiRouter.use('/watch', watchRoutes);
   apiRouter.use('/user/password', authRateLimiters.passwordChange);
   apiRouter.use('/user', userRoutes);
 

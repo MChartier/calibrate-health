@@ -313,6 +313,9 @@ Notes:
 - Leave `SESSION_COOKIE_DOMAIN` unset so prod and staging sessions do not collide in the same browser.
 - Keep `SESSION_SECRET` stable within an environment so sessions remain valid across deploys.
 - `SESSION_COOKIE_SECURE` defaults to `true` in production and staging; override only if you are intentionally serving over plain HTTP.
+- Wear pairing requires HTTPS in production and staging. A LAN/loopback-only self-host can explicitly set
+  `ALLOW_INSECURE_WEAR_PAIRING=true`, but the backend will warn because pairing credentials and health traffic
+  can be intercepted over cleartext HTTP.
 
 See [docs/security.md](docs/security.md) for the browser CSRF posture, native bearer-token model,
 authentication rate limits, and device-session behavior.

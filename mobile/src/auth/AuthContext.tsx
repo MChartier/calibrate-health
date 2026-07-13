@@ -1,5 +1,10 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { ApiError, CalibrateApiClient, type UserClientPayload } from '@calibrate/api-client';
+import {
+    ApiError,
+    CalibrateApiClient,
+    type MobileAuthResponse,
+    type UserClientPayload
+} from '@calibrate/api-client';
 import { MOBILE_DEVICE_PLATFORMS } from '@calibrate/shared';
 import * as Application from 'expo-application';
 import { useQueryClient } from '@tanstack/react-query';
@@ -123,7 +128,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             baseUrl: serverUrl || 'https://calibratehealth.app'
         });
         try {
-            const refreshed = await refreshClient.refreshMobile(currentRefreshToken);
+            const refreshed = await refreshClient.refreshMobile<MobileAuthResponse>(currentRefreshToken);
             await persistAuthPayload(refreshed);
             return true;
         } catch (error) {
@@ -185,7 +190,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 if (tokens.refreshToken) {
                     const bootstrapClient = new CalibrateApiClient({ baseUrl: storedServerUrl });
                     try {
-                        const refreshed = await bootstrapClient.refreshMobile(tokens.refreshToken);
+                        const refreshed = await bootstrapClient.refreshMobile<MobileAuthResponse>(tokens.refreshToken);
                         if (isMounted) {
                             await persistAuthPayload(refreshed);
                         }

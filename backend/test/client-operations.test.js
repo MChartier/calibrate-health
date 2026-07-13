@@ -28,7 +28,10 @@ function loadClientOperationsService(prismaStub) {
   delete require.cache[servicePath];
   stubModule(dbPath, { __esModule: true, default: prismaStub });
   stubModule(prismaClientPath, {
-    Prisma: { PrismaClientKnownRequestError: PrismaKnownRequestErrorStub }
+    Prisma: {
+      DbNull: null,
+      PrismaClientKnownRequestError: PrismaKnownRequestErrorStub
+    }
   });
 
   const loaded = require('../src/services/clientOperations');
@@ -126,6 +129,61 @@ test('executeIdempotentMutation replays the committed response without repeating
   assert.deepEqual(replay, first);
 });
 
+test('executeIdempotentMutation replays a completed 204 with a null body without repeating the mutation', async () => {
+  const prismaStub = createPrismaStub();
+  const { executeIdempotentMutation } = loadClientOperationsService(prismaStub);
+  let mutationCalls = 0;
+  const options = {
+    userId: 7,
+    operationId: 'operation-delete-001',
+    operationKind: 'food_log.delete',
+    requestPayload: { id: 44 },
+    mutate: async () => {
+      mutationCalls += 1;
+      return { status: 204, body: null };
+    }
+  };
+
+  const first = await executeIdempotentMutation(options);
+  const replay = await executeIdempotentMutation(options);
+
+  assert.equal(mutationCalls, 1);
+  assert.deepEqual(first, { status: 204, body: null });
+  assert.deepEqual(replay, first);
+});
+
+test('executeIdempotentMutation reports a matching incomplete receipt as in progress', async () => {
+  const prismaStub = createPrismaStub();
+  const { ClientOperationConflictError, executeIdempotentMutation } = loadClientOperationsService(prismaStub);
+  let mutationCalls = 0;
+  const options = {
+    userId: 7,
+    operationId: 'operation-pending-001',
+    operationKind: 'food_log.delete',
+    requestPayload: { id: 44 },
+    mutate: async () => {
+      mutationCalls += 1;
+      return { status: 204, body: null };
+    }
+  };
+
+  await executeIdempotentMutation(options);
+  const receipt = Array.from(prismaStub.receipts.values())[0];
+  receipt.response_status = 204;
+  receipt.response_body = null;
+  receipt.completed_at = null;
+
+  await assert.rejects(
+    () => executeIdempotentMutation(options),
+    (error) => {
+      assert.ok(error instanceof ClientOperationConflictError);
+      assert.equal(error.code, 'OPERATION_IN_PROGRESS');
+      return true;
+    }
+  );
+  assert.equal(mutationCalls, 1);
+});
+
 test('executeIdempotentMutation rejects reuse of an operation id for a different request', async () => {
   const prismaStub = createPrismaStub();
   const { ClientOperationConflictError, executeIdempotentMutation } = loadClientOperationsService(prismaStub);
@@ -185,6 +243,32 @@ test('the same client operation id remains isolated between users', async () => 
   assert.deepEqual(await executeForUser(10), { status: 200, body: { user_id: 10 } });
   assert.equal(mutationCalls, 2);
   assert.equal(prismaStub.receipts.size, 2);
+});
+
+test('session-bound operations replay only for the originating mobile session', async () => {
+  const prismaStub = createPrismaStub();
+  const { ClientOperationConflictError, executeIdempotentMutation } = loadClientOperationsService(prismaStub);
+  let mutationCalls = 0;
+  const base = {
+    userId: 7,
+    mobileAuthSessionId: 73,
+    operationId: 'watch-operation-001',
+    operationKind: 'watch.food.create',
+    requestPayload: { calories: 120 },
+    mutate: async () => {
+      mutationCalls += 1;
+      return { status: 200, body: { food_log: { id: 44 } } };
+    }
+  };
+
+  const first = await executeIdempotentMutation(base);
+  assert.deepEqual(await executeIdempotentMutation(base), first);
+  assert.equal(Array.from(prismaStub.receipts.values())[0].mobile_auth_session_id, 73);
+  await assert.rejects(
+    () => executeIdempotentMutation({ ...base, mobileAuthSessionId: 74 }),
+    (error) => error instanceof ClientOperationConflictError && error.code === 'OPERATION_ID_REUSED'
+  );
+  assert.equal(mutationCalls, 1);
 });
 
 test('recordSyncChange stores entity identifiers as strings and JSON-safe payload values', async () => {

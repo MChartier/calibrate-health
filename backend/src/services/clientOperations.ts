@@ -56,6 +56,7 @@ const hashRequest = (operationKind: string, payload: unknown): string =>
  */
 export async function executeIdempotentMutation<T>(options: {
   userId: number;
+  mobileAuthSessionId?: number;
   operationId?: string;
   operationKind: string;
   requestPayload: unknown;
@@ -72,6 +73,9 @@ export async function executeIdempotentMutation<T>(options: {
       await tx.clientOperation.create({
         data: {
           user_id: options.userId,
+          ...(options.mobileAuthSessionId === undefined
+            ? {}
+            : { mobile_auth_session_id: options.mobileAuthSessionId }),
           operation_id: options.operationId!,
           operation_kind: options.operationKind,
           request_hash: requestHash
@@ -89,7 +93,7 @@ export async function executeIdempotentMutation<T>(options: {
         },
         data: {
           response_status: result.status,
-          response_body: normalizedBody,
+          response_body: normalizedBody === null ? Prisma.DbNull : normalizedBody,
           completed_at: new Date()
         }
       });
@@ -109,13 +113,20 @@ export async function executeIdempotentMutation<T>(options: {
         }
       }
     });
-    if (!existing || existing.request_hash !== requestHash) {
+    if (
+      !existing ||
+      existing.request_hash !== requestHash ||
+      (options.mobileAuthSessionId !== undefined &&
+        existing.mobile_auth_session_id !== options.mobileAuthSessionId)
+    ) {
       throw new ClientOperationConflictError(
         'OPERATION_ID_REUSED',
         'Client operation id was already used for a different request.'
       );
     }
-    if (existing.response_status === null || existing.response_body === null || existing.completed_at === null) {
+    // A successful 204 receipt has a deliberately null response body. Completion is determined by
+    // the status/timestamp pair so that an uncertain delete can replay without repeating the write.
+    if (existing.response_status === null || existing.completed_at === null) {
       throw new ClientOperationConflictError(
         'OPERATION_IN_PROGRESS',
         'Client operation is still in progress; retry shortly.'

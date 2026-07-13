@@ -55,6 +55,7 @@
         }
       ],
       "./plugins/withHealthConnect",
+      "./plugins/withSharedAndroidSigning",
       [
         "expo-camera",
         {

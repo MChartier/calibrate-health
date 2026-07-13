@@ -17,6 +17,13 @@ import type {
     MobileAuthRequest,
     MobileAuthResponse,
     MobileSessionSummary,
+    WearPairingCredentialRequest,
+    WearPairingCredentialResponse,
+    WearPairingExchangeRequest,
+    WearMobileAuthResponse,
+    WatchMutationRequest,
+    WatchMutationResponse,
+    WatchSnapshotFetchResult,
     CreateRecipePayload,
     MyFoodDetail,
     MyFoodSummary,
@@ -55,6 +62,8 @@ export class ApiError extends Error {
 type RequestOptions = RequestInit & {
     auth?: boolean;
     json?: unknown;
+    acceptNotModified?: boolean;
+    responseMetadata?: boolean;
 };
 
 const DEFAULT_REQUEST_TIMEOUT_MS = 15000;
@@ -122,7 +131,13 @@ export class CalibrateApiClient {
     }
 
     private async request<T>(path: string, options: RequestOptions = {}, allowRefresh = true): Promise<T> {
-        const { auth = true, json, ...fetchOptions } = options;
+        const {
+            auth = true,
+            json,
+            acceptNotModified = false,
+            responseMetadata = false,
+            ...fetchOptions
+        } = options;
         const headers = new Headers(options.headers);
         if (json !== undefined) {
             headers.set('content-type', 'application/json');
@@ -178,6 +193,14 @@ export class CalibrateApiClient {
             }
         }
 
+        if (response.status === 304 && acceptNotModified) {
+            return {
+                body: null,
+                etag: response.headers.get('etag'),
+                notModified: true
+            } as T;
+        }
+
         if (!response.ok) {
             if (response.status === 401 && auth && allowRefresh && this.refreshAccessToken) {
                 const refreshed = await this.refreshAccessTokenOnce();
@@ -192,6 +215,13 @@ export class CalibrateApiClient {
         }
 
         if (response.status === 204) return undefined as T;
+        if (responseMetadata) {
+            return {
+                body,
+                etag: response.headers.get('etag'),
+                notModified: false
+            } as T;
+        }
         return body as T;
     }
 
@@ -222,8 +252,8 @@ export class CalibrateApiClient {
         });
     }
 
-    refreshMobile(refreshToken: string): Promise<MobileRefreshResponse> {
-        return this.request<MobileRefreshResponse>('/auth/mobile/refresh', {
+    refreshMobile<TResponse extends MobileRefreshResponse = MobileRefreshResponse>(refreshToken: string): Promise<TResponse> {
+        return this.request<TResponse>('/auth/mobile/refresh', {
             method: 'POST',
             auth: false,
             json: { refresh_token: refreshToken }
@@ -251,6 +281,37 @@ export class CalibrateApiClient {
     revokeOtherMobileSessions(): Promise<{ ok: true; revoked: number }> {
         return this.request<{ ok: true; revoked: number }>('/auth/mobile/sessions/revoke-others', {
             method: 'POST'
+        });
+    }
+
+    issueWearPairingCredential(payload: WearPairingCredentialRequest): Promise<WearPairingCredentialResponse> {
+        return this.request<WearPairingCredentialResponse>('/auth/mobile/wear/pairing-credential', {
+            method: 'POST',
+            json: payload
+        });
+    }
+
+    exchangeWearPairingCredential(payload: WearPairingExchangeRequest): Promise<WearMobileAuthResponse> {
+        return this.request<WearMobileAuthResponse>('/auth/mobile/wear/pair', {
+            method: 'POST',
+            auth: false,
+            json: payload
+        });
+    }
+
+    getWatchSnapshot(ifNoneMatch?: string): Promise<WatchSnapshotFetchResult> {
+        return this.request<WatchSnapshotFetchResult>('/api/watch', {
+            headers: ifNoneMatch ? { 'if-none-match': ifNoneMatch } : undefined,
+            acceptNotModified: true,
+            responseMetadata: true
+        });
+    }
+
+    executeWatchMutation(payload: WatchMutationRequest, operationId: string): Promise<WatchMutationResponse> {
+        return this.request<WatchMutationResponse>('/api/watch/mutations', {
+            method: 'POST',
+            headers: buildOperationHeaders(operationId),
+            json: payload
         });
     }
 

@@ -117,6 +117,8 @@ model User {
   push_subscriptions PushSubscription[]
   /// Native mobile auth sessions keyed by hashed opaque tokens.
   mobile_sessions MobileAuthSession[]
+  /// One-time phone-issued Wear OS pairing credentials.
+  wear_pairing_credentials WearPairingCredential[]
   /// Native push tokens for Android app builds.
   native_push_subscriptions NativePushSubscription[]
   /// Durable idempotency records for native/offline mutation replay.
@@ -460,9 +462,44 @@ model MobileAuthSession {
   updated_at          DateTime             @updatedAt
   /// Push endpoints authenticated and registered by this native session.
   native_push_subscriptions NativePushSubscription[]
+  /// Short-lived credentials this phone session issued for nearby Wear OS pairing.
+  issued_wear_pairing_credentials WearPairingCredential[] @relation("WearPairingIssuer")
+  /// Pairing exchange that created this Wear OS session, when applicable.
+  created_from_wear_pairing_credential WearPairingCredential? @relation("WearPairingCreatedSession")
+  /// Idempotent mutations issued by this native session when provenance is required (for example Wear undo).
+  client_operations ClientOperation[]
 
   @@index([user_id])
   @@index([user_id, device_id, revoked_at])
+}
+
+model WearPairingCredential {
+  id                        Int               @id @default(autoincrement())
+  user_id                   Int
+  user                      User              @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  issuing_mobile_session_id Int
+  issuing_mobile_session    MobileAuthSession @relation("WearPairingIssuer", fields: [issuing_mobile_session_id], references: [id], onDelete: Cascade)
+  /// SHA-256 hash of the one-time token transferred from phone to watch.
+  token_hash                String            @unique
+  /// Exact Calibrate origin selected on the phone; prevents cross-instance credential reuse.
+  server_origin             String
+  watch_device_id           String
+  watch_device_name         String?
+  protocol_version          Int
+  /// Server-generated nonce signed by the watch's Android Keystore key.
+  challenge                 String
+  /// Base64 DER SubjectPublicKeyInfo for the watch's P-256 signing key.
+  watch_public_key_spki     String            @db.Text
+  /// SHA-256 of the client-generated UUID included in the successful signed exchange.
+  exchange_id_hash          String?
+  created_mobile_session_id Int?              @unique
+  created_mobile_session    MobileAuthSession? @relation("WearPairingCreatedSession", fields: [created_mobile_session_id], references: [id], onDelete: SetNull)
+  expires_at                DateTime
+  consumed_at               DateTime?
+  created_at                DateTime          @default(now())
+
+  @@index([user_id, expires_at])
+  @@index([issuing_mobile_session_id, expires_at])
 }
 
 model NativePushSubscription {
@@ -495,6 +532,8 @@ model ClientOperation {
   id               Int       @id @default(autoincrement())
   user_id          Int
   user             User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  mobile_auth_session_id Int?
+  mobile_auth_session MobileAuthSession? @relation(fields: [mobile_auth_session_id], references: [id], onDelete: SetNull)
   operation_id     String
   operation_kind   String
   request_hash     String
@@ -505,6 +544,7 @@ model ClientOperation {
 
   @@unique([user_id, operation_id])
   @@index([user_id, created_at])
+  @@index([mobile_auth_session_id, operation_kind, completed_at, created_at], map: "ClientOperation_mobile_session_kind_completed_created_idx")
 }
 
 model SyncChange {

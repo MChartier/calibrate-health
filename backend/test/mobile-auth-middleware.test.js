@@ -21,6 +21,7 @@ function loadMiddleware(authenticateMobileAccessToken) {
 
 function createResponse() {
   return {
+    locals: {},
     statusCode: 200,
     body: undefined,
     status(code) {
@@ -84,7 +85,8 @@ test('mobile auth middleware exposes trusted session and device identity', async
     ok: true,
     user: { id: 9 },
     sessionId: 73,
-    deviceId: 'trusted-device'
+    deviceId: 'trusted-device',
+    devicePlatform: 'android_phone'
   }));
   const req = {
     method: 'POST',
@@ -104,4 +106,60 @@ test('mobile auth middleware exposes trusted session and device identity', async
   assert.equal(req.isAuthenticated(), true);
   assert.equal(res.locals.mobileAuthSessionId, 73);
   assert.equal(res.locals.mobileDeviceId, 'trusted-device');
+  assert.equal(res.locals.mobileDevicePlatform, 'android_phone');
+});
+
+async function runWearRequest(method, path, sessionId = 73) {
+  const middleware = loadMiddleware(async () => ({
+    ok: true,
+    user: { id: 9 },
+    sessionId,
+    deviceId: 'watch-install-1',
+    devicePlatform: 'wear_os'
+  }));
+  const req = { method, path, get: () => 'Bearer valid' };
+  const res = createResponse();
+  let nextCount = 0;
+  await middleware(req, res, () => { nextCount += 1; });
+  return { res, nextCount };
+}
+
+test('Wear bearer sessions are centrally denied from generic and export APIs', async () => {
+  for (const path of ['/api/v1/food', '/api/v1/user/account/export']) {
+    const { res, nextCount } = await runWearRequest('GET', path);
+    assert.equal(nextCount, 0);
+    assert.equal(res.statusCode, 403);
+    assert.deepEqual(res.body, {
+      message: 'Wear OS session is not allowed for this endpoint',
+      code: 'WEAR_SESSION_SCOPE_DENIED',
+      retryable: false
+    });
+  }
+});
+
+test('Wear bearer sessions can use watch APIs and limited session self-management', async () => {
+  const allowed = [
+    ['GET', '/api/v1/watch/today'],
+    ['POST', '/auth/mobile/refresh'],
+    ['POST', '/auth/mobile/logout'],
+    ['DELETE', '/auth/mobile/sessions/73']
+  ];
+  for (const [method, path] of allowed) {
+    const { nextCount, res } = await runWearRequest(method, path);
+    assert.equal(nextCount, 1, `${method} ${path}`);
+    assert.equal(res.statusCode, 200);
+  }
+});
+
+test('Wear bearer sessions cannot revoke other sessions or revoke all others', async () => {
+  for (const [method, path] of [
+    ['GET', '/auth/mobile/sessions'],
+    ['DELETE', '/auth/mobile/sessions/74'],
+    ['POST', '/auth/mobile/sessions/revoke-others']
+  ]) {
+    const { res, nextCount } = await runWearRequest(method, path);
+    assert.equal(nextCount, 0);
+    assert.equal(res.statusCode, 403);
+    assert.equal(res.body.code, 'WEAR_SESSION_SCOPE_DENIED');
+  }
 });

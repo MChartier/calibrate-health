@@ -4,6 +4,7 @@ import { openOutboxDatabase } from './database';
 import { SqliteOutbox } from './outbox';
 import { OutboxReconciler, type QueuedMutationExecutor, type ReconcileResult } from './reconciler';
 import { createOutboxNamespace, type QueuedMutation } from './queuedMutation';
+import { queueWearSyncInvalidation } from '../wear/syncInvalidation';
 
 type OfflineOutboxContextValue = {
     isReady: boolean;
@@ -70,6 +71,12 @@ export function OfflineOutboxProvider({ children, executeMutation }: OfflineOutb
         setMutations(await requireOutbox().list());
     }, [requireOutbox]);
 
+    const notifyWearAfterReplay = useCallback((result: ReconcileResult) => {
+        if (result.replayed > 0 && userId !== undefined) {
+            void queueWearSyncInvalidation({ serverOrigin: serverUrl, userId });
+        }
+    }, [serverUrl, userId]);
+
     const enqueue = useCallback(async (operation: string, payload: unknown, operationId?: string) => {
         const mutation = await requireOutbox().enqueue({ id: operationId, operation, payload });
         await refresh();
@@ -79,16 +86,18 @@ export function OfflineOutboxProvider({ children, executeMutation }: OfflineOutb
     const reconcile = useCallback(async () => {
         if (!reconciler) throw new Error('Offline outbox is unavailable until authentication is ready.');
         const result = await reconciler.reconcile();
+        notifyWearAfterReplay(result);
         await refresh();
         return result;
-    }, [reconciler, refresh]);
+    }, [notifyWearAfterReplay, reconciler, refresh]);
 
     const retryFailed = useCallback(async (id?: string) => {
         if (!reconciler) throw new Error('Offline outbox is unavailable until authentication is ready.');
         const result = await reconciler.retryFailed(id);
+        notifyWearAfterReplay(result);
         await refresh();
         return result;
-    }, [reconciler, refresh]);
+    }, [notifyWearAfterReplay, reconciler, refresh]);
 
     const discardAll = useCallback(async () => {
         await requireOutbox().clear();
@@ -98,8 +107,11 @@ export function OfflineOutboxProvider({ children, executeMutation }: OfflineOutb
     useEffect(() => {
         if (!reconciler) return;
         // Startup replay handles writes left pending by a previous offline session.
-        void reconciler.reconcile().then(refresh, refresh).catch(() => undefined);
-    }, [reconciler, refresh]);
+        void reconciler.reconcile().then(async (result) => {
+            notifyWearAfterReplay(result);
+            await refresh();
+        }, refresh).catch(() => undefined);
+    }, [notifyWearAfterReplay, reconciler, refresh]);
 
     const value = useMemo<OfflineOutboxContextValue>(() => ({
         isReady: outbox !== null,

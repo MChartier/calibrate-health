@@ -5,9 +5,12 @@ import prisma from '../config/database';
 import { DUMMY_AUTH_PASSWORD_HASH, normalizeEmailCredential, validatePasswordCredential } from '../utils/authCredentials';
 import { serializeUserForClient, USER_CLIENT_SELECT } from '../utils/userSerialization';
 import {
+    exchangeWearPairingCredential,
     formatMobileAuthResponse,
     issueMobileAuthPayload,
+    issueWearPairingCredential,
     listMobileSessionsForUser,
+    normalizePairingServerOrigin,
     parseMobileDevicePayload,
     refreshMobileSession,
     revokeMobileSessionByAccessToken,
@@ -98,6 +101,9 @@ router.post('/mobile/register', async (req, res) => {
     if (!device.ok) {
         return res.status(400).json({ message: device.message });
     }
+    if (device.device.devicePlatform === 'WEAR_OS') {
+        return res.status(400).json({ message: 'Wear OS sessions require phone pairing' });
+    }
 
     try {
         const existingUser = await prisma.user.findFirst({
@@ -172,6 +178,9 @@ router.post('/mobile/login', async (req, res) => {
     if (!device.ok) {
         return res.status(400).json({ message: device.message });
     }
+    if (device.device.devicePlatform === 'WEAR_OS') {
+        return res.status(400).json({ message: 'Wear OS sessions require phone pairing' });
+    }
 
     try {
         const user = await prisma.user.findFirst({
@@ -218,6 +227,81 @@ router.post('/mobile/refresh', async (req, res) => {
     } catch (err) {
         console.error('Mobile auth refresh failed:', err);
         res.status(500).json({ message: 'Server error' });
+    }
+});
+
+router.post('/mobile/wear/pairing-credential', async (req, res) => {
+    if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: 'Not authenticated' });
+    }
+    const user = req.user as { id: number };
+    const issuingSessionId = res.locals.mobileAuthSessionId as number | undefined;
+    if (!issuingSessionId) {
+        return res.status(403).json({
+            message: 'Wear pairing requires an authenticated Android phone session',
+            code: 'PAIRING_PHONE_SESSION_REQUIRED',
+            retryable: false
+        });
+    }
+    const pairingRequest = req.body && typeof req.body === 'object'
+        ? req.body as Record<string, unknown>
+        : {};
+    const serverOrigin = pairingRequest.server_origin;
+    const normalizedServerOrigin = normalizePairingServerOrigin(serverOrigin);
+    if (!normalizedServerOrigin) {
+        return res.status(400).json({
+            message: 'valid server_origin is required',
+            code: 'INVALID_PAIRING_REQUEST',
+            retryable: false
+        });
+    }
+
+    try {
+        const result = await issueWearPairingCredential({
+            userId: user.id,
+            issuingSessionId,
+            serverOrigin: normalizedServerOrigin,
+            watchDeviceId: pairingRequest.watch_device_id,
+            watchDeviceName: pairingRequest.watch_device_name,
+            protocolVersion: pairingRequest.protocol_version,
+            watchPublicKeySpki: pairingRequest.watch_public_key_spki
+        });
+        if (!result.ok) {
+            return res.status(result.status).json({
+                message: result.message,
+                code: result.code,
+                retryable: false
+            });
+        }
+        const credential = result.credential;
+        return res.status(201).json({
+            pairing_token: credential.pairingToken,
+            server_origin: credential.serverOrigin,
+            watch_device_id: credential.watchDeviceId,
+            protocol_version: credential.protocolVersion,
+            challenge: credential.challenge,
+            expires_at: credential.expiresAt.toISOString()
+        });
+    } catch (error) {
+        console.error('Wear pairing credential issuance failed:', error);
+        return res.status(500).json({ message: 'Server error' });
+    }
+});
+
+router.post('/mobile/wear/pair', async (req, res) => {
+    try {
+        const result = await exchangeWearPairingCredential(req.body);
+        if (!result.ok) {
+            return res.status(result.status).json({
+                message: result.message,
+                code: result.code,
+                retryable: false
+            });
+        }
+        return res.json(formatMobileAuthResponse(result.payload));
+    } catch (error) {
+        console.error('Wear pairing exchange failed:', error);
+        return res.status(500).json({ message: 'Server error' });
     }
 });
 

@@ -1,6 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const Module = require('node:module');
+const crypto = require('node:crypto');
 
 function stubModule(resolvedPath, exports) {
   const moduleInstance = new Module(resolvedPath);
@@ -45,6 +46,17 @@ const baseUser = {
   profile_image_mime_type: null
 };
 
+const EXCHANGE_ID = 'f6ca2d91-d450-4ee0-9f09-7c66e6eb7358';
+const OTHER_EXCHANGE_ID = '77ba9232-8d0b-4721-82f0-326fb4eaa3e5';
+
+function createWearKeyPair() {
+  const { publicKey, privateKey } = crypto.generateKeyPairSync('ec', { namedCurve: 'prime256v1' });
+  return {
+    privateKey,
+    publicKeySpki: publicKey.export({ format: 'der', type: 'spki' }).toString('base64')
+  };
+}
+
 test('mobile auth parses Android device metadata', () => {
   const { parseMobileDevicePayload, serializeMobileDevicePlatform } = loadMobileAuthService({
     prismaStub: {}
@@ -59,6 +71,396 @@ test('mobile auth parses Android device metadata', () => {
   assert.equal(parsed.ok, true);
   assert.equal(parsed.device.deviceId, 'emulator-1');
   assert.equal(serializeMobileDevicePlatform(parsed.device.devicePlatform), 'android_phone');
+});
+
+test('Wear pairing origins require HTTPS except on Android-approved local and private hosts', () => {
+  const { normalizePairingServerOrigin } = loadMobileAuthService({ prismaStub: {} });
+  assert.equal(normalizePairingServerOrigin('https://public.example/'), 'https://public.example');
+  assert.equal(normalizePairingServerOrigin('http://localhost:3000'), 'http://localhost:3000');
+  assert.equal(normalizePairingServerOrigin('http://10.0.2.2:3000'), 'http://10.0.2.2:3000');
+  assert.equal(normalizePairingServerOrigin('http://192.168.0.160:3000'), 'http://192.168.0.160:3000');
+  assert.equal(normalizePairingServerOrigin('http://172.31.4.8:3000'), 'http://172.31.4.8:3000');
+  assert.equal(normalizePairingServerOrigin('http://calibrate.local:3000'), 'http://calibrate.local:3000');
+  assert.equal(normalizePairingServerOrigin('http://public.example'), null);
+  assert.equal(normalizePairingServerOrigin('http://172.32.0.1'), null);
+  assert.equal(normalizePairingServerOrigin(
+    'http://192.168.0.160:3000', { NODE_ENV: 'production' }, () => {}
+  ), null);
+  const warnings = [];
+  assert.equal(normalizePairingServerOrigin(
+    'http://192.168.0.160:3000',
+    { NODE_ENV: 'staging', ALLOW_INSECURE_WEAR_PAIRING: 'true' },
+    (message) => warnings.push(message)
+  ), 'http://192.168.0.160:3000');
+  assert.match(warnings[0], /health data can be intercepted/i);
+});
+
+test('mobile auth issues a short-lived hashed Wear credential only from an active phone session', async () => {
+  let credentialCreate;
+  const tx = {
+    mobileAuthSession: {
+      updateMany: async ({ where }) => {
+        assert.equal(where.id, 12);
+        assert.equal(where.user_id, 4);
+        assert.equal(where.device_platform, 'ANDROID_PHONE');
+        return { count: 1 };
+      }
+    },
+    wearPairingCredential: {
+      deleteMany: async () => ({ count: 0 }),
+      findMany: async () => [],
+      create: async (args) => { credentialCreate = args; return { id: 1 }; }
+    }
+  };
+  const { hashMobileToken, issueWearPairingCredential } = loadMobileAuthService({
+    prismaStub: { $transaction: async (callback) => callback(tx) }
+  });
+  const keyPair = createWearKeyPair();
+  const now = new Date('2026-07-11T12:00:00.000Z');
+  const result = await issueWearPairingCredential({
+    userId: 4,
+    issuingSessionId: 12,
+    serverOrigin: 'https://health.example/',
+    watchDeviceId: 'watch-install-1',
+    watchDeviceName: 'Galaxy Watch Ultra',
+    protocolVersion: 1,
+    watchPublicKeySpki: keyPair.publicKeySpki,
+    now
+  });
+
+  assert.equal(result.ok, true);
+  assert.match(result.credential.pairingToken, /^wear_pair_/);
+  assert.equal(result.credential.serverOrigin, 'https://health.example');
+  assert.equal(result.credential.watchDeviceId, 'watch-install-1');
+  assert.equal(result.credential.protocolVersion, 1);
+  assert.equal(result.credential.expiresAt.toISOString(), '2026-07-11T12:05:00.000Z');
+  assert.equal(credentialCreate.data.token_hash, hashMobileToken(result.credential.pairingToken));
+  assert.notEqual(credentialCreate.data.token_hash, result.credential.pairingToken);
+  assert.equal(credentialCreate.data.watch_public_key_spki, keyPair.publicKeySpki);
+  assert.equal(credentialCreate.data.watch_device_name, 'Galaxy Watch Ultra');
+  assert.ok(credentialCreate.data.challenge);
+});
+
+test('Wear pairing issuance permits concurrent tickets while pruning overflow and stale rows', async () => {
+  const deleteCalls = [];
+  const tx = {
+    mobileAuthSession: { updateMany: async () => ({ count: 1 }) },
+    wearPairingCredential: {
+      deleteMany: async (args) => { deleteCalls.push(args); return { count: 1 }; },
+      findMany: async ({ skip }) => {
+        assert.equal(skip, 4);
+        return [{ id: 10 }, { id: 9 }];
+      },
+      create: async () => ({ id: 20 })
+    }
+  };
+  const { issueWearPairingCredential } = loadMobileAuthService({
+    prismaStub: { $transaction: async (callback) => callback(tx) }
+  });
+  const keyPair = createWearKeyPair();
+  const result = await issueWearPairingCredential({
+    userId: 4,
+    issuingSessionId: 12,
+    serverOrigin: 'https://health.example',
+    watchDeviceId: 'watch-new',
+    protocolVersion: 1,
+    watchPublicKeySpki: keyPair.publicKeySpki,
+    now: new Date('2026-07-11T12:00:00.000Z')
+  });
+
+  assert.equal(result.ok, true);
+  assert.equal(deleteCalls.length, 2);
+  assert.deepEqual(deleteCalls[1].where.id.in, [10, 9]);
+});
+
+test('mobile auth exchanges a pairing token once for a Wear OS session bound to the same server', async () => {
+  const token = 'wear_pair_one-time-token';
+  let consumed = false;
+  let sessionCreate;
+  const keyPair = createWearKeyPair();
+  const credential = {
+    id: 31,
+    user_id: 4,
+    token_hash: 'hash-filled-by-test',
+    server_origin: 'https://health.example',
+    watch_device_id: 'watch-install-1',
+    watch_device_name: 'Galaxy Watch Ultra',
+    protocol_version: 1,
+    challenge: 'server-challenge',
+    watch_public_key_spki: keyPair.publicKeySpki,
+    issuing_mobile_session_id: 12,
+    exchange_id_hash: null,
+    created_mobile_session_id: null,
+    expires_at: new Date('2026-07-11T12:05:00.000Z'),
+    consumed_at: null
+  };
+  let orphanRevoked = false;
+  let orphanPushRevoked = false;
+  const tx = {
+    wearPairingCredential: {
+      findUnique: async () => credential,
+      updateMany: async ({ data }) => {
+        if (consumed) return { count: 0 };
+        consumed = true;
+        credential.consumed_at = data.consumed_at;
+        credential.exchange_id_hash = data.exchange_id_hash;
+        return { count: 1 };
+      },
+      update: async ({ data }) => {
+        credential.created_mobile_session_id = data.created_mobile_session_id;
+        return credential;
+      }
+    },
+    user: { findUnique: async () => baseUser },
+    mobileAuthSession: {
+      updateMany: async ({ where, data }) => {
+        if (where.device_platform === 'WEAR_OS') {
+          orphanRevoked = Boolean(data.revoked_at);
+          return { count: 1 };
+        }
+        assert.equal(where.id, 12);
+        return { count: 1 };
+      },
+      create: async (args) => { sessionCreate = args; return { id: 50 }; }
+    },
+    nativePushSubscription: {
+      updateMany: async ({ where, data }) => {
+        assert.equal(where.mobile_auth_session_id, 50);
+        orphanPushRevoked = Boolean(data.revoked_at);
+        return { count: 1 };
+      }
+    }
+  };
+  const { buildWearPairingChallengePayload, exchangeWearPairingCredential, hashMobileToken } = loadMobileAuthService({
+    prismaStub: { $transaction: async (callback) => callback(tx) }
+  });
+  credential.token_hash = hashMobileToken(token);
+  const signature = crypto.sign(
+    'sha256',
+    buildWearPairingChallengePayload({
+      serverOrigin: credential.server_origin,
+      watchDeviceId: credential.watch_device_id,
+      exchangeId: EXCHANGE_ID,
+      challenge: credential.challenge
+    }),
+    keyPair.privateKey
+  ).toString('base64url');
+  const request = {
+    pairing_token: token,
+    server_origin: 'https://health.example',
+    watch_device_id: 'watch-install-1',
+    protocol_version: 1,
+    exchange_id: EXCHANGE_ID,
+    challenge_signature: signature
+  };
+
+  const first = await exchangeWearPairingCredential(request, new Date('2026-07-11T12:01:00.000Z'));
+  const otherExchangeSignature = crypto.sign(
+    'sha256',
+    buildWearPairingChallengePayload({
+      serverOrigin: credential.server_origin,
+      watchDeviceId: credential.watch_device_id,
+      exchangeId: OTHER_EXCHANGE_ID,
+      challenge: credential.challenge
+    }),
+    keyPair.privateKey
+  ).toString('base64url');
+  const differentExchange = await exchangeWearPairingCredential({
+    ...request,
+    exchange_id: OTHER_EXCHANGE_ID,
+    challenge_signature: otherExchangeSignature
+  }, new Date('2026-07-11T12:01:00.500Z'));
+  assert.equal(differentExchange.ok, false);
+  assert.equal(differentExchange.code, 'PAIRING_CREDENTIAL_USED');
+  assert.equal(orphanRevoked, false);
+
+  const retrySignature = crypto.sign(
+    'sha256',
+    buildWearPairingChallengePayload({
+      serverOrigin: credential.server_origin,
+      watchDeviceId: credential.watch_device_id,
+      exchangeId: EXCHANGE_ID,
+      challenge: credential.challenge
+    }),
+    keyPair.privateKey
+  ).toString('base64url');
+  const replay = await exchangeWearPairingCredential(
+    { ...request, challenge_signature: retrySignature },
+    new Date('2026-07-11T12:01:01.000Z')
+  );
+
+  assert.equal(first.ok, true);
+  assert.equal(replay.ok, false);
+  assert.equal(replay.status, 409);
+  assert.equal(replay.code, 'PAIRING_RESPONSE_LOST');
+  assert.equal(orphanRevoked, true);
+  assert.equal(orphanPushRevoked, true);
+  assert.equal(sessionCreate.data.device_id, 'watch-install-1');
+  assert.equal(sessionCreate.data.device_platform, 'WEAR_OS');
+  assert.deepEqual(Object.keys(first.payload.user).sort(), [
+    'height_unit', 'id', 'language', 'timezone', 'weight_unit'
+  ]);
+  assert.ok(first.payload.accessToken);
+  assert.ok(first.payload.refreshToken);
+});
+
+test('mobile auth rejects cross-server or revoked-phone Wear exchanges without consuming the token', async () => {
+  let claims = 0;
+  let issuerActive = true;
+  const keyPair = createWearKeyPair();
+  const credential = {
+    id: 31,
+    user_id: 4,
+    server_origin: 'https://first.example',
+    watch_device_id: 'watch-1',
+    watch_device_name: null,
+    protocol_version: 1,
+    challenge: 'server-challenge',
+    watch_public_key_spki: keyPair.publicKeySpki,
+    issuing_mobile_session_id: 12,
+    exchange_id_hash: null,
+    created_mobile_session_id: null,
+    expires_at: new Date('2026-07-11T12:05:00.000Z'),
+    consumed_at: null
+  };
+  const tx = {
+    wearPairingCredential: {
+      findUnique: async () => credential,
+      updateMany: async () => { claims += 1; return { count: 1 }; }
+    },
+    user: { findUnique: async () => baseUser },
+    mobileAuthSession: {
+      updateMany: async ({ where }) => {
+        assert.equal(where.id, 12);
+        return { count: issuerActive ? 1 : 0 };
+      },
+      create: async () => ({ id: 1 })
+    }
+  };
+  const { buildWearPairingChallengePayload, exchangeWearPairingCredential } = loadMobileAuthService({
+    prismaStub: { $transaction: async (callback) => callback(tx) }
+  });
+  const signature = crypto.sign(
+    'sha256',
+    buildWearPairingChallengePayload({
+      serverOrigin: credential.server_origin,
+      watchDeviceId: credential.watch_device_id,
+      exchangeId: EXCHANGE_ID,
+      challenge: credential.challenge
+    }),
+    keyPair.privateKey
+  ).toString('base64url');
+  const request = {
+    pairing_token: 'wear_pair_server-bound',
+    server_origin: 'https://second.example',
+    watch_device_id: 'watch-1',
+    protocol_version: 1,
+    exchange_id: EXCHANGE_ID,
+    challenge_signature: signature
+  };
+
+  const wrongServer = await exchangeWearPairingCredential(request, new Date('2026-07-11T12:01:00.000Z'));
+  credential.server_origin = 'https://second.example';
+  issuerActive = false;
+  const reboundSignature = crypto.sign(
+    'sha256',
+    buildWearPairingChallengePayload({
+      serverOrigin: credential.server_origin,
+      watchDeviceId: credential.watch_device_id,
+      exchangeId: EXCHANGE_ID,
+      challenge: credential.challenge
+    }),
+    keyPair.privateKey
+  ).toString('base64url');
+  const revokedPhone = await exchangeWearPairingCredential(
+    { ...request, challenge_signature: reboundSignature },
+    new Date('2026-07-11T12:01:00.000Z')
+  );
+
+  assert.equal(wrongServer.ok, false);
+  assert.equal(wrongServer.code, 'PAIRING_BINDING_MISMATCH');
+  assert.equal(revokedPhone.ok, false);
+  assert.equal(revokedPhone.code, 'INVALID_PAIRING_CREDENTIAL');
+  assert.equal(claims, 0);
+});
+
+test('mobile auth rejects invalid Wear challenge signatures without consuming the credential', async () => {
+  let claims = 0;
+  const keyPair = createWearKeyPair();
+  const tx = {
+    wearPairingCredential: {
+      findUnique: async () => ({
+        id: 31,
+        user_id: 4,
+        server_origin: 'https://health.example',
+        watch_device_id: 'watch-1',
+        watch_device_name: null,
+        protocol_version: 1,
+        challenge: 'server-challenge',
+        watch_public_key_spki: keyPair.publicKeySpki,
+        issuing_mobile_session_id: 12,
+        exchange_id_hash: null,
+        created_mobile_session_id: null,
+        expires_at: new Date('2026-07-11T12:05:00.000Z'),
+        consumed_at: null
+      }),
+      updateMany: async () => { claims += 1; return { count: 1 }; }
+    },
+    mobileAuthSession: { updateMany: async () => ({ count: 1 }) }
+  };
+  const { exchangeWearPairingCredential } = loadMobileAuthService({
+    prismaStub: { $transaction: async (callback) => callback(tx) }
+  });
+  const result = await exchangeWearPairingCredential({
+    pairing_token: 'wear_pair_server-bound',
+    server_origin: 'https://health.example',
+    watch_device_id: 'watch-1',
+    protocol_version: 1,
+    exchange_id: EXCHANGE_ID,
+    challenge_signature: crypto.randomBytes(64).toString('base64url')
+  }, new Date('2026-07-11T12:01:00.000Z'));
+
+  assert.equal(result.ok, false);
+  assert.equal(result.code, 'PAIRING_SIGNATURE_INVALID');
+  assert.equal(claims, 0);
+});
+
+test('expired consumed Wear retries return expiry without revoking the created session', async () => {
+  let sideEffects = 0;
+  const tx = {
+    wearPairingCredential: {
+      findUnique: async () => ({
+        id: 31,
+        user_id: 4,
+        server_origin: 'https://health.example',
+        watch_device_id: 'watch-1',
+        protocol_version: 1,
+        expires_at: new Date('2026-07-11T12:00:00.000Z'),
+        consumed_at: new Date('2026-07-11T11:59:00.000Z'),
+        exchange_id_hash: 'stored-exchange-hash',
+        created_mobile_session_id: 50
+      }),
+      updateMany: async () => { sideEffects += 1; return { count: 1 }; }
+    },
+    mobileAuthSession: { updateMany: async () => { sideEffects += 1; return { count: 1 }; } },
+    nativePushSubscription: { updateMany: async () => { sideEffects += 1; return { count: 1 }; } }
+  };
+  const { exchangeWearPairingCredential } = loadMobileAuthService({
+    prismaStub: { $transaction: async (callback) => callback(tx) }
+  });
+  const result = await exchangeWearPairingCredential({
+    pairing_token: 'wear_pair_expired',
+    server_origin: 'https://health.example',
+    watch_device_id: 'watch-1',
+    protocol_version: 1,
+    exchange_id: EXCHANGE_ID,
+    challenge_signature: crypto.randomBytes(64).toString('base64url')
+  }, new Date('2026-07-11T12:00:01.000Z'));
+
+  assert.equal(result.ok, false);
+  assert.equal(result.status, 410);
+  assert.equal(result.code, 'PAIRING_CREDENTIAL_EXPIRED');
+  assert.equal(sideEffects, 0);
 });
 
 test('mobile auth issues hashed opaque session tokens', async () => {
@@ -121,6 +523,30 @@ test('mobile auth validates bearer access tokens and hydrates the client user', 
   assert.ok(updateCall.data.last_used_at instanceof Date);
 });
 
+test('Wear bearer authentication exposes only the reduced principal', async () => {
+  const prismaStub = {
+    mobileAuthSession: {
+      findUnique: async () => ({
+        id: 45,
+        device_id: 'watch-45',
+        device_platform: 'WEAR_OS',
+        revoked_at: null,
+        access_expires_at: new Date(Date.now() + 60_000),
+        user: baseUser
+      }),
+      update: async () => ({ id: 45 })
+    }
+  };
+  const { authenticateMobileAccessToken } = loadMobileAuthService({ prismaStub });
+  const result = await authenticateMobileAccessToken('Bearer wear-token');
+
+  assert.equal(result.ok, true);
+  assert.equal(result.devicePlatform, 'wear_os');
+  assert.deepEqual(Object.keys(result.user).sort(), [
+    'height_unit', 'id', 'language', 'timezone', 'weight_unit'
+  ]);
+});
+
 test('mobile auth allows exactly one successor for concurrent refresh-token replays', async () => {
   const presentedToken = 'shared-refresh-token';
   let storedRefreshHash = null;
@@ -165,6 +591,31 @@ test('mobile auth allows exactly one successor for concurrent refresh-token repl
   assert.equal(storedRefreshHash, hashMobileToken(successfulResult.refreshToken));
 });
 
+test('Wear refresh returns only the reduced principal', async () => {
+  const presentedToken = 'wear-refresh-token';
+  let storedRefreshHash;
+  const prismaStub = {
+    mobileAuthSession: {
+      findUnique: async (args) => args.where.refresh_token_hash
+        ? { id: 44 }
+        : { id: 44, device_platform: 'WEAR_OS', user: baseUser },
+      updateMany: async ({ where, data }) => {
+        assert.equal(where.refresh_token_hash, storedRefreshHash);
+        storedRefreshHash = data.refresh_token_hash;
+        return { count: 1 };
+      }
+    }
+  };
+  const { hashMobileToken, refreshMobileSession } = loadMobileAuthService({ prismaStub });
+  storedRefreshHash = hashMobileToken(presentedToken);
+  const result = await refreshMobileSession(presentedToken);
+
+  assert.deepEqual(Object.keys(result.user).sort(), [
+    'height_unit', 'id', 'language', 'timezone', 'weight_unit'
+  ]);
+  assert.equal(result.user.id, baseUser.id);
+});
+
 test('mobile auth logout revokes push subscriptions bound to the session', async () => {
   let mobileSessionUpdate = null;
   let pushSubscriptionUpdate = null;
@@ -204,6 +655,14 @@ test('mobile auth lists only safe session metadata and marks the current device'
         created_at: new Date('2026-01-01T00:00:00.000Z'),
         last_used_at: new Date('2026-01-02T00:00:00.000Z'),
         refresh_expires_at: new Date('2026-02-01T00:00:00.000Z')
+      }, {
+        id: 45,
+        device_id: 'wear-45',
+        device_platform: 'WEAR_OS',
+        device_name: 'Galaxy Watch Ultra',
+        created_at: new Date('2026-01-03T00:00:00.000Z'),
+        last_used_at: null,
+        refresh_expires_at: new Date('2026-02-03T00:00:00.000Z')
       }]
     }
   };
@@ -220,6 +679,15 @@ test('mobile auth lists only safe session metadata and marks the current device'
     last_used_at: '2026-01-02T00:00:00.000Z',
     refresh_expires_at: '2026-02-01T00:00:00.000Z',
     current: true
+  }, {
+    id: 45,
+    device_id: 'wear-45',
+    device_platform: 'wear_os',
+    device_name: 'Galaxy Watch Ultra',
+    created_at: '2026-01-03T00:00:00.000Z',
+    last_used_at: null,
+    refresh_expires_at: '2026-02-03T00:00:00.000Z',
+    current: false
   }]);
 });
 

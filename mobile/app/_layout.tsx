@@ -12,12 +12,20 @@ import { OfflineOutboxProvider } from '../src/offline/provider';
 import { colors } from '../src/theme';
 import { AppErrorBoundary } from '../src/components/AppErrorBoundary';
 import { HealthConnectProvider } from '../src/healthConnect/provider';
+import { useWearHandoffRouting } from '../src/wear/useWearHandoffRouting';
+import { useWearSyncInvalidation } from '../src/wear/useWearSyncInvalidation';
 
 const queryClient = new QueryClient();
 
 const NativeRuntimeHooks: React.FC = () => {
-    const { user } = useAuth();
+    const { user, serverUrl } = useAuth();
     useNotificationTapRouting(Boolean(user));
+    useWearHandoffRouting({
+        enabled: Boolean(user && serverUrl),
+        serverOrigin: serverUrl,
+        userId: user?.id ?? null
+    });
+    useWearSyncInvalidation();
     return null;
 };
 
