@@ -10,6 +10,8 @@ import { BottomSheetModal } from './BottomSheetModal';
 import { NumberStepperField } from './NumberStepperField';
 import { SectionHeader } from './SectionHeader';
 import { useAuth } from '../auth/AuthContext';
+import { executeOrQueueMutation, OFFLINE_MUTATION_OPERATIONS } from '../offline/operations';
+import { useOfflineOutbox } from '../offline/provider';
 import { formatDateOnlyForDisplay } from '../utils/dates';
 import { formatWeightUnit } from '../utils/format';
 import { colors, spacing } from '../theme';
@@ -42,6 +44,7 @@ function formatWeightInput(value: number): string {
  */
 export const WeightEntrySheet: React.FC<WeightEntrySheetProps> = ({ visible, date, onClose, onSaved }) => {
     const { api, user } = useAuth();
+    const { enqueue } = useOfflineOutbox();
     const queryClient = useQueryClient();
     const [weight, setWeight] = useState('');
     const weightUnit = formatWeightUnit(user?.weight_unit);
@@ -70,7 +73,15 @@ export const WeightEntrySheet: React.FC<WeightEntrySheetProps> = ({ visible, dat
     }, [date, prefillMetric?.id, prefillMetric?.weight, visible]);
 
     const addWeight = useMutation({
-        mutationFn: () => api.addMetric({ weight: Number(weight), date }),
+        mutationFn: () => {
+            const payload = { weight: Number(weight), date };
+            return executeOrQueueMutation({
+                operation: OFFLINE_MUTATION_OPERATIONS.ADD_METRIC,
+                payload,
+                execute: (operationId) => api.addMetric(payload, operationId),
+                enqueue
+            });
+        },
         onSuccess: async () => {
             await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
             await Promise.all([

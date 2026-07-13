@@ -120,3 +120,123 @@ test('mobile auth validates bearer access tokens and hydrates the client user', 
   assert.equal(updateCall.where.id, 12);
   assert.ok(updateCall.data.last_used_at instanceof Date);
 });
+
+test('mobile auth allows exactly one successor for concurrent refresh-token replays', async () => {
+  const presentedToken = 'shared-refresh-token';
+  let storedRefreshHash = null;
+  let initialReadCount = 0;
+  const waitingInitialReads = [];
+  const prismaStub = {
+    mobileAuthSession: {
+      findUnique: async (args) => {
+        if (args.where.refresh_token_hash) {
+          initialReadCount += 1;
+          if (initialReadCount < 2) {
+            await new Promise((resolve) => waitingInitialReads.push(resolve));
+          } else {
+            waitingInitialReads.splice(0).forEach((resolve) => resolve());
+          }
+          return { id: 22 };
+        }
+
+        return { id: 22, user: baseUser };
+      },
+      updateMany: async (args) => {
+        if (args.where.refresh_token_hash !== storedRefreshHash) {
+          return { count: 0 };
+        }
+        storedRefreshHash = args.data.refresh_token_hash;
+        return { count: 1 };
+      }
+    }
+  };
+
+  const { hashMobileToken, refreshMobileSession } = loadMobileAuthService({ prismaStub });
+  storedRefreshHash = hashMobileToken(presentedToken);
+
+  const results = await Promise.all([
+    refreshMobileSession(presentedToken),
+    refreshMobileSession(presentedToken)
+  ]);
+
+  assert.equal(results.filter(Boolean).length, 1);
+  assert.equal(results.filter((result) => result === null).length, 1);
+  const successfulResult = results.find(Boolean);
+  assert.equal(storedRefreshHash, hashMobileToken(successfulResult.refreshToken));
+});
+
+test('mobile auth logout revokes push subscriptions bound to the session', async () => {
+  let mobileSessionUpdate = null;
+  let pushSubscriptionUpdate = null;
+  const prismaStub = {
+    $transaction: async (operations) => Promise.all(operations),
+    mobileAuthSession: {
+      findMany: async () => [{ id: 31 }],
+      updateMany: async (args) => {
+        mobileSessionUpdate = args;
+        return { count: 1 };
+      }
+    },
+    nativePushSubscription: {
+      updateMany: async (args) => {
+        pushSubscriptionUpdate = args;
+        return { count: 1 };
+      }
+    }
+  };
+
+  const { revokeMobileSessionByRefreshToken } = loadMobileAuthService({ prismaStub });
+  await revokeMobileSessionByRefreshToken('logout-refresh-token');
+
+  assert.deepEqual(mobileSessionUpdate.where.id, { in: [31] });
+  assert.deepEqual(pushSubscriptionUpdate.where.mobile_auth_session_id, { in: [31] });
+  assert.equal(mobileSessionUpdate.data.revoked_at, pushSubscriptionUpdate.data.revoked_at);
+});
+
+test('mobile auth lists only safe session metadata and marks the current device', async () => {
+  const prismaStub = {
+    mobileAuthSession: {
+      findMany: async () => [{
+        id: 44,
+        device_id: 'device-44',
+        device_platform: 'ANDROID_PHONE',
+        device_name: 'Pixel',
+        created_at: new Date('2026-01-01T00:00:00.000Z'),
+        last_used_at: new Date('2026-01-02T00:00:00.000Z'),
+        refresh_expires_at: new Date('2026-02-01T00:00:00.000Z')
+      }]
+    }
+  };
+
+  const { listMobileSessionsForUser } = loadMobileAuthService({ prismaStub });
+  const sessions = await listMobileSessionsForUser(7, 44);
+
+  assert.deepEqual(sessions, [{
+    id: 44,
+    device_id: 'device-44',
+    device_platform: 'android_phone',
+    device_name: 'Pixel',
+    created_at: '2026-01-01T00:00:00.000Z',
+    last_used_at: '2026-01-02T00:00:00.000Z',
+    refresh_expires_at: '2026-02-01T00:00:00.000Z',
+    current: true
+  }]);
+});
+
+test('mobile auth cannot revoke a session owned by another user', async () => {
+  let transactionCalled = false;
+  const prismaStub = {
+    $transaction: async () => {
+      transactionCalled = true;
+    },
+    mobileAuthSession: {
+      findFirst: async () => null
+    }
+  };
+
+  const { revokeMobileSessionForUser } = loadMobileAuthService({ prismaStub });
+  const revoked = await revokeMobileSessionForUser(7, 999);
+
+  assert.equal(revoked, false);
+  assert.equal(transactionCalled, false);
+});

@@ -12,12 +12,20 @@ function stubModule(resolvedPath, exports) {
 function loadFoodRouter({ prismaStub, foodDataStub }) {
   const dbPath = require.resolve('../src/config/database');
   const foodDataPath = require.resolve('../src/services/foodData');
+  const clientOperationsPath = require.resolve('../src/services/clientOperations');
   const foodRoutePath = require.resolve('../src/routes/food');
 
   const previousDbModule = require.cache[dbPath];
   const previousFoodDataModule = require.cache[foodDataPath];
+  const previousClientOperationsModule = require.cache[clientOperationsPath];
 
   delete require.cache[foodRoutePath];
+  delete require.cache[clientOperationsPath];
+
+  // Mutation routes always append to the sync feed, including legacy clients
+  // that have not started sending an idempotency key yet.
+  prismaStub.syncChange ??= { create: async () => ({ id: 1n }) };
+  prismaStub.$transaction ??= async (callback) => callback(prismaStub);
 
   stubModule(dbPath, prismaStub);
   stubModule(foodDataPath, foodDataStub);
@@ -29,6 +37,9 @@ function loadFoodRouter({ prismaStub, foodDataStub }) {
 
   if (previousFoodDataModule) require.cache[foodDataPath] = previousFoodDataModule;
   else delete require.cache[foodDataPath];
+
+  if (previousClientOperationsModule) require.cache[clientOperationsPath] = previousClientOperationsModule;
+  else delete require.cache[clientOperationsPath];
 
   return loaded.default ?? loaded;
 }

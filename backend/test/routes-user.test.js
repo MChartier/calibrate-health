@@ -9,18 +9,36 @@ function stubModule(resolvedPath, exports) {
   require.cache[resolvedPath] = moduleInstance;
 }
 
-function loadUserRouter({ prismaStub, bcryptStub }) {
+function loadUserRouter({ prismaStub, bcryptStub, accountLifecycleStub }) {
   const dbPath = require.resolve('../src/config/database');
   const bcryptPath = require.resolve('bcryptjs');
+  const mobileAuthPath = require.resolve('../src/services/mobileAuth');
+  const accountLifecyclePath = require.resolve('../src/services/accountLifecycle');
+  const clientOperationsPath = require.resolve('../src/services/clientOperations');
   const userPath = require.resolve('../src/routes/user');
 
   const previousDbModule = require.cache[dbPath];
   const previousBcryptModule = require.cache[bcryptPath];
+  const previousMobileAuthModule = require.cache[mobileAuthPath];
+  const previousAccountLifecycleModule = require.cache[accountLifecyclePath];
+  const previousClientOperationsModule = require.cache[clientOperationsPath];
 
   delete require.cache[userPath];
+  delete require.cache[mobileAuthPath];
+  delete require.cache[accountLifecyclePath];
+  delete require.cache[clientOperationsPath];
 
-  stubModule(dbPath, prismaStub);
+  const normalizedPrismaStub = {
+    ...prismaStub,
+    syncChange: {
+      create: async () => ({ id: 1n }),
+      ...(prismaStub.syncChange ?? {})
+    }
+  };
+  normalizedPrismaStub.$transaction ??= async (callback) => callback(normalizedPrismaStub);
+  stubModule(dbPath, normalizedPrismaStub);
   stubModule(bcryptPath, bcryptStub);
+  if (accountLifecycleStub) stubModule(accountLifecyclePath, accountLifecycleStub);
 
   const loaded = require('../src/routes/user');
 
@@ -30,19 +48,43 @@ function loadUserRouter({ prismaStub, bcryptStub }) {
   if (previousBcryptModule) require.cache[bcryptPath] = previousBcryptModule;
   else delete require.cache[bcryptPath];
 
+  if (previousMobileAuthModule) require.cache[mobileAuthPath] = previousMobileAuthModule;
+  else delete require.cache[mobileAuthPath];
+
+  if (previousAccountLifecycleModule) require.cache[accountLifecyclePath] = previousAccountLifecycleModule;
+  else delete require.cache[accountLifecyclePath];
+
+  if (previousClientOperationsModule) require.cache[clientOperationsPath] = previousClientOperationsModule;
+  else delete require.cache[clientOperationsPath];
+
   return loaded.default ?? loaded;
 }
 
-function createRes() {
+function createRes(locals = {}) {
   return {
     statusCode: 200,
     body: undefined,
+    headers: {},
+    clearedCookie: null,
+    locals,
     status(code) {
       this.statusCode = code;
       return this;
     },
     json(payload) {
       this.body = payload;
+      return this;
+    },
+    send(payload) {
+      this.body = payload;
+      return this;
+    },
+    setHeader(name, value) {
+      this.headers[name.toLowerCase()] = value;
+      return this;
+    },
+    clearCookie(name, options) {
+      this.clearedCookie = { name, options };
       return this;
     }
   };
@@ -250,13 +292,25 @@ test('user route: PATCH /password validates request shape and rejects identical 
 
 test('user route: PATCH /password updates password when current password matches', async () => {
   let updated = false;
+  let sessionLookup = null;
 
   const prismaStub = {
+    $transaction: async (operations) => Promise.all(operations),
     user: {
       findUnique: async () => ({ id: 7, password_hash: 'old-hash' }),
       update: async () => {
         updated = true;
       }
+    },
+    mobileAuthSession: {
+      findMany: async (args) => {
+        sessionLookup = args;
+        return [{ id: 12 }];
+      },
+      updateMany: async () => ({ count: 1 })
+    },
+    nativePushSubscription: {
+      updateMany: async () => ({ count: 1 })
     }
   };
   const bcryptStub = {
@@ -271,13 +325,108 @@ test('user route: PATCH /password updates password when current password matches
     user: { id: 7 },
     body: { current_password: 'current', new_password: 'new-password' }
   };
-  const res = createRes();
+  const res = createRes({ mobileAuthSessionId: 11 });
 
   await handler(req, res);
 
   assert.equal(updated, true);
+  assert.deepEqual(sessionLookup.where.id, { not: 11 });
   assert.equal(res.statusCode, 200);
   assert.deepEqual(res.body, { message: 'Password updated' });
+});
+
+test('user route: GET /account/export returns a no-store attachment', async () => {
+  const accountExport = {
+    format: 'calibrate-account-export',
+    version: 1,
+    exported_at: '2026-07-11T20:00:00.000Z'
+  };
+  const router = loadUserRouter({
+    prismaStub: { user: {} },
+    bcryptStub: {},
+    accountLifecycleStub: {
+      exportAccountData: async (userId) => {
+        assert.equal(userId, 7);
+        return accountExport;
+      },
+      deleteAccountData: async () => false
+    }
+  });
+  const handler = getRouteHandler(router, 'get', '/account/export');
+  const res = createRes();
+
+  await handler({ user: { id: 7 } }, res);
+
+  assert.equal(res.statusCode, 200);
+  assert.equal(res.headers['cache-control'], 'no-store');
+  assert.match(res.headers['content-disposition'], /calibrate-account-export-2026-07-11\.json/);
+  assert.equal(res.body, accountExport);
+});
+
+test('user route: DELETE /account requires and verifies the current password', async () => {
+  let deleted = false;
+  const router = loadUserRouter({
+    prismaStub: {
+      user: { findUnique: async () => ({ password_hash: 'stored-hash' }) }
+    },
+    bcryptStub: { compare: async () => false },
+    accountLifecycleStub: {
+      exportAccountData: async () => null,
+      deleteAccountData: async () => {
+        deleted = true;
+        return true;
+      }
+    }
+  });
+  const handler = getRouteHandler(router, 'delete', '/account');
+
+  const missingRes = createRes();
+  await handler({ user: { id: 7 }, body: {} }, missingRes);
+  assert.equal(missingRes.statusCode, 400);
+  assert.deepEqual(missingRes.body, { message: 'Current password is required' });
+
+  const wrongRes = createRes();
+  await handler({ user: { id: 7 }, body: { current_password: 'wrong' } }, wrongRes);
+  assert.equal(wrongRes.statusCode, 400);
+  assert.deepEqual(wrongRes.body, { message: 'Current password is incorrect' });
+  assert.equal(deleted, false);
+});
+
+test('user route: DELETE /account deletes data, destroys the request session, and clears the cookie', async () => {
+  let deletedUserId = null;
+  let sessionDestroyed = false;
+  const router = loadUserRouter({
+    prismaStub: {
+      user: { findUnique: async () => ({ password_hash: 'stored-hash' }) }
+    },
+    bcryptStub: { compare: async () => true },
+    accountLifecycleStub: {
+      exportAccountData: async () => null,
+      deleteAccountData: async (userId) => {
+        deletedUserId = userId;
+        return true;
+      }
+    }
+  });
+  const handler = getRouteHandler(router, 'delete', '/account');
+  const req = {
+    user: { id: 7 },
+    body: { current_password: 'correct-password' },
+    session: {
+      destroy: (callback) => {
+        sessionDestroyed = true;
+        callback();
+      }
+    }
+  };
+  const res = createRes();
+
+  await handler(req, res);
+
+  assert.equal(deletedUserId, 7);
+  assert.equal(sessionDestroyed, true);
+  assert.deepEqual(res.clearedCookie, { name: 'cal.sid', options: { path: '/' } });
+  assert.equal(res.statusCode, 204);
 });
 
 test('user route: PATCH /preferences validates reminder preference booleans', async () => {

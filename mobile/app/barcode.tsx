@@ -15,6 +15,8 @@ import { OverlaySelect, type OverlaySelectOption } from '../src/components/Overl
 import { Screen } from '../src/components/Screen';
 import { SectionHeader } from '../src/components/SectionHeader';
 import { useAuth } from '../src/auth/AuthContext';
+import { executeOrQueueMutation, OFFLINE_MUTATION_OPERATIONS } from '../src/offline/operations';
+import { useOfflineOutbox } from '../src/offline/provider';
 import { getTodayDate } from '../src/utils/dates';
 import { formatCalories, formatMealPeriod } from '../src/utils/format';
 import { MEAL_OPTIONS } from '../src/utils/meals';
@@ -51,6 +53,7 @@ function buildBarcodeFoodPayload(result: FoodSearchResult, code: string, date: s
 export default function BarcodeScreen() {
     const { date, meal: mealParam } = useLocalSearchParams<{ date?: string; meal?: string }>();
     const { api, user } = useAuth();
+    const { enqueue } = useOfflineOutbox();
     const queryClient = useQueryClient();
     const [permission, requestPermission] = useCameraPermissions();
     const [barcode, setBarcode] = useState<string | null>(null);
@@ -65,7 +68,13 @@ export default function BarcodeScreen() {
             if (!barcode) {
                 throw new Error('Scan a barcode before logging food.');
             }
-            return api.createFoodLog(buildBarcodeFoodPayload(result, barcode, selectedDate, meal));
+            const payload = buildBarcodeFoodPayload(result, barcode, selectedDate, meal);
+            return executeOrQueueMutation({
+                operation: OFFLINE_MUTATION_OPERATIONS.CREATE_FOOD_LOG,
+                payload,
+                execute: (operationId) => api.createFoodLog(payload, operationId),
+                enqueue
+            });
         },
         onSuccess: async () => {
             await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);

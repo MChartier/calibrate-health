@@ -42,7 +42,7 @@ const PrivacyPolicy: React.FC = () => {
                             <Box component="span" sx={{ fontWeight: 700 }}>
                                 Last updated:
                             </Box>{' '}
-                            January 2026
+                            July 11, 2026
                         </Typography>
                         <Typography variant="body1" sx={{ mt: 1.5 }}>
                             Calibrate Health ("Calibrate", "we", "us", or "our") respects your privacy. This Privacy Policy
@@ -119,6 +119,12 @@ const PrivacyPolicy: React.FC = () => {
                                                 <Typography component="li" variant="body2">
                                                     Activity level
                                                 </Typography>
+                                                <Typography component="li" variant="body2">
+                                                    Optional profile photo used as your in-app avatar
+                                                </Typography>
+                                                <Typography component="li" variant="body2">
+                                                    Language, unit, haptic, and reminder preferences
+                                                </Typography>
                                             </Box>
                                         </Box>
                                         <Box component="li">
@@ -167,8 +173,8 @@ const PrivacyPolicy: React.FC = () => {
                                 </Typography>
                                 <Stack spacing={PARAGRAPH_SPACING} sx={{ mt: 1 }} useFlexGap>
                                     <Typography variant="body1">
-                                        When you use the Service, we automatically collect limited technical information,
-                                        including:
+                                        When you use the Service, we process limited technical information needed to
+                                        authenticate requests, protect the Service, and diagnose failures, including:
                                     </Typography>
                                     <Box component="ul" sx={LIST_SX}>
                                         <Typography component="li" variant="body2">
@@ -184,13 +190,15 @@ const PrivacyPolicy: React.FC = () => {
                                             Dates and times of access
                                         </Typography>
                                         <Typography component="li" variant="body2">
-                                            Application usage necessary for authentication and session management
+                                            Session, device, and application information necessary for authentication
+                                            and account security
                                         </Typography>
                                     </Box>
                                     <Typography variant="body2" sx={{
                                         color: "text.secondary"
                                     }}>
-                                        We do not use this data for advertising or behavioral profiling.
+                                        Some of this information may appear in application, reverse-proxy, or security
+                                        logs. We do not use it for advertising or behavioral profiling.
                                     </Typography>
                                 </Stack>
                             </Box>
@@ -205,6 +213,9 @@ const PrivacyPolicy: React.FC = () => {
                                     </Typography>
                                     <Box component="ul" sx={LIST_SX}>
                                         <Typography component="li" variant="body2">
+                                            FatSecret (when configured)
+                                        </Typography>
+                                        <Typography component="li" variant="body2">
                                             Open Food Facts
                                         </Typography>
                                         <Typography component="li" variant="body2">
@@ -214,9 +225,44 @@ const PrivacyPolicy: React.FC = () => {
                                     <Typography variant="body2" sx={{
                                         color: "text.secondary"
                                     }}>
-                                        When you search for foods or scan barcodes, your query may be sent to these
-                                        providers. Calibrate does not send personally identifiable information (such as your
-                                        email address or account ID) to these services.
+                                        When you search for foods or scan barcodes, the search text, barcode, requested
+                                        language, and serving context may be sent to the selected provider. Calibrate does
+                                        not include your email address or account ID in those requests. The provider may
+                                        still receive ordinary request metadata from the Calibrate server, such as its IP
+                                        address.
+                                    </Typography>
+                                </Stack>
+                            </Box>
+
+                            <Box component="section">
+                                <Typography variant="h6" component="h3">
+                                    1.4 Sessions, Notifications, and Push Delivery
+                                </Typography>
+                                <Stack spacing={PARAGRAPH_SPACING} sx={{ mt: 1 }} useFlexGap>
+                                    <Typography variant="body1">
+                                        Calibrate stores the minimum records needed to keep you signed in and deliver
+                                        notifications you enable:
+                                    </Typography>
+                                    <Box component="ul" sx={LIST_SX}>
+                                        <Typography component="li" variant="body2">
+                                            Browser session records linked to an HttpOnly session cookie
+                                        </Typography>
+                                        <Typography component="li" variant="body2">
+                                            Hashed mobile access and refresh tokens, device identifiers, device labels,
+                                            platform, expiration, and last-use timestamps
+                                        </Typography>
+                                        <Typography component="li" variant="body2">
+                                            Browser push endpoints and encryption keys, or native push provider tokens,
+                                            for devices where push is enabled
+                                        </Typography>
+                                        <Typography component="li" variant="body2">
+                                            In-app reminder records and their read, dismissed, or resolved state
+                                        </Typography>
+                                    </Box>
+                                    <Typography variant="body2" sx={{ color: "text.secondary" }}>
+                                        Push delivery may send a device endpoint or token and reminder content to the
+                                        applicable browser push service or Expo Push Service. You can disable or revoke
+                                        push delivery for a device. Self-hosted operators decide whether to configure push.
                                     </Typography>
                                 </Stack>
                             </Box>
@@ -248,6 +294,12 @@ const PrivacyPolicy: React.FC = () => {
                                     Authenticate users and maintain sessions
                                 </Typography>
                                 <Typography component="li" variant="body2">
+                                    Deliver enabled in-app, browser, and native reminders
+                                </Typography>
+                                <Typography component="li" variant="body2">
+                                    Prepare a portable account export or permanently delete an account on request
+                                </Typography>
+                                <Typography component="li" variant="body2">
                                     Diagnose bugs and maintain system reliability
                                 </Typography>
                             </Box>
@@ -265,19 +317,12 @@ const PrivacyPolicy: React.FC = () => {
                         </Typography>
                         <Stack spacing={PARAGRAPH_SPACING} sx={{ mt: 1.5 }} useFlexGap>
                             <Typography variant="body1">
-                                Calibrate uses cookies and similar technologies strictly for:
+                                The web client uses an HttpOnly session cookie for authentication and session security.
+                                Browser storage may also retain app preferences and PWA state. The Android client stores
+                                its server address and may keep pending food, weight, or completed-day changes in an
+                                app-local SQLite queue until they are sent or discarded. Authentication tokens are kept in
+                                the operating system's secure credential storage.
                             </Typography>
-                            <Box component="ul" sx={LIST_SX}>
-                                <Typography component="li" variant="body2">
-                                    Authentication
-                                </Typography>
-                                <Typography component="li" variant="body2">
-                                    Session management
-                                </Typography>
-                                <Typography component="li" variant="body2">
-                                    Security
-                                </Typography>
-                            </Box>
                             <Typography variant="body2" sx={{
                                 color: "text.secondary"
                             }}>
@@ -299,12 +344,19 @@ const PrivacyPolicy: React.FC = () => {
                                     Encrypted connections (HTTPS)
                                 </Typography>
                                 <Typography component="li" variant="body2">
-                                    Encrypted passwords
+                                    Salted password hashes rather than stored plaintext passwords
                                 </Typography>
                                 <Typography component="li" variant="body2">
                                     Access-controlled databases
                                 </Typography>
+                                <Typography component="li" variant="body2">
+                                    Hashed native authentication tokens on the server
+                                </Typography>
                             </Box>
+                            <Typography variant="body1">
+                                Optional profile photos are resized and stored inline with the account record. They are
+                                not uploaded to a separate hosted image service.
+                            </Typography>
                             <Typography variant="body2" sx={{
                                 color: "text.secondary"
                             }}>
@@ -331,6 +383,14 @@ const PrivacyPolicy: React.FC = () => {
                                 <Typography component="li" variant="body2">
                                     We do not have access to data stored in self-hosted instances
                                 </Typography>
+                                <Typography component="li" variant="body2">
+                                    Portable export and password-confirmed account deletion run against the instance's own
+                                    database and do not depend on the hosted Calibrate service
+                                </Typography>
+                                <Typography component="li" variant="body2">
+                                    The operator controls HTTPS, database access, logs, backups, push configuration, and
+                                    retention outside the Calibrate application database
+                                </Typography>
                             </Box>
                         </Stack>
                     </Box>
@@ -340,12 +400,33 @@ const PrivacyPolicy: React.FC = () => {
                             6. Data Retention
                         </Typography>
                         <Stack spacing={PARAGRAPH_SPACING} sx={{ mt: 1.5 }} useFlexGap>
-                            <Typography variant="body1">We retain your data for as long as your account remains active.</Typography>
-                            <Typography variant="body1">You may delete your account at any time. Upon deletion:</Typography>
+                            <Typography variant="body1">
+                                Account profile and tracking data remain in the active database while your account is
+                                active, unless you edit or delete individual records sooner. Session records expire or are
+                                removed when revoked. Push subscriptions remain until they are disabled, revoked, rejected
+                                by the push provider, or the account is deleted.
+                            </Typography>
+                            <Typography variant="body1">
+                                You may permanently delete your account after confirming your current password. Upon
+                                deletion from the active database:
+                            </Typography>
                             <Box component="ul" sx={LIST_SX}>
                                 <Typography component="li" variant="body2">
-                                    Your personal data will be permanently removed from our systems within a reasonable period,
-                                    unless retention is required for legal or security purposes.
+                                    Profile data, inline avatar, goals, body metrics, food logs, completed-day state, My
+                                    Foods and recipes, in-app notifications, and internal synchronization records are
+                                    removed
+                                </Typography>
+                                <Typography component="li" variant="body2">
+                                    Browser and mobile sessions are revoked, and browser/native push subscriptions are
+                                    removed
+                                </Typography>
+                                <Typography component="li" variant="body2">
+                                    Data outside the active database, such as operator-managed backups or security logs,
+                                    follows the applicable operator retention schedule or legal requirements
+                                </Typography>
+                                <Typography component="li" variant="body2">
+                                    Export files, shared copies, and app-local data on your devices remain under your
+                                    control and may need to be removed separately, especially on a shared device
                                 </Typography>
                             </Box>
                         </Stack>
@@ -371,11 +452,17 @@ const PrivacyPolicy: React.FC = () => {
                                     Export your data
                                 </Typography>
                             </Box>
-                            <Typography variant="body2" sx={{
-                                color: "text.secondary"
-                            }}>
-                                You can exercise most of these rights directly within the Service. If you need assistance,
-                                contact us using the information below.
+                            <Typography variant="body1">
+                                While signed in, you can download a versioned JSON export containing your account profile,
+                                preferences, optional avatar, goals, body metrics, food logs, completed-day state, My Foods,
+                                recipes, and in-app notification history. Password hashes, authentication tokens, session
+                                records, push endpoints and tokens, and internal replay metadata are excluded for security.
+                            </Typography>
+                            <Typography variant="body2" sx={{ color: "text.secondary" }}>
+                                Account deletion requires your current password and cannot be undone. These export and
+                                deletion controls are available on self-hosted instances without contacting the hosted
+                                service. If you need assistance with the hosted Service, contact us below; for a self-hosted
+                                instance, contact its operator.
                             </Typography>
                         </Stack>
                     </Box>

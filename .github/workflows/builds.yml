@@ -6,6 +6,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: builds-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   backend-build:
     name: Backend Build
@@ -28,7 +32,7 @@ jobs:
           cache-dependency-path: backend/package-lock.json
 
       - name: Install deps
-        run: npm ci
+        run: npm ci --no-audit --fund=false
 
       - name: Build backend
         run: npm run build
@@ -54,7 +58,7 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
 
       - name: Install deps
-        run: npm ci
+        run: npm ci --no-audit --fund=false
 
       - name: Build frontend
         run: npm run build
@@ -80,12 +84,13 @@ jobs:
         with:
           distribution: temurin
           java-version: 17
+          cache: gradle
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
       - name: Install deps
-        run: npm ci
+        run: npm ci --no-audit --fund=false
 
       - name: Type-check mobile
         run: npm --prefix mobile run typecheck
@@ -96,4 +101,4 @@ jobs:
 
       - name: Build Android debug
         working-directory: mobile/android
-        run: ./gradlew assembleDebug
+        run: ./gradlew assembleDebug -PreactNativeArchitectures=x86_64

@@ -173,6 +173,25 @@ test('PostgresSessionStore.set falls back to the store TTL when no cookie timing
   assert.ok(expire.getTime() <= after + ttlMs);
 });
 
+test('PostgresSessionStore links authenticated Passport sessions to their user', async () => {
+  const pool = createPoolStub(() => ({ rows: [] }));
+  const store = new PostgresSessionStore(pool);
+
+  await callStoreSet(store, 'sid-user', { cookie: {}, passport: { user: 42 } });
+
+  assert.match(pool.calls[0].text, /user_id/);
+  assert.equal(pool.calls[0].params[3], 42);
+});
+
+test('PostgresSessionStore leaves unauthenticated session ownership null', async () => {
+  const pool = createPoolStub(() => ({ rows: [] }));
+  const store = new PostgresSessionStore(pool);
+
+  await callStoreSet(store, 'sid-anonymous', { cookie: {} });
+
+  assert.equal(pool.calls[0].params[3], null);
+});
+
 test('PostgresSessionStore.touch updates expiry using cookie maxAge', async () => {
   const pool = createPoolStub(() => ({ rows: [] }));
   const store = new PostgresSessionStore(pool);
@@ -190,6 +209,16 @@ test('PostgresSessionStore.touch updates expiry using cookie maxAge', async () =
   assert.ok(expire instanceof Date);
   assert.ok(expire.getTime() >= before + session.cookie.maxAge);
   assert.ok(expire.getTime() <= after + session.cookie.maxAge);
+  assert.equal(pool.calls[0].params[3], null);
+});
+
+test('PostgresSessionStore.touch refreshes Passport session ownership', async () => {
+  const pool = createPoolStub(() => ({ rows: [] }));
+  const store = new PostgresSessionStore(pool);
+
+  await callStoreTouch(store, 'sid-touch-user', { cookie: {}, passport: { user: '17' } });
+
+  assert.equal(pool.calls[0].params[3], 17);
 });
 
 test('PostgresSessionStore.destroy deletes stored sessions', async () => {

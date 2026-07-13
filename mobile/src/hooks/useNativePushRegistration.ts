@@ -10,14 +10,12 @@ import { useAuth } from '../auth/AuthContext';
  * and keep the code path for development builds and release builds.
  */
 export function useNativePushRegistration() {
-    const { api, user, deviceId } = useAuth();
+    const { api, user } = useAuth();
 
     useEffect(() => {
-        const currentDeviceId = deviceId;
-        if (!user || !currentDeviceId) return;
+        if (!user) return;
 
         let cancelled = false;
-        const registerDeviceId = currentDeviceId;
 
         async function register() {
             if (Constants.appOwnership === 'expo') {
@@ -43,7 +41,6 @@ export function useNativePushRegistration() {
 
             await api.registerNativePushSubscription({
                 token: token.data,
-                device_id: registerDeviceId,
                 platform: NATIVE_PUSH_PLATFORMS.ANDROID,
                 provider: NATIVE_PUSH_PROVIDERS.EXPO
             });
@@ -56,5 +53,5 @@ export function useNativePushRegistration() {
         return () => {
             cancelled = true;
         };
-    }, [api, deviceId, user]);
+    }, [api, user]);
 }

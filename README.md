@@ -313,3 +313,10 @@ Notes:
 - Leave `SESSION_COOKIE_DOMAIN` unset so prod and staging sessions do not collide in the same browser.
 - Keep `SESSION_SECRET` stable within an environment so sessions remain valid across deploys.
 - `SESSION_COOKIE_SECURE` defaults to `true` in production and staging; override only if you are intentionally serving over plain HTTP.
+
+See [docs/security.md](docs/security.md) for the browser CSRF posture, native bearer-token model,
+authentication rate limits, and device-session behavior.
+
+The shared client uses the stable `/api/v1` resource API. See
+[docs/api-versioning.md](docs/api-versioning.md) and [docs/openapi/v1.yaml](docs/openapi/v1.yaml)
+for compatibility and wire-contract policy.

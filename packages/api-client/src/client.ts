@@ -1,4 +1,5 @@
 import type {
+    AccountExport,
     ClientConfigResponse,
     FoodLogCreatePayload,
     FoodLogDay,
@@ -11,12 +12,14 @@ import type {
     MetricEntry,
     MobileAuthRequest,
     MobileAuthResponse,
+    MobileSessionSummary,
     CreateRecipePayload,
     MyFoodDetail,
     MyFoodSummary,
     MobileRefreshResponse,
     NativePushSubscriptionPayload,
     RecentFoodsResponse,
+    SyncChangesResponse,
     TrendMetricsResponse,
     UserClientPayload,
     UserProfileResponse
@@ -25,6 +28,8 @@ import type {
 export type ApiClientOptions = {
     baseUrl: string;
     getAccessToken?: () => string | null | Promise<string | null>;
+    /** Refresh native credentials after a protected request returns 401. */
+    refreshAccessToken?: () => boolean | Promise<boolean>;
     onUnauthorized?: () => void | Promise<void>;
     fetchImpl?: typeof fetch;
     requestTimeoutMs?: number;
@@ -48,11 +53,20 @@ type RequestOptions = RequestInit & {
 };
 
 const DEFAULT_REQUEST_TIMEOUT_MS = 15000;
+const CLIENT_OPERATION_ID_HEADER = 'x-client-operation-id';
+
+/** Attach an operation identifier only when the caller is opting into idempotent replay. */
+const buildOperationHeaders = (operationId?: string): HeadersInit | undefined =>
+    operationId ? { [CLIENT_OPERATION_ID_HEADER]: operationId } : undefined;
 
 const trimTrailingSlash = (value: string): string => value.replace(/\/+$/, '');
 
 const buildUrl = (baseUrl: string, path: string): string => {
-    const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+    const requestedPath = path.startsWith('/') ? path : `/${path}`;
+    // Keep method declarations readable while ensuring all shared API calls use the stable v1 mount.
+    const normalizedPath = requestedPath.startsWith('/api/')
+        ? `/api/v1/${requestedPath.slice('/api/'.length)}`
+        : requestedPath;
     return `${trimTrailingSlash(baseUrl)}${normalizedPath}`;
 };
 
@@ -73,25 +87,43 @@ const getErrorMessage = (body: unknown, fallback: string): string => {
 export class CalibrateApiClient {
     private readonly baseUrl: string;
     private readonly getAccessToken?: ApiClientOptions['getAccessToken'];
+    private readonly refreshAccessToken?: ApiClientOptions['refreshAccessToken'];
     private readonly onUnauthorized?: ApiClientOptions['onUnauthorized'];
     private readonly fetchImpl: typeof fetch;
     private readonly requestTimeoutMs: number;
+    private refreshPromise: Promise<boolean> | null = null;
 
     constructor(options: ApiClientOptions) {
         this.baseUrl = options.baseUrl;
         this.getAccessToken = options.getAccessToken;
+        this.refreshAccessToken = options.refreshAccessToken;
         this.onUnauthorized = options.onUnauthorized;
         this.fetchImpl = options.fetchImpl ?? fetch;
         this.requestTimeoutMs = options.requestTimeoutMs ?? DEFAULT_REQUEST_TIMEOUT_MS;
     }
 
-    private async request<T>(path: string, options: RequestOptions = {}): Promise<T> {
+    /** Share one refresh across concurrent 401 responses to avoid rotating the same token twice. */
+    private async refreshAccessTokenOnce(): Promise<boolean> {
+        if (!this.refreshAccessToken) return false;
+
+        if (!this.refreshPromise) {
+            this.refreshPromise = Promise.resolve(this.refreshAccessToken())
+                .finally(() => {
+                    this.refreshPromise = null;
+                });
+        }
+
+        return this.refreshPromise;
+    }
+
+    private async request<T>(path: string, options: RequestOptions = {}, allowRefresh = true): Promise<T> {
+        const { auth = true, json, ...fetchOptions } = options;
         const headers = new Headers(options.headers);
-        if (options.json !== undefined) {
+        if (json !== undefined) {
             headers.set('content-type', 'application/json');
         }
 
-        if (options.auth !== false && this.getAccessToken) {
+        if (auth && this.getAccessToken) {
             const token = await this.getAccessToken();
             if (token) {
                 headers.set('authorization', `Bearer ${token}`);
@@ -111,10 +143,10 @@ export class CalibrateApiClient {
         let response: Response;
         try {
             response = await this.fetchImpl(buildUrl(this.baseUrl, path), {
-                ...options,
+                ...fetchOptions,
                 headers,
                 signal: timeoutController.signal,
-                body: options.json !== undefined ? JSON.stringify(options.json) : options.body
+                body: json !== undefined ? JSON.stringify(json) : options.body
             });
         } catch (error) {
             if (timedOut) {
@@ -127,15 +159,30 @@ export class CalibrateApiClient {
         }
 
         const text = await response.text();
-        const body = text.length > 0 ? JSON.parse(text) : null;
+        let body: unknown = null;
+        if (text.length > 0) {
+            try {
+                body = JSON.parse(text);
+            } catch {
+                // Reverse proxies and self-hosted gateways can return plain text or HTML failures.
+                body = text;
+            }
+        }
 
         if (!response.ok) {
-            if (response.status === 401) {
+            if (response.status === 401 && auth && allowRefresh && this.refreshAccessToken) {
+                const refreshed = await this.refreshAccessTokenOnce();
+                if (refreshed) {
+                    return this.request<T>(path, options, false);
+                }
+            }
+            if (response.status === 401 && auth) {
                 await this.onUnauthorized?.();
             }
             throw new ApiError(getErrorMessage(body, `Request failed with status ${response.status}`), response.status, body);
         }
 
+        if (response.status === 204) return undefined as T;
         return body as T;
     }
 
@@ -177,7 +224,24 @@ export class CalibrateApiClient {
     logoutMobile(refreshToken?: string): Promise<{ ok: true }> {
         return this.request<{ ok: true }>('/auth/mobile/logout', {
             method: 'POST',
+            auth: false,
             json: refreshToken ? { refresh_token: refreshToken } : {}
+        });
+    }
+
+    getMobileSessions(): Promise<{ sessions: MobileSessionSummary[] }> {
+        return this.request<{ sessions: MobileSessionSummary[] }>('/auth/mobile/sessions');
+    }
+
+    revokeMobileSession(sessionId: number): Promise<{ ok: true; revoked: boolean }> {
+        return this.request<{ ok: true; revoked: boolean }>(`/auth/mobile/sessions/${sessionId}`, {
+            method: 'DELETE'
+        });
+    }
+
+    revokeOtherMobileSessions(): Promise<{ ok: true; revoked: number }> {
+        return this.request<{ ok: true; revoked: number }>('/auth/mobile/sessions/revoke-others', {
+            method: 'POST'
         });
     }
 
@@ -196,9 +260,10 @@ export class CalibrateApiClient {
         });
     }
 
-    updatePreferences(payload: Record<string, unknown>): Promise<{ user: UserClientPayload }> {
+    updatePreferences(payload: Record<string, unknown>, operationId?: string): Promise<{ user: UserClientPayload }> {
         return this.request<{ user: UserClientPayload }>('/api/user/preferences', {
             method: 'PATCH',
+            headers: buildOperationHeaders(operationId),
             json: payload
         });
     }
@@ -207,9 +272,10 @@ export class CalibrateApiClient {
         return this.request<GoalEntry | null>('/api/goals');
     }
 
-    createGoal(payload: Record<string, unknown>): Promise<GoalEntry> {
+    createGoal(payload: Record<string, unknown>, operationId?: string): Promise<GoalEntry> {
         return this.request<GoalEntry>('/api/goals', {
             method: 'POST',
+            headers: buildOperationHeaders(operationId),
             json: payload
         });
     }
@@ -227,16 +293,18 @@ export class CalibrateApiClient {
         return this.request<TrendMetricsResponse>(`/api/metrics?${query.toString()}`);
     }
 
-    addMetric(payload: { weight: number; date: string }): Promise<MetricEntry> {
+    addMetric(payload: { weight: number; date: string }, operationId?: string): Promise<MetricEntry> {
         return this.request<MetricEntry>('/api/metrics', {
             method: 'POST',
+            headers: buildOperationHeaders(operationId),
             json: payload
         });
     }
 
-    deleteMetric(id: number): Promise<{ message: string }> {
-        return this.request<{ message: string }>(`/api/metrics/${encodeURIComponent(String(id))}`, {
-            method: 'DELETE'
+    deleteMetric(id: number, operationId?: string): Promise<void> {
+        return this.request<void>(`/api/metrics/${encodeURIComponent(String(id))}`, {
+            method: 'DELETE',
+            headers: buildOperationHeaders(operationId)
         });
     }
 
@@ -244,22 +312,25 @@ export class CalibrateApiClient {
         return this.request<FoodLogEntry[]>(`/api/food?date=${encodeURIComponent(date)}`);
     }
 
-    createFoodLog(payload: FoodLogCreatePayload): Promise<FoodLogEntry> {
+    createFoodLog(payload: FoodLogCreatePayload, operationId?: string): Promise<FoodLogEntry> {
         return this.request<FoodLogEntry>('/api/food', {
             method: 'POST',
+            headers: buildOperationHeaders(operationId),
             json: payload
         });
     }
 
-    deleteFoodLog(id: number): Promise<{ message: string }> {
-        return this.request<{ message: string }>(`/api/food/${encodeURIComponent(String(id))}`, {
-            method: 'DELETE'
+    deleteFoodLog(id: number, operationId?: string): Promise<void> {
+        return this.request<void>(`/api/food/${encodeURIComponent(String(id))}`, {
+            method: 'DELETE',
+            headers: buildOperationHeaders(operationId)
         });
     }
 
-    updateFoodLog(id: number, payload: FoodLogUpdatePayload): Promise<FoodLogEntry> {
+    updateFoodLog(id: number, payload: FoodLogUpdatePayload, operationId?: string): Promise<FoodLogEntry> {
         return this.request<FoodLogEntry>(`/api/food/${encodeURIComponent(String(id))}`, {
             method: 'PATCH',
+            headers: buildOperationHeaders(operationId),
             json: payload
         });
     }
@@ -317,11 +388,18 @@ export class CalibrateApiClient {
         return this.request<FoodLogDay>(`/api/food-days?date=${encodeURIComponent(date)}`);
     }
 
-    updateFoodDay(payload: { date: string; is_complete: boolean }): Promise<FoodLogDay> {
+    updateFoodDay(payload: { date: string; is_complete: boolean }, operationId?: string): Promise<FoodLogDay> {
         return this.request<FoodLogDay>('/api/food-days', {
             method: 'PATCH',
+            headers: buildOperationHeaders(operationId),
             json: payload
         });
+    }
+
+    getSyncChanges(after = '0', limit?: number): Promise<SyncChangesResponse> {
+        const query = new URLSearchParams({ after });
+        if (limit !== undefined) query.set('limit', String(limit));
+        return this.request<SyncChangesResponse>(`/api/sync/changes?${query.toString()}`);
     }
 
     getInAppNotifications(): Promise<InAppNotificationsResponse> {
@@ -357,6 +435,17 @@ export class CalibrateApiClient {
         return this.request<{ message: string }>('/api/user/password', {
             method: 'PATCH',
             json: payload
+        });
+    }
+
+    exportAccount(): Promise<AccountExport> {
+        return this.request<AccountExport>('/api/user/account/export');
+    }
+
+    deleteAccount(currentPassword: string): Promise<void> {
+        return this.request<void>('/api/user/account', {
+            method: 'DELETE',
+            json: { current_password: currentPassword }
         });
     }
 

@@ -6,6 +6,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: lint-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   frontend-lint:
     name: Frontend Lint
@@ -28,7 +32,7 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
 
       - name: Install deps
-        run: npm ci
+        run: npm ci --no-audit --fund=false
 
       - name: Run linter
         run: npm run lint
@@ -50,7 +54,7 @@ jobs:
           cache-dependency-path: package-lock.json
 
       - name: Install deps
-        run: npm ci
+        run: npm ci --no-audit --fund=false
 
       - name: Type-check mobile
         run: npm --prefix mobile run typecheck

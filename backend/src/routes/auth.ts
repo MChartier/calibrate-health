@@ -2,15 +2,18 @@ import express from 'express';
 import passport from 'passport';
 import bcrypt from 'bcryptjs';
 import prisma from '../config/database';
-import { normalizeEmailCredential, validatePasswordCredential } from '../utils/authCredentials';
+import { DUMMY_AUTH_PASSWORD_HASH, normalizeEmailCredential, validatePasswordCredential } from '../utils/authCredentials';
 import { serializeUserForClient, USER_CLIENT_SELECT } from '../utils/userSerialization';
 import {
     formatMobileAuthResponse,
     issueMobileAuthPayload,
+    listMobileSessionsForUser,
     parseMobileDevicePayload,
     refreshMobileSession,
     revokeMobileSessionByAccessToken,
-    revokeMobileSessionByRefreshToken
+    revokeMobileSessionByRefreshToken,
+    revokeMobileSessionForUser,
+    revokeOtherMobileSessionsForUser
 } from '../services/mobileAuth';
 
 /**
@@ -21,6 +24,7 @@ import {
 const router = express.Router();
 
 const INVALID_LOGIN_MESSAGE = 'Invalid email or password';
+const REGISTRATION_FAILED_MESSAGE = 'Unable to create account';
 
 const isUniqueConstraintError = (err: unknown): boolean =>
     Boolean(err && typeof err === 'object' && (err as { code?: unknown }).code === 'P2002');
@@ -43,7 +47,7 @@ router.post('/register', async (req, res) => {
             select: { id: true }
         });
         if (existingUser) {
-            return res.status(400).json({ message: 'User already exists' });
+            return res.status(400).json({ message: REGISTRATION_FAILED_MESSAGE });
         }
 
         const salt = await bcrypt.genSalt(10);
@@ -71,7 +75,7 @@ router.post('/register', async (req, res) => {
         });
     } catch (err) {
         if (isUniqueConstraintError(err)) {
-            return res.status(400).json({ message: 'User already exists' });
+            return res.status(400).json({ message: REGISTRATION_FAILED_MESSAGE });
         }
         console.error('Auth register failed:', err);
         return res.status(500).json({ message: 'Server error' });
@@ -101,7 +105,7 @@ router.post('/mobile/register', async (req, res) => {
             select: { id: true }
         });
         if (existingUser) {
-            return res.status(400).json({ message: 'User already exists' });
+            return res.status(400).json({ message: REGISTRATION_FAILED_MESSAGE });
         }
 
         const salt = await bcrypt.genSalt(10);
@@ -125,7 +129,7 @@ router.post('/mobile/register', async (req, res) => {
         res.json(formatMobileAuthResponse(authPayload));
     } catch (err) {
         if (isUniqueConstraintError(err)) {
-            return res.status(400).json({ message: 'User already exists' });
+            return res.status(400).json({ message: REGISTRATION_FAILED_MESSAGE });
         }
         console.error('Mobile auth register failed:', err);
         return res.status(500).json({ message: 'Server error' });
@@ -174,12 +178,8 @@ router.post('/mobile/login', async (req, res) => {
             where: { email: { equals: email, mode: 'insensitive' } },
             select: { ...USER_CLIENT_SELECT, password_hash: true }
         });
-        if (!user) {
-            return res.status(401).json({ message: INVALID_LOGIN_MESSAGE });
-        }
-
-        const isMatch = await bcrypt.compare(password, user.password_hash);
-        if (!isMatch) {
+        const isMatch = await bcrypt.compare(password, user?.password_hash ?? DUMMY_AUTH_PASSWORD_HASH);
+        if (!user || !isMatch) {
             return res.status(401).json({ message: INVALID_LOGIN_MESSAGE });
         }
 
@@ -224,7 +224,11 @@ router.post('/mobile/refresh', async (req, res) => {
 router.post('/logout', (req, res, next) => {
     req.logout((err) => {
         if (err) { return next(err); }
-        res.json({ message: 'Logged out' });
+        req.session.destroy((destroyError) => {
+            if (destroyError) return next(destroyError);
+            res.clearCookie(process.env.SESSION_COOKIE_NAME || 'cal.sid');
+            res.json({ message: 'Logged out' });
+        });
     });
 });
 
@@ -248,6 +252,41 @@ router.post('/mobile/logout', async (req, res) => {
         console.error('Mobile auth logout failed:', err);
         res.status(500).json({ message: 'Server error' });
     }
+});
+
+router.get('/mobile/sessions', async (req, res) => {
+    if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: 'Not authenticated' });
+    }
+
+    const user = req.user as { id: number };
+    const sessions = await listMobileSessionsForUser(user.id, res.locals.mobileAuthSessionId);
+    res.json({ sessions });
+});
+
+router.delete('/mobile/sessions/:sessionId', async (req, res) => {
+    if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: 'Not authenticated' });
+    }
+
+    const sessionId = Number(req.params.sessionId);
+    if (!Number.isSafeInteger(sessionId) || sessionId <= 0) {
+        return res.status(400).json({ message: 'Invalid mobile session id' });
+    }
+
+    const user = req.user as { id: number };
+    const revoked = await revokeMobileSessionForUser(user.id, sessionId);
+    res.json({ ok: true, revoked });
+});
+
+router.post('/mobile/sessions/revoke-others', async (req, res) => {
+    if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: 'Not authenticated' });
+    }
+
+    const user = req.user as { id: number };
+    const revoked = await revokeOtherMobileSessionsForUser(user.id, res.locals.mobileAuthSessionId);
+    res.json({ ok: true, revoked });
 });
 
 router.get('/me', async (req, res) => {

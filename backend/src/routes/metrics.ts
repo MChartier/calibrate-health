@@ -15,6 +15,12 @@ import {
     getMaterializedTrendWindowFromLatestDate,
     refreshMaterializedWeightTrendsBestEffort
 } from '../services/materializedWeightTrend';
+import {
+    ClientOperationConflictError,
+    executeIdempotentMutation,
+    parseClientOperationId,
+    recordSyncChange
+} from '../services/clientOperations';
 
 /**
  * Weight and body metric log endpoints.
@@ -392,6 +398,13 @@ router.post('/', async (req, res) => {
     const { weight, body_fat_percent, date } = req.body;
     const weightUnit: WeightUnit = isWeightUnit(user.weight_unit) ? user.weight_unit : 'KG';
     try {
+        const operationId = parseClientOperationId(
+            req.get?.('x-client-operation-id') ?? req.headers?.['x-client-operation-id']
+        );
+        if (operationId === null) {
+            return res.status(400).json({ message: 'Invalid x-client-operation-id' });
+        }
+
         let metricDate: Date;
         try {
             const timeZone = typeof user.timezone === 'string' ? user.timezone : 'UTC';
@@ -437,36 +450,66 @@ router.post('/', async (req, res) => {
 
         const whereUnique = { user_id_date: { user_id: user.id, date: metricDate } } as const;
 
-        let metric;
-        if (updateData.weight_grams === undefined) {
-            const existing = await prisma.bodyMetric.findUnique({ where: whereUnique });
-            if (!existing) {
-                return res.status(400).json({ message: 'Weight is required for a new day' });
-            }
-            metric = await prisma.bodyMetric.update({
-                where: { id: existing.id },
-                data: updateData
-            });
-        } else {
-            metric = await prisma.bodyMetric.upsert({
-                where: whereUnique,
-                update: updateData,
-                create: {
-                    user_id: user.id,
-                    date: metricDate,
-                    weight_grams: updateData.weight_grams,
-                    body_fat_percent: updateData.body_fat_percent ?? null
+        const result = await executeIdempotentMutation<unknown>({
+            userId: user.id,
+            operationId,
+            operationKind: 'body_metric.upsert',
+            requestPayload: req.body,
+            mutate: async (tx, claimedOperationId) => {
+                let metric;
+                if (updateData.weight_grams === undefined) {
+                    const existing = await tx.bodyMetric.findUnique({ where: whereUnique });
+                    if (!existing) {
+                        return { status: 400, body: { message: 'Weight is required for a new day' } };
+                    }
+                    metric = await tx.bodyMetric.update({
+                        where: { id: existing.id },
+                        data: updateData
+                    });
+                } else {
+                    metric = await tx.bodyMetric.upsert({
+                        where: whereUnique,
+                        update: updateData,
+                        create: {
+                            user_id: user.id,
+                            date: metricDate,
+                            weight_grams: updateData.weight_grams,
+                            body_fat_percent: updateData.body_fat_percent ?? null
+                        }
+                    });
                 }
-            });
-        }
 
-        if (updateData.weight_grams !== undefined) {
+                await recordSyncChange({
+                    tx,
+                    userId: user.id,
+                    entityType: 'body_metric',
+                    entityId: metric.id,
+                    action: 'upsert',
+                    operationId: claimedOperationId,
+                    payload: metric
+                });
+
+                const { weight_grams: savedWeightGrams, ...savedMetric } = metric;
+                return {
+                    status: 200,
+                    body: { ...savedMetric, weight: gramsToWeight(savedWeightGrams, weightUnit) }
+                };
+            }
+        });
+
+        if (result.status === 200 && updateData.weight_grams !== undefined) {
             await refreshMaterializedWeightTrendsBestEffort(user.id);
         }
 
-        const { weight_grams: savedWeightGrams, ...savedMetric } = metric;
-        res.json({ ...savedMetric, weight: gramsToWeight(savedWeightGrams, weightUnit) });
+        return res.status(result.status).json(result.body);
     } catch (err) {
+        if (err instanceof ClientOperationConflictError) {
+            return res.status(409).json({
+                message: err.message,
+                code: err.code,
+                retryable: err.code === 'OPERATION_IN_PROGRESS'
+            });
+        }
         res.status(500).json({ message: 'Server error' });
     }
 });
@@ -479,14 +522,48 @@ router.delete('/:id', async (req, res) => {
     }
 
     try {
-        const deleteResult = await prisma.bodyMetric.deleteMany({ where: { id, user_id: user.id } });
-        if (deleteResult.count === 0) {
-            return res.status(404).json({ message: 'Metric not found' });
+        const operationId = parseClientOperationId(
+            req.get?.('x-client-operation-id') ?? req.headers?.['x-client-operation-id']
+        );
+        if (operationId === null) {
+            return res.status(400).json({ message: 'Invalid x-client-operation-id' });
         }
 
-        await refreshMaterializedWeightTrendsBestEffort(user.id);
-        res.status(204).send();
+        const result = await executeIdempotentMutation<unknown>({
+            userId: user.id,
+            operationId,
+            operationKind: 'body_metric.delete',
+            requestPayload: { id },
+            mutate: async (tx, claimedOperationId) => {
+                const deleteResult = await tx.bodyMetric.deleteMany({ where: { id, user_id: user.id } });
+                if (deleteResult.count === 0) {
+                    return { status: 404, body: { message: 'Metric not found' } };
+                }
+                await recordSyncChange({
+                    tx,
+                    userId: user.id,
+                    entityType: 'body_metric',
+                    entityId: id,
+                    action: 'delete',
+                    operationId: claimedOperationId
+                });
+                return { status: 204, body: null };
+            }
+        });
+
+        if (result.status === 204) {
+            await refreshMaterializedWeightTrendsBestEffort(user.id);
+            return res.status(204).send();
+        }
+        return res.status(result.status).json(result.body);
     } catch (err) {
+        if (err instanceof ClientOperationConflictError) {
+            return res.status(409).json({
+                message: err.message,
+                code: err.code,
+                retryable: err.code === 'OPERATION_IN_PROGRESS'
+            });
+        }
         res.status(500).json({ message: 'Server error' });
     }
 });

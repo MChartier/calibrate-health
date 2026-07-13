@@ -119,9 +119,6 @@ const parseNativePushProvider = (value: unknown): NativePushProvider | null => {
   if (value === undefined || value === null || value === NATIVE_PUSH_PROVIDERS.EXPO) {
     return NativePushProvider.EXPO;
   }
-  if (value === NATIVE_PUSH_PROVIDERS.FCM) {
-    return NativePushProvider.FCM;
-  }
   return null;
 };
 
@@ -131,38 +128,51 @@ const normalizeNativeText = (value: unknown, maxLength: number): string => {
   return trimmed.length > maxLength ? trimmed.slice(0, maxLength) : trimmed;
 };
 
+const isExpoPushToken = (token: string): boolean =>
+  /^(?:Exponent|Expo)PushToken\[[^\[\]]+\]$/.test(token);
+
 router.post('/native-subscription', async (req, res) => {
   const user = req.user as { id: number };
   const token = normalizeNativeText(req.body?.token, 512);
-  const deviceId = normalizeNativeText(req.body?.device_id, 128);
+  const mobileAuthSessionId = res.locals.mobileAuthSessionId as number | undefined;
+  const deviceId = res.locals.mobileDeviceId as string | undefined;
   const platform = parseNativePushPlatform(req.body?.platform);
   const provider = parseNativePushProvider(req.body?.provider);
 
-  if (!token || !deviceId) {
-    return res.status(400).json({ message: 'token and device_id are required.' });
+  if (!mobileAuthSessionId || !deviceId) {
+    return res.status(401).json({ message: 'Mobile authentication required.' });
+  }
+  if (!token) {
+    return res.status(400).json({ message: 'token is required.' });
   }
   if (!platform) {
     return res.status(400).json({ message: 'Invalid native push platform.' });
   }
   if (!provider) {
-    return res.status(400).json({ message: 'Invalid native push provider.' });
+    return res.status(400).json({ message: 'Invalid or unsupported native push provider.' });
+  }
+  if (provider === NativePushProvider.EXPO && !isExpoPushToken(token)) {
+    return res.status(400).json({ message: 'Invalid Expo push token.' });
   }
 
   await prisma.nativePushSubscription.upsert({
     where: {
-      user_id_provider_token: {
-        user_id: user.id,
+      provider_token: {
         provider,
         token
       }
     },
     update: {
+      user_id: user.id,
+      mobile_auth_session_id: mobileAuthSessionId,
       device_id: deviceId,
       platform,
+      last_sent_local_date: null,
       revoked_at: null
     },
     create: {
       user_id: user.id,
+      mobile_auth_session_id: mobileAuthSessionId,
       device_id: deviceId,
       platform,
       provider,
@@ -176,21 +186,22 @@ router.post('/native-subscription', async (req, res) => {
 router.delete('/native-subscription', async (req, res) => {
   const user = req.user as { id: number };
   const token = normalizeNativeText(req.body?.token, 512);
-  const deviceId = normalizeNativeText(req.body?.device_id, 128);
+  const mobileAuthSessionId = res.locals.mobileAuthSessionId as number | undefined;
   const provider = parseNativePushProvider(req.body?.provider);
 
-  if (!token && !deviceId) {
-    return res.status(400).json({ message: 'token or device_id is required.' });
+  if (!mobileAuthSessionId) {
+    return res.status(401).json({ message: 'Mobile authentication required.' });
   }
   if (!provider) {
-    return res.status(400).json({ message: 'Invalid native push provider.' });
+    return res.status(400).json({ message: 'Invalid or unsupported native push provider.' });
   }
 
   await prisma.nativePushSubscription.updateMany({
     where: {
       user_id: user.id,
+      mobile_auth_session_id: mobileAuthSessionId,
       provider,
-      ...(token ? { token } : { device_id: deviceId }),
+      ...(token ? { token } : {}),
       revoked_at: null
     },
     data: {

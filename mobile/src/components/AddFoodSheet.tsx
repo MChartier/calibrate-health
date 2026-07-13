@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -15,6 +15,8 @@ import { SectionHeader } from './SectionHeader';
 import { SegmentedControl } from './SegmentedControl';
 import { TextField } from './TextField';
 import { useAuth } from '../auth/AuthContext';
+import { executeOrQueueMutation, OFFLINE_MUTATION_OPERATIONS } from '../offline/operations';
+import { useOfflineOutbox } from '../offline/provider';
 import { formatDateOnlyForDisplay } from '../utils/dates';
 import { formatCalories, formatMealPeriod } from '../utils/format';
 import { MEAL_OPTIONS } from '../utils/meals';
@@ -131,6 +133,7 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
     onLogged
 }) => {
     const { api } = useAuth();
+    const { enqueue } = useOfflineOutbox();
     const queryClient = useQueryClient();
     const [mode, setMode] = useState<AddFoodMode>('quick');
     const [name, setName] = useState('');
@@ -157,6 +160,13 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
         enabled: visible && mode === 'recipes'
     });
     const isDayComplete = foodDayQuery.data?.is_complete ?? false;
+
+    const createFoodLog = useCallback((payload: FoodLogCreatePayload) => executeOrQueueMutation({
+        operation: OFFLINE_MUTATION_OPERATIONS.CREATE_FOOD_LOG,
+        payload,
+        execute: (operationId) => api.createFoodLog(payload, operationId),
+        enqueue
+    }), [api, enqueue]);
 
     useEffect(() => {
         if (visible && initialMeal && MEAL_OPTIONS.includes(initialMeal)) {
@@ -188,7 +198,7 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
 
     const addFood = useMutation({
         mutationFn: (closeDialog: boolean) =>
-            api.createFoodLog({
+            createFoodLog({
                 date,
                 meal_period: meal,
                 name: name.trim(),
@@ -203,13 +213,13 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
 
     const logRecentFood = useMutation({
         mutationFn: (recent: RecentFoodSummary) =>
-            api.createFoodLog(buildRecentFoodPayload(recent, date, meal)),
+            createFoodLog(buildRecentFoodPayload(recent, date, meal)),
         onSuccess: () => confirmLogged(true)
     });
 
     const logMyFood = useMutation({
         mutationFn: (item: MyFoodSummary) =>
-            api.createFoodLog({
+            createFoodLog({
                 date,
                 meal_period: meal,
                 my_food_id: item.id,
@@ -220,7 +230,7 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
 
     const logSearchResult = useMutation({
         mutationFn: (result: FoodSearchResult) =>
-            api.createFoodLog(buildSearchFoodPayload(result, date, meal, parsePositiveServings(servings))),
+            createFoodLog(buildSearchFoodPayload(result, date, meal, parsePositiveServings(servings))),
         onSuccess: () => confirmLogged(true)
     });
 

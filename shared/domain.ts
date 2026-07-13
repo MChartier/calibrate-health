@@ -59,8 +59,7 @@ export type NativePushPlatform =
     (typeof NATIVE_PUSH_PLATFORMS)[keyof typeof NATIVE_PUSH_PLATFORMS];
 
 export const NATIVE_PUSH_PROVIDERS = {
-    EXPO: 'expo',
-    FCM: 'fcm'
+    EXPO: 'expo'
 } as const;
 
 export type NativePushProvider =

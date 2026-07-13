@@ -43,12 +43,17 @@ function createRes() {
   return {
     statusCode: 200,
     body: undefined,
+    clearedCookie: null,
     status(code) {
       this.statusCode = code;
       return this;
     },
     json(payload) {
       this.body = payload;
+      return this;
+    },
+    clearCookie(name) {
+      this.clearedCookie = name;
       return this;
     }
   };
@@ -82,7 +87,7 @@ test('auth route: POST /register returns 400 when the email already exists', asy
 
   await handler(req, res);
   assert.equal(res.statusCode, 400);
-  assert.deepEqual(res.body, { message: 'User already exists' });
+  assert.deepEqual(res.body, { message: 'Unable to create account' });
 });
 
 test('auth route: POST /register validates email and password inputs', async () => {
@@ -306,6 +311,31 @@ test('auth route: POST /logout forwards errors from req.logout', async () => {
 
   assert.ok(nextError);
   assert.equal(nextError.message, 'boom');
+});
+
+test('auth route: POST /logout destroys the session and clears its cookie', async () => {
+  const prismaStub = { user: {} };
+  const passportStub = { authenticate: () => () => {} };
+  const bcryptStub = { genSalt: async () => 'salt', hash: async () => 'hash' };
+  const router = loadAuthRouter({ prismaStub, passportStub, bcryptStub });
+  const [handler] = getRouteHandlers(router, 'post', '/logout');
+  let destroyed = false;
+  const req = {
+    logout: (cb) => cb(),
+    session: {
+      destroy: (cb) => {
+        destroyed = true;
+        cb();
+      }
+    }
+  };
+  const res = createRes();
+
+  handler(req, res, () => {});
+
+  assert.equal(destroyed, true);
+  assert.equal(res.clearedCookie, 'cal.sid');
+  assert.deepEqual(res.body, { message: 'Logged out' });
 });
 
 test('auth route: GET /me returns 401 when not authenticated', async () => {

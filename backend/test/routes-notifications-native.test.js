@@ -33,10 +33,11 @@ function loadNotificationsRouter({ prismaStub }) {
   return loaded.default ?? loaded;
 }
 
-function createRes() {
+function createRes(locals = { mobileAuthSessionId: 41, mobileDeviceId: 'session-device' }) {
   return {
     statusCode: 200,
     body: undefined,
+    locals,
     status(code) {
       this.statusCode = code;
       return this;
@@ -56,7 +57,7 @@ function getRouteHandlers(router, method, path) {
   return layer.route.stack.map((stackLayer) => stackLayer.handle);
 }
 
-test('notifications route: registers native Expo push tokens per device', async () => {
+test('notifications route: transfers an Expo token to the authenticated mobile session', async () => {
   let upsertArgs = null;
   const router = loadNotificationsRouter({
     prismaStub: {
@@ -74,7 +75,7 @@ test('notifications route: registers native Expo push tokens per device', async 
     user: { id: 5 },
     body: {
       token: 'ExponentPushToken[test]',
-      device_id: 'device-1',
+      device_id: 'untrusted-body-device',
       platform: 'android',
       provider: 'expo'
     }
@@ -85,10 +86,13 @@ test('notifications route: registers native Expo push tokens per device', async 
 
   assert.equal(res.statusCode, 200);
   assert.deepEqual(res.body, { ok: true });
-  assert.equal(upsertArgs.where.user_id_provider_token.user_id, 5);
-  assert.equal(upsertArgs.where.user_id_provider_token.provider, 'EXPO');
-  assert.equal(upsertArgs.where.user_id_provider_token.token, 'ExponentPushToken[test]');
-  assert.equal(upsertArgs.create.device_id, 'device-1');
+  assert.equal(upsertArgs.where.provider_token.provider, 'EXPO');
+  assert.equal(upsertArgs.where.provider_token.token, 'ExponentPushToken[test]');
+  assert.equal(upsertArgs.update.user_id, 5);
+  assert.equal(upsertArgs.update.mobile_auth_session_id, 41);
+  assert.equal(upsertArgs.update.device_id, 'session-device');
+  assert.equal(upsertArgs.update.last_sent_local_date, null);
+  assert.equal(upsertArgs.create.device_id, 'session-device');
 });
 
 test('notifications route: rejects native subscription without token', async () => {
@@ -104,8 +108,50 @@ test('notifications route: rejects native subscription without token', async () 
   const [handler] = getRouteHandlers(router, 'post', '/native-subscription');
   const res = createRes();
 
-  await handler({ user: { id: 5 }, body: { device_id: 'device-1' } }, res);
+  await handler({ user: { id: 5 }, body: {} }, res);
 
   assert.equal(res.statusCode, 400);
-  assert.deepEqual(res.body, { message: 'token and device_id are required.' });
+  assert.deepEqual(res.body, { message: 'token is required.' });
+});
+
+test('notifications route: requires bearer-backed mobile session ownership', async () => {
+  const router = loadNotificationsRouter({ prismaStub: { nativePushSubscription: {} } });
+  const [handler] = getRouteHandlers(router, 'post', '/native-subscription');
+  const res = createRes({});
+
+  await handler(
+    { user: { id: 5 }, body: { token: 'ExponentPushToken[test]', provider: 'expo' } },
+    res
+  );
+
+  assert.equal(res.statusCode, 401);
+  assert.deepEqual(res.body, { message: 'Mobile authentication required.' });
+});
+
+test('notifications route: rejects unsupported FCM registrations', async () => {
+  const router = loadNotificationsRouter({ prismaStub: { nativePushSubscription: {} } });
+  const [handler] = getRouteHandlers(router, 'post', '/native-subscription');
+  const res = createRes();
+
+  await handler(
+    { user: { id: 5 }, body: { token: 'fcm-token', provider: 'fcm' } },
+    res
+  );
+
+  assert.equal(res.statusCode, 400);
+  assert.deepEqual(res.body, { message: 'Invalid or unsupported native push provider.' });
+});
+
+test('notifications route: validates Expo provider token shape', async () => {
+  const router = loadNotificationsRouter({ prismaStub: { nativePushSubscription: {} } });
+  const [handler] = getRouteHandlers(router, 'post', '/native-subscription');
+  const res = createRes();
+
+  await handler(
+    { user: { id: 5 }, body: { token: 'not-an-expo-token', provider: 'expo' } },
+    res
+  );
+
+  assert.equal(res.statusCode, 400);
+  assert.deepEqual(res.body, { message: 'Invalid Expo push token.' });
 });

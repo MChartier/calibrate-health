@@ -1,5 +1,5 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { CalibrateApiClient, type UserClientPayload } from '@calibrate/api-client';
+import { ApiError, CalibrateApiClient, type UserClientPayload } from '@calibrate/api-client';
 import { MOBILE_DEVICE_PLATFORMS } from '@calibrate/shared';
 import * as Application from 'expo-application';
 import { useQueryClient } from '@tanstack/react-query';
@@ -27,6 +27,7 @@ type AuthContextValue = {
     login: (email: string, password: string) => Promise<void>;
     register: (email: string, password: string) => Promise<void>;
     logout: () => Promise<void>;
+    clearLocalSession: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -86,16 +87,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         queryClient.clear();
     }, [queryClient]);
 
-    const api = useMemo(
-        () =>
-            new CalibrateApiClient({
-                baseUrl: serverUrl || 'https://calibratehealth.app',
-                getAccessToken: () => accessTokenRef.current,
-                onUnauthorized: clearSession
-            }),
-        [clearSession, serverUrl]
-    );
-
     const persistAuthPayload = useCallback(async (payload: {
         user: UserClientPayload;
         access_token: string;
@@ -111,6 +102,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             refreshToken: payload.refresh_token
         });
     }, []);
+
+    const refreshAccessToken = useCallback(async (): Promise<boolean> => {
+        const currentRefreshToken = refreshTokenRef.current;
+        if (!currentRefreshToken) return false;
+
+        const refreshClient = new CalibrateApiClient({
+            baseUrl: serverUrl || 'https://calibratehealth.app'
+        });
+        try {
+            const refreshed = await refreshClient.refreshMobile(currentRefreshToken);
+            await persistAuthPayload(refreshed);
+            return true;
+        } catch (error) {
+            if (error instanceof ApiError && error.status === 401) return false;
+            throw error;
+        }
+    }, [persistAuthPayload, serverUrl]);
+
+    const api = useMemo(
+        () =>
+            new CalibrateApiClient({
+                baseUrl: serverUrl || 'https://calibratehealth.app',
+                getAccessToken: () => accessTokenRef.current,
+                refreshAccessToken,
+                onUnauthorized: clearSession
+            }),
+        [clearSession, refreshAccessToken, serverUrl]
+    );
 
     const loginDevTestUser = useCallback(async (baseUrl: string, nextDeviceId: string) => {
         const bootstrapClient = new CalibrateApiClient({ baseUrl });
@@ -173,7 +192,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             } catch (error) {
                 if (isMounted) {
                     setAuthError(error instanceof Error ? error.message : 'Unable to restore session.');
-                    await clearSession();
+                    // Only a rejected refresh invalidates stored credentials; offline startup should be retryable.
+                    if (error instanceof ApiError && error.status === 401) {
+                        await clearSession();
+                    }
                 }
             } finally {
                 if (isMounted) {
@@ -196,11 +218,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             return false;
         }
 
+        if (normalized !== serverUrl) {
+            // Credentials are scoped to one self-hosted server and must never follow a server switch.
+            await clearSession();
+        }
         setServerUrlState(normalized);
         await writeServerUrl(normalized);
         setAuthError(null);
         return true;
-    }, []);
+    }, [clearSession, serverUrl]);
 
     const updateCurrentUser = useCallback((nextUser: UserClientPayload) => {
         setUser(nextUser);
@@ -260,9 +286,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setServerUrl: updateServerUrl,
             login,
             register,
-            logout
+            logout,
+            clearLocalSession: clearSession
         }),
-        [accessToken, api, authError, deviceId, isLoading, login, logout, refreshToken, register, serverUrl, updateCurrentUser, updateServerUrl, user]
+        [accessToken, api, authError, clearSession, deviceId, isLoading, login, logout, refreshToken, register, serverUrl, updateCurrentUser, updateServerUrl, user]
     );
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

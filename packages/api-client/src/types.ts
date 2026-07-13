@@ -28,6 +28,125 @@ export type UserClientPayload = {
     profile_image_url: string | null;
 };
 
+export type AccountExport = {
+    format: 'calibrate-account-export';
+    version: 1;
+    exported_at: string;
+    account: {
+        id: number;
+        email: string;
+        created_at: string;
+        weight_unit: WeightUnit;
+        height_unit: HeightUnit;
+        timezone: string;
+        language: string;
+        reminder_log_weight_enabled: boolean;
+        reminder_log_food_enabled: boolean;
+        haptics_enabled: boolean;
+        date_of_birth: string | null;
+        sex: Sex | null;
+        height_mm: number | null;
+        activity_level: ActivityLevel | null;
+        profile_image: { mime_type: string; data_base64: string } | null;
+    };
+    goals: Array<{
+        id: number;
+        start_weight_grams: number;
+        target_weight_grams: number;
+        target_date: string | null;
+        daily_deficit: number;
+        created_at: string;
+    }>;
+    body_metrics: Array<{
+        id: number;
+        date: string;
+        weight_grams: number;
+        body_fat_percent: number | null;
+    }>;
+    food_logs: Array<{
+        id: number;
+        my_food_id: number | null;
+        date: string;
+        local_date: string;
+        meal_period: MealPeriod;
+        name: string;
+        calories: number;
+        servings_consumed: number | null;
+        serving_size_quantity_snapshot: number | null;
+        serving_unit_label_snapshot: string | null;
+        calories_per_serving_snapshot: number | null;
+        external_source: string | null;
+        external_id: string | null;
+        brand_snapshot: string | null;
+        locale_snapshot: string | null;
+        barcode_snapshot: string | null;
+        measure_label_snapshot: string | null;
+        grams_per_measure_snapshot: number | null;
+        measure_quantity_snapshot: number | null;
+        grams_total_snapshot: number | null;
+        created_at: string;
+    }>;
+    food_log_days: Array<{
+        id: number;
+        local_date: string;
+        is_complete: boolean;
+        completed_at: string | null;
+        created_at: string;
+        updated_at: string;
+    }>;
+    my_foods: Array<{
+        id: number;
+        type: 'FOOD' | 'RECIPE';
+        name: string;
+        serving_size_quantity: number;
+        serving_unit_label: string;
+        calories_per_serving: number;
+        recipe_total_calories: number | null;
+        yield_servings: number | null;
+        created_at: string;
+        updated_at: string;
+        recipe_ingredients: Array<{
+            id: number;
+            sort_order: number;
+            source: RecipeIngredientSource;
+            name_snapshot: string;
+            calories_total_snapshot: number;
+            source_my_food_id: number | null;
+            quantity_servings: number | null;
+            serving_size_quantity_snapshot: number | null;
+            serving_unit_label_snapshot: string | null;
+            calories_per_serving_snapshot: number | null;
+            external_source: string | null;
+            external_id: string | null;
+            brand_snapshot: string | null;
+            locale_snapshot: string | null;
+            barcode_snapshot: string | null;
+            measure_label_snapshot: string | null;
+            grams_per_measure_snapshot: number | null;
+            measure_quantity_snapshot: number | null;
+            grams_total_snapshot: number | null;
+            created_at: string;
+        }>;
+    }>;
+    in_app_notifications: Array<{
+        id: number;
+        type: InAppNotificationType;
+        local_date: string;
+        title: string | null;
+        body: string | null;
+        action_url: string | null;
+        read_at: string | null;
+        dismissed_at: string | null;
+        resolved_at: string | null;
+        created_at: string;
+        updated_at: string;
+    }>;
+};
+
+export type DeleteAccountRequest = {
+    current_password: string;
+};
+
 export type MobileAuthRequest = {
     email: string;
     password: string;
@@ -46,8 +165,25 @@ export type MobileAuthResponse = {
 
 export type MobileRefreshResponse = MobileAuthResponse;
 
+export type MobileSessionSummary = {
+    id: number;
+    device_id: string;
+    device_platform: MobileDevicePlatform;
+    device_name: string | null;
+    created_at: string;
+    last_used_at: string | null;
+    refresh_expires_at: string;
+    current: boolean;
+};
+
 export type ClientConfigResponse = {
     api_version: number;
+    api_versions: {
+        current: 'v1';
+        supported: string[];
+        legacy_alias: string;
+        legacy_deprecation: string;
+    };
     server_version: string;
     hosted_origin: string;
     min_supported_mobile_version: string;
@@ -189,7 +325,7 @@ export type InAppNotificationsResponse = {
 
 export type NativePushSubscriptionPayload = {
     token: string;
-    device_id: string;
+    device_id?: string;
     platform?: NativePushPlatform;
     provider?: NativePushProvider;
 };
@@ -308,4 +444,20 @@ export type LoseItImportSummary = {
         invalid: number;
     };
     warnings: string[];
+};
+
+export type SyncChange = {
+    cursor: string;
+    entity_type: string;
+    entity_id: string;
+    action: 'upsert' | 'delete';
+    operation_id: string | null;
+    payload: unknown;
+    created_at: string;
+};
+
+export type SyncChangesResponse = {
+    changes: SyncChange[];
+    next_cursor: string;
+    has_more: boolean;
 };

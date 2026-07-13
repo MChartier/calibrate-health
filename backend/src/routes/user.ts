@@ -10,6 +10,14 @@ import { isSupportedLanguage, type SupportedLanguage } from '../utils/language';
 import { MAX_PROFILE_IMAGE_BYTES, parseBase64DataUrl } from '../utils/profileImage';
 import { serializeUserForClient, USER_CLIENT_SELECT } from '../utils/userSerialization';
 import { MAX_AUTH_PASSWORD_LENGTH, MIN_AUTH_PASSWORD_LENGTH } from '../utils/authCredentials';
+import { revokeOtherMobileSessionsForUser } from '../services/mobileAuth';
+import { deleteAccountData, exportAccountData } from '../services/accountLifecycle';
+import {
+  ClientOperationConflictError,
+  executeIdempotentMutation,
+  parseClientOperationId,
+  recordSyncChange
+} from '../services/clientOperations';
 
 /**
  * Authenticated user account routes (profile, preferences, password, avatar).
@@ -54,6 +62,29 @@ const parsePasswordChangePayload = (body: unknown): PasswordChangeParseResult =>
   }
 
   return { ok: true, currentPassword, newPassword };
+};
+
+const parseCurrentPassword = (body: unknown): string | null => {
+  if (!body || typeof body !== 'object') return null;
+  const currentPassword = (body as Record<string, unknown>).current_password;
+  return typeof currentPassword === 'string' && currentPassword.length > 0 ? currentPassword : null;
+};
+
+const destroyRequestSession = (req: express.Request): Promise<void> =>
+  new Promise((resolve, reject) => {
+    if (!req.session) {
+      resolve();
+      return;
+    }
+    req.session.destroy((error) => error ? reject(error) : resolve());
+  });
+
+const clearSessionCookie = (res: express.Response): void => {
+  const domain = process.env.SESSION_COOKIE_DOMAIN;
+  res.clearCookie(process.env.SESSION_COOKIE_NAME || 'cal.sid', {
+    path: '/',
+    ...(domain ? { domain } : {})
+  });
 };
 
 /**
@@ -168,9 +199,68 @@ router.patch('/password', async (req, res) => {
       where: { id: dbUser.id },
       data: { password_hash }
     });
+    await revokeOtherMobileSessionsForUser(dbUser.id, res.locals.mobileAuthSessionId);
 
     res.json({ message: 'Password updated' });
   } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+router.get('/account/export', async (req, res) => {
+  const user = req.user as { id: number };
+  try {
+    const accountExport = await exportAccountData(user.id);
+    if (!accountExport) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const exportDate = accountExport.exported_at.slice(0, 10);
+    res.setHeader('cache-control', 'no-store');
+    res.setHeader('content-disposition', `attachment; filename="calibrate-account-export-${exportDate}.json"`);
+    res.json(accountExport);
+  } catch (error) {
+    console.error('Account export failed:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+router.delete('/account', async (req, res) => {
+  const user = req.user as { id: number };
+  const currentPassword = parseCurrentPassword(req.body);
+  if (!currentPassword) {
+    return res.status(400).json({ message: 'Current password is required' });
+  }
+
+  try {
+    const dbUser = await prisma.user.findUnique({
+      where: { id: user.id },
+      select: { password_hash: true }
+    });
+    if (!dbUser) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const passwordMatches = await bcrypt.compare(currentPassword, dbUser.password_hash);
+    if (!passwordMatches) {
+      return res.status(400).json({ message: 'Current password is incorrect' });
+    }
+
+    const deleted = await deleteAccountData(user.id);
+    if (!deleted) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    try {
+      await destroyRequestSession(req);
+    } catch (error) {
+      // The user row and linked sessions are already gone; clearing the browser cookie completes logout.
+      console.warn('Account deleted, but request session cleanup failed:', error);
+    }
+    clearSessionCookie(res);
+    res.status(204).send();
+  } catch (error) {
+    console.error('Account deletion failed:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -249,16 +339,47 @@ router.patch('/preferences', async (req, res) => {
   }
 
   try {
-    const updatedUser = await prisma.user.update({
-      where: { id: user.id },
-      data: updateData,
-      select: USER_CLIENT_SELECT
+    const operationId = parseClientOperationId(
+      req.get?.('x-client-operation-id') ?? req.headers?.['x-client-operation-id']
+    );
+    if (operationId === null) {
+      return res.status(400).json({ message: 'Invalid x-client-operation-id' });
+    }
+
+    const result = await executeIdempotentMutation<unknown>({
+      userId: user.id,
+      operationId,
+      operationKind: 'user.preferences.update',
+      requestPayload: req.body,
+      mutate: async (tx, claimedOperationId) => {
+        const updatedUser = await tx.user.update({
+          where: { id: user.id },
+          data: updateData,
+          select: USER_CLIENT_SELECT
+        });
+        const body = { user: serializeUserForClient(updatedUser) };
+        await recordSyncChange({
+          tx,
+          userId: user.id,
+          entityType: 'user_preferences',
+          entityId: user.id,
+          action: 'upsert',
+          operationId: claimedOperationId,
+          payload: body.user
+        });
+        return { status: 200, body };
+      }
     });
 
-    res.json({
-      user: serializeUserForClient(updatedUser)
-    });
+    return res.status(result.status).json(result.body);
   } catch (err) {
+    if (err instanceof ClientOperationConflictError) {
+      return res.status(409).json({
+        message: err.message,
+        code: err.code,
+        retryable: err.code === 'OPERATION_IN_PROGRESS'
+      });
+    }
     res.status(500).json({ message: 'Server error' });
   }
 });

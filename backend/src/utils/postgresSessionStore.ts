@@ -57,14 +57,15 @@ export class PostgresSessionStore extends session.Store {
   async set(sid: string, sess: session.SessionData, callback?: (err?: any) => void): Promise<void> {
     const expire = this.calculateExpiry(sess);
     const sessionData = JSON.stringify(sess);
+    const userId = this.resolvePassportUserId(sess);
 
     try {
       await this.pool.query(
-        `INSERT INTO session_store (sid, sess, expire)
-         VALUES ($1, $2, $3)
+        `INSERT INTO session_store (sid, sess, expire, user_id)
+         VALUES ($1, $2, $3, $4)
          ON CONFLICT (sid)
-         DO UPDATE SET sess = EXCLUDED.sess, expire = EXCLUDED.expire`,
-        [sid, sessionData, expire]
+         DO UPDATE SET sess = EXCLUDED.sess, expire = EXCLUDED.expire, user_id = EXCLUDED.user_id`,
+        [sid, sessionData, expire, userId]
       );
       callback?.();
     } catch (err) {
@@ -84,9 +85,15 @@ export class PostgresSessionStore extends session.Store {
   async touch(sid: string, sess: session.SessionData, callback?: (err?: any) => void): Promise<void> {
     const expire = this.calculateExpiry(sess);
     const sessionData = JSON.stringify(sess);
+    const userId = this.resolvePassportUserId(sess);
 
     try {
-      await this.pool.query('UPDATE session_store SET expire = $2, sess = $3 WHERE sid = $1', [sid, expire, sessionData]);
+      await this.pool.query('UPDATE session_store SET expire = $2, sess = $3, user_id = $4 WHERE sid = $1', [
+        sid,
+        expire,
+        sessionData,
+        userId
+      ]);
       callback?.();
     } catch (err) {
       callback?.(err);
@@ -100,6 +107,18 @@ export class PostgresSessionStore extends session.Store {
 
     const maxAge = sess.cookie?.maxAge ?? this.ttlMs;
     return new Date(Date.now() + maxAge);
+  }
+
+  /** Extract Passport's serialized integer user id without trusting arbitrary session JSON. */
+  private resolvePassportUserId(sess: session.SessionData): number | null {
+    const passport = (sess as session.SessionData & { passport?: { user?: unknown } }).passport;
+    const value = passport?.user;
+    if (typeof value === 'number' && Number.isInteger(value) && value > 0) return value;
+    if (typeof value === 'string' && /^\d+$/.test(value)) {
+      const parsed = Number(value);
+      return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : null;
+    }
+    return null;
   }
 
   /**

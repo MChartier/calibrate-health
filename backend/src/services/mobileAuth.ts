@@ -22,6 +22,17 @@ export type MobileAuthSessionPayload = TokenPair & {
   user: UserClientPayload;
 };
 
+export type MobileSessionSummary = {
+  id: number;
+  device_id: string;
+  device_platform: MobileDevicePlatformWire;
+  device_name: string | null;
+  created_at: string;
+  last_used_at: string | null;
+  refresh_expires_at: string;
+  current: boolean;
+};
+
 type ParsedMobileDevice = {
   deviceId: string;
   devicePlatform: MobileDevicePlatform;
@@ -33,7 +44,7 @@ type ParseMobileDeviceResult =
   | { ok: false; message: string };
 
 type AuthenticateAccessTokenResult =
-  | { ok: true; user: UserClientPayload; sessionId: number }
+  | { ok: true; user: UserClientPayload; sessionId: number; deviceId: string }
   | { ok: false; status: number; message: string };
 
 const randomToken = (): string => crypto.randomBytes(TOKEN_BYTES).toString('base64url');
@@ -161,33 +172,42 @@ export async function refreshMobileSession(refreshToken: string): Promise<Mobile
   const now = new Date();
   const existing = await prisma.mobileAuthSession.findUnique({
     where: { refresh_token_hash: tokenHash },
-    include: {
-      user: {
-        select: USER_CLIENT_SELECT
-      }
-    }
+    select: { id: true }
   });
 
-  if (!existing || existing.revoked_at || existing.refresh_expires_at <= now) {
-    return null;
-  }
+  if (!existing) return null;
 
   const tokens = buildTokenPair(now);
-  const updated = await prisma.mobileAuthSession.update({
-    where: { id: existing.id },
+  // Claim the presented refresh token in one database write. Concurrent replays can read the
+  // same session, but only one can replace the matching hash and create a valid successor chain.
+  const claimed = await prisma.mobileAuthSession.updateMany({
+    where: {
+      id: existing.id,
+      refresh_token_hash: tokenHash,
+      revoked_at: null,
+      refresh_expires_at: { gt: now }
+    },
     data: {
       access_token_hash: hashMobileToken(tokens.accessToken),
       refresh_token_hash: hashMobileToken(tokens.refreshToken),
       access_expires_at: tokens.accessExpiresAt,
       refresh_expires_at: tokens.refreshExpiresAt,
       last_used_at: now
-    },
+    }
+  });
+
+  if (claimed.count !== 1) return null;
+
+  const updated = await prisma.mobileAuthSession.findUnique({
+    where: { id: existing.id },
     include: {
       user: {
         select: USER_CLIENT_SELECT
       }
     }
   });
+
+  if (!updated) return null;
 
   return {
     user: serializeUserForClient(updated.user),
@@ -200,15 +220,39 @@ export async function refreshMobileSession(refreshToken: string): Promise<Mobile
  */
 export async function revokeMobileSessionByRefreshToken(refreshToken: string): Promise<void> {
   const tokenHash = hashMobileToken(refreshToken);
-  await prisma.mobileAuthSession.updateMany({
+  await revokeMobileSessionsAndPushSubscriptions({ refresh_token_hash: tokenHash });
+}
+
+/** Revoke sessions and every push endpoint authorized by them in the same database transaction. */
+async function revokeMobileSessionsAndPushSubscriptions(tokenWhere: {
+  access_token_hash?: string;
+  refresh_token_hash?: string;
+}): Promise<void> {
+  const sessions = await prisma.mobileAuthSession.findMany({
     where: {
-      refresh_token_hash: tokenHash,
+      ...tokenWhere,
       revoked_at: null
     },
-    data: {
-      revoked_at: new Date()
-    }
+    select: { id: true }
   });
+  await revokeMobileSessionIds(sessions.map((session) => session.id));
+}
+
+/** Revoke a known set of owned sessions and their notification endpoints atomically. */
+async function revokeMobileSessionIds(sessionIds: number[]): Promise<number> {
+  if (sessionIds.length === 0) return 0;
+  const revokedAt = new Date();
+  const [sessionResult] = await prisma.$transaction([
+    prisma.mobileAuthSession.updateMany({
+      where: { id: { in: sessionIds }, revoked_at: null },
+      data: { revoked_at: revokedAt }
+    }),
+    prisma.nativePushSubscription.updateMany({
+      where: { mobile_auth_session_id: { in: sessionIds }, revoked_at: null },
+      data: { revoked_at: revokedAt }
+    })
+  ]);
+  return sessionResult.count;
 }
 
 /**
@@ -216,15 +260,68 @@ export async function revokeMobileSessionByRefreshToken(refreshToken: string): P
  */
 export async function revokeMobileSessionByAccessToken(accessToken: string): Promise<void> {
   const tokenHash = hashMobileToken(accessToken);
-  await prisma.mobileAuthSession.updateMany({
+  await revokeMobileSessionsAndPushSubscriptions({ access_token_hash: tokenHash });
+}
+
+/** List active native sessions without exposing credential hashes. */
+export async function listMobileSessionsForUser(
+  userId: number,
+  currentSessionId?: number
+): Promise<MobileSessionSummary[]> {
+  const sessions = await prisma.mobileAuthSession.findMany({
     where: {
-      access_token_hash: tokenHash,
-      revoked_at: null
+      user_id: userId,
+      revoked_at: null,
+      refresh_expires_at: { gt: new Date() }
     },
-    data: {
-      revoked_at: new Date()
+    orderBy: [{ last_used_at: 'desc' }, { created_at: 'desc' }, { id: 'desc' }],
+    select: {
+      id: true,
+      device_id: true,
+      device_platform: true,
+      device_name: true,
+      created_at: true,
+      last_used_at: true,
+      refresh_expires_at: true
     }
   });
+
+  return sessions.map((session) => ({
+    id: session.id,
+    device_id: session.device_id,
+    device_platform: serializeMobileDevicePlatform(session.device_platform),
+    device_name: session.device_name,
+    created_at: session.created_at.toISOString(),
+    last_used_at: session.last_used_at?.toISOString() ?? null,
+    refresh_expires_at: session.refresh_expires_at.toISOString(),
+    current: session.id === currentSessionId
+  }));
+}
+
+/** Revoke one session only when it belongs to the authenticated account. */
+export async function revokeMobileSessionForUser(userId: number, sessionId: number): Promise<boolean> {
+  const owned = await prisma.mobileAuthSession.findFirst({
+    where: { id: sessionId, user_id: userId, revoked_at: null },
+    select: { id: true }
+  });
+  if (!owned) return false;
+  return (await revokeMobileSessionIds([owned.id])) === 1;
+}
+
+/** Revoke every active native session except the caller's current bearer session, when present. */
+export async function revokeOtherMobileSessionsForUser(
+  userId: number,
+  currentSessionId?: number
+): Promise<number> {
+  const sessions = await prisma.mobileAuthSession.findMany({
+    where: {
+      user_id: userId,
+      revoked_at: null,
+      ...(currentSessionId ? { id: { not: currentSessionId } } : {})
+    },
+    select: { id: true }
+  });
+  return revokeMobileSessionIds(sessions.map((session) => session.id));
 }
 
 /**
@@ -265,7 +362,8 @@ export async function authenticateMobileAccessToken(
   return {
     ok: true,
     user: serializeUserForClient(session.user),
-    sessionId: session.id
+    sessionId: session.id,
+    deviceId: session.device_id
   };
 }
 
