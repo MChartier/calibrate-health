@@ -50,3 +50,7 @@ jobs:
       - name: Audit high and critical production findings
         run: npm audit --omit=dev --audit-level=high
         working-directory: ${{ matrix.directory }}
+
+      - name: Validate time-bounded dependency exceptions
+        if: matrix.directory == '.'
+        run: npm run audit:exceptions:check

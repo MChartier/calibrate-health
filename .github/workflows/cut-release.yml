@@ -40,7 +40,7 @@ jobs:
 
       - name: Validate canonical release configuration
         run: |
-          npm run release:check
+          npm run release:check:production
           npm run test:release
 
       - name: Configure git identity (for annotated tags)

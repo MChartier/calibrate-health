@@ -57,11 +57,13 @@
     "build:native:release": "node scripts/native-release-build.mjs",
     "api:generate": "openapi-typescript docs/openapi/v1.yaml -o packages/api-client/src/generated/v1.ts",
     "api:contract:check": "npm run api:generate && git diff --exit-code -- packages/api-client/src/generated/v1.ts",
-    "release:check": "node scripts/release-config.mjs check",
+    "release:check": "node scripts/release-config.mjs check && node scripts/dependency-advisory-exceptions.mjs",
+    "release:check:production": "node scripts/release-config.mjs check && node scripts/dependency-advisory-exceptions.mjs --strict",
     "release:metadata": "node scripts/release-config.mjs metadata",
-    "test:release": "node --test scripts/release-config.test.mjs",
+    "test:release": "node --test scripts/release-config.test.mjs scripts/dependency-advisory-exceptions.test.mjs",
     "test:native-release": "node --test scripts/native-release-build.test.mjs",
     "test:build-budget": "node --test scripts/frontend-build-budget.test.mjs",
+    "audit:exceptions:check": "node scripts/dependency-advisory-exceptions.mjs",
     "build:storybook": "npm --prefix frontend run storybook:build",
     "lint": "npm --prefix frontend run lint",
     "lint:mobile": "npm --prefix mobile run typecheck",
@@ -86,6 +88,11 @@
   "license": "ISC",
   "engines": {
     "node": "^20.19.0 || >=22.12.0"
+  },
+  "overrides": {
+    "@expo/metro-config@54.0.16": {
+      "postcss": "8.5.18"
+    }
   },
   "devDependencies": {
     "@devcontainers/cli": "^0.86.0",
