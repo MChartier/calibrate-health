@@ -36,9 +36,18 @@ import type {
     UserClientPayload,
     UserProfileResponse
 } from './types';
+import {
+    NATIVE_CLIENT_HEADERS,
+    isClientUpgradeRequirement,
+    type ClientUpgradeRequirement,
+    type NativeClientIdentity
+} from '@calibrate/shared/clientCompatibility';
 
 export type ApiClientOptions = {
     baseUrl: string;
+    /** Native identity is attached to every request so a self-host can enforce release floors continuously. */
+    clientIdentity?: NativeClientIdentity;
+    onClientUpgradeRequired?: (requirement: ClientUpgradeRequirement) => void | Promise<void>;
     getAccessToken?: () => string | null | Promise<string | null>;
     /** Refresh native credentials after a protected request returns 401. */
     refreshAccessToken?: () => boolean | Promise<boolean>;
@@ -101,6 +110,8 @@ const getErrorMessage = (body: unknown, fallback: string): string => {
 export class CalibrateApiClient {
     private readonly baseUrl: string;
     private readonly getAccessToken?: ApiClientOptions['getAccessToken'];
+    private readonly clientIdentity?: NativeClientIdentity;
+    private readonly onClientUpgradeRequired?: ApiClientOptions['onClientUpgradeRequired'];
     private readonly refreshAccessToken?: ApiClientOptions['refreshAccessToken'];
     private readonly onUnauthorized?: ApiClientOptions['onUnauthorized'];
     private readonly fetchImpl: typeof fetch;
@@ -109,6 +120,8 @@ export class CalibrateApiClient {
 
     constructor(options: ApiClientOptions) {
         this.baseUrl = options.baseUrl;
+        this.clientIdentity = options.clientIdentity;
+        this.onClientUpgradeRequired = options.onClientUpgradeRequired;
         this.getAccessToken = options.getAccessToken;
         this.refreshAccessToken = options.refreshAccessToken;
         this.onUnauthorized = options.onUnauthorized;
@@ -139,6 +152,11 @@ export class CalibrateApiClient {
             ...fetchOptions
         } = options;
         const headers = new Headers(options.headers);
+        if (this.clientIdentity) {
+            // Constructor-owned identity wins over per-request headers so feature code cannot spoof another client.
+            headers.set(NATIVE_CLIENT_HEADERS.PLATFORM, this.clientIdentity.platform);
+            headers.set(NATIVE_CLIENT_HEADERS.VERSION, this.clientIdentity.version);
+        }
         if (json !== undefined) {
             headers.set('content-type', 'application/json');
         }
@@ -202,6 +220,9 @@ export class CalibrateApiClient {
         }
 
         if (!response.ok) {
+            if (response.status === 426 && isClientUpgradeRequirement(body)) {
+                await this.onClientUpgradeRequired?.(body);
+            }
             if (response.status === 401 && auth && allowRefresh && this.refreshAccessToken) {
                 const refreshed = await this.refreshAccessTokenOnce();
                 if (refreshed) {

@@ -678,7 +678,17 @@ async function ci() {
   await timed("Validate release configuration", () => {
     run("npm", ["run", "release:check"]);
     run("npm", ["run", "test:release"]);
+    run("npm", ["run", "test:native-release"]);
+    run("npm", ["run", "test:wear:emulator:unit"]);
+    run("npm", ["run", "test:db:upgrade:unit"]);
     run("npm", ["run", "test:build-budget"]);
+    run("npm", ["run", "test:deploy"]);
+    run("npm", ["run", "api:contract:check"]);
+    if (process.env.DATABASE_URL) {
+      run("npm", ["run", "test:db:upgrade"]);
+    } else {
+      console.warn("[dev-env] DATABASE_URL is not set; the live populated-upgrade smoke test is skipped locally.");
+    }
   });
   await timed("Build backend", () => {
     run("npm", ["--prefix", "backend", "run", "build"]);

@@ -24,10 +24,13 @@ authorize a read, update, delete, undo, or association.
 ## Release evidence still required
 
 - Exercise CSRF from cross-site and same-site sibling origins through the production proxy.
-- Inspect merged release manifests and Play declarations for unexpected storage, overlay,
-  microphone, Health Connect write, sensor, or location permissions.
-- Run release-signed backup/restore and uninstall/reinstall tests on phone and watch.
-- Capture hostile-LAN traffic and confirm release builds refuse HTTP.
+- Repeat merged-manifest inspection in Play App Bundle Explorer; local test-signed phone/Wear
+  artifacts already exclude storage, overlay, microphone, Health Connect write, sensor, and
+  location permissions.
+- Repeat backup/restore and upgrade checks with permanent signing and a distributed predecessor;
+  the local encrypted restore drill and test-signed install/reinstall paths are complete.
+- Capture hostile-LAN traffic on physical devices; local release code, merged manifests, and
+  emulator UI already reject HTTP origins and cleartext transport.
 - Revoke sessions and switch accounts/servers offline; verify old outbox, tile, pairing,
   notification, and Health Connect state is not shown or replayed.
 - Review lock-screen previews and export sharing on the Galaxy Watch Ultra and phone used for dogfood.

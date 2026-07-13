@@ -17,6 +17,7 @@ sealed interface PairingUiState {
         val confirmationPending: Boolean
     ) : PairingUiState
     data class Error(val message: String) : PairingUiState
+    data class UpgradeRequired(val message: String) : PairingUiState
 }
 
 internal data class PairingSessionFacts(
@@ -64,6 +65,7 @@ internal class PairingStateStore(context: Context) {
             preferences.edit()
                 .putString(PENDING_KEY, json.toString())
                 .remove(ERROR_KEY)
+                .remove(UPGRADE_REQUIRED_KEY)
                 .commit()
         ) { "Unable to persist Wear pairing request." }
         PairingStateEvents.notifyChanged()
@@ -123,7 +125,13 @@ internal class PairingStateStore(context: Context) {
     fun setError(message: String) {
         val bounded = message.trim().take(180).ifEmpty { "Pairing failed. Start pairing again on your phone." }
         readPending()?.let { WearPairingKeyManager().deleteOwned(it.keyAlias) }
-        check(preferences.edit().remove(PENDING_KEY).putString(ERROR_KEY, bounded).commit()) {
+        check(
+            preferences.edit()
+                .remove(PENDING_KEY)
+                .remove(UPGRADE_REQUIRED_KEY)
+                .putString(ERROR_KEY, bounded)
+                .commit()
+        ) {
             "Unable to persist Wear pairing error."
         }
         PairingStateEvents.notifyChanged()
@@ -142,14 +150,28 @@ internal class PairingStateStore(context: Context) {
         }
         if (sessionAbsent) return
         val bounded = message.trim().take(180).ifEmpty { SESSION_RECOVERY_MESSAGE }
-        check(preferences.edit().putString(ERROR_KEY, bounded).commit()) {
+        check(preferences.edit().remove(UPGRADE_REQUIRED_KEY).putString(ERROR_KEY, bounded).commit()) {
             "Unable to persist Wear session recovery state."
         }
         PairingStateEvents.notifyChanged()
     }
 
+    /** Preserve the paired session and cache while making an incompatible build unmistakable in the UI. */
+    @Synchronized
+    fun setUpgradeRequired(message: String) {
+        if (readPending() != null) return
+        val bounded = message.trim().take(180).ifEmpty { "Update Calibrate on this watch to continue." }
+        check(
+            preferences.edit()
+                .remove(ERROR_KEY)
+                .putString(UPGRADE_REQUIRED_KEY, bounded)
+                .commit()
+        ) { "Unable to persist Wear compatibility state." }
+        PairingStateEvents.notifyChanged()
+    }
+
     fun clearError() {
-        preferences.edit().remove(ERROR_KEY).commit()
+        preferences.edit().remove(ERROR_KEY).remove(UPGRADE_REQUIRED_KEY).commit()
         PairingStateEvents.notifyChanged()
     }
 
@@ -208,6 +230,7 @@ internal class PairingStateStore(context: Context) {
                 .remove(PENDING_KEY)
                 .remove(PENDING_RESULT_KEY)
                 .remove(ERROR_KEY)
+                .remove(UPGRADE_REQUIRED_KEY)
                 .commit()
         ) { "Unable to clear local Wear pairing state." }
         TrustedPhoneBindingStore(appContext).clear()
@@ -217,6 +240,8 @@ internal class PairingStateStore(context: Context) {
 
     fun currentUiState(): PairingUiState {
         val nowEpochMs = System.currentTimeMillis()
+        val upgradeRequired = preferences.getString(UPGRADE_REQUIRED_KEY, null)
+        if (!upgradeRequired.isNullOrBlank()) return PairingUiState.UpgradeRequired(upgradeRequired)
         val error = preferences.getString(ERROR_KEY, null)
         val hasPendingPairing = readPending(nowEpochMs) != null
         if (!error.isNullOrBlank() || hasPendingPairing) {
@@ -243,6 +268,7 @@ internal class PairingStateStore(context: Context) {
         private const val PENDING_KEY = "pending_invite"
         private const val PENDING_RESULT_KEY = "pending_result"
         private const val ERROR_KEY = "pairing_error"
+        private const val UPGRADE_REQUIRED_KEY = "client_upgrade_required"
     }
 }
 

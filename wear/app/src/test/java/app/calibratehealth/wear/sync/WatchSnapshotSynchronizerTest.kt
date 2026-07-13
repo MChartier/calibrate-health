@@ -79,6 +79,37 @@ class WatchSnapshotSynchronizerTest {
         assertTrue(events.isEmpty())
     }
 
+    @Test
+    fun `upgrade requirement blocks cache replacement and reaches the compatibility UI callback`() = runBlocking {
+        val events = mutableListOf<String>()
+        val synchronizer = WatchSnapshotSynchronizer(
+            api = WatchSnapshotApi { _, _ ->
+                AuthenticatedApiResult.UpgradeRequired("Update this watch.", "0.2.0")
+            },
+            snapshots = RecordingSnapshotRepository(events),
+            quickAdds = RecordingQuickAddRepository(events),
+            metadata = RecordingMetadataRepository(
+                SyncMetadataEntity(
+                    serverOrigin = "https://health.example.com",
+                    syncCursor = null,
+                    lastSuccessAtEpochMs = null,
+                    invalidatedAtEpochMs = null,
+                    protocolVersion = 1
+                ),
+                events
+            ),
+            tokenStore = MemoryTokenStore(session()),
+            onUpgradeRequired = { events += "upgrade:$it" },
+            nowEpochMs = { 42 }
+        )
+
+        assertEquals(
+            SnapshotSyncResult.PermanentFailure("Update this watch."),
+            synchronizer.refresh()
+        )
+        assertEquals(listOf("upgrade:Update this watch."), events)
+    }
+
     private class RecordingSnapshotRepository(private val events: MutableList<String>) : DailySnapshotRepository {
         override fun observeLatest(): Flow<DailySnapshotEntity?> = MutableStateFlow(null)
         override suspend fun allNewestFirst(): List<DailySnapshotEntity> = emptyList()

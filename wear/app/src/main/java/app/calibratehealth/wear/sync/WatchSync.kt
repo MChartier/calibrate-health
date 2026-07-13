@@ -50,7 +50,8 @@ fun classifyWatchHttpStatus(status: Int): HttpOutcome = when {
 
 class AuthenticatedMutationSender(
     private val api: WatchMutationApi,
-    private val onAuthenticationRequired: (String) -> Unit = {}
+    private val onAuthenticationRequired: (String) -> Unit = {},
+    private val onUpgradeRequired: (String) -> Unit = {}
 ) : MutationSender {
     override suspend fun send(mutation: QueuedMutationEntity, session: SecureSession): MutationSendResult {
         val result = try {
@@ -69,6 +70,11 @@ class AuthenticatedMutationSender(
             }
             is AuthenticatedApiResult.AccountChanged -> MutationSendResult.AccountChanged
             is AuthenticatedApiResult.InvalidResponse -> MutationSendResult.PermanentFailure(result.message)
+            is AuthenticatedApiResult.UpgradeRequired -> {
+                onUpgradeRequired(result.message)
+                // Preserve durable intent until an in-place watch update can replay it.
+                MutationSendResult.Retryable(result.message)
+            }
             is AuthenticatedApiResult.Response -> when (classifyWatchHttpStatus(result.value.status)) {
                 HttpOutcome.SUCCESS -> MutationSendResult.Success
                 HttpOutcome.CONFLICT -> classifyConflict(result.value.body)
@@ -99,6 +105,7 @@ class WatchSnapshotSynchronizer(
     private val tokenStore: SecureTokenStore,
     private val accountState: AccountStateCriticalSection = AccountStateCriticalSection.Shared,
     private val onAuthenticationRequired: (String) -> Unit = {},
+    private val onUpgradeRequired: (String) -> Unit = {},
     private val onRemindersChanged: (List<app.calibratehealth.wear.notifications.WearReminder>) -> Unit = {},
     private val nowEpochMs: () -> Long = System::currentTimeMillis
 ) {
@@ -120,6 +127,10 @@ class WatchSnapshotSynchronizer(
             }
             is AuthenticatedApiResult.AccountChanged -> return SnapshotSyncResult.AccountChanged
             is AuthenticatedApiResult.InvalidResponse -> return SnapshotSyncResult.PermanentFailure(result.message)
+            is AuthenticatedApiResult.UpgradeRequired -> {
+                onUpgradeRequired(result.message)
+                return SnapshotSyncResult.PermanentFailure(result.message)
+            }
         }
         val fetchedAt = nowEpochMs()
         return when (classifyWatchHttpStatus(response.status)) {
@@ -218,10 +229,13 @@ object WearSyncRuntime {
         val authenticationRequired: (String) -> Unit = { message ->
             PairingStateStore(appContext).setSessionInvalid(message)
         }
+        val upgradeRequired: (String) -> Unit = { message ->
+            PairingStateStore(appContext).setUpgradeRequired(message)
+        }
         return WearSyncDependencies(
             outboxProcessor = FifoOutboxProcessor(
                 repository = outbox,
-                sender = AuthenticatedMutationSender(api, authenticationRequired),
+                sender = AuthenticatedMutationSender(api, authenticationRequired, upgradeRequired),
                 tokenStore = tokenStore,
                 onAuthenticationRequired = authenticationRequired
             ),
@@ -232,6 +246,7 @@ object WearSyncRuntime {
                 metadata = RoomSyncMetadataRepository(database.syncMetadataDao()),
                 tokenStore = tokenStore,
                 onAuthenticationRequired = authenticationRequired,
+                onUpgradeRequired = upgradeRequired,
                 onRemindersChanged = WearReminderStateStore(appContext)::replace
             ),
             outboxRepository = outbox

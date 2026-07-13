@@ -1,5 +1,6 @@
 import { Platform } from 'react-native';
 import type { ClientConfigResponse } from '@calibrate/api-client';
+import { compareClientVersions } from '@calibrate/shared/clientCompatibility';
 import release from '../../../shared/release.json';
 
 export const HOSTED_SERVER_URL = 'https://calibratehealth.app';
@@ -125,29 +126,13 @@ export function normalizeServerUrl(
     return result.ok ? result.url : null;
 }
 
-const parseVersion = (value: string): number[] | null => {
-    const match = value.trim().match(/^(\d+)\.(\d+)(?:\.(\d+))?/);
-    if (!match) return null;
-    return [Number(match[1]), Number(match[2]), Number(match[3] ?? 0)];
-};
-
-const compareVersions = (left: string, right: string): number | null => {
-    const leftParts = parseVersion(left);
-    const rightParts = parseVersion(right);
-    if (!leftParts || !rightParts) return null;
-    for (let index = 0; index < leftParts.length; index += 1) {
-        const difference = leftParts[index] - rightParts[index];
-        if (difference !== 0) return difference;
-    }
-    return 0;
-};
-
 const isClientConfigResponse = (value: unknown): value is ClientConfigResponse => {
     if (!value || typeof value !== 'object') return false;
     const record = value as Partial<ClientConfigResponse>;
     return record.api_version === 1
         && Boolean(record.api_versions && Array.isArray(record.api_versions.supported))
         && typeof record.min_supported_mobile_version === 'string'
+        && typeof record.min_supported_wear_version === 'string'
         && typeof record.server_version === 'string';
 };
 
@@ -217,9 +202,9 @@ export async function testCalibrateServerConnection(
 
     const mobileVersion = options.mobileVersion;
     const versionComparison = mobileVersion
-        ? compareVersions(mobileVersion, body.min_supported_mobile_version)
+        ? compareClientVersions(mobileVersion, body.min_supported_mobile_version)
         : null;
-    if (versionComparison !== null && versionComparison < 0) {
+    if (mobileVersion && (versionComparison === null || versionComparison < 0)) {
         return {
             ok: false,
             url: parsed.url,

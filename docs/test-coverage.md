@@ -7,8 +7,12 @@ targeted Kotlin/JVM and device checks for the Wear client:
 - `npm run test:coverage` runs backend `c8` coverage and frontend Vitest V8 coverage.
 - Package-specific commands include `test:backend`, `test:frontend`, `test:mobile`,
   `test:coverage:backend`, and `test:coverage:frontend`. Wear JVM tests run from the Gradle project
-  when the Android dependency toolchain is available; static protocol checks and device QA record
-  the gap when that toolchain is unavailable.
+  with `wear/gradlew testDebugUnitTest`; a non-debuggable APK smoke runs against an adb watch target
+  with `npm run test:wear:emulator`. PR builds compile and run the Wear JVM suite independently of
+  the longer phone build.
+- `npm run test:db:upgrade` applies migrations through `0020` to an isolated schema, inserts
+  representative account/goal/weight/food data, upgrades through current, verifies retention, and
+  removes only that generated schema. Its helper tests run without Postgres.
 
 ## Current Coverage Shape
 

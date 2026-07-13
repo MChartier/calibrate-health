@@ -47,7 +47,7 @@ case "${MIGRATION_RETRY_SECONDS}" in
 esac
 
 attempt=1
-until npm run db:migrate; do
+until ./node_modules/.bin/prisma migrate deploy; do
   if [[ "${attempt}" -ge "${MIGRATION_MAX_ATTEMPTS}" ]]; then
     echo "Database migrations failed after ${attempt} attempts; the container will exit for its restart policy." >&2
     exit 1
@@ -56,4 +56,4 @@ until npm run db:migrate; do
   attempt=$((attempt + 1))
   sleep "${MIGRATION_RETRY_SECONDS}"
 done
-exec npm run start
+exec node dist/backend/src/index.js

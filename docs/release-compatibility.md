@@ -13,9 +13,16 @@ Android `version_code` values for upgrades. A self-hosted server should support 
 correctly; routine feature additions should remain backward compatible.
 
 The phone fetches `/api/v1/client-config` before saving a server or sending credentials. It refuses an unsupported API
-or a release older than `min_supported_mobile_version` with an actionable update message. The server also advertises
-`min_supported_wear_version` so the Wear preflight can enforce the same rule when the watch gains an independent
-server-selection flow. Until then, keep the Wear minimum at or below every watch build paired with a supported phone.
+or a release older than `min_supported_mobile_version` with an actionable update message. Native phone and Wear HTTP
+requests also send `X-Calibrate-Client-Platform` plus `X-Calibrate-Client-Version`. The server compares the trusted
+bearer-session platform with those headers on every authenticated request and requires Wear identity during the
+one-time pairing exchange. Browser cookie sessions omit these headers and are unaffected.
+
+An incompatible native request receives HTTP 426 with `CLIENT_UPGRADE_REQUIRED`, the applicable minimum version, and
+a non-retryable user message. Phone keeps its credentials and offline outbox behind an update-required screen. Wear
+keeps pairing, cache, and queued mutations but stops normal refresh/action work behind a dedicated update-required
+state. Updating in place lets both clients resume without discarding local data. A platform header cannot override
+the device platform retained by the authenticated server session.
 
 Compatibility changes follow these rules:
 

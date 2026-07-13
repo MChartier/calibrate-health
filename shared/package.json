@@ -8,6 +8,7 @@
     ".": "./index.ts",
     "./domain": "./domain.ts",
     "./date": "./date.ts",
+    "./clientCompatibility": "./clientCompatibility.ts",
     "./goalDeficit": "./goalDeficit.ts",
     "./inAppNotifications": "./inAppNotifications.ts",
     "./notificationDelivery": "./notificationDelivery.ts"

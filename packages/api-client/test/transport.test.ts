@@ -176,3 +176,76 @@ test('a retried 401 does not start another refresh loop', async () => {
     assert.equal(refreshCalls, 1);
     assert.equal(unauthorizedCalls, 1);
 });
+
+test('native identity is attached to public and authenticated requests and cannot be overridden', async () => {
+    const captured: Headers[] = [];
+    const client = new CalibrateApiClient({
+        baseUrl: 'https://calibrate.example',
+        clientIdentity: { platform: 'android_phone', version: '1.2.3' },
+        fetchImpl: (async (_input, init) => {
+            captured.push(new Headers(init?.headers));
+            return new Response('{}', { status: 200 });
+        }) as typeof fetch
+    });
+
+    await client.getClientConfig();
+    await getInternalRequest(client)('/api/user/profile', {
+        headers: {
+            'x-calibrate-client-platform': 'wear_os',
+            'x-calibrate-client-version': '99.0.0'
+        }
+    });
+
+    assert.equal(captured.length, 2);
+    for (const headers of captured) {
+        assert.equal(headers.get('x-calibrate-client-platform'), 'android_phone');
+        assert.equal(headers.get('x-calibrate-client-version'), '1.2.3');
+    }
+});
+
+test('upgrade-required responses notify the native shell without triggering auth logout', async () => {
+    const requirements = [];
+    let unauthorizedCalls = 0;
+    const body = {
+        code: 'CLIENT_UPGRADE_REQUIRED',
+        platform: 'android_phone',
+        current_version: '0.1.0',
+        minimum_supported_version: '0.2.0',
+        message: 'Update Calibrate for Android to version 0.2.0 or newer to continue.',
+        retryable: false
+    };
+    const client = new CalibrateApiClient({
+        baseUrl: 'https://calibrate.example',
+        clientIdentity: { platform: 'android_phone', version: '0.1.0' },
+        onClientUpgradeRequired: (requirement) => { requirements.push(requirement); },
+        onUnauthorized: () => { unauthorizedCalls += 1; },
+        fetchImpl: (async () => new Response(JSON.stringify(body), { status: 426 })) as typeof fetch
+    });
+
+    await assert.rejects(
+        () => client.getUserProfile(),
+        (error) => error instanceof ApiError && error.status === 426
+    );
+    assert.deepEqual(requirements, [body]);
+    assert.equal(unauthorizedCalls, 0);
+});
+
+test('malformed upgrade bodies cannot inject unbounded compatibility UI content', async () => {
+    let notifications = 0;
+    const client = new CalibrateApiClient({
+        baseUrl: 'https://calibrate.example',
+        clientIdentity: { platform: 'android_phone', version: '0.1.0' },
+        onClientUpgradeRequired: () => { notifications += 1; },
+        fetchImpl: (async () => new Response(JSON.stringify({
+            code: 'CLIENT_UPGRADE_REQUIRED',
+            platform: 'android_phone',
+            current_version: '0.1.0',
+            minimum_supported_version: 'not-semver',
+            message: 'x'.repeat(10_000),
+            retryable: false
+        }), { status: 426 })) as typeof fetch
+    });
+
+    await assert.rejects(() => client.getClientConfig(), ApiError);
+    assert.equal(notifications, 0);
+});

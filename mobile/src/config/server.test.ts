@@ -16,6 +16,7 @@ const compatibleConfig = {
     server_version: '1.2.3',
     hosted_origin: 'https://calibrate.example',
     min_supported_mobile_version: '0.1.0',
+    min_supported_wear_version: '0.1.0',
     capabilities: {
         self_hosted_server_url: true,
         native_push: true,
@@ -111,5 +112,11 @@ describe('testCalibrateServerConnection', () => {
             code: 'incompatible',
             message: 'This server requires Calibrate 2.0.0 or newer.'
         }));
+
+        const malformedLocalVersion = await testCalibrateServerConnection('https://newer.example', {
+            fetchImpl: jest.fn(async () => new Response(JSON.stringify(compatibleConfig), { status: 200 })) as typeof fetch,
+            mobileVersion: 'development'
+        });
+        expect(malformedLocalVersion).toEqual(expect.objectContaining({ ok: false, code: 'incompatible' }));
     });
 });

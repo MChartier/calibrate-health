@@ -149,6 +149,7 @@ private fun SummaryScreen(
                 WearAppState.Unpaired -> item { StatusText("Pair with Calibrate on your phone to see today's summary.") }
                 WearAppState.Pairing -> item { StatusText("Pairing securely with your phone...") }
                 is WearAppState.PairingError -> item { StatusText(appState.message) }
+                is WearAppState.UpgradeRequired -> item { StatusText(appState.message) }
                 is WearAppState.Paired -> item {
                     StatusText("Paired securely. Waiting for the first health sync.")
                 }
@@ -339,6 +340,7 @@ private fun connectionLabel(appState: WearAppState, syncStatus: WearSyncStatus):
     WearAppState.Unpaired -> "Phone setup required"
     WearAppState.Pairing -> "Pairing in progress"
     is WearAppState.PairingError -> "Pairing needs attention"
+    is WearAppState.UpgradeRequired -> "Update required"
     is WearAppState.Paired -> if (appState.confirmationPending) "Phone confirmation pending" else "First sync pending"
     is WearAppState.Ready -> SummaryFormatter.sync(syncStatus, appState.summary.lastSyncAtEpochMs)
 }
@@ -393,7 +395,10 @@ private fun ConnectionScreen(
             }
             item { StatusText(connectionDetail(appState)) }
             disconnectError?.let { error -> item { StatusText(error) } }
-            if (appState is WearAppState.Paired || appState is WearAppState.Ready) {
+            if (
+                appState is WearAppState.Paired || appState is WearAppState.Ready ||
+                appState is WearAppState.UpgradeRequired
+            ) {
                 item { SectionTitle("Privacy and account") }
                 item {
                     Button(
@@ -415,7 +420,7 @@ private fun ConnectionScreen(
             }
             if (
                 appState is WearAppState.Paired || appState is WearAppState.Ready ||
-                appState is WearAppState.PairingError || disconnectError != null
+                appState is WearAppState.PairingError || appState is WearAppState.UpgradeRequired || disconnectError != null
             ) {
                 if (confirmDisconnect) {
                     item { StatusText("This clears Calibrate data and sign-in only from this watch.") }
@@ -455,6 +460,7 @@ private fun connectionDetail(appState: WearAppState): String = when (appState) {
     WearAppState.Unpaired -> "Open Calibrate settings on your phone and choose the nearby watch to begin."
     WearAppState.Pairing -> "Keep the phone nearby while this one-time secure pairing completes."
     is WearAppState.PairingError -> appState.message
+    is WearAppState.UpgradeRequired -> appState.message
     is WearAppState.Paired -> if (appState.confirmationPending) {
         "This watch is paired securely. Keep your phone nearby to confirm the connection."
     } else {

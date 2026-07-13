@@ -57,8 +57,11 @@ test('restore refuses accidental destructive use and never writes a plaintext du
 test('production startup retries migrations before opening the app process', () => {
   const startup = fs.readFileSync(path.join(repositoryRoot, 'backend/scripts/start-prod.sh'), 'utf8');
   assert.match(startup, /MIGRATION_MAX_ATTEMPTS/);
-  assert.match(startup, /until npm run db:migrate/);
-  assert.ok(startup.indexOf('until npm run db:migrate') < startup.indexOf('exec npm run start'));
+  assert.match(startup, /until \.\/node_modules\/\.bin\/prisma migrate deploy/);
+  assert.ok(
+    startup.indexOf('until ./node_modules/.bin/prisma migrate deploy') <
+      startup.indexOf('exec node dist/backend/src/index.js')
+  );
 });
 
 test('deployment remains portable and does not restore removed cloud infrastructure', () => {

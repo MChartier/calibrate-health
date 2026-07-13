@@ -164,6 +164,7 @@ class MainActivity : ComponentActivity() {
             PairingUiState.Unpaired -> WearAppState.Unpaired
             PairingUiState.Pairing -> WearAppState.Pairing
             is PairingUiState.Error -> WearAppState.PairingError(state.message)
+            is PairingUiState.UpgradeRequired -> WearAppState.UpgradeRequired(state.message)
             is PairingUiState.Paired -> WearAppState.Paired(
                 state.userId,
                 state.serverOrigin,

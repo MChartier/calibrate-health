@@ -11,6 +11,7 @@ import { createQueuedMutationExecutor } from '../src/offline/operations';
 import { OfflineOutboxProvider } from '../src/offline/provider';
 import { colors } from '../src/theme';
 import { AppErrorBoundary } from '../src/components/AppErrorBoundary';
+import { ClientUpgradeRequiredScreen } from '../src/components/ClientUpgradeRequiredScreen';
 import { HealthConnectProvider } from '../src/healthConnect/provider';
 import { useWearHandoffRouting } from '../src/wear/useWearHandoffRouting';
 import { useWearSyncInvalidation } from '../src/wear/useWearSyncInvalidation';
@@ -29,6 +30,26 @@ const NativeRuntimeHooks: React.FC = () => {
     return null;
 };
 
+const ClientCompatibilityGate: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+    const {
+        clientUpgradeRequired,
+        serverUrl,
+        recheckClientCompatibility,
+        clearLocalSession
+    } = useAuth();
+    if (clientUpgradeRequired) {
+        return (
+            <ClientUpgradeRequiredScreen
+                requirement={clientUpgradeRequired}
+                serverUrl={serverUrl}
+                onRecheck={recheckClientCompatibility}
+                onChooseServer={clearLocalSession}
+            />
+        );
+    }
+    return <>{children}</>;
+};
+
 const AuthenticatedRuntime: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const { api } = useAuth();
     const executeMutation = React.useMemo(() => createQueuedMutationExecutor(api), [api]);
@@ -45,13 +66,15 @@ export default function RootLayout() {
             <SafeAreaProvider>
                 <QueryClientProvider client={queryClient}>
                     <AuthProvider>
-                        <NativePushRegistrationProvider>
-                            <AuthenticatedRuntime>
-                                <NativeRuntimeHooks />
-                                <StatusBar style="dark" backgroundColor={colors.surface} />
-                                <Slot />
-                            </AuthenticatedRuntime>
-                        </NativePushRegistrationProvider>
+                        <ClientCompatibilityGate>
+                            <NativePushRegistrationProvider>
+                                <AuthenticatedRuntime>
+                                    <NativeRuntimeHooks />
+                                    <StatusBar style="dark" backgroundColor={colors.surface} />
+                                    <Slot />
+                                </AuthenticatedRuntime>
+                            </NativePushRegistrationProvider>
+                        </ClientCompatibilityGate>
                     </AuthProvider>
                 </QueryClientProvider>
             </SafeAreaProvider>

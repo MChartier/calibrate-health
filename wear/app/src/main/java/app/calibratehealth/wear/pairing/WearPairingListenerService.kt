@@ -171,7 +171,11 @@ class WearPairingListenerService : WearableListenerService() {
                     .put("watch_device_name", pending.watchDeviceName)
                     .toString()
             } catch (error: Exception) {
-                stateStore.setError(safeError(error))
+                if (error is WearUpgradeRequiredException) {
+                    stateStore.setUpgradeRequired(error.message ?: "Update Calibrate on this watch to continue.")
+                } else {
+                    stateStore.setError(safeError(error))
+                }
                 return
             } finally {
                 keyManager.deleteOwned(pending.keyAlias)

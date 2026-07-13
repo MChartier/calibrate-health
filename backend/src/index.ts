@@ -29,6 +29,7 @@ import syncRoutes from './routes/sync';
 import userRoutes from './routes/user';
 import watchRoutes from './routes/watch';
 import { authenticateMobileBearerToken } from './middleware/mobileAuth';
+import { enforceNativeClientCompatibility } from './middleware/clientCompatibility';
 import { createAuthRateLimiters, createBrowserMutationOriginGuard } from './middleware/security';
 import { startReminderScheduler } from './services/reminderScheduler';
 import { checkDatabaseReadiness } from './services/readiness';
@@ -347,6 +348,7 @@ const bootstrap = async (): Promise<void> => {
   app.use(passport.initialize());
   app.use(passport.session());
   app.use(authenticateMobileBearerToken);
+  app.use(enforceNativeClientCompatibility);
   app.use(createBrowserMutationOriginGuard({
     trustedOrigins: allowedOriginSet,
     useSecureRequestOrigin: useSecureCookies
