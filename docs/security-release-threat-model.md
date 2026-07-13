@@ -35,12 +35,12 @@ authorize a read, update, delete, undo, or association.
   notification, and Health Connect state is not shown or replayed.
 - Review lock-screen previews and export sharing on the Galaxy Watch Ultra and phone used for dogfood.
 
-## Temporary dependency advisory record
+## Dependency advisory resolution
 
-As of 2026-07-12, `npm audit --omit=dev` reports no high or critical production findings. A scoped
+As of 2026-07-12, `npm audit --omit=dev` reports no production findings. A scoped
 Expo Metro override keeps PostCSS on patched `8.5.18`; an Android Expo/Metro export verifies that
-the compatible patch still bundles successfully. The remaining 15 moderate package entries all
-collapse to
+the compatible patch still bundles successfully. The former 15 moderate package entries all
+collapsed to
 [`GHSA-w5hq-g745-h8pq`](https://github.com/advisories/GHSA-w5hq-g745-h8pq) through the Expo 54
 build-tool chain: `@expo/config-plugins` -> `xcode@3.0.1` -> `uuid@7.0.3`. The advisory affects
 UUID v3/v5/v6 only when a caller supplies an undersized output buffer. The installed `xcode`
@@ -48,12 +48,9 @@ package calls only `uuid.v4()` without a buffer while generating project identif
 affected path is not reachable through this dependency. This code runs while generating native
 projects and is not bundled into the server, web client, Android app, or Wear app.
 
-Forcing npm's suggested remediation would downgrade or cross major versions of Expo, Health
-Connect, and related native packages. Keep Expo 54 on its latest compatible patches instead, retain
-the high/critical audit gate, and re-evaluate this exception on every Expo/config-plugin update. The
-exception expires on 2026-08-12 or before signing a production release candidate, whichever comes
-first. Issue [#222](https://github.com/MChartier/calibrate-health/issues/222) owns the follow-up.
-The dependency-audit workflow enforces the deadline against every locked UUID version, while
-`npm run release:check:production` and the release-cut workflow reject the active exception
-immediately. At the deadline, upgrade the upstream chain, renew the reachability record with fresh
-evidence and a new deadline, or block all builds covered by the audit workflow.
+Rather than changing Expo or Health Connect majors, the root lock graph now pins the CommonJS
+`xcode@3.0.1` edge to patched `uuid@11.1.1`. UUID 11 exposes a CommonJS entry point, and a release
+test executes xcode's actual `generateUuid()` path to guard that compatibility. Android prebuild,
+bundle export, mobile typecheck/tests, and the production dependency audit must remain green. The
+advisory scanner still models all published vulnerable ranges and inspects every root or nested UUID
+copy, so a future Expo/config-plugin update cannot silently reintroduce the advisory.
