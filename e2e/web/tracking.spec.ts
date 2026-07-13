@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 
 const TEST_FOOD_NAME = 'E2E oatmeal';
+const RECOVERY_FOOD_NAME = 'E2E recovery oatmeal';
 
 async function chooseOption(page: Page, label: string, optionName: string): Promise<void> {
   await page.getByRole('combobox', { name: label, exact: true }).click();
@@ -76,4 +77,46 @@ test('new user can onboard, log food, and update today\'s weight', async ({ page
 
   await expect(weightDialog).toBeHidden();
   await expect(page.getByRole('heading', { name: '81.5 kg', exact: true })).toBeVisible();
+});
+
+test('food logging recovers in place after a transient server failure', async ({ page }) => {
+  await completeOnboarding(page);
+
+  let rejectedFirstCreate = false;
+  await page.route('**/api/food', async (route) => {
+    const isFoodCreate = route.request().method() === 'POST';
+    if (isFoodCreate && !rejectedFirstCreate) {
+      rejectedFirstCreate = true;
+      await route.fulfill({ status: 503, contentType: 'application/json', body: '{}' });
+      return;
+    }
+    await route.continue();
+  });
+
+  await page.goto('/dashboard');
+  await expect(page.getByRole('heading', { name: 'Today', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Add food', exact: true }).click();
+
+  const foodDialog = page.getByRole('dialog', { name: 'Track Food' });
+  const foodNameInput = foodDialog.getByRole('textbox', { name: 'Search foods', exact: true });
+  const caloriesInput = foodDialog.getByRole('spinbutton', { name: 'Calories', exact: true });
+  const addAndCloseButton = foodDialog.getByRole('button', { name: 'Add & close', exact: true });
+
+  await foodNameInput.fill(RECOVERY_FOOD_NAME);
+  await caloriesInput.fill('275');
+  await chooseOption(page, 'Meal Period', 'Breakfast');
+  await addAndCloseButton.click();
+
+  await expect(foodDialog.getByRole('alert')).toHaveText('Unable to add this food right now.');
+  await expect(foodDialog).toBeVisible();
+  await expect(foodNameInput).toHaveValue(RECOVERY_FOOD_NAME);
+  await expect(caloriesInput).toHaveValue('275');
+  await expect(addAndCloseButton).toBeEnabled();
+
+  await addAndCloseButton.click();
+  await expect(foodDialog).toBeHidden();
+  await expect(
+    page.getByRole('group', { name: `${RECOVERY_FOOD_NAME}, 275 Calories`, exact: true }),
+  ).toBeVisible();
+  expect(rejectedFirstCreate).toBe(true);
 });
