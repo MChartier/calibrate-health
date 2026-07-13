@@ -123,6 +123,57 @@ does not understand a newer on-device schema.
 If a release is bad, publish a fixed build with a higher version code. A lower-version APK is not a safe rollback for
 SecureStore or SQLite changes.
 
+## Disposable emulator upgrade rehearsal
+
+`npm run test:native:upgrade` creates isolated local clones, overrides version codes only in those clones, signs phone
+and Wear APKs with one disposable identity, and installs the candidate with `adb install -r`. It never uninstalls the
+app or clears application data. Dry-run is the default and performs only Git/ADB discovery before printing the exact
+plan. Baseline and candidate refs execute their Expo/Gradle build logic, so use only trusted commits from this
+repository. Child builds receive an allowlisted environment that excludes unrelated service credentials and tokens:
+
+```powershell
+npm.cmd run test:native:upgrade -- `
+  --baseline a99fcb8 `
+  --candidate HEAD `
+  --phone-serial emulator-5554 `
+  --wear-serial emulator-5556 `
+  --disposable-keystore mobile\android\app\debug.keystore `
+  --disposable-key-alias androiddebugkey `
+  --allow-existing-package
+```
+
+The ignored Expo debug keystore is acceptable only for this emulator rehearsal. Never pass the permanent Play/release
+key. Existing disposable-key credentials are read only from `CALIBRATE_REHEARSAL_STORE_PASSWORD` and
+`CALIBRATE_REHEARSAL_KEY_PASSWORD`; no password is written to the result. Execute mode copies the key into the owned
+temporary directory, pulls each installed base APK there, and compares full certificate SHA-256 fingerprints before
+the first replacement:
+
+```powershell
+$env:CALIBRATE_REHEARSAL_STORE_PASSWORD='android'
+$env:CALIBRATE_REHEARSAL_KEY_PASSWORD='android'
+npm.cmd run test:native:upgrade -- `
+  --execute `
+  --baseline a99fcb8 `
+  --candidate HEAD `
+  --baseline-version-code 1 `
+  --candidate-version-code 2 `
+  --phone-serial emulator-5554 `
+  --wear-serial emulator-5556 `
+  --disposable-keystore mobile\android\app\debug.keystore `
+  --disposable-key-alias androiddebugkey `
+  --allow-existing-package
+```
+
+Interactive execution launches the baseline and pauses for the operator to prepare login, pairing, cached data, and
+offline outbox state. After upgrading, it requires separate `YES` confirmations for session/server/settings,
+phone food/weight data, exactly-once phone outbox replay, Wear pairing/cache, and exactly-once Wear action replay
+before recording `behavior-check-passed`. Non-interactive package-only automation must add `--package-only`; its
+retained JSON is labeled as package/install evidence and proves only version increase, signer continuity, unchanged
+`firstInstallTime`, live processes after launch, and clean crash-pattern checks. It records
+`package-check-passed` and does not satisfy login, pairing, cache, Room migration, or outbox-preservation gates.
+The script refuses physical devices, implicit ADB targets, active `CALIBRATE_ANDROID_SIGNING_*` values, a signer
+mismatch, a non-increasing candidate version, or recursive cleanup outside its unique marked short build root.
+
 ## Internal release checklist
 
 - [ ] `npm.cmd run release:check` and `npm.cmd run test:release` pass.
