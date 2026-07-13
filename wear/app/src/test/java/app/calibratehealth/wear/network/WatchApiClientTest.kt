@@ -35,7 +35,8 @@ class WatchApiClientTest {
                 captured = request
                 WatchHttpResponse(200, emptyMap(), "{}")
             },
-            nowEpochMs = { 1_000L }
+            nowEpochMs = { 1_000L },
+            clientVersion = "0.1.0-internal"
         )
 
         val result = api.postMutation(
@@ -49,6 +50,8 @@ class WatchApiClientTest {
         assertEquals("POST", captured?.method)
         assertEquals("operation-1234", captured?.headers?.get("X-Client-Operation-Id"))
         assertEquals("Bearer access", captured?.headers?.get("Authorization"))
+        assertEquals("wear_os", captured?.headers?.get("X-Calibrate-Client-Platform"))
+        assertEquals("0.1.0-internal", captured?.headers?.get("X-Calibrate-Client-Version"))
         assertEquals(
             "{\"type\":\"food.create\",\"payload\":{\"date\":\"2026-07-11\",\"name\":\"Apple\",\"calories\":95}}",
             captured?.body
@@ -84,6 +87,8 @@ class WatchApiClientTest {
         assertEquals("rotated-refresh", store.value?.refreshToken)
         assertEquals("Bearer rotated-access", requests.last().headers["Authorization"])
         assertEquals("W/\"watch-old\"", requests.last().headers["If-None-Match"])
+        assertTrue(requests.all { it.headers["X-Calibrate-Client-Platform"] == "wear_os" })
+        assertTrue(requests.all { it.headers["X-Calibrate-Client-Version"] != null })
     }
 
     @Test
@@ -112,6 +117,33 @@ class WatchApiClientTest {
 
         assertEquals(1, refreshCount)
         assertTrue(result is AuthenticatedApiResult.AuthenticationRequired)
+    }
+
+    @Test
+    fun `upgrade response is terminal for the request without refreshing or clearing session`() = runBlocking {
+        val store = MemoryTokenStore(session())
+        var requests = 0
+        val api = AuthenticatedWatchApi(
+            tokenStore = store,
+            sessionCoordinator = coordinator(store),
+            transport = WatchHttpTransport {
+                requests++
+                WatchHttpResponse(
+                    426,
+                    mapOf("X-Calibrate-Minimum-Client-Version" to "0.2.0"),
+                    """{"message":"Update Calibrate for Wear OS to version 0.2.0 or newer to continue.","code":"CLIENT_UPGRADE_REQUIRED","platform":"wear_os","current_version":"0.1.0","minimum_supported_version":"0.2.0","retryable":false}"""
+                )
+            },
+            nowEpochMs = { 1_000L },
+            clientVersion = "0.1.0"
+        )
+
+        val result = api.getSnapshot(store.value!!, null)
+
+        assertEquals(1, requests)
+        assertEquals("access", store.value?.accessToken)
+        assertTrue(result is AuthenticatedApiResult.UpgradeRequired)
+        assertEquals("0.2.0", (result as AuthenticatedApiResult.UpgradeRequired).minimumVersion)
     }
 
     private fun session() = SecureSession(

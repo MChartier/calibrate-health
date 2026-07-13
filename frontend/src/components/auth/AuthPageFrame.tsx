@@ -1,9 +1,10 @@
 import React from 'react';
-import { Box, Divider, Stack, Typography } from '@mui/material';
+import { Box, Divider, Link, Stack, Typography } from '@mui/material';
 import RestaurantMenuRoundedIcon from '@mui/icons-material/RestaurantMenuRounded';
 import MonitorWeightRoundedIcon from '@mui/icons-material/MonitorWeightRounded';
 import TimelineRoundedIcon from '@mui/icons-material/TimelineRounded';
 import { alpha } from '@mui/material/styles';
+import { Link as RouterLink } from 'react-router-dom';
 import AppCard from '../../ui/AppCard';
 import AppPage from '../../ui/AppPage';
 import { useI18n } from '../../i18n/useI18n';
@@ -114,61 +115,79 @@ const AuthPageFrame: React.FC<AuthPageFrameProps> = ({
                     alignItems: { md: 'center' }
                 }}
             >
-                <AppCard contentSx={{ p: { xs: 2.25, sm: 3, md: 3.5 } }}>
-                    <Box
-                        sx={{
-                            display: 'grid',
-                            gridTemplateColumns: { xs: '1fr', md: `${AUTH_FORM_MAX_WIDTH_PX}px minmax(0, 1fr)` },
-                            gap: { xs: 2.25, md: 4 },
-                            alignItems: 'center'
-                        }}
-                    >
-                        <Stack component="form" spacing={2} onSubmit={onSubmit} sx={{ minWidth: 0 }}>
-                            <Box>
-                                <Typography variant="h4" component="h1">
-                                    {title}
-                                </Typography>
-                                <Typography variant="body2" sx={{ color: 'text.secondary', mt: 0.5 }}>
-                                    {subtitle}
-                                </Typography>
-                            </Box>
-                            {children}
-                        </Stack>
-
-                        <Divider sx={{ display: { xs: 'block', md: 'none' } }} />
-
+                <Stack spacing={1.5} sx={{ width: '100%' }} useFlexGap>
+                    <AppCard contentSx={{ p: { xs: 2.25, sm: 3, md: 3.5 } }}>
                         <Box
-                            component="aside"
-                            aria-label={t('auth.frameTitle')}
-                            sx={(theme) => ({
-                                borderRadius: 2,
-                                border: `1px solid ${alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.28 : 0.18)}`,
-                                backgroundColor: alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.1 : 0.06),
-                                p: { xs: 1.5, sm: 2, md: 2.5 },
-                                alignSelf: 'stretch',
-                                display: 'flex',
+                            sx={{
+                                display: 'grid',
+                                gridTemplateColumns: { xs: '1fr', md: `${AUTH_FORM_MAX_WIDTH_PX}px minmax(0, 1fr)` },
+                                gap: { xs: 2.25, md: 4 },
                                 alignItems: 'center'
-                            })}
+                            }}
                         >
-                            <Stack spacing={{ xs: 1.5, md: 2 }} sx={{ width: '100%' }}>
+                            <Stack component="form" spacing={2} onSubmit={onSubmit} sx={{ minWidth: 0 }}>
                                 <Box>
-                                    <Typography variant="h6" component="h2">
-                                        {t('auth.frameTitle')}
+                                    <Typography variant="h4" component="h1">
+                                        {title}
                                     </Typography>
                                     <Typography variant="body2" sx={{ color: 'text.secondary', mt: 0.5 }}>
-                                        {t('auth.frameBody')}
+                                        {subtitle}
                                     </Typography>
                                 </Box>
-
-                                <Stack spacing={1.35}>
-                                    {AUTH_FEATURES.map((feature) => (
-                                        <AuthFeatureItem key={feature.titleKey} feature={feature} />
-                                    ))}
-                                </Stack>
+                                {children}
                             </Stack>
+
+                            <Divider sx={{ display: { xs: 'block', md: 'none' } }} />
+
+                            <Box
+                                component="aside"
+                                aria-label={t('auth.frameTitle')}
+                                sx={(theme) => ({
+                                    borderRadius: 2,
+                                    border: `1px solid ${alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.28 : 0.18)}`,
+                                    backgroundColor: alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.1 : 0.06),
+                                    p: { xs: 1.5, sm: 2, md: 2.5 },
+                                    alignSelf: 'stretch',
+                                    display: 'flex',
+                                    alignItems: 'center'
+                                })}
+                            >
+                                <Stack spacing={{ xs: 1.5, md: 2 }} sx={{ width: '100%' }}>
+                                    <Box>
+                                        <Typography variant="h6" component="h2">
+                                            {t('auth.frameTitle')}
+                                        </Typography>
+                                        <Typography variant="body2" sx={{ color: 'text.secondary', mt: 0.5 }}>
+                                            {t('auth.frameBody')}
+                                        </Typography>
+                                    </Box>
+
+                                    <Stack spacing={1.35}>
+                                        {AUTH_FEATURES.map((feature) => (
+                                            <AuthFeatureItem key={feature.titleKey} feature={feature} />
+                                        ))}
+                                    </Stack>
+                                </Stack>
+                            </Box>
                         </Box>
-                    </Box>
-                </AppCard>
+                    </AppCard>
+
+                    <Stack
+                        component="nav"
+                        aria-label={t('legal.publicLinks')}
+                        direction="row"
+                        spacing={2}
+                        sx={{ justifyContent: 'center' }}
+                        useFlexGap
+                    >
+                        <Link component={RouterLink} to="/privacy" variant="body2">
+                            {t('legal.privacyPolicy')}
+                        </Link>
+                        <Link component={RouterLink} to="/account-deletion" variant="body2">
+                            {t('legal.accountDeletion')}
+                        </Link>
+                    </Stack>
+                </Stack>
             </Box>
         </AppPage>
     );

@@ -96,6 +96,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }, [queryClient]);
 
     /**
+     * The deletion endpoint already destroys the server session, so only local auth and query state remain.
+     */
+    const clearDeletedAccountSession = useCallback(() => {
+        setUser(null);
+        queryClient.clear();
+    }, [queryClient]);
+
+    /**
      * Change the authenticated user's password (server validates the current password).
      */
     const changePassword = useCallback(async (currentPassword: string, newPassword: string) => {
@@ -210,6 +218,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             register,
             logout,
             changePassword,
+            clearDeletedAccountSession,
             updateUnitPreferences,
             updateReminderPreferences,
             updateFeedbackPreferences,
@@ -223,6 +232,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }),
         [
             changePassword,
+            clearDeletedAccountSession,
             isLoading,
             login,
             logout,

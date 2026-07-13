@@ -1,0 +1,38 @@
+services:
+  app:
+    depends_on:
+      db:
+        condition: service_healthy
+        restart: true
+    environment:
+      DATABASE_URL: ""
+      DB_HOST: db
+      DB_PORT: "5432"
+      DB_NAME: ${POSTGRES_DB:-calibratehealth}
+      DB_USER: ${POSTGRES_USER:-calibratehealth}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD for in-stack Postgres}
+      DB_SCHEMA: ${POSTGRES_SCHEMA:-public}
+      DB_SSLMODE: disable
+
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    init: true
+    stop_grace_period: 60s
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-calibratehealth}
+      POSTGRES_USER: ${POSTGRES_USER:-calibratehealth}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD for in-stack Postgres}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - internal
+
+volumes:
+  postgres_data:

@@ -1,10 +1,12 @@
 import { Platform } from 'react-native';
 import type { ClientConfigResponse } from '@calibrate/api-client';
+import { compareClientVersions } from '@calibrate/shared/clientCompatibility';
+import release from '../../../shared/release.json';
 
 export const HOSTED_SERVER_URL = 'https://calibratehealth.app';
 export const ANDROID_EMULATOR_SERVER_URL = 'http://10.0.2.2:3000';
 export const CALIBRATE_SERVER_URL_ENV = 'EXPO_PUBLIC_CALIBRATE_SERVER_URL';
-export const MOBILE_API_VERSION = 'v1';
+export const MOBILE_API_VERSION = release.server.api.current;
 
 const SERVER_CONNECTION_TIMEOUT_MS = 8000; // Fails quickly enough to keep sign-in setup responsive on bad LAN addresses.
 
@@ -64,7 +66,10 @@ export function isLocalServerHostname(hostname: string): boolean {
  *
  * Scheme-less public hosts default to HTTPS, while local development hosts default to HTTP.
  */
-export function parseServerUrl(value: string): ServerUrlResult {
+export function parseServerUrl(
+    value: string,
+    options: { allowInsecureLocalHttp?: boolean } = {}
+): ServerUrlResult {
     const trimmed = value.trim();
     if (!trimmed) {
         return { ok: false, message: 'Enter a Calibrate server URL.' };
@@ -81,13 +86,14 @@ export function parseServerUrl(value: string): ServerUrlResult {
         }
 
         const isLocalHost = isLocalServerHostname(url.hostname);
-        if (!explicitScheme && isLocalHost) {
+        const allowInsecureLocalHttp = options.allowInsecureLocalHttp ?? __DEV__;
+        if (!explicitScheme && isLocalHost && allowInsecureLocalHttp) {
             url.protocol = 'http:';
         }
-        if (url.protocol === 'http:' && !isLocalHost) {
+        if (url.protocol === 'http:' && (!isLocalHost || !allowInsecureLocalHttp)) {
             return {
                 ok: false,
-                message: 'Use HTTPS for remote servers. HTTP is allowed only for local or private-network development.'
+                message: 'Use HTTPS for this server. HTTP is available only in local development builds.'
             };
         }
 
@@ -112,27 +118,13 @@ export function getDefaultServerUrl(): string {
 }
 
 /** Normalize self-hosted server input so API calls can safely append versioned paths. */
-export function normalizeServerUrl(value: string): string | null {
-    const result = parseServerUrl(value);
+export function normalizeServerUrl(
+    value: string,
+    options: { allowInsecureLocalHttp?: boolean } = {}
+): string | null {
+    const result = parseServerUrl(value, options);
     return result.ok ? result.url : null;
 }
-
-const parseVersion = (value: string): number[] | null => {
-    const match = value.trim().match(/^(\d+)\.(\d+)(?:\.(\d+))?/);
-    if (!match) return null;
-    return [Number(match[1]), Number(match[2]), Number(match[3] ?? 0)];
-};
-
-const compareVersions = (left: string, right: string): number | null => {
-    const leftParts = parseVersion(left);
-    const rightParts = parseVersion(right);
-    if (!leftParts || !rightParts) return null;
-    for (let index = 0; index < leftParts.length; index += 1) {
-        const difference = leftParts[index] - rightParts[index];
-        if (difference !== 0) return difference;
-    }
-    return 0;
-};
 
 const isClientConfigResponse = (value: unknown): value is ClientConfigResponse => {
     if (!value || typeof value !== 'object') return false;
@@ -140,6 +132,7 @@ const isClientConfigResponse = (value: unknown): value is ClientConfigResponse =
     return record.api_version === 1
         && Boolean(record.api_versions && Array.isArray(record.api_versions.supported))
         && typeof record.min_supported_mobile_version === 'string'
+        && typeof record.min_supported_wear_version === 'string'
         && typeof record.server_version === 'string';
 };
 
@@ -209,9 +202,9 @@ export async function testCalibrateServerConnection(
 
     const mobileVersion = options.mobileVersion;
     const versionComparison = mobileVersion
-        ? compareVersions(mobileVersion, body.min_supported_mobile_version)
+        ? compareClientVersions(mobileVersion, body.min_supported_mobile_version)
         : null;
-    if (versionComparison !== null && versionComparison < 0) {
+    if (mobileVersion && (versionComparison === null || versionComparison < 0)) {
         return {
             ok: false,
             url: parsed.url,

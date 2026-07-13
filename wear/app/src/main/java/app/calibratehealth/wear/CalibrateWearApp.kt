@@ -1,5 +1,6 @@
 package app.calibratehealth.wear
 
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -17,7 +18,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.focus.focusable
 import androidx.compose.ui.input.rotary.onRotaryScrollEvent
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -54,6 +54,9 @@ fun CalibrateWearApp(
     onContinueOnPhone: (WearSummary) -> Unit = {},
     disconnecting: Boolean = false,
     disconnectError: String? = null,
+    publicResourceHandoffStatus: String? = null,
+    onOpenPrivacyOnPhone: () -> Unit = {},
+    onOpenAccountDeletionOnPhone: () -> Unit = {},
     onDisconnect: () -> Unit = {},
     reminderDeepLink: WearReminderDeepLink? = null,
     reminderDeepLinkRequest: Long = 0,
@@ -90,6 +93,9 @@ fun CalibrateWearApp(
                         serverConfig = serverConfig,
                         disconnecting = disconnecting,
                         disconnectError = disconnectError,
+                        publicResourceHandoffStatus = publicResourceHandoffStatus,
+                        onOpenPrivacyOnPhone = onOpenPrivacyOnPhone,
+                        onOpenAccountDeletionOnPhone = onOpenAccountDeletionOnPhone,
                         onDisconnect = onDisconnect
                     )
                 }
@@ -143,6 +149,7 @@ private fun SummaryScreen(
                 WearAppState.Unpaired -> item { StatusText("Pair with Calibrate on your phone to see today's summary.") }
                 WearAppState.Pairing -> item { StatusText("Pairing securely with your phone...") }
                 is WearAppState.PairingError -> item { StatusText(appState.message) }
+                is WearAppState.UpgradeRequired -> item { StatusText(appState.message) }
                 is WearAppState.Paired -> item {
                     StatusText("Paired securely. Waiting for the first health sync.")
                 }
@@ -333,6 +340,7 @@ private fun connectionLabel(appState: WearAppState, syncStatus: WearSyncStatus):
     WearAppState.Unpaired -> "Phone setup required"
     WearAppState.Pairing -> "Pairing in progress"
     is WearAppState.PairingError -> "Pairing needs attention"
+    is WearAppState.UpgradeRequired -> "Update required"
     is WearAppState.Paired -> if (appState.confirmationPending) "Phone confirmation pending" else "First sync pending"
     is WearAppState.Ready -> SummaryFormatter.sync(syncStatus, appState.summary.lastSyncAtEpochMs)
 }
@@ -361,6 +369,9 @@ private fun ConnectionScreen(
     serverConfig: WearServerConfig,
     disconnecting: Boolean,
     disconnectError: String?,
+    publicResourceHandoffStatus: String?,
+    onOpenPrivacyOnPhone: () -> Unit,
+    onOpenAccountDeletionOnPhone: () -> Unit,
     onDisconnect: () -> Unit
 ) {
     var confirmDisconnect by remember(appState) { mutableStateOf(false) }
@@ -386,7 +397,30 @@ private fun ConnectionScreen(
             disconnectError?.let { error -> item { StatusText(error) } }
             if (
                 appState is WearAppState.Paired || appState is WearAppState.Ready ||
-                appState is WearAppState.PairingError || disconnectError != null
+                appState is WearAppState.UpgradeRequired
+            ) {
+                item { SectionTitle("Privacy and account") }
+                item {
+                    Button(
+                        onClick = onOpenPrivacyOnPhone,
+                        label = { Text("Privacy policy") },
+                        secondaryLabel = { Text("Open public policy on phone") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+                item {
+                    Button(
+                        onClick = onOpenAccountDeletionOnPhone,
+                        label = { Text("Account deletion") },
+                        secondaryLabel = { Text("Open public request page on phone") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+                publicResourceHandoffStatus?.let { status -> item { StatusText(status) } }
+            }
+            if (
+                appState is WearAppState.Paired || appState is WearAppState.Ready ||
+                appState is WearAppState.PairingError || appState is WearAppState.UpgradeRequired || disconnectError != null
             ) {
                 if (confirmDisconnect) {
                     item { StatusText("This clears Calibrate data and sign-in only from this watch.") }
@@ -426,6 +460,7 @@ private fun connectionDetail(appState: WearAppState): String = when (appState) {
     WearAppState.Unpaired -> "Open Calibrate settings on your phone and choose the nearby watch to begin."
     WearAppState.Pairing -> "Keep the phone nearby while this one-time secure pairing completes."
     is WearAppState.PairingError -> appState.message
+    is WearAppState.UpgradeRequired -> appState.message
     is WearAppState.Paired -> if (appState.confirmationPending) {
         "This watch is paired securely. Keep your phone nearby to confirm the connection."
     } else {

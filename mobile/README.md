@@ -35,3 +35,7 @@ npm --prefix mobile test
 ```
 
 CI also prebuilds Android and runs a debug Gradle build so native config drift is caught before release work.
+For local release validation, provide the four shared `CALIBRATE_ANDROID_SIGNING_*` values documented in
+`docs/mobile-release.md`, then run `npm run build:native:release` from the repository root. It performs a clean phone
+prebuild and produces signed phone and Wear APKs and AABs with one certificate; local development does not need to
+wait for the remote CI build.

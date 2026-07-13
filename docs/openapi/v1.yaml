@@ -915,6 +915,7 @@ components:
         - server_version
         - hosted_origin
         - min_supported_mobile_version
+        - min_supported_wear_version
         - capabilities
       properties:
         api_version:
@@ -942,6 +943,8 @@ components:
           type: string
           format: uri
         min_supported_mobile_version:
+          type: string
+        min_supported_wear_version:
           type: string
         capabilities:
           type: object

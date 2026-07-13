@@ -12,6 +12,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
+import app.calibratehealth.wear.actions.ContinueOnPhoneRequest
 import app.calibratehealth.wear.actions.DataLayerContinueOnPhoneMessenger
 import app.calibratehealth.wear.actions.WearHomeController
 import app.calibratehealth.wear.actions.WearLocalDisconnect
@@ -23,6 +24,7 @@ import app.calibratehealth.wear.data.local.CalibrateWearDatabase
 import app.calibratehealth.wear.pairing.PairingStateEvents
 import app.calibratehealth.wear.pairing.PairingStateStore
 import app.calibratehealth.wear.pairing.PairingUiState
+import app.calibratehealth.wear.pairing.shouldAttemptForegroundSync
 import app.calibratehealth.wear.notifications.WearReminderDeepLink
 import app.calibratehealth.wear.notifications.parseWearReminderDeepLink
 import app.calibratehealth.wear.sync.OutboxWorkPolicy
@@ -37,9 +39,11 @@ class MainActivity : ComponentActivity() {
     private val controllerScope = MainScope()
     private val disconnecting = mutableStateOf(false)
     private val disconnectError = mutableStateOf<String?>(null)
+    private val publicResourceHandoffStatus = mutableStateOf<String?>(null)
     private val reminderDeepLink = mutableStateOf<WearReminderDeepLink?>(null)
     private val reminderDeepLinkRequest = mutableStateOf(0L)
     private lateinit var homeController: WearHomeController
+    private lateinit var continueOnPhoneMessenger: DataLayerContinueOnPhoneMessenger
     private lateinit var localDisconnect: WearLocalDisconnect
     private val pairingStateChanged: () -> Unit = {
         runOnUiThread { refreshPairingState() }
@@ -49,6 +53,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         val database = CalibrateWearDatabase.get(this)
         localDisconnect = WearLocalDisconnect(this)
+        continueOnPhoneMessenger = DataLayerContinueOnPhoneMessenger(this)
         homeController = WearHomeController(
             snapshots = RoomDailySnapshotRepository(database.dailySnapshotDao()),
             quickAdds = RoomQuickAddRepository(database.quickAddItemDao()),
@@ -58,7 +63,7 @@ class MainActivity : ComponentActivity() {
                 WorkManagerOutboxScheduler(this)
             ),
             mutationFactory = QueuedMutationFactory(),
-            continueOnPhone = DataLayerContinueOnPhoneMessenger(this),
+            continueOnPhone = continueOnPhoneMessenger,
             scope = controllerScope
         )
         observeOutboxWork()
@@ -66,10 +71,12 @@ class MainActivity : ComponentActivity() {
         refreshPairingState()
         setContent {
             val homeState by homeController.uiState.collectAsState()
+            // Snapshot delegated state once so Kotlin can safely narrow the nullable summary.
+            val summary = homeState.summary
             val displayedAppState = if (
-                appState.value is WearAppState.Paired && homeState.summary != null
+                appState.value is WearAppState.Paired && summary != null
             ) {
-                WearAppState.Ready(homeState.summary)
+                WearAppState.Ready(summary)
             } else {
                 appState.value
             }
@@ -84,6 +91,16 @@ class MainActivity : ComponentActivity() {
                 onContinueOnPhone = homeController::continueOnPhone,
                 disconnecting = disconnecting.value,
                 disconnectError = disconnectError.value,
+                publicResourceHandoffStatus = publicResourceHandoffStatus.value,
+                onOpenPrivacyOnPhone = {
+                    openPublicResourceOnPhone(ContinueOnPhoneRequest.Privacy, "Privacy policy opened on phone.")
+                },
+                onOpenAccountDeletionOnPhone = {
+                    openPublicResourceOnPhone(
+                        ContinueOnPhoneRequest.AccountDeletion,
+                        "Account deletion opened on phone."
+                    )
+                },
                 onDisconnect = ::disconnectThisWatch,
                 reminderDeepLink = reminderDeepLink.value,
                 reminderDeepLinkRequest = reminderDeepLinkRequest.value
@@ -96,8 +113,11 @@ class MainActivity : ComponentActivity() {
         PairingStateEvents.addListener(pairingStateChanged)
         refreshPairingState()
         // Foreground entry is a freshness event even when the process survived in the background.
-        if (appState.value is WearAppState.Paired) {
+        val pairingState = PairingStateStore(this).currentUiState()
+        if (pairingState.shouldAttemptForegroundSync()) {
             WorkManagerOutboxScheduler(this).scheduleForegroundRefresh()
+        }
+        if (pairingState is PairingUiState.Paired) {
             requestReminderPermissionOnce()
         }
     }
@@ -110,7 +130,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onRequestPermissionsResult(
         requestCode: Int,
-        permissions: Array<out String>,
+        permissions: Array<String>,
         grantResults: IntArray
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
@@ -148,13 +168,17 @@ class MainActivity : ComponentActivity() {
             PairingUiState.Unpaired -> WearAppState.Unpaired
             PairingUiState.Pairing -> WearAppState.Pairing
             is PairingUiState.Error -> WearAppState.PairingError(state.message)
+            is PairingUiState.UpgradeRequired -> WearAppState.UpgradeRequired(state.message)
             is PairingUiState.Paired -> WearAppState.Paired(
                 state.userId,
                 state.serverOrigin,
                 state.confirmationPending
             )
         }
-        if (nextState !is WearAppState.Paired) reminderDeepLink.value = null
+        if (nextState !is WearAppState.Paired) {
+            reminderDeepLink.value = null
+            publicResourceHandoffStatus.value = null
+        }
         appState.value = nextState
     }
 
@@ -169,6 +193,20 @@ class MainActivity : ComponentActivity() {
                 "Local data could not be fully cleared. Pairing access was removed; try again before re-pairing."
             }
             refreshPairingState()
+        }
+    }
+
+    /** Legal links use the paired phone browser; no watch credentials or free-form URL cross Data Layer. */
+    private fun openPublicResourceOnPhone(request: ContinueOnPhoneRequest, successMessage: String) {
+        publicResourceHandoffStatus.value = "Opening on phone..."
+        continueOnPhoneMessenger.send(request) { result ->
+            runOnUiThread {
+                publicResourceHandoffStatus.value = if (result.isSuccess) {
+                    successMessage
+                } else {
+                    "Phone is not reachable. Try again when it is connected."
+                }
+            }
         }
     }
 

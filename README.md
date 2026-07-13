@@ -34,13 +34,19 @@ attribution requirements: https://platform.fatsecret.com/docs/guides
 - Deployment (Compose self-hosting): `deploy/README.md`
 - Frontend dev/build/PWA: `frontend/README.md`
 - Android native client: `mobile/README.md`
+- First native release scope: `docs/release-scope.md`
+- Android/Wear Play and health release worksheet: `docs/play-console-health-release-checklist.md`
+- Current release-candidate notes: `docs/releases/1.0.0-native-0.1.0.md`
+- Security model and release threat review: `docs/security.md`, `docs/security-release-threat-model.md`
+- Architecture decisions: `docs/architecture/`
 
 ## Self-hosting
 
 ### Docker Compose (single machine)
 
-For a production-oriented Compose stack (Caddy for HTTPS + reverse proxy, plus the app container), use the files in
-`deploy/`.
+The portable production Compose files under `deploy/` support either Caddy or an existing Traefik deployment, with
+either external Postgres or a private in-stack Postgres volume. An optional backup overlay creates age-encrypted
+automated dumps with retention. The deployment intentionally has no AWS/Terraform dependency.
 
 Quick start:
 
@@ -50,44 +56,32 @@ Quick start:
    docker build -f Dockerfile.app -t calibrate:local .
    ```
 
-2. Create `deploy/Caddyfile` and `deploy/.env`:
-
-   - Start from a template Caddyfile:
-     - `deploy/Caddyfile.prod` (production)
-     - `deploy/Caddyfile.staging` (basic auth, handy for private/staging installs)
-   - Copy it to `deploy/Caddyfile` and edit the site address (replace `calibratehealth.app` with your domain).
-   - Create a `.env` file with your image + database + session secret:
-
-     ```dotenv
-     APP_IMAGE=calibrate:local
-     DATABASE_URL=postgresql://USER:PASSWORD@HOST:5432/DB?schema=public
-     # Generate with: openssl rand -base64 32
-     SESSION_SECRET=replace-with-random
-     # Optional (recommended): CADDY_EMAIL=you@example.com
-     ```
+2. Copy `deploy/.env.example` to `deploy/.env`, set `APP_IMAGE`, `APP_HOST`, `SESSION_SECRET`, and configure the chosen
+   database mode. Generate an age identity and set its public recipient if using the recommended backup overlay.
 
 3. Start the stack:
 
    ```sh
    cd deploy
-   docker compose up -d
+   docker compose --env-file .env \
+     -f docker-compose.yml \
+     -f docker-compose.postgres.yml \
+     -f docker-compose.backup.yml \
+     up -d --build
    ```
 
-4. Optional: apply DB migrations explicitly (first deploy, or after pulling changes with new migrations). The production
-   image runs `npm run db:migrate` on startup, but running it manually lets you control timing:
-
-   ```sh
-   docker compose exec app npm run db:migrate
-   ```
+   Omit `docker-compose.postgres.yml` when using external Postgres. Replace `docker-compose.yml` with
+   `docker-compose.traefik.yml` when the host already runs Traefik.
 
 Notes:
 
-- Caddy needs ports 80/443 reachable from the internet (and DNS pointing at the machine) to get HTTPS certificates.
-- This stack expects you to provide a Postgres database (managed or self-hosted).
-- If you want Postgres in Docker on the same machine, add a Postgres service to `deploy/docker-compose.yml`
-  (see the repo root `docker-compose.yml` for a dev example).
+- Caddy needs ports 80/443 reachable from the internet and DNS pointing at the machine. Traefik uses its existing
+  external network and certificate resolver.
+- The app runs committed Prisma migrations before becoming ready. Compose and both proxies use DB-backed readiness.
+- Restore drills refuse non-empty databases and require the age private identity plus explicit confirmation.
 
-See [deploy/README.md](deploy/README.md) for required env vars, staging options, and notes.
+See [deploy/README.md](deploy/README.md) for external/in-stack commands, upgrade behavior, resource guidance,
+encrypted backup monitoring, and the clean-instance restore procedure.
 
 ## Development
 
@@ -244,6 +238,7 @@ More:
 - `npm run build`: build the frontend.
 - `npm run build:mobile`: type-check the Expo React Native Android client.
 - `npm run test:mobile`: run mobile unit tests.
+- `npm run test:web:e2e`: run the local Chrome E2E path for onboarding, food, weight, and narrow responsive behavior.
 - `npm run build:storybook`: build the static Storybook.
 - `npm run lint`: lint the frontend.
 - `npm run ci:local`: run the local equivalent of PR CI (backend build, frontend build, frontend lint, backend tests).
@@ -271,6 +266,7 @@ screen.
 Push notes:
 
 - Browser push registration and delivery require backend VAPID env vars: `WEB_PUSH_PUBLIC_KEY`, `WEB_PUSH_PRIVATE_KEY`, and `WEB_PUSH_SUBJECT`.
+- Native Android push is disabled by default for self-hosting. Set `NATIVE_PUSH_MODE=expo` only when the instance intentionally uses Expo Push Service for private/internal builds.
 - In the devcontainer workflow, `.devcontainer/init-devcontainer-env.mjs` auto-generates missing VAPID keys and writes them into `.devcontainer/.env` during container initialization.
 - For local backend runs outside the devcontainer (or for plain `docker compose`), set `WEB_PUSH_*` values explicitly (see `.env.example` and `backend/.env.example`).
 
@@ -319,6 +315,9 @@ Notes:
 
 See [docs/security.md](docs/security.md) for the browser CSRF posture, native bearer-token model,
 authentication rate limits, and device-session behavior.
+
+Optional redacted JSON request logs and bearer-protected, process-local counters are documented in
+[docs/observability.md](docs/observability.md). Diagnostics are disabled by default and have no external SaaS exporter.
 
 The shared client uses the stable `/api/v1` resource API. See
 [docs/api-versioning.md](docs/api-versioning.md) and [docs/openapi/v1.yaml](docs/openapi/v1.yaml)

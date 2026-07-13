@@ -15,6 +15,7 @@ import {
 import { parseLocalDateOnly } from '../utils/date';
 import { parsePositiveInteger } from '../utils/requestParsing';
 import { parseFoodLogCreateBody, parseFoodLogUpdateBody, parseFoodSearchParams } from './foodUtils';
+import { diagnosticsRegistry, safeErrorType } from '../observability';
 import {
     getRecentFoodSuggestions,
     RECENT_FOOD_DEFAULT_LIMIT,
@@ -53,10 +54,7 @@ type ProviderSearchOutcome =
  */
 const formatProviderAttemptSummary = (attempts: ProviderSearchAttempt[]): string => {
     return attempts
-        .map((attempt) => {
-            const detail = attempt.detail ? ` - ${attempt.detail}` : '';
-            return `${attempt.name} (${attempt.status}${detail})`;
-        })
+        .map((attempt) => `${attempt.name} (${attempt.status})`)
         .join(', ');
 };
 
@@ -110,8 +108,14 @@ const searchEnabledProviders = async (
             continue;
         }
 
+        const startedAt = Date.now();
         try {
             const result = await resolution.provider.searchFoods(params);
+            diagnosticsRegistry.recordOperation(
+                'food_provider_request',
+                result.items.length > 0 ? 'success' : 'empty',
+                Date.now() - startedAt
+            );
             if (opts.requireBarcodeLookup && !resolution.provider.supportsBarcodeLookup) {
                 attempts.push({
                     name: providerInfo.name,
@@ -133,6 +137,7 @@ const searchEnabledProviders = async (
 
             attempts.push({ name: providerInfo.name, status: 'empty' });
         } catch (err) {
+            diagnosticsRegistry.recordOperation('food_provider_request', 'failure', Date.now() - startedAt);
             const message = err instanceof Error ? err.message : 'Search failed.';
             attempts.push({ name: providerInfo.name, status: 'error', detail: message });
             lastError = err instanceof Error ? err : new Error(message);
@@ -167,7 +172,8 @@ router.get('/recent', async (req, res) => {
         const items = await getRecentFoodSuggestions({ userId: user.id, limit, query: q, database: prisma });
         return res.json({ items });
     } catch (err) {
-        console.error(err);
+        const errorType = safeErrorType(err);
+        console.error(`Food lookup failed (request_id=${res.locals?.requestId ?? 'unavailable'}, error_type=${errorType}).`);
         return res.status(500).json({ message: 'Server error' });
     }
 });
@@ -197,7 +203,8 @@ router.get('/search', async (req, res) => {
     }
 
     if (!searchOutcome.sawSuccessfulResponse && searchOutcome.lastError) {
-        console.error(searchOutcome.lastError);
+        const errorType = safeErrorType(searchOutcome.lastError);
+        console.error(`Food provider search failed (request_id=${res.locals?.requestId ?? 'unavailable'}, error_type=${errorType}).`);
         if (searchOutcome.attempts.length > 0) {
             console.info(
                 `Food search failed for all providers. Attempts: ${formatProviderAttemptSummary(searchOutcome.attempts)}`

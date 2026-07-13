@@ -9,10 +9,13 @@ backend/prisma/*.db-wal
 mobile/.expo
 mobile/android
 mobile/dist
+mobile/modules/wear-pairing/android/build/
 .codex-screenshots/
 .DS_Store
 coverage
 .nyc_output
 .c8_output
+deploy/backups/
+deploy/*age-identity*
 .devcontainer/.env
 .vscode/settings.json

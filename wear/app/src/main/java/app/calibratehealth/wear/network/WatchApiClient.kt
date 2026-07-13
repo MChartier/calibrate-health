@@ -93,6 +93,7 @@ sealed interface AuthenticatedApiResult {
     data class AuthenticationRequired(val message: String) : AuthenticatedApiResult
     data class AccountChanged(val message: String = "The paired account changed during sync.") : AuthenticatedApiResult
     data class InvalidResponse(val message: String) : AuthenticatedApiResult
+    data class UpgradeRequired(val message: String, val minimumVersion: String?) : AuthenticatedApiResult
 }
 
 fun interface WatchSnapshotApi {
@@ -113,8 +114,10 @@ class AuthenticatedWatchApi(
     private val tokenStore: SecureTokenStore,
     private val sessionCoordinator: AccountSessionCoordinator,
     private val transport: WatchHttpTransport,
-    private val nowEpochMs: () -> Long = System::currentTimeMillis
+    private val nowEpochMs: () -> Long = System::currentTimeMillis,
+    clientVersion: String = app.calibratehealth.wear.BuildConfig.VERSION_NAME
 ) : WatchSnapshotApi, WatchMutationApi {
+    private val clientHeaders = WearClientCompatibility.headers(clientVersion)
     override suspend fun getSnapshot(session: SecureSession, etag: String?): AuthenticatedApiResult = authenticatedRequest(
         capturedSession = session,
         method = "GET",
@@ -175,6 +178,10 @@ class AuthenticatedWatchApi(
                 is SessionRefreshResult.AuthenticationRequired -> return AuthenticatedApiResult.AuthenticationRequired(refreshed.message)
                 is SessionRefreshResult.AccountChanged -> return AuthenticatedApiResult.AccountChanged(refreshed.message)
                 is SessionRefreshResult.InvalidResponse -> return AuthenticatedApiResult.InvalidResponse(refreshed.message)
+                is SessionRefreshResult.UpgradeRequired -> return AuthenticatedApiResult.UpgradeRequired(
+                    refreshed.message,
+                    refreshed.minimumVersion
+                )
             }
         }
 
@@ -187,6 +194,10 @@ class AuthenticatedWatchApi(
             is SessionRefreshResult.AuthenticationRequired -> return AuthenticatedApiResult.AuthenticationRequired(refreshed.message)
             is SessionRefreshResult.AccountChanged -> return AuthenticatedApiResult.AccountChanged(refreshed.message)
             is SessionRefreshResult.InvalidResponse -> return AuthenticatedApiResult.InvalidResponse(refreshed.message)
+            is SessionRefreshResult.UpgradeRequired -> return AuthenticatedApiResult.UpgradeRequired(
+                refreshed.message,
+                refreshed.minimumVersion
+            )
         }
         val replay = executeAuthenticated(session, method, path, headers, body)
         return if (replay is AuthenticatedApiResult.Response && replay.value.status == 401) {
@@ -203,16 +214,24 @@ class AuthenticatedWatchApi(
         headers: Map<String, String>,
         body: String?
     ): AuthenticatedApiResult = try {
-        AuthenticatedApiResult.Response(
-            transport.execute(
+        val response = transport.execute(
                 WatchHttpRequest(
                     method = method,
                     url = endpointUrl(session.serverOrigin, path),
-                    headers = headers + ("Authorization" to "Bearer ${session.accessToken}"),
+                    headers = headers + clientHeaders + ("Authorization" to "Bearer ${session.accessToken}"),
                     body = body
                 )
             )
+        val upgrade = WearClientCompatibility.parseUpgradeRequired(
+            response.status,
+            response.body,
+            response.header(WearClientCompatibility.MINIMUM_VERSION_HEADER)
         )
+        if (upgrade != null) {
+            AuthenticatedApiResult.UpgradeRequired(upgrade.message, upgrade.minimumVersion)
+        } else {
+            AuthenticatedApiResult.Response(response)
+        }
     } catch (error: IOException) {
         AuthenticatedApiResult.RetryableFailure(error.message ?: "Watch API network request failed.")
     } catch (error: Exception) {
@@ -244,6 +263,7 @@ class AuthenticatedWatchApi(
                 WatchHttpRequest(
                     method = "POST",
                     url = endpointUrl(current.serverOrigin, "/auth/mobile/refresh"),
+                    headers = clientHeaders,
                     body = requestBody
                 )
             )
@@ -251,6 +271,14 @@ class AuthenticatedWatchApi(
             return@withLock SessionRefreshResult.Retryable(error.message ?: "Session refresh failed.")
         } catch (error: Exception) {
             return@withLock SessionRefreshResult.InvalidResponse(error.message ?: "Unable to construct refresh request.")
+        }
+
+        WearClientCompatibility.parseUpgradeRequired(
+            response.status,
+            response.body,
+            response.header(WearClientCompatibility.MINIMUM_VERSION_HEADER)
+        )?.let {
+            return@withLock SessionRefreshResult.UpgradeRequired(it.message, it.minimumVersion)
         }
 
         when {
@@ -315,4 +343,5 @@ private sealed interface SessionRefreshResult {
     data class AuthenticationRequired(val message: String) : SessionRefreshResult
     data class AccountChanged(val message: String = "The paired account changed during sync.") : SessionRefreshResult
     data class InvalidResponse(val message: String) : SessionRefreshResult
+    data class UpgradeRequired(val message: String, val minimumVersion: String?) : SessionRefreshResult
 }

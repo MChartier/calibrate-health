@@ -1,6 +1,7 @@
 package app.calibratehealth.wear.pairing
 
 import app.calibratehealth.wear.data.security.SecureSession
+import app.calibratehealth.wear.network.WearClientCompatibility
 import org.json.JSONObject
 import java.io.ByteArrayOutputStream
 import java.io.IOException
@@ -16,7 +17,8 @@ internal data class PairingExchangeRequest(
     val challengeSignature: String
 )
 
-internal class PairingExchangeException(message: String) : IllegalStateException(message)
+internal open class PairingExchangeException(message: String) : IllegalStateException(message)
+internal class WearUpgradeRequiredException(message: String) : PairingExchangeException(message)
 
 /** Exchanges once, with one identical transport retry so the backend can revoke a response-lost session. */
 internal class WearPairingHttpClient {
@@ -66,12 +68,18 @@ internal class WearPairingHttpClient {
             connection.useCaches = false
             connection.setRequestProperty("Accept", "application/json")
             connection.setRequestProperty("Content-Type", "application/json; charset=utf-8")
+            WearClientCompatibility.headers().forEach(connection::setRequestProperty)
             connection.setFixedLengthStreamingMode(requestBytes.size)
             connection.outputStream.use { it.write(requestBytes) }
 
             val status = connection.responseCode
             val stream = if (status in 200..299) connection.inputStream else connection.errorStream
             val body = stream?.use(::readBounded)?.toString(Charsets.UTF_8).orEmpty()
+            WearClientCompatibility.parseUpgradeRequired(
+                status,
+                body,
+                connection.getHeaderField(WearClientCompatibility.MINIMUM_VERSION_HEADER)
+            )?.let { throw WearUpgradeRequiredException(it.message) }
             val contentType = connection.contentType.orEmpty().lowercase()
             if (contentType.isNotEmpty() && !contentType.startsWith("application/json")) {
                 throw PairingExchangeException("Pairing server returned an unsupported response.")

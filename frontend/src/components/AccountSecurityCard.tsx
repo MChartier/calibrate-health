@@ -7,6 +7,7 @@ import {
     DialogActions,
     DialogContent,
     DialogTitle,
+    Divider,
     Stack,
     TextField,
     Typography
@@ -20,6 +21,7 @@ import InlineStatusLine from '../ui/InlineStatusLine';
 import SectionHeader from '../ui/SectionHeader';
 import { getApiErrorMessage } from '../utils/apiError';
 import { useI18n } from '../i18n/useI18n';
+import AccountDataControls from './AccountDataControls';
 
 const MIN_PASSWORD_LENGTH = 8;
 
@@ -183,6 +185,12 @@ const AccountSecurityCard: React.FC<Props> = ({
                             <Typography sx={{ wordBreak: 'break-word' }}>{user?.email ?? ''}</Typography>
                         </Box>
                     </Stack>
+
+                    <Divider />
+
+                    <AccountDataControls clearStatus={clearStatus} showStatus={showStatus} />
+
+                    <Divider />
 
                     <Button
                         variant="outlined"

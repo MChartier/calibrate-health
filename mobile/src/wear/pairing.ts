@@ -12,7 +12,9 @@ export const WEAR_PAIRING_PATHS = {
     CREDENTIAL: '/calibrate/v1/pair/credential',
     RESULT: '/calibrate/v1/pair/result',
     SYNC_INVALIDATE: '/calibrate/v1/sync/invalidate',
-    CONTINUE_ON_PHONE: '/calibrate/v1/continue-on-phone'
+    CONTINUE_ON_PHONE: '/calibrate/v1/continue-on-phone',
+    ACCOUNT_DISCONNECT: '/calibrate/v1/account/disconnect',
+    ACCOUNT_DISCONNECT_RESULT: '/calibrate/v1/account/disconnect-result'
 } as const;
 
 type PairingHello = {
@@ -75,6 +77,9 @@ const MAX_REQUEST_ID_LENGTH = 128;
 const MAX_DEVICE_ID_LENGTH = 128;
 const MAX_DEVICE_NAME_LENGTH = 120;
 const MAX_PUBLIC_KEY_LENGTH = 2048;
+const ACCOUNT_DISCONNECT_ACK_TIMEOUT_MS = 8_000;
+const ACCOUNT_DISCONNECT_ACK_POLL_MS = 100;
+const MESSAGE_CLOCK_SKEW_MS = 30_000;
 
 function accountScope(serverOrigin: string, userId: number): string {
     return `${encodeURIComponent(new URL(serverOrigin).origin)}/${userId}`;
@@ -167,6 +172,113 @@ export async function readStoredWearPairing(
         await AsyncStorage.removeItem(key);
         return null;
     }
+}
+
+/** Remove both completed and in-flight pairing metadata for exactly one server account. */
+export async function clearWearPairingStorage(serverOrigin: string, userId: number): Promise<void> {
+    const origin = new URL(serverOrigin).origin;
+    const results = await Promise.allSettled([
+        AsyncStorage.removeItem(scopedStorageKey(origin, userId)),
+        AsyncStorage.removeItem(pendingStorageKey(origin, userId))
+    ]);
+    if (results.some(({ status }) => status === 'rejected')) {
+        throw new Error('Phone-side Wear pairing state could not be cleared.');
+    }
+}
+
+export type WearAccountDisconnectAck = {
+    requestId: string;
+    serverOrigin: string;
+    userId: number;
+    watchDeviceId: string;
+};
+
+/** Accept only a positive, minimal cleanup result; delivery alone is never an acknowledgement. */
+export function parseWearAccountDisconnectAck(payload: string): WearAccountDisconnectAck | null {
+    try {
+        const parsed = JSON.parse(payload) as unknown;
+        if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return null;
+        const value = parsed as Record<string, unknown>;
+        const expectedKeys = new Set([
+            'kind', 'request_id', 'protocol_version', 'server_origin', 'user_id', 'watch_device_id', 'ok'
+        ]);
+        if (Object.keys(value).length !== expectedKeys.size) return null;
+        if (Object.keys(value).some((key) => !expectedKeys.has(key))) return null;
+        if (
+            value.kind !== 'watch_account_disconnected' ||
+            value.protocol_version !== WEAR_PAIRING_PROTOCOL_VERSION ||
+            value.ok !== true
+        ) return null;
+        const requestId = requiredText(value.request_id, MAX_REQUEST_ID_LENGTH);
+        const serverOrigin = requiredText(value.server_origin, 2_048);
+        const watchDeviceId = requiredText(value.watch_device_id, MAX_DEVICE_ID_LENGTH);
+        if (
+            !requestId || !serverOrigin || new URL(serverOrigin).origin !== serverOrigin ||
+            !Number.isSafeInteger(value.user_id) || (value.user_id as number) <= 0 || !watchDeviceId
+        ) return null;
+        return { requestId, serverOrigin, userId: value.user_id as number, watchDeviceId };
+    } catch {
+        return null;
+    }
+}
+
+function wait(delayMs: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, delayMs));
+}
+
+/** Ask the exact paired node to erase its account and require its correlated positive cleanup ACK. */
+export async function sendWearAccountDisconnect(options: {
+    pairing: StoredWearPairing;
+    userId: number;
+    transport?: Pick<WearPairingTransport, 'sendMessage' | 'listMessages' | 'acknowledgeMessages'> | null;
+    nowEpochMs?: number;
+    requestId?: string;
+    timeoutMs?: number;
+    pollIntervalMs?: number;
+}): Promise<void> {
+    const transport = options.transport === undefined ? getNativeTransport() : options.transport;
+    if (!transport) throw new Error('Paired watch was unreachable. Disconnect Calibrate on the watch.');
+    const issuedAtEpochMs = options.nowEpochMs ?? Date.now();
+    const requestId = options.requestId ?? Crypto.randomUUID();
+    if (!requiredText(requestId, MAX_REQUEST_ID_LENGTH)) throw new Error('Invalid watch cleanup request ID.');
+    await transport.sendMessage(
+        options.pairing.nodeId,
+        WEAR_PAIRING_PATHS.ACCOUNT_DISCONNECT,
+        JSON.stringify({
+            kind: 'phone_account_deleted',
+            request_id: requestId,
+            protocol_version: WEAR_PAIRING_PROTOCOL_VERSION,
+            server_origin: options.pairing.serverOrigin,
+            user_id: options.userId,
+            watch_device_id: options.pairing.watchDeviceId,
+            issued_at_epoch_ms: issuedAtEpochMs
+        })
+    );
+
+    const timeoutMs = options.timeoutMs ?? ACCOUNT_DISCONNECT_ACK_TIMEOUT_MS;
+    const pollIntervalMs = options.pollIntervalMs ?? ACCOUNT_DISCONNECT_ACK_POLL_MS;
+    const deadline = Date.now() + timeoutMs;
+    do {
+        const nowEpochMs = Date.now();
+        for (const message of transport.listMessages()) {
+            if (message.path !== WEAR_PAIRING_PATHS.ACCOUNT_DISCONNECT_RESULT) continue;
+            const ack = parseWearAccountDisconnectAck(message.payload);
+            if (
+                !ack || message.nodeId !== options.pairing.nodeId ||
+                ack.requestId !== requestId || ack.serverOrigin !== options.pairing.serverOrigin ||
+                ack.userId !== options.userId || ack.watchDeviceId !== options.pairing.watchDeviceId ||
+                typeof message.id !== 'string' || message.id.length < 1 || message.id.length > MAX_REQUEST_ID_LENGTH ||
+                typeof message.receivedAt !== 'number' || !Number.isFinite(message.receivedAt) ||
+                message.receivedAt < issuedAtEpochMs - MESSAGE_CLOCK_SKEW_MS ||
+                message.receivedAt > nowEpochMs + MESSAGE_CLOCK_SKEW_MS
+            ) continue;
+            transport.acknowledgeMessages([message.id]);
+            return;
+        }
+        if (Date.now() < deadline) await wait(Math.min(pollIntervalMs, Math.max(1, deadline - Date.now())));
+    } while (Date.now() < deadline);
+
+    throw new Error('Watch cleanup was not confirmed. Disconnect Calibrate on the watch.');
 }
 
 async function readPendingWearPairing(serverOrigin: string, userId: number): Promise<PendingWearPairing | null> {

@@ -2,11 +2,14 @@
   email {$CADDY_EMAIL}
 }
 
-staging.calibratehealth.app {
+{$APP_HOST} {
   basicauth {
     {$BASIC_AUTH_USER} {$BASIC_AUTH_HASH}
   }
   encode gzip zstd
-  reverse_proxy app:3000
+  reverse_proxy app:3000 {
+    health_uri /api/v1/readyz
+    health_interval 15s
+    health_timeout 5s
+  }
 }
-

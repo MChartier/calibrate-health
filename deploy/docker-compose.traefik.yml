@@ -1,83 +1,65 @@
+name: calibrate
+
 services:
   app:
-    # Full image reference, e.g. ghcr.io/mchartier/calibratehealth:master
-    image: ${APP_IMAGE}
+    image: ${APP_IMAGE:?Set APP_IMAGE in deploy/.env}
     restart: unless-stopped
-    depends_on:
-      db:
-        condition: service_healthy
+    init: true
+    stop_grace_period: 30s
     environment:
       NODE_ENV: production
-      PORT: 3000
+      PORT: "3000"
       FRONTEND_DIST_DIR: /app/frontend/dist
-
-      # Session + DB configuration required by the backend runtime.
-      SESSION_SECRET: ${SESSION_SECRET}
-      DB_HOST: db
-      DB_PORT: "5432"
-      DB_NAME: ${POSTGRES_DB}
-      DB_USER: ${POSTGRES_USER}
-      DB_PASSWORD: ${POSTGRES_PASSWORD}
-      DB_SSLMODE: disable
-
+      # Empty only when docker-compose.postgres.yml supplies DB_* components.
+      DATABASE_URL: ${DATABASE_URL:-}
+      SESSION_SECRET: ${SESSION_SECRET:?Set SESSION_SECRET in deploy/.env}
       AUTO_LOGIN_TEST_USER: "false"
-
-      # Optional push notification keys.
+      MIGRATION_MAX_ATTEMPTS: ${MIGRATION_MAX_ATTEMPTS:-30}
+      MIGRATION_RETRY_SECONDS: ${MIGRATION_RETRY_SECONDS:-5}
+      CALIBRATE_DIAGNOSTICS_ENABLED: ${CALIBRATE_DIAGNOSTICS_ENABLED:-false}
+      CALIBRATE_DIAGNOSTICS_METRICS_TOKEN: ${CALIBRATE_DIAGNOSTICS_METRICS_TOKEN:-}
+      NATIVE_PUSH_MODE: ${NATIVE_PUSH_MODE:-disabled}
       WEB_PUSH_PUBLIC_KEY: ${WEB_PUSH_PUBLIC_KEY:-}
       WEB_PUSH_PRIVATE_KEY: ${WEB_PUSH_PRIVATE_KEY:-}
       WEB_PUSH_SUBJECT: ${WEB_PUSH_SUBJECT:-}
-
-      # Optional food provider credentials (falls back automatically when missing).
       FOOD_DATA_PROVIDER: ${FOOD_DATA_PROVIDER:-fatsecret}
       FATSECRET_CLIENT_ID: ${FATSECRET_CLIENT_ID:-}
       FATSECRET_CLIENT_SECRET: ${FATSECRET_CLIENT_SECRET:-}
       USDA_API_KEY: ${USDA_API_KEY:-}
-
     expose:
       - "3000"
-
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:3000/api/v1/readyz').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 45s
     labels:
       - traefik.enable=true
       - traefik.docker.network=${TRAEFIK_NETWORK:-traefik}
-
-      - traefik.http.routers.calibratehealth.rule=Host(`${APP_HOST}`)
-      - traefik.http.routers.calibratehealth.entrypoints=websecure
-      - traefik.http.routers.calibratehealth.tls=true
-      - traefik.http.routers.calibratehealth.tls.certresolver=${TRAEFIK_CERT_RESOLVER:-letsencrypt}
-      - traefik.http.services.calibratehealth.loadbalancer.server.port=3000
-
-      - traefik.http.routers.calibratehealth-http.rule=Host(`${APP_HOST}`)
-      - traefik.http.routers.calibratehealth-http.entrypoints=web
-      - traefik.http.routers.calibratehealth-http.middlewares=calibratehealth-https-redirect
-      - traefik.http.middlewares.calibratehealth-https-redirect.redirectscheme.scheme=https
-
+      - traefik.http.routers.calibrate.rule=Host(`${APP_HOST}`)
+      - traefik.http.routers.calibrate.entrypoints=websecure
+      - traefik.http.routers.calibrate.tls=true
+      - traefik.http.routers.calibrate.tls.certresolver=${TRAEFIK_CERT_RESOLVER:-letsencrypt}
+      - traefik.http.services.calibrate.loadbalancer.server.port=3000
+      - traefik.http.services.calibrate.loadbalancer.healthcheck.path=/api/v1/readyz
+      - traefik.http.services.calibrate.loadbalancer.healthcheck.interval=15s
+      - traefik.http.services.calibrate.loadbalancer.healthcheck.timeout=5s
+      - traefik.http.routers.calibrate-http.rule=Host(`${APP_HOST}`)
+      - traefik.http.routers.calibrate-http.entrypoints=web
+      - traefik.http.routers.calibrate-http.middlewares=calibrate-https-redirect
+      - traefik.http.middlewares.calibrate-https-redirect.redirectscheme.scheme=https
     networks:
       - internal
       - traefik
 
-  db:
-    image: postgres:16-alpine
-    restart: unless-stopped
-    environment:
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
-      interval: 10s
-      timeout: 5s
-      retries: 10
-      start_period: 10s
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    networks:
-      - internal
-
-volumes:
-  postgres_data:
-
 networks:
   internal:
+    driver: bridge
   traefik:
     external: true
     name: ${TRAEFIK_NETWORK:-traefik}

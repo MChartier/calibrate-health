@@ -28,8 +28,10 @@ let nativeModulePromise: Promise<NativeHealthConnect> | null = null;
 
 async function loadNativeModule(): Promise<NativeHealthConnect> {
     if (!nativeModulePromise) {
-        // A dynamic import keeps Jest, web, and unsupported platforms from eagerly loading Android native code.
-        nativeModulePromise = import('react-native-health-connect');
+        // Keep the Android bridge lazy for Jest/web. Metro's async-import transform resolves hoisted
+        // workspace packages relative to the app root and misses this package's `src/index.tsx` entry.
+        // A lazy CommonJS require uses Metro's normal package resolver without loading it off Android.
+        nativeModulePromise = Promise.resolve(require('react-native-health-connect') as NativeHealthConnect);
     }
     return nativeModulePromise;
 }
@@ -113,8 +115,27 @@ export async function openHealthConnectAccess(): Promise<void> {
 }
 
 export async function disconnectHealthConnect(): Promise<RevokeAllPermissionsResponse | void> {
+    if (Platform.OS !== 'android') return;
     const native = await loadNativeModule();
-    return native.revokeAllPermissions();
+    const response = await native.revokeAllPermissions() as RevokeAllPermissionsResponse | boolean | void;
+    return normalizeRevocationResponse(response, Platform.Version);
+}
+
+/** Normalize the bridge's legacy boolean response and Android 14 deferred-revocation behavior. */
+export function normalizeRevocationResponse(
+    response: RevokeAllPermissionsResponse | boolean | void,
+    androidVersion: number | string
+): RevokeAllPermissionsResponse | void {
+    if (typeof response === 'boolean') {
+        return {
+            revoked: response,
+            requiresRestart: response && Number(androidVersion) >= 34
+        };
+    }
+    if (response?.revoked && response.requiresRestart === undefined && Number(androidVersion) >= 34) {
+        return { ...response, requiresRestart: true };
+    }
+    return response;
 }
 
 /** Test hook for resetting a failed or mocked dynamic import between cases. */

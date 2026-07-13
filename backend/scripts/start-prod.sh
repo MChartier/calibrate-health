@@ -31,5 +31,29 @@ if [[ -z "${DATABASE_URL:-}" ]]; then
   export DATABASE_URL="postgresql://${ENCODED_USER}:${ENCODED_PASS}@${DB_HOST}:${DB_PORT}/${ENCODED_DB_NAME}?schema=${ENCODED_SCHEMA}&sslmode=${ENCODED_SSLMODE}"
 fi
 
-npm run db:migrate
-exec npm run start
+MIGRATION_MAX_ATTEMPTS="${MIGRATION_MAX_ATTEMPTS:-30}"
+MIGRATION_RETRY_SECONDS="${MIGRATION_RETRY_SECONDS:-5}"
+case "${MIGRATION_MAX_ATTEMPTS}" in
+  ''|*[!0-9]*|0*)
+    echo "MIGRATION_MAX_ATTEMPTS and MIGRATION_RETRY_SECONDS must be positive integers." >&2
+    exit 1
+    ;;
+esac
+case "${MIGRATION_RETRY_SECONDS}" in
+  ''|*[!0-9]*|0*)
+    echo "MIGRATION_MAX_ATTEMPTS and MIGRATION_RETRY_SECONDS must be positive integers." >&2
+    exit 1
+    ;;
+esac
+
+attempt=1
+until ./node_modules/.bin/prisma migrate deploy; do
+  if [[ "${attempt}" -ge "${MIGRATION_MAX_ATTEMPTS}" ]]; then
+    echo "Database migrations failed after ${attempt} attempts; the container will exit for its restart policy." >&2
+    exit 1
+  fi
+  echo "Database is unavailable or migrations could not acquire their lock (attempt ${attempt}/${MIGRATION_MAX_ATTEMPTS}); retrying in ${MIGRATION_RETRY_SECONDS}s." >&2
+  attempt=$((attempt + 1))
+  sleep "${MIGRATION_RETRY_SECONDS}"
+done
+exec node dist/backend/src/index.js

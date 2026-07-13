@@ -1,6 +1,7 @@
 import express from 'express';
-import { NativePushPlatform, NativePushProvider, Prisma } from '@prisma/client';
+import { NativePushPlatform, NativePushProvider } from '@prisma/client';
 import prisma from '../config/database';
+import { NATIVE_PUSH_MODES, resolveNativePushMode } from '../config/nativePush';
 import {
   listActiveInAppNotificationsForUser,
   markInAppNotificationDismissed,
@@ -8,6 +9,10 @@ import {
   resolveInactiveReminderNotificationsForUser
 } from '../services/inAppNotifications';
 import { getWebPushPublicKey } from '../services/webPush';
+import {
+  NOTIFICATION_REALTIME_EVENT_NAME,
+  subscribeToNotificationRealtimeUpdates
+} from '../services/notificationRealtime';
 import { parsePositiveInteger } from '../utils/requestParsing';
 import { NATIVE_PUSH_PLATFORMS, NATIVE_PUSH_PROVIDERS } from '../../../shared/domain';
 
@@ -15,6 +20,7 @@ import { NATIVE_PUSH_PLATFORMS, NATIVE_PUSH_PROVIDERS } from '../../../shared/do
  * Push notification subscription endpoints plus in-app reminder feed endpoints.
  */
 const router = express.Router();
+const SSE_HEARTBEAT_INTERVAL_MS = 25_000; // Keep intermediaries from closing otherwise-idle notification streams.
 
 /**
  * Ensure the session is authenticated before accessing notification settings.
@@ -26,7 +32,52 @@ const isAuthenticated = (req: express.Request, res: express.Response, next: expr
   res.status(401).json({ message: 'Not authenticated' });
 };
 
+/** Web Push is owned by a persisted cookie session, never by a native bearer session. */
+const isBrowserSession = (req: express.Request, res: express.Response, next: express.NextFunction) => {
+  if (typeof res.locals.mobileAuthSessionId === 'number' || !req.sessionID) {
+    return res.status(403).json({ message: 'Browser session required.' });
+  }
+  return next();
+};
+
 router.use(isAuthenticated);
+
+/**
+ * Stream per-user notification state changes to the authenticated browser session.
+ */
+router.get('/stream', (req, res) => {
+  const user = req.user as { id: number };
+
+  res.status(200);
+  res.set({
+    'Content-Type': 'text/event-stream',
+    'Cache-Control': 'no-cache, no-transform',
+    Connection: 'keep-alive',
+    'X-Accel-Buffering': 'no'
+  });
+  res.flushHeaders?.();
+  res.write(': connected\n\n');
+
+  const writeEvent = (payload: unknown) => {
+    res.write(`event: ${NOTIFICATION_REALTIME_EVENT_NAME}\n`);
+    res.write(`data: ${JSON.stringify(payload)}\n\n`);
+  };
+
+  const unsubscribe = subscribeToNotificationRealtimeUpdates({
+    userId: user.id,
+    onUpdate: writeEvent
+  });
+
+  const heartbeatId = setInterval(() => {
+    res.write(': heartbeat\n\n');
+  }, SSE_HEARTBEAT_INTERVAL_MS);
+  heartbeatId.unref();
+
+  res.once('close', () => {
+    clearInterval(heartbeatId);
+    unsubscribe();
+  });
+});
 
 router.get('/public-key', (_req, res) => {
   const { publicKey, error } = getWebPushPublicKey();
@@ -37,7 +88,7 @@ router.get('/public-key', (_req, res) => {
   res.json({ publicKey });
 });
 
-router.post('/subscription', async (req, res) => {
+router.post('/subscription', isBrowserSession, async (req, res) => {
   const user = req.user as { id: number };
   const endpoint = typeof req.body?.endpoint === 'string' ? req.body.endpoint.trim() : '';
   const keys = req.body?.keys as { p256dh?: unknown; auth?: unknown } | undefined;
@@ -54,19 +105,22 @@ router.post('/subscription', async (req, res) => {
   }
 
   await prisma.pushSubscription.upsert({
-    where: {
-      user_id_endpoint: {
-        user_id: user.id,
-        endpoint
-      }
-    },
+    where: { endpoint },
     update: {
+      // A browser push endpoint belongs to one current account. Re-registering it
+      // after an account switch transfers delivery instead of duplicating it.
+      user_id: user.id,
+      session_sid: req.sessionID,
       p256dh,
       auth,
-      expiration_time: expirationTime
+      expiration_time: expirationTime,
+      // Registration is an explicit opt-in. Clear any delivery date inherited
+      // from a previous owner of this globally unique browser endpoint.
+      last_sent_local_date: null
     },
     create: {
       user_id: user.id,
+      session_sid: req.sessionID,
       endpoint,
       p256dh,
       auth,
@@ -77,7 +131,7 @@ router.post('/subscription', async (req, res) => {
   res.json({ ok: true });
 });
 
-router.delete('/subscription', async (req, res) => {
+router.delete('/subscription', isBrowserSession, async (req, res) => {
   const user = req.user as { id: number };
   const endpoint = typeof req.body?.endpoint === 'string' ? req.body.endpoint.trim() : '';
 
@@ -85,25 +139,11 @@ router.delete('/subscription', async (req, res) => {
     return res.status(400).json({ message: 'Endpoint is required.' });
   }
 
-  try {
-    await prisma.pushSubscription.delete({
-      where: {
-        user_id_endpoint: {
-          user_id: user.id,
-          endpoint
-        }
-      }
-    });
-  } catch (error) {
-    // Treat repeated unsubscribe calls as success so this endpoint stays idempotent.
-    if (
-      error instanceof Prisma.PrismaClientKnownRequestError &&
-      error.code === 'P2025'
-    ) {
-      return res.json({ ok: true });
-    }
-    throw error;
-  }
+  // Keep unsubscribe idempotent and owner-scoped. A stale account session must
+  // not delete an endpoint after another account has claimed it.
+  await prisma.pushSubscription.deleteMany({
+    where: { user_id: user.id, session_sid: req.sessionID, endpoint }
+  });
 
   res.json({ ok: true });
 });
@@ -153,6 +193,12 @@ router.post('/native-subscription', async (req, res) => {
   }
   if (provider === NativePushProvider.EXPO && !isExpoPushToken(token)) {
     return res.status(400).json({ message: 'Invalid Expo push token.' });
+  }
+  if (resolveNativePushMode() !== NATIVE_PUSH_MODES.EXPO) {
+    return res.status(503).json({
+      message: 'Native push is disabled by this server.',
+      code: 'NATIVE_PUSH_DISABLED'
+    });
   }
 
   await prisma.nativePushSubscription.upsert({

@@ -126,6 +126,41 @@ class OutboxProcessorTest {
     }
 
     @Test
+    fun `upgrade marker is written only after the captured account is confirmed current`() = runBlocking {
+        val currentRepository = FakeMutationOutboxRepository(FakeWearStorage())
+        currentRepository.enqueue(mutation("current", 100))
+        val currentEvents = mutableListOf<String>()
+        val currentProcessor = FifoOutboxProcessor(
+            repository = currentRepository,
+            sender = MutationSender { _, _ -> MutationSendResult.UpgradeRequired("Update this watch.") },
+            tokenStore = tokenStore(),
+            onUpgradeRequired = { currentEvents += it }
+        )
+
+        assertEquals(OutboxDrainResult.Retry, currentProcessor.drain())
+        assertEquals(listOf("Update this watch."), currentEvents)
+        assertEquals("Update this watch.", currentRepository.head()?.lastError)
+
+        val changedRepository = FakeMutationOutboxRepository(FakeWearStorage())
+        changedRepository.enqueue(mutation("changed", 100))
+        val changedTokenStore = FakeSecureTokenStore(FakeWearStorage().apply { secureSession = session() })
+        val changedEvents = mutableListOf<String>()
+        val changedProcessor = FifoOutboxProcessor(
+            repository = changedRepository,
+            sender = MutationSender { _, _ ->
+                changedTokenStore.write(session().copy(userId = 99))
+                MutationSendResult.UpgradeRequired("Stale update requirement.")
+            },
+            tokenStore = changedTokenStore,
+            onUpgradeRequired = { changedEvents += it }
+        )
+
+        assertEquals(OutboxDrainResult.AccountChanged, changedProcessor.drain())
+        assertTrue(changedEvents.isEmpty())
+        assertEquals("changed", changedRepository.head()?.operationId)
+    }
+
+    @Test
     fun `operation id is assigned once when mutation is created`() {
         val factory = QueuedMutationFactory(
             operationIds = OperationIdFactory { "stable-operation-id" },

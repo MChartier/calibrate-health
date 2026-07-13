@@ -1,60 +1,66 @@
 # Android internal release
 
-This runbook produces signed Android artifacts from the Expo project in `mobile/`:
+This runbook produces locally signed Android artifacts from the Expo project in `mobile/` and the native Wear
+project in `wear/`:
 
-- `internal` produces an APK for direct installation on owned devices.
-- `production` produces an AAB for Google Play internal testing and later store tracks.
+- Phone and Wear APKs are used for direct installation on owned devices.
+- Phone and Wear AABs are used for Google Play testing and later store tracks.
 
 The permanent Android identity is the application ID `app.calibratehealth.mobile` plus its signing certificate.
 Changing either creates a different app or prevents an in-place upgrade.
 
 ## One-time release setup
 
-The repository uses EAS-managed Android credentials. EAS stores the keystore and passwords outside Git, while
-`mobile/eas.json` keeps artifact shape and version ownership reviewable.
+The canonical release path uses one operator-controlled keystore for both phone and Wear. This is required for Wear
+Data Layer communication because both artifacts share `app.calibratehealth.mobile`. Generate the keystore outside
+the repository, retain an encrypted offline backup, and record its alias and passwords in a password manager.
 
-From `mobile/`:
+Set these values in the current PowerShell session. The store path may be absolute or relative to the repository
+root:
 
 ```powershell
-npx eas-cli@16.28.0 login
-npx eas-cli@16.28.0 init
-npx eas-cli@16.28.0 credentials --platform android
+$env:CALIBRATE_ANDROID_SIGNING_STORE_FILE='C:\secure\calibrate-release.p12'
+$env:CALIBRATE_ANDROID_SIGNING_STORE_PASSWORD='<from-password-manager>'
+$env:CALIBRATE_ANDROID_SIGNING_KEY_ALIAS='calibrate'
+$env:CALIBRATE_ANDROID_SIGNING_KEY_PASSWORD='<from-password-manager>'
 ```
 
-`eas init` links the app to an EAS project. Review and commit only its non-secret project ID if it updates
-`mobile/app.json`. Let the credentials command generate or upload the one release keystore. Download an encrypted
-offline backup from EAS credentials and record its alias and passwords in a password manager. Never commit a
-keystore, `credentials.json`, service-account JSON, EAS access token, or signing password.
+Never commit a keystore, `credentials.json`, service-account JSON, access token, or signing password. Backend
+database, food-provider, push, and session secrets remain server-side and never belong in an Android build.
 
-For unattended builds, store `EXPO_TOKEN` in the CI secret store. It is an account credential and must not use the
-`EXPO_PUBLIC_` prefix. Backend database, food-provider, push, and session secrets remain server-side and never belong
-in an Android build.
+`mobile/eas.json` retains prospective cloud-build profiles, but EAS remote credentials are not the canonical path:
+the repository's Gradle contract requires the four shared signing values above for both projects. Do not call an EAS
+artifact release-ready until that profile has been wired to the same keystore and its certificate has been compared
+with the Wear artifact.
 
 ## Environment configuration
 
-Internal builds use the EAS `preview` environment and production AABs use `production`. With no override, release
-builds default to `https://calibratehealth.app`, and users can select a self-hosted origin from the sign-in screen.
+With no override, release builds default to `https://calibratehealth.app`, and users can select a self-hosted origin
+from the sign-in screen.
 
-To give a private build a different initial origin, define `EXPO_PUBLIC_CALIBRATE_SERVER_URL` in the matching EAS
-environment. This value is compiled into the app and is public; it may contain an `https://` origin, never a token,
-password, API key, username, or URL with embedded credentials. Prefer HTTPS for every non-development server.
+To give a private build a different initial origin, define `EXPO_PUBLIC_CALIBRATE_SERVER_URL` before building. This
+value is compiled into the artifacts and is public. The release script accepts only a credential-free `https://`
+origin without a path, query, or fragment.
 
 ```powershell
 # Example only: the value is public inside the APK/AAB.
-npx eas-cli@16.28.0 env:create --environment preview --name EXPO_PUBLIC_CALIBRATE_SERVER_URL --value https://health.example.com
+$env:EXPO_PUBLIC_CALIBRATE_SERVER_URL='https://health.example.com'
 ```
 
 ## Versioning
 
-`mobile/app.json` is the source of truth:
+`shared/release.json` is the cross-platform source of truth; see `docs/release-compatibility.md` for the compatibility
+policy and artifact metadata format. The native phone values mirror it in `mobile/app.json`:
 
 - `expo.version` is the user-visible semantic version.
 - `expo.android.versionCode` is the monotonically increasing Android build number.
 
-`appVersionSource` is `local`, and EAS profiles do not auto-increment. Before every distributed build, increment
-`versionCode`; increment `version` when the user-visible release changes. Commit both before building so an artifact
-can be traced to one Git commit. Google Play and Android reject an upgrade whose version code is not greater than the
-installed build.
+Before every distributed build, increment `versionCode`; increment `version` when the user-visible release changes.
+Commit both before building so an artifact can be traced to one Git commit. Google Play and Android reject an upgrade
+whose version code is not greater than the installed build.
+
+Run `npm.cmd run release:check` after every version change. It also verifies the backend package, generated Android
+project, Wear app, pairing module, application ID, and EAS profile names without invoking a native build.
 
 ## Validate from a clean checkout
 
@@ -76,18 +82,19 @@ files. Use the repository's local Android/Gradle validation after prebuild when 
 
 ## Build artifacts
 
-Run these commands from `mobile/` with the pinned CLI version used during setup:
+Run this from the repository root with the signing environment above:
 
 ```powershell
-# Signed APK for direct installation.
-npx eas-cli@16.28.0 build --platform android --profile internal
-
-# Signed AAB for Google Play internal testing.
-npx eas-cli@16.28.0 build --platform android --profile production
+npm.cmd run build:native:release
 ```
 
-Record the EAS build URL, Git commit, semantic version, version code, and SHA-256 digest of the downloaded artifact in
-the release notes. Do not rename an artifact in a way that loses those identifiers.
+The command fails before native work when signing is incomplete or the configured origin is not a credential-free
+HTTPS origin. It regenerates the ignored phone Android project with a clean Expo prebuild, then builds APK and AAB
+artifacts for phone and Wear with the same signing identity. Outputs are under `mobile/android/app/build/outputs/`
+and `wear/app/build/outputs/`.
+
+Record the Git commit, semantic versions, version codes, SHA-256 digests, and signing certificate fingerprint in the
+release notes. Do not rename an artifact in a way that loses those identifiers.
 
 Install or upgrade the internal APK with Android Debug Bridge:
 
@@ -116,13 +123,65 @@ does not understand a newer on-device schema.
 If a release is bad, publish a fixed build with a higher version code. A lower-version APK is not a safe rollback for
 SecureStore or SQLite changes.
 
+## Disposable emulator upgrade rehearsal
+
+`npm run test:native:upgrade` creates isolated local clones, overrides version codes only in those clones, signs phone
+and Wear APKs with one disposable identity, and installs the candidate with `adb install -r`. It never uninstalls the
+app or clears application data. Dry-run is the default and performs only Git/ADB discovery before printing the exact
+plan. Baseline and candidate refs execute their Expo/Gradle build logic, so use only trusted commits from this
+repository. Child builds receive an allowlisted environment that excludes unrelated service credentials and tokens:
+
+```powershell
+npm.cmd run test:native:upgrade -- `
+  --baseline a99fcb8 `
+  --candidate HEAD `
+  --phone-serial emulator-5554 `
+  --wear-serial emulator-5556 `
+  --disposable-keystore mobile\android\app\debug.keystore `
+  --disposable-key-alias androiddebugkey `
+  --allow-existing-package
+```
+
+The ignored Expo debug keystore is acceptable only for this emulator rehearsal. Never pass the permanent Play/release
+key. Existing disposable-key credentials are read only from `CALIBRATE_REHEARSAL_STORE_PASSWORD` and
+`CALIBRATE_REHEARSAL_KEY_PASSWORD`; no password is written to the result. Execute mode copies the key into the owned
+temporary directory, pulls each installed base APK there, and compares full certificate SHA-256 fingerprints before
+the first replacement:
+
+```powershell
+$env:CALIBRATE_REHEARSAL_STORE_PASSWORD='android'
+$env:CALIBRATE_REHEARSAL_KEY_PASSWORD='android'
+npm.cmd run test:native:upgrade -- `
+  --execute `
+  --baseline a99fcb8 `
+  --candidate HEAD `
+  --baseline-version-code 1 `
+  --candidate-version-code 2 `
+  --phone-serial emulator-5554 `
+  --wear-serial emulator-5556 `
+  --disposable-keystore mobile\android\app\debug.keystore `
+  --disposable-key-alias androiddebugkey `
+  --allow-existing-package
+```
+
+Interactive execution launches the baseline and pauses for the operator to prepare login, pairing, cached data, and
+offline outbox state. After upgrading, it requires separate `YES` confirmations for session/server/settings,
+phone food/weight data, exactly-once phone outbox replay, Wear pairing/cache, and exactly-once Wear action replay
+before recording `behavior-check-passed`. Non-interactive package-only automation must add `--package-only`; its
+retained JSON is labeled as package/install evidence and proves only version increase, signer continuity, unchanged
+`firstInstallTime`, live processes after launch, and clean crash-pattern checks. It records
+`package-check-passed` and does not satisfy login, pairing, cache, Room migration, or outbox-preservation gates.
+The script refuses physical devices, implicit ADB targets, active `CALIBRATE_ANDROID_SIGNING_*` values, a signer
+mismatch, a non-increasing candidate version, or recursive cleanup outside its unique marked short build root.
+
 ## Internal release checklist
 
+- [ ] `npm.cmd run release:check` and `npm.cmd run test:release` pass.
 - [ ] Working tree is clean and the release commit is pushed.
 - [ ] `version` is correct and `versionCode` is greater than every distributed Android build.
 - [ ] Application ID is still `app.calibratehealth.mobile`.
 - [ ] Public Expo config includes camera/notification permissions but does not request microphone access.
-- [ ] EAS reports the expected Android signing certificate fingerprint.
+- [ ] Phone and Wear report the same expected Android signing certificate fingerprint.
 - [ ] No keystore, password, token, service-account JSON, backend secret, or credential URL is tracked or embedded.
 - [ ] Mobile typecheck, tests, Expo dependency check, public config, clean prebuild, and local Gradle build pass.
 - [ ] Upgrade the previous signed APK with `adb install -r`; do not uninstall it first.
@@ -133,5 +192,6 @@ SecureStore or SQLite changes.
 - [ ] With the phone disconnected and watch networking available, confirm the bounded watch refresh posts one combined, deep-linked food/weight reminder.
 - [ ] Confirm a self-hosted HTTPS origin can be selected and survives an app restart.
 - [ ] Inspect the APK/AAB for an expected public server origin and absence of credentials.
-- [ ] Record artifact digest, EAS build URL, Git commit, version, version code, device/API level, and test results.
+- [ ] Record artifact digest, Git commit, version, version code, device/API level, and test results.
+- [ ] Generate and retain the deterministic release metadata described in `docs/release-compatibility.md`.
 - [ ] Keep the prior artifact and encrypted keystore backup, but distribute only the new higher-version build.

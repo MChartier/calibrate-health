@@ -23,6 +23,7 @@ const successfulConnection: ServerConnectionResult = {
         server_version: '1.0.0',
         hosted_origin: 'https://new.example',
         min_supported_mobile_version: '0.1.0',
+        min_supported_wear_version: '0.1.0',
         capabilities: {
             self_hosted_server_url: true,
             native_push: true,

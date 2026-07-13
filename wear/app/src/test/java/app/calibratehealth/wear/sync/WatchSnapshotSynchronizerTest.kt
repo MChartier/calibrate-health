@@ -79,6 +79,180 @@ class WatchSnapshotSynchronizerTest {
         assertTrue(events.isEmpty())
     }
 
+    @Test
+    fun `upgrade requirement blocks cache replacement and reaches the compatibility UI callback`() = runBlocking {
+        val events = mutableListOf<String>()
+        val synchronizer = WatchSnapshotSynchronizer(
+            api = WatchSnapshotApi { _, _ ->
+                AuthenticatedApiResult.UpgradeRequired("Update this watch.", "0.2.0")
+            },
+            snapshots = RecordingSnapshotRepository(events),
+            quickAdds = RecordingQuickAddRepository(events),
+            metadata = RecordingMetadataRepository(
+                SyncMetadataEntity(
+                    serverOrigin = "https://health.example.com",
+                    syncCursor = null,
+                    lastSuccessAtEpochMs = null,
+                    invalidatedAtEpochMs = null,
+                    protocolVersion = 1
+                ),
+                events
+            ),
+            tokenStore = MemoryTokenStore(session()),
+            onUpgradeRequired = { events += "upgrade:$it" },
+            nowEpochMs = { 42 }
+        )
+
+        assertEquals(
+            SnapshotSyncResult.PermanentFailure("Update this watch."),
+            synchronizer.refresh()
+        )
+        assertEquals(listOf("upgrade:Update this watch."), events)
+    }
+
+    @Test
+    fun `upgrade response from a replaced account cannot transfer the compatibility marker`() = runBlocking {
+        val events = mutableListOf<String>()
+        val tokenStore = MemoryTokenStore(session())
+        val synchronizer = WatchSnapshotSynchronizer(
+            api = WatchSnapshotApi { _, _ ->
+                tokenStore.value = session().copy(userId = 99)
+                AuthenticatedApiResult.UpgradeRequired("Stale update requirement.", "0.2.0")
+            },
+            snapshots = RecordingSnapshotRepository(events),
+            quickAdds = RecordingQuickAddRepository(events),
+            metadata = RecordingMetadataRepository(
+                SyncMetadataEntity(
+                    serverOrigin = "https://health.example.com",
+                    syncCursor = null,
+                    lastSuccessAtEpochMs = null,
+                    invalidatedAtEpochMs = null,
+                    protocolVersion = 1
+                ),
+                events
+            ),
+            tokenStore = tokenStore,
+            onUpgradeRequired = { events += "upgrade:$it" },
+            nowEpochMs = { 42 }
+        )
+
+        assertEquals(SnapshotSyncResult.AccountChanged, synchronizer.refresh())
+        assertTrue(events.isEmpty())
+    }
+
+    @Test
+    fun `compatible retry after 426 restores UI and unlocks retained work`() = runBlocking {
+        val events = mutableListOf<String>()
+        var compatible = false
+        val tokenStore = MemoryTokenStore(session())
+        val synchronizer = WatchSnapshotSynchronizer(
+            api = WatchSnapshotApi { _, _ ->
+                if (compatible) {
+                    AuthenticatedApiResult.Response(
+                        WatchHttpResponse(200, mapOf("ETag" to "W/\"watch-new\""), validSnapshot())
+                    )
+                } else {
+                    AuthenticatedApiResult.UpgradeRequired("Update this watch.", "0.2.0")
+                }
+            },
+            snapshots = RecordingSnapshotRepository(events),
+            quickAdds = RecordingQuickAddRepository(events),
+            metadata = RecordingMetadataRepository(
+                SyncMetadataEntity(
+                    serverOrigin = "https://health.example.com",
+                    syncCursor = null,
+                    lastSuccessAtEpochMs = null,
+                    invalidatedAtEpochMs = null,
+                    protocolVersion = 1
+                ),
+                events
+            ),
+            tokenStore = tokenStore,
+            onUpgradeRequired = { events += "upgrade:$it" },
+            onCompatibilityRestored = { events += "compatibility.restored" },
+            nowEpochMs = { 42 }
+        )
+
+        assertEquals(
+            SnapshotSyncResult.PermanentFailure("Update this watch."),
+            synchronizer.refresh { events += "outbox.unlock" }
+        )
+        assertEquals(listOf("upgrade:Update this watch."), events)
+        assertEquals("access", tokenStore.value?.accessToken)
+
+        compatible = true
+        assertEquals(
+            SnapshotSyncResult.Success,
+            synchronizer.refresh { events += "outbox.unlock" }
+        )
+        assertEquals(
+            listOf(
+                "upgrade:Update this watch.",
+                "metadata.clear",
+                "snapshot.cache",
+                "quick_add.cache",
+                "metadata.store",
+                "outbox.unlock",
+                "compatibility.restored"
+            ),
+            events
+        )
+        assertEquals("access", tokenStore.value?.accessToken)
+    }
+
+    @Test
+    fun `not-modified retry after 426 preserves cache then clears compatibility state`() = runBlocking {
+        val events = mutableListOf<String>()
+        var compatible = false
+        val tokenStore = MemoryTokenStore(session())
+        val existing = SyncMetadataEntity(
+            serverOrigin = "https://health.example.com",
+            syncCursor = "W/\"watch-current\"",
+            lastSuccessAtEpochMs = 1,
+            invalidatedAtEpochMs = null,
+            protocolVersion = 1
+        )
+        val metadata = RecordingMetadataRepository(existing, events)
+        val synchronizer = WatchSnapshotSynchronizer(
+            api = WatchSnapshotApi { _, etag ->
+                assertEquals(existing.syncCursor, etag)
+                if (compatible) {
+                    AuthenticatedApiResult.Response(WatchHttpResponse(304, emptyMap(), ""))
+                } else {
+                    AuthenticatedApiResult.UpgradeRequired("Update this watch.", "0.2.0")
+                }
+            },
+            snapshots = RecordingSnapshotRepository(events),
+            quickAdds = RecordingQuickAddRepository(events),
+            metadata = metadata,
+            tokenStore = tokenStore,
+            onUpgradeRequired = { events += "upgrade:$it" },
+            onCompatibilityRestored = { events += "compatibility.restored" },
+            nowEpochMs = { 42 }
+        )
+
+        assertEquals(
+            SnapshotSyncResult.PermanentFailure("Update this watch."),
+            synchronizer.refresh { events += "outbox.unlock" }
+        )
+        compatible = true
+        assertEquals(
+            SnapshotSyncResult.NotModified,
+            synchronizer.refresh { events += "outbox.unlock" }
+        )
+        assertEquals(
+            listOf(
+                "upgrade:Update this watch.",
+                "metadata.store",
+                "outbox.unlock",
+                "compatibility.restored"
+            ),
+            events
+        )
+        assertEquals(42L, metadata.value?.lastSuccessAtEpochMs)
+        assertEquals("access", tokenStore.value?.accessToken)
+    }
+
     private class RecordingSnapshotRepository(private val events: MutableList<String>) : DailySnapshotRepository {
         override fun observeLatest(): Flow<DailySnapshotEntity?> = MutableStateFlow(null)
         override suspend fun allNewestFirst(): List<DailySnapshotEntity> = emptyList()

@@ -1,0 +1,22 @@
+services:
+  backup:
+    build:
+      context: ./backup
+    image: calibrate-postgres-backup:local
+    restart: unless-stopped
+    init: true
+    environment:
+      DB_HOST: ${BACKUP_DB_HOST:-db}
+      DB_PORT: ${BACKUP_DB_PORT:-5432}
+      DB_NAME: ${BACKUP_DB_NAME:-calibratehealth}
+      DB_USER: ${BACKUP_DB_USER:-calibratehealth}
+      DB_PASSWORD: ${BACKUP_DB_PASSWORD:-}
+      PGSSLMODE: ${BACKUP_DB_SSLMODE:-disable}
+      BACKUP_AGE_RECIPIENT: ${BACKUP_AGE_RECIPIENT:?Set an age recipient for encrypted backups}
+      BACKUP_INTERVAL_SECONDS: ${BACKUP_INTERVAL_SECONDS:-86400}
+      BACKUP_RETRY_SECONDS: ${BACKUP_RETRY_SECONDS:-300}
+      BACKUP_RETENTION_DAYS: ${BACKUP_RETENTION_DAYS:-14}
+    volumes:
+      - ${BACKUP_PATH:-./backups}:/backups
+    networks:
+      - internal

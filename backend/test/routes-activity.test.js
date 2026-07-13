@@ -1,6 +1,11 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const Module = require('node:module');
+const { diagnosticsRegistry } = require('../src/observability');
+
+function operationCount(name, field) {
+  return diagnosticsRegistry.snapshot().operations[name]?.[field] ?? 0;
+}
 
 function stubModule(resolvedPath, exports) {
   const moduleInstance = new Module(resolvedPath);
@@ -162,6 +167,7 @@ test('activity route requires trusted mobile provenance for Health Connect write
 });
 
 test('activity route advances the token with source writes in one transaction', async () => {
+  const successesBefore = operationCount('health_connect_ingestion', 'successes');
   let transactions = 0;
   let stateUpsert;
   let recordCreate;
@@ -213,9 +219,11 @@ test('activity route advances the token with source writes in one transaction', 
   assert.equal(recordCreate.local_date.toISOString(), '2026-07-11T00:00:00.000Z');
   assert.equal(stateUpsert.create.changes_token, 'next-token');
   assert.equal(transactions, 1);
+  assert.equal(operationCount('health_connect_ingestion', 'successes'), successesBefore + 1);
 });
 
 test('activity route rejects out-of-order token pages before domain writes', async () => {
+  const conflictsBefore = operationCount('health_connect_ingestion', 'conflicts');
   let creates = 0;
   const tx = {
     activityRecord: {
@@ -235,23 +243,34 @@ test('activity route rejects out-of-order token pages before domain writes', asy
   assert.equal(res.statusCode, 409);
   assert.equal(res.body.code, 'HEALTH_CONNECT_TOKEN_MISMATCH');
   assert.equal(creates, 0);
+  assert.equal(operationCount('health_connect_ingestion', 'conflicts'), conflictsBefore + 1);
 });
 
 test('activity route returns every requested date with optional summary and records', async () => {
   const localDate = new Date('2026-07-11T00:00:00Z');
+  let summaryWhere;
+  let recordWhere;
   const router = loadActivityRouter({
     activityDaySummary: {
-      findMany: async () => [storedSummary({
-        source_device_id: 'phone-1',
-        local_date: localDate,
-        steps: 1000,
-        active_calories_kcal: null,
-        total_calories_kcal: null,
-        exercise_minutes: null,
-        observed_at: new Date('2026-07-11T20:00:00Z')
-      })]
+      findMany: async ({ where }) => {
+        summaryWhere = where;
+        return [storedSummary({
+          source_device_id: 'phone-1',
+          local_date: localDate,
+          steps: 1000,
+          active_calories_kcal: null,
+          total_calories_kcal: null,
+          exercise_minutes: null,
+          observed_at: new Date('2026-07-11T20:00:00Z')
+        })];
+      }
     },
-    activityRecord: { findMany: async () => [] }
+    activityRecord: {
+      findMany: async ({ where }) => {
+        recordWhere = where;
+        return [];
+      }
+    }
   });
   const res = createRes();
   await getRouteHandler(router, 'get', '/days')({
@@ -264,6 +283,8 @@ test('activity route returns every requested date with optional summary and reco
   assert.equal(res.body.days[0].summary.steps, 1000);
   assert.equal(res.body.days[0].summary.source_device_id, undefined);
   assert.equal(res.body.days[1].summary, null);
+  assert.equal(summaryWhere.user_id, 7);
+  assert.equal(recordWhere.user_id, 7);
 });
 
 test('activity route authoritatively replaces a reset window and replays without a second delete', async () => {

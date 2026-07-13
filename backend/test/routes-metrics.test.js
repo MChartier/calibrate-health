@@ -649,9 +649,13 @@ test('metrics route: POST / upserts metrics when weight is provided', async () =
 });
 
 test('metrics route: DELETE /:id validates ids and handles not-found deletes', async () => {
+  let receivedDeleteWhere = null;
   const prismaStub = {
     bodyMetric: {
-      deleteMany: async () => ({ count: 0 })
+      deleteMany: async ({ where }) => {
+        receivedDeleteWhere = where;
+        return { count: 0 };
+      }
     }
   };
   const router = loadMetricsRouter(prismaStub);
@@ -668,6 +672,7 @@ test('metrics route: DELETE /:id validates ids and handles not-found deletes', a
   await handler(missingReq, missingRes);
   assert.equal(missingRes.statusCode, 404);
   assert.deepEqual(missingRes.body, { message: 'Metric not found' });
+  assert.deepEqual(receivedDeleteWhere, { id: 123, user_id: 7 });
 });
 
 test('metrics route: DELETE /:id returns 204 when a row is deleted', async () => {

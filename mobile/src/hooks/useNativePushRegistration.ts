@@ -56,6 +56,12 @@ export function NativePushRegistrationProvider({ children }: { children: React.R
 
         setState(NATIVE_PUSH_STATES.CHECKING);
         try {
+            const config = await api.getClientConfig();
+            if (run !== activeRun.current) return;
+            if (!config.capabilities.native_push) {
+                setState(NATIVE_PUSH_STATES.DISABLED);
+                return;
+            }
             const Notifications = await loadNotificationsModule();
             const permission = requestPermission
                 ? await Notifications.requestPermissionsAsync()

@@ -22,6 +22,14 @@ describe('native notification workflow', () => {
         expect(isNativePushEnvironmentSupported('standalone', 'android')).toBe(true);
     });
 
+    it('explains when the selected self-host disables third-party native push', () => {
+        expect(getPushStatusPresentation(NATIVE_PUSH_STATES.DISABLED)).toEqual({
+            message: 'Native push is disabled by this Calibrate server.',
+            action: null,
+            isError: false
+        });
+    });
+
     it('maps food, weight, and goal actions to allowlisted native routes', () => {
         expect(getNotificationAction('/log?quickAdd=food', '2026-07-12')).toEqual({
             label: 'Log food',

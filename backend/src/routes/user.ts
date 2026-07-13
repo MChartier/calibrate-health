@@ -18,6 +18,7 @@ import {
   parseClientOperationId,
   recordSyncChange
 } from '../services/clientOperations';
+import { logSafeOperationalError } from '../observability';
 
 /**
  * Authenticated user account routes (profile, preferences, password, avatar).
@@ -220,7 +221,7 @@ router.get('/account/export', async (req, res) => {
     res.setHeader('content-disposition', `attachment; filename="calibrate-account-export-${exportDate}.json"`);
     res.json(accountExport);
   } catch (error) {
-    console.error('Account export failed:', error);
+    logSafeOperationalError('account.export', error, res.locals?.requestId);
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -255,12 +256,12 @@ router.delete('/account', async (req, res) => {
       await destroyRequestSession(req);
     } catch (error) {
       // The user row and linked sessions are already gone; clearing the browser cookie completes logout.
-      console.warn('Account deleted, but request session cleanup failed:', error);
+      logSafeOperationalError('account.session_cleanup', error, res.locals?.requestId, console.warn);
     }
     clearSessionCookie(res);
     res.status(204).send();
   } catch (error) {
-    console.error('Account deletion failed:', error);
+    logSafeOperationalError('account.delete', error, res.locals?.requestId);
     res.status(500).json({ message: 'Server error' });
   }
 });

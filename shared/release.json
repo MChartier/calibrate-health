@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "server": {
+    "version": "1.0.0",
+    "api": {
+      "current": "v1",
+      "supported": [
+        "v1"
+      ],
+      "legacy_alias": "/api"
+    }
+  },
+  "android": {
+    "application_id": "app.calibratehealth.mobile",
+    "mobile": {
+      "version_name": "0.1.0",
+      "version_code": 1,
+      "minimum_supported_version": "0.1.0"
+    },
+    "wear": {
+      "version_name": "0.1.0",
+      "version_code": 1,
+      "minimum_supported_version": "0.1.0"
+    },
+    "channels": {
+      "debug": {
+        "wear_build_type": "debug"
+      },
+      "internal": {
+        "mobile_eas_profile": "internal",
+        "wear_build_type": "internal"
+      },
+      "production": {
+        "mobile_eas_profile": "production",
+        "wear_build_type": "release"
+      }
+    }
+  }
+}

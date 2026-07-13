@@ -501,13 +501,8 @@ class FatSecretFoodDataProvider implements FoodDataProvider {
         }
         this.hasLoggedBarcodeScopeWarning = true;
 
-        const message =
-            error instanceof Error && error.message
-                ? error.message
-                : 'FatSecret barcode lookup failed due to a missing scope.';
-
         console.warn(
-            `${message} Barcode lookup is disabled. ` +
+            'FatSecret barcode lookup failed due to a missing scope. Barcode lookup is disabled. ' +
                 'Enable the FatSecret barcode scope or remove barcode scanning from the UI.'
         );
     }

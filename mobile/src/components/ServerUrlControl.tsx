@@ -90,7 +90,7 @@ export const ServerUrlControl: React.FC<ServerUrlControlProps> = ({
                         keyboardType="url"
                         value={value}
                         onChangeText={onChangeText}
-                        helperText="Remote servers require HTTPS. Localhost, 10.0.2.2, and private LAN addresses may use HTTP."
+                        helperText="Release builds require HTTPS. Local HTTP is limited to development builds."
                     />
                     <View style={styles.editorActions}>
                         <Pressable

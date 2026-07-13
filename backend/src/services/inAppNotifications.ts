@@ -2,6 +2,8 @@ import { InAppNotificationType, Prisma } from '@prisma/client';
 import prisma from '../config/database';
 import { getSafeUtcTodayDateOnlyInTimeZone } from '../utils/date';
 import { IN_APP_NOTIFICATION_ACTION_URLS, IN_APP_NOTIFICATION_TYPES, type InAppNotificationType as SharedInAppNotificationType } from '../../../shared/inAppNotifications';
+import { NOTIFICATION_REALTIME_REASONS } from '../../../shared/notificationRealtime';
+import { publishNotificationRealtimeUpdate } from './notificationRealtime';
 
 const REMINDER_TYPES: readonly InAppNotificationType[] = [
     InAppNotificationType.LOG_WEIGHT_REMINDER,
@@ -21,7 +23,6 @@ const ACTION_URL_BY_TYPE: Record<InAppNotificationType, string> = {
 type InAppNotificationClient = {
     inAppNotification: {
         findMany: typeof prisma.inAppNotification.findMany;
-        createMany: typeof prisma.inAppNotification.createMany;
         updateMany: typeof prisma.inAppNotification.updateMany;
     };
     foodLog: {
@@ -279,6 +280,14 @@ export const resolveInactiveReminderNotificationsForUser = async ({
         }
     });
 
+    if (result.count > 0) {
+        publishNotificationRealtimeUpdate({
+            userId,
+            reason: NOTIFICATION_REALTIME_REASONS.RESOLVED,
+            now
+        });
+    }
+
     return result.count;
 };
 
@@ -323,8 +332,8 @@ export const markInAppNotificationRead = async ({
     notificationId,
     now = new Date(),
     db = prisma
-}: MarkInAppNotificationArgs): Promise<void> => {
-    await db.inAppNotification.updateMany({
+}: MarkInAppNotificationArgs): Promise<number> => {
+    const result = await db.inAppNotification.updateMany({
         where: {
             id: notificationId,
             user_id: userId,
@@ -336,6 +345,16 @@ export const markInAppNotificationRead = async ({
             read_at: now
         }
     });
+
+    if (result.count > 0) {
+        publishNotificationRealtimeUpdate({
+            userId,
+            reason: NOTIFICATION_REALTIME_REASONS.READ,
+            now
+        });
+    }
+
+    return result.count;
 };
 
 /**
@@ -346,8 +365,8 @@ export const markInAppNotificationDismissed = async ({
     notificationId,
     now = new Date(),
     db = prisma
-}: MarkInAppNotificationArgs): Promise<void> => {
-    await db.inAppNotification.updateMany({
+}: MarkInAppNotificationArgs): Promise<number> => {
+    const result = await db.inAppNotification.updateMany({
         where: {
             id: notificationId,
             user_id: userId,
@@ -359,4 +378,14 @@ export const markInAppNotificationDismissed = async ({
             read_at: now
         }
     });
+
+    if (result.count > 0) {
+        publishNotificationRealtimeUpdate({
+            userId,
+            reason: NOTIFICATION_REALTIME_REASONS.DISMISSED,
+            now
+        });
+    }
+
+    return result.count;
 };

@@ -74,9 +74,12 @@ const FoodLogEntryRow: React.FC<FoodLogEntryRowProps> = ({ entry, onEdit, onDele
 
     const caloriesValue = typeof entry.calories === 'number' ? entry.calories : '-';
     const caloriesLabel = t('foodLog.entryCalories', { calories: caloriesValue });
+    const entryAccessibleLabel = [entry.name?.trim(), caloriesLabel].filter(Boolean).join(', ');
 
     return (
         <Box
+            role="group"
+            aria-label={entryAccessibleLabel}
             sx={{
                 display: 'grid',
                 gridTemplateColumns: 'minmax(0, 1fr) auto',

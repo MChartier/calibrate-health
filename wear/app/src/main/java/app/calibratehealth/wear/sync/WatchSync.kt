@@ -69,6 +69,8 @@ class AuthenticatedMutationSender(
             }
             is AuthenticatedApiResult.AccountChanged -> MutationSendResult.AccountChanged
             is AuthenticatedApiResult.InvalidResponse -> MutationSendResult.PermanentFailure(result.message)
+            // The outbox processor applies the UI marker only after confirming this account is current.
+            is AuthenticatedApiResult.UpgradeRequired -> MutationSendResult.UpgradeRequired(result.message)
             is AuthenticatedApiResult.Response -> when (classifyWatchHttpStatus(result.value.status)) {
                 HttpOutcome.SUCCESS -> MutationSendResult.Success
                 HttpOutcome.CONFLICT -> classifyConflict(result.value.body)
@@ -99,6 +101,8 @@ class WatchSnapshotSynchronizer(
     private val tokenStore: SecureTokenStore,
     private val accountState: AccountStateCriticalSection = AccountStateCriticalSection.Shared,
     private val onAuthenticationRequired: (String) -> Unit = {},
+    private val onUpgradeRequired: (String) -> Unit = {},
+    private val onCompatibilityRestored: () -> Unit = {},
     private val onRemindersChanged: (List<app.calibratehealth.wear.notifications.WearReminder>) -> Unit = {},
     private val nowEpochMs: () -> Long = System::currentTimeMillis
 ) {
@@ -120,6 +124,11 @@ class WatchSnapshotSynchronizer(
             }
             is AuthenticatedApiResult.AccountChanged -> return SnapshotSyncResult.AccountChanged
             is AuthenticatedApiResult.InvalidResponse -> return SnapshotSyncResult.PermanentFailure(result.message)
+            is AuthenticatedApiResult.UpgradeRequired -> return accountState.withLock {
+                if (!scopeStillCurrent(captured.session)) return@withLock SnapshotSyncResult.AccountChanged
+                onUpgradeRequired(result.message)
+                SnapshotSyncResult.PermanentFailure(result.message)
+            }
         }
         val fetchedAt = nowEpochMs()
         return when (classifyWatchHttpStatus(response.status)) {
@@ -131,6 +140,7 @@ class WatchSnapshotSynchronizer(
                         if (!scopeStillCurrent(captured.session)) return@withLock SnapshotSyncResult.AccountChanged
                         metadata.store(captured.metadata.copy(lastSuccessAtEpochMs = fetchedAt))
                         onAuthoritativeSnapshotCommitted()
+                        onCompatibilityRestored()
                         SnapshotSyncResult.NotModified
                     }
                 }
@@ -161,6 +171,7 @@ class WatchSnapshotSynchronizer(
                     )
                     // Keep cache replacement and action unlock in the same account critical section.
                     onAuthoritativeSnapshotCommitted()
+                    onCompatibilityRestored()
                     SnapshotSyncResult.Success
                 }
             } catch (error: Exception) {
@@ -218,12 +229,19 @@ object WearSyncRuntime {
         val authenticationRequired: (String) -> Unit = { message ->
             PairingStateStore(appContext).setSessionInvalid(message)
         }
+        val upgradeRequired: (String) -> Unit = { message ->
+            PairingStateStore(appContext).setUpgradeRequired(message)
+        }
+        val compatibilityRestored: () -> Unit = {
+            PairingStateStore(appContext).clearUpgradeRequired()
+        }
         return WearSyncDependencies(
             outboxProcessor = FifoOutboxProcessor(
                 repository = outbox,
                 sender = AuthenticatedMutationSender(api, authenticationRequired),
                 tokenStore = tokenStore,
-                onAuthenticationRequired = authenticationRequired
+                onAuthenticationRequired = authenticationRequired,
+                onUpgradeRequired = upgradeRequired
             ),
             snapshotSynchronizer = WatchSnapshotSynchronizer(
                 api = api,
@@ -232,6 +250,8 @@ object WearSyncRuntime {
                 metadata = RoomSyncMetadataRepository(database.syncMetadataDao()),
                 tokenStore = tokenStore,
                 onAuthenticationRequired = authenticationRequired,
+                onUpgradeRequired = upgradeRequired,
+                onCompatibilityRestored = compatibilityRestored,
                 onRemindersChanged = WearReminderStateStore(appContext)::replace
             ),
             outboxRepository = outbox

@@ -68,6 +68,8 @@ function getPromptForAboutQuestion(key: AboutQuestionKey): string {
 const AboutYouQuestionFooter: React.FC<AboutYouQuestionFooterProps> = (props) => {
     const { t } = useI18n();
     const activityLevelOptions = React.useMemo(() => getActivityLevelOptions(t), [t]);
+    const sexLabelId = React.useId();
+    const activityLevelLabelId = React.useId();
 
     const prompt = getPromptForAboutQuestion(props.questionKey);
 
@@ -107,8 +109,9 @@ const AboutYouQuestionFooter: React.FC<AboutYouQuestionFooterProps> = (props) =>
     } else if (props.questionKey === 'sex') {
         activeQuestionControl = (
             <FormControl fullWidth required disabled={props.disabled} error={props.showErrors && !props.sex} size="small">
-                <InputLabel>{t('profile.sex')}</InputLabel>
+                <InputLabel id={sexLabelId}>{t('profile.sex')}</InputLabel>
                 <Select
+                    labelId={sexLabelId}
                     value={props.sex}
                     label={t('profile.sex')}
                     onChange={(e) => props.onSexChange(e.target.value)}
@@ -124,8 +127,9 @@ const AboutYouQuestionFooter: React.FC<AboutYouQuestionFooterProps> = (props) =>
     } else if (props.questionKey === 'activityLevel') {
         activeQuestionControl = (
             <FormControl fullWidth required disabled={props.disabled} error={props.showErrors && !props.activityLevel} size="small">
-                <InputLabel>{t('profile.activityLevel')}</InputLabel>
+                <InputLabel id={activityLevelLabelId}>{t('profile.activityLevel')}</InputLabel>
                 <Select
+                    labelId={activityLevelLabelId}
                     value={props.activityLevel}
                     label={t('profile.activityLevel')}
                     onChange={(e) => props.onActivityLevelChange(e.target.value)}

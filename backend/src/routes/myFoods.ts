@@ -4,6 +4,7 @@ import prisma from '../config/database';
 import { parseNonNegativeNumber, parsePositiveInteger, parsePositiveNumber } from '../utils/requestParsing';
 import { buildExternalIngredientSnapshotRow, parseMyFoodIngredientInput } from './myFoodsRecipeUtils';
 import { createHttpError, isHttpError, normalizeMyFoodName, normalizeServingUnitLabel } from './myFoodsUtils';
+import { logSafeOperationalError } from '../observability';
 
 /**
  * "My Foods" endpoints for user-defined foods and immutable recipe snapshots.
@@ -45,7 +46,7 @@ router.get('/', async (req, res) => {
         });
         res.json(items);
     } catch (err) {
-        console.error(err);
+        logSafeOperationalError('my_foods.list', err, res.locals?.requestId);
         res.status(500).json({ message: 'Server error' });
     }
 });
@@ -76,7 +77,7 @@ router.patch('/:id/pin', async (req, res) => {
         }
         return res.json(updated);
     } catch (err) {
-        console.error(err);
+        logSafeOperationalError('my_foods.pin', err, res.locals?.requestId);
         return res.status(500).json({ message: 'Server error' });
     }
 });
@@ -102,7 +103,7 @@ router.get('/:id', async (req, res) => {
 
         res.json(item);
     } catch (err) {
-        console.error(err);
+        logSafeOperationalError('my_foods.get', err, res.locals?.requestId);
         res.status(500).json({ message: 'Server error' });
     }
 });
@@ -143,7 +144,7 @@ router.post('/foods', async (req, res) => {
         });
         res.json(created);
     } catch (err) {
-        console.error(err);
+        logSafeOperationalError('my_foods.create', err, res.locals?.requestId);
         res.status(500).json({ message: 'Server error' });
     }
 });
@@ -321,7 +322,7 @@ router.post('/recipes', async (req, res) => {
 
         res.json(created);
     } catch (err) {
-        console.error(err);
+        logSafeOperationalError('my_foods.create_recipe', err, res.locals?.requestId);
         if (isHttpError(err)) {
             return res.status(err.statusCode).json({ message: err.message || 'Request failed' });
         }
@@ -396,7 +397,7 @@ router.patch('/:id', async (req, res) => {
         if (!updated) return res.status(404).json({ message: 'My food not found' });
         return res.json(updated);
     } catch (err) {
-        console.error(err);
+        logSafeOperationalError('my_foods.update', err, res.locals?.requestId);
         if (isHttpError(err)) return res.status(err.statusCode).json({ message: err.message || 'Request failed' });
         return res.status(500).json({ message: 'Server error' });
     }
@@ -413,7 +414,7 @@ router.delete('/:id', async (req, res) => {
         if (result.count === 0) return res.status(404).json({ message: 'My food not found' });
         return res.status(204).end();
     } catch (err) {
-        console.error(err);
+        logSafeOperationalError('my_foods.delete', err, res.locals?.requestId);
         return res.status(500).json({ message: 'Server error' });
     }
 });

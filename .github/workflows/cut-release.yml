@@ -2,15 +2,6 @@ name: Cut Release Tag
 
 on:
   workflow_dispatch:
-    inputs:
-      bump:
-        description: "SemVer bump for the next release tag"
-        required: true
-        type: choice
-        options:
-          - patch
-          - minor
-          - major
 
 permissions:
   contents: write
@@ -42,6 +33,16 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Validate canonical release configuration
+        run: |
+          npm run release:check:production
+          npm run test:release
+
       - name: Configure git identity (for annotated tags)
         shell: bash
         run: |
@@ -50,68 +51,21 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: Compute next version tag
+      - name: Read version tag from release manifest
         id: version
         shell: bash
         run: |
           set -euo pipefail
-
-          BUMP="${{ inputs.bump }}"
-
-          # We only treat fully-qualified SemVer tags (vMAJOR.MINOR.PATCH) as release tags.
           LATEST_TAG="$(git tag --list --sort=-v:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | head -n 1 || true)"
-
-          if [[ -z "${LATEST_TAG}" ]]; then
-            MAJOR=0
-            MINOR=0
-            PATCH=0
+          if [[ -n "${LATEST_TAG}" ]]; then
+            NEW_TAG="$(node scripts/release-config.mjs tag --latest-tag "${LATEST_TAG}")"
           else
-            VERSION="${LATEST_TAG#v}"
-            IFS='.' read -r MAJOR MINOR PATCH <<<"${VERSION}"
+            NEW_TAG="$(node scripts/release-config.mjs tag)"
           fi
-
-          for n in "${MAJOR}" "${MINOR}" "${PATCH}"; do
-            if ! [[ "${n}" =~ ^[0-9]+$ ]]; then
-              echo "Latest tag ${LATEST_TAG} is not parseable as vMAJOR.MINOR.PATCH." >&2
-              exit 1
-            fi
-          done
-
-          case "${BUMP}" in
-            patch)
-              PATCH=$((PATCH + 1))
-              ;;
-            minor)
-              MINOR=$((MINOR + 1))
-              PATCH=0
-              ;;
-            major)
-              MAJOR=$((MAJOR + 1))
-              MINOR=0
-              PATCH=0
-              ;;
-            *)
-              echo "Unknown bump type: ${BUMP}" >&2
-              exit 1
-              ;;
-          esac
-
-          NEW_TAG="v${MAJOR}.${MINOR}.${PATCH}"
 
           if git show-ref --tags --verify --quiet "refs/tags/${NEW_TAG}"; then
             echo "Tag ${NEW_TAG} already exists." >&2
             exit 1
-          fi
-
-          if [[ -n "${LATEST_TAG}" ]]; then
-            # Defense-in-depth: ensure the computed version actually increases (monotonic).
-            LATEST_VERSION="${LATEST_TAG#v}"
-            NEW_VERSION="${NEW_TAG#v}"
-            GREATEST="$(printf "%s\n%s\n" "${LATEST_VERSION}" "${NEW_VERSION}" | sort -V | tail -n 1)"
-            if [[ "${GREATEST}" != "${NEW_VERSION}" || "${NEW_VERSION}" == "${LATEST_VERSION}" ]]; then
-              echo "Computed version ${NEW_TAG} is not greater than latest ${LATEST_TAG}." >&2
-              exit 1
-            fi
           fi
 
           {

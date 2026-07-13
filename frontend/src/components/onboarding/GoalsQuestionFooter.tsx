@@ -62,6 +62,7 @@ function getPromptForGoalsQuestion(opts: {
  */
 const GoalsQuestionFooter: React.FC<GoalsQuestionFooterProps> = (props) => {
     const weightUnitLabel = props.weightUnit === WEIGHT_UNITS.LB ? 'lb' : 'kg';
+    const paceLabelId = React.useId();
 
     const currentWeightNumber = parseFiniteNumber(props.currentWeight);
     const hasCurrentWeight = currentWeightNumber !== null && currentWeightNumber > 0;
@@ -203,8 +204,9 @@ const GoalsQuestionFooter: React.FC<GoalsQuestionFooterProps> = (props) => {
             )}
             {props.questionKey === 'pace' && paceGoalMode && (
                 <FormControl fullWidth disabled={props.disabled} size="small">
-                    <InputLabel>Pace</InputLabel>
+                    <InputLabel id={paceLabelId}>Pace</InputLabel>
                     <Select
+                        labelId={paceLabelId}
                         value={props.dailyDeficit}
                         label="Pace"
                         onChange={(e) => props.onDailyDeficitChange(e.target.value)}

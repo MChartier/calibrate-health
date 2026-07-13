@@ -1,0 +1,407 @@
+{
+  "schemaVersion": 1,
+  "physicalDeviceEvidence": [],
+  "riskAreas": [
+    {
+      "id": "authentication-and-authorization",
+      "title": "Authentication, session rotation, pairing, account deletion, and authorization",
+      "requiredCapabilities": [
+        "success",
+        "invalid-or-expired-credential",
+        "replay-or-idempotency",
+        "revocation",
+        "cross-account-denial"
+      ],
+      "evidence": [
+        {
+          "id": "browser-and-account-routes",
+          "npmScript": "test:backend",
+          "scriptCommand": "npm --prefix backend test",
+          "paths": [
+            "backend/test/routes-auth.test.js",
+            "backend/test/routes-user.test.js"
+          ],
+          "capabilities": ["success", "invalid-or-expired-credential", "revocation"]
+        },
+        {
+          "id": "mobile-and-wear-token-lifecycle",
+          "npmScript": "test:backend",
+          "scriptCommand": "npm --prefix backend test",
+          "paths": [
+            "backend/test/mobile-auth.test.js",
+            "backend/test/mobile-auth-middleware.test.js",
+            "backend/test/routes-auth-mobile.test.js"
+          ],
+          "capabilities": [
+            "invalid-or-expired-credential",
+            "replay-or-idempotency",
+            "revocation",
+            "cross-account-denial"
+          ]
+        },
+        {
+          "id": "native-client-auth-recovery",
+          "npmScript": "test:mobile",
+          "scriptCommand": "npm --prefix mobile test",
+          "paths": [
+            "mobile/src/auth/apiClientAuth.test.ts",
+            "mobile/src/auth/serverSwitch.test.ts",
+            "mobile/src/wear/pairing.test.ts",
+            "mobile/src/wear/accountCleanup.test.ts"
+          ],
+          "capabilities": [
+            "success",
+            "invalid-or-expired-credential",
+            "replay-or-idempotency",
+            "revocation",
+            "cross-account-denial"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "synchronization-and-offline-writes",
+      "title": "Offline writes, synchronization, Health Connect checkpoints, and watch reconciliation",
+      "requiredCapabilities": [
+        "durable-retry",
+        "duplicate-replay",
+        "stale-revision-or-conflict",
+        "account-or-server-isolation",
+        "reconnect"
+      ],
+      "evidence": [
+        {
+          "id": "phone-outbox",
+          "npmScript": "test:mobile",
+          "scriptCommand": "npm --prefix mobile test",
+          "paths": [
+            "mobile/src/offline/operations.test.ts",
+            "mobile/src/offline/outbox.test.ts",
+            "mobile/src/offline/reconciler.test.ts"
+          ],
+          "capabilities": ["durable-retry", "duplicate-replay", "reconnect"]
+        },
+        {
+          "id": "health-connect-checkpoints",
+          "npmScript": "test:mobile",
+          "scriptCommand": "npm --prefix mobile test",
+          "paths": [
+            "mobile/src/healthConnect/storageScope.test.ts",
+            "mobile/src/healthConnect/sync.test.ts"
+          ],
+          "capabilities": [
+            "durable-retry",
+            "duplicate-replay",
+            "stale-revision-or-conflict",
+            "account-or-server-isolation",
+            "reconnect"
+          ]
+        },
+        {
+          "id": "server-activity-ingestion",
+          "npmScript": "test:backend",
+          "scriptCommand": "npm --prefix backend test",
+          "paths": ["backend/test/routes-activity.test.js"],
+          "capabilities": [
+            "duplicate-replay",
+            "stale-revision-or-conflict",
+            "account-or-server-isolation"
+          ]
+        },
+        {
+          "id": "watch-reconciliation",
+          "workflow": ".github/workflows/builds.yml",
+          "workflowContains": "./gradlew assembleDebug testDebugUnitTest --no-daemon --console=plain",
+          "paths": [
+            "wear/app/src/test/java/app/calibratehealth/wear/sync/OutboxProcessorTest.kt",
+            "wear/app/src/test/java/app/calibratehealth/wear/sync/WatchSnapshotSynchronizerTest.kt",
+            "wear/app/src/test/java/app/calibratehealth/wear/sync/SyncInvalidationProtocolTest.kt"
+          ],
+          "capabilities": [
+            "durable-retry",
+            "duplicate-replay",
+            "stale-revision-or-conflict",
+            "account-or-server-isolation",
+            "reconnect"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "database-and-portability",
+      "title": "Database schema and data portability",
+      "requiredCapabilities": [
+        "fresh-migration",
+        "supported-upgrade",
+        "representative-export",
+        "cascade-deletion",
+        "encrypted-backup-validation",
+        "clean-restore"
+      ],
+      "evidence": [
+        {
+          "id": "fresh-migration",
+          "npmScript": "db:migrate",
+          "scriptCommand": "npm --prefix backend run db:migrate",
+          "paths": [
+            ".github/workflows/tests.yml",
+            "backend/prisma/schema.prisma"
+          ],
+          "capabilities": ["fresh-migration"]
+        },
+        {
+          "id": "populated-upgrade",
+          "npmScript": "test:db:upgrade",
+          "scriptCommand": "node scripts/postgres-populated-upgrade-smoke.mjs",
+          "paths": [
+            "scripts/postgres-populated-upgrade-smoke.mjs",
+            "scripts/postgres-populated-upgrade-smoke.test.mjs"
+          ],
+          "capabilities": ["supported-upgrade"]
+        },
+        {
+          "id": "account-portability",
+          "npmScript": "test:backend",
+          "scriptCommand": "npm --prefix backend test",
+          "paths": [
+            "backend/test/account-lifecycle.test.js",
+            "backend/test/routes-user.test.js"
+          ],
+          "capabilities": ["representative-export", "cascade-deletion"]
+        },
+        {
+          "id": "encrypted-backup-and-clean-restore",
+          "npmScript": "test:db:backup-restore",
+          "scriptCommand": "node scripts/postgres-backup-restore-smoke.mjs",
+          "paths": [
+            "scripts/postgres-backup-restore-smoke.mjs",
+            "scripts/postgres-backup-restore-smoke.test.mjs",
+            "deploy/backup/backup-postgres.sh",
+            "deploy/backup/restore-postgres.sh"
+          ],
+          "capabilities": ["encrypted-backup-validation", "clean-restore"]
+        }
+      ]
+    },
+    {
+      "id": "tracking-domain-calculations",
+      "title": "Food, weight, goals, and activity calculations",
+      "requiredCapabilities": [
+        "unit-conversion",
+        "timezone-or-local-day",
+        "boundary-values",
+        "immutable-snapshot",
+        "api-serialization"
+      ],
+      "evidence": [
+        {
+          "id": "backend-domain-boundaries",
+          "npmScript": "test:backend",
+          "scriptCommand": "npm --prefix backend test",
+          "paths": [
+            "backend/test/local-date.test.js",
+            "backend/test/units-utils.test.js",
+            "backend/test/goal-validation.test.js",
+            "backend/test/routes-food.test.js",
+            "backend/test/routes-goals.test.js",
+            "backend/test/routes-metrics.test.js",
+            "backend/test/activity-utils.test.js"
+          ],
+          "capabilities": [
+            "unit-conversion",
+            "timezone-or-local-day",
+            "boundary-values",
+            "immutable-snapshot",
+            "api-serialization"
+          ]
+        },
+        {
+          "id": "web-domain-presentation",
+          "npmScript": "test:frontend",
+          "scriptCommand": "npm --prefix frontend test",
+          "paths": [
+            "frontend/src/utils/date.test.ts",
+            "frontend/src/utils/foodMeasure.test.ts",
+            "frontend/src/utils/goalTracking.test.ts",
+            "frontend/src/utils/goalValidation.test.ts",
+            "frontend/src/components/GoalProjection.test.tsx"
+          ],
+          "capabilities": [
+            "unit-conversion",
+            "timezone-or-local-day",
+            "boundary-values",
+            "immutable-snapshot"
+          ]
+        },
+        {
+          "id": "android-domain-presentation",
+          "npmScript": "test:mobile",
+          "scriptCommand": "npm --prefix mobile test",
+          "paths": [
+            "mobile/src/utils/dates.test.ts",
+            "mobile/src/food/serving.test.ts",
+            "mobile/src/activity/presentation.test.ts"
+          ],
+          "capabilities": [
+            "unit-conversion",
+            "timezone-or-local-day",
+            "boundary-values",
+            "immutable-snapshot",
+            "api-serialization"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "privacy-and-diagnostics",
+      "title": "Privacy-sensitive configuration and diagnostics",
+      "requiredCapabilities": [
+        "permission-or-config-assertions",
+        "log-redaction",
+        "metric-redaction",
+        "export-redaction",
+        "error-redaction",
+        "health-detail-minimization"
+      ],
+      "evidence": [
+        {
+          "id": "server-observability-boundaries",
+          "npmScript": "test:backend",
+          "scriptCommand": "npm --prefix backend test",
+          "paths": [
+            "backend/test/observability.test.js",
+            "backend/test/readiness.test.js",
+            "backend/test/account-lifecycle.test.js"
+          ],
+          "capabilities": [
+            "permission-or-config-assertions",
+            "log-redaction",
+            "metric-redaction",
+            "export-redaction",
+            "error-redaction",
+            "health-detail-minimization"
+          ]
+        },
+        {
+          "id": "android-privacy-boundaries",
+          "npmScript": "test:mobile",
+          "scriptCommand": "npm --prefix mobile test",
+          "paths": [
+            "mobile/src/config/androidSecurityConfig.test.ts",
+            "mobile/src/healthConnect/permissions.test.ts",
+            "mobile/src/account/accountData.test.ts"
+          ],
+          "capabilities": [
+            "permission-or-config-assertions",
+            "export-redaction",
+            "error-redaction",
+            "health-detail-minimization"
+          ]
+        },
+        {
+          "id": "wear-bounded-payloads",
+          "workflow": ".github/workflows/builds.yml",
+          "workflowContains": "./gradlew assembleDebug testDebugUnitTest --no-daemon --console=plain",
+          "paths": [
+            "wear/app/src/test/java/app/calibratehealth/wear/actions/ContinueOnPhonePayloadTest.kt",
+            "wear/app/src/test/java/app/calibratehealth/wear/data/security/ServerOriginPolicyTest.kt"
+          ],
+          "capabilities": ["permission-or-config-assertions", "health-detail-minimization"]
+        }
+      ]
+    },
+    {
+      "id": "critical-client-workflows",
+      "title": "Web, Android, and Wear critical workflows",
+      "requiredCapabilities": [
+        "web-state-transitions",
+        "web-browser-happy-path",
+        "web-failure-recovery",
+        "android-state-transitions",
+        "android-emulator-happy-path",
+        "wear-state-transitions",
+        "wear-emulator-package-smoke",
+        "android-physical-happy-path",
+        "android-physical-offline-reconnect",
+        "wear-physical-happy-path",
+        "wear-physical-offline-reconnect"
+      ],
+      "evidence": [
+        {
+          "id": "web-components",
+          "npmScript": "test:frontend",
+          "scriptCommand": "npm --prefix frontend test",
+          "paths": [
+            "frontend/src/components/FoodEntryForm.test.tsx",
+            "frontend/src/components/GoalEditor.test.tsx",
+            "frontend/src/components/GoalProjection.test.tsx",
+            "frontend/src/pages/Onboarding.test.tsx",
+            "frontend/src/pages/Settings.test.tsx"
+          ],
+          "capabilities": ["web-state-transitions", "web-failure-recovery"]
+        },
+        {
+          "id": "web-browser-tracking",
+          "npmScript": "test:web:e2e",
+          "scriptCommand": "playwright test",
+          "paths": ["e2e/web/tracking.spec.ts", "e2e/web/mobile.spec.ts"],
+          "capabilities": ["web-browser-happy-path", "web-failure-recovery"]
+        },
+        {
+          "id": "android-state-and-offline",
+          "npmScript": "test:mobile",
+          "scriptCommand": "npm --prefix mobile test",
+          "paths": [
+            "mobile/src/offline/operations.test.ts",
+            "mobile/src/offline/reconciler.test.ts",
+            "mobile/src/healthConnect/sync.test.ts",
+            "mobile/src/wear/pairing.test.ts"
+          ],
+          "capabilities": ["android-state-transitions"]
+        },
+        {
+          "id": "android-emulator-smoke",
+          "npmScript": "test:android:e2e",
+          "scriptCommand": "node scripts/android-e2e.mjs",
+          "paths": ["scripts/android-e2e.mjs"],
+          "capabilities": ["android-emulator-happy-path"]
+        },
+        {
+          "id": "wear-jvm-state-transitions",
+          "workflow": ".github/workflows/builds.yml",
+          "workflowContains": "./gradlew assembleDebug testDebugUnitTest --no-daemon --console=plain",
+          "paths": [
+            "wear/app/src/test/java/app/calibratehealth/wear/actions/WearActionPlannerTest.kt",
+            "wear/app/src/test/java/app/calibratehealth/wear/sync/OutboxProcessorTest.kt",
+            "wear/app/src/test/java/app/calibratehealth/wear/sync/WatchSnapshotSynchronizerTest.kt"
+          ],
+          "capabilities": ["wear-state-transitions"]
+        },
+        {
+          "id": "wear-emulator-smoke",
+          "npmScript": "test:wear:emulator",
+          "scriptCommand": "node scripts/wear-emulator-smoke.mjs",
+          "paths": ["scripts/wear-emulator-smoke.mjs"],
+          "capabilities": ["wear-emulator-package-smoke"]
+        }
+      ]
+    }
+  ],
+  "waivers": [
+    {
+      "id": "physical-galaxy-phone-and-watch-validation",
+      "riskArea": "critical-client-workflows",
+      "status": "release-blocking",
+      "owner": "MChartier",
+      "trackingIssues": ["#219", "#222"],
+      "expiresOn": "2026-08-12",
+      "reason": "Requires the owner's physical Galaxy phone, Galaxy Watch Ultra, Samsung Health, and real disconnect/reconnect conditions.",
+      "capabilities": [
+        "android-physical-happy-path",
+        "android-physical-offline-reconnect",
+        "wear-physical-happy-path",
+        "wear-physical-offline-reconnect"
+      ]
+    }
+  ]
+}

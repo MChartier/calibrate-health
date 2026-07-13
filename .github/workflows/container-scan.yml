@@ -1,0 +1,74 @@
+name: Production Container Scan
+
+on:
+  pull_request:
+  workflow_dispatch:
+  schedule:
+    - cron: '15 14 * * 1'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: container-scan-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  scan:
+    name: High and Critical Vulnerabilities
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: calibrate_container_ci
+          POSTGRES_PASSWORD: calibrate_container_ci
+          POSTGRES_DB: calibrate_container_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U calibrate_container_ci -d calibrate_container_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build production image
+        run: docker build --file Dockerfile.app --tag calibrate:security-scan .
+
+      - name: Smoke production startup and readiness
+        run: |
+          docker run --detach --name calibrate-runtime-smoke --network host \
+            --env DATABASE_URL='postgresql://calibrate_container_ci:calibrate_container_ci@127.0.0.1:5432/calibrate_container_ci?schema=public' \
+            --env SESSION_SECRET='container-smoke-session-secret-at-least-32' \
+            --env PUBLIC_APP_ORIGIN='http://127.0.0.1:3000' \
+            --env MIGRATION_MAX_ATTEMPTS=3 \
+            calibrate:security-scan
+          for attempt in {1..30}; do
+            if curl --fail --silent --show-error http://127.0.0.1:3000/api/v1/readyz; then
+              exit 0
+            fi
+            sleep 1
+          done
+          docker logs calibrate-runtime-smoke
+          exit 1
+
+      - name: Remove runtime smoke container
+        if: always()
+        run: docker rm --force calibrate-runtime-smoke || true
+
+      # Immutable action commit for v0.36.0; do not replace with a mutable major tag.
+      - name: Scan production image
+        uses: aquasecurity/trivy-action@a9c7b0f06e461e9d4b4d1711f154ee024b8d7ab8
+        with:
+          image-ref: calibrate:security-scan
+          format: table
+          scanners: vuln
+          severity: HIGH,CRITICAL
+          ignore-unfixed: false
+          exit-code: '1'

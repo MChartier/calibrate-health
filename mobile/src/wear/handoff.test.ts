@@ -15,9 +15,11 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
     getPendingWearHandoffs,
     getWearHandoffHref,
+    getWearHandoffPublicUrl,
     markWearHandoffsHandled,
     parseWearHandoffPayload,
     processWearHandoffInbox,
+    selectNextWearHandoffBatch,
     type WearHandoff
 } from './handoff';
 import { WEAR_PAIRING_PATHS } from './pairing';
@@ -76,6 +78,31 @@ describe('Wear continue-on-phone handoff', () => {
         expect(parseWearHandoffPayload(payload({ server_origin: `${ORIGIN}/path` }))).toBeNull();
         expect(parseWearHandoffPayload(payload({ user_id: USER_ID, extra: true }))).toBeNull();
         expect(parseWearHandoffPayload(payload({ destination: 'barcode' }))).toBeNull();
+    });
+
+    it.each([
+        ['privacy', '/privacy'],
+        ['account_deletion', '/account-deletion']
+    ])('accepts only the exact %s public destination and maps it to a fixed server path', (destination, path) => {
+        const legalPayload = payload({ destination });
+        const withoutFoodDate = JSON.stringify(
+            Object.fromEntries(Object.entries(JSON.parse(legalPayload)).filter(([key]) => key !== 'local_date'))
+        );
+        const parsed = parseWearHandoffPayload(withoutFoodDate);
+
+        expect(parsed).toEqual({
+            serverOrigin: ORIGIN,
+            userId: USER_ID,
+            destination,
+            localDate: null
+        });
+        expect(getWearHandoffPublicUrl({
+            messageId: 'legal-1',
+            nodeId: 'node-1',
+            receivedAt: RECEIVED_AT,
+            ...parsed!
+        })).toBe(`${ORIGIN}${path}`);
+        expect(parseWearHandoffPayload(legalPayload)).toBeNull();
     });
 
     it('acknowledges only after persisting a handoff from the paired node', async () => {
@@ -157,5 +184,52 @@ describe('Wear continue-on-phone handoff', () => {
         });
         await markWearHandoffsHandled(ORIGIN, USER_ID, ['handoff-1']);
         expect(await getPendingWearHandoffs(ORIGIN, USER_ID)).toEqual([]);
+    });
+
+    it('persists a legal handoff only from the paired node and never derives a free-form URL', async () => {
+        const native = transport({
+            payload: JSON.stringify({
+                protocol_version: 1,
+                server_origin: ORIGIN,
+                user_id: USER_ID,
+                destination: 'account_deletion'
+            })
+        });
+        await processWearHandoffInbox({
+            serverOrigin: ORIGIN,
+            userId: USER_ID,
+            transport: native,
+            readPairing: jest.fn().mockResolvedValue(storedPairing)
+        });
+
+        const [handoff] = await getPendingWearHandoffs(ORIGIN, USER_ID);
+        expect(getWearHandoffPublicUrl(handoff)).toBe(`${ORIGIN}/account-deletion`);
+        expect(getWearHandoffHref(handoff)).toBeNull();
+    });
+
+    it('routes distinct intents in arrival order and coalesces only repeated equivalent taps', () => {
+        const pending: WearHandoff[] = [
+            {
+                messageId: 'food-1', nodeId: 'node-1', serverOrigin: ORIGIN, userId: USER_ID,
+                destination: 'food_log', localDate: '2026-07-12', receivedAt: RECEIVED_AT
+            },
+            {
+                messageId: 'privacy-1', nodeId: 'node-1', serverOrigin: ORIGIN, userId: USER_ID,
+                destination: 'privacy', localDate: null, receivedAt: RECEIVED_AT + 1
+            },
+            {
+                messageId: 'food-2', nodeId: 'node-1', serverOrigin: ORIGIN, userId: USER_ID,
+                destination: 'food_log', localDate: '2026-07-12', receivedAt: RECEIVED_AT + 2
+            }
+        ];
+
+        expect(selectNextWearHandoffBatch(pending)).toEqual({
+            handoff: pending[0],
+            messageIds: ['food-1', 'food-2']
+        });
+        expect(selectNextWearHandoffBatch(pending.slice(1))).toEqual({
+            handoff: pending[1],
+            messageIds: ['privacy-1']
+        });
     });
 });

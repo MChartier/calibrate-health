@@ -31,12 +31,35 @@ function isEnabledEnvFlag(rawValue: string | undefined): boolean {
   return rawValue === 'true' || rawValue === '1'
 }
 
+/** Assign frequently changing third-party families to cache-stable eager chunks. */
+function getVendorChunkName(moduleId: string): string | undefined {
+  if (!moduleId.includes('/node_modules/')) return undefined
+
+  for (const group of VENDOR_CHUNK_PREFIXES) {
+    if (group.packages.some((packageName) => moduleId.includes(`/node_modules/${packageName}`))) {
+      return group.name
+    }
+  }
+
+  return 'vendor-other'
+}
+
 const QUICK_ADD_SHORTCUT_ICON = 'pwa-192x192.png' // Icon used for quick-add PWA shortcuts.
 const QUICK_ADD_SHORTCUT_BASE_PATH = '/log' // Base route for quick-add shortcuts.
 const PWA_THEME_COLOR = '#111827' // Browser UI color matching the dark app bar.
 const PWA_BACKGROUND_COLOR = '#f8fafc' // Android may use this behind transparent icons; keep it non-black for launcher tiles.
 // Keep the main SPA routes eagerly bundled for app-like first-click latency; warn only if that shell grows again.
 const EAGER_APP_CHUNK_WARNING_LIMIT_KB = 1600
+// Stable vendor groups keep framework churn out of the app chunk without lazy-loading primary routes.
+const VENDOR_CHUNK_PREFIXES = [
+  { name: 'vendor-barcode', packages: ['@zxing/'] },
+  { name: 'vendor-pwa', packages: ['workbox-window'] },
+  { name: 'vendor-charts', packages: ['@mui/x-charts'] },
+  { name: 'vendor-mui', packages: ['@mui/', '@emotion/'] },
+  { name: 'vendor-react', packages: ['react', 'react-dom', 'react-router-dom'] },
+  { name: 'vendor-data', packages: ['@tanstack/react-query', 'axios'] },
+  { name: 'vendor-timezone', packages: ['react-timezone-select', 'react-select', 'spacetime', 'timezone-soft'] },
+] as const
 // Reuse an existing app window so PWA shortcuts navigate instead of spawning a new instance.
 const PWA_LAUNCH_HANDLER = {
   client_mode: 'navigate-existing',
@@ -265,5 +288,11 @@ export default defineConfig({
   },
   build: {
     chunkSizeWarningLimit: EAGER_APP_CHUNK_WARNING_LIMIT_KB,
+    manifest: true,
+    rollupOptions: {
+      output: {
+        manualChunks: getVendorChunkName,
+      },
+    },
   },
 })

@@ -34,6 +34,8 @@ import { getTodayDate } from '../../src/utils/dates';
 import { formatCalories } from '../../src/utils/format';
 import { ACTIVITY_OPTIONS, HEIGHT_UNIT_OPTIONS, SEX_OPTIONS, WEIGHT_UNIT_OPTIONS } from '../../src/utils/profileOptions';
 import { colors, radius, spacing } from '../../src/theme';
+import { useHealthConnect } from '../../src/healthConnect/provider';
+import { clearWearAccountData } from '../../src/wear/accountCleanup';
 
 const MIN_PASSWORD_LENGTH = 8;
 const COMMON_TIMEZONE_OPTIONS = [
@@ -54,7 +56,10 @@ function formatSessionActivity(value: string | null, fallback: string): string {
 }
 
 export default function SettingsScreen() {
-    const { api, user, clearLocalSession, logout, serverUrl, setServerUrl, updateCurrentUser } = useAuth();
+    const {
+        api, user, clearLocalSession, logout, persistAccountDeletionCleanupNotice,
+        serverUrl, setServerUrl, updateCurrentUser
+    } = useAuth();
     const {
         isReady: isOutboxReady,
         initializationError: outboxInitializationError,
@@ -64,6 +69,7 @@ export default function SettingsScreen() {
         retryFailed: retryFailedOutbox
     } = useOfflineOutbox();
     const queryClient = useQueryClient();
+    const healthConnect = useHealthConnect();
     const nativePush = useNativePushRegistration();
     const pushStatus = getPushStatusPresentation(nativePush.state);
     const [serverInput, setServerInput] = useState(serverUrl);
@@ -109,9 +115,15 @@ export default function SettingsScreen() {
     });
     const deleteAccount = useMutation({
         mutationFn: async () => {
+            if (!user) throw new Error('Sign in again before deleting this account.');
+            const accountUserId = user.id;
+            const accountServerUrl = serverUrl;
             await deleteAccountAndClearLocalData(deleteAccountPassword, {
                 deleteRemoteAccount: (currentPassword) => api.deleteAccount(currentPassword),
                 discardOfflineChanges,
+                clearHealthConnectData: healthConnect.clearAccountData,
+                clearWearData: () => clearWearAccountData(accountServerUrl, accountUserId),
+                persistCleanupNotice: persistAccountDeletionCleanupNotice,
                 clearLocalSession
             });
             setDeleteAccountPassword('');

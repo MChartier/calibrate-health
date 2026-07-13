@@ -18,7 +18,7 @@
         android:usesCleartextTraffic="${usesCleartextTraffic}">
         <meta-data
             android:name="com.google.android.wearable.standalone"
-            android:value="true" />
+            android:value="false" />
         <meta-data
             android:name="com.google.android.wearable.capabilities"
             android:resource="@array/android_wear_capabilities" />
@@ -32,6 +32,13 @@
                     android:scheme="wear"
                     android:host="*"
                     android:pathPrefix="/calibrate/v1/pair/" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="com.google.android.gms.wearable.MESSAGE_RECEIVED" />
+                <data
+                    android:scheme="wear"
+                    android:host="*"
+                    android:path="/calibrate/v1/account/disconnect" />
             </intent-filter>
         </service>
 

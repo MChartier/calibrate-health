@@ -119,6 +119,7 @@ test('goals route: GET / returns null when the user has no goal', async () => {
   await handler(req, res);
   assert.equal(res.statusCode, 200);
   assert.equal(res.body, null);
+  assert.deepEqual(findFirstArgs.where, { user_id: 7 });
   assert.deepEqual(findFirstArgs.orderBy, [{ created_at: 'desc' }, { id: 'desc' }]);
 });
 

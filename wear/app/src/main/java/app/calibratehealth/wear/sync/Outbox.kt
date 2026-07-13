@@ -49,6 +49,7 @@ object OutboxRetryPolicy {
 sealed interface MutationSendResult {
     data object Success : MutationSendResult
     data class Retryable(val error: String) : MutationSendResult
+    data class UpgradeRequired(val error: String) : MutationSendResult
     data class PermanentFailure(val error: String) : MutationSendResult
     data class Conflict(val error: String) : MutationSendResult
     data object AccountChanged : MutationSendResult
@@ -75,6 +76,7 @@ class FifoOutboxProcessor(
     private val tokenStore: SecureTokenStore,
     private val accountState: AccountStateCriticalSection = AccountStateCriticalSection.Shared,
     private val onAuthenticationRequired: (String) -> Unit = {},
+    private val onUpgradeRequired: (String) -> Unit = {},
     private val maxMutationsPerRun: Int = 25
 ) : OutboxProcessor {
     init {
@@ -108,9 +110,15 @@ class FifoOutboxProcessor(
                 val updated = when (result) {
                     MutationSendResult.Success -> repository.recordServerSuccess(work.mutation.operationId)
                     is MutationSendResult.Retryable -> repository.recordRetry(work.mutation.operationId, result.error)
+                    is MutationSendResult.UpgradeRequired -> repository.recordRetry(work.mutation.operationId, result.error)
                     is MutationSendResult.PermanentFailure -> repository.recordFailure(work.mutation.operationId, result.error)
                     is MutationSendResult.Conflict -> repository.recordFailure(work.mutation.operationId, result.error)
                     MutationSendResult.AccountChanged -> false
+                }
+                if (updated && result is MutationSendResult.UpgradeRequired) {
+                    // Pairing and account replacement use this same critical section, so a stale 426
+                    // cannot transfer its compatibility marker to a different session.
+                    onUpgradeRequired(result.error)
                 }
                 if (updated) OutboxCommit.Committed else OutboxCommit.Failed
             }
@@ -123,6 +131,7 @@ class FifoOutboxProcessor(
                 is MutationSendResult.Retryable -> {
                     return OutboxDrainResult.Retry
                 }
+                is MutationSendResult.UpgradeRequired -> return OutboxDrainResult.Retry
                 is MutationSendResult.PermanentFailure, is MutationSendResult.Conflict -> Unit
                 MutationSendResult.AccountChanged -> return OutboxDrainResult.AccountChanged
             }

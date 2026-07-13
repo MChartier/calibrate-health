@@ -1,6 +1,11 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const Module = require('node:module');
+const { diagnosticsRegistry } = require('../src/observability');
+
+function operationCount(name, field) {
+  return diagnosticsRegistry.snapshot().operations[name]?.[field] ?? 0;
+}
 
 function stubModule(resolvedPath, exports) {
   const moduleInstance = new Module(resolvedPath);
@@ -213,6 +218,8 @@ test('food route: GET /search keeps text pagination pinned when a provider retur
 });
 
 test('food route: GET /search falls back to the next provider when text search errors', async () => {
+  const failuresBefore = operationCount('food_provider_request', 'failures');
+  const successesBefore = operationCount('food_provider_request', 'successes');
   const callOrder = [];
   const providerA = {
     name: 'fatsecret',
@@ -259,6 +266,8 @@ test('food route: GET /search falls back to the next provider when text search e
   assert.equal(res.body.provider, 'usda');
   assert.equal(res.body.items.length, 1);
   assert.deepEqual(callOrder, ['fatsecret', 'usda']);
+  assert.equal(operationCount('food_provider_request', 'failures'), failuresBefore + 1);
+  assert.equal(operationCount('food_provider_request', 'successes'), successesBefore + 1);
 });
 
 test('food route: GET /search falls back to the next provider for barcode lookups', async () => {
@@ -727,11 +736,15 @@ test('food route: PATCH /:id validates and computes updateData', async () => {
   };
 
   let receivedUpdateData = null;
+  let receivedOwnershipLookup = null;
   const updatedRow = { id: 1, user_id: 7, calories: 220, servings_consumed: 2 };
 
   const prismaStub = {
     foodLog: {
-      findFirst: async () => existingRow,
+      findFirst: async (args) => {
+        receivedOwnershipLookup = args;
+        return existingRow;
+      },
       update: async ({ data }) => {
         receivedUpdateData = data;
         return updatedRow;
@@ -751,13 +764,18 @@ test('food route: PATCH /:id validates and computes updateData', async () => {
   await handler(req, res);
   assert.equal(res.statusCode, 200);
   assert.deepEqual(res.body, updatedRow);
+  assert.deepEqual(receivedOwnershipLookup.where, { id: 1, user_id: 7 });
   assert.deepEqual(receivedUpdateData, { servings_consumed: 2, calories: 220, calories_per_serving_snapshot: 110 });
 });
 
 test('food route: DELETE /:id validates ids and returns 204 on delete', async () => {
+  let receivedDeleteWhere = null;
   const prismaStub = {
     foodLog: {
-      deleteMany: async () => ({ count: 1 })
+      deleteMany: async ({ where }) => {
+        receivedDeleteWhere = where;
+        return { count: 1 };
+      }
     }
   };
 
@@ -770,4 +788,5 @@ test('food route: DELETE /:id validates ids and returns 204 on delete', async ()
   const res = createRes();
   await handler({ user: { id: 7 }, params: { id: '123' } }, res);
   assert.equal(res.statusCode, 204);
+  assert.deepEqual(receivedDeleteWhere, { id: 123, user_id: 7 });
 });

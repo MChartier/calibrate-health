@@ -9,13 +9,19 @@ requests in the normal deployment.
 
 Split-origin deployments must explicitly list every trusted frontend origin in `CORS_ORIGINS`.
 The backend validates each request `Origin` against the API origin or that exact allowlist before
-returning credentialed CORS headers. If `SESSION_COOKIE_SAMESITE=none` is required, keep
+returning credentialed CORS headers. It also rejects browser mutations whose `Origin` is neither
+the API origin nor that allowlist, protecting same-site sibling hosts as well as cross-site requests.
+If `SESSION_COOKIE_SAMESITE=none` is required, keep
 `SESSION_COOKIE_SECURE=true`, use HTTPS, and never use wildcard origins. Browser mutation requests
 from an untrusted origin are rejected by the CORS origin delegate.
 
 Native clients use opaque bearer tokens instead of browser cookies, so the cookie CSRF model does
 not apply to Android or Wear OS requests. Tokens are hashed at rest on the server and stored in
 Expo SecureStore on the phone.
+
+Release Android builds require HTTPS even for private-network server addresses. Cleartext loopback
+and LAN URLs are accepted only by development builds, keeping bearer, activity, and food data off
+unencrypted transports in normal self-hosted use.
 
 ## Authentication abuse controls
 
@@ -45,6 +51,11 @@ Native push registrations are linked to the mobile session that registered them.
 account therefore removes its browser sessions, mobile sessions, web push subscriptions, and
 native push tokens through database cascades rather than relying on a hosted cleanup service.
 
+Native push defaults to disabled because Expo delivery crosses an external service boundary. Set
+`NATIVE_PUSH_MODE=expo` only for a private/internal deployment that accepts that dependency. While
+disabled, the public capability is false, Android does not request notification access, new token
+registration returns `NATIVE_PUSH_DISABLED`, and stored native tokens are not delivered.
+
 Wear mutations attach the trusted mobile-session ID to their internal idempotency receipt. This
 provenance is never accepted from request JSON or exposed by the watch API; it exists only so the
 watch can offer undo for its current session's latest still-existing food entry. Deleting a mobile
@@ -73,3 +84,8 @@ The Android client can also retain pending offline mutation payloads in app-loca
 server origin and account id. Server-side deletion cannot remotely erase those local records or an
 export file the user has already shared; users should clear app data and saved exports separately
 when removing data from a shared device.
+
+Android OS backup is disabled for phone and watch builds. Phone bearer tokens use SecureStore, Wear
+tokens use an Android Keystore AES-GCM key, and offline SQLite data stays in the app sandbox. Rooted
+or unlocked devices, screenshots, notification previews, and user-shared exports remain outside the
+server's protection boundary.

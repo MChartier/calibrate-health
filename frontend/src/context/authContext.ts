@@ -72,6 +72,8 @@ export type AuthContextType = {
     logout: () => Promise<void>;
     /** Update the authenticated user's password (current password required). */
     changePassword: (currentPassword: string, newPassword: string) => Promise<void>;
+    /** Clear account-scoped browser state after the server confirms permanent deletion. */
+    clearDeletedAccountSession: () => void;
     updateUnitPreferences: (preferences: { weight_unit?: WeightUnit; height_unit?: HeightUnit }) => Promise<void>;
     updateReminderPreferences: (preferences: {
         reminder_log_weight_enabled?: boolean;

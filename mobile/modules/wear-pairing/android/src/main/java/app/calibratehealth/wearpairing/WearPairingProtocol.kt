@@ -7,6 +7,8 @@ internal object WearPairingProtocol {
     const val PAIR_RESULT = "/calibrate/v1/pair/result"
     const val SYNC_INVALIDATE = "/calibrate/v1/sync/invalidate"
     const val CONTINUE_ON_PHONE = "/calibrate/v1/continue-on-phone"
+    const val ACCOUNT_DISCONNECT = "/calibrate/v1/account/disconnect"
+    const val ACCOUNT_DISCONNECT_RESULT = "/calibrate/v1/account/disconnect-result"
     const val MAX_MESSAGE_BYTES = 32 * 1024
 
     private val allowedPaths = setOf(
@@ -14,7 +16,9 @@ internal object WearPairingProtocol {
         PAIR_CREDENTIAL,
         PAIR_RESULT,
         SYNC_INVALIDATE,
-        CONTINUE_ON_PHONE
+        CONTINUE_ON_PHONE,
+        ACCOUNT_DISCONNECT,
+        ACCOUNT_DISCONNECT_RESULT
     )
 
     fun isAllowed(path: String): Boolean = path in allowedPaths

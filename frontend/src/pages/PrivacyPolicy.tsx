@@ -1,6 +1,7 @@
 import React from 'react';
 import { Box, Divider, Link, Stack, Typography } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
+import { Link as RouterLink } from 'react-router-dom';
 import AppPage from '../ui/AppPage';
 import AppCard from '../ui/AppCard';
 import { useI18n } from '../i18n/useI18n';
@@ -490,14 +491,22 @@ const PrivacyPolicy: React.FC = () => {
                             <Typography variant="body1">
                                 While signed in, you can download a versioned JSON export containing your account profile,
                                 preferences, optional avatar, goals, body metrics, food logs, completed-day state, My Foods,
-                                recipes, and in-app notification history. Password hashes, authentication tokens, session
-                                records, push endpoints and tokens, and internal replay metadata are excluded for security.
+                                recipes, in-app notification history, Health Connect source records, and daily activity
+                                summaries. Password hashes, authentication tokens, session records, push endpoints and tokens,
+                                and internal replay metadata are excluded for security.
                             </Typography>
                             <Typography variant="body2" sx={{ color: "text.secondary" }}>
                                 Account deletion requires your current password and cannot be undone. These export and
                                 deletion controls are available on self-hosted instances without contacting the hosted
                                 service. If you need assistance with the hosted Service, contact us below; for a self-hosted
                                 instance, contact its operator.
+                            </Typography>
+                            <Typography variant="body2">
+                                See the public{' '}
+                                <Link component={RouterLink} to="/account-deletion" underline="hover">
+                                    account deletion instructions
+                                </Link>{' '}
+                                for the signed-in steps, hosted-service request path, timing, and retention details.
                             </Typography>
                         </Stack>
                     </Box>

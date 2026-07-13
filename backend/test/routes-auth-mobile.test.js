@@ -2,6 +2,11 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const Module = require('node:module');
 const crypto = require('node:crypto');
+const { diagnosticsRegistry } = require('../src/observability');
+
+function operationCount(name, field) {
+  return diagnosticsRegistry.snapshot().operations[name]?.[field] ?? 0;
+}
 
 function stubModule(resolvedPath, exports) {
   const moduleInstance = new Module(resolvedPath);
@@ -276,6 +281,7 @@ test('auth route: POST /mobile/login performs a dummy hash comparison for unknow
 });
 
 test('auth route: POST /mobile/refresh rejects missing refresh token', async () => {
+  const rejectedBefore = operationCount('auth_mobile_refresh', 'rejected');
   const router = loadAuthRouter({
     prismaStub: { user: {}, mobileAuthSession: {} },
     passportStub: { authenticate: () => () => {} },
@@ -288,6 +294,26 @@ test('auth route: POST /mobile/refresh rejects missing refresh token', async () 
 
   assert.equal(res.statusCode, 400);
   assert.deepEqual(res.body, { message: 'refresh_token is required' });
+  assert.equal(operationCount('auth_mobile_refresh', 'rejected'), rejectedBefore + 1);
+});
+
+test('auth route: POST /mobile/refresh records invalid or expired refresh tokens', async () => {
+  const rejectedBefore = operationCount('auth_mobile_refresh', 'rejected');
+  const router = loadAuthRouter({
+    prismaStub: {
+      mobileAuthSession: { findUnique: async () => null }
+    },
+    passportStub: { authenticate: () => () => {} },
+    bcryptStub: { compare: async () => false, genSalt: async () => 'salt', hash: async () => 'hash' }
+  });
+  const handler = getRouteHandler(router, 'post', '/mobile/refresh');
+  const res = createRes();
+
+  await handler({ body: { refresh_token: 'expired-refresh-token' } }, res);
+
+  assert.equal(res.statusCode, 401);
+  assert.deepEqual(res.body, { message: 'Invalid or expired refresh token' });
+  assert.equal(operationCount('auth_mobile_refresh', 'rejected'), rejectedBefore + 1);
 });
 
 test('auth route: GET /mobile/sessions returns owned active devices', async () => {

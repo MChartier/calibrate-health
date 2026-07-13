@@ -7,6 +7,7 @@ export const NATIVE_PUSH_STATES = {
     BLOCKED: 'blocked',
     REGISTERING: 'registering',
     REGISTERED: 'registered',
+    DISABLED: 'disabled',
     UNSUPPORTED: 'unsupported',
     ERROR: 'error'
 } as const;
@@ -66,6 +67,12 @@ export function getPushStatusPresentation(state: NativePushState): PushStatusPre
         case NATIVE_PUSH_STATES.UNSUPPORTED:
             return {
                 message: 'Remote push is unavailable in Expo Go. Use an Android development or release build.',
+                action: null,
+                isError: false
+            };
+        case NATIVE_PUSH_STATES.DISABLED:
+            return {
+                message: 'Native push is disabled by this Calibrate server.',
                 action: null,
                 isError: false
             };

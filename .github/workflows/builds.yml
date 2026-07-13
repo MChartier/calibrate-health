@@ -11,6 +11,29 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  release-config:
+    name: Release Configuration
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Validate versions and quality-gate tests
+        run: |
+          npm run release:check
+          npm run test:release
+          npm run test:native-release
+          npm run test:wear:emulator:unit
+          npm run test:build-budget
+          npm run test:deploy
+
   backend-build:
     name: Backend Build
     runs-on: ubuntu-latest
@@ -92,6 +115,9 @@ jobs:
       - name: Install deps
         run: npm ci --no-audit --fund=false
 
+      - name: Validate patched mobile build tools
+        run: npm run test:mobile-build-tools
+
       - name: Type-check mobile
         run: npm --prefix mobile run typecheck
 
@@ -102,3 +128,40 @@ jobs:
       - name: Build Android debug
         working-directory: mobile/android
         run: ./gradlew assembleDebug -PreactNativeArchitectures=x86_64
+
+  wear-build:
+    name: Wear Build and JVM Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: gradle
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Create shared phone and Wear debug keystore
+        shell: bash
+        run: |
+          mkdir -p mobile/android/app
+          keytool -genkeypair -noprompt \
+            -keystore mobile/android/app/debug.keystore \
+            -storepass android \
+            -keypass android \
+            -alias androiddebugkey \
+            -keyalg RSA \
+            -keysize 2048 \
+            -validity 10000 \
+            -dname "CN=Android Debug,O=Android,C=US"
+
+      - name: Validate Wear source, resources, and tests
+        working-directory: wear
+        run: ./gradlew assembleDebug testDebugUnitTest --no-daemon --console=plain

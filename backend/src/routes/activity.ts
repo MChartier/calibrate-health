@@ -14,6 +14,7 @@ import {
   type ParsedActivityRecord,
   type ParsedActivityDaySummary
 } from './activityUtils';
+import { diagnosticOperationOutcomeForStatus, diagnosticsRegistry } from '../observability';
 
 const router = express.Router();
 
@@ -228,17 +229,30 @@ router.get('/days', async (req, res) => {
 
 /** Reconcile one Health Connect change-token page and advance its device checkpoint atomically. */
 router.post('/health-connect/sync', async (req, res) => {
+  const startedAt = Date.now();
+  const recordOutcome = (statusCode: number) => diagnosticsRegistry.recordOperation(
+    'health_connect_ingestion',
+    diagnosticOperationOutcomeForStatus(statusCode),
+    Date.now() - startedAt
+  );
   const user = req.user as { id: number; timezone?: string };
   const sourceDeviceId = res.locals.mobileDeviceId as string | undefined;
   if (!sourceDeviceId) {
+    recordOutcome(403);
     return res.status(403).json({ message: 'Health Connect sync requires an authenticated mobile device' });
   }
 
   const operationId = parseClientOperationId(
     req.get?.('x-client-operation-id') ?? req.headers?.['x-client-operation-id']
   );
-  if (operationId === null) return res.status(400).json({ message: 'Invalid x-client-operation-id' });
-  if (operationId === undefined) return res.status(400).json({ message: 'x-client-operation-id is required' });
+  if (operationId === null) {
+    recordOutcome(400);
+    return res.status(400).json({ message: 'Invalid x-client-operation-id' });
+  }
+  if (operationId === undefined) {
+    recordOutcome(400);
+    return res.status(400).json({ message: 'x-client-operation-id is required' });
+  }
 
   let parsed;
   try {
@@ -247,6 +261,7 @@ router.post('/health-connect/sync', async (req, res) => {
       typeof user.timezone === 'string' ? user.timezone : 'UTC'
     );
   } catch (error) {
+    recordOutcome(400);
     return res.status(400).json({ message: error instanceof Error ? error.message : 'Invalid sync request' });
   }
 
@@ -433,15 +448,18 @@ router.post('/health-connect/sync', async (req, res) => {
         };
       }
     });
+    recordOutcome(result.status);
     return res.status(result.status).json(result.body);
   } catch (error) {
     if (error instanceof ClientOperationConflictError) {
+      recordOutcome(409);
       return res.status(409).json({
         message: error.message,
         code: error.code,
         retryable: error.code === 'OPERATION_IN_PROGRESS'
       });
     }
+    recordOutcome(500);
     return res.status(500).json({ message: 'Server error' });
   }
 });
