@@ -52,4 +52,12 @@ class PairingUiStateTest {
             )
         )
     }
+
+    @Test
+    fun `paired and upgrade-required states can probe for compatibility recovery`() {
+        assertTrue(PairingUiState.Paired(42, "https://health.example.com", false).shouldAttemptForegroundSync())
+        assertTrue(PairingUiState.UpgradeRequired("Update this watch.").shouldAttemptForegroundSync())
+        assertEquals(false, PairingUiState.Unpaired.shouldAttemptForegroundSync())
+        assertEquals(false, PairingUiState.Error("Pair again.").shouldAttemptForegroundSync())
+    }
 }

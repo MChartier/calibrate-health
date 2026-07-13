@@ -24,6 +24,7 @@ import app.calibratehealth.wear.data.local.CalibrateWearDatabase
 import app.calibratehealth.wear.pairing.PairingStateEvents
 import app.calibratehealth.wear.pairing.PairingStateStore
 import app.calibratehealth.wear.pairing.PairingUiState
+import app.calibratehealth.wear.pairing.shouldAttemptForegroundSync
 import app.calibratehealth.wear.notifications.WearReminderDeepLink
 import app.calibratehealth.wear.notifications.parseWearReminderDeepLink
 import app.calibratehealth.wear.sync.OutboxWorkPolicy
@@ -112,8 +113,11 @@ class MainActivity : ComponentActivity() {
         PairingStateEvents.addListener(pairingStateChanged)
         refreshPairingState()
         // Foreground entry is a freshness event even when the process survived in the background.
-        if (appState.value is WearAppState.Paired) {
+        val pairingState = PairingStateStore(this).currentUiState()
+        if (pairingState.shouldAttemptForegroundSync()) {
             WorkManagerOutboxScheduler(this).scheduleForegroundRefresh()
+        }
+        if (pairingState is PairingUiState.Paired) {
             requestReminderPermissionOnce()
         }
     }

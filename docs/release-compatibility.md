@@ -21,8 +21,10 @@ one-time pairing exchange. Browser cookie sessions omit these headers and are un
 An incompatible native request receives HTTP 426 with `CLIENT_UPGRADE_REQUIRED`, the applicable minimum version, and
 a non-retryable user message. Phone keeps its credentials and offline outbox behind an update-required screen. Wear
 keeps pairing, cache, and queued mutations but stops normal refresh/action work behind a dedicated update-required
-state. Updating in place lets both clients resume without discarding local data. A platform header cannot override
-the device platform retained by the authenticated server session.
+state. Foregrounding that Wear screen schedules a bounded compatibility probe; a committed compatible snapshot clears
+only the upgrade marker and then resumes retained queued work. This allows either an in-place watch update or a server
+rollback that lowers the client floor to recover without re-pairing or discarding local data. A platform header cannot
+override the device platform retained by the authenticated server session.
 
 Compatibility changes follow these rules:
 

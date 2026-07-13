@@ -29,6 +29,10 @@ internal data class PairingSessionFacts(
 internal const val SESSION_RECOVERY_MESSAGE =
     "Watch sign-in expired. Pair again from Calibrate on your phone; queued changes will be preserved."
 
+/** A compatibility-blocked watch must still probe so an in-place update or server rollback can recover. */
+internal fun PairingUiState.shouldAttemptForegroundSync(): Boolean =
+    this is PairingUiState.Paired || this is PairingUiState.UpgradeRequired
+
 /** Keeps UI precedence and session-expiry behavior testable without Android storage. */
 internal fun resolvePairingUiState(
     storedError: String?,
@@ -172,6 +176,16 @@ internal class PairingStateStore(context: Context) {
 
     fun clearError() {
         preferences.edit().remove(ERROR_KEY).remove(UPGRADE_REQUIRED_KEY).commit()
+        PairingStateEvents.notifyChanged()
+    }
+
+    /** Clear only a proven-resolved compatibility block without hiding an unrelated pairing error. */
+    @Synchronized
+    fun clearUpgradeRequired() {
+        if (!preferences.contains(UPGRADE_REQUIRED_KEY)) return
+        check(preferences.edit().remove(UPGRADE_REQUIRED_KEY).commit()) {
+            "Unable to clear Wear compatibility state."
+        }
         PairingStateEvents.notifyChanged()
     }
 
