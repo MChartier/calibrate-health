@@ -1,0 +1,15 @@
+{
+  "name": "@calibrate/shared",
+  "version": "0.0.0",
+  "private": true,
+  "main": "./index.ts",
+  "types": "./index.ts",
+  "exports": {
+    ".": "./index.ts",
+    "./domain": "./domain.ts",
+    "./date": "./date.ts",
+    "./goalDeficit": "./goalDeficit.ts",
+    "./inAppNotifications": "./inAppNotifications.ts",
+    "./notificationDelivery": "./notificationDelivery.ts"
+  }
+}

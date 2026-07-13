@@ -2,6 +2,14 @@ node_modules
 dist
 .env
 backend/.env
+backend/prisma/*.db
+backend/prisma/*.db-journal
+backend/prisma/*.db-shm
+backend/prisma/*.db-wal
+mobile/.expo
+mobile/android
+mobile/dist
+.codex-screenshots/
 .DS_Store
 coverage
 .nyc_output

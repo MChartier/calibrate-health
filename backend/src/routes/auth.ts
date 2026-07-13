@@ -4,6 +4,14 @@ import bcrypt from 'bcryptjs';
 import prisma from '../config/database';
 import { normalizeEmailCredential, validatePasswordCredential } from '../utils/authCredentials';
 import { serializeUserForClient, USER_CLIENT_SELECT } from '../utils/userSerialization';
+import {
+    formatMobileAuthResponse,
+    issueMobileAuthPayload,
+    parseMobileDevicePayload,
+    refreshMobileSession,
+    revokeMobileSessionByAccessToken,
+    revokeMobileSessionByRefreshToken
+} from '../services/mobileAuth';
 
 /**
  * Session-based auth endpoints (register/login/logout/me).
@@ -70,6 +78,60 @@ router.post('/register', async (req, res) => {
     }
 });
 
+router.post('/mobile/register', async (req, res) => {
+    const email = normalizeEmailCredential(req.body?.email);
+    if (!email) {
+        return res.status(400).json({ message: 'Invalid email' });
+    }
+
+    const password = req.body?.password;
+    const passwordError = validatePasswordCredential(password);
+    if (passwordError) {
+        return res.status(400).json({ message: passwordError });
+    }
+
+    const device = parseMobileDevicePayload(req.body);
+    if (!device.ok) {
+        return res.status(400).json({ message: device.message });
+    }
+
+    try {
+        const existingUser = await prisma.user.findFirst({
+            where: { email: { equals: email, mode: 'insensitive' } },
+            select: { id: true }
+        });
+        if (existingUser) {
+            return res.status(400).json({ message: 'User already exists' });
+        }
+
+        const salt = await bcrypt.genSalt(10);
+        const password_hash = await bcrypt.hash(password, salt);
+        const newUser = await prisma.user.create({
+            data: {
+                email,
+                password_hash
+            },
+            select: USER_CLIENT_SELECT
+        });
+
+        const authPayload = await issueMobileAuthPayload({
+            userId: newUser.id,
+            device: device.device
+        });
+        if (!authPayload) {
+            return res.status(500).json({ message: 'Server error' });
+        }
+
+        res.json(formatMobileAuthResponse(authPayload));
+    } catch (err) {
+        if (isUniqueConstraintError(err)) {
+            return res.status(400).json({ message: 'User already exists' });
+        }
+        console.error('Mobile auth register failed:', err);
+        return res.status(500).json({ message: 'Server error' });
+    }
+});
+
 router.post('/login', (req, res, next) => {
     const email = normalizeEmailCredential(req.body?.email);
     const password = req.body?.password;
@@ -95,11 +157,97 @@ router.post('/login', (req, res, next) => {
     })(req, res, next);
 });
 
+router.post('/mobile/login', async (req, res) => {
+    const email = normalizeEmailCredential(req.body?.email);
+    const password = req.body?.password;
+    if (!email || typeof password !== 'string' || password.length === 0) {
+        return res.status(400).json({ message: INVALID_LOGIN_MESSAGE });
+    }
+
+    const device = parseMobileDevicePayload(req.body);
+    if (!device.ok) {
+        return res.status(400).json({ message: device.message });
+    }
+
+    try {
+        const user = await prisma.user.findFirst({
+            where: { email: { equals: email, mode: 'insensitive' } },
+            select: { ...USER_CLIENT_SELECT, password_hash: true }
+        });
+        if (!user) {
+            return res.status(401).json({ message: INVALID_LOGIN_MESSAGE });
+        }
+
+        const isMatch = await bcrypt.compare(password, user.password_hash);
+        if (!isMatch) {
+            return res.status(401).json({ message: INVALID_LOGIN_MESSAGE });
+        }
+
+        const authPayload = await issueMobileAuthPayload({
+            userId: user.id,
+            device: device.device
+        });
+        if (!authPayload) {
+            return res.status(500).json({ message: 'Server error' });
+        }
+
+        res.json(formatMobileAuthResponse(authPayload));
+    } catch (err) {
+        console.error('Mobile auth login failed:', err);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+router.post('/mobile/refresh', async (req, res) => {
+    const refreshToken =
+        req.body && typeof req.body === 'object' && typeof (req.body as { refresh_token?: unknown }).refresh_token === 'string'
+            ? (req.body as { refresh_token: string }).refresh_token.trim()
+            : '';
+
+    if (!refreshToken) {
+        return res.status(400).json({ message: 'refresh_token is required' });
+    }
+
+    try {
+        const authPayload = await refreshMobileSession(refreshToken);
+        if (!authPayload) {
+            return res.status(401).json({ message: 'Invalid or expired refresh token' });
+        }
+
+        res.json(formatMobileAuthResponse(authPayload));
+    } catch (err) {
+        console.error('Mobile auth refresh failed:', err);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
 router.post('/logout', (req, res, next) => {
     req.logout((err) => {
         if (err) { return next(err); }
         res.json({ message: 'Logged out' });
     });
+});
+
+router.post('/mobile/logout', async (req, res) => {
+    const refreshToken =
+        req.body && typeof req.body === 'object' && typeof (req.body as { refresh_token?: unknown }).refresh_token === 'string'
+            ? (req.body as { refresh_token: string }).refresh_token.trim()
+            : '';
+    const authorization = req.get('authorization');
+    const accessToken = authorization?.match(/^Bearer\s+(.+)$/i)?.[1]?.trim();
+
+    try {
+        if (refreshToken) {
+            await revokeMobileSessionByRefreshToken(refreshToken);
+        } else if (accessToken) {
+            await revokeMobileSessionByAccessToken(accessToken);
+        }
+
+        res.json({ ok: true });
+    } catch (err) {
+        console.error('Mobile auth logout failed:', err);
+        res.status(500).json({ message: 'Server error' });
+    }
 });
 
 router.get('/me', async (req, res) => {

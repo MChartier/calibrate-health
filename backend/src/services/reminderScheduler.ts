@@ -14,7 +14,6 @@ import {
     DEFAULT_NOTIFICATION_DELIVERY_CHANNELS,
     NOTIFICATION_DELIVERY_CHANNELS
 } from '../../../shared/notificationDelivery';
-import { ensureWebPushConfigured } from './webPush';
 
 const DEFAULT_REMINDER_SEND_HOUR_LOCAL = 9; // Local hour (0-23) to begin sending reminders.
 const DEFAULT_REMINDER_JOB_INTERVAL_MINUTES = 15; // How often to scan for eligible reminders.
@@ -104,21 +103,7 @@ const resolveInactiveInAppReminders = async (now: Date): Promise<void> => {
  * Create scheduled in-app reminders and optionally fan out matching push notifications.
  */
 const createAndSendScheduledReminders = async (reminderHour: number, now: Date): Promise<void> => {
-    const webPushConfig = ensureWebPushConfigured();
-    const channels = webPushConfig.ok
-        ? [...DEFAULT_NOTIFICATION_DELIVERY_CHANNELS]
-        : [NOTIFICATION_DELIVERY_CHANNELS.IN_APP];
-
-    if (!webPushConfig.ok) {
-        if (!hasLoggedMissingConfig) {
-            console.warn(
-                `${webPushConfig.error ?? 'Web push is not configured.'} Push delivery is disabled; in-app reminders will continue.`
-            );
-            hasLoggedMissingConfig = true;
-        }
-    } else {
-        hasLoggedMissingConfig = false;
-    }
+    const channels = [...DEFAULT_NOTIFICATION_DELIVERY_CHANNELS];
 
     const users = await prisma.user.findMany({
         where: {
@@ -180,6 +165,10 @@ const createAndSendScheduledReminders = async (reminderHour: number, now: Date):
 
         if (result.push.failed > 0 && result.push.message) {
             console.warn(`Reminder push delivery for user ${user.id} had failures. ${result.push.message}`);
+        }
+        if (result.push.skipped && result.push.message?.startsWith('Web push is disabled') && !hasLoggedMissingConfig) {
+            console.warn(`${result.push.message} Native push delivery can still run when native tokens are registered.`);
+            hasLoggedMissingConfig = true;
         }
     }
 };

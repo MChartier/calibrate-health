@@ -58,6 +58,20 @@ enum InAppNotificationType {
   GENERIC
 }
 
+enum MobileDevicePlatform {
+  ANDROID_PHONE
+  WEAR_OS
+}
+
+enum NativePushPlatform {
+  ANDROID
+}
+
+enum NativePushProvider {
+  EXPO
+  FCM
+}
+
 model User {
   id            Int       @id @default(autoincrement())
   email         String    @unique
@@ -93,6 +107,10 @@ model User {
   my_foods      MyFood[]
   /// Web push subscriptions for reminder notifications.
   push_subscriptions PushSubscription[]
+  /// Native mobile auth sessions keyed by hashed opaque tokens.
+  mobile_sessions MobileAuthSession[]
+  /// Native push tokens for Android app builds.
+  native_push_subscriptions NativePushSubscription[]
   /// In-app reminder feed entries rendered in the notifications panel.
   in_app_notifications InAppNotification[]
 }
@@ -305,6 +323,54 @@ model PushSubscription {
 
   @@unique([user_id, endpoint])
   @@index([user_id])
+}
+
+model MobileAuthSession {
+  id                  Int                  @id @default(autoincrement())
+  user_id             Int
+  user                User                 @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  /// Stable per-install identifier supplied by the native client.
+  device_id           String
+  /// Device class for Android phone now and Wear OS later.
+  device_platform     MobileDevicePlatform
+  /// Optional human-readable device label for account/device management.
+  device_name         String?
+  /// SHA-256 hash of the short-lived access token.
+  access_token_hash   String               @unique
+  /// SHA-256 hash of the long-lived refresh token.
+  refresh_token_hash  String               @unique
+  access_expires_at   DateTime
+  refresh_expires_at  DateTime
+  revoked_at          DateTime?
+  last_used_at        DateTime?
+  created_at          DateTime             @default(now())
+  updated_at          DateTime             @updatedAt
+
+  @@index([user_id])
+  @@index([user_id, device_id, revoked_at])
+}
+
+model NativePushSubscription {
+  id                    Int                @id @default(autoincrement())
+  user_id               Int
+  user                  User               @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  /// Stable per-install identifier supplied by the native client.
+  device_id             String
+  /// Native OS platform for this token.
+  platform              NativePushPlatform @default(ANDROID)
+  /// Push provider for the stored token. Expo is the first implementation; FCM can be added later.
+  provider              NativePushProvider
+  /// Provider-issued token, e.g. ExpoPushToken[...] for Expo development builds.
+  token                 String
+  /// Local date (UTC-normalized) when the last reminder was sent for this token.
+  last_sent_local_date  DateTime?          @db.Date
+  revoked_at            DateTime?
+  created_at            DateTime           @default(now())
+  updated_at            DateTime           @updatedAt
+
+  @@unique([user_id, provider, token])
+  @@index([user_id])
+  @@index([user_id, device_id])
 }
 
 model InAppNotification {
