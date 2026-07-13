@@ -15,7 +15,7 @@ import {
 import { parseLocalDateOnly } from '../utils/date';
 import { parsePositiveInteger } from '../utils/requestParsing';
 import { parseFoodLogCreateBody, parseFoodLogUpdateBody, parseFoodSearchParams } from './foodUtils';
-import { safeErrorType } from '../observability';
+import { diagnosticsRegistry, safeErrorType } from '../observability';
 import {
     getRecentFoodSuggestions,
     RECENT_FOOD_DEFAULT_LIMIT,
@@ -108,8 +108,14 @@ const searchEnabledProviders = async (
             continue;
         }
 
+        const startedAt = Date.now();
         try {
             const result = await resolution.provider.searchFoods(params);
+            diagnosticsRegistry.recordOperation(
+                'food_provider_request',
+                result.items.length > 0 ? 'success' : 'empty',
+                Date.now() - startedAt
+            );
             if (opts.requireBarcodeLookup && !resolution.provider.supportsBarcodeLookup) {
                 attempts.push({
                     name: providerInfo.name,
@@ -131,6 +137,7 @@ const searchEnabledProviders = async (
 
             attempts.push({ name: providerInfo.name, status: 'empty' });
         } catch (err) {
+            diagnosticsRegistry.recordOperation('food_provider_request', 'failure', Date.now() - startedAt);
             const message = err instanceof Error ? err.message : 'Search failed.';
             attempts.push({ name: providerInfo.name, status: 'error', detail: message });
             lastError = err instanceof Error ? err : new Error(message);

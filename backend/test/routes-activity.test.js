@@ -1,6 +1,11 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const Module = require('node:module');
+const { diagnosticsRegistry } = require('../src/observability');
+
+function operationCount(name, field) {
+  return diagnosticsRegistry.snapshot().operations[name]?.[field] ?? 0;
+}
 
 function stubModule(resolvedPath, exports) {
   const moduleInstance = new Module(resolvedPath);
@@ -162,6 +167,7 @@ test('activity route requires trusted mobile provenance for Health Connect write
 });
 
 test('activity route advances the token with source writes in one transaction', async () => {
+  const successesBefore = operationCount('health_connect_ingestion', 'successes');
   let transactions = 0;
   let stateUpsert;
   let recordCreate;
@@ -213,9 +219,11 @@ test('activity route advances the token with source writes in one transaction', 
   assert.equal(recordCreate.local_date.toISOString(), '2026-07-11T00:00:00.000Z');
   assert.equal(stateUpsert.create.changes_token, 'next-token');
   assert.equal(transactions, 1);
+  assert.equal(operationCount('health_connect_ingestion', 'successes'), successesBefore + 1);
 });
 
 test('activity route rejects out-of-order token pages before domain writes', async () => {
+  const conflictsBefore = operationCount('health_connect_ingestion', 'conflicts');
   let creates = 0;
   const tx = {
     activityRecord: {
@@ -235,6 +243,7 @@ test('activity route rejects out-of-order token pages before domain writes', asy
   assert.equal(res.statusCode, 409);
   assert.equal(res.body.code, 'HEALTH_CONNECT_TOKEN_MISMATCH');
   assert.equal(creates, 0);
+  assert.equal(operationCount('health_connect_ingestion', 'conflicts'), conflictsBefore + 1);
 });
 
 test('activity route returns every requested date with optional summary and records', async () => {

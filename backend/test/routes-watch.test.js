@@ -2,6 +2,11 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const express = require('express');
 const Module = require('node:module');
+const { diagnosticsRegistry } = require('../src/observability');
+
+function operationCount(name, field) {
+  return diagnosticsRegistry.snapshot().operations[name]?.[field] ?? 0;
+}
 
 function loadWatchRouter(watchService) {
   const servicePath = require.resolve('../src/services/watch');
@@ -90,6 +95,8 @@ test('watch snapshot returns a private ETag and supports conditional 304', async
 });
 
 test('watch mutations require an operation id and trusted session provenance', async (t) => {
+  const rejectedBefore = operationCount('watch_mutation_reconciliation', 'rejected');
+  const successesBefore = operationCount('watch_mutation_reconciliation', 'successes');
   let executed;
   const origin = await createServer(t, {
     parseWatchMutation: (body) => ({ ok: true, type: body.type, payload: body.payload }),
@@ -117,4 +124,6 @@ test('watch mutations require an operation id and trusted session provenance', a
   assert.equal(executed.userId, 9);
   assert.equal(executed.mobileAuthSessionId, 73);
   assert.equal(executed.operationId, 'watch-op-0001');
+  assert.equal(operationCount('watch_mutation_reconciliation', 'rejected'), rejectedBefore + 1);
+  assert.equal(operationCount('watch_mutation_reconciliation', 'successes'), successesBefore + 1);
 });

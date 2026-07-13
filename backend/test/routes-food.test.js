@@ -1,6 +1,11 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const Module = require('node:module');
+const { diagnosticsRegistry } = require('../src/observability');
+
+function operationCount(name, field) {
+  return diagnosticsRegistry.snapshot().operations[name]?.[field] ?? 0;
+}
 
 function stubModule(resolvedPath, exports) {
   const moduleInstance = new Module(resolvedPath);
@@ -213,6 +218,8 @@ test('food route: GET /search keeps text pagination pinned when a provider retur
 });
 
 test('food route: GET /search falls back to the next provider when text search errors', async () => {
+  const failuresBefore = operationCount('food_provider_request', 'failures');
+  const successesBefore = operationCount('food_provider_request', 'successes');
   const callOrder = [];
   const providerA = {
     name: 'fatsecret',
@@ -259,6 +266,8 @@ test('food route: GET /search falls back to the next provider when text search e
   assert.equal(res.body.provider, 'usda');
   assert.equal(res.body.items.length, 1);
   assert.deepEqual(callOrder, ['fatsecret', 'usda']);
+  assert.equal(operationCount('food_provider_request', 'failures'), failuresBefore + 1);
+  assert.equal(operationCount('food_provider_request', 'successes'), successesBefore + 1);
 });
 
 test('food route: GET /search falls back to the next provider for barcode lookups', async () => {

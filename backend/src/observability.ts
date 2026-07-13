@@ -22,8 +22,13 @@ export type DiagnosticCategory =
 
 export type DiagnosticJobName = 'reminder_scheduler';
 export type DiagnosticJobOutcome = 'success' | 'failure' | 'skipped';
-export type DiagnosticOperationName = 'notification_delivery';
-export type DiagnosticOperationOutcome = 'success' | 'failure';
+export type DiagnosticOperationName =
+  | 'notification_delivery'
+  | 'auth_mobile_refresh'
+  | 'food_provider_request'
+  | 'health_connect_ingestion'
+  | 'watch_mutation_reconciliation';
+export type DiagnosticOperationOutcome = 'success' | 'failure' | 'rejected' | 'conflict' | 'empty';
 
 export type ObservabilityConfig = {
   enabled: boolean;
@@ -51,6 +56,19 @@ type JobCounters = {
   lastFinishedAt: string | null;
 };
 
+type OperationCounters = {
+  attempts: number;
+  successes: number;
+  failures: number;
+  rejected: number;
+  conflicts: number;
+  empty: number;
+  durationSamples: number;
+  durationMsTotal: number;
+  durationMsMax: number;
+  latencyBuckets: Record<string, number>;
+};
+
 const emptyRequestCounters = (): RequestCounters => ({
   total: 0,
   failures: 0,
@@ -71,13 +89,26 @@ const emptyJobCounters = (): JobCounters => ({
   lastFinishedAt: null
 });
 
+const emptyOperationCounters = (): OperationCounters => ({
+  attempts: 0,
+  successes: 0,
+  failures: 0,
+  rejected: 0,
+  conflicts: 0,
+  empty: 0,
+  durationSamples: 0,
+  durationMsTotal: 0,
+  durationMsMax: 0,
+  latencyBuckets: Object.fromEntries([...LATENCY_BUCKETS_MS.map((bucket) => [`up_to_${bucket}`, 0]), ['overflow', 0]])
+});
+
 /** Process-local, bounded counters deliberately avoid user, route-parameter, and health-data labels. */
 export class DiagnosticsRegistry {
   private readonly startedAt = new Date();
   private readonly requests = emptyRequestCounters();
   private readonly requestCategories = new Map<DiagnosticCategory, RequestCounters>();
   private readonly jobs = new Map<DiagnosticJobName, JobCounters>();
-  private readonly operations = new Map<DiagnosticOperationName, { attempts: number; successes: number; failures: number }>();
+  private readonly operations = new Map<DiagnosticOperationName, OperationCounters>();
 
   recordRequest(category: DiagnosticCategory, statusCode: number, durationMs: number): void {
     this.updateRequestCounters(this.requests, statusCode, durationMs);
@@ -99,11 +130,22 @@ export class DiagnosticsRegistry {
     this.jobs.set(name, counters);
   }
 
-  recordOperation(name: DiagnosticOperationName, outcome: DiagnosticOperationOutcome): void {
-    const counters = this.operations.get(name) ?? { attempts: 0, successes: 0, failures: 0 };
+  recordOperation(name: DiagnosticOperationName, outcome: DiagnosticOperationOutcome, durationMs?: number): void {
+    const counters = this.operations.get(name) ?? emptyOperationCounters();
     counters.attempts += 1;
     counters.successes += outcome === 'success' ? 1 : 0;
     counters.failures += outcome === 'failure' ? 1 : 0;
+    counters.rejected += outcome === 'rejected' ? 1 : 0;
+    counters.conflicts += outcome === 'conflict' ? 1 : 0;
+    counters.empty += outcome === 'empty' ? 1 : 0;
+    if (durationMs !== undefined) {
+      const bounded = boundedDuration(durationMs);
+      counters.durationSamples += 1;
+      counters.durationMsTotal += bounded;
+      counters.durationMsMax = Math.max(counters.durationMsMax, bounded);
+      const bucket = LATENCY_BUCKETS_MS.find((limit) => bounded <= limit);
+      counters.latencyBuckets[bucket === undefined ? 'overflow' : `up_to_${bucket}`] += 1;
+    }
     this.operations.set(name, counters);
   }
 
@@ -125,7 +167,7 @@ export class DiagnosticsRegistry {
       ),
       operations: Object.fromEntries(
         [...this.operations.entries()].sort(([left], [right]) => left.localeCompare(right))
-          .map(([name, counters]) => [name, { ...counters }])
+          .map(([name, counters]) => [name, { ...counters, latencyBuckets: { ...counters.latencyBuckets } }])
       )
     };
   }
@@ -152,6 +194,14 @@ function copyRequestCounters(counters: RequestCounters): object {
 }
 
 export const diagnosticsRegistry = new DiagnosticsRegistry();
+
+/** Map HTTP-style results to the fixed operation outcome set without introducing route-specific labels. */
+export function diagnosticOperationOutcomeForStatus(statusCode: number): DiagnosticOperationOutcome {
+  if (statusCode >= 200 && statusCode < 400) return 'success';
+  if (statusCode === 409) return 'conflict';
+  if (statusCode >= 400 && statusCode < 500) return 'rejected';
+  return 'failure';
+}
 
 export function resolveObservabilityConfig(env: NodeJS.ProcessEnv = process.env): ObservabilityConfig {
   const enabled = env.CALIBRATE_DIAGNOSTICS_ENABLED?.trim().toLowerCase() === 'true';

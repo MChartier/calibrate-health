@@ -90,6 +90,7 @@ const hoistedRuntimeModules = [
   'react-freeze',
   'react-refresh',
   'react-native-gesture-handler',
+  'react-native-health-connect',
   'react-native-is-edge-to-edge',
   'react-native-reanimated',
   'react-native-safe-area-context',

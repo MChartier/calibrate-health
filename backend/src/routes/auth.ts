@@ -18,7 +18,7 @@ import {
     revokeMobileSessionForUser,
     revokeOtherMobileSessionsForUser
 } from '../services/mobileAuth';
-import { logSafeOperationalError } from '../observability';
+import { diagnosticsRegistry, logSafeOperationalError } from '../observability';
 
 /**
  * Session-based auth endpoints (register/login/logout/me).
@@ -209,23 +209,28 @@ router.post('/mobile/login', async (req, res) => {
 });
 
 router.post('/mobile/refresh', async (req, res) => {
+    const startedAt = Date.now();
     const refreshToken =
         req.body && typeof req.body === 'object' && typeof (req.body as { refresh_token?: unknown }).refresh_token === 'string'
             ? (req.body as { refresh_token: string }).refresh_token.trim()
             : '';
 
     if (!refreshToken) {
+        diagnosticsRegistry.recordOperation('auth_mobile_refresh', 'rejected', Date.now() - startedAt);
         return res.status(400).json({ message: 'refresh_token is required' });
     }
 
     try {
         const authPayload = await refreshMobileSession(refreshToken);
         if (!authPayload) {
+            diagnosticsRegistry.recordOperation('auth_mobile_refresh', 'rejected', Date.now() - startedAt);
             return res.status(401).json({ message: 'Invalid or expired refresh token' });
         }
 
+        diagnosticsRegistry.recordOperation('auth_mobile_refresh', 'success', Date.now() - startedAt);
         res.json(formatMobileAuthResponse(authPayload));
     } catch (err) {
+        diagnosticsRegistry.recordOperation('auth_mobile_refresh', 'failure', Date.now() - startedAt);
         logSafeOperationalError('auth.mobile_refresh', err, res.locals?.requestId);
         res.status(500).json({ message: 'Server error' });
     }

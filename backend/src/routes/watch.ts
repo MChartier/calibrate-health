@@ -1,5 +1,9 @@
 import express from 'express';
-import { safeErrorType } from '../observability';
+import {
+  diagnosticOperationOutcomeForStatus,
+  diagnosticsRegistry,
+  safeErrorType
+} from '../observability';
 import {
   ClientOperationConflictError,
   parseClientOperationId
@@ -58,16 +62,27 @@ router.get('/', async (req, res) => {
 });
 
 router.post('/mutations', async (req, res) => {
+  const startedAt = Date.now();
+  const recordOutcome = (statusCode: number) => diagnosticsRegistry.recordOperation(
+    'watch_mutation_reconciliation',
+    diagnosticOperationOutcomeForStatus(statusCode),
+    Date.now() - startedAt
+  );
   const user = req.user as { id: number; timezone: string };
   const operationId = parseClientOperationId(req.get('x-client-operation-id'));
   if (operationId === undefined) {
+    recordOutcome(400);
     return res.status(400).json({ message: 'x-client-operation-id is required' });
   }
   if (operationId === null) {
+    recordOutcome(400);
     return res.status(400).json({ message: 'Invalid x-client-operation-id' });
   }
   const mutation = parseWatchMutation(req.body, { timezone: user.timezone });
-  if (!mutation.ok) return res.status(mutation.status).json({ message: mutation.message });
+  if (!mutation.ok) {
+    recordOutcome(mutation.status);
+    return res.status(mutation.status).json({ message: mutation.message });
+  }
 
   try {
     const result = await executeWatchMutation({
@@ -76,15 +91,18 @@ router.post('/mutations', async (req, res) => {
       operationId,
       mutation
     });
+    recordOutcome(result.status);
     return res.status(result.status).json(result.body);
   } catch (error) {
     if (error instanceof ClientOperationConflictError) {
+      recordOutcome(409);
       return res.status(409).json({
         message: error.message,
         code: error.code,
         retryable: error.code === 'OPERATION_IN_PROGRESS'
       });
     }
+    recordOutcome(500);
     const errorType = safeErrorType(error);
     console.error(`Watch mutation failed (request_id=${res.locals?.requestId ?? 'unavailable'}, error_type=${errorType}).`);
     return res.status(500).json({ message: 'Server error' });

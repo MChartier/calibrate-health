@@ -7,6 +7,7 @@ const {
   classifyDiagnosticCategory,
   createDiagnosticsMetricsHandler,
   createRequestObservabilityMiddleware,
+  diagnosticOperationOutcomeForStatus,
   resolveObservabilityConfig,
   logSafeOperationalError,
   safeErrorType,
@@ -116,6 +117,9 @@ test('metrics surface is opt-in, bearer protected, and contains only bounded agg
   registry.recordRequest('provider', 503, 250);
   registry.recordJob('reminder_scheduler', 'failure', 500);
   registry.recordOperation('notification_delivery', 'failure');
+  registry.recordOperation('food_provider_request', 'failure', 250);
+  registry.recordOperation('food_provider_request', 'empty', 125);
+  registry.recordOperation('health_connect_ingestion', 'conflict', Number.POSITIVE_INFINITY);
   const handler = createDiagnosticsMetricsHandler({ config, registry });
 
   const unauthorized = mockResponse();
@@ -129,7 +133,17 @@ test('metrics surface is opt-in, bearer protected, and contains only bounded agg
   assert.equal(authorized.body.requests.total, 2);
   assert.equal(authorized.body.requests.serverFailures, 1);
   assert.equal(authorized.body.background_jobs.reminder_scheduler.failures, 1);
-  assert.deepEqual(authorized.body.operations.notification_delivery, { attempts: 1, successes: 0, failures: 1 });
+  assert.equal(authorized.body.operations.notification_delivery.attempts, 1);
+  assert.equal(authorized.body.operations.notification_delivery.failures, 1);
+  assert.equal(authorized.body.operations.notification_delivery.durationSamples, 0);
+  assert.equal(authorized.body.operations.notification_delivery.latencyBuckets.up_to_10, 0);
+  assert.equal(authorized.body.operations.food_provider_request.failures, 1);
+  assert.equal(authorized.body.operations.food_provider_request.empty, 1);
+  assert.equal(authorized.body.operations.food_provider_request.durationSamples, 2);
+  assert.equal(authorized.body.operations.food_provider_request.durationMsTotal, 375);
+  assert.equal(authorized.body.operations.food_provider_request.latencyBuckets.up_to_500, 2);
+  assert.equal(authorized.body.operations.health_connect_ingestion.conflicts, 1);
+  assert.equal(authorized.body.operations.health_connect_ingestion.durationMsTotal, 0);
   const encoded = JSON.stringify(authorized.body);
   assert.equal(encoded.includes(token), false);
   assert.equal(encoded.includes('user'), false);
@@ -140,4 +154,12 @@ test('metrics surface is opt-in, bearer protected, and contains only bounded agg
     registry
   })({ get: () => undefined }, disabled);
   assert.equal(disabled.statusCode, 404);
+});
+
+test('operation status mapping uses a fixed bounded outcome vocabulary', () => {
+  assert.equal(diagnosticOperationOutcomeForStatus(200), 'success');
+  assert.equal(diagnosticOperationOutcomeForStatus(304), 'success');
+  assert.equal(diagnosticOperationOutcomeForStatus(400), 'rejected');
+  assert.equal(diagnosticOperationOutcomeForStatus(409), 'conflict');
+  assert.equal(diagnosticOperationOutcomeForStatus(503), 'failure');
 });
