@@ -1,5 +1,4 @@
 import assert from 'node:assert/strict';
-import { createRequire } from 'node:module';
 import test from 'node:test';
 
 import {
@@ -9,8 +8,6 @@ import {
   isUuidVersionAffected,
   readLockedUuidVersions
 } from './dependency-advisory-exceptions.mjs';
-
-const require = createRequire(import.meta.url);
 
 test('accepts the affected UUID version only before the exception deadline', () => {
   const result = evaluateUuidAdvisoryException(['7.0.3'], {
@@ -77,14 +74,4 @@ test('collects root and nested UUID versions from a lock graph', () => {
 
 test('reads every UUID version from the production lock graph', async () => {
   assert.deepEqual(await readLockedUuidVersions(), ['11.1.1']);
-});
-
-test('patched UUID remains compatible with xcode CommonJS project identifiers', () => {
-  const xcode = require('xcode');
-  const uuidPackage = require('uuid/package.json');
-  const project = xcode.project('fixture.pbxproj');
-  project.hash = { project: { objects: {} } };
-
-  assert.equal(uuidPackage.version, '11.1.1');
-  assert.match(project.generateUuid(), /^[0-9A-F]{24}$/);
 });

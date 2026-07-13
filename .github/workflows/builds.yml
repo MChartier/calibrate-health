@@ -115,6 +115,9 @@ jobs:
       - name: Install deps
         run: npm ci --no-audit --fund=false
 
+      - name: Validate patched mobile build tools
+        run: npm run test:mobile-build-tools
+
       - name: Type-check mobile
         run: npm --prefix mobile run typecheck
 
