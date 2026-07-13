@@ -25,6 +25,8 @@ import {
 } from '../../src/account/accountData';
 import { OUTBOX_MUTATION_STATES } from '../../src/offline/queuedMutation';
 import { useOfflineOutbox } from '../../src/offline/provider';
+import { useNativePushRegistration } from '../../src/hooks/useNativePushRegistration';
+import { getPushStatusPresentation } from '../../src/notifications/workflow';
 import { millimetersToCentimeters, millimetersToFeetInches } from '../../src/utils/bodyMeasurements';
 import { getTodayDate } from '../../src/utils/dates';
 import { formatCalories } from '../../src/utils/format';
@@ -60,6 +62,8 @@ export default function SettingsScreen() {
         retryFailed: retryFailedOutbox
     } = useOfflineOutbox();
     const queryClient = useQueryClient();
+    const nativePush = useNativePushRegistration();
+    const pushStatus = getPushStatusPresentation(nativePush.state);
     const [serverInput, setServerInput] = useState(serverUrl);
     const [timezone, setTimezone] = useState(user?.timezone ?? 'UTC');
     const [dateOfBirth, setDateOfBirth] = useState(user?.date_of_birth?.slice(0, 10) ?? '');
@@ -350,6 +354,53 @@ export default function SettingsScreen() {
                     value={logWeightReminders}
                     onValueChange={setLogWeightReminders}
                 />
+                <View style={styles.notificationStatus}>
+                    <AppText variant="label">Push on this device</AppText>
+                    <AppText
+                        accessibilityLiveRegion="polite"
+                        accessibilityRole={pushStatus.isError ? 'alert' : undefined}
+                        style={pushStatus.isError ? styles.error : undefined}
+                        variant={pushStatus.isError ? 'body' : 'muted'}
+                    >
+                        {pushStatus.message}
+                    </AppText>
+                    {pushStatus.action === 'request' && (
+                        <AppButton
+                            title="Enable push notifications"
+                            variant="secondary"
+                            accessibilityHint="Shows the Android notification permission prompt."
+                            leftIcon={<Ionicons name="notifications-outline" size={18} color={colors.text} />}
+                            onPress={() => void nativePush.requestPermission()}
+                        />
+                    )}
+                    {pushStatus.action === 'settings' && (
+                        <View style={styles.row}>
+                            <AppButton
+                                title="Open Android settings"
+                                variant="secondary"
+                                accessibilityHint="Opens notification permissions for Calibrate."
+                                onPress={() => void nativePush.openSettings()}
+                                style={styles.rowButton}
+                            />
+                            <AppButton
+                                title="Check again"
+                                variant="secondary"
+                                accessibilityHint="Checks whether notification permission is now enabled."
+                                onPress={() => void nativePush.refreshPermission()}
+                                style={styles.rowButton}
+                            />
+                        </View>
+                    )}
+                    {pushStatus.action === 'retry' && (
+                        <AppButton
+                            title="Retry push registration"
+                            variant="secondary"
+                            accessibilityHint="Checks permission and registers this device again."
+                            leftIcon={<Ionicons name="refresh-outline" size={18} color={colors.text} />}
+                            onPress={() => void nativePush.retryRegistration()}
+                        />
+                    )}
+                </View>
                 <PreferenceSwitch
                     label="Haptics"
                     value={hapticsEnabled}
@@ -856,6 +907,9 @@ const styles = StyleSheet.create({
     },
     pressedRow: {
         opacity: 0.78
+    },
+    notificationStatus: {
+        gap: spacing.sm
     },
     success: {
         color: colors.success

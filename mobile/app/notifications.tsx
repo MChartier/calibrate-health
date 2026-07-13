@@ -12,25 +12,8 @@ import { Screen } from '../src/components/Screen';
 import { SectionHeader } from '../src/components/SectionHeader';
 import { SkeletonBlock } from '../src/components/SkeletonBlock';
 import { useAuth } from '../src/auth/AuthContext';
+import { getNotificationAction } from '../src/notifications/workflow';
 import { colors, radius, spacing } from '../src/theme';
-
-type NotificationAction = {
-    label: string;
-    href: Href;
-};
-
-function getNotificationAction(notification: InAppNotification): NotificationAction {
-    if (notification.action_url.includes('weight')) {
-        return { label: 'Log weight', href: { pathname: '/(tabs)/weight', params: { date: notification.local_date } } };
-    }
-    if (notification.action_url.includes('goal')) {
-        return { label: 'Open goals', href: '/(tabs)/progress' };
-    }
-    if (notification.action_url.includes('log') || notification.action_url.includes('food')) {
-        return { label: 'Log food', href: { pathname: '/(tabs)/log', params: { date: notification.local_date } } };
-    }
-    return { label: 'Open log', href: '/(tabs)/today' };
-}
 
 function getNotificationText(notification: InAppNotification): { title: string; body: string } {
     const title = notification.title?.trim();
@@ -80,7 +63,7 @@ export default function NotificationsScreen() {
         mutationFn: (notification: InAppNotification) => api.markInAppNotificationRead(notification.id).then(() => notification),
         onSuccess: async (notification) => {
             await queryClient.invalidateQueries({ queryKey: ['mobile-in-app-notifications'] });
-            router.push(getNotificationAction(notification).href);
+            router.push(getNotificationAction(notification.action_url, notification.local_date).href as Href);
         }
     });
 
@@ -119,7 +102,7 @@ export default function NotificationsScreen() {
             )}
 
             {notifications.map((notification) => {
-                const action = getNotificationAction(notification);
+                const action = getNotificationAction(notification.action_url, notification.local_date);
                 const text = getNotificationText(notification);
                 const isUnread = !notification.read_at;
 
@@ -147,6 +130,7 @@ export default function NotificationsScreen() {
                         <View style={styles.actions}>
                             <AppButton
                                 title={action.label}
+                                accessibilityHint="Marks this reminder read and opens its Calibrate destination."
                                 leftIcon={<Ionicons name="open-outline" size={18} color="#ffffff" />}
                                 onPress={() => markRead.mutate(notification)}
                                 style={styles.actionButton}
@@ -170,7 +154,21 @@ export default function NotificationsScreen() {
                 </AppCard>
             )}
 
-            {notificationsQuery.error && <AppText style={styles.error}>{notificationsQuery.error.message}</AppText>}
+            {(notificationsQuery.error || markRead.error || dismissNotification.error) && (
+                <AppCard>
+                    <AppText accessibilityLiveRegion="assertive" accessibilityRole="alert" style={styles.error}>
+                        {notificationsQuery.error?.message ?? markRead.error?.message ?? dismissNotification.error?.message}
+                    </AppText>
+                    {notificationsQuery.error && (
+                        <AppButton
+                            title="Try notifications again"
+                            variant="secondary"
+                            accessibilityHint="Reloads the notification list from your Calibrate server."
+                            onPress={() => void notificationsQuery.refetch()}
+                        />
+                    )}
+                </AppCard>
+            )}
         </Screen>
     );
 }

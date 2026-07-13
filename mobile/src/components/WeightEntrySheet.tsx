@@ -99,7 +99,13 @@ export const WeightEntrySheet: React.FC<WeightEntrySheetProps> = ({ visible, dat
             if (!existingMetric) {
                 throw new Error('No weight entry exists for this day.');
             }
-            return api.deleteMetric(existingMetric.id);
+            const payload = { id: existingMetric.id };
+            return executeOrQueueMutation({
+                operation: OFFLINE_MUTATION_OPERATIONS.DELETE_METRIC,
+                payload,
+                execute: (operationId) => api.deleteMetric(existingMetric.id, operationId),
+                enqueue
+            });
         },
         onSuccess: async () => {
             setWeight('');

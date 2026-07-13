@@ -91,7 +91,10 @@ describe('createQueuedMutationExecutor', () => {
     it('replays all supported operations with the persisted operation ID', async () => {
         const api = {
             createFoodLog: jest.fn(async () => undefined),
+            updateFoodLog: jest.fn(async () => undefined),
+            deleteFoodLog: jest.fn(async () => undefined),
             addMetric: jest.fn(async () => undefined),
+            deleteMetric: jest.fn(async () => undefined),
             updateFoodDay: jest.fn(async () => undefined)
         } as unknown as CalibrateApiClient;
         const execute = createQueuedMutationExecutor(api);
@@ -102,12 +105,24 @@ describe('createQueuedMutationExecutor', () => {
         await execute(queuedMutation(OFFLINE_MUTATION_OPERATIONS.ADD_METRIC, {
             date: '2026-07-11', weight: 82.5
         }));
+        await execute(queuedMutation(OFFLINE_MUTATION_OPERATIONS.UPDATE_FOOD_LOG, {
+            id: 42, update: { name: 'Updated dinner', calories: 550, meal_period: 'DINNER' }
+        }));
+        await execute(queuedMutation(OFFLINE_MUTATION_OPERATIONS.DELETE_FOOD_LOG, { id: 43 }));
+        await execute(queuedMutation(OFFLINE_MUTATION_OPERATIONS.DELETE_METRIC, { id: 44 }));
         await execute(queuedMutation(OFFLINE_MUTATION_OPERATIONS.UPDATE_FOOD_DAY, {
             date: '2026-07-11', is_complete: true
         }));
 
         expect(api.createFoodLog).toHaveBeenCalledWith(expect.objectContaining({ name: 'Dinner' }), 'stable-operation-id');
         expect(api.addMetric).toHaveBeenCalledWith({ date: '2026-07-11', weight: 82.5 }, 'stable-operation-id');
+        expect(api.updateFoodLog).toHaveBeenCalledWith(
+            42,
+            { name: 'Updated dinner', calories: 550, meal_period: 'DINNER' },
+            'stable-operation-id'
+        );
+        expect(api.deleteFoodLog).toHaveBeenCalledWith(43, 'stable-operation-id');
+        expect(api.deleteMetric).toHaveBeenCalledWith(44, 'stable-operation-id');
         expect(api.updateFoodDay).toHaveBeenCalledWith(
             { date: '2026-07-11', is_complete: true },
             'stable-operation-id'
@@ -119,5 +134,9 @@ describe('createQueuedMutationExecutor', () => {
         await expect(execute(queuedMutation('unknown.operation', {}))).rejects.toThrow('Unsupported');
         await expect(execute(queuedMutation(OFFLINE_MUTATION_OPERATIONS.ADD_METRIC, { weight: 'bad' })))
             .rejects.toThrow('metric.add payload is invalid');
+        await expect(execute(queuedMutation(OFFLINE_MUTATION_OPERATIONS.DELETE_FOOD_LOG, { id: 0 })))
+            .rejects.toThrow('food.delete payload is invalid');
+        await expect(execute(queuedMutation(OFFLINE_MUTATION_OPERATIONS.UPDATE_FOOD_LOG, { id: 1, update: null })))
+            .rejects.toThrow('food.update payload is invalid');
     });
 });

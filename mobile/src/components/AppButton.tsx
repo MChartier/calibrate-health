@@ -12,12 +12,18 @@ export const AppButton: React.FC<PressableProps & {
     variant = 'primary',
     leftIcon,
     disabled,
+    accessibilityLabel,
+    accessibilityRole,
+    accessibilityState,
     style,
     ...props
 }) => (
     <Pressable
         {...props}
         disabled={disabled}
+        accessibilityLabel={accessibilityLabel ?? title}
+        accessibilityRole={accessibilityRole ?? 'button'}
+        accessibilityState={{ ...accessibilityState, disabled: Boolean(disabled) }}
         style={({ pressed }) => [
             styles.base,
             styles[variant],

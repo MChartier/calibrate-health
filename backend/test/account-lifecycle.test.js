@@ -97,6 +97,7 @@ const exportRow = {
     serving_size_quantity: 1,
     serving_unit_label: 'bowl',
     calories_per_serving: 400,
+    is_pinned: true,
     recipe_total_calories: 800,
     yield_servings: 2,
     created_at: at('2025-01-02T00:00:00.000Z'),
@@ -162,6 +163,7 @@ test('account export returns canonical versioned tracking data without credentia
   assert.deepEqual(result.account.profile_image, { mime_type: 'image/png', data_base64: 'AQID' });
   assert.equal(result.body_metrics[0].date, '2025-01-03');
   assert.equal(result.food_logs[0].serving_unit_label_snapshot, 'bowl');
+  assert.equal(result.my_foods[0].is_pinned, true);
   assert.equal(result.my_foods[0].recipe_ingredients[0].external_id, 'rice-1');
 
   assert.equal(findArgs.where.id, 7);

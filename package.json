@@ -63,6 +63,7 @@
     "test:backend": "npm --prefix backend test",
     "test:frontend": "npm --prefix frontend test",
     "test:mobile": "npm --prefix mobile test",
+    "test:android:e2e": "node scripts/android-e2e.mjs",
     "test:coverage": "npm run test:coverage:backend && npm run test:coverage:frontend",
     "test:coverage:backend": "npm --prefix backend run test:coverage",
     "test:coverage:frontend": "npm --prefix frontend run test:coverage"

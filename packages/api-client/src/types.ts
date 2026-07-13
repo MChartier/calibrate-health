@@ -101,6 +101,7 @@ export type AccountExport = {
         serving_size_quantity: number;
         serving_unit_label: string;
         calories_per_serving: number;
+        is_pinned: boolean;
         recipe_total_calories: number | null;
         yield_servings: number | null;
         created_at: string;
@@ -364,6 +365,7 @@ export type MyFoodSummary = {
     serving_size_quantity: number;
     serving_unit_label: string;
     calories_per_serving: number;
+    is_pinned: boolean;
     recipe_total_calories?: number | null;
     yield_servings?: number | null;
 };
@@ -377,10 +379,31 @@ export type RecipeIngredientSummary = {
     source: RecipeIngredientSource;
     name_snapshot: string;
     calories_total_snapshot: number;
+    source_my_food_id: number | null;
+    quantity_servings: number | null;
+    serving_size_quantity_snapshot: number | null;
+    serving_unit_label_snapshot: string | null;
+    calories_per_serving_snapshot: number | null;
+    external_source: string | null;
+    external_id: string | null;
+    brand_snapshot: string | null;
+    locale_snapshot: string | null;
+    barcode_snapshot: string | null;
+    measure_label_snapshot: string | null;
+    grams_per_measure_snapshot: number | null;
+    measure_quantity_snapshot: number | null;
+    grams_total_snapshot: number | null;
 };
 
 export type MyFoodDetail = MyFoodSummary & {
     recipe_ingredients?: RecipeIngredientSummary[];
+};
+
+export type CreateMyFoodPayload = {
+    name: string;
+    serving_size_quantity: number;
+    serving_unit_label: string;
+    calories_per_serving: number;
 };
 
 export type CreateRecipePayload = {
@@ -412,6 +435,8 @@ export type CreateRecipePayload = {
           }
     >;
 };
+
+export type UpdateMyFoodPayload = CreateMyFoodPayload | CreateRecipePayload;
 
 export type TrendMetricEntry = MetricEntry & {
     user_id: number;

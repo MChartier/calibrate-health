@@ -3,7 +3,15 @@ import { ApiError, CalibrateApiClient, type UserClientPayload } from '@calibrate
 import { MOBILE_DEVICE_PLATFORMS } from '@calibrate/shared';
 import * as Application from 'expo-application';
 import { useQueryClient } from '@tanstack/react-query';
-import { normalizeServerUrl } from '../config/server';
+import {
+    INITIAL_SERVER_CONNECTION_STATE,
+    normalizeServerUrl,
+    testCalibrateServerConnection,
+    type ServerConnectionResult,
+    type ServerConnectionState
+} from '../config/server';
+import { confirmServerSwitch } from './serverSwitch';
+import { getSessionRestoreErrorMessage } from './authErrors';
 import {
     clearStoredTokens,
     getOrCreateDeviceId,
@@ -22,8 +30,10 @@ type AuthContextValue = {
     serverUrl: string;
     isLoading: boolean;
     authError: string | null;
+    serverConnection: ServerConnectionState;
     updateCurrentUser: (user: UserClientPayload) => void;
     setServerUrl: (value: string) => Promise<boolean>;
+    testServerUrl: (value: string) => Promise<boolean>;
     login: (email: string, password: string) => Promise<void>;
     register: (email: string, password: string) => Promise<void>;
     logout: () => Promise<void>;
@@ -74,8 +84,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const [deviceId, setDeviceId] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [authError, setAuthError] = useState<string | null>(null);
+    const [serverConnection, setServerConnection] = useState<ServerConnectionState>(INITIAL_SERVER_CONNECTION_STATE);
     const accessTokenRef = useRef<string | null>(null);
     const refreshTokenRef = useRef<string | null>(null);
+    const serverTestRequestRef = useRef(0);
 
     const clearSession = useCallback(async () => {
         setUser(null);
@@ -191,7 +203,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 }
             } catch (error) {
                 if (isMounted) {
-                    setAuthError(error instanceof Error ? error.message : 'Unable to restore session.');
+                    setAuthError(getSessionRestoreErrorMessage(error));
                     // Only a rejected refresh invalidates stored credentials; offline startup should be retryable.
                     if (error instanceof ApiError && error.status === 401) {
                         await clearSession();
@@ -211,22 +223,54 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         };
     }, [clearSession, loginDevTestUser, persistAuthPayload]);
 
-    const updateServerUrl = useCallback(async (value: string): Promise<boolean> => {
+    const probeServerUrl = useCallback(async (value: string): Promise<ServerConnectionResult> => {
+        const requestId = serverTestRequestRef.current + 1;
+        serverTestRequestRef.current = requestId;
         const normalized = normalizeServerUrl(value);
-        if (!normalized) {
-            setAuthError('Enter a valid http or https server URL.');
+        setServerConnection({
+            status: 'testing',
+            testedInput: value.trim(),
+            testedUrl: normalized,
+            message: 'Testing this Calibrate server...'
+        });
+
+        const result = await testCalibrateServerConnection(value, {
+            mobileVersion: Application.nativeApplicationVersion
+        });
+        if (serverTestRequestRef.current === requestId) {
+            setServerConnection({
+                status: result.ok ? 'connected' : 'error',
+                testedInput: value.trim(),
+                testedUrl: result.url,
+                message: result.message
+            });
+        }
+        return result;
+    }, []);
+
+    const testServerUrl = useCallback(async (value: string): Promise<boolean> => {
+        const result = await probeServerUrl(value);
+        if (result.ok) setAuthError(null);
+        return result.ok;
+    }, [probeServerUrl]);
+
+    const updateServerUrl = useCallback(async (value: string): Promise<boolean> => {
+        const result = await confirmServerSwitch({
+            candidate: value,
+            currentServerUrl: serverUrl,
+            testConnection: probeServerUrl,
+            clearCurrentSession: clearSession,
+            persistServerUrl: writeServerUrl
+        });
+        if (!result.ok) {
+            setAuthError(result.message);
             return false;
         }
 
-        if (normalized !== serverUrl) {
-            // Credentials are scoped to one self-hosted server and must never follow a server switch.
-            await clearSession();
-        }
-        setServerUrlState(normalized);
-        await writeServerUrl(normalized);
+        setServerUrlState(result.url);
         setAuthError(null);
         return true;
-    }, [clearSession, serverUrl]);
+    }, [clearSession, probeServerUrl, serverUrl]);
 
     const updateCurrentUser = useCallback((nextUser: UserClientPayload) => {
         setUser(nextUser);
@@ -282,14 +326,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             serverUrl,
             isLoading,
             authError,
+            serverConnection,
             updateCurrentUser,
             setServerUrl: updateServerUrl,
+            testServerUrl,
             login,
             register,
             logout,
             clearLocalSession: clearSession
         }),
-        [accessToken, api, authError, clearSession, deviceId, isLoading, login, logout, refreshToken, register, serverUrl, updateCurrentUser, updateServerUrl, user]
+        [accessToken, api, authError, clearSession, deviceId, isLoading, login, logout, refreshToken, register, serverConnection, serverUrl, testServerUrl, updateCurrentUser, updateServerUrl, user]
     );
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

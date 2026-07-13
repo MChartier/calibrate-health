@@ -1,11 +1,11 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as Haptics from 'expo-haptics';
 import { MEAL_PERIODS, type MealPeriod } from '@calibrate/shared';
-import type { FoodLogCreatePayload, FoodSearchResult, MyFoodSummary, RecentFoodSummary } from '@calibrate/api-client';
+import type { FoodLogCreatePayload, MyFoodSummary, RecentFoodSummary } from '@calibrate/api-client';
 import { AppButton } from './AppButton';
 import { AppText } from './AppText';
 import { BottomSheetModal } from './BottomSheetModal';
@@ -20,6 +20,14 @@ import { useOfflineOutbox } from '../offline/provider';
 import { formatDateOnlyForDisplay } from '../utils/dates';
 import { formatCalories, formatMealPeriod } from '../utils/format';
 import { MEAL_OPTIONS } from '../utils/meals';
+import { selectQuickRecentFoods } from '../utils/myFoods';
+import {
+    buildSearchedFoodLogPayload,
+    calculateFoodServing,
+    getPreferredFoodMeasureIndex,
+    normalizeSearchedFoodItem,
+    type SearchedFoodItem
+} from '../food/serving';
 import { colors, radius, spacing } from '../theme';
 
 type AddFoodSheetProps = {
@@ -31,6 +39,7 @@ type AddFoodSheetProps = {
 };
 
 type AddFoodMode = 'quick' | 'search' | 'recipes';
+type SavedFoodLogRequest = { item: MyFoodSummary; servings: number };
 
 const ADD_FOOD_MODES: Array<{ value: AddFoodMode; label: string }> = [
     { value: 'quick', label: 'Quick' },
@@ -41,15 +50,23 @@ const ADD_FOOD_MODES: Array<{ value: AddFoodMode; label: string }> = [
 const SERVINGS_STEP = 0.1; // Food servings match the PWA precision and provider serving snapshots.
 const DEFAULT_RECENT_LIMIT = 5;
 const DEFAULT_RECIPE_LIMIT = 6;
+const DEFAULT_PINNED_LIMIT = 6;
 const ADD_FOOD_MODE_MIN_HEIGHT = 360; // Stabilizes the sheet while switching between Quick, Search, and Recipes.
-
-function foodResultCalories(result: FoodSearchResult): string {
-    return typeof result.calories === 'number' ? formatCalories(result.calories) : 'Calories not listed';
-}
 
 function parsePositiveServings(value: string): number {
     const parsed = Number(value);
     return Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
+}
+
+function describeSearchedFood(item: SearchedFoodItem): string {
+    const preferredIndex = getPreferredFoodMeasureIndex(item);
+    const measure = preferredIndex === null ? null : item.measures[preferredIndex];
+    const calculation = measure ? calculateFoodServing(item, measure, 1) : null;
+    return [
+        item.brand,
+        measure ? `${measure.label} (${measure.gramWeight} g)` : 'No usable serving measure',
+        calculation ? formatCalories(calculation.calories) : 'Calories unavailable'
+    ].filter(Boolean).join(' | ');
 }
 
 /**
@@ -64,24 +81,6 @@ function getDefaultMealPeriodForTime(now: Date): MealPeriod {
     if (minutesSinceMidnight >= 11 * 60 + 30) return MEAL_PERIODS.LUNCH;
     if (minutesSinceMidnight >= 9 * 60) return MEAL_PERIODS.MORNING_SNACK;
     return MEAL_PERIODS.BREAKFAST;
-}
-
-function buildSearchFoodPayload(result: FoodSearchResult, date: string, meal: MealPeriod, servings: number): FoodLogCreatePayload {
-    const caloriesPerServing = typeof result.calories === 'number' ? result.calories : 0;
-    const calories = Math.round(caloriesPerServing * servings);
-
-    return {
-        date,
-        meal_period: meal,
-        name: result.name,
-        calories,
-        servings_consumed: servings,
-        calories_per_serving_snapshot: caloriesPerServing,
-        external_source: result.source ?? null,
-        external_id: result.id,
-        brand: result.brand ?? null,
-        barcode: result.barcode ?? null
-    };
 }
 
 function buildRecentFoodPayload(
@@ -140,9 +139,13 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
     const [calories, setCalories] = useState('');
     const [meal, setMeal] = useState<MealPeriod>(initialMeal ?? getDefaultMealPeriodForTime(new Date()));
     const [servings, setServings] = useState('1');
+    const [searchQuantity, setSearchQuantity] = useState('1');
     const [query, setQuery] = useState('');
     const [recipeQuery, setRecipeQuery] = useState('');
     const [searchError, setSearchError] = useState<string | null>(null);
+    const [selectedSearchItem, setSelectedSearchItem] = useState<SearchedFoodItem | null>(null);
+    const [selectedMeasureIndex, setSelectedMeasureIndex] = useState('0');
+    const [isMeasureSelectorOpen, setIsMeasureSelectorOpen] = useState(false);
     const [isMealSelectorOpen, setIsMealSelectorOpen] = useState(false);
     const foodDayQuery = useQuery({
         queryKey: ['mobile-food-day', date],
@@ -154,10 +157,15 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
         queryFn: () => api.getRecentFoods({ q: query, limit: DEFAULT_RECENT_LIMIT }),
         enabled: visible && mode === 'search' && query.trim().length >= 2
     });
+    const quickRecentFoodsQuery = useQuery({
+        queryKey: ['mobile-recent-foods', 'quick'],
+        queryFn: () => api.getRecentFoods({ limit: DEFAULT_RECENT_LIMIT }),
+        enabled: visible && mode === 'quick'
+    });
     const myFoodsQuery = useQuery({
         queryKey: ['mobile-my-foods'],
         queryFn: () => api.getMyFoods(),
-        enabled: visible && mode === 'recipes'
+        enabled: visible && (mode === 'quick' || mode === 'recipes')
     });
     const isDayComplete = foodDayQuery.data?.is_complete ?? false;
 
@@ -174,6 +182,7 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
         }
         if (visible) {
             setIsMealSelectorOpen(false);
+            setIsMeasureSelectorOpen(false);
         }
     }, [initialMeal, visible]);
 
@@ -218,26 +227,31 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
     });
 
     const logMyFood = useMutation({
-        mutationFn: (item: MyFoodSummary) =>
+        mutationFn: ({ item, servings: requestedServings }: SavedFoodLogRequest) =>
             createFoodLog({
                 date,
                 meal_period: meal,
                 my_food_id: item.id,
-                servings_consumed: parsePositiveServings(servings)
+                servings_consumed: requestedServings
             }),
         onSuccess: () => confirmLogged(true)
     });
 
     const logSearchResult = useMutation({
-        mutationFn: (result: FoodSearchResult) =>
-            createFoodLog(buildSearchFoodPayload(result, date, meal, parsePositiveServings(servings))),
-        onSuccess: () => confirmLogged(true)
+        mutationFn: (payload: FoodLogCreatePayload) => createFoodLog(payload),
+        onSuccess: () => {
+            setSelectedSearchItem(null);
+            setSearchQuantity('1');
+            return confirmLogged(true);
+        }
     });
 
     const searchFood = useMutation({
         mutationFn: () => api.searchFood(query),
         onSuccess: () => {
             setSearchError(null);
+            setSelectedSearchItem(null);
+            setIsMeasureSelectorOpen(false);
         },
         onError: (error) => {
             setSearchError(error instanceof Error ? error.message : 'Food search failed.');
@@ -254,7 +268,33 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
     const hasValidServings = Number.isFinite(Number(servings)) && Number(servings) > 0;
     const servingsError = servings.trim().length > 0 && !hasValidServings ? 'Servings must be a positive number.' : null;
     const recentFoodMatches = recentFoodsQuery.data?.items ?? [];
+    const searchResults = useMemo(
+        () => (searchFood.data?.items ?? [])
+            .map(normalizeSearchedFoodItem)
+            .filter((item): item is SearchedFoodItem => item !== null),
+        [searchFood.data?.items]
+    );
+    const selectedMeasure = selectedSearchItem?.measures[Number(selectedMeasureIndex)] ?? null;
+    const parsedSearchQuantity = Number(searchQuantity);
+    const selectedServingCalculation = selectedSearchItem && selectedMeasure
+        ? calculateFoodServing(selectedSearchItem, selectedMeasure, parsedSearchQuantity)
+        : null;
+    const selectedServingPayload = selectedSearchItem
+        ? buildSearchedFoodLogPayload({
+              item: selectedSearchItem,
+              measure: selectedMeasure,
+              quantity: parsedSearchQuantity,
+              date,
+              meal
+          })
+        : null;
     const savedFoods = myFoodsQuery.data ?? [];
+    const pinnedFoods = savedFoods.filter((item) => item.is_pinned).slice(0, DEFAULT_PINNED_LIMIT);
+    const quickRecentFoods = selectQuickRecentFoods(
+        quickRecentFoodsQuery.data?.items ?? [],
+        pinnedFoods,
+        DEFAULT_RECENT_LIMIT
+    );
     const recipes = savedFoods.filter((item) => item.type === 'RECIPE');
     const recipeSearchText = recipeQuery.trim().toLowerCase();
     const visibleRecipes = recipes
@@ -266,10 +306,46 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
         router.push({ pathname: '/barcode', params: { date, meal } });
     }
 
+    function selectSearchItem(item: SearchedFoodItem) {
+        const preferredMeasureIndex = getPreferredFoodMeasureIndex(item);
+        setSelectedSearchItem(item);
+        setSelectedMeasureIndex(String(preferredMeasureIndex ?? 0));
+        setSearchQuantity('1');
+        setSearchError(null);
+        setIsMeasureSelectorOpen(false);
+    }
+
     function renderModeContent() {
         if (mode === 'quick') {
             return (
                 <View style={styles.section}>
+                    {(pinnedFoods.length > 0 || quickRecentFoods.length > 0) && (
+                        <View style={styles.list}>
+                            {pinnedFoods.length > 0 && <AppText variant="label">Pinned</AppText>}
+                            {pinnedFoods.map((item) => (
+                                <FoodActionRow
+                                    key={`pinned-${item.id}`}
+                                    title={item.name}
+                                    subtitle={`${formatCalories(item.calories_per_serving)} per ${item.serving_size_quantity} ${item.serving_unit_label}`}
+                                    disabled={isDayComplete || isSubmitting}
+                                    onPress={() => logMyFood.mutate({ item, servings: 1 })}
+                                />
+                            ))}
+                            {quickRecentFoods.length > 0 && <AppText variant="label">Recent</AppText>}
+                            {quickRecentFoods.map((recent) => (
+                                <FoodActionRow
+                                    key={`quick-recent-${recent.id}`}
+                                    title={recent.name}
+                                    subtitle={`${formatCalories(recent.calories)} | ${recent.times_logged}x`}
+                                    disabled={isDayComplete || isSubmitting}
+                                    onPress={() => logRecentFood.mutate(recent)}
+                                />
+                            ))}
+                        </View>
+                    )}
+                    {(myFoodsQuery.isLoading || quickRecentFoodsQuery.isLoading) && (
+                        <AppText variant="muted">Loading pinned and recent foods...</AppText>
+                    )}
                     <AppText variant="label">Quick entry</AppText>
                     <TextField label="Food name" value={name} onChangeText={setName} editable={!isDayComplete && !isSubmitting} />
                     <NumberStepperField
@@ -306,30 +382,37 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
         }
 
         if (mode === 'search') {
-            const results = searchFood.data?.items ?? [];
+            const measureOptions: Array<OverlaySelectOption<string>> = selectedSearchItem
+                ? selectedSearchItem.measures.map((measure, index) => ({
+                      value: String(index),
+                      label: measure.label,
+                      description: `${measure.gramWeight} g per measure`
+                  }))
+                : [];
+            let searchedFoodLogTitle = 'Log food';
+            if (logSearchResult.isPending) {
+                searchedFoodLogTitle = 'Logging...';
+            } else if (selectedServingCalculation) {
+                searchedFoodLogTitle = `Log ${formatCalories(selectedServingCalculation.calories)}`;
+            }
             const hasQuery = query.trim().length > 0;
-            const hasResults = recentFoodMatches.length > 0 || results.length > 0;
+            const hasResults = recentFoodMatches.length > 0 || searchResults.length > 0;
             return (
                 <View style={styles.section}>
                     <TextField
                         label="Search foods"
                         value={query}
-                        onChangeText={setQuery}
+                        onChangeText={(value) => {
+                            setQuery(value);
+                            setSelectedSearchItem(null);
+                            setIsMeasureSelectorOpen(false);
+                        }}
                         returnKeyType="search"
                         editable={!isDayComplete && !isSubmitting}
                         onSubmitEditing={() => {
                             if (query.trim()) searchFood.mutate();
                         }}
                     />
-                    <NumberStepperField
-                        label="Servings"
-                        value={servings}
-                        onChangeText={setServings}
-                        step={SERVINGS_STEP}
-                        min={SERVINGS_STEP}
-                        editable={!isDayComplete && !isSubmitting}
-                    />
-                    {servingsError && <AppText style={styles.error}>{servingsError}</AppText>}
                     {searchError && <AppText style={styles.error}>{searchError}</AppText>}
                     <View style={styles.row}>
                         <AppButton
@@ -351,6 +434,80 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
                     {searchFood.data?.provider && (
                         <AppText variant="caption">Results from {searchFood.data.provider}</AppText>
                     )}
+                    {selectedSearchItem && (
+                        <View style={styles.servingCard}>
+                            <View style={styles.servingHeader}>
+                                <View style={styles.foodText}>
+                                    <AppText variant="subtitle" numberOfLines={2}>{selectedSearchItem.name}</AppText>
+                                    {selectedSearchItem.brand && <AppText variant="caption">{selectedSearchItem.brand}</AppText>}
+                                </View>
+                                <Pressable
+                                    accessibilityRole="button"
+                                    accessibilityLabel={`Clear ${selectedSearchItem.name} selection`}
+                                    onPress={() => setSelectedSearchItem(null)}
+                                    style={({ pressed }) => [styles.clearSelection, pressed && styles.pressed]}
+                                >
+                                    <Ionicons name="close" size={19} color={colors.muted} />
+                                </Pressable>
+                            </View>
+
+                            {measureOptions.length > 0 && (
+                                <View style={styles.section}>
+                                    <AppText variant="label">Measure</AppText>
+                                    <OverlaySelect
+                                        accessibilityLabel="Select food measure"
+                                        value={selectedMeasureIndex}
+                                        options={measureOptions}
+                                        isOpen={isMeasureSelectorOpen}
+                                        onToggle={() => setIsMeasureSelectorOpen((current) => !current)}
+                                        onChange={(nextIndex) => {
+                                            setSelectedMeasureIndex(nextIndex);
+                                            setIsMeasureSelectorOpen(false);
+                                        }}
+                                    />
+                                </View>
+                            )}
+                            <NumberStepperField
+                                label="Quantity"
+                                value={searchQuantity}
+                                onChangeText={setSearchQuantity}
+                                step={SERVINGS_STEP}
+                                min={SERVINGS_STEP}
+                                editable={!isDayComplete && !isSubmitting && measureOptions.length > 0}
+                            />
+
+                            {selectedServingCalculation && selectedMeasure && (
+                                <View
+                                    accessible
+                                    accessibilityLiveRegion="polite"
+                                    accessibilityLabel={`${formatCalories(selectedServingCalculation.calories)}, ${selectedServingCalculation.gramsTotal} grams total`}
+                                    style={styles.servingSummary}
+                                >
+                                    <AppText variant="subtitle">{formatCalories(selectedServingCalculation.calories)}</AppText>
+                                    <AppText variant="caption">
+                                        {searchQuantity} x {selectedMeasure.label} | {selectedServingCalculation.gramsTotal} g total
+                                    </AppText>
+                                </View>
+                            )}
+                            {selectedServingPayload && !selectedServingPayload.ok && (
+                                <AppText accessibilityRole="alert" style={styles.error}>{selectedServingPayload.message}</AppText>
+                            )}
+                            {logSearchResult.error && (
+                                <AppText accessibilityRole="alert" style={styles.error}>{logSearchResult.error.message}</AppText>
+                            )}
+                            <AppButton
+                                title={searchedFoodLogTitle}
+                                disabled={isDayComplete || isSubmitting || !selectedServingPayload?.ok}
+                                leftIcon={<Ionicons name="add" size={18} color={selectedServingPayload?.ok ? colors.surface : colors.muted} />}
+                                onPress={() => {
+                                    if (selectedServingPayload?.ok) {
+                                        logSearchResult.mutate(selectedServingPayload.payload);
+                                    }
+                                }}
+                                accessibilityLabel={`Log ${selectedSearchItem.name}`}
+                            />
+                        </View>
+                    )}
                     <View style={styles.list}>
                         {recentFoodMatches.length > 0 && (
                             <>
@@ -367,14 +524,16 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
                             </>
                         )}
                         {recentFoodsQuery.isLoading && <AppText variant="muted">Checking recent foods...</AppText>}
-                        {results.length > 0 && <AppText variant="label">Search results</AppText>}
-                        {results.slice(0, 8).map((result) => (
+                        {searchResults.length > 0 && <AppText variant="label">Search results</AppText>}
+                        {searchResults.slice(0, 8).map((result) => (
                             <FoodActionRow
                                 key={`${result.source ?? 'food'}-${result.id}`}
                                 title={result.name}
-                                subtitle={[result.brand, result.servingSize, foodResultCalories(result)].filter(Boolean).join(' | ')}
-                                disabled={isDayComplete || isSubmitting || !hasValidServings}
-                                onPress={() => logSearchResult.mutate(result)}
+                                subtitle={describeSearchedFood(result)}
+                                accessibilityLabel={`Choose serving for ${result.name}`}
+                                icon="chevron-forward"
+                                disabled={isDayComplete || isSubmitting}
+                                onPress={() => selectSearchItem(result)}
                             />
                         ))}
                         {!searchFood.isPending && hasQuery && searchFood.data && !hasResults && (
@@ -411,7 +570,7 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
                             title={item.name}
                             subtitle={`${formatCalories(item.calories_per_serving)} per ${item.serving_size_quantity} ${item.serving_unit_label}`}
                             disabled={isDayComplete || isSubmitting || !hasValidServings}
-                            onPress={() => logMyFood.mutate(item)}
+                            onPress={() => logMyFood.mutate({ item, servings: parsePositiveServings(servings) })}
                         />
                     ))}
                     {myFoodsQuery.isLoading && <AppText variant="muted">Loading recipes...</AppText>}
@@ -453,6 +612,7 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
                 onChange={(nextMode) => {
                     setMode(nextMode);
                     setIsMealSelectorOpen(false);
+                    setIsMeasureSelectorOpen(false);
                 }}
             />
             <View style={styles.modeContent}>{renderModeContent()}</View>
@@ -463,13 +623,23 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
 type FoodActionRowProps = {
     title: string;
     subtitle: string;
+    accessibilityLabel?: string;
+    icon?: React.ComponentProps<typeof Ionicons>['name'];
     disabled?: boolean;
     onPress: () => void;
 };
 
-const FoodActionRow: React.FC<FoodActionRowProps> = ({ title, subtitle, disabled, onPress }) => (
+const FoodActionRow: React.FC<FoodActionRowProps> = ({
+    title,
+    subtitle,
+    accessibilityLabel,
+    icon = 'add',
+    disabled,
+    onPress
+}) => (
     <Pressable
         accessibilityRole="button"
+        accessibilityLabel={accessibilityLabel}
         disabled={disabled}
         onPress={onPress}
         style={({ pressed }) => [styles.foodRow, disabled && styles.disabledButton, pressed && styles.pressed]}
@@ -479,7 +649,7 @@ const FoodActionRow: React.FC<FoodActionRowProps> = ({ title, subtitle, disabled
             <AppText variant="caption" numberOfLines={1}>{subtitle}</AppText>
         </View>
         <View style={styles.addIcon}>
-            <Ionicons name="add" size={18} color="#ffffff" />
+            <Ionicons name={icon} size={18} color="#ffffff" />
         </View>
     </Pressable>
 );
@@ -537,6 +707,33 @@ const styles = StyleSheet.create({
         flex: 1,
         minWidth: 0,
         gap: spacing.xs
+    },
+    servingCard: {
+        gap: spacing.md,
+        borderRadius: radius.md,
+        borderWidth: StyleSheet.hairlineWidth,
+        borderColor: colors.border,
+        backgroundColor: colors.surfaceAlt,
+        padding: spacing.md
+    },
+    servingHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.md
+    },
+    clearSelection: {
+        width: 44,
+        height: 44,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderRadius: radius.md,
+        backgroundColor: colors.surface
+    },
+    servingSummary: {
+        gap: spacing.xs,
+        borderRadius: radius.md,
+        backgroundColor: colors.primarySoft,
+        padding: spacing.md
     },
     addIcon: {
         width: 34,

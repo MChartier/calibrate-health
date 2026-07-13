@@ -11,6 +11,8 @@ import { LoadingState } from '../../src/components/LoadingState';
 import { useAuth } from '../../src/auth/AuthContext';
 import { LogDateProvider } from '../../src/context/LogDateContext';
 import { useLogDateNavigation } from '../../src/hooks/useLogDateNavigation';
+import { useOfflineOutbox } from '../../src/offline/provider';
+import { OUTBOX_MUTATION_STATES } from '../../src/offline/queuedMutation';
 import { isProfileSetupComplete } from '../../src/utils/profileCompletion';
 import { colors, radius, spacing } from '../../src/theme';
 
@@ -28,6 +30,10 @@ export default function TabsLayout() {
     const { api, user, isLoading } = useAuth();
     const insets = useSafeAreaInsets();
     const logDateNavigation = useLogDateNavigation();
+    const { mutations: queuedMutations } = useOfflineOutbox();
+    const hasFailedOfflineChanges = queuedMutations.some(
+        (mutation) => mutation.state === OUTBOX_MUTATION_STATES.FAILED
+    );
     const profileQuery = useQuery({
         queryKey: ['mobile-profile'],
         queryFn: () => api.getUserProfile(),
@@ -76,6 +82,8 @@ export default function TabsLayout() {
                             title={typeof options.headerTitle === 'string' ? options.headerTitle : ''}
                             user={user}
                             unreadCount={notificationsQuery.data?.unread_count ?? 0}
+                            offlineChangeCount={queuedMutations.length}
+                            hasFailedOfflineChanges={hasFailedOfflineChanges}
                         />
                     )
                 }}
@@ -110,7 +118,9 @@ const TabHeader: React.FC<{
     title: string;
     user: UserClientPayload | null;
     unreadCount: number;
-}> = ({ topInset, title, user, unreadCount }) => (
+    offlineChangeCount: number;
+    hasFailedOfflineChanges: boolean;
+}> = ({ topInset, title, user, unreadCount, offlineChangeCount, hasFailedOfflineChanges }) => (
     <View style={[styles.headerRoot, { paddingTop: topInset }]}>
         <View style={styles.headerRow}>
             <HeaderBrand />
@@ -119,7 +129,12 @@ const TabHeader: React.FC<{
                     <AppText numberOfLines={1} style={styles.headerTitleText}>{title}</AppText>
                 </View>
             )}
-            <HeaderActions user={user} unreadCount={unreadCount} />
+            <HeaderActions
+                user={user}
+                unreadCount={unreadCount}
+                offlineChangeCount={offlineChangeCount}
+                hasFailedOfflineChanges={hasFailedOfflineChanges}
+            />
         </View>
     </View>
 );
@@ -153,7 +168,12 @@ function getAvatarLabel(email?: string | null): string {
     return email?.trim().charAt(0).toUpperCase() || 'C';
 }
 
-const HeaderActions: React.FC<{ user: UserClientPayload | null; unreadCount: number }> = ({ user, unreadCount }) => (
+const HeaderActions: React.FC<{
+    user: UserClientPayload | null;
+    unreadCount: number;
+    offlineChangeCount: number;
+    hasFailedOfflineChanges: boolean;
+}> = ({ user, unreadCount, offlineChangeCount, hasFailedOfflineChanges }) => (
     <View style={styles.headerActions}>
         <Pressable
             accessibilityRole="button"
@@ -170,7 +190,11 @@ const HeaderActions: React.FC<{ user: UserClientPayload | null; unreadCount: num
         </Pressable>
         <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Open settings"
+            accessibilityLabel={
+                offlineChangeCount > 0
+                    ? `Open settings, ${offlineChangeCount} offline changes ${hasFailedOfflineChanges ? 'need attention' : 'pending'}`
+                    : 'Open settings'
+            }
             onPress={() => router.push('/(tabs)/settings')}
             style={({ pressed }) => [styles.accountButton, pressed && styles.pressed]}
         >
@@ -180,6 +204,12 @@ const HeaderActions: React.FC<{ user: UserClientPayload | null; unreadCount: num
                 <View style={styles.avatarFallback}>
                     <AppText style={styles.avatarText}>{getAvatarLabel(user?.email)}</AppText>
                 </View>
+            )}
+            {offlineChangeCount > 0 && (
+                <View
+                    accessibilityElementsHidden
+                    style={[styles.syncBadge, hasFailedOfflineChanges && styles.syncBadgeFailed]}
+                />
             )}
             <Ionicons name="chevron-down" size={13} color={colors.muted} />
         </Pressable>
@@ -279,6 +309,20 @@ const styles = StyleSheet.create({
         fontWeight: '900',
         textAlign: 'center',
         includeFontPadding: false
+    },
+    syncBadge: {
+        position: 'absolute',
+        top: 2,
+        left: 2,
+        width: 9,
+        height: 9,
+        borderRadius: radius.pill,
+        backgroundColor: colors.warning,
+        borderColor: colors.surface,
+        borderWidth: 1
+    },
+    syncBadgeFailed: {
+        backgroundColor: colors.danger
     },
     avatarImage: {
         width: 28,

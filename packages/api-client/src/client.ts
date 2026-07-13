@@ -1,6 +1,7 @@
 import type {
     AccountExport,
     ClientConfigResponse,
+    CreateMyFoodPayload,
     FoodLogCreatePayload,
     FoodLogDay,
     FoodLogEntry,
@@ -21,6 +22,7 @@ import type {
     RecentFoodsResponse,
     SyncChangesResponse,
     TrendMetricsResponse,
+    UpdateMyFoodPayload,
     UserClientPayload,
     UserProfileResponse
 } from './types';
@@ -139,6 +141,10 @@ export class CalibrateApiClient {
         const callerSignal = options.signal;
         const abortFromCaller = () => timeoutController.abort();
         callerSignal?.addEventListener('abort', abortFromCaller, { once: true });
+        if (callerSignal?.aborted) {
+            // An abort event that fired before listener registration must still cancel this request.
+            abortFromCaller();
+        }
 
         let response: Response;
         try {
@@ -358,7 +364,14 @@ export class CalibrateApiClient {
         return this.request<MyFoodDetail>(`/api/my-foods/${encodeURIComponent(String(id))}`);
     }
 
-    createMyFood(payload: Record<string, unknown>): Promise<MyFoodSummary> {
+    setMyFoodPinned(id: number, isPinned: boolean): Promise<MyFoodSummary> {
+        return this.request<MyFoodSummary>(`/api/my-foods/${encodeURIComponent(String(id))}/pin`, {
+            method: 'PATCH',
+            json: { is_pinned: isPinned }
+        });
+    }
+
+    createMyFood(payload: CreateMyFoodPayload): Promise<MyFoodSummary> {
         return this.request<MyFoodSummary>('/api/my-foods/foods', {
             method: 'POST',
             json: payload
@@ -369,6 +382,19 @@ export class CalibrateApiClient {
         return this.request<MyFoodSummary>('/api/my-foods/recipes', {
             method: 'POST',
             json: payload
+        });
+    }
+
+    updateMyFood(id: number, payload: UpdateMyFoodPayload): Promise<MyFoodSummary> {
+        return this.request<MyFoodSummary>(`/api/my-foods/${encodeURIComponent(String(id))}`, {
+            method: 'PATCH',
+            json: payload
+        });
+    }
+
+    deleteMyFood(id: number): Promise<void> {
+        return this.request<void>(`/api/my-foods/${encodeURIComponent(String(id))}`, {
+            method: 'DELETE'
         });
     }
 

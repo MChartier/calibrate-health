@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Animated, Easing, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, View, type ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, radius, shadows, spacing } from '../theme';
+import { useReducedMotionPreference } from '../hooks/useReducedMotionPreference';
 
 type BottomSheetModalProps = {
     visible: boolean;
@@ -22,6 +23,7 @@ export const BottomSheetModal: React.FC<BottomSheetModalProps> = ({
     maxHeight = '88%'
 }) => {
     const insets = useSafeAreaInsets();
+    const reduceMotion = useReducedMotionPreference();
     const [shouldRender, setShouldRender] = useState(visible);
     const backdropOpacity = useRef(new Animated.Value(0)).current;
     const sheetProgress = useRef(new Animated.Value(1)).current;
@@ -34,13 +36,13 @@ export const BottomSheetModal: React.FC<BottomSheetModalProps> = ({
             Animated.parallel([
                 Animated.timing(backdropOpacity, {
                     toValue: 1,
-                    duration: 160,
+                    duration: reduceMotion ? 0 : 160,
                     easing: Easing.out(Easing.ease),
                     useNativeDriver: true
                 }),
                 Animated.timing(sheetProgress, {
                     toValue: 0,
-                    duration: 220,
+                    duration: reduceMotion ? 0 : 220,
                     easing: Easing.out(Easing.cubic),
                     useNativeDriver: true
                 })
@@ -53,13 +55,13 @@ export const BottomSheetModal: React.FC<BottomSheetModalProps> = ({
         Animated.parallel([
             Animated.timing(backdropOpacity, {
                 toValue: 0,
-                duration: 140,
+                duration: reduceMotion ? 0 : 140,
                 easing: Easing.in(Easing.ease),
                 useNativeDriver: true
             }),
             Animated.timing(sheetProgress, {
                 toValue: 1,
-                duration: 160,
+                duration: reduceMotion ? 0 : 160,
                 easing: Easing.in(Easing.cubic),
                 useNativeDriver: true
             })
@@ -68,7 +70,7 @@ export const BottomSheetModal: React.FC<BottomSheetModalProps> = ({
                 setShouldRender(false);
             }
         });
-    }, [backdropOpacity, sheetProgress, shouldRender, visible]);
+    }, [backdropOpacity, reduceMotion, sheetProgress, shouldRender, visible]);
 
     if (!shouldRender) return null;
 
@@ -87,6 +89,7 @@ export const BottomSheetModal: React.FC<BottomSheetModalProps> = ({
                     <Animated.View style={[styles.backdrop, { opacity: backdropOpacity }]} />
                 </Pressable>
                 <Animated.View
+                    accessibilityViewIsModal
                     style={[
                         styles.sheet,
                         {

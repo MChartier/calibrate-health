@@ -123,6 +123,7 @@ export type AccountExport = {
     serving_size_quantity: number;
     serving_unit_label: string;
     calories_per_serving: number;
+    is_pinned: boolean;
     recipe_total_calories: number | null;
     yield_servings: number | null;
     created_at: string;
@@ -260,6 +261,7 @@ export function serializeAccountExport(user: AccountExportRow, now = new Date())
       serving_size_quantity: food.serving_size_quantity,
       serving_unit_label: food.serving_unit_label,
       calories_per_serving: food.calories_per_serving,
+      is_pinned: food.is_pinned,
       recipe_total_calories: food.recipe_total_calories,
       yield_servings: food.yield_servings,
       created_at: toIsoDateTime(food.created_at),
