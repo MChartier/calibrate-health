@@ -176,6 +176,9 @@ mismatch, a non-increasing candidate version, or recursive cleanup outside its u
 
 ## Internal release checklist
 
+Execute the paired phone/watch runtime path in `docs/physical-galaxy-validation.md`; use the broader Play worksheet
+for store policy and declaration evidence.
+
 - [ ] `npm.cmd run release:check` and `npm.cmd run test:release` pass.
 - [ ] Working tree is clean and the release commit is pushed.
 - [ ] `version` is correct and `versionCode` is greater than every distributed Android build.
