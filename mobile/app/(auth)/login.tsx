@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
-import { Link } from 'expo-router';
+import { Link, useLocalSearchParams } from 'expo-router';
 import { AppButton } from '../../src/components/AppButton';
 import { AppCard } from '../../src/components/AppCard';
 import { AppText } from '../../src/components/AppText';
@@ -10,31 +10,32 @@ import { SectionHeader } from '../../src/components/SectionHeader';
 import { TextField } from '../../src/components/TextField';
 import { useAuth } from '../../src/auth/AuthContext';
 import { accountDeletionCleanupGuidance } from '../../src/account/accountDeletionNotice';
+import { readAuthServerDraft } from '../../src/auth/authServerDraft';
 import { colors, spacing } from '../../src/theme';
 
 export default function LoginScreen() {
+    const params = useLocalSearchParams<{ serverUrl?: string | string[] }>();
     const {
-        login, serverUrl, setServerUrl, testServerUrl, serverConnection, authError,
+        login, serverUrl, testServerUrl, serverConnection, authError,
         accountDeletionCleanupNotice, acknowledgeAccountDeletionCleanupNotice
     } = useAuth();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [serverInput, setServerInput] = useState(serverUrl);
+    const routedServerDraft = readAuthServerDraft(params.serverUrl);
+    const [serverInput, setServerInput] = useState(routedServerDraft ?? serverUrl);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
-        setServerInput(serverUrl);
-    }, [serverUrl]);
+        setServerInput(routedServerDraft ?? serverUrl);
+    }, [routedServerDraft, serverUrl]);
 
     async function handleLogin() {
         if (accountDeletionCleanupNotice) return;
         setIsSubmitting(true);
         setError(null);
         try {
-            const changedServer = await setServerUrl(serverInput);
-            if (!changedServer) return;
-            await login(email, password);
+            await login(email, password, serverInput);
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Unable to sign in.');
         } finally {
@@ -93,11 +94,14 @@ export default function LoginScreen() {
             </AppCard>
 
             {!accountDeletionCleanupNotice && (
-                <Pressable>
-                    <Link href="/(auth)/register" asChild>
+                <Link
+                    href={{ pathname: '/(auth)/register', params: { serverUrl: serverInput } }}
+                    asChild
+                >
+                    <Pressable accessibilityRole="link">
                         <AppText style={styles.link}>Create an account</AppText>
-                    </Link>
-                </Pressable>
+                    </Pressable>
+                </Link>
             )}
         </Screen>
     );

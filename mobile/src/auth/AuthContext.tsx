@@ -15,7 +15,7 @@ import {
     type ServerConnectionResult,
     type ServerConnectionState
 } from '../config/server';
-import { confirmServerSwitch } from './serverSwitch';
+import { authenticateAgainstConfirmedServer, confirmServerSwitch } from './serverSwitch';
 import { getSessionRestoreErrorMessage } from './authErrors';
 import { MOBILE_CLIENT_IDENTITY } from '../config/nativeClient';
 import {
@@ -49,8 +49,8 @@ type AuthContextValue = {
     updateCurrentUser: (user: UserClientPayload) => void;
     setServerUrl: (value: string) => Promise<boolean>;
     testServerUrl: (value: string) => Promise<boolean>;
-    login: (email: string, password: string) => Promise<void>;
-    register: (email: string, password: string) => Promise<void>;
+    login: (email: string, password: string, serverCandidate: string) => Promise<boolean>;
+    register: (email: string, password: string, serverCandidate: string) => Promise<boolean>;
     logout: () => Promise<void>;
     clearLocalSession: () => Promise<void>;
     recheckClientCompatibility: () => Promise<boolean>;
@@ -315,7 +315,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return result.ok;
     }, [probeServerUrl]);
 
-    const updateServerUrl = useCallback(async (value: string): Promise<boolean> => {
+    const confirmSelectedServerUrl = useCallback(async (value: string): Promise<ServerConnectionResult> => {
         const result = await confirmServerSwitch({
             candidate: value,
             currentServerUrl: serverUrl,
@@ -325,50 +325,83 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         });
         if (!result.ok) {
             setAuthError(result.message);
-            return false;
+            return result;
         }
 
         setServerUrlState(result.url);
         setAuthError(null);
-        return true;
+        return result;
     }, [clearSession, probeServerUrl, serverUrl]);
+
+    const updateServerUrl = useCallback(async (value: string): Promise<boolean> => {
+        const result = await confirmSelectedServerUrl(value);
+        return result.ok;
+    }, [confirmSelectedServerUrl]);
 
     const updateCurrentUser = useCallback((nextUser: UserClientPayload) => {
         setUser(nextUser);
     }, []);
 
     const login = useCallback(
-        async (email: string, password: string) => {
+        async (email: string, password: string, serverCandidate: string): Promise<boolean> => {
             assertAccountDeletionCleanupAcknowledged(accountDeletionCleanupNotice);
             const nextDeviceId = deviceId ?? (await getOrCreateDeviceId());
             setDeviceId(nextDeviceId);
-            const payload = await api.loginMobile({
-                email,
-                password,
-                device_id: nextDeviceId,
-                device_platform: MOBILE_DEVICE_PLATFORMS.ANDROID_PHONE,
-                device_name: Application.applicationName ?? 'Android device'
+            const payload = await authenticateAgainstConfirmedServer({
+                candidate: serverCandidate,
+                confirmServer: confirmSelectedServerUrl,
+                authenticate: (confirmedServerUrl) => {
+                    const authClient = new CalibrateApiClient({
+                        baseUrl: confirmedServerUrl,
+                        clientIdentity: MOBILE_CLIENT_IDENTITY,
+                        onClientUpgradeRequired: handleClientUpgradeRequired
+                    });
+                    return authClient.loginMobile({
+                        email,
+                        password,
+                        device_id: nextDeviceId,
+                        device_platform: MOBILE_DEVICE_PLATFORMS.ANDROID_PHONE,
+                        device_name: Application.applicationName ?? 'Android device'
+                    });
+                }
             });
+            if (!payload) return false;
+
             await persistAuthPayload(payload);
+            return true;
         },
-        [accountDeletionCleanupNotice, api, deviceId, persistAuthPayload]
+        [accountDeletionCleanupNotice, confirmSelectedServerUrl, deviceId, handleClientUpgradeRequired, persistAuthPayload]
     );
 
     const register = useCallback(
-        async (email: string, password: string) => {
+        async (email: string, password: string, serverCandidate: string): Promise<boolean> => {
             assertAccountDeletionCleanupAcknowledged(accountDeletionCleanupNotice);
             const nextDeviceId = deviceId ?? (await getOrCreateDeviceId());
             setDeviceId(nextDeviceId);
-            const payload = await api.registerMobile({
-                email,
-                password,
-                device_id: nextDeviceId,
-                device_platform: MOBILE_DEVICE_PLATFORMS.ANDROID_PHONE,
-                device_name: Application.applicationName ?? 'Android device'
+            const payload = await authenticateAgainstConfirmedServer({
+                candidate: serverCandidate,
+                confirmServer: confirmSelectedServerUrl,
+                authenticate: (confirmedServerUrl) => {
+                    const authClient = new CalibrateApiClient({
+                        baseUrl: confirmedServerUrl,
+                        clientIdentity: MOBILE_CLIENT_IDENTITY,
+                        onClientUpgradeRequired: handleClientUpgradeRequired
+                    });
+                    return authClient.registerMobile({
+                        email,
+                        password,
+                        device_id: nextDeviceId,
+                        device_platform: MOBILE_DEVICE_PLATFORMS.ANDROID_PHONE,
+                        device_name: Application.applicationName ?? 'Android device'
+                    });
+                }
             });
+            if (!payload) return false;
+
             await persistAuthPayload(payload);
+            return true;
         },
-        [accountDeletionCleanupNotice, api, deviceId, persistAuthPayload]
+        [accountDeletionCleanupNotice, confirmSelectedServerUrl, deviceId, handleClientUpgradeRequired, persistAuthPayload]
     );
 
     const logout = useCallback(async () => {
