@@ -86,6 +86,8 @@ owner, phone/watch models, exact command or manual protocol, and covered physica
 ordinary unit-test paths cannot clear the device gate. Release mode also compares that tested commit
 with `GITHUB_SHA` or the current Git `HEAD`, preventing stale device results from clearing a newer
 candidate.
+The focused execution path and retained-result shape are documented in
+[`physical-galaxy-validation.md`](physical-galaxy-validation.md).
 The existing Wear emulator command proves launch, package/permission state, unpaired guidance, Tile
 registration, and crash absence; it is deliberately not recorded as a paired tracking happy path.
 
