@@ -1,13 +1,22 @@
 import { execFileSync } from 'node:child_process';
+import { readFileSync } from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const API_URL = process.env.CALIBRATE_E2E_API_URL ?? 'http://127.0.0.1:3000';
 const TEST_EMAIL = process.env.CALIBRATE_E2E_EMAIL ?? 'test@calibratehealth.app';
 const TEST_PASSWORD = process.env.CALIBRATE_E2E_PASSWORD ?? 'password123';
 const APP_ID = 'app.calibratehealth.mobile';
+const ONLINE_FOOD = { name: 'Android E2E latte', calories: 190 };
+const OFFLINE_FOOD = { name: 'Android E2E protein shake', calories: 240 };
 const UI_DUMP_PATH = '/sdcard/calibrate-e2e-window.xml';
 const ADB = process.env.ADB
   ?? path.join(process.env.LOCALAPPDATA ?? '', 'Android', 'Sdk', 'platform-tools', 'adb.exe');
+const release = JSON.parse(readFileSync(new URL('../shared/release.json', import.meta.url), 'utf8'));
+const NATIVE_CLIENT_HEADERS = {
+  PLATFORM: 'x-calibrate-client-platform',
+  VERSION: 'x-calibrate-client-version'
+};
 
 const sleep = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
 
@@ -83,13 +92,29 @@ async function tapNode(label, predicate, timeoutMs = 30_000) {
   adb(['shell', 'input', 'tap', String(point.x), String(point.y)], { quiet: true });
 }
 
+/** Attach the release-candidate phone identity to direct API assertions made outside the app. */
+export function buildE2eRequestHeaders(initialHeaders = {}) {
+  const headers = new Headers(initialHeaders);
+  headers.set(NATIVE_CLIENT_HEADERS.PLATFORM, 'android_phone');
+  headers.set(NATIVE_CLIENT_HEADERS.VERSION, release.android.mobile.version_name);
+  return headers;
+}
+
+/** Ignore shell/test-runner crashes while still failing on the Calibrate application process. */
+export function crashBufferContainsCalibrateProcess(crashBuffer) {
+  return /Process:\s+app\.calibratehealth\.mobile(?:[:,\s]|$)/i.test(crashBuffer);
+}
+
 async function requestJson(pathname, options = {}) {
   const method = options.method ?? 'GET';
   const attempts = method === 'GET' ? 3 : 1;
   let lastError;
   for (let attempt = 1; attempt <= attempts; attempt += 1) {
     try {
-      const response = await fetch(`${API_URL}${pathname}`, options);
+      const response = await fetch(`${API_URL}${pathname}`, {
+        ...options,
+        headers: buildE2eRequestHeaders(options.headers)
+      });
       const body = await response.json().catch(() => null);
       if (!response.ok) throw new Error(`${method} ${pathname} returned ${response.status}`);
       return body;
@@ -134,6 +159,23 @@ async function countFood(accessToken, date, name) {
   return logs.filter((entry) => entry.name === name).length;
 }
 
+/** Put known rows at the front of Quick recents without relying on mutable seed history. */
+async function seedRecentFood(accessToken, date, food) {
+  await requestJson('/api/v1/food', {
+    method: 'POST',
+    headers: {
+      authorization: `Bearer ${accessToken}`,
+      'content-type': 'application/json'
+    },
+    body: JSON.stringify({
+      meal_period: 'DINNER',
+      name: food.name,
+      calories: food.calories,
+      date
+    })
+  });
+}
+
 async function waitForFoodCount(accessToken, date, name, expected, timeoutMs = 30_000) {
   return waitFor(`${name} count ${expected}`, async () => {
     const count = await countFood(accessToken, date, name);
@@ -163,6 +205,8 @@ async function main() {
 
   const session = await loginApi();
   const date = localDateFor(session.user.timezone);
+  await seedRecentFood(session.access_token, date, ONLINE_FOOD);
+  await seedRecentFood(session.access_token, date, OFFLINE_FOOD);
   adb(['wait-for-device'], { quiet: true });
   adb(['reverse', 'tcp:8081', 'tcp:8081'], { quiet: true });
   adb(['shell', 'cmd', 'connectivity', 'airplane-mode', 'disable'], { quiet: true });
@@ -173,13 +217,13 @@ async function main() {
   try {
     await launchAndWaitForLog();
 
-    const onlineName = 'Latte';
+    const onlineName = ONLINE_FOOD.name;
     const onlineBefore = await countFood(session.access_token, date, onlineName);
     await logRecentFood(onlineName);
     await waitForFoodCount(session.access_token, date, onlineName, onlineBefore + 1);
     console.log(`PASS online one-tap logging: ${onlineName} ${onlineBefore} -> ${onlineBefore + 1}`);
 
-    const offlineName = 'Protein shake';
+    const offlineName = OFFLINE_FOOD.name;
     const offlineBefore = await countFood(session.access_token, date, offlineName);
     adb(['shell', 'cmd', 'connectivity', 'airplane-mode', 'enable'], { quiet: true });
     await logRecentFood(offlineName);
@@ -205,15 +249,24 @@ async function main() {
     if (finalCount !== offlineBefore + 1) {
       throw new Error(`Replay duplicated ${offlineName}: expected ${offlineBefore + 1}, received ${finalCount}`);
     }
+    const finalPid = adb(['shell', 'pidof', '-s', APP_ID], { quiet: true });
+    if (!finalPid) throw new Error('Calibrate process is not alive after the final replay check.');
     const crashes = adb(['logcat', '-b', 'crash', '-d', '-v', 'brief'], { quiet: true });
-    if (/FATAL EXCEPTION|AndroidRuntime/i.test(crashes)) throw new Error(`Android crash buffer is not empty:\n${crashes}`);
+    if (crashBufferContainsCalibrateProcess(crashes)) {
+      throw new Error(`Calibrate appears in the Android crash buffer:\n${crashes}`);
+    }
     console.log(`PASS exactly-once replay after second restart: ${offlineName} remained ${finalCount}`);
   } finally {
     adb(['shell', 'cmd', 'connectivity', 'airplane-mode', 'disable'], { quiet: true });
   }
 }
 
-main().catch((error) => {
-  console.error(error instanceof Error ? error.stack : error);
-  process.exitCode = 1;
-});
+const isMain = process.argv[1]
+  && path.resolve(process.argv[1]) === path.resolve(fileURLToPath(import.meta.url));
+
+if (isMain) {
+  main().catch((error) => {
+    console.error(error instanceof Error ? error.stack : error);
+    process.exitCode = 1;
+  });
+}

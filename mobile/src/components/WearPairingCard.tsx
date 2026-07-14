@@ -3,6 +3,7 @@ import { StyleSheet, View } from 'react-native';
 import type { WearNode } from '@calibrate/wear-pairing';
 import { useAuth } from '../auth/AuthContext';
 import {
+    getWearPairingErrorMessage,
     getReachableWearNodes,
     processWearPairingInbox,
     readStoredWearPairing,
@@ -60,7 +61,7 @@ export function WearPairingCard() {
             } else setStatus('No compatible reachable Calibrate watch app was found.');
         } catch (error) {
             if (activeScope.current === checkedScope) {
-                setStatus(error instanceof Error ? error.message : 'Unable to check for a Wear OS watch.');
+                setStatus(getWearPairingErrorMessage(error));
             }
         } finally {
             if (activeScope.current === checkedScope) setIsChecking(false);
