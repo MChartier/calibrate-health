@@ -81,6 +81,22 @@ const ACCOUNT_DISCONNECT_ACK_TIMEOUT_MS = 8_000;
 const ACCOUNT_DISCONNECT_ACK_POLL_MS = 100;
 const MESSAGE_CLOCK_SKEW_MS = 30_000;
 
+const WEAR_PAIRING_FALLBACK_MESSAGE =
+    'Unable to check for a Wear OS watch. Confirm Bluetooth and Google Play services are available, then try again.';
+
+/** Convert native Play Services failures into actionable copy without exposing implementation details. */
+export function getWearPairingErrorMessage(error: unknown): string {
+    if (!(error instanceof Error) || !error.message.trim()) return WEAR_PAIRING_FALLBACK_MESSAGE;
+    const message = error.message.trim();
+    if (/Wearable\.API is not available|statusCode=API_UNAVAILABLE|ApiException:\s*17/i.test(message)) {
+        return 'Wear OS pairing is unavailable on this phone. Pair a Wear OS watch in Android and update Google Play services, then try again.';
+    }
+    if (/Call to function|Caused by:|com\.google\.android\.gms|\bjava\.[a-z]/i.test(message)) {
+        return WEAR_PAIRING_FALLBACK_MESSAGE;
+    }
+    return message;
+}
+
 function accountScope(serverOrigin: string, userId: number): string {
     return `${encodeURIComponent(new URL(serverOrigin).origin)}/${userId}`;
 }

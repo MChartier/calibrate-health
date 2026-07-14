@@ -61,7 +61,7 @@
     "release:check:production": "node scripts/postgres-backup-restore-smoke.mjs && node scripts/release-config.mjs check && node scripts/dependency-advisory-exceptions.mjs --strict && node scripts/verify-risk-evidence.mjs --release",
     "release:metadata": "node scripts/release-config.mjs metadata",
     "test:release": "node --test scripts/release-config.test.mjs scripts/dependency-advisory-exceptions.test.mjs",
-    "test:native-release": "node --test scripts/native-release-build.test.mjs",
+    "test:native-release": "node --test scripts/native-release-build.test.mjs scripts/android-e2e.test.mjs",
     "test:mobile-build-tools": "node --test scripts/xcode-uuid-compatibility.test.mjs",
     "test:native:upgrade": "node scripts/native-upgrade-rehearsal.mjs",
     "test:native:upgrade:unit": "node --test scripts/native-upgrade-rehearsal.test.mjs",

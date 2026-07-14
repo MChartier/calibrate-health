@@ -8,7 +8,7 @@ The adb-driven E2E test exercises a real debug client, backend, Postgres databas
 - the queued write survives process death;
 - reconnect and relaunch replay it exactly once;
 - a second relaunch does not duplicate it;
-- the app process remains alive with an empty Android crash buffer.
+- the app process remains alive with no Calibrate process entry in Android's crash buffer.
 
 ## Prerequisites
 

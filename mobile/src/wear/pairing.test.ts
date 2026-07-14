@@ -12,6 +12,7 @@ jest.mock('expo-crypto', () => ({ randomUUID: jest.fn(() => 'generated-request')
 jest.mock('@calibrate/wear-pairing', () => ({ __esModule: true, default: null }));
 
 import {
+    getWearPairingErrorMessage,
     parseWearAccountDisconnectAck,
     parsePairingHello,
     processWearPairingInbox,
@@ -91,6 +92,22 @@ describe('Wear phone pairing coordinator', () => {
     beforeEach(() => {
         mockStorage.clear();
         jest.clearAllMocks();
+    });
+
+    it('maps unavailable Play Services and raw native failures to actionable pairing guidance', () => {
+        expect(getWearPairingErrorMessage(new Error(
+            "Call to function 'CalibrateWearPairing.getPairingNodes' has been rejected. " +
+            'Caused by: com.google.android.gms.common.api.ApiException: 17: API: Wearable.API is not available ' +
+            'on this device. Connection failed with statusCode=API_UNAVAILABLE'
+        ))).toBe(
+            'Wear OS pairing is unavailable on this phone. Pair a Wear OS watch in Android and update Google Play services, then try again.'
+        );
+        expect(getWearPairingErrorMessage(new Error(
+            'Call to function failed. Caused by: java.lang.IllegalStateException'
+        ))).toBe(
+            'Unable to check for a Wear OS watch. Confirm Bluetooth and Google Play services are available, then try again.'
+        );
+        expect(getWearPairingErrorMessage(new Error('Watch unavailable'))).toBe('Watch unavailable');
     });
 
     it('validates the server-bound, expiring watch hello contract', () => {
