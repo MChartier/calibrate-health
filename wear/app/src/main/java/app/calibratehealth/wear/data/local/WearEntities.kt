@@ -47,6 +47,20 @@ data class DailySnapshotEntity(
     val latestWeightDate: String? = null,
     @ColumnInfo(name = "weight_unit", defaultValue = "'KG'")
     val weightUnit: String = "KG",
+    @ColumnInfo(name = "goal_start_weight_grams")
+    val goalStartWeightGrams: Long? = null,
+    @ColumnInfo(name = "goal_target_weight_grams")
+    val goalTargetWeightGrams: Long? = null,
+    @ColumnInfo(name = "goal_current_weight_grams")
+    val goalCurrentWeightGrams: Long? = null,
+    @ColumnInfo(name = "goal_daily_deficit")
+    val goalDailyDeficit: Int? = null,
+    @ColumnInfo(name = "goal_progress_percent")
+    val goalProgressPercent: Double? = null,
+    @ColumnInfo(name = "goal_remaining_weight_grams")
+    val goalRemainingWeightGrams: Long? = null,
+    @ColumnInfo(name = "goal_is_complete")
+    val goalIsComplete: Boolean? = null,
     @ColumnInfo(name = "undo_food_log_id")
     val undoFoodLogId: Long? = null,
     @ColumnInfo(name = "undo_name")

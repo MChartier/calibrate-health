@@ -79,7 +79,10 @@ val configuredServerOrigin = validateServerOrigin(
     configuredCleartext
 )
 val configuredUsesCleartext = URI(configuredServerOrigin).scheme.equals("http", ignoreCase = true)
-val debugServerOrigin = validateServerOrigin("http://10.0.2.2:3000", allowCleartext = true)
+val debugServerOrigin = validateServerOrigin(
+    providers.gradleProperty("calibrateWearDebugServerUrl").orElse("http://10.0.2.2:3000").get(),
+    allowCleartext = true
+)
 
 val phoneDebugKeystore = rootProject.file("../mobile/android/app/debug.keystore")
 

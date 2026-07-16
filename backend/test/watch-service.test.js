@@ -74,7 +74,7 @@ test('watch snapshot is bounded, timezone-local, and derives current-session und
       id: 9, timezone: 'America/Los_Angeles', language: 'en', weight_unit: 'KG', height_unit: 'CM',
       sex: 'MALE', date_of_birth: new Date('1990-01-01T00:00:00.000Z'), height_mm: 1800, activity_level: 'SEDENTARY'
     }) },
-    goal: { findFirst: async () => ({ daily_deficit: 500 }) },
+    goal: { findFirst: async () => ({ start_weight_grams: 90000, target_weight_grams: 75000, daily_deficit: 500 }) },
     bodyMetric: {
       findFirst: async () => ({ id: 4, date: new Date('2026-07-10T00:00:00.000Z'), weight_grams: 80000 }),
       findUnique: async () => null
@@ -142,6 +142,15 @@ test('watch snapshot is bounded, timezone-local, and derives current-session und
   assert.equal(snapshot.weight.latest_grams, 80000);
   assert.match(snapshot.weight.latest_revision, /^[a-f0-9]{24}$/);
   assert.equal(snapshot.weight.latest_date, '2026-07-10');
+  assert.deepEqual(snapshot.goal, {
+    start_weight_grams: 90000,
+    target_weight_grams: 75000,
+    current_weight_grams: 80000,
+    daily_deficit: 500,
+    progress_percent: 66.7,
+    remaining_weight_grams: 5000,
+    is_complete: false
+  });
   assert.equal(snapshot.activity.total_calories_kcal, 2200);
   assert.equal(snapshot.activity.exercise_minutes, 25);
   assert.equal(snapshot.activity.observed_at, '2026-07-11T18:30:00.000Z');
@@ -164,6 +173,54 @@ test('watch snapshot is bounded, timezone-local, and derives current-session und
   assert.ok(snapshot.food_day.revision);
   assert.equal(snapshot.weight.today_revision, null);
   assert.match(watchSnapshotEtag(snapshot.revision), /^W\/"watch-/);
+});
+
+test('watch goal progress covers loss, gain, maintenance, missing goals, and completed targets', () => {
+  const { buildWatchGoalSnapshot } = loadWatchService({ prismaStub: {} });
+  assert.equal(buildWatchGoalSnapshot(null, 80000, 'KG'), null);
+  const serialized = buildWatchGoalSnapshot({
+    id: 99, user_id: 9, start_weight_grams: 90000, target_weight_grams: 80000,
+    daily_deficit: 500, target_date: new Date(), created_at: new Date()
+  }, 85000, 'KG');
+  assert.deepEqual(Object.keys(serialized).sort(), [
+    'current_weight_grams', 'daily_deficit', 'is_complete', 'progress_percent',
+    'remaining_weight_grams', 'start_weight_grams', 'target_weight_grams'
+  ]);
+  assert.deepEqual(
+    buildWatchGoalSnapshot({ start_weight_grams: 90000, target_weight_grams: 80000, daily_deficit: 500 }, 85000, 'KG'),
+    {
+      start_weight_grams: 90000, target_weight_grams: 80000, current_weight_grams: 85000,
+      daily_deficit: 500, progress_percent: 50, remaining_weight_grams: 5000, is_complete: false
+    }
+  );
+  assert.deepEqual(
+    buildWatchGoalSnapshot({ start_weight_grams: 70000, target_weight_grams: 80000, daily_deficit: -500 }, 75000, 'KG'),
+    {
+      start_weight_grams: 70000, target_weight_grams: 80000, current_weight_grams: 75000,
+      daily_deficit: -500, progress_percent: 50, remaining_weight_grams: 5000, is_complete: false
+    }
+  );
+  assert.deepEqual(
+    buildWatchGoalSnapshot({ start_weight_grams: 75000, target_weight_grams: 75000, daily_deficit: 0 }, 75090, 'KG'),
+    {
+      start_weight_grams: 75000, target_weight_grams: 75000, current_weight_grams: 75090,
+      daily_deficit: 0, progress_percent: 100, remaining_weight_grams: 90, is_complete: true
+    }
+  );
+  assert.deepEqual(
+    buildWatchGoalSnapshot({ start_weight_grams: 90000, target_weight_grams: 80000, daily_deficit: 500 }, 79000, 'KG'),
+    {
+      start_weight_grams: 90000, target_weight_grams: 80000, current_weight_grams: 79000,
+      daily_deficit: 500, progress_percent: 100, remaining_weight_grams: 0, is_complete: true
+    }
+  );
+  assert.deepEqual(
+    buildWatchGoalSnapshot({ start_weight_grams: 90000, target_weight_grams: 80000, daily_deficit: 500 }, null, 'KG'),
+    {
+      start_weight_grams: 90000, target_weight_grams: 80000, current_weight_grams: null,
+      daily_deficit: 500, progress_percent: null, remaining_weight_grams: 10000, is_complete: false
+    }
+  );
 });
 
 test('watch food creation snapshots My Food and records trusted session provenance', async () => {

@@ -1225,6 +1225,20 @@ components:
             latest_grams: { type: [integer, 'null'] }
             latest_revision: { type: [string, 'null'] }
             latest_date: { type: [string, 'null'], format: date }
+        goal:
+          oneOf:
+            - type: 'null'
+            - type: object
+              additionalProperties: false
+              required: [start_weight_grams, target_weight_grams, current_weight_grams, daily_deficit, progress_percent, remaining_weight_grams, is_complete]
+              properties:
+                start_weight_grams: { type: integer, minimum: 1 }
+                target_weight_grams: { type: integer, minimum: 1 }
+                current_weight_grams: { type: [integer, 'null'], minimum: 1 }
+                daily_deficit: { type: integer, enum: [-1000, -750, -500, -250, 0, 250, 500, 750, 1000] }
+                progress_percent: { type: [number, 'null'], minimum: 0, maximum: 100 }
+                remaining_weight_grams: { type: integer, minimum: 0 }
+                is_complete: { type: boolean }
         quick_add:
           type: array
           maxItems: 12

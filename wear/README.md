@@ -5,7 +5,8 @@ Standalone native Kotlin/Compose application for the Calibrate Wear OS companion
 
 ## Variants
 
-- `debug`: debug-signed and defaults to the emulator host at `http://10.0.2.2:3000`.
+- `debug`: debug-signed and defaults to the emulator host at `http://10.0.2.2:3000`; use
+  `-PcalibrateWearDebugServerUrl=http://<LAN-IP>:3000` for a physical watch on a trusted private network.
 - `internal`: uses shared release signing when all signing values are supplied, otherwise falls back to the phone debug key; defaults to the hosted server.
 - `release`: release signing is supplied outside the repository.
 
@@ -57,6 +58,16 @@ private IPv4/private IPv6 address, or `.local` host. Public HTTP, credentials, p
 rejected during Gradle configuration. When the configured origin is HTTPS, cleartext traffic remains disabled even
 if the allow flag was supplied.
 
+For a same-signed physical debug build, point the watch directly at the development server's private-LAN address:
+
+```powershell
+.\gradlew.bat :app:assembleDebug `
+  -PcalibrateWearDebugServerUrl=http://192.168.1.10:3000
+```
+
+The debug override accepts the same literal loopback/private-address rules while keeping the emulator default when
+the property is omitted. The phone and watch must still be signed by the same debug key.
+
 ## Validate
 
 ```powershell
@@ -67,9 +78,10 @@ $env:ANDROID_HOME="$env:LOCALAPPDATA\Android\Sdk"
 ```
 
 The runtime derives unpaired, pairing, recovery, and paired states from durable storage; deterministic health values
-remain limited to tests. The app renders the Room-cached daily summary and supports quick add, undo, completion,
-rotary weight entry, continue-on-phone, and watch-local disconnect. The cache-only Tile exposes calorie, activity,
-completion, and staleness state without initiating network work from the Tile service.
+remain limited to tests. The glance-first home emphasizes consumed and remaining calories plus goal progress, while
+quick add, undo, completion, rotary weight entry, and continue-on-phone live on a secondary Actions screen. The
+cache-only Tile exposes calorie progress, completion, and cache freshness without initiating network work from the
+Tile service.
 
 `WearDataLayerContract` defines versioned coordination paths for pairing, sync invalidation, and continue-on-phone
 handoffs. Health summaries do not travel over Data Layer: the paired watch calls the selected server directly and

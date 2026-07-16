@@ -28,6 +28,7 @@ import app.calibratehealth.wear.pairing.shouldAttemptForegroundSync
 import app.calibratehealth.wear.notifications.WearReminderDeepLink
 import app.calibratehealth.wear.notifications.parseWearReminderDeepLink
 import app.calibratehealth.wear.sync.OutboxWorkPolicy
+import app.calibratehealth.wear.sync.OUTBOX_WORK_ERROR_KEY
 import app.calibratehealth.wear.sync.QueuedMutationFactory
 import app.calibratehealth.wear.sync.WorkManagerOutboxScheduler
 import kotlinx.coroutines.MainScope
@@ -155,8 +156,13 @@ class MainActivity : ComponentActivity() {
         WorkManager.getInstance(this)
             .getWorkInfosForUniqueWorkLiveData(OutboxWorkPolicy.UNIQUE_WORK_NAME)
             .observe(this) { work ->
-                if (work.any { it.state == WorkInfo.State.FAILED }) {
-                    homeController.reportWorkerFailure()
+                val latestWorkId = OutboxWorkPolicy.latestWorkId(this)
+                val latest = work.firstOrNull { it.id == latestWorkId }
+                if (latest?.state == WorkInfo.State.FAILED) {
+                    homeController.reportWorkerFailure(
+                        latest.outputData.getString(OUTBOX_WORK_ERROR_KEY)
+                            ?: "Health sync needs attention."
+                    )
                 } else {
                     homeController.refreshQueueStatus()
                 }

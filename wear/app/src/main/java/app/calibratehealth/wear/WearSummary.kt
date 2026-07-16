@@ -20,6 +20,13 @@ data class WearSummary(
     val latestWeightGrams: Long?,
     val latestWeightDate: String?,
     val weightUnit: String,
+    val goalStartWeightGrams: Long? = null,
+    val goalTargetWeightGrams: Long? = null,
+    val goalCurrentWeightGrams: Long? = null,
+    val goalDailyDeficit: Int? = null,
+    val goalProgressPercent: Double? = null,
+    val goalRemainingWeightGrams: Long? = null,
+    val goalIsComplete: Boolean? = null,
     val undoFoodLogId: Long?,
     val undoName: String?,
     val undoCalories: Int?,
@@ -53,15 +60,17 @@ sealed interface WearSyncStatus {
 object SummaryFormatter {
     fun caloriesRemaining(summary: WearSummary): String =
         summary.caloriesRemaining?.let { value ->
-            if (value >= 0) "$value kcal left" else "${-value} kcal over"
+            if (value >= 0) "${calorieCount(value)} kcal left" else "${calorieCount(-value)} kcal over"
         } ?: "Calorie target unavailable"
 
     fun calorieProgress(summary: WearSummary): String =
         if (summary.caloriesConsumed != null && summary.calorieTarget != null) {
-            "${summary.caloriesConsumed} of ${summary.calorieTarget} kcal"
+            "${calorieCount(summary.caloriesConsumed)} of ${calorieCount(summary.calorieTarget)} kcal"
         } else {
             "Open phone to finish setup"
         }
+
+    fun calorieCount(value: Int?): String = value?.let(::formatWholeNumber) ?: "--"
 
     fun steps(summary: WearSummary): String = summary.steps?.let(::formatWholeNumber) ?: "--"
 

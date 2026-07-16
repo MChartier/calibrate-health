@@ -65,6 +65,46 @@ class WatchSnapshotMapperTest {
     }
 
     @Test
+    fun `maps optional goal progress and remains compatible with snapshots that omit it`() {
+        val withoutGoal = WatchSnapshotMapper.map(validSnapshot(), 42L).dailySnapshot
+        assertEquals(null, withoutGoal.goalStartWeightGrams)
+
+        val goal =
+            "\"goal\":{\"start_weight_grams\":90000,\"target_weight_grams\":75000," +
+                "\"current_weight_grams\":80000,\"daily_deficit\":500,\"progress_percent\":66.7," +
+                "\"remaining_weight_grams\":5000,\"is_complete\":false},"
+        val withGoal = validSnapshot().replace("\"quick_add\":", "$goal\"quick_add\":")
+        val mapped = WatchSnapshotMapper.map(withGoal, 42L).dailySnapshot
+
+        assertEquals(90_000L, mapped.goalStartWeightGrams)
+        assertEquals(75_000L, mapped.goalTargetWeightGrams)
+        assertEquals(80_000L, mapped.goalCurrentWeightGrams)
+        assertEquals(500, mapped.goalDailyDeficit)
+        assertEquals(66.7, mapped.goalProgressPercent)
+        assertEquals(5_000L, mapped.goalRemainingWeightGrams)
+        assertEquals(false, mapped.goalIsComplete)
+    }
+
+    @Test
+    fun `rejects incomplete or out-of-range goal progress`() {
+        val incompleteGoal =
+            "\"goal\":{\"start_weight_grams\":90000,\"target_weight_grams\":75000," +
+                "\"current_weight_grams\":80000,\"daily_deficit\":500,\"progress_percent\":null," +
+                "\"remaining_weight_grams\":5000,\"is_complete\":false},"
+        val invalidProgress =
+            "\"goal\":{\"start_weight_grams\":90000,\"target_weight_grams\":75000," +
+                "\"current_weight_grams\":80000,\"daily_deficit\":500,\"progress_percent\":101," +
+                "\"remaining_weight_grams\":5000,\"is_complete\":false},"
+
+        assertTrue(runCatching {
+            WatchSnapshotMapper.map(validSnapshot().replace("\"quick_add\":", "$incompleteGoal\"quick_add\":"), 42L)
+        }.isFailure)
+        assertTrue(runCatching {
+            WatchSnapshotMapper.map(validSnapshot().replace("\"quick_add\":", "$invalidProgress\"quick_add\":"), 42L)
+        }.isFailure)
+    }
+
+    @Test
     fun `strict parser rejects duplicate keys and trailing input`() {
         assertTrue(runCatching { StrictJson.parse("{\"a\":1,\"a\":2}") }.isFailure)
         assertTrue(runCatching { StrictJson.parse("{}[]") }.isFailure)

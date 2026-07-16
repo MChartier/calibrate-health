@@ -186,6 +186,37 @@ class WearPersistenceInstrumentedTest {
     }
 
     @Test
+    fun versionThreeGoalMigrationPreservesSnapshotsWithNoInventedProgress() {
+        val configuration = SupportSQLiteOpenHelper.Configuration.builder(context)
+            .name(migrationDatabaseName)
+            .callback(object : SupportSQLiteOpenHelper.Callback(3) {
+                override fun onCreate(database: SupportSQLiteDatabase) {
+                    database.execSQL(
+                        "CREATE TABLE daily_snapshots (local_date TEXT NOT NULL PRIMARY KEY, fetched_at_epoch_ms INTEGER NOT NULL)"
+                    )
+                    database.execSQL(
+                        "INSERT INTO daily_snapshots (local_date, fetched_at_epoch_ms) VALUES ('2026-07-11', 42)"
+                    )
+                }
+
+                override fun onUpgrade(database: SupportSQLiteDatabase, oldVersion: Int, newVersion: Int) = Unit
+            })
+            .build()
+        val helper = FrameworkSQLiteOpenHelperFactory().create(configuration)
+        val database = helper.writableDatabase
+
+        CalibrateWearDatabase.MIGRATION_3_4.migrate(database)
+
+        database.query("SELECT * FROM daily_snapshots WHERE local_date = '2026-07-11'").use { cursor ->
+            assertEquals(true, cursor.moveToFirst())
+            assertEquals(true, cursor.isNull(cursor.getColumnIndexOrThrow("goal_start_weight_grams")))
+            assertEquals(true, cursor.isNull(cursor.getColumnIndexOrThrow("goal_progress_percent")))
+            assertEquals(true, cursor.isNull(cursor.getColumnIndexOrThrow("goal_is_complete")))
+        }
+        helper.close()
+    }
+
+    @Test
     fun roomAccountDataStoreClearsEveryAccountScopedTable() = runBlocking {
         val database = CalibrateWearDatabase.open(context, databaseName)
         database.dailySnapshotDao().cacheBounded(snapshot("2026-07-11"), maxRows = 2)

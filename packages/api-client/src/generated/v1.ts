@@ -841,6 +841,16 @@ export interface components {
                 /** Format: date */
                 latest_date: string | null;
             };
+            goal?: null | {
+                start_weight_grams: number;
+                target_weight_grams: number;
+                current_weight_grams: number | null;
+                /** @enum {integer} */
+                daily_deficit: -1000 | -750 | -500 | -250 | 0 | 250 | 500 | 750 | 1000;
+                progress_percent: number | null;
+                remaining_weight_grams: number;
+                is_complete: boolean;
+            };
             quick_add: components["schemas"]["WatchQuickAddDraft"][];
             reminders: {
                 id: number;

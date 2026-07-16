@@ -460,6 +460,66 @@ const recentDraft = (
   };
 };
 
+export type WatchGoalSnapshot = {
+  start_weight_grams: number;
+  target_weight_grams: number;
+  current_weight_grams: number | null;
+  daily_deficit: number;
+  progress_percent: number | null;
+  remaining_weight_grams: number;
+  is_complete: boolean;
+};
+
+/** Derive bounded, direction-aware goal progress once so every Watch surface agrees. */
+export function buildWatchGoalSnapshot(
+  goal: { start_weight_grams: number; target_weight_grams: number; daily_deficit: number } | null,
+  currentWeightGrams: number | null,
+  weightUnit: 'KG' | 'LB'
+): WatchGoalSnapshot | null {
+  if (!goal) return null;
+  const totalDelta = goal.target_weight_grams - goal.start_weight_grams;
+  if (currentWeightGrams === null) {
+    return {
+      start_weight_grams: goal.start_weight_grams,
+      target_weight_grams: goal.target_weight_grams,
+      daily_deficit: goal.daily_deficit,
+      current_weight_grams: null,
+      progress_percent: null,
+      remaining_weight_grams: Math.abs(totalDelta),
+      is_complete: false
+    };
+  }
+
+  let isComplete: boolean;
+  let remainingWeightGrams: number;
+  let progressPercent: number;
+  if (totalDelta > 0) {
+    isComplete = currentWeightGrams >= goal.target_weight_grams;
+    remainingWeightGrams = Math.max(0, goal.target_weight_grams - currentWeightGrams);
+    progressPercent = ((currentWeightGrams - goal.start_weight_grams) / totalDelta) * 100;
+  } else if (totalDelta < 0) {
+    isComplete = currentWeightGrams <= goal.target_weight_grams;
+    remainingWeightGrams = Math.max(0, currentWeightGrams - goal.target_weight_grams);
+    progressPercent = ((currentWeightGrams - goal.start_weight_grams) / totalDelta) * 100;
+  } else {
+    // Match the existing 0.1 display-unit maintenance tolerance at the canonical gram edge.
+    const toleranceGrams = weightUnit === 'LB' ? 45 : 100;
+    remainingWeightGrams = Math.abs(currentWeightGrams - goal.target_weight_grams);
+    isComplete = remainingWeightGrams <= toleranceGrams;
+    progressPercent = isComplete ? 100 : 0;
+  }
+
+  return {
+    start_weight_grams: goal.start_weight_grams,
+    target_weight_grams: goal.target_weight_grams,
+    daily_deficit: goal.daily_deficit,
+    current_weight_grams: currentWeightGrams,
+    progress_percent: Math.round(Math.max(0, Math.min(100, progressPercent)) * 10) / 10,
+    remaining_weight_grams: remainingWeightGrams,
+    is_complete: isComplete
+  };
+}
+
 export async function buildWatchSnapshot(options: {
   userId: number;
   mobileAuthSessionId: number;
@@ -517,6 +577,7 @@ export async function buildWatchSnapshot(options: {
       : null;
     const activityStale = !observedAt || now.getTime() - observedAt.getTime() > ACTIVITY_STALE_AFTER_MS;
     const defaultMealPeriod = suggestedMealPeriod(now, user.timezone);
+    const goalProgress = buildWatchGoalSnapshot(goal, latestWeight?.weight_grams ?? null, user.weight_unit);
     const recentMyFoodIds = Array.from(new Set(
       recent.map((item) => item.my_food_id).filter((id): id is number => id !== null)
     ));
@@ -575,6 +636,7 @@ export async function buildWatchSnapshot(options: {
         latest_revision: latestWeight ? metricRevision(latestWeight) : null,
         latest_date: latestWeight?.date.toISOString().slice(0, 10) ?? null
       },
+      goal: goalProgress,
       quick_add: quickAdd,
       reminders,
       undo_candidate: undoCandidate,

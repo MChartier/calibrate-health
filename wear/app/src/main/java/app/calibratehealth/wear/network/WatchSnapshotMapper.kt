@@ -28,6 +28,7 @@ object WatchSnapshotMapper {
     private const val MAX_STEPS = 1_000_000
     private const val MAX_WEIGHT_GRAMS = 1_000_000L
     private const val MAX_REMINDERS = 2
+    private val DAILY_DEFICITS = setOf(-1_000, -750, -500, -250, 0, 250, 500, 750, 1_000)
 
     fun map(body: String, fetchedAtEpochMs: Long): MappedWatchSnapshot {
         require(fetchedAtEpochMs > 0) { "Snapshot fetch time must be positive." }
@@ -78,6 +79,34 @@ object WatchSnapshotMapper {
         require((todayWeight == null) == (todayWeightRevision == null)) { "Today weight and revision must both be present or absent." }
         require((latestWeight == null) == (latestWeightRevision == null)) { "Latest weight and revision must both be present or absent." }
         require((latestWeight == null) == (latestWeightDate == null)) { "Latest weight and date must both be present or absent." }
+
+        // Goal was added after the first Watch snapshot contract, so absence maps to no cached goal.
+        val goal = when (val value = root.values["goal"]) {
+            null, JsonValue.Null -> null
+            is JsonValue.Object -> value
+            else -> throw InvalidJsonException("goal must be an object or null.")
+        }
+        val goalStartWeight = goal?.requiredLong("start_weight_grams")?.also(::requireWeight)
+        val goalTargetWeight = goal?.requiredLong("target_weight_grams")?.also(::requireWeight)
+        val goalCurrentWeight = goal?.optionalLong("current_weight_grams")?.also(::requireWeight)
+        val goalDailyDeficit = goal?.requiredLong("daily_deficit")?.boundedInt(
+            "goal.daily_deficit",
+            -1_000,
+            1_000
+        )?.also { require(it in DAILY_DEFICITS) { "Invalid goal daily deficit." } }
+        val goalProgressPercent = goal?.optionalDouble("progress_percent")?.also {
+            require(it in 0.0..100.0) { "goal.progress_percent is outside its allowed range." }
+        }
+        val goalRemainingWeight = goal?.requiredLong("remaining_weight_grams")?.also {
+            require(it in 0..MAX_WEIGHT_GRAMS) { "Goal remaining weight is outside its allowed range." }
+        }
+        val goalIsComplete = goal?.requiredBoolean("is_complete")
+        require((goalCurrentWeight == null) == (goalProgressPercent == null)) {
+            "Goal current weight and progress must both be present or absent."
+        }
+        if (goalCurrentWeight == null) require(goalIsComplete != true) {
+            "A goal without a current weight cannot be complete."
+        }
 
         val quickAdds = root.requiredArray("quick_add")
         require(quickAdds.size <= WearCacheLimits.QUICK_ADD_ITEMS) { "Too many quick-add items." }
@@ -142,6 +171,13 @@ object WatchSnapshotMapper {
                 latestWeightRevision = latestWeightRevision,
                 latestWeightDate = latestWeightDate,
                 weightUnit = weightUnit,
+                goalStartWeightGrams = goalStartWeight,
+                goalTargetWeightGrams = goalTargetWeight,
+                goalCurrentWeightGrams = goalCurrentWeight,
+                goalDailyDeficit = goalDailyDeficit,
+                goalProgressPercent = goalProgressPercent,
+                goalRemainingWeightGrams = goalRemainingWeight,
+                goalIsComplete = goalIsComplete,
                 undoFoodLogId = undoFoodLogId,
                 undoName = undoName,
                 undoCalories = undoCalories,

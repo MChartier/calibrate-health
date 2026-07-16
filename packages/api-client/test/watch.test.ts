@@ -45,6 +45,15 @@ test('watch snapshot contract exposes unit and revisions needed for offline acti
             latest_revision: '222222222222222222222222',
             latest_date: '2026-07-11'
         },
+        goal: {
+            start_weight_grams: 90000,
+            target_weight_grams: 75000,
+            current_weight_grams: 80000,
+            daily_deficit: 500,
+            progress_percent: 66.7,
+            remaining_weight_grams: 5000,
+            is_complete: false
+        },
         quick_add: [],
         reminders: [{
             id: 51,
@@ -58,6 +67,7 @@ test('watch snapshot contract exposes unit and revisions needed for offline acti
 
     assert.equal(snapshot.weight_unit, 'LB');
     assert.equal(snapshot.weight.latest_revision, snapshot.weight.today_revision);
+    assert.equal(snapshot.goal?.remaining_weight_grams, 5000);
     assert.equal(snapshot.reminders[0]?.type, 'food');
 });
 

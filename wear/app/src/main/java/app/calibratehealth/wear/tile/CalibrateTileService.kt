@@ -32,7 +32,8 @@ class CalibrateTileService : Material3TileService() {
         }.getOrNull()
         val content = CalibrateTileFormatter.format(snapshot, System.currentTimeMillis())
         return TileBuilders.Tile.Builder()
-            // No freshness interval: cache commits explicitly request updates and Tile rendering never fetches.
+            // Periodic cache-only renders keep the age label honest when no sync commit requests an update.
+            .setFreshnessIntervalMillis(TILE_FRESHNESS_INTERVAL_MS)
             .setTileTimeline(TimelineBuilders.Timeline.fromLayoutElement(layout(content)))
             .build()
     }
@@ -44,9 +45,7 @@ class CalibrateTileService : Material3TileService() {
             .addContent(spacer(8f))
             .addContent(text(content.calorieLine, PRIMARY_SIZE_SP, PRIMARY_COLOR, bold = true))
 
-        content.stepsLine?.let {
-            column.addContent(spacer(6f)).addContent(text(it, BODY_SIZE_SP, PRIMARY_COLOR))
-        }
+        column.addContent(spacer(6f)).addContent(text(content.consumedLine, BODY_SIZE_SP, PRIMARY_COLOR))
         column.addContent(spacer(8f)).addContent(
             text(
                 content.statusLine,
@@ -126,5 +125,6 @@ class CalibrateTileService : Material3TileService() {
         const val PRIMARY_SIZE_SP = 24f
         const val BODY_SIZE_SP = 15f
         const val STATUS_SIZE_SP = 11f
+        const val TILE_FRESHNESS_INTERVAL_MS = 60 * 60 * 1_000L
     }
 }

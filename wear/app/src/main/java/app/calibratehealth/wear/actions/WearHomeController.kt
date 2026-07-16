@@ -154,9 +154,9 @@ class WearHomeController(
         }
     }
 
-    fun reportWorkerFailure() {
+    fun reportWorkerFailure(message: String = "Health sync needs attention.") {
         actionState.update { current ->
-            current.copy(status = WearSyncStatus.Error("A queued change needs attention."))
+            current.copy(status = WearSyncStatus.Error(message))
         }
     }
 
@@ -253,6 +253,13 @@ private fun DailySnapshotEntity.toWearSummary(lastSyncAtEpochMs: Long?): WearSum
     latestWeightGrams = latestWeightGrams,
     latestWeightDate = latestWeightDate,
     weightUnit = weightUnit,
+    goalStartWeightGrams = goalStartWeightGrams,
+    goalTargetWeightGrams = goalTargetWeightGrams,
+    goalCurrentWeightGrams = goalCurrentWeightGrams,
+    goalDailyDeficit = goalDailyDeficit,
+    goalProgressPercent = goalProgressPercent,
+    goalRemainingWeightGrams = goalRemainingWeightGrams,
+    goalIsComplete = goalIsComplete,
     undoFoodLogId = undoFoodLogId,
     undoName = undoName,
     undoCalories = undoCalories,

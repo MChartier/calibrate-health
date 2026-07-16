@@ -9,7 +9,7 @@ class SummaryFormatterTest {
         val base = summary(caloriesRemaining = 640)
         assertEquals("640 kcal left", SummaryFormatter.caloriesRemaining(base))
         assertEquals("125 kcal over", SummaryFormatter.caloriesRemaining(base.copy(caloriesRemaining = -125)))
-        assertEquals("1360 of 2000 kcal", SummaryFormatter.calorieProgress(base))
+        assertEquals("1,360 of 2,000 kcal", SummaryFormatter.calorieProgress(base))
         assertEquals("12,345", SummaryFormatter.steps(base))
     }
 

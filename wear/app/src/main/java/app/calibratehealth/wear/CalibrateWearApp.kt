@@ -1,24 +1,35 @@
 package app.calibratehealth.wear
 
 import androidx.compose.foundation.focusable
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.input.rotary.onRotaryScrollEvent
+import androidx.compose.ui.semantics.ProgressBarRangeInfo
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.progressBarRangeInfo
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -37,8 +48,11 @@ import app.calibratehealth.wear.actions.WearHomeUiState
 import app.calibratehealth.wear.data.local.QuickAddItemEntity
 import app.calibratehealth.wear.notifications.WearReminderDeepLink
 import app.calibratehealth.wear.notifications.WearReminderNotification
+import kotlin.math.abs
+import kotlin.math.roundToInt
 
 private const val SUMMARY_ROUTE = "summary"
+private const val ACTIONS_ROUTE = "actions"
 private const val CONNECTION_ROUTE = "connection"
 private const val WEIGHT_ROUTE = "weight"
 
@@ -62,6 +76,21 @@ fun CalibrateWearApp(
     reminderDeepLinkRequest: Long = 0,
     modifier: Modifier = Modifier
 ) {
+    // Wear navigation retains destination lambdas; updated state prevents a destination from
+    // continuing to render its initial pairing snapshot after the first sync commits.
+    val currentAppState = rememberUpdatedState(appState)
+    val currentHomeState = rememberUpdatedState(homeState)
+    val currentDisconnecting = rememberUpdatedState(disconnecting)
+    val currentDisconnectError = rememberUpdatedState(disconnectError)
+    val currentPublicResourceHandoffStatus = rememberUpdatedState(publicResourceHandoffStatus)
+    val currentOnQuickAdd = rememberUpdatedState(onQuickAdd)
+    val currentOnToggleFoodDay = rememberUpdatedState(onToggleFoodDay)
+    val currentOnUndo = rememberUpdatedState(onUndo)
+    val currentOnSaveWeight = rememberUpdatedState(onSaveWeight)
+    val currentOnContinueOnPhone = rememberUpdatedState(onContinueOnPhone)
+    val currentOnOpenPrivacyOnPhone = rememberUpdatedState(onOpenPrivacyOnPhone)
+    val currentOnOpenAccountDeletionOnPhone = rememberUpdatedState(onOpenAccountDeletionOnPhone)
+    val currentOnDisconnect = rememberUpdatedState(onDisconnect)
     MaterialTheme {
         AppScaffold(modifier = modifier) {
             val navController = rememberSwipeDismissableNavController()
@@ -71,43 +100,52 @@ fun CalibrateWearApp(
                 if (reminderDeepLink.destination == WearReminderNotification.DESTINATION_WEIGHT) {
                     navController.navigate(WEIGHT_ROUTE) { launchSingleTop = true }
                 } else {
-                    navController.popBackStack(SUMMARY_ROUTE, inclusive = false)
+                    navController.navigate(ACTIONS_ROUTE) { launchSingleTop = true }
                 }
             }
             SwipeDismissableNavHost(navController = navController, startDestination = SUMMARY_ROUTE) {
                 composable(SUMMARY_ROUTE) {
                     SummaryScreen(
-                        appState = appState,
-                        homeState = homeState,
-                        onOpenConnection = { navController.navigate(CONNECTION_ROUTE) },
+                        appState = currentAppState.value,
+                        homeState = currentHomeState.value,
+                        onOpenActions = { navController.navigate(ACTIONS_ROUTE) },
                         onOpenWeight = { navController.navigate(WEIGHT_ROUTE) },
-                        onQuickAdd = onQuickAdd,
-                        onToggleFoodDay = onToggleFoodDay,
-                        onUndo = onUndo,
-                        onContinueOnPhone = onContinueOnPhone
+                        onOpenConnection = { navController.navigate(CONNECTION_ROUTE) },
+                    )
+                }
+                composable(ACTIONS_ROUTE) {
+                    ActionsScreen(
+                        appState = currentAppState.value,
+                        homeState = currentHomeState.value,
+                        onOpenWeight = { navController.navigate(WEIGHT_ROUTE) },
+                        onQuickAdd = currentOnQuickAdd.value,
+                        onToggleFoodDay = currentOnToggleFoodDay.value,
+                        onUndo = currentOnUndo.value,
+                        onContinueOnPhone = currentOnContinueOnPhone.value
                     )
                 }
                 composable(CONNECTION_ROUTE) {
                     ConnectionScreen(
-                        appState = appState,
+                        appState = currentAppState.value,
                         serverConfig = serverConfig,
-                        disconnecting = disconnecting,
-                        disconnectError = disconnectError,
-                        publicResourceHandoffStatus = publicResourceHandoffStatus,
-                        onOpenPrivacyOnPhone = onOpenPrivacyOnPhone,
-                        onOpenAccountDeletionOnPhone = onOpenAccountDeletionOnPhone,
-                        onDisconnect = onDisconnect
+                        disconnecting = currentDisconnecting.value,
+                        disconnectError = currentDisconnectError.value,
+                        publicResourceHandoffStatus = currentPublicResourceHandoffStatus.value,
+                        onOpenPrivacyOnPhone = currentOnOpenPrivacyOnPhone.value,
+                        onOpenAccountDeletionOnPhone = currentOnOpenAccountDeletionOnPhone.value,
+                        onDisconnect = currentOnDisconnect.value
                     )
                 }
                 composable(WEIGHT_ROUTE) {
-                    val summary = homeState.summary
+                    val latestHomeState = currentHomeState.value
+                    val summary = latestHomeState.summary
                     if (summary != null) {
                         WeightScreen(
                             summary = summary,
-                            saving = homeState.actionInProgress ||
-                                "metric.upsert" in homeState.pendingMutationTypes,
+                            saving = latestHomeState.actionInProgress ||
+                                "metric.upsert" in latestHomeState.pendingMutationTypes,
                             onSave = { grams ->
-                                onSaveWeight(summary, grams)
+                                currentOnSaveWeight.value(summary, grams)
                                 navController.popBackStack()
                             }
                         )
@@ -122,12 +160,9 @@ fun CalibrateWearApp(
 private fun SummaryScreen(
     appState: WearAppState,
     homeState: WearHomeUiState,
-    onOpenConnection: () -> Unit,
+    onOpenActions: () -> Unit,
     onOpenWeight: () -> Unit,
-    onQuickAdd: (QuickAddItemEntity) -> Unit,
-    onToggleFoodDay: (WearSummary) -> Unit,
-    onUndo: (WearSummary) -> Unit,
-    onContinueOnPhone: (WearSummary) -> Unit
+    onOpenConnection: () -> Unit
 ) {
     val listState = rememberTransformingLazyColumnState()
     ScreenScaffold(scrollState = listState, edgeButton = {}) { contentPadding ->
@@ -139,7 +174,7 @@ private fun SummaryScreen(
         ) {
             item {
                 Text(
-                    text = "Today",
+                    text = "Calories today",
                     style = MaterialTheme.typography.titleMedium,
                     textAlign = TextAlign.Center,
                     modifier = Modifier.fillMaxWidth()
@@ -151,70 +186,35 @@ private fun SummaryScreen(
                 is WearAppState.PairingError -> item { StatusText(appState.message) }
                 is WearAppState.UpgradeRequired -> item { StatusText(appState.message) }
                 is WearAppState.Paired -> item {
-                    StatusText("Paired securely. Waiting for the first health sync.")
+                    val status = (homeState.syncStatus as? WearSyncStatus.Error)?.message
+                        ?: "Paired securely. Waiting for the first health sync."
+                    StatusText(status)
                 }
                 is WearAppState.Ready -> {
-                    item { CalorieSummaryCard(appState.summary) }
-                    item { ActivityCard(appState.summary) }
-                    item {
-                        WeightCard(
-                            summary = appState.summary,
-                            enabled = "metric.upsert" !in homeState.pendingMutationTypes,
-                            onOpenWeight = onOpenWeight
-                        )
-                    }
-                    item {
-                        Button(
-                            onClick = { onToggleFoodDay(appState.summary) },
-                            enabled = !homeState.actionInProgress &&
-                                "food_day.set_complete" !in homeState.pendingMutationTypes,
-                            label = { Text(if (appState.summary.foodDayComplete) "Reopen food day" else "Mark food complete") },
-                            secondaryLabel = { Text(SummaryFormatter.completion(appState.summary)) },
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    }
-                    if (appState.summary.hasUndoCandidate) {
+                    item { CalorieSummaryCard(appState.summary, onOpenActions) }
+                    if (appState.summary.goalTargetWeightGrams != null) {
                         item {
-                            Button(
-                                onClick = { onUndo(appState.summary) },
-                                enabled = !homeState.actionInProgress &&
-                                    "food.delete" !in homeState.pendingMutationTypes,
-                                label = { Text("Undo ${appState.summary.undoName}") },
-                                secondaryLabel = { Text("${appState.summary.undoCalories} kcal") },
-                                modifier = Modifier.fillMaxWidth()
+                            GoalProgressCard(
+                                summary = appState.summary,
+                                onOpenWeight = onOpenWeight
                             )
                         }
                     }
-                    if (homeState.quickAdds.isNotEmpty()) {
-                        item { SectionTitle("Quick add") }
-                        homeState.quickAdds.forEach { food ->
-                            item(key = food.quickAddId) {
-                                Button(
-                                    onClick = { onQuickAdd(food) },
-                                    enabled = !homeState.actionInProgress,
-                                    label = { Text(food.name) },
-                                    secondaryLabel = { Text("${food.calories} kcal | ${food.servingDescription}") },
-                                    modifier = Modifier.fillMaxWidth()
-                                )
-                            }
-                        }
-                    }
-                    item {
-                        Button(
-                            onClick = { onContinueOnPhone(appState.summary) },
-                            enabled = !homeState.actionInProgress,
-                            label = { Text("Continue on phone") },
-                            secondaryLabel = { Text("Search, scan, or edit details") },
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    }
                     item {
                         val syncLabel = if (homeState.actionInProgress) {
-                            "Queueing change..."
+                            "Syncing a change..."
                         } else {
                             SummaryFormatter.sync(homeState.syncStatus, appState.summary.lastSyncAtEpochMs)
                         }
                         StatusText(syncLabel)
+                    }
+                    item {
+                        Button(
+                            onClick = onOpenActions,
+                            label = { Text("Actions") },
+                            secondaryLabel = { Text("Continue on phone or log a quick change") },
+                            modifier = Modifier.fillMaxWidth()
+                        )
                     }
                 }
             }
@@ -231,52 +231,223 @@ private fun SummaryScreen(
 }
 
 @Composable
-private fun CalorieSummaryCard(summary: WearSummary) {
-    Card(onClick = {}, modifier = Modifier.fillMaxWidth()) {
+private fun CalorieSummaryCard(summary: WearSummary, onOpenActions: () -> Unit) {
+    val progress = calorieProgressFraction(summary.caloriesConsumed, summary.calorieTarget)
+    Card(
+        onClick = onOpenActions,
+        modifier = Modifier
+            .fillMaxWidth()
+            .semantics(mergeDescendants = true) {
+                contentDescription = calorieAccessibilityDescription(summary)
+            }
+    ) {
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(SummaryFormatter.caloriesRemaining(summary), style = MaterialTheme.typography.titleLarge)
-            Text(SummaryFormatter.calorieProgress(summary), style = MaterialTheme.typography.bodySmall)
-        }
-    }
-}
-
-@Composable
-private fun ActivityCard(summary: WearSummary) {
-    Card(onClick = {}, modifier = Modifier.fillMaxWidth()) {
-        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
-                GlanceMetric(label = "Steps", value = SummaryFormatter.steps(summary))
-                GlanceMetric(label = "Activity", value = summary.activityCalories?.let { "$it kcal" } ?: "--")
+                GlanceMetric(label = "Consumed", value = SummaryFormatter.calorieCount(summary.caloriesConsumed))
+                GlanceMetric(label = "Target", value = SummaryFormatter.calorieCount(summary.calorieTarget))
             }
-            Text(SummaryFormatter.activity(summary), style = MaterialTheme.typography.labelSmall)
+            progress?.let { ProgressTrack(it) }
+            Text(SummaryFormatter.calorieProgress(summary), style = MaterialTheme.typography.labelSmall)
         }
     }
 }
 
 @Composable
-private fun WeightCard(summary: WearSummary, enabled: Boolean, onOpenWeight: () -> Unit) {
-    Card(onClick = onOpenWeight, enabled = enabled, modifier = Modifier.fillMaxWidth()) {
-        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            val displayWeight = summary.editableWeightGrams ?: WeightEditorState.DEFAULT_FIRST_WEIGHT_GRAMS
-            Text(SummaryFormatter.weight(displayWeight, summary.weightUnit), style = MaterialTheme.typography.titleMedium)
-            val detail = if (!enabled) {
-                "Weight change pending"
-            } else if (summary.editableWeightGrams == null) {
-                "No weight yet | Tap to adjust the ${SummaryFormatter.weight(displayWeight, summary.weightUnit)} start"
-            } else if (summary.todayWeightGrams == null && summary.latestWeightDate != null) {
-                "Latest: ${summary.latestWeightDate} | Tap to log today"
-            } else {
-                "Today's weight | Tap to adjust"
+private fun GoalProgressCard(summary: WearSummary, onOpenWeight: () -> Unit) {
+    val progress = summary.goalProgressPercent?.let { (it / 100.0).toFloat().coerceIn(0f, 1f) }
+    Card(
+        onClick = onOpenWeight,
+        enabled = summary.editableWeightGrams != null,
+        modifier = Modifier
+            .fillMaxWidth()
+            .semantics(mergeDescendants = true) {
+                contentDescription = goalAccessibilityDescription(summary)
             }
-            Text(detail, style = MaterialTheme.typography.labelSmall)
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(goalProgressHeadline(summary), style = MaterialTheme.typography.titleMedium)
+            progress?.let { ProgressTrack(it) }
+            Text(goalProgressDetail(summary), style = MaterialTheme.typography.bodySmall)
+            summary.goalRemainingWeightGrams?.takeIf { it > 0 }?.let { remaining ->
+                val suffix = if (summary.goalDailyDeficit == 0) "from target" else "remaining"
+                Text(
+                    "${SummaryFormatter.weight(remaining, summary.weightUnit)} $suffix",
+                    style = MaterialTheme.typography.labelSmall
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ProgressTrack(progress: Float) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(6.dp)
+            .clip(CircleShape)
+            .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.16f))
+            .semantics { progressBarRangeInfo = ProgressBarRangeInfo(progress, 0f..1f) }
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth(progress)
+                .fillMaxHeight()
+                .background(MaterialTheme.colorScheme.primary)
+        )
+    }
+}
+
+internal fun calorieProgressFraction(consumed: Int?, target: Int?): Float? = when {
+    consumed == null || target == null || target <= 0 -> null
+    else -> (consumed.toFloat() / target).coerceIn(0f, 1f)
+}
+
+internal fun calorieAccessibilityDescription(summary: WearSummary): String {
+    val consumed = summary.caloriesConsumed
+    val target = summary.calorieTarget
+    val remaining = summary.caloriesRemaining
+    if (consumed == null || target == null || remaining == null) return "Calorie target unavailable."
+    val balance = if (remaining >= 0) {
+        "${SummaryFormatter.calorieCount(remaining)} calories remaining."
+    } else {
+        "${SummaryFormatter.calorieCount(abs(remaining))} calories over target."
+    }
+    return "${SummaryFormatter.calorieCount(consumed)} calories consumed of " +
+        "${SummaryFormatter.calorieCount(target)}. $balance"
+}
+
+internal fun goalProgressHeadline(summary: WearSummary): String = when {
+    summary.goalDailyDeficit == 0 -> "Maintenance goal"
+    summary.goalIsComplete == true -> "Goal reached"
+    summary.goalProgressPercent != null -> "${summary.goalProgressPercent.roundToInt()}% to goal"
+    else -> "Goal progress"
+}
+
+internal fun goalProgressDetail(summary: WearSummary): String {
+    val target = summary.goalTargetWeightGrams?.let { SummaryFormatter.weight(it, summary.weightUnit) }
+        ?: return "Goal unavailable"
+    val current = summary.goalCurrentWeightGrams?.let { SummaryFormatter.weight(it, summary.weightUnit) }
+    return if (current == null) "Goal $target | Log weight on phone" else "Current $current | Goal $target"
+}
+
+internal fun goalAccessibilityDescription(summary: WearSummary): String {
+    val headline = goalProgressHeadline(summary)
+    val detail = goalProgressDetail(summary).replace(" | ", ". ")
+    val remaining = summary.goalRemainingWeightGrams?.takeIf { it > 0 }?.let {
+        val suffix = if (summary.goalDailyDeficit == 0) "from target" else "remaining"
+        " ${SummaryFormatter.weight(it, summary.weightUnit)} $suffix."
+    }.orEmpty()
+    return "$headline. $detail.$remaining"
+}
+
+@Composable
+private fun ActionsScreen(
+    appState: WearAppState,
+    homeState: WearHomeUiState,
+    onOpenWeight: () -> Unit,
+    onQuickAdd: (QuickAddItemEntity) -> Unit,
+    onToggleFoodDay: (WearSummary) -> Unit,
+    onUndo: (WearSummary) -> Unit,
+    onContinueOnPhone: (WearSummary) -> Unit
+) {
+    val listState = rememberTransformingLazyColumnState()
+    ScreenScaffold(scrollState = listState, edgeButton = {}) { contentPadding ->
+        TransformingLazyColumn(
+            state = listState,
+            contentPadding = contentPadding,
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.fillMaxSize()
+        ) {
+            item { SectionTitle("Actions") }
+            if (appState !is WearAppState.Ready) {
+                item { StatusText("Finish pairing and sync before using watch actions.") }
+                return@TransformingLazyColumn
+            }
+            val summary = appState.summary
+            item {
+                Button(
+                    onClick = { onContinueOnPhone(summary) },
+                    enabled = !homeState.actionInProgress,
+                    label = { Text("Continue on phone") },
+                    secondaryLabel = { Text("Search, scan, or edit food details") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+            if (homeState.quickAdds.isNotEmpty()) {
+                item { SectionTitle("Quick add") }
+                homeState.quickAdds.forEach { food ->
+                    item(key = food.quickAddId) {
+                        Button(
+                            onClick = { onQuickAdd(food) },
+                            enabled = !homeState.actionInProgress,
+                            label = { Text(food.name) },
+                            secondaryLabel = { Text("${food.calories} kcal | ${food.servingDescription}") },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                }
+            }
+            item { SectionTitle("Other") }
+            if (summary.editableWeightGrams != null) {
+                item {
+                    Button(
+                        onClick = onOpenWeight,
+                        enabled = !homeState.actionInProgress &&
+                            "metric.upsert" !in homeState.pendingMutationTypes,
+                        label = { Text("Log weight") },
+                        secondaryLabel = {
+                            Text("Current ${SummaryFormatter.weight(summary.editableWeightGrams, summary.weightUnit)}")
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            }
+            item {
+                Button(
+                    onClick = { onToggleFoodDay(summary) },
+                    enabled = !homeState.actionInProgress &&
+                        "food_day.set_complete" !in homeState.pendingMutationTypes,
+                    label = { Text(if (summary.foodDayComplete) "Reopen food day" else "Mark food complete") },
+                    secondaryLabel = { Text(SummaryFormatter.completion(summary)) },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+            if (summary.hasUndoCandidate) {
+                item {
+                    Button(
+                        onClick = { onUndo(summary) },
+                        enabled = !homeState.actionInProgress &&
+                            "food.delete" !in homeState.pendingMutationTypes,
+                        label = { Text("Undo ${summary.undoName}") },
+                        secondaryLabel = { Text("${summary.undoCalories} kcal") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            }
         }
     }
 }
 
 @Composable
 private fun WeightScreen(summary: WearSummary, saving: Boolean, onSave: (Long) -> Unit) {
-    val isFirstWeight = summary.editableWeightGrams == null
-    val startingWeight = summary.editableWeightGrams ?: WeightEditorState.DEFAULT_FIRST_WEIGHT_GRAMS
+    val startingWeight = summary.editableWeightGrams
+    if (startingWeight == null) {
+        val listState = rememberTransformingLazyColumnState()
+        ScreenScaffold(scrollState = listState, edgeButton = {}) { contentPadding ->
+            TransformingLazyColumn(
+                state = listState,
+                contentPadding = contentPadding,
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.fillMaxSize()
+            ) {
+                item { SectionTitle("Log weight") }
+                item { StatusText("Log your first weight on the phone before adjusting it on the watch.") }
+            }
+        }
+        return
+    }
     var editor by remember(summary.localDate, startingWeight, summary.weightUnit) {
         mutableStateOf(WeightEditorState(startingWeight, summary.weightUnit))
     }
@@ -300,10 +471,7 @@ private fun WeightScreen(summary: WearSummary, saving: Boolean, onSave: (Long) -
                 .focusRequester(focusRequester)
                 .focusable()
         ) {
-            item { SectionTitle(if (isFirstWeight) "Log first weight" else "Log weight") }
-            if (isFirstWeight) {
-                item { StatusText("Starting at ${SummaryFormatter.weight(startingWeight, summary.weightUnit)}. Adjust before saving.") }
-            }
+            item { SectionTitle("Log weight") }
             item { Text(editor.label(), style = MaterialTheme.typography.titleLarge) }
                 item {
                     Button(
@@ -341,7 +509,11 @@ private fun connectionLabel(appState: WearAppState, syncStatus: WearSyncStatus):
     WearAppState.Pairing -> "Pairing in progress"
     is WearAppState.PairingError -> "Pairing needs attention"
     is WearAppState.UpgradeRequired -> "Update required"
-    is WearAppState.Paired -> if (appState.confirmationPending) "Phone confirmation pending" else "First sync pending"
+    is WearAppState.Paired -> when {
+        appState.confirmationPending -> "Phone confirmation pending"
+        syncStatus is WearSyncStatus.Error -> "Sync needs attention"
+        else -> "First sync pending"
+    }
     is WearAppState.Ready -> SummaryFormatter.sync(syncStatus, appState.summary.lastSyncAtEpochMs)
 }
 
@@ -385,12 +557,13 @@ private fun ConnectionScreen(
         ) {
             item { SectionTitle("Connection") }
             item {
-                Card(onClick = {}, modifier = Modifier.fillMaxWidth()) {
-                    Column(verticalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.padding(vertical = 2.dp)) {
-                        Text("Server", style = MaterialTheme.typography.labelSmall)
-                        Text(serverConfig.defaultServerUrl, style = MaterialTheme.typography.bodySmall)
-                        Text("${serverConfig.buildVariant} build", style = MaterialTheme.typography.labelSmall)
-                    }
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp)
+                ) {
+                    Text("Server", style = MaterialTheme.typography.labelSmall)
+                    Text(serverConfig.defaultServerUrl, style = MaterialTheme.typography.bodySmall)
+                    Text("${serverConfig.buildVariant} build", style = MaterialTheme.typography.labelSmall)
                 }
             }
             item { StatusText(connectionDetail(appState)) }
@@ -472,9 +645,39 @@ private fun connectionDetail(appState: WearAppState): String = when (appState) {
 @Preview(name = "Round summary", device = "id:wearos_large_round", showSystemUi = true)
 @Composable
 private fun SummaryPreview() {
+    val summary = WearSummary(
+        localDate = "2026-07-16",
+        caloriesRemaining = 595,
+        caloriesConsumed = 1_240,
+        calorieTarget = 1_835,
+        steps = null,
+        activityCalories = null,
+        activityStale = false,
+        activityAgeSeconds = null,
+        foodDayComplete = false,
+        foodDayRevision = null,
+        todayWeightGrams = 76_340,
+        todayWeightRevision = null,
+        latestWeightGrams = 76_340,
+        latestWeightDate = "2026-07-16",
+        weightUnit = "LB",
+        goalStartWeightGrams = 82_000,
+        goalTargetWeightGrams = 72_500,
+        goalCurrentWeightGrams = 76_340,
+        goalDailyDeficit = 500,
+        goalProgressPercent = 59.6,
+        goalRemainingWeightGrams = 3_840,
+        goalIsComplete = false,
+        undoFoodLogId = null,
+        undoName = null,
+        undoCalories = null,
+        fetchedAtEpochMs = 1_000,
+        lastSyncAtEpochMs = 1_000
+    )
     CalibrateWearApp(
-        appState = WearAppState.Paired(42, "https://calibratehealth.app"),
-        serverConfig = WearServerConfig("https://calibratehealth.app", "preview")
+        appState = WearAppState.Ready(summary),
+        serverConfig = WearServerConfig("https://calibratehealth.app", "preview"),
+        homeState = WearHomeUiState(summary = summary)
     )
 }
 

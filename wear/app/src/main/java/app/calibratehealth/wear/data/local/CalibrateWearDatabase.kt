@@ -14,7 +14,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         QueuedMutationEntity::class,
         SyncMetadataEntity::class
     ],
-    version = 3,
+    version = 4,
     exportSchema = true
 )
 abstract class CalibrateWearDatabase : RoomDatabase() {
@@ -39,7 +39,7 @@ abstract class CalibrateWearDatabase : RoomDatabase() {
                 CalibrateWearDatabase::class.java,
                 name
             )
-                .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
                 .build()
 
         /** Preserves the old outbox order while moving FIFO authority to a database-assigned row ID. */
@@ -109,6 +109,19 @@ abstract class CalibrateWearDatabase : RoomDatabase() {
                 database.execSQL("ALTER TABLE daily_snapshots ADD COLUMN undo_name TEXT")
                 database.execSQL("ALTER TABLE daily_snapshots ADD COLUMN undo_calories INTEGER")
                 database.execSQL("ALTER TABLE daily_snapshots ADD COLUMN undo_created_at_epoch_ms INTEGER")
+            }
+        }
+
+        /** Adds nullable goal progress so existing cached summaries remain valid after upgrade. */
+        val MIGRATION_3_4 = object : Migration(3, 4) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL("ALTER TABLE daily_snapshots ADD COLUMN goal_start_weight_grams INTEGER")
+                database.execSQL("ALTER TABLE daily_snapshots ADD COLUMN goal_target_weight_grams INTEGER")
+                database.execSQL("ALTER TABLE daily_snapshots ADD COLUMN goal_current_weight_grams INTEGER")
+                database.execSQL("ALTER TABLE daily_snapshots ADD COLUMN goal_daily_deficit INTEGER")
+                database.execSQL("ALTER TABLE daily_snapshots ADD COLUMN goal_progress_percent REAL")
+                database.execSQL("ALTER TABLE daily_snapshots ADD COLUMN goal_remaining_weight_grams INTEGER")
+                database.execSQL("ALTER TABLE daily_snapshots ADD COLUMN goal_is_complete INTEGER")
             }
         }
     }

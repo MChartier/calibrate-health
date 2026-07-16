@@ -285,6 +285,15 @@ export type WatchSnapshot = {
         latest_revision: string | null;
         latest_date: string | null;
     };
+    goal?: {
+        start_weight_grams: number;
+        target_weight_grams: number;
+        current_weight_grams: number | null;
+        daily_deficit: number;
+        progress_percent: number | null;
+        remaining_weight_grams: number;
+        is_complete: boolean;
+    } | null;
     quick_add: WatchQuickAddDraft[];
     reminders: Array<{
         id: number;
