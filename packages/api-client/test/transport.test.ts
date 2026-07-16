@@ -203,6 +203,61 @@ test('native identity is attached to public and authenticated requests and canno
     }
 });
 
+test('browser cookie transport uses session endpoints without native or bearer credentials', async () => {
+    const requests: Array<{ url: string; init: RequestInit }> = [];
+    const client = new CalibrateApiClient({
+        baseUrl: 'https://calibrate.example',
+        requestCredentials: 'include',
+        fetchImpl: (async (input, init = {}) => {
+            requests.push({ url: String(input), init });
+            return new Response('{"user":{"id":7}}', { status: 200 });
+        }) as typeof fetch
+    });
+
+    await client.loginBrowser({ email: 'person@example.com', password: 'secret123' });
+    await client.registerBrowser({ email: 'new@example.com', password: 'secret456' });
+    await client.getMe();
+    await client.logoutBrowser();
+
+    assert.deepEqual(requests.map(({ url }) => url), [
+        'https://calibrate.example/auth/login',
+        'https://calibrate.example/auth/register',
+        'https://calibrate.example/auth/me',
+        'https://calibrate.example/auth/logout'
+    ]);
+    assert.deepEqual(requests.map(({ init }) => init.method), ['POST', 'POST', undefined, 'POST']);
+    for (const { init } of requests) {
+        const headers = new Headers(init.headers);
+        assert.equal(init.credentials, 'include');
+        assert.equal(headers.get('authorization'), null);
+        assert.equal(headers.get('x-calibrate-client-platform'), null);
+        assert.equal(headers.get('x-calibrate-client-version'), null);
+    }
+    assert.deepEqual(JSON.parse(String(requests[0]?.init.body)), {
+        email: 'person@example.com',
+        password: 'secret123'
+    });
+});
+
+test('a per-request credential policy overrides the browser client default', async () => {
+    let credentials: RequestCredentials | undefined;
+    const client = new CalibrateApiClient({
+        baseUrl: 'https://calibrate.example',
+        requestCredentials: 'include',
+        fetchImpl: (async (_input, init) => {
+            credentials = init?.credentials;
+            return new Response('{}', { status: 200 });
+        }) as typeof fetch
+    });
+
+    await getInternalRequest(client)('/api/client-config', {
+        auth: false,
+        credentials: 'omit'
+    });
+
+    assert.equal(credentials, 'omit');
+});
+
 test('upgrade-required responses notify the native shell without triggering auth logout', async () => {
     const requirements = [];
     let unauthorizedCalls = 0;

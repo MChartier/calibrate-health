@@ -194,6 +194,15 @@ export type MobileAuthRequest = {
     device_name?: string;
 };
 
+export type BrowserAuthRequest = {
+    email: string;
+    password: string;
+};
+
+export type BrowserAuthResponse = {
+    user: UserClientPayload;
+};
+
 export type MobileAuthResponse = {
     user: UserClientPayload;
     access_token: string;

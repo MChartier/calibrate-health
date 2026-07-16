@@ -1,6 +1,8 @@
 import type {
     AccountExport,
     ActivityDaysResponse,
+    BrowserAuthRequest,
+    BrowserAuthResponse,
     ClientConfigResponse,
     CreateMyFoodPayload,
     FoodLogCreatePayload,
@@ -54,6 +56,8 @@ export type ApiClientOptions = {
     onUnauthorized?: () => void | Promise<void>;
     fetchImpl?: typeof fetch;
     requestTimeoutMs?: number;
+    /** Browser clients opt in explicitly when the API uses an HttpOnly cookie session. */
+    requestCredentials?: RequestCredentials;
 };
 
 export class ApiError extends Error {
@@ -116,6 +120,7 @@ export class CalibrateApiClient {
     private readonly onUnauthorized?: ApiClientOptions['onUnauthorized'];
     private readonly fetchImpl: typeof fetch;
     private readonly requestTimeoutMs: number;
+    private readonly requestCredentials?: RequestCredentials;
     private refreshPromise: Promise<boolean> | null = null;
 
     constructor(options: ApiClientOptions) {
@@ -127,6 +132,7 @@ export class CalibrateApiClient {
         this.onUnauthorized = options.onUnauthorized;
         this.fetchImpl = options.fetchImpl ?? fetch;
         this.requestTimeoutMs = options.requestTimeoutMs ?? DEFAULT_REQUEST_TIMEOUT_MS;
+        this.requestCredentials = options.requestCredentials;
     }
 
     /** Share one refresh across concurrent 401 responses to avoid rotating the same token twice. */
@@ -186,6 +192,7 @@ export class CalibrateApiClient {
         try {
             response = await this.fetchImpl(buildUrl(this.baseUrl, path), {
                 ...fetchOptions,
+                credentials: fetchOptions.credentials ?? this.requestCredentials,
                 headers,
                 signal: timeoutController.signal,
                 body: json !== undefined ? JSON.stringify(json) : options.body
@@ -255,6 +262,28 @@ export class CalibrateApiClient {
 
     getClientConfig(): Promise<ClientConfigResponse> {
         return this.request<ClientConfigResponse>('/api/client-config', { auth: false });
+    }
+
+    loginBrowser(payload: BrowserAuthRequest): Promise<BrowserAuthResponse> {
+        return this.request<BrowserAuthResponse>('/auth/login', {
+            method: 'POST',
+            auth: false,
+            json: payload
+        });
+    }
+
+    registerBrowser(payload: BrowserAuthRequest): Promise<BrowserAuthResponse> {
+        return this.request<BrowserAuthResponse>('/auth/register', {
+            method: 'POST',
+            auth: false,
+            json: payload
+        });
+    }
+
+    logoutBrowser(): Promise<{ message: string }> {
+        return this.request<{ message: string }>('/auth/logout', {
+            method: 'POST'
+        });
     }
 
     loginMobile(payload: MobileAuthRequest): Promise<MobileAuthResponse> {
