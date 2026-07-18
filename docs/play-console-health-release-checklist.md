@@ -30,7 +30,7 @@ Current requirements used by this worksheet:
 
 | Area | Confirmed behavior | Source |
 | --- | --- | --- |
-| Android identity | Phone and watch use `app.calibratehealth.mobile`, version `0.1.0`, version code `1`. | `mobile/app.json`, `wear/app/build.gradle.kts` |
+| Android identity | Phone and watch use `app.calibratehealth.mobile`. Phone is version `0.1.0` (code `1`); Wear is version `0.2.0` (code `2`). | `mobile/app.json`, `wear/app/build.gradle.kts` |
 | Phone platform | Expo config sets minimum SDK 26, disables backup, requests camera, vibration, and notifications, and blocks storage, microphone, and system-alert-window permissions. | `mobile/app.json` |
 | Camera | Camera access is requested only from the barcode screen after explanatory copy. Frames stay in `CameraView`; only the decoded UPC/EAN is sent for lookup. | `mobile/app/barcode.tsx` |
 | Profile image | A user-selected image is cropped, compressed, base64-encoded, and uploaded as the optional profile avatar. | `mobile/app/(tabs)/settings.tsx`, `backend/src/utils/profileImage.ts` |

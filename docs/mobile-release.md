@@ -47,6 +47,16 @@ origin without a path, query, or fragment.
 $env:EXPO_PUBLIC_CALIBRATE_SERVER_URL='https://health.example.com'
 ```
 
+Private builds that use Expo push must also have a stable Expo project ID. EAS builds embed it automatically.
+For a local Gradle build, set the public project UUID explicitly before bundling:
+
+```powershell
+$env:EXPO_PUBLIC_EAS_PROJECT_ID='<expo-project-uuid>'
+```
+
+The app passes this identity when requesting its Expo push token and re-registers after native token rotation. A
+missing project ID leaves native push in an actionable error state instead of creating an ambiguously scoped token.
+
 ## Versioning
 
 `shared/release.json` is the cross-platform source of truth; see `docs/release-compatibility.md` for the compatibility

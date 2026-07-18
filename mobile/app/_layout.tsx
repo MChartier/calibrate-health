@@ -9,7 +9,7 @@ import { NativePushRegistrationProvider } from '../src/hooks/useNativePushRegist
 import { useNotificationTapRouting } from '../src/notifications/useNotificationTapRouting';
 import { createQueuedMutationExecutor } from '../src/offline/operations';
 import { OfflineOutboxProvider } from '../src/offline/provider';
-import { colors } from '../src/theme';
+import { useAppTheme } from '../src/theme';
 import { AppErrorBoundary } from '../src/components/AppErrorBoundary';
 import { ClientUpgradeRequiredScreen } from '../src/components/ClientUpgradeRequiredScreen';
 import { HealthConnectProvider } from '../src/healthConnect/provider';
@@ -61,6 +61,8 @@ const AuthenticatedRuntime: React.FC<{ children: React.ReactNode }> = ({ childre
 };
 
 export default function RootLayout() {
+    const theme = useAppTheme();
+
     return (
         <AppErrorBoundary>
             <SafeAreaProvider>
@@ -70,7 +72,7 @@ export default function RootLayout() {
                             <NativePushRegistrationProvider>
                                 <AuthenticatedRuntime>
                                     <NativeRuntimeHooks />
-                                    <StatusBar style="dark" backgroundColor={colors.surface} />
+                                    <StatusBar style={theme.dark ? 'light' : 'dark'} />
                                     <Slot />
                                 </AuthenticatedRuntime>
                             </NativePushRegistrationProvider>

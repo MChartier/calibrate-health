@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as Haptics from 'expo-haptics';
 import type { FoodLogEntry } from '@calibrate/api-client';
@@ -25,6 +25,7 @@ import { useAuth } from '../../src/auth/AuthContext';
 import { executeOrQueueMutation, OFFLINE_MUTATION_OPERATIONS } from '../../src/offline/operations';
 import { useOfflineOutbox } from '../../src/offline/provider';
 import { useSharedLogDateNavigation } from '../../src/context/LogDateContext';
+import { useAddFoodRequest } from '../../src/context/AddFoodRequestContext';
 import { addDaysToDateOnly } from '../../src/utils/dates';
 import { formatMealPeriod } from '../../src/utils/format';
 import { MEAL_OPTIONS } from '../../src/utils/meals';
@@ -37,10 +38,13 @@ const MEAL_SELECTOR_OPTIONS: Array<OverlaySelectOption<MealPeriod>> = MEAL_OPTIO
 }));
 
 export default function TodayScreen() {
+    const routeParams = useLocalSearchParams<{ openAddFood?: string; date?: string; meal?: string }>();
     const { api } = useAuth();
     const { enqueue } = useOfflineOutbox();
     const queryClient = useQueryClient();
     const dateNavigation = useSharedLogDateNavigation();
+    const setLogDate = dateNavigation.setDate;
+    const { request: addFoodRequest, consumeRequest: consumeAddFoodRequest } = useAddFoodRequest();
     const selectedDate = dateNavigation.selectedDate;
     const [editEntry, setEditEntry] = useState<FoodLogEntry | null>(null);
     const [editName, setEditName] = useState('');
@@ -59,6 +63,25 @@ export default function TodayScreen() {
         queryFn: () => api.getActivityDays({ start: selectedDate, end: selectedDate })
     });
     const isFoodDayComplete = foodDayQuery.data?.is_complete ?? false;
+
+    useEffect(() => {
+        if (!addFoodRequest) return;
+
+        if (addFoodRequest.date) {
+            setLogDate(addFoodRequest.date);
+        }
+        setAddFoodMeal(addFoodRequest.meal ?? null);
+        consumeAddFoodRequest(addFoodRequest.id);
+    }, [addFoodRequest, consumeAddFoodRequest, setLogDate]);
+
+    useEffect(() => {
+        if (routeParams.openAddFood !== 'true') return;
+        const requestedMeal = typeof routeParams.meal === 'string' && MEAL_OPTIONS.includes(routeParams.meal as MealPeriod)
+            ? routeParams.meal as MealPeriod
+            : null;
+        if (typeof routeParams.date === 'string') setLogDate(routeParams.date);
+        setAddFoodMeal(requestedMeal);
+    }, [routeParams.date, routeParams.meal, routeParams.openAddFood, setLogDate]);
 
     useEffect(() => {
         const previousDate = addDaysToDateOnly(selectedDate, -1);
@@ -164,10 +187,6 @@ export default function TodayScreen() {
         (!profileQuery.data || !foodQuery.data || !foodDayQuery.data) &&
         (profileQuery.isLoading || foodQuery.isLoading || foodDayQuery.isLoading);
 
-    function openAddFood(meal?: MealPeriod) {
-        setAddFoodMeal(meal ?? null);
-    }
-
     function openEditEntry(entry: FoodLogEntry) {
         setEditEntry(entry);
         setEditName(entry.name);
@@ -219,7 +238,15 @@ export default function TodayScreen() {
                         targetCalories={target}
                     />
 
+                    <FoodLogTimelineCard
+                        entries={entries}
+                        disabled={isFoodDayComplete}
+                        onEditEntry={openEditEntry}
+                        onDeleteEntry={(entry) => deleteFood.mutate(entry.id)}
+                    />
+
                     <ActivitySummaryCard
+                        compact
                         day={activityQuery.data?.days[0]}
                         isToday={dateNavigation.isToday}
                         profileTdee={profileQuery.data?.calorieSummary.tdee}
@@ -227,15 +254,6 @@ export default function TodayScreen() {
                         error={activityQuery.error}
                         onRetry={() => void activityQuery.refetch()}
                         onOpenDetails={() => router.push({ pathname: '/activity', params: { date: selectedDate } })}
-                    />
-
-                    <FoodLogTimelineCard
-                        entries={entries}
-                        disabled={isFoodDayComplete}
-                        onAddFood={() => openAddFood()}
-                        onAddMeal={openAddFood}
-                        onEditEntry={openEditEntry}
-                        onDeleteEntry={(entry) => deleteFood.mutate(entry.id)}
                     />
 
                     <DayCompletionCard

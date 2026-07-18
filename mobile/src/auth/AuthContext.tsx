@@ -16,7 +16,7 @@ import {
     type ServerConnectionState
 } from '../config/server';
 import { authenticateAgainstConfirmedServer, confirmServerSwitch } from './serverSwitch';
-import { getSessionRestoreErrorMessage } from './authErrors';
+import { getSessionRestoreErrorMessage, isExpectedDevAutoLoginMiss } from './authErrors';
 import { MOBILE_CLIENT_IDENTITY } from '../config/nativeClient';
 import {
     clearStoredTokens,
@@ -175,7 +175,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         [clearSession, handleClientUpgradeRequired, refreshAccessToken, serverUrl]
     );
 
-    const loginDevTestUser = useCallback(async (baseUrl: string, nextDeviceId: string) => {
+    const getDevTestUserAuthPayload = useCallback(async (
+        baseUrl: string,
+        nextDeviceId: string
+    ): Promise<MobileAuthResponse | null> => {
         const bootstrapClient = new CalibrateApiClient({
             baseUrl,
             clientIdentity: MOBILE_CLIENT_IDENTITY,
@@ -189,15 +192,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             // against an already-seeded local database.
         }
 
-        const payload = await bootstrapClient.loginMobile({
-            email: DEV_TEST_EMAIL,
-            password: DEV_TEST_PASSWORD,
-            device_id: nextDeviceId,
-            device_platform: MOBILE_DEVICE_PLATFORMS.ANDROID_PHONE,
-            device_name: Application.applicationName ?? 'Android device'
-        });
-        await persistAuthPayload(payload);
-    }, [handleClientUpgradeRequired, persistAuthPayload]);
+        let payload: MobileAuthResponse;
+        try {
+            payload = await bootstrapClient.loginMobile({
+                email: DEV_TEST_EMAIL,
+                password: DEV_TEST_PASSWORD,
+                device_id: nextDeviceId,
+                device_platform: MOBILE_DEVICE_PLATFORMS.ANDROID_PHONE,
+                device_name: Application.applicationName ?? 'Android device'
+            });
+        } catch (error) {
+            if (isExpectedDevAutoLoginMiss(error)) return null;
+            throw error;
+        }
+        return payload;
+    }, [handleClientUpgradeRequired]);
 
     useEffect(() => {
         let isMounted = true;
@@ -249,7 +258,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 }
 
                 if (shouldDevAutoLoginMobile(storedServerUrl)) {
-                    await loginDevTestUser(storedServerUrl, nextDeviceId);
+                    const devAuthPayload = await getDevTestUserAuthPayload(storedServerUrl, nextDeviceId);
+                    if (isMounted && devAuthPayload) {
+                        await persistAuthPayload(devAuthPayload);
+                    }
                 }
             } catch (error) {
                 if (isMounted) {
@@ -271,7 +283,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return () => {
             isMounted = false;
         };
-    }, [clearSession, handleClientUpgradeRequired, loginDevTestUser, persistAuthPayload]);
+    }, [clearSession, getDevTestUserAuthPayload, handleClientUpgradeRequired, persistAuthPayload]);
 
     const recheckClientCompatibility = useCallback(async (): Promise<boolean> => {
         try {

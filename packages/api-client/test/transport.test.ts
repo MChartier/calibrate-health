@@ -26,6 +26,23 @@ const createAbortAwareFetch = (): typeof fetch =>
         });
     }) as typeof fetch;
 
+test('default browser transport preserves the global fetch receiver', async (t) => {
+    const originalFetch = globalThis.fetch;
+    let observedReceiver: unknown = null;
+    globalThis.fetch = (async function (this: typeof globalThis) {
+        observedReceiver = this;
+        return new Response('{"api_version":1}', { status: 200 });
+    }) as typeof fetch;
+    t.after(() => {
+        globalThis.fetch = originalFetch;
+    });
+
+    const client = new CalibrateApiClient({ baseUrl: 'https://calibrate.example' });
+    await client.getClientConfig();
+
+    assert.equal(observedReceiver, globalThis);
+});
+
 test('request timeout reports a connection timeout rather than a caller abort', async () => {
     const client = new CalibrateApiClient({
         baseUrl: 'https://calibrate.example',
@@ -239,6 +256,24 @@ test('browser cookie transport uses session endpoints without native or bearer c
     });
 });
 
+test('browser Lose It uploads submit a real Blob instead of a React Native URI descriptor', async () => {
+    let uploaded: FormData | null = null;
+    const client = new CalibrateApiClient({
+        baseUrl: 'https://calibrate.example',
+        fetchImpl: (async (_input, init) => {
+            uploaded = init?.body as FormData;
+            return new Response('{}', { status: 200 });
+        }) as typeof fetch
+    });
+    const exportBlob = new Blob(['zip export'], { type: 'application/zip' });
+
+    await client.executeLoseItImport(exportBlob);
+
+    const uploadedFile = uploaded?.get('file');
+    assert.ok(uploadedFile instanceof Blob);
+    assert.equal(await uploadedFile.text(), 'zip export');
+});
+
 test('a per-request credential policy overrides the browser client default', async () => {
     let credentials: RequestCredentials | undefined;
     const client = new CalibrateApiClient({
@@ -256,6 +291,54 @@ test('a per-request credential policy overrides the browser client default', asy
     });
 
     assert.equal(credentials, 'omit');
+});
+
+test('browser push methods use the versioned cookie-session endpoints', async () => {
+    const requests: Array<{ url: string; init: RequestInit }> = [];
+    const client = new CalibrateApiClient({
+        baseUrl: 'https://calibrate.example',
+        requestCredentials: 'include',
+        fetchImpl: (async (input, init) => {
+            requests.push({ url: String(input), init: init ?? {} });
+            const body = String(input).endsWith('/public-key') ? { publicKey: 'AQID' } : { ok: true };
+            return new Response(JSON.stringify(body), { status: 200 });
+        }) as typeof fetch
+    });
+    const subscription = {
+        endpoint: 'https://push.example/subscription',
+        expirationTime: null,
+        keys: { p256dh: 'p256dh', auth: 'auth' }
+    };
+
+    assert.deepEqual(await client.getBrowserPushPublicKey(), { publicKey: 'AQID' });
+    await client.registerBrowserPushSubscription(subscription);
+    await client.unregisterBrowserPushSubscription(subscription.endpoint);
+
+    assert.deepEqual(requests.map(({ url, init }) => ({
+        url,
+        method: init.method ?? 'GET',
+        credentials: init.credentials,
+        body: init.body
+    })), [
+        {
+            url: 'https://calibrate.example/api/v1/notifications/public-key',
+            method: 'GET',
+            credentials: 'include',
+            body: undefined
+        },
+        {
+            url: 'https://calibrate.example/api/v1/notifications/subscription',
+            method: 'POST',
+            credentials: 'include',
+            body: JSON.stringify(subscription)
+        },
+        {
+            url: 'https://calibrate.example/api/v1/notifications/subscription',
+            method: 'DELETE',
+            credentials: 'include',
+            body: JSON.stringify({ endpoint: subscription.endpoint })
+        }
+    ]);
 });
 
 test('upgrade-required responses notify the native shell without triggering auth logout', async () => {

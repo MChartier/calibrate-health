@@ -13,6 +13,7 @@ function loadUserRouter({ prismaStub, bcryptStub, accountLifecycleStub }) {
   const dbPath = require.resolve('../src/config/database');
   const bcryptPath = require.resolve('bcryptjs');
   const mobileAuthPath = require.resolve('../src/services/mobileAuth');
+  const browserSessionsPath = require.resolve('../src/services/browserSessions');
   const accountLifecyclePath = require.resolve('../src/services/accountLifecycle');
   const clientOperationsPath = require.resolve('../src/services/clientOperations');
   const userPath = require.resolve('../src/routes/user');
@@ -20,11 +21,13 @@ function loadUserRouter({ prismaStub, bcryptStub, accountLifecycleStub }) {
   const previousDbModule = require.cache[dbPath];
   const previousBcryptModule = require.cache[bcryptPath];
   const previousMobileAuthModule = require.cache[mobileAuthPath];
+  const previousBrowserSessionsModule = require.cache[browserSessionsPath];
   const previousAccountLifecycleModule = require.cache[accountLifecyclePath];
   const previousClientOperationsModule = require.cache[clientOperationsPath];
 
   delete require.cache[userPath];
   delete require.cache[mobileAuthPath];
+  delete require.cache[browserSessionsPath];
   delete require.cache[accountLifecyclePath];
   delete require.cache[clientOperationsPath];
 
@@ -50,6 +53,9 @@ function loadUserRouter({ prismaStub, bcryptStub, accountLifecycleStub }) {
 
   if (previousMobileAuthModule) require.cache[mobileAuthPath] = previousMobileAuthModule;
   else delete require.cache[mobileAuthPath];
+
+  if (previousBrowserSessionsModule) require.cache[browserSessionsPath] = previousBrowserSessionsModule;
+  else delete require.cache[browserSessionsPath];
 
   if (previousAccountLifecycleModule) require.cache[accountLifecyclePath] = previousAccountLifecycleModule;
   else delete require.cache[accountLifecyclePath];
@@ -288,11 +294,20 @@ test('user route: PATCH /password validates request shape and rejects identical 
   );
   assert.equal(samePasswordRes.statusCode, 400);
   assert.deepEqual(samePasswordRes.body, { message: 'New password must be different from current password' });
+
+  const utf8LimitRes = createRes();
+  await handler(
+    { user: { id: 7 }, body: { current_password: 'current', new_password: '\ud83d\ude00'.repeat(19) } },
+    utf8LimitRes
+  );
+  assert.equal(utf8LimitRes.statusCode, 400);
+  assert.deepEqual(utf8LimitRes.body, { message: 'New password must be at most 72 bytes' });
 });
 
 test('user route: PATCH /password updates password when current password matches', async () => {
   let updated = false;
   let sessionLookup = null;
+  let browserSessionDeletion = null;
 
   const prismaStub = {
     $transaction: async (operations) => Promise.all(operations),
@@ -311,6 +326,12 @@ test('user route: PATCH /password updates password when current password matches
     },
     nativePushSubscription: {
       updateMany: async () => ({ count: 1 })
+    },
+    sessionStore: {
+      deleteMany: async (args) => {
+        browserSessionDeletion = args;
+        return { count: 2 };
+      }
     }
   };
   const bcryptStub = {
@@ -323,6 +344,7 @@ test('user route: PATCH /password updates password when current password matches
 
   const req = {
     user: { id: 7 },
+    sessionID: 'browser-session-11',
     body: { current_password: 'current', new_password: 'new-password' }
   };
   const res = createRes({ mobileAuthSessionId: 11 });
@@ -331,6 +353,9 @@ test('user route: PATCH /password updates password when current password matches
 
   assert.equal(updated, true);
   assert.deepEqual(sessionLookup.where.id, { not: 11 });
+  assert.deepEqual(browserSessionDeletion, {
+    where: { user_id: 7, sid: { not: 'browser-session-11' } }
+  });
   assert.equal(res.statusCode, 200);
   assert.deepEqual(res.body, { message: 'Password updated' });
 });

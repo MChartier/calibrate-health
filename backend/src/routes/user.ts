@@ -9,8 +9,9 @@ import { resolveHeightMmUpdate } from '../utils/height';
 import { isSupportedLanguage, type SupportedLanguage } from '../utils/language';
 import { MAX_PROFILE_IMAGE_BYTES, parseBase64DataUrl } from '../utils/profileImage';
 import { serializeUserForClient, USER_CLIENT_SELECT } from '../utils/userSerialization';
-import { MAX_AUTH_PASSWORD_LENGTH, MIN_AUTH_PASSWORD_LENGTH } from '../utils/authCredentials';
+import { validatePasswordCredential } from '../utils/authCredentials';
 import { revokeOtherMobileSessionsForUser } from '../services/mobileAuth';
+import { revokeOtherBrowserSessionsForUser } from '../services/browserSessions';
 import { deleteAccountData, exportAccountData } from '../services/accountLifecycle';
 import {
   ClientOperationConflictError,
@@ -19,6 +20,7 @@ import {
   recordSyncChange
 } from '../services/clientOperations';
 import { logSafeOperationalError } from '../observability';
+import { clearSessionCookie } from '../utils/sessionCookie';
 
 /**
  * Authenticated user account routes (profile, preferences, password, avatar).
@@ -49,18 +51,11 @@ const parsePasswordChangePayload = (body: unknown): PasswordChangeParseResult =>
   if (typeof currentPassword !== 'string' || currentPassword.length === 0) {
     return { ok: false, message: 'Current password is required' };
   }
-
-  if (typeof newPassword !== 'string' || newPassword.length === 0) {
+  if (typeof newPassword !== 'string') {
     return { ok: false, message: 'New password is required' };
   }
-
-  if (newPassword.length < MIN_AUTH_PASSWORD_LENGTH) {
-    return { ok: false, message: `New password must be at least ${MIN_AUTH_PASSWORD_LENGTH} characters` };
-  }
-
-  if (newPassword.length > MAX_AUTH_PASSWORD_LENGTH) {
-    return { ok: false, message: `New password must be at most ${MAX_AUTH_PASSWORD_LENGTH} characters` };
-  }
+  const newPasswordError = validatePasswordCredential(newPassword, 'New password');
+  if (newPasswordError) return { ok: false, message: newPasswordError };
 
   return { ok: true, currentPassword, newPassword };
 };
@@ -79,14 +74,6 @@ const destroyRequestSession = (req: express.Request): Promise<void> =>
     }
     req.session.destroy((error) => error ? reject(error) : resolve());
   });
-
-const clearSessionCookie = (res: express.Response): void => {
-  const domain = process.env.SESSION_COOKIE_DOMAIN;
-  res.clearCookie(process.env.SESSION_COOKIE_NAME || 'cal.sid', {
-    path: '/',
-    ...(domain ? { domain } : {})
-  });
-};
 
 /**
  * Ensure the session is authenticated before accessing user settings.
@@ -200,7 +187,10 @@ router.patch('/password', async (req, res) => {
       where: { id: dbUser.id },
       data: { password_hash }
     });
-    await revokeOtherMobileSessionsForUser(dbUser.id, res.locals.mobileAuthSessionId);
+    await Promise.all([
+      revokeOtherMobileSessionsForUser(dbUser.id, res.locals.mobileAuthSessionId),
+      revokeOtherBrowserSessionsForUser(dbUser.id, req.sessionID)
+    ]);
 
     res.json({ message: 'Password updated' });
   } catch (err) {

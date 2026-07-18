@@ -19,6 +19,7 @@ import {
     revokeOtherMobileSessionsForUser
 } from '../services/mobileAuth';
 import { diagnosticsRegistry, logSafeOperationalError } from '../observability';
+import { clearSessionCookie } from '../utils/sessionCookie';
 
 /**
  * Session-based auth endpoints (register/login/logout/me).
@@ -316,7 +317,7 @@ router.post('/logout', (req, res, next) => {
         if (err) { return next(err); }
         req.session.destroy((destroyError) => {
             if (destroyError) return next(destroyError);
-            res.clearCookie(process.env.SESSION_COOKIE_NAME || 'cal.sid');
+            clearSessionCookie(res);
             res.json({ message: 'Logged out' });
         });
     });

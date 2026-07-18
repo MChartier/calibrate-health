@@ -2,12 +2,12 @@
 
 Expo React Native Android client for calibrate.
 
-The app is currently pinned to Expo SDK 54 so it can run in the Play Store version of Expo Go during Expo's SDK 55
-transition window. Move back to SDK 55+ when local testing uses development builds or SDK 55 Expo Go is broadly
-available through the normal store channel.
+The app tracks the latest stable Expo release and currently uses Expo SDK 57 with React Native 0.86. Development
+builds are the primary native workflow; Expo Go is useful for lightweight checks but is not the release runtime.
 
 ## Development
 
+- Use Node.js 22.13 or newer for Expo commands.
 - Run from the repo root after installing workspace dependencies: `npm install`.
 - Start the Expo development server: `npm --prefix mobile run dev`.
 - Build/install on an Android emulator or device: `npm --prefix mobile run android`.

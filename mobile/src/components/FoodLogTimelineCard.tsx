@@ -1,20 +1,17 @@
 import React, { useMemo, useState } from 'react';
-import { Pressable, StyleSheet, View, type ViewProps } from 'react-native';
+import { Pressable, StyleSheet, View, useWindowDimensions, type ViewProps } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import type { FoodLogEntry } from '@calibrate/api-client';
 import type { MealPeriod } from '@calibrate/shared';
-import { AppButton } from './AppButton';
 import { AppCard } from './AppCard';
 import { AppText } from './AppText';
-import { colors, radius, spacing } from '../theme';
+import { type AppTheme, useAppTheme } from '../theme';
 import { formatCalories, formatMealPeriod } from '../utils/format';
 import { MEAL_OPTIONS } from '../utils/meals';
 
 type FoodLogTimelineCardProps = ViewProps & {
     entries: FoodLogEntry[];
     disabled?: boolean;
-    onAddFood: () => void;
-    onAddMeal: (meal: MealPeriod) => void;
     onEditEntry: (entry: FoodLogEntry) => void;
     onDeleteEntry: (entry: FoodLogEntry) => void;
 };
@@ -41,19 +38,19 @@ function getServingText(entry: FoodLogEntry): string | null {
 }
 
 /**
- * Compact meal log for the Log tab, matching the PWA's meal grouping and add/edit/delete affordances.
+ * Compact Today meal log with expansion for populated meals and snapshot edit/delete actions.
  */
 export const FoodLogTimelineCard: React.FC<FoodLogTimelineCardProps> = ({
     entries,
     disabled,
-    onAddFood,
-    onAddMeal,
     onEditEntry,
     onDeleteEntry,
     style,
     ...props
 }) => {
     const [expandedMeals, setExpandedMeals] = useState<Record<MealPeriod, boolean>>(DEFAULT_EXPANDED_MEALS);
+    const theme = useAppTheme();
+    const styles = React.useMemo(() => createStyles(theme), [theme]);
 
     const mealGroups = useMemo<MealGroup[]>(() => {
         return MEAL_OPTIONS.map((meal) => {
@@ -86,21 +83,12 @@ export const FoodLogTimelineCard: React.FC<FoodLogTimelineCardProps> = ({
                         isFirst={index === 0}
                         isExpanded={expandedMeals[group.meal]}
                         disabled={disabled}
-                        onAddMeal={onAddMeal}
                         onEditEntry={onEditEntry}
                         onDeleteEntry={onDeleteEntry}
                         onToggleMeal={toggleMeal}
                     />
                 ))}
             </View>
-
-            <AppButton
-                title="Add food"
-                variant="secondary"
-                disabled={disabled}
-                leftIcon={<Ionicons name="add" size={18} color={colors.text} />}
-                onPress={onAddFood}
-            />
         </AppCard>
     );
 };
@@ -110,7 +98,6 @@ type MealTimelineRowProps = {
     isFirst: boolean;
     isExpanded: boolean;
     disabled?: boolean;
-    onAddMeal: (meal: MealPeriod) => void;
     onEditEntry: (entry: FoodLogEntry) => void;
     onDeleteEntry: (entry: FoodLogEntry) => void;
     onToggleMeal: (meal: MealPeriod) => void;
@@ -121,41 +108,42 @@ const MealTimelineRow: React.FC<MealTimelineRowProps> = ({
     isFirst,
     isExpanded,
     disabled,
-    onAddMeal,
     onEditEntry,
     onDeleteEntry,
     onToggleMeal
 }) => {
     const hasEntries = group.entries.length > 0;
+    const theme = useAppTheme();
+    const styles = React.useMemo(() => createStyles(theme), [theme]);
+    const { fontScale } = useWindowDimensions();
+    const useStackedLayout = fontScale >= 1.6;
 
     return (
         <View style={styles.mealRow}>
             <View style={styles.mealContent}>
-                <View style={[styles.mealHeader, !isFirst && styles.mealDivider]}>
+                <View
+                    style={[
+                        styles.mealHeader,
+                        useStackedLayout && styles.mealHeaderStacked,
+                        !isFirst && styles.mealDivider
+                    ]}
+                >
                     <View style={styles.mealTitleRow}>
-                        <AppText variant="body" numberOfLines={1} adjustsFontSizeToFit style={styles.mealTitle}>
+                        <AppText variant="body" numberOfLines={2} style={styles.mealTitle}>
                             {formatMealPeriod(group.meal)}
                         </AppText>
                     </View>
-                    <View style={styles.mealMetaRow}>
+                    <View style={[styles.mealMetaRow, useStackedLayout && styles.mealMetaRowStacked]}>
                         <AppText variant="body" style={styles.mealCalories}>{formatCalories(group.calories)}</AppText>
-                        <Pressable
-                            accessibilityRole="button"
-                            accessibilityLabel={`Add food to ${formatMealPeriod(group.meal)}`}
-                            disabled={disabled}
-                            onPress={() => onAddMeal(group.meal)}
-                            style={({ pressed }) => [styles.addMealButton, disabled && styles.disabled, pressed && styles.pressed]}
-                        >
-                            <Ionicons name="add" size={20} color={disabled ? colors.muted : colors.primaryDark} />
-                        </Pressable>
                         {hasEntries ? (
                             <Pressable
                                 accessibilityRole="button"
                                 accessibilityLabel={`${isExpanded ? 'Collapse' : 'Expand'} ${formatMealPeriod(group.meal)}`}
+                                android_ripple={{ color: theme.colors.ripple }}
                                 onPress={() => onToggleMeal(group.meal)}
                                 style={({ pressed }) => [styles.expandButton, pressed && styles.pressed]}
                             >
-                                <Ionicons name={isExpanded ? 'chevron-up' : 'chevron-down'} size={18} color={colors.muted} />
+                                <Ionicons name={isExpanded ? 'chevron-up' : 'chevron-down'} size={20} color={theme.colors.onSurfaceVariant} />
                             </Pressable>
                         ) : null}
                     </View>
@@ -187,50 +175,59 @@ type FoodEntryRowProps = {
 
 const FoodEntryRow: React.FC<FoodEntryRowProps> = ({ entry, disabled, onEditEntry, onDeleteEntry }) => {
     const servingText = getServingText(entry);
+    const theme = useAppTheme();
+    const styles = React.useMemo(() => createStyles(theme), [theme]);
+    const { fontScale } = useWindowDimensions();
+    const useStackedLayout = fontScale >= 1.6;
 
     return (
-        <View style={styles.entryRow}>
+        <View style={[styles.entryRow, useStackedLayout && styles.entryRowStacked]}>
             <View style={styles.entryText}>
-                <AppText variant="body" numberOfLines={1}>{entry.name}</AppText>
-                {servingText && <AppText variant="caption" numberOfLines={1}>{servingText}</AppText>}
+                <AppText variant="body" numberOfLines={2}>{entry.name}</AppText>
+                {servingText && <AppText variant="caption" numberOfLines={2}>{servingText}</AppText>}
             </View>
-            <AppText variant="body" style={styles.entryCalories}>{formatCalories(entry.calories)}</AppText>
-            <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={`Edit ${entry.name}`}
-                disabled={disabled}
-                onPress={() => onEditEntry(entry)}
-                style={({ pressed }) => [styles.entryAction, disabled && styles.disabled, pressed && styles.pressed]}
-            >
-                <Ionicons name="pencil" size={18} color={disabled ? colors.muted : colors.muted} />
-            </Pressable>
-            <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={`Delete ${entry.name}`}
-                disabled={disabled}
-                onPress={() => onDeleteEntry(entry)}
-                style={({ pressed }) => [styles.entryAction, disabled && styles.disabled, pressed && styles.pressed]}
-            >
-                <Ionicons name="trash-outline" size={18} color={colors.muted} />
-            </Pressable>
+            <View style={[styles.entryMetaRow, useStackedLayout && styles.entryMetaRowStacked]}>
+                <AppText variant="body" style={styles.entryCalories}>{formatCalories(entry.calories)}</AppText>
+                <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={`Edit ${entry.name}`}
+                    disabled={disabled}
+                    android_ripple={{ color: theme.colors.ripple }}
+                    onPress={() => onEditEntry(entry)}
+                    style={({ pressed }) => [styles.entryAction, disabled && styles.disabled, pressed && styles.pressed]}
+                >
+                    <Ionicons name="pencil" size={20} color={theme.colors.onSurfaceVariant} />
+                </Pressable>
+                <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={`Delete ${entry.name}`}
+                    disabled={disabled}
+                    android_ripple={{ color: theme.colors.ripple }}
+                    onPress={() => onDeleteEntry(entry)}
+                    style={({ pressed }) => [styles.entryAction, disabled && styles.disabled, pressed && styles.pressed]}
+                >
+                    <Ionicons name="trash-outline" size={20} color={theme.colors.onSurfaceVariant} />
+                </Pressable>
+            </View>
         </View>
     );
 };
 
-const styles = StyleSheet.create({
+function createStyles(theme: AppTheme) {
+    return StyleSheet.create({
     headerRow: {
         flexDirection: 'row',
         alignItems: 'flex-start',
         justifyContent: 'space-between',
-        gap: spacing.md
+        gap: theme.spacing.md
     },
     headerText: {
         flex: 1,
         minWidth: 0,
-        gap: spacing.xs
+        gap: theme.spacing.xs
     },
     mealList: {
-        marginTop: spacing.xs
+        marginTop: theme.spacing.xs
     },
     mealRow: {
         minHeight: 0
@@ -240,14 +237,19 @@ const styles = StyleSheet.create({
         minWidth: 0
     },
     mealHeader: {
-        minHeight: 36,
+        minHeight: 56,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        gap: spacing.xs
+        gap: theme.spacing.xs
+    },
+    mealHeaderStacked: {
+        alignItems: 'stretch',
+        flexDirection: 'column',
+        paddingVertical: theme.spacing.sm
     },
     mealDivider: {
-        borderTopColor: colors.border,
+        borderTopColor: theme.colors.outlineVariant,
         borderTopWidth: StyleSheet.hairlineWidth
     },
     mealTitleRow: {
@@ -255,71 +257,84 @@ const styles = StyleSheet.create({
         minWidth: 0,
         flexDirection: 'row',
         alignItems: 'center',
-        gap: spacing.sm
+        gap: theme.spacing.sm
     },
     mealTitle: {
         flex: 1,
         minWidth: 0,
-        fontWeight: '900'
+        fontWeight: '600'
     },
     mealMetaRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: spacing.xs,
+        gap: theme.spacing.xs,
         flexShrink: 0
     },
+    mealMetaRowStacked: {
+        alignSelf: 'stretch',
+        justifyContent: 'flex-end'
+    },
     mealCalories: {
-        color: colors.muted,
-        fontWeight: '800',
+        color: theme.colors.onSurfaceVariant,
+        fontWeight: '600',
         textAlign: 'right',
         fontSize: 14
     },
-    addMealButton: {
-        width: 30,
-        height: 30,
-        flexDirection: 'row',
+    expandButton: {
+        width: theme.interaction.minimumTouchTarget,
+        height: theme.interaction.minimumTouchTarget,
         alignItems: 'center',
         justifyContent: 'center',
-        borderRadius: radius.md,
-        backgroundColor: colors.primarySoft
-    },
-    expandButton: {
-        width: 26,
-        height: 26,
-        alignItems: 'center',
-        justifyContent: 'center'
+        borderRadius: theme.radius.md,
+        overflow: 'hidden'
     },
     entries: {
-        borderTopColor: colors.border,
+        borderTopColor: theme.colors.outlineVariant,
         borderTopWidth: StyleSheet.hairlineWidth
     },
     entryRow: {
-        minHeight: 40,
+        minHeight: 64,
         flexDirection: 'row',
         alignItems: 'center',
-        gap: spacing.sm,
-        borderBottomColor: colors.border,
+        gap: theme.spacing.sm,
+        borderBottomColor: theme.colors.outlineVariant,
         borderBottomWidth: StyleSheet.hairlineWidth
+    },
+    entryRowStacked: {
+        alignItems: 'stretch',
+        flexDirection: 'column',
+        paddingVertical: theme.spacing.sm
     },
     entryText: {
         flex: 1,
         minWidth: 0
     },
     entryCalories: {
-        color: colors.muted,
+        color: theme.colors.onSurfaceVariant,
         textAlign: 'right'
     },
+    entryMetaRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: theme.spacing.xs
+    },
+    entryMetaRowStacked: {
+        alignSelf: 'stretch',
+        justifyContent: 'flex-end'
+    },
     entryAction: {
-        width: 34,
-        height: 34,
+        width: theme.interaction.minimumTouchTarget,
+        height: theme.interaction.minimumTouchTarget,
         alignItems: 'center',
         justifyContent: 'center',
-        borderRadius: radius.md
+        borderRadius: theme.radius.md,
+        overflow: 'hidden'
     },
     disabled: {
         opacity: 0.45
     },
     pressed: {
-        backgroundColor: colors.surfacePressed
+        backgroundColor: theme.colors.surfacePressed
     }
-});
+    });
+}

@@ -30,6 +30,20 @@ describe('native notification workflow', () => {
         });
     });
 
+    it('uses browser-specific push status copy and recovery actions on web', () => {
+        expect(getPushStatusPresentation(NATIVE_PUSH_STATES.BLOCKED, 'web')).toEqual({
+            message: 'Notifications are blocked for this site. Allow them in browser site settings, then check again.',
+            action: 'settings',
+            isError: true
+        });
+        expect(getPushStatusPresentation(NATIVE_PUSH_STATES.DISABLED, 'web').message).toBe(
+            'Browser push is disabled by this Calibrate server.'
+        );
+        expect(getPushStatusPresentation(NATIVE_PUSH_STATES.UNSUPPORTED, 'web').message).toMatch(/browser/i);
+        expect(getPushStatusPresentation(NATIVE_PUSH_STATES.ERROR, 'web').action).toBe('retry');
+        expect(getPushStatusPresentation(NATIVE_PUSH_STATES.REGISTERED, 'web').action).toBe('disable');
+    });
+
     it('maps food, weight, and goal actions to allowlisted native routes', () => {
         expect(getNotificationAction('/log?quickAdd=food', '2026-07-12')).toEqual({
             label: 'Log food',

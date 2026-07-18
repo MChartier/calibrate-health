@@ -52,8 +52,8 @@ function createRes() {
       this.body = payload;
       return this;
     },
-    clearCookie(name) {
-      this.clearedCookie = name;
+    clearCookie(name, options) {
+      this.clearedCookie = { name, options };
       return this;
     }
   };
@@ -334,7 +334,7 @@ test('auth route: POST /logout destroys the session and clears its cookie', asyn
   handler(req, res, () => {});
 
   assert.equal(destroyed, true);
-  assert.equal(res.clearedCookie, 'cal.sid');
+  assert.deepEqual(res.clearedCookie, { name: 'cal.sid', options: { path: '/' } });
   assert.deepEqual(res.body, { message: 'Logged out' });
 });
 

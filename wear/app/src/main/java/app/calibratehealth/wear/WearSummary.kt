@@ -9,10 +9,6 @@ data class WearSummary(
     val caloriesRemaining: Int?,
     val caloriesConsumed: Int?,
     val calorieTarget: Int?,
-    val steps: Int?,
-    val activityCalories: Int?,
-    val activityStale: Boolean,
-    val activityAgeSeconds: Long?,
     val foodDayComplete: Boolean,
     val foodDayRevision: String?,
     val todayWeightGrams: Long?,
@@ -72,14 +68,6 @@ object SummaryFormatter {
 
     fun calorieCount(value: Int?): String = value?.let(::formatWholeNumber) ?: "--"
 
-    fun steps(summary: WearSummary): String = summary.steps?.let(::formatWholeNumber) ?: "--"
-
-    fun activity(summary: WearSummary): String {
-        val calories = summary.activityCalories?.let { "$it active kcal" }
-        val stale = if (summary.activityStale) "Activity may be stale" else null
-        return listOfNotNull(calories, stale).joinToString(" | ").ifBlank { "Activity unavailable" }
-    }
-
     fun completion(summary: WearSummary): String =
         if (summary.foodDayComplete) "Food day complete" else "Food day in progress"
 
@@ -115,8 +103,6 @@ data class WeightEditorState(val grams: Long, val unit: String) {
     fun label(): String = SummaryFormatter.weight(grams, unit)
 
     companion object {
-        // A neutral starting point lets a first-time user log locally without inventing profile data.
-        const val DEFAULT_FIRST_WEIGHT_GRAMS = 70_000L
         const val MIN_WEIGHT_GRAMS = 20_000L
         const val MAX_WEIGHT_GRAMS = 500_000L
         private const val METRIC_STEP_GRAMS = 100L

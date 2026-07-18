@@ -76,11 +76,6 @@ class WearPersistenceInstrumentedTest {
         )
         val latest = database.dailySnapshotDao().allNewestFirst().first()
         assertEquals(1250, latest.caloriesRemaining)
-        assertEquals(2100, latest.activityTotalCalories)
-        assertEquals(40, latest.exerciseMinutes)
-        assertEquals(123_000L, latest.activityObservedAtEpochMs)
-        assertEquals(false, latest.activityStale)
-        assertEquals(300L, latest.activityAgeSeconds)
         assertEquals(true, latest.foodDayComplete)
         assertEquals("food-day-revision", latest.foodDayRevision)
         assertEquals(81_500L, latest.todayWeightGrams)
@@ -217,6 +212,70 @@ class WearPersistenceInstrumentedTest {
     }
 
     @Test
+    fun versionFourMigrationDropsActivityCacheAndPreservesSummaryData() {
+        val configuration = SupportSQLiteOpenHelper.Configuration.builder(context)
+            .name(migrationDatabaseName)
+            .callback(object : SupportSQLiteOpenHelper.Callback(4) {
+                override fun onCreate(database: SupportSQLiteDatabase) {
+                    database.execSQL(
+                        """
+                        CREATE TABLE daily_snapshots (
+                            local_date TEXT NOT NULL PRIMARY KEY,
+                            calories_consumed INTEGER, calorie_target INTEGER, calories_remaining INTEGER,
+                            steps INTEGER, activity_calories INTEGER, activity_total_calories INTEGER,
+                            exercise_minutes INTEGER, activity_observed_at_epoch_ms INTEGER,
+                            activity_stale INTEGER NOT NULL DEFAULT 1, activity_age_seconds INTEGER,
+                            food_day_complete INTEGER NOT NULL DEFAULT 0, food_day_completed_at_epoch_ms INTEGER,
+                            food_day_revision TEXT, today_weight_grams INTEGER, today_weight_revision TEXT,
+                            latest_weight_grams INTEGER, latest_weight_revision TEXT, latest_weight_date TEXT,
+                            weight_unit TEXT NOT NULL DEFAULT 'KG', goal_start_weight_grams INTEGER,
+                            goal_target_weight_grams INTEGER, goal_current_weight_grams INTEGER,
+                            goal_daily_deficit INTEGER, goal_progress_percent REAL,
+                            goal_remaining_weight_grams INTEGER, goal_is_complete INTEGER,
+                            undo_food_log_id INTEGER, undo_name TEXT, undo_calories INTEGER,
+                            undo_created_at_epoch_ms INTEGER, server_revision TEXT,
+                            fetched_at_epoch_ms INTEGER NOT NULL
+                        )
+                        """.trimIndent()
+                    )
+                    database.execSQL(
+                        """
+                        INSERT INTO daily_snapshots (
+                            local_date, calories_consumed, calories_remaining, activity_stale,
+                            food_day_complete, weight_unit, goal_progress_percent, fetched_at_epoch_ms
+                        ) VALUES ('2026-07-11', 750, 1250, 0, 1, 'LB', 42.5, 99)
+                        """.trimIndent()
+                    )
+                }
+
+                override fun onUpgrade(database: SupportSQLiteDatabase, oldVersion: Int, newVersion: Int) = Unit
+            })
+            .build()
+        val helper = FrameworkSQLiteOpenHelperFactory().create(configuration)
+        val database = helper.writableDatabase
+
+        CalibrateWearDatabase.MIGRATION_4_5.migrate(database)
+
+        database.query("SELECT calories_consumed, calories_remaining, food_day_complete, weight_unit, goal_progress_percent, fetched_at_epoch_ms FROM daily_snapshots").use { cursor ->
+            assertEquals(true, cursor.moveToFirst())
+            assertEquals(750, cursor.getInt(0))
+            assertEquals(1250, cursor.getInt(1))
+            assertEquals(1, cursor.getInt(2))
+            assertEquals("LB", cursor.getString(3))
+            assertEquals(42.5, cursor.getDouble(4), 0.0)
+            assertEquals(99, cursor.getLong(5))
+        }
+        database.query("PRAGMA table_info(daily_snapshots)").use { cursor ->
+            val columns = mutableSetOf<String>()
+            val nameColumn = cursor.getColumnIndexOrThrow("name")
+            while (cursor.moveToNext()) columns += cursor.getString(nameColumn)
+            assertEquals(false, columns.contains("activity_stale"))
+            assertEquals(false, columns.contains("activity_total_calories"))
+        }
+        helper.close()
+    }
+
+    @Test
     fun roomAccountDataStoreClearsEveryAccountScopedTable() = runBlocking {
         val database = CalibrateWearDatabase.open(context, databaseName)
         database.dailySnapshotDao().cacheBounded(snapshot("2026-07-11"), maxRows = 2)
@@ -254,13 +313,6 @@ class WearPersistenceInstrumentedTest {
         caloriesConsumed = 750,
         calorieTarget = 2_000,
         caloriesRemaining = 1_250,
-        steps = 12_345,
-        activityCalories = 350,
-        activityTotalCalories = 2_100,
-        exerciseMinutes = 40,
-        activityObservedAtEpochMs = 123_000,
-        activityStale = false,
-        activityAgeSeconds = 300,
         foodDayComplete = true,
         foodDayCompletedAtEpochMs = 124_000,
         foodDayRevision = "food-day-revision",

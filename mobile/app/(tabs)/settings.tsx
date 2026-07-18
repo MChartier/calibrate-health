@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Alert, Image, Pressable, StyleSheet, Switch, View } from 'react-native';
+import { Alert, Image, Platform, Pressable, StyleSheet, Switch, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as DocumentPicker from 'expo-document-picker';
@@ -18,6 +18,8 @@ import { Screen } from '../../src/components/Screen';
 import { SectionHeader } from '../../src/components/SectionHeader';
 import { SegmentedControl } from '../../src/components/SegmentedControl';
 import { TextField } from '../../src/components/TextField';
+import { TimeZonePickerField } from '../../src/components/TimeZonePickerField';
+import { SettingsRow, SettingsSection } from '../../src/components/settings/SettingsList';
 import { useAuth } from '../../src/auth/AuthContext';
 import {
     canSubmitAccountDeletion,
@@ -33,17 +35,24 @@ import { millimetersToCentimeters, millimetersToFeetInches } from '../../src/uti
 import { getTodayDate } from '../../src/utils/dates';
 import { formatCalories } from '../../src/utils/format';
 import { ACTIVITY_OPTIONS, HEIGHT_UNIT_OPTIONS, SEX_OPTIONS, WEIGHT_UNIT_OPTIONS } from '../../src/utils/profileOptions';
-import { colors, radius, spacing } from '../../src/theme';
+import { formatTimeZoneLabel } from '../../src/utils/timezones';
+import { colors, radius, spacing, useAppTheme } from '../../src/theme';
 import { useHealthConnect } from '../../src/healthConnect/provider';
 import { clearWearAccountData } from '../../src/wear/accountCleanup';
 
 const MIN_PASSWORD_LENGTH = 8;
-const COMMON_TIMEZONE_OPTIONS = [
-    { label: 'Los Angeles', value: 'America/Los_Angeles' },
-    { label: 'New York', value: 'America/New_York' },
-    { label: 'London', value: 'Europe/London' },
-    { label: 'UTC', value: 'UTC' }
-]; // Common shortcuts keep most users out of manual IANA timezone editing.
+type SettingsSheet =
+    | 'preferences'
+    | 'health-connect'
+    | 'watch'
+    | 'import'
+    | 'profile-photo'
+    | 'password'
+    | 'devices'
+    | 'offline'
+    | 'data'
+    | 'server'
+    | null;
 
 function getAvatarLabel(email?: string | null): string {
     return email?.trim().charAt(0).toUpperCase() || 'C';
@@ -69,9 +78,11 @@ export default function SettingsScreen() {
         retryFailed: retryFailedOutbox
     } = useOfflineOutbox();
     const queryClient = useQueryClient();
+    const { colors: themeColors } = useAppTheme();
     const healthConnect = useHealthConnect();
     const nativePush = useNativePushRegistration();
-    const pushStatus = getPushStatusPresentation(nativePush.state);
+    const isWeb = Platform.OS === 'web';
+    const pushStatus = getPushStatusPresentation(nativePush.state, isWeb ? 'web' : 'android');
     const [serverInput, setServerInput] = useState(serverUrl);
     const [timezone, setTimezone] = useState(user?.timezone ?? 'UTC');
     const [dateOfBirth, setDateOfBirth] = useState(user?.date_of_birth?.slice(0, 10) ?? '');
@@ -90,6 +101,7 @@ export default function SettingsScreen() {
     const [newPassword, setNewPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [isProfileEditorOpen, setIsProfileEditorOpen] = useState(false);
+    const [activeSheet, setActiveSheet] = useState<SettingsSheet>(null);
     const [isDeleteAccountOpen, setIsDeleteAccountOpen] = useState(false);
     const [deleteAccountPassword, setDeleteAccountPassword] = useState('');
     const [deleteAccountConfirmation, setDeleteAccountConfirmation] = useState('');
@@ -107,6 +119,12 @@ export default function SettingsScreen() {
     const syncOutbox = useMutation({ mutationFn: () => reconcileOutbox() });
     const retryOutbox = useMutation({ mutationFn: () => retryFailedOutbox() });
     const outboxActionError = syncOutbox.error ?? retryOutbox.error;
+    let outboxErrorMessage = outboxInitializationError;
+    if (!outboxErrorMessage && outboxActionError) {
+        outboxErrorMessage = outboxActionError instanceof Error
+            ? outboxActionError.message
+            : 'Unable to sync offline changes.';
+    }
     const exportAccount = useMutation({
         mutationFn: async () => {
             const accountExport = await api.exportAccount();
@@ -178,6 +196,7 @@ export default function SettingsScreen() {
         onSuccess: async (response) => {
             updateCurrentUser(response.user);
             await queryClient.invalidateQueries({ queryKey: ['mobile-profile'] });
+            setActiveSheet(null);
         }
     });
 
@@ -278,6 +297,7 @@ export default function SettingsScreen() {
 
     async function handleSaveServer() {
         await setServerUrl(serverInput);
+        setActiveSheet(null);
     }
 
     function handleChangePassword() {
@@ -320,39 +340,137 @@ export default function SettingsScreen() {
     }
 
     return (
-        <Screen reserveBottomTabs>
-            <AppCard>
+        <Screen reserveBottomTabs style={{ backgroundColor: themeColors.background }}>
+            <AppCard style={{ backgroundColor: themeColors.surface, borderColor: themeColors.outlineVariant }}>
                 <View style={styles.accountSummary}>
-                    <View style={styles.summaryAvatar}>
+                    <View style={[styles.summaryAvatar, { backgroundColor: themeColors.primaryContainer }]}>
                         {user?.profile_image_url ? (
                             <Image source={{ uri: user.profile_image_url }} style={styles.avatarImage} />
                         ) : (
-                            <AppText variant="subtitle" style={styles.avatarLabel}>{getAvatarLabel(user?.email)}</AppText>
+                            <AppText variant="subtitle" style={{ color: themeColors.onPrimaryContainer }}>{getAvatarLabel(user?.email)}</AppText>
                         )}
                     </View>
                     <SectionHeader
-                        title="Account"
+                        title="Account overview"
                         description={user?.email ?? 'Account and app settings.'}
                         style={styles.summaryText}
                     />
                 </View>
-                <View style={styles.summaryRows}>
+                <View style={[styles.summaryRows, { backgroundColor: themeColors.surfaceContainer }]}>
                     <SummaryRow label="Calorie target" value={formatCalories(profileQuery.data?.calorieSummary.dailyCalorieTarget)} />
                     <SummaryRow
                         label="Units"
                         value={`${weightUnit === WEIGHT_UNITS.LB ? 'lb' : 'kg'} | ${heightUnit === HEIGHT_UNITS.FT_IN ? 'ft/in' : 'cm'}`}
                     />
-                    <SummaryRow label="Timezone" value={timezone.replace(/_/g, ' ')} />
+                    <SummaryRow label="Time zone" value={formatTimeZoneLabel(timezone)} />
                 </View>
-                <AppButton
-                    title="Edit profile details"
-                    variant="secondary"
-                    leftIcon={<Ionicons name="person-outline" size={18} color={colors.text} />}
-                    onPress={() => setIsProfileEditorOpen(true)}
-                />
             </AppCard>
 
-            <AppCard>
+            <SettingsSection title="Personal" description="Your profile and how Calibrate works for you.">
+                <SettingsRow
+                    icon="person-outline"
+                    label="Profile details"
+                    supportingText="Body details, activity level, and time zone"
+                    onPress={() => setIsProfileEditorOpen(true)}
+                />
+                <SettingsRow
+                    icon="options-outline"
+                    label="Preferences"
+                    supportingText="Units, reminders, notifications, and haptics"
+                    value={`${weightUnit === WEIGHT_UNITS.LB ? 'lb' : 'kg'} | ${heightUnit === HEIGHT_UNITS.FT_IN ? 'ft/in' : 'cm'}`}
+                    onPress={() => setActiveSheet('preferences')}
+                />
+                <SettingsRow
+                    icon="image-outline"
+                    label="Profile photo"
+                    supportingText="Your avatar across Calibrate"
+                    showDivider={false}
+                    onPress={() => setActiveSheet('profile-photo')}
+                />
+            </SettingsSection>
+
+            <SettingsSection title="Connections" description="Health data and companion devices.">
+                <SettingsRow
+                    icon="fitness-outline"
+                    label="Health Connect"
+                    supportingText="Read activity and weight from Android"
+                    onPress={() => setActiveSheet('health-connect')}
+                />
+                <SettingsRow
+                    icon="watch-outline"
+                    label="Galaxy Watch"
+                    supportingText="Pair, sync, and manage the Wear OS companion"
+                    onPress={() => setActiveSheet('watch')}
+                />
+                <SettingsRow
+                    icon="phone-portrait-outline"
+                    label="Signed-in devices"
+                    supportingText="Review and revoke phone and watch sessions"
+                    value={sessionsQuery.data ? String(sessionsQuery.data.sessions.length) : undefined}
+                    showDivider={false}
+                    onPress={() => setActiveSheet('devices')}
+                />
+            </SettingsSection>
+
+            <SettingsSection title="Data" description="Import, sync, export, and privacy controls.">
+                <SettingsRow
+                    icon="cloud-upload-outline"
+                    label="Import from Lose It"
+                    supportingText="Bring in a ZIP export"
+                    onPress={() => setActiveSheet('import')}
+                />
+                <SettingsRow
+                    icon="sync-outline"
+                    label="Offline changes"
+                    supportingText={isOutboxReady
+                        ? 'Review work waiting to sync'
+                        : 'Browser changes require an active server connection'}
+                    value={isOutboxReady
+                        ? (failedMutations.length > 0 ? `${failedMutations.length} failed` : `${pendingMutationCount} pending`)
+                        : 'Online only'}
+                    onPress={() => setActiveSheet('offline')}
+                />
+                <SettingsRow
+                    icon="shield-checkmark-outline"
+                    label="Your data"
+                    supportingText="Export or permanently delete your account"
+                    showDivider={false}
+                    onPress={() => setActiveSheet('data')}
+                />
+            </SettingsSection>
+
+            <SettingsSection title="Security & server">
+                <SettingsRow
+                    icon="key-outline"
+                    label="Password"
+                    supportingText="Change your account password"
+                    onPress={() => setActiveSheet('password')}
+                />
+                <SettingsRow
+                    icon="server-outline"
+                    label="Calibrate server"
+                    supportingText="Hosted or self-hosted connection"
+                    value={serverUrl.replace(/^https?:\/\//, '')}
+                    showDivider={false}
+                    onPress={() => setActiveSheet('server')}
+                />
+            </SettingsSection>
+
+            <SettingsSection title="Account">
+                <SettingsRow
+                    icon="log-out-outline"
+                    label="Log out"
+                    danger
+                    showDivider={false}
+                    onPress={() => void logout()}
+                />
+            </SettingsSection>
+
+            <SettingsDetailSheet
+                visible={activeSheet === 'preferences'}
+                maxHeight="92%"
+                onClose={() => setActiveSheet(null)}
+            >
                 <SectionHeader title="Preferences" description="Units, reminders, and interaction feedback." />
                 <AppText variant="label">Weight unit</AppText>
                 <SegmentedControl options={WEIGHT_UNIT_OPTIONS} value={weightUnit} onChange={setWeightUnit} />
@@ -369,7 +487,7 @@ export default function SettingsScreen() {
                     onValueChange={setLogWeightReminders}
                 />
                 <View style={styles.notificationStatus}>
-                    <AppText variant="label">Push on this device</AppText>
+                    <AppText variant="label">{isWeb ? 'Push in this browser' : 'Push on this device'}</AppText>
                     <AppText
                         accessibilityLiveRegion="polite"
                         accessibilityRole={pushStatus.isError ? 'alert' : undefined}
@@ -382,24 +500,30 @@ export default function SettingsScreen() {
                         <AppButton
                             title="Enable push notifications"
                             variant="secondary"
-                            accessibilityHint="Shows the Android notification permission prompt."
-                            leftIcon={<Ionicons name="notifications-outline" size={18} color={colors.text} />}
+                            accessibilityHint={isWeb
+                                ? 'Shows this browser notification permission prompt.'
+                                : 'Shows the Android notification permission prompt.'}
+                            leftIcon={<Ionicons name="notifications-outline" size={18} color={themeColors.onSurface} />}
                             onPress={() => void nativePush.requestPermission()}
                         />
                     )}
                     {pushStatus.action === 'settings' && (
                         <View style={styles.row}>
-                            <AppButton
-                                title="Open Android settings"
-                                variant="secondary"
-                                accessibilityHint="Opens notification permissions for Calibrate."
-                                onPress={() => void nativePush.openSettings()}
-                                style={styles.rowButton}
-                            />
+                            {!isWeb && (
+                                <AppButton
+                                    title="Open Android settings"
+                                    variant="secondary"
+                                    accessibilityHint="Opens notification permissions for Calibrate."
+                                    onPress={() => void nativePush.openSettings()}
+                                    style={styles.rowButton}
+                                />
+                            )}
                             <AppButton
                                 title="Check again"
                                 variant="secondary"
-                                accessibilityHint="Checks whether notification permission is now enabled."
+                                accessibilityHint={isWeb
+                                    ? 'Checks whether notifications are now allowed for this site.'
+                                    : 'Checks whether notification permission is now enabled.'}
                                 onPress={() => void nativePush.refreshPermission()}
                                 style={styles.rowButton}
                             />
@@ -409,9 +533,20 @@ export default function SettingsScreen() {
                         <AppButton
                             title="Retry push registration"
                             variant="secondary"
-                            accessibilityHint="Checks permission and registers this device again."
-                            leftIcon={<Ionicons name="refresh-outline" size={18} color={colors.text} />}
+                            accessibilityHint={isWeb
+                                ? 'Checks permission and registers this browser again.'
+                                : 'Checks permission and registers this device again.'}
+                            leftIcon={<Ionicons name="refresh-outline" size={18} color={themeColors.onSurface} />}
                             onPress={() => void nativePush.retryRegistration()}
+                        />
+                    )}
+                    {pushStatus.action === 'disable' && isWeb && (
+                        <AppButton
+                            title="Disable push in this browser"
+                            variant="secondary"
+                            accessibilityHint="Removes this browser from reminder delivery on the selected Calibrate server."
+                            leftIcon={<Ionicons name="notifications-off-outline" size={18} color={themeColors.onSurface} />}
+                            onPress={() => void nativePush.disableRegistration?.()}
                         />
                     )}
                 </View>
@@ -425,15 +560,30 @@ export default function SettingsScreen() {
                     title={savePreferences.isPending ? 'Saving...' : 'Save preferences'}
                     disabled={savePreferences.isPending}
                     variant="secondary"
-                    leftIcon={<Ionicons name="options-outline" size={18} color={colors.text} />}
+                    leftIcon={<Ionicons name="options-outline" size={18} color={themeColors.onSurface} />}
                     onPress={() => savePreferences.mutate()}
                 />
-            </AppCard>
+            </SettingsDetailSheet>
 
-            <HealthConnectCard />
-            <WearPairingCard />
+            <BottomSheetModal
+                visible={activeSheet === 'health-connect'}
+                maxHeight="92%"
+                onRequestClose={() => setActiveSheet(null)}
+            >
+                <HealthConnectCard />
+            </BottomSheetModal>
+            <BottomSheetModal
+                visible={activeSheet === 'watch'}
+                maxHeight="92%"
+                onRequestClose={() => setActiveSheet(null)}
+            >
+                <WearPairingCard />
+            </BottomSheetModal>
 
-            <AppCard>
+            <SettingsDetailSheet
+                visible={activeSheet === 'import'}
+                onClose={() => setActiveSheet(null)}
+            >
                 <SectionHeader title="Import" description="Import a Lose It ZIP export into food logs and weigh-ins." />
                 {importMutation.data && (
                     <AppText variant="muted">
@@ -444,22 +594,30 @@ export default function SettingsScreen() {
                 <AppButton
                     title={importMutation.isPending ? 'Importing...' : 'Import Lose It ZIP'}
                     variant="secondary"
-                    leftIcon={<Ionicons name="cloud-upload-outline" size={18} color={colors.text} />}
+                    leftIcon={<Ionicons name="cloud-upload-outline" size={18} color={themeColors.onSurface} />}
                     onPress={() => importMutation.mutate()}
                 />
-            </AppCard>
+            </SettingsDetailSheet>
 
-            <AppCard>
+            <SettingsDetailSheet
+                visible={activeSheet === 'profile-photo'}
+                onClose={() => setActiveSheet(null)}
+            >
                 <SectionHeader
                     title="Profile photo"
                     description={user?.email ? `Signed in as ${user.email}.` : 'Used for your avatar across the app.'}
                 />
                 <View style={styles.avatarRow}>
-                    <View style={styles.avatar}>
+                    <View style={[
+                        styles.avatar,
+                        { backgroundColor: themeColors.primaryContainer, borderColor: themeColors.outlineVariant }
+                    ]}>
                         {user?.profile_image_url ? (
                             <Image source={{ uri: user.profile_image_url }} style={styles.avatarImage} />
                         ) : (
-                            <AppText variant="subtitle" style={styles.avatarLabel}>{getAvatarLabel(user?.email)}</AppText>
+                            <AppText variant="subtitle" style={{ color: themeColors.onPrimaryContainer }}>
+                                {getAvatarLabel(user?.email)}
+                            </AppText>
                         )}
                     </View>
                     <View style={styles.avatarActions}>
@@ -467,7 +625,7 @@ export default function SettingsScreen() {
                             title={updateProfileImage.isPending ? 'Opening...' : 'Choose photo'}
                             variant="secondary"
                             disabled={updateProfileImage.isPending || removeProfileImage.isPending}
-                            leftIcon={<Ionicons name="image-outline" size={18} color={colors.text} />}
+                            leftIcon={<Ionicons name="image-outline" size={18} color={themeColors.onSurface} />}
                             onPress={() => updateProfileImage.mutate()}
                         />
                         {user?.profile_image_url && (
@@ -475,7 +633,7 @@ export default function SettingsScreen() {
                                 title={removeProfileImage.isPending ? 'Removing...' : 'Remove photo'}
                                 variant="ghost"
                                 disabled={updateProfileImage.isPending || removeProfileImage.isPending}
-                                leftIcon={<Ionicons name="trash-outline" size={18} color={colors.text} />}
+                                leftIcon={<Ionicons name="trash-outline" size={18} color={themeColors.onSurface} />}
                                 onPress={() => removeProfileImage.mutate()}
                             />
                         )}
@@ -486,9 +644,13 @@ export default function SettingsScreen() {
                         {updateProfileImage.error?.message ?? removeProfileImage.error?.message}
                     </AppText>
                 )}
-            </AppCard>
+            </SettingsDetailSheet>
 
-            <AppCard>
+            <SettingsDetailSheet
+                visible={activeSheet === 'password'}
+                maxHeight="92%"
+                onClose={() => setActiveSheet(null)}
+            >
                 <SectionHeader title="Password" description="Update the password for this account." />
                 <TextField label="Current password" secureTextEntry value={currentPassword} onChangeText={setCurrentPassword} />
                 <TextField label="New password" secureTextEntry value={newPassword} onChangeText={setNewPassword} helperText={`At least ${MIN_PASSWORD_LENGTH} characters.`} />
@@ -499,12 +661,16 @@ export default function SettingsScreen() {
                     title={changePassword.isPending ? 'Updating...' : 'Update password'}
                     disabled={changePassword.isPending}
                     variant="secondary"
-                    leftIcon={<Ionicons name="key-outline" size={18} color={colors.text} />}
+                    leftIcon={<Ionicons name="key-outline" size={18} color={themeColors.onSurface} />}
                     onPress={handleChangePassword}
                 />
-            </AppCard>
+            </SettingsDetailSheet>
 
-            <AppCard>
+            <SettingsDetailSheet
+                visible={activeSheet === 'devices'}
+                maxHeight="92%"
+                onClose={() => setActiveSheet(null)}
+            >
                 <SectionHeader title="Devices" description="Review and revoke active phone and watch sessions." />
                 {sessionsQuery.isLoading && <AppText variant="muted">Loading active devices...</AppText>}
                 {sessionsQuery.error && <AppText style={styles.error}>{sessionsQuery.error.message}</AppText>}
@@ -532,54 +698,64 @@ export default function SettingsScreen() {
                         title={revokeOtherSessions.isPending ? 'Revoking...' : 'Revoke other devices'}
                         variant="secondary"
                         disabled={revokeSession.isPending || revokeOtherSessions.isPending}
-                        leftIcon={<Ionicons name="phone-portrait-outline" size={18} color={colors.text} />}
+                        leftIcon={<Ionicons name="phone-portrait-outline" size={18} color={themeColors.onSurface} />}
                         onPress={() => revokeOtherSessions.mutate()}
                     />
                 )}
-            </AppCard>
+            </SettingsDetailSheet>
 
-            <AppCard>
+            <SettingsDetailSheet
+                visible={activeSheet === 'offline'}
+                onClose={() => setActiveSheet(null)}
+            >
                 <SectionHeader
-                    title="Offline changes"
-                    description="Writes saved on this device replay in order when the server is reachable."
+                    title={isOutboxReady ? 'Offline changes' : 'Online-only browser changes'}
+                    description={isOutboxReady
+                        ? 'Writes saved on this device replay in order when the server is reachable.'
+                        : 'The browser does not save pending writes yet. Stay online when adding or editing data.'}
                 />
-                <View style={styles.summaryRows}>
-                    <SummaryRow label="Pending" value={String(pendingMutationCount)} />
-                    <SummaryRow label="Failed" value={String(failedMutations.length)} />
-                </View>
-                {failedMutations[0]?.lastError && (
-                    <AppText style={styles.error}>Last failure: {failedMutations[0].lastError}</AppText>
-                )}
-                {(outboxInitializationError || outboxActionError) && (
-                    <AppText style={styles.error}>
-                        {outboxInitializationError ?? (outboxActionError instanceof Error
-                            ? outboxActionError.message
-                            : 'Unable to sync offline changes.')}
+                {isOutboxReady ? (
+                    <>
+                        <View style={[styles.summaryRows, { backgroundColor: themeColors.surfaceContainer }]}>
+                            <SummaryRow label="Pending" value={String(pendingMutationCount)} />
+                            <SummaryRow label="Failed" value={String(failedMutations.length)} />
+                        </View>
+                        {failedMutations[0]?.lastError && (
+                            <AppText style={styles.error}>Last failure: {failedMutations[0].lastError}</AppText>
+                        )}
+                        {outboxErrorMessage && <AppText style={styles.error}>{outboxErrorMessage}</AppText>}
+                        <View style={styles.row}>
+                            <AppButton
+                                title={syncOutbox.isPending ? 'Syncing...' : 'Sync now'}
+                                variant="secondary"
+                                disabled={pendingMutationCount === 0 || failedMutations.length > 0 || syncOutbox.isPending || retryOutbox.isPending}
+                                leftIcon={<Ionicons name="sync-outline" size={18} color={themeColors.onSurface} />}
+                                onPress={() => syncOutbox.mutate()}
+                                style={styles.rowButton}
+                            />
+                            {failedMutations.length > 0 && (
+                                <AppButton
+                                    title={retryOutbox.isPending ? 'Retrying...' : 'Retry failed'}
+                                    variant="secondary"
+                                    disabled={syncOutbox.isPending || retryOutbox.isPending}
+                                    leftIcon={<Ionicons name="refresh-outline" size={18} color={themeColors.onSurface} />}
+                                    onPress={() => retryOutbox.mutate()}
+                                    style={styles.rowButton}
+                                />
+                            )}
+                        </View>
+                    </>
+                ) : (
+                    <AppText variant="muted">
+                        If a browser request fails because the server is offline, Calibrate reports the failure and does not claim the change was queued.
                     </AppText>
                 )}
-                <View style={styles.row}>
-                    <AppButton
-                        title={syncOutbox.isPending ? 'Syncing...' : 'Sync now'}
-                        variant="secondary"
-                        disabled={!isOutboxReady || pendingMutationCount === 0 || failedMutations.length > 0 || syncOutbox.isPending || retryOutbox.isPending}
-                        leftIcon={<Ionicons name="sync-outline" size={18} color={colors.text} />}
-                        onPress={() => syncOutbox.mutate()}
-                        style={styles.rowButton}
-                    />
-                    {failedMutations.length > 0 && (
-                        <AppButton
-                            title={retryOutbox.isPending ? 'Retrying...' : 'Retry failed'}
-                            variant="secondary"
-                            disabled={!isOutboxReady || syncOutbox.isPending || retryOutbox.isPending}
-                            leftIcon={<Ionicons name="refresh-outline" size={18} color={colors.text} />}
-                            onPress={() => retryOutbox.mutate()}
-                            style={styles.rowButton}
-                        />
-                    )}
-                </View>
-            </AppCard>
+            </SettingsDetailSheet>
 
-            <AppCard>
+            <SettingsDetailSheet
+                visible={activeSheet === 'data'}
+                onClose={() => setActiveSheet(null)}
+            >
                 <SectionHeader
                     title="Your data"
                     description="Export a portable JSON copy or permanently delete this account."
@@ -593,60 +769,39 @@ export default function SettingsScreen() {
                     title={exportAccount.isPending ? 'Preparing export...' : 'Export account data'}
                     variant="secondary"
                     disabled={exportAccount.isPending || deleteAccount.isPending}
-                    leftIcon={<Ionicons name="share-outline" size={18} color={colors.text} />}
+                    leftIcon={<Ionicons name="share-outline" size={18} color={themeColors.onSurface} />}
                     onPress={() => exportAccount.mutate()}
                 />
                 <AppButton
                     title="Delete account"
                     variant="danger"
                     disabled={exportAccount.isPending || deleteAccount.isPending}
-                    leftIcon={<Ionicons name="trash-outline" size={18} color="#ffffff" />}
+                    leftIcon={<Ionicons name="trash-outline" size={18} color={themeColors.onDanger} />}
                     onPress={() => setIsDeleteAccountOpen(true)}
                 />
-            </AppCard>
+            </SettingsDetailSheet>
 
-            <AppCard>
+            <SettingsDetailSheet
+                visible={activeSheet === 'server'}
+                onClose={() => setActiveSheet(null)}
+            >
                 <SectionHeader title="Advanced" description="Hosted and self-hosted server connection." />
                 <TextField label="Server URL" value={serverInput} onChangeText={setServerInput} autoCapitalize="none" />
                 <AppButton
                     title="Save connection"
                     variant="secondary"
-                    leftIcon={<Ionicons name="server-outline" size={18} color={colors.text} />}
+                    leftIcon={<Ionicons name="server-outline" size={18} color={themeColors.onSurface} />}
                     onPress={() => void handleSaveServer()}
                 />
-            </AppCard>
-
-            <AppButton
-                title="Log out"
-                variant="danger"
-                leftIcon={<Ionicons name="log-out-outline" size={18} color="#ffffff" />}
-                onPress={() => void logout()}
-            />
+            </SettingsDetailSheet>
 
             <BottomSheetModal
                 visible={isProfileEditorOpen}
                 maxHeight="92%"
                 onRequestClose={() => setIsProfileEditorOpen(false)}
             >
-                <SectionHeader title="Profile details" description="Timezone and body details used for calorie targets." />
-                <AppText variant="label">Timezone</AppText>
-                <View style={styles.chips}>
-                    {COMMON_TIMEZONE_OPTIONS.map((option) => (
-                        <AppChip
-                            key={option.value}
-                            label={option.label}
-                            selected={timezone === option.value}
-                            onPress={() => setTimezone(option.value)}
-                        />
-                    ))}
-                </View>
-                <TextField
-                    label="Custom timezone"
-                    value={timezone}
-                    onChangeText={setTimezone}
-                    autoCapitalize="none"
-                    helperText="Use an IANA timezone such as America/Los_Angeles."
-                />
+                <SectionHeader title="Profile details" description="Time zone and body details used for calorie targets." />
+                <TimeZonePickerField value={timezone} onChange={setTimezone} />
                 <DatePickerField
                     label="Date of birth"
                     value={dateOfBirth}
@@ -690,14 +845,14 @@ export default function SettingsScreen() {
                     <AppButton
                         title="Cancel"
                         variant="secondary"
-                        leftIcon={<Ionicons name="close" size={18} color={colors.text} />}
+                        leftIcon={<Ionicons name="close" size={18} color={themeColors.onSurface} />}
                         onPress={() => setIsProfileEditorOpen(false)}
                         style={styles.rowButton}
                     />
                     <AppButton
                         title={saveProfile.isPending ? 'Saving...' : 'Save'}
                         disabled={saveProfile.isPending}
-                        leftIcon={<Ionicons name="checkmark" size={18} color="#ffffff" />}
+                        leftIcon={<Ionicons name="checkmark" size={18} color={themeColors.onPrimary} />}
                         onPress={() => saveProfile.mutate()}
                         style={styles.rowButton}
                     />
@@ -710,7 +865,9 @@ export default function SettingsScreen() {
             >
                 <SectionHeader
                     title="Delete account permanently"
-                    description="This cannot be undone. Pending offline changes on this device will also be discarded."
+                    description={isOutboxReady
+                        ? 'This cannot be undone. Pending offline changes on this device will also be discarded.'
+                        : 'This cannot be undone. Browser changes are sent directly and there is no local write queue to discard.'}
                 />
                 <TextField
                     label="Current password"
@@ -761,35 +918,50 @@ type PreferenceSwitchProps = {
     onValueChange: (value: boolean) => void;
 };
 
-const PreferenceSwitch: React.FC<PreferenceSwitchProps> = ({ label, value, onValueChange }) => (
-    <Pressable
-        accessibilityRole="switch"
-        accessibilityState={{ checked: value }}
-        onPress={() => onValueChange(!value)}
-        style={({ pressed }) => [styles.switchRow, pressed && styles.pressedRow]}
-    >
-        <AppText variant="body">{label}</AppText>
-        <View style={styles.switchControl}>
-            <View style={[styles.switchStatePill, value ? styles.switchStatePillOn : styles.switchStatePillOff]}>
-                <AppText variant="caption" style={[styles.switchStateText, value ? styles.switchStateTextOn : styles.switchStateTextOff]}>
-                    {value ? 'On' : 'Off'}
-                </AppText>
-            </View>
+const PreferenceSwitch: React.FC<PreferenceSwitchProps> = ({ label, value, onValueChange }) => {
+    const { colors: themeColors } = useAppTheme();
+
+    return (
+        <Pressable
+            accessibilityRole="switch"
+            accessibilityState={{ checked: value }}
+            onPress={() => onValueChange(!value)}
+            style={({ pressed }) => [styles.switchRow, pressed && styles.pressedRow]}
+        >
+            <AppText variant="body" style={styles.switchLabel}>{label}</AppText>
             <Switch
                 value={value}
                 onValueChange={onValueChange}
-                trackColor={{ false: colors.controlTrack, true: colors.primarySoft }}
-                thumbColor={value ? colors.primary : colors.surface}
+                trackColor={{ false: themeColors.outlineVariant, true: themeColors.primaryContainer }}
+                thumbColor={value ? themeColors.primary : themeColors.outline}
             />
-        </View>
-    </Pressable>
-);
+        </Pressable>
+    );
+};
 
 const SummaryRow: React.FC<{ label: string; value: string }> = ({ label, value }) => (
     <View style={styles.summaryRow}>
         <AppText variant="caption">{label}</AppText>
         <AppText variant="body" numberOfLines={1} style={styles.summaryValue}>{value}</AppText>
     </View>
+);
+
+type SettingsDetailSheetProps = {
+    visible: boolean;
+    maxHeight?: React.ComponentProps<typeof BottomSheetModal>['maxHeight'];
+    onClose: () => void;
+    children: React.ReactNode;
+};
+
+const SettingsDetailSheet: React.FC<SettingsDetailSheetProps> = ({
+    visible,
+    maxHeight,
+    onClose,
+    children
+}) => (
+    <BottomSheetModal visible={visible} maxHeight={maxHeight} onRequestClose={onClose}>
+        <View style={styles.sheetContent}>{children}</View>
+    </BottomSheetModal>
 );
 
 const styles = StyleSheet.create({
@@ -799,6 +971,9 @@ const styles = StyleSheet.create({
     },
     rowButton: {
         flex: 1
+    },
+    sheetContent: {
+        gap: spacing.md
     },
     accountSummary: {
         flexDirection: 'row',
@@ -891,36 +1066,9 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         gap: spacing.md
     },
-    switchControl: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: spacing.sm
-    },
-    switchStatePill: {
-        minWidth: 44,
-        minHeight: 28,
-        borderRadius: radius.pill,
-        alignItems: 'center',
-        justifyContent: 'center',
-        paddingHorizontal: spacing.sm,
-        borderWidth: StyleSheet.hairlineWidth
-    },
-    switchStatePillOn: {
-        backgroundColor: colors.primarySoft,
-        borderColor: colors.primary
-    },
-    switchStatePillOff: {
-        backgroundColor: colors.surfaceMuted,
-        borderColor: colors.controlTrack
-    },
-    switchStateText: {
-        fontWeight: '800'
-    },
-    switchStateTextOn: {
-        color: colors.primaryDark
-    },
-    switchStateTextOff: {
-        color: colors.muted
+    switchLabel: {
+        flex: 1,
+        fontWeight: '700'
     },
     pressedRow: {
         opacity: 0.78

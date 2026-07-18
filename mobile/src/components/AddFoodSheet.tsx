@@ -41,6 +41,8 @@ type AddFoodSheetProps = {
 type AddFoodMode = 'quick' | 'search' | 'recipes';
 type SavedFoodLogRequest = { item: MyFoodSummary; servings: number };
 
+const DEFAULT_ADD_FOOD_MODE: AddFoodMode = 'search';
+
 const ADD_FOOD_MODES: Array<{ value: AddFoodMode; label: string }> = [
     { value: 'quick', label: 'Quick' },
     { value: 'search', label: 'Search' },
@@ -119,7 +121,7 @@ function buildRecentFoodPayload(
 }
 
 /**
- * Focused add-food bottom sheet used by the Log tab and add-food route.
+ * Focused add-food bottom sheet opened over Today by app actions and deep links.
  *
  * The modes mirror the PWA's Quick, Search, and Recipes entry points while
  * keeping the native sheet focused on one logging decision at a time.
@@ -134,7 +136,7 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
     const { api } = useAuth();
     const { enqueue } = useOfflineOutbox();
     const queryClient = useQueryClient();
-    const [mode, setMode] = useState<AddFoodMode>('quick');
+    const [mode, setMode] = useState<AddFoodMode>(DEFAULT_ADD_FOOD_MODE);
     const [name, setName] = useState('');
     const [calories, setCalories] = useState('');
     const [meal, setMeal] = useState<MealPeriod>(initialMeal ?? getDefaultMealPeriodForTime(new Date()));
@@ -181,6 +183,7 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
             setMeal(initialMeal);
         }
         if (visible) {
+            setMode(DEFAULT_ADD_FOOD_MODE);
             setIsMealSelectorOpen(false);
             setIsMeasureSelectorOpen(false);
         }

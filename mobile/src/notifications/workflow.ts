@@ -26,9 +26,11 @@ export type NotificationAction = {
 
 export type PushStatusPresentation = {
     message: string;
-    action: 'request' | 'settings' | 'retry' | null;
+    action: 'request' | 'settings' | 'retry' | 'disable' | null;
     isError: boolean;
 };
+
+export type PushStatusTarget = 'android' | 'web';
 
 /** Remote push is unavailable in Expo Go and outside the native Android target. */
 export function isNativePushEnvironmentSupported(appOwnership: string | null | undefined, platform: string): boolean {
@@ -44,7 +46,53 @@ export function getNotificationPermissionState(permission: {
 }
 
 /** Keep permission/registration status copy and recovery actions consistent in Settings. */
-export function getPushStatusPresentation(state: NativePushState): PushStatusPresentation {
+export function getPushStatusPresentation(
+    state: NativePushState,
+    target: PushStatusTarget = 'android'
+): PushStatusPresentation {
+    if (target === 'web') {
+        switch (state) {
+            case NATIVE_PUSH_STATES.CHECKING:
+                return { message: 'Checking browser notification access...', action: null, isError: false };
+            case NATIVE_PUSH_STATES.PERMISSION_REQUIRED:
+                return {
+                    message: 'Enable notifications in this browser to receive your food and weight reminders.',
+                    action: 'request',
+                    isError: false
+                };
+            case NATIVE_PUSH_STATES.BLOCKED:
+                return {
+                    message: 'Notifications are blocked for this site. Allow them in browser site settings, then check again.',
+                    action: 'settings',
+                    isError: true
+                };
+            case NATIVE_PUSH_STATES.REGISTERING:
+                return { message: 'Registering this browser for reminders...', action: null, isError: false };
+            case NATIVE_PUSH_STATES.REGISTERED:
+                return { message: 'Push reminders are ready in this browser.', action: 'disable', isError: false };
+            case NATIVE_PUSH_STATES.UNSUPPORTED:
+                return {
+                    message: 'Push notifications are unavailable in this browser or browsing mode.',
+                    action: null,
+                    isError: false
+                };
+            case NATIVE_PUSH_STATES.DISABLED:
+                return {
+                    message: 'Browser push is disabled by this Calibrate server.',
+                    action: null,
+                    isError: false
+                };
+            case NATIVE_PUSH_STATES.ERROR:
+                return {
+                    message: 'Browser push registration failed. Check the server connection and try again.',
+                    action: 'retry',
+                    isError: true
+                };
+            default:
+                return { message: 'Sign in to configure notifications.', action: null, isError: false };
+        }
+    }
+
     switch (state) {
         case NATIVE_PUSH_STATES.CHECKING:
             return { message: 'Checking notification access...', action: null, isError: false };

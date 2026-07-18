@@ -2,6 +2,7 @@ import React, { useRef, useState } from 'react';
 import {
     Modal,
     Pressable,
+    ScrollView,
     StyleSheet,
     View,
     type LayoutChangeEvent,
@@ -11,7 +12,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { AppText } from './AppText';
-import { colors, radius, shadows, spacing } from '../theme';
+import { type AppTheme, spacing, useAppTheme } from '../theme';
 
 export type OverlaySelectOption<T extends string> = {
     value: T;
@@ -38,7 +39,7 @@ type AnchorFrame = {
 
 const MENU_EDGE_MARGIN = spacing.lg;
 const MENU_GAP = spacing.xs;
-const OPTION_ROW_HEIGHT = 56;
+const OPTION_ROW_HEIGHT = 72;
 
 /**
  * Select control whose menu floats over the current surface instead of
@@ -54,6 +55,8 @@ export function OverlaySelect<T extends string>({
     style
 }: OverlaySelectProps<T>) {
     const anchorRef = useRef<View>(null);
+    const theme = useAppTheme();
+    const styles = React.useMemo(() => createStyles(theme), [theme]);
     const [buttonHeight, setButtonHeight] = useState(0);
     const [anchorFrame, setAnchorFrame] = useState<AnchorFrame | null>(null);
     const window = useWindowDimensions();
@@ -104,19 +107,20 @@ export function OverlaySelect<T extends string>({
                 accessibilityRole="button"
                 accessibilityLabel={accessibilityLabel}
                 accessibilityState={{ expanded: isOpen }}
+                android_ripple={{ color: theme.colors.ripple }}
                 onLayout={handleButtonLayout}
                 onPress={handleToggle}
                 style={({ pressed }) => [styles.button, pressed && styles.pressedSurface]}
             >
                 <View style={styles.valueText}>
-                    <AppText variant="body" style={styles.valueLabel} numberOfLines={1}>
+                    <AppText variant="body" style={styles.valueLabel} numberOfLines={2}>
                         {selectedOption.label}
                     </AppText>
                     {selectedOption.description && (
                         <AppText variant="caption" numberOfLines={2}>{selectedOption.description}</AppText>
                     )}
                 </View>
-                <Ionicons name={isOpen ? 'chevron-up' : 'chevron-down'} size={18} color={colors.muted} />
+                <Ionicons name={isOpen ? 'chevron-up' : 'chevron-down'} size={20} color={theme.colors.onSurfaceVariant} />
             </Pressable>
 
             {isOpen && (
@@ -133,6 +137,7 @@ export function OverlaySelect<T extends string>({
                             }
                         ]}
                     >
+                        <ScrollView keyboardShouldPersistTaps="handled">
                         {options.map((option, index) => {
                             const isSelected = option.value === value;
                             return (
@@ -140,6 +145,7 @@ export function OverlaySelect<T extends string>({
                                     key={option.value}
                                     accessibilityRole="button"
                                     accessibilityState={{ selected: isSelected }}
+                                    android_ripple={{ color: theme.colors.ripple }}
                                     onPress={() => onChange(option.value)}
                                     style={({ pressed }) => [
                                         styles.option,
@@ -149,17 +155,18 @@ export function OverlaySelect<T extends string>({
                                     ]}
                                 >
                                     <View style={styles.valueText}>
-                                        <AppText style={[styles.optionTitle, isSelected && styles.optionTitleSelected]} numberOfLines={1}>
+                                        <AppText style={[styles.optionTitle, isSelected && styles.optionTitleSelected]} numberOfLines={2}>
                                             {option.label}
                                         </AppText>
                                         {option.description && (
                                             <AppText variant="caption" numberOfLines={2}>{option.description}</AppText>
                                         )}
                                     </View>
-                                    {isSelected && <Ionicons name="checkmark" size={17} color={colors.primaryDark} />}
+                                    {isSelected && <Ionicons name="checkmark" size={20} color={theme.colors.primary} />}
                                 </Pressable>
                             );
                         })}
+                        </ScrollView>
                     </View>
                 </Modal>
             )}
@@ -167,64 +174,68 @@ export function OverlaySelect<T extends string>({
     );
 }
 
-const styles = StyleSheet.create({
+function createStyles(theme: AppTheme) {
+    return StyleSheet.create({
     root: {
         position: 'relative'
     },
     button: {
-        minHeight: 46,
+        minHeight: theme.interaction.minimumTouchTarget,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        gap: spacing.md,
-        borderRadius: radius.md,
-        borderColor: colors.border,
+        gap: theme.spacing.md,
+        borderRadius: theme.radius.md,
+        borderColor: theme.colors.outline,
         borderWidth: StyleSheet.hairlineWidth,
-        backgroundColor: colors.surface,
-        paddingHorizontal: spacing.md,
-        paddingVertical: spacing.sm
+        backgroundColor: theme.colors.surfaceContainerLow,
+        paddingHorizontal: theme.spacing.md,
+        paddingVertical: theme.spacing.sm,
+        overflow: 'hidden'
     },
     valueText: {
         flex: 1,
         minWidth: 0,
-        gap: spacing.xs
+        gap: theme.spacing.xs
     },
     valueLabel: {
-        fontWeight: '900'
+        fontWeight: '600'
     },
     menu: {
-        ...shadows.card,
+        ...theme.shadows.raised,
         position: 'absolute',
         overflow: 'hidden',
-        borderRadius: radius.md,
-        borderColor: colors.border,
+        borderRadius: theme.radius.md,
+        borderColor: theme.colors.outlineVariant,
         borderWidth: StyleSheet.hairlineWidth,
-        backgroundColor: colors.surface
+        backgroundColor: theme.colors.surfaceContainerHigh
     },
     option: {
-        minHeight: 44,
+        minHeight: 56,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        gap: spacing.md,
-        borderBottomColor: colors.border,
+        gap: theme.spacing.md,
+        borderBottomColor: theme.colors.outlineVariant,
         borderBottomWidth: StyleSheet.hairlineWidth,
-        paddingHorizontal: spacing.md,
-        paddingVertical: spacing.sm
+        paddingHorizontal: theme.spacing.md,
+        paddingVertical: theme.spacing.sm,
+        overflow: 'hidden'
     },
     optionLast: {
         borderBottomWidth: 0
     },
     optionSelected: {
-        backgroundColor: colors.primarySoft
+        backgroundColor: theme.colors.primaryContainer
     },
     optionTitle: {
-        fontWeight: '900'
+        fontWeight: '600'
     },
     optionTitleSelected: {
-        color: colors.primaryDark
+        color: theme.colors.onPrimaryContainer
     },
     pressedSurface: {
-        backgroundColor: colors.surfacePressed
+        backgroundColor: theme.colors.surfacePressed
     }
-});
+    });
+}

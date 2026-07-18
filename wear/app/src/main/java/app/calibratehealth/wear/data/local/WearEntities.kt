@@ -16,19 +16,6 @@ data class DailySnapshotEntity(
     val calorieTarget: Int? = null,
     @ColumnInfo(name = "calories_remaining")
     val caloriesRemaining: Int? = null,
-    val steps: Int? = null,
-    @ColumnInfo(name = "activity_calories")
-    val activityCalories: Int? = null,
-    @ColumnInfo(name = "activity_total_calories")
-    val activityTotalCalories: Int? = null,
-    @ColumnInfo(name = "exercise_minutes")
-    val exerciseMinutes: Int? = null,
-    @ColumnInfo(name = "activity_observed_at_epoch_ms")
-    val activityObservedAtEpochMs: Long? = null,
-    @ColumnInfo(name = "activity_stale", defaultValue = "1")
-    val activityStale: Boolean = true,
-    @ColumnInfo(name = "activity_age_seconds")
-    val activityAgeSeconds: Long? = null,
     @ColumnInfo(name = "food_day_complete", defaultValue = "0")
     val foodDayComplete: Boolean = false,
     @ColumnInfo(name = "food_day_completed_at_epoch_ms")

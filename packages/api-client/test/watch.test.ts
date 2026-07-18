@@ -30,13 +30,6 @@ test('watch snapshot contract exposes unit and revisions needed for offline acti
         weight_unit: 'LB',
         revision: '0123456789abcdef01234567',
         calories: { consumed: 1200, target: 2000, remaining: 800, missing: [] },
-        activity: {
-            steps: 7000,
-            active_calories_kcal: 300,
-            total_calories_kcal: 2200,
-            exercise_minutes: 25,
-            observed_at: '2026-07-11T18:30:00.000Z'
-        },
         food_day: { is_complete: true, completed_at: '2026-07-11T19:00:00.000Z', revision: '111111111111111111111111' },
         weight: {
             today_grams: 80000,
@@ -61,8 +54,7 @@ test('watch snapshot contract exposes unit and revisions needed for offline acti
             local_date: '2026-07-11',
             created_at: '2026-07-11T17:00:00.000Z'
         }],
-        undo_candidate: { food_log_id: 88, name: 'Oats', calories: 300, created_at: '2026-07-11T15:00:00.000Z' },
-        staleness: { activity_stale: false, activity_age_seconds: 5400 }
+        undo_candidate: { food_log_id: 88, name: 'Oats', calories: 300, created_at: '2026-07-11T15:00:00.000Z' }
     };
 
     assert.equal(snapshot.weight_unit, 'LB');

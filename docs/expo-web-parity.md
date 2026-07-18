@@ -17,41 +17,41 @@ blocked.
 
 | Vite route/capability | Expo route | Status | Work required before cutover |
 | --- | --- | --- | --- |
-| `/` public home | `app/index.tsx` | Missing | Preserve a public landing page; authenticated users may redirect to Today. |
-| `/login` | `app/(auth)/login.tsx` | Partial | Use the backend cookie session on web and restore it through `/auth/me`. |
-| `/register` | `app/(auth)/register.tsx` | Partial | Register through the cookie-session endpoint; do not persist bearer or refresh tokens in browser storage. |
-| `/privacy` | none | Missing | Port the public privacy surface and keep it available without authentication. |
-| `/account-deletion` | none | Missing | Port the public deletion instructions and keep the authenticated deletion flow discoverable. |
-| `/onboarding` | `app/onboarding.tsx` | Ready | Add browser E2E coverage and desktop-width visual verification. |
-| `/dashboard` | `app/(tabs)/today.tsx`, `progress.tsx` | Partial | Add the desktop combined workspace and responsive chart behavior. |
-| `/log` | `app/(tabs)/log.tsx` | Partial | Preserve mobile flow; combine with Today at the desktop breakpoint. |
-| `/weight` | `app/(tabs)/weight.tsx` | Partial | Preserve focused mobile entry and add desktop workspace integration. |
-| `/weight/history` | `app/(tabs)/progress.tsx` | Partial | Verify equivalent range controls, trends, and browser chart accessibility. |
+| `/` public home | `app/index.web.tsx` | Ready | Keep public-route browser release coverage. |
+| `/login` | `app/(auth)/login.tsx` | Ready | Cookie login and `/auth/me` restore are browser-specific and store no bearer credentials. |
+| `/register` | `app/(auth)/register.tsx` | Ready | Registration establishes the backend cookie session. |
+| `/privacy` | `app/privacy.tsx` | Ready | Keep it public and synchronized with the self-hosting disclosures. |
+| `/account-deletion` | `app/account-deletion.tsx` | Ready | Keep the public instructions and authenticated flow discoverable. |
+| `/onboarding` | `app/onboarding.tsx` | Ready | Add a full browser workflow test across desktop and phone release viewports. |
+| `/dashboard` | `app/(tabs)/today.tsx`, `progress.tsx` | Ready | Responsive navigation, workspace width, and chart behavior are covered by release smoke tests. |
+| `/log` | `app/(tabs)/log.tsx` | Ready | Legacy query entry points hand off to the Today add-food flow. |
+| `/weight` | `app/(tabs)/weight.tsx` | Ready | Focused entry remains available across release viewports. |
+| `/weight/history` | `app/(tabs)/progress.tsx` | Ready | Progress owns browser history, trend, and goal projection. |
 | `/goals` | `app/(tabs)/goals.tsx` | Ready | Add browser E2E and desktop visual coverage. |
-| `/settings` | `app/(tabs)/settings.tsx` | Partial | Hide native-only controls on web and port all account/session/preferences controls. |
-| `/profile` | settings/profile content | Partial | Choose and document a stable web URL; preserve deep links and browser history. |
+| `/settings` | `app/(tabs)/settings.tsx` | Partial | Core account/preferences controls are ready; browser-session inspection and password recovery remain operational follow-ups. |
+| `/profile` | settings/profile content | Ready | `/settings` is the stable browser account/profile URL. |
 | `/dev` | none | Missing | Preserve the provider/barcode dashboard as a separate internal web surface unless product scope explicitly removes it. |
 | barcode capture | `app/barcode.tsx` | Partial | Test camera permissions and fallback copy in supported desktop/mobile browsers. |
-| My Foods | `app/my-foods.tsx` | Partial | Add browser E2E and responsive verification. |
-| notifications | `app/notifications.tsx` | Partial | Separate in-app settings from native push and future web-push controls. |
+| My Foods | `app/my-foods.tsx` | Ready | Add browser E2E and responsive verification. |
+| notifications | `app/notifications.tsx` | Partial | In-app realtime state and browser push lifecycle are ready; end-to-end delivery must still pass the production HTTPS/VAPID gate. |
 | activity / Health Connect | `app/activity.tsx`, `health-connect-privacy.tsx` | Native-only | Activity history may render on web, but Health Connect permission and sync controls must not mount. |
 
 ## Capability parity
 
 | Capability | Current Expo web risk | Target boundary / release gate |
 | --- | --- | --- |
-| Authentication | `SecureStore` and mobile refresh-token hydration are imported unconditionally. | `auth/session.native` owns mobile tokens; `auth/session.web` owns cookie login, `/auth/me` restore, and cookie logout. No browser bearer-token persistence. |
-| API transport | Shared client assumes the browser default credential policy. | Explicitly test same-origin cookies. If cross-origin self-hosting remains supported, opt into `credentials: 'include'` and restrict CORS to configured origins. |
-| Server selection | Mobile permits arbitrary server URLs and stores them in AsyncStorage. | Define the web deployment contract: same-origin by default; any cross-origin server switch must pass HTTPS/CORS/cookie tests. |
-| Offline mutation outbox | `expo-sqlite` is imported unconditionally. | `offline/database.native` retains SQLite; `offline/database.web` implements the existing `OutboxDatabase` contract with IndexedDB, including ordering and exclusive replay semantics. |
-| Health Connect | Native module/provider is mounted by the root layout. | A platform runtime component omits the provider and all native calls on web while leaving read-only server activity views available. |
-| Wear transport | Wear hooks mount from the root layout. | Native runtime only. Web settings explain that pairing is completed from Android. |
-| Push notifications | Expo native notification provider mounts globally. | Native runtime only until a distinct service-worker/web-push adapter and permission UX are implemented. |
+| Authentication | Ready: browser cookie sessions are isolated in `AuthContext.web`; no bearer credentials enter browser storage. | Keep reload, expiry, logout, password-change, and account-deletion coverage. Offline cold start intentionally requires live session restore. |
+| API transport | Ready: browser requests include credentials and same-origin is the deployment default. | Cross-origin production deployments still require exact CORS, HTTPS, and compatible cookie policy. |
+| Server selection | Ready for same-origin and tested loopback development origins. | Treat cross-origin production selection as an advanced self-hosting mode with an explicit deployment check. |
+| Offline mutation outbox | Ready: IndexedDB uses the shared ordered reconciler and stable operation IDs. | Retain reload/reconnect E2E and namespace-isolation tests; surface blocked storage honestly. |
+| Health Connect | Ready boundary: web omits native APIs and retains read-only server activity. | Keep native-only controls out of the web bundle. |
+| Wear transport | Ready boundary: pairing and transport stay native-only. | Web settings direct users to Android. |
+| Push notifications | Ready client path: credentialed SSE, user-initiated permission/subscription, session cleanup, endpoint rotation repair, and safe service-worker delivery/click handling are implemented. | Validate real delivery, revocation, and action clicks over production HTTPS with VAPID configured. |
 | Barcode | Camera may render through Expo web but is unverified. | Browser capability detection, permission-denied recovery, manual-entry fallback, and E2E coverage. |
 | Localization | Mobile strings are hard-coded English. | Port EN/ES/FR/RU resources and language selection; every visible copy change remains synchronized. |
-| Responsive shell | Tab-first phone layout is used at all widths. | At the established `md` breakpoint, use a desktop navigation shell and combined Today workspace without first-click route latency. |
-| PWA lifecycle | No Expo web release contract. | Install metadata, service worker, offline/back-online/update-ready UI, cache headers, and update-failure recovery. |
-| Static delivery | Root production build/deploy targets Vite. | Add Expo static export beside Vite, self-hosting configuration, cache policy, and release verification before changing the default. |
+| Responsive shell | Ready across compact phone, phone, tablet, and desktop release viewports. | Keep keyboard, overflow, and route-navigation checks in the release suite. |
+| PWA lifecycle | Ready: install metadata, explicit update activation/retry, offline/recovery UI, and backend cache bypass are implemented. | Validate two-version upgrade and installed-mode behavior on a production HTTPS host. |
+| Static delivery | Partial: Expo static export, preview server, cache policy, and browser release tests run beside Vite. | Add a production Expo container/deploy target before changing the default image. |
 
 ## Platform boundary
 

@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, View, type ViewProps } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import Svg, { Circle, Line, Path, Polygon } from 'react-native-svg';
 import { useQuery } from '@tanstack/react-query';
 import type { TrendMetricEntry } from '@calibrate/api-client';
@@ -9,7 +10,7 @@ import { AppText } from './AppText';
 import { LoadingState } from './LoadingState';
 import { SectionHeader } from './SectionHeader';
 import { useAuth } from '../auth/AuthContext';
-import { colors, radius, spacing } from '../theme';
+import { colors, radius, spacing, useAppTheme } from '../theme';
 import { formatDateOnlyForDisplay } from '../utils/dates';
 import { formatWeight, formatWeightUnit } from '../utils/format';
 
@@ -113,6 +114,7 @@ export const WeightTrendCard: React.FC<WeightTrendCardProps> = ({
     ...props
 }) => {
     const { api, user } = useAuth();
+    const { colors: themeColors } = useAppTheme();
     const [range, setRange] = useState<TrendRange>('month');
     const [selectedPointKey, setSelectedPointKey] = useState<string | null>(null);
     const [chartCanvasWidth, setChartCanvasWidth] = useState(CHART_WIDTH);
@@ -190,6 +192,23 @@ export const WeightTrendCard: React.FC<WeightTrendCardProps> = ({
             ) : chartPoints.length === 0 ? (
                 <View style={styles.emptyChart}>
                     <AppText variant="muted">Log a weigh-in to start a trend.</AppText>
+                </View>
+            ) : chartPoints.length === 1 ? (
+                <View
+                    accessibilityLabel={`First weigh-in recorded at ${formatWeight(chartPoints[0].metric.weight, user?.weight_unit)}`}
+                    style={[styles.singlePointState, { backgroundColor: themeColors.surfaceContainer }]}
+                >
+                    <View style={[styles.singlePointIcon, { backgroundColor: themeColors.primaryContainer }]}>
+                        <Ionicons name="scale-outline" size={24} color={themeColors.primary} />
+                    </View>
+                    <View style={styles.singlePointText}>
+                        <AppText variant="subtitle">First weigh-in recorded</AppText>
+                        <AppText variant="body">
+                            {formatWeight(chartPoints[0].metric.weight, user?.weight_unit)} on{' '}
+                            {formatDateOnlyForDisplay(getDatePart(chartPoints[0].metric.date))}
+                        </AppText>
+                        <AppText variant="muted">Log one more weigh-in to reveal your trend.</AppText>
+                    </View>
                 </View>
             ) : (
                 <View style={styles.chartShell}>
@@ -319,6 +338,27 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         padding: spacing.lg
+    },
+    singlePointState: {
+        minHeight: 116,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.lg,
+        borderRadius: radius.md,
+        padding: spacing.lg
+    },
+    singlePointIcon: {
+        width: 52,
+        height: 52,
+        flexShrink: 0,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderRadius: radius.pill
+    },
+    singlePointText: {
+        flex: 1,
+        minWidth: 0,
+        gap: spacing.xs
     },
     summary: {
         textAlign: 'center'

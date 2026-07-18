@@ -1,15 +1,11 @@
 import React, { useState } from 'react';
-import { Platform, Pressable, StyleSheet, View, type ViewProps } from 'react-native';
+import { Platform, Pressable, StyleSheet, View } from 'react-native';
 import DateTimePicker, { type DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, radius, spacing } from '../theme';
+import { type AppTheme, useAppTheme } from '../theme';
 import { AppText } from './AppText';
-import type { LogDateNavigation } from '../hooks/useLogDateNavigation';
 import { dateOnlyToLocalDate, localDateToDateOnly } from '../utils/dates';
-
-type DateNavigationProps = ViewProps & {
-    navigation: LogDateNavigation;
-};
+import type { DateNavigationProps } from './DateNavigation.types';
 
 /**
  * In-content local-day navigation for log-focused screens.
@@ -23,6 +19,8 @@ export const DateNavigation: React.FC<DateNavigationProps> = ({
     ...props
 }) => {
     const [pickerDate, setPickerDate] = useState<Date | null>(null);
+    const theme = useAppTheme();
+    const styles = React.useMemo(() => createStyles(theme), [theme]);
 
     function openPicker() {
         setPickerDate(dateOnlyToLocalDate(navigation.selectedDate));
@@ -50,13 +48,14 @@ export const DateNavigation: React.FC<DateNavigationProps> = ({
                 <Pressable
                     accessibilityRole="button"
                     accessibilityLabel="Choose date"
+                    android_ripple={{ color: theme.colors.ripple }}
                     onPress={openPicker}
                     style={({ pressed }) => [styles.datePill, pressed && styles.pressed]}
                 >
-                    <AppText variant="subtitle" numberOfLines={1} adjustsFontSizeToFit style={styles.dateText}>
+                    <AppText variant="subtitle" numberOfLines={2} style={styles.dateText}>
                         {navigation.isToday ? 'Today' : navigation.selectedDateLabel}
                     </AppText>
-                    <Ionicons name="calendar-outline" size={18} color={colors.primaryDark} />
+                    <Ionicons name="calendar-outline" size={20} color={theme.colors.primary} />
                 </Pressable>
                 <IconPressable
                     label="Next day"
@@ -87,49 +86,56 @@ type IconPressableProps = {
     onPress: () => void;
 };
 
-const IconPressable: React.FC<IconPressableProps> = ({ label, icon, disabled, onPress }) => (
-    <Pressable
+const IconPressable: React.FC<IconPressableProps> = ({ label, icon, disabled, onPress }) => {
+    const theme = useAppTheme();
+    const styles = React.useMemo(() => createStyles(theme), [theme]);
+    return <Pressable
         accessibilityRole="button"
         accessibilityLabel={label}
         disabled={disabled}
+        android_ripple={{ color: theme.colors.ripple, borderless: false }}
         onPress={onPress}
         style={({ pressed }) => [styles.iconButton, disabled && styles.disabled, pressed && styles.pressed]}
     >
-        <Ionicons name={icon} size={20} color={disabled ? colors.muted : colors.text} />
+        <Ionicons name={icon} size={22} color={disabled ? theme.colors.onSurfaceVariant : theme.colors.onSurface} />
     </Pressable>
-);
+};
 
-const styles = StyleSheet.create({
+function createStyles(theme: AppTheme) {
+    return StyleSheet.create({
     container: {
-        gap: spacing.sm
+        gap: theme.spacing.sm
     },
     root: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: spacing.sm
+        gap: theme.spacing.sm
     },
     iconButton: {
-        width: 42,
-        height: 42,
-        borderRadius: radius.md,
+        width: theme.interaction.minimumTouchTarget,
+        height: theme.interaction.minimumTouchTarget,
+        borderRadius: theme.radius.md,
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: colors.surfaceAlt,
-        borderColor: colors.border,
-        borderWidth: StyleSheet.hairlineWidth
+        backgroundColor: theme.colors.surfaceContainer,
+        borderColor: theme.colors.outlineVariant,
+        borderWidth: StyleSheet.hairlineWidth,
+        overflow: 'hidden'
     },
     datePill: {
         flex: 1,
-        minHeight: 42,
+        minHeight: theme.interaction.minimumTouchTarget,
         flexDirection: 'row',
-        borderRadius: radius.md,
+        borderRadius: theme.radius.md,
         alignItems: 'center',
         justifyContent: 'center',
-        gap: spacing.sm,
-        backgroundColor: colors.surface,
-        borderColor: colors.border,
+        gap: theme.spacing.sm,
+        backgroundColor: theme.colors.surfaceContainerLow,
+        borderColor: theme.colors.outlineVariant,
         borderWidth: StyleSheet.hairlineWidth,
-        paddingHorizontal: spacing.md
+        paddingHorizontal: theme.spacing.md,
+        paddingVertical: theme.spacing.xs,
+        overflow: 'hidden'
     },
     dateText: {
         textAlign: 'center',
@@ -139,6 +145,7 @@ const styles = StyleSheet.create({
         opacity: 0.45
     },
     pressed: {
-        opacity: 0.82
+        backgroundColor: theme.colors.surfacePressed
     }
-});
+    });
+}

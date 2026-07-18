@@ -85,7 +85,6 @@ test('watch snapshot is bounded, timezone-local, and derives current-session und
         ? { id: 88, name: 'Oats', calories: 300, created_at: new Date('2026-07-11T15:00:00.000Z') }
         : null
     },
-    activityDaySummary: { findUnique: async () => ({ steps: 7000, active_calories_kcal: 300, total_calories_kcal: 2200, exercise_minutes: 25, observed_at: new Date('2026-07-11T18:30:00.000Z') }) },
     foodLogDay: { findUnique: async () => ({
       id: 7,
       local_date: new Date('2026-07-11T00:00:00.000Z'),
@@ -151,11 +150,8 @@ test('watch snapshot is bounded, timezone-local, and derives current-session und
     remaining_weight_grams: 5000,
     is_complete: false
   });
-  assert.equal(snapshot.activity.total_calories_kcal, 2200);
-  assert.equal(snapshot.activity.exercise_minutes, 25);
-  assert.equal(snapshot.activity.observed_at, '2026-07-11T18:30:00.000Z');
-  assert.equal(snapshot.staleness.activity_stale, false);
-  assert.equal(snapshot.staleness.activity_age_seconds, 5400);
+  assert.equal('activity' in snapshot, false);
+  assert.equal('staleness' in snapshot, false);
   assert.equal(snapshot.food_day.is_complete, true);
   assert.equal(snapshot.food_day.completed_at, '2026-07-11T19:00:00.000Z');
   assert.equal(snapshot.quick_add.length, 3);

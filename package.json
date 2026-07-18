@@ -54,6 +54,7 @@
     "ci:local": "node scripts/dev-env.mjs ci",
     "build": "npm --prefix frontend run build",
     "build:mobile": "npm --prefix mobile run typecheck",
+    "build:expo-web": "npm --prefix mobile run build:web",
     "build:native:release": "node scripts/native-release-build.mjs",
     "api:generate": "openapi-typescript docs/openapi/v1.yaml -o packages/api-client/src/generated/v1.ts",
     "api:contract:check": "npm run api:generate && git diff --exit-code -- packages/api-client/src/generated/v1.ts",
@@ -70,11 +71,15 @@
     "build:storybook": "npm --prefix frontend run storybook:build",
     "lint": "npm --prefix frontend run lint",
     "lint:mobile": "npm --prefix mobile run typecheck",
-    "test": "npm run test:backend && npm run test:frontend && npm run test:mobile",
+    "test": "npm run test:backend && npm run test:frontend && npm run test:api-client && npm run test:mobile",
     "test:backend": "npm --prefix backend test",
     "test:frontend": "npm --prefix frontend test",
+    "test:api-client": "npm --prefix packages/api-client test",
     "test:mobile": "npm --prefix mobile test",
     "test:web:e2e": "playwright test",
+    "test:expo-web:release": "node --test scripts/expo-web-release.test.mjs scripts/expo-web-static-server.test.mjs",
+    "test:expo-web:e2e": "node scripts/expo-web-playwright.mjs",
+    "test:expo-web": "npm run test:expo-web:release && npm run test:expo-web:e2e",
     "test:android:e2e": "node scripts/android-e2e.mjs",
     "test:wear:emulator": "node scripts/wear-emulator-smoke.mjs",
     "test:wear:emulator:unit": "node --test scripts/wear-emulator-smoke.test.mjs",
@@ -97,9 +102,6 @@
     "node": "^20.19.0 || >=22.12.0"
   },
   "overrides": {
-    "@expo/metro-config@54.0.16": {
-      "postcss": "8.5.18"
-    },
     "xcode@3.0.1": {
       "uuid": "11.1.1"
     }
@@ -108,7 +110,6 @@
     "@devcontainers/cli": "^0.86.0",
     "@playwright/test": "^1.61.1",
     "@types/node": "^20.0.0",
-    "expo-font": "~14.0.12",
     "openapi-typescript": "^7.13.0",
     "typescript": "^5.0.0"
   }

@@ -7,15 +7,23 @@ type SectionHeaderProps = ViewProps & {
     title: string;
     eyebrow?: string;
     description?: string;
+    headingLevel?: 1 | 2 | 3 | 4 | 5 | 6;
 };
 
 /**
  * Compact header pattern shared by native screens and cards.
  */
-export const SectionHeader: React.FC<SectionHeaderProps> = ({ title, eyebrow, description, style, ...props }) => (
+export const SectionHeader: React.FC<SectionHeaderProps> = ({
+    title,
+    eyebrow,
+    description,
+    headingLevel = 2,
+    style,
+    ...props
+}) => (
     <View {...props} style={[styles.root, style]}>
         {eyebrow && <AppText variant="label">{eyebrow}</AppText>}
-        <AppText variant="screenTitle">{title}</AppText>
+        <AppText accessibilityRole="header" aria-level={headingLevel} variant="screenTitle">{title}</AppText>
         {description && <AppText variant="muted">{description}</AppText>}
     </View>
 );

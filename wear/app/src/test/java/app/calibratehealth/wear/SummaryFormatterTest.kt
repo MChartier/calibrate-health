@@ -10,7 +10,6 @@ class SummaryFormatterTest {
         assertEquals("640 kcal left", SummaryFormatter.caloriesRemaining(base))
         assertEquals("125 kcal over", SummaryFormatter.caloriesRemaining(base.copy(caloriesRemaining = -125)))
         assertEquals("1,360 of 2,000 kcal", SummaryFormatter.calorieProgress(base))
-        assertEquals("12,345", SummaryFormatter.steps(base))
     }
 
     @Test
@@ -21,25 +20,19 @@ class SummaryFormatterTest {
     }
 
     @Test
-    fun `surfaces stale and pending states explicitly`() {
-        val stale = summary(activityStale = true)
-        assertEquals("450 active kcal | Activity may be stale", SummaryFormatter.activity(stale))
-        assertEquals("2 changes pending", SummaryFormatter.sync(WearSyncStatus.Pending(2), stale.lastSyncAtEpochMs))
+    fun `surfaces pending and error sync states explicitly`() {
+        val base = summary()
+        assertEquals("2 changes pending", SummaryFormatter.sync(WearSyncStatus.Pending(2), base.lastSyncAtEpochMs))
         assertEquals("A queued change failed", SummaryFormatter.sync(WearSyncStatus.Error("A queued change failed"), null))
     }
 
     private fun summary(
-        caloriesRemaining: Int? = 640,
-        activityStale: Boolean = false
+        caloriesRemaining: Int? = 640
     ) = WearSummary(
         localDate = "2026-07-12",
         caloriesRemaining = caloriesRemaining,
         caloriesConsumed = 1_360,
         calorieTarget = 2_000,
-        steps = 12_345,
-        activityCalories = 450,
-        activityStale = activityStale,
-        activityAgeSeconds = if (activityStale) 7_200 else 60,
         foodDayComplete = false,
         foodDayRevision = "aaaaaaaaaaaaaaaaaaaaaaaa",
         todayWeightGrams = 72_400,

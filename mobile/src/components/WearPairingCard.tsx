@@ -18,7 +18,7 @@ import { AppText } from './AppText';
 import { SectionHeader } from './SectionHeader';
 
 /** Phone-owned discovery and one-time credential relay for the signed Calibrate watch app. */
-export function WearPairingCard() {
+export function WearPairingCard({ embedded = false }: { embedded?: boolean } = {}) {
     const { api, serverUrl, user } = useAuth();
     const [nodes, setNodes] = useState<WearNode[]>([]);
     const [pairing, setPairing] = useState<StoredWearPairing | null>(null);
@@ -38,7 +38,9 @@ export function WearPairingCard() {
         setStatus('Open Calibrate on your watch, then check for its pairing request.');
         if (user) {
             void readStoredWearPairing(serverUrl, user.id).then((stored) => {
-                if (active) setPairing(stored);
+                if (!active) return;
+                setPairing(stored);
+                if (stored) setStatus('Galaxy Watch pairing complete.');
             });
         }
         return () => {
@@ -117,17 +119,17 @@ export function WearPairingCard() {
         }
     }
 
-    return (
-        <AppCard>
-            <SectionHeader
+    const content = (
+        <>
+            {!embedded && <SectionHeader
                 title="Galaxy Watch"
                 description="Pair the signed Wear OS companion without copying your phone session or password."
-            />
+            />}
             <View style={styles.statusPanel}>
                 <AppText style={styles.status}>{status}</AppText>
-                <AppText variant="caption">
+                {!embedded && <AppText variant="caption">
                     Selected server: {serverUrl}. Changing the phone server never retargets an already-paired watch.
-                </AppText>
+                </AppText>}
             </View>
             {pairing && (
                 <AppText variant="caption">
@@ -144,11 +146,16 @@ export function WearPairingCard() {
                 disabled={isChecking}
                 onPress={() => void checkForWatch()}
             />
-        </AppCard>
+        </>
     );
+
+    return embedded ? <View style={styles.embedded}>{content}</View> : <AppCard>{content}</AppCard>;
 }
 
 const styles = StyleSheet.create({
+    embedded: {
+        gap: spacing.md
+    },
     statusPanel: {
         gap: spacing.xs,
         padding: spacing.md,

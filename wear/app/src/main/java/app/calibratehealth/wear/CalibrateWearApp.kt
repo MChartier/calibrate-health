@@ -532,7 +532,14 @@ private fun SectionTitle(text: String) {
 
 @Composable
 private fun StatusText(text: String) {
-    Text(text, style = MaterialTheme.typography.bodySmall, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
+    Text(
+        text,
+        style = MaterialTheme.typography.bodySmall,
+        textAlign = TextAlign.Center,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 24.dp)
+    )
 }
 
 @Composable
@@ -650,10 +657,6 @@ private fun SummaryPreview() {
         caloriesRemaining = 595,
         caloriesConsumed = 1_240,
         calorieTarget = 1_835,
-        steps = null,
-        activityCalories = null,
-        activityStale = false,
-        activityAgeSeconds = null,
         foodDayComplete = false,
         foodDayRevision = null,
         todayWeightGrams = 76_340,

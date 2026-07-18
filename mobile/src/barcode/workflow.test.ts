@@ -8,7 +8,7 @@ import {
 } from './workflow';
 
 describe('barcode workflow', () => {
-    it('routes denied permissions to retry or Android settings based on canAskAgain', () => {
+    it('routes denied permissions to retry or platform settings based on canAskAgain', () => {
         expect(getCameraPermissionState(null)).toBe('checking');
         expect(getCameraPermissionState({ granted: true, canAskAgain: true })).toBe('granted');
         expect(getCameraPermissionState({ granted: false, canAskAgain: true })).toBe('request');

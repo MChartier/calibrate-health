@@ -159,12 +159,17 @@ test('notifications route: transfers an Expo token to the authenticated mobile s
   const previousMode = process.env.NATIVE_PUSH_MODE;
   process.env.NATIVE_PUSH_MODE = 'expo';
   let upsertArgs = null;
+  let retireArgs = null;
   const router = loadNotificationsRouter({
     prismaStub: {
       nativePushSubscription: {
         upsert: async (args) => {
           upsertArgs = args;
           return { id: 1 };
+        },
+        updateMany: async (args) => {
+          retireArgs = args;
+          return { count: 1 };
         }
       }
     }
@@ -196,6 +201,14 @@ test('notifications route: transfers an Expo token to the authenticated mobile s
   assert.equal(upsertArgs.update.device_id, 'session-device');
   assert.equal(upsertArgs.update.last_sent_local_date, null);
   assert.equal(upsertArgs.create.device_id, 'session-device');
+  assert.deepEqual(retireArgs.where, {
+    user_id: 5,
+    mobile_auth_session_id: 41,
+    provider: 'EXPO',
+    token: { not: 'ExponentPushToken[test]' },
+    revoked_at: null
+  });
+  assert.ok(retireArgs.data.revoked_at instanceof Date);
 });
 
 test('notifications route: rejects registration when native push is not explicitly enabled', async () => {

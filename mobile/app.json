@@ -4,9 +4,14 @@
     "slug": "calibrate",
     "scheme": "calibrate",
     "version": "0.1.0",
-    "orientation": "portrait",
+    "orientation": "default",
     "userInterfaceStyle": "automatic",
     "icon": "./assets/icon.png",
+    "web": {
+      "bundler": "metro",
+      "output": "static",
+      "favicon": "./assets/icon.png"
+    },
     "assetBundlePatterns": [
       "**/*"
     ],
@@ -79,7 +84,10 @@
           "color": "#2E7D32"
         }
       ],
-      "@react-native-community/datetimepicker"
+      "@react-native-community/datetimepicker",
+      "expo-font",
+      "expo-sharing",
+      "expo-status-bar"
     ],
     "extra": {
       "router": {

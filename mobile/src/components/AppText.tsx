@@ -1,57 +1,68 @@
 import React from 'react';
 import { Text, type TextProps, StyleSheet } from 'react-native';
-import { colors, typography } from '../theme';
+import { type AppTheme, useAppTheme } from '../theme';
 
 export const AppText: React.FC<TextProps & { variant?: 'title' | 'screenTitle' | 'subtitle' | 'body' | 'muted' | 'label' | 'metric' | 'caption' }> = ({
     style,
     variant = 'body',
     ...props
-}) => <Text {...props} style={[styles.base, styles[variant], style]} />;
+}) => {
+    const theme = useAppTheme();
+    const styles = React.useMemo(() => createStyles(theme), [theme]);
+    return <Text {...props} style={[styles.base, styles[variant], style]} />;
+};
 
-const styles = StyleSheet.create({
+function createStyles(theme: AppTheme) {
+    return StyleSheet.create({
     base: {
-        color: colors.text,
+        color: theme.colors.onSurface,
         fontVariant: ['tabular-nums']
     },
     title: {
-        fontSize: typography.title,
-        fontWeight: '900',
-        letterSpacing: 0
+        fontSize: theme.typography.title,
+        lineHeight: 34,
+        fontWeight: '800',
+        letterSpacing: -0.3
     },
     screenTitle: {
-        fontSize: typography.screenTitle,
-        fontWeight: '900',
-        letterSpacing: 0
+        fontSize: theme.typography.screenTitle,
+        lineHeight: 30,
+        fontWeight: '700',
+        letterSpacing: -0.2
     },
     subtitle: {
-        fontSize: typography.subtitle,
-        fontWeight: '800',
+        fontSize: theme.typography.subtitle,
+        lineHeight: 24,
+        fontWeight: '700',
         letterSpacing: 0
     },
     body: {
-        fontSize: typography.body,
-        lineHeight: 20
+        fontSize: theme.typography.body,
+        lineHeight: 24,
+        fontWeight: '400'
     },
     muted: {
-        color: colors.muted,
-        fontSize: typography.small,
-        lineHeight: 18
+        color: theme.colors.onSurfaceVariant,
+        fontSize: theme.typography.small,
+        lineHeight: 20
     },
     label: {
-        color: colors.muted,
-        fontSize: typography.caption,
-        fontWeight: '800',
-        letterSpacing: 0,
-        textTransform: 'uppercase'
+        color: theme.colors.onSurfaceVariant,
+        fontSize: theme.typography.small,
+        lineHeight: 20,
+        fontWeight: '600',
+        letterSpacing: 0.1
     },
     metric: {
-        fontSize: 30,
-        fontWeight: '900',
-        letterSpacing: 0
+        fontSize: theme.typography.metric,
+        lineHeight: 38,
+        fontWeight: '800',
+        letterSpacing: -0.4
     },
     caption: {
-        color: colors.muted,
-        fontSize: typography.caption,
-        lineHeight: 16
+        color: theme.colors.onSurfaceVariant,
+        fontSize: theme.typography.caption,
+        lineHeight: 17
     }
-});
+    });
+}

@@ -18,9 +18,9 @@
       "minimum_supported_version": "0.1.0"
     },
     "wear": {
-      "version_name": "0.1.0",
-      "version_code": 1,
-      "minimum_supported_version": "0.1.0"
+      "version_name": "0.2.0",
+      "version_code": 2,
+      "minimum_supported_version": "0.2.0"
     },
     "channels": {
       "debug": {

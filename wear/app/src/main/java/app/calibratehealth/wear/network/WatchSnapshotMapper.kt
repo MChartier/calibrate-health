@@ -7,7 +7,6 @@ import app.calibratehealth.wear.notifications.WearReminder
 import app.calibratehealth.wear.notifications.WearReminderType
 import java.time.Instant
 import java.time.LocalDate
-import kotlin.math.roundToInt
 
 data class MappedWatchSnapshot(
     val dailySnapshot: DailySnapshotEntity,
@@ -25,7 +24,6 @@ object WatchSnapshotMapper {
     private const val MAX_LABEL_CHARS = 240
     private const val MAX_DRAFT_CHARS = 8 * 1024
     private const val MAX_CALORIES = 100_000
-    private const val MAX_STEPS = 1_000_000
     private const val MAX_WEIGHT_GRAMS = 1_000_000L
     private const val MAX_REMINDERS = 2
     private val DAILY_DEFICITS = setOf(-1_000, -750, -500, -250, 0, 250, 500, 750, 1_000)
@@ -46,22 +44,6 @@ object WatchSnapshotMapper {
         val consumed = calories.requiredLong("consumed").boundedInt("calories.consumed", 0, MAX_CALORIES)
         val target = calories.optionalLong("target")?.boundedInt("calories.target", 0, MAX_CALORIES)
         val remaining = calories.optionalLong("remaining")?.boundedInt("calories.remaining", -MAX_CALORIES, MAX_CALORIES)
-
-        val activity = root.optionalObject("activity")
-        val steps = activity?.optionalLong("steps")?.boundedInt("activity.steps", 0, MAX_STEPS)
-        val activeCalories = activity?.optionalDouble("active_calories_kcal")?.let {
-            require(it in 0.0..MAX_CALORIES.toDouble()) { "activity.active_calories_kcal is outside its allowed range." }
-            it.roundToInt()
-        }
-        val totalCalories = activity?.optionalDouble("total_calories_kcal")?.also {
-            require(it in 0.0..MAX_CALORIES.toDouble()) { "activity.total_calories_kcal is outside its allowed range." }
-        }?.roundToInt()
-        val exerciseMinutes = activity?.optionalDouble("exercise_minutes")?.also {
-            require(it in 0.0..1_440.0) { "activity.exercise_minutes is outside its allowed range." }
-        }?.roundToInt()
-        val activityObservedAt = activity?.requiredString("observed_at")?.let {
-            requireInstant(it, "activity.observed_at")
-        }
 
         val foodDay = root.requiredObject("food_day")
         val foodDayComplete = foodDay.requiredBoolean("is_complete")
@@ -145,23 +127,12 @@ object WatchSnapshotMapper {
         val undoCreatedAt = undo?.requiredString("created_at")?.let {
             requireInstant(it, "undo_candidate.created_at")
         }
-        val staleness = root.requiredObject("staleness")
-        val activityStale = staleness.requiredBoolean("activity_stale")
-        val activityAgeSeconds = staleness.optionalLong("activity_age_seconds")?.also { require(it >= 0) }
-
         return MappedWatchSnapshot(
             dailySnapshot = DailySnapshotEntity(
                 localDate = localDate,
                 caloriesConsumed = consumed,
                 calorieTarget = target,
                 caloriesRemaining = remaining,
-                steps = steps,
-                activityCalories = activeCalories,
-                activityTotalCalories = totalCalories,
-                exerciseMinutes = exerciseMinutes,
-                activityObservedAtEpochMs = activityObservedAt,
-                activityStale = activityStale,
-                activityAgeSeconds = activityAgeSeconds,
                 foodDayComplete = foodDayComplete,
                 foodDayCompletedAtEpochMs = foodDayCompletedAt,
                 foodDayRevision = foodDayRevision,

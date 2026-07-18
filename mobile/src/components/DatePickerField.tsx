@@ -1,21 +1,11 @@
 import React, { useState } from 'react';
-import { Platform, Pressable, StyleSheet, View, type ViewProps } from 'react-native';
+import { Platform, Pressable, StyleSheet, View } from 'react-native';
 import DateTimePicker, { type DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { Ionicons } from '@expo/vector-icons';
 import { AppText } from './AppText';
 import { colors, radius, spacing } from '../theme';
 import { dateOnlyToLocalDate, formatDateOnlyForDisplay, localDateToDateOnly } from '../utils/dates';
-
-type DatePickerFieldProps = ViewProps & {
-    label: string;
-    value: string;
-    onChangeDate: (value: string) => void;
-    placeholder?: string;
-    helperText?: string;
-    minimumDate?: string;
-    maximumDate?: string;
-    fallbackDate?: string;
-};
+import type { DatePickerFieldProps } from './DatePickerField.types';
 
 /**
  * Pressable native date field used where typed date strings are error-prone on mobile.

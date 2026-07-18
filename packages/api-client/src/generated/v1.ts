@@ -672,6 +672,8 @@ export interface components {
             capabilities: {
                 self_hosted_server_url: boolean;
                 native_push: boolean;
+                /** @description Present on newer servers; true only when complete VAPID configuration is available. */
+                web_push?: boolean;
                 health_connect_activity: boolean;
                 wear_os_ready: boolean;
             };
@@ -819,14 +821,6 @@ export interface components {
                 remaining: number | null;
                 missing: string[];
             };
-            activity: null | {
-                steps: number | null;
-                active_calories_kcal: number | null;
-                total_calories_kcal: number | null;
-                exercise_minutes: number | null;
-                /** Format: date-time */
-                observed_at: string;
-            };
             food_day: {
                 is_complete: boolean;
                 /** Format: date-time */
@@ -867,10 +861,6 @@ export interface components {
                 calories: number;
                 /** Format: date-time */
                 created_at: string;
-            };
-            staleness: {
-                activity_stale: boolean;
-                activity_age_seconds: number | null;
             };
         };
         WatchMutationRequest: {

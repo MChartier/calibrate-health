@@ -14,7 +14,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         QueuedMutationEntity::class,
         SyncMetadataEntity::class
     ],
-    version = 4,
+    version = 5,
     exportSchema = true
 )
 abstract class CalibrateWearDatabase : RoomDatabase() {
@@ -39,7 +39,7 @@ abstract class CalibrateWearDatabase : RoomDatabase() {
                 CalibrateWearDatabase::class.java,
                 name
             )
-                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
                 .build()
 
         /** Preserves the old outbox order while moving FIFO authority to a database-assigned row ID. */
@@ -122,6 +122,70 @@ abstract class CalibrateWearDatabase : RoomDatabase() {
                 database.execSQL("ALTER TABLE daily_snapshots ADD COLUMN goal_progress_percent REAL")
                 database.execSQL("ALTER TABLE daily_snapshots ADD COLUMN goal_remaining_weight_grams INTEGER")
                 database.execSQL("ALTER TABLE daily_snapshots ADD COLUMN goal_is_complete INTEGER")
+            }
+        }
+
+        /** Drops activity cache fields after the 0.2 Watch contract stopped mirroring activity. */
+        val MIGRATION_4_5 = object : Migration(4, 5) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL(
+                    """
+                    CREATE TABLE daily_snapshots_v5 (
+                        local_date TEXT NOT NULL PRIMARY KEY,
+                        calories_consumed INTEGER,
+                        calorie_target INTEGER,
+                        calories_remaining INTEGER,
+                        food_day_complete INTEGER NOT NULL DEFAULT 0,
+                        food_day_completed_at_epoch_ms INTEGER,
+                        food_day_revision TEXT,
+                        today_weight_grams INTEGER,
+                        today_weight_revision TEXT,
+                        latest_weight_grams INTEGER,
+                        latest_weight_revision TEXT,
+                        latest_weight_date TEXT,
+                        weight_unit TEXT NOT NULL DEFAULT 'KG',
+                        goal_start_weight_grams INTEGER,
+                        goal_target_weight_grams INTEGER,
+                        goal_current_weight_grams INTEGER,
+                        goal_daily_deficit INTEGER,
+                        goal_progress_percent REAL,
+                        goal_remaining_weight_grams INTEGER,
+                        goal_is_complete INTEGER,
+                        undo_food_log_id INTEGER,
+                        undo_name TEXT,
+                        undo_calories INTEGER,
+                        undo_created_at_epoch_ms INTEGER,
+                        server_revision TEXT,
+                        fetched_at_epoch_ms INTEGER NOT NULL
+                    )
+                    """.trimIndent()
+                )
+                database.execSQL(
+                    """
+                    INSERT INTO daily_snapshots_v5 (
+                        local_date, calories_consumed, calorie_target, calories_remaining,
+                        food_day_complete, food_day_completed_at_epoch_ms, food_day_revision,
+                        today_weight_grams, today_weight_revision, latest_weight_grams,
+                        latest_weight_revision, latest_weight_date, weight_unit,
+                        goal_start_weight_grams, goal_target_weight_grams, goal_current_weight_grams,
+                        goal_daily_deficit, goal_progress_percent, goal_remaining_weight_grams, goal_is_complete,
+                        undo_food_log_id, undo_name, undo_calories, undo_created_at_epoch_ms,
+                        server_revision, fetched_at_epoch_ms
+                    )
+                    SELECT
+                        local_date, calories_consumed, calorie_target, calories_remaining,
+                        food_day_complete, food_day_completed_at_epoch_ms, food_day_revision,
+                        today_weight_grams, today_weight_revision, latest_weight_grams,
+                        latest_weight_revision, latest_weight_date, weight_unit,
+                        goal_start_weight_grams, goal_target_weight_grams, goal_current_weight_grams,
+                        goal_daily_deficit, goal_progress_percent, goal_remaining_weight_grams, goal_is_complete,
+                        undo_food_log_id, undo_name, undo_calories, undo_created_at_epoch_ms,
+                        server_revision, fetched_at_epoch_ms
+                    FROM daily_snapshots
+                    """.trimIndent()
+                )
+                database.execSQL("DROP TABLE daily_snapshots")
+                database.execSQL("ALTER TABLE daily_snapshots_v5 RENAME TO daily_snapshots")
             }
         }
     }

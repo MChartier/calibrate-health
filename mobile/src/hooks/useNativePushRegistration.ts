@@ -9,6 +9,7 @@ import {
     NATIVE_PUSH_STATES,
     type NativePushState
 } from '../notifications/workflow';
+import { EXPO_PROJECT_ID_ENV, resolveExpoProjectId } from '../notifications/expoProject';
 
 type NativePushRegistrationContextValue = {
     state: NativePushState;
@@ -16,6 +17,7 @@ type NativePushRegistrationContextValue = {
     openSettings: () => Promise<void>;
     refreshPermission: () => Promise<void>;
     retryRegistration: () => Promise<void>;
+    disableRegistration?: () => Promise<void>;
 };
 
 const NativePushRegistrationContext = createContext<NativePushRegistrationContextValue | null>(null);
@@ -75,7 +77,11 @@ export function NativePushRegistrationProvider({ children }: { children: React.R
             }
 
             setState(NATIVE_PUSH_STATES.REGISTERING);
-            const token = await Notifications.getExpoPushTokenAsync();
+            const projectId = resolveExpoProjectId(Constants);
+            if (!projectId) {
+                throw new Error(`Missing Expo project ID. Set ${EXPO_PROJECT_ID_ENV} for local builds or use an EAS build.`);
+            }
+            const token = await Notifications.getExpoPushTokenAsync({ projectId });
             if (run !== activeRun.current) return;
             if (!token.data) throw new Error('Expo did not return a push token.');
 
@@ -96,6 +102,27 @@ export function NativePushRegistrationProvider({ children }: { children: React.R
             activeRun.current += 1;
         };
     }, [synchronize]);
+
+    useEffect(() => {
+        if (!user || state !== NATIVE_PUSH_STATES.REGISTERED) return undefined;
+
+        let disposed = false;
+        let removeListener: (() => void) | undefined;
+        void loadNotificationsModule().then((Notifications) => {
+            if (disposed) return;
+            const subscription = Notifications.addPushTokenListener(() => {
+                void synchronize(false);
+            });
+            removeListener = () => subscription.remove();
+        }).catch(() => {
+            if (!disposed) setState(NATIVE_PUSH_STATES.ERROR);
+        });
+
+        return () => {
+            disposed = true;
+            removeListener?.();
+        };
+    }, [state, synchronize, user]);
 
     const requestPermission = useCallback(() => synchronize(true), [synchronize]);
     const refreshPermission = useCallback(() => synchronize(false), [synchronize]);

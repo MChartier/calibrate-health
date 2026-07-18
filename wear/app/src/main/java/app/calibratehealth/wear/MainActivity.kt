@@ -7,6 +7,7 @@ import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -43,6 +44,11 @@ class MainActivity : ComponentActivity() {
     private val publicResourceHandoffStatus = mutableStateOf<String?>(null)
     private val reminderDeepLink = mutableStateOf<WearReminderDeepLink?>(null)
     private val reminderDeepLinkRequest = mutableStateOf(0L)
+    private val reminderPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted) WorkManagerOutboxScheduler(this).schedule()
+    }
     private lateinit var homeController: WearHomeController
     private lateinit var continueOnPhoneMessenger: DataLayerContinueOnPhoneMessenger
     private lateinit var localDisconnect: WearLocalDisconnect
@@ -127,19 +133,6 @@ class MainActivity : ComponentActivity() {
         super.onNewIntent(intent)
         setIntent(intent)
         acceptReminderDeepLink(intent)
-    }
-
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<String>,
-        grantResults: IntArray
-    ) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == REMINDER_PERMISSION_REQUEST &&
-            grantResults.firstOrNull() == PackageManager.PERMISSION_GRANTED
-        ) {
-            WorkManagerOutboxScheduler(this).schedule()
-        }
     }
 
     override fun onStop() {
@@ -229,10 +222,6 @@ class MainActivity : ComponentActivity() {
         val preferences = getSharedPreferences("calibrate_wear_reminders", MODE_PRIVATE)
         if (preferences.getBoolean("permission_requested", false)) return
         if (!preferences.edit().putBoolean("permission_requested", true).commit()) return
-        requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), REMINDER_PERMISSION_REQUEST)
-    }
-
-    private companion object {
-        const val REMINDER_PERMISSION_REQUEST = 4102
+        reminderPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
     }
 }

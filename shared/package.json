@@ -11,6 +11,7 @@
     "./clientCompatibility": "./clientCompatibility.ts",
     "./goalDeficit": "./goalDeficit.ts",
     "./inAppNotifications": "./inAppNotifications.ts",
-    "./notificationDelivery": "./notificationDelivery.ts"
+    "./notificationDelivery": "./notificationDelivery.ts",
+    "./designTokens": "./designTokens.ts"
   }
 }

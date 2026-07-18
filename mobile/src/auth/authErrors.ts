@@ -1,5 +1,10 @@
 import { ApiError } from '@calibrate/api-client';
 
+/** A missing local seed account is an expected miss for debug auto-login. */
+export function isExpectedDevAutoLoginMiss(error: unknown): boolean {
+    return error instanceof ApiError && error.status === 401;
+}
+
 /** Turn startup refresh failures into next-step guidance without exposing raw transport errors. */
 export function getSessionRestoreErrorMessage(error: unknown): string {
     if (error instanceof ApiError && error.status === 401) {

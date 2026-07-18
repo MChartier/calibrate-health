@@ -1,6 +1,6 @@
 import React from 'react';
-import { Pressable, StyleSheet, View, type PressableProps } from 'react-native';
-import { colors, radius, shadows, spacing } from '../theme';
+import { Pressable, StyleSheet, View, type PressableProps, type StyleProp, type TextStyle } from 'react-native';
+import { type AppTheme, useAppTheme } from '../theme';
 import { AppText } from './AppText';
 
 export const AppButton: React.FC<PressableProps & {
@@ -17,8 +17,14 @@ export const AppButton: React.FC<PressableProps & {
     accessibilityState,
     style,
     ...props
-}) => (
-    <Pressable
+}) => {
+    const theme = useAppTheme();
+    const styles = React.useMemo(() => createStyles(theme), [theme]);
+    let labelStyle: StyleProp<TextStyle> = styles.secondaryLabel;
+    if (variant === 'primary') labelStyle = styles.primaryLabel;
+    if (variant === 'danger') labelStyle = styles.dangerLabel;
+
+    return <Pressable
         {...props}
         disabled={disabled}
         accessibilityLabel={accessibilityLabel ?? title}
@@ -35,40 +41,40 @@ export const AppButton: React.FC<PressableProps & {
         <View style={styles.content}>
             {leftIcon}
             <AppText
-                numberOfLines={1}
-                adjustsFontSizeToFit
+                numberOfLines={2}
                 style={[
                     styles.label,
-                    variant !== 'primary' && variant !== 'danger' && styles.secondaryLabel,
+                    labelStyle,
                     disabled && styles.disabledLabel
                 ]}
             >
                 {title}
             </AppText>
         </View>
-    </Pressable>
-);
+    </Pressable>;
+};
 
-const styles = StyleSheet.create({
+function createStyles(theme: AppTheme) {
+    return StyleSheet.create({
     base: {
-        minHeight: 48,
-        borderRadius: radius.md,
+        minHeight: theme.interaction.minimumTouchTarget,
+        borderRadius: theme.radius.md,
         alignItems: 'center',
         justifyContent: 'center',
-        paddingHorizontal: spacing.lg,
-        paddingVertical: spacing.md
+        paddingHorizontal: theme.spacing.lg,
+        paddingVertical: theme.spacing.sm
     },
     primary: {
-        ...shadows.button,
-        backgroundColor: colors.primary
+        ...theme.shadows.button,
+        backgroundColor: theme.colors.primary
     },
     secondary: {
-        backgroundColor: colors.surfaceAlt,
-        borderColor: colors.border,
+        backgroundColor: theme.colors.surfaceContainer,
+        borderColor: theme.colors.outlineVariant,
         borderWidth: StyleSheet.hairlineWidth
     },
     danger: {
-        backgroundColor: colors.danger
+        backgroundColor: theme.colors.danger
     },
     ghost: {
         backgroundColor: 'transparent'
@@ -77,15 +83,15 @@ const styles = StyleSheet.create({
         opacity: 0.36
     },
     disabledSolid: {
-        backgroundColor: colors.surfaceMuted,
-        borderColor: colors.border,
+        backgroundColor: theme.colors.surfaceContainer,
+        borderColor: theme.colors.outlineVariant,
         borderWidth: StyleSheet.hairlineWidth,
         shadowOpacity: 0,
         elevation: 0,
         opacity: 1
     },
     disabledLabel: {
-        color: colors.muted
+        color: theme.colors.onSurfaceVariant
     },
     pressed: {
         transform: [{ translateY: 1 }],
@@ -95,15 +101,22 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        gap: spacing.sm,
+        gap: theme.spacing.sm,
         minWidth: 0
     },
     label: {
-        color: '#ffffff',
-        fontWeight: '800',
-        flexShrink: 1
+        fontWeight: '700',
+        flexShrink: 1,
+        textAlign: 'center'
+    },
+    primaryLabel: {
+        color: theme.colors.onPrimary
+    },
+    dangerLabel: {
+        color: theme.colors.onDanger
     },
     secondaryLabel: {
-        color: colors.text
+        color: theme.colors.onSurface
     }
-});
+    });
+}

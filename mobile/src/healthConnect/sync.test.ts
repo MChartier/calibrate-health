@@ -218,6 +218,67 @@ describe('foreground Health Connect sync', () => {
         expect(storedToken(storage.values, tokenKey)).toBe('replacement-token');
     });
 
+    it('discards a pending upload containing the native negative client-version sentinel', async () => {
+        const tokenKey = HEALTH_CONNECT_SYNC_STORAGE_KEYS.token(SERVER_URL, 7, 'STEPS');
+        const pendingKey = HEALTH_CONNECT_SYNC_STORAGE_KEYS.pending(SERVER_URL, 7, 'STEPS');
+        const storage = memoryStorage({
+            [tokenKey]: tokenReceipt('steps-token-1', 'UTC'),
+            [pendingKey]: JSON.stringify({
+                nextToken: 'bad-token',
+                timeZone: 'UTC',
+                nextPageIndex: 0,
+                pages: [{
+                    operationId: 'stale-operation',
+                    payload: {
+                        sync_mode: 'incremental',
+                        record_type: 'STEPS',
+                        previous_changes_token: 'steps-token-1',
+                        next_changes_token: 'bad-token',
+                        upserts: [{
+                            ...stepsRecord('steps-bad', 100),
+                            record_id: 'steps-bad',
+                            data_origin: 'com.sec.android.app.shealth',
+                            source_updated_at: '2026-07-11T18:00:00.000Z',
+                            start_time: '2026-07-11T17:00:00.000Z',
+                            end_time: '2026-07-11T18:00:00.000Z',
+                            client_record_version: '-1'
+                        }],
+                        deleted_record_ids: [],
+                        day_summaries: []
+                    }
+                }]
+            })
+        });
+        const native = {
+            getChanges: jest.fn(async () => ({
+                upsertionChanges: [], deletionChanges: [], nextChangesToken: 'steps-token-2',
+                changesTokenExpired: false, hasMore: false
+            })),
+            readRecords: jest.fn(),
+            aggregateRecords: jest.fn(async () => ({ COUNT_TOTAL: 1_000 }))
+        };
+        const api = { syncHealthConnect: jest.fn(async () => acknowledged()) };
+
+        await synchronizeHealthConnect({
+            serverUrl: SERVER_URL,
+            userId: 7,
+            timeZone: 'UTC',
+            selection: { ...DEFAULT_HEALTH_CONNECT_SELECTION, active_calories: false, total_calories: false, exercise: false },
+            grantedFeatures: ['steps'],
+            api,
+            storage,
+            native: native as any,
+            now: new Date('2026-07-11T20:00:00.000Z')
+        });
+
+        expect(api.syncHealthConnect).not.toHaveBeenCalledWith(
+            expect.anything(),
+            'stale-operation'
+        );
+        expect(storage.values.has(pendingKey)).toBe(false);
+        expect(storedToken(storage.values, tokenKey)).toBe('steps-token-2');
+    });
+
     it('chunks combined incremental changes and advances the checkpoint only on the final chunk', async () => {
         const tokenKey = HEALTH_CONNECT_SYNC_STORAGE_KEYS.token(SERVER_URL, 7, 'STEPS');
         const storage = memoryStorage({ [tokenKey]: tokenReceipt('steps-token-1', 'UTC') });

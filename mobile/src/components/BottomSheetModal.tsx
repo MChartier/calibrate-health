@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Animated, Easing, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, View, type ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { colors, radius, shadows, spacing } from '../theme';
+import { type AppTheme, useAppTheme } from '../theme';
 import { useReducedMotionPreference } from '../hooks/useReducedMotionPreference';
 
 type BottomSheetModalProps = {
@@ -23,6 +23,8 @@ export const BottomSheetModal: React.FC<BottomSheetModalProps> = ({
     maxHeight = '88%'
 }) => {
     const insets = useSafeAreaInsets();
+    const theme = useAppTheme();
+    const styles = React.useMemo(() => createStyles(theme), [theme]);
     const reduceMotion = useReducedMotionPreference();
     const [shouldRender, setShouldRender] = useState(visible);
     const backdropOpacity = useRef(new Animated.Value(0)).current;
@@ -80,7 +82,7 @@ export const BottomSheetModal: React.FC<BottomSheetModalProps> = ({
     });
 
     return (
-        <Modal visible transparent animationType="none" onRequestClose={onRequestClose}>
+        <Modal visible transparent animationType="none" presentationStyle="overFullScreen" onRequestClose={onRequestClose}>
             <KeyboardAvoidingView
                 behavior={Platform.OS === 'ios' ? 'padding' : undefined}
                 style={styles.root}
@@ -94,12 +96,14 @@ export const BottomSheetModal: React.FC<BottomSheetModalProps> = ({
                         styles.sheet,
                         {
                             maxHeight,
-                            marginBottom: spacing.lg + insets.bottom,
                             transform: [{ translateY }]
                         }
                     ]}
                 >
-                    <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+                    <ScrollView
+                        contentContainerStyle={[styles.content, { paddingBottom: Math.max(theme.spacing.lg, insets.bottom + theme.spacing.sm) }]}
+                        keyboardShouldPersistTaps="handled"
+                    >
                         <View style={styles.handle} />
                         {children}
                     </ScrollView>
@@ -109,34 +113,38 @@ export const BottomSheetModal: React.FC<BottomSheetModalProps> = ({
     );
 };
 
-const styles = StyleSheet.create({
+function createStyles(theme: AppTheme) {
+    return StyleSheet.create({
     root: {
         flex: 1,
         justifyContent: 'flex-end'
     },
     backdrop: {
         flex: 1,
-        backgroundColor: 'rgba(31, 41, 55, 0.36)'
+        backgroundColor: theme.colors.scrim
     },
     sheet: {
-        ...shadows.card,
-        margin: spacing.lg,
+        ...theme.shadows.raised,
+        width: '100%',
         overflow: 'hidden',
-        borderRadius: radius.md,
-        backgroundColor: colors.surface,
-        borderColor: colors.border,
-        borderWidth: StyleSheet.hairlineWidth
+        borderTopLeftRadius: theme.radius.sheet,
+        borderTopRightRadius: theme.radius.sheet,
+        backgroundColor: theme.colors.surfaceContainerLow,
+        borderColor: theme.colors.outlineVariant,
+        borderTopWidth: StyleSheet.hairlineWidth
     },
     content: {
-        gap: spacing.md,
-        padding: spacing.lg
+        gap: theme.spacing.md,
+        paddingHorizontal: theme.spacing.lg,
+        paddingTop: theme.spacing.md
     },
     handle: {
         alignSelf: 'center',
         width: 44,
         height: 4,
-        borderRadius: radius.pill,
-        backgroundColor: colors.border,
-        marginBottom: spacing.xs
+        borderRadius: theme.radius.pill,
+        backgroundColor: theme.colors.outline,
+        marginBottom: theme.spacing.xs
     }
-});
+    });
+}

@@ -3,6 +3,7 @@ import type {
     ActivityDaysResponse,
     BrowserAuthRequest,
     BrowserAuthResponse,
+    BrowserPushSubscriptionPayload,
     ClientConfigResponse,
     CreateMyFoodPayload,
     FoodLogCreatePayload,
@@ -59,6 +60,12 @@ export type ApiClientOptions = {
     /** Browser clients opt in explicitly when the API uses an HttpOnly cookie session. */
     requestCredentials?: RequestCredentials;
 };
+
+/** React Native uploads identify a local URI, while browsers must submit a real Blob/File. */
+export type LoseItImportFile = { uri: string; name: string; type: string } | Blob;
+
+const isNativeLoseItImportFile = (file: LoseItImportFile): file is { uri: string; name: string; type: string } =>
+    'uri' in file;
 
 export class ApiError extends Error {
     readonly status: number;
@@ -130,7 +137,8 @@ export class CalibrateApiClient {
         this.getAccessToken = options.getAccessToken;
         this.refreshAccessToken = options.refreshAccessToken;
         this.onUnauthorized = options.onUnauthorized;
-        this.fetchImpl = options.fetchImpl ?? fetch;
+        // Preserve the browser global as fetch's receiver; some web hosts reject detached Window.fetch calls.
+        this.fetchImpl = options.fetchImpl ?? ((input, init) => globalThis.fetch(input, init));
         this.requestTimeoutMs = options.requestTimeoutMs ?? DEFAULT_REQUEST_TIMEOUT_MS;
         this.requestCredentials = options.requestCredentials;
     }
@@ -512,16 +520,36 @@ export class CalibrateApiClient {
         });
     }
 
-    previewLoseItImport(file: { uri: string; name: string; type: string }): Promise<LoseItImportSummary> {
-        const formData = new FormData();
-        formData.append('file', file as unknown as Blob);
+    async previewLoseItImport(file: LoseItImportFile): Promise<LoseItImportSummary> {
+        const formData = await this.createLoseItImportForm(file);
         return this.requestForm<LoseItImportSummary>('/api/imports/loseit/preview', formData);
     }
 
-    executeLoseItImport(file: { uri: string; name: string; type: string }): Promise<LoseItImportSummary> {
-        const formData = new FormData();
-        formData.append('file', file as unknown as Blob);
+    async executeLoseItImport(file: LoseItImportFile): Promise<LoseItImportSummary> {
+        const formData = await this.createLoseItImportForm(file);
         return this.requestForm<LoseItImportSummary>('/api/imports/loseit/execute', formData);
+    }
+
+    /** Convert the web DocumentPicker blob URL to a real browser Blob; native keeps its URI descriptor. */
+    private async createLoseItImportForm(file: LoseItImportFile): Promise<FormData> {
+        const formData = new FormData();
+        if (!isNativeLoseItImportFile(file)) {
+            const fileName = typeof File !== 'undefined' && file instanceof File ? file.name : 'loseit-export.zip';
+            formData.append('file', file, fileName);
+            return formData;
+        }
+
+        if (typeof window !== 'undefined') {
+            const response = await this.fetchImpl(file.uri);
+            if (!response.ok) {
+                throw new Error('Unable to read the selected Lose It export in this browser.');
+            }
+            formData.append('file', await response.blob(), file.name);
+            return formData;
+        }
+
+        formData.append('file', file as unknown as Blob);
+        return formData;
     }
 
     getFoodDay(date: string): Promise<FoodLogDay> {
@@ -563,6 +591,24 @@ export class CalibrateApiClient {
 
     getInAppNotifications(): Promise<InAppNotificationsResponse> {
         return this.request<InAppNotificationsResponse>('/api/notifications/in-app');
+    }
+
+    getBrowserPushPublicKey(): Promise<{ publicKey: string }> {
+        return this.request<{ publicKey: string }>('/api/notifications/public-key');
+    }
+
+    registerBrowserPushSubscription(payload: BrowserPushSubscriptionPayload): Promise<{ ok: true }> {
+        return this.request<{ ok: true }>('/api/notifications/subscription', {
+            method: 'POST',
+            json: payload
+        });
+    }
+
+    unregisterBrowserPushSubscription(endpoint: string): Promise<{ ok: true }> {
+        return this.request<{ ok: true }>('/api/notifications/subscription', {
+            method: 'DELETE',
+            json: { endpoint }
+        });
     }
 
     dismissInAppNotification(id: number): Promise<{ ok: true }> {

@@ -1,4 +1,5 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { AppState } from 'react-native';
 import { useAuth } from '../auth/AuthContext';
 import { openOutboxDatabase } from './database';
 import { SqliteOutbox } from './outbox';
@@ -104,14 +105,28 @@ export function OfflineOutboxProvider({ children, executeMutation }: OfflineOutb
         setMutations([]);
     }, [requireOutbox]);
 
-    useEffect(() => {
+    const replayPending = useCallback(async (includeFailures: boolean) => {
         if (!reconciler) return;
-        // Startup replay handles writes left pending by a previous offline session.
-        void reconciler.reconcile().then(async (result) => {
+        try {
+            const result = includeFailures
+                ? await reconciler.retryFailed()
+                : await reconciler.reconcile();
             notifyWearAfterReplay(result);
             await refresh();
-        }, refresh).catch(() => undefined);
+        } catch {
+            await refresh().catch(() => undefined);
+        }
     }, [notifyWearAfterReplay, reconciler, refresh]);
+
+    useEffect(() => {
+        if (!reconciler) return;
+        // Replay on startup and whenever the app returns to the foreground after a connection change.
+        void replayPending(false);
+        const subscription = AppState.addEventListener('change', (state) => {
+            if (state === 'active') void replayPending(true);
+        });
+        return () => subscription.remove();
+    }, [reconciler, replayPending]);
 
     const value = useMemo<OfflineOutboxContextValue>(() => ({
         isReady: outbox !== null,

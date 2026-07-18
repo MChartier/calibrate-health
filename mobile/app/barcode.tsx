@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { Linking, StyleSheet, View } from 'react-native';
+import { Linking, Platform, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { CameraView, useCameraPermissions, type BarcodeScanningResult } from 'expo-camera';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -105,6 +105,27 @@ export default function BarcodeScreen() {
 
     if (cameraPermissionState === 'request' || cameraPermissionState === 'settings') {
         const mustUseSettings = cameraPermissionState === 'settings';
+        const isWeb = Platform.OS === 'web';
+        const blockedPermissionMessage = isWeb
+            ? 'Camera access is blocked. Enable it in your browser site settings.'
+            : 'Camera access is blocked. Open Android settings to enable it.';
+        const stillBlockedMessage = isWeb
+            ? 'Camera access is still disabled in your browser site settings.'
+            : 'Camera access is still disabled in Android settings.';
+        const blockedPermissionDescription = isWeb
+            ? 'Camera access is blocked for this site. Enable it from your browser site settings.'
+            : 'Camera access is blocked for Calibrate. Enable it from the Android app permissions screen.';
+        const permissionDescription = mustUseSettings
+            ? blockedPermissionDescription
+            : "Barcode scanning uses this device's camera to find matching packaged foods.";
+        let permissionActionHint = 'Shows the camera permission prompt.';
+        if (mustUseSettings) {
+            permissionActionHint = isWeb
+                ? 'Checks whether camera permission is enabled for this site.'
+                : 'Opens the Calibrate app permissions in Android settings.';
+        }
+        let permissionActionTitle = 'Try camera permission again';
+        if (mustUseSettings) permissionActionTitle = isWeb ? 'Check camera access' : 'Open Android settings';
 
         async function retryCameraPermission() {
             setCameraMessage(null);
@@ -114,7 +135,7 @@ export default function BarcodeScreen() {
                     setCameraMessage(
                         nextPermission.canAskAgain
                             ? 'Camera permission was not granted. You can try again.'
-                            : 'Camera access is blocked. Open Android settings to enable it.'
+                            : blockedPermissionMessage
                     );
                 }
             } catch {
@@ -137,21 +158,32 @@ export default function BarcodeScreen() {
             try {
                 const nextPermission = await refreshPermission();
                 if (!nextPermission.granted) {
-                    setCameraMessage('Camera access is still disabled in Android settings.');
+                    setCameraMessage(stillBlockedMessage);
                 }
             } catch {
                 setCameraMessage('Unable to check camera permission. Try again.');
             }
         }
 
+        async function handlePermissionAction() {
+            if (!mustUseSettings) {
+                await retryCameraPermission();
+                return;
+            }
+            if (isWeb) {
+                await checkCameraPermission();
+                return;
+            }
+            await openCameraSettings();
+        }
+
         return (
             <Screen>
                 <AppCard>
                     <SectionHeader
+                        headingLevel={1}
                         title="Camera permission"
-                        description={mustUseSettings
-                            ? 'Camera access is blocked for Calibrate. Enable it from the Android app permissions screen.'
-                            : 'Barcode scanning uses the Android camera to find matching packaged foods.'}
+                        description={permissionDescription}
                     />
                     {cameraMessage && (
                         <AppText accessibilityLiveRegion="polite" style={styles.permissionMessage}>
@@ -160,14 +192,12 @@ export default function BarcodeScreen() {
                     )}
                     <AppButton
                         accessibilityRole="button"
-                        accessibilityHint={mustUseSettings
-                            ? 'Opens the Calibrate app permissions in Android settings.'
-                            : 'Shows the Android camera permission prompt.'}
-                        title={mustUseSettings ? 'Open Android settings' : 'Try camera permission again'}
+                        accessibilityHint={permissionActionHint}
+                        title={permissionActionTitle}
                         leftIcon={<Ionicons name="camera-outline" size={18} color="#ffffff" />}
-                        onPress={() => void (mustUseSettings ? openCameraSettings() : retryCameraPermission())}
+                        onPress={() => void handlePermissionAction()}
                     />
-                    {mustUseSettings && (
+                    {mustUseSettings && !isWeb && (
                         <AppButton
                             accessibilityRole="button"
                             accessibilityHint="Checks whether camera permission is now enabled."
@@ -254,6 +284,7 @@ export default function BarcodeScreen() {
             <View style={styles.panel}>
                 <AppCard>
                     <SectionHeader
+                        headingLevel={1}
                         title={barcode ? `Barcode ${barcode}` : 'Scan barcode'}
                         description="Center the packaged-food barcode in the frame."
                     />

@@ -119,8 +119,8 @@ android {
         applicationId = "app.calibratehealth.mobile"
         minSdk = 30
         targetSdk = 36
-        versionCode = 1
-        versionName = "0.1.0"
+        versionCode = 2
+        versionName = "0.2.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         buildConfigField("String", "DEFAULT_SERVER_URL", quoteBuildConfig(configuredServerOrigin))
@@ -253,6 +253,8 @@ dependencies {
     androidTestImplementation(composeBom)
 
     implementation(libs.androidx.activity.compose)
+    // Play Services Wearable still exposes Fragment 1.1 transitively; Activity Result requires 1.3+.
+    implementation(libs.androidx.fragment)
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.wear.compose.foundation)

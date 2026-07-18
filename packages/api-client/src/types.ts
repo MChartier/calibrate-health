@@ -279,13 +279,6 @@ export type WatchSnapshot = {
         remaining: number | null;
         missing: string[];
     };
-    activity: {
-        steps: number | null;
-        active_calories_kcal: number | null;
-        total_calories_kcal: number | null;
-        exercise_minutes: number | null;
-        observed_at: string;
-    } | null;
     food_day: { is_complete: boolean; completed_at: string | null; revision: string | null };
     weight: {
         today_grams: number | null;
@@ -311,7 +304,6 @@ export type WatchSnapshot = {
         created_at: string;
     }>;
     undo_candidate: { food_log_id: number; name: string; calories: number; created_at: string } | null;
-    staleness: { activity_stale: boolean; activity_age_seconds: number | null };
 };
 
 export type WatchSnapshotFetchResult = {
@@ -353,6 +345,8 @@ export type ClientConfigResponse = {
     capabilities: {
         self_hosted_server_url: boolean;
         native_push: boolean;
+        /** Optional for compatibility with servers released before browser capability discovery. */
+        web_push?: boolean;
         health_connect_activity: boolean;
         wear_os_ready: boolean;
     };
@@ -618,6 +612,15 @@ export type NativePushSubscriptionPayload = {
     device_id?: string;
     platform?: NativePushPlatform;
     provider?: NativePushProvider;
+};
+
+export type BrowserPushSubscriptionPayload = {
+    endpoint: string;
+    expirationTime?: number | null;
+    keys: {
+        p256dh: string;
+        auth: string;
+    };
 };
 
 export type RecentFoodSummary = {
