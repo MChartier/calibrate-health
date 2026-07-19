@@ -1,9 +1,8 @@
 name: Build Release Image
 
 on:
-  push:
-    tags:
-      - "v[0-9]*.[0-9]*.[0-9]*"
+  # Releases are dispatched by cut-release.yml after the immutable tag exists.
+  # Keeping this manual-only avoids a duplicate build when the tag is pushed.
   workflow_dispatch:
     inputs:
       release_tag:

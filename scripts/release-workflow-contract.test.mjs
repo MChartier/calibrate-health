@@ -23,6 +23,7 @@ test('master merges publish only when the reviewed manifest version advances', (
 test('release images use the current GHCR-only workflow with an explicit immutable tag', () => {
   const workflow = readWorkflow('container.yml');
 
+  assert.doesNotMatch(workflow, /push:\s*\n\s+tags:/, 'image builds must be explicitly dispatched');
   assert.match(workflow, /release_tag:/);
   assert.match(workflow, /ref: \$\{\{ inputs\.release_tag \|\| github\.ref \}\}/);
   assert.match(workflow, /node scripts\/release-config\.mjs tag/);
