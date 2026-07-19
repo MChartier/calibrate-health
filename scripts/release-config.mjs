@@ -82,6 +82,25 @@ export function getReleaseTag(manifest, latestTag = null) {
   return `v${version}`;
 }
 
+/** Decide whether the reviewed manifest needs a new stable tag without treating an existing tag as an error. */
+export function getReleasePlan(manifest, latestTag = null) {
+  const newTag = getReleaseTag(manifest);
+  if (latestTag === null) {
+    return { latest_tag: '', new_tag: newTag, should_release: true };
+  }
+  if (!/^v\d+\.\d+\.\d+$/.test(latestTag)) throw new Error(`Invalid latest release tag: ${latestTag}`);
+
+  const comparison = compareSemver(newTag.slice(1), latestTag.slice(1));
+  if (comparison < 0) {
+    throw new Error(`Manifest version ${newTag.slice(1)} cannot be older than ${latestTag}.`);
+  }
+  return {
+    latest_tag: latestTag,
+    new_tag: newTag,
+    should_release: comparison > 0
+  };
+}
+
 export function validateManifest(manifest) {
   const errors = [];
   const requiredSemvers = [
@@ -275,6 +294,13 @@ async function main() {
   }
   if (options.command === 'tag') {
     console.log(getReleaseTag(manifest, options.latestTag));
+    return;
+  }
+  if (options.command === 'plan') {
+    const plan = getReleasePlan(manifest, options.latestTag);
+    console.log(`latest_tag=${plan.latest_tag}`);
+    console.log(`new_tag=${plan.new_tag}`);
+    console.log(`should_release=${plan.should_release}`);
     return;
   }
   throw new Error(`Unknown command: ${options.command}`);

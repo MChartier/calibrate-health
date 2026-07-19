@@ -1,18 +1,24 @@
 name: Build Release Image
 
 on:
-  push:
-    tags:
-      # Match "vMAJOR.MINOR.PATCH" style tags (glob isn't strict; we validate in-workflow too).
-      - "v[0-9]*.[0-9]*.[0-9]*"
+  # Releases are dispatched by cut-release.yml after the immutable tag exists.
+  # Keeping this manual-only avoids a duplicate build when the tag is pushed.
   workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Existing vMAJOR.MINOR.PATCH tag to build with the current GHCR-only workflow
+        required: true
+        type: string
 
 permissions:
   contents: read
   packages: write
 
+concurrency:
+  group: release-image-${{ inputs.release_tag || github.ref_name }}
+  cancel-in-progress: false
+
 env:
-  IMAGE_NAME: calibratehealth
   GHCR_IMAGE: ghcr.io/${{ github.repository_owner }}/calibratehealth
 
 jobs:
@@ -22,8 +28,45 @@ jobs:
     timeout-minutes: 30
 
     steps:
-      - name: Checkout
+      - name: Checkout immutable release tag
         uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.release_tag || github.ref }}
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Validate release identity
+        id: release
+        shell: bash
+        env:
+          REQUESTED_TAG: ${{ inputs.release_tag || github.ref_name }}
+        run: |
+          set -euo pipefail
+          if [[ ! "${REQUESTED_TAG}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Release tag must match vMAJOR.MINOR.PATCH; received ${REQUESTED_TAG}." >&2
+            exit 1
+          fi
+
+          MANIFEST_TAG="$(node scripts/release-config.mjs tag)"
+          if [[ "${REQUESTED_TAG}" != "${MANIFEST_TAG}" ]]; then
+            echo "Requested tag ${REQUESTED_TAG} does not match manifest tag ${MANIFEST_TAG}." >&2
+            exit 1
+          fi
+
+          SOURCE_SHA="$(git rev-list -n 1 "${REQUESTED_TAG}")"
+          if [[ "${SOURCE_SHA}" != "$(git rev-parse HEAD)" ]]; then
+            echo "Checkout does not match ${REQUESTED_TAG}." >&2
+            exit 1
+          fi
+
+          {
+            echo "release_tag=${REQUESTED_TAG}"
+            echo "source_sha=${SOURCE_SHA}"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -41,37 +84,21 @@ jobs:
       - name: Compute image tags
         id: meta
         shell: bash
+        env:
+          RELEASE_TAG: ${{ steps.release.outputs.release_tag }}
+          SOURCE_SHA: ${{ steps.release.outputs.source_sha }}
         run: |
           set -euo pipefail
-
-          # `HEAD` is always the checked-out commit, even when the workflow runs on an annotated tag.
-          SOURCE_SHA="$(git rev-parse HEAD)"
           GHCR_IMAGE="${GHCR_IMAGE,,}"
-
-          TAGS=()
-          TAGS+=("${GHCR_IMAGE}:sha-${SOURCE_SHA}")
-
-          if [[ "${GITHUB_REF}" == "refs/heads/master" ]]; then
-            TAGS+=("${GHCR_IMAGE}:${GITHUB_REF_NAME}")
-          fi
-
-          if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
-            if [[ "${GITHUB_REF_NAME}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-              TAGS+=("${GHCR_IMAGE}:${GITHUB_REF_NAME}")
-            else
-              echo "Tag ${GITHUB_REF_NAME} is not a strict SemVer release tag; skipping version image tag."
-            fi
-          fi
-
           {
-            echo "source_sha=${SOURCE_SHA}"
             echo "ghcr_image=${GHCR_IMAGE}"
             echo "tags<<EOF"
-            printf "%s\n" "${TAGS[@]}"
+            echo "${GHCR_IMAGE}:${RELEASE_TAG}"
+            echo "${GHCR_IMAGE}:sha-${SOURCE_SHA}"
             echo "EOF"
           } >> "$GITHUB_OUTPUT"
 
-      - name: Build and push (multi-arch)
+      - name: Build and push multi-architecture image
         uses: docker/build-push-action@v6
         with:
           context: .

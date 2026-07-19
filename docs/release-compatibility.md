@@ -65,10 +65,23 @@ npm.cmd run test:release
 
 These checks parse configuration only. They do not invoke Gradle, Expo, Docker, or the full CI suite.
 
-The `Cut Release Tag` workflow does not calculate or mutate versions. It validates the repository and tags the exact
-stable `server.version` declared in `shared/release.json`. The workflow refuses an existing, prerelease, or
-non-monotonic version. This keeps the Git tag, published container version, and compatibility metadata on one release
-identity.
+The `Publish Manifest Release` workflow does not calculate or mutate versions. Every merge to `master` validates the
+exact stable `server.version` declared in `shared/release.json`. If that version is newer than the latest stable tag,
+the workflow runs the container release gates, creates the tag, and dispatches the current GHCR-only image workflow.
+If the version is already published, it exits without building an image. Regressions and prerelease versions fail
+closed. A manual dispatch on `master` is retained only as a recovery mechanism; ordinary releases require no step
+beyond merging the reviewed version bump.
+
+The image workflow receives the immutable tag as an explicit input while its workflow definition is loaded from
+`master`. This prevents rebuilding an older tag from executing historical AWS/ECS deployment jobs. It publishes only
+the version and source-SHA tags to GHCR; deployment to a self-host remains an operator-controlled Docker Compose
+operation.
+
+Container publication runs `release:check:container`, including the encrypted backup/restore drill, strict dependency
+policy, canonical version checks, and risk-contract validation. It intentionally does not claim physical Android/Wear
+readiness: `release:check:production` remains the stricter native distribution gate and still requires the retained
+Galaxy phone/watch evidence. This allows an immutable server image to exist for the production-like device testing
+that produces that evidence without weakening the final native release gate.
 
 ## Reproducible artifact metadata
 

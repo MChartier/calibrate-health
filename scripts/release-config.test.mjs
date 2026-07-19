@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { compareSemver, createReleaseMetadata, getReleaseTag, validateManifest } from './release-config.mjs';
+import { compareSemver, createReleaseMetadata, getReleasePlan, getReleaseTag, validateManifest } from './release-config.mjs';
 
 const validManifest = {
   schema_version: 1,
@@ -64,4 +64,24 @@ test('production tag comes from the manifest and must advance', () => {
   const prerelease = structuredClone(validManifest);
   prerelease.server.version = '1.2.4-internal';
   assert.throws(() => getReleaseTag(prerelease), /stable server.version/);
+});
+
+test('the v0.12 release advances the existing pre-1.0 tag sequence', () => {
+  const manifest = structuredClone(validManifest);
+  manifest.server.version = '0.12.0';
+  assert.equal(getReleaseTag(manifest, 'v0.11.0'), 'v0.12.0');
+});
+
+test('automatic release planning publishes advances, skips an existing version, and rejects regressions', () => {
+  assert.deepEqual(getReleasePlan(validManifest, 'v1.2.2'), {
+    latest_tag: 'v1.2.2',
+    new_tag: 'v1.2.3',
+    should_release: true
+  });
+  assert.deepEqual(getReleasePlan(validManifest, 'v1.2.3'), {
+    latest_tag: 'v1.2.3',
+    new_tag: 'v1.2.3',
+    should_release: false
+  });
+  assert.throws(() => getReleasePlan(validManifest, 'v1.2.4'), /cannot be older/);
 });

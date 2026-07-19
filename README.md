@@ -36,7 +36,7 @@ attribution requirements: https://platform.fatsecret.com/docs/guides
 - Android native client: `mobile/README.md`
 - First native release scope: `docs/release-scope.md`
 - Android/Wear Play and health release worksheet: `docs/play-console-health-release-checklist.md`
-- Current release-candidate notes: `docs/releases/1.0.0-native-0.1.0-wear-0.2.0.md`
+- Current release-candidate notes: `docs/releases/0.12.0-native-0.1.0-wear-0.2.0.md`
 - Security model and release threat review: `docs/security.md`, `docs/security-release-threat-model.md`
 - Architecture decisions: `docs/architecture/`
 
