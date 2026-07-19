@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 
 # Multi-stage production image:
-# - Builds frontend (Vite) + backend (TypeScript) and runs the backend server.
+# - Builds Expo web + backend (TypeScript) and runs the backend server.
 # - Includes Prisma CLI + migrations so deployments can run `prisma migrate deploy` inside the container.
 
 # Pin the multi-platform base digest so release rebuilds do not silently change underneath a tag.
@@ -11,21 +11,26 @@ WORKDIR /app
 
 FROM base AS deps
 
-COPY backend/package.json backend/package-lock.json ./backend/
-RUN cd backend && npm ci
+COPY package.json package-lock.json ./
+COPY mobile/package.json ./mobile/package.json
+COPY mobile/modules/wear-pairing/package.json ./mobile/modules/wear-pairing/package.json
+COPY packages/api-client/package.json ./packages/api-client/package.json
+COPY shared/package.json ./shared/package.json
+RUN npm ci --no-audit --fund=false
 
-COPY frontend/package.json frontend/package-lock.json ./frontend/
-RUN cd frontend && npm ci --legacy-peer-deps
+COPY backend/package.json backend/package-lock.json ./backend/
+RUN cd backend && npm ci --no-audit --fund=false
 
 FROM deps AS build
 
 COPY backend ./backend
-COPY frontend ./frontend
+COPY mobile ./mobile
+COPY packages ./packages
 COPY shared ./shared
-COPY scripts/frontend-build-budget.mjs ./scripts/frontend-build-budget.mjs
+COPY scripts/expo-web-build.mjs scripts/expo-web-release.mjs ./scripts/
 
 RUN cd backend && npm run build
-RUN cd frontend && npm run build
+RUN npm run build:expo-web
 
 FROM base AS runtime-deps
 
@@ -36,7 +41,7 @@ FROM base AS runtime
 
 ENV NODE_ENV=production
 ENV PORT=3000
-ENV FRONTEND_DIST_DIR=/app/frontend/dist
+ENV FRONTEND_DIST_DIR=/app/web/dist
 
 WORKDIR /app
 
@@ -49,7 +54,7 @@ COPY --from=build /app/backend/prisma /app/backend/prisma
 COPY --from=build /app/backend/prisma.config.ts /app/backend/prisma.config.ts
 COPY --from=build /app/backend/scripts /app/backend/scripts
 
-COPY --from=build /app/frontend/dist /app/frontend/dist
+COPY --from=build /app/mobile/dist /app/web/dist
 
 WORKDIR /app/backend
 EXPOSE 3000

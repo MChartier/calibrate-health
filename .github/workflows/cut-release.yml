@@ -42,6 +42,8 @@ jobs:
         run: |
           npm run release:check:production
           npm run test:release
+          npm run test:expo-web:release
+          npm run test:deploy
 
       - name: Configure git identity (for annotated tags)
         shell: bash

@@ -80,6 +80,7 @@
     "test:expo-web:release": "node --test scripts/expo-web-release.test.mjs scripts/expo-web-static-server.test.mjs",
     "test:expo-web:e2e": "node scripts/expo-web-playwright.mjs",
     "test:expo-web": "npm run test:expo-web:release && npm run test:expo-web:e2e",
+    "test:container:web": "node scripts/production-container-smoke.mjs",
     "test:android:e2e": "node scripts/android-e2e.mjs",
     "test:wear:emulator": "node scripts/wear-emulator-smoke.mjs",
     "test:wear:emulator:unit": "node --test scripts/wear-emulator-smoke.test.mjs",

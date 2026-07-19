@@ -1,6 +1,9 @@
 # Keep Docker build contexts small and deterministic.
 **/node_modules
 **/dist
+**/build
+**/.gradle
+mobile/android
 .git
 .github
 .vscode

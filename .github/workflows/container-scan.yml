@@ -51,6 +51,7 @@ jobs:
             calibrate:security-scan
           for attempt in {1..30}; do
             if curl --fail --silent --show-error http://127.0.0.1:3000/api/v1/readyz; then
+              npm run test:container:web -- http://127.0.0.1:3000
               exit 0
             fi
             sleep 1

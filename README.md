@@ -5,8 +5,8 @@ logging food and weight, then comparing daily intake against an estimated target
 If you self-host, your data stays in your own database.
 
 - Hosted instance: https://calibratehealth.app
-- Stack: React + TypeScript + Vite (MUI), Node.js + TypeScript + Express, Postgres (Prisma)
-- Clients: installable PWA plus an Expo React Native Android client in `mobile/`
+- Stack: Expo Router + React Native Web, Node.js + TypeScript + Express, Postgres (Prisma)
+- Clients: one Expo codebase for the installable web client and native Android client; legacy Vite/MUI remains available for rollback
 
 Note: calibrate is not medical advice.
 
@@ -235,7 +235,8 @@ More:
 - `npm run db:seed`: seed deterministic dev data (test user + sample logs).
 - `npm --prefix backend run db:push:reset`: dev-only schema reset using `prisma db push` (fast, skips migrations).
 - `npm run db:studio`: Prisma Studio (DB browser).
-- `npm run build`: build the frontend.
+- `npm run build`: build the legacy Vite rollback client.
+- `npm run build:expo-web`: build and validate the production Expo web export.
 - `npm run build:mobile`: type-check the Expo React Native Android client.
 - `npm run test:mobile`: run mobile unit tests.
 - `npm run test:web:e2e`: run the local Chrome E2E path for onboarding, food, weight, and narrow responsive behavior.
@@ -255,12 +256,12 @@ docker compose up --build
 
 ## PWA (installable)
 
-The frontend is configured as a Progressive Web App (PWA), so it can be installed on desktop/mobile and added to a home
-screen.
+The production Expo web client is configured as a Progressive Web App, so it can be installed on desktop/mobile and
+added to a home screen. The tagged `Dockerfile.app` image serves this export from the same origin as the API.
 
-- For local push/PWA flow validation in dev mode, run `npm run dev` (service worker enabled by default in local dev scripts).
-- Test locally: `npm --prefix frontend run build && npm --prefix frontend run preview` then open
-  `http://localhost:4173` and use the browser install UI.
+- For local API work, run `npm run dev:backend`; run the Expo web client from `mobile/` when testing the production UI.
+- Test the release artifact locally with `npm run build:expo-web` followed by
+  `npm --prefix mobile run preview:web`, then open `http://localhost:4174` and use the browser install UI.
 - iOS: open the app in Safari and use Share -> Add to Home Screen.
 
 Push notes:

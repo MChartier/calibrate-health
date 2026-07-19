@@ -1,7 +1,5 @@
 import 'dotenv/config';
 
-import fs from 'node:fs';
-import path from 'node:path';
 import bcrypt from 'bcryptjs';
 import cors from 'cors';
 import express from 'express';
@@ -13,6 +11,7 @@ import { resolveBrowserOriginPolicy } from './config/cors';
 import prisma, { pgPool } from './config/database';
 import { isProductionOrStagingEnv } from './config/environment';
 import { getNativePushModeConfigurationWarning } from './config/nativePush';
+import { configureFrontendStaticAssets } from './frontendStatic';
 import authRoutes from './routes/auth';
 import clientConfigRoutes from './routes/clientConfig';
 import devRoutes from './routes/dev';
@@ -48,43 +47,6 @@ import {
 } from './observability';
 
 const SESSION_TTL_MS = DEFAULT_SESSION_TTL_MS;
-
-/**
- * Serve the built frontend SPA from disk in deployed environments (NODE_ENV=production|staging).
- *
- * In development we typically run the Vite dev server (HMR) separately and proxy `/api/*` and `/auth/*`
- * to the backend, so serving `dist/` from Express would be redundant and can hide misconfiguration.
- *
- * We only fall back to `index.html` for non-API routes so deep links work without
- * intercepting JSON endpoints like `/api/*` and `/auth/*`.
- */
-function configureSpaStaticAssets(app: express.Express, isProductionOrStaging: boolean): void {
-  if (!isProductionOrStaging) return;
-
-  const distDir = process.env.FRONTEND_DIST_DIR;
-  if (!distDir) {
-    console.warn(
-      'FRONTEND_DIST_DIR is not set; backend will not serve the built frontend (expected when frontend is hosted separately). Set FRONTEND_DIST_DIR to the Vite dist directory for a single-origin deployment.'
-    );
-    return;
-  }
-
-  const indexHtmlPath = path.join(distDir, 'index.html');
-  if (!fs.existsSync(indexHtmlPath)) {
-    console.warn(
-      `FRONTEND_DIST_DIR does not contain index.html (${indexHtmlPath}); backend will not serve the built frontend. Ensure the frontend build output is present and FRONTEND_DIST_DIR points to it.`
-    );
-    return;
-  }
-
-  app.use(express.static(distDir));
-
-  // SPA fallback should not hijack backend endpoints.
-  const spaFallbackRoute = /^\/(?!api(?:\/|$)|auth(?:\/|$)|dev(?:\/|$)).*/;
-  app.get(spaFallbackRoute, (_req, res) => {
-    res.sendFile(indexHtmlPath);
-  });
-}
 
 type HttpError = Error & { statusCode?: number; status?: number; expose?: boolean };
 
@@ -335,7 +297,7 @@ const bootstrap = async (): Promise<void> => {
     app.use('/dev/test', devTestRoutes);
   }
 
-  configureSpaStaticAssets(app, isProductionOrStaging);
+  configureFrontendStaticAssets(app, isProductionOrStaging);
   app.use(requestErrorHandler);
 
   app.listen(PORT, () => {

@@ -1,10 +1,10 @@
 # Expo Web Parity Plan
 
-This document is the replacement contract for moving browser delivery from the
-Vite/MUI client in `frontend/` to the Expo Router/React Native Web client in
-`mobile/`. The clients must run side by side until every release gate below is
-met. Do not remove or redirect the Vite client while any row is partial or
-blocked.
+This document is the replacement contract for browser delivery from the
+Expo Router/React Native Web client in `mobile/`. The production image now
+serves Expo web for dogfooding. The Vite/MUI client in `frontend/` remains
+buildable as a rollback surface until the remaining parity gates are met; do
+not delete it while any row is partial or blocked.
 
 ## Status vocabulary
 
@@ -51,7 +51,7 @@ blocked.
 | Localization | Mobile strings are hard-coded English. | Port EN/ES/FR/RU resources and language selection; every visible copy change remains synchronized. |
 | Responsive shell | Ready across compact phone, phone, tablet, and desktop release viewports. | Keep keyboard, overflow, and route-navigation checks in the release suite. |
 | PWA lifecycle | Ready: install metadata, explicit update activation/retry, offline/recovery UI, and backend cache bypass are implemented. | Validate two-version upgrade and installed-mode behavior on a production HTTPS host. |
-| Static delivery | Partial: Expo static export, preview server, cache policy, and browser release tests run beside Vite. | Add a production Expo container/deploy target before changing the default image. |
+| Static delivery | Ready: the production image builds the validated Expo export, serves prerendered routes, preserves backend boundaries, and applies PWA-safe cache headers. | Keep the container smoke test and tagged multi-architecture build green. |
 
 ## Platform boundary
 
@@ -83,8 +83,8 @@ evaluation.
 3. Implement and stress-test the IndexedDB outbox adapter, including reload and replay ordering.
 4. Build the responsive desktop shell/workspaces and chart behavior.
 5. Port localization, public pages, web push, and the PWA lifecycle.
-6. Add Expo static export/deploy alongside Vite and run browser parity E2E.
-7. Cut authenticated routes first only after data-integrity, accessibility, self-hosting, and rollback checks pass.
+6. Add Expo static export/deploy alongside Vite and run browser parity E2E. **Complete.**
+7. Dogfood authenticated Expo routes while retaining Vite as a rollback build. **In progress.**
 8. Retire Vite only after public routes and all production release gates pass.
 
 ## Replacement gates

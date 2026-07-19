@@ -21,6 +21,19 @@ test('Caddy and Traefik share DB-backed app readiness semantics', () => {
   assert.doesNotMatch(caddyfile, /calibratehealth\.app/);
 });
 
+test('production image and Compose serve the Expo web artifact', () => {
+  const dockerfile = fs.readFileSync(path.join(repositoryRoot, 'Dockerfile.app'), 'utf8');
+  const caddyCompose = readDeploy('docker-compose.yml');
+  const traefikCompose = readDeploy('docker-compose.traefik.yml');
+  assert.match(dockerfile, /RUN npm run build:expo-web/);
+  assert.match(dockerfile, /COPY --from=build \/app\/mobile\/dist \/app\/web\/dist/);
+  assert.doesNotMatch(dockerfile, /COPY --from=build \/app\/frontend\/dist/);
+  for (const compose of [caddyCompose, traefikCompose]) {
+    assert.match(compose, /FRONTEND_DIST_DIR: \/app\/web\/dist/);
+    assert.doesNotMatch(compose, /FRONTEND_DIST_DIR: \/app\/frontend\/dist/);
+  }
+});
+
 test('in-stack Postgres remains private and gates app startup on DB health', () => {
   const postgres = readDeploy('docker-compose.postgres.yml');
   assert.match(postgres, /pg_isready/);
