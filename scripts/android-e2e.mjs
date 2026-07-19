@@ -1,5 +1,7 @@
 import { execFileSync } from 'node:child_process';
+import { once } from 'node:events';
 import { readFileSync } from 'node:fs';
+import http from 'node:http';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -10,6 +12,12 @@ const APP_ID = 'app.calibratehealth.mobile';
 const ONLINE_FOOD = { name: 'Android E2E latte', calories: 190 };
 const OFFLINE_FOOD = { name: 'Android E2E protein shake', calories: 240 };
 const UI_DUMP_PATH = '/sdcard/calibrate-e2e-window.xml';
+const METRO_REVERSE_HOST = 'localhost:8081';
+const API_REVERSE_PORT = 'tcp:3000';
+const HOP_BY_HOP_HEADERS = new Set([
+  'connection', 'content-encoding', 'content-length', 'keep-alive', 'proxy-authenticate',
+  'proxy-authorization', 'te', 'trailer', 'transfer-encoding', 'upgrade'
+]);
 const ADB = process.env.ADB
   ?? path.join(process.env.LOCALAPPDATA ?? '', 'Android', 'Sdk', 'platform-tools', 'adb.exe');
 const release = JSON.parse(readFileSync(new URL('../shared/release.json', import.meta.url), 'utf8'));
@@ -25,6 +33,80 @@ function adb(args, options = {}) {
     encoding: 'utf8',
     stdio: options.quiet ? ['ignore', 'pipe', 'pipe'] : ['ignore', 'pipe', 'inherit']
   }).trim();
+}
+
+/** Proxy the app's reversed loopback API separately from the host-side assertions. */
+async function startApiProxy() {
+  const target = new URL(API_URL);
+  let available = true;
+  let closed = false;
+  const server = http.createServer(async (request, response) => {
+    if (!available) {
+      request.resume();
+      response.writeHead(503, { 'content-type': 'application/json' });
+      response.end('{"message":"Android E2E API proxy is offline."}');
+      return;
+    }
+
+    try {
+      const bodyChunks = [];
+      for await (const chunk of request) bodyChunks.push(chunk);
+      const headers = new Headers();
+      for (const [name, value] of Object.entries(request.headers)) {
+        if (value !== undefined && name !== 'host' && !HOP_BY_HOP_HEADERS.has(name)) {
+          headers.set(name, Array.isArray(value) ? value.join(', ') : value);
+        }
+      }
+      const body = bodyChunks.length > 0 ? Buffer.concat(bodyChunks) : undefined;
+      const upstream = await fetch(new URL(request.url ?? '/', target), {
+        method: request.method,
+        headers,
+        body
+      });
+      const responseHeaders = {};
+      upstream.headers.forEach((value, name) => {
+        if (!HOP_BY_HOP_HEADERS.has(name)) responseHeaders[name] = value;
+      });
+      response.writeHead(upstream.status, responseHeaders);
+      response.end(Buffer.from(await upstream.arrayBuffer()));
+    } catch (error) {
+      if (closed) {
+        response.destroy();
+        return;
+      }
+      console.error(`Android E2E API proxy failed ${request.method} ${request.url}: ${error.message}`);
+      if (!response.headersSent) response.writeHead(502);
+      response.end();
+    }
+  });
+  server.listen(0, '127.0.0.1');
+  await once(server, 'listening');
+  const address = server.address();
+  if (!address || typeof address === 'string') throw new Error('Unable to start the Android E2E API proxy.');
+
+  return {
+    port: address.port,
+    setAvailable: (nextAvailable) => {
+      available = nextAvailable;
+    },
+    close: async () => {
+      if (closed) return;
+      closed = true;
+      await new Promise((resolve) => server.close(resolve));
+    }
+  };
+}
+
+function reverseApiTo(proxy) {
+  adb(['reverse', API_REVERSE_PORT, `tcp:${proxy.port}`], { quiet: true });
+}
+
+function removeApiReverse() {
+  try {
+    adb(['reverse', '--remove', API_REVERSE_PORT], { quiet: true });
+  } catch {
+    // A failed run may already have removed the isolated API mapping.
+  }
 }
 
 async function waitFor(label, check, timeoutMs = 30_000, intervalMs = 500) {
@@ -66,6 +148,17 @@ function parseBounds(value) {
 function dumpUi() {
   adb(['shell', 'uiautomator', 'dump', UI_DUMP_PATH], { quiet: true });
   return adb(['exec-out', 'cat', UI_DUMP_PATH], { quiet: true });
+}
+
+/** Keep Metro on adb reverse while the API proxy is isolated independently. */
+function configureMetroReverseHost() {
+  const preferencesFile = `shared_prefs/${APP_ID}_preferences.xml`;
+  const preferences = `<map><string name="debug_http_host">${METRO_REVERSE_HOST}</string></map>`;
+  const encodedPreferences = Buffer.from(preferences, 'utf8').toString('base64');
+  const writePreferences =
+    `mkdir -p shared_prefs && echo ${encodedPreferences} | base64 -d > ${preferencesFile}`;
+  adb(['reverse', 'tcp:8081', 'tcp:8081'], { quiet: true });
+  adb(['shell', `run-as ${APP_ID} sh -c '${writePreferences}'`], { quiet: true });
 }
 
 function findNode(xml, predicate) {
@@ -189,13 +282,23 @@ async function launchAndWaitForLog() {
   await waitForNode('authenticated Log screen', (node) => node.clickable && node.label === 'Add food', 45_000);
 }
 
-async function logRecentFood(name) {
+async function openQuickAdd() {
   await tapNode('Add food button', (node) => node.clickable && node.label === 'Add food');
+  await tapNode('Quick add mode', (node) => node.clickable && node.label === 'Quick');
+}
+
+async function logOpenRecentFood(name) {
   await tapNode(`${name} recent row`, (node) => node.clickable && node.label.startsWith(`${name},`));
-  await waitForNode('Add food sheet to close', (node) => node.clickable && node.label === 'Add food', 25_000);
+  await waitForNode('Add food sheet to close', (node) => node.clickable && node.label === 'Add food', 45_000);
+}
+
+async function logRecentFood(name) {
+  await openQuickAdd();
+  await logOpenRecentFood(name);
 }
 
 async function main() {
+  let apiProxy = null;
   const health = await requestJson('/api/v1/healthz');
   if (!health.ok) throw new Error('Calibrate E2E backend health check failed.');
   const metroStatus = await fetch('http://127.0.0.1:8081/status').then((response) => response.text());
@@ -207,12 +310,14 @@ async function main() {
   const date = localDateFor(session.user.timezone);
   await seedRecentFood(session.access_token, date, ONLINE_FOOD);
   await seedRecentFood(session.access_token, date, OFFLINE_FOOD);
+  apiProxy = await startApiProxy();
   adb(['wait-for-device'], { quiet: true });
-  adb(['reverse', 'tcp:8081', 'tcp:8081'], { quiet: true });
   adb(['shell', 'cmd', 'connectivity', 'airplane-mode', 'disable'], { quiet: true });
+  reverseApiTo(apiProxy);
   // Scope the crash assertion to this run so stale emulator crashes do not cause a false failure.
   adb(['logcat', '-c'], { quiet: true });
   adb(['shell', 'pm', 'clear', APP_ID], { quiet: true });
+  configureMetroReverseHost();
 
   try {
     await launchAndWaitForLog();
@@ -225,8 +330,10 @@ async function main() {
 
     const offlineName = OFFLINE_FOOD.name;
     const offlineBefore = await countFood(session.access_token, date, offlineName);
-    adb(['shell', 'cmd', 'connectivity', 'airplane-mode', 'enable'], { quiet: true });
-    await logRecentFood(offlineName);
+    // Load the cached Quick list before isolating the API while Metro remains reachable through adb reverse.
+    await openQuickAdd();
+    apiProxy.setAvailable(false);
+    await logOpenRecentFood(offlineName);
     const pendingBadge = await waitForNode(
       'offline pending badge',
       (node) => node.clickable && node.label.includes('offline changes pending'),
@@ -238,7 +345,7 @@ async function main() {
     }
 
     adb(['shell', 'am', 'force-stop', APP_ID], { quiet: true });
-    adb(['shell', 'cmd', 'connectivity', 'airplane-mode', 'disable'], { quiet: true });
+    apiProxy.setAvailable(true);
     await launchAndWaitForLog();
     await waitForFoodCount(session.access_token, date, offlineName, offlineBefore + 1, 45_000);
     console.log(`PASS process-death replay: ${offlineName} ${offlineBefore} -> ${offlineBefore + 1}`);
@@ -258,6 +365,8 @@ async function main() {
     console.log(`PASS exactly-once replay after second restart: ${offlineName} remained ${finalCount}`);
   } finally {
     adb(['shell', 'cmd', 'connectivity', 'airplane-mode', 'disable'], { quiet: true });
+    await apiProxy?.close().catch(() => undefined);
+    removeApiReverse();
   }
 }
 

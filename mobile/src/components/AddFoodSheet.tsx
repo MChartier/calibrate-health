@@ -201,11 +201,11 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
 
     async function confirmLogged(closeDialog: boolean) {
         await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        await invalidateLogQueries();
         onLogged?.();
         if (closeDialog) {
             onClose();
         }
+        await invalidateLogQueries();
     }
 
     const addFood = useMutation({

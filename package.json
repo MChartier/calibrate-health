@@ -56,7 +56,7 @@
     "build:mobile": "npm --prefix mobile run typecheck",
     "build:expo-web": "npm --prefix mobile run build:web",
     "build:native:release": "node scripts/native-release-build.mjs",
-    "api:generate": "openapi-typescript docs/openapi/v1.yaml -o packages/api-client/src/generated/v1.ts",
+    "api:generate": "npm --prefix backend exec -- openapi-typescript docs/openapi/v1.yaml -o packages/api-client/src/generated/v1.ts",
     "api:contract:check": "npm run api:generate && git diff --exit-code -- packages/api-client/src/generated/v1.ts",
     "release:check": "node scripts/release-config.mjs check && node scripts/dependency-advisory-exceptions.mjs",
     "release:check:production": "node scripts/postgres-backup-restore-smoke.mjs && node scripts/release-config.mjs check && node scripts/dependency-advisory-exceptions.mjs --strict && node scripts/verify-risk-evidence.mjs --release",
@@ -110,7 +110,6 @@
     "@devcontainers/cli": "^0.86.0",
     "@playwright/test": "^1.61.1",
     "@types/node": "^20.0.0",
-    "openapi-typescript": "^7.13.0",
-    "typescript": "^5.0.0"
+    "typescript": "~6.0.3"
   }
 }

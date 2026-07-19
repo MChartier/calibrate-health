@@ -184,10 +184,19 @@ export class CalibrateApiClient {
 
         const timeoutController = new AbortController();
         let timedOut = false;
-        const timeoutId = setTimeout(() => {
-            timedOut = true;
-            timeoutController.abort();
-        }, this.requestTimeoutMs);
+        let timeoutId: ReturnType<typeof setTimeout> | undefined;
+        const timeoutError = () => new Error(
+            `Request timed out while connecting to ${this.baseUrl}. Check the server URL and network access.`
+        );
+        // Some React Native transports do not settle fetch after AbortController fires. The explicit
+        // rejection keeps offline mutations bounded while still aborting transports that honor it.
+        const timeout = new Promise<never>((_resolve, reject) => {
+            timeoutId = setTimeout(() => {
+                timedOut = true;
+                timeoutController.abort();
+                reject(timeoutError());
+            }, this.requestTimeoutMs);
+        });
         const callerSignal = options.signal;
         const abortFromCaller = () => timeoutController.abort();
         callerSignal?.addEventListener('abort', abortFromCaller, { once: true });
@@ -198,20 +207,23 @@ export class CalibrateApiClient {
 
         let response: Response;
         try {
-            response = await this.fetchImpl(buildUrl(this.baseUrl, path), {
-                ...fetchOptions,
-                credentials: fetchOptions.credentials ?? this.requestCredentials,
-                headers,
-                signal: timeoutController.signal,
-                body: json !== undefined ? JSON.stringify(json) : options.body
-            });
+            response = await Promise.race([
+                this.fetchImpl(buildUrl(this.baseUrl, path), {
+                    ...fetchOptions,
+                    credentials: fetchOptions.credentials ?? this.requestCredentials,
+                    headers,
+                    signal: timeoutController.signal,
+                    body: json !== undefined ? JSON.stringify(json) : options.body
+                }),
+                timeout
+            ]);
         } catch (error) {
             if (timedOut) {
-                throw new Error(`Request timed out while connecting to ${this.baseUrl}. Check the server URL and network access.`);
+                throw timeoutError();
             }
             throw error;
         } finally {
-            clearTimeout(timeoutId);
+            if (timeoutId !== undefined) clearTimeout(timeoutId);
             callerSignal?.removeEventListener('abort', abortFromCaller);
         }
 

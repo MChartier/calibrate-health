@@ -61,6 +61,19 @@ test('request timeout reports a connection timeout rather than a caller abort', 
     );
 });
 
+test('request timeout settles even when the fetch implementation ignores abort', async () => {
+    const client = new CalibrateApiClient({
+        baseUrl: 'https://calibrate.example',
+        fetchImpl: (() => new Promise<Response>(() => undefined)) as typeof fetch,
+        requestTimeoutMs: 5
+    });
+
+    await assert.rejects(
+        () => client.getClientConfig(),
+        /Request timed out while connecting to https:\/\/calibrate\.example\./
+    );
+});
+
 test('caller abort remains an AbortError and is not rewritten as a timeout', async () => {
     const client = new CalibrateApiClient({
         baseUrl: 'https://calibrate.example',
