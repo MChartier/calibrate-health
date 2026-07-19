@@ -6,15 +6,13 @@ data class CalibrateTileSnapshot(
     val caloriesConsumed: Int?,
     val calorieTarget: Int?,
     val caloriesRemaining: Int?,
-    val steps: Int?,
-    val activityStale: Boolean?,
     val isComplete: Boolean?,
     val cachedAtEpochMs: Long
 )
 
 data class CalibrateTileContent(
     val calorieLine: String,
-    val stepsLine: String?,
+    val consumedLine: String,
     val statusLine: String,
     val isStale: Boolean
 )
@@ -30,7 +28,7 @@ object CalibrateTileFormatter {
         if (snapshot == null) {
             return CalibrateTileContent(
                 calorieLine = "Open calibrate",
-                stepsLine = null,
+                consumedLine = "Calories unavailable",
                 statusLine = "No cached data",
                 isStale = true
             )
@@ -43,39 +41,45 @@ object CalibrateTileFormatter {
         )
         val ageMs = (nowEpochMs - snapshot.cachedAtEpochMs).coerceAtLeast(0L)
         val cacheIsStale = ageMs >= STALE_AFTER_MS
-        val isStale = cacheIsStale || snapshot.activityStale == true
         val completion = when (snapshot.isComplete) {
             true -> "Day complete"
             false -> "Day open"
             null -> null
         }
-        val age = ageLabel(ageMs, cacheIsStale, snapshot.activityStale == true)
+        val age = ageLabel(ageMs, cacheIsStale)
         return CalibrateTileContent(
             calorieLine = calories,
-            stepsLine = snapshot.steps?.coerceAtLeast(0)?.let { "${formatCount(it)} steps" },
+            consumedLine = consumedLine(snapshot.caloriesConsumed, snapshot.calorieTarget),
             statusLine = listOfNotNull(completion, age).joinToString(" | "),
-            isStale = isStale
+            isStale = cacheIsStale
         )
     }
 
     private fun calorieLine(consumed: Int?, target: Int?, cachedRemaining: Int?): String {
         val remaining = cachedRemaining ?: if (consumed != null && target != null) target - consumed else null
         if (remaining == null) return "Calories --"
-        return if (remaining >= 0) "$remaining kcal left" else "${abs(remaining)} kcal over"
+        return if (remaining >= 0) {
+            "${formatCount(remaining)} kcal left"
+        } else {
+            "${formatCount(abs(remaining))} kcal over"
+        }
     }
 
-    private fun ageLabel(ageMs: Long, cacheIsStale: Boolean, activityIsStale: Boolean): String {
+    private fun consumedLine(consumed: Int?, target: Int?): String =
+        if (consumed != null && target != null) {
+            "${formatCount(consumed.coerceAtLeast(0))} of ${formatCount(target.coerceAtLeast(0))} kcal"
+        } else {
+            "Consumed / target --"
+        }
+
+    private fun ageLabel(ageMs: Long, cacheIsStale: Boolean): String {
         val value = when {
             ageMs < MINUTE_MS -> "Updated now"
             ageMs < HOUR_MS -> "${ageMs / MINUTE_MS} min ago"
             ageMs < DAY_MS -> "${ageMs / HOUR_MS} hr ago"
             else -> "${ageMs / DAY_MS} d ago"
         }
-        return when {
-            cacheIsStale -> "Stale - $value"
-            activityIsStale -> "Steps stale - $value"
-            else -> value
-        }
+        return if (cacheIsStale) "Stale - $value" else value
     }
 
     private fun formatCount(value: Int): String {

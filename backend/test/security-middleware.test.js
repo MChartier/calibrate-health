@@ -35,6 +35,46 @@ test('browser mutation origin guard rejects cross-origin and same-site sibling r
   assert.equal((await fetch(url, { method: 'POST' })).status, 200);
 });
 
+test('browser mutation origin guard permits arbitrary loopback ports only when development policy is enabled', async (t) => {
+  const createApp = (allowDevelopmentLoopbackOrigins) => {
+    const app = express();
+    app.use(createBrowserMutationOriginGuard({
+      trustedOrigins: new Set(['http://localhost:5173']),
+      useSecureRequestOrigin: false,
+      allowDevelopmentLoopbackOrigins
+    }));
+    app.post('/mutation', (_req, res) => res.json({ ok: true }));
+    return app;
+  };
+
+  const developmentServer = createApp(true).listen(0, '127.0.0.1');
+  const deployedServer = createApp(false).listen(0, '127.0.0.1');
+  await Promise.all([
+    new Promise((resolve) => developmentServer.once('listening', resolve)),
+    new Promise((resolve) => deployedServer.once('listening', resolve))
+  ]);
+  t.after(() => Promise.all([
+    new Promise((resolve) => developmentServer.close(resolve)),
+    new Promise((resolve) => deployedServer.close(resolve))
+  ]));
+
+  const developmentAddress = developmentServer.address();
+  const deployedAddress = deployedServer.address();
+  assert.ok(developmentAddress && typeof developmentAddress === 'object');
+  assert.ok(deployedAddress && typeof deployedAddress === 'object');
+
+  const request = (port, origin) => fetch(`http://127.0.0.1:${port}/mutation`, {
+    method: 'POST',
+    headers: { origin }
+  });
+
+  assert.equal((await request(developmentAddress.port, 'http://localhost:8081')).status, 200);
+  assert.equal((await request(developmentAddress.port, 'http://127.0.0.1:19006')).status, 200);
+  assert.equal((await request(developmentAddress.port, 'http://untrusted.example:8081')).status, 403);
+  assert.equal((await request(deployedAddress.port, 'http://localhost:8081')).status, 403);
+  assert.equal((await request(deployedAddress.port, 'http://localhost:5173')).status, 200);
+});
+
 test('auth rate limiting is narrow and returns a JSON 429 response', async (t) => {
   const app = express();
   const limiters = createAuthRateLimiters();

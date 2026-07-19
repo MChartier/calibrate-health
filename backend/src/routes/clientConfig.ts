@@ -1,6 +1,7 @@
 import express from 'express';
 import release from '../../../shared/release.json';
 import { NATIVE_PUSH_MODES, resolveNativePushMode } from '../config/nativePush';
+import { getWebPushPublicKey } from '../services/webPush';
 
 const router = express.Router();
 
@@ -13,6 +14,7 @@ const CURRENT_API_VERSION = release.server.api.current;
  */
 router.get('/', (_req, res) => {
   const nativePushMode = resolveNativePushMode();
+  const webPushEnabled = Boolean(getWebPushPublicKey().publicKey);
   res.json({
     api_version: CLIENT_API_VERSION,
     api_versions: {
@@ -28,8 +30,9 @@ router.get('/', (_req, res) => {
     capabilities: {
       self_hosted_server_url: true,
       native_push: nativePushMode === NATIVE_PUSH_MODES.EXPO,
+      web_push: webPushEnabled,
       health_connect_activity: true,
-      wear_os_ready: false
+      wear_os_ready: true
     }
   });
 });

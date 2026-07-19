@@ -79,7 +79,9 @@ export default function ActivityScreen() {
                     <Ionicons name="chevron-back" size={22} color={colors.text} />
                 </Pressable>
                 <View style={styles.headerText}>
-                    <AppText variant="screenTitle">Activity history</AppText>
+                    <AppText accessibilityRole="header" aria-level={1} variant="screenTitle">
+                        Activity history
+                    </AppText>
                     <AppText variant="caption">Observed through Health Connect</AppText>
                 </View>
             </View>

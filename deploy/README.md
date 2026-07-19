@@ -4,6 +4,11 @@ The deployment files are portable Docker Compose building blocks. They intention
 other cloud-specific infrastructure. Choose one proxy file and optionally add the Postgres and encrypted-backup
 overlays.
 
+The published `Dockerfile.app` image serves the Expo Router/React Native Web static export and the API from one
+origin. The legacy Vite client remains in the repository as a temporary rollback surface, but it is not copied into
+the release image. Expo documents, the service worker, and the install manifest are revalidated; hashed bundles use
+immutable caching.
+
 ## Stack combinations
 
 | Proxy | Database | Compose files |
@@ -25,8 +30,21 @@ its own `pg_isready` health check, and the app waits for it before running migra
 4. Point `APP_HOST` DNS at the proxy host. Caddy obtains certificates itself; Traefik uses the configured resolver and
    external Docker network.
 
+The Compose files set `FRONTEND_DIST_DIR=/app/web/dist`, which is populated by the tagged application image. Do not
+bind-mount a separately built web directory over it: server and web release provenance should remain the same image
+digest and Git commit.
+
 For Caddy, `CADDYFILE=./Caddyfile.prod` is the normal setting. Use `./Caddyfile.staging` only after setting a real
 `BASIC_AUTH_USER` and Caddy password hash.
+
+### Split frontend and API origins
+
+The standard Compose files serve the frontend and API from `APP_HOST`. If a separate frontend origin is intentional,
+set `CORS_ORIGINS` to its exact HTTPS origin (comma-separate multiple origins). Browser sessions require
+`SESSION_COOKIE_SECURE=true`; use `SESSION_COOKIE_SAMESITE=none` for a cross-origin frontend and set
+`SESSION_COOKIE_DOMAIN` only when a shared parent-domain cookie is intended. Prefer sibling HTTPS subdomains so the
+frontend and API remain same-site: browsers may block cookies entirely across unrelated sites. Logout and account
+deletion use the configured cookie domain, so changing that setting invalidates existing browser sessions.
 
 ### External Postgres
 

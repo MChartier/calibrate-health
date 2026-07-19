@@ -188,6 +188,11 @@ function parsePending(value: string | null): PendingUpload | null {
             || typeof parsed.timeZone !== 'string'
             || !Number.isInteger(parsed.nextPageIndex)
             || !Array.isArray(parsed.pages)
+            || parsed.pages.some(({ payload }) => payload.upserts?.some(({ client_record_version: version }) => (
+                version !== undefined
+                && version !== null
+                && !/^\d+$/.test(version)
+            )))
         ) return null;
         return parsed;
     } catch {

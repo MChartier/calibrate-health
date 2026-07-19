@@ -2,6 +2,7 @@ import type { PaletteMode } from '@mui/material';
 import { alpha, createTheme } from '@mui/material/styles';
 import type { Theme } from '@mui/material/styles';
 import type {} from '@mui/x-charts/themeAugmentation';
+import { calibrateDesignTokens } from '@calibrate/shared/designTokens';
 
 const PAGE_SECTION_GAP_SPACING = 1.5; // Base vertical gap between stacked Today workspace surfaces (theme spacing units).
 const FOCUS_RING_WIDTH_PX = 3; // Keyboard focus ring thickness shared by MUI controls.
@@ -64,45 +65,53 @@ function buildFocusRing(theme: Theme, ringAlpha = FOCUS_RING_ALPHA): string {
  */
 export function createAppTheme(mode: PaletteMode) {
     const isDark = mode === 'dark';
+    const scheme = calibrateDesignTokens.schemes[mode];
 
     return createTheme({
         palette: {
             mode,
             primary: {
-                main: isDark ? '#A3E635' : '#2E7D32',
-                light: isDark ? '#BEF264' : '#43A047',
-                dark: isDark ? '#65A30D' : '#1B5E20',
-                contrastText: isDark ? '#111827' : '#FFFFFF'
+                main: scheme.primary,
+                light: isDark ? '#B4F4B3' : '#43A047',
+                dark: isDark ? '#6ABD70' : calibrateDesignTokens.brand.greenDark,
+                contrastText: scheme.onPrimary
             },
             secondary: {
-                main: isDark ? '#E5E7EB' : '#1F2937',
-                light: isDark ? '#F9FAFB' : '#334155',
-                dark: isDark ? '#CBD5E1' : '#111827',
-                contrastText: isDark ? '#111827' : '#FFFFFF'
+                main: scheme.onSurface,
+                light: isDark ? '#F7FFF5' : '#3C4A40',
+                dark: isDark ? scheme.onSurfaceVariant : '#101811',
+                contrastText: scheme.surface
             },
             success: {
-                main: '#2E7D32'
+                main: scheme.success,
+                contrastText: scheme.onSuccess
             },
             warning: {
-                main: '#F59E0B'
+                main: scheme.warning,
+                contrastText: scheme.onWarning
             },
             error: {
-                main: '#DC2626'
+                main: scheme.danger,
+                contrastText: scheme.onDanger
+            },
+            info: {
+                main: scheme.info,
+                contrastText: scheme.onInfo
             },
             background: {
-                default: isDark ? '#0B1117' : '#F6F8F4',
-                paper: isDark ? '#111827' : '#FFFFFF'
+                default: scheme.background,
+                paper: scheme.surface
             },
             text: {
-                primary: isDark ? '#F8FAFC' : '#1F2937',
-                secondary: isDark ? '#CBD5E1' : '#64748B'
+                primary: scheme.onSurface,
+                secondary: scheme.onSurfaceVariant
             },
-            divider: alpha(isDark ? '#FFFFFF' : '#1F2937', isDark ? 0.14 : 0.11)
+            divider: scheme.outlineVariant
         },
         shape: {
-            borderRadius: 8
+            borderRadius: calibrateDesignTokens.shape.medium
         },
-        shadows: buildShadowRamp({ shadowColor: isDark ? '#000000' : '#1F2937', intensity: isDark ? 0.9 : 0.42 }),
+        shadows: buildShadowRamp({ shadowColor: '#000000', intensity: isDark ? 0.9 : 0.32 }),
         typography: {
             fontFamily: '"DIN Alternate", "Avenir Next", Avenir, "Segoe UI Variable", "Segoe UI", sans-serif',
             h1: { fontWeight: 850, letterSpacing: 0 },

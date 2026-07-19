@@ -69,8 +69,6 @@ class RepositoryContractsTest {
         localDate = localDate,
         caloriesConsumed = null,
         calorieTarget = null,
-        steps = null,
-        activityCalories = null,
         latestWeightGrams = null,
         serverRevision = null,
         fetchedAtEpochMs = 0

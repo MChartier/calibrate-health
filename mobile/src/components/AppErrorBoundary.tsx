@@ -1,6 +1,7 @@
 import React from 'react';
 import {
     DevSettings,
+    Platform,
     Pressable,
     StatusBar,
     StyleSheet,
@@ -23,9 +24,20 @@ type AppErrorBoundaryState = {
 const FALLBACK_MAX_WIDTH = 420; // Keeps recovery copy readable on tablets and unfolded devices.
 const BRAND_MARK_SIZE = 52; // Gives the emergency shell a recognizable mark without loading SVG/native modules.
 
-const defaultRestartApp = (): void => {
-    DevSettings.reload();
-};
+/** Restart through the host that actually owns the current runtime. */
+export function restartAppRuntime(
+    platform = Platform.OS,
+    reloadWeb = () => window.location.reload(),
+    reloadNative = () => DevSettings.reload()
+): void {
+    if (platform === 'web') {
+        reloadWeb();
+        return;
+    }
+    reloadNative();
+}
+
+const defaultRestartApp = (): void => restartAppRuntime();
 
 /**
  * Last-resort native shell for render and lifecycle failures below the app root.

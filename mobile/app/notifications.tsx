@@ -82,7 +82,9 @@ export default function NotificationsScreen() {
                     <Ionicons name="chevron-back" size={22} color={colors.text} />
                 </Pressable>
                 <View style={styles.headerText}>
-                    <AppText variant="screenTitle">Notifications</AppText>
+                    <AppText accessibilityRole="header" aria-level={1} variant="screenTitle">
+                        Notifications
+                    </AppText>
                     <AppText variant="caption">{unreadCount} unread</AppText>
                 </View>
             </View>

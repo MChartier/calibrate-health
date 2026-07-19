@@ -1,18 +1,17 @@
 import 'dotenv/config';
 
-import fs from 'node:fs';
-import type { IncomingHttpHeaders } from 'node:http';
-import path from 'node:path';
 import bcrypt from 'bcryptjs';
-import cors, { type CorsOptionsDelegate } from 'cors';
+import cors from 'cors';
 import express from 'express';
 import helmet from 'helmet';
 import session from 'express-session';
 import passport from 'passport';
 import { Strategy as LocalStrategy } from 'passport-local';
+import { resolveBrowserOriginPolicy } from './config/cors';
 import prisma, { pgPool } from './config/database';
 import { isProductionOrStagingEnv } from './config/environment';
 import { getNativePushModeConfigurationWarning } from './config/nativePush';
+import { configureFrontendStaticAssets } from './frontendStatic';
 import authRoutes from './routes/auth';
 import clientConfigRoutes from './routes/clientConfig';
 import devRoutes from './routes/dev';
@@ -30,6 +29,7 @@ import userRoutes from './routes/user';
 import watchRoutes from './routes/watch';
 import { authenticateMobileBearerToken } from './middleware/mobileAuth';
 import { enforceNativeClientCompatibility } from './middleware/clientCompatibility';
+import { createCorsOptionsDelegate } from './middleware/cors';
 import { createAuthRateLimiters, createBrowserMutationOriginGuard } from './middleware/security';
 import { startReminderScheduler } from './services/reminderScheduler';
 import { checkDatabaseReadiness } from './services/readiness';
@@ -48,118 +48,7 @@ import {
 
 const SESSION_TTL_MS = DEFAULT_SESSION_TTL_MS;
 
-const DEFAULT_VITE_DEV_SERVER_PORT = 5173; // Fallback port for the Vite dev server when VITE_DEV_SERVER_PORT isn't set.
-
-/**
- * Parse an environment variable as a positive integer.
- */
-function parsePositiveInteger(value: string | undefined): number | null {
-  if (!value) return null;
-  const parsed = Number.parseInt(value, 10);
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
-}
-
-/**
- * Default CORS allowlist for local development when CORS_ORIGINS is unset.
- *
- * We use the Vite dev server port (VITE_DEV_SERVER_PORT/FRONTEND_PORT) when present so worktrees
- * and devcontainers that customize ports keep working without extra config.
- */
-function getDefaultAllowedOriginsDev(env: NodeJS.ProcessEnv = process.env): string[] {
-  const port =
-    parsePositiveInteger(env.VITE_DEV_SERVER_PORT) ??
-    parsePositiveInteger(env.FRONTEND_PORT) ??
-    DEFAULT_VITE_DEV_SERVER_PORT;
-
-  return [`http://localhost:${port}`, `http://127.0.0.1:${port}`];
-}
-
-/**
- * Serve the built frontend SPA from disk in deployed environments (NODE_ENV=production|staging).
- *
- * In development we typically run the Vite dev server (HMR) separately and proxy `/api/*` and `/auth/*`
- * to the backend, so serving `dist/` from Express would be redundant and can hide misconfiguration.
- *
- * We only fall back to `index.html` for non-API routes so deep links work without
- * intercepting JSON endpoints like `/api/*` and `/auth/*`.
- */
-function configureSpaStaticAssets(app: express.Express, isProductionOrStaging: boolean): void {
-  if (!isProductionOrStaging) return;
-
-  const distDir = process.env.FRONTEND_DIST_DIR;
-  if (!distDir) {
-    console.warn(
-      'FRONTEND_DIST_DIR is not set; backend will not serve the built frontend (expected when frontend is hosted separately). Set FRONTEND_DIST_DIR to the Vite dist directory for a single-origin deployment.'
-    );
-    return;
-  }
-
-  const indexHtmlPath = path.join(distDir, 'index.html');
-  if (!fs.existsSync(indexHtmlPath)) {
-    console.warn(
-      `FRONTEND_DIST_DIR does not contain index.html (${indexHtmlPath}); backend will not serve the built frontend. Ensure the frontend build output is present and FRONTEND_DIST_DIR points to it.`
-    );
-    return;
-  }
-
-  app.use(express.static(distDir));
-
-  // SPA fallback should not hijack backend endpoints.
-  const spaFallbackRoute = /^\/(?!api(?:\/|$)|auth(?:\/|$)|dev(?:\/|$)).*/;
-  app.get(spaFallbackRoute, (_req, res) => {
-    res.sendFile(indexHtmlPath);
-  });
-}
-
-/**
- * Parse a comma-delimited list of origins from CORS_ORIGINS.
- * Defaults to allowing the local Vite dev server origin in development.
- */
-const parseAllowedOrigins = (value: string | undefined, inDeployedEnv: boolean): string[] => {
-  if (value && value.trim().length > 0) {
-    return value
-      .split(',')
-      .map((origin) => origin.trim())
-      .filter(Boolean);
-  }
-
-  return inDeployedEnv ? [] : getDefaultAllowedOriginsDev();
-};
-
-/**
- * Normalize an Origin header or CORS allowlist entry for comparison.
- */
-const normalizeOrigin = (origin: string): string | null => {
-  try {
-    return new URL(origin).origin;
-  } catch {
-    return null;
-  }
-};
-
-/**
- * Read an HTTP header as a single string value.
- *
- * Node can surface multi-value headers as `string[]`; for our purposes we only
- * care about the first entry.
- */
-function getHeaderValue(headers: IncomingHttpHeaders, name: string): string | undefined {
-  const value = headers[name.toLowerCase()];
-  if (Array.isArray(value)) return value[0];
-  return typeof value === 'string' ? value : undefined;
-}
-
 type HttpError = Error & { statusCode?: number; status?: number; expose?: boolean };
-
-/**
- * Create a request error that the final Express error handler can safely expose.
- */
-function createRequestError(message: string, statusCode: number): HttpError {
-  const error = new Error(message) as HttpError;
-  error.statusCode = statusCode;
-  error.expose = true;
-  return error;
-}
 
 /**
  * Final JSON error response mapper for middleware and async route failures.
@@ -269,52 +158,14 @@ const bootstrap = async (): Promise<void> => {
     app.set('trust proxy', 1);
   }
 
-  const allowedOrigins = parseAllowedOrigins(process.env.CORS_ORIGINS, isProductionOrStaging)
-    .map(normalizeOrigin)
-    .filter((origin): origin is string => origin !== null);
-  const allowedOriginSet = new Set(allowedOrigins);
+  const browserOriginPolicy = resolveBrowserOriginPolicy(process.env.CORS_ORIGINS, isProductionOrStaging);
+  const allowedOriginSet = browserOriginPolicy.exactOrigins;
 
-  /**
-   * Allow requests from:
-   * - The same origin as the API host (covers prod + staging deployments where the SPA and API share a domain).
-   * - Explicitly configured origins (CORS_ORIGINS), for split frontend/backend deployments.
-   */
-  const corsDelegate: CorsOptionsDelegate = (req, callback) => {
-    const requestOrigin = getHeaderValue(req.headers, 'origin');
-    if (!requestOrigin) {
-      // Non-browser requests (curl, health checks, etc.).
-      callback(null, { origin: false });
-      return;
-    }
-
-    // For single-origin deployments (typical prod/staging), we do not need CORS at all. If no allowlist is
-    // configured, disable CORS headers and let the browser enforce same-origin policy.
-    if (allowedOriginSet.size === 0 && isProductionOrStaging) {
-      callback(null, { origin: false });
-      return;
-    }
-
-    const normalizedOrigin = normalizeOrigin(requestOrigin);
-    if (!normalizedOrigin) {
-      callback(createRequestError('Not allowed by CORS', 403));
-      return;
-    }
-
-    const host = getHeaderValue(req.headers, 'host');
-    const forwardedProtocol = getHeaderValue(req.headers, 'x-forwarded-proto');
-    const protocol = forwardedProtocol ? forwardedProtocol.split(',')[0].trim() : useSecureCookies ? 'https' : 'http';
-    const normalizedRequestOrigin = host ? normalizeOrigin(`${protocol}://${host}`) : null;
-    const isSameOrigin = normalizedRequestOrigin !== null && normalizedOrigin === normalizedRequestOrigin;
-
-    if (!isSameOrigin && !allowedOriginSet.has(normalizedOrigin)) {
-      callback(createRequestError('Not allowed by CORS', 403));
-      return;
-    }
-
-    callback(null, { origin: true, credentials: true });
-  };
-
-  app.use(cors(corsDelegate));
+  app.use(cors(createCorsOptionsDelegate({
+    originPolicy: browserOriginPolicy,
+    isProductionOrStaging,
+    useSecureRequestOrigin: useSecureCookies
+  })));
   app.use('/auth/register', authRateLimiters.registration);
   app.use('/auth/mobile/register', authRateLimiters.registration);
   app.use('/auth/login', authRateLimiters.login);
@@ -351,7 +202,8 @@ const bootstrap = async (): Promise<void> => {
   app.use(enforceNativeClientCompatibility);
   app.use(createBrowserMutationOriginGuard({
     trustedOrigins: allowedOriginSet,
-    useSecureRequestOrigin: useSecureCookies
+    useSecureRequestOrigin: useSecureCookies,
+    allowDevelopmentLoopbackOrigins: browserOriginPolicy.allowDevelopmentLoopbackOrigins
   }));
   app.use('/auth/mobile/wear/pairing-credential', authRateLimiters.pairingIssue);
   app.use(autoLoginTestUser);
@@ -445,7 +297,7 @@ const bootstrap = async (): Promise<void> => {
     app.use('/dev/test', devTestRoutes);
   }
 
-  configureSpaStaticAssets(app, isProductionOrStaging);
+  configureFrontendStaticAssets(app, isProductionOrStaging);
   app.use(requestErrorHandler);
 
   app.listen(PORT, () => {

@@ -11,7 +11,6 @@ import { refreshMaterializedWeightTrendsBestEffort } from './materializedWeightT
 const WATCH_QUICK_ADD_LIMIT = 12;
 const WATCH_PINNED_LIMIT = 6;
 const WATCH_RECENT_LIMIT = 12;
-const ACTIVITY_STALE_AFTER_MS = 2 * 60 * 60 * 1000;
 const MAX_WATCH_WEIGHT_GRAMS = 1_000_000;
 const ENTITY_REVISION_PATTERN = /^[a-f0-9]{24}$/;
 
@@ -460,6 +459,66 @@ const recentDraft = (
   };
 };
 
+export type WatchGoalSnapshot = {
+  start_weight_grams: number;
+  target_weight_grams: number;
+  current_weight_grams: number | null;
+  daily_deficit: number;
+  progress_percent: number | null;
+  remaining_weight_grams: number;
+  is_complete: boolean;
+};
+
+/** Derive bounded, direction-aware goal progress once so every Watch surface agrees. */
+export function buildWatchGoalSnapshot(
+  goal: { start_weight_grams: number; target_weight_grams: number; daily_deficit: number } | null,
+  currentWeightGrams: number | null,
+  weightUnit: 'KG' | 'LB'
+): WatchGoalSnapshot | null {
+  if (!goal) return null;
+  const totalDelta = goal.target_weight_grams - goal.start_weight_grams;
+  if (currentWeightGrams === null) {
+    return {
+      start_weight_grams: goal.start_weight_grams,
+      target_weight_grams: goal.target_weight_grams,
+      daily_deficit: goal.daily_deficit,
+      current_weight_grams: null,
+      progress_percent: null,
+      remaining_weight_grams: Math.abs(totalDelta),
+      is_complete: false
+    };
+  }
+
+  let isComplete: boolean;
+  let remainingWeightGrams: number;
+  let progressPercent: number;
+  if (totalDelta > 0) {
+    isComplete = currentWeightGrams >= goal.target_weight_grams;
+    remainingWeightGrams = Math.max(0, goal.target_weight_grams - currentWeightGrams);
+    progressPercent = ((currentWeightGrams - goal.start_weight_grams) / totalDelta) * 100;
+  } else if (totalDelta < 0) {
+    isComplete = currentWeightGrams <= goal.target_weight_grams;
+    remainingWeightGrams = Math.max(0, currentWeightGrams - goal.target_weight_grams);
+    progressPercent = ((currentWeightGrams - goal.start_weight_grams) / totalDelta) * 100;
+  } else {
+    // Match the existing 0.1 display-unit maintenance tolerance at the canonical gram edge.
+    const toleranceGrams = weightUnit === 'LB' ? 45 : 100;
+    remainingWeightGrams = Math.abs(currentWeightGrams - goal.target_weight_grams);
+    isComplete = remainingWeightGrams <= toleranceGrams;
+    progressPercent = isComplete ? 100 : 0;
+  }
+
+  return {
+    start_weight_grams: goal.start_weight_grams,
+    target_weight_grams: goal.target_weight_grams,
+    daily_deficit: goal.daily_deficit,
+    current_weight_grams: currentWeightGrams,
+    progress_percent: Math.round(Math.max(0, Math.min(100, progressPercent)) * 10) / 10,
+    remaining_weight_grams: remainingWeightGrams,
+    is_complete: isComplete
+  };
+}
+
 export async function buildWatchSnapshot(options: {
   userId: number;
   mobileAuthSessionId: number;
@@ -490,12 +549,11 @@ export async function buildWatchSnapshot(options: {
           select: { id: true, type: true, local_date: true, created_at: true }
         })
       : Promise.resolve([]);
-    const [goal, latestWeight, todayWeight, foodAggregate, activity, foodDay, pinned, recent, undoCandidate, activeReminderRows] = await Promise.all([
+    const [goal, latestWeight, todayWeight, foodAggregate, foodDay, pinned, recent, undoCandidate, activeReminderRows] = await Promise.all([
       tx.goal.findFirst({ where: { user_id: options.userId }, orderBy: [{ created_at: 'desc' }, { id: 'desc' }] }),
       tx.bodyMetric.findFirst({ where: { user_id: options.userId, date: { lte: localDate } }, orderBy: [{ date: 'desc' }, { id: 'desc' }] }),
       tx.bodyMetric.findUnique({ where: { user_id_date: { user_id: options.userId, date: localDate } } }),
       tx.foodLog.aggregate({ where: { user_id: options.userId, local_date: localDate }, _sum: { calories: true } }),
-      tx.activityDaySummary.findUnique({ where: { user_id_local_date: { user_id: options.userId, local_date: localDate } } }),
       tx.foodLogDay.findUnique({ where: { user_id_local_date: { user_id: options.userId, local_date: localDate } } }),
       tx.myFood.findMany({ where: { user_id: options.userId, is_pinned: true }, orderBy: [{ name: 'asc' }, { id: 'asc' }], take: WATCH_PINNED_LIMIT, select: { id: true, name: true, calories_per_serving: true } }),
       getRecentFoodSuggestions({ userId: options.userId, limit: WATCH_RECENT_LIMIT, database: tx }),
@@ -511,12 +569,8 @@ export async function buildWatchSnapshot(options: {
     });
     const caloriesConsumed = foodAggregate._sum.calories ?? 0;
     const calorieTarget = calorieSummary.dailyCalorieTarget === undefined ? null : Math.round(calorieSummary.dailyCalorieTarget);
-    const observedAt = activity?.observed_at ?? null;
-    const activityAgeSeconds = observedAt
-      ? Math.max(0, Math.floor((now.getTime() - observedAt.getTime()) / 60_000) * 60)
-      : null;
-    const activityStale = !observedAt || now.getTime() - observedAt.getTime() > ACTIVITY_STALE_AFTER_MS;
     const defaultMealPeriod = suggestedMealPeriod(now, user.timezone);
+    const goalProgress = buildWatchGoalSnapshot(goal, latestWeight?.weight_grams ?? null, user.weight_unit);
     const recentMyFoodIds = Array.from(new Set(
       recent.map((item) => item.my_food_id).filter((id): id is number => id !== null)
     ));
@@ -562,7 +616,6 @@ export async function buildWatchSnapshot(options: {
       local_date: localDateKey,
       weight_unit: user.weight_unit,
       calories: { consumed: caloriesConsumed, target: calorieTarget, remaining: calorieTarget === null ? null : calorieTarget - caloriesConsumed, missing: calorieSummary.missing },
-      activity: activity ? { steps: activity.steps, active_calories_kcal: activity.active_calories_kcal, total_calories_kcal: activity.total_calories_kcal, exercise_minutes: activity.exercise_minutes, observed_at: activity.observed_at.toISOString() } : null,
       food_day: {
         is_complete: foodDay?.is_complete ?? false,
         completed_at: foodDay?.completed_at?.toISOString() ?? null,
@@ -575,10 +628,10 @@ export async function buildWatchSnapshot(options: {
         latest_revision: latestWeight ? metricRevision(latestWeight) : null,
         latest_date: latestWeight?.date.toISOString().slice(0, 10) ?? null
       },
+      goal: goalProgress,
       quick_add: quickAdd,
       reminders,
-      undo_candidate: undoCandidate,
-      staleness: { activity_stale: activityStale, activity_age_seconds: activityAgeSeconds }
+      undo_candidate: undoCandidate
     };
     const revision = crypto.createHash('sha256')
       .update(JSON.stringify({ timezone: user.timezone, ...semantic }))

@@ -12,14 +12,14 @@ import { OverlaySelect, type OverlaySelectOption } from '../../src/components/Ov
 import { Screen } from '../../src/components/Screen';
 import { SectionHeader } from '../../src/components/SectionHeader';
 import { SegmentedControl } from '../../src/components/SegmentedControl';
-import { WeightStatusCard } from '../../src/components/WeightStatusCard';
 import { WeightEntrySheet } from '../../src/components/WeightEntrySheet';
 import { WeightTrendCard } from '../../src/components/WeightTrendCard';
+import { ProgressOverviewCard } from '../../src/components/progress/ProgressOverviewCard';
 import { useAuth } from '../../src/auth/AuthContext';
 import { gramsToDisplayWeight } from '../../src/utils/bodyMeasurements';
 import { getTodayDate } from '../../src/utils/dates';
 import { formatWeightUnit } from '../../src/utils/format';
-import { colors, radius, spacing } from '../../src/theme';
+import { colors, radius, spacing, useAppTheme } from '../../src/theme';
 
 type GoalMode = 'lose' | 'maintain' | 'gain';
 
@@ -82,6 +82,7 @@ function inferGoalMode(dailyDeficit?: number | null): GoalMode {
 
 export default function ProgressScreen() {
     const { api, user } = useAuth();
+    const { colors: themeColors } = useAppTheme();
     const queryClient = useQueryClient();
     const goalQuery = useQuery({ queryKey: ['mobile-goal'], queryFn: () => api.getGoals() });
     const profileQuery = useQuery({ queryKey: ['mobile-profile'], queryFn: () => api.getUserProfile() });
@@ -162,14 +163,19 @@ export default function ProgressScreen() {
     }
 
     return (
-        <Screen reserveBottomTabs>
-            <WeightStatusCard
+        <Screen reserveBottomTabs style={{ backgroundColor: themeColors.background }}>
+            <ProgressOverviewCard
                 latestMetric={metricsQuery.data?.[0]}
+                trendMeta={trendSummaryQuery.data?.meta}
+                goal={goalQuery.data}
                 user={user}
-                onEditWeight={() => setIsWeightEditorOpen(true)}
+                onLogWeight={() => setIsWeightEditorOpen(true)}
             />
 
-            <WeightTrendCard title="Weight trend" />
+            <WeightTrendCard
+                title="Weight trend"
+                description="Daily weigh-ins and your smoothed trend over time."
+            />
 
             <GoalProgressCard
                 title="Goal projection"

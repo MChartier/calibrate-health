@@ -34,6 +34,18 @@ describe('Health Connect normalization', () => {
         }));
     });
 
+    it('treats the native negative client-version sentinel as absent', () => {
+        expect(normalizeHealthConnectRecord('Steps', {
+            metadata: { ...metadata, clientRecordId: '', clientRecordVersion: -1 },
+            startTime: '2026-07-11T17:00:00.000Z',
+            endTime: '2026-07-11T18:00:00.000Z',
+            count: 1_000
+        })).toEqual(expect.objectContaining({
+            client_record_id: null,
+            client_record_version: null
+        }));
+    });
+
     it('uses true IANA-local day boundaries across DST transitions', () => {
         const spring = buildLocalDayRanges(
             'America/Los_Angeles',

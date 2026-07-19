@@ -5,6 +5,7 @@ import release from '../../../shared/release.json';
 
 export const HOSTED_SERVER_URL = 'https://calibratehealth.app';
 export const ANDROID_EMULATOR_SERVER_URL = 'http://10.0.2.2:3000';
+export const LOCAL_WEB_BACKEND_PORT = '3000';
 export const CALIBRATE_SERVER_URL_ENV = 'EXPO_PUBLIC_CALIBRATE_SERVER_URL';
 export const MOBILE_API_VERSION = release.server.api.current;
 
@@ -109,10 +110,27 @@ export function getConfiguredServerUrl(value = process.env.EXPO_PUBLIC_CALIBRATE
     return normalizeServerUrl(value);
 }
 
+/** Keep the Expo dev server and local API on separate ports while preserving same-origin web exports. */
+export function resolveDefaultWebServerUrl(
+    location: Pick<URL, 'hostname' | 'origin' | 'protocol'>,
+    isDevelopment: boolean
+): string {
+    if (!isDevelopment || !isLocalServerHostname(location.hostname)) return location.origin;
+
+    const backendUrl = new URL(location.origin);
+    backendUrl.port = LOCAL_WEB_BACKEND_PORT;
+    return backendUrl.origin;
+}
+
 /** Default to an explicit env value, hosted production, or Android emulator loopback in development. */
 export function getDefaultServerUrl(): string {
     const configuredServerUrl = getConfiguredServerUrl();
     if (configuredServerUrl) return configuredServerUrl;
+    // Production web exports use their serving origin for HttpOnly cookie sessions.
+    // Local Expo development targets the backend's stable port instead of Metro.
+    if (Platform.OS === 'web' && typeof window !== 'undefined' && window.location.origin) {
+        return resolveDefaultWebServerUrl(window.location, __DEV__);
+    }
     if (__DEV__ && Platform.OS === 'android') return ANDROID_EMULATOR_SERVER_URL;
     return HOSTED_SERVER_URL;
 }
@@ -150,7 +168,8 @@ export async function testCalibrateServerConnection(
         return { ok: false, url: null, code: 'invalid_url', message: parsed.message };
     }
 
-    const fetchImpl = options.fetchImpl ?? fetch;
+    // Some browser hosts require Window to remain fetch's receiver.
+    const fetchImpl = options.fetchImpl ?? ((input, init) => globalThis.fetch(input, init));
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), options.timeoutMs ?? SERVER_CONNECTION_TIMEOUT_MS);
     let response: Response;

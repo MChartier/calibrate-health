@@ -21,8 +21,6 @@ class CalibrateTileCacheReader(
             caloriesConsumed = snapshot.caloriesConsumed,
             calorieTarget = snapshot.calorieTarget,
             caloriesRemaining = snapshot.caloriesRemaining,
-            steps = snapshot.steps,
-            activityStale = snapshot.activityStale,
             isComplete = snapshot.foodDayComplete,
             cachedAtEpochMs = metadata.lastSuccessAtEpochMs ?: snapshot.fetchedAtEpochMs
         )

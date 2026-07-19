@@ -1,5 +1,5 @@
 import React from 'react';
-import { fireEvent, render, waitFor } from '@testing-library/react-native';
+import { fireEvent, render, waitFor, within } from '@testing-library/react-native';
 import LoginScreen from '../../app/(auth)/login';
 import RegisterScreen from '../../app/(auth)/register';
 import { useAuth } from './AuthContext';
@@ -100,5 +100,22 @@ describe('auth screen server navigation', () => {
         await waitFor(() => {
             expect(auth.register).toHaveBeenCalledWith('new@example.com', 'secret', SELF_HOSTED_URL);
         });
+    });
+
+    it('restores the create-account action after registration fails', async () => {
+        const auth = authContextStub();
+        auth.register.mockRejectedValueOnce(new Error('Unable to create account'));
+        mockUseAuth.mockReturnValue(auth as unknown as ReturnType<typeof useAuth>);
+        const screen = render(<RegisterScreen />);
+
+        fireEvent.changeText(screen.getByLabelText('Email'), 'existing@example.com');
+        fireEvent.changeText(screen.getByLabelText('Password'), 'secret');
+        fireEvent.press(screen.getByLabelText('Create account'));
+
+        await waitFor(() => {
+            expect(screen.getByRole('alert')).toHaveTextContent('Unable to create account');
+        });
+        const createAccountButton = screen.getByRole('button', { name: 'Create account' });
+        expect(within(createAccountButton).getByText('Create account')).toBeTruthy();
     });
 });

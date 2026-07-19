@@ -2,6 +2,7 @@ import {
     getConfiguredServerUrl,
     normalizeServerUrl,
     parseServerUrl,
+    resolveDefaultWebServerUrl,
     testCalibrateServerConnection
 } from './server';
 
@@ -56,6 +57,14 @@ describe('server URL parsing', () => {
         expect(getConfiguredServerUrl('http://192.168.0.160:3000/api')).toBe('http://192.168.0.160:3000');
         expect(getConfiguredServerUrl('not a url')).toBeNull();
     });
+
+    it('targets port 3000 from a loopback Expo dev server but preserves production origins', () => {
+        const expoLocation = new URL('http://localhost:8081/login');
+        expect(resolveDefaultWebServerUrl(expoLocation, true)).toBe('http://localhost:3000');
+        expect(resolveDefaultWebServerUrl(expoLocation, false)).toBe('http://localhost:8081');
+        expect(resolveDefaultWebServerUrl(new URL('https://self-hosted.example/app'), true))
+            .toBe('https://self-hosted.example');
+    });
 });
 
 describe('testCalibrateServerConnection', () => {
@@ -76,6 +85,23 @@ describe('testCalibrateServerConnection', () => {
             'https://calibrate.example/api/v1/client-config',
             expect.objectContaining({ method: 'GET' })
         );
+    });
+
+    it('keeps the global receiver when using the browser fetch implementation', async () => {
+        const originalFetch = globalThis.fetch;
+        const receiverAwareFetch = jest.fn(function (this: typeof globalThis) {
+            if (this !== globalThis) throw new TypeError('Illegal invocation');
+            return Promise.resolve(new Response(JSON.stringify(compatibleConfig), { status: 200 }));
+        });
+        globalThis.fetch = receiverAwareFetch as typeof fetch;
+
+        try {
+            const result = await testCalibrateServerConnection('https://calibrate.example');
+            expect(result).toEqual(expect.objectContaining({ ok: true }));
+            expect(receiverAwareFetch).toHaveBeenCalledTimes(1);
+        } finally {
+            globalThis.fetch = originalFetch;
+        }
     });
 
     it('reports unreachable and non-Calibrate servers clearly', async () => {

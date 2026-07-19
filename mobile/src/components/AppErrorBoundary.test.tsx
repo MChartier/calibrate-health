@@ -1,7 +1,7 @@
 import React from 'react';
 import { Text } from 'react-native';
 import { fireEvent, render } from '@testing-library/react-native';
-import { AppErrorBoundary } from './AppErrorBoundary';
+import { AppErrorBoundary, restartAppRuntime } from './AppErrorBoundary';
 
 const AlwaysThrows = () => {
     throw new Error('Example render failure');
@@ -66,5 +66,17 @@ describe('AppErrorBoundary', () => {
         fireEvent.press(view.getByLabelText('Restart Calibrate'));
 
         expect(restartApp).toHaveBeenCalledTimes(1);
+    });
+
+    it('uses the browser reload host on web and the native host elsewhere', () => {
+        const reloadWeb = jest.fn();
+        const reloadNative = jest.fn();
+
+        restartAppRuntime('web', reloadWeb, reloadNative);
+        expect(reloadWeb).toHaveBeenCalledTimes(1);
+        expect(reloadNative).not.toHaveBeenCalled();
+
+        restartAppRuntime('android', reloadWeb, reloadNative);
+        expect(reloadNative).toHaveBeenCalledTimes(1);
     });
 });

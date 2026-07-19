@@ -1,31 +1,31 @@
-import React, { useState } from 'react';
+import React, { useEffect } from 'react';
 import { router, useLocalSearchParams } from 'expo-router';
 import type { MealPeriod } from '@calibrate/shared';
-import { AddFoodSheet } from '../../src/components/AddFoodSheet';
-import { DateNavigation } from '../../src/components/DateNavigation';
-import { Screen } from '../../src/components/Screen';
-import { useLogDateNavigation } from '../../src/hooks/useLogDateNavigation';
+import { LoadingState } from '../../src/components/LoadingState';
+import { useAddFoodRequest } from '../../src/context/AddFoodRequestContext';
+import { MEAL_OPTIONS } from '../../src/utils/meals';
 
 export default function LogScreen() {
     const { date, meal } = useLocalSearchParams<{ date?: string; meal?: MealPeriod }>();
-    const dateNavigation = useLogDateNavigation(typeof date === 'string' ? date : null);
-    const [isSheetOpen, setIsSheetOpen] = useState(true);
+    const { requestAddFood } = useAddFoodRequest();
 
-    function closeSheet() {
-        setIsSheetOpen(false);
-        router.replace('/(tabs)/today');
-    }
+    useEffect(() => {
+        const requestedMeal = typeof meal === 'string' && MEAL_OPTIONS.includes(meal as MealPeriod)
+            ? meal as MealPeriod
+            : undefined;
+        requestAddFood({
+            date: typeof date === 'string' ? date : undefined,
+            meal: requestedMeal
+        });
+        router.replace({
+            pathname: '/(tabs)/today',
+            params: {
+                openAddFood: 'true',
+                date: typeof date === 'string' ? date : undefined,
+                meal: requestedMeal
+            }
+        });
+    }, [date, meal, requestAddFood]);
 
-    return (
-        <Screen reserveBottomTabs>
-            <DateNavigation navigation={dateNavigation} />
-
-            <AddFoodSheet
-                visible={isSheetOpen}
-                date={dateNavigation.selectedDate}
-                initialMeal={meal ?? null}
-                onClose={closeSheet}
-            />
-        </Screen>
-    );
+    return <LoadingState label="Opening add food..." />;
 }

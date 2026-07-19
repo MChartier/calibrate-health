@@ -9,10 +9,6 @@ data class WearSummary(
     val caloriesRemaining: Int?,
     val caloriesConsumed: Int?,
     val calorieTarget: Int?,
-    val steps: Int?,
-    val activityCalories: Int?,
-    val activityStale: Boolean,
-    val activityAgeSeconds: Long?,
     val foodDayComplete: Boolean,
     val foodDayRevision: String?,
     val todayWeightGrams: Long?,
@@ -20,6 +16,13 @@ data class WearSummary(
     val latestWeightGrams: Long?,
     val latestWeightDate: String?,
     val weightUnit: String,
+    val goalStartWeightGrams: Long? = null,
+    val goalTargetWeightGrams: Long? = null,
+    val goalCurrentWeightGrams: Long? = null,
+    val goalDailyDeficit: Int? = null,
+    val goalProgressPercent: Double? = null,
+    val goalRemainingWeightGrams: Long? = null,
+    val goalIsComplete: Boolean? = null,
     val undoFoodLogId: Long?,
     val undoName: String?,
     val undoCalories: Int?,
@@ -53,23 +56,17 @@ sealed interface WearSyncStatus {
 object SummaryFormatter {
     fun caloriesRemaining(summary: WearSummary): String =
         summary.caloriesRemaining?.let { value ->
-            if (value >= 0) "$value kcal left" else "${-value} kcal over"
+            if (value >= 0) "${calorieCount(value)} kcal left" else "${calorieCount(-value)} kcal over"
         } ?: "Calorie target unavailable"
 
     fun calorieProgress(summary: WearSummary): String =
         if (summary.caloriesConsumed != null && summary.calorieTarget != null) {
-            "${summary.caloriesConsumed} of ${summary.calorieTarget} kcal"
+            "${calorieCount(summary.caloriesConsumed)} of ${calorieCount(summary.calorieTarget)} kcal"
         } else {
             "Open phone to finish setup"
         }
 
-    fun steps(summary: WearSummary): String = summary.steps?.let(::formatWholeNumber) ?: "--"
-
-    fun activity(summary: WearSummary): String {
-        val calories = summary.activityCalories?.let { "$it active kcal" }
-        val stale = if (summary.activityStale) "Activity may be stale" else null
-        return listOfNotNull(calories, stale).joinToString(" | ").ifBlank { "Activity unavailable" }
-    }
+    fun calorieCount(value: Int?): String = value?.let(::formatWholeNumber) ?: "--"
 
     fun completion(summary: WearSummary): String =
         if (summary.foodDayComplete) "Food day complete" else "Food day in progress"
@@ -106,8 +103,6 @@ data class WeightEditorState(val grams: Long, val unit: String) {
     fun label(): String = SummaryFormatter.weight(grams, unit)
 
     companion object {
-        // A neutral starting point lets a first-time user log locally without inventing profile data.
-        const val DEFAULT_FIRST_WEIGHT_GRAMS = 70_000L
         const val MIN_WEIGHT_GRAMS = 20_000L
         const val MAX_WEIGHT_GRAMS = 500_000L
         private const val METRIC_STEP_GRAMS = 100L

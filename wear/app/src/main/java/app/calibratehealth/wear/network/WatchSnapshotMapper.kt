@@ -7,7 +7,6 @@ import app.calibratehealth.wear.notifications.WearReminder
 import app.calibratehealth.wear.notifications.WearReminderType
 import java.time.Instant
 import java.time.LocalDate
-import kotlin.math.roundToInt
 
 data class MappedWatchSnapshot(
     val dailySnapshot: DailySnapshotEntity,
@@ -25,9 +24,9 @@ object WatchSnapshotMapper {
     private const val MAX_LABEL_CHARS = 240
     private const val MAX_DRAFT_CHARS = 8 * 1024
     private const val MAX_CALORIES = 100_000
-    private const val MAX_STEPS = 1_000_000
     private const val MAX_WEIGHT_GRAMS = 1_000_000L
     private const val MAX_REMINDERS = 2
+    private val DAILY_DEFICITS = setOf(-1_000, -750, -500, -250, 0, 250, 500, 750, 1_000)
 
     fun map(body: String, fetchedAtEpochMs: Long): MappedWatchSnapshot {
         require(fetchedAtEpochMs > 0) { "Snapshot fetch time must be positive." }
@@ -46,22 +45,6 @@ object WatchSnapshotMapper {
         val target = calories.optionalLong("target")?.boundedInt("calories.target", 0, MAX_CALORIES)
         val remaining = calories.optionalLong("remaining")?.boundedInt("calories.remaining", -MAX_CALORIES, MAX_CALORIES)
 
-        val activity = root.optionalObject("activity")
-        val steps = activity?.optionalLong("steps")?.boundedInt("activity.steps", 0, MAX_STEPS)
-        val activeCalories = activity?.optionalDouble("active_calories_kcal")?.let {
-            require(it in 0.0..MAX_CALORIES.toDouble()) { "activity.active_calories_kcal is outside its allowed range." }
-            it.roundToInt()
-        }
-        val totalCalories = activity?.optionalDouble("total_calories_kcal")?.also {
-            require(it in 0.0..MAX_CALORIES.toDouble()) { "activity.total_calories_kcal is outside its allowed range." }
-        }?.roundToInt()
-        val exerciseMinutes = activity?.optionalDouble("exercise_minutes")?.also {
-            require(it in 0.0..1_440.0) { "activity.exercise_minutes is outside its allowed range." }
-        }?.roundToInt()
-        val activityObservedAt = activity?.requiredString("observed_at")?.let {
-            requireInstant(it, "activity.observed_at")
-        }
-
         val foodDay = root.requiredObject("food_day")
         val foodDayComplete = foodDay.requiredBoolean("is_complete")
         val foodDayCompletedAt = foodDay.optionalString("completed_at")?.let {
@@ -78,6 +61,34 @@ object WatchSnapshotMapper {
         require((todayWeight == null) == (todayWeightRevision == null)) { "Today weight and revision must both be present or absent." }
         require((latestWeight == null) == (latestWeightRevision == null)) { "Latest weight and revision must both be present or absent." }
         require((latestWeight == null) == (latestWeightDate == null)) { "Latest weight and date must both be present or absent." }
+
+        // Goal was added after the first Watch snapshot contract, so absence maps to no cached goal.
+        val goal = when (val value = root.values["goal"]) {
+            null, JsonValue.Null -> null
+            is JsonValue.Object -> value
+            else -> throw InvalidJsonException("goal must be an object or null.")
+        }
+        val goalStartWeight = goal?.requiredLong("start_weight_grams")?.also(::requireWeight)
+        val goalTargetWeight = goal?.requiredLong("target_weight_grams")?.also(::requireWeight)
+        val goalCurrentWeight = goal?.optionalLong("current_weight_grams")?.also(::requireWeight)
+        val goalDailyDeficit = goal?.requiredLong("daily_deficit")?.boundedInt(
+            "goal.daily_deficit",
+            -1_000,
+            1_000
+        )?.also { require(it in DAILY_DEFICITS) { "Invalid goal daily deficit." } }
+        val goalProgressPercent = goal?.optionalDouble("progress_percent")?.also {
+            require(it in 0.0..100.0) { "goal.progress_percent is outside its allowed range." }
+        }
+        val goalRemainingWeight = goal?.requiredLong("remaining_weight_grams")?.also {
+            require(it in 0..MAX_WEIGHT_GRAMS) { "Goal remaining weight is outside its allowed range." }
+        }
+        val goalIsComplete = goal?.requiredBoolean("is_complete")
+        require((goalCurrentWeight == null) == (goalProgressPercent == null)) {
+            "Goal current weight and progress must both be present or absent."
+        }
+        if (goalCurrentWeight == null) require(goalIsComplete != true) {
+            "A goal without a current weight cannot be complete."
+        }
 
         val quickAdds = root.requiredArray("quick_add")
         require(quickAdds.size <= WearCacheLimits.QUICK_ADD_ITEMS) { "Too many quick-add items." }
@@ -116,23 +127,12 @@ object WatchSnapshotMapper {
         val undoCreatedAt = undo?.requiredString("created_at")?.let {
             requireInstant(it, "undo_candidate.created_at")
         }
-        val staleness = root.requiredObject("staleness")
-        val activityStale = staleness.requiredBoolean("activity_stale")
-        val activityAgeSeconds = staleness.optionalLong("activity_age_seconds")?.also { require(it >= 0) }
-
         return MappedWatchSnapshot(
             dailySnapshot = DailySnapshotEntity(
                 localDate = localDate,
                 caloriesConsumed = consumed,
                 calorieTarget = target,
                 caloriesRemaining = remaining,
-                steps = steps,
-                activityCalories = activeCalories,
-                activityTotalCalories = totalCalories,
-                exerciseMinutes = exerciseMinutes,
-                activityObservedAtEpochMs = activityObservedAt,
-                activityStale = activityStale,
-                activityAgeSeconds = activityAgeSeconds,
                 foodDayComplete = foodDayComplete,
                 foodDayCompletedAtEpochMs = foodDayCompletedAt,
                 foodDayRevision = foodDayRevision,
@@ -142,6 +142,13 @@ object WatchSnapshotMapper {
                 latestWeightRevision = latestWeightRevision,
                 latestWeightDate = latestWeightDate,
                 weightUnit = weightUnit,
+                goalStartWeightGrams = goalStartWeight,
+                goalTargetWeightGrams = goalTargetWeight,
+                goalCurrentWeightGrams = goalCurrentWeight,
+                goalDailyDeficit = goalDailyDeficit,
+                goalProgressPercent = goalProgressPercent,
+                goalRemainingWeightGrams = goalRemainingWeight,
+                goalIsComplete = goalIsComplete,
                 undoFoodLogId = undoFoodLogId,
                 undoName = undoName,
                 undoCalories = undoCalories,

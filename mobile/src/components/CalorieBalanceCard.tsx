@@ -1,9 +1,9 @@
 import React from 'react';
-import { StyleSheet, View, type ViewProps } from 'react-native';
+import { StyleSheet, View, useWindowDimensions, type ViewProps } from 'react-native';
+import Svg, { Circle } from 'react-native-svg';
 import { AppCard } from './AppCard';
 import { AppText } from './AppText';
-import { ProgressBar } from './ProgressBar';
-import { colors, radius, spacing } from '../theme';
+import { radius, spacing, useAppTheme, type AppThemeColors } from '../theme';
 import { formatNumber } from '../utils/format';
 
 type CalorieBalanceCardProps = ViewProps & {
@@ -11,10 +11,16 @@ type CalorieBalanceCardProps = ViewProps & {
     targetCalories: number | null | undefined;
 };
 
-function getBalanceTone(remaining: number | null): 'primary' | 'warning' | 'danger' {
-    if (remaining === null) return 'warning';
+const GAUGE_SIZE = 94;
+const GAUGE_STROKE = 9;
+const GAUGE_RADIUS = (GAUGE_SIZE - GAUGE_STROKE) / 2;
+const GAUGE_CIRCUMFERENCE = 2 * Math.PI * GAUGE_RADIUS;
+
+function getBalanceTone(remaining: number | null, progress: number): 'primary' | 'warning' | 'danger' {
+    if (remaining === null) return 'primary';
     if (remaining < 0) return 'danger';
-    return 'warning';
+    if (progress >= 0.85) return 'warning';
+    return 'primary';
 }
 
 /**
@@ -29,66 +35,165 @@ export const CalorieBalanceCard: React.FC<CalorieBalanceCardProps> = ({
     style,
     ...props
 }) => {
+    const { colors } = useAppTheme();
+    const styles = React.useMemo(() => createStyles(colors), [colors]);
+    const { width, fontScale } = useWindowDimensions();
     const hasTarget = typeof targetCalories === 'number' && Number.isFinite(targetCalories) && targetCalories > 0;
     const remaining = hasTarget ? Math.round(targetCalories - totalCalories) : null;
     const isOver = remaining !== null && remaining < 0;
-    const tone = getBalanceTone(remaining);
     const progressValue = hasTarget ? Math.min(totalCalories / targetCalories, 1) : 0;
+    const tone = getBalanceTone(remaining, progressValue);
     const balanceValue = remaining === null ? '-' : formatNumber(Math.abs(remaining), 0);
-    const balanceLabel = remaining === null ? 'kcal target unavailable' : isOver ? 'kcal over' : 'kcal left';
-    const balanceSummary = remaining === null ? 'Target unavailable' : `${balanceValue} ${balanceLabel}`;
+    const balanceLabel = remaining === null ? 'Target unavailable' : isOver ? 'kcal over target' : 'kcal remaining';
+    const balanceSummary = remaining === null ? balanceLabel : `${balanceValue} ${balanceLabel}`;
+    const stackHero = width < 360 || fontScale >= 1.6;
 
     return (
-        <AppCard {...props} style={style}>
-            <View style={styles.compactHeader}>
-                <View>
-                    <AppText variant="caption">{isOver ? 'Over target' : 'Remaining'}</AppText>
-                    <AppText style={[styles.compactBalance, styles[`${tone}Text`]]}>{balanceSummary}</AppText>
+        <AppCard
+            {...props}
+            accessible
+            accessibilityLabel={`${balanceSummary}. ${formatNumber(totalCalories, 0)} eaten out of ${formatNumber(targetCalories, 0)} calorie target.`}
+            style={style}
+        >
+            <View style={[styles.hero, stackHero && styles.heroStacked]}>
+                <CalorieGauge value={progressValue} tone={tone} colors={colors} styles={styles} />
+                <View style={[styles.balanceCopy, stackHero && styles.balanceCopyStacked]}>
+                    <AppText variant="label">Daily balance</AppText>
+                    {remaining === null ? (
+                        <AppText style={styles.unavailable}>{balanceLabel}</AppText>
+                    ) : (
+                        <>
+                            <AppText style={[styles.balanceValue, styles[`${tone}Text`]]}>{balanceValue}</AppText>
+                            <AppText style={[styles.balanceLabel, isOver && styles.dangerText]}>{balanceLabel}</AppText>
+                        </>
+                    )}
                 </View>
-                <AppText variant="caption">{Math.round(progressValue * 100)}%</AppText>
             </View>
-            <ProgressBar
-                accessibilityLabel={`${formatNumber(totalCalories, 0)} kcal eaten out of ${formatNumber(targetCalories, 0)} kcal target`}
-                value={progressValue}
-                tone={tone}
-                style={styles.progress}
-            />
             <View style={styles.statRow}>
-                <CalorieStat label="Eaten" value={formatNumber(totalCalories, 0)} />
-                <CalorieStat label={isOver ? 'Over' : 'Left'} value={remaining === null ? '-' : formatNumber(Math.abs(remaining), 0)} tone={tone} />
-                <CalorieStat label="Target" value={hasTarget ? formatNumber(targetCalories, 0) : '-'} />
+                <CalorieStat label="Eaten" value={formatNumber(totalCalories, 0)} styles={styles} />
+                <CalorieStat label="Target" value={hasTarget ? formatNumber(targetCalories, 0) : '-'} styles={styles} />
             </View>
         </AppCard>
     );
 };
 
-const CalorieStat: React.FC<{ label: string; value: string; tone?: 'primary' | 'warning' | 'danger' }> = ({
-    label,
-    value,
-    tone
-}) => (
+type CalorieBalanceStyles = ReturnType<typeof createStyles>;
+
+const CalorieGauge: React.FC<{
+    value: number;
+    tone: 'primary' | 'warning' | 'danger';
+    colors: AppThemeColors;
+    styles: CalorieBalanceStyles;
+}> = ({ value, tone, colors, styles }) => {
+    const percent = Math.round(value * 100);
+    const toneColor = tone === 'danger' ? colors.danger : tone === 'warning' ? colors.warningDark : colors.primary;
+    const dashOffset = GAUGE_CIRCUMFERENCE * (1 - value);
+
+    return (
+        <View accessibilityElementsHidden style={styles.gauge}>
+            <Svg width={GAUGE_SIZE} height={GAUGE_SIZE} viewBox={`0 0 ${GAUGE_SIZE} ${GAUGE_SIZE}`}>
+                <Circle
+                    cx={GAUGE_SIZE / 2}
+                    cy={GAUGE_SIZE / 2}
+                    r={GAUGE_RADIUS}
+                    fill="none"
+                    stroke={colors.surfaceAlt}
+                    strokeWidth={GAUGE_STROKE}
+                />
+                <Circle
+                    cx={GAUGE_SIZE / 2}
+                    cy={GAUGE_SIZE / 2}
+                    r={GAUGE_RADIUS}
+                    fill="none"
+                    stroke={toneColor}
+                    strokeWidth={GAUGE_STROKE}
+                    strokeLinecap="round"
+                    strokeDasharray={`${GAUGE_CIRCUMFERENCE} ${GAUGE_CIRCUMFERENCE}`}
+                    strokeDashoffset={dashOffset}
+                    rotation={-90}
+                    origin={`${GAUGE_SIZE / 2}, ${GAUGE_SIZE / 2}`}
+                />
+            </Svg>
+            <View style={styles.gaugeLabel}>
+                <AppText style={styles.gaugePercent}>{percent}%</AppText>
+                <AppText variant="caption">eaten</AppText>
+            </View>
+        </View>
+    );
+};
+
+const CalorieStat: React.FC<{ label: string; value: string; styles: CalorieBalanceStyles }> = ({ label, value, styles }) => (
     <View style={styles.stat}>
         <AppText variant="caption">{label}</AppText>
-        <AppText style={[styles.statValue, tone && styles[`${tone}Text`]]}>{value}</AppText>
+        <AppText style={styles.statValue}>{value}</AppText>
     </View>
 );
 
-const styles = StyleSheet.create({
+function createStyles(colors: AppThemeColors) {
+    return StyleSheet.create({
     primaryText: {
         color: colors.primary
     },
     warningText: {
-        color: colors.warning
+        color: colors.warningDark
     },
     dangerText: {
         color: colors.danger
     },
-    progress: {
-        height: 10
+    hero: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.xl
+    },
+    heroStacked: {
+        flexDirection: 'column',
+        alignItems: 'flex-start'
+    },
+    gauge: {
+        width: GAUGE_SIZE,
+        height: GAUGE_SIZE,
+        alignItems: 'center',
+        justifyContent: 'center'
+    },
+    gaugeLabel: {
+        position: 'absolute',
+        inset: 0,
+        alignItems: 'center',
+        justifyContent: 'center'
+    },
+    gaugePercent: {
+        color: colors.text,
+        fontSize: 16,
+        lineHeight: 20,
+        fontWeight: '800'
+    },
+    balanceCopy: {
+        flex: 1,
+        minWidth: 0
+    },
+    balanceCopyStacked: {
+        paddingTop: spacing.xs
+    },
+    balanceValue: {
+        fontSize: 36,
+        lineHeight: 42,
+        fontWeight: '800'
+    },
+    balanceLabel: {
+        color: colors.muted,
+        fontSize: 15,
+        lineHeight: 21,
+        fontWeight: '600'
+    },
+    unavailable: {
+        color: colors.muted,
+        fontSize: 20,
+        lineHeight: 26,
+        fontWeight: '700'
     },
     statRow: {
         flexDirection: 'row',
-        gap: spacing.sm
+        gap: spacing.md
     },
     stat: {
         flex: 1,
@@ -96,23 +201,13 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         borderRadius: radius.md,
         backgroundColor: colors.surfaceAlt,
-        paddingVertical: spacing.sm,
-        paddingHorizontal: spacing.xs
+        paddingVertical: spacing.md,
+        paddingHorizontal: spacing.sm
     },
     statValue: {
         color: colors.text,
         fontSize: 15,
-        fontWeight: '900'
-    },
-    compactHeader: {
-        flexDirection: 'row',
-        alignItems: 'flex-end',
-        justifyContent: 'space-between',
-        gap: spacing.md
-    },
-    compactBalance: {
-        fontSize: 24,
-        lineHeight: 30,
-        fontWeight: '900'
+        fontWeight: '800'
     }
-});
+    });
+}

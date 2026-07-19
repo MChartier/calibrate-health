@@ -49,6 +49,11 @@ function optionalInteger(value: unknown): number | null {
     return typeof value === 'number' && Number.isSafeInteger(value) ? value : null;
 }
 
+function optionalNonNegativeInteger(value: unknown): number | null {
+    const parsed = optionalInteger(value);
+    return parsed !== null && parsed >= 0 ? parsed : null;
+}
+
 function zoneOffsetSeconds(value: unknown): number | null {
     if (!isObject(value)) return null;
     return optionalInteger(value.totalSeconds);
@@ -128,7 +133,8 @@ export function normalizeHealthConnectRecord(
         record_id: requiredString(metadata.id, 'a source record ID'),
         data_origin: requiredString(metadata.dataOrigin, 'a data origin'),
         client_record_id: optionalString(metadata.clientRecordId),
-        client_record_version: optionalInteger(metadata.clientRecordVersion)?.toString() ?? null,
+        // The Android bridge exposes -1 when the source did not set a client version.
+        client_record_version: optionalNonNegativeInteger(metadata.clientRecordVersion)?.toString() ?? null,
         source_updated_at: requiredString(metadata.lastModifiedTime, 'a source update time'),
         start_time: startTime,
         end_time: endTime,

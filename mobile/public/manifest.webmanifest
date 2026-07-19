@@ -1,0 +1,19 @@
+{
+  "id": "/",
+  "name": "calibrate",
+  "short_name": "calibrate",
+  "description": "Private food, weight, activity, and goal tracking with your Calibrate server.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#F6F8F4",
+  "theme_color": "#2E7D32",
+  "icons": [
+    {
+      "src": "/calibrate-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

@@ -303,12 +303,11 @@ class WatchSnapshotSynchronizerTest {
           "server_time":"2026-07-11T01:00:00Z","timezone":"America/Los_Angeles","weight_unit":"KG",
           "revision":"0123456789abcdef01234567","local_date":"2026-07-11",
           "calories":{"consumed":750,"target":2000,"remaining":1250,"missing":[]},
-          "activity":null,
           "food_day":{"is_complete":false,"completed_at":null,"revision":null},
           "weight":{"today_grams":null,"today_revision":null,"latest_grams":81500,"latest_revision":"abcdef0123456789abcdef01","latest_date":"2026-07-11"},
           "quick_add":[{"id":"my-food:4","source":"pinned","label":"Yogurt","calories":120,"draft":{"date":"2026-07-11","meal_period":"LUNCH","my_food_id":4,"servings_consumed":1}}],
           "reminders":[],
-          "undo_candidate":null,"staleness":{"activity_stale":true,"activity_age_seconds":null}
+          "undo_candidate":null
         }
     """.trimIndent()
 }

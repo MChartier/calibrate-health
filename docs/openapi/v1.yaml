@@ -954,6 +954,9 @@ components:
               type: boolean
             native_push:
               type: boolean
+            web_push:
+              type: boolean
+              description: Present on newer servers; true only when complete VAPID configuration is available.
             health_connect_activity:
               type: boolean
             wear_os_ready:
@@ -1183,7 +1186,7 @@ components:
     WatchSnapshot:
       type: object
       additionalProperties: false
-      required: [server_time, timezone, local_date, weight_unit, revision, calories, activity, food_day, weight, quick_add, reminders, undo_candidate, staleness]
+      required: [server_time, timezone, local_date, weight_unit, revision, calories, food_day, weight, quick_add, reminders, undo_candidate]
       properties:
         server_time: { type: string, format: date-time }
         timezone: { type: string }
@@ -1198,17 +1201,6 @@ components:
             target: { type: [integer, 'null'] }
             remaining: { type: [integer, 'null'] }
             missing: { type: array, items: { type: string } }
-        activity:
-          oneOf:
-            - type: 'null'
-            - type: object
-              required: [steps, active_calories_kcal, total_calories_kcal, exercise_minutes, observed_at]
-              properties:
-                steps: { type: [integer, 'null'] }
-                active_calories_kcal: { type: [number, 'null'] }
-                total_calories_kcal: { type: [number, 'null'] }
-                exercise_minutes: { type: [number, 'null'] }
-                observed_at: { type: string, format: date-time }
         food_day:
           type: object
           required: [is_complete, completed_at, revision]
@@ -1225,6 +1217,20 @@ components:
             latest_grams: { type: [integer, 'null'] }
             latest_revision: { type: [string, 'null'] }
             latest_date: { type: [string, 'null'], format: date }
+        goal:
+          oneOf:
+            - type: 'null'
+            - type: object
+              additionalProperties: false
+              required: [start_weight_grams, target_weight_grams, current_weight_grams, daily_deficit, progress_percent, remaining_weight_grams, is_complete]
+              properties:
+                start_weight_grams: { type: integer, minimum: 1 }
+                target_weight_grams: { type: integer, minimum: 1 }
+                current_weight_grams: { type: [integer, 'null'], minimum: 1 }
+                daily_deficit: { type: integer, enum: [-1000, -750, -500, -250, 0, 250, 500, 750, 1000] }
+                progress_percent: { type: [number, 'null'], minimum: 0, maximum: 100 }
+                remaining_weight_grams: { type: integer, minimum: 0 }
+                is_complete: { type: boolean }
         quick_add:
           type: array
           maxItems: 12
@@ -1251,12 +1257,6 @@ components:
                 name: { type: string }
                 calories: { type: integer }
                 created_at: { type: string, format: date-time }
-        staleness:
-          type: object
-          required: [activity_stale, activity_age_seconds]
-          properties:
-            activity_stale: { type: boolean }
-            activity_age_seconds: { type: [integer, 'null'] }
     WatchMutationRequest:
       oneOf:
         - type: object

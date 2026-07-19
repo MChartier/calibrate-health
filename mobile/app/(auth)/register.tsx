@@ -1,18 +1,20 @@
 import React, { useEffect, useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet } from 'react-native';
 import { Link, useLocalSearchParams } from 'expo-router';
 import { AppButton } from '../../src/components/AppButton';
 import { AppCard } from '../../src/components/AppCard';
 import { AppText } from '../../src/components/AppText';
+import { AuthBrand } from '../../src/components/auth/AuthBrand';
 import { Screen } from '../../src/components/Screen';
 import { ServerUrlControl } from '../../src/components/ServerUrlControl';
 import { SectionHeader } from '../../src/components/SectionHeader';
 import { TextField } from '../../src/components/TextField';
 import { useAuth } from '../../src/auth/AuthContext';
 import { readAuthServerDraft } from '../../src/auth/authServerDraft';
-import { colors, spacing } from '../../src/theme';
+import { useAppTheme } from '../../src/theme';
 
 export default function RegisterScreen() {
+    const { colors } = useAppTheme();
     const params = useLocalSearchParams<{ serverUrl?: string | string[] }>();
     const { register, serverUrl, testServerUrl, serverConnection, authError } = useAuth();
     const routedServerDraft = readAuthServerDraft(params.serverUrl);
@@ -39,29 +41,40 @@ export default function RegisterScreen() {
     }
 
     return (
-        <Screen style={styles.screen}>
-            <View style={styles.header}>
-                <AppText variant="title">calibrate</AppText>
-                <AppText variant="muted">Create an account on the hosted service or your self-hosted Calibrate server.</AppText>
-            </View>
+        <Screen safeTop style={styles.screen}>
+            <AuthBrand description="A private, portable home for your food, weight, and goal history." />
 
             <AppCard>
                 <SectionHeader title="Create account" description="Use email and password for this Calibrate server." />
                 <TextField
                     label="Email"
                     autoCapitalize="none"
+                    autoComplete="email"
+                    autoCorrect={false}
+                    textContentType="emailAddress"
                     keyboardType="email-address"
                     value={email}
                     onChangeText={setEmail}
                 />
-                <TextField label="Password" secureTextEntry value={password} onChangeText={setPassword} />
+                <TextField
+                    label="Password"
+                    autoCapitalize="none"
+                    autoComplete="new-password"
+                    autoCorrect={false}
+                    textContentType="newPassword"
+                    returnKeyType="go"
+                    secureTextEntry
+                    value={password}
+                    onChangeText={setPassword}
+                    onSubmitEditing={() => void handleRegister()}
+                />
                 <ServerUrlControl
                     value={serverInput}
                     onChangeText={setServerInput}
                     connection={serverConnection}
                     onTestConnection={testServerUrl}
                 />
-                {(error || authError) && <AppText style={styles.error}>{error ?? authError}</AppText>}
+                {(error || authError) && <AppText accessibilityRole="alert" style={{ color: colors.danger }}>{error ?? authError}</AppText>}
                 <AppButton title={isSubmitting ? 'Creating...' : 'Create account'} disabled={isSubmitting} onPress={() => void handleRegister()} />
             </AppCard>
 
@@ -69,8 +82,8 @@ export default function RegisterScreen() {
                 href={{ pathname: '/(auth)/login', params: { serverUrl: serverInput } }}
                 asChild
             >
-                <Pressable accessibilityRole="link">
-                    <AppText style={styles.link}>Back to sign in</AppText>
+                <Pressable accessibilityRole="link" style={styles.linkTarget}>
+                    <AppText style={[styles.link, { color: colors.primary }]}>Back to sign in</AppText>
                 </Pressable>
             </Link>
         </Screen>
@@ -85,14 +98,12 @@ const styles = StyleSheet.create({
         width: '100%',
         alignSelf: 'center'
     },
-    header: {
-        gap: spacing.sm
-    },
-    error: {
-        color: colors.danger
+    linkTarget: {
+        minHeight: 48,
+        alignItems: 'center',
+        justifyContent: 'center'
     },
     link: {
-        color: colors.primary,
         fontWeight: '800',
         textAlign: 'center'
     }

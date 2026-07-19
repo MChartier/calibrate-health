@@ -226,6 +226,19 @@ router.post('/native-subscription', async (req, res) => {
     }
   });
 
+  // One authenticated install owns one active token per provider. Expo can rotate a token while
+  // the app is running; retire the previous value immediately instead of waiting for a failed send.
+  await prisma.nativePushSubscription.updateMany({
+    where: {
+      user_id: user.id,
+      mobile_auth_session_id: mobileAuthSessionId,
+      provider,
+      token: { not: token },
+      revoked_at: null
+    },
+    data: { revoked_at: new Date() }
+  });
+
   res.json({ ok: true });
 });
 

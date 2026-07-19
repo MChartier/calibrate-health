@@ -33,6 +33,7 @@ export default function HealthConnectPrivacyScreen() {
             />
             <SectionHeader
                 eyebrow="Health Connect"
+                headingLevel={1}
                 title="How Calibrate uses health data"
                 description="Clear, read-only access that stays under your control."
             />

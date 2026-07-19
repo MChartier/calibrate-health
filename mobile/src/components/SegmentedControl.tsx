@@ -1,7 +1,7 @@
 import React from 'react';
 import { Pressable, StyleSheet, View, type ViewProps } from 'react-native';
 import { AppText } from './AppText';
-import { colors, radius, spacing } from '../theme';
+import { type AppTheme, useAppTheme } from '../theme';
 
 type SegmentedOption<T extends string> = {
     value: T;
@@ -24,15 +24,19 @@ export function SegmentedControl<T extends string>({
     style,
     ...props
 }: SegmentedControlProps<T>) {
+    const theme = useAppTheme();
+    const styles = React.useMemo(() => createStyles(theme), [theme]);
+
     return (
-        <View {...props} style={[styles.root, style]}>
+        <View {...props} accessibilityRole="radiogroup" style={[styles.root, style]}>
             {options.map((option) => {
                 const selected = option.value === value;
                 return (
                     <Pressable
                         key={option.value}
-                        accessibilityRole="button"
-                        accessibilityState={{ selected }}
+                        aria-checked={selected}
+                        accessibilityRole="radio"
+                        accessibilityState={{ checked: selected }}
                         onPress={() => onChange(option.value)}
                         style={({ pressed }) => [
                             styles.segment,
@@ -40,7 +44,10 @@ export function SegmentedControl<T extends string>({
                             pressed && !selected && styles.segmentPressed
                         ]}
                     >
-                        <AppText style={[styles.label, selected && styles.labelSelected]} numberOfLines={1}>
+                        <AppText
+                            style={selected ? styles.labelSelected : styles.label}
+                            numberOfLines={2}
+                        >
                             {option.label}
                         </AppText>
                     </Pressable>
@@ -50,38 +57,51 @@ export function SegmentedControl<T extends string>({
     );
 }
 
-const styles = StyleSheet.create({
+function createStyles(theme: AppTheme) {
+    const labelBase = {
+        fontSize: theme.typography.small,
+        lineHeight: 19,
+        fontWeight: '600',
+        textAlign: 'center'
+    } as const;
+
+    return StyleSheet.create({
     root: {
         flexDirection: 'row',
-        borderRadius: radius.md,
-        backgroundColor: colors.surfaceAlt,
-        borderColor: colors.border,
+        borderRadius: theme.radius.md,
+        backgroundColor: theme.colors.surfaceContainer,
+        borderColor: theme.colors.outlineVariant,
         borderWidth: StyleSheet.hairlineWidth,
-        padding: spacing.xs,
-        gap: spacing.xs
+        padding: theme.spacing.xs,
+        gap: theme.spacing.xs
     },
     segment: {
         flex: 1,
-        minHeight: 40,
-        borderRadius: radius.sm,
+        minHeight: theme.interaction.minimumTouchTarget,
+        borderRadius: theme.radius.sm,
+        backgroundColor: theme.colors.surfaceContainer,
+        borderColor: 'transparent',
+        borderWidth: StyleSheet.hairlineWidth,
         alignItems: 'center',
         justifyContent: 'center',
-        paddingHorizontal: spacing.sm
+        paddingHorizontal: theme.spacing.sm,
+        paddingVertical: theme.spacing.xs
     },
     segmentSelected: {
-        backgroundColor: colors.surface,
-        borderColor: colors.border,
+        backgroundColor: theme.colors.surface,
+        borderColor: theme.colors.outlineVariant,
         borderWidth: StyleSheet.hairlineWidth
     },
     segmentPressed: {
-        backgroundColor: colors.surfacePressed
+        backgroundColor: theme.colors.surfacePressed
     },
     label: {
-        color: colors.muted,
-        fontSize: 14,
-        fontWeight: '800'
+        ...labelBase,
+        color: theme.colors.onSurfaceVariant,
     },
     labelSelected: {
-        color: colors.primaryDark
+        ...labelBase,
+        color: theme.colors.onPrimaryContainer
     }
-});
+    });
+}

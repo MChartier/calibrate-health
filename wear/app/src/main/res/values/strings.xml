@@ -2,5 +2,5 @@
 <resources>
     <string name="app_name">calibrate</string>
     <string name="tile_label">Today</string>
-    <string name="tile_description">Calories, steps, and daily tracking status</string>
+    <string name="tile_description">Calories consumed, remaining, and daily tracking status</string>
 </resources>

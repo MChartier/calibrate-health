@@ -90,10 +90,21 @@ test('Wear pairing exchange requires Wear version identity before issuing a sess
     path: '/api/v1/auth/mobile/wear/pair',
     headers: {
       'x-calibrate-client-platform': 'wear_os',
-      'x-calibrate-client-version': '0.1.0'
+      'x-calibrate-client-version': '0.2.0-internal'
     }
   });
   assert.equal(current.nextCount, 1);
+
+  const older = run({
+    path: '/api/v1/auth/mobile/wear/pair',
+    headers: {
+      'x-calibrate-client-platform': 'wear_os',
+      'x-calibrate-client-version': '0.1.0'
+    }
+  });
+  assert.equal(older.nextCount, 0);
+  assert.equal(older.res.statusCode, 426);
+  assert.equal(older.res.headers['x-calibrate-minimum-client-version'], '0.2.0');
 });
 
 test('older and malformed versions receive a bounded upgrade contract', () => {

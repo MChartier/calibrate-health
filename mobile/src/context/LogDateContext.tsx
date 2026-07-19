@@ -4,7 +4,7 @@ import type { LogDateNavigation } from '../hooks/useLogDateNavigation';
 const LogDateContext = createContext<LogDateNavigation | null>(null);
 
 /**
- * Shares the selected log day between the app bar date controls and the visible Log tab.
+ * Shares the selected log day between the app shell and the visible Today screen.
  */
 export const LogDateProvider: React.FC<{ value: LogDateNavigation; children: React.ReactNode }> = ({ value, children }) => (
     <LogDateContext.Provider value={value}>{children}</LogDateContext.Provider>

@@ -47,7 +47,7 @@ export function resolveNativeReleaseEnvironment(environment, options = {}) {
     ...environment,
     CALIBRATE_ANDROID_SIGNING_STORE_FILE: storeFile,
     EXPO_PUBLIC_CALIBRATE_SERVER_URL: serverUrl.origin,
-    // Expo SDK 54 otherwise interprets Gradle's project-relative entry against the workspace root.
+    // Keep Metro rooted at the mobile app when the release build is launched from this workspace.
     EXPO_NO_METRO_WORKSPACE_ROOT: '1',
     NODE_ENV: 'production'
   };

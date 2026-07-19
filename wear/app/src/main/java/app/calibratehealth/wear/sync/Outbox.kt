@@ -2,6 +2,7 @@ package app.calibratehealth.wear.sync
 
 import android.content.Context
 import android.os.SystemClock
+import android.util.Log
 import androidx.work.BackoffPolicy
 import androidx.work.Constraints
 import androidx.work.CoroutineWorker
@@ -10,6 +11,8 @@ import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
+import androidx.work.workDataOf
+import app.calibratehealth.wear.BuildConfig
 import app.calibratehealth.wear.data.MutationOutboxRepository
 import app.calibratehealth.wear.data.local.QueuedMutationEntity
 import app.calibratehealth.wear.data.security.AccountStateCriticalSection
@@ -153,33 +156,54 @@ interface OutboxScheduler {
     fun scheduleContinuation()
 }
 
+const val OUTBOX_WORK_ERROR_KEY = "calibrate_sync_error"
+
 object OutboxWorkPolicy {
     const val UNIQUE_WORK_NAME = "calibrate-wear-outbox-v1"
     const val WORK_TAG = "calibrate-wear-outbox"
+
+    private const val PREFERENCES_NAME = "calibrate_outbox_work"
+    private const val LATEST_WORK_ID_KEY = "latest_work_id"
+
+    fun recordLatestWorkId(context: Context, workId: UUID) {
+        context.applicationContext
+            .getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE)
+            .edit()
+            // Commit synchronously so observers never see the work before its identity is durable.
+            .putString(LATEST_WORK_ID_KEY, workId.toString())
+            .commit()
+    }
+
+    fun latestWorkId(context: Context): UUID? {
+        val stored = context.applicationContext
+            .getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE)
+            .getString(LATEST_WORK_ID_KEY, null)
+            ?: return null
+        return runCatching { UUID.fromString(stored) }.getOrNull()
+    }
 }
 
 class WorkManagerOutboxScheduler(context: Context) : OutboxScheduler {
-    private val workManager = WorkManager.getInstance(context.applicationContext)
+    private val appContext = context.applicationContext
+    private val workManager = WorkManager.getInstance(appContext)
 
     /** Avoids duplicate cold-start/onStart refreshes while still refreshing a surviving process. */
     fun scheduleForegroundRefresh() {
         if (foregroundRefreshGate.tryAcquire(SystemClock.elapsedRealtime())) schedule()
     }
 
-    override fun schedule() {
-        workManager.enqueueUniqueWork(
-            OutboxWorkPolicy.UNIQUE_WORK_NAME,
-            ExistingWorkPolicy.APPEND_OR_REPLACE,
-            workRequest()
-        )
-    }
+    override fun schedule() = enqueue()
 
-    override fun scheduleContinuation() {
+    override fun scheduleContinuation() = enqueue()
+
+    private fun enqueue() = synchronized(enqueueLock) {
+        val request = workRequest()
         workManager.enqueueUniqueWork(
             OutboxWorkPolicy.UNIQUE_WORK_NAME,
             ExistingWorkPolicy.APPEND_OR_REPLACE,
-            workRequest()
+            request
         )
+        OutboxWorkPolicy.recordLatestWorkId(appContext, request.id)
     }
 
     private fun workRequest() = run {
@@ -198,6 +222,7 @@ class WorkManagerOutboxScheduler(context: Context) : OutboxScheduler {
     }
 
     private companion object {
+        val enqueueLock = Any()
         val foregroundRefreshGate = ForegroundRefreshGate(minimumIntervalMs = 60_000L)
     }
 }
@@ -234,18 +259,29 @@ class OutboxWorker(
         val capturedInvalidationId = SyncInvalidationInbox.pendingId(applicationContext)
         return when (dependencies.outboxProcessor.drain()) {
             OutboxDrainResult.Complete -> {
-                when (dependencies.snapshotSynchronizer.refresh {
+                val syncResult = dependencies.snapshotSynchronizer.refresh {
                     dependencies.outboxRepository.confirmSnapshotRefresh()
                     SyncInvalidationInbox.completeRefresh(applicationContext, capturedInvalidationId)
-                }) {
+                }
+                when (syncResult) {
                     SnapshotSyncResult.Success, SnapshotSyncResult.NotModified -> {
                         // Notification failures must never turn a committed health sync into failed work.
                         runCatching { WearReminderNotifier(applicationContext).evaluate() }
                         CalibrateTileUpdate.request(applicationContext)
                         Result.success()
                     }
-                    is SnapshotSyncResult.Retryable -> Result.retry()
-                    is SnapshotSyncResult.PermanentFailure -> Result.failure()
+                    is SnapshotSyncResult.Retryable -> {
+                        if (BuildConfig.DEBUG) {
+                            Log.w(WORKER_LOG_TAG, "Snapshot refresh will retry: ${syncResult.message}")
+                        }
+                        Result.retry()
+                    }
+                    is SnapshotSyncResult.PermanentFailure -> {
+                        if (BuildConfig.DEBUG) {
+                            Log.e(WORKER_LOG_TAG, "Snapshot refresh failed: ${syncResult.message}")
+                        }
+                        Result.failure(workDataOf(OUTBOX_WORK_ERROR_KEY to syncResult.message))
+                    }
                     SnapshotSyncResult.AccountChanged -> Result.success()
                 }
             }
@@ -256,5 +292,9 @@ class OutboxWorker(
             OutboxDrainResult.Retry -> Result.retry()
             OutboxDrainResult.AccountChanged -> Result.success()
         }
+    }
+
+    private companion object {
+        const val WORKER_LOG_TAG = "CalibrateWearSync"
     }
 }

@@ -16,7 +16,7 @@ export type ProviderAttribution = {
     url?: string;
 };
 
-/** Decide whether Android can prompt again or must hand permission control to system settings. */
+/** Decide whether the current platform can prompt again or must hand control to settings. */
 export function getCameraPermissionState(
     permission: { granted: boolean; canAskAgain: boolean } | null
 ): CameraPermissionState {

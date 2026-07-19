@@ -31,10 +31,15 @@ services:
     environment:
       NODE_ENV: production
       PORT: "3000"
-      FRONTEND_DIST_DIR: /app/frontend/dist
+      FRONTEND_DIST_DIR: /app/web/dist
       # Empty only when docker-compose.postgres.yml supplies DB_* components.
       DATABASE_URL: ${DATABASE_URL:-}
       SESSION_SECRET: ${SESSION_SECRET:?Set SESSION_SECRET in deploy/.env}
+      CORS_ORIGINS: ${CORS_ORIGINS:-}
+      SESSION_COOKIE_NAME: ${SESSION_COOKIE_NAME:-cal.sid}
+      SESSION_COOKIE_DOMAIN: ${SESSION_COOKIE_DOMAIN:-}
+      SESSION_COOKIE_SECURE: ${SESSION_COOKIE_SECURE:-true}
+      SESSION_COOKIE_SAMESITE: ${SESSION_COOKIE_SAMESITE:-lax}
       AUTO_LOGIN_TEST_USER: "false"
       MIGRATION_MAX_ATTEMPTS: ${MIGRATION_MAX_ATTEMPTS:-30}
       MIGRATION_RETRY_SECONDS: ${MIGRATION_RETRY_SECONDS:-5}

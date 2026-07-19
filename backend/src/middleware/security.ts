@@ -1,5 +1,6 @@
 import type { RequestHandler } from 'express';
 import { rateLimit, type RateLimitRequestHandler } from 'express-rate-limit';
+import { isOriginTrustedByPolicy } from '../config/cors';
 
 const AUTH_RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000;
 const SAFE_HTTP_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
@@ -65,7 +66,13 @@ function normalizedOrigin(value: string | undefined): string | null {
 export function createBrowserMutationOriginGuard(options: {
   trustedOrigins: ReadonlySet<string>;
   useSecureRequestOrigin: boolean;
+  allowDevelopmentLoopbackOrigins?: boolean;
 }): RequestHandler {
+  const originPolicy = {
+    exactOrigins: options.trustedOrigins,
+    allowDevelopmentLoopbackOrigins: options.allowDevelopmentLoopbackOrigins ?? false
+  };
+
   return (req, res, next) => {
     if (SAFE_HTTP_METHODS.has(req.method.toUpperCase())) return next();
     if (typeof res.locals.mobileAuthSessionId === 'number') return next();
@@ -86,7 +93,8 @@ export function createBrowserMutationOriginGuard(options: {
     const forwardedProtocol = req.get('x-forwarded-proto')?.split(',')[0]?.trim();
     const protocol = forwardedProtocol || (options.useSecureRequestOrigin ? 'https' : req.protocol);
     const apiOrigin = host ? normalizedOrigin(`${protocol}://${host}`) : null;
-    if (origin && (origin === apiOrigin || options.trustedOrigins.has(origin))) return next();
+    const isAllowedOrigin = origin && (origin === apiOrigin || isOriginTrustedByPolicy(origin, originPolicy));
+    if (isAllowedOrigin) return next();
 
     return res.status(403).json({ message: 'Cross-origin mutation is not allowed' });
   };

@@ -205,12 +205,12 @@ export default function MyFoodsScreen() {
 
     return (
         <Screen>
-            <SectionHeader title="My Foods" description="Saved foods and recipes for fast logging." />
+            <SectionHeader headingLevel={1} title="My Foods" description="Saved foods and recipes for fast logging." />
 
             <AppCard>
                 <View style={styles.cardHeader}>
                     <View style={styles.headerText}>
-                        <AppText variant="screenTitle">Saved library</AppText>
+                        <AppText accessibilityRole="header" aria-level={2} variant="screenTitle">Saved library</AppText>
                         <AppText variant="caption">{allFoods.length} foods and recipes</AppText>
                     </View>
                     <View style={styles.headerActions}>

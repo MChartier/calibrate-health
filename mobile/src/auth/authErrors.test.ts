@@ -1,5 +1,13 @@
 import { ApiError } from '@calibrate/api-client';
-import { getSessionRestoreErrorMessage } from './authErrors';
+import { getSessionRestoreErrorMessage, isExpectedDevAutoLoginMiss } from './authErrors';
+
+describe('debug auto-login errors', () => {
+    it('treats a missing seed account as an optional convenience miss', () => {
+        expect(isExpectedDevAutoLoginMiss(new ApiError('unauthorized', 401, null))).toBe(true);
+        expect(isExpectedDevAutoLoginMiss(new ApiError('server unavailable', 503, null))).toBe(false);
+        expect(isExpectedDevAutoLoginMiss(new TypeError('Network request failed'))).toBe(false);
+    });
+});
 
 describe('session restore error copy', () => {
     it('distinguishes an expired session from a temporarily unavailable server', () => {

@@ -14,13 +14,6 @@ class WatchSnapshotMapperTest {
         assertEquals(750, result.dailySnapshot.caloriesConsumed)
         assertEquals(2_000, result.dailySnapshot.calorieTarget)
         assertEquals(1_250, result.dailySnapshot.caloriesRemaining)
-        assertEquals(12_345, result.dailySnapshot.steps)
-        assertEquals(350, result.dailySnapshot.activityCalories)
-        assertEquals(2_100, result.dailySnapshot.activityTotalCalories)
-        assertEquals(40, result.dailySnapshot.exerciseMinutes)
-        assertEquals(1_783_731_300_000L, result.dailySnapshot.activityObservedAtEpochMs)
-        assertEquals(false, result.dailySnapshot.activityStale)
-        assertEquals(300L, result.dailySnapshot.activityAgeSeconds)
         assertEquals(true, result.dailySnapshot.foodDayComplete)
         assertEquals(1_783_731_600_000L, result.dailySnapshot.foodDayCompletedAtEpochMs)
         assertEquals("fedcba9876543210fedcba98", result.dailySnapshot.foodDayRevision)
@@ -65,6 +58,46 @@ class WatchSnapshotMapperTest {
     }
 
     @Test
+    fun `maps optional goal progress and remains compatible with snapshots that omit it`() {
+        val withoutGoal = WatchSnapshotMapper.map(validSnapshot(), 42L).dailySnapshot
+        assertEquals(null, withoutGoal.goalStartWeightGrams)
+
+        val goal =
+            "\"goal\":{\"start_weight_grams\":90000,\"target_weight_grams\":75000," +
+                "\"current_weight_grams\":80000,\"daily_deficit\":500,\"progress_percent\":66.7," +
+                "\"remaining_weight_grams\":5000,\"is_complete\":false},"
+        val withGoal = validSnapshot().replace("\"quick_add\":", "$goal\"quick_add\":")
+        val mapped = WatchSnapshotMapper.map(withGoal, 42L).dailySnapshot
+
+        assertEquals(90_000L, mapped.goalStartWeightGrams)
+        assertEquals(75_000L, mapped.goalTargetWeightGrams)
+        assertEquals(80_000L, mapped.goalCurrentWeightGrams)
+        assertEquals(500, mapped.goalDailyDeficit)
+        assertEquals(66.7, mapped.goalProgressPercent)
+        assertEquals(5_000L, mapped.goalRemainingWeightGrams)
+        assertEquals(false, mapped.goalIsComplete)
+    }
+
+    @Test
+    fun `rejects incomplete or out-of-range goal progress`() {
+        val incompleteGoal =
+            "\"goal\":{\"start_weight_grams\":90000,\"target_weight_grams\":75000," +
+                "\"current_weight_grams\":80000,\"daily_deficit\":500,\"progress_percent\":null," +
+                "\"remaining_weight_grams\":5000,\"is_complete\":false},"
+        val invalidProgress =
+            "\"goal\":{\"start_weight_grams\":90000,\"target_weight_grams\":75000," +
+                "\"current_weight_grams\":80000,\"daily_deficit\":500,\"progress_percent\":101," +
+                "\"remaining_weight_grams\":5000,\"is_complete\":false},"
+
+        assertTrue(runCatching {
+            WatchSnapshotMapper.map(validSnapshot().replace("\"quick_add\":", "$incompleteGoal\"quick_add\":"), 42L)
+        }.isFailure)
+        assertTrue(runCatching {
+            WatchSnapshotMapper.map(validSnapshot().replace("\"quick_add\":", "$invalidProgress\"quick_add\":"), 42L)
+        }.isFailure)
+    }
+
+    @Test
     fun `strict parser rejects duplicate keys and trailing input`() {
         assertTrue(runCatching { StrictJson.parse("{\"a\":1,\"a\":2}") }.isFailure)
         assertTrue(runCatching { StrictJson.parse("{}[]") }.isFailure)
@@ -78,7 +111,6 @@ class WatchSnapshotMapperTest {
           "revision":"0123456789abcdef01234567",
           "local_date":"2026-07-11",
           "calories":{"consumed":750,"target":2000,"remaining":1250,"missing":[]},
-          "activity":{"steps":12345,"active_calories_kcal":349.6,"total_calories_kcal":2100.0,"exercise_minutes":40.0,"observed_at":"2026-07-11T00:55:00Z"},
           "food_day":{"is_complete":true,"completed_at":"2026-07-11T01:00:00Z","revision":"fedcba9876543210fedcba98"},
           "weight":{"today_grams":81500,"today_revision":"abcdef0123456789abcdef01","latest_grams":81500,"latest_revision":"abcdef0123456789abcdef01","latest_date":"2026-07-11"},
           "quick_add":[
@@ -88,8 +120,7 @@ class WatchSnapshotMapperTest {
             {"id":51,"type":"food","local_date":"2026-07-11","created_at":"2026-07-11T09:00:00Z"},
             {"id":52,"type":"weight","local_date":"2026-07-11","created_at":"2026-07-11T09:00:00Z"}
           ],
-          "undo_candidate":{"food_log_id":44,"name":"Yogurt","calories":120,"created_at":"2026-07-11T01:05:00Z"},
-          "staleness":{"activity_stale":false,"activity_age_seconds":300}
+          "undo_candidate":{"food_log_id":44,"name":"Yogurt","calories":120,"created_at":"2026-07-11T01:05:00Z"}
         }
     """.trimIndent()
 }
