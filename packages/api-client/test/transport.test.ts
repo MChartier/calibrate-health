@@ -287,6 +287,75 @@ test('browser Lose It uploads submit a real Blob instead of a React Native URI d
     assert.equal(await uploadedFile.text(), 'zip export');
 });
 
+test('browser Lose It object URLs are hydrated before upload', async () => {
+    const objectUrl = 'blob:https://calibrate.example/loseit-export';
+    const exportBlob = new Blob(['zip export'], { type: 'application/zip' });
+    let uploaded: FormData | null = null;
+    const requestedUrls: string[] = [];
+    const client = new CalibrateApiClient({
+        baseUrl: 'https://calibrate.example',
+        fetchImpl: (async (input, init) => {
+            const url = String(input);
+            requestedUrls.push(url);
+            if (url === objectUrl) {
+                return new Response(exportBlob, { status: 200 });
+            }
+            uploaded = init?.body as FormData;
+            return new Response('{}', { status: 200 });
+        }) as typeof fetch
+    });
+
+    await client.executeLoseItImport({ uri: objectUrl, name: 'loseit-export.zip', type: 'application/zip' });
+
+    assert.deepEqual(requestedUrls, [objectUrl, 'https://calibrate.example/api/v1/imports/loseit/execute']);
+    const uploadedFile = uploaded?.get('file');
+    assert.ok(uploadedFile instanceof Blob);
+    assert.equal(await uploadedFile.text(), 'zip export');
+});
+
+test('native Lose It URIs remain FormData descriptors even when React Native exposes window', async (t) => {
+    const requestedUrls: string[] = [];
+    const nativeFile = {
+        uri: 'content://com.android.providers.downloads.documents/document/loseit-export',
+        name: 'loseit-export.zip',
+        type: 'application/zip'
+    };
+    class NativeFormData {
+        readonly fields: Array<{ name: string; value: unknown }> = [];
+
+        append(name: string, value: unknown): void {
+            this.fields.push({ name, value });
+        }
+    }
+    const originalFormData = globalThis.FormData;
+    const globalWithWindow = globalThis as typeof globalThis & { window?: object };
+    const originalWindow = globalWithWindow.window;
+    globalThis.FormData = NativeFormData as unknown as typeof FormData;
+    globalWithWindow.window = {};
+    t.after(() => {
+        globalThis.FormData = originalFormData;
+        if (originalWindow === undefined) {
+            delete globalWithWindow.window;
+        } else {
+            globalWithWindow.window = originalWindow;
+        }
+    });
+    let uploaded: NativeFormData | null = null;
+    const client = new CalibrateApiClient({
+        baseUrl: 'https://calibrate.example',
+        fetchImpl: (async (input, init) => {
+            requestedUrls.push(String(input));
+            uploaded = init?.body as unknown as NativeFormData;
+            return new Response('{}', { status: 200 });
+        }) as typeof fetch
+    });
+
+    await client.executeLoseItImport(nativeFile);
+
+    assert.deepEqual(requestedUrls, ['https://calibrate.example/api/v1/imports/loseit/execute']);
+    assert.deepEqual(uploaded?.fields, [{ name: 'file', value: nativeFile }]);
+});
+
 test('a per-request credential policy overrides the browser client default', async () => {
     let credentials: RequestCredentials | undefined;
     const client = new CalibrateApiClient({

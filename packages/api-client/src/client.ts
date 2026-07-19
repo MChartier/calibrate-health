@@ -67,6 +67,9 @@ export type LoseItImportFile = { uri: string; name: string; type: string } | Blo
 const isNativeLoseItImportFile = (file: LoseItImportFile): file is { uri: string; name: string; type: string } =>
     'uri' in file;
 
+/** Expo web returns an object URL; native DocumentPicker URIs must stay opaque for React Native FormData. */
+const isBrowserBlobUri = (uri: string): boolean => uri.toLowerCase().startsWith('blob:');
+
 export class ApiError extends Error {
     readonly status: number;
     readonly body: unknown;
@@ -551,7 +554,7 @@ export class CalibrateApiClient {
             return formData;
         }
 
-        if (typeof window !== 'undefined') {
+        if (isBrowserBlobUri(file.uri)) {
             const response = await this.fetchImpl(file.uri);
             if (!response.ok) {
                 throw new Error('Unable to read the selected Lose It export in this browser.');

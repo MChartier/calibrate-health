@@ -97,10 +97,15 @@ jobs:
         with:
           node-version: 22.13.0
           cache: npm
-          cache-dependency-path: package-lock.json
+          cache-dependency-path: |
+            package-lock.json
+            backend/package-lock.json
 
-      - name: Install deps
+      - name: Install mobile deps
         run: npm ci --no-audit --fund=false
+
+      - name: Install API generator deps
+        run: npm ci --prefix backend --no-audit --fund=false
 
       - name: Validate API contract
         run: npm run api:contract:check
