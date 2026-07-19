@@ -68,9 +68,6 @@ jobs:
             echo "source_sha=${SOURCE_SHA}"
           } >> "$GITHUB_OUTPUT"
 
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-
       - name: Set up Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -98,11 +95,11 @@ jobs:
             echo "EOF"
           } >> "$GITHUB_OUTPUT"
 
-      - name: Build and push multi-architecture image
+      - name: Build and push AMD64 image
         uses: docker/build-push-action@v6
         with:
           context: .
           file: ./Dockerfile.app
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64
           push: true
           tags: ${{ steps.meta.outputs.tags }}

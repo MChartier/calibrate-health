@@ -51,7 +51,7 @@ not delete it while any row is partial or blocked.
 | Localization | Mobile strings are hard-coded English. | Port EN/ES/FR/RU resources and language selection; every visible copy change remains synchronized. |
 | Responsive shell | Ready across compact phone, phone, tablet, and desktop release viewports. | Keep keyboard, overflow, and route-navigation checks in the release suite. |
 | PWA lifecycle | Ready: install metadata, explicit update activation/retry, offline/recovery UI, and backend cache bypass are implemented. | Validate two-version upgrade and installed-mode behavior on a production HTTPS host. |
-| Static delivery | Ready: the production image builds the validated Expo export, serves prerendered routes, preserves backend boundaries, and applies PWA-safe cache headers. | Keep the container smoke test and tagged multi-architecture build green. |
+| Static delivery | Ready: the production image builds the validated Expo export, serves prerendered routes, preserves backend boundaries, and applies PWA-safe cache headers. | Keep the container smoke test and tagged AMD64 build green. |
 
 ## Platform boundary
 

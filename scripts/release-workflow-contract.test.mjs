@@ -28,7 +28,8 @@ test('release images use the current GHCR-only workflow with an explicit immutab
   assert.match(workflow, /ref: \$\{\{ inputs\.release_tag \|\| github\.ref \}\}/);
   assert.match(workflow, /node scripts\/release-config\.mjs tag/);
   assert.match(workflow, /ghcr\.io/);
-  assert.match(workflow, /platforms: linux\/amd64,linux\/arm64/);
+  assert.match(workflow, /platforms: linux\/amd64/);
+  assert.doesNotMatch(workflow, /linux\/arm64|setup-qemu-action/);
   assert.doesNotMatch(workflow, /aws-actions|amazon-ecs|\bECR\b|\bECS\b|Deploy Staging|Deploy Prod/i);
 });
 
