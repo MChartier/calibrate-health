@@ -45,6 +45,11 @@ type ChartPoint = {
     upperY: number;
 };
 
+type ChartPressNativeEvent = {
+    locationX?: unknown;
+    offsetX?: unknown;
+};
+
 function getDatePart(value: string): string {
     return value.split('T')[0] ?? value;
 }
@@ -61,6 +66,14 @@ function buildBandPoints(points: ChartPoint[]): string {
     const upper = points.map((point) => `${point.x.toFixed(2)},${point.upperY.toFixed(2)}`);
     const lower = points.slice().reverse().map((point) => `${point.x.toFixed(2)},${point.lowerY.toFixed(2)}`);
     return [...upper, ...lower].join(' ');
+}
+
+/** React Native reports locationX, while React Native Web forwards the browser click's offsetX. */
+function getChartPressX(nativeEvent: ChartPressNativeEvent): number | null {
+    const pressX = typeof nativeEvent.locationX === 'number'
+        ? nativeEvent.locationX
+        : nativeEvent.offsetX;
+    return typeof pressX === 'number' && Number.isFinite(pressX) ? pressX : null;
 }
 
 function getChartPoints(metrics: TrendMetricEntry[]): ChartPoint[] {
@@ -159,8 +172,8 @@ export const WeightTrendCard: React.FC<WeightTrendCardProps> = ({
         };
     }, [chartPoints]);
 
-    function selectNearestPoint(locationX: number) {
-        if (chartPoints.length === 0) return;
+    function selectNearestPoint(locationX: number | null) {
+        if (chartPoints.length === 0 || locationX === null) return;
         const scaledX = (locationX / Math.max(chartCanvasWidth, 1)) * CHART_WIDTH;
         const nearestPoint = chartPoints.reduce((nearest, point) => {
             return Math.abs(point.x - scaledX) < Math.abs(nearest.x - scaledX) ? point : nearest;
@@ -248,7 +261,7 @@ export const WeightTrendCard: React.FC<WeightTrendCardProps> = ({
                         <Pressable
                             accessibilityRole="button"
                             accessibilityLabel="Show nearest weigh-in details"
-                            onPress={(event) => selectNearestPoint(event.nativeEvent.locationX)}
+                            onPress={(event) => selectNearestPoint(getChartPressX(event.nativeEvent))}
                             style={StyleSheet.absoluteFill}
                         />
                     </View>

@@ -33,7 +33,9 @@ const HIDDEN_TAB_OPTIONS = {
     href: null
 } as const;
 
-const TAB_BAR_BASE_HEIGHT = 64; // Material-style navigation height before Android gesture/navigation safe-area padding.
+const TAB_BAR_CONTENT_HEIGHT = 56; // Keeps the UIKit icon, label, and built-in item padding from clipping.
+const TAB_BAR_VERTICAL_PADDING = spacing.sm; // Separates tab content from both bar edges before safe-area padding.
+const TAB_BAR_BASE_HEIGHT = TAB_BAR_CONTENT_HEIGHT + (TAB_BAR_VERTICAL_PADDING * 2);
 const HEADER_ROW_MIN_HEIGHT = 56; // Standard compact Android app-bar height before large-text expansion.
 const LARGE_TEXT_HEIGHT_INCREMENT = 18; // Adds vertical room as Android font scale grows toward 200%.
 const DESKTOP_NAV_BREAKPOINT = 1024;
@@ -168,8 +170,8 @@ export default function TabsLayout() {
                                     backgroundColor: theme.colors.surface,
                                     borderTopColor: theme.colors.border,
                                     height: tabBarHeight,
-                                    paddingBottom: Math.max(insets.bottom, spacing.sm),
-                                    paddingTop: spacing.sm,
+                                    paddingBottom: insets.bottom + TAB_BAR_VERTICAL_PADDING,
+                                    paddingTop: TAB_BAR_VERTICAL_PADDING,
                                     paddingHorizontal: spacing.md
                                 },
                             tabBarItemStyle: [styles.tabBarItem, usesNavigationRail && styles.navigationRailItem],
@@ -358,7 +360,7 @@ function createStyles(colors: AppThemeColors, shadows: AppTheme['shadows']) {
         flex: 1
     },
     tabBarItem: {
-        minHeight: 48
+        minHeight: TAB_BAR_CONTENT_HEIGHT
     },
     navigationRail: {
         width: DESKTOP_NAV_RAIL_WIDTH,
