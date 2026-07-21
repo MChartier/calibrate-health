@@ -15,6 +15,8 @@ const GAUGE_SIZE = 94;
 const GAUGE_STROKE = 9;
 const GAUGE_RADIUS = (GAUGE_SIZE - GAUGE_STROKE) / 2;
 const GAUGE_CIRCUMFERENCE = 2 * Math.PI * GAUGE_RADIUS;
+// SVG rotation keeps the progress arc's zero point at 12 o'clock on native and web.
+const GAUGE_ROTATION_TRANSFORM = `rotate(-90 ${GAUGE_SIZE / 2} ${GAUGE_SIZE / 2})`;
 
 function getBalanceTone(remaining: number | null, progress: number): 'primary' | 'warning' | 'danger' {
     if (remaining === null) return 'primary';
@@ -110,8 +112,7 @@ const CalorieGauge: React.FC<{
                     strokeLinecap="round"
                     strokeDasharray={`${GAUGE_CIRCUMFERENCE} ${GAUGE_CIRCUMFERENCE}`}
                     strokeDashoffset={dashOffset}
-                    rotation={-90}
-                    origin={`${GAUGE_SIZE / 2}, ${GAUGE_SIZE / 2}`}
+                    transform={GAUGE_ROTATION_TRANSFORM}
                 />
             </Svg>
             <View style={styles.gaugeLabel}>

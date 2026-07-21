@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, View, useWindowDimensions, type ViewProps } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import type { FoodLogEntry } from '@calibrate/api-client';
 import type { MealPeriod } from '@calibrate/shared';
 import { AppCard } from './AppCard';
@@ -10,6 +10,7 @@ import { formatCalories, formatMealPeriod } from '../utils/format';
 import { MEAL_OPTIONS } from '../utils/meals';
 
 type FoodLogTimelineCardProps = ViewProps & {
+    title?: string;
     entries: FoodLogEntry[];
     disabled?: boolean;
     onEditEntry: (entry: FoodLogEntry) => void;
@@ -38,9 +39,10 @@ function getServingText(entry: FoodLogEntry): string | null {
 }
 
 /**
- * Compact Today meal log with expansion for populated meals and snapshot edit/delete actions.
+ * Full meal log with expansion for populated meals and snapshot edit/delete actions.
  */
 export const FoodLogTimelineCard: React.FC<FoodLogTimelineCardProps> = ({
+    title = 'Food log',
     entries,
     disabled,
     onEditEntry,
@@ -71,7 +73,7 @@ export const FoodLogTimelineCard: React.FC<FoodLogTimelineCardProps> = ({
         <AppCard {...props} style={style}>
             <View style={styles.headerRow}>
                 <View style={styles.headerText}>
-                    <AppText variant="screenTitle">Food log</AppText>
+                    <AppText accessibilityRole="header" aria-level={2} variant="screenTitle">{title}</AppText>
                 </View>
             </View>
 

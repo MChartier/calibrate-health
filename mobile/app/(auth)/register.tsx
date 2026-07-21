@@ -21,6 +21,7 @@ export default function RegisterScreen() {
     const [serverInput, setServerInput] = useState(routedServerDraft ?? serverUrl);
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -29,6 +30,19 @@ export default function RegisterScreen() {
     }, [routedServerDraft, serverUrl]);
 
     async function handleRegister() {
+        if (!email.trim()) {
+            setError('Enter your email address.');
+            return;
+        }
+        if (!password) {
+            setError('Enter a password.');
+            return;
+        }
+        if (password !== confirmPassword) {
+            setError('Passwords do not match.');
+            return;
+        }
+
         setIsSubmitting(true);
         setError(null);
         try {
@@ -62,10 +76,21 @@ export default function RegisterScreen() {
                     autoComplete="new-password"
                     autoCorrect={false}
                     textContentType="newPassword"
-                    returnKeyType="go"
+                    returnKeyType="next"
                     secureTextEntry
                     value={password}
                     onChangeText={setPassword}
+                />
+                <TextField
+                    label="Confirm password"
+                    autoCapitalize="none"
+                    autoComplete="new-password"
+                    autoCorrect={false}
+                    textContentType="newPassword"
+                    returnKeyType="go"
+                    secureTextEntry
+                    value={confirmPassword}
+                    onChangeText={setConfirmPassword}
                     onSubmitEditing={() => void handleRegister()}
                 />
                 <ServerUrlControl

@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { router } from 'expo-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as Haptics from 'expo-haptics';
@@ -19,7 +19,7 @@ import { executeOrQueueMutation, OFFLINE_MUTATION_OPERATIONS } from '../offline/
 import { useOfflineOutbox } from '../offline/provider';
 import { formatDateOnlyForDisplay } from '../utils/dates';
 import { formatCalories, formatMealPeriod } from '../utils/format';
-import { MEAL_OPTIONS } from '../utils/meals';
+import { MEAL_OPTIONS, MEAL_SELECT_OPTIONS } from '../utils/meals';
 import { selectQuickRecentFoods } from '../utils/myFoods';
 import {
     buildSearchedFoodLogPayload,
@@ -28,7 +28,8 @@ import {
     normalizeSearchedFoodItem,
     type SearchedFoodItem
 } from '../food/serving';
-import { colors, radius, spacing } from '../theme';
+import { radius, spacing, useAppTheme, type AppTheme } from '../theme';
+import { SERVING_INPUT_INCREMENT } from '../config/inputPrecision';
 
 type AddFoodSheetProps = {
     visible: boolean;
@@ -49,7 +50,6 @@ const ADD_FOOD_MODES: Array<{ value: AddFoodMode; label: string }> = [
     { value: 'recipes', label: 'Recipes' }
 ];
 
-const SERVINGS_STEP = 0.1; // Food servings match the PWA precision and provider serving snapshots.
 const DEFAULT_RECENT_LIMIT = 5;
 const DEFAULT_RECIPE_LIMIT = 6;
 const DEFAULT_PINNED_LIMIT = 6;
@@ -133,6 +133,9 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
     onClose,
     onLogged
 }) => {
+    const theme = useAppTheme();
+    const { colors } = theme;
+    const styles = useMemo(() => createStyles(theme), [theme]);
     const { api } = useAuth();
     const { enqueue } = useOfflineOutbox();
     const queryClient = useQueryClient();
@@ -149,11 +152,6 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
     const [selectedMeasureIndex, setSelectedMeasureIndex] = useState('0');
     const [isMeasureSelectorOpen, setIsMeasureSelectorOpen] = useState(false);
     const [isMealSelectorOpen, setIsMealSelectorOpen] = useState(false);
-    const foodDayQuery = useQuery({
-        queryKey: ['mobile-food-day', date],
-        queryFn: () => api.getFoodDay(date),
-        enabled: visible
-    });
     const recentFoodsQuery = useQuery({
         queryKey: ['mobile-recent-foods', query.trim()],
         queryFn: () => api.getRecentFoods({ q: query, limit: DEFAULT_RECENT_LIMIT }),
@@ -169,7 +167,6 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
         queryFn: () => api.getMyFoods(),
         enabled: visible && (mode === 'quick' || mode === 'recipes')
     });
-    const isDayComplete = foodDayQuery.data?.is_complete ?? false;
 
     const createFoodLog = useCallback((payload: FoodLogCreatePayload) => executeOrQueueMutation({
         operation: OFFLINE_MUTATION_OPERATIONS.CREATE_FOOD_LOG,
@@ -192,7 +189,6 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
     async function invalidateLogQueries() {
         await Promise.all([
             queryClient.invalidateQueries({ queryKey: ['mobile-food', date] }),
-            queryClient.invalidateQueries({ queryKey: ['mobile-food-day', date] }),
             queryClient.invalidateQueries({ queryKey: ['mobile-profile'] }),
             queryClient.invalidateQueries({ queryKey: ['mobile-recent-foods'] }),
             queryClient.invalidateQueries({ queryKey: ['mobile-in-app-notifications'] })
@@ -262,7 +258,6 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
     });
 
     const canAddQuickEntry =
-        !isDayComplete &&
         name.trim().length > 0 &&
         Number.isFinite(Number(calories)) &&
         Number(calories) >= 0;
@@ -330,7 +325,7 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
                                     key={`pinned-${item.id}`}
                                     title={item.name}
                                     subtitle={`${formatCalories(item.calories_per_serving)} per ${item.serving_size_quantity} ${item.serving_unit_label}`}
-                                    disabled={isDayComplete || isSubmitting}
+                                    disabled={isSubmitting}
                                     onPress={() => logMyFood.mutate({ item, servings: 1 })}
                                 />
                             ))}
@@ -340,7 +335,7 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
                                     key={`quick-recent-${recent.id}`}
                                     title={recent.name}
                                     subtitle={`${formatCalories(recent.calories)} | ${recent.times_logged}x`}
-                                    disabled={isDayComplete || isSubmitting}
+                                    disabled={isSubmitting}
                                     onPress={() => logRecentFood.mutate(recent)}
                                 />
                             ))}
@@ -350,7 +345,7 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
                         <AppText variant="muted">Loading pinned and recent foods...</AppText>
                     )}
                     <AppText variant="label">Quick entry</AppText>
-                    <TextField label="Food name" value={name} onChangeText={setName} editable={!isDayComplete && !isSubmitting} />
+                    <TextField label="Food name" value={name} onChangeText={setName} editable={!isSubmitting} />
                     <NumberStepperField
                         label="Calories"
                         value={calories}
@@ -360,7 +355,7 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
                         suffix="kcal"
                         placeholder="0"
                         helperText={!canAddQuickEntry ? 'Enter a food name and calories to enable Add.' : undefined}
-                        editable={!isDayComplete && !isSubmitting}
+                        editable={!isSubmitting}
                     />
                     {addFood.error && <AppText style={styles.error}>{addFood.error.message}</AppText>}
                     <View style={styles.row}>
@@ -368,14 +363,14 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
                             title={addFood.isPending ? 'Adding...' : 'Add another'}
                             variant="secondary"
                             disabled={!canAddQuickEntry || addFood.isPending}
-                            leftIcon={<Ionicons name="add" size={18} color={canAddQuickEntry ? colors.text : colors.muted} />}
+                            leftIcon={<Ionicons name="add" size={18} color={canAddQuickEntry ? colors.onSurface : colors.onSurfaceVariant} />}
                             onPress={() => addFood.mutate(false)}
                             style={styles.rowButton}
                         />
                         <AppButton
                             title={addFood.isPending ? 'Adding...' : 'Add & close'}
                             disabled={!canAddQuickEntry || addFood.isPending}
-                            leftIcon={<Ionicons name="checkmark" size={18} color={canAddQuickEntry ? '#ffffff' : colors.muted} />}
+                            leftIcon={<Ionicons name="checkmark" size={18} color={canAddQuickEntry ? colors.onPrimary : colors.onSurfaceVariant} />}
                             onPress={() => addFood.mutate(true)}
                             style={styles.rowButton}
                         />
@@ -411,7 +406,7 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
                             setIsMeasureSelectorOpen(false);
                         }}
                         returnKeyType="search"
-                        editable={!isDayComplete && !isSubmitting}
+                        editable={!isSubmitting}
                         onSubmitEditing={() => {
                             if (query.trim()) searchFood.mutate();
                         }}
@@ -420,16 +415,16 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
                     <View style={styles.row}>
                         <AppButton
                             title={searchFood.isPending ? 'Searching...' : 'Search'}
-                            disabled={isDayComplete || !query.trim() || searchFood.isPending}
-                            leftIcon={<Ionicons name="search" size={18} color="#ffffff" />}
+                            disabled={!query.trim() || searchFood.isPending}
+                            leftIcon={<Ionicons name="search" size={18} color={colors.onPrimary} />}
                             onPress={() => searchFood.mutate()}
                             style={styles.rowButton}
                         />
                         <AppButton
                             title="Scan"
                             variant="secondary"
-                            disabled={isDayComplete || isSubmitting}
-                            leftIcon={<Ionicons name="barcode-outline" size={18} color={colors.text} />}
+                            disabled={isSubmitting}
+                            leftIcon={<Ionicons name="barcode-outline" size={18} color={colors.onSurface} />}
                             onPress={openBarcodeScanner}
                             style={styles.rowButton}
                         />
@@ -450,7 +445,7 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
                                     onPress={() => setSelectedSearchItem(null)}
                                     style={({ pressed }) => [styles.clearSelection, pressed && styles.pressed]}
                                 >
-                                    <Ionicons name="close" size={19} color={colors.muted} />
+                                    <Ionicons name="close" size={19} color={colors.onSurfaceVariant} />
                                 </Pressable>
                             </View>
 
@@ -474,9 +469,9 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
                                 label="Quantity"
                                 value={searchQuantity}
                                 onChangeText={setSearchQuantity}
-                                step={SERVINGS_STEP}
-                                min={SERVINGS_STEP}
-                                editable={!isDayComplete && !isSubmitting && measureOptions.length > 0}
+                                step={SERVING_INPUT_INCREMENT}
+                                min={SERVING_INPUT_INCREMENT}
+                                editable={!isSubmitting && measureOptions.length > 0}
                             />
 
                             {selectedServingCalculation && selectedMeasure && (
@@ -500,8 +495,8 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
                             )}
                             <AppButton
                                 title={searchedFoodLogTitle}
-                                disabled={isDayComplete || isSubmitting || !selectedServingPayload?.ok}
-                                leftIcon={<Ionicons name="add" size={18} color={selectedServingPayload?.ok ? colors.surface : colors.muted} />}
+                                disabled={isSubmitting || !selectedServingPayload?.ok}
+                                leftIcon={<Ionicons name="add" size={18} color={selectedServingPayload?.ok ? colors.onPrimary : colors.onSurfaceVariant} />}
                                 onPress={() => {
                                     if (selectedServingPayload?.ok) {
                                         logSearchResult.mutate(selectedServingPayload.payload);
@@ -520,7 +515,7 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
                                         key={recent.id}
                                         title={recent.name}
                                         subtitle={`${formatCalories(recent.calories)} | ${recent.times_logged}x`}
-                                        disabled={isDayComplete || isSubmitting}
+                                        disabled={isSubmitting}
                                         onPress={() => logRecentFood.mutate(recent)}
                                     />
                                 ))}
@@ -535,7 +530,7 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
                                 subtitle={describeSearchedFood(result)}
                                 accessibilityLabel={`Choose serving for ${result.name}`}
                                 icon="chevron-forward"
-                                disabled={isDayComplete || isSubmitting}
+                                disabled={isSubmitting}
                                 onPress={() => selectSearchItem(result)}
                             />
                         ))}
@@ -554,15 +549,15 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
                     value={recipeQuery}
                     onChangeText={setRecipeQuery}
                     placeholder="e.g. chili, overnight oats"
-                    editable={!isDayComplete && !isSubmitting}
+                    editable={!isSubmitting}
                 />
                 <NumberStepperField
                     label="Recipe servings"
                     value={servings}
                     onChangeText={setServings}
-                    step={SERVINGS_STEP}
-                    min={SERVINGS_STEP}
-                    editable={!isDayComplete && !isSubmitting}
+                    step={SERVING_INPUT_INCREMENT}
+                    min={SERVING_INPUT_INCREMENT}
+                    editable={!isSubmitting}
                 />
                 {servingsError && <AppText style={styles.error}>{servingsError}</AppText>}
                 <AppText variant="label">Recipes</AppText>
@@ -572,7 +567,7 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
                             key={`recipe-${item.id}`}
                             title={item.name}
                             subtitle={`${formatCalories(item.calories_per_serving)} per ${item.serving_size_quantity} ${item.serving_unit_label}`}
-                            disabled={isDayComplete || isSubmitting || !hasValidServings}
+                            disabled={isSubmitting || !hasValidServings}
                             onPress={() => logMyFood.mutate({ item, servings: parsePositiveServings(servings) })}
                         />
                     ))}
@@ -591,10 +586,6 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
     return (
         <BottomSheetModal visible={visible} onRequestClose={onClose}>
             <SectionHeader title="Add food" description={`${formatDateOnlyForDisplay(date)} | ${formatMealPeriod(meal)}`} />
-
-            {isDayComplete && (
-                <AppText variant="muted">This day is marked done. Reopen it from Log before adding more food.</AppText>
-            )}
 
             <View style={styles.section}>
                 <AppText variant="label">Meal</AppText>
@@ -639,23 +630,28 @@ const FoodActionRow: React.FC<FoodActionRowProps> = ({
     icon = 'add',
     disabled,
     onPress
-}) => (
-    <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={accessibilityLabel}
-        disabled={disabled}
-        onPress={onPress}
-        style={({ pressed }) => [styles.foodRow, disabled && styles.disabledButton, pressed && styles.pressed]}
-    >
-        <View style={styles.foodText}>
-            <AppText variant="body" numberOfLines={1}>{title}</AppText>
-            <AppText variant="caption" numberOfLines={1}>{subtitle}</AppText>
-        </View>
-        <View style={styles.addIcon}>
-            <Ionicons name={icon} size={18} color="#ffffff" />
-        </View>
-    </Pressable>
-);
+}) => {
+    const theme = useAppTheme();
+    const styles = useMemo(() => createStyles(theme), [theme]);
+
+    return (
+        <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={accessibilityLabel}
+            disabled={disabled}
+            onPress={onPress}
+            style={({ pressed }) => [styles.foodRow, disabled && styles.disabledButton, pressed && styles.pressed]}
+        >
+            <View style={styles.foodText}>
+                <AppText variant="body" numberOfLines={1}>{title}</AppText>
+                <AppText variant="caption" numberOfLines={1}>{subtitle}</AppText>
+            </View>
+            <View style={styles.addIcon}>
+                <Ionicons name={icon} size={18} color={theme.colors.onPrimary} />
+            </View>
+        </Pressable>
+    );
+};
 
 type MealSelectorProps = {
     value: MealPeriod;
@@ -664,23 +660,18 @@ type MealSelectorProps = {
     onSelect: (meal: MealPeriod) => void;
 };
 
-const MEAL_SELECTOR_OPTIONS: Array<OverlaySelectOption<MealPeriod>> = MEAL_OPTIONS.map((option) => ({
-    value: option,
-    label: formatMealPeriod(option)
-}));
-
 const MealSelector: React.FC<MealSelectorProps> = ({ value, isOpen, onToggle, onSelect }) => (
     <OverlaySelect
         accessibilityLabel="Select meal"
         value={value}
-        options={MEAL_SELECTOR_OPTIONS}
+        options={MEAL_SELECT_OPTIONS}
         isOpen={isOpen}
         onToggle={onToggle}
         onChange={onSelect}
     />
 );
 
-const styles = StyleSheet.create({
+const createStyles = (theme: AppTheme) => StyleSheet.create({
     row: {
         flexDirection: 'row',
         gap: spacing.md
@@ -703,7 +694,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         gap: spacing.md,
         borderRadius: radius.md,
-        backgroundColor: colors.surfaceAlt,
+        backgroundColor: theme.colors.surfaceContainer,
         padding: spacing.md
     },
     foodText: {
@@ -715,8 +706,8 @@ const styles = StyleSheet.create({
         gap: spacing.md,
         borderRadius: radius.md,
         borderWidth: StyleSheet.hairlineWidth,
-        borderColor: colors.border,
-        backgroundColor: colors.surfaceAlt,
+        borderColor: theme.colors.outlineVariant,
+        backgroundColor: theme.colors.surfaceContainer,
         padding: spacing.md
     },
     servingHeader: {
@@ -725,17 +716,17 @@ const styles = StyleSheet.create({
         gap: spacing.md
     },
     clearSelection: {
-        width: 44,
-        height: 44,
+        width: 48,
+        height: 48,
         alignItems: 'center',
         justifyContent: 'center',
         borderRadius: radius.md,
-        backgroundColor: colors.surface
+        backgroundColor: theme.colors.surface
     },
     servingSummary: {
         gap: spacing.xs,
         borderRadius: radius.md,
-        backgroundColor: colors.primarySoft,
+        backgroundColor: theme.colors.primaryContainer,
         padding: spacing.md
     },
     addIcon: {
@@ -744,7 +735,7 @@ const styles = StyleSheet.create({
         borderRadius: radius.md,
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: colors.primary
+        backgroundColor: theme.colors.primary
     },
     disabledButton: {
         opacity: 0.45
@@ -753,6 +744,6 @@ const styles = StyleSheet.create({
         opacity: 0.82
     },
     error: {
-        color: colors.danger
+        color: theme.colors.danger
     }
 });

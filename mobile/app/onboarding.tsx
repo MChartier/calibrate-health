@@ -1,12 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { Redirect, router } from 'expo-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import * as DocumentPicker from 'expo-document-picker';
 import {
     ACTIVITY_LEVELS,
-    ALLOWED_DAILY_DEFICIT_ABS_VALUES,
     HEIGHT_UNITS,
     WEIGHT_UNITS,
     type ActivityLevel,
@@ -22,7 +20,7 @@ import { DatePickerField } from '../src/components/DatePickerField';
 import { HealthConnectOnboardingStep } from '../src/components/HealthConnectOnboardingStep';
 import { LoadingState } from '../src/components/LoadingState';
 import { NumberStepperField } from '../src/components/NumberStepperField';
-import { OverlaySelect, type OverlaySelectOption } from '../src/components/OverlaySelect';
+import { GoalDailyChangeSelect } from '../src/components/GoalDailyChangeSelect';
 import { Screen } from '../src/components/Screen';
 import { SectionHeader } from '../src/components/SectionHeader';
 import { SegmentedControl } from '../src/components/SegmentedControl';
@@ -31,9 +29,17 @@ import { WearPairingCard } from '../src/components/WearPairingCard';
 import { useAuth } from '../src/auth/AuthContext';
 import { gramsToDisplayWeight, millimetersToCentimeters, millimetersToFeetInches } from '../src/utils/bodyMeasurements';
 import { getTodayDate } from '../src/utils/dates';
-import { formatCalories, formatWeightUnit } from '../src/utils/format';
+import { formatWeightUnit } from '../src/utils/format';
+import {
+    DAILY_GOAL_CHANGE_OPTIONS,
+    formatDailyGoalChange,
+    getSignedDailyDeficit,
+    GOAL_MODE_OPTIONS,
+    type GoalMode
+} from '../src/utils/goals';
 import { isProfileSetupComplete } from '../src/utils/profileCompletion';
 import { ACTIVITY_OPTIONS, HEIGHT_UNIT_OPTIONS, SEX_OPTIONS, WEIGHT_UNIT_OPTIONS } from '../src/utils/profileOptions';
+import { getKeyboardAvoidingBehavior } from '../src/utils/keyboard';
 import { detectDeviceTimeZone, formatTimeZoneLabel, resolveOnboardingTimeZone } from '../src/utils/timezones';
 import {
     getNextButtonTitle,
@@ -43,23 +49,7 @@ import {
 } from '../src/onboarding/steps';
 import { OnboardingProgress } from '../src/onboarding/OnboardingProgress';
 import { radius, spacing, useAppTheme } from '../src/theme';
-
-type GoalMode = 'lose' | 'maintain' | 'gain';
-
-const GOAL_MODES: Array<{ value: GoalMode; label: string }> = [
-    { value: 'lose', label: 'Lose' },
-    { value: 'maintain', label: 'Maintain' },
-    { value: 'gain', label: 'Gain' }
-];
-
-const DAILY_CHANGE_OPTIONS = ALLOWED_DAILY_DEFICIT_ABS_VALUES.filter((value) => value !== 0);
-const WEIGHT_ENTRY_STEP = 0.1; // Keep setup weights aligned with the log-weight dialog.
-
-function getSignedDailyDeficit(goalMode: GoalMode, dailyChangeAbs: string): number {
-    if (goalMode === 'maintain') return 0;
-    const magnitude = Math.abs(Number(dailyChangeAbs));
-    return goalMode === 'gain' ? -magnitude : magnitude;
-}
+import { WEIGHT_INPUT_INCREMENT } from '../src/config/inputPrecision';
 
 function getTargetWeightForGoal(goalMode: GoalMode, currentWeight: string, targetWeight: string): string {
     if (goalMode === 'maintain' && targetWeight.trim().length === 0) {
@@ -79,27 +69,6 @@ function validateGoal(goalMode: GoalMode, currentWeight: number, targetWeight: n
         return 'For a gain goal, target weight must be above current weight.';
     }
     return null;
-}
-
-function getDailyChangeCopy(goalMode: Exclude<GoalMode, 'maintain'>, value: string): { label: string; description: string } {
-    const magnitude = Math.abs(Number(value));
-    const formatted = Number.isFinite(magnitude) ? magnitude.toLocaleString() : value;
-    if (goalMode === 'gain') {
-        return {
-            label: `${formatted} kcal/day surplus`,
-            description: `Targets eating ${formatted} kcal above estimated burn.`
-        };
-    }
-    return {
-        label: `${formatted} kcal/day deficit`,
-        description: `Targets eating ${formatted} kcal below estimated burn.`
-    };
-}
-
-function formatDailyChangeSummary(signedDailyDeficit: number): string {
-    if (signedDailyDeficit === 0) return 'Maintenance';
-    const direction = signedDailyDeficit > 0 ? 'deficit' : 'surplus';
-    return `${formatCalories(Math.abs(signedDailyDeficit))}/day ${direction}`;
 }
 
 export default function OnboardingScreen() {
@@ -224,6 +193,7 @@ export default function OnboardingScreen() {
 
     const importMutation = useMutation({
         mutationFn: async () => {
+            const DocumentPicker = await import('expo-document-picker');
             const result = await DocumentPicker.getDocumentAsync({
                 type: 'application/zip',
                 copyToCacheDirectory: true
@@ -244,8 +214,7 @@ export default function OnboardingScreen() {
     const projectedTarget = useMemo(() => {
         const current = Number(currentWeight);
         if (!Number.isFinite(current) || signedDailyDeficit === 0) return null;
-        const direction = signedDailyDeficit > 0 ? 'deficit' : 'surplus';
-        return `${formatCalories(Math.abs(signedDailyDeficit))}/day ${direction}`;
+        return formatDailyGoalChange(signedDailyDeficit);
     }, [currentWeight, signedDailyDeficit]);
 
     if (!user) {
@@ -273,7 +242,7 @@ export default function OnboardingScreen() {
             case 'goal':
                 return validateGoal(goalMode, Number(currentWeight), Number(resolvedTargetWeight));
             case 'pace':
-                if (goalMode !== 'maintain' && !DAILY_CHANGE_OPTIONS.some((value) => String(value) === dailyChangeAbs)) {
+                if (goalMode !== 'maintain' && !DAILY_GOAL_CHANGE_OPTIONS.some((value) => String(value) === dailyChangeAbs)) {
                     return 'Choose a daily calorie change.';
                 }
                 return null;
@@ -360,7 +329,7 @@ export default function OnboardingScreen() {
             case 'goal':
                 return (
                     <>
-                        <SegmentedControl options={GOAL_MODES} value={goalMode} onChange={handleGoalModeChange} />
+                        <SegmentedControl options={GOAL_MODE_OPTIONS} value={goalMode} onChange={handleGoalModeChange} />
                         <AppText variant="muted">
                             Select the direction first. We will keep the target consistent with that choice.
                         </AppText>
@@ -372,16 +341,16 @@ export default function OnboardingScreen() {
                                     setCurrentWeight(value);
                                     if (goalMode === 'maintain') setTargetWeight(value);
                                 }}
-                                step={WEIGHT_ENTRY_STEP}
-                                min={WEIGHT_ENTRY_STEP}
+                                step={WEIGHT_INPUT_INCREMENT}
+                                min={WEIGHT_INPUT_INCREMENT}
                                 suffix={formatWeightUnit(weightUnit)}
                             />
                             <NumberStepperField
                                 label={goalMode === 'maintain' ? 'Maintain at' : 'Target'}
                                 value={resolvedTargetWeight}
                                 onChangeText={setTargetWeight}
-                                step={WEIGHT_ENTRY_STEP}
-                                min={WEIGHT_ENTRY_STEP}
+                                step={WEIGHT_INPUT_INCREMENT}
+                                min={WEIGHT_INPUT_INCREMENT}
                                 suffix={formatWeightUnit(weightUnit)}
                             />
                         </View>
@@ -402,12 +371,12 @@ export default function OnboardingScreen() {
                         ) : (
                             <>
                                 <AppText variant="label">Daily calorie change</AppText>
-                                <DailyChangeSelector
+                                <GoalDailyChangeSelect
                                     goalMode={goalMode}
                                     value={dailyChangeAbs}
                                     isOpen={isDailyChangeSelectorOpen}
                                     onToggle={() => setIsDailyChangeSelectorOpen((current) => !current)}
-                                    onSelect={(value) => {
+                                    onChange={(value) => {
                                         setDailyChangeAbs(value);
                                         setIsDailyChangeSelectorOpen(false);
                                     }}
@@ -540,7 +509,7 @@ export default function OnboardingScreen() {
                         <ReviewRow label="Goal" value={`${currentWeight || '-'} -> ${resolvedTargetWeight || '-'} ${formatWeightUnit(weightUnit)}`} />
                         <ReviewRow
                             label="Calorie change"
-                            value={formatDailyChangeSummary(signedDailyDeficit)}
+                            value={formatDailyGoalChange(signedDailyDeficit)}
                         />
                         <ReviewRow label="Date of birth" value={dateOfBirth || '-'} />
                         <ReviewRow label="Sex" value={SEX_OPTIONS.find((option) => option.value === sex)?.label ?? '-'} />
@@ -569,7 +538,9 @@ export default function OnboardingScreen() {
                 <CalibrateLogo size={30} />
                 <View style={styles.setupHeaderCopy}>
                     <AppText variant="label" style={{ color: themeColors.primary }}>Calibrate setup</AppText>
-                    <AppText variant="subtitle">Build your daily target</AppText>
+                    <AppText accessibilityRole="header" aria-level={1} variant="subtitle">
+                        Build your daily target
+                    </AppText>
                 </View>
             </View>
 
@@ -579,10 +550,11 @@ export default function OnboardingScreen() {
             />
 
             <KeyboardAvoidingView
-                behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+                behavior={getKeyboardAvoidingBehavior(Platform.OS)}
                 style={styles.wizardRegion}
             >
                 <ScrollView
+                    automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}
                     contentContainerStyle={styles.wizardContent}
                     keyboardDismissMode="on-drag"
                     keyboardShouldPersistTaps="handled"
@@ -622,33 +594,6 @@ export default function OnboardingScreen() {
         </Screen>
     );
 }
-
-type DailyChangeSelectorProps = {
-    goalMode: Exclude<GoalMode, 'maintain'>;
-    value: string;
-    isOpen: boolean;
-    onToggle: () => void;
-    onSelect: (value: string) => void;
-};
-
-const DailyChangeSelector: React.FC<DailyChangeSelectorProps> = ({ goalMode, value, isOpen, onToggle, onSelect }) => {
-    const options: Array<OverlaySelectOption<string>> = DAILY_CHANGE_OPTIONS.map((option) => {
-        const optionValue = String(option);
-        const copy = getDailyChangeCopy(goalMode, optionValue);
-        return { value: optionValue, label: copy.label, description: copy.description };
-    });
-
-    return (
-        <OverlaySelect
-            accessibilityLabel="Select daily calorie change"
-            value={value}
-            options={options}
-            isOpen={isOpen}
-            onToggle={onToggle}
-            onChange={onSelect}
-        />
-    );
-};
 
 const ConnectionStepIntro: React.FC<{
     icon: React.ComponentProps<typeof Ionicons>['name'];
@@ -691,7 +636,7 @@ const PlanSummary: React.FC<{
             <ReviewRow label="Target" value={`${targetWeight || '-'} ${unit}`} compact />
             <ReviewRow
                 label="Plan"
-                value={formatDailyChangeSummary(signedDailyDeficit)}
+                value={formatDailyGoalChange(signedDailyDeficit)}
                 compact
             />
         </View>

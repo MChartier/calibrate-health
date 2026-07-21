@@ -7,13 +7,12 @@ import org.junit.Test
 
 class CalibrateTileFormatterTest {
     @Test
-    fun `formats remaining consumed target and completion`() {
+    fun `formats remaining consumed target and freshness`() {
         val result = CalibrateTileFormatter.format(
             CalibrateTileSnapshot(
                 caloriesConsumed = 1_500,
                 calorieTarget = 2_000,
                 caloriesRemaining = 500,
-                isComplete = true,
                 cachedAtEpochMs = NOW - 5 * MINUTE_MS
             ),
             NOW
@@ -21,7 +20,7 @@ class CalibrateTileFormatterTest {
 
         assertEquals("500 kcal left", result.calorieLine)
         assertEquals("1,500 of 2,000 kcal", result.consumedLine)
-        assertEquals("Day complete | 5 min ago", result.statusLine)
+        assertEquals("5 min ago", result.statusLine)
         assertFalse(result.isStale)
     }
 
@@ -32,7 +31,6 @@ class CalibrateTileFormatterTest {
                 caloriesConsumed = 2_250,
                 calorieTarget = 2_000,
                 caloriesRemaining = -250,
-                isComplete = false,
                 cachedAtEpochMs = NOW - 7 * HOUR_MS
             ),
             NOW
@@ -40,7 +38,7 @@ class CalibrateTileFormatterTest {
 
         assertEquals("250 kcal over", result.calorieLine)
         assertEquals("2,250 of 2,000 kcal", result.consumedLine)
-        assertEquals("Day open | Stale - 7 hr ago", result.statusLine)
+        assertEquals("Stale - 7 hr ago", result.statusLine)
         assertTrue(result.isStale)
     }
 
@@ -51,7 +49,6 @@ class CalibrateTileFormatterTest {
                 caloriesConsumed = 400,
                 calorieTarget = null,
                 caloriesRemaining = null,
-                isComplete = null,
                 cachedAtEpochMs = NOW + MINUTE_MS
             ),
             NOW
@@ -70,13 +67,12 @@ class CalibrateTileFormatterTest {
                 caloriesConsumed = 1_000,
                 calorieTarget = 2_000,
                 caloriesRemaining = 1_000,
-                isComplete = false,
                 cachedAtEpochMs = NOW - 2 * MINUTE_MS
             ),
             NOW
         )
 
-        assertEquals("Day open | 2 min ago", result.statusLine)
+        assertEquals("2 min ago", result.statusLine)
         assertFalse(result.isStale)
     }
 

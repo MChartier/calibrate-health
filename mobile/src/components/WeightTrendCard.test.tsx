@@ -4,12 +4,12 @@ import { useQuery } from '@tanstack/react-query';
 import type { TrendMetricEntry } from '@calibrate/api-client';
 import { WeightTrendCard } from './WeightTrendCard';
 
-jest.mock('@expo/vector-icons', () => ({ Ionicons: () => null }));
+jest.mock('@expo/vector-icons/Ionicons', () => () => null);
 jest.mock('@tanstack/react-query', () => ({ useQuery: jest.fn() }));
 jest.mock('../auth/AuthContext', () => ({
     useAuth: () => ({
         api: { getTrendMetrics: jest.fn() },
-        user: { weight_unit: 'lb' }
+        user: { weight_unit: 'LB' }
     })
 }));
 
@@ -51,9 +51,10 @@ describe('WeightTrendCard', () => {
     });
 
     it('selects individual points from React Native Web offset coordinates', () => {
-        const { getByLabelText, getByText } = render(<WeightTrendCard />);
+        const { getByLabelText, getByText, queryByText } = render(<WeightTrendCard />);
         const chart = getByLabelText('Show nearest weigh-in details');
 
+        expect(queryByText(/Latest 168\.3/)).toBeNull();
         expect(getByText('Jul 15, 2026')).toBeTruthy();
 
         fireEvent.press(chart, { nativeEvent: { offsetX: 170 } });
@@ -69,5 +70,18 @@ describe('WeightTrendCard', () => {
         fireEvent.press(getByLabelText('Show nearest weigh-in details'), { nativeEvent: {} });
 
         expect(getByText('Jul 15, 2026')).toBeTruthy();
+    });
+
+    it('labels the chart scale, dates, and visual series', () => {
+        const { getAllByText, getByLabelText } = render(<WeightTrendCard />);
+
+        expect(getByLabelText('170 lb weight axis label')).toBeTruthy();
+        expect(getByLabelText('167 lb weight axis label')).toBeTruthy();
+        expect(getByLabelText('Jul 13 date axis label')).toBeTruthy();
+        expect(getByLabelText('Jul 14 date axis label')).toBeTruthy();
+        expect(getByLabelText('Jul 15 date axis label')).toBeTruthy();
+        expect(getAllByText('Measurement')).toHaveLength(2);
+        expect(getAllByText('Trend')).toHaveLength(2);
+        expect(getAllByText('Expected range')).toHaveLength(2);
     });
 });

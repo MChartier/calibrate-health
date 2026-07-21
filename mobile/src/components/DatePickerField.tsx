@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Platform, Pressable, StyleSheet, View } from 'react-native';
 import DateTimePicker, { type DateTimePickerEvent } from '@react-native-community/datetimepicker';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { AppText } from './AppText';
-import { colors, radius, spacing } from '../theme';
+import { radius, spacing, useAppTheme, type AppTheme } from '../theme';
 import { dateOnlyToLocalDate, formatDateOnlyForDisplay, localDateToDateOnly } from '../utils/dates';
 import type { DatePickerFieldProps } from './DatePickerField.types';
 
@@ -22,6 +22,8 @@ export const DatePickerField: React.FC<DatePickerFieldProps> = ({
     style,
     ...props
 }) => {
+    const theme = useAppTheme();
+    const styles = useMemo(() => createStyles(theme), [theme]);
     const [pickerDate, setPickerDate] = useState<Date | null>(null);
 
     function openPicker() {
@@ -55,7 +57,7 @@ export const DatePickerField: React.FC<DatePickerFieldProps> = ({
                 >
                     {value ? formatDateOnlyForDisplay(value) : placeholder}
                 </AppText>
-                <Ionicons name="calendar-outline" size={18} color={colors.primaryDark} />
+                <Ionicons name="calendar-outline" size={18} color={theme.colors.primary} />
             </Pressable>
             {helperText && <AppText variant="caption">{helperText}</AppText>}
             {pickerDate && (
@@ -72,7 +74,7 @@ export const DatePickerField: React.FC<DatePickerFieldProps> = ({
     );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: AppTheme) => StyleSheet.create({
     group: {
         gap: spacing.sm
     },
@@ -84,15 +86,15 @@ const styles = StyleSheet.create({
         gap: spacing.md,
         borderRadius: radius.md,
         borderWidth: StyleSheet.hairlineWidth,
-        borderColor: colors.border,
-        backgroundColor: '#FBFCFA',
+        borderColor: theme.colors.outlineVariant,
+        backgroundColor: theme.colors.surfaceContainerLow,
         paddingHorizontal: spacing.md
     },
     placeholder: {
-        color: colors.muted
+        color: theme.colors.onSurfaceVariant
     },
     pressed: {
-        borderColor: colors.primary,
-        backgroundColor: colors.surface
+        borderColor: theme.colors.primary,
+        backgroundColor: theme.colors.surface
     }
 });

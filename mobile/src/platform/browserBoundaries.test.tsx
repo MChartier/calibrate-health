@@ -24,6 +24,7 @@ describe('browser-native feature boundaries', () => {
             initialized: false,
             grantedFeatures: []
         });
+        expect(result.current.error).toBeNull();
         await expect(result.current.connect()).rejects.toThrow(/Android app/i);
     });
 

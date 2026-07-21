@@ -1,10 +1,10 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Alert, StyleSheet, Switch, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { router } from 'expo-router';
 import { HEALTH_CONNECT_FEATURES, type HealthConnectFeature } from '../healthConnect/types';
 import { useHealthConnect } from '../healthConnect/provider';
-import { colors, spacing } from '../theme';
+import { spacing, useAppTheme, type AppTheme } from '../theme';
 import { AppButton } from './AppButton';
 import { AppCard } from './AppCard';
 import { AppText } from './AppText';
@@ -31,6 +31,8 @@ function formatLastRefresh(value: string | null): string {
 
 /** Read-only Health Connect consent and device-access controls. */
 export function HealthConnectCard() {
+    const theme = useAppTheme();
+    const styles = useMemo(() => createStyles(theme), [theme]);
     const healthConnect = useHealthConnect();
     const availability = healthConnect.connection?.availability;
     const granted = new Set(healthConnect.connection?.grantedFeatures ?? []);
@@ -76,7 +78,7 @@ export function HealthConnectCard() {
                 description="Read activity from Samsung Health and other connected apps on this phone."
             />
             <View style={styles.rationale}>
-                <Ionicons name="shield-checkmark-outline" size={22} color={colors.primaryDark} />
+                <Ionicons name="shield-checkmark-outline" size={22} color={theme.colors.primary} />
                 <AppText style={styles.rationaleText}>
                     Read only: Calibrate never writes health records, and imported activity will not automatically change your calorie target.
                 </AppText>
@@ -114,7 +116,7 @@ export function HealthConnectCard() {
                 <AppButton
                     title="Update Health Connect"
                     variant="secondary"
-                    leftIcon={<Ionicons name="download-outline" size={18} color={colors.text} />}
+                    leftIcon={<Ionicons name="download-outline" size={18} color={theme.colors.onSurface} />}
                     onPress={() => void healthConnect.updateProvider()}
                 />
             )}
@@ -148,8 +150,8 @@ export function HealthConnectCard() {
                                         value={enabled}
                                         disabled={healthConnect.isBusy}
                                         onValueChange={(next) => void healthConnect.setFeatureEnabled(feature, next)}
-                                        trackColor={{ false: colors.controlTrack, true: colors.primarySoft }}
-                                        thumbColor={enabled ? colors.primary : colors.surface}
+                                        trackColor={{ false: theme.colors.controlTrack, true: theme.colors.primaryContainer }}
+                                        thumbColor={enabled ? theme.colors.primary : theme.colors.surface}
                                     />
                                 </View>
                             );
@@ -163,7 +165,7 @@ export function HealthConnectCard() {
                         <AppButton
                             title={healthConnect.isBusy ? 'Connecting...' : 'Connect Health Connect'}
                             disabled={healthConnect.isBusy || enabledFeatures.length === 0}
-                            leftIcon={<Ionicons name="fitness-outline" size={18} color="#ffffff" />}
+                            leftIcon={<Ionicons name="fitness-outline" size={18} color={theme.colors.onPrimary} />}
                             onPress={() => void healthConnect.connect()}
                         />
                     ) : (
@@ -218,6 +220,12 @@ export function HealthConnectCard() {
                 <AppText accessibilityLiveRegion="polite" style={styles.notice}>{healthConnect.restartMessage}</AppText>
             )}
             <AppButton
+                title="View activity history"
+                variant="secondary"
+                leftIcon={<Ionicons name="bar-chart-outline" size={18} color={theme.colors.onSurface} />}
+                onPress={() => router.push('/activity')}
+            />
+            <AppButton
                 title="How Calibrate uses health data"
                 variant="ghost"
                 onPress={() => router.push('/health-connect-privacy')}
@@ -226,13 +234,13 @@ export function HealthConnectCard() {
     );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (theme: AppTheme) => StyleSheet.create({
     rationale: {
         flexDirection: 'row',
         alignItems: 'flex-start',
         gap: spacing.md,
         padding: spacing.md,
-        backgroundColor: colors.primarySoft
+        backgroundColor: theme.colors.primaryContainer
     },
     rationaleText: {
         flex: 1
@@ -249,7 +257,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         gap: spacing.md,
         paddingVertical: spacing.sm,
-        borderBottomColor: colors.border,
+        borderBottomColor: theme.colors.outlineVariant,
         borderBottomWidth: StyleSheet.hairlineWidth
     },
     featureText: {
@@ -266,10 +274,10 @@ const styles = StyleSheet.create({
         fontWeight: '800'
     },
     granted: {
-        color: colors.success
+        color: theme.colors.success
     },
     needsAccess: {
-        color: colors.warningDark
+        color: theme.colors.warning
     },
     actionRow: {
         flexDirection: 'row',
@@ -289,9 +297,9 @@ const styles = StyleSheet.create({
         paddingVertical: spacing.sm
     },
     error: {
-        color: colors.danger
+        color: theme.colors.danger
     },
     notice: {
-        color: colors.warningDark
+        color: theme.colors.warning
     }
 });

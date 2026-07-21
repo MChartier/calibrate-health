@@ -6,6 +6,10 @@ Use this repo-owned setup script for Codex app worktrees:
 node .codex/local-environment.setup.mjs
 ```
 
+The ordinary `npm run dev`, `dev:setup`, `dev:build`, and `dev:down` commands use the same isolated devcontainer and
+Postgres stack. Developers outside Codex therefore get the same setup behavior without running this Codex bootstrap
+script or configuring database environment variables.
+
 Configured Codex app actions:
 
 | Name | Script |
@@ -21,7 +25,7 @@ Configured Codex app actions:
 | Shell | `node scripts/codex-worktree-env.mjs shell` |
 
 The Storybook action uses the worktree-specific `STORYBOOK_PORT` generated in
-`.devcontainer/.env`, so it can run alongside the Vite frontend and other
+`.devcontainer/.env`, so it can run alongside the Expo web client and other
 worktree containers without reusing port 6006.
 
 The setup script uses `CODEX_WORKTREE_PATH` when Codex provides it and falls
@@ -30,7 +34,6 @@ Windows Codex execution does not need WSL bash. It also copies the source
 checkout's ignored `.env` into the new worktree if that file exists and the
 worktree does not already have one.
 
-Setup streams devcontainer logs as they are produced. New worktrees still need
-to install backend/frontend dependencies and seed Postgres, but the devcontainer
-shares a Docker npm cache volume named `calibrate-health-npm-cache` so repeated
-setups can reuse downloaded packages.
+Setup streams devcontainer logs as they are produced. The Dev and Setup actions install dependencies and seed Postgres
+when needed. Root workspace, backend, and frontend dependencies use lockfile-keyed Docker volumes, and downloads share
+the `calibrate-health-npm-cache` volume so repeated setups can reuse both installed packages and cached artifacts.

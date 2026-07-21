@@ -1,14 +1,16 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { router } from 'expo-router';
 import { getHealthConnectOnboardingState } from '../healthConnect/onboardingState';
 import { useHealthConnect } from '../healthConnect/provider';
-import { colors, radius, spacing } from '../theme';
+import { radius, spacing, useAppTheme, type AppTheme } from '../theme';
 import { AppButton } from './AppButton';
 import { AppText } from './AppText';
 
 export function HealthConnectOnboardingStep() {
+    const theme = useAppTheme();
+    const styles = useMemo(() => createStyles(theme), [theme]);
     const healthConnect = useHealthConnect();
     const availability = healthConnect.connection?.availability;
     const state = getHealthConnectOnboardingState({
@@ -24,7 +26,7 @@ export function HealthConnectOnboardingStep() {
     return (
         <View style={styles.root}>
             <View style={styles.rationale}>
-                <Ionicons name="shield-checkmark-outline" size={22} color={colors.primaryDark} />
+                <Ionicons name="shield-checkmark-outline" size={22} color={theme.colors.primary} />
                 <AppText style={styles.rationaleText}>
                     Calibrate reads activity only. It never writes health records or automatically adds exercise calories back to your food budget.
                 </AppText>
@@ -34,7 +36,7 @@ export function HealthConnectOnboardingStep() {
                 <Ionicons
                     name={healthConnect.connected && !state.needsPermissionReview ? 'checkmark-circle' : 'fitness-outline'}
                     size={22}
-                    color={healthConnect.connected && !state.needsPermissionReview ? colors.success : colors.primaryDark}
+                    color={healthConnect.connected && !state.needsPermissionReview ? theme.colors.success : theme.colors.primary}
                 />
                 <AppText
                     accessibilityLiveRegion="polite"
@@ -49,7 +51,7 @@ export function HealthConnectOnboardingStep() {
                 <AppButton
                     title={healthConnect.isBusy ? 'Reviewing...' : healthConnect.connected ? 'Review selected access' : 'Connect Health Connect'}
                     disabled={healthConnect.isBusy}
-                    leftIcon={<Ionicons name="fitness-outline" size={18} color="#ffffff" />}
+                    leftIcon={<Ionicons name="fitness-outline" size={18} color={theme.colors.onPrimary} />}
                     onPress={() => void healthConnect.connect()}
                 />
             )}
@@ -58,7 +60,7 @@ export function HealthConnectOnboardingStep() {
                     title={healthConnect.isBusy ? 'Opening update...' : 'Update Health Connect'}
                     variant="secondary"
                     disabled={healthConnect.isBusy}
-                    leftIcon={<Ionicons name="download-outline" size={18} color={colors.text} />}
+                    leftIcon={<Ionicons name="download-outline" size={18} color={theme.colors.onSurface} />}
                     onPress={() => void healthConnect.updateProvider()}
                 />
             )}
@@ -82,7 +84,7 @@ export function HealthConnectOnboardingStep() {
     );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (theme: AppTheme) => StyleSheet.create({
     root: {
         gap: spacing.md
     },
@@ -92,7 +94,7 @@ const styles = StyleSheet.create({
         gap: spacing.md,
         padding: spacing.md,
         borderRadius: radius.md,
-        backgroundColor: colors.primarySoft
+        backgroundColor: theme.colors.primaryContainer
     },
     rationaleText: {
         flex: 1,
@@ -104,16 +106,16 @@ const styles = StyleSheet.create({
         gap: spacing.md,
         padding: spacing.md,
         borderRadius: radius.md,
-        backgroundColor: colors.surfaceAlt
+        backgroundColor: theme.colors.surfaceContainer
     },
     connectedPanel: {
-        borderColor: colors.success,
+        borderColor: theme.colors.success,
         borderWidth: StyleSheet.hairlineWidth
     },
     statusText: {
         flex: 1
     },
     error: {
-        color: colors.danger
+        color: theme.colors.danger
     }
 });

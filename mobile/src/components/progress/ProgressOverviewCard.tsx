@@ -1,6 +1,6 @@
 import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import type { GoalEntry, MetricEntry, TrendMetricsResponse, UserClientPayload } from '@calibrate/api-client';
 import { AppCard } from '../AppCard';
 import { AppText } from '../AppText';
@@ -14,6 +14,7 @@ type ProgressOverviewCardProps = {
     trendMeta: TrendMetricsResponse['meta'] | null | undefined;
     goal: GoalEntry | null | undefined;
     user: UserClientPayload | null;
+    hasWeightToday: boolean;
     onLogWeight: () => void;
 };
 
@@ -38,6 +39,7 @@ export const ProgressOverviewCard: React.FC<ProgressOverviewCardProps> = ({
     trendMeta,
     goal,
     user,
+    hasWeightToday,
     onLogWeight
 }) => {
     const { colors } = useAppTheme();
@@ -59,7 +61,7 @@ export const ProgressOverviewCard: React.FC<ProgressOverviewCardProps> = ({
                 </View>
                 <Pressable
                     accessibilityRole="button"
-                    accessibilityLabel="Log weight"
+                    accessibilityLabel={hasWeightToday ? "Edit today's weight" : 'Log weight'}
                     onPress={onLogWeight}
                     style={({ pressed }) => [
                         styles.logButton,
@@ -68,7 +70,9 @@ export const ProgressOverviewCard: React.FC<ProgressOverviewCardProps> = ({
                     ]}
                 >
                     <Ionicons name="add" size={20} color={colors.primary} />
-                    <AppText variant="body" style={[styles.logButtonText, { color: colors.primary }]}>Log</AppText>
+                    <AppText variant="body" style={[styles.logButtonText, { color: colors.primary }]}>
+                        {hasWeightToday ? 'Edit' : 'Log'}
+                    </AppText>
                 </Pressable>
             </View>
 

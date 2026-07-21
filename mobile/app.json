@@ -19,6 +19,7 @@
       "package": "app.calibratehealth.mobile",
       "versionCode": 1,
       "allowBackup": false,
+      "softwareKeyboardLayoutMode": "resize",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#F6F8F4"

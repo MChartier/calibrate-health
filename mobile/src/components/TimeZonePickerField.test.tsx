@@ -2,7 +2,7 @@ import React from 'react';
 import { fireEvent, render } from '@testing-library/react-native';
 import { TimeZonePickerField } from './TimeZonePickerField';
 
-jest.mock('@expo/vector-icons', () => ({ Ionicons: () => null }));
+jest.mock('@expo/vector-icons/Ionicons', () => () => null);
 
 jest.mock('../utils/timezones', () => {
     const actual = jest.requireActual('../utils/timezones');

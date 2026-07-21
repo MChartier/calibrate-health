@@ -27,12 +27,20 @@ describe('mobile semantic theme', () => {
         expect(themes.dark.interaction.minimumTouchTarget).toBe(48);
     });
 
-    it('keeps semantic body and warning text contrast-safe in both schemes', () => {
+    it('keeps semantic text and status colors contrast-safe in both schemes', () => {
         for (const theme of [themes.light, themes.dark]) {
             expect(contrastRatio(theme.colors.onSurface, theme.colors.surface)).toBeGreaterThanOrEqual(4.5);
             expect(contrastRatio(theme.colors.onSurfaceVariant, theme.colors.surfaceContainer)).toBeGreaterThanOrEqual(4.5);
             expect(contrastRatio(theme.colors.warning, theme.colors.surface)).toBeGreaterThanOrEqual(4.5);
             expect(contrastRatio(theme.colors.onWarningContainer, theme.colors.warningContainer)).toBeGreaterThanOrEqual(4.5);
+            expect(contrastRatio(theme.colors.danger, theme.colors.surface)).toBeGreaterThanOrEqual(4.5);
+            expect(contrastRatio(theme.colors.onDanger, theme.colors.danger)).toBeGreaterThanOrEqual(4.5);
+            expect(contrastRatio(theme.colors.onDangerContainer, theme.colors.dangerContainer)).toBeGreaterThanOrEqual(4.5);
         }
+    });
+
+    it('uses a saturated red for dark-mode danger states', () => {
+        expect(themes.dark.colors.danger).toBe('#FF5F56');
+        expect(themes.dark.colors.danger).not.toBe(themes.light.colors.danger);
     });
 });

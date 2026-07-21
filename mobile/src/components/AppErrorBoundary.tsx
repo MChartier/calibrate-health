@@ -8,7 +8,7 @@ import {
     Text,
     View
 } from 'react-native';
-import { colors, radius, shadows, spacing, typography } from '../theme';
+import { radius, spacing, typography, useAppTheme, type AppTheme } from '../theme';
 
 type AppErrorBoundaryProps = {
     children: React.ReactNode;
@@ -45,7 +45,9 @@ const defaultRestartApp = (): void => restartAppRuntime();
  * The fallback intentionally uses only React Native core primitives so it remains
  * available when navigation, providers, or feature components are what failed.
  */
-export class AppErrorBoundary extends React.Component<AppErrorBoundaryProps, AppErrorBoundaryState> {
+type ThemedAppErrorBoundaryProps = AppErrorBoundaryProps & { theme: AppTheme };
+
+class ThemedAppErrorBoundary extends React.Component<ThemedAppErrorBoundaryProps, AppErrorBoundaryState> {
     state: AppErrorBoundaryState = {
         error: null,
         resetVersion: 0
@@ -76,6 +78,8 @@ export class AppErrorBoundary extends React.Component<AppErrorBoundaryProps, App
 
     render(): React.ReactNode {
         if (this.state.error) {
+            const { theme } = this.props;
+            const styles = createStyles(theme);
             return (
                 <View
                     style={styles.screen}
@@ -84,7 +88,7 @@ export class AppErrorBoundary extends React.Component<AppErrorBoundaryProps, App
                     accessibilityLiveRegion="assertive"
                     accessibilityLabel="Calibrate encountered an unexpected error"
                 >
-                    <StatusBar barStyle="dark-content" backgroundColor={colors.background} />
+                    <StatusBar barStyle={theme.dark ? 'light-content' : 'dark-content'} backgroundColor={theme.colors.background} />
                     <View style={styles.card}>
                         <View style={styles.brandRow}>
                             <View
@@ -97,7 +101,7 @@ export class AppErrorBoundary extends React.Component<AppErrorBoundaryProps, App
                             <Text style={styles.brandName}>calibrate</Text>
                         </View>
 
-                        <Text accessibilityRole="header" style={styles.title}>Calibrate hit a snag</Text>
+                        <Text accessibilityRole="header" aria-level={1} style={styles.title}>Calibrate hit a snag</Text>
                         <Text style={styles.description}>
                             Your saved data is safe. Try loading the app again, or restart Calibrate if the problem continues.
                         </Text>
@@ -134,12 +138,17 @@ export class AppErrorBoundary extends React.Component<AppErrorBoundaryProps, App
     }
 }
 
-const styles = StyleSheet.create({
+export const AppErrorBoundary: React.FC<AppErrorBoundaryProps> = (props) => {
+    const theme = useAppTheme();
+    return <ThemedAppErrorBoundary {...props} theme={theme} />;
+};
+
+const createStyles = (theme: AppTheme) => StyleSheet.create({
     screen: {
         flex: 1,
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: colors.background,
+        backgroundColor: theme.colors.background,
         padding: spacing.xxl
     },
     card: {
@@ -148,9 +157,9 @@ const styles = StyleSheet.create({
         padding: spacing.xxl,
         borderRadius: radius.md,
         borderWidth: StyleSheet.hairlineWidth,
-        borderColor: colors.border,
-        backgroundColor: colors.surface,
-        ...shadows.card
+        borderColor: theme.colors.outlineVariant,
+        backgroundColor: theme.colors.surface,
+        ...theme.shadows.card
     },
     brandRow: {
         flexDirection: 'row',
@@ -164,31 +173,31 @@ const styles = StyleSheet.create({
         borderRadius: BRAND_MARK_SIZE / 2,
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: colors.primary
+        backgroundColor: theme.colors.primary
     },
     brandMarkText: {
-        color: colors.surface,
+        color: theme.colors.onPrimary,
         fontSize: typography.title,
         fontWeight: '900'
     },
     brandName: {
-        color: colors.text,
+        color: theme.colors.onSurface,
         fontSize: typography.screenTitle,
         fontWeight: '900'
     },
     title: {
-        color: colors.text,
+        color: theme.colors.onSurface,
         fontSize: typography.title,
         fontWeight: '900',
         marginBottom: spacing.lg
     },
     description: {
-        color: colors.muted,
+        color: theme.colors.onSurfaceVariant,
         fontSize: typography.body,
         lineHeight: 21
     },
     developmentError: {
-        color: colors.dangerMuted,
+        color: theme.colors.onDangerContainer,
         fontSize: typography.caption,
         marginTop: spacing.xl
     },
@@ -205,21 +214,21 @@ const styles = StyleSheet.create({
         paddingVertical: spacing.lg
     },
     primaryButton: {
-        backgroundColor: colors.primary,
-        ...shadows.button
+        backgroundColor: theme.colors.primary,
+        ...theme.shadows.button
     },
     secondaryButton: {
-        backgroundColor: colors.surfaceAlt,
+        backgroundColor: theme.colors.surfaceContainer,
         borderWidth: StyleSheet.hairlineWidth,
-        borderColor: colors.border
+        borderColor: theme.colors.outlineVariant
     },
     primaryButtonLabel: {
-        color: colors.surface,
+        color: theme.colors.onPrimary,
         fontSize: typography.body,
         fontWeight: '800'
     },
     secondaryButtonLabel: {
-        color: colors.text,
+        color: theme.colors.onSurface,
         fontSize: typography.body,
         fontWeight: '800'
     },

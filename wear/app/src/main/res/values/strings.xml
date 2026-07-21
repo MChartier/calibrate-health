@@ -3,4 +3,5 @@
     <string name="app_name">calibrate</string>
     <string name="tile_label">Today</string>
     <string name="tile_description">Calories consumed, remaining, and daily tracking status</string>
+    <string name="complication_label">Calorie balance</string>
 </resources>

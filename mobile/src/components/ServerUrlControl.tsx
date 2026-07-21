@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, View, type ViewProps } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { AppText } from './AppText';
 import { TextField } from './TextField';
-import { colors, radius, spacing } from '../theme';
+import { radius, spacing, useAppTheme, type AppThemeColors, type AppTheme } from '../theme';
 import {
     HOSTED_SERVER_URL,
     normalizeServerUrl,
@@ -17,7 +17,7 @@ type ServerUrlControlProps = ViewProps & {
     onTestConnection: (value: string) => Promise<boolean>;
 };
 
-const resolveStatusPresentation = (status: ServerConnectionState['status']): {
+const resolveStatusPresentation = (status: ServerConnectionState['status'], colors: AppThemeColors): {
     icon: React.ComponentProps<typeof Ionicons>['name'];
     color: string;
 } => {
@@ -29,7 +29,7 @@ const resolveStatusPresentation = (status: ServerConnectionState['status']): {
         case 'testing':
             return { icon: 'sync-circle', color: colors.info };
         default:
-            return { icon: 'information-circle', color: colors.muted };
+            return { icon: 'information-circle', color: colors.onSurfaceVariant };
     }
 };
 
@@ -47,6 +47,8 @@ export const ServerUrlControl: React.FC<ServerUrlControlProps> = ({
     style,
     ...props
 }) => {
+    const theme = useAppTheme();
+    const styles = useMemo(() => createStyles(theme), [theme]);
     const [isEditing, setIsEditing] = useState(false);
     const normalizedValue = normalizeServerUrl(value);
     const matchesTestedCandidate = normalizedValue
@@ -60,7 +62,7 @@ export const ServerUrlControl: React.FC<ServerUrlControlProps> = ({
               testedUrl: null,
               message: 'Test this address before signing in.'
           };
-    const statusPresentation = resolveStatusPresentation(visibleConnection.status);
+    const statusPresentation = resolveStatusPresentation(visibleConnection.status, theme.colors);
     const isTesting = visibleConnection.status === 'testing';
 
     return (
@@ -76,7 +78,7 @@ export const ServerUrlControl: React.FC<ServerUrlControlProps> = ({
                     <AppText numberOfLines={1} style={styles.urlText}>{value}</AppText>
                 </View>
                 <View style={styles.changeButton}>
-                    <Ionicons name={isEditing ? 'chevron-up' : 'create-outline'} size={16} color={colors.primaryDark} />
+                    <Ionicons name={isEditing ? 'chevron-up' : 'create-outline'} size={16} color={theme.colors.primary} />
                     <AppText style={styles.changeText}>{isEditing ? 'Hide' : 'Change'}</AppText>
                 </View>
             </Pressable>
@@ -112,7 +114,7 @@ export const ServerUrlControl: React.FC<ServerUrlControlProps> = ({
                                 pressed && !isTesting && styles.pressed
                             ]}
                         >
-                            <Ionicons name="pulse" size={16} color={colors.surface} />
+                            <Ionicons name="pulse" size={16} color={theme.colors.onPrimary} />
                             <AppText style={styles.testActionText}>{isTesting ? 'Testing...' : 'Test connection'}</AppText>
                         </Pressable>
                     </View>
@@ -134,7 +136,7 @@ export const ServerUrlControl: React.FC<ServerUrlControlProps> = ({
     );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: AppTheme) => StyleSheet.create({
     root: {
         gap: spacing.sm
     },
@@ -144,9 +146,9 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         gap: spacing.md,
         borderRadius: radius.md,
-        borderColor: colors.border,
+        borderColor: theme.colors.outlineVariant,
         borderWidth: StyleSheet.hairlineWidth,
-        backgroundColor: colors.surfaceAlt,
+        backgroundColor: theme.colors.surfaceContainer,
         paddingHorizontal: spacing.md,
         paddingVertical: spacing.sm
     },
@@ -156,7 +158,7 @@ const styles = StyleSheet.create({
         gap: 2
     },
     urlText: {
-        color: colors.text,
+        color: theme.colors.onSurface,
         fontWeight: '800'
     },
     changeButton: {
@@ -166,7 +168,7 @@ const styles = StyleSheet.create({
         gap: spacing.xs
     },
     changeText: {
-        color: colors.primaryDark,
+        color: theme.colors.primary,
         fontWeight: '900'
     },
     editor: {
@@ -179,27 +181,27 @@ const styles = StyleSheet.create({
         gap: spacing.md
     },
     secondaryAction: {
-        minHeight: 42,
+        minHeight: 48,
         justifyContent: 'center',
         paddingHorizontal: spacing.lg,
         borderRadius: radius.md
     },
     secondaryActionText: {
-        color: colors.primaryDark,
+        color: theme.colors.primary,
         fontWeight: '800'
     },
     testAction: {
-        minHeight: 42,
+        minHeight: 48,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
         gap: spacing.sm,
         paddingHorizontal: spacing.lg,
         borderRadius: radius.md,
-        backgroundColor: colors.primary
+        backgroundColor: theme.colors.primary
     },
     testActionText: {
-        color: colors.surface,
+        color: theme.colors.onPrimary,
         fontWeight: '800'
     },
     connectionStatus: {
@@ -216,6 +218,6 @@ const styles = StyleSheet.create({
         opacity: 0.55
     },
     pressed: {
-        backgroundColor: colors.surfacePressed
+        backgroundColor: theme.colors.surfacePressed
     }
 });

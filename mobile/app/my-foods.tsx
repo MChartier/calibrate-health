@@ -1,14 +1,17 @@
 import React, { useMemo, useState } from 'react';
-import { Alert, Pressable, StyleSheet, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Alert, StyleSheet, View } from 'react-native';
+import Ionicons from '@expo/vector-icons/Ionicons';
+import { router } from 'expo-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { MyFoodSummary } from '@calibrate/api-client';
 import { AppButton } from '../src/components/AppButton';
 import { AppCard } from '../src/components/AppCard';
 import { AppChip } from '../src/components/AppChip';
+import { AppIconButton } from '../src/components/AppIconButton';
 import { AppText } from '../src/components/AppText';
 import { BottomSheetModal } from '../src/components/BottomSheetModal';
 import { NumberStepperField } from '../src/components/NumberStepperField';
+import { PageHeader } from '../src/components/PageHeader';
 import { Screen } from '../src/components/Screen';
 import { SectionHeader } from '../src/components/SectionHeader';
 import { TextField } from '../src/components/TextField';
@@ -20,14 +23,14 @@ import {
     serializeRecipeIngredientDrafts,
     type RecipeIngredientDraft
 } from '../src/utils/myFoodEditing';
-import { colors, radius, spacing } from '../src/theme';
+import { radius, spacing, useAppTheme, type AppTheme } from '../src/theme';
+import { SERVING_INPUT_INCREMENT } from '../src/config/inputPrecision';
 
 type MyFoodSheet = 'food' | 'recipe' | null;
 
-const SERVING_STEP = 0.1; // Saved food and recipe servings use the same precision as food logging.
-const INGREDIENT_STEP = 0.1;
-
 export default function MyFoodsScreen() {
+    const theme = useAppTheme();
+    const styles = useMemo(() => createStyles(theme), [theme]);
     const { api } = useAuth();
     const queryClient = useQueryClient();
     const myFoodsQuery = useQuery({ queryKey: ['mobile-my-foods'], queryFn: () => api.getMyFoods() });
@@ -197,7 +200,10 @@ export default function MyFoodsScreen() {
                 if (ingredient.source !== 'MY_FOOD') return ingredient;
                 return {
                     ...ingredient,
-                    servings: Math.max(SERVING_STEP, Math.round((ingredient.servings + delta) * 10) / 10)
+                    servings: Math.max(
+                        SERVING_INPUT_INCREMENT,
+                        Math.round((ingredient.servings + delta) / SERVING_INPUT_INCREMENT) * SERVING_INPUT_INCREMENT
+                    )
                 };
             })
         );
@@ -205,31 +211,31 @@ export default function MyFoodsScreen() {
 
     return (
         <Screen>
-            <SectionHeader headingLevel={1} title="My Foods" description="Saved foods and recipes for fast logging." />
+            <PageHeader
+                title="My Foods"
+                description="Saved foods and recipes for fast logging."
+                onBack={() => router.back()}
+            />
 
             <AppCard>
                 <View style={styles.cardHeader}>
                     <View style={styles.headerText}>
-                        <AppText accessibilityRole="header" aria-level={2} variant="screenTitle">Saved library</AppText>
+                        <AppText accessibilityRole="header" aria-level={2} variant="subtitle">Saved library</AppText>
                         <AppText variant="caption">{allFoods.length} foods and recipes</AppText>
                     </View>
                     <View style={styles.headerActions}>
-                        <Pressable
-                            accessibilityRole="button"
+                        <AppIconButton
+                            icon="add"
                             accessibilityLabel="Create saved food"
+                            variant="container"
                             onPress={() => openNew('food')}
-                            style={({ pressed }) => [styles.iconButton, pressed && styles.pressed]}
-                        >
-                            <Ionicons name="add" size={20} color={colors.primaryDark} />
-                        </Pressable>
-                        <Pressable
-                            accessibilityRole="button"
+                        />
+                        <AppIconButton
+                            icon="restaurant-outline"
                             accessibilityLabel="Create recipe"
+                            variant="container"
                             onPress={() => openNew('recipe')}
-                            style={({ pressed }) => [styles.iconButton, pressed && styles.pressed]}
-                        >
-                            <Ionicons name="restaurant-outline" size={20} color={colors.primaryDark} />
-                        </Pressable>
+                        />
                     </View>
                 </View>
 
@@ -239,34 +245,23 @@ export default function MyFoodsScreen() {
                             <View style={styles.libraryText}>
                                 <AppText variant="body" numberOfLines={1}>{item.name}</AppText>
                                 <AppText variant="caption" numberOfLines={1}>
-                                    {formatCalories(item.calories_per_serving)} per {item.serving_size_quantity} {item.serving_unit_label}
+                                    {item.type === 'RECIPE' ? 'Recipe' : 'Food'} | {formatCalories(item.calories_per_serving)} per {item.serving_size_quantity} {item.serving_unit_label}
                                 </AppText>
                             </View>
                             <View style={styles.libraryActions}>
-                                <Pressable
-                                    accessibilityRole="button"
+                                <AppIconButton
+                                    icon="create-outline"
                                     accessibilityLabel={`Edit ${item.name}`}
+                                    iconColor={theme.colors.onSurface}
                                     onPress={() => openEditor(item)}
-                                    style={({ pressed }) => [styles.pinButton, pressed && styles.pressed]}
-                                >
-                                    <Ionicons name="create-outline" size={19} color={colors.text} />
-                                </Pressable>
-                                <Pressable
-                                    accessibilityRole="button"
+                                />
+                                <AppIconButton
+                                    icon={item.is_pinned ? 'star' : 'star-outline'}
                                     accessibilityLabel={`${item.is_pinned ? 'Unpin' : 'Pin'} ${item.name}`}
                                     disabled={setPinned.isPending && setPinned.variables?.id === item.id}
+                                    iconColor={item.is_pinned ? theme.colors.primary : theme.colors.onSurfaceVariant}
                                     onPress={() => setPinned.mutate(item)}
-                                    style={({ pressed }) => [styles.pinButton, pressed && styles.pressed]}
-                                >
-                                    <Ionicons
-                                        name={item.is_pinned ? 'star' : 'star-outline'}
-                                        size={19}
-                                        color={item.is_pinned ? colors.primary : colors.muted}
-                                    />
-                                </Pressable>
-                                <View style={styles.typePill}>
-                                    <AppText style={styles.typeText}>{item.type === 'RECIPE' ? 'Recipe' : 'Food'}</AppText>
-                                </View>
+                                />
                             </View>
                         </View>
                     ))}
@@ -288,8 +283,8 @@ export default function MyFoodsScreen() {
                         label="Serving"
                         value={servingQuantity}
                         onChangeText={setServingQuantity}
-                        step={SERVING_STEP}
-                        min={SERVING_STEP}
+                        step={SERVING_INPUT_INCREMENT}
+                        min={SERVING_INPUT_INCREMENT}
                         containerStyle={styles.field}
                     />
                     <TextField label="Unit" value={servingUnit} onChangeText={setServingUnit} containerStyle={styles.field} />
@@ -309,7 +304,7 @@ export default function MyFoodsScreen() {
                         title={deleteItem.isPending ? 'Deleting...' : 'Delete food'}
                         variant="danger"
                         disabled={deleteItem.isPending || saveFood.isPending}
-                        leftIcon={<Ionicons name="trash-outline" size={18} color="#ffffff" />}
+                        leftIcon={<Ionicons name="trash-outline" size={18} color={theme.colors.onDanger} />}
                         onPress={confirmDelete}
                     />
                 )}
@@ -317,14 +312,14 @@ export default function MyFoodsScreen() {
                     <AppButton
                         title="Cancel"
                         variant="secondary"
-                        leftIcon={<Ionicons name="close" size={18} color={colors.text} />}
+                        leftIcon={<Ionicons name="close" size={18} color={theme.colors.onSurface} />}
                         onPress={closeEditor}
                         style={styles.field}
                     />
                     <AppButton
                         title={saveFood.isPending ? 'Saving...' : 'Save food'}
                         disabled={!canSaveFood || saveFood.isPending || deleteItem.isPending}
-                        leftIcon={<Ionicons name="checkmark" size={18} color="#ffffff" />}
+                        leftIcon={<Ionicons name="checkmark" size={18} color={theme.colors.onPrimary} />}
                         onPress={() => saveFood.mutate()}
                         style={styles.field}
                     />
@@ -342,8 +337,8 @@ export default function MyFoodsScreen() {
                         label="Serving"
                         value={recipeServingQuantity}
                         onChangeText={setRecipeServingQuantity}
-                        step={SERVING_STEP}
-                        min={SERVING_STEP}
+                        step={SERVING_INPUT_INCREMENT}
+                        min={SERVING_INPUT_INCREMENT}
                         containerStyle={styles.field}
                     />
                     <TextField
@@ -376,32 +371,28 @@ export default function MyFoodsScreen() {
                             </AppText>
                         </View>
                         {ingredient.source === 'MY_FOOD' && <View style={styles.stepper}>
-                            <Pressable
-                                accessibilityRole="button"
+                            <AppIconButton
+                                icon="remove"
+                                iconSize={16}
                                 accessibilityLabel={`Decrease ${ingredient.myFood.name} servings`}
-                                onPress={() => adjustRecipeIngredientServings(index, -INGREDIENT_STEP)}
-                                style={({ pressed }) => [styles.stepperButton, pressed && styles.pressed]}
-                            >
-                                <Ionicons name="remove" size={16} color={colors.text} />
-                            </Pressable>
+                                variant="surface"
+                                onPress={() => adjustRecipeIngredientServings(index, -SERVING_INPUT_INCREMENT)}
+                            />
                             <AppText variant="label">{ingredient.servings}x</AppText>
-                            <Pressable
-                                accessibilityRole="button"
+                            <AppIconButton
+                                icon="add"
+                                iconSize={16}
                                 accessibilityLabel={`Increase ${ingredient.myFood.name} servings`}
-                                onPress={() => adjustRecipeIngredientServings(index, INGREDIENT_STEP)}
-                                style={({ pressed }) => [styles.stepperButton, pressed && styles.pressed]}
-                            >
-                                <Ionicons name="add" size={16} color={colors.text} />
-                            </Pressable>
+                                variant="surface"
+                                onPress={() => adjustRecipeIngredientServings(index, SERVING_INPUT_INCREMENT)}
+                            />
                         </View>}
-                        <Pressable
-                            accessibilityRole="button"
+                        <AppIconButton
+                            icon="close"
                             accessibilityLabel={`Remove ${ingredient.source === 'MY_FOOD' ? ingredient.myFood.name : ingredient.name}`}
+                            iconColor={theme.colors.danger}
                             onPress={() => setRecipeIngredients((current) => current.filter((_, currentIndex) => currentIndex !== index))}
-                            style={({ pressed }) => [styles.removeButton, pressed && styles.pressed]}
-                        >
-                            <Ionicons name="close" size={18} color={colors.danger} />
-                        </Pressable>
+                        />
                     </View>
                 ))}
                 {saveRecipe.error && <AppText style={styles.error}>{saveRecipe.error.message}</AppText>}
@@ -411,7 +402,7 @@ export default function MyFoodsScreen() {
                         title={deleteItem.isPending ? 'Deleting...' : 'Delete recipe'}
                         variant="danger"
                         disabled={deleteItem.isPending || saveRecipe.isPending}
-                        leftIcon={<Ionicons name="trash-outline" size={18} color="#ffffff" />}
+                        leftIcon={<Ionicons name="trash-outline" size={18} color={theme.colors.onDanger} />}
                         onPress={confirmDelete}
                     />
                 )}
@@ -419,14 +410,14 @@ export default function MyFoodsScreen() {
                     <AppButton
                         title="Cancel"
                         variant="secondary"
-                        leftIcon={<Ionicons name="close" size={18} color={colors.text} />}
+                        leftIcon={<Ionicons name="close" size={18} color={theme.colors.onSurface} />}
                         onPress={closeEditor}
                         style={styles.field}
                     />
                     <AppButton
                         title={saveRecipe.isPending ? 'Saving...' : 'Save recipe'}
                         disabled={!canSaveRecipe || saveRecipe.isPending || deleteItem.isPending || loadRecipe.isPending}
-                        leftIcon={<Ionicons name="checkmark" size={18} color="#ffffff" />}
+                        leftIcon={<Ionicons name="checkmark" size={18} color={theme.colors.onPrimary} />}
                         onPress={() => saveRecipe.mutate()}
                         style={styles.field}
                     />
@@ -436,7 +427,7 @@ export default function MyFoodsScreen() {
     );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (theme: AppTheme) => StyleSheet.create({
     cardHeader: {
         flexDirection: 'row',
         alignItems: 'flex-start',
@@ -452,16 +443,6 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         gap: spacing.sm
     },
-    iconButton: {
-        width: 42,
-        height: 42,
-        borderRadius: radius.md,
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: colors.primarySoft,
-        borderColor: colors.border,
-        borderWidth: StyleSheet.hairlineWidth
-    },
     libraryList: {
         gap: spacing.sm
     },
@@ -471,7 +452,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'space-between',
         gap: spacing.md,
-        borderTopColor: colors.border,
+        borderTopColor: theme.colors.outlineVariant,
         borderTopWidth: StyleSheet.hairlineWidth,
         paddingTop: spacing.md
     },
@@ -484,25 +465,6 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         gap: spacing.sm
-    },
-    pinButton: {
-        width: 38,
-        height: 38,
-        borderRadius: radius.md,
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: colors.surfaceAlt
-    },
-    typePill: {
-        borderRadius: radius.pill,
-        backgroundColor: colors.surfaceAlt,
-        paddingHorizontal: spacing.md,
-        paddingVertical: spacing.xs
-    },
-    typeText: {
-        color: colors.muted,
-        fontSize: 12,
-        fontWeight: '800'
     },
     row: {
         flexDirection: 'row',
@@ -521,7 +483,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         gap: spacing.md,
         borderRadius: radius.md,
-        backgroundColor: colors.surfaceAlt,
+        backgroundColor: theme.colors.surfaceContainer,
         padding: spacing.md
     },
     stepper: {
@@ -529,26 +491,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         gap: spacing.xs
     },
-    stepperButton: {
-        width: 32,
-        height: 32,
-        borderRadius: radius.md,
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: colors.surface
-    },
-    removeButton: {
-        width: 36,
-        height: 36,
-        borderRadius: radius.md,
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: colors.surface
-    },
-    pressed: {
-        backgroundColor: colors.surfacePressed
-    },
     error: {
-        color: colors.danger
+        color: theme.colors.danger
     }
 });

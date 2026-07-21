@@ -7,7 +7,7 @@ import { radius, spacing } from '../theme';
 /**
  * Glimmer layout for the selected day's log content.
  *
- * The shape mirrors the calorie card, meal timeline, and completion row so date changes do not flash the whole pane.
+ * The shape mirrors the calorie card and compact food summary so date changes do not flash the whole pane.
  */
 export const LogContentSkeleton: React.FC = () => (
     <>
@@ -24,22 +24,14 @@ export const LogContentSkeleton: React.FC = () => (
 
         <AppCard>
             <SkeletonBlock width="42%" height={32} />
-            {[0, 1, 2, 3].map((row) => (
-                <View key={row} style={styles.mealRow}>
-                    <SkeletonBlock width={42} height={42} radius={21} />
-                    <View style={styles.mealText}>
-                        <SkeletonBlock width="62%" height={24} />
-                        <SkeletonBlock width="38%" height={18} />
-                    </View>
-                    <SkeletonBlock width={58} height={32} />
+            <View style={styles.mealRow}>
+                <SkeletonBlock width={42} height={42} radius={radius.md} />
+                <View style={styles.mealText}>
+                    <SkeletonBlock width="62%" height={24} />
+                    <SkeletonBlock width="78%" height={18} />
                 </View>
-            ))}
-        </AppCard>
-
-        <AppCard style={styles.completionCard}>
-            <SkeletonBlock width={40} height={40} />
-            <SkeletonBlock width="42%" height={24} />
-            <SkeletonBlock width={54} height={32} radius={radius.pill} />
+                <SkeletonBlock width={72} height={24} />
+            </View>
         </AppCard>
     </>
 );
@@ -62,11 +54,5 @@ const styles = StyleSheet.create({
     mealText: {
         flex: 1,
         gap: spacing.sm
-    },
-    completionCard: {
-        minHeight: 64,
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between'
     }
 });
