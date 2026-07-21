@@ -27,7 +27,7 @@ COPY backend ./backend
 COPY mobile ./mobile
 COPY packages ./packages
 COPY shared ./shared
-COPY scripts/expo-web-build.mjs scripts/expo-web-release.mjs ./scripts/
+COPY scripts/expo-cli-environment.mjs scripts/expo-web-build.mjs scripts/expo-web-release.mjs ./scripts/
 
 RUN cd backend && npm run build
 RUN npm run build:expo-web
