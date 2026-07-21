@@ -5,6 +5,7 @@
   },
   "build": {
     "internal": {
+      "channel": "internal",
       "distribution": "internal",
       "environment": "preview",
       "credentialsSource": "remote",
@@ -14,6 +15,7 @@
       }
     },
     "production": {
+      "channel": "production",
       "distribution": "store",
       "environment": "production",
       "credentialsSource": "remote",

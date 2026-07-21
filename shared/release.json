@@ -13,8 +13,8 @@
   "android": {
     "application_id": "app.calibratehealth.mobile",
     "mobile": {
-      "version_name": "0.1.0",
-      "version_code": 1,
+      "version_name": "0.2.0",
+      "version_code": 2,
       "minimum_supported_version": "0.1.0"
     },
     "wear": {
