@@ -208,7 +208,16 @@ export async function checkRepository(root = REPOSITORY_ROOT) {
 
   for (const channel of ['internal', 'production']) {
     const profile = manifest.android.channels[channel].mobile_eas_profile;
-    if (!easConfig.build?.[profile]) errors.push(`mobile/eas.json is missing the ${profile} profile for ${channel}.`);
+    if (!easConfig.build?.[profile]) {
+      errors.push(`mobile/eas.json is missing the ${profile} profile for ${channel}.`);
+    } else {
+      assertMatch(
+        errors,
+        `mobile/eas.json ${profile} update channel`,
+        easConfig.build[profile].channel,
+        channel
+      );
+    }
   }
 
   return { manifest, errors };

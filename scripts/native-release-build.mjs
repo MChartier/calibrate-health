@@ -1,7 +1,9 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { spawnSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+
+import { resolveExpoUpdateBuildConfig, writeNativeOtaBaseline } from './native-ota-contract.mjs';
 
 export const REQUIRED_SIGNING_ENV = Object.freeze([
   'CALIBRATE_ANDROID_SIGNING_STORE_FILE',
@@ -43,10 +45,25 @@ export function resolveNativeReleaseEnvironment(environment, options = {}) {
     throw new Error('EXPO_PUBLIC_CALIBRATE_SERVER_URL must be a credential-free HTTPS origin for release builds.');
   }
 
+  let linkedProjectId = options.expoProjectId ?? null;
+  try {
+    const appConfig = JSON.parse(fs.readFileSync(path.join(
+      options.repositoryRoot ?? repositoryRoot,
+      'mobile',
+      'app.json'
+    ), 'utf8'));
+    linkedProjectId ??= appConfig.expo?.extra?.eas?.projectId;
+  } catch (error) {
+    if (error?.code !== 'ENOENT') throw error;
+  }
+  const updates = resolveExpoUpdateBuildConfig(environment, linkedProjectId);
+
   return {
     ...environment,
     CALIBRATE_ANDROID_SIGNING_STORE_FILE: storeFile,
     EXPO_PUBLIC_CALIBRATE_SERVER_URL: serverUrl.origin,
+    EXPO_PUBLIC_EAS_PROJECT_ID: updates.projectId ?? '',
+    EXPO_UPDATES_CHANNEL: updates.channel,
     // Keep Metro rooted at the mobile app when the release build is launched from this workspace.
     EXPO_NO_METRO_WORKSPACE_ROOT: '1',
     NODE_ENV: 'production'
@@ -131,6 +148,18 @@ function run() {
     });
     if (result.error) throw result.error;
     if (result.status !== 0) process.exit(result.status ?? 1);
+  }
+
+  const commit = execFileSync('git', ['rev-parse', 'HEAD'], {
+    cwd: repositoryRoot,
+    encoding: 'utf8',
+    stdio: ['ignore', 'pipe', 'ignore']
+  }).trim();
+  const otaBaseline = writeNativeOtaBaseline({ root: repositoryRoot, environment, commit });
+  if (otaBaseline) {
+    console.log(`Recorded OTA compatibility baseline at ${otaBaseline.output}`);
+  } else {
+    console.log('Expo OTA is disabled for this build because EXPO_PUBLIC_EAS_PROJECT_ID was not set.');
   }
 }
 

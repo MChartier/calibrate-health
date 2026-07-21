@@ -26,6 +26,7 @@ test('native release environment enforces one complete signing identity and a pr
   assert.equal(resolved.EXPO_PUBLIC_CALIBRATE_SERVER_URL, 'https://health.example');
   assert.equal(resolved.EXPO_NO_METRO_WORKSPACE_ROOT, '1');
   assert.equal(resolved.NODE_ENV, 'production');
+  assert.equal(resolved.EXPO_UPDATES_CHANNEL, 'internal');
   assert.match(resolved.CALIBRATE_ANDROID_SIGNING_STORE_FILE, /signing[\\/]calibrate\.p12$/);
 });
 
@@ -51,6 +52,13 @@ test('native release environment rejects incomplete signing and non-origin HTTP 
   assert.throws(
     () => resolveNativeReleaseEnvironment(signingEnvironment, { fileExists: () => false }),
     /does not point to a file/
+  );
+  assert.throws(
+    () => resolveNativeReleaseEnvironment({
+      ...signingEnvironment,
+      EXPO_PUBLIC_EAS_PROJECT_ID: 'not-a-uuid'
+    }, { fileExists: () => true }),
+    /project UUID/
   );
 });
 

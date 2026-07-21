@@ -48,14 +48,27 @@ $env:EXPO_PUBLIC_CALIBRATE_SERVER_URL='https://health.example.com'
 ```
 
 Private builds that use Expo push must also have a stable Expo project ID. EAS builds embed it automatically.
-For a local Gradle build, set the public project UUID explicitly before bundling:
+The same public identity is required for Expo OTA updates. Link the mobile project once (an Expo account is required):
+
+```powershell
+Push-Location mobile
+npx.cmd --yes eas-cli@latest login
+npx.cmd --yes eas-cli@latest project:init
+npx.cmd --yes eas-cli@latest project:info
+Pop-Location
+```
+
+Keep the public `extra.eas.projectId` added by `project:init`, or set the project UUID explicitly before a local
+Gradle build:
 
 ```powershell
 $env:EXPO_PUBLIC_EAS_PROJECT_ID='<expo-project-uuid>'
 ```
 
-The app passes this identity when requesting its Expo push token and re-registers after native token rotation. A
-missing project ID leaves native push in an actionable error state instead of creating an ambiguously scoped token.
+The app passes this identity when requesting its Expo push token and re-registers after native token rotation. It
+also embeds the EAS Update URL, the app-version runtime policy, and the `internal` update channel in local dogfood
+builds. A missing project ID disables OTA and leaves native push in an actionable error state instead of creating an
+ambiguously scoped token.
 
 ## Versioning
 
@@ -106,6 +119,40 @@ and `wear/app/build/outputs/`.
 Record the Git commit, semantic versions, version codes, SHA-256 digests, and signing certificate fingerprint in the
 release notes. Do not rename an artifact in a way that loses those identifiers.
 
+## One-command physical device workflow
+
+For routine dogfood builds, use the interactive repository workflow from the release checkout:
+
+```powershell
+npm.cmd run release:native:devices
+```
+
+The command prompts only for signing values that are not already present in `CALIBRATE_ANDROID_SIGNING_*`, and hides
+password input from the terminal and shell history. It then:
+
+1. Builds both release APKs with the configured HTTPS server origin.
+2. Verifies the package IDs, versions, artifact hashes, and shared signing fingerprint.
+3. Discovers physical phone and Wear targets, preferring them over emulators and collapsing duplicate watch mDNS rows.
+4. Offers to run `adb pair` when no watch is connected.
+5. Preflights installed signatures before making changes. Matching releases upgrade in place; an incompatible debug
+   signer requires typing `REPLACE` before local app data is removed.
+6. Installs, launches, and checks that both processes remain alive.
+
+Reuse already-built artifacts with `--skip-build`. Explicit flags support unattended repeat installs after the
+operator has intentionally authorized any signer replacement:
+
+```powershell
+npm.cmd run release:native:devices -- `
+  --skip-build `
+  --phone-serial '<phone adb or hardware serial>' `
+  --watch-serial '<watch adb or hardware serial>'
+```
+
+`--server-url`, `--keystore`, `--key-alias`, `--eas-project-id`, and `--updates-channel` replace the corresponding
+prompts. Signing passwords are intentionally accepted only through hidden prompts or environment variables.
+`--replace-incompatible` is available for an explicitly authorized debug-to-release reset; normal repeat installs
+never need it. Run with `--help` for the complete option list.
+
 Install or upgrade the internal APK with Android Debug Bridge:
 
 ```powershell
@@ -114,6 +161,37 @@ adb install -r .\calibrate-internal.apk
 
 `-r` performs an in-place replacement. Do not uninstall the existing app, use `adb install --uninstall`, clear app
 storage, or change the application ID/signing key when testing an upgrade.
+
+## Expo OTA updates between native builds
+
+Expo OTA updates apply only to the Android phone app's JavaScript, styling, and bundled assets. Wear OS, native
+modules, permissions, config plugins, app identity/version, dependencies with native code, and native icons require a
+new signed phone/Watch build. The currently installed pre-OTA build must be replaced once after `expo-updates` is
+introduced; later compatible updates can use the faster path below.
+
+Build and install an OTA-enabled release through the physical-device workflow. When a project ID is present, the
+native build records an ignored compatibility baseline beside the generated APK outputs. That file contains no
+keystore values or passwords; it records the Git commit, runtime, channel, server origin, project ID, and a hash of
+the native inputs that produced the installed binary.
+
+For a committed JavaScript/assets-only change, validate without uploading and then publish:
+
+```powershell
+npm.cmd run release:native:ota -- --dry-run --message 'Describe the tested update'
+npm.cmd run release:native:ota -- --message 'Describe the tested update'
+```
+
+The command always targets Android, reuses the installed build's project, server, runtime, and channel, and invokes
+the current EAS CLI from the repository. It refuses a dirty working tree, a divergent Git history, a changed native
+fingerprint, a runtime mismatch, or a different channel. Before bundling, it pulls the selected EAS environment and
+requires `EXPO_PUBLIC_CALIBRATE_SERVER_URL`, `EXPO_PUBLIC_EAS_PROJECT_ID`, and `EXPO_UPDATES_CHANNEL` to match the
+installed-build baseline; this prevents an EAS environment from silently redirecting a self-hosted app. Run it
+interactively after `eas login`; automation can use `--non-interactive` with `EXPO_TOKEN`. The default dogfood mapping
+is channel `internal` with EAS environment `preview`; production builds and updates use `production` for both.
+
+Release builds check for updates without blocking startup. After an update is downloaded, fully close and reopen the
+phone app again to run it. Keep the signed native artifact: OTA is not a substitute for an installable recovery build,
+and a native incompatibility must be corrected with a higher-version signed APK/AAB.
 
 ## Preserve on-device data during upgrades
 
@@ -194,6 +272,7 @@ for store policy and declaration evidence.
 - [ ] `version` is correct and `versionCode` is greater than every distributed Android build.
 - [ ] Application ID is still `app.calibratehealth.mobile`.
 - [ ] Public Expo config includes camera/notification permissions but does not request microphone access.
+- [ ] OTA-enabled phone config has the expected EAS project ID, app-version runtime, and update channel.
 - [ ] Phone and Wear report the same expected Android signing certificate fingerprint.
 - [ ] No keystore, password, token, service-account JSON, backend secret, or credential URL is tracked or embedded.
 - [ ] Mobile typecheck, tests, Expo dependency check, public config, clean prebuild, and local Gradle build pass.
@@ -206,5 +285,6 @@ for store policy and declaration evidence.
 - [ ] Confirm a self-hosted HTTPS origin can be selected and survives an app restart.
 - [ ] Inspect the APK/AAB for an expected public server origin and absence of credentials.
 - [ ] Record artifact digest, Git commit, version, version code, device/API level, and test results.
+- [ ] Before an OTA publish, run `release:native:ota -- --dry-run` and confirm no native fingerprint mismatch.
 - [ ] Generate and retain the deterministic release metadata described in `docs/release-compatibility.md`.
 - [ ] Keep the prior artifact and encrypted keystore backup, but distribute only the new higher-version build.
