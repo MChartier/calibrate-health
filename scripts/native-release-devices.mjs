@@ -369,6 +369,41 @@ function assertSharedReleaseIdentity(phone, watch) {
   }
 }
 
+function requiredNativeReleaseVersion(manifest, client) {
+  const version = manifest?.android?.[client];
+  if (typeof version?.version_name !== 'string' || !version.version_name.trim() ||
+      !Number.isSafeInteger(version?.version_code) || version.version_code < 1) {
+    throw new Error(
+      `shared/release.json must define android.${client}.version_name and a positive integer version_code.`
+    );
+  }
+  return { versionName: version.version_name, versionCode: version.version_code };
+}
+
+/** Read the canonical versions that existing APK outputs must match before installation. */
+export function readNativeReleaseArtifactVersions(root = repositoryRoot) {
+  const manifest = JSON.parse(fs.readFileSync(path.join(root, 'shared', 'release.json'), 'utf8'));
+  return {
+    phone: requiredNativeReleaseVersion(manifest, 'mobile'),
+    watch: requiredNativeReleaseVersion(manifest, 'wear')
+  };
+}
+
+/** Prevent --skip-build from silently installing APKs left over from an earlier release. */
+export function assertNativeReleaseArtifactVersions(artifacts, expected) {
+  for (const role of ['phone', 'watch']) {
+    const artifact = artifacts[role];
+    const release = expected[role];
+    if (artifact.versionName !== release.versionName || artifact.versionCode !== release.versionCode) {
+      throw new Error(
+        `${role} release APK is stale: found ${artifact.versionName} (${artifact.versionCode}), ` +
+        `expected ${release.versionName} (${release.versionCode}) from shared/release.json. ` +
+        'Run without --skip-build to rebuild current artifacts.'
+      );
+    }
+  }
+}
+
 function displayDevice(device) {
   const kind = device.isEmulator ? 'emulator' : 'physical';
   return `${device.model} (${device.hardwareSerial || device.serial}, ${kind})`;
@@ -581,6 +616,12 @@ export async function runNativeReleaseDevices(options = {}) {
     inspectReleaseArtifact(path.join(root, WEAR_APK), tooling, runner, 'watch')
   ]);
   assertSharedReleaseIdentity(phoneArtifact, watchArtifact);
+  if (config.skipBuild) {
+    assertNativeReleaseArtifactVersions(
+      { phone: phoneArtifact, watch: watchArtifact },
+      readNativeReleaseArtifactVersions(root)
+    );
+  }
   process.stdout.write(
     `\nRelease signer: ${formatFingerprint(phoneArtifact.signerSha256)}\n` +
     `Phone ${phoneArtifact.versionName} (${phoneArtifact.versionCode}) SHA-256 ${phoneArtifact.sha256}\n` +

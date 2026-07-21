@@ -7,9 +7,11 @@ import test from 'node:test';
 import { writeNativeOtaBaseline } from './native-ota-contract.mjs';
 import {
   nativeOtaPublishCommand,
+  parseEasEnvironmentFile,
   parseDirtyPaths,
   parseNativeOtaArgs,
-  runNativeOtaUpdate
+  runNativeOtaUpdate,
+  validateEasUpdateEnvironment
 } from './native-ota-update.mjs';
 
 function createOtaFixture() {
@@ -73,6 +75,42 @@ test('OTA publish command targets Android and the build channel', () => {
   );
 });
 
+test('OTA environment parsing supports the values emitted by eas env:pull', () => {
+  assert.deepEqual(parseEasEnvironmentFile([
+    '# Environment: preview',
+    'EXPO_PUBLIC_CALIBRATE_SERVER_URL="https://health.example"',
+    "EXPO_PUBLIC_EAS_PROJECT_ID='01234567-89ab-4def-8123-456789abcdef'",
+    'EXPO_UPDATES_CHANNEL=internal # selected build channel'
+  ].join('\n')), {
+    EXPO_PUBLIC_CALIBRATE_SERVER_URL: 'https://health.example',
+    EXPO_PUBLIC_EAS_PROJECT_ID: '01234567-89ab-4def-8123-456789abcdef',
+    EXPO_UPDATES_CHANNEL: 'internal'
+  });
+});
+
+test('OTA publishing rejects missing or mismatched EAS baseline values', () => {
+  const baseline = {
+    server_url: 'https://health.example',
+    project_id: '01234567-89ab-4def-8123-456789abcdef',
+    channel: 'internal'
+  };
+  assert.throws(
+    () => validateEasUpdateEnvironment({
+      EXPO_PUBLIC_EAS_PROJECT_ID: baseline.project_id,
+      EXPO_UPDATES_CHANNEL: baseline.channel
+    }, baseline, 'preview'),
+    /does not define EXPO_PUBLIC_CALIBRATE_SERVER_URL/
+  );
+  assert.throws(
+    () => validateEasUpdateEnvironment({
+      EXPO_PUBLIC_CALIBRATE_SERVER_URL: 'https://public.example',
+      EXPO_PUBLIC_EAS_PROJECT_ID: baseline.project_id,
+      EXPO_UPDATES_CHANNEL: baseline.channel
+    }, baseline, 'preview'),
+    /installed build baseline requires https:\/\/health\.example/
+  );
+});
+
 test('OTA cleanliness ignores Codex UI artifacts but not application changes', () => {
   const paths = parseDirtyPaths([
     '?? .codex-remote-attachments/screenshot.png',
@@ -108,14 +146,64 @@ test('OTA dry run validates and reuses the exact installed build contract', () =
         help: false
       },
       runner: (request) => {
-        assert.equal(request.command, 'git');
-        assert.equal(request.args[0], 'status');
+        if (request.command === 'git') {
+          assert.equal(request.args[0], 'status');
+          return { status: 0, stdout: '', stderr: '' };
+        }
+        assert.equal(request.command, 'npx.cmd');
+        assert.equal(request.args[2], 'env:pull');
+        const environmentFile = request.args[request.args.indexOf('--path') + 1];
+        fs.writeFileSync(environmentFile, [
+          'EXPO_PUBLIC_CALIBRATE_SERVER_URL=https://health.example',
+          'EXPO_PUBLIC_EAS_PROJECT_ID=01234567-89ab-4def-8123-456789abcdef',
+          'EXPO_UPDATES_CHANNEL=internal'
+        ].join('\n'));
         return { status: 0, stdout: '', stderr: '' };
       }
     });
     assert.equal(result.dryRun, true);
     assert.equal(result.publish.channel, 'internal');
     assert.equal(result.baseline.server_url, 'https://health.example');
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('OTA dry run fails when the selected EAS environment would override the installed server', () => {
+  const root = createOtaFixture();
+  try {
+    writeNativeOtaBaseline({
+      root,
+      environment: {
+        EXPO_PUBLIC_EAS_PROJECT_ID: '01234567-89ab-4def-8123-456789abcdef',
+        EXPO_UPDATES_CHANNEL: 'internal',
+        EXPO_PUBLIC_CALIBRATE_SERVER_URL: 'https://health.example'
+      }
+    });
+    assert.throws(() => runNativeOtaUpdate({
+      repositoryRoot: root,
+      environment: {},
+      platform: 'win32',
+      config: {
+        baseline: null,
+        channel: null,
+        environment: 'preview',
+        message: 'Fix food logging',
+        nonInteractive: false,
+        dryRun: true,
+        help: false
+      },
+      runner: (request) => {
+        if (request.command === 'git') return { status: 0, stdout: '', stderr: '' };
+        const environmentFile = request.args[request.args.indexOf('--path') + 1];
+        fs.writeFileSync(environmentFile, [
+          'EXPO_PUBLIC_CALIBRATE_SERVER_URL=https://public.example',
+          'EXPO_PUBLIC_EAS_PROJECT_ID=01234567-89ab-4def-8123-456789abcdef',
+          'EXPO_UPDATES_CHANNEL=internal'
+        ].join('\n'));
+        return { status: 0, stdout: '', stderr: '' };
+      }
+    }), /installed build baseline requires https:\/\/health\.example/);
   } finally {
     fs.rmSync(root, { recursive: true, force: true });
   }

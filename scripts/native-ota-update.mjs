@@ -1,4 +1,5 @@
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import process from 'node:process';
 import { spawnSync } from 'node:child_process';
@@ -102,6 +103,74 @@ export function nativeOtaPublishCommand(config, baseline, platform = process.pla
   return { command: platform === 'win32' ? 'npx.cmd' : 'npx', args, channel, environment };
 }
 
+export function parseEasEnvironmentFile(contents) {
+  const values = {};
+  for (const originalLine of contents.replace(/^\uFEFF/, '').split(/\r?\n/)) {
+    const line = originalLine.trim();
+    if (!line || line.startsWith('#')) continue;
+    const match = /^(?:export\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)$/.exec(line);
+    if (!match) continue;
+    let value = match[2].trim();
+    if ((value.startsWith('"') && value.endsWith('"')) ||
+        (value.startsWith("'") && value.endsWith("'"))) {
+      value = value.slice(1, -1);
+    } else {
+      value = value.replace(/\s+#.*$/, '').trimEnd();
+    }
+    values[match[1]] = value;
+  }
+  return values;
+}
+
+export function validateEasUpdateEnvironment(values, baseline, environmentName) {
+  const expected = {
+    EXPO_PUBLIC_CALIBRATE_SERVER_URL: baseline.server_url,
+    EXPO_PUBLIC_EAS_PROJECT_ID: baseline.project_id,
+    EXPO_UPDATES_CHANNEL: baseline.channel
+  };
+  for (const [name, expectedValue] of Object.entries(expected)) {
+    const actualValue = values[name]?.trim();
+    if (!actualValue) {
+      throw new Error(
+        `EAS environment ${environmentName} does not define ${name}. Set it to ${expectedValue} before publishing this OTA.`
+      );
+    }
+    if (actualValue !== expectedValue) {
+      throw new Error(
+        `EAS environment ${environmentName} defines ${name} as ${actualValue}, but the installed build baseline requires ${expectedValue}.`
+      );
+    }
+  }
+}
+
+export function verifyEasUpdateEnvironment({ root, baseline, publish, runner, environment }) {
+  const temporaryDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'calibrate-eas-environment-'));
+  const environmentFile = path.join(temporaryDirectory, '.env');
+  try {
+    runner({
+      command: publish.command,
+      args: [
+        '--yes',
+        'eas-cli@latest',
+        'env:pull',
+        '--environment', publish.environment,
+        '--path', environmentFile,
+        '--non-interactive'
+      ],
+      cwd: path.join(root, 'mobile'),
+      env: environment,
+      label: `read EAS ${publish.environment} environment`
+    });
+    validateEasUpdateEnvironment(
+      parseEasEnvironmentFile(fs.readFileSync(environmentFile, 'utf8')),
+      baseline,
+      publish.environment
+    );
+  } finally {
+    fs.rmSync(temporaryDirectory, { recursive: true, force: true });
+  }
+}
+
 function defaultMessage(runner, root) {
   const commit = runner(gitRequest(root, ['rev-parse', '--short', 'HEAD'], 'read current commit')).stdout.trim();
   const subject = runner(gitRequest(root, ['log', '-1', '--pretty=%s'], 'read current commit message')).stdout.trim();
@@ -119,7 +188,7 @@ Options:
   --environment <name>         EAS environment (default: preview, or production for production channel)
   --baseline <path>            Override the recorded local native-build baseline
   --non-interactive            Require token-based EAS authentication and disable CLI prompts
-  --dry-run                    Validate and print the publish command without uploading
+  --dry-run                    Validate the baseline and EAS environment without uploading
   --help                       Show this help
 
 Wear OS and native module/configuration changes cannot be delivered by Expo OTA.
@@ -198,9 +267,17 @@ export function runNativeOtaUpdate(options = {}) {
     EXPO_PUBLIC_EAS_PROJECT_ID: baseline.project_id,
     EXPO_UPDATES_CHANNEL: baseline.channel
   };
+  verifyEasUpdateEnvironment({
+    root,
+    baseline,
+    publish,
+    runner,
+    environment: publishEnvironment
+  });
   process.stdout.write(
     `OTA baseline: ${baselineFile}\n` +
     `Runtime: ${baseline.runtime_version} | Channel: ${publish.channel} | Environment: ${publish.environment}\n` +
+    'EAS environment contract: verified\n' +
     `Native fingerprint: ${baseline.native_fingerprint_sha256}\n` +
     `Message: ${resolvedConfig.message}\n`
   );

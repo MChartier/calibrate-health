@@ -183,9 +183,11 @@ npm.cmd run release:native:ota -- --message 'Describe the tested update'
 
 The command always targets Android, reuses the installed build's project, server, runtime, and channel, and invokes
 the current EAS CLI from the repository. It refuses a dirty working tree, a divergent Git history, a changed native
-fingerprint, a runtime mismatch, or a different channel. Run it interactively after `eas login`; automation can use
-`--non-interactive` with `EXPO_TOKEN`. The default dogfood mapping is channel `internal` with EAS environment
-`preview`; production builds and updates use `production` for both.
+fingerprint, a runtime mismatch, or a different channel. Before bundling, it pulls the selected EAS environment and
+requires `EXPO_PUBLIC_CALIBRATE_SERVER_URL`, `EXPO_PUBLIC_EAS_PROJECT_ID`, and `EXPO_UPDATES_CHANNEL` to match the
+installed-build baseline; this prevents an EAS environment from silently redirecting a self-hosted app. Run it
+interactively after `eas login`; automation can use `--non-interactive` with `EXPO_TOKEN`. The default dogfood mapping
+is channel `internal` with EAS environment `preview`; production builds and updates use `production` for both.
 
 Release builds check for updates without blocking startup. After an update is downloaded, fully close and reopen the
 phone app again to run it. Keep the signed native artifact: OTA is not a substitute for an installable recovery build,

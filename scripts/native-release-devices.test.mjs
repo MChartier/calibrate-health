@@ -1,18 +1,33 @@
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 
 import {
+  assertNativeReleaseArtifactVersions,
   classifyReleaseDevice,
   deduplicateReleaseDevices,
+  nativeReleaseToolEnvironment,
   parseAdbDeviceRows,
   parseApkBadging,
   parseNativeReleaseDeviceArgs,
   parseSignerFingerprint,
+  readNativeReleaseArtifactVersions,
   releaseDeviceCandidates,
-  nativeReleaseToolEnvironment,
   resolveNativeReleaseDeviceTooling
 } from './native-release-devices.mjs';
+
+function withTempReleaseManifest(manifest, run) {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'calibrate-native-device-test-'));
+  try {
+    fs.mkdirSync(path.join(root, 'shared'), { recursive: true });
+    fs.writeFileSync(path.join(root, 'shared', 'release.json'), JSON.stringify(manifest));
+    return run(root);
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+}
 
 test('release device CLI supports repeat installs and explicit non-interactive targets', () => {
   assert.deepEqual(parseNativeReleaseDeviceArgs([
@@ -90,6 +105,47 @@ test('APK parsers retain release identity and normalize certificate fingerprints
   assert.equal(
     parseSignerFingerprint('V2 Signer: certificate SHA-256 digest: B3:6E:57:03'),
     'b36e5703'
+  );
+});
+
+test('release artifact versions are read from the canonical manifest', () => {
+  withTempReleaseManifest({
+    android: {
+      mobile: { version_name: '0.3.0', version_code: 3 },
+      wear: { version_name: '0.4.0', version_code: 4 }
+    }
+  }, (root) => {
+    assert.deepEqual(readNativeReleaseArtifactVersions(root), {
+      phone: { versionName: '0.3.0', versionCode: 3 },
+      watch: { versionName: '0.4.0', versionCode: 4 }
+    });
+  });
+});
+
+test('stale phone and Wear APK versions are rejected before installation', () => {
+  const expected = {
+    phone: { versionName: '0.2.0', versionCode: 2 },
+    watch: { versionName: '0.2.0', versionCode: 2 }
+  };
+  const current = {
+    phone: { versionName: '0.2.0', versionCode: 2 },
+    watch: { versionName: '0.2.0', versionCode: 2 }
+  };
+
+  assert.doesNotThrow(() => assertNativeReleaseArtifactVersions(current, expected));
+  assert.throws(
+    () => assertNativeReleaseArtifactVersions({
+      ...current,
+      phone: { versionName: '0.1.0', versionCode: 2 }
+    }, expected),
+    /phone release APK is stale: found 0\.1\.0 \(2\), expected 0\.2\.0 \(2\).*without --skip-build/
+  );
+  assert.throws(
+    () => assertNativeReleaseArtifactVersions({
+      ...current,
+      watch: { versionName: '0.2.0', versionCode: 1 }
+    }, expected),
+    /watch release APK is stale: found 0\.2\.0 \(1\), expected 0\.2\.0 \(2\).*without --skip-build/
   );
 });
 
