@@ -113,8 +113,10 @@ npm.cmd run build:native:release
 
 The command fails before native work when signing is incomplete or the configured origin is not a credential-free
 HTTPS origin. It regenerates the ignored phone Android project with a clean Expo prebuild, then builds APK and AAB
-artifacts for phone and Wear with the same signing identity. Outputs are under `mobile/android/app/build/outputs/`
-and `wear/app/build/outputs/`.
+artifacts for phone and Wear with the same signing identity. The release workflow supplies a larger Gradle heap and
+metaspace allowance for Expo release lint, removes stale final artifacts before each build, and fails immediately if
+Gradle does not recreate both outputs. Outputs are under `mobile/android/app/build/outputs/` and
+`wear/app/build/outputs/`.
 
 Record the Git commit, semantic versions, version codes, SHA-256 digests, and signing certificate fingerprint in the
 release notes. Do not rename an artifact in a way that loses those identifiers.
