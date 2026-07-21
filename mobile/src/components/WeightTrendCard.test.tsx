@@ -72,6 +72,27 @@ describe('WeightTrendCard', () => {
         expect(getByText('Jul 15, 2026')).toBeTruthy();
     });
 
+    it('renders the first-weigh-in state for a single metric', () => {
+        (useQuery as jest.Mock).mockReturnValue({
+            data: {
+                metrics: [METRICS[0]],
+                meta: {
+                    weekly_rate: 0,
+                    volatility: 'low',
+                    total_points: 1,
+                    total_span_days: 0
+                }
+            },
+            error: null,
+            isLoading: false
+        });
+
+        const { getByText } = render(<WeightTrendCard />);
+
+        expect(getByText('First weigh-in recorded')).toBeTruthy();
+        expect(getByText('168.3 lb on Jul 15, 2026')).toBeTruthy();
+    });
+
     it('labels the chart scale, dates, and visual series', () => {
         const { getAllByText, getByLabelText } = render(<WeightTrendCard />);
 

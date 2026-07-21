@@ -171,7 +171,9 @@ function getChartLayout(metrics: TrendMetricEntry[], canvasWidth: number): Chart
     const firstYear = getDatePart(chronologicalMetrics[0].date).slice(0, 4);
     const lastYear = getDatePart(chronologicalMetrics[chronologicalMetrics.length - 1].date).slice(0, 4);
     const includeYear = firstYear !== lastYear;
-    const middleIndex = Math.round(lastIndex / 2);
+    // `lastIndex` is clamped for point spacing, so derive tick indices from the
+    // actual collection bounds to keep a single weigh-in at index zero.
+    const middleIndex = Math.round((chronologicalMetrics.length - 1) / 2);
     const tickIndices = Array.from(new Set([0, middleIndex, chronologicalMetrics.length - 1]));
     const xTicks = tickIndices.map((index, tickIndex) => {
         let textAnchor: ChartLayout['xTicks'][number]['textAnchor'] = 'middle';
