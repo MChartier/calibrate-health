@@ -1,9 +1,9 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { AppText } from './AppText';
 import { TextField } from './TextField';
-import { colors, radius, spacing } from '../theme';
+import { radius, spacing, useAppTheme, type AppTheme } from '../theme';
 
 type NumberStepperFieldProps = {
     label: string;
@@ -40,6 +40,8 @@ export const NumberStepperField: React.FC<NumberStepperFieldProps> = ({
     editable = true,
     containerStyle
 }) => {
+    const theme = useAppTheme();
+    const styles = useMemo(() => createStyles(theme), [theme]);
     const parsed = Number(value);
     const currentValue = Number.isFinite(parsed) ? parsed : 0;
 
@@ -64,7 +66,7 @@ export const NumberStepperField: React.FC<NumberStepperFieldProps> = ({
                     onPress={() => adjust(-step)}
                     style={({ pressed }) => [styles.stepperButton, !editable && styles.disabled, pressed && editable && styles.pressed]}
                 >
-                    <Ionicons name="remove" size={18} color={colors.text} />
+                    <Ionicons name="remove" size={18} color={theme.colors.onSurface} />
                 </Pressable>
                 <TextField
                     label={label}
@@ -85,7 +87,7 @@ export const NumberStepperField: React.FC<NumberStepperFieldProps> = ({
                     onPress={() => adjust(step)}
                     style={({ pressed }) => [styles.stepperButton, !editable && styles.disabled, pressed && editable && styles.pressed]}
                 >
-                    <Ionicons name="add" size={18} color={colors.text} />
+                    <Ionicons name="add" size={18} color={theme.colors.onSurface} />
                 </Pressable>
             </View>
             {helperText && <AppText variant="caption">{helperText}</AppText>}
@@ -93,7 +95,7 @@ export const NumberStepperField: React.FC<NumberStepperFieldProps> = ({
     );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: AppTheme) => StyleSheet.create({
     root: {
         gap: spacing.sm
     },
@@ -120,12 +122,12 @@ const styles = StyleSheet.create({
         borderRadius: radius.md,
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: colors.surfaceAlt,
-        borderColor: colors.border,
+        backgroundColor: theme.colors.surfaceContainer,
+        borderColor: theme.colors.outlineVariant,
         borderWidth: StyleSheet.hairlineWidth
     },
     pressed: {
-        backgroundColor: colors.surfacePressed
+        backgroundColor: theme.colors.surfacePressed
     },
     disabled: {
         opacity: 0.5

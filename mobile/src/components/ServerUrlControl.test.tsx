@@ -3,7 +3,7 @@ import { fireEvent, render } from '@testing-library/react-native';
 import { ServerUrlControl } from './ServerUrlControl';
 import { HOSTED_SERVER_URL, type ServerConnectionState } from '../config/server';
 
-jest.mock('@expo/vector-icons', () => ({ Ionicons: () => null }));
+jest.mock('@expo/vector-icons/Ionicons', () => () => null);
 
 const idleConnection: ServerConnectionState = {
     status: 'idle',

@@ -36,7 +36,7 @@ export function HealthConnectProvider({ children }: { children: React.ReactNode 
         isSyncing: false,
         lastRefreshedAt: null,
         lastSuccessfulSyncAt: null,
-        error: WEB_UNAVAILABLE,
+        error: null,
         syncError: null,
         restartMessage: null,
         connect: async () => { throw new Error(WEB_UNAVAILABLE); },

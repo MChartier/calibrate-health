@@ -29,7 +29,7 @@ export function PublicLegalPage({ title, lastUpdated, intro, sections, links }: 
             <AppCard>
                 <View style={styles.content}>
                     <View style={styles.section}>
-                        <AppText accessibilityRole="header" variant="title">{title}</AppText>
+                        <AppText accessibilityRole="header" aria-level={1} variant="title">{title}</AppText>
                         {lastUpdated && <AppText variant="label">Last updated: {lastUpdated}</AppText>}
                         {intro.map((paragraph) => (
                             <AppText key={paragraph}>{paragraph}</AppText>
@@ -39,10 +39,9 @@ export function PublicLegalPage({ title, lastUpdated, intro, sections, links }: 
                     {sections.map((section) => (
                         <View
                             key={section.title}
-                            accessibilityRole="summary"
                             style={[styles.section, styles.dividedSection, { borderTopColor: colors.outlineVariant }]}
                         >
-                            <AppText accessibilityRole="header" variant="subtitle">{section.title}</AppText>
+                            <AppText accessibilityRole="header" aria-level={2} variant="subtitle">{section.title}</AppText>
                             {section.paragraphs?.map((paragraph) => (
                                 <AppText key={paragraph}>{paragraph}</AppText>
                             ))}

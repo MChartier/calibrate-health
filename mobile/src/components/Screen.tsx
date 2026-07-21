@@ -31,7 +31,7 @@ export const Screen: React.FC<ScreenProps> = ({
     const horizontalPadding = Platform.OS === 'web' && width >= WIDE_LAYOUT_BREAKPOINT
         ? theme.spacing.xl
         : theme.spacing.lg;
-    const bottomPadding = theme.spacing.xl + insets.bottom + (reserveBottomTabs ? BOTTOM_TAB_RESERVED_SPACE : 0);
+    const bottomPadding = insets.bottom + (reserveBottomTabs ? BOTTOM_TAB_RESERVED_SPACE : theme.spacing.xl);
     const contentStyle = [
         styles.content,
         {
@@ -84,23 +84,23 @@ export const Screen: React.FC<ScreenProps> = ({
 
 function createStyles(theme: AppTheme) {
     return StyleSheet.create({
-    root: {
-        flex: 1,
-        width: '100%',
-        maxWidth: DESKTOP_CONTENT_MAX_WIDTH,
-        alignSelf: 'center',
-        backgroundColor: theme.colors.background,
-        gap: theme.spacing.lg
-    },
-    scroller: {
-        flex: 1,
-        backgroundColor: theme.colors.background
-    },
-    content: {
-        width: '100%',
-        maxWidth: DESKTOP_CONTENT_MAX_WIDTH,
-        alignSelf: 'center',
-        gap: theme.spacing.lg
-    }
+        root: {
+            flex: 1,
+            width: '100%',
+            maxWidth: DESKTOP_CONTENT_MAX_WIDTH,
+            alignSelf: 'center',
+            backgroundColor: theme.colors.background,
+            gap: theme.spacing.lg
+        },
+        scroller: {
+            flex: 1,
+            backgroundColor: theme.colors.background
+        },
+        content: {
+            width: '100%',
+            maxWidth: DESKTOP_CONTENT_MAX_WIDTH,
+            alignSelf: 'center',
+            gap: theme.spacing.lg
+        }
     });
 }

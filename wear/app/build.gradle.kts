@@ -267,6 +267,7 @@ dependencies {
     implementation(libs.androidx.wear.tiles)
     implementation(libs.androidx.wear.protolayout)
     implementation(libs.androidx.wear.protolayout.material3)
+    implementation(libs.androidx.wear.watchface.complications.data.source.ktx)
 
     debugImplementation(libs.androidx.compose.ui.tooling)
     testImplementation(libs.junit4)

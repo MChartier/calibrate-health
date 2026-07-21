@@ -7,7 +7,7 @@ import { Link, useLocalSearchParams } from 'expo-router';
 
 jest.mock('./AuthContext', () => ({ useAuth: jest.fn() }));
 jest.mock('../account/accountDeletionNotice', () => ({ accountDeletionCleanupGuidance: jest.fn(() => '') }));
-jest.mock('@expo/vector-icons', () => ({ Ionicons: () => null }));
+jest.mock('@expo/vector-icons/Ionicons', () => () => null);
 jest.mock('react-native-safe-area-context', () => ({
     useSafeAreaInsets: () => ({ top: 0, right: 0, bottom: 0, left: 0 })
 }));
@@ -95,6 +95,7 @@ describe('auth screen server navigation', () => {
 
         fireEvent.changeText(screen.getByLabelText('Email'), 'new@example.com');
         fireEvent.changeText(screen.getByLabelText('Password'), 'secret');
+        fireEvent.changeText(screen.getByLabelText('Confirm password'), 'secret');
         fireEvent.press(screen.getByLabelText('Create account'));
 
         await waitFor(() => {
@@ -110,6 +111,7 @@ describe('auth screen server navigation', () => {
 
         fireEvent.changeText(screen.getByLabelText('Email'), 'existing@example.com');
         fireEvent.changeText(screen.getByLabelText('Password'), 'secret');
+        fireEvent.changeText(screen.getByLabelText('Confirm password'), 'secret');
         fireEvent.press(screen.getByLabelText('Create account'));
 
         await waitFor(() => {
@@ -117,5 +119,19 @@ describe('auth screen server navigation', () => {
         });
         const createAccountButton = screen.getByRole('button', { name: 'Create account' });
         expect(within(createAccountButton).getByText('Create account')).toBeTruthy();
+    });
+
+    it('prevents account creation when password confirmation does not match', () => {
+        const auth = authContextStub();
+        mockUseAuth.mockReturnValue(auth as unknown as ReturnType<typeof useAuth>);
+        const screen = render(<RegisterScreen />);
+
+        fireEvent.changeText(screen.getByLabelText('Email'), 'new@example.com');
+        fireEvent.changeText(screen.getByLabelText('Password'), 'secret');
+        fireEvent.changeText(screen.getByLabelText('Confirm password'), 'different');
+        fireEvent.press(screen.getByLabelText('Create account'));
+
+        expect(screen.getByRole('alert')).toHaveTextContent('Passwords do not match.');
+        expect(auth.register).not.toHaveBeenCalled();
     });
 });

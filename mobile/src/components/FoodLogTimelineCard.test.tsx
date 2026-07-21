@@ -3,7 +3,7 @@ import { render } from '@testing-library/react-native';
 import type { FoodLogEntry } from '@calibrate/api-client';
 import { FoodLogTimelineCard } from './FoodLogTimelineCard';
 
-jest.mock('@expo/vector-icons', () => ({ Ionicons: () => null }));
+jest.mock('@expo/vector-icons/Ionicons', () => () => null);
 
 const MORNING_SNACK_ENTRY: FoodLogEntry = {
     id: 1,

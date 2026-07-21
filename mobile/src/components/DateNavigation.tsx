@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Platform, Pressable, StyleSheet, View } from 'react-native';
 import DateTimePicker, { type DateTimePickerEvent } from '@react-native-community/datetimepicker';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { type AppTheme, useAppTheme } from '../theme';
 import { AppText } from './AppText';
 import { dateOnlyToLocalDate, localDateToDateOnly } from '../utils/dates';

@@ -373,6 +373,7 @@ const colorIndex =
   greekLetterIndex === -1 ? hash % worktreeColors.length : greekLetterIndex % worktreeColors.length;
 const derivedColor = worktreeColors[colorIndex];
 const worktreeColor = isMainWorktree ? basePeacockColor : derivedColor;
+const workspaceNodeModulesVolume = buildNodeModulesVolumeName("workspace", "package-lock.json");
 const backendNodeModulesVolume = buildNodeModulesVolumeName("backend", "backend/package-lock.json");
 const frontendNodeModulesVolume = buildNodeModulesVolumeName("frontend", "frontend/package-lock.json");
 
@@ -426,11 +427,13 @@ const lines = [
   `FRONTEND_PORT=${frontendPort}`,
   `STORYBOOK_PORT=${storybookPort}`,
   `VITE_DEV_SERVER_PORT=${frontendPort}`,
+  `WORKSPACE_NODE_MODULES_VOLUME=${workspaceNodeModulesVolume}`,
   `BACKEND_NODE_MODULES_VOLUME=${backendNodeModulesVolume}`,
   `FRONTEND_NODE_MODULES_VOLUME=${frontendNodeModulesVolume}`,
   `WORKTREE_NAME=${workspaceName}`,
   `WORKTREE_IS_MAIN=${isMainWorktree ? "true" : "false"}`,
   `WORKTREE_COLOR=${worktreeColor}`,
+  `VITE_WORKTREE_COLOR=${worktreeColor}`,
   `VITE_WORKTREE_NAME=${workspaceName}`,
   `VITE_WORKTREE_IS_MAIN=${isMainWorktree ? "true" : "false"}`,
   "# Sourced from the host environment or repo-local .env during devcontainer init so Docker can pass it into the container.",

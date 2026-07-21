@@ -7,8 +7,14 @@ import net from "node:net";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { runDevelopmentServers } from "./dev.mjs";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const backendEnvPath = path.join(repoRoot, "backend", ".env");
+if (fs.existsSync(backendEnvPath)) {
+  // Host-side backend development keeps its database configuration in backend/.env.
+  process.loadEnvFile(backendEnvPath);
+}
 const backendRequire = createRequire(path.join(repoRoot, "backend", "package.json"));
 const DEV_SEED_USER_EMAIL = "test@calibratehealth.app";
 const INSTALL_STALE_LOCK_MS = 20 * 60 * 1000;
@@ -48,6 +54,7 @@ const packages = [
     ],
   },
 ];
+const expoDevelopmentPackages = packages.filter(({ name }) => name !== "frontend");
 const packageLockHashCache = new Map();
 let cachedNpmVersion = null;
 
@@ -449,9 +456,10 @@ async function ensurePackageDependencies(packageConfig) {
 }
 
 /**
- * Install all app dependencies with shared-volume locking.
+ * Install selected app dependencies with shared-volume locking.
+ * @param {typeof packages} packageConfigs - Packages required by the requested workflow.
  */
-async function ensureDependencies() {
+async function ensureDependencies(packageConfigs = packages) {
   if (process.platform !== "win32" && fs.existsSync(path.join(repoRoot, ".devcontainer", "prepare-volumes.sh"))) {
     await timed("Prepare devcontainer volumes", () => {
       run("bash", [".devcontainer/prepare-volumes.sh"]);
@@ -460,7 +468,7 @@ async function ensureDependencies() {
 
   await timed("Install dependencies", async () => {
     await Promise.all(
-      packages.map((packageConfig) =>
+      packageConfigs.map((packageConfig) =>
         timed(`${packageConfig.name} dependencies`, () => ensurePackageDependencies(packageConfig))
       )
     );
@@ -639,8 +647,8 @@ async function resetDatabase() {
 /**
  * Run full app setup for a worktree.
  */
-async function setup(doneMessage = "Setup complete.") {
-  await ensureDependencies();
+async function setup(doneMessage = "Setup complete.", packageConfigs = packages) {
+  await ensureDependencies(packageConfigs);
   await generatePrismaClient();
   await waitForDatabase();
   await timed("Migrate database", () => {
@@ -654,9 +662,26 @@ async function setup(doneMessage = "Setup complete.") {
  * Ensure the app is ready, then start dev servers with the seeded test user.
  */
 async function dev() {
-  await setup("Dev setup preflight complete.");
-  console.log("\n[dev-env] Starting dev server with seeded test-user auto-login...");
-  run("npm", ["run", "dev:test"]);
+  await setup("Dev setup preflight complete.", expoDevelopmentPackages);
+  const manualAuth = process.argv.includes("--manual-auth");
+  console.log(
+    manualAuth
+      ? "\n[dev-env] Starting dev server with manual authentication..."
+      : "\n[dev-env] Starting dev server with seeded test-user auto-login..."
+  );
+  // Run in the devcontainer exec process so terminal signals reach the service supervisor directly.
+  runDevelopmentServers({ argv: manualAuth ? ["--manual-auth"] : [] });
+}
+
+/**
+ * Prepare the local stack and validate the Expo web production export.
+ */
+async function buildExpoWeb() {
+  await setup("Expo web build preflight complete.", expoDevelopmentPackages);
+  await timed("Build Expo web", () => {
+    run("npm", ["run", "build:expo-web"]);
+  });
+  printDone("Expo web build passed.");
 }
 
 /**
@@ -679,6 +704,7 @@ async function ci() {
     run("npm", ["run", "release:check"]);
     run("npm", ["run", "test:release"]);
     run("npm", ["run", "test:native-release"]);
+    run("npm", ["run", "test:dev-script"]);
     run("npm", ["run", "test:wear:emulator:unit"]);
     run("npm", ["run", "test:db:upgrade:unit"]);
     run("npm", ["run", "test:build-budget"]);
@@ -724,7 +750,9 @@ function printHelp() {
       "  db:migrate  Apply migrations and seed without resetting data.",
       "  db:reset    Reset the disposable worktree DB, then seed it.",
       "  setup       Install deps, generate Prisma, migrate, and seed.",
-      "  dev         Ensure setup is ready, then run dev:test.",
+      "  setup:expo  Prepare the database plus Expo/backend dependencies.",
+      "  dev         Ensure setup is ready, then start backend and Expo web.",
+      "  build:web   Ensure setup is ready, then build the Expo web export.",
       "  test        Install deps when needed, then run fast tests.",
       "  ci          Run the local equivalent of PR CI checks.",
     ].join("\n")
@@ -745,8 +773,12 @@ try {
     await resetDatabase();
   } else if (command === "setup") {
     await setup();
+  } else if (command === "setup:expo") {
+    await setup("Expo development setup complete.", expoDevelopmentPackages);
   } else if (command === "dev") {
     await dev();
+  } else if (command === "build:web") {
+    await buildExpoWeb();
   } else if (command === "test") {
     await test();
   } else if (command === "ci") {

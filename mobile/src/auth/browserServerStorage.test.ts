@@ -36,4 +36,17 @@ describe('browser server storage', () => {
             .toBe('https://fallback.example');
         expect(writeBrowserServerUrl('https://self-hosted.example', blockedStorage)).resolves.toBeUndefined();
     });
+
+    it('prefers the launcher-selected local server during automatic test-user development', () => {
+        expect(readBrowserServerUrl(
+            createStorage('https://calibratehealth.app'),
+            'http://localhost:3000',
+            true
+        )).toBe('http://localhost:3000');
+        expect(readBrowserServerUrl(
+            createStorage('https://self-hosted.example'),
+            'http://localhost:3000',
+            false
+        )).toBe('https://self-hosted.example');
+    });
 });

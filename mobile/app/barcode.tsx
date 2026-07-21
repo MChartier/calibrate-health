@@ -1,6 +1,6 @@
-import React, { useRef, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import { Linking, Platform, StyleSheet, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { CameraView, useCameraPermissions, type BarcodeScanningResult } from 'expo-camera';
 import { router, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
@@ -11,16 +11,16 @@ import { AppButton } from '../src/components/AppButton';
 import { AppCard } from '../src/components/AppCard';
 import { AppText } from '../src/components/AppText';
 import { LoadingState } from '../src/components/LoadingState';
-import { OverlaySelect, type OverlaySelectOption } from '../src/components/OverlaySelect';
+import { OverlaySelect } from '../src/components/OverlaySelect';
 import { Screen } from '../src/components/Screen';
 import { SectionHeader } from '../src/components/SectionHeader';
 import { useAuth } from '../src/auth/AuthContext';
 import { executeOrQueueMutation, OFFLINE_MUTATION_OPERATIONS } from '../src/offline/operations';
 import { useOfflineOutbox } from '../src/offline/provider';
 import { getTodayDate } from '../src/utils/dates';
-import { formatCalories, formatMealPeriod } from '../src/utils/format';
-import { MEAL_OPTIONS } from '../src/utils/meals';
-import { colors, radius, spacing } from '../src/theme';
+import { formatCalories } from '../src/utils/format';
+import { MEAL_OPTIONS, MEAL_SELECT_OPTIONS } from '../src/utils/meals';
+import { radius, spacing, useAppTheme, type AppTheme } from '../src/theme';
 import {
     BarcodeScanGate,
     getBarcodeLookupErrorMessage,
@@ -28,11 +28,6 @@ import {
     getCameraPermissionState,
     getProviderAttribution
 } from '../src/barcode/workflow';
-
-const MEAL_SELECTOR_OPTIONS: Array<OverlaySelectOption<MealPeriod>> = MEAL_OPTIONS.map((option) => ({
-    value: option,
-    label: formatMealPeriod(option)
-}));
 
 function parseMeal(value: unknown): MealPeriod {
     return typeof value === 'string' && MEAL_OPTIONS.includes(value as MealPeriod)
@@ -58,6 +53,8 @@ function buildBarcodeFoodPayload(result: FoodSearchResult, code: string, date: s
 }
 
 export default function BarcodeScreen() {
+    const theme = useAppTheme();
+    const styles = useMemo(() => createStyles(theme), [theme]);
     const { date, meal: mealParam } = useLocalSearchParams<{ date?: string; meal?: string }>();
     const { api, user } = useAuth();
     const { enqueue } = useOfflineOutbox();
@@ -89,7 +86,6 @@ export default function BarcodeScreen() {
         onSuccess: async () => {
             await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
             await queryClient.invalidateQueries({ queryKey: ['mobile-food', selectedDate] });
-            await queryClient.invalidateQueries({ queryKey: ['mobile-food-day', selectedDate] });
             await queryClient.invalidateQueries({ queryKey: ['mobile-profile'] });
             await queryClient.invalidateQueries({ queryKey: ['mobile-recent-foods'] });
             await queryClient.invalidateQueries({ queryKey: ['mobile-in-app-notifications'] });
@@ -194,7 +190,7 @@ export default function BarcodeScreen() {
                         accessibilityRole="button"
                         accessibilityHint={permissionActionHint}
                         title={permissionActionTitle}
-                        leftIcon={<Ionicons name="camera-outline" size={18} color="#ffffff" />}
+                        leftIcon={<Ionicons name="camera-outline" size={18} color={theme.colors.onPrimary} />}
                         onPress={() => void handlePermissionAction()}
                     />
                     {mustUseSettings && !isWeb && (
@@ -203,7 +199,7 @@ export default function BarcodeScreen() {
                             accessibilityHint="Checks whether camera permission is now enabled."
                             title="Check camera access"
                             variant="secondary"
-                            leftIcon={<Ionicons name="refresh-outline" size={18} color={colors.text} />}
+                            leftIcon={<Ionicons name="refresh-outline" size={18} color={theme.colors.onSurface} />}
                             onPress={() => void checkCameraPermission()}
                         />
                     )}
@@ -211,7 +207,7 @@ export default function BarcodeScreen() {
                         accessibilityRole="button"
                         title="Back to log"
                         variant="ghost"
-                        leftIcon={<Ionicons name="arrow-back" size={18} color={colors.text} />}
+                        leftIcon={<Ionicons name="arrow-back" size={18} color={theme.colors.onSurface} />}
                         onPress={() => router.back()}
                     />
                 </AppCard>
@@ -324,7 +320,7 @@ export default function BarcodeScreen() {
                     <OverlaySelect
                         accessibilityLabel="Select meal"
                         value={meal}
-                        options={MEAL_SELECTOR_OPTIONS}
+                        options={MEAL_SELECT_OPTIONS}
                         isOpen={isMealSelectorOpen}
                         onToggle={() => setIsMealSelectorOpen((current) => !current)}
                         onChange={(nextMeal) => {
@@ -342,7 +338,7 @@ export default function BarcodeScreen() {
                         accessibilityHint="Adds the matched food to the selected day and meal."
                         title={logFood.isPending ? 'Logging...' : `Log to ${selectedDate}`}
                         disabled={!first || lookupStatus !== 'result' || logFood.isPending}
-                        leftIcon={<Ionicons name="add" size={18} color="#ffffff" />}
+                        leftIcon={<Ionicons name="add" size={18} color={theme.colors.onPrimary} />}
                         onPress={() => {
                             if (first) logFood.mutate(first);
                         }}
@@ -353,7 +349,7 @@ export default function BarcodeScreen() {
                             accessibilityHint="Repeats the provider lookup for the scanned barcode."
                             title="Try lookup again"
                             variant="secondary"
-                            leftIcon={<Ionicons name="cloud-download-outline" size={18} color={colors.text} />}
+                            leftIcon={<Ionicons name="cloud-download-outline" size={18} color={theme.colors.onSurface} />}
                             onPress={retryLookup}
                         />
                     )}
@@ -363,14 +359,14 @@ export default function BarcodeScreen() {
                             accessibilityHint="Clears this result and re-enables the camera scanner."
                             title="Scan again"
                             variant="secondary"
-                            leftIcon={<Ionicons name="refresh-outline" size={18} color={colors.text} />}
+                            leftIcon={<Ionicons name="refresh-outline" size={18} color={theme.colors.onSurface} />}
                             onPress={resetScanner}
                             style={styles.actionButton}
                         />
                         <AppButton
                             accessibilityRole="button"
                             title="Back to log"
-                            leftIcon={<Ionicons name="arrow-back" size={18} color="#ffffff" />}
+                            leftIcon={<Ionicons name="arrow-back" size={18} color={theme.colors.onPrimary} />}
                             onPress={() => router.back()}
                             style={styles.actionButton}
                         />
@@ -381,7 +377,7 @@ export default function BarcodeScreen() {
     );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (theme: AppTheme) => StyleSheet.create({
     root: {
         padding: 0
     },
@@ -399,16 +395,16 @@ const styles = StyleSheet.create({
         height: 160,
         borderRadius: radius.md,
         borderWidth: 3,
-        borderColor: colors.surface,
+        borderColor: theme.colors.onSurface,
         backgroundColor: 'transparent'
     },
     panel: {
         padding: spacing.lg,
-        backgroundColor: colors.background
+        backgroundColor: theme.colors.background
     },
     result: {
         borderRadius: radius.md,
-        backgroundColor: colors.surfaceAlt,
+        backgroundColor: theme.colors.surfaceContainer,
         padding: spacing.md,
         gap: spacing.xs
     },
@@ -420,13 +416,13 @@ const styles = StyleSheet.create({
         flex: 1
     },
     error: {
-        color: colors.danger
+        color: theme.colors.danger
     },
     permissionMessage: {
-        color: colors.muted
+        color: theme.colors.onSurfaceVariant
     },
     attributionLink: {
-        color: colors.primary,
+        color: theme.colors.primary,
         textDecorationLine: 'underline'
     }
 });

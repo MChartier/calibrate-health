@@ -2,6 +2,8 @@
 import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
+import { ensureDevcontainerCliCache } from "./devcontainer-cli-cache.mjs";
+import { ensureDockerRuntime } from "./docker-runtime.mjs";
 
 const repoRoot = process.cwd();
 const workspacePath = path.resolve(process.env.CODEX_WORKTREE_PATH || repoRoot);
@@ -15,6 +17,8 @@ const commandMap = new Map([
   ["devcontainer:start", { type: "up", skipPostCreate: true }],
   ["devcontainer:recreate", { type: "recreate", skipPostCreate: true }],
   ["setup-app", { type: "exec", command: ["npm", "run", "setup"] }],
+  ["setup:expo", { type: "exec", command: ["node", "scripts/dev-env.mjs", "setup:expo"] }],
+  ["build:expo-web", { type: "exec", command: ["node", "scripts/dev-env.mjs", "build:web"] }],
   ["db:migrate", { type: "exec", command: ["npm", "run", "db:migrate:dev"] }],
   ["db:reset", { type: "exec", command: ["npm", "run", "db:reset:dev"] }],
   ["shell", { type: "shell" }],
@@ -29,9 +33,10 @@ const commandMap = new Map([
   ["ci", { type: "exec", command: ["npm", "run", "ci:local"] }],
   ["dev", { type: "exec", command: ["node", "scripts/dev-env.mjs", "dev"] }],
   ["dev:test", { type: "exec", command: ["node", "scripts/dev-env.mjs", "dev"] }],
+  ["dev:manual-auth", { type: "exec", command: ["node", "scripts/dev-env.mjs", "dev", "--manual-auth"] }],
   [
     "reset-test-user-onboarding",
-    { type: "exec", command: ["npm", "run", "dev:reset-test-user-onboarding"] },
+    { type: "exec", command: ["node", "scripts/reset-test-user-onboarding.mjs"] },
   ],
 ]);
 
@@ -56,6 +61,14 @@ function printHelp() {
   console.log(
     [
       "Usage:",
+      "  npm run dev",
+      "  npm run dev:bootstrap",
+      "  npm run dev:setup",
+      "  npm run dev:build",
+      "  npm run dev:manual-auth",
+      "  npm run dev:reset",
+      "  npm run dev:shell",
+      "  npm run dev:down",
       "  npm run codex:devcontainer:start",
       "  npm run codex:devcontainer:recreate",
       "  npm run codex:devcontainer:down",
@@ -99,20 +112,25 @@ function runComposeDown() {
   return !process.exitCode;
 }
 
-const commandName = process.argv[2];
-if (
-  !commandName ||
-  commandName === "--help" ||
-  commandName === "-h" ||
-  process.argv.slice(3).some((arg) => arg === "--help" || arg === "-h")
-) {
-  printHelp();
-  process.exit(commandName ? 0 : 1);
-}
+async function main() {
+  const commandName = process.argv[2];
+  if (
+    !commandName ||
+    commandName === "--help" ||
+    commandName === "-h" ||
+    process.argv.slice(3).some((arg) => arg === "--help" || arg === "-h")
+  ) {
+    printHelp();
+    process.exit(commandName ? 0 : 1);
+  }
 
-if (commandName === "down") {
-  runComposeDown();
-} else {
+  if (commandName === "down") {
+    await ensureDockerRuntime();
+    process.env.DEVCONTAINER_CLI_JS = ensureDevcontainerCliCache(workspacePath).cliJs;
+    runComposeDown();
+    return;
+  }
+
   const command = commandMap.get(commandName);
   if (!command) {
     console.error(`Unknown command: ${commandName}`);
@@ -124,6 +142,9 @@ if (commandName === "down") {
     console.error(`No devcontainer helper found at ${devcontainerScript}.`);
     process.exit(1);
   }
+
+  await ensureDockerRuntime();
+  process.env.DEVCONTAINER_CLI_JS = ensureDevcontainerCliCache(workspacePath).cliJs;
 
   if (command.type === "up") {
     run(process.execPath, [
@@ -159,4 +180,11 @@ if (commandName === "down") {
       ...command.command,
     ]);
   }
+}
+
+try {
+  await main();
+} catch (error) {
+  console.error(`[dev] ${error instanceof Error ? error.message : String(error)}`);
+  process.exitCode = 1;
 }

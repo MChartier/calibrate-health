@@ -1,6 +1,4 @@
 import type { AccountExport } from '@calibrate/api-client';
-import { File, Paths } from 'expo-file-system';
-import * as Sharing from 'expo-sharing';
 import type { AccountDeletionCleanupNotice } from './accountDeletionNotice';
 
 export const DELETE_ACCOUNT_CONFIRMATION = 'DELETE MY ACCOUNT';
@@ -37,11 +35,17 @@ type AccountDeletionDependencies = {
     clearLocalSession: () => Promise<void>;
 };
 
-const defaultSharingDependencies: AccountExportSharingDependencies = {
-    isSharingAvailable: Sharing.isAvailableAsync,
-    createCacheFile: (filename) => new File(Paths.cache, filename),
-    share: Sharing.shareAsync
-};
+async function loadSharingDependencies(): Promise<AccountExportSharingDependencies> {
+    const [fileSystem, Sharing] = await Promise.all([
+        import('expo-file-system'),
+        import('expo-sharing')
+    ]);
+    return {
+        isSharingAvailable: Sharing.isAvailableAsync,
+        createCacheFile: (filename) => new fileSystem.File(fileSystem.Paths.cache, filename),
+        share: Sharing.shareAsync
+    };
+}
 
 function assertNoCredentialFields(value: unknown, seen: Set<object>): void {
     if (!value || typeof value !== 'object') return;
@@ -143,17 +147,18 @@ function buildExportFilename(exportedAt: string): string {
 /** Shares a short-lived cache file and removes it whether sharing succeeds or fails. */
 export async function shareAccountExport(
     accountExport: AccountExport,
-    dependencies: AccountExportSharingDependencies = defaultSharingDependencies
+    dependencies?: AccountExportSharingDependencies
 ): Promise<void> {
-    if (!(await dependencies.isSharingAvailable())) {
+    const sharingDependencies = dependencies ?? await loadSharingDependencies();
+    if (!(await sharingDependencies.isSharingAvailable())) {
         throw new Error('File sharing is unavailable on this device.');
     }
 
-    const file = dependencies.createCacheFile(buildExportFilename(accountExport.exported_at));
+    const file = sharingDependencies.createCacheFile(buildExportFilename(accountExport.exported_at));
     try {
         file.create({ overwrite: true });
         file.write(serializeAccountExport(accountExport));
-        await dependencies.share(file.uri, {
+        await sharingDependencies.share(file.uri, {
             mimeType: EXPORT_MIME_TYPE,
             dialogTitle: 'Share calibrate account export'
         });

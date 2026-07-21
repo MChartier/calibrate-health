@@ -5,6 +5,13 @@ import org.junit.Test
 
 class CalorieProgressTest {
     @Test
+    fun `dashboard diameter fits the smaller post-inset screen dimension`() {
+        assertEquals(116f, summaryDashboardDiameter(widthDp = 192f, heightDp = 120f))
+        assertEquals(188f, summaryDashboardDiameter(widthDp = 192f, heightDp = 220f))
+        assertEquals(0f, summaryDashboardDiameter(widthDp = 3f, heightDp = 3f))
+    }
+
+    @Test
     fun `progress is bounded and handles unavailable targets`() {
         assertEquals(0.5f, calorieProgressFraction(consumed = 1_000, target = 2_000))
         assertEquals(1f, calorieProgressFraction(consumed = 2_500, target = 2_000))

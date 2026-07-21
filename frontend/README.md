@@ -5,8 +5,8 @@ React + TypeScript + Vite UI for calibrate. Uses MUI and React Query.
 ## Development
 
 - Supported Node.js versions: `20.19+` or `22.12+` (required by Vite 8).
-- Run from the repo root: `npm run dev` (recommended), or `npm --prefix frontend run dev` if the backend is already running.
-- `npm run dev` at the repo root enables the PWA service worker in development (`VITE_ENABLE_SW_DEV=1`) so push flows can be tested locally.
+- This is the legacy rollback client. Run it from the repo root with `npm run dev:vite`, or use `npm --prefix frontend run dev` if the backend is already running.
+- Root `npm run dev` now starts the Expo web client instead.
 - If you run the frontend directly and still need push/PWA behavior, set `VITE_ENABLE_SW_DEV=1` for that process (for example: `VITE_ENABLE_SW_DEV=1 npm --prefix frontend run dev`).
 - The Vite dev server expects the backend at `http://localhost:3000` and proxies `/auth`, `/api`, and `/dev/test`.
 - Use `VITE_DEV_SERVER_PORT` to change the dev server port (the backend CORS default follows this port).

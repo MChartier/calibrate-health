@@ -7,8 +7,15 @@ builds are the primary native workflow; Expo Go is useful for lightweight checks
 
 ## Development
 
-- Use Node.js 22.13 or newer for Expo commands.
-- Run from the repo root after installing workspace dependencies: `npm install`.
+- Use Node.js 22.13 or newer and Docker Desktop for the standard local workflow.
+- From the repo root, run `npm run dev`. It starts Docker Desktop when needed, provisions Postgres, installs dependencies,
+  migrates and seeds the database, then starts the backend and Expo web client. No prior `npm install` or local `.env`
+  file is required.
+- The launcher prints the worktree-specific web and API URLs and automatically signs in the seeded local test user.
+- Use `npm run dev:manual-auth` when testing login or registration instead.
+- Use `npm run dev:build` to bootstrap the environment and validate the Expo web production export.
+- `npm run dev:expo-web` starts only Expo web on the host and is intended for advanced workflows where the backend is
+  already running.
 - Start the Expo development server: `npm --prefix mobile run dev`.
 - Build/install on an Android emulator or device: `npm --prefix mobile run android`.
 - The Android emulator dev default server is `http://10.0.2.2:3000`.

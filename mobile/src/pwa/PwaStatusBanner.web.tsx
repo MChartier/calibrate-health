@@ -9,6 +9,7 @@ import {
 } from './runtime.web';
 
 export const BROWSER_OFFLINE_MESSAGE = 'Queued changes stay on this device and sync when the server is reachable.';
+const NOTICE_TOP_OFFSET = 76; // Clears the compact app header while keeping status feedback near the top.
 
 type NoticeProps = {
     role: 'alert' | 'status';
@@ -79,7 +80,7 @@ export function PwaStatusBanner({ runtime = browserPwaRuntime }: { runtime?: Pwa
     const { network, update, applyUpdate, retryUpdate } = usePwaStatus(runtime);
     const containerStyle: React.CSSProperties = {
         position: 'fixed',
-        top: 12,
+        top: `calc(env(safe-area-inset-top, 0px) + ${NOTICE_TOP_OFFSET}px)`,
         left: 0,
         right: 0,
         zIndex: 9000,

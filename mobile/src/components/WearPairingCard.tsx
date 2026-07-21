@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import type { WearNode } from '@calibrate/wear-pairing';
 import { useAuth } from '../auth/AuthContext';
@@ -11,7 +11,7 @@ import {
     type StoredWearPairing
 } from '../wear/pairing';
 import { pollWearPairingInbox, type WearPairingInboxCheck } from '../wear/pairingPoll';
-import { colors, spacing } from '../theme';
+import { spacing, useAppTheme, type AppTheme } from '../theme';
 import { AppButton } from './AppButton';
 import { AppCard } from './AppCard';
 import { AppText } from './AppText';
@@ -19,6 +19,8 @@ import { SectionHeader } from './SectionHeader';
 
 /** Phone-owned discovery and one-time credential relay for the signed Calibrate watch app. */
 export function WearPairingCard({ embedded = false }: { embedded?: boolean } = {}) {
+    const theme = useAppTheme();
+    const styles = useMemo(() => createStyles(theme), [theme]);
     const { api, serverUrl, user } = useAuth();
     const [nodes, setNodes] = useState<WearNode[]>([]);
     const [pairing, setPairing] = useState<StoredWearPairing | null>(null);
@@ -152,7 +154,7 @@ export function WearPairingCard({ embedded = false }: { embedded?: boolean } = {
     return embedded ? <View style={styles.embedded}>{content}</View> : <AppCard>{content}</AppCard>;
 }
 
-const styles = StyleSheet.create({
+const createStyles = (theme: AppTheme) => StyleSheet.create({
     embedded: {
         gap: spacing.md
     },
@@ -160,10 +162,10 @@ const styles = StyleSheet.create({
         gap: spacing.xs,
         padding: spacing.md,
         borderRadius: spacing.sm,
-        backgroundColor: colors.primarySoft
+        backgroundColor: theme.colors.primaryContainer
     },
     status: {
-        color: colors.text,
+        color: theme.colors.onPrimaryContainer,
         fontWeight: '700'
     }
 });

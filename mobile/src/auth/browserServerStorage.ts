@@ -16,8 +16,11 @@ function getBrowserStorage(): BrowserStorage | null {
 /** Restore only the selected server origin; browser credentials remain in HttpOnly cookies. */
 export function readBrowserServerUrl(
     storage: BrowserStorage | null = getBrowserStorage(),
-    fallbackUrl = getDefaultServerUrl()
+    fallbackUrl = getDefaultServerUrl(),
+    preferFallback = process.env.EXPO_PUBLIC_CALIBRATE_AUTO_LOGIN_TEST_USER === 'true'
 ): string {
+    // Automatic local testing must not silently reuse a previously selected remote server.
+    if (preferFallback) return fallbackUrl;
     if (!storage) return fallbackUrl;
     try {
         const storedUrl = storage.getItem(BROWSER_SERVER_URL_KEY);

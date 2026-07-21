@@ -17,6 +17,7 @@ prepare_owned_volume() {
   touch "$marker_path"
 }
 
+prepare_owned_volume "node_modules"
 prepare_owned_volume "backend/node_modules"
 prepare_owned_volume "frontend/node_modules"
 prepare_owned_volume "/home/node/.npm"

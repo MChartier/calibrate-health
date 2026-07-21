@@ -3,6 +3,7 @@ import { Animated, Easing, KeyboardAvoidingView, Modal, Platform, Pressable, Scr
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { type AppTheme, useAppTheme } from '../theme';
 import { useReducedMotionPreference } from '../hooks/useReducedMotionPreference';
+import { getKeyboardAvoidingBehavior } from '../utils/keyboard';
 
 type BottomSheetModalProps = {
     visible: boolean;
@@ -84,7 +85,7 @@ export const BottomSheetModal: React.FC<BottomSheetModalProps> = ({
     return (
         <Modal visible transparent animationType="none" presentationStyle="overFullScreen" onRequestClose={onRequestClose}>
             <KeyboardAvoidingView
-                behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+                behavior={getKeyboardAvoidingBehavior(Platform.OS)}
                 style={styles.root}
             >
                 <Pressable accessibilityRole="button" accessibilityLabel="Close dialog" style={StyleSheet.absoluteFill} onPress={onRequestClose}>
@@ -101,8 +102,11 @@ export const BottomSheetModal: React.FC<BottomSheetModalProps> = ({
                     ]}
                 >
                     <ScrollView
+                        automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}
                         contentContainerStyle={[styles.content, { paddingBottom: Math.max(theme.spacing.lg, insets.bottom + theme.spacing.sm) }]}
+                        keyboardDismissMode="on-drag"
                         keyboardShouldPersistTaps="handled"
+                        showsVerticalScrollIndicator={false}
                     >
                         <View style={styles.handle} />
                         {children}

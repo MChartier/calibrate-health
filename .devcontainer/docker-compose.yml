@@ -3,6 +3,7 @@ services:
     image: mcr.microsoft.com/devcontainers/javascript-node:4-24-bookworm
     volumes:
       - ..:/workspaces/${WORKSPACE_FOLDER_NAME}:cached
+      - workspace_node_modules:/workspaces/${WORKSPACE_FOLDER_NAME}/node_modules
       - backend_node_modules:/workspaces/${WORKSPACE_FOLDER_NAME}/backend/node_modules
       - frontend_node_modules:/workspaces/${WORKSPACE_FOLDER_NAME}/frontend/node_modules
       - ${GIT_DIR}:/workspaces/.git-dir:cached
@@ -31,6 +32,10 @@ services:
       WORKTREE_IS_MAIN: ${WORKTREE_IS_MAIN}
       WORKTREE_NAME: ${WORKTREE_NAME}
       STORYBOOK_PORT: ${STORYBOOK_PORT}
+      EXPO_WEB_DEV_SERVER_PORT: ${FRONTEND_PORT}
+      EXPO_PUBLIC_CALIBRATE_SERVER_URL: http://localhost:${BACKEND_PORT}
+      # Docker Desktop reports a WSL2 kernel, but the container cannot launch the host browser.
+      BROWSER: none
       VITE_DEV_SERVER_PORT: ${VITE_DEV_SERVER_PORT}
       VITE_WORKTREE_COLOR: ${VITE_WORKTREE_COLOR}
       VITE_WORKTREE_NAME: ${VITE_WORKTREE_NAME}
@@ -55,6 +60,8 @@ services:
 
 volumes:
   postgres_data:
+  workspace_node_modules:
+    name: ${WORKSPACE_NODE_MODULES_VOLUME}
   backend_node_modules:
     name: ${BACKEND_NODE_MODULES_VOLUME}
   frontend_node_modules:

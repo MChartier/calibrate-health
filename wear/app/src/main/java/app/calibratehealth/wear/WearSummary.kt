@@ -68,9 +68,6 @@ object SummaryFormatter {
 
     fun calorieCount(value: Int?): String = value?.let(::formatWholeNumber) ?: "--"
 
-    fun completion(summary: WearSummary): String =
-        if (summary.foodDayComplete) "Food day complete" else "Food day in progress"
-
     fun weight(grams: Long?, unit: String): String {
         if (grams == null) return "--"
         return if (unit.lowercase(Locale.US) == "lb") {

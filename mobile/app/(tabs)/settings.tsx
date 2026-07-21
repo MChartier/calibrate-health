@@ -1,9 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Alert, Image, Platform, Pressable, StyleSheet, Switch, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import * as DocumentPicker from 'expo-document-picker';
-import * as ImagePicker from 'expo-image-picker';
 import { ACTIVITY_LEVELS, HEIGHT_UNITS, WEIGHT_UNITS, type ActivityLevel, type HeightUnit, type Sex, type WeightUnit } from '@calibrate/shared';
 import { AppButton } from '../../src/components/AppButton';
 import { AppCard } from '../../src/components/AppCard';
@@ -34,9 +32,9 @@ import { getPushStatusPresentation } from '../../src/notifications/workflow';
 import { millimetersToCentimeters, millimetersToFeetInches } from '../../src/utils/bodyMeasurements';
 import { getTodayDate } from '../../src/utils/dates';
 import { formatCalories } from '../../src/utils/format';
+import { formatGoalSummary } from '../../src/utils/goals';
 import { ACTIVITY_OPTIONS, HEIGHT_UNIT_OPTIONS, SEX_OPTIONS, WEIGHT_UNIT_OPTIONS } from '../../src/utils/profileOptions';
-import { formatTimeZoneLabel } from '../../src/utils/timezones';
-import { colors, radius, spacing, useAppTheme } from '../../src/theme';
+import { radius, spacing, useAppTheme } from '../../src/theme';
 import { useHealthConnect } from '../../src/healthConnect/provider';
 import { clearWearAccountData } from '../../src/wear/accountCleanup';
 
@@ -108,6 +106,7 @@ export default function SettingsScreen() {
     const [passwordError, setPasswordError] = useState<string | null>(null);
     const [passwordStatus, setPasswordStatus] = useState<string | null>(null);
     const profileQuery = useQuery({ queryKey: ['mobile-profile'], queryFn: () => api.getUserProfile() });
+    const goalQuery = useQuery({ queryKey: ['mobile-goal'], queryFn: () => api.getGoals() });
     const sessionsQuery = useQuery({
         queryKey: ['mobile-sessions'],
         queryFn: () => api.getMobileSessions()
@@ -202,6 +201,7 @@ export default function SettingsScreen() {
 
     const updateProfileImage = useMutation({
         mutationFn: async () => {
+            const ImagePicker = await import('expo-image-picker');
             const result = await ImagePicker.launchImageLibraryAsync({
                 mediaTypes: 'images',
                 allowsEditing: true,
@@ -278,6 +278,7 @@ export default function SettingsScreen() {
 
     const importMutation = useMutation({
         mutationFn: async () => {
+            const DocumentPicker = await import('expo-document-picker');
             const result = await DocumentPicker.getDocumentAsync({
                 type: 'application/zip',
                 copyToCacheDirectory: true
@@ -350,19 +351,22 @@ export default function SettingsScreen() {
                             <AppText variant="subtitle" style={{ color: themeColors.onPrimaryContainer }}>{getAvatarLabel(user?.email)}</AppText>
                         )}
                     </View>
-                    <SectionHeader
-                        title="Account overview"
-                        description={user?.email ?? 'Account and app settings.'}
-                        style={styles.summaryText}
-                    />
-                </View>
-                <View style={[styles.summaryRows, { backgroundColor: themeColors.surfaceContainer }]}>
-                    <SummaryRow label="Calorie target" value={formatCalories(profileQuery.data?.calorieSummary.dailyCalorieTarget)} />
-                    <SummaryRow
-                        label="Units"
-                        value={`${weightUnit === WEIGHT_UNITS.LB ? 'lb' : 'kg'} | ${heightUnit === HEIGHT_UNITS.FT_IN ? 'ft/in' : 'cm'}`}
-                    />
-                    <SummaryRow label="Time zone" value={formatTimeZoneLabel(timezone)} />
+                    <View style={styles.summaryText}>
+                        <AppText
+                            accessibilityRole="header"
+                            aria-level={2}
+                            ellipsizeMode="middle"
+                            numberOfLines={1}
+                            style={styles.summaryEmail}
+                        >
+                            {user?.email ?? 'Calibrate account'}
+                        </AppText>
+                        <AppText variant="caption" numberOfLines={2}>
+                            {goalQuery.isLoading
+                                ? 'Loading current goal...'
+                                : formatGoalSummary(goalQuery.data, user?.weight_unit)}
+                        </AppText>
+                    </View>
                 </View>
             </AppCard>
 
@@ -491,7 +495,7 @@ export default function SettingsScreen() {
                     <AppText
                         accessibilityLiveRegion="polite"
                         accessibilityRole={pushStatus.isError ? 'alert' : undefined}
-                        style={pushStatus.isError ? styles.error : undefined}
+                        style={pushStatus.isError ? [styles.error, { color: themeColors.danger }] : undefined}
                         variant={pushStatus.isError ? 'body' : 'muted'}
                     >
                         {pushStatus.message}
@@ -555,12 +559,11 @@ export default function SettingsScreen() {
                     value={hapticsEnabled}
                     onValueChange={setHapticsEnabled}
                 />
-                {savePreferences.error && <AppText style={styles.error}>{savePreferences.error.message}</AppText>}
+                {savePreferences.error && <AppText style={[styles.error, { color: themeColors.danger }]}>{savePreferences.error.message}</AppText>}
                 <AppButton
                     title={savePreferences.isPending ? 'Saving...' : 'Save preferences'}
                     disabled={savePreferences.isPending}
-                    variant="secondary"
-                    leftIcon={<Ionicons name="options-outline" size={18} color={themeColors.onSurface} />}
+                    leftIcon={<Ionicons name="options-outline" size={18} color={themeColors.onPrimary} />}
                     onPress={() => savePreferences.mutate()}
                 />
             </SettingsDetailSheet>
@@ -590,7 +593,7 @@ export default function SettingsScreen() {
                         Imported {importMutation.data.food_logs.valid} food rows and {importMutation.data.weights.valid} weights.
                     </AppText>
                 )}
-                {importMutation.error && <AppText style={styles.error}>{importMutation.error.message}</AppText>}
+                {importMutation.error && <AppText style={[styles.error, { color: themeColors.danger }]}>{importMutation.error.message}</AppText>}
                 <AppButton
                     title={importMutation.isPending ? 'Importing...' : 'Import Lose It ZIP'}
                     variant="secondary"
@@ -640,7 +643,7 @@ export default function SettingsScreen() {
                     </View>
                 </View>
                 {(updateProfileImage.error || removeProfileImage.error) && (
-                    <AppText style={styles.error}>
+                    <AppText style={[styles.error, { color: themeColors.danger }]}>
                         {updateProfileImage.error?.message ?? removeProfileImage.error?.message}
                     </AppText>
                 )}
@@ -655,13 +658,12 @@ export default function SettingsScreen() {
                 <TextField label="Current password" secureTextEntry value={currentPassword} onChangeText={setCurrentPassword} />
                 <TextField label="New password" secureTextEntry value={newPassword} onChangeText={setNewPassword} helperText={`At least ${MIN_PASSWORD_LENGTH} characters.`} />
                 <TextField label="Confirm new password" secureTextEntry value={confirmPassword} onChangeText={setConfirmPassword} />
-                {passwordError && <AppText style={styles.error}>{passwordError}</AppText>}
-                {passwordStatus && <AppText style={styles.success}>{passwordStatus}</AppText>}
+                {passwordError && <AppText style={[styles.error, { color: themeColors.danger }]}>{passwordError}</AppText>}
+                {passwordStatus && <AppText style={[styles.success, { color: themeColors.success }]}>{passwordStatus}</AppText>}
                 <AppButton
                     title={changePassword.isPending ? 'Updating...' : 'Update password'}
                     disabled={changePassword.isPending}
-                    variant="secondary"
-                    leftIcon={<Ionicons name="key-outline" size={18} color={themeColors.onSurface} />}
+                    leftIcon={<Ionicons name="key-outline" size={18} color={themeColors.onPrimary} />}
                     onPress={handleChangePassword}
                 />
             </SettingsDetailSheet>
@@ -673,9 +675,9 @@ export default function SettingsScreen() {
             >
                 <SectionHeader title="Devices" description="Review and revoke active phone and watch sessions." />
                 {sessionsQuery.isLoading && <AppText variant="muted">Loading active devices...</AppText>}
-                {sessionsQuery.error && <AppText style={styles.error}>{sessionsQuery.error.message}</AppText>}
+                {sessionsQuery.error && <AppText style={[styles.error, { color: themeColors.danger }]}>{sessionsQuery.error.message}</AppText>}
                 {sessionsQuery.data?.sessions.map((session) => (
-                    <View key={session.id} style={styles.deviceRow}>
+                    <View key={session.id} style={[styles.deviceRow, { borderBottomColor: themeColors.outlineVariant }]}>
                         <View style={styles.deviceText}>
                             <AppText variant="body" style={styles.deviceName}>
                                 {session.device_name || (session.device_platform === 'wear_os' ? 'Wear OS device' : 'Android device')}
@@ -721,9 +723,9 @@ export default function SettingsScreen() {
                             <SummaryRow label="Failed" value={String(failedMutations.length)} />
                         </View>
                         {failedMutations[0]?.lastError && (
-                            <AppText style={styles.error}>Last failure: {failedMutations[0].lastError}</AppText>
+                            <AppText style={[styles.error, { color: themeColors.danger }]}>Last failure: {failedMutations[0].lastError}</AppText>
                         )}
-                        {outboxErrorMessage && <AppText style={styles.error}>{outboxErrorMessage}</AppText>}
+                        {outboxErrorMessage && <AppText style={[styles.error, { color: themeColors.danger }]}>{outboxErrorMessage}</AppText>}
                         <View style={styles.row}>
                             <AppButton
                                 title={syncOutbox.isPending ? 'Syncing...' : 'Sync now'}
@@ -761,7 +763,7 @@ export default function SettingsScreen() {
                     description="Export a portable JSON copy or permanently delete this account."
                 />
                 {exportAccount.error && (
-                    <AppText style={styles.error}>
+                    <AppText style={[styles.error, { color: themeColors.danger }]}>
                         {exportAccount.error instanceof Error ? exportAccount.error.message : 'Unable to export account data.'}
                     </AppText>
                 )}
@@ -789,8 +791,7 @@ export default function SettingsScreen() {
                 <TextField label="Server URL" value={serverInput} onChangeText={setServerInput} autoCapitalize="none" />
                 <AppButton
                     title="Save connection"
-                    variant="secondary"
-                    leftIcon={<Ionicons name="server-outline" size={18} color={themeColors.onSurface} />}
+                    leftIcon={<Ionicons name="server-outline" size={18} color={themeColors.onPrimary} />}
                     onPress={() => void handleSaveServer()}
                 />
             </SettingsDetailSheet>
@@ -840,7 +841,7 @@ export default function SettingsScreen() {
                     </View>
                 )}
                 <AppText variant="muted">Current calorie target: {formatCalories(profileQuery.data?.calorieSummary.dailyCalorieTarget)}</AppText>
-                {saveProfile.error && <AppText style={styles.error}>{saveProfile.error.message}</AppText>}
+                {saveProfile.error && <AppText style={[styles.error, { color: themeColors.danger }]}>{saveProfile.error.message}</AppText>}
                 <View style={styles.row}>
                     <AppButton
                         title="Cancel"
@@ -884,7 +885,7 @@ export default function SettingsScreen() {
                     editable={!deleteAccount.isPending}
                 />
                 {deleteAccount.error && (
-                    <AppText style={styles.error}>
+                    <AppText style={[styles.error, { color: themeColors.danger }]}>
                         {deleteAccount.error instanceof Error ? deleteAccount.error.message : 'Unable to delete account.'}
                     </AppText>
                 )}
@@ -930,8 +931,10 @@ const PreferenceSwitch: React.FC<PreferenceSwitchProps> = ({ label, value, onVal
         >
             <AppText variant="body" style={styles.switchLabel}>{label}</AppText>
             <Switch
+                accessible={false}
+                importantForAccessibility="no-hide-descendants"
+                pointerEvents="none"
                 value={value}
-                onValueChange={onValueChange}
                 trackColor={{ false: themeColors.outlineVariant, true: themeColors.primaryContainer }}
                 thumbColor={value ? themeColors.primary : themeColors.outline}
             />
@@ -986,16 +989,18 @@ const styles = StyleSheet.create({
         borderRadius: 27,
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: colors.primarySoft,
         overflow: 'hidden'
     },
     summaryText: {
         flex: 1,
-        minWidth: 0
+        minWidth: 0,
+        gap: spacing.xs
+    },
+    summaryEmail: {
+        fontWeight: '900'
     },
     summaryRows: {
         borderRadius: radius.md,
-        backgroundColor: colors.surfaceAlt,
         paddingHorizontal: spacing.md,
         paddingVertical: spacing.sm,
         gap: spacing.xs
@@ -1023,17 +1028,12 @@ const styles = StyleSheet.create({
         borderRadius: 38,
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: colors.primarySoft,
-        borderColor: colors.border,
         borderWidth: StyleSheet.hairlineWidth,
         overflow: 'hidden'
     },
     avatarImage: {
         width: '100%',
         height: '100%'
-    },
-    avatarLabel: {
-        color: colors.primaryDark
     },
     avatarActions: {
         flex: 1,
@@ -1044,8 +1044,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         gap: spacing.md,
         paddingVertical: spacing.sm,
-        borderBottomWidth: StyleSheet.hairlineWidth,
-        borderBottomColor: colors.border
+        borderBottomWidth: StyleSheet.hairlineWidth
     },
     deviceText: {
         flex: 1,
@@ -1076,10 +1075,6 @@ const styles = StyleSheet.create({
     notificationStatus: {
         gap: spacing.sm
     },
-    success: {
-        color: colors.success
-    },
-    error: {
-        color: colors.danger
-    }
+    success: {},
+    error: {}
 });

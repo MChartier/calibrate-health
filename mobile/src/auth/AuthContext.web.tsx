@@ -14,6 +14,7 @@ import { getSessionRestoreErrorMessage } from './authErrors';
 import { readBrowserServerUrl, writeBrowserServerUrl } from './browserServerStorage';
 import type { AccountDeletionCleanupNotice } from '../account/accountDeletionNotice';
 import { cleanupBrowserPushBeforeSessionChange } from '../notifications/browserPush.web';
+import { restoreBrowserDevelopmentSession } from './devAutoLogin';
 
 type AuthContextValue = {
     api: CalibrateApiClient;
@@ -70,7 +71,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     useEffect(() => {
         let active = true;
-        void api.getMe().then(({ user: nextUser }) => {
+        void restoreBrowserDevelopmentSession(api, serverUrl).then(({ user: nextUser }) => {
             if (active) setUser(nextUser);
         }).catch((error: unknown) => {
             if (!active || (error instanceof ApiError && error.status === 401)) return;
@@ -79,7 +80,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             if (active) setIsLoading(false);
         });
         return () => { active = false; };
-    }, [api]);
+    }, [api, serverUrl]);
 
     const probeServerUrl = useCallback(async (value: string): Promise<ServerConnectionResult> => {
         const currentRequest = requestId.current + 1;

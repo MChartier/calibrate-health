@@ -29,4 +29,15 @@ describe('Screen', () => {
 
         expect(contentStyle).toEqual(expect.objectContaining({ width: '100%', maxWidth: 1040, alignSelf: 'center' }));
     });
+
+    it('uses FAB clearance instead of stacking it on normal bottom padding', () => {
+        const view = render(
+            <Screen testID="responsive-screen" reserveBottomTabs>
+                <AppText>Dashboard</AppText>
+            </Screen>
+        );
+        const contentStyle = StyleSheet.flatten(view.getByTestId('responsive-screen').props.contentContainerStyle);
+
+        expect(contentStyle.paddingBottom).toBe(88);
+    });
 });

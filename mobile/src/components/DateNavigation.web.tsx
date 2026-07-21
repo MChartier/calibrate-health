@@ -1,6 +1,6 @@
 import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { AppText } from './AppText';
 import { type AppTheme, useAppTheme } from '../theme';
 import type { DateNavigationProps } from './DateNavigation.types';
@@ -10,8 +10,22 @@ export const DateNavigation: React.FC<DateNavigationProps> = ({ navigation, styl
     const theme = useAppTheme();
     const styles = React.useMemo(() => createStyles(theme), [theme]);
     const [isDateFocused, setIsDateFocused] = React.useState(false);
+    const dateInputRef = React.useRef<HTMLInputElement>(null);
     const handleDateChange = (event: React.FormEvent<HTMLInputElement>) => {
         if (event.currentTarget.value) navigation.setDate(event.currentTarget.value);
+    };
+    const openDatePicker = () => {
+        const input = dateInputRef.current;
+        if (!input) return;
+        try {
+            if (typeof input.showPicker === 'function') {
+                input.showPicker();
+                return;
+            }
+        } catch {
+            // The native input still handles its own trusted click when showPicker is unavailable.
+        }
+        input.focus();
     };
 
     return (
@@ -23,24 +37,27 @@ export const DateNavigation: React.FC<DateNavigationProps> = ({ navigation, styl
                     disabled={!navigation.canGoBack}
                     onPress={navigation.goToPreviousDate}
                 />
-                <View style={styles.datePill}>
+                <View
+                    style={[
+                        styles.datePill,
+                        isDateFocused && styles.datePillFocused
+                    ]}
+                >
                     <AppText variant="subtitle" numberOfLines={2} style={styles.dateText}>
                         {navigation.isToday ? 'Today' : navigation.selectedDateLabel}
                     </AppText>
                     <Ionicons name="calendar-outline" size={20} color={theme.colors.primary} />
                     <input
+                        ref={dateInputRef}
                         aria-label="Choose date"
                         max={navigation.maxDate}
                         min={navigation.minDate}
                         onBlur={() => setIsDateFocused(false)}
                         onChange={handleDateChange}
+                        onClick={openDatePicker}
                         onFocus={() => setIsDateFocused(true)}
                         onInput={handleDateChange}
-                        style={{
-                            ...WEB_DATE_INPUT_STYLE,
-                            outline: isDateFocused ? `2px solid ${theme.colors.primary}` : 'none',
-                            outlineOffset: -3
-                        }}
+                        style={WEB_DATE_INPUT_STYLE}
                         type="date"
                         value={navigation.selectedDate}
                     />
@@ -115,6 +132,10 @@ function createStyles(theme: AppTheme) {
             paddingVertical: theme.spacing.xs,
             overflow: 'hidden'
         },
+        datePillFocused: {
+            borderColor: theme.colors.primary,
+            borderWidth: 2
+        },
         dateText: {
             textAlign: 'center',
             flexShrink: 1
@@ -135,5 +156,5 @@ const WEB_DATE_INPUT_STYLE: React.CSSProperties = {
     height: '100%',
     border: 0,
     cursor: 'pointer',
-    opacity: 0.01
+    opacity: 0.001
 };

@@ -280,10 +280,24 @@ test('authenticated shell renders real dashboard data and navigates release surf
   await expect(page).toHaveURL(/\/today$/);
   await expect(page.getByRole('heading', { name: 'Today', exact: true })).toBeVisible();
   await expect(page.getByText('Daily balance', { exact: true })).toBeVisible();
+  const foodLogSummary = page.getByRole('button', { name: /Food log.*View full log/ });
+  await expect(foodLogSummary).toContainText('Breakfast');
+  await expect(foodLogSummary).toContainText('Greek yogurt and berries');
+  await foodLogSummary.click();
+  await expect(page).toHaveURL((url) => url.pathname === '/food-log' && Boolean(url.searchParams.get('date')));
+  await expect(page.getByRole('heading', { name: 'Food log', exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Expand Breakfast', exact: true }).click();
-  await expect(page.getByText('Greek yogurt and berries', { exact: true })).toBeVisible();
-  await expect(page.getByText('Activity', { exact: true })).toBeVisible();
+  await expect(page.getByRole('main').getByText('Greek yogurt and berries', { exact: true })).toBeVisible();
   await expectNoHorizontalOverflow(page);
+
+  await page.getByRole('tab', { name: /Today$/ }).click();
+  await expect(page).toHaveURL(/\/today$/);
+
+  await page.getByRole('button', { name: 'Open notifications', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Notifications', exact: true })).toBeVisible();
+  await expect(page.getByText('All caught up', { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Close notifications', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Notifications', exact: true })).toBeHidden();
 
   await page.goto('/log?date=2026-07-18&meal=DINNER');
   await expect(page).toHaveURL((url) => url.pathname === '/today' && url.searchParams.get('openAddFood') === 'true');
@@ -325,11 +339,13 @@ test('authenticated shell renders real dashboard data and navigates release surf
   await expect(page).toHaveURL(/\/progress$/);
   await expect(page.getByText('Goal projection', { exact: true })).toBeVisible();
 
-  await page.getByRole('tab', { name: /Account$/ }).click();
+  await page.getByRole('button', { name: 'Open account', exact: true }).click();
   await expect(page).toHaveURL(/\/settings$/);
   await expect(page.getByRole('heading', { name: 'Account', exact: true })).toBeVisible();
   await expect(page.getByText('Personal', { exact: true })).toBeVisible();
   await expect(page.getByText('Connections', { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: /Health Connect/ }).click();
+  await expect(page.getByRole('button', { name: 'View activity history', exact: true })).toBeVisible();
   await expectNoHorizontalOverflow(page);
 });
 
@@ -364,7 +380,7 @@ test('a browser write survives reload and replays exactly once with its operatio
   const increaseWeight = page.getByRole('button', { name: 'Increase Weight', exact: true });
   await expect(increaseWeight).toBeEnabled();
   await increaseWeight.click();
-  await page.getByRole('button', { name: 'Save weight', exact: true }).click();
+  await page.getByRole('button', { name: 'Log weight', exact: true }).click();
 
   await expect(page.getByRole('button', { name: '1 offline changes pending' })).toBeVisible();
   expect(operationIds).toHaveLength(1);

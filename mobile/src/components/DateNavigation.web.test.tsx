@@ -5,14 +5,18 @@ import type { LogDateNavigation } from '../hooks/useLogDateNavigation';
 type TestInstance = {
     props: Record<string, unknown>;
     findByType: (type: string) => TestInstance;
+    findByProps: (props: Record<string, unknown>) => TestInstance;
 };
 
 const testRenderer = require('react-test-renderer') as {
     act: (callback: () => void) => void;
-    create: (element: React.ReactElement) => { root: TestInstance };
+    create: (
+        element: React.ReactElement,
+        options?: { createNodeMock: (element: { type: unknown }) => unknown }
+    ) => { root: TestInstance };
 };
 
-jest.mock('@expo/vector-icons', () => ({ Ionicons: () => null }));
+jest.mock('@expo/vector-icons/Ionicons', () => () => null);
 jest.mock('../theme', () => ({
     useAppTheme: () => ({
         colors: {
@@ -42,6 +46,7 @@ jest.mock('../theme', () => ({
 describe('DateNavigation web', () => {
     it('uses a constrained browser date input and forwards date selection', () => {
         const setDate = jest.fn();
+        const showPicker = jest.fn();
         const navigation: LogDateNavigation = {
             selectedDate: '2026-07-17',
             selectedDateLabel: 'Jul 17, 2026',
@@ -59,7 +64,11 @@ describe('DateNavigation web', () => {
         let tree: { root: TestInstance };
 
         testRenderer.act(() => {
-            tree = testRenderer.create(<DateNavigation navigation={navigation} />);
+            tree = testRenderer.create(<DateNavigation navigation={navigation} />, {
+                createNodeMock: (element) => element.type === 'input'
+                    ? { showPicker, focus: jest.fn(), click: jest.fn() }
+                    : null
+            });
         });
 
         const input = tree!.root.findByType('input');
@@ -77,5 +86,10 @@ describe('DateNavigation web', () => {
             });
         });
         expect(setDate).toHaveBeenCalledWith('2026-07-16');
+
+        testRenderer.act(() => {
+            (input.props.onClick as () => void)();
+        });
+        expect(showPicker).toHaveBeenCalledTimes(1);
     });
 });

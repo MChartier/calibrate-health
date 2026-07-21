@@ -85,74 +85,53 @@ encrypted backup monitoring, and the clean-instance restore procedure.
 
 ## Development
 
-### Quickstart (devcontainer)
+### One-command quickstart
 
-The devcontainer starts quickly and does not install app dependencies or reset the database automatically. Run
-`npm run setup` inside the container when you need the full app environment; it installs dependencies, generates the
-Prisma client, applies migrations, and seeds deterministic dev data.
-
-This repo supports a repo-local `.env` file (gitignored) for devcontainer secrets. Start by copying `.env.example` to
-`.env`, then rebuild the devcontainer so `.devcontainer/.env` is regenerated and Docker can pass the values into the
-container.
-
-Devcontainer CLI helpers (worktree-friendly, safe to run from any worktree):
-
-- Start or reuse a container: `npm run devcontainer:up -- <branch|path>`
-- Start a fresh container: `npm run devcontainer:up:new -- <branch|path>`
-- Open a shell in the workspace: `npm run devcontainer:shell -- <branch|path>`
-- Recreate then shell: `npm run devcontainer:shell:new -- <branch|path>`
-
-If you omit `<branch|path>`, the current directory is used. You can pass a worktree branch name (e.g. `alpha`, `beta`)
-or a path. For example: `npm run devcontainer:shell -- alpha` or
-`npm run devcontainer:shell -- --path /home/matthew/code/calibrate-health-alpha`.
-
-#### Codex app worktrees
-
-Codex app local environments are defined under `.codex/environments/`. The `local-devcontainer` environment calls the
-tracked setup script at `.codex/local-environment.setup.mjs`:
+Prerequisites are Node.js `20.19+` or `22.12+`, npm, and Docker Desktop. The Docker daemon does not need to be open
+first on Windows or macOS; the launcher attempts to start Docker Desktop and waits for it to become ready.
 
 ```sh
-node .codex/local-environment.setup.mjs
+npm run dev
 ```
 
-The script targets `CODEX_WORKTREE_PATH` when the Codex app provides it, installs the repo-local Dev Containers CLI if
-needed into a host-level tool cache, copies the source checkout's ignored `.env` into the new worktree when needed, and
-starts that worktree's devcontainer with isolated Compose services and ports. It intentionally does not install app
-dependencies, run devcontainer post-create hooks, migrate the database, or seed data; those steps are exposed as Codex
-actions.
-For Codex-managed worktrees whose folder is still named `calibrate-health`, the devcontainer identity is derived from
-the full worktree path so concurrent app-created worktrees do not share a Compose project, database volume, or dev ports.
-Backend and frontend `node_modules` are mounted as shared lockfile-hashed Docker volumes, so sibling worktrees with the
-same lockfiles can reuse installed dependencies without writing them into the Windows bind mount.
+That command creates or reuses an isolated devcontainer for the current worktree, starts its Postgres service, installs
+the Expo workspace and backend dependencies, generates Prisma, applies migrations, seeds deterministic test data, and
+starts the backend plus Expo web client. The generated client and API URLs are printed in the terminal. No local
+Postgres install, `.env` file, or per-machine environment variables are required for the standard workflow.
 
-Recommended Codex app actions:
+Dependencies use lockfile-keyed Docker volumes, including the root Expo workspace, so Linux container packages never
+overwrite host packages and sibling worktrees can reuse valid caches. Each worktree also receives stable, non-conflicting
+ports and its own database volume.
 
-- Setup: `npm run codex:setup-app`
-- Recreate Devcontainer: `npm run codex:devcontainer:recreate`
-- Stop Devcontainer: `npm run codex:devcontainer:down`
-- Migrate DB: `npm run codex:db:migrate`
-- Reset DB: `npm run codex:db:reset`
-- Dev server with test-user auto-login: `npm run codex:dev`
-- Storybook component workbench: `npm run codex:storybook`
-- Test: `npm run codex:test`
-- Full CI: `npm run codex:ci`
-- Shell: `npm run codex:shell`
+The normal development lifecycle is intentionally small:
 
-The Dev action runs the same setup checks as Setup first, but cached dependencies, already-applied migrations, and
-existing seed data are skipped. After the preflight passes, it starts `npm run dev:test`.
-Use Recreate Devcontainer after changing devcontainer config or when the worktree's container state needs a clean
-replacement. It tears down the generated Compose stack for the current worktree before starting a fresh container.
-Use Stop Devcontainer to remove the current worktree's generated devcontainer stack during cleanup.
+- `npm run dev`: bootstrap anything missing and run the backend plus Expo web with the seeded user signed in.
+- `npm run dev:bootstrap`: create the devcontainer and Postgres service without installing app dependencies.
+- `npm run dev:setup`: install Expo/backend dependencies, generate Prisma, migrate, and seed without starting servers.
+- `npm run dev:build`: run the same setup preflight, then build and validate the Expo web export.
+- `npm run dev:manual-auth`: run the app without automatic test-user login.
+- `npm run dev:reset`: reset the disposable worktree database and restore seed data.
+- `npm run dev:shell`: open a shell in the worktree devcontainer.
+- `npm run dev:down`: stop and remove the worktree's containers; named dependency and database volumes are retained.
 
-When using VS Code with a Codex-created worktree container, use **Dev Containers: Attach to Running Container** and open
-`/workspaces/calibrate-health` inside the container. **Reopen in Container** follows VS Code's own devcontainer flow and
-may create or recreate a separate container.
+Setup is incremental: current dependencies, applied migrations, and existing seed data are skipped. Run
+`npm run dev:bootstrap` only when you specifically want infrastructure without application setup; most developers can
+use `npm run dev` directly after cloning.
 
-1. Start the app: `npm run dev`
-2. Frontend: `http://localhost:5173` (proxies `/auth` and `/api` to the backend)
-3. Backend/API: `http://localhost:3000`
-4. Dev dashboard (dev-only): `http://localhost:5173/dev` (compare providers + test barcode scanning)
-5. Component workbench: `npm run dev:storybook` (local Storybook defaults to `http://localhost:6006`; devcontainer worktrees use the generated `STORYBOOK_PORT` in `.devcontainer/.env`)
+#### Advanced host and worktree commands
+
+`npm run dev:host` runs the preflight and servers directly on the host for developers who intentionally manage their own
+Postgres instance and `backend/.env`. It is not required for normal development.
+
+The lower-level devcontainer helpers remain available for selecting another worktree by branch or path:
+
+- `npm run devcontainer:up -- <branch|path>`
+- `npm run devcontainer:up:new -- <branch|path>`
+- `npm run devcontainer:shell -- <branch|path>`
+- `npm run devcontainer:shell:new -- <branch|path>`
+
+Codex app actions use the same devcontainer launcher and caches as the ordinary `dev:*` commands. Codex-specific aliases
+such as `npm run codex:dev`, `npm run codex:setup-app`, and `npm run codex:ci` remain available for app actions.
 
 #### Food data provider (devcontainer)
 
@@ -186,42 +165,32 @@ The Codex app runs outside the devcontainer and uses the repo-local actions abov
 The devcontainer does not install or configure the Codex CLI by default, which keeps new worktree startup focused on
 creating the app container quickly.
 
-#### Dev test user (optional)
+#### Dev test user
 
 The seed script creates a deterministic local test account (`test@calibratehealth.app`). To speed up onboarding
-iterations you can auto-login this user and reset its onboarding state:
+iterations, the local app auto-logs in this user by default. The backend creates the seeded data on demand when the
+database is otherwise ready:
 
-- Start with auto-login enabled: `npm run dev:test` (sets `AUTO_LOGIN_TEST_USER=true`)
+- Start with automatic test-user login: `npm run dev` (`npm run dev:test` remains as a compatible alias)
+- Exercise the login and registration screens instead: `npm run dev:manual-auth`
 - Reset the test user onboarding state: `npm run dev:reset-test-user-onboarding`
-
-### Quickstart (local)
-
-Prereqs: Node.js `20.19+` or `22.12+`, npm, and a Postgres database.
-
-1. Set env vars (recommended via `backend/.env`):
-   - `DATABASE_URL=postgresql://user:password@localhost:5432/fitness_app?schema=public`
-   - `SESSION_SECRET=some-secret`
-   - `PORT=3000` (optional)
-   - `FOOD_DATA_PROVIDER=fatsecret` (optional; defaults by available credentials in the devcontainer)
-   - `FATSECRET_CLIENT_ID=your-client-id` (required when `FOOD_DATA_PROVIDER=fatsecret`)
-   - `FATSECRET_CLIENT_SECRET=your-client-secret` (required when `FOOD_DATA_PROVIDER=fatsecret`)
-   - `USDA_API_KEY=your-usda-key` (required when `FOOD_DATA_PROVIDER=usda`)
-2. Install deps + generate Prisma client: `npm run setup`
-3. Create tables (apply migrations): `npm run db:migrate`
-4. Start the app: `npm run dev`
-
-If you see Prisma errors like "The table `public.User` does not exist", you haven't applied migrations yet - run
-`npm run db:migrate`.
 
 ### Common scripts
 
-- `npm run dev`: runs backend + frontend together (`backend/` + `frontend/`) with `VITE_ENABLE_SW_DEV=1` for local PWA/push validation.
-- `npm run dev:test`: same as `npm run dev`, but auto-logs in the seeded dev user.
+- `npm run dev`: provisions the devcontainer/Postgres stack, installs missing dependencies, verifies migrations and
+  seed data, then runs the backend and Expo web client with the seeded dev user logged in.
+- `npm run dev:test`: explicit alias for the same preflight and seeded-user workflow.
+- `npm run dev:manual-auth`: runs the same preflight and local stack without auto-login for authentication testing.
+- `npm run dev:setup`: prepares dependencies, Prisma, migrations, and seed data without starting the servers.
+- `npm run dev:build`: prepares the environment and validates the Expo web production export.
+- `npm run dev:reset`: reset the disposable worktree database and seed it again.
+- `npm run dev:down`: stop the current worktree's devcontainer stack.
 - `npm run dev:reset-test-user-onboarding`: reset the dev test user to pre-onboarding.
-- `npm run dev:backend`: runs only the backend (`http://localhost:3000`).
-- `npm run dev:frontend`: runs only the frontend (`http://localhost:5173`).
+- `npm run dev:backend`: advanced host-only backend launcher.
+- `npm run dev:frontend` / `npm run dev:expo-web`: advanced host-only Expo web launcher.
+- `npm run dev:vite`: runs the legacy Vite rollback client (`http://localhost:5173`).
 - `npm run dev:storybook`: runs Storybook for isolated React component development. Local runs default to `http://localhost:6006`; devcontainer worktrees use the generated `STORYBOOK_PORT` so concurrent worktrees do not collide.
-- `npm run setup`: installs deps, runs `prisma generate`, applies migrations, and seeds dev data when missing.
+- `npm run setup`: lower-level in-container/host setup for all packages, including the legacy frontend.
 - `npm run db:migrate`: applies committed migrations (use for fresh DBs, CI, and prod).
 - `npm test`: runs backend unit tests (Node.js test runner).
 
@@ -236,7 +205,7 @@ More:
 - `npm --prefix backend run db:push:reset`: dev-only schema reset using `prisma db push` (fast, skips migrations).
 - `npm run db:studio`: Prisma Studio (DB browser).
 - `npm run build`: build the legacy Vite rollback client.
-- `npm run build:expo-web`: build and validate the production Expo web export.
+- `npm run build:expo-web`: lower-level Expo web export without the devcontainer setup preflight; prefer `dev:build` from the host.
 - `npm run build:mobile`: type-check the Expo React Native Android client.
 - `npm run test:mobile`: run mobile unit tests.
 - `npm run test:web:e2e`: run the local Chrome E2E path for onboarding, food, weight, and narrow responsive behavior.
@@ -279,9 +248,11 @@ Expo push notifications, haptics, camera barcode scanning, and the shared Calibr
 Quick start:
 
 ```sh
-npm install
-npm --prefix mobile run dev
+npm run dev
 ```
+
+This standard path brings up the local API, Postgres, and Expo web client. Host-side native Android commands still use
+the commands in `mobile/README.md` when Android build tools are available.
 
 For Android emulator development, the app defaults to `http://10.0.2.2:3000` in dev builds so it can reach the local
 backend. Production builds default to `https://calibratehealth.app`, and the sign-in screen allows a custom self-hosted

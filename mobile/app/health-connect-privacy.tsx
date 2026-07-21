@@ -1,13 +1,11 @@
 import React from 'react';
-import { Alert, Linking, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Alert, Linking } from 'react-native';
 import { router } from 'expo-router';
 import { AppButton } from '../src/components/AppButton';
 import { AppCard } from '../src/components/AppCard';
 import { AppText } from '../src/components/AppText';
+import { PageHeader } from '../src/components/PageHeader';
 import { Screen } from '../src/components/Screen';
-import { SectionHeader } from '../src/components/SectionHeader';
-import { colors, spacing } from '../src/theme';
 import { useAuth } from '../src/auth/AuthContext';
 
 export default function HealthConnectPrivacyScreen() {
@@ -24,18 +22,11 @@ export default function HealthConnectPrivacyScreen() {
 
     return (
         <Screen safeTop>
-            <AppButton
-                title="Back"
-                variant="ghost"
-                leftIcon={<Ionicons name="arrow-back" size={18} color={colors.text} />}
-                onPress={() => router.back()}
-                style={styles.backButton}
-            />
-            <SectionHeader
+            <PageHeader
                 eyebrow="Health Connect"
-                headingLevel={1}
                 title="How Calibrate uses health data"
                 description="Clear, read-only access that stays under your control."
+                onBack={() => router.back()}
             />
             <AppCard>
                 <AppText variant="subtitle">What Calibrate requests</AppText>
@@ -60,7 +51,6 @@ export default function HealthConnectPrivacyScreen() {
                 <AppButton
                     title="Open complete privacy policy"
                     variant="secondary"
-                    leftIcon={<Ionicons name="open-outline" size={18} color={colors.text} />}
                     accessibilityHint="Opens the complete privacy policy hosted by your selected Calibrate server."
                     onPress={() => void openCompletePrivacyPolicy()}
                 />
@@ -68,11 +58,3 @@ export default function HealthConnectPrivacyScreen() {
         </Screen>
     );
 }
-
-const styles = StyleSheet.create({
-    backButton: {
-        alignSelf: 'flex-start',
-        minHeight: 40,
-        paddingHorizontal: spacing.sm
-    }
-});

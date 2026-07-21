@@ -1,12 +1,12 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Pressable, StyleSheet, View, type ViewProps } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import type { GoalEntry, MetricEntry } from '@calibrate/api-client';
 import { AppCard } from './AppCard';
 import { AppText } from './AppText';
 import { ProgressBar } from './ProgressBar';
 import { SectionHeader } from './SectionHeader';
-import { colors, radius, spacing } from '../theme';
+import { radius, spacing, useAppTheme, type AppTheme } from '../theme';
 import { computeGoalProgress, computeGoalProjection, getGoalModeFromDailyDeficit } from '../utils/goals';
 import { formatSignedCalories, formatWeight, formatWeightUnit } from '../utils/format';
 import type { UserClientPayload } from '@calibrate/api-client';
@@ -46,14 +46,19 @@ export const GoalProgressCard: React.FC<GoalProgressCardProps> = ({
     style,
     ...props
 }) => {
+    const theme = useAppTheme();
+    const styles = useMemo(() => createStyles(theme), [theme]);
+
     if (!goal) {
         return (
             <AppCard {...props} style={style}>
-                <View style={styles.headerRow}>
-                    <SectionHeader title={title} description="Latest active goal and calorie plan." style={styles.headerText} />
-                    {onEditGoal && <GoalActionButton label="Set goal" onPress={onEditGoal} />}
-                </View>
+                <SectionHeader title={title} description="Latest active goal and calorie plan." />
                 <AppText variant="muted">No goal configured yet.</AppText>
+                {onEditGoal && (
+                    <View style={styles.footerActionRow}>
+                        <GoalActionButton label="Set goal" onPress={onEditGoal} theme={theme} />
+                    </View>
+                )}
             </AppCard>
         );
     }
@@ -75,10 +80,7 @@ export const GoalProgressCard: React.FC<GoalProgressCardProps> = ({
 
     return (
         <AppCard {...props} style={style}>
-            <View style={styles.headerRow}>
-                <SectionHeader title={title} description={describeGoalPlan(goal)} style={styles.headerText} />
-                {onEditGoal && <GoalActionButton label="Set a new goal" onPress={onEditGoal} />}
-            </View>
+            <SectionHeader title={title} description={describeGoalPlan(goal)} />
             <View style={styles.projectionBlock}>
                 <AppText variant="caption">Projected goal date</AppText>
                 <AppText variant="subtitle" style={styles.projectionValue}>{projection}</AppText>
@@ -95,51 +97,54 @@ export const GoalProgressCard: React.FC<GoalProgressCardProps> = ({
             {typeof targetCalories === 'number' && (
                 <AppText variant="caption">Current target: {Math.round(targetCalories).toLocaleString()} kcal/day</AppText>
             )}
+            {onEditGoal && (
+                <View style={styles.footerActionRow}>
+                    <GoalActionButton label="Set a new goal" onPress={onEditGoal} theme={theme} />
+                </View>
+            )}
         </AppCard>
     );
 };
 
-const GoalActionButton: React.FC<{ label: string; onPress: () => void }> = ({ label, onPress }) => (
-    <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={label}
-        onPress={onPress}
-        style={({ pressed }) => [styles.actionButton, pressed && styles.pressed]}
-    >
-        <Ionicons name="flag-outline" size={16} color={colors.primaryDark} />
-        <AppText numberOfLines={1} adjustsFontSizeToFit style={styles.actionText}>{label}</AppText>
-    </Pressable>
-);
+const GoalActionButton: React.FC<{ label: string; onPress: () => void; theme: AppTheme }> = ({ label, onPress, theme }) => {
+    const styles = useMemo(() => createStyles(theme), [theme]);
 
-const styles = StyleSheet.create({
-    headerRow: {
-        flexDirection: 'row',
-        alignItems: 'flex-start',
-        justifyContent: 'space-between',
-        gap: spacing.md
-    },
-    headerText: {
-        flex: 1,
-        minWidth: 0
-    },
+    return (
+        <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={label}
+            onPress={onPress}
+            style={({ pressed }) => [styles.actionButton, pressed && styles.pressed]}
+        >
+            <Ionicons name="flag-outline" size={16} color={theme.colors.primary} />
+            <AppText numberOfLines={1} adjustsFontSizeToFit style={styles.actionText}>{label}</AppText>
+        </Pressable>
+    );
+};
+
+const createStyles = (theme: AppTheme) => StyleSheet.create({
     actionButton: {
-        minHeight: 40,
+        minHeight: 48,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
         gap: spacing.xs,
         borderRadius: radius.md,
-        borderColor: colors.primary,
+        borderColor: theme.colors.primary,
         borderWidth: StyleSheet.hairlineWidth,
         paddingHorizontal: spacing.md
     },
     actionText: {
-        color: colors.primaryDark,
+        color: theme.colors.primary,
         fontWeight: '900',
         flexShrink: 1
     },
     pressed: {
-        backgroundColor: colors.surfacePressed
+        backgroundColor: theme.colors.surfacePressed
+    },
+    footerActionRow: {
+        flexDirection: 'row',
+        justifyContent: 'flex-end'
     },
     goalEndpoints: {
         flexDirection: 'row',
@@ -150,11 +155,11 @@ const styles = StyleSheet.create({
     projectionBlock: {
         gap: spacing.xs,
         borderRadius: radius.md,
-        backgroundColor: colors.warningSoft,
+        backgroundColor: theme.colors.warningContainer,
         paddingHorizontal: spacing.md,
         paddingVertical: spacing.sm
     },
     projectionValue: {
-        color: colors.warningDark
+        color: theme.colors.onWarningContainer
     }
 });

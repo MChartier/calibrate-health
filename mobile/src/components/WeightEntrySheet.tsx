@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as Haptics from 'expo-haptics';
 import type { MetricEntry } from '@calibrate/api-client';
@@ -14,7 +14,9 @@ import { executeOrQueueMutation, OFFLINE_MUTATION_OPERATIONS } from '../offline/
 import { useOfflineOutbox } from '../offline/provider';
 import { formatDateOnlyForDisplay } from '../utils/dates';
 import { formatWeightUnit } from '../utils/format';
-import { colors, spacing } from '../theme';
+import { getMetricDate } from '../utils/metrics';
+import { spacing, useAppTheme } from '../theme';
+import { WEIGHT_INPUT_INCREMENT } from '../config/inputPrecision';
 
 type WeightEntrySheetProps = {
     visible: boolean;
@@ -23,16 +25,9 @@ type WeightEntrySheetProps = {
     onSaved?: () => void;
 };
 
-const WEIGHT_ENTRY_STEP = 0.1; // Matches the PWA and backend rounding so daily weigh-ins are not coarse.
-const WEIGHT_ENTRY_MIN = 0.1;
-
-function toDatePart(value: string): string {
-    return value.split('T')[0] ?? value;
-}
-
 function findMetricOnOrBeforeDate(metrics: MetricEntry[], targetDate: string): MetricEntry | null {
-    const sorted = metrics.slice().sort((a, b) => toDatePart(b.date).localeCompare(toDatePart(a.date)));
-    return sorted.find((metric) => toDatePart(metric.date) <= targetDate) ?? null;
+    const sorted = metrics.slice().sort((a, b) => getMetricDate(b).localeCompare(getMetricDate(a)));
+    return sorted.find((metric) => getMetricDate(metric) <= targetDate) ?? null;
 }
 
 function formatWeightInput(value: number): string {
@@ -43,6 +38,7 @@ function formatWeightInput(value: number): string {
  * Focused weigh-in bottom sheet used by Goals and deep-linked weight routes.
  */
 export const WeightEntrySheet: React.FC<WeightEntrySheetProps> = ({ visible, date, onClose, onSaved }) => {
+    const { colors } = useAppTheme();
     const { api, user } = useAuth();
     const { enqueue } = useOfflineOutbox();
     const queryClient = useQueryClient();
@@ -55,7 +51,7 @@ export const WeightEntrySheet: React.FC<WeightEntrySheetProps> = ({ visible, dat
     });
 
     const existingMetric = useMemo(() => {
-        return (metricsQuery.data ?? []).find((metric) => toDatePart(metric.date) === date) ?? null;
+        return (metricsQuery.data ?? []).find((metric) => getMetricDate(metric) === date) ?? null;
     }, [date, metricsQuery.data]);
 
     const prefillMetric = useMemo(() => {
@@ -121,7 +117,7 @@ export const WeightEntrySheet: React.FC<WeightEntrySheetProps> = ({ visible, dat
     });
 
     const parsedWeight = Number(weight);
-    const canSave = Number.isFinite(parsedWeight) && parsedWeight >= WEIGHT_ENTRY_MIN;
+    const canSave = Number.isFinite(parsedWeight) && parsedWeight >= WEIGHT_INPUT_INCREMENT;
     const isBusy = metricsQuery.isLoading || addWeight.isPending || deleteWeight.isPending;
     const loadError = metricsQuery.error instanceof Error ? metricsQuery.error.message : null;
     const saveError = addWeight.error instanceof Error ? addWeight.error.message : null;
@@ -135,20 +131,20 @@ export const WeightEntrySheet: React.FC<WeightEntrySheetProps> = ({ visible, dat
             )}
             {!existingMetric && prefillMetric && (
                 <AppText variant="muted">
-                    Using your last weigh-in from {formatDateOnlyForDisplay(toDatePart(prefillMetric.date))}.
+                    Using your last weigh-in from {formatDateOnlyForDisplay(getMetricDate(prefillMetric))}.
                 </AppText>
             )}
             <NumberStepperField
                 label="Weight"
                 value={weight}
                 onChangeText={setWeight}
-                step={WEIGHT_ENTRY_STEP}
-                min={WEIGHT_ENTRY_MIN}
+                step={WEIGHT_INPUT_INCREMENT}
+                min={WEIGHT_INPUT_INCREMENT}
                 suffix={weightUnit}
                 editable={!isBusy}
             />
             {(loadError || saveError || deleteError) && (
-                <AppText style={styles.error}>{loadError ?? saveError ?? deleteError}</AppText>
+                <AppText style={{ color: colors.danger }}>{loadError ?? saveError ?? deleteError}</AppText>
             )}
             {existingMetric && (
                 <AppButton
@@ -163,14 +159,14 @@ export const WeightEntrySheet: React.FC<WeightEntrySheetProps> = ({ visible, dat
                 <AppButton
                     title="Cancel"
                     variant="secondary"
-                    leftIcon={<Ionicons name="close" size={18} color={colors.text} />}
+                    leftIcon={<Ionicons name="close" size={18} color={colors.onSurface} />}
                     onPress={onClose}
                     style={styles.rowButton}
                 />
                 <AppButton
                     title={addWeight.isPending ? 'Saving...' : existingMetric ? 'Save weight' : 'Log weight'}
                     disabled={!canSave || isBusy}
-                    leftIcon={<Ionicons name="scale-outline" size={18} color="#ffffff" />}
+                    leftIcon={<Ionicons name="scale-outline" size={18} color={colors.onPrimary} />}
                     onPress={() => addWeight.mutate()}
                     style={styles.rowButton}
                 />
@@ -186,8 +182,5 @@ const styles = StyleSheet.create({
     },
     rowButton: {
         flex: 1
-    },
-    error: {
-        color: colors.danger
     }
 });

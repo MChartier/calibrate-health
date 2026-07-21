@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { Animated, Easing, StyleSheet, type DimensionValue, type ViewStyle } from 'react-native';
-import { colors, radius } from '../theme';
+import { radius, useAppTheme } from '../theme';
+import { useReducedMotionPreference } from '../hooks/useReducedMotionPreference';
 
 type SkeletonBlockProps = {
     width?: DimensionValue;
@@ -18,9 +19,16 @@ export const SkeletonBlock: React.FC<SkeletonBlockProps> = ({
     radius: blockRadius = radius.md,
     style
 }) => {
+    const { colors } = useAppTheme();
+    const reduceMotion = useReducedMotionPreference();
     const opacity = useRef(new Animated.Value(0.48)).current;
 
     useEffect(() => {
+        if (reduceMotion) {
+            opacity.setValue(0.68);
+            return;
+        }
+
         const animation = Animated.loop(
             Animated.sequence([
                 Animated.timing(opacity, {
@@ -40,13 +48,11 @@ export const SkeletonBlock: React.FC<SkeletonBlockProps> = ({
         animation.start();
 
         return () => animation.stop();
-    }, [opacity]);
+    }, [opacity, reduceMotion]);
 
-    return <Animated.View style={[styles.block, { width, height, borderRadius: blockRadius, opacity }, style]} />;
+    return <Animated.View style={[styles.block, { width, height, borderRadius: blockRadius, opacity, backgroundColor: colors.surfacePressed }, style]} />;
 };
 
 const styles = StyleSheet.create({
-    block: {
-        backgroundColor: colors.surfacePressed
-    }
+    block: {}
 });

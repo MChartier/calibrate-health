@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { ACTIVITY_RECORD_TYPES, WEIGHT_UNITS } from '@calibrate/shared';
@@ -10,11 +10,12 @@ import { ActivitySummaryCard } from '../src/components/ActivitySummaryCard';
 import { AppCard } from '../src/components/AppCard';
 import { AppText } from '../src/components/AppText';
 import { DateNavigation } from '../src/components/DateNavigation';
+import { PageHeader } from '../src/components/PageHeader';
 import { Screen } from '../src/components/Screen';
 import { SectionHeader } from '../src/components/SectionHeader';
 import { useAuth } from '../src/auth/AuthContext';
 import { useLogDateNavigation } from '../src/hooks/useLogDateNavigation';
-import { colors, radius, spacing } from '../src/theme';
+import { radius, spacing, useAppTheme, type AppTheme } from '../src/theme';
 import { addDaysToDateOnly, formatDateOnlyForDisplay } from '../src/utils/dates';
 import { gramsToDisplayWeight } from '../src/utils/bodyMeasurements';
 import { formatNumber, formatWeightUnit } from '../src/utils/format';
@@ -37,6 +38,8 @@ function formatExerciseTime(record: ActivityRecordEntry): string {
 }
 
 export default function ActivityScreen() {
+    const theme = useAppTheme();
+    const styles = useMemo(() => createStyles(theme), [theme]);
     const { date } = useLocalSearchParams<{ date?: string }>();
     const { api, user } = useAuth();
     const navigation = useLogDateNavigation(typeof date === 'string' ? date : null);
@@ -69,22 +72,11 @@ export default function ActivityScreen() {
 
     return (
         <Screen safeTop>
-            <View style={styles.header}>
-                <Pressable
-                    accessibilityRole="button"
-                    accessibilityLabel="Go back"
-                    onPress={() => router.back()}
-                    style={({ pressed }) => [styles.headerButton, pressed && styles.pressed]}
-                >
-                    <Ionicons name="chevron-back" size={22} color={colors.text} />
-                </Pressable>
-                <View style={styles.headerText}>
-                    <AppText accessibilityRole="header" aria-level={1} variant="screenTitle">
-                        Activity history
-                    </AppText>
-                    <AppText variant="caption">Observed through Health Connect</AppText>
-                </View>
-            </View>
+            <PageHeader
+                title="Activity history"
+                description="Observed through Health Connect"
+                onBack={() => router.back()}
+            />
 
             <DateNavigation navigation={navigation} />
             <ActivitySummaryCard
@@ -105,7 +97,7 @@ export default function ActivityScreen() {
                 ) : exerciseRecords.map((record) => (
                     <View key={record.id} style={styles.exerciseRow}>
                         <View style={styles.exerciseIcon}>
-                            <Ionicons name="fitness-outline" size={20} color={colors.primaryDark} />
+                            <Ionicons name="fitness-outline" size={20} color={theme.colors.primary} />
                         </View>
                         <View style={styles.exerciseText}>
                             <AppText style={styles.exerciseTitle}>{record.title?.trim() || 'Exercise session'}</AppText>
@@ -139,7 +131,7 @@ export default function ActivityScreen() {
                     return (
                         <View key={record.id} style={styles.exerciseRow}>
                             <View style={styles.weightIcon}>
-                                <Ionicons name="scale-outline" size={20} color={colors.info} />
+                                <Ionicons name="scale-outline" size={20} color={theme.colors.info} />
                             </View>
                             <View style={styles.exerciseText}>
                                 <AppText style={styles.weightValue}>
@@ -190,7 +182,7 @@ export default function ActivityScreen() {
                             <AppText>{formatNumber(day.summary?.steps, 0)} steps</AppText>
                             <AppText variant="caption">{formatNumber(day.summary?.active_calories_kcal, 0)} active kcal</AppText>
                         </View>
-                        <Ionicons name="chevron-forward" size={18} color={colors.muted} />
+                        <Ionicons name="chevron-forward" size={18} color={theme.colors.onSurfaceVariant} />
                     </Pressable>
                 ))}
                 <AppText variant="muted">
@@ -201,24 +193,7 @@ export default function ActivityScreen() {
     );
 }
 
-const styles = StyleSheet.create({
-    header: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: spacing.md
-    },
-    headerButton: {
-        width: 42,
-        height: 42,
-        alignItems: 'center',
-        justifyContent: 'center',
-        borderRadius: radius.md,
-        backgroundColor: colors.surface
-    },
-    headerText: {
-        flex: 1,
-        gap: spacing.xs
-    },
+const createStyles = (theme: AppTheme) => StyleSheet.create({
     pressed: {
         opacity: 0.78
     },
@@ -227,7 +202,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         gap: spacing.md,
         paddingVertical: spacing.sm,
-        borderBottomColor: colors.border,
+        borderBottomColor: theme.colors.outlineVariant,
         borderBottomWidth: StyleSheet.hairlineWidth
     },
     exerciseIcon: {
@@ -236,7 +211,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         borderRadius: radius.md,
-        backgroundColor: colors.primarySoft
+        backgroundColor: theme.colors.primaryContainer
     },
     weightIcon: {
         width: 40,
@@ -244,7 +219,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         borderRadius: radius.md,
-        backgroundColor: colors.infoSoft
+        backgroundColor: theme.colors.infoContainer
     },
     exerciseText: {
         flex: 1,
@@ -263,13 +238,13 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         gap: spacing.md,
         padding: spacing.md,
-        borderColor: colors.border,
+        borderColor: theme.colors.outlineVariant,
         borderWidth: StyleSheet.hairlineWidth,
         borderRadius: radius.md
     },
     historyRowSelected: {
-        borderColor: colors.primary,
-        backgroundColor: colors.primarySoft
+        borderColor: theme.colors.primary,
+        backgroundColor: theme.colors.primaryContainer
     },
     historyDate: {
         flex: 1,
@@ -280,6 +255,6 @@ const styles = StyleSheet.create({
         gap: spacing.xs
     },
     error: {
-        color: colors.danger
+        color: theme.colors.danger
     }
 });
