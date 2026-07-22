@@ -5,10 +5,10 @@ import org.junit.Test
 
 class CalorieProgressTest {
     @Test
-    fun `dashboard diameter fits the smaller post-inset screen dimension`() {
-        assertEquals(116f, summaryDashboardDiameter(widthDp = 192f, heightDp = 120f))
-        assertEquals(188f, summaryDashboardDiameter(widthDp = 192f, heightDp = 220f))
-        assertEquals(0f, summaryDashboardDiameter(widthDp = 3f, heightDp = 3f))
+    fun `dashboard diameter uses the full smaller screen dimension`() {
+        assertEquals(120f, summaryDashboardDiameter(widthDp = 192f, heightDp = 120f))
+        assertEquals(192f, summaryDashboardDiameter(widthDp = 192f, heightDp = 220f))
+        assertEquals(3f, summaryDashboardDiameter(widthDp = 3f, heightDp = 3f))
     }
 
     @Test
@@ -45,9 +45,12 @@ class CalorieProgressTest {
         )
 
         assertEquals("42% to goal", goalProgressHeadline(goal))
+        assertEquals(0.42f, goalProgressFraction(goal))
         assertEquals("Current 85.8 kg | Goal 80.0 kg", goalProgressDetail(goal))
         assertEquals("Goal reached", goalProgressHeadline(goal.copy(goalIsComplete = true)))
+        assertEquals(1f, goalProgressFraction(goal.copy(goalIsComplete = true)))
         assertEquals("Maintenance goal", goalProgressHeadline(goal.copy(goalDailyDeficit = 0, goalIsComplete = true)))
+        assertEquals(null, goalProgressFraction(goal.copy(goalDailyDeficit = 0, goalIsComplete = true)))
         assertEquals(
             "Maintenance goal. Current 85.8 kg. Goal 80.0 kg. 5.8 kg from target.",
             goalAccessibilityDescription(goal.copy(goalDailyDeficit = 0, goalIsComplete = true))

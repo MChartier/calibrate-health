@@ -4,6 +4,8 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Arrangement
@@ -15,6 +17,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -26,6 +29,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -47,6 +51,7 @@ import androidx.wear.compose.material3.Card
 import androidx.wear.compose.material3.MaterialTheme
 import androidx.wear.compose.material3.ScreenScaffold
 import androidx.wear.compose.material3.Text
+import androidx.wear.compose.material3.TimeText
 import androidx.wear.compose.navigation.SwipeDismissableNavHost
 import androidx.wear.compose.navigation.composable
 import androidx.wear.compose.navigation.rememberSwipeDismissableNavController
@@ -96,8 +101,16 @@ fun CalibrateWearApp(
     val currentOnOpenAccountDeletionOnPhone = rememberUpdatedState(onOpenAccountDeletionOnPhone)
     val currentOnDisconnect = rememberUpdatedState(onDisconnect)
     MaterialTheme {
-        AppScaffold(modifier = modifier) {
-            val navController = rememberSwipeDismissableNavController()
+        val navController = rememberSwipeDismissableNavController()
+        val currentBackStackEntry by navController.currentBackStackEntryFlow.collectAsState(
+            initial = navController.currentBackStackEntry
+        )
+        val fullBleedSummary = appState is WearAppState.Ready &&
+            currentBackStackEntry?.destination?.route == SUMMARY_ROUTE
+        AppScaffold(
+            modifier = modifier,
+            timeText = { if (!fullBleedSummary) TimeText() }
+        ) {
             val reminderNavigationReady = appState is WearAppState.Ready
             LaunchedEffect(reminderDeepLinkRequest, reminderDeepLink, reminderNavigationReady) {
                 if (reminderDeepLink == null || !reminderNavigationReady) return@LaunchedEffect
@@ -214,6 +227,39 @@ private fun ReadySummaryDashboard(
     homeState: WearHomeUiState,
     onOpenActions: () -> Unit
 ) {
+    val pagerState = rememberPagerState(pageCount = { SUMMARY_PAGE_COUNT })
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(CALIBRATE_BACKGROUND)
+    ) {
+        HorizontalPager(
+            state = pagerState,
+            modifier = Modifier.fillMaxSize()
+        ) { page ->
+            when (page) {
+                CALORIE_SUMMARY_PAGE -> CalorieSummaryPage(
+                    summary = summary,
+                    onOpenActions = onOpenActions
+                )
+                else -> GoalProgressPage(summary = summary)
+            }
+        }
+        SummaryPageIndicator(
+            selectedPage = pagerState.currentPage,
+            status = summaryStatus(homeState),
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = 10.dp)
+        )
+    }
+}
+
+@Composable
+private fun CalorieSummaryPage(
+    summary: WearSummary,
+    onOpenActions: () -> Unit
+) {
     val progress = calorieProgressFraction(summary.caloriesConsumed, summary.calorieTarget)
     val caloriesRemaining = summary.caloriesRemaining
     val balanceValue = caloriesRemaining?.let { SummaryFormatter.calorieCount(abs(it)) } ?: "--"
@@ -222,92 +268,198 @@ private fun ReadySummaryDashboard(
         caloriesRemaining < 0 -> "kcal over"
         else -> "kcal remaining"
     }
-    val footerLabel = when {
-        homeState.actionInProgress -> "Syncing..."
-        homeState.syncStatus is WearSyncStatus.Error -> "Sync needs attention"
-        summary.goalTargetWeightGrams != null -> goalProgressHeadline(summary)
-        else -> null
-    }
     val progressColor = if ((caloriesRemaining ?: 0) < 0) CALIBRATE_DANGER else CALIBRATE_GREEN
-    val listState = rememberTransformingLazyColumnState()
-
-    ScreenScaffold(scrollState = listState) {
-        BoxWithConstraints(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(CALIBRATE_BACKGROUND)
-                // Keep the dashboard clear of the curved edge and system time without
-                // surrendering the lower third of the display to an unused edge button.
-                .padding(horizontal = 12.dp, vertical = 8.dp)
-                .padding(top = 20.dp),
-            contentAlignment = Alignment.Center
+    FullBleedSummaryGauge(
+        progress = progress,
+        progressColor = progressColor,
+        accessibilityDescription = calorieAccessibilityDescription(summary),
+        onClick = onOpenActions
+    ) { compactDashboard ->
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(1.dp),
+            modifier = Modifier.padding(horizontal = 18.dp)
         ) {
-            // Scale from the actual circular-safe region so large watches use their display.
-            val dashboardDiameter = summaryDashboardDiameter(maxWidth.value, maxHeight.value).dp
-            val compactDashboard = dashboardDiameter.value < SUMMARY_COMPACT_DIAMETER_DP
-            Box(
-                modifier = Modifier
-                    .size(dashboardDiameter)
-                    .clickable(onClick = onOpenActions)
-                    .semantics(mergeDescendants = true) {
-                        contentDescription = calorieAccessibilityDescription(summary)
-                    },
-                contentAlignment = Alignment.Center
-            ) {
-                Canvas(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .semantics {
-                            progress?.let { progressBarRangeInfo = ProgressBarRangeInfo(it, 0f..1f) }
-                        }
-                ) {
-                    val strokeWidth = 9.dp.toPx()
-                    drawArc(
-                        color = CALIBRATE_RING_TRACK,
-                        startAngle = CALORIE_RING_START_ANGLE,
-                        sweepAngle = CALORIE_RING_SWEEP_ANGLE,
-                        useCenter = false,
-                        style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
-                    )
-                    progress?.let {
-                        drawArc(
-                            color = progressColor,
-                            startAngle = CALORIE_RING_START_ANGLE,
-                            sweepAngle = CALORIE_RING_SWEEP_ANGLE * it,
-                            useCenter = false,
-                            style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
-                        )
-                    }
+            CalibrateBrand(showWordmark = !compactDashboard)
+            Text(
+                balanceValue,
+                style = if (compactDashboard) {
+                    MaterialTheme.typography.titleLarge
+                } else {
+                    MaterialTheme.typography.displaySmall
                 }
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(1.dp),
-                    modifier = Modifier.padding(horizontal = 14.dp)
-                ) {
-                    CalibrateBrand(showWordmark = !compactDashboard)
-                    Text(
-                        balanceValue,
-                        style = if (compactDashboard) {
-                            MaterialTheme.typography.titleLarge
-                        } else {
-                            MaterialTheme.typography.displaySmall
-                        }
-                    )
-                    Text(balanceLabel, style = MaterialTheme.typography.labelMedium)
-                    Text(SummaryFormatter.calorieProgress(summary), style = MaterialTheme.typography.labelSmall)
-                    if (footerLabel != null && (!compactDashboard || homeState.syncStatus is WearSyncStatus.Error)) {
-                        Text(
-                            footerLabel,
-                            style = MaterialTheme.typography.labelSmall,
-                            color = CALIBRATE_SECONDARY_TEXT,
-                            maxLines = 1,
-                            softWrap = false
-                        )
-                    }
+            )
+            Text(balanceLabel, style = MaterialTheme.typography.labelMedium)
+            Text(SummaryFormatter.calorieProgress(summary), style = MaterialTheme.typography.labelSmall)
+        }
+    }
+}
+
+@Composable
+private fun GoalProgressPage(summary: WearSummary) {
+    val progress = goalProgressFraction(summary)
+    val currentWeight = summary.goalCurrentWeightGrams?.let {
+        SummaryFormatter.weight(it, summary.weightUnit)
+    }
+    val targetWeight = summary.goalTargetWeightGrams?.let {
+        SummaryFormatter.weight(it, summary.weightUnit)
+    }
+    val value = when {
+        summary.goalTargetWeightGrams == null -> "--"
+        summary.goalDailyDeficit == 0 -> "Maintain"
+        summary.goalIsComplete == true -> "Reached"
+        summary.goalProgressPercent != null -> "${summary.goalProgressPercent.roundToInt()}%"
+        else -> "--"
+    }
+    val label = when {
+        summary.goalTargetWeightGrams == null -> "goal unavailable"
+        summary.goalDailyDeficit == 0 -> "maintenance goal"
+        summary.goalIsComplete == true -> "goal complete"
+        else -> "to goal"
+    }
+
+    FullBleedSummaryGauge(
+        progress = progress,
+        progressColor = CALIBRATE_GOAL,
+        accessibilityDescription = goalAccessibilityDescription(summary)
+    ) { compactDashboard ->
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(1.dp),
+            modifier = Modifier.padding(horizontal = 18.dp)
+        ) {
+            CalibrateBrand(showWordmark = !compactDashboard)
+            Text(
+                value,
+                style = if (value.length > 5 || compactDashboard) {
+                    MaterialTheme.typography.titleLarge
+                } else {
+                    MaterialTheme.typography.displaySmall
                 }
+            )
+            Text(label, style = MaterialTheme.typography.labelMedium)
+            if (currentWeight != null) {
+                Text("Current $currentWeight", style = MaterialTheme.typography.labelSmall)
+            }
+            if (targetWeight != null) {
+                Text(
+                    "Goal $targetWeight",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = CALIBRATE_SECONDARY_TEXT
+                )
             }
         }
     }
+}
+
+@Composable
+private fun FullBleedSummaryGauge(
+    progress: Float?,
+    progressColor: Color,
+    accessibilityDescription: String,
+    onClick: (() -> Unit)? = null,
+    content: @Composable (compactDashboard: Boolean) -> Unit
+) {
+    var pageModifier = Modifier
+        .fillMaxSize()
+        .background(CALIBRATE_BACKGROUND)
+        .semantics(mergeDescendants = true) {
+            contentDescription = accessibilityDescription
+        }
+    if (onClick != null) pageModifier = pageModifier.clickable(onClick = onClick)
+
+    BoxWithConstraints(
+        modifier = pageModifier,
+        contentAlignment = Alignment.Center
+    ) {
+        val dashboardDiameter = summaryDashboardDiameter(maxWidth.value, maxHeight.value).dp
+        val compactDashboard = dashboardDiameter.value < SUMMARY_COMPACT_DIAMETER_DP
+        Box(
+            modifier = Modifier.size(dashboardDiameter),
+            contentAlignment = Alignment.Center
+        ) {
+            Canvas(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .semantics {
+                        progress?.let { progressBarRangeInfo = ProgressBarRangeInfo(it, 0f..1f) }
+                    }
+            ) {
+                val strokeWidth = 10.dp.toPx()
+                val strokeInset = strokeWidth / 2f
+                val arcSize = Size(
+                    width = (size.width - strokeWidth).coerceAtLeast(0f),
+                    height = (size.height - strokeWidth).coerceAtLeast(0f)
+                )
+                val arcOrigin = Offset(strokeInset, strokeInset)
+                drawArc(
+                    color = CALIBRATE_RING_TRACK,
+                    startAngle = CALORIE_RING_START_ANGLE,
+                    sweepAngle = CALORIE_RING_SWEEP_ANGLE,
+                    useCenter = false,
+                    topLeft = arcOrigin,
+                    size = arcSize,
+                    style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
+                )
+                progress?.let {
+                    drawArc(
+                        color = progressColor,
+                        startAngle = CALORIE_RING_START_ANGLE,
+                        sweepAngle = CALORIE_RING_SWEEP_ANGLE * it,
+                        useCenter = false,
+                        topLeft = arcOrigin,
+                        size = arcSize,
+                        style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
+                    )
+                }
+            }
+            content(compactDashboard)
+        }
+    }
+}
+
+@Composable
+private fun SummaryPageIndicator(
+    selectedPage: Int,
+    status: SummaryDashboardStatus?,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier.semantics {
+            contentDescription = "Page ${selectedPage + 1} of $SUMMARY_PAGE_COUNT"
+        },
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        if (status != null) {
+            Text(
+                status.label,
+                style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                color = status.color,
+                maxLines = 1
+            )
+        }
+        Canvas(modifier = Modifier.size(width = 24.dp, height = 6.dp)) {
+            repeat(SUMMARY_PAGE_COUNT) { page ->
+                drawCircle(
+                    color = if (page == selectedPage) CALIBRATE_FOREGROUND else CALIBRATE_RING_TRACK,
+                    radius = if (page == selectedPage) 3.dp.toPx() else 2.dp.toPx(),
+                    center = Offset(
+                        x = if (page == CALORIE_SUMMARY_PAGE) 6.dp.toPx() else 18.dp.toPx(),
+                        y = size.height / 2f
+                    )
+                )
+            }
+        }
+    }
+}
+
+private data class SummaryDashboardStatus(val label: String, val color: Color)
+
+private fun summaryStatus(homeState: WearHomeUiState): SummaryDashboardStatus? = when {
+    homeState.actionInProgress -> SummaryDashboardStatus("Syncing...", CALIBRATE_SECONDARY_TEXT)
+    homeState.syncStatus is WearSyncStatus.Error -> SummaryDashboardStatus("Sync needs attention", CALIBRATE_DANGER)
+    else -> null
 }
 
 @Composable
@@ -363,20 +515,30 @@ private val CALIBRATE_FOREGROUND = Color(0xFFF3F7F1)
 private val CALIBRATE_SECONDARY_TEXT = Color(0xFFB6C5B6)
 private val CALIBRATE_RING_TRACK = Color(0xFF29382B)
 private val CALIBRATE_GREEN = Color(0xFF71D478)
+private val CALIBRATE_GOAL = Color(0xFF8DDD2B)
 private val CALIBRATE_NEEDLE = Color(0xFF8DDD2B)
 private val CALIBRATE_HUB = Color(0xFF2E7D32)
 private val CALIBRATE_DANGER = Color(0xFFFF796E)
 private const val CALORIE_RING_START_ANGLE = 140f
 private const val CALORIE_RING_SWEEP_ANGLE = 260f
-private const val SUMMARY_DASHBOARD_INSET_DP = 4f
 private const val SUMMARY_COMPACT_DIAMETER_DP = 160f
+private const val SUMMARY_PAGE_COUNT = 2
+private const val CALORIE_SUMMARY_PAGE = 0
 
 internal fun summaryDashboardDiameter(widthDp: Float, heightDp: Float): Float =
-    (minOf(widthDp, heightDp) - SUMMARY_DASHBOARD_INSET_DP).coerceAtLeast(0f)
+    minOf(widthDp, heightDp).coerceAtLeast(0f)
 
 internal fun calorieProgressFraction(consumed: Int?, target: Int?): Float? = when {
     consumed == null || target == null || target <= 0 -> null
     else -> (consumed.toFloat() / target).coerceIn(0f, 1f)
+}
+
+internal fun goalProgressFraction(summary: WearSummary): Float? = when {
+    summary.goalTargetWeightGrams == null -> null
+    summary.goalDailyDeficit == 0 -> null
+    summary.goalIsComplete == true -> 1f
+    summary.goalProgressPercent == null -> null
+    else -> (summary.goalProgressPercent.toFloat() / 100f).coerceIn(0f, 1f)
 }
 
 internal fun calorieAccessibilityDescription(summary: WearSummary): String {
