@@ -131,6 +131,11 @@ export function validateManifest(manifest) {
     }
   }
 
+  const nativeReleaseTag = manifest?.android?.mobile?.native_release_tag;
+  if (typeof nativeReleaseTag !== 'string' || !/^v\d+\.\d+\.\d+$/.test(nativeReleaseTag)) {
+    errors.push('android.mobile.native_release_tag must be a stable vMAJOR.MINOR.PATCH tag.');
+  }
+
   const applicationId = manifest?.android?.application_id;
   if (typeof applicationId !== 'string' || !/^[a-z][a-z0-9]*(?:\.[a-z][a-z0-9]*)+$/.test(applicationId)) {
     errors.push('android.application_id must be a valid lowercase Android application ID.');
@@ -183,6 +188,12 @@ export async function checkRepository(root = REPOSITORY_ROOT) {
   assertMatch(errors, 'mobile/app.json expo.version', expoConfig.expo?.version, manifest.android.mobile.version_name);
   assertMatch(errors, 'mobile/app.json expo.android.versionCode', expoConfig.expo?.android?.versionCode, manifest.android.mobile.version_code);
   assertMatch(errors, 'mobile/app.json expo.android.package', expoConfig.expo?.android?.package, manifest.android.application_id);
+  assertMatch(
+    errors,
+    'mobile/app.json expo.extra.calibrate.nativeReleaseTag',
+    expoConfig.expo?.extra?.calibrate?.nativeReleaseTag,
+    manifest.android.mobile.native_release_tag
+  );
 
   // Expo generates this ignored directory. Validate it when present without making a clean checkout depend on prebuild.
   if (mobileGradle !== null) {
