@@ -1,8 +1,9 @@
 import React from 'react';
 import { fireEvent, render } from '@testing-library/react-native';
+import { Modal, StyleSheet } from 'react-native';
 import type { InAppNotification } from '@calibrate/api-client';
 import { IN_APP_NOTIFICATION_TYPES } from '@calibrate/shared/inAppNotifications';
-import { NotificationsDrawer } from './NotificationsDrawer';
+import { NotificationsDrawer, notificationDrawerWidth } from './NotificationsDrawer';
 
 jest.mock('@expo/vector-icons/Ionicons', () => () => null);
 jest.mock('react-native-safe-area-context', () => ({
@@ -38,6 +39,21 @@ function renderDrawer(overrides: Partial<React.ComponentProps<typeof Notificatio
 }
 
 describe('NotificationsDrawer', () => {
+    it('slides its panel independently instead of fading the entire modal', () => {
+        const { screen } = renderDrawer();
+        const modal = screen.UNSAFE_getByType(Modal);
+        const panelStyle = StyleSheet.flatten(screen.getByTestId('notifications-drawer-panel').props.style);
+
+        expect(modal.props.animationType).toBe('none');
+        expect(panelStyle.transform).toHaveLength(1);
+        expect(panelStyle.transform[0].translateX).toBeDefined();
+    });
+
+    it('uses the rendered panel width as its off-screen translation', () => {
+        expect(notificationDrawerWidth(320)).toBe(288);
+        expect(notificationDrawerWidth(1_024)).toBe(440);
+    });
+
     it('reviews and acts on notifications without requiring a notification-center route', () => {
         const { props, screen } = renderDrawer();
 
