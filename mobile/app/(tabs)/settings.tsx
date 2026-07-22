@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Alert, Image, Platform, Pressable, StyleSheet, Switch, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { useRouter } from 'expo-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ACTIVITY_LEVELS, HEIGHT_UNITS, WEIGHT_UNITS, type ActivityLevel, type HeightUnit, type Sex, type WeightUnit } from '@calibrate/shared';
 import { AppButton } from '../../src/components/AppButton';
@@ -37,6 +38,7 @@ import { ACTIVITY_OPTIONS, HEIGHT_UNIT_OPTIONS, SEX_OPTIONS, WEIGHT_UNIT_OPTIONS
 import { radius, spacing, useAppTheme } from '../../src/theme';
 import { useHealthConnect } from '../../src/healthConnect/provider';
 import { clearWearAccountData } from '../../src/wear/accountCleanup';
+import { MOBILE_CLIENT_IDENTITY } from '../../src/config/nativeClient';
 
 const MIN_PASSWORD_LENGTH = 8;
 type SettingsSheet =
@@ -63,6 +65,7 @@ function formatSessionActivity(value: string | null, fallback: string): string {
 }
 
 export default function SettingsScreen() {
+    const router = useRouter();
     const {
         api, user, clearLocalSession, logout, persistAccountDeletionCleanupNotice,
         serverUrl, setServerUrl, updateCurrentUser
@@ -457,6 +460,17 @@ export default function SettingsScreen() {
                     value={serverUrl.replace(/^https?:\/\//, '')}
                     showDivider={false}
                     onPress={() => setActiveSheet('server')}
+                />
+            </SettingsSection>
+
+            <SettingsSection title="App">
+                <SettingsRow
+                    icon="information-circle-outline"
+                    label="About Calibrate"
+                    supportingText="Version, build, and software updates"
+                    value={isWeb ? undefined : `v${MOBILE_CLIENT_IDENTITY.version}`}
+                    showDivider={false}
+                    onPress={() => router.push('/about')}
                 />
             </SettingsSection>
 

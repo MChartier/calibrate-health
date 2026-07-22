@@ -211,7 +211,8 @@ Before its first use:
 
 In GitHub, open **Actions > Publish Expo OTA Update > Run workflow**, select `master`, and provide:
 
-- `native_build_ref`: the exact commit or tag used to build the installed phone app.
+- `native_build_ref`: the native build tag shown in **Settings > About Calibrate**, or the exact source commit used to
+  build the installed phone app.
 - `channel`: `internal` for the dogfood APK or `production` for a production-channel build.
 - `message`: a short description shown in EAS Update history.
 

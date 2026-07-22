@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       native_build_ref:
-        description: Exact master commit or tag used to build the installed Android phone app
+        description: Native build tag shown in Settings > About Calibrate (or its exact source commit)
         required: true
         type: string
       channel:
