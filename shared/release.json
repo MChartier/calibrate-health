@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "server": {
-    "version": "0.12.1",
+    "version": "0.12.2",
     "api": {
       "current": "v1",
       "supported": [
@@ -13,13 +13,13 @@
   "android": {
     "application_id": "app.calibratehealth.mobile",
     "mobile": {
-      "version_name": "0.2.0",
-      "version_code": 2,
+      "version_name": "0.2.1",
+      "version_code": 3,
       "minimum_supported_version": "0.1.0"
     },
     "wear": {
-      "version_name": "0.2.0",
-      "version_code": 2,
+      "version_name": "0.2.1",
+      "version_code": 3,
       "minimum_supported_version": "0.2.0"
     },
     "channels": {

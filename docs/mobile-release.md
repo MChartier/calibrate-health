@@ -48,18 +48,19 @@ $env:EXPO_PUBLIC_CALIBRATE_SERVER_URL='https://health.example.com'
 ```
 
 Private builds that use Expo push must also have a stable Expo project ID. EAS builds embed it automatically.
-The same public identity is required for Expo OTA updates. Link the mobile project once (an Expo account is required):
+The same public identity is required for Expo OTA updates. The mobile app is linked to
+`@calibrate-health/calibrate-health-app` with project ID
+`fda8f8c5-e646-47ac-82fb-35003c9cbec7` in `mobile/app.json`. Verify that link after signing in:
 
 ```powershell
 Push-Location mobile
 npx.cmd --yes eas-cli@latest login
-npx.cmd --yes eas-cli@latest project:init
 npx.cmd --yes eas-cli@latest project:info
 Pop-Location
 ```
 
-Keep the public `extra.eas.projectId` added by `project:init`, or set the project UUID explicitly before a local
-Gradle build:
+Do not initialize a replacement project. Keep the public `owner`, `slug`, and `extra.eas.projectId` values in
+`mobile/app.json`, or set the same project UUID explicitly before a local Gradle build:
 
 ```powershell
 $env:EXPO_PUBLIC_EAS_PROJECT_ID='<expo-project-uuid>'

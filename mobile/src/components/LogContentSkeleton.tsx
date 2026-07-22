@@ -7,7 +7,7 @@ import { radius, spacing } from '../theme';
 /**
  * Glimmer layout for the selected day's log content.
  *
- * The shape mirrors the calorie card and compact food summary so date changes do not flash the whole pane.
+ * The shape mirrors the calorie, food, and weight summaries so date changes do not flash the whole pane.
  */
 export const LogContentSkeleton: React.FC = () => (
     <>
@@ -31,6 +31,17 @@ export const LogContentSkeleton: React.FC = () => (
                     <SkeletonBlock width="78%" height={18} />
                 </View>
                 <SkeletonBlock width={72} height={24} />
+            </View>
+        </AppCard>
+
+        <AppCard>
+            <SkeletonBlock width="42%" height={32} />
+            <View style={styles.mealRow}>
+                <SkeletonBlock width={42} height={42} radius={radius.md} />
+                <View style={styles.mealText}>
+                    <SkeletonBlock width="48%" height={26} />
+                    <SkeletonBlock width="34%" height={18} />
+                </View>
             </View>
         </AppCard>
     </>

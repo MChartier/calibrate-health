@@ -3,10 +3,10 @@ import { hasMetricForDate } from '../utils/metrics';
 
 export type ContextualFabKind = 'add-food' | 'log-weight' | null;
 
-export function getActiveTabRoute(pathname: string): 'today' | 'progress' | null {
+export function getActiveTabRoute(pathname: string): 'today' | 'progress' | 'food-log' | null {
     const segments = pathname.split('?')[0].replace(/\/+$/, '').split('/').filter(Boolean);
     const route = segments[segments.length - 1];
-    if (route === 'today' || route === 'progress') return route;
+    if (route === 'today' || route === 'progress' || route === 'food-log') return route;
     return null;
 }
 
@@ -17,7 +17,7 @@ export function resolveContextualFab(input: {
     metricsLoaded: boolean;
 }): ContextualFabKind {
     const activeRoute = getActiveTabRoute(input.pathname);
-    if (activeRoute === 'today') return 'add-food';
+    if (activeRoute === 'today' || activeRoute === 'food-log') return 'add-food';
     if (activeRoute !== 'progress' || !input.metricsLoaded) return null;
     return hasMetricForDate(input.metrics ?? [], input.today) ? null : 'log-weight';
 }

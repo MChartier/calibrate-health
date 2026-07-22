@@ -25,24 +25,25 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.input.rotary.onRotaryScrollEvent
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.input.rotary.onRotaryScrollEvent
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.progressBarRangeInfo
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.wear.compose.foundation.lazy.TransformingLazyColumn
 import androidx.wear.compose.foundation.lazy.rememberTransformingLazyColumnState
 import androidx.wear.compose.material3.AppScaffold
 import androidx.wear.compose.material3.Button
-import androidx.wear.compose.material3.ButtonDefaults
 import androidx.wear.compose.material3.Card
-import androidx.wear.compose.material3.EdgeButton
 import androidx.wear.compose.material3.MaterialTheme
 import androidx.wear.compose.material3.ScreenScaffold
 import androidx.wear.compose.material3.Text
@@ -219,39 +220,29 @@ private fun ReadySummaryDashboard(
     val balanceLabel = when {
         caloriesRemaining == null -> "target unavailable"
         caloriesRemaining < 0 -> "kcal over"
-        else -> "kcal left"
+        else -> "kcal remaining"
     }
-    val syncLabel = when {
+    val footerLabel = when {
         homeState.actionInProgress -> "Syncing..."
         homeState.syncStatus is WearSyncStatus.Error -> "Sync needs attention"
-        else -> SummaryFormatter.sync(homeState.syncStatus, summary.lastSyncAtEpochMs)
+        summary.goalTargetWeightGrams != null -> goalProgressHeadline(summary)
+        else -> null
     }
     val progressColor = if ((caloriesRemaining ?: 0) < 0) CALIBRATE_DANGER else CALIBRATE_GREEN
     val listState = rememberTransformingLazyColumnState()
 
-    ScreenScaffold(
-        scrollState = listState,
-        edgeButton = {
-            EdgeButton(
-                onClick = onOpenActions,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = CALIBRATE_GREEN,
-                    contentColor = CALIBRATE_ON_GREEN
-                )
-            ) {
-                Text("Actions")
-            }
-        }
-    ) { contentPadding ->
+    ScreenScaffold(scrollState = listState) {
         BoxWithConstraints(
             modifier = Modifier
                 .fillMaxSize()
                 .background(CALIBRATE_BACKGROUND)
-                .padding(contentPadding),
+                // Keep the dashboard clear of the curved edge and system time without
+                // surrendering the lower third of the display to an unused edge button.
+                .padding(horizontal = 12.dp, vertical = 8.dp)
+                .padding(top = 20.dp),
             contentAlignment = Alignment.Center
         ) {
-            // EdgeButton padding changes the usable height across watch sizes. Keep the ring
-            // inside the real content bounds instead of assuming a large round display.
+            // Scale from the actual circular-safe region so large watches use their display.
             val dashboardDiameter = summaryDashboardDiameter(maxWidth.value, maxHeight.value).dp
             val compactDashboard = dashboardDiameter.value < SUMMARY_COMPACT_DIAMETER_DP
             Box(
@@ -293,7 +284,7 @@ private fun ReadySummaryDashboard(
                     verticalArrangement = Arrangement.spacedBy(1.dp),
                     modifier = Modifier.padding(horizontal = 14.dp)
                 ) {
-                    CalibrateBrand()
+                    CalibrateBrand(showWordmark = !compactDashboard)
                     Text(
                         balanceValue,
                         style = if (compactDashboard) {
@@ -304,13 +295,14 @@ private fun ReadySummaryDashboard(
                     )
                     Text(balanceLabel, style = MaterialTheme.typography.labelMedium)
                     Text(SummaryFormatter.calorieProgress(summary), style = MaterialTheme.typography.labelSmall)
-                    if (!compactDashboard) {
-                        summary.goalTargetWeightGrams?.let {
-                            Text(goalProgressHeadline(summary), style = MaterialTheme.typography.labelSmall)
-                        }
-                    }
-                    if (!compactDashboard || homeState.syncStatus is WearSyncStatus.Error) {
-                        Text(syncLabel, style = MaterialTheme.typography.labelSmall, color = CALIBRATE_SECONDARY_TEXT)
+                    if (footerLabel != null && (!compactDashboard || homeState.syncStatus is WearSyncStatus.Error)) {
+                        Text(
+                            footerLabel,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = CALIBRATE_SECONDARY_TEXT,
+                            maxLines = 1,
+                            softWrap = false
+                        )
                     }
                 }
             }
@@ -319,29 +311,50 @@ private fun ReadySummaryDashboard(
 }
 
 @Composable
-private fun CalibrateBrand() {
+private fun CalibrateBrand(showWordmark: Boolean = true) {
     Row(
         horizontalArrangement = Arrangement.spacedBy(4.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Canvas(modifier = Modifier.size(17.dp)) {
-            val markStroke = 3.dp.toPx()
+        Canvas(modifier = Modifier.size(19.dp)) {
+            val gaugeStroke = 3.5.dp.toPx()
             drawArc(
-                color = CALIBRATE_GREEN,
-                startAngle = -40f,
-                sweepAngle = 290f,
+                color = CALIBRATE_FOREGROUND,
+                startAngle = 45f,
+                sweepAngle = 270f,
                 useCenter = false,
-                style = Stroke(width = markStroke, cap = StrokeCap.Round)
+                style = Stroke(width = gaugeStroke, cap = StrokeCap.Butt)
             )
             drawLine(
                 color = CALIBRATE_FOREGROUND,
-                start = center,
-                end = center.copy(y = size.height * 0.16f),
-                strokeWidth = 2.dp.toPx(),
+                start = Offset(size.width * 0.5f, size.height * 0.03f),
+                end = Offset(size.width * 0.5f, size.height * 0.23f),
+                strokeWidth = 2.5.dp.toPx(),
                 cap = StrokeCap.Round
             )
+            val hub = Offset(size.width * 0.45f, size.height * 0.61f)
+            drawLine(
+                color = CALIBRATE_NEEDLE,
+                start = hub,
+                end = Offset(size.width * 0.79f, size.height * 0.27f),
+                strokeWidth = 3.dp.toPx(),
+                cap = StrokeCap.Round
+            )
+            drawCircle(color = CALIBRATE_HUB, radius = 3.3.dp.toPx(), center = hub)
+            drawCircle(color = CALIBRATE_FOREGROUND, radius = 1.4.dp.toPx(), center = hub)
         }
-        Text("CALIBRATE", style = MaterialTheme.typography.labelSmall, color = CALIBRATE_FOREGROUND)
+        if (showWordmark) {
+            Text(
+                "calibrate",
+                style = MaterialTheme.typography.labelSmall.copy(
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold
+                ),
+                color = CALIBRATE_FOREGROUND,
+                maxLines = 1,
+                softWrap = false
+            )
+        }
     }
 }
 
@@ -350,12 +363,13 @@ private val CALIBRATE_FOREGROUND = Color(0xFFF3F7F1)
 private val CALIBRATE_SECONDARY_TEXT = Color(0xFFB6C5B6)
 private val CALIBRATE_RING_TRACK = Color(0xFF29382B)
 private val CALIBRATE_GREEN = Color(0xFF71D478)
-private val CALIBRATE_ON_GREEN = Color(0xFF00390A)
+private val CALIBRATE_NEEDLE = Color(0xFF8DDD2B)
+private val CALIBRATE_HUB = Color(0xFF2E7D32)
 private val CALIBRATE_DANGER = Color(0xFFFF796E)
 private const val CALORIE_RING_START_ANGLE = 140f
 private const val CALORIE_RING_SWEEP_ANGLE = 260f
 private const val SUMMARY_DASHBOARD_INSET_DP = 4f
-private const val SUMMARY_COMPACT_DIAMETER_DP = 124f
+private const val SUMMARY_COMPACT_DIAMETER_DP = 160f
 
 internal fun summaryDashboardDiameter(widthDp: Float, heightDp: Float): Float =
     (minOf(widthDp, heightDp) - SUMMARY_DASHBOARD_INSET_DP).coerceAtLeast(0f)

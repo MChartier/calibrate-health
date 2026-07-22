@@ -4,7 +4,6 @@
     android:height="108dp"
     android:viewportWidth="512"
     android:viewportHeight="512">
-    <!-- Adaptive launchers may crop everything outside the centered 66dp safe zone. -->
     <group
         android:pivotX="256"
         android:pivotY="256"
@@ -13,25 +12,22 @@
         <path
             android:fillColor="@android:color/transparent"
             android:pathData="M360,151A164,164 0,1 0,363 365"
-            android:strokeColor="#1F2937"
+            android:strokeColor="#FFFFFF"
             android:strokeWidth="57" />
         <path
             android:fillColor="@android:color/transparent"
             android:pathData="M256,93L256,141"
-            android:strokeColor="#1F2937"
+            android:strokeColor="#FFFFFF"
             android:strokeLineCap="round"
             android:strokeWidth="36" />
         <path
             android:fillColor="@android:color/transparent"
             android:pathData="M239,291L351,179"
-            android:strokeColor="#8DDD2B"
+            android:strokeColor="#FFFFFF"
             android:strokeLineCap="round"
             android:strokeWidth="43" />
         <path
-            android:fillColor="#2E7D32"
+            android:fillColor="#FFFFFF"
             android:pathData="M239,247A44,44 0,1 0,239 335A44,44 0,1 0,239 247" />
-        <path
-            android:fillColor="#F6F8F4"
-            android:pathData="M239,273A18,18 0,1 0,239 309A18,18 0,1 0,239 273" />
     </group>
 </vector>

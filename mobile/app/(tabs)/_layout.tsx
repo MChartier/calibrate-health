@@ -287,7 +287,9 @@ export default function TabsLayout() {
                             onPress={() => {
                                 if (fabKind === 'add-food') {
                                     requestAddFood({ date: logDateNavigation.selectedDate });
-                                    router.navigate('/(tabs)/today');
+                                    if (getActiveTabRoute(pathname) !== 'food-log') {
+                                        router.navigate('/(tabs)/today');
+                                    }
                                     return;
                                 }
                                 router.push({ pathname: '/(tabs)/weight', params: { date: today } });
