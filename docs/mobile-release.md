@@ -196,6 +196,30 @@ Release builds check for updates without blocking startup. After an update is do
 phone app again to run it. Keep the signed native artifact: OTA is not a substitute for an installable recovery build,
 and a native incompatibility must be corrected with a higher-version signed APK/AAB.
 
+### Publish OTA updates from GitHub Actions
+
+The `Publish Expo OTA Update` workflow is manual-only and publishes Android phone JavaScript/assets from `master`.
+Before its first use:
+
+1. Create an Expo access token and save it as the repository Actions secret `EXPO_TOKEN`.
+2. Configure the Expo `preview` environment with `EXPO_PUBLIC_CALIBRATE_SERVER_URL`,
+   `EXPO_PUBLIC_EAS_PROJECT_ID`, and `EXPO_UPDATES_CHANNEL=internal`.
+3. Configure the Expo `production` environment with the same project/server values and
+   `EXPO_UPDATES_CHANNEL=production`.
+4. Build and install the phone binary from a known `master` commit with the same channel/environment you intend to
+   update.
+
+In GitHub, open **Actions > Publish Expo OTA Update > Run workflow**, select `master`, and provide:
+
+- `native_build_ref`: the exact commit or tag used to build the installed phone app.
+- `channel`: `internal` for the dogfood APK or `production` for a production-channel build.
+- `message`: a short description shown in EAS Update history.
+
+The workflow pulls and validates the selected EAS environment, verifies that the current source descends from the
+native build reference, and compares the precise runtime fingerprint before it uploads. Any app version, native
+dependency, config plugin, icon, Wear source, or other native input change stops the publish and requires a new signed
+phone/Watch build. OTA updates never update the Wear app.
+
 ## Preserve on-device data during upgrades
 
 Expo SecureStore tokens and the SQLite offline outbox live in the Android application sandbox. Android preserves

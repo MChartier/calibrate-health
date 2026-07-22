@@ -1,0 +1,101 @@
+name: Publish Expo OTA Update
+
+on:
+  workflow_dispatch:
+    inputs:
+      native_build_ref:
+        description: Exact master commit or tag used to build the installed Android phone app
+        required: true
+        type: string
+      channel:
+        description: Update channel embedded in the installed Android phone build
+        required: true
+        default: internal
+        type: choice
+        options:
+          - internal
+          - production
+      message:
+        description: Short operator-facing description of this OTA update
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: expo-ota-${{ inputs.channel }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Validate and Publish Android OTA
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      EAS_ENVIRONMENT: ${{ inputs.channel == 'production' && 'production' || 'preview' }}
+      EXPO_NO_METRO_WORKSPACE_ROOT: '1'
+      EXPO_PUBLIC_EAS_PROJECT_ID: fda8f8c5-e646-47ac-82fb-35003c9cbec7
+      EXPO_UPDATES_CHANNEL: ${{ inputs.channel }}
+      NATIVE_BUILD_REF: ${{ inputs.native_build_ref }}
+      NODE_ENV: production
+      OTA_MESSAGE: ${{ inputs.message }}
+
+    steps:
+      - name: Require master and Expo authentication
+        shell: bash
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [[ "${GITHUB_REF}" != "refs/heads/master" ]]; then
+            echo "OTA updates must be dispatched from the master branch; received ${GITHUB_REF}." >&2
+            exit 1
+          fi
+          if [[ -z "${EXPO_TOKEN}" ]]; then
+            echo "Add an EXPO_TOKEN repository secret before publishing an OTA update." >&2
+            exit 1
+          fi
+
+      - name: Checkout reviewed source
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.14.0
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Setup EAS
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Install mobile dependencies
+        run: npm ci --no-audit --fund=false
+
+      - name: Read selected EAS environment
+        working-directory: mobile
+        run: eas env:pull --environment "${EAS_ENVIRONMENT}" --path "${RUNNER_TEMP}/calibrate-eas-update.env" --non-interactive
+
+      - name: Verify native compatibility and environment targeting
+        run: >-
+          node scripts/native-ota-ci-preflight.mjs
+          --native-build-ref "${NATIVE_BUILD_REF}"
+          --channel "${EXPO_UPDATES_CHANNEL}"
+          --environment "${EAS_ENVIRONMENT}"
+          --environment-file "${RUNNER_TEMP}/calibrate-eas-update.env"
+
+      - name: Publish Android phone OTA update
+        working-directory: mobile
+        run: >-
+          eas update
+          --channel "${EXPO_UPDATES_CHANNEL}"
+          --message "${OTA_MESSAGE}"
+          --environment "${EAS_ENVIRONMENT}"
+          --platform android
+          --non-interactive
