@@ -48,18 +48,19 @@ $env:EXPO_PUBLIC_CALIBRATE_SERVER_URL='https://health.example.com'
 ```
 
 Private builds that use Expo push must also have a stable Expo project ID. EAS builds embed it automatically.
-The same public identity is required for Expo OTA updates. Link the mobile project once (an Expo account is required):
+The same public identity is required for Expo OTA updates. The mobile app is linked to
+`@calibrate-health/calibrate-health-app` with project ID
+`fda8f8c5-e646-47ac-82fb-35003c9cbec7` in `mobile/app.json`. Verify that link after signing in:
 
 ```powershell
 Push-Location mobile
 npx.cmd --yes eas-cli@latest login
-npx.cmd --yes eas-cli@latest project:init
 npx.cmd --yes eas-cli@latest project:info
 Pop-Location
 ```
 
-Keep the public `extra.eas.projectId` added by `project:init`, or set the project UUID explicitly before a local
-Gradle build:
+Do not initialize a replacement project. Keep the public `owner`, `slug`, and `extra.eas.projectId` values in
+`mobile/app.json`, or set the same project UUID explicitly before a local Gradle build:
 
 ```powershell
 $env:EXPO_PUBLIC_EAS_PROJECT_ID='<expo-project-uuid>'
@@ -113,8 +114,10 @@ npm.cmd run build:native:release
 
 The command fails before native work when signing is incomplete or the configured origin is not a credential-free
 HTTPS origin. It regenerates the ignored phone Android project with a clean Expo prebuild, then builds APK and AAB
-artifacts for phone and Wear with the same signing identity. Outputs are under `mobile/android/app/build/outputs/`
-and `wear/app/build/outputs/`.
+artifacts for phone and Wear with the same signing identity. The release workflow supplies a larger Gradle heap and
+metaspace allowance for Expo release lint, removes stale final artifacts before each build, and fails immediately if
+Gradle does not recreate both outputs. Outputs are under `mobile/android/app/build/outputs/` and
+`wear/app/build/outputs/`.
 
 Record the Git commit, semantic versions, version codes, SHA-256 digests, and signing certificate fingerprint in the
 release notes. Do not rename an artifact in a way that loses those identifiers.
@@ -192,6 +195,30 @@ is channel `internal` with EAS environment `preview`; production builds and upda
 Release builds check for updates without blocking startup. After an update is downloaded, fully close and reopen the
 phone app again to run it. Keep the signed native artifact: OTA is not a substitute for an installable recovery build,
 and a native incompatibility must be corrected with a higher-version signed APK/AAB.
+
+### Publish OTA updates from GitHub Actions
+
+The `Publish Expo OTA Update` workflow is manual-only and publishes Android phone JavaScript/assets from `master`.
+Before its first use:
+
+1. Create an Expo access token and save it as the repository Actions secret `EXPO_TOKEN`.
+2. Configure the Expo `preview` environment with `EXPO_PUBLIC_CALIBRATE_SERVER_URL`,
+   `EXPO_PUBLIC_EAS_PROJECT_ID`, and `EXPO_UPDATES_CHANNEL=internal`.
+3. Configure the Expo `production` environment with the same project/server values and
+   `EXPO_UPDATES_CHANNEL=production`.
+4. Build and install the phone binary from a known `master` commit with the same channel/environment you intend to
+   update.
+
+In GitHub, open **Actions > Publish Expo OTA Update > Run workflow**, select `master`, and provide:
+
+- `native_build_ref`: the exact commit or tag used to build the installed phone app.
+- `channel`: `internal` for the dogfood APK or `production` for a production-channel build.
+- `message`: a short description shown in EAS Update history.
+
+The workflow pulls and validates the selected EAS environment, verifies that the current source descends from the
+native build reference, and compares the precise runtime fingerprint before it uploads. Any app version, native
+dependency, config plugin, icon, Wear source, or other native input change stops the publish and requires a new signed
+phone/Watch build. OTA updates never update the Wear app.
 
 ## Preserve on-device data during upgrades
 

@@ -15,6 +15,9 @@ export const REQUIRED_SIGNING_ENV = Object.freeze([
 const scriptDirectory = path.dirname(fileURLToPath(import.meta.url));
 const repositoryRoot = path.resolve(scriptDirectory, '..');
 
+// Expo SDK 57 release lint can exceed the generated project's 512 MiB metaspace cap.
+export const RELEASE_GRADLE_JVM_ARGS = '-Xmx4096m -XX:MaxMetaspaceSize=1536m -Dfile.encoding=UTF-8';
+
 /** Resolve and validate the shared phone/watch release environment before Gradle can start. */
 export function resolveNativeReleaseEnvironment(environment, options = {}) {
   const missing = REQUIRED_SIGNING_ENV.filter((name) => !environment[name]?.trim());
@@ -72,7 +75,11 @@ export function resolveNativeReleaseEnvironment(environment, options = {}) {
 
 export function nativeReleaseGradleCommands(platform = process.platform) {
   const wrapper = platform === 'win32' ? 'gradlew.bat' : './gradlew';
-  const common = ['--no-daemon', '--console=plain'];
+  const common = [
+    `-Dorg.gradle.jvmargs=${RELEASE_GRADLE_JVM_ARGS}`,
+    '--no-daemon',
+    '--console=plain'
+  ];
   return [
     {
       label: 'phone',
@@ -87,6 +94,29 @@ export function nativeReleaseGradleCommands(platform = process.platform) {
       args: [':app:bundleRelease', ':app:assembleRelease', ...common]
     }
   ];
+}
+
+export function nativeReleaseArtifactPaths(build) {
+  const outputRoot = path.join(build.cwd, 'app', 'build', 'outputs');
+  return [
+    path.join(outputRoot, 'apk', 'release', 'app-release.apk'),
+    path.join(outputRoot, 'bundle', 'release', 'app-release.aab')
+  ];
+}
+
+/** Ensure a successful Gradle exit cannot reuse or conceal missing release outputs. */
+export function prepareNativeReleaseArtifacts(build, removeFile = (file) => fs.rmSync(file, { force: true })) {
+  for (const file of nativeReleaseArtifactPaths(build)) removeFile(file);
+}
+
+export function assertNativeReleaseArtifacts(build, fileExists = fs.existsSync) {
+  const missing = nativeReleaseArtifactPaths(build).filter((file) => !fileExists(file));
+  if (missing.length === 0) return;
+  throw new Error(
+    `${build.label} Gradle completed without producing the expected release artifacts:\n` +
+    `${missing.map((file) => `  - ${file}`).join('\n')}\n` +
+    `Review the earlier ${build.label} Gradle output for a masked daemon, lint, or memory failure.`
+  );
 }
 
 export function nativeReleasePrebuildCommand(root = repositoryRoot) {
@@ -137,6 +167,7 @@ function run() {
     if (!fs.existsSync(path.join(build.cwd, process.platform === 'win32' ? 'gradlew.bat' : 'gradlew'))) {
       throw new Error(`${build.label} Gradle wrapper is missing. Run a clean Android prebuild before release.`);
     }
+    prepareNativeReleaseArtifacts(build);
     const args = build.label === 'wear'
       ? [`-PcalibrateWearServerUrl=${environment.EXPO_PUBLIC_CALIBRATE_SERVER_URL}`, ...build.args]
       : build.args;
@@ -148,6 +179,7 @@ function run() {
     });
     if (result.error) throw result.error;
     if (result.status !== 0) process.exit(result.status ?? 1);
+    assertNativeReleaseArtifacts(build);
   }
 
   const commit = execFileSync('git', ['rev-parse', 'HEAD'], {

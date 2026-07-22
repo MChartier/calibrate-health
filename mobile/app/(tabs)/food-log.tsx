@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { router, useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams, usePathname } from 'expo-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as Haptics from 'expo-haptics';
 import type { FoodLogEntry } from '@calibrate/api-client';
 import type { MealPeriod } from '@calibrate/shared';
+import { AddFoodSheet } from '../../src/components/AddFoodSheet';
 import { AppButton } from '../../src/components/AppButton';
 import { AppCard } from '../../src/components/AppCard';
 import { AppText } from '../../src/components/AppText';
@@ -20,8 +21,10 @@ import { SectionHeader } from '../../src/components/SectionHeader';
 import { SkeletonBlock } from '../../src/components/SkeletonBlock';
 import { TextField } from '../../src/components/TextField';
 import { useAuth } from '../../src/auth/AuthContext';
+import { useAddFoodRequest } from '../../src/context/AddFoodRequestContext';
 import { useSharedLogDateNavigation } from '../../src/context/LogDateContext';
 import { usePrefetchPreviousFoodLog } from '../../src/hooks/usePrefetchPreviousFoodLog';
+import { getActiveTabRoute } from '../../src/navigation/contextualFab';
 import { executeOrQueueMutation, OFFLINE_MUTATION_OPERATIONS } from '../../src/offline/operations';
 import { useOfflineOutbox } from '../../src/offline/provider';
 import { MEAL_SELECT_OPTIONS } from '../../src/utils/meals';
@@ -30,11 +33,14 @@ import { SERVING_INPUT_INCREMENT } from '../../src/config/inputPrecision';
 
 export default function FoodLogScreen() {
     const routeParams = useLocalSearchParams<{ date?: string }>();
+    const pathname = usePathname();
     const { api } = useAuth();
     const { enqueue } = useOfflineOutbox();
     const queryClient = useQueryClient();
     const dateNavigation = useSharedLogDateNavigation();
+    const { request: addFoodRequest, consumeRequest: consumeAddFoodRequest } = useAddFoodRequest();
     const selectedDate = dateNavigation.selectedDate;
+    const [addFoodMeal, setAddFoodMeal] = useState<MealPeriod | null | undefined>(undefined);
     const [editEntry, setEditEntry] = useState<FoodLogEntry | null>(null);
     const [editName, setEditName] = useState('');
     const [editCalories, setEditCalories] = useState('');
@@ -51,6 +57,16 @@ export default function FoodLogScreen() {
     useEffect(() => {
         if (typeof routeParams.date === 'string') dateNavigation.setDate(routeParams.date);
     }, [dateNavigation.setDate, routeParams.date]);
+
+    useEffect(() => {
+        if (!addFoodRequest || getActiveTabRoute(pathname) !== 'food-log') return;
+
+        if (addFoodRequest.date) {
+            dateNavigation.setDate(addFoodRequest.date);
+        }
+        setAddFoodMeal(addFoodRequest.meal ?? null);
+        consumeAddFoodRequest(addFoodRequest.id);
+    }, [addFoodRequest, consumeAddFoodRequest, dateNavigation.setDate, pathname]);
 
     async function invalidateLogQueries() {
         await Promise.all([
@@ -173,6 +189,13 @@ export default function FoodLogScreen() {
 
             {foodQuery.error && <AppText style={styles.error}>{foodQuery.error.message}</AppText>}
             {deleteFood.error && <AppText style={styles.error}>{deleteFood.error.message}</AppText>}
+
+            <AddFoodSheet
+                visible={addFoodMeal !== undefined}
+                date={selectedDate}
+                initialMeal={addFoodMeal}
+                onClose={() => setAddFoodMeal(undefined)}
+            />
 
             <BottomSheetModal
                 visible={Boolean(editEntry)}

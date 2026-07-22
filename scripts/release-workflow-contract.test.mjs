@@ -43,3 +43,18 @@ test('no active workflow deploys to AWS or builds an image for every merged PR',
   assert.doesNotMatch(workflows, /aws-actions|amazon-ecs|\bECR\b|\bECS\b/i);
   assert.doesNotMatch(workflows, /pull_request_target/);
 });
+
+test('Expo OTA updates are manual, authenticated, and native-compatibility gated', () => {
+  const workflow = readWorkflow('expo-ota-update.yml');
+
+  assert.match(workflow, /workflow_dispatch:/);
+  assert.match(workflow, /native_build_ref:/);
+  assert.match(workflow, /refs\/heads\/master/);
+  assert.match(workflow, /secrets\.EXPO_TOKEN/);
+  assert.match(workflow, /eas env:pull/);
+  assert.match(workflow, /native-ota-ci-preflight\.mjs/);
+  assert.match(workflow, /eas update/);
+  assert.match(workflow, /--platform android/);
+  assert.match(workflow, /--non-interactive/);
+  assert.doesNotMatch(workflow, /pull_request:|push:/);
+});

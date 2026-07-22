@@ -1,6 +1,6 @@
 {
   "name": "backend",
-  "version": "0.12.1",
+  "version": "0.12.2",
   "main": "index.js",
   "scripts": {
     "prebuild": "npm run prisma:generate",
@@ -26,13 +26,13 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
-    "@prisma/adapter-pg": "^7.1.0",
-    "@prisma/client": "^7.7.0",
+    "@prisma/adapter-pg": "^7.9.0",
+    "@prisma/client": "^7.9.0",
     "adm-zip": "^0.6.0",
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
-    "express": "^5.1.0",
+    "express": "^5.2.1",
     "express-rate-limit": "^8.5.2",
     "express-session": "^1.18.2",
     "helmet": "^8.2.0",
@@ -40,7 +40,7 @@
     "passport": "^0.7.0",
     "passport-local": "^1.0.0",
     "pg": "^8.14.1",
-    "prisma": "^7.7.0",
+    "prisma": "^7.9.0",
     "web-push": "^3.6.7"
   },
   "devDependencies": {
@@ -81,9 +81,8 @@
     "exclude-after-remap": true
   },
   "overrides": {
-    "@hono/node-server": "1.19.13",
-    "fast-uri": "4.1.0",
-    "hono": "4.12.29",
+    "body-parser": "2.3.0",
+    "fast-uri": "4.1.1",
     "qs": "6.15.3"
   }
 }
