@@ -67,7 +67,26 @@ const TREND_METRICS = [
   { id: 1, user_id: 17, date: '2026-07-04', weight: 90.0, body_fat_percent: null, trend_weight: 89.8, trend_ci_lower: 89.4, trend_ci_upper: 90.2 },
 ];
 
-async function stubAuthenticatedApi(page: Page): Promise<void> {
+type AuthenticatedApiOptions = {
+  foodDayStatus?: 'OPEN' | 'PAUSED';
+  foodEntries?: Array<{
+    id: number;
+    meal_period: 'BREAKFAST';
+    name: string;
+    calories: number;
+    servings_consumed: number;
+  }>;
+};
+
+const DEFAULT_FOOD_ENTRIES: NonNullable<AuthenticatedApiOptions['foodEntries']> = [{
+  id: 31,
+  meal_period: 'BREAKFAST',
+  name: 'Greek yogurt and berries',
+  calories: 360,
+  servings_consumed: 1,
+}];
+
+async function stubAuthenticatedApi(page: Page, options: AuthenticatedApiOptions = {}): Promise<void> {
   unexpectedApiRequests.set(page, []);
   await page.route('**/*', (route) => {
     const url = new URL(route.request().url());
@@ -99,25 +118,20 @@ async function stubAuthenticatedApi(page: Page): Promise<void> {
       });
     }
     if (pathname === '/api/v1/food') {
-      return fulfillJson(route, [{
-        id: 31,
-        meal_period: 'BREAKFAST',
-        name: 'Greek yogurt and berries',
-        calories: 360,
-        servings_consumed: 1,
-      }]);
+      return fulfillJson(route, options.foodEntries ?? DEFAULT_FOOD_ENTRIES);
     }
     if (pathname === '/api/v1/food-days/pause') {
+      const isPaused = options.foodDayStatus === 'PAUSED';
       return fulfillJson(route, {
         pause: {
-          active: false,
-          id: null,
-          starts_on: null,
-          expected_resume_on: null,
+          active: isPaused,
+          id: isPaused ? 9 : null,
+          starts_on: isPaused ? '2026-07-21' : null,
+          expected_resume_on: isPaused ? '2099-12-31' : null,
           resumed_on: null,
-          started_at: null,
+          started_at: isPaused ? '2026-07-21T08:00:00.000Z' : null,
           resumed_at: null,
-          materialized_through: null,
+          materialized_through: isPaused ? '2026-07-23' : null,
           resume_confirmation_due: false,
         },
       });
@@ -130,9 +144,9 @@ async function stubAuthenticatedApi(page: Page): Promise<void> {
         end_date: endDate,
         days: [{
           date: startDate,
-          status: 'OPEN',
-          origin: null,
-          source: 'DEFAULT',
+          status: options.foodDayStatus ?? 'OPEN',
+          origin: options.foodDayStatus === 'PAUSED' ? 'PAUSE' : null,
+          source: options.foodDayStatus === 'PAUSED' ? 'STORED' : 'DEFAULT',
           is_representative: false,
           is_complete: false,
           completed_at: null,
@@ -143,9 +157,9 @@ async function stubAuthenticatedApi(page: Page): Promise<void> {
     if (pathname === '/api/v1/food-days') {
       return fulfillJson(route, {
         date: url.searchParams.get('date'),
-        status: 'OPEN',
-        origin: null,
-        source: 'DEFAULT',
+        status: options.foodDayStatus ?? 'OPEN',
+        origin: options.foodDayStatus === 'PAUSED' ? 'PAUSE' : null,
+        source: options.foodDayStatus === 'PAUSED' ? 'STORED' : 'DEFAULT',
         is_representative: false,
         is_complete: false,
         completed_at: null,
@@ -392,6 +406,27 @@ test('authenticated shell renders real dashboard data and navigates release surf
   await page.getByRole('button', { name: /Health Connect/ }).click();
   await expect(page.getByRole('button', { name: 'View activity history', exact: true })).toBeVisible();
   await expectNoHorizontalOverflow(page);
+});
+
+test('paused days omit calorie progress and only preview food when entries exist', async ({ page }) => {
+  const options: AuthenticatedApiOptions = {
+    foodDayStatus: 'PAUSED',
+    foodEntries: [...DEFAULT_FOOD_ENTRIES],
+  };
+  await stubAuthenticatedApi(page, options);
+  await page.goto('/today');
+
+  await expect(page.getByText('Calorie tracking paused', { exact: true })).toBeVisible();
+  await expect(page.getByText('Daily balance', { exact: true })).toBeHidden();
+  await expect(page.getByText('0%', { exact: true })).toBeHidden();
+  await expect(page.getByRole('button', { name: /Food log.*View full log/ })).toContainText('Greek yogurt and berries');
+
+  options.foodEntries = [];
+  await page.reload();
+
+  await expect(page.getByText('Calorie tracking paused', { exact: true })).toBeVisible();
+  await expect(page.getByText('Daily balance', { exact: true })).toBeHidden();
+  await expect(page.getByRole('button', { name: /Food log.*View full log/ })).toBeHidden();
 });
 
 test('a browser write survives reload and replays exactly once with its operation id', async ({ page }, testInfo) => {

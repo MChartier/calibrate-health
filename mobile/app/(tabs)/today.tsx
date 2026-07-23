@@ -80,9 +80,9 @@ export default function TodayScreen() {
     const selectedDateMetric = (metricsQuery.data ?? []).find((metric) => getMetricDate(metric) === selectedDate) ?? null;
     const isToday = selectedDate === getTodayDate(user?.timezone);
     const dayStatus = foodDayQuery.data;
+    const isPaused = dayStatus?.status === 'PAUSED';
     const showCalorieComparison = dayStatus?.status === 'COMPLETE' || (isToday && dayStatus?.status === 'OPEN');
     let unavailableLabel = 'Day unresolved';
-    if (dayStatus?.status === 'PAUSED') unavailableLabel = 'Tracking paused';
     if (dayStatus?.status === 'INCOMPLETE') unavailableLabel = 'Incomplete day';
     const showContentSkeleton =
         (!profileQuery.data || !foodQuery.data || !metricsQuery.data || !foodDayQuery.data) &&
@@ -97,17 +97,21 @@ export default function TodayScreen() {
                 <LogContentSkeleton />
             ) : (
                 <>
-                    <CalorieBalanceCard
-                        totalCalories={calories}
-                        targetCalories={showCalorieComparison ? target : null}
-                        unavailableLabel={unavailableLabel}
-                    />
+                    {!isPaused && (
+                        <CalorieBalanceCard
+                            totalCalories={calories}
+                            targetCalories={showCalorieComparison ? target : null}
+                            unavailableLabel={unavailableLabel}
+                        />
+                    )}
 
-                    <FoodLogSummaryCard
-                        entries={entries}
-                        trackingUnavailable={dayStatus?.status !== 'OPEN' && dayStatus?.status !== 'COMPLETE'}
-                        onPress={() => router.push({ pathname: '/(tabs)/food-log', params: { date: selectedDate } })}
-                    />
+                    {(!isPaused || entries.length > 0) && (
+                        <FoodLogSummaryCard
+                            entries={entries}
+                            trackingUnavailable={dayStatus?.status !== 'OPEN' && dayStatus?.status !== 'COMPLETE'}
+                            onPress={() => router.push({ pathname: '/(tabs)/food-log', params: { date: selectedDate } })}
+                        />
+                    )}
 
                     <TodayWeightCard
                         metric={selectedDateMetric}
