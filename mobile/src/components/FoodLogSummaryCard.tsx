@@ -10,6 +10,7 @@ import { type AppTheme, useAppTheme } from '../theme';
 type FoodLogSummaryCardProps = Omit<React.ComponentProps<typeof AppPressableCard>, 'children' | 'onPress'> & {
     entries: FoodLogEntry[];
     onPress: () => void;
+    trackingUnavailable?: boolean;
 };
 
 type RecentMealSummary = {
@@ -39,7 +40,7 @@ function formatEntryPreview(entries: FoodLogEntry[]): string {
 }
 
 /** Compact Today summary that opens the full editable food log. */
-export const FoodLogSummaryCard: React.FC<FoodLogSummaryCardProps> = ({ entries, onPress, style, ...props }) => {
+export const FoodLogSummaryCard: React.FC<FoodLogSummaryCardProps> = ({ entries, onPress, trackingUnavailable = false, style, ...props }) => {
     const theme = useAppTheme();
     const styles = React.useMemo(() => createStyles(theme), [theme]);
     // The food endpoint returns entries in creation order, so the final entry identifies the latest populated meal.
@@ -89,7 +90,9 @@ export const FoodLogSummaryCard: React.FC<FoodLogSummaryCardProps> = ({ entries,
                     </View>
                     <View style={styles.summaryText}>
                         <AppText variant="subtitle">Nothing logged yet</AppText>
-                        <AppText variant="muted">Use Add food to start this day.</AppText>
+                        <AppText variant="muted">
+                            {trackingUnavailable ? 'No representative calorie record for this day.' : 'Use Add food to start this day.'}
+                        </AppText>
                     </View>
                 </View>
             )}

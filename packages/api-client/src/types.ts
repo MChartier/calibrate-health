@@ -31,7 +31,7 @@ export type UserClientPayload = {
 
 export type AccountExport = {
     format: 'calibrate-account-export';
-    version: 2;
+    version: 3;
     exported_at: string;
     account: {
         id: number;
@@ -90,8 +90,21 @@ export type AccountExport = {
     food_log_days: Array<{
         id: number;
         local_date: string;
+        status: FoodLogDayStatus;
+        origin: FoodLogDayOrigin;
         is_complete: boolean;
         completed_at: string | null;
+        created_at: string;
+        updated_at: string;
+    }>;
+    food_tracking_pauses: Array<{
+        id: number;
+        starts_on: string;
+        expected_resume_on: string | null;
+        resumed_on: string | null;
+        started_at: string;
+        resumed_at: string | null;
+        materialized_through: string;
         created_at: string;
         updated_at: string;
     }>;
@@ -279,7 +292,7 @@ export type WatchSnapshot = {
         remaining: number | null;
         missing: string[];
     };
-    food_day: { is_complete: boolean; completed_at: string | null; revision: string | null };
+    food_day: FoodLogDay & { revision: string | null };
     weight: {
         today_grams: number | null;
         today_revision: string | null;
@@ -584,10 +597,42 @@ export type FoodSearchResponse = {
     attribution?: string;
 };
 
+export type FoodLogDayStatus = 'OPEN' | 'COMPLETE' | 'INCOMPLETE' | 'PAUSED';
+export type FoodLogDayOrigin = 'USER' | 'PAUSE' | 'IMPORT';
+export type FoodLogDaySource =
+    | 'STORED'
+    | 'ACTIVE_PAUSE'
+    | 'INFERRED_EMPTY'
+    | 'DEFAULT'
+    | 'BEFORE_TRACKING_START';
+
 export type FoodLogDay = {
     date: string;
+    status: FoodLogDayStatus;
+    origin: FoodLogDayOrigin | null;
+    source: FoodLogDaySource;
+    is_representative: boolean;
     is_complete: boolean;
     completed_at: string | null;
+    updated_at?: string | null;
+};
+
+export type FoodLogDayRange = {
+    start_date: string;
+    end_date: string;
+    days: FoodLogDay[];
+};
+
+export type FoodTrackingPause = {
+    active: boolean;
+    id: number | null;
+    starts_on: string | null;
+    expected_resume_on: string | null;
+    resumed_on: string | null;
+    started_at: string | null;
+    resumed_at: string | null;
+    materialized_through: string | null;
+    resume_confirmation_due: boolean;
 };
 
 export type InAppNotification = {
@@ -761,6 +806,8 @@ export type LoseItImportSummary = {
         invalid: number;
     };
     warnings: string[];
+    foodDayCompletionStatus?: 'unavailable';
+    foodDayCompletionMessage?: string;
 };
 
 export type SyncChange = {

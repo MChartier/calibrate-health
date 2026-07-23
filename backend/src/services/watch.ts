@@ -66,14 +66,25 @@ const metricRevision = (metric: { id: number; date: Date; weight_grams: number; 
     body_fat_percent: metric.body_fat_percent ?? null
   });
 
-const foodDayRevision = (day: { id: number; local_date: Date; is_complete: boolean; completed_at: Date | null; updated_at: Date }): string =>
-  entityRevision('food_log_day', {
+const foodDayRevision = (day: {
+  id: number;
+  local_date: Date;
+  status?: string;
+  origin?: string;
+  is_complete?: boolean;
+  completed_at: Date | null;
+  updated_at: Date;
+}): string => {
+  const status = day.status ?? (day.is_complete ? 'COMPLETE' : 'OPEN');
+  return entityRevision('food_log_day', {
     id: day.id,
     local_date: day.local_date.toISOString().slice(0, 10),
-    is_complete: day.is_complete,
+    status,
+    origin: day.origin ?? 'USER',
     completed_at: day.completed_at?.toISOString() ?? null,
     updated_at: day.updated_at.toISOString()
   });
+};
 
 export function parseWatchMutation(body: unknown, options: {
   timezone: string;
@@ -370,7 +381,10 @@ export async function executeWatchMutation(options: {
             retryable: false,
             current: existingDay ? {
               date: mutation.payload.local_date,
-              is_complete: existingDay.is_complete,
+              status: existingDay.status ?? ('is_complete' in existingDay && existingDay.is_complete ? 'COMPLETE' : 'OPEN'),
+              source: existingDay.origin ?? 'USER',
+              is_representative: (existingDay.status ?? ('is_complete' in existingDay && existingDay.is_complete ? 'COMPLETE' : 'OPEN')) === 'COMPLETE',
+              is_complete: (existingDay.status ?? ('is_complete' in existingDay && existingDay.is_complete ? 'COMPLETE' : 'OPEN')) === 'COMPLETE',
               completed_at: existingDay.completed_at,
               revision: currentRevision
             } : null
@@ -378,16 +392,20 @@ export async function executeWatchMutation(options: {
         };
       }
       const completedAt = mutation.payload.is_complete ? new Date() : null;
+      const status = mutation.payload.is_complete ? 'COMPLETE' : 'OPEN';
       const day = await tx.foodLogDay.upsert({
         where: { user_id_local_date: { user_id: options.userId, local_date: mutation.localDate } },
-        update: { is_complete: mutation.payload.is_complete, completed_at: completedAt },
-        create: { user_id: options.userId, local_date: mutation.localDate, is_complete: mutation.payload.is_complete, completed_at: completedAt }
+        update: { status, origin: 'USER', completed_at: completedAt },
+        create: { user_id: options.userId, local_date: mutation.localDate, status, origin: 'USER', completed_at: completedAt }
       });
       const body = {
         type: 'food_day.set_complete',
         food_day: {
           date: mutation.payload.local_date,
-          is_complete: day.is_complete,
+          status: day.status ?? status,
+          source: day.origin ?? 'USER',
+          is_representative: (day.status ?? status) === 'COMPLETE',
+          is_complete: (day.status ?? status) === 'COMPLETE',
           completed_at: day.completed_at,
           revision: foodDayRevision(day)
         }
@@ -549,12 +567,19 @@ export async function buildWatchSnapshot(options: {
           select: { id: true, type: true, local_date: true, created_at: true }
         })
       : Promise.resolve([]);
-    const [goal, latestWeight, todayWeight, foodAggregate, foodDay, pinned, recent, undoCandidate, activeReminderRows] = await Promise.all([
+    const activePausePromise = 'foodTrackingPause' in tx
+      ? tx.foodTrackingPause.findFirst({
+          where: { user_id: options.userId, resumed_on: null, starts_on: { lte: localDate } },
+          select: { id: true }
+        })
+      : Promise.resolve(null);
+    const [goal, latestWeight, todayWeight, foodAggregate, foodDay, activePause, pinned, recent, undoCandidate, activeReminderRows] = await Promise.all([
       tx.goal.findFirst({ where: { user_id: options.userId }, orderBy: [{ created_at: 'desc' }, { id: 'desc' }] }),
       tx.bodyMetric.findFirst({ where: { user_id: options.userId, date: { lte: localDate } }, orderBy: [{ date: 'desc' }, { id: 'desc' }] }),
       tx.bodyMetric.findUnique({ where: { user_id_date: { user_id: options.userId, date: localDate } } }),
       tx.foodLog.aggregate({ where: { user_id: options.userId, local_date: localDate }, _sum: { calories: true } }),
       tx.foodLogDay.findUnique({ where: { user_id_local_date: { user_id: options.userId, local_date: localDate } } }),
+      activePausePromise,
       tx.myFood.findMany({ where: { user_id: options.userId, is_pinned: true }, orderBy: [{ name: 'asc' }, { id: 'asc' }], take: WATCH_PINNED_LIMIT, select: { id: true, name: true, calories_per_serving: true } }),
       getRecentFoodSuggestions({ userId: options.userId, limit: WATCH_RECENT_LIMIT, database: tx }),
       findCurrentSessionUndoCandidate({ tx, userId: options.userId, mobileAuthSessionId: options.mobileAuthSessionId }),
@@ -589,7 +614,11 @@ export async function buildWatchSnapshot(options: {
       draft: { meal_period: defaultMealPeriod, my_food_id: item.id, servings_consumed: 1 }
     }));
     const pinnedIds = new Set(pinned.map((item) => item.id));
-    const quickAdd = [
+    const effectiveFoodDayStatus = foodDay
+      ? (foodDay.status ?? ('is_complete' in foodDay && foodDay.is_complete ? 'COMPLETE' : 'OPEN'))
+      : (activePause ? 'PAUSED' : 'OPEN');
+    const effectiveFoodDaySource = foodDay?.origin ?? (activePause ? 'PAUSE' : null);
+    const quickAddCandidates = [
       ...pinnedDrafts,
       ...recent
         .filter((item) => !item.my_food_id || !pinnedIds.has(item.my_food_id))
@@ -600,12 +629,18 @@ export async function buildWatchSnapshot(options: {
       // Preserve the snapshot's intended local day when an offline watch submits after midnight.
       draft: { date: localDateKey, ...item.draft }
     }));
+    const quickAdd = effectiveFoodDayStatus === 'OPEN' ? quickAddCandidates : [];
     // One current reminder per action prevents dev/scheduler rows from creating duplicate watch notifications.
     const reminderByType = new Map<string, (typeof activeReminderRows)[number]>();
     for (const reminder of activeReminderRows) {
       if (!reminderByType.has(reminder.type)) reminderByType.set(reminder.type, reminder);
     }
-    const reminders = [...reminderByType.values()].map((reminder) => ({
+    const reminders = [...reminderByType.values()]
+      .filter((reminder) => {
+        if (effectiveFoodDayStatus === 'PAUSED') return false;
+        return effectiveFoodDayStatus === 'OPEN' || reminder.type !== 'LOG_FOOD_REMINDER';
+      })
+      .map((reminder) => ({
       id: reminder.id,
       type: reminder.type === 'LOG_WEIGHT_REMINDER' ? 'weight' as const : 'food' as const,
       local_date: reminder.local_date.toISOString().slice(0, 10),
@@ -617,7 +652,10 @@ export async function buildWatchSnapshot(options: {
       weight_unit: user.weight_unit,
       calories: { consumed: caloriesConsumed, target: calorieTarget, remaining: calorieTarget === null ? null : calorieTarget - caloriesConsumed, missing: calorieSummary.missing },
       food_day: {
-        is_complete: foodDay?.is_complete ?? false,
+        status: effectiveFoodDayStatus,
+        source: effectiveFoodDaySource,
+        is_representative: effectiveFoodDayStatus === 'COMPLETE',
+        is_complete: effectiveFoodDayStatus === 'COMPLETE',
         completed_at: foodDay?.completed_at?.toISOString() ?? null,
         revision: foodDay ? foodDayRevision(foodDay) : null
       },

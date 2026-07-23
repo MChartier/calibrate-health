@@ -9,6 +9,7 @@ import { formatNumber } from '../utils/format';
 type CalorieBalanceCardProps = ViewProps & {
     totalCalories: number;
     targetCalories: number | null | undefined;
+    unavailableLabel?: string;
 };
 
 const GAUGE_SIZE = 94;
@@ -34,6 +35,7 @@ function getBalanceTone(remaining: number | null, progress: number): 'primary' |
 export const CalorieBalanceCard: React.FC<CalorieBalanceCardProps> = ({
     totalCalories,
     targetCalories,
+    unavailableLabel = 'Target unavailable',
     style,
     ...props
 }) => {
@@ -46,7 +48,7 @@ export const CalorieBalanceCard: React.FC<CalorieBalanceCardProps> = ({
     const progressValue = hasTarget ? Math.min(totalCalories / targetCalories, 1) : 0;
     const tone = getBalanceTone(remaining, progressValue);
     const balanceValue = remaining === null ? '-' : formatNumber(Math.abs(remaining), 0);
-    const balanceLabel = remaining === null ? 'Target unavailable' : isOver ? 'kcal over target' : 'kcal remaining';
+    const balanceLabel = remaining === null ? unavailableLabel : isOver ? 'kcal over target' : 'kcal remaining';
     const balanceSummary = remaining === null ? balanceLabel : `${balanceValue} ${balanceLabel}`;
     const stackHero = width < 360 || fontScale >= 1.6;
 
@@ -54,7 +56,9 @@ export const CalorieBalanceCard: React.FC<CalorieBalanceCardProps> = ({
         <AppCard
             {...props}
             accessible
-            accessibilityLabel={`${balanceSummary}. ${formatNumber(totalCalories, 0)} eaten out of ${formatNumber(targetCalories, 0)} calorie target.`}
+            accessibilityLabel={hasTarget
+                ? `${balanceSummary}. ${formatNumber(totalCalories, 0)} eaten out of ${formatNumber(targetCalories, 0)} calorie target.`
+                : `${balanceSummary}. ${formatNumber(totalCalories, 0)} calories logged.`}
             style={style}
         >
             <View style={[styles.hero, stackHero && styles.heroStacked]}>

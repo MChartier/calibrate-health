@@ -107,8 +107,53 @@ async function stubAuthenticatedApi(page: Page): Promise<void> {
         servings_consumed: 1,
       }]);
     }
+    if (pathname === '/api/v1/food-days/pause') {
+      return fulfillJson(route, {
+        pause: {
+          active: false,
+          id: null,
+          starts_on: null,
+          expected_resume_on: null,
+          resumed_on: null,
+          started_at: null,
+          resumed_at: null,
+          materialized_through: null,
+          resume_confirmation_due: false,
+        },
+      });
+    }
+    if (pathname === '/api/v1/food-days/range') {
+      const startDate = url.searchParams.get('start') ?? '2026-07-18';
+      const endDate = url.searchParams.get('end') ?? startDate;
+      return fulfillJson(route, {
+        start_date: startDate,
+        end_date: endDate,
+        days: [{
+          date: startDate,
+          status: 'OPEN',
+          origin: null,
+          source: 'DEFAULT',
+          is_representative: false,
+          is_complete: false,
+          completed_at: null,
+          updated_at: null,
+        }],
+      });
+    }
     if (pathname === '/api/v1/food-days') {
-      return fulfillJson(route, { date: url.searchParams.get('date'), is_complete: false, completed_at: null });
+      return fulfillJson(route, {
+        date: url.searchParams.get('date'),
+        status: 'OPEN',
+        origin: null,
+        source: 'DEFAULT',
+        is_representative: false,
+        is_complete: false,
+        completed_at: null,
+        updated_at: null,
+      });
+    }
+    if (pathname === '/api/v1/user/tracking-history') {
+      return fulfillJson(route, { tracking_start_date: '2026-01-01' });
     }
     if (pathname === '/api/v1/activity/days') {
       const localDate = url.searchParams.get('start') ?? '2026-07-18';

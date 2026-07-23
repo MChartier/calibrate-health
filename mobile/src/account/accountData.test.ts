@@ -16,13 +16,14 @@ jest.mock('expo-sharing', () => ({
 function accountExport(overrides: Record<string, unknown> = {}): AccountExport {
     return {
         format: 'calibrate-account-export',
-        version: 2,
+        version: 3,
         exported_at: '2026-07-11T12:00:00.000Z',
         account: { email: 'user@example.com' },
         goals: [],
         body_metrics: [],
         food_logs: [],
         food_log_days: [],
+        food_tracking_pauses: [],
         my_foods: [],
         in_app_notifications: [],
         ...overrides

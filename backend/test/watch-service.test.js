@@ -88,8 +88,9 @@ test('watch snapshot is bounded, timezone-local, and derives current-session und
     foodLogDay: { findUnique: async () => ({
       id: 7,
       local_date: new Date('2026-07-11T00:00:00.000Z'),
-      is_complete: true,
-      completed_at: new Date('2026-07-11T19:00:00.000Z'),
+      status: 'OPEN',
+      origin: 'USER',
+      completed_at: null,
       updated_at: new Date('2026-07-11T19:00:00.000Z')
     }) },
     myFood: { findMany: async ({ where, take }) => {
@@ -152,8 +153,9 @@ test('watch snapshot is bounded, timezone-local, and derives current-session und
   });
   assert.equal('activity' in snapshot, false);
   assert.equal('staleness' in snapshot, false);
-  assert.equal(snapshot.food_day.is_complete, true);
-  assert.equal(snapshot.food_day.completed_at, '2026-07-11T19:00:00.000Z');
+  assert.equal(snapshot.food_day.status, 'OPEN');
+  assert.equal(snapshot.food_day.is_complete, false);
+  assert.equal(snapshot.food_day.completed_at, null);
   assert.equal(snapshot.quick_add.length, 3);
   assert.deepEqual(snapshot.reminders.map((reminder) => reminder.type).sort(), ['food', 'weight']);
   assert.equal(snapshot.reminders.find((reminder) => reminder.type === 'food').id, 41);
@@ -320,7 +322,8 @@ test('watch metric and completion mutations use canonical date-only upserts', as
         return {
           id: 6,
           local_date: args.create.local_date,
-          is_complete: args.create.is_complete,
+          status: args.create.status,
+          origin: args.create.origin,
           completed_at: args.create.completed_at,
           updated_at: new Date('2026-07-11T20:00:00.000Z')
         };
@@ -358,7 +361,8 @@ test('watch metric and completion mutations reject stale snapshot revisions', as
   const dayRow = {
     id: 6,
     local_date: new Date('2026-07-11T00:00:00.000Z'),
-    is_complete: false,
+    status: 'OPEN',
+    origin: 'USER',
     completed_at: null,
     updated_at: new Date('2026-07-11T19:00:00.000Z')
   };

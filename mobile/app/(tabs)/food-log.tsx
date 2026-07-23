@@ -13,6 +13,7 @@ import { AppText } from '../../src/components/AppText';
 import { BottomSheetModal } from '../../src/components/BottomSheetModal';
 import { DateNavigation } from '../../src/components/DateNavigation';
 import { FoodLogTimelineCard } from '../../src/components/FoodLogTimelineCard';
+import { DayStatusCard, useFoodDayStatus } from '../../src/components/FoodTrackingStatus';
 import { NumberStepperField } from '../../src/components/NumberStepperField';
 import { OverlaySelect } from '../../src/components/OverlaySelect';
 import { PageHeader } from '../../src/components/PageHeader';
@@ -30,11 +31,12 @@ import { useOfflineOutbox } from '../../src/offline/provider';
 import { MEAL_SELECT_OPTIONS } from '../../src/utils/meals';
 import { type AppTheme, useAppTheme } from '../../src/theme';
 import { SERVING_INPUT_INCREMENT } from '../../src/config/inputPrecision';
+import { getTodayDate } from '../../src/utils/dates';
 
 export default function FoodLogScreen() {
     const routeParams = useLocalSearchParams<{ date?: string }>();
     const pathname = usePathname();
-    const { api } = useAuth();
+    const { api, user } = useAuth();
     const { enqueue } = useOfflineOutbox();
     const queryClient = useQueryClient();
     const dateNavigation = useSharedLogDateNavigation();
@@ -53,6 +55,9 @@ export default function FoodLogScreen() {
     usePrefetchPreviousFoodLog(selectedDate, dateNavigation.minDate);
 
     const foodQuery = useQuery({ queryKey: ['mobile-food', selectedDate], queryFn: () => api.getFoodLog(selectedDate) });
+    const foodDayQuery = useFoodDayStatus(selectedDate);
+    const canEditFood = foodDayQuery.data?.status === 'OPEN';
+    const isToday = selectedDate === getTodayDate(user?.timezone);
 
     useEffect(() => {
         if (typeof routeParams.date === 'string') dateNavigation.setDate(routeParams.date);
@@ -60,13 +65,15 @@ export default function FoodLogScreen() {
 
     useEffect(() => {
         if (!addFoodRequest || getActiveTabRoute(pathname) !== 'food-log') return;
-
-        if (addFoodRequest.date) {
-            dateNavigation.setDate(addFoodRequest.date);
+        const requestDate = addFoodRequest.date ?? selectedDate;
+        if (requestDate !== selectedDate) {
+            dateNavigation.setDate(requestDate);
+            return;
         }
+        if (!canEditFood) return;
         setAddFoodMeal(addFoodRequest.meal ?? null);
         consumeAddFoodRequest(addFoodRequest.id);
-    }, [addFoodRequest, consumeAddFoodRequest, dateNavigation.setDate, pathname]);
+    }, [addFoodRequest, canEditFood, consumeAddFoodRequest, dateNavigation.setDate, pathname, selectedDate]);
 
     async function invalidateLogQueries() {
         await Promise.all([
@@ -175,6 +182,7 @@ export default function FoodLogScreen() {
             />
 
             <DateNavigation navigation={dateNavigation} />
+            <DayStatusCard date={selectedDate} isToday={isToday} />
 
             {foodQuery.isLoading ? (
                 <FoodLogSkeleton />
@@ -182,6 +190,7 @@ export default function FoodLogScreen() {
                 <FoodLogTimelineCard
                     title="Meals"
                     entries={foodQuery.data ?? []}
+                    disabled={!canEditFood}
                     onEditEntry={openEditEntry}
                     onDeleteEntry={(entry) => deleteFood.mutate(entry.id)}
                 />
@@ -189,9 +198,10 @@ export default function FoodLogScreen() {
 
             {foodQuery.error && <AppText style={styles.error}>{foodQuery.error.message}</AppText>}
             {deleteFood.error && <AppText style={styles.error}>{deleteFood.error.message}</AppText>}
+            {foodDayQuery.error && <AppText style={styles.error}>{foodDayQuery.error.message}</AppText>}
 
             <AddFoodSheet
-                visible={addFoodMeal !== undefined}
+                visible={addFoodMeal !== undefined && canEditFood}
                 date={selectedDate}
                 initialMeal={addFoodMeal}
                 onClose={() => setAddFoodMeal(undefined)}

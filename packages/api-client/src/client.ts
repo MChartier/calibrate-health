@@ -8,6 +8,9 @@ import type {
     CreateMyFoodPayload,
     FoodLogCreatePayload,
     FoodLogDay,
+    FoodLogDayRange,
+    FoodLogDayStatus,
+    FoodTrackingPause,
     FoodLogEntry,
     FoodLogUpdatePayload,
     FoodSearchResponse,
@@ -571,12 +574,69 @@ export class CalibrateApiClient {
         return this.request<FoodLogDay>(`/api/food-days?date=${encodeURIComponent(date)}`);
     }
 
+    getFoodDays(start: string, end: string): Promise<FoodLogDayRange> {
+        const query = new URLSearchParams({ start, end });
+        return this.request<FoodLogDayRange>(`/api/food-days/range?${query.toString()}`);
+    }
+
+    getFoodTrackingPause(): Promise<{ pause: FoodTrackingPause }> {
+        return this.request<{ pause: FoodTrackingPause }>('/api/food-days/pause');
+    }
+
     updateFoodDay(payload: { date: string; is_complete: boolean }, operationId?: string): Promise<FoodLogDay> {
         return this.request<FoodLogDay>('/api/food-days', {
             method: 'PATCH',
             headers: buildOperationHeaders(operationId),
             json: payload
         });
+    }
+
+    setFoodDayStatus(
+        payload: { date: string; status: Exclude<FoodLogDayStatus, 'PAUSED'> },
+        operationId?: string
+    ): Promise<FoodLogDay> {
+        return this.request<FoodLogDay>('/api/food-days', {
+            method: 'PATCH',
+            headers: buildOperationHeaders(operationId),
+            json: payload
+        });
+    }
+
+    startFoodTrackingPause(
+        payload: { starts_on: string; expected_resume_on: string | null },
+        operationId?: string
+    ): Promise<{ pause: FoodTrackingPause }> {
+        return this.request<{ pause: FoodTrackingPause }>('/api/food-days/pause', {
+            method: 'POST',
+            headers: buildOperationHeaders(operationId),
+            json: payload
+        });
+    }
+
+    updateFoodTrackingPause(
+        payload: { expected_resume_on: string | null },
+        operationId?: string
+    ): Promise<{ pause: FoodTrackingPause }> {
+        return this.request<{ pause: FoodTrackingPause }>('/api/food-days/pause', {
+            method: 'PATCH',
+            headers: buildOperationHeaders(operationId),
+            json: payload
+        });
+    }
+
+    resumeFoodTracking(
+        payload: { resumed_on: string },
+        operationId?: string
+    ): Promise<{ pause: FoodTrackingPause; day: FoodLogDay }> {
+        return this.request<{ pause: FoodTrackingPause; day: FoodLogDay }>('/api/food-days/resume', {
+            method: 'POST',
+            headers: buildOperationHeaders(operationId),
+            json: payload
+        });
+    }
+
+    getTrackingHistory(): Promise<{ tracking_start_date: string }> {
+        return this.request<{ tracking_start_date: string }>('/api/user/tracking-history');
     }
 
     getSyncChanges(after = '0', limit?: number): Promise<SyncChangesResponse> {

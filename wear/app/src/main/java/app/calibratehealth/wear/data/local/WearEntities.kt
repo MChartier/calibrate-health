@@ -18,6 +18,12 @@ data class DailySnapshotEntity(
     val caloriesRemaining: Int? = null,
     @ColumnInfo(name = "food_day_complete", defaultValue = "0")
     val foodDayComplete: Boolean = false,
+    @ColumnInfo(name = "food_day_status", defaultValue = "'OPEN'")
+    val foodDayStatus: String = "OPEN",
+    @ColumnInfo(name = "food_day_source")
+    val foodDaySource: String? = null,
+    @ColumnInfo(name = "food_day_representative", defaultValue = "0")
+    val foodDayRepresentative: Boolean = false,
     @ColumnInfo(name = "food_day_completed_at_epoch_ms")
     val foodDayCompletedAtEpochMs: Long? = null,
     @ColumnInfo(name = "food_day_revision")

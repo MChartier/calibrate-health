@@ -4,7 +4,7 @@ export type PublicLegalSection = {
     bullets?: string[];
 };
 
-export const PRIVACY_LAST_UPDATED = 'July 11, 2026';
+export const PRIVACY_LAST_UPDATED = 'July 23, 2026';
 export const PRIVACY_INTRO = [
     'Calibrate Health ("Calibrate", "we", "us", or "our") respects your privacy. This Privacy Policy explains what information we collect, how we use it, and the choices you have when you use the Calibrate Health application at https://calibratehealth.app.',
     'Calibrate Health is a calorie and weight-tracking tool. It is not a medical service and does not provide medical advice.'
@@ -43,7 +43,7 @@ export const PRIVACY_SECTIONS: PublicLegalSection[] = [
         title: '3. Cookies and Local Storage',
         paragraphs: [
             'The web client uses an HttpOnly session cookie for authentication. Browser storage may retain non-sensitive app preferences, the selected server origin, and PWA state; browser access and refresh tokens are not stored there.',
-            'The Android client stores its server address, secure authentication credentials, Health Connect synchronization state, and a local SQLite queue for pending food, weight, or completed-day changes. We do not use advertising cookies or tracking pixels.'
+            'The Android client stores its server address, secure authentication credentials, Health Connect synchronization state, and a local SQLite queue for pending food, weight, day-status, or tracking-pause changes. We do not use advertising cookies or tracking pixels.'
         ]
     },
     {
@@ -66,7 +66,7 @@ export const PRIVACY_SECTIONS: PublicLegalSection[] = [
         title: '6. Data Retention',
         paragraphs: [
             'Profile and tracking data remain in the active database while the account is active unless individual records are edited or deleted. Sessions expire or are revoked, and push subscriptions remain until disabled, rejected, revoked, or removed with the account.',
-            'Password-confirmed account deletion removes active profile data, avatar, goals, metrics, food history, completed days, My Foods, recipes, notifications, Health Connect source records, summaries, sessions, push subscriptions, and synchronization records.'
+            'Password-confirmed account deletion removes active profile data, avatar, goals, metrics, food history, day resolutions, tracking-pause history, My Foods, recipes, notifications, Health Connect source records, summaries, sessions, push subscriptions, and synchronization records.'
         ],
         bullets: [
             'Operator-managed backups or security logs follow the operator retention schedule and legal requirements.',
@@ -77,7 +77,7 @@ export const PRIVACY_SECTIONS: PublicLegalSection[] = [
         title: '7. Your Rights and Choices',
         paragraphs: [
             'Depending on your location, you may have rights to access, correct, delete, or export personal data.',
-            'The signed-in versioned JSON export includes account profile, preferences, optional avatar, goals, body metrics, food history, completed days, My Foods, recipes, notification history, Health Connect source records, and daily activity summaries. Password hashes, tokens, sessions, push endpoints, and internal replay metadata are excluded.',
+            'The signed-in versioned JSON export includes account profile, preferences, optional avatar, goals, body metrics, food history, day resolutions, tracking-pause history, My Foods, recipes, notification history, Health Connect source records, and daily activity summaries. Password hashes, tokens, sessions, push endpoints, and internal replay metadata are excluded.',
             'Account deletion requires the current password and cannot be undone. Use the public account deletion instructions for signed-in steps, hosted-service requests, timing, and retention details.'
         ]
     },
@@ -126,7 +126,7 @@ export const ACCOUNT_DELETION_SECTIONS: PublicLegalSection[] = [
     {
         title: 'Data deleted with the account',
         bullets: [
-            'Profile, preferences, inline avatar, goals, body metrics, food logs, completed-day state, My Foods, and recipes.',
+            'Profile, preferences, inline avatar, goals, body metrics, food logs, day resolutions, tracking-pause history, My Foods, and recipes.',
             'Imported Health Connect source records, daily activity summaries, notifications, and internal synchronization records.',
             'Browser and mobile sessions, authentication tokens, and browser or native push subscriptions.'
         ]

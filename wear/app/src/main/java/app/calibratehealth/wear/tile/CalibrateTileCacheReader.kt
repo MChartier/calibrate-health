@@ -21,7 +21,8 @@ class CalibrateTileCacheReader(
             caloriesConsumed = snapshot.caloriesConsumed,
             calorieTarget = snapshot.calorieTarget,
             caloriesRemaining = snapshot.caloriesRemaining,
-            cachedAtEpochMs = metadata.lastSuccessAtEpochMs ?: snapshot.fetchedAtEpochMs
+            cachedAtEpochMs = metadata.lastSuccessAtEpochMs ?: snapshot.fetchedAtEpochMs,
+            foodDayStatus = snapshot.foodDayStatus
         )
     }
 }

@@ -11,6 +11,7 @@ import { AppButton } from '../src/components/AppButton';
 import { AppCard } from '../src/components/AppCard';
 import { AppText } from '../src/components/AppText';
 import { LoadingState } from '../src/components/LoadingState';
+import { useFoodDayStatus } from '../src/components/FoodTrackingStatus';
 import { OverlaySelect } from '../src/components/OverlaySelect';
 import { Screen } from '../src/components/Screen';
 import { SectionHeader } from '../src/components/SectionHeader';
@@ -67,11 +68,15 @@ export default function BarcodeScreen() {
     const [isMealSelectorOpen, setIsMealSelectorOpen] = useState(false);
     const scanGate = useRef(new BarcodeScanGate());
     const selectedDate = typeof date === 'string' ? date : getTodayDate(user?.timezone);
+    const foodDayQuery = useFoodDayStatus(selectedDate);
     const lookup = useMutation({
         mutationFn: (code: string) => api.searchFood('', code)
     });
     const logFood = useMutation({
         mutationFn: (result: FoodSearchResult) => {
+            if (foodDayQuery.data?.status !== 'OPEN') {
+                throw new Error('Backfill this day before adding food.');
+            }
             if (!barcode) {
                 throw new Error('Scan a barcode before logging food.');
             }
@@ -94,6 +99,25 @@ export default function BarcodeScreen() {
     });
 
     const cameraPermissionState = getCameraPermissionState(permission);
+
+    if (foodDayQuery.isLoading) {
+        return <LoadingState label="Checking tracking status..." />;
+    }
+
+    if (foodDayQuery.data?.status !== 'OPEN') {
+        return (
+            <Screen>
+                <AppCard>
+                    <SectionHeader
+                        headingLevel={1}
+                        title="Food logging is unavailable"
+                        description="Resume tracking or backfill this day from Today before scanning a barcode."
+                    />
+                    <AppButton title="Back to Today" onPress={() => router.replace('/(tabs)/today')} />
+                </AppCard>
+            </Screen>
+        );
+    }
 
     if (cameraPermissionState === 'checking') {
         return <LoadingState label="Checking camera permission..." />;

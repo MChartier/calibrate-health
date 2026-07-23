@@ -603,9 +603,14 @@ export default function SettingsScreen() {
             >
                 <SectionHeader title="Import" description="Import a Lose It ZIP export into food logs and weigh-ins." />
                 {importMutation.data && (
-                    <AppText variant="muted">
-                        Imported {importMutation.data.food_logs.valid} food rows and {importMutation.data.weights.valid} weights.
-                    </AppText>
+                    <>
+                        <AppText variant="muted">
+                            Imported {importMutation.data.food_logs.valid} food rows and {importMutation.data.weights.valid} weights.
+                        </AppText>
+                        {importMutation.data.foodDayCompletionMessage && (
+                            <AppText variant="muted">{importMutation.data.foodDayCompletionMessage}</AppText>
+                        )}
+                    </>
                 )}
                 {importMutation.error && <AppText style={[styles.error, { color: themeColors.danger }]}>{importMutation.error.message}</AppText>}
                 <AppButton

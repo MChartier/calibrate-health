@@ -31,6 +31,12 @@ type InAppNotificationClient = {
     bodyMetric: {
         count: typeof prisma.bodyMetric.count;
     };
+    foodLogDay?: {
+        findUnique: typeof prisma.foodLogDay.findUnique;
+    };
+    foodTrackingPause?: {
+        findFirst: typeof prisma.foodTrackingPause.findFirst;
+    };
 };
 
 export type InAppNotificationWire = {
@@ -149,7 +155,21 @@ export const getReminderMissingStatusForDate = async ({
     reminderLogFoodEnabled,
     db = prisma
 }: ReminderMissingStatusArgs): Promise<ReminderMissingStatus> => {
-    const [foodCount, weightCount] = await Promise.all([
+    const activePause = db.foodTrackingPause
+        ? await db.foodTrackingPause.findFirst({
+              where: {
+                  user_id: userId,
+                  resumed_on: null,
+                  starts_on: { lte: localDate }
+              },
+              select: { id: true }
+          })
+        : null;
+    if (activePause) {
+        return { missingWeight: false, missingFood: false };
+    }
+
+    const [foodCount, weightCount, foodDay] = await Promise.all([
         reminderLogFoodEnabled
             ? db.foodLog.count({
                   where: {
@@ -165,12 +185,21 @@ export const getReminderMissingStatusForDate = async ({
                       date: localDate
                   }
               })
-            : Promise.resolve(1)
+            : Promise.resolve(1),
+        reminderLogFoodEnabled && db.foodLogDay
+            ? db.foodLogDay.findUnique({
+                  where: { user_id_local_date: { user_id: userId, local_date: localDate } },
+                  select: { status: true }
+              })
+            : Promise.resolve(null)
     ]);
 
     return {
         missingWeight: reminderLogWeightEnabled && weightCount === 0,
-        missingFood: reminderLogFoodEnabled && foodCount === 0
+        missingFood:
+            reminderLogFoodEnabled &&
+            foodCount === 0 &&
+            (foodDay === null || foodDay.status === 'OPEN')
     };
 };
 
@@ -183,7 +212,8 @@ export const resolveInactiveReminderNotificationsForUser = async ({
     now = new Date(),
     db = prisma
 }: ResolveInactiveReminderNotificationsArgs): Promise<number> => {
-    const activeNotifications = await db.inAppNotification.findMany({
+    const [activeNotifications, activePause] = await Promise.all([
+        db.inAppNotification.findMany({
         where: {
             user_id: userId,
             type: { in: [...REMINDER_TYPES] },
@@ -196,7 +226,14 @@ export const resolveInactiveReminderNotificationsForUser = async ({
             local_date: true,
             dedupe_key: true
         }
-    });
+        }),
+        db.foodTrackingPause
+            ? db.foodTrackingPause.findFirst({
+                  where: { user_id: userId, resumed_on: null },
+                  select: { id: true }
+              })
+            : Promise.resolve(null)
+    ]);
 
     if (activeNotifications.length === 0) {
         return 0;
@@ -236,6 +273,10 @@ export const resolveInactiveReminderNotificationsForUser = async ({
 
     const idsToResolve = activeNotifications
         .filter((notification) => {
+            if (activePause) {
+                return true;
+            }
+
             if (notification.local_date.getTime() < todayLocalDate.getTime()) {
                 return true;
             }

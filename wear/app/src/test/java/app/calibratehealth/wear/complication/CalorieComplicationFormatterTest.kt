@@ -45,6 +45,18 @@ class CalorieComplicationFormatterTest {
         assertEquals(true, result.contentDescription.startsWith("Cached data may be out of date."))
     }
 
+    @Test
+    fun `shows paused instead of calorie progress`() {
+        val result = CalorieComplicationFormatter.format(
+            snapshot(remaining = 595).copy(foodDayStatus = "PAUSED"),
+            NOW
+        )
+
+        assertEquals("Paused", result.text)
+        assertEquals("tracking", result.title)
+        assertEquals(1f, result.rangeMaximum)
+    }
+
     private fun snapshot(
         remaining: Int,
         consumed: Int = 1_240,

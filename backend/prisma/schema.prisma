@@ -80,6 +80,19 @@ enum NativePushProvider {
   FCM
 }
 
+enum FoodLogDayStatus {
+  OPEN
+  COMPLETE
+  INCOMPLETE
+  PAUSED
+}
+
+enum FoodLogDayOrigin {
+  USER
+  PAUSE
+  IMPORT
+}
+
 model User {
   id            Int       @id @default(autoincrement())
   email         String    @unique
@@ -111,6 +124,7 @@ model User {
   metrics       BodyMetric[]
   food_logs     FoodLog[]
   food_log_days FoodLogDay[]
+  food_tracking_pauses FoodTrackingPause[]
   /// User-owned library of reusable foods and recipes for quick logging.
   my_foods      MyFood[]
   /// Web push subscriptions for reminder notifications.
@@ -322,14 +336,37 @@ model FoodLogDay {
   user         User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
   /// Calendar day for grouping logs, derived from the user's timezone at write time.
   local_date   DateTime @db.Date
-  /// Whether the user has marked the day's log as complete.
-  is_complete  Boolean  @default(false)
-  /// Timestamp of when the day was marked complete (cleared when toggled off).
+  /// Permanent resolution for this local day. Only COMPLETE is representative.
+  status       FoodLogDayStatus @default(OPEN)
+  /// How this stored resolution was created.
+  origin       FoodLogDayOrigin @default(USER)
+  /// Timestamp of when the day was marked complete (cleared for other statuses).
   completed_at DateTime?
   created_at   DateTime @default(now())
   updated_at   DateTime @updatedAt
 
   @@unique([user_id, local_date])
+}
+
+model FoodTrackingPause {
+  id                   Int      @id @default(autoincrement())
+  user_id              Int
+  user                 User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  /// First local date covered by the pause.
+  starts_on            DateTime @db.Date
+  /// Optional prompt date. This never resumes tracking automatically.
+  expected_resume_on   DateTime? @db.Date
+  /// First local date not covered by a closed pause.
+  resumed_on           DateTime? @db.Date
+  started_at           DateTime @default(now())
+  resumed_at           DateTime?
+  /// Most recent local date already persisted as PAUSED.
+  materialized_through DateTime @db.Date
+  created_at           DateTime @default(now())
+  updated_at           DateTime @updatedAt
+
+  @@index([user_id, starts_on])
+  @@index([user_id, resumed_on])
 }
 
 model MyFood {

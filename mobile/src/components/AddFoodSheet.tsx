@@ -17,6 +17,7 @@ import { TextField } from './TextField';
 import { useAuth } from '../auth/AuthContext';
 import { executeOrQueueMutation, OFFLINE_MUTATION_OPERATIONS } from '../offline/operations';
 import { useOfflineOutbox } from '../offline/provider';
+import { useFoodDayStatus } from './FoodTrackingStatus';
 import { formatDateOnlyForDisplay } from '../utils/dates';
 import { formatCalories, formatMealPeriod } from '../utils/format';
 import { MEAL_OPTIONS, MEAL_SELECT_OPTIONS } from '../utils/meals';
@@ -139,6 +140,7 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
     const { api } = useAuth();
     const { enqueue } = useOfflineOutbox();
     const queryClient = useQueryClient();
+    const foodDayQuery = useFoodDayStatus(date, visible);
     const [mode, setMode] = useState<AddFoodMode>(DEFAULT_ADD_FOOD_MODE);
     const [name, setName] = useState('');
     const [calories, setCalories] = useState('');
@@ -168,12 +170,17 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
         enabled: visible && (mode === 'quick' || mode === 'recipes')
     });
 
-    const createFoodLog = useCallback((payload: FoodLogCreatePayload) => executeOrQueueMutation({
-        operation: OFFLINE_MUTATION_OPERATIONS.CREATE_FOOD_LOG,
-        payload,
-        execute: (operationId) => api.createFoodLog(payload, operationId),
-        enqueue
-    }), [api, enqueue]);
+    const createFoodLog = useCallback((payload: FoodLogCreatePayload) => {
+        if (foodDayQuery.data?.status !== 'OPEN') {
+            throw new Error('Backfill this day before adding food.');
+        }
+        return executeOrQueueMutation({
+            operation: OFFLINE_MUTATION_OPERATIONS.CREATE_FOOD_LOG,
+            payload,
+            execute: (operationId) => api.createFoodLog(payload, operationId),
+            enqueue
+        });
+    }, [api, enqueue, foodDayQuery.data?.status]);
 
     useEffect(() => {
         if (visible && initialMeal && MEAL_OPTIONS.includes(initialMeal)) {

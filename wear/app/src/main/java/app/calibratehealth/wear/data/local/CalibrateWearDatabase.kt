@@ -14,7 +14,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         QueuedMutationEntity::class,
         SyncMetadataEntity::class
     ],
-    version = 5,
+    version = 6,
     exportSchema = true
 )
 abstract class CalibrateWearDatabase : RoomDatabase() {
@@ -39,7 +39,7 @@ abstract class CalibrateWearDatabase : RoomDatabase() {
                 CalibrateWearDatabase::class.java,
                 name
             )
-                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
                 .build()
 
         /** Preserves the old outbox order while moving FIFO authority to a database-assigned row ID. */
@@ -186,6 +186,26 @@ abstract class CalibrateWearDatabase : RoomDatabase() {
                 )
                 database.execSQL("DROP TABLE daily_snapshots")
                 database.execSQL("ALTER TABLE daily_snapshots_v5 RENAME TO daily_snapshots")
+            }
+        }
+
+        /** Adds the effective food-day resolution while retaining the legacy completion cache. */
+        val MIGRATION_5_6 = object : Migration(5, 6) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL(
+                    "ALTER TABLE daily_snapshots ADD COLUMN food_day_status TEXT NOT NULL DEFAULT 'OPEN'"
+                )
+                database.execSQL("ALTER TABLE daily_snapshots ADD COLUMN food_day_source TEXT")
+                database.execSQL(
+                    "ALTER TABLE daily_snapshots ADD COLUMN food_day_representative INTEGER NOT NULL DEFAULT 0"
+                )
+                database.execSQL(
+                    """
+                    UPDATE daily_snapshots
+                    SET food_day_status = CASE WHEN food_day_complete = 1 THEN 'COMPLETE' ELSE 'OPEN' END,
+                        food_day_representative = food_day_complete
+                    """.trimIndent()
+                )
             }
         }
     }

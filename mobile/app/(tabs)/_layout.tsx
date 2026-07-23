@@ -19,6 +19,7 @@ import { AppText } from '../../src/components/AppText';
 import { CalibrateLogo } from '../../src/components/CalibrateLogo';
 import { LoadingState } from '../../src/components/LoadingState';
 import { NotificationsDrawer } from '../../src/components/NotificationsDrawer';
+import { ResumeTrackingPrompt, useFoodDayStatus } from '../../src/components/FoodTrackingStatus';
 import { useAuth } from '../../src/auth/AuthContext';
 import { LogDateProvider } from '../../src/context/LogDateContext';
 import {
@@ -106,6 +107,7 @@ export default function TabsLayout() {
     const pathname = usePathname();
     const usesNavigationRail = Platform.OS === 'web' && width >= DESKTOP_NAV_BREAKPOINT;
     const logDateNavigation = useLogDateNavigation();
+    const selectedFoodDayQuery = useFoodDayStatus(logDateNavigation.selectedDate, Boolean(user));
     const addFoodRequestSequence = React.useRef(0);
     const [addFoodRequest, setAddFoodRequest] = React.useState<AddFoodRequest | null>(null);
     const [isNotificationDrawerOpen, setIsNotificationDrawerOpen] = React.useState(false);
@@ -184,7 +186,9 @@ export default function TabsLayout() {
         pathname,
         today,
         metrics: progressMetricsQuery.data,
-        metricsLoaded: progressMetricsQuery.isSuccess
+        metricsLoaded: progressMetricsQuery.isSuccess,
+        foodDayStatus: selectedFoodDayQuery.data?.status,
+        foodDayStatusLoaded: selectedFoodDayQuery.isSuccess
     });
 
     return (
@@ -276,6 +280,7 @@ export default function TabsLayout() {
                             void notificationsQuery.refetch();
                         }}
                     />
+                    <ResumeTrackingPrompt />
                     {fabKind && (
                         <ContextualFab
                             kind={fabKind}
@@ -286,6 +291,7 @@ export default function TabsLayout() {
                             styles={styles}
                             onPress={() => {
                                 if (fabKind === 'add-food') {
+                                    if (selectedFoodDayQuery.data?.status !== 'OPEN') return;
                                     requestAddFood({ date: logDateNavigation.selectedDate });
                                     if (getActiveTabRoute(pathname) !== 'food-log') {
                                         router.navigate('/(tabs)/today');

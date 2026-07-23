@@ -260,6 +260,41 @@ private fun CalorieSummaryPage(
     summary: WearSummary,
     onOpenActions: () -> Unit
 ) {
+    if (summary.isFoodTrackingPaused) {
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier
+                .fillMaxSize()
+                .clickable(onClick = onOpenActions)
+                .semantics { contentDescription = "Calorie tracking paused. Review pause on phone." }
+        ) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(6.dp),
+                modifier = Modifier.padding(horizontal = 20.dp)
+            ) {
+                CalibrateBrand()
+                Text(
+                    text = "Ⅱ",
+                    fontSize = 34.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = CALIBRATE_GREEN
+                )
+                Text(
+                    text = "Tracking paused",
+                    textAlign = TextAlign.Center,
+                    fontWeight = FontWeight.Bold,
+                    color = CALIBRATE_FOREGROUND
+                )
+                Text(
+                    text = "Review on phone",
+                    textAlign = TextAlign.Center,
+                    color = CALIBRATE_SECONDARY_TEXT
+                )
+            }
+        }
+        return
+    }
     val progress = calorieProgressFraction(summary.caloriesConsumed, summary.calorieTarget)
     val caloriesRemaining = summary.caloriesRemaining
     val balanceValue = caloriesRemaining?.let { SummaryFormatter.calorieCount(abs(it)) } ?: "--"
@@ -542,6 +577,7 @@ internal fun goalProgressFraction(summary: WearSummary): Float? = when {
 }
 
 internal fun calorieAccessibilityDescription(summary: WearSummary): String {
+    if (summary.isFoodTrackingPaused) return "Calorie tracking paused. Review pause on phone."
     val consumed = summary.caloriesConsumed
     val target = summary.calorieTarget
     val remaining = summary.caloriesRemaining
@@ -607,12 +643,20 @@ private fun ActionsScreen(
                 Button(
                     onClick = { onContinueOnPhone(summary) },
                     enabled = !homeState.actionInProgress,
-                    label = { Text("Continue on phone") },
-                    secondaryLabel = { Text("Search, scan, or edit food details") },
+                    label = { Text(if (summary.isFoodTrackingPaused) "Review pause on phone" else "Continue on phone") },
+                    secondaryLabel = {
+                        Text(
+                            if (summary.isFoodTrackingPaused) {
+                                "Resume or extend tracking pause"
+                            } else {
+                                "Search, scan, or edit food details"
+                            }
+                        )
+                    },
                     modifier = Modifier.fillMaxWidth()
                 )
             }
-            if (homeState.quickAdds.isNotEmpty()) {
+            if (!summary.isFoodTrackingPaused && homeState.quickAdds.isNotEmpty()) {
                 item { SectionTitle("Quick add") }
                 homeState.quickAdds.forEach { food ->
                     item(key = food.quickAddId) {
@@ -641,7 +685,7 @@ private fun ActionsScreen(
                     )
                 }
             }
-            if (summary.hasUndoCandidate) {
+            if (!summary.isFoodTrackingPaused && summary.hasUndoCandidate) {
                 item {
                     Button(
                         onClick = { onUndo(summary) },
