@@ -21,6 +21,7 @@ import {
     RECENT_FOOD_DEFAULT_LIMIT,
     RECENT_FOOD_MAX_LIMIT
 } from '../services/recentFoods';
+import { getFoodDayWriteBlock } from '../services/foodTracking';
 
 /**
  * Food log and food search endpoints.
@@ -275,6 +276,13 @@ router.post('/', async (req, res) => {
             operationKind: 'food_log.create',
             requestPayload: req.body,
             mutate: async (tx, claimedOperationId) => {
+                const writeBlock = await getFoodDayWriteBlock({
+                    userId: user.id,
+                    localDate: parsedBody.localDate,
+                    db: tx
+                });
+                if (writeBlock) return writeBlock;
+
                 if (parsedBody.kind === 'MY_FOOD') {
                     // Snapshot serving details so later edits to "my foods" do not mutate historical logs.
                     const myFood = await tx.myFood.findFirst({

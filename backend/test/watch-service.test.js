@@ -34,6 +34,16 @@ function loadWatchMutationService(tx) {
     [dbPath, require.cache[dbPath]], [recentPath, require.cache[recentPath]],
     [operationsPath, require.cache[operationsPath]], [trendPath, require.cache[trendPath]]
   ]);
+  tx.foodLogDay ??= {
+    findUnique: async ({ where }) => ({
+      id: 7,
+      local_date: where.user_id_local_date.local_date,
+      status: 'OPEN',
+      origin: 'USER',
+      completed_at: null,
+      updated_at: new Date('2026-07-11T19:00:00.000Z')
+    })
+  };
   delete require.cache[servicePath];
   const captured = { options: null, syncChanges: [], trendRefreshes: 0 };
   stubModule(dbPath, {});
@@ -241,6 +251,45 @@ test('watch food creation snapshots My Food and records trusted session provenan
   assert.equal(service.captured.options.mobileAuthSessionId, 73);
   assert.equal(service.captured.options.operationKind, 'watch.food.create');
   assert.equal(service.captured.syncChanges[0].entityType, 'food_log');
+});
+
+test('watch food creation rejects paused days before inserting', async () => {
+  let createCalled = false;
+  const tx = {
+    foodLogDay: {
+      findUnique: async ({ where }) => ({
+        id: 7,
+        local_date: where.user_id_local_date.local_date,
+        status: 'PAUSED',
+        origin: 'PAUSE',
+        completed_at: null,
+        updated_at: new Date('2026-07-11T19:00:00.000Z')
+      })
+    },
+    foodLog: {
+      create: async () => {
+        createCalled = true;
+        throw new Error('Paused day must not write');
+      }
+    }
+  };
+  const service = loadWatchMutationService(tx);
+  const mutation = service.parseWatchMutation({
+    type: 'food.create',
+    payload: { date: '2026-07-11', meal_period: 'BREAKFAST', name: 'Oats', calories: 300 }
+  }, { timezone: 'UTC', now: new Date('2026-07-11T18:00:00.000Z') });
+  const result = await service.executeWatchMutation({
+    userId: 9,
+    mobileAuthSessionId: 73,
+    operationId: 'watch-food-paused-01',
+    mutation
+  });
+
+  assert.equal(result.status, 409);
+  assert.equal(result.body.code, 'FOOD_DAY_NOT_OPEN');
+  assert.equal(result.body.food_day.status, 'PAUSED');
+  assert.equal(createCalled, false);
+  assert.equal(service.captured.syncChanges.length, 0);
 });
 
 test('watch food deletion is limited to the current session undo candidate', async () => {

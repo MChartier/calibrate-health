@@ -280,6 +280,20 @@ export type WatchQuickAddDraft = {
     draft: FoodLogCreatePayload;
 };
 
+export type WatchFoodDaySnapshot = {
+    status: FoodLogDayStatus;
+    source: FoodLogDayOrigin | null;
+    is_representative: boolean;
+    is_complete: boolean;
+    completed_at: string | null;
+    revision: string | null;
+};
+
+export type WatchFoodDayMutation = Omit<WatchFoodDaySnapshot, 'revision'> & {
+    date: string;
+    revision: string;
+};
+
 export type WatchSnapshot = {
     server_time: string;
     timezone: string;
@@ -292,7 +306,7 @@ export type WatchSnapshot = {
         remaining: number | null;
         missing: string[];
     };
-    food_day: FoodLogDay & { revision: string | null };
+    food_day: WatchFoodDaySnapshot;
     weight: {
         today_grams: number | null;
         today_revision: string | null;
@@ -341,7 +355,7 @@ export type WatchMutationResponse =
     | { type: 'food.create'; food_log: WatchFoodLog }
     | { type: 'food.delete'; food_log_id: number; deleted: true }
     | { type: 'metric.upsert'; metric: { id: number; local_date: string; weight_grams: number; revision: string } }
-    | { type: 'food_day.set_complete'; food_day: FoodLogDay & { revision: string } };
+    | { type: 'food_day.set_complete'; food_day: WatchFoodDayMutation };
 
 export type ClientConfigResponse = {
     api_version: number;

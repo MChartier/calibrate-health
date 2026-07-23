@@ -7,6 +7,7 @@ import { formatDateToLocalDateString, parseLocalDateOnly } from '../utils/date';
 import { parseFoodLogCreateBody } from '../routes/foodUtils';
 import { executeIdempotentMutation, recordSyncChange, type MutationDatabase } from './clientOperations';
 import { refreshMaterializedWeightTrendsBestEffort } from './materializedWeightTrend';
+import { getFoodDayWriteBlock } from './foodTracking';
 
 const WATCH_QUICK_ADD_LIMIT = 12;
 const WATCH_PINNED_LIMIT = 6;
@@ -316,6 +317,12 @@ export async function executeWatchMutation(options: {
     mutate: async (tx, claimedOperationId) => {
       const mutation = options.mutation;
       if (mutation.type === 'food.create') {
+        const writeBlock = await getFoodDayWriteBlock({
+          userId: options.userId,
+          localDate: mutation.parsedFood.localDate,
+          db: tx
+        });
+        if (writeBlock) return writeBlock;
         return createFoodLog({ tx, userId: options.userId, operationId: claimedOperationId, parsed: mutation.parsedFood });
       }
       if (mutation.type === 'food.delete') {

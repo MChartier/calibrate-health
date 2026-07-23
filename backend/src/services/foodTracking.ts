@@ -40,6 +40,16 @@ export type FoodTrackingPauseWire = {
   resume_confirmation_due: boolean;
 };
 
+export type FoodDayWriteBlock = {
+  status: 409;
+  body: {
+    message: string;
+    code: 'FOOD_DAY_NOT_OPEN';
+    retryable: false;
+    food_day: FoodDayWire | null;
+  };
+};
+
 export function formatDateKey(date: Date): string {
   return date.toISOString().slice(0, 10);
 }
@@ -211,6 +221,31 @@ export async function getEffectiveFoodDay(
     is_complete: false,
     completed_at: null,
     updated_at: null
+  };
+}
+
+/** Keep every client surface behind the same canonical food-day write gate. */
+export async function getFoodDayWriteBlock(options: {
+  userId: number;
+  localDate: Date;
+  now?: Date;
+  db?: MutationDatabase;
+}): Promise<FoodDayWriteBlock | null> {
+  const foodDay = await getEffectiveFoodDay(
+    options.userId,
+    options.localDate,
+    options.now ?? new Date(),
+    options.db ?? prisma
+  );
+  if (foodDay?.status === 'OPEN') return null;
+  return {
+    status: 409,
+    body: {
+      message: 'Reopen this day before changing its food log.',
+      code: 'FOOD_DAY_NOT_OPEN',
+      retryable: false,
+      food_day: foodDay
+    }
   };
 }
 
