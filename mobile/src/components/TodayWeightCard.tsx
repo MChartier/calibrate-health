@@ -1,14 +1,14 @@
 import React from 'react';
-import { Pressable, StyleSheet, View, type ViewProps } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import type { MetricEntry } from '@calibrate/api-client';
 import type { WeightUnit } from '@calibrate/shared';
-import { AppCard } from './AppCard';
+import { AppPressableCard } from './AppPressableCard';
 import { AppText } from './AppText';
 import { formatWeight } from '../utils/format';
 import { type AppTheme, useAppTheme } from '../theme';
 
-type TodayWeightCardProps = Omit<ViewProps, 'children'> & {
+type TodayWeightCardProps = Omit<React.ComponentProps<typeof AppPressableCard>, 'children' | 'onPress'> & {
     metric: MetricEntry | null;
     weightUnit: WeightUnit | undefined;
     isToday: boolean;
@@ -34,46 +34,39 @@ export const TodayWeightCard: React.FC<TodayWeightCardProps> = ({
         : (isToday ? 'Add today\'s measurement' : 'Add a measurement for this day');
 
     return (
-        <Pressable
+        <AppPressableCard
+            {...props}
             accessibilityRole="button"
             accessibilityLabel={`${title}. ${metricLabel}. ${action} weight`}
             accessibilityHint={metric ? 'Opens this weigh-in for editing' : 'Opens the weight entry form'}
-            android_ripple={{ color: theme.colors.ripple }}
             onPress={onPress}
-            style={({ pressed }) => [styles.pressable, pressed && styles.pressed]}
+            style={[styles.card, style]}
         >
-            <AppCard {...props} style={[styles.card, style]}>
-                <View style={styles.headerRow}>
-                    <AppText accessibilityRole="header" aria-level={2} variant="screenTitle">{title}</AppText>
-                    <View style={styles.viewAction}>
-                        <AppText style={styles.viewActionText}>{action}</AppText>
-                        <Ionicons name="chevron-forward" size={19} color={theme.colors.primary} />
-                    </View>
+            <View style={styles.headerRow}>
+                <AppText accessibilityRole="header" aria-level={2} variant="screenTitle">{title}</AppText>
+                <View style={styles.viewAction}>
+                    <AppText style={styles.viewActionText}>{action}</AppText>
+                    <Ionicons name="chevron-forward" size={19} color={theme.colors.primary} />
                 </View>
+            </View>
 
-                <View style={styles.summaryRow}>
-                    <View style={styles.weightIcon}>
-                        <Ionicons name="scale-outline" size={22} color={theme.colors.primary} />
-                    </View>
-                    <View style={styles.summaryText}>
-                        <AppText variant={metric ? 'screenTitle' : 'subtitle'} numberOfLines={1}>
-                            {metricLabel}
-                        </AppText>
-                        <AppText variant="muted">{supportingLabel}</AppText>
-                    </View>
+            <View style={styles.summaryRow}>
+                <View style={styles.weightIcon}>
+                    <Ionicons name="scale-outline" size={22} color={theme.colors.primary} />
                 </View>
-            </AppCard>
-        </Pressable>
+                <View style={styles.summaryText}>
+                    <AppText variant={metric ? 'screenTitle' : 'subtitle'} numberOfLines={1}>
+                        {metricLabel}
+                    </AppText>
+                    <AppText variant="muted">{supportingLabel}</AppText>
+                </View>
+            </View>
+        </AppPressableCard>
     );
 };
 
 function createStyles(theme: AppTheme) {
     return StyleSheet.create({
-        pressable: {
-            width: '100%',
-            borderRadius: theme.radius.lg,
-            overflow: 'hidden'
-        },
         card: {
             gap: theme.spacing.md
         },
@@ -112,9 +105,6 @@ function createStyles(theme: AppTheme) {
             flex: 1,
             minWidth: 0,
             gap: theme.spacing.xs
-        },
-        pressed: {
-            opacity: 0.86
         }
     });
 }

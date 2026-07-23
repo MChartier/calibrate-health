@@ -141,7 +141,6 @@ const MealTimelineRow: React.FC<MealTimelineRowProps> = ({
                             <Pressable
                                 accessibilityRole="button"
                                 accessibilityLabel={`${isExpanded ? 'Collapse' : 'Expand'} ${formatMealPeriod(group.meal)}`}
-                                android_ripple={{ color: theme.colors.ripple }}
                                 onPress={() => onToggleMeal(group.meal)}
                                 style={({ pressed }) => [styles.expandButton, pressed && styles.pressed]}
                             >
@@ -194,7 +193,6 @@ const FoodEntryRow: React.FC<FoodEntryRowProps> = ({ entry, disabled, onEditEntr
                     accessibilityRole="button"
                     accessibilityLabel={`Edit ${entry.name}`}
                     disabled={disabled}
-                    android_ripple={{ color: theme.colors.ripple }}
                     onPress={() => onEditEntry(entry)}
                     style={({ pressed }) => [styles.entryAction, disabled && styles.disabled, pressed && styles.pressed]}
                 >
@@ -204,7 +202,6 @@ const FoodEntryRow: React.FC<FoodEntryRowProps> = ({ entry, disabled, onEditEntr
                     accessibilityRole="button"
                     accessibilityLabel={`Delete ${entry.name}`}
                     disabled={disabled}
-                    android_ripple={{ color: theme.colors.ripple }}
                     onPress={() => onDeleteEntry(entry)}
                     style={({ pressed }) => [styles.entryAction, disabled && styles.disabled, pressed && styles.pressed]}
                 >
