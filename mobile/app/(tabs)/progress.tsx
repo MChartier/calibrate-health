@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { router } from 'expo-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { AppButton } from '../../src/components/AppButton';
 import { AppText } from '../../src/components/AppText';
@@ -12,8 +13,8 @@ import { Screen } from '../../src/components/Screen';
 import { SectionHeader } from '../../src/components/SectionHeader';
 import { SegmentedControl } from '../../src/components/SegmentedControl';
 import { WeightEntrySheet } from '../../src/components/WeightEntrySheet';
-import { WeightTrendCard } from '../../src/components/WeightTrendCard';
 import { ProgressOverviewCard } from '../../src/components/progress/ProgressOverviewCard';
+import { WeightTrendPreviewCard } from '../../src/components/progress/WeightTrendPreviewCard';
 import { useAuth } from '../../src/auth/AuthContext';
 import { gramsToDisplayWeight } from '../../src/utils/bodyMeasurements';
 import { getTodayDate } from '../../src/utils/dates';
@@ -138,17 +139,12 @@ export default function ProgressScreen() {
         <Screen reserveBottomTabs style={{ backgroundColor: themeColors.background }}>
             <ProgressOverviewCard
                 latestMetric={metricsQuery.data?.[0]}
-                trendMeta={trendSummaryQuery.data?.meta}
-                goal={goalQuery.data}
                 user={user}
                 hasWeightToday={hasWeightToday}
                 onLogWeight={() => setIsWeightEditorOpen(true)}
             />
 
-            <WeightTrendCard
-                title="Weight trend"
-                description="Daily weigh-ins and your smoothed trend over time."
-            />
+            <WeightTrendPreviewCard onPress={() => router.push('/weight-trend')} />
 
             <GoalProgressCard
                 title="Goal projection"

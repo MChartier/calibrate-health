@@ -6,8 +6,6 @@ jest.mock('@expo/vector-icons/Ionicons', () => () => null);
 
 const BASE_PROPS = {
     latestMetric: { id: 1, date: '2026-07-20', weight: 168.2 },
-    trendMeta: null,
-    goal: null,
     user: null,
     onLogWeight: jest.fn()
 };
@@ -33,5 +31,13 @@ describe('ProgressOverviewCard', () => {
 
         expect(screen.getByText('Edit')).toBeTruthy();
         expect(BASE_PROPS.onLogWeight).toHaveBeenCalledTimes(1);
+    });
+
+    it('stays focused on the latest weigh-in instead of repeating goal progress', () => {
+        const screen = render(<ProgressOverviewCard {...BASE_PROPS} hasWeightToday={false} />);
+
+        expect(screen.getByText('Current weight')).toBeTruthy();
+        expect(screen.getByText('168.2 kg')).toBeTruthy();
+        expect(screen.queryByText('Goal progress')).toBeNull();
     });
 });

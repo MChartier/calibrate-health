@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Pressable, StyleSheet, View, type StyleProp, type ViewProps, type ViewStyle } from 'react-native';
+import { Pressable, StyleSheet, View, type ViewProps } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import Svg, { Circle, Line, Path, Polygon, Text as SvgText } from 'react-native-svg';
 import { useQuery } from '@tanstack/react-query';
@@ -285,11 +285,6 @@ export const WeightTrendCard: React.FC<WeightTrendCardProps> = ({
                 </View>
             ) : (
                 <View style={styles.chartShell}>
-                    <View style={styles.chartLegend} accessibilityLabel="Chart legend">
-                        <ChartLegendItem label="Measurement" tone="measurement" />
-                        <ChartLegendItem label="Trend" tone="trend" />
-                        <ChartLegendItem label="Expected range" tone="range" />
-                    </View>
                     <View
                         style={styles.chartCanvas}
                         onLayout={(event) => setChartCanvasWidth(event.nativeEvent.layout.width)}
@@ -383,23 +378,6 @@ export const WeightTrendCard: React.FC<WeightTrendCardProps> = ({
     );
 };
 
-const ChartLegendItem: React.FC<{ label: string; tone: 'measurement' | 'trend' | 'range' }> = ({ label, tone }) => {
-    const theme = useAppTheme();
-    const styles = useMemo(() => createStyles(theme), [theme]);
-    let swatchStyle: StyleProp<ViewStyle> = styles.measurementSwatch;
-    if (tone === 'trend') swatchStyle = styles.trendSwatch;
-    if (tone === 'range') swatchStyle = styles.rangeSwatch;
-
-    return (
-        <View style={styles.chartLegendItem}>
-            <View style={styles.chartLegendSwatchSlot}>
-                <View style={swatchStyle} />
-            </View>
-            <AppText variant="caption">{label}</AppText>
-        </View>
-    );
-};
-
 const TrendPointDetails: React.FC<{ point: ChartPoint; unit: Parameters<typeof formatWeight>[1] }> = ({ point, unit }) => {
     const theme = useAppTheme();
     const styles = useMemo(() => createStyles(theme), [theme]);
@@ -453,44 +431,6 @@ const createStyles = (theme: AppTheme) => StyleSheet.create({
         borderWidth: StyleSheet.hairlineWidth,
         padding: spacing.sm,
         gap: spacing.sm
-    },
-    chartLegend: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        alignItems: 'center',
-        gap: spacing.sm
-    },
-    chartLegendItem: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: spacing.xs
-    },
-    chartLegendSwatchSlot: {
-        width: 20,
-        height: 12,
-        alignItems: 'center',
-        justifyContent: 'center'
-    },
-    measurementSwatch: {
-        width: 20,
-        height: 2,
-        borderRadius: radius.pill,
-        backgroundColor: theme.colors.info,
-        opacity: 0.65
-    },
-    trendSwatch: {
-        width: 20,
-        height: 4,
-        borderRadius: radius.pill,
-        backgroundColor: theme.colors.primary
-    },
-    rangeSwatch: {
-        width: 20,
-        height: 10,
-        borderRadius: radius.sm,
-        borderColor: theme.colors.info,
-        borderWidth: StyleSheet.hairlineWidth,
-        backgroundColor: theme.colors.infoContainer
     },
     chartCanvas: {
         position: 'relative',

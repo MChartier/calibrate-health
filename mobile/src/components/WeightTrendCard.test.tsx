@@ -93,16 +93,17 @@ describe('WeightTrendCard', () => {
         expect(getByText('168.3 lb on Jul 15, 2026')).toBeTruthy();
     });
 
-    it('labels the chart scale, dates, and visual series', () => {
-        const { getAllByText, getByLabelText } = render(<WeightTrendCard />);
+    it('labels the chart scale, dates, and selected-point series without a duplicate legend', () => {
+        const { getAllByText, getByLabelText, queryByLabelText } = render(<WeightTrendCard />);
 
         expect(getByLabelText('170 lb weight axis label')).toBeTruthy();
         expect(getByLabelText('167 lb weight axis label')).toBeTruthy();
         expect(getByLabelText('Jul 13 date axis label')).toBeTruthy();
         expect(getByLabelText('Jul 14 date axis label')).toBeTruthy();
         expect(getByLabelText('Jul 15 date axis label')).toBeTruthy();
-        expect(getAllByText('Measurement')).toHaveLength(2);
-        expect(getAllByText('Trend')).toHaveLength(2);
-        expect(getAllByText('Expected range')).toHaveLength(2);
+        expect(queryByLabelText('Chart legend')).toBeNull();
+        expect(getAllByText('Measurement')).toHaveLength(1);
+        expect(getAllByText('Trend')).toHaveLength(1);
+        expect(getAllByText('Expected range')).toHaveLength(1);
     });
 });
