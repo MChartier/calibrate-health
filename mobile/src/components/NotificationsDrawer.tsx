@@ -1,5 +1,5 @@
-import React, { useMemo } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { Animated, Easing, Modal, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
 import type { InAppNotification } from '@calibrate/api-client';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppButton } from './AppButton';
@@ -8,7 +8,17 @@ import { AppIconButton } from './AppIconButton';
 import { AppText } from './AppText';
 import { NotificationCard } from './NotificationCard';
 import { SkeletonBlock } from './SkeletonBlock';
+import { useReducedMotionPreference } from '../hooks/useReducedMotionPreference';
 import { spacing, useAppTheme, type AppTheme } from '../theme';
+
+const DRAWER_WIDTH_FRACTION = 0.9;
+const DRAWER_MAX_WIDTH = 440;
+const DRAWER_ENTER_DURATION_MS = 240;
+const DRAWER_EXIT_DURATION_MS = 180;
+
+export function notificationDrawerWidth(windowWidth: number): number {
+    return Math.min(windowWidth * DRAWER_WIDTH_FRACTION, DRAWER_MAX_WIDTH);
+}
 
 type NotificationsDrawerProps = {
     visible: boolean;
@@ -39,14 +49,61 @@ export const NotificationsDrawer: React.FC<NotificationsDrawerProps> = ({
     const theme = useAppTheme();
     const styles = useMemo(() => createStyles(theme), [theme]);
     const insets = useSafeAreaInsets();
+    const { width: windowWidth } = useWindowDimensions();
+    const reduceMotion = useReducedMotionPreference();
+    const [shouldRender, setShouldRender] = useState(visible);
+    const backdropOpacity = useRef(new Animated.Value(0)).current;
+    const drawerProgress = useRef(new Animated.Value(1)).current;
 
-    if (!visible) return null;
+    useEffect(() => {
+        if (visible) setShouldRender(true);
+    }, [visible]);
+
+    useEffect(() => {
+        if (!shouldRender) return;
+
+        if (visible) {
+            backdropOpacity.setValue(0);
+            drawerProgress.setValue(1);
+        }
+
+        let duration = 0;
+        if (!reduceMotion) {
+            duration = visible ? DRAWER_ENTER_DURATION_MS : DRAWER_EXIT_DURATION_MS;
+        }
+
+        const animation = Animated.parallel([
+            Animated.timing(backdropOpacity, {
+                toValue: visible ? 1 : 0,
+                duration,
+                easing: visible ? Easing.out(Easing.ease) : Easing.in(Easing.ease),
+                useNativeDriver: true
+            }),
+            Animated.timing(drawerProgress, {
+                toValue: visible ? 0 : 1,
+                duration,
+                easing: visible ? Easing.out(Easing.cubic) : Easing.in(Easing.cubic),
+                useNativeDriver: true
+            })
+        ]);
+        animation.start(({ finished }) => {
+            if (finished && !visible) setShouldRender(false);
+        });
+        return () => animation.stop();
+    }, [backdropOpacity, drawerProgress, reduceMotion, shouldRender, visible]);
+
+    if (!shouldRender) return null;
+
+    const translateX = drawerProgress.interpolate({
+        inputRange: [0, 1],
+        outputRange: [0, notificationDrawerWidth(windowWidth)]
+    });
 
     return (
         <Modal
             visible
             transparent
-            animationType="fade"
+            animationType="none"
             presentationStyle="overFullScreen"
             statusBarTranslucent
             onRequestClose={onClose}
@@ -58,15 +115,17 @@ export const NotificationsDrawer: React.FC<NotificationsDrawerProps> = ({
                     onPress={onClose}
                     style={StyleSheet.absoluteFill}
                 >
-                    <View style={styles.backdrop} />
+                    <Animated.View style={[styles.backdrop, { opacity: backdropOpacity }]} />
                 </Pressable>
-                <View
+                <Animated.View
+                    testID="notifications-drawer-panel"
                     accessibilityViewIsModal
                     style={[
                         styles.panel,
                         {
                             paddingTop: Math.max(insets.top, spacing.md),
-                            paddingBottom: Math.max(insets.bottom, spacing.md)
+                            paddingBottom: Math.max(insets.bottom, spacing.md),
+                            transform: [{ translateX }]
                         }
                     ]}
                 >
@@ -124,7 +183,7 @@ export const NotificationsDrawer: React.FC<NotificationsDrawerProps> = ({
                             </AppCard>
                         )}
                     </ScrollView>
-                </View>
+                </Animated.View>
             </View>
         </Modal>
     );
