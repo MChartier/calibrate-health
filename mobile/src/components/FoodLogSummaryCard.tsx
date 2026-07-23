@@ -1,13 +1,13 @@
 import React, { useMemo } from 'react';
-import { Pressable, StyleSheet, View, type ViewProps } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import type { FoodLogEntry } from '@calibrate/api-client';
-import { AppCard } from './AppCard';
+import { AppPressableCard } from './AppPressableCard';
 import { AppText } from './AppText';
 import { formatCalories, formatMealPeriod } from '../utils/format';
 import { type AppTheme, useAppTheme } from '../theme';
 
-type FoodLogSummaryCardProps = Omit<ViewProps, 'children'> & {
+type FoodLogSummaryCardProps = Omit<React.ComponentProps<typeof AppPressableCard>, 'children' | 'onPress'> & {
     entries: FoodLogEntry[];
     onPress: () => void;
 };
@@ -49,63 +49,56 @@ export const FoodLogSummaryCard: React.FC<FoodLogSummaryCardProps> = ({ entries,
         : 'No food logged';
 
     return (
-        <Pressable
+        <AppPressableCard
+            {...props}
             accessibilityRole="button"
             accessibilityLabel={`Food log. ${accessibilitySummary}. View full log`}
             accessibilityHint="Opens the full food log for this day"
-            android_ripple={{ color: theme.colors.ripple }}
             onPress={onPress}
-            style={({ pressed }) => [styles.pressable, pressed && styles.pressed]}
+            style={[styles.card, style]}
         >
-            <AppCard {...props} style={[styles.card, style]}>
-                <View style={styles.headerRow}>
-                    <AppText accessibilityRole="header" aria-level={2} variant="screenTitle">Food log</AppText>
-                    <View style={styles.viewAction}>
-                        <AppText style={styles.viewActionText}>View full log</AppText>
-                        <Ionicons name="chevron-forward" size={19} color={theme.colors.primary} />
+            <View style={styles.headerRow}>
+                <AppText accessibilityRole="header" aria-level={2} variant="screenTitle">Food log</AppText>
+                <View style={styles.viewAction}>
+                    <AppText style={styles.viewActionText}>View full log</AppText>
+                    <Ionicons name="chevron-forward" size={19} color={theme.colors.primary} />
+                </View>
+            </View>
+
+            {recentMeal ? (
+                <View style={styles.summaryRow}>
+                    <View style={styles.mealIcon}>
+                        <Ionicons name="restaurant-outline" size={21} color={theme.colors.primary} />
+                    </View>
+                    <View style={styles.summaryText}>
+                        <View style={styles.mealHeading}>
+                            <AppText variant="subtitle" numberOfLines={1} style={styles.mealName}>
+                                {formatMealPeriod(recentMeal.meal)}
+                            </AppText>
+                            <AppText variant="label" numberOfLines={1}>{formatCalories(recentMeal.calories)}</AppText>
+                        </View>
+                        <AppText variant="muted" numberOfLines={1}>
+                            {formatEntryPreview(recentMeal.entries)}
+                        </AppText>
                     </View>
                 </View>
-
-                {recentMeal ? (
-                    <View style={styles.summaryRow}>
-                        <View style={styles.mealIcon}>
-                            <Ionicons name="restaurant-outline" size={21} color={theme.colors.primary} />
-                        </View>
-                        <View style={styles.summaryText}>
-                            <View style={styles.mealHeading}>
-                                <AppText variant="subtitle" numberOfLines={1} style={styles.mealName}>
-                                    {formatMealPeriod(recentMeal.meal)}
-                                </AppText>
-                                <AppText variant="label" numberOfLines={1}>{formatCalories(recentMeal.calories)}</AppText>
-                            </View>
-                            <AppText variant="muted" numberOfLines={1}>
-                                {formatEntryPreview(recentMeal.entries)}
-                            </AppText>
-                        </View>
+            ) : (
+                <View style={styles.summaryRow}>
+                    <View style={styles.mealIcon}>
+                        <Ionicons name="restaurant-outline" size={21} color={theme.colors.muted} />
                     </View>
-                ) : (
-                    <View style={styles.summaryRow}>
-                        <View style={styles.mealIcon}>
-                            <Ionicons name="restaurant-outline" size={21} color={theme.colors.muted} />
-                        </View>
-                        <View style={styles.summaryText}>
-                            <AppText variant="subtitle">Nothing logged yet</AppText>
-                            <AppText variant="muted">Use Add food to start this day.</AppText>
-                        </View>
+                    <View style={styles.summaryText}>
+                        <AppText variant="subtitle">Nothing logged yet</AppText>
+                        <AppText variant="muted">Use Add food to start this day.</AppText>
                     </View>
-                )}
-            </AppCard>
-        </Pressable>
+                </View>
+            )}
+        </AppPressableCard>
     );
 };
 
 function createStyles(theme: AppTheme) {
     return StyleSheet.create({
-        pressable: {
-            width: '100%',
-            borderRadius: theme.radius.lg,
-            overflow: 'hidden'
-        },
         card: {
             gap: theme.spacing.md
         },
@@ -153,9 +146,6 @@ function createStyles(theme: AppTheme) {
         mealName: {
             flex: 1,
             minWidth: 0
-        },
-        pressed: {
-            opacity: 0.86
         }
     });
 }

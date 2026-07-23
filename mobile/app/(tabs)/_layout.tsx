@@ -345,7 +345,6 @@ const HeaderBrand: React.FC<{ colors: AppThemeColors; styles: TabStyles }> = ({ 
         accessibilityRole="button"
         accessibilityLabel="Go to Today"
         accessibilityHint="Opens the Today dashboard"
-        android_ripple={{ color: colors.surfacePressed, borderless: false }}
         focusStyle={styles.navigationFocus}
         hoverStyle={styles.navigationHover}
         onPress={() => router.push('/(tabs)/today')}
@@ -369,7 +368,6 @@ const HeaderActions: React.FC<{
             <NavigationPressable
                 accessibilityRole="button"
                 accessibilityLabel={`${offlineChangeCount} offline changes ${hasFailedOfflineChanges ? 'need attention' : 'pending'}`}
-                android_ripple={{ color: colors.surfacePressed, borderless: false }}
                 focusStyle={styles.navigationFocus}
                 hoverStyle={styles.navigationHover}
                 onPress={() => router.push('/(tabs)/settings')}
@@ -385,7 +383,6 @@ const HeaderActions: React.FC<{
         <NavigationPressable
             accessibilityRole="button"
             accessibilityLabel={unreadCount > 0 ? `Open notifications, ${unreadCount} unread` : 'Open notifications'}
-            android_ripple={{ color: colors.surfacePressed, borderless: false }}
             focusStyle={styles.navigationFocus}
             hoverStyle={styles.navigationHover}
             onPress={onOpenNotifications}
@@ -402,7 +399,6 @@ const HeaderActions: React.FC<{
             accessibilityRole="button"
             accessibilityLabel="Open account"
             accessibilityHint="Opens profile and app settings"
-            android_ripple={{ color: colors.surfacePressed, borderless: false }}
             focusStyle={styles.navigationFocus}
             hoverStyle={styles.navigationHover}
             onPress={() => router.push('/(tabs)/settings')}
@@ -434,7 +430,6 @@ const ContextualFab: React.FC<{
             accessibilityRole="button"
             accessibilityLabel={label}
             accessibilityHint={isAddFood ? 'Opens food search for the selected day' : "Opens today's weight editor"}
-            android_ripple={{ color: colors.ripple, borderless: false }}
             focusStyle={styles.fabFocus}
             hoverStyle={styles.fabHover}
             onPress={onPress}
@@ -537,7 +532,7 @@ function createStyles(colors: AppThemeColors, shadows: AppTheme['shadows']) {
         overflow: 'hidden'
     },
     pressed: {
-        backgroundColor: colors.surfaceAlt
+        backgroundColor: colors.surfacePressed
     },
     navigationHover: {
         backgroundColor: colors.surfaceAlt

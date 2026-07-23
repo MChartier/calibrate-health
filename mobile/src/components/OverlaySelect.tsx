@@ -107,7 +107,6 @@ export function OverlaySelect<T extends string>({
                 accessibilityRole="button"
                 accessibilityLabel={accessibilityLabel}
                 accessibilityState={{ expanded: isOpen }}
-                android_ripple={{ color: theme.colors.ripple }}
                 onLayout={handleButtonLayout}
                 onPress={handleToggle}
                 style={({ pressed }) => [styles.button, pressed && styles.pressedSurface]}
@@ -145,7 +144,6 @@ export function OverlaySelect<T extends string>({
                                     key={option.value}
                                     accessibilityRole="button"
                                     accessibilityState={{ selected: isSelected }}
-                                    android_ripple={{ color: theme.colors.ripple }}
                                     onPress={() => onChange(option.value)}
                                     style={({ pressed }) => [
                                         styles.option,

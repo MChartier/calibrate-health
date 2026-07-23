@@ -84,7 +84,6 @@ export const TimeZonePickerField: React.FC<TimeZonePickerFieldProps> = ({ value,
             <Pressable
                 accessibilityRole="button"
                 accessibilityState={{ expanded: isManualOpen }}
-                android_ripple={{ color: theme.colors.ripple }}
                 onPress={() => setIsManualOpen((current) => !current)}
                 style={({ pressed }) => [styles.advancedAction, pressed && styles.pressed]}
             >

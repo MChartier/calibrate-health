@@ -3,7 +3,7 @@ import { Pressable, StyleSheet, type PressableProps } from 'react-native';
 import { type AppTheme, useAppTheme } from '../theme';
 import { AppText } from './AppText';
 
-type AppChipProps = PressableProps & {
+type AppChipProps = Omit<PressableProps, 'android_ripple'> & {
     label: string;
     selected?: boolean;
 };
@@ -11,14 +11,13 @@ type AppChipProps = PressableProps & {
 /**
  * Native chip used for meal periods and compact option sets.
  */
-export const AppChip: React.FC<AppChipProps> = ({ label, selected = false, style, android_ripple, ...props }) => {
+export const AppChip: React.FC<AppChipProps> = ({ label, selected = false, style, ...props }) => {
     const theme = useAppTheme();
     const styles = React.useMemo(() => createStyles(theme), [theme]);
     return <Pressable
         {...props}
         accessibilityRole={props.accessibilityRole ?? 'button'}
         accessibilityState={{ ...props.accessibilityState, selected }}
-        android_ripple={android_ripple ?? { color: theme.colors.ripple }}
         style={({ pressed }) => [
             styles.root,
             selected && styles.selected,

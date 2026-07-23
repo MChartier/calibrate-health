@@ -48,7 +48,6 @@ export const DateNavigation: React.FC<DateNavigationProps> = ({
                 <Pressable
                     accessibilityRole="button"
                     accessibilityLabel="Choose date"
-                    android_ripple={{ color: theme.colors.ripple }}
                     onPress={openPicker}
                     style={({ pressed }) => [styles.datePill, pressed && styles.pressed]}
                 >
@@ -93,7 +92,6 @@ const IconPressable: React.FC<IconPressableProps> = ({ label, icon, disabled, on
         accessibilityRole="button"
         accessibilityLabel={label}
         disabled={disabled}
-        android_ripple={{ color: theme.colors.ripple, borderless: false }}
         onPress={onPress}
         style={({ pressed }) => [styles.iconButton, disabled && styles.disabled, pressed && styles.pressed]}
     >
