@@ -44,17 +44,23 @@ test('no active workflow deploys to AWS or builds an image for every merged PR',
   assert.doesNotMatch(workflows, /pull_request_target/);
 });
 
-test('Expo OTA updates are manual, authenticated, and native-compatibility gated', () => {
+test('Expo OTA updates publish internal automatically and gate production approval', () => {
   const workflow = readWorkflow('expo-ota-update.yml');
 
-  assert.match(workflow, /workflow_dispatch:/);
-  assert.match(workflow, /native_build_ref:/);
-  assert.match(workflow, /refs\/heads\/master/);
+  assert.match(workflow, /push:\s*\n\s+branches: \[master\]/);
+  assert.match(workflow, /publish-internal:/);
+  assert.match(workflow, /environment: preview/);
+  assert.match(workflow, /EXPO_UPDATES_CHANNEL: internal/);
+  assert.match(workflow, /publish-production:/);
+  assert.match(workflow, /needs: publish-internal/);
+  assert.match(workflow, /environment: production/);
+  assert.match(workflow, /EXPO_UPDATES_CHANNEL: production/);
+  assert.match(workflow, /cancel-in-progress: true/);
   assert.match(workflow, /secrets\.EXPO_TOKEN/);
   assert.match(workflow, /eas env:pull/);
-  assert.match(workflow, /native-ota-ci-preflight\.mjs/);
+  assert.match(workflow, /expo-ota-ci-preflight\.mjs/);
   assert.match(workflow, /eas update/);
   assert.match(workflow, /--platform android/);
   assert.match(workflow, /--non-interactive/);
-  assert.doesNotMatch(workflow, /pull_request:|push:/);
+  assert.doesNotMatch(workflow, /workflow_dispatch:|native_build_ref|native-ota-ci-preflight/);
 });

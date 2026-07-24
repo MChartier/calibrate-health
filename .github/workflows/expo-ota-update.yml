@@ -1,57 +1,37 @@
 name: Publish Expo OTA Update
 
 on:
-  workflow_dispatch:
-    inputs:
-      native_build_ref:
-        description: Native build tag shown in Settings > About Calibrate (or its exact source commit)
-        required: true
-        type: string
-      channel:
-        description: Update channel embedded in the installed Android phone build
-        required: true
-        default: internal
-        type: choice
-        options:
-          - internal
-          - production
-      message:
-        description: Short operator-facing description of this OTA update
-        required: true
-        type: string
+  push:
+    branches: [master]
 
 permissions:
   contents: read
 
 concurrency:
-  group: expo-ota-${{ inputs.channel }}
-  cancel-in-progress: false
+  group: expo-ota-master
+  cancel-in-progress: true
 
 jobs:
-  publish:
-    name: Validate and Publish Android OTA
+  publish-internal:
+    name: Publish Android OTA to internal
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    environment: preview
     env:
-      EAS_ENVIRONMENT: ${{ inputs.channel == 'production' && 'production' || 'preview' }}
+      EAS_ENVIRONMENT: preview
       EXPO_NO_METRO_WORKSPACE_ROOT: '1'
       EXPO_PUBLIC_EAS_PROJECT_ID: fda8f8c5-e646-47ac-82fb-35003c9cbec7
-      EXPO_UPDATES_CHANNEL: ${{ inputs.channel }}
-      NATIVE_BUILD_REF: ${{ inputs.native_build_ref }}
+      EXPO_UPDATES_CHANNEL: internal
       NODE_ENV: production
-      OTA_MESSAGE: ${{ inputs.message }}
+      OTA_MESSAGE: ${{ github.event.head_commit.message }}
 
     steps:
-      - name: Require master and Expo authentication
+      - name: Require Expo authentication
         shell: bash
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         run: |
           set -euo pipefail
-          if [[ "${GITHUB_REF}" != "refs/heads/master" ]]; then
-            echo "OTA updates must be dispatched from the master branch; received ${GITHUB_REF}." >&2
-            exit 1
-          fi
           if [[ -z "${EXPO_TOKEN}" ]]; then
             echo "Add an EXPO_TOKEN repository secret before publishing an OTA update." >&2
             exit 1
@@ -59,8 +39,6 @@ jobs:
 
       - name: Checkout reviewed source
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -82,10 +60,76 @@ jobs:
         working-directory: mobile
         run: eas env:pull --environment "${EAS_ENVIRONMENT}" --path "${RUNNER_TEMP}/calibrate-eas-update.env" --non-interactive
 
-      - name: Verify native compatibility and environment targeting
+      - name: Verify internal environment targeting
         run: >-
-          node scripts/native-ota-ci-preflight.mjs
-          --native-build-ref "${NATIVE_BUILD_REF}"
+          node scripts/expo-ota-ci-preflight.mjs
+          --channel "${EXPO_UPDATES_CHANNEL}"
+          --environment "${EAS_ENVIRONMENT}"
+          --environment-file "${RUNNER_TEMP}/calibrate-eas-update.env"
+
+      - name: Publish Android phone OTA update
+        working-directory: mobile
+        run: >-
+          eas update
+          --channel "${EXPO_UPDATES_CHANNEL}"
+          --message "${OTA_MESSAGE}"
+          --environment "${EAS_ENVIRONMENT}"
+          --platform android
+          --non-interactive
+
+  publish-production:
+    name: Approve and publish Android OTA to production
+    needs: publish-internal
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    # Required reviewers on this GitHub environment hold the job for verification and sign-off.
+    environment: production
+    env:
+      EAS_ENVIRONMENT: production
+      EXPO_NO_METRO_WORKSPACE_ROOT: '1'
+      EXPO_PUBLIC_EAS_PROJECT_ID: fda8f8c5-e646-47ac-82fb-35003c9cbec7
+      EXPO_UPDATES_CHANNEL: production
+      NODE_ENV: production
+      OTA_MESSAGE: ${{ github.event.head_commit.message }}
+
+    steps:
+      - name: Require Expo authentication
+        shell: bash
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [[ -z "${EXPO_TOKEN}" ]]; then
+            echo "Add an EXPO_TOKEN repository secret before publishing an OTA update." >&2
+            exit 1
+          fi
+
+      - name: Checkout verified source
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.14.0
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Setup EAS
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Install mobile dependencies
+        run: npm ci --no-audit --fund=false
+
+      - name: Read production EAS environment
+        working-directory: mobile
+        run: eas env:pull --environment "${EAS_ENVIRONMENT}" --path "${RUNNER_TEMP}/calibrate-eas-update.env" --non-interactive
+
+      - name: Verify production environment targeting
+        run: >-
+          node scripts/expo-ota-ci-preflight.mjs
           --channel "${EXPO_UPDATES_CHANNEL}"
           --environment "${EAS_ENVIRONMENT}"
           --environment-file "${RUNNER_TEMP}/calibrate-eas-update.env"

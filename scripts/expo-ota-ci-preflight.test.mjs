@@ -2,38 +2,22 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import {
-  parseNativeOtaCiArgs,
-  validateEasCiEnvironment,
-  validateNativeOtaCompatibility
-} from './native-ota-ci-preflight.mjs';
+  parseExpoOtaCiArgs,
+  validateEasCiEnvironment
+} from './expo-ota-ci-preflight.mjs';
 
-test('OTA CI CLI requires explicit native-build targeting inputs', () => {
-  assert.deepEqual(parseNativeOtaCiArgs([
-    '--native-build-ref', 'v0.12.2',
+test('OTA CI CLI requires explicit channel and environment inputs', () => {
+  assert.deepEqual(parseExpoOtaCiArgs([
     '--channel', 'production',
     '--environment', 'production',
     '--environment-file', 'eas.env'
   ]), {
-    nativeBuildRef: 'v0.12.2',
     channel: 'production',
     environment: 'production',
     environmentFile: 'eas.env',
     help: false
   });
-  assert.throws(() => parseNativeOtaCiArgs(['--unknown']), /Unknown native OTA CI option/);
-});
-
-test('OTA CI accepts only the exact compatible native runtime', () => {
-  const installed = { runtimeVersion: '0.2.1', fingerprint: 'abc' };
-  validateNativeOtaCompatibility(installed, { ...installed });
-  assert.throws(
-    () => validateNativeOtaCompatibility(installed, { ...installed, runtimeVersion: '0.2.2' }),
-    /Native runtime version changed/
-  );
-  assert.throws(
-    () => validateNativeOtaCompatibility(installed, { ...installed, fingerprint: 'def' }),
-    /Native runtime inputs changed/
-  );
+  assert.throws(() => parseExpoOtaCiArgs(['--unknown']), /Unknown Expo OTA CI option/);
 });
 
 test('OTA CI validates the selected EAS environment contract', () => {
