@@ -459,7 +459,9 @@ function createStyles(theme: AppTheme) {
             flexGrow: 1
         },
         actionCompact: {
-            flex: 1,
+            flexBasis: 0,
+            flexGrow: 1,
+            flexShrink: 1,
             minWidth: 0,
             paddingHorizontal: theme.spacing.xs
         },

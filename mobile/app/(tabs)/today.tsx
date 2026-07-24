@@ -17,6 +17,7 @@ import { useAuth } from '../../src/auth/AuthContext';
 import { useSharedLogDateNavigation } from '../../src/context/LogDateContext';
 import { useAddFoodRequest } from '../../src/context/AddFoodRequestContext';
 import { usePrefetchPreviousFoodLog } from '../../src/hooks/usePrefetchPreviousFoodLog';
+import { shouldShowCalorieComparison } from '../../src/food/dayPresentation';
 import { getActiveTabRoute } from '../../src/navigation/contextualFab';
 import { MEAL_OPTIONS } from '../../src/utils/meals';
 import { getTodayDate } from '../../src/utils/dates';
@@ -81,7 +82,11 @@ export default function TodayScreen() {
     const isToday = selectedDate === getTodayDate(user?.timezone);
     const dayStatus = foodDayQuery.data;
     const isPaused = dayStatus?.status === 'PAUSED';
-    const showCalorieComparison = dayStatus?.status === 'COMPLETE' || (isToday && dayStatus?.status === 'OPEN');
+    const showCalorieComparison = shouldShowCalorieComparison({
+        status: dayStatus?.status,
+        isToday,
+        hasFoodEntries: entries.length > 0
+    });
     let unavailableLabel = 'Day unresolved';
     if (dayStatus?.status === 'INCOMPLETE') unavailableLabel = 'Incomplete day';
     const showContentSkeleton =
