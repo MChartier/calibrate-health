@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet } from 'react-native';
+import { ScrollView, StyleSheet } from 'react-native';
 import { render } from '@testing-library/react-native';
 import { AppText } from './AppText';
 import { Screen } from './Screen';
@@ -39,5 +39,17 @@ describe('Screen', () => {
         const contentStyle = StyleSheet.flatten(view.getByTestId('responsive-screen').props.contentContainerStyle);
 
         expect(contentStyle.paddingBottom).toBe(88);
+    });
+
+    it('uses the shared keyboard-aware scroller for form content', () => {
+        const view = render(
+            <Screen testID="responsive-screen">
+                <AppText>Account form</AppText>
+            </Screen>
+        );
+
+        const scroller = view.UNSAFE_getByType(ScrollView);
+        expect(scroller.props.keyboardDismissMode).toBe('on-drag');
+        expect(scroller.props.keyboardShouldPersistTaps).toBe('handled');
     });
 });

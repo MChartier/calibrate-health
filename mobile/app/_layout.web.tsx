@@ -2,6 +2,7 @@ import 'react-native-gesture-handler';
 import React from 'react';
 import { Slot } from 'expo-router';
 import Head from 'expo-router/head';
+import { StyleSheet, View } from 'react-native';
 import { QueryClient, QueryClientProvider, useQueryClient } from '@tanstack/react-query';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
@@ -14,6 +15,7 @@ import { AppErrorBoundary } from '../src/components/AppErrorBoundary';
 import { HealthConnectProvider } from '../src/healthConnect/provider';
 import { PwaStatusBanner } from '../src/pwa/PwaStatusBanner.web';
 import { useBrowserNotificationStream } from '../src/notifications/useBrowserNotificationStream.web';
+import { useVisualViewportHeight } from '../src/hooks/useVisualViewportHeight';
 
 const queryClient = new QueryClient();
 
@@ -80,6 +82,7 @@ const AuthenticatedPwaStatus: React.FC = () => {
 
 export default function RootLayout() {
     const theme = useAppTheme();
+    const visualViewportHeight = useVisualViewportHeight();
 
     React.useEffect(() => {
         const previousRootBackground = document.documentElement.style.backgroundColor;
@@ -116,7 +119,9 @@ export default function RootLayout() {
                                 <Head>
                                     <title>calibrate</title>
                                 </Head>
-                                <Slot />
+                                <View style={[styles.viewport, { height: visualViewportHeight }]}>
+                                    <Slot />
+                                </View>
                             </BrowserRuntime>
                         </NativePushRegistrationProvider>
                     </AuthProvider>
@@ -125,3 +130,10 @@ export default function RootLayout() {
         </AppErrorBoundary>
     );
 }
+
+const styles = StyleSheet.create({
+    viewport: {
+        flex: 1,
+        minHeight: 0
+    }
+});
