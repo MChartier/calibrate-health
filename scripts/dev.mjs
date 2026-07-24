@@ -87,8 +87,16 @@ export function terminateDevelopmentChild(
 export function createDevelopmentServices({
   root = repoRoot,
   environment = process.env,
+  expoOnly = false,
   expoWebOnly = false
 } = {}) {
+  const expoService = {
+    name: 'expo',
+    cwd: path.join(root, 'mobile'),
+    args: ['run', 'dev']
+  };
+  if (expoOnly) return [expoService];
+
   const expoWebPort = resolveExpoWebDevServerPort(environment);
   const expoWebService = {
     name: 'expo-web',
@@ -109,12 +117,21 @@ export function runDevelopmentServers({
   spawnProcess = spawn
 } = {}) {
   const autoLoginTestUser = resolveTestUserAutoLogin(argv);
+  const expoOnly = argv.includes('--expo-only');
   const expoWebOnly = argv.includes('--expo-web-only');
+  if (expoOnly && expoWebOnly) {
+    throw new Error('Choose either --expo-only or --expo-web-only.');
+  }
   const childEnvironment = createExpoCliEnvironment(
     root,
     createDevelopmentEnvironment(environment, autoLoginTestUser)
   );
-  const services = createDevelopmentServices({ root, environment: childEnvironment, expoWebOnly });
+  const services = createDevelopmentServices({
+    root,
+    environment: childEnvironment,
+    expoOnly,
+    expoWebOnly
+  });
   const npmExecPath = childEnvironment.npm_execpath;
   const states = new Map();
   let shuttingDown = false;

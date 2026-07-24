@@ -23,6 +23,7 @@
     "dev:reset-test-user-onboarding": "node scripts/codex-worktree-env.mjs reset-test-user-onboarding",
     "dev:backend": "npm --prefix backend run dev",
     "dev:frontend": "npm run dev:expo-web",
+    "dev:expo": "node scripts/dev.mjs --expo-only",
     "dev:expo-web": "node scripts/dev.mjs --expo-web-only",
     "preview": "node scripts/preview.mjs",
     "prisma:generate": "npm --prefix backend run prisma:generate",
