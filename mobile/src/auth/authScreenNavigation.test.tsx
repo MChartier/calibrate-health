@@ -1,4 +1,5 @@
 import React from 'react';
+import { Platform } from 'react-native';
 import { fireEvent, render, waitFor, within } from '@testing-library/react-native';
 import LoginScreen from '../../app/(auth)/login';
 import RegisterScreen from '../../app/(auth)/register';
@@ -60,6 +61,10 @@ describe('auth screen server navigation', () => {
         mockUseAuth.mockReturnValue(authContextStub() as unknown as ReturnType<typeof useAuth>);
     });
 
+    afterEach(() => {
+        jest.restoreAllMocks();
+    });
+
     it('carries the login server draft into the registration link', () => {
         const screen = render(<LoginScreen />);
 
@@ -101,6 +106,29 @@ describe('auth screen server navigation', () => {
         await waitFor(() => {
             expect(auth.register).toHaveBeenCalledWith('new@example.com', 'secret', SELF_HOSTED_URL);
         });
+    });
+
+    it('hides server selection and uses the serving server on web', async () => {
+        jest.replaceProperty(Platform, 'OS', 'web');
+        const auth = authContextStub();
+        mockUseAuth.mockReturnValue(auth as unknown as ReturnType<typeof useAuth>);
+        const screen = render(<LoginScreen />);
+
+        expect(screen.queryByText(SELF_HOSTED_URL)).toBeNull();
+        expect(screen.queryByLabelText('Change server URL')).toBeNull();
+
+        fireEvent.changeText(screen.getByLabelText('Email'), 'user@example.com');
+        fireEvent.changeText(screen.getByLabelText('Password'), 'secret');
+        fireEvent.press(screen.getByLabelText('Sign in'));
+
+        await waitFor(() => {
+            expect(auth.login).toHaveBeenCalledWith(
+                'user@example.com',
+                'secret',
+                auth.serverUrl
+            );
+        });
+        expect(mockLink.mock.calls[0][0].href).toBe('/(auth)/register');
     });
 
     it('restores the create-account action after registration fails', async () => {

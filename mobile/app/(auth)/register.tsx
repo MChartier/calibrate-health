@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Pressable, StyleSheet } from 'react-native';
+import { Platform, Pressable, StyleSheet } from 'react-native';
 import { Link, useLocalSearchParams } from 'expo-router';
 import { AppButton } from '../../src/components/AppButton';
 import { AppCard } from '../../src/components/AppCard';
@@ -17,7 +17,8 @@ export default function RegisterScreen() {
     const { colors } = useAppTheme();
     const params = useLocalSearchParams<{ serverUrl?: string | string[] }>();
     const { register, serverUrl, testServerUrl, serverConnection, authError } = useAuth();
-    const routedServerDraft = readAuthServerDraft(params.serverUrl);
+    const canSelectServer = Platform.OS !== 'web';
+    const routedServerDraft = canSelectServer ? readAuthServerDraft(params.serverUrl) : null;
     const [serverInput, setServerInput] = useState(routedServerDraft ?? serverUrl);
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -93,18 +94,23 @@ export default function RegisterScreen() {
                     onChangeText={setConfirmPassword}
                     onSubmitEditing={() => void handleRegister()}
                 />
-                <ServerUrlControl
-                    value={serverInput}
-                    onChangeText={setServerInput}
-                    connection={serverConnection}
-                    onTestConnection={testServerUrl}
-                />
+                {canSelectServer && (
+                    <ServerUrlControl
+                        value={serverInput}
+                        onChangeText={setServerInput}
+                        connection={serverConnection}
+                        onTestConnection={testServerUrl}
+                    />
+                )}
                 {(error || authError) && <AppText accessibilityRole="alert" style={{ color: colors.danger }}>{error ?? authError}</AppText>}
                 <AppButton title={isSubmitting ? 'Creating...' : 'Create account'} disabled={isSubmitting} onPress={() => void handleRegister()} />
             </AppCard>
 
             <Link
-                href={{ pathname: '/(auth)/login', params: { serverUrl: serverInput } }}
+                href={canSelectServer ? {
+                    pathname: '/(auth)/login',
+                    params: { serverUrl: serverInput }
+                } : '/(auth)/login'}
                 asChild
             >
                 <Pressable accessibilityRole="link" style={styles.linkTarget}>

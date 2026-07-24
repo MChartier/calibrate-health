@@ -4,7 +4,7 @@ export type PublicLegalSection = {
     bullets?: string[];
 };
 
-export const PRIVACY_LAST_UPDATED = 'July 23, 2026';
+export const PRIVACY_LAST_UPDATED = 'July 24, 2026';
 export const PRIVACY_INTRO = [
     'Calibrate Health ("Calibrate", "we", "us", or "our") respects your privacy. This Privacy Policy explains what information we collect, how we use it, and the choices you have when you use the Calibrate Health application at https://calibratehealth.app.',
     'Calibrate Health is a calorie and weight-tracking tool. It is not a medical service and does not provide medical advice.'
@@ -42,7 +42,7 @@ export const PRIVACY_SECTIONS: PublicLegalSection[] = [
     {
         title: '3. Cookies and Local Storage',
         paragraphs: [
-            'The web client uses an HttpOnly session cookie for authentication. Browser storage may retain non-sensitive app preferences, the selected server origin, and PWA state; browser access and refresh tokens are not stored there.',
+            'The web client uses an HttpOnly session cookie for authentication and sends API requests only to the origin that served the app. Browser storage may retain non-sensitive app preferences and PWA state; browser access and refresh tokens are not stored there.',
             'The Android client stores its server address, secure authentication credentials, Health Connect synchronization state, and a local SQLite queue for pending food, weight, day-status, or tracking-pause changes. We do not use advertising cookies or tracking pixels.'
         ]
     },

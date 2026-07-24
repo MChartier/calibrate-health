@@ -446,21 +446,24 @@ export default function SettingsScreen() {
                 />
             </SettingsSection>
 
-            <SettingsSection title="Security & server">
+            <SettingsSection title={isWeb ? 'Security' : 'Security & server'}>
                 <SettingsRow
                     icon="key-outline"
                     label="Password"
                     supportingText="Change your account password"
+                    showDivider={!isWeb}
                     onPress={() => setActiveSheet('password')}
                 />
-                <SettingsRow
-                    icon="server-outline"
-                    label="Calibrate server"
-                    supportingText="Hosted or self-hosted connection"
-                    value={serverUrl.replace(/^https?:\/\//, '')}
-                    showDivider={false}
-                    onPress={() => setActiveSheet('server')}
-                />
+                {!isWeb && (
+                    <SettingsRow
+                        icon="server-outline"
+                        label="Calibrate server"
+                        supportingText="Hosted or self-hosted connection"
+                        value={serverUrl.replace(/^https?:\/\//, '')}
+                        showDivider={false}
+                        onPress={() => setActiveSheet('server')}
+                    />
+                )}
             </SettingsSection>
 
             <SettingsSection title="App">
@@ -802,18 +805,20 @@ export default function SettingsScreen() {
                 />
             </SettingsDetailSheet>
 
-            <SettingsDetailSheet
-                visible={activeSheet === 'server'}
-                onClose={() => setActiveSheet(null)}
-            >
-                <SectionHeader title="Advanced" description="Hosted and self-hosted server connection." />
-                <TextField label="Server URL" value={serverInput} onChangeText={setServerInput} autoCapitalize="none" />
-                <AppButton
-                    title="Save connection"
-                    leftIcon={<Ionicons name="server-outline" size={18} color={themeColors.onPrimary} />}
-                    onPress={() => void handleSaveServer()}
-                />
-            </SettingsDetailSheet>
+            {!isWeb && (
+                <SettingsDetailSheet
+                    visible={activeSheet === 'server'}
+                    onClose={() => setActiveSheet(null)}
+                >
+                    <SectionHeader title="Advanced" description="Hosted and self-hosted server connection." />
+                    <TextField label="Server URL" value={serverInput} onChangeText={setServerInput} autoCapitalize="none" />
+                    <AppButton
+                        title="Save connection"
+                        leftIcon={<Ionicons name="server-outline" size={18} color={themeColors.onPrimary} />}
+                        onPress={() => void handleSaveServer()}
+                    />
+                </SettingsDetailSheet>
+            )}
 
             <BottomSheetModal
                 visible={isProfileEditorOpen}

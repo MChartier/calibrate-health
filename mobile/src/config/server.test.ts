@@ -2,6 +2,7 @@ import {
     getConfiguredServerUrl,
     normalizeServerUrl,
     parseServerUrl,
+    resolveBrowserServerUrl,
     resolveDefaultWebServerUrl,
     resolveInitialServerUrl,
     testCalibrateServerConnection
@@ -80,6 +81,17 @@ describe('server URL parsing', () => {
         expect(resolveDefaultWebServerUrl(expoLocation, false)).toBe('http://localhost:8081');
         expect(resolveDefaultWebServerUrl(new URL('https://self-hosted.example/app'), true))
             .toBe('https://self-hosted.example');
+    });
+
+    it('binds production web auth to the serving origin while allowing an explicit development backend', () => {
+        const location = new URL('https://self-hosted.example/login');
+        expect(resolveBrowserServerUrl(location, 'https://other.example', false))
+            .toBe('https://self-hosted.example');
+        expect(resolveBrowserServerUrl(
+            new URL('http://localhost:41508/login'),
+            'http://localhost:21508',
+            true
+        )).toBe('http://localhost:21508');
     });
 });
 
