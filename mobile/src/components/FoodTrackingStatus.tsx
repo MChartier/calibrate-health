@@ -154,8 +154,8 @@ export const DayStatusCard: React.FC<{
     let icon: React.ComponentProps<typeof Ionicons>['name'] = 'options-outline';
     let title = isToday ? 'Tracking options' : 'Resolve this day';
     let description = isToday
-        ? 'Pause tracking now, or resolve the day when you are finished.'
-        : 'Mark this day complete if it represents the full day, or incomplete if it does not.';
+        ? 'Complete the day when the log is finished, or pause tracking when you are taking time off.'
+        : 'This day remains unresolved until its calorie log represents the full day.';
     if (day.status === 'COMPLETE') {
         icon = 'checkmark-circle';
         title = 'Day complete';
@@ -198,31 +198,32 @@ export const DayStatusCard: React.FC<{
 
                 {day.status === 'OPEN' && (
                     <View style={[styles.actions, useCompactOpenLayout && styles.actionsCompact]}>
-                        {isToday && (
-                            <AppButton
-                                title={useCompactOpenLayout ? 'Pause' : 'Pause tracking'}
-                                accessibilityLabel="Pause tracking"
-                                disabled={isBusy}
-                                onPress={() => setPauseSheetOpen(true)}
-                                style={[styles.action, useCompactOpenLayout && styles.actionCompact]}
-                            />
-                        )}
                         <AppButton
-                            title={useCompactOpenLayout ? 'Complete' : 'Complete day'}
+                            title="Complete day"
                             accessibilityLabel="Complete day"
-                            variant="secondary"
                             disabled={isBusy}
                             onPress={() => setStatus.mutate('COMPLETE')}
                             style={[styles.action, useCompactOpenLayout && styles.actionCompact]}
+                            leftIcon={<Ionicons
+                                name="checkmark-circle-outline"
+                                size={18}
+                                color={theme.colors.onPrimary}
+                            />}
                         />
-                        <AppButton
-                            title={useCompactOpenLayout ? 'Incomplete' : 'Mark incomplete'}
-                            accessibilityLabel="Mark incomplete"
-                            variant="secondary"
-                            disabled={isBusy}
-                            onPress={() => setStatus.mutate('INCOMPLETE')}
-                            style={[styles.action, useCompactOpenLayout && styles.actionCompact]}
-                        />
+                        {isToday && (
+                            <AppButton
+                                title="Pause tracking"
+                                variant="secondary"
+                                disabled={isBusy}
+                                onPress={() => setPauseSheetOpen(true)}
+                                style={[styles.action, useCompactOpenLayout && styles.actionCompact]}
+                                leftIcon={<Ionicons
+                                    name="pause-circle-outline"
+                                    size={18}
+                                    color={theme.colors.primary}
+                                />}
+                            />
+                        )}
                     </View>
                 )}
                 {(day.status === 'COMPLETE' || day.status === 'INCOMPLETE' || (day.status === 'PAUSED' && !isToday)) && (

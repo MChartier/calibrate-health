@@ -133,9 +133,9 @@ describe('food tracking day resolution', () => {
         const screen = renderWithQuery(<DayStatusCard date="2026-07-23" isToday compact />);
 
         await waitFor(() => expect(screen.getByText('Tracking options')).toBeTruthy());
-        expect(screen.getByText('Pause')).toBeTruthy();
-        expect(screen.getByText('Complete')).toBeTruthy();
-        expect(screen.getByText('Incomplete')).toBeTruthy();
+        expect(screen.getByText('Complete day')).toBeTruthy();
+        expect(screen.getByText('Pause tracking')).toBeTruthy();
+        expect(screen.queryByText('Mark incomplete')).toBeNull();
         fireEvent.press(screen.getByLabelText('Pause tracking'));
 
         expect(screen.getByText('Pause calorie tracking?')).toBeTruthy();
