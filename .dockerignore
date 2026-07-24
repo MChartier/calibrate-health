@@ -3,12 +3,12 @@
 **/dist
 **/build
 **/.gradle
-.env
 **/.env
 mobile/android
 .git
 .github
 .vscode
 .devcontainer
+.dev.env
 coverage
 **/*.log

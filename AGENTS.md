@@ -71,48 +71,49 @@ Non-goals for MVP:
   verify the repo-owned setup path before changing app code.
 - Keep secrets out of the database. Provider API keys and client IDs are sourced
   from environment variables unless the product direction changes explicitly.
-- For commands that need to run inside the devcontainer from the host, prefer the
-  worktree-aware helpers:
-  - `npm run devcontainer:up -- <branch|path>`
-  - `npm run devcontainer:exec -- -- <command...>`
-  - `npm run devcontainer:shell -- <branch|path>`
-  - `npm run codex:<action>` when using Codex app actions.
+- Keep Codex and validation commands on the host. Use the repo-owned Compose
+  launcher for the live application stack; do not add container-shell wrappers
+  for ordinary tests, linting, builds, or Prisma work.
 
 ## Local Development
 
 Primary workflows:
 
 - Codex setup: `node .codex/local-environment.setup.mjs`
-- Codex dev action: `npm run codex:dev`
-- Codex setup action: `npm run codex:setup-app`
-- Codex shell: `npm run codex:shell`
+- Host dependency setup: `npm run setup`
+- Prepare the worktree stack: `npm run dev:setup`
 - Local dev server: `npm run dev`
-- Local dev with seeded test-user auto-login: `npm run dev:test`
+- Native Expo dev-client bundler: `npm run dev:expo` (with the Compose stack
+  running separately)
+- Local dev without seeded-user auto-login: `npm run dev:manual-auth`
+- Inspect the current stack: `npm run dev:status`
 - Reset test-user onboarding: `npm run dev:reset-test-user-onboarding`
 - Local CI equivalent: `npm run ci:local`
 
-Devcontainer notes:
+Worktree stack notes:
 
-- The devcontainer intentionally starts quickly. Run setup when dependencies,
-  Prisma generation, migrations, or seed data are needed.
-- `scripts/dev-env.mjs` is the supported dependency/setup orchestrator.
-  `setup:deps` repairs dependency volumes; `setup` installs dependencies,
-  generates Prisma, waits for DB readiness, migrates, and seeds.
-- Dependency caches are lockfile-and-runtime based. Keep cache-hit/cache-miss
-  output explicit when editing setup scripts.
-- A healthy backend dependency volume contains `backend/node_modules/.bin/prisma`,
-  `backend/node_modules/.bin/ts-node`, and
-  `backend/node_modules/.calibrate-install-complete.json`.
-- If Prisma disappears inside the container, rerun the repo setup/deps path
-  before treating it as an app regression.
+- `scripts/dev-stack.mjs` owns Docker/Compose lifecycle, stable ports, and the
+  current worktree database. It always targets the current checkout.
+- `scripts/dev-env.mjs` owns host dependency setup, Prisma commands, and local
+  CI. Host dependency caches are lockfile-and-runtime based; keep cache-hit and
+  cache-miss output explicit when editing setup.
+- `compose.dev.yaml` runs separate `web`, `backend`, and `postgres` services.
+  Compose Watch syncs source changes; package-lock and Prisma changes rebuild
+  the affected image.
+- Codex setup installs host dependencies and allocates `.dev.env`, but it does
+  not start containers. This prevents idle stacks in code-only worktrees.
+- `npm run dev:down` retains the current database volume. `npm run dev:reset`
+  resets only that worktree's database.
 - Repo root `.env` is gitignored. Do not assume it propagates to new worktrees
   unless setup copies it or the user sets machine/user environment variables.
 
 Environment conventions:
 
-- Devcontainer and docker-compose read repo root `.env`.
-- Local backend runs outside the devcontainer use `backend/.env`.
-- `.devcontainer/.env` is generated and gitignored.
+- Root `.env` stores user-provided application credentials.
+- `.dev.env` is generated, gitignored, worktree-specific, and contains only the
+  allowlisted application configuration plus local ports/secrets.
+- Direct backend package runs may use `backend/.env`; standard root database
+  commands inject the current worktree database automatically.
 - The seeded account is `test@calibratehealth.app`.
 - `AUTO_LOGIN_TEST_USER=true` enables local auto-login for that seeded account.
 
@@ -168,7 +169,7 @@ Food provider behavior:
 - `FOOD_DATA_PROVIDER` selects the preferred provider: `fatsecret`, `usda`, or
   `openfoodfacts`.
 - FatSecret requires `FATSECRET_CLIENT_ID` and `FATSECRET_CLIENT_SECRET`.
-- USDA requires `USDA_API_KEY`, though devcontainers may use USDA `DEMO_KEY` for
+- USDA requires `USDA_API_KEY`, though local development may use USDA `DEMO_KEY` for
   local fallback when no provider credentials exist.
 - Missing credentials should not crash normal dev search. Detect available
   providers and use deterministic fallback order with the configured/default

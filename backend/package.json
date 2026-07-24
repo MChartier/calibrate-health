@@ -19,7 +19,7 @@
     "test": "node -r ts-node/register --test",
     "pretest:coverage": "npm run prisma:generate",
     "test:coverage": "c8 node -r ts-node/register --test",
-    "dev": "nodemon --watch src --ext ts,json --exec ts-node src/index.ts"
+    "dev": "nodemon --watch src --watch ../shared --ext ts,json --exec ts-node src/index.ts"
   },
   "keywords": [],
   "author": "",
