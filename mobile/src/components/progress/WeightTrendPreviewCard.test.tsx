@@ -32,7 +32,9 @@ describe('WeightTrendPreviewCard', () => {
                 ],
                 meta: {
                     weekly_rate: -0.35,
-                    volatility: 'low'
+                    volatility: 'low',
+                    total_points: 2,
+                    total_span_days: 1
                 }
             },
             error: null,
@@ -50,5 +52,19 @@ describe('WeightTrendPreviewCard', () => {
 
         fireEvent.press(screen.getByLabelText('Open full weight trend'));
         expect(onPress).toHaveBeenCalledTimes(1);
+    });
+
+    it('uses added height and sample metadata when the screen has room', () => {
+        const screen = render(
+            <WeightTrendPreviewCard
+                contentExpansion={1}
+                showExpandedMetadata
+                onPress={jest.fn()}
+            />
+        );
+
+        expect(screen.getByLabelText('30-day weight trend preview')).toHaveProp('height', 176);
+        expect(screen.getByText('2 total weigh-ins')).toBeTruthy();
+        expect(screen.getByText('1-day history')).toBeTruthy();
     });
 });

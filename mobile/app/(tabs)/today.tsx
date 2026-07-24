@@ -17,6 +17,7 @@ import { useAuth } from '../../src/auth/AuthContext';
 import { useSharedLogDateNavigation } from '../../src/context/LogDateContext';
 import { useAddFoodRequest } from '../../src/context/AddFoodRequestContext';
 import { usePrefetchPreviousFoodLog } from '../../src/hooks/usePrefetchPreviousFoodLog';
+import { useResponsiveContentLayout } from '../../src/hooks/useResponsiveContentLayout';
 import { shouldShowCalorieComparison } from '../../src/food/dayPresentation';
 import { getActiveTabRoute } from '../../src/navigation/contextualFab';
 import { MEAL_OPTIONS } from '../../src/utils/meals';
@@ -26,6 +27,7 @@ import { spacing, useAppTheme } from '../../src/theme';
 
 export default function TodayScreen() {
     const { colors } = useAppTheme();
+    const responsiveLayout = useResponsiveContentLayout();
     const routeParams = useLocalSearchParams<{ openAddFood?: string; date?: string; meal?: string }>();
     const pathname = usePathname();
     const { api, user } = useAuth();
@@ -94,9 +96,18 @@ export default function TodayScreen() {
         (profileQuery.isLoading || foodQuery.isLoading || metricsQuery.isLoading || foodDayQuery.isLoading);
 
     return (
-        <Screen reserveBottomTabs style={styles.screenContent}>
+        <Screen
+            reserveBottomTabs
+            style={[styles.screenContent, !responsiveLayout.isCompact && styles.screenContentRoomy]}
+        >
             <DateNavigation navigation={dateNavigation} />
-            {isPaused && <DayStatusCard date={selectedDate} isToday={isToday} compact />}
+            {isPaused && (
+                <DayStatusCard
+                    date={selectedDate}
+                    isToday={isToday}
+                    compact={responsiveLayout.isCompact}
+                />
+            )}
 
             {showContentSkeleton ? (
                 <LogContentSkeleton />
@@ -107,7 +118,7 @@ export default function TodayScreen() {
                             totalCalories={calories}
                             targetCalories={showCalorieComparison ? target : null}
                             unavailableLabel={unavailableLabel}
-                            compact
+                            compact={responsiveLayout.isCompact}
                         />
                     )}
 
@@ -116,7 +127,7 @@ export default function TodayScreen() {
                             entries={entries}
                             trackingUnavailable={dayStatus?.status !== 'OPEN' && dayStatus?.status !== 'COMPLETE'}
                             onPress={() => router.push({ pathname: '/(tabs)/food-log', params: { date: selectedDate } })}
-                            compact
+                            compact={responsiveLayout.isCompact}
                         />
                     )}
 
@@ -125,12 +136,18 @@ export default function TodayScreen() {
                         weightUnit={user?.weight_unit}
                         isToday={isToday}
                         onPress={() => setIsWeightSheetOpen(true)}
-                        compact
+                        compact={responsiveLayout.isCompact}
                     />
                 </>
             )}
 
-            {!isPaused && <DayStatusCard date={selectedDate} isToday={isToday} compact />}
+            {!isPaused && (
+                <DayStatusCard
+                    date={selectedDate}
+                    isToday={isToday}
+                    compact={responsiveLayout.isCompact}
+                />
+            )}
 
             {foodQuery.error && <AppText style={{ color: colors.danger }}>{foodQuery.error.message}</AppText>}
             {profileQuery.error && <AppText style={{ color: colors.danger }}>{profileQuery.error.message}</AppText>}
@@ -156,5 +173,9 @@ const styles = StyleSheet.create({
         flexGrow: 1,
         gap: spacing.md,
         paddingTop: spacing.md
+    },
+    screenContentRoomy: {
+        gap: spacing.lg,
+        paddingTop: spacing.lg
     }
 });

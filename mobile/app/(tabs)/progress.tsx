@@ -16,6 +16,7 @@ import { WeightEntrySheet } from '../../src/components/WeightEntrySheet';
 import { ProgressOverviewCard } from '../../src/components/progress/ProgressOverviewCard';
 import { WeightTrendPreviewCard } from '../../src/components/progress/WeightTrendPreviewCard';
 import { useAuth } from '../../src/auth/AuthContext';
+import { useResponsiveContentLayout } from '../../src/hooks/useResponsiveContentLayout';
 import { gramsToDisplayWeight } from '../../src/utils/bodyMeasurements';
 import { getTodayDate } from '../../src/utils/dates';
 import { formatWeightUnit } from '../../src/utils/format';
@@ -51,6 +52,7 @@ function getGoalValidationError(goalMode: GoalMode, startWeight: number, targetW
 
 export default function ProgressScreen() {
     const { api, user } = useAuth();
+    const responsiveLayout = useResponsiveContentLayout();
     const theme = useAppTheme();
     const { colors: themeColors } = theme;
     const styles = useMemo(() => createStyles(theme), [theme]);
@@ -144,7 +146,11 @@ export default function ProgressScreen() {
                 onLogWeight={() => setIsWeightEditorOpen(true)}
             />
 
-            <WeightTrendPreviewCard onPress={() => router.push('/weight-trend')} />
+            <WeightTrendPreviewCard
+                contentExpansion={responsiveLayout.contentExpansion}
+                showExpandedMetadata={!responsiveLayout.isCompact}
+                onPress={() => router.push('/weight-trend')}
+            />
 
             <GoalProgressCard
                 title="Goal projection"
