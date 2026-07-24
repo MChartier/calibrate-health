@@ -49,7 +49,8 @@ export function parseNativeOtaArgs(argv) {
 
 export function createNativeOtaRunner() {
   return function runCommand(request) {
-    const result = spawnSync(request.command, request.args ?? [], {
+    const invocation = resolveNativeOtaInvocation(request);
+    const result = spawnSync(invocation.command, invocation.args, {
       cwd: request.cwd,
       env: request.env,
       encoding: request.inherit ? undefined : 'utf8',
@@ -68,6 +69,36 @@ export function createNativeOtaRunner() {
     }
     return response;
   };
+}
+
+export function resolveNativeOtaInvocation(request, options = {}) {
+  const platform = options.platform ?? process.platform;
+  const args = request.args ?? [];
+  if (platform !== 'win32' || request.command.toLowerCase() !== 'npx.cmd') {
+    return { command: request.command, args };
+  }
+
+  const nodeExecutable = options.nodeExecutable ?? process.execPath;
+  const fileExists = options.fileExists ?? fs.existsSync;
+  const npmExecPath = request.env?.npm_execpath ?? process.env.npm_execpath;
+  const candidates = [];
+  if (npmExecPath) {
+    candidates.push(path.win32.join(path.win32.dirname(npmExecPath), 'npx-cli.js'));
+  }
+  candidates.push(path.win32.join(
+    path.win32.dirname(nodeExecutable),
+    'node_modules',
+    'npm',
+    'bin',
+    'npx-cli.js'
+  ));
+  const npxCli = candidates.find((candidate) => fileExists(candidate));
+  if (!npxCli) {
+    throw new Error(
+      'Unable to locate npm/bin/npx-cli.js for the Windows OTA command. Run this workflow through npm.cmd.'
+    );
+  }
+  return { command: nodeExecutable, args: [npxCli, ...args] };
 }
 
 function gitRequest(root, args, label, allowFailure = false) {
