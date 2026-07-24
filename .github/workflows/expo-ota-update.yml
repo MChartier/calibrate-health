@@ -24,6 +24,7 @@ jobs:
       EXPO_UPDATES_CHANNEL: internal
       NODE_ENV: production
       OTA_MESSAGE: ${{ github.event.head_commit.message }}
+      PREVIOUS_MASTER_REF: ${{ github.event.before }}
 
     steps:
       - name: Require Expo authentication
@@ -39,6 +40,8 @@ jobs:
 
       - name: Checkout reviewed source
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -63,6 +66,7 @@ jobs:
       - name: Verify internal environment targeting
         run: >-
           node scripts/expo-ota-ci-preflight.mjs
+          --previous-ref "${PREVIOUS_MASTER_REF}"
           --channel "${EXPO_UPDATES_CHANNEL}"
           --environment "${EAS_ENVIRONMENT}"
           --environment-file "${RUNNER_TEMP}/calibrate-eas-update.env"
@@ -91,6 +95,7 @@ jobs:
       EXPO_UPDATES_CHANNEL: production
       NODE_ENV: production
       OTA_MESSAGE: ${{ github.event.head_commit.message }}
+      PREVIOUS_MASTER_REF: ${{ github.event.before }}
 
     steps:
       - name: Require Expo authentication
@@ -106,6 +111,8 @@ jobs:
 
       - name: Checkout verified source
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -130,6 +137,7 @@ jobs:
       - name: Verify production environment targeting
         run: >-
           node scripts/expo-ota-ci-preflight.mjs
+          --previous-ref "${PREVIOUS_MASTER_REF}"
           --channel "${EXPO_UPDATES_CHANNEL}"
           --environment "${EAS_ENVIRONMENT}"
           --environment-file "${RUNNER_TEMP}/calibrate-eas-update.env"

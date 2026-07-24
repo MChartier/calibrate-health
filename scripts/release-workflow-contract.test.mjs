@@ -55,6 +55,8 @@ test('Expo OTA updates publish internal automatically and gate production approv
   assert.match(workflow, /needs: publish-internal/);
   assert.match(workflow, /environment: production/);
   assert.match(workflow, /EXPO_UPDATES_CHANNEL: production/);
+  assert.match(workflow, /PREVIOUS_MASTER_REF: \$\{\{ github\.event\.before \}\}/);
+  assert.match(workflow, /--previous-ref "\$\{PREVIOUS_MASTER_REF\}"/);
   assert.match(workflow, /cancel-in-progress: true/);
   assert.match(workflow, /secrets\.EXPO_TOKEN/);
   assert.match(workflow, /eas env:pull/);

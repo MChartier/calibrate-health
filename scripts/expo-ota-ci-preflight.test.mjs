@@ -3,21 +3,37 @@ import test from 'node:test';
 
 import {
   parseExpoOtaCiArgs,
-  validateEasCiEnvironment
+  validateEasCiEnvironment,
+  validateNativeRuntimeChange
 } from './expo-ota-ci-preflight.mjs';
 
 test('OTA CI CLI requires explicit channel and environment inputs', () => {
   assert.deepEqual(parseExpoOtaCiArgs([
+    '--previous-ref', 'abc123',
     '--channel', 'production',
     '--environment', 'production',
     '--environment-file', 'eas.env'
   ]), {
+    previousRef: 'abc123',
     channel: 'production',
     environment: 'production',
     environmentFile: 'eas.env',
     help: false
   });
   assert.throws(() => parseExpoOtaCiArgs(['--unknown']), /Unknown Expo OTA CI option/);
+});
+
+test('OTA CI requires an app version change when native runtime inputs change', () => {
+  const previous = { appVersion: '0.2.2', nativeFingerprint: 'abc' };
+  assert.deepEqual(validateNativeRuntimeChange(previous, { ...previous }), { changed: false });
+  assert.deepEqual(validateNativeRuntimeChange(previous, {
+    appVersion: '0.2.3',
+    nativeFingerprint: 'def'
+  }), { changed: true });
+  assert.throws(
+    () => validateNativeRuntimeChange(previous, { ...previous, nativeFingerprint: 'def' }),
+    /without an app version change/
+  );
 });
 
 test('OTA CI validates the selected EAS environment contract', () => {
