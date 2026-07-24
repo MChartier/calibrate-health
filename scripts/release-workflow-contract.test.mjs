@@ -20,23 +20,31 @@ test('master merges publish only when the reviewed manifest version advances', (
   assert.match(workflow, /needs: publish/);
   assert.match(workflow, /uses: \.\/\.github\/workflows\/container\.yml/);
   assert.match(workflow, /release_tag: \$\{\{ needs\.publish\.outputs\.release_tag \}\}/);
+  assert.match(workflow, /publish_latest: true/);
   assert.doesNotMatch(workflow, /createWorkflowDispatch|workflow_id:/);
 });
 
-test('release images use the current GHCR-only workflow with an explicit immutable tag', () => {
+test('release images publish immutable identity and guard the moving latest tag', () => {
   const workflow = readWorkflow('container.yml');
+  const deployEnvironment = readFileSync(path.join(repositoryRoot, 'deploy', '.env.example'), 'utf8');
 
   assert.doesNotMatch(workflow, /push:\s*\n\s+tags:/, 'image builds must be explicitly dispatched');
   assert.match(workflow, /workflow_call:/);
   assert.match(workflow, /workflow_dispatch:/);
   assert.match(workflow, /release_tag:/);
+  assert.match(workflow, /publish_latest:/);
+  assert.match(workflow, /default: false/);
   assert.match(workflow, /ref: \$\{\{ inputs\.release_tag \}\}/);
   assert.match(workflow, /REQUESTED_TAG: \$\{\{ inputs\.release_tag \}\}/);
   assert.match(workflow, /node scripts\/release-config\.mjs tag/);
   assert.match(workflow, /ghcr\.io/);
+  assert.match(workflow, /echo "\$\{GHCR_IMAGE\}:latest"/);
+  assert.match(workflow, /Refusing to move latest/);
   assert.match(workflow, /platforms: linux\/amd64/);
   assert.doesNotMatch(workflow, /linux\/arm64|setup-qemu-action/);
   assert.doesNotMatch(workflow, /aws-actions|amazon-ecs|\bECR\b|\bECS\b|Deploy Staging|Deploy Prod/i);
+  assert.match(deployEnvironment, /^APP_IMAGE=ghcr\.io\/mchartier\/calibratehealth:latest$/m);
+  assert.doesNotMatch(deployEnvironment, /calibratehealth:master/);
 });
 
 test('no active workflow deploys to AWS or builds an image for every merged PR', () => {

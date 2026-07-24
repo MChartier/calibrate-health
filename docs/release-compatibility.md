@@ -75,9 +75,10 @@ closed. A manual dispatch on `master` is retained only as a recovery mechanism; 
 beyond merging the reviewed version bump.
 
 The reusable image workflow receives the immutable tag as an explicit input while its workflow definition is loaded
-from `master`. This prevents rebuilding an older tag from executing historical AWS/ECS deployment jobs. It publishes
-only the version and source-SHA tags to GHCR; deployment to a self-host remains an operator-controlled Docker Compose
-operation.
+from `master`. This prevents rebuilding an older tag from executing historical AWS/ECS deployment jobs. Validated
+manifest releases publish version, source-SHA, and moving `latest` tags to GHCR. Manual recovery builds leave `latest`
+unchanged by default and reject attempts to move it to anything other than the highest stable release. Deployment to
+a self-host remains an operator-controlled Docker Compose operation.
 
 Container publication runs `release:check:container`, including the encrypted backup/restore drill, strict dependency
 policy, canonical version checks, and risk-contract validation. It intentionally does not claim physical Android/Wear
