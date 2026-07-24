@@ -8,6 +8,11 @@ on:
         description: Existing vMAJOR.MINOR.PATCH tag created by the validated manifest release
         required: true
         type: string
+      publish_latest:
+        description: Also publish the moving latest tag after validating the current stable release
+        required: false
+        default: false
+        type: boolean
   # Retain an explicit recovery path for rebuilding an existing immutable release.
   workflow_dispatch:
     inputs:
@@ -15,6 +20,11 @@ on:
         description: Existing vMAJOR.MINOR.PATCH tag to build with the current GHCR-only workflow
         required: true
         type: string
+      publish_latest:
+        description: Also update latest when rebuilding the current stable release
+        required: false
+        default: false
+        type: boolean
 
 permissions:
   contents: read
@@ -50,6 +60,7 @@ jobs:
         shell: bash
         env:
           REQUESTED_TAG: ${{ inputs.release_tag }}
+          PUBLISH_LATEST: ${{ inputs.publish_latest }}
         run: |
           set -euo pipefail
           if [[ ! "${REQUESTED_TAG}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
@@ -67,6 +78,14 @@ jobs:
           if [[ "${SOURCE_SHA}" != "$(git rev-parse HEAD)" ]]; then
             echo "Checkout does not match ${REQUESTED_TAG}." >&2
             exit 1
+          fi
+
+          if [[ "${PUBLISH_LATEST}" == "true" ]]; then
+            LATEST_RELEASE_TAG="$(git tag --list --sort=-v:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | head -n 1 || true)"
+            if [[ "${REQUESTED_TAG}" != "${LATEST_RELEASE_TAG}" ]]; then
+              echo "Refusing to move latest to ${REQUESTED_TAG}; current stable release is ${LATEST_RELEASE_TAG}." >&2
+              exit 1
+            fi
           fi
 
           {
@@ -90,6 +109,7 @@ jobs:
         env:
           RELEASE_TAG: ${{ steps.release.outputs.release_tag }}
           SOURCE_SHA: ${{ steps.release.outputs.source_sha }}
+          PUBLISH_LATEST: ${{ inputs.publish_latest }}
         run: |
           set -euo pipefail
           GHCR_IMAGE="${GHCR_IMAGE,,}"
@@ -98,6 +118,9 @@ jobs:
             echo "tags<<EOF"
             echo "${GHCR_IMAGE}:${RELEASE_TAG}"
             echo "${GHCR_IMAGE}:sha-${SOURCE_SHA}"
+            if [[ "${PUBLISH_LATEST}" == "true" ]]; then
+              echo "${GHCR_IMAGE}:latest"
+            fi
             echo "EOF"
           } >> "$GITHUB_OUTPUT"
 

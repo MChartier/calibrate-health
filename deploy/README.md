@@ -24,7 +24,8 @@ its own `pg_isready` health check, and the app waits for it before running migra
 ## Initial configuration
 
 1. Copy `.env.example` to `.env` and replace every placeholder used by your selected files.
-2. Use a pinned immutable `APP_IMAGE` tag or digest for reproducible upgrades.
+2. `APP_IMAGE` defaults to the moving `latest` release tag. Replace it with an immutable `vMAJOR.MINOR.PATCH` tag or
+   digest when you need reproducible upgrades and rollbacks.
 3. Generate `SESSION_SECRET` from at least 32 random bytes and keep it stable across restarts.
 4. Point `APP_HOST` DNS at the proxy host. Caddy obtains certificates itself; Traefik uses the configured resolver and
    external Docker network.
@@ -83,9 +84,10 @@ exist.
   readiness probe.
 - `restart: unless-stopped`, init handling, and stop grace periods cover normal host reboots and orderly Postgres
   shutdown. Do not scale the Compose app beyond one replica without separately designing migration and job ownership.
-- Before an upgrade, confirm a recent encrypted backup exists. Pull the new immutable image, run `docker compose up -d`,
-  and watch `docker compose logs -f app` until migrations and readiness succeed. Database migrations are forward-only;
-  rollback means restoring a pre-upgrade backup into a clean database and running the matching prior image.
+- Before an upgrade, confirm a recent encrypted backup exists. If you use `latest`, pull it explicitly before running
+  `docker compose up -d`; Compose does not automatically refresh a moving tag. Watch `docker compose logs -f app` until
+  migrations and readiness succeed. Database migrations are forward-only; rollback means restoring a pre-upgrade
+  backup into a clean database and running the matching prior image.
 
 ## Encrypted automated backups
 

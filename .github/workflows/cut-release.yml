@@ -93,3 +93,4 @@ jobs:
     uses: ./.github/workflows/container.yml
     with:
       release_tag: ${{ needs.publish.outputs.release_tag }}
+      publish_latest: true
