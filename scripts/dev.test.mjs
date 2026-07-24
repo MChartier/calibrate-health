@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import { createRequire } from 'node:module';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import test from 'node:test';
@@ -16,6 +17,7 @@ import {
 } from './dev.mjs';
 
 const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const require = createRequire(import.meta.url);
 
 test('root development launches the backend and Expo web client', () => {
   const root = path.resolve('test-worktree');
@@ -163,6 +165,16 @@ test('Expo CLI can resolve app-local Router packages from its hoisted workspace 
     { cwd: repositoryRoot, env: createExpoCliEnvironment(repositoryRoot), encoding: 'utf8' }
   );
   assert.equal(resolution.status, 0, resolution.stderr || resolution.stdout);
+});
+
+test('Metro ignores dependency executable shims that devcontainers can make unreadable on Windows', () => {
+  const metroConfig = require(path.join(repositoryRoot, 'mobile', 'metro.config.js'));
+  const dependencyBinDirectory = path.join(repositoryRoot, 'mobile', 'node_modules', '.bin');
+
+  assert.equal(
+    metroConfig.resolver.blockList.some((pattern) => pattern.test(dependencyBinDirectory)),
+    true
+  );
 });
 
 test('package and devcontainer entry points target Expo web with browser-reachable ports', () => {
