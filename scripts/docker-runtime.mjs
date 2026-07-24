@@ -16,7 +16,7 @@ function delay(delayMs) {
   return new Promise((resolve) => setTimeout(resolve, delayMs));
 }
 
-/** Ensure the Docker daemon used by the repository devcontainer is available. */
+/** Ensure the Docker daemon used by the repository development stack is available. */
 export async function ensureDockerRuntime({
   platform = process.platform,
   inspect = () => runDocker(['info']),

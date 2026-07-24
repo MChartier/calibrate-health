@@ -18,8 +18,8 @@ Browser routes should either use the web implementation or render intentional gu
 
 ## Development and validation
 
-- `npm run dev`: start the backend and Expo web client in the worktree devcontainer.
-- `npm run dev:expo-web`: start only Expo web from the host.
+- `npm run dev`: start the worktree-scoped backend, Expo web, and Postgres Compose services.
+- `npm run dev:status`: print the current worktree's service state and URLs.
 - `npm run preview`: build and preview Expo web with the backend.
 - `npm run build`: create the production Expo web export.
 - `npm run test:expo-web:release`: validate static routes, PWA files, service-worker behavior, and hashed bundles.
