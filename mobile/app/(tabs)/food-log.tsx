@@ -57,6 +57,7 @@ export default function FoodLogScreen() {
     const foodQuery = useQuery({ queryKey: ['mobile-food', selectedDate], queryFn: () => api.getFoodLog(selectedDate) });
     const foodDayQuery = useFoodDayStatus(selectedDate);
     const canEditFood = foodDayQuery.data?.status === 'OPEN';
+    const isPaused = foodDayQuery.data?.status === 'PAUSED';
     const isToday = selectedDate === getTodayDate(user?.timezone);
 
     useEffect(() => {
@@ -182,7 +183,7 @@ export default function FoodLogScreen() {
             />
 
             <DateNavigation navigation={dateNavigation} />
-            <DayStatusCard date={selectedDate} isToday={isToday} />
+            {isPaused && <DayStatusCard date={selectedDate} isToday={isToday} />}
 
             {foodQuery.isLoading ? (
                 <FoodLogSkeleton />
@@ -195,6 +196,8 @@ export default function FoodLogScreen() {
                     onDeleteEntry={(entry) => deleteFood.mutate(entry.id)}
                 />
             )}
+
+            {!isPaused && <DayStatusCard date={selectedDate} isToday={isToday} />}
 
             {foodQuery.error && <AppText style={styles.error}>{foodQuery.error.message}</AppText>}
             {deleteFood.error && <AppText style={styles.error}>{deleteFood.error.message}</AppText>}

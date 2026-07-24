@@ -233,6 +233,28 @@ test('native identity is attached to public and authenticated requests and canno
     }
 });
 
+test('legacy food-day responses remain open and editable', async () => {
+    const client = new CalibrateApiClient({
+        baseUrl: 'https://calibrate.example',
+        fetchImpl: (async () => new Response(JSON.stringify({
+            date: '2026-07-23',
+            is_complete: false,
+            completed_at: null
+        }), { status: 200 })) as typeof fetch
+    });
+
+    assert.deepEqual(await client.getFoodDay('2026-07-23'), {
+        date: '2026-07-23',
+        status: 'OPEN',
+        origin: null,
+        source: 'STORED',
+        is_representative: false,
+        is_complete: false,
+        completed_at: null,
+        updated_at: null
+    });
+});
+
 test('browser cookie transport uses session endpoints without native or bearer credentials', async () => {
     const requests: Array<{ url: string; init: RequestInit }> = [];
     const client = new CalibrateApiClient({

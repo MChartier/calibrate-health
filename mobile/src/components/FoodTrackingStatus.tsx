@@ -149,9 +149,11 @@ export const DayStatusCard: React.FC<{
     const day = dayQuery.data;
     const isBusy = setStatus.isPending || startPause.isPending || resume.isPending;
     const error = dayQuery.error ?? setStatus.error ?? startPause.error ?? resume.error;
-    let icon: React.ComponentProps<typeof Ionicons>['name'] = 'ellipse-outline';
-    let title = 'Tracking in progress';
-    let description = 'This day is still open. Sign it off only when the calorie log represents the full day.';
+    let icon: React.ComponentProps<typeof Ionicons>['name'] = 'options-outline';
+    let title = isToday ? 'Tracking options' : 'Resolve this day';
+    let description = isToday
+        ? 'Pause tracking now, or resolve the day when you are finished.'
+        : 'Mark this day complete if it represents the full day, or incomplete if it does not.';
     if (day.status === 'COMPLETE') {
         icon = 'checkmark-circle';
         title = 'Day complete';
@@ -187,8 +189,17 @@ export const DayStatusCard: React.FC<{
 
                 {day.status === 'OPEN' && (
                     <View style={styles.actions}>
+                        {isToday && (
+                            <AppButton
+                                title="Pause tracking"
+                                disabled={isBusy}
+                                onPress={() => setPauseSheetOpen(true)}
+                                style={styles.action}
+                            />
+                        )}
                         <AppButton
                             title="Complete day"
+                            variant="secondary"
                             disabled={isBusy}
                             onPress={() => setStatus.mutate('COMPLETE')}
                             style={styles.action}
@@ -200,15 +211,6 @@ export const DayStatusCard: React.FC<{
                             onPress={() => setStatus.mutate('INCOMPLETE')}
                             style={styles.action}
                         />
-                        {isToday && (
-                            <AppButton
-                                title="Pause tracking"
-                                variant="secondary"
-                                disabled={isBusy}
-                                onPress={() => setPauseSheetOpen(true)}
-                                style={styles.action}
-                            />
-                        )}
                     </View>
                 )}
                 {(day.status === 'COMPLETE' || day.status === 'INCOMPLETE' || (day.status === 'PAUSED' && !isToday)) && (

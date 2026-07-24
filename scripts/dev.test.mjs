@@ -11,6 +11,7 @@ import {
   createDevelopmentServices,
   DEFAULT_EXPO_WEB_DEV_SERVER_PORT,
   isContainerizedLinux,
+  resolveExpoNativeBackendUrl,
   resolveExpoWebDevServerPort,
   resolveTestUserAutoLogin,
   terminateDevelopmentChild
@@ -64,6 +65,27 @@ test('the native Expo launcher starts the dev-client server without starting ano
     cwd: path.join(repositoryRoot, 'mobile'),
     args: ['run', 'dev']
   }]);
+});
+
+test('native Expo targets the current worktree backend from the Android emulator', () => {
+  assert.equal(resolveExpoNativeBackendUrl({
+    root: repositoryRoot,
+    environment: {},
+    readFile: () => 'BACKEND_PORT=6123\nFRONTEND_PORT=8123\n'
+  }), 'http://10.0.2.2:6123');
+  assert.equal(resolveExpoNativeBackendUrl({
+    root: repositoryRoot,
+    environment: { EXPO_PUBLIC_CALIBRATE_SERVER_URL: 'http://192.168.0.10:3000' },
+    readFile: assert.fail
+  }), 'http://192.168.0.10:3000');
+  assert.throws(
+    () => resolveExpoNativeBackendUrl({
+      root: repositoryRoot,
+      environment: {},
+      readFile: () => 'BACKEND_PORT=not-a-port\n'
+    }),
+    /whole-number TCP port/
+  );
 });
 
 test('test-user mode is inherited by both services without mutating the input environment', () => {

@@ -16,8 +16,9 @@ builds are the primary native workflow; Expo Go is useful for lightweight checks
 - Use `npm run dev:build` to bootstrap the environment and validate the Expo web production export.
 - `npm run dev:expo-web` starts only Expo web on the host and is intended for advanced workflows where the backend is
   already running.
-- `npm run dev:expo` starts the native Expo dev-client server on the host. Keep `npm run dev` running in another
-  terminal for the worktree backend, then launch the installed development build in the Android emulator.
+- `npm run dev:expo` starts the native Expo dev-client server on the host and targets the current worktree's mapped
+  backend from the Android emulator. Keep `npm run dev` running in another terminal, then launch the installed
+  development build in the emulator.
 - Build/install on an Android emulator or device: `npm --prefix mobile run android`.
 - The Android emulator dev default server is `http://10.0.2.2:3000`.
 - For Expo Go on a physical Android phone, start Expo with a LAN-reachable backend URL:

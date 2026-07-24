@@ -101,6 +101,30 @@ const buildOperationHeaders = (operationId?: string): HeadersInit | undefined =>
 
 const trimTrailingSlash = (value: string): string => value.replace(/\/+$/, '');
 
+type FoodLogDayResponse = Pick<FoodLogDay, 'date' | 'is_complete' | 'completed_at'>
+    & Partial<Omit<FoodLogDay, 'date' | 'is_complete' | 'completed_at'>>;
+
+const FOOD_LOG_DAY_STATUSES: ReadonlySet<string> = new Set(['OPEN', 'COMPLETE', 'INCOMPLETE', 'PAUSED']);
+
+/** Older servers expose only is_complete; treat their unresolved days as open and editable. */
+const normalizeFoodLogDay = (day: FoodLogDayResponse): FoodLogDay => {
+    let status: FoodLogDayStatus = day.is_complete ? 'COMPLETE' : 'OPEN';
+    if (typeof day.status === 'string' && FOOD_LOG_DAY_STATUSES.has(day.status)) {
+        status = day.status as FoodLogDayStatus;
+    }
+
+    return {
+        date: day.date,
+        status,
+        origin: day.origin ?? null,
+        source: day.source ?? 'STORED',
+        is_representative: day.is_representative ?? status === 'COMPLETE',
+        is_complete: status === 'COMPLETE',
+        completed_at: day.completed_at ?? null,
+        updated_at: day.updated_at ?? null
+    };
+};
+
 const buildUrl = (baseUrl: string, path: string): string => {
     const requestedPath = path.startsWith('/') ? path : `/${path}`;
     // Keep method declarations readable while ensuring all shared API calls use the stable v1 mount.
@@ -570,36 +594,42 @@ export class CalibrateApiClient {
         return formData;
     }
 
-    getFoodDay(date: string): Promise<FoodLogDay> {
-        return this.request<FoodLogDay>(`/api/food-days?date=${encodeURIComponent(date)}`);
+    async getFoodDay(date: string): Promise<FoodLogDay> {
+        const day = await this.request<FoodLogDayResponse>(`/api/food-days?date=${encodeURIComponent(date)}`);
+        return normalizeFoodLogDay(day);
     }
 
-    getFoodDays(start: string, end: string): Promise<FoodLogDayRange> {
+    async getFoodDays(start: string, end: string): Promise<FoodLogDayRange> {
         const query = new URLSearchParams({ start, end });
-        return this.request<FoodLogDayRange>(`/api/food-days/range?${query.toString()}`);
+        const range = await this.request<Omit<FoodLogDayRange, 'days'> & { days: FoodLogDayResponse[] }>(
+            `/api/food-days/range?${query.toString()}`
+        );
+        return { ...range, days: range.days.map(normalizeFoodLogDay) };
     }
 
     getFoodTrackingPause(): Promise<{ pause: FoodTrackingPause }> {
         return this.request<{ pause: FoodTrackingPause }>('/api/food-days/pause');
     }
 
-    updateFoodDay(payload: { date: string; is_complete: boolean }, operationId?: string): Promise<FoodLogDay> {
-        return this.request<FoodLogDay>('/api/food-days', {
+    async updateFoodDay(payload: { date: string; is_complete: boolean }, operationId?: string): Promise<FoodLogDay> {
+        const day = await this.request<FoodLogDayResponse>('/api/food-days', {
             method: 'PATCH',
             headers: buildOperationHeaders(operationId),
             json: payload
         });
+        return normalizeFoodLogDay(day);
     }
 
-    setFoodDayStatus(
+    async setFoodDayStatus(
         payload: { date: string; status: Exclude<FoodLogDayStatus, 'PAUSED'> },
         operationId?: string
     ): Promise<FoodLogDay> {
-        return this.request<FoodLogDay>('/api/food-days', {
+        const day = await this.request<FoodLogDayResponse>('/api/food-days', {
             method: 'PATCH',
             headers: buildOperationHeaders(operationId),
             json: payload
         });
+        return normalizeFoodLogDay(day);
     }
 
     startFoodTrackingPause(

@@ -132,7 +132,8 @@ describe('food tracking day resolution', () => {
         mockApi.getFoodDay.mockResolvedValue(resolvedDay('OPEN'));
         const screen = renderWithQuery(<DayStatusCard date="2026-07-23" isToday />);
 
-        await waitFor(() => expect(screen.getByText('Tracking in progress')).toBeTruthy());
+        await waitFor(() => expect(screen.getByText('Tracking options')).toBeTruthy());
+        expect(screen.getByText('Pause tracking')).toBeTruthy();
         expect(screen.getByText('Complete day')).toBeTruthy();
         expect(screen.getByText('Mark incomplete')).toBeTruthy();
         fireEvent.press(screen.getByText('Pause tracking'));

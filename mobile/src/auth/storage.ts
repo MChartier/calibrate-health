@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Crypto from 'expo-crypto';
 import * as SecureStore from 'expo-secure-store';
-import { getDefaultServerUrl } from '../config/server';
+import { getConfiguredServerUrl, getDefaultServerUrl, resolveInitialServerUrl } from '../config/server';
 
 const ACCESS_TOKEN_KEY = 'calibrate.mobile.accessToken';
 const REFRESH_TOKEN_KEY = 'calibrate.mobile.refreshToken';
@@ -50,7 +50,12 @@ export async function getOrCreateDeviceId(): Promise<string> {
 }
 
 export async function readServerUrl(): Promise<string> {
-    return (await AsyncStorage.getItem(SERVER_URL_KEY)) ?? getDefaultServerUrl();
+    return resolveInitialServerUrl(
+        await AsyncStorage.getItem(SERVER_URL_KEY),
+        getConfiguredServerUrl(),
+        getDefaultServerUrl(),
+        __DEV__
+    );
 }
 
 export async function writeServerUrl(serverUrl: string): Promise<void> {
