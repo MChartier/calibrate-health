@@ -16,7 +16,6 @@ describe('mobile accessibility primitives', () => {
         const { getByRole } = render(<AppButton title="Create account" />);
 
         expect(getByRole('button', { name: 'Create account' }).props.android_ripple).toBeUndefined();
-        expect(getByRole('button', { name: 'Create account' })).toHaveStyle({ overflow: 'hidden' });
     });
 
     it('uses a text field label as its accessible name even when the visual label is hidden', () => {

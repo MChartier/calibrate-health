@@ -203,7 +203,11 @@ export const DayStatusCard: React.FC<{
                             accessibilityLabel="Complete day"
                             disabled={isBusy}
                             onPress={() => setStatus.mutate('COMPLETE')}
-                            style={[styles.action, useCompactOpenLayout && styles.actionCompact]}
+                            style={[
+                                styles.action,
+                                useCompactOpenLayout && styles.actionCompact,
+                                useCompactOpenLayout && styles.primaryActionFlat
+                            ]}
                             leftIcon={<Ionicons
                                 name="checkmark-circle-outline"
                                 size={18}
@@ -257,11 +261,13 @@ export const DayStatusCard: React.FC<{
                     disabled={startPause.isPending}
                     onPress={() => startPause.mutate(null)}
                 />
-                <AppButton
-                    title="Choose expected resume date"
-                    variant="secondary"
-                    onPress={() => setShowExpectedDate(true)}
-                />
+                {!showExpectedDate && (
+                    <AppButton
+                        title="Choose expected resume date"
+                        variant="secondary"
+                        onPress={() => setShowExpectedDate(true)}
+                    />
+                )}
                 {showExpectedDate && (
                     <>
                         <DatePickerField
@@ -456,6 +462,10 @@ function createStyles(theme: AppTheme) {
             flex: 1,
             minWidth: 0,
             paddingHorizontal: theme.spacing.xs
+        },
+        primaryActionFlat: {
+            elevation: 0,
+            shadowOpacity: 0
         },
         error: {
             color: theme.colors.danger

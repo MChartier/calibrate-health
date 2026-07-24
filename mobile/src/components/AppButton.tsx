@@ -64,8 +64,7 @@ function createStyles(theme: AppTheme) {
         alignItems: 'center',
         justifyContent: 'center',
         paddingHorizontal: theme.spacing.lg,
-        paddingVertical: theme.spacing.sm,
-        overflow: 'hidden'
+        paddingVertical: theme.spacing.sm
     },
     primary: {
         ...theme.shadows.button,

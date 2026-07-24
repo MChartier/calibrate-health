@@ -136,12 +136,19 @@ describe('food tracking day resolution', () => {
         expect(screen.getByText('Complete day')).toBeTruthy();
         expect(screen.getByText('Pause tracking')).toBeTruthy();
         expect(screen.queryByText('Mark incomplete')).toBeNull();
+        expect(screen.getByRole('button', { name: 'Complete day' })).toHaveStyle({
+            elevation: 0,
+            shadowOpacity: 0
+        });
         fireEvent.press(screen.getByLabelText('Pause tracking'));
 
         expect(screen.getByText('Pause calorie tracking?')).toBeTruthy();
         expect(screen.getByText(/Calorie tracking and all reminders will stop/)).toBeTruthy();
         expect(screen.getByText('Until I resume')).toBeTruthy();
         expect(screen.getByText('Choose expected resume date')).toBeTruthy();
+        fireEvent.press(screen.getByText('Choose expected resume date'));
+        expect(screen.queryByText('Choose expected resume date')).toBeNull();
+        expect(screen.getByText('Pause with this date')).toBeTruthy();
     });
 
     it('presents inferred blank, incomplete, complete, and paused days without food prompts', async () => {
