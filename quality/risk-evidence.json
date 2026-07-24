@@ -142,7 +142,7 @@
         {
           "id": "fresh-migration",
           "npmScript": "db:migrate",
-          "scriptCommand": "npm --prefix backend run db:migrate",
+          "scriptCommand": "node scripts/dev-stack.mjs db:migrate",
           "paths": [
             ".github/workflows/tests.yml",
             "backend/prisma/schema.prisma"
