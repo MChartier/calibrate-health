@@ -137,12 +137,12 @@ describe('food tracking day resolution', () => {
         expect(screen.getByText('Pause tracking')).toBeTruthy();
         expect(screen.queryByText('Mark incomplete')).toBeNull();
         expect(screen.getByRole('button', { name: 'Complete day' })).toHaveStyle({
-            flexBasis: 0,
             elevation: 0,
-            shadowOpacity: 0
+            shadowOpacity: 0,
+            width: 0
         });
         expect(screen.getByRole('button', { name: 'Pause tracking' })).toHaveStyle({
-            flexBasis: 0
+            width: 0
         });
         fireEvent.press(screen.getByLabelText('Pause tracking'));
 

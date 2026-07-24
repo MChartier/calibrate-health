@@ -459,11 +459,11 @@ function createStyles(theme: AppTheme) {
             flexGrow: 1
         },
         actionCompact: {
-            flexBasis: 0,
             flexGrow: 1,
             flexShrink: 1,
             minWidth: 0,
-            paddingHorizontal: theme.spacing.xs
+            paddingHorizontal: theme.spacing.xs,
+            width: 0
         },
         primaryActionFlat: {
             elevation: 0,
