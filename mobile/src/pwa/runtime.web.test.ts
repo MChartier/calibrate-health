@@ -17,15 +17,38 @@ type FakeEnvironment = PwaEnvironment & {
     reload: jest.Mock;
 };
 
-function createWorker(): PwaWorker & { postMessage: jest.Mock } {
-    return { state: 'installed', postMessage: jest.fn() };
+type FakeWorker = PwaWorker & {
+    postMessage: jest.Mock;
+    setState(state: string): void;
+};
+
+function createWorker(initialState = 'installed'): FakeWorker {
+    const stateChangeListeners = new Set<() => void>();
+    const errorListeners = new Set<() => void>();
+    return {
+        state: initialState,
+        postMessage: jest.fn(),
+        addEventListener: (type, listener) => {
+            (type === 'statechange' ? stateChangeListeners : errorListeners).add(listener);
+        },
+        removeEventListener: (type, listener) => {
+            (type === 'statechange' ? stateChangeListeners : errorListeners).delete(listener);
+        },
+        setState(state) {
+            this.state = state;
+            stateChangeListeners.forEach((listener) => listener());
+        }
+    };
 }
 
-function createRegistration(waiting: PwaWorker | null = null): PwaRegistration {
+function createRegistration(
+    waiting: PwaWorker | null = null,
+    installing: PwaWorker | null = null
+): PwaRegistration {
     const updateFound = new Set<() => void>();
     return {
         waiting,
-        installing: null,
+        installing,
         update: jest.fn().mockResolvedValue(undefined),
         addEventListener: (_type, listener) => updateFound.add(listener),
         removeEventListener: (_type, listener) => updateFound.delete(listener)
@@ -140,6 +163,27 @@ describe('browser PWA runtime', () => {
 
         environment.emitControllerChange();
         environment.emitControllerChange();
+        expect(environment.reload).toHaveBeenCalledTimes(1);
+        runtime.dispose();
+    });
+
+    it('keeps the installed worker available while registration.waiting catches up', async () => {
+        const installing = createWorker('installing');
+        const environment = createEnvironment({
+            registration: createRegistration(null, installing)
+        });
+        const runtime = createPwaRuntime(environment);
+        runtime.subscribe(jest.fn());
+        await flushRegistration();
+
+        installing.setState('installed');
+        expect(runtime.getSnapshot().update).toBe(PWA_UPDATE_STATES.READY);
+
+        runtime.applyUpdate();
+        expect(installing.postMessage).toHaveBeenCalledWith({ type: 'SKIP_WAITING' });
+        expect(runtime.getSnapshot().update).toBe(PWA_UPDATE_STATES.APPLYING);
+
+        installing.setState('activated');
         expect(environment.reload).toHaveBeenCalledTimes(1);
         runtime.dispose();
     });

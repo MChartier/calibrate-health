@@ -108,6 +108,7 @@ export function createPwaRuntime(environment: PwaEnvironment): PwaRuntime {
     let disposed = false;
     let registration: PwaRegistration | null = null;
     let serviceWorker: PwaServiceWorkerContainer | null = null;
+    let readyUpdateWorker: PwaWorker | null = null;
     let removeOnlineListener: (() => void) | null = null;
     let removeOfflineListener: (() => void) | null = null;
     let backOnlineTimer: unknown = null;
@@ -142,7 +143,17 @@ export function createPwaRuntime(environment: PwaEnvironment): PwaRuntime {
     function reportUpdateFailure() {
         clearUpdateApplyTimer();
         reloadOnControllerChange = false;
+        readyUpdateWorker = null;
         publish({ update: PWA_UPDATE_STATES.ERROR, updateError: UPDATE_FAILURE_MESSAGE });
+    }
+
+    function reloadForAppliedUpdate() {
+        if (!reloadOnControllerChange || didReloadForControllerChange) return;
+        didReloadForControllerChange = true;
+        reloadOnControllerChange = false;
+        readyUpdateWorker = null;
+        clearUpdateApplyTimer();
+        environment.reload();
     }
 
     function handleOffline() {
@@ -167,7 +178,12 @@ export function createPwaRuntime(environment: PwaEnvironment): PwaRuntime {
         if (!worker || workerListeners.has(worker)) return;
         const stateChange = () => {
             if (worker.state === 'installed' && (serviceWorker?.controller || registration?.waiting)) {
+                // `registration.waiting` can lag the install state event. Keep the worker that
+                // actually reached `installed` so an immediate Refresh click cannot lose it.
+                readyUpdateWorker = registration?.waiting ?? worker;
                 publish({ update: PWA_UPDATE_STATES.READY, updateError: null });
+            } else if (worker.state === 'activated') {
+                reloadForAppliedUpdate();
             } else if (worker.state === 'redundant') {
                 reportUpdateFailure();
             }
@@ -187,6 +203,8 @@ export function createPwaRuntime(environment: PwaEnvironment): PwaRuntime {
         removeRegistrationListener = () => nextRegistration.removeEventListener('updatefound', updateFound);
         observeWorker(nextRegistration.installing);
         if (nextRegistration.waiting) {
+            readyUpdateWorker = nextRegistration.waiting;
+            observeWorker(nextRegistration.waiting);
             publish({ update: PWA_UPDATE_STATES.READY, updateError: null });
         }
     }
@@ -203,11 +221,7 @@ export function createPwaRuntime(environment: PwaEnvironment): PwaRuntime {
     }
 
     function handleControllerChange() {
-        if (!reloadOnControllerChange || didReloadForControllerChange) return;
-        didReloadForControllerChange = true;
-        reloadOnControllerChange = false;
-        clearUpdateApplyTimer();
-        environment.reload();
+        reloadForAppliedUpdate();
     }
 
     function start() {
@@ -236,6 +250,8 @@ export function createPwaRuntime(environment: PwaEnvironment): PwaRuntime {
             }
             await registration.update();
             if (registration.waiting) {
+                readyUpdateWorker = registration.waiting;
+                observeWorker(registration.waiting);
                 publish({ update: PWA_UPDATE_STATES.READY, updateError: null });
             }
         } catch {
@@ -245,7 +261,7 @@ export function createPwaRuntime(environment: PwaEnvironment): PwaRuntime {
 
     function applyUpdate() {
         start();
-        const waitingWorker = registration?.waiting;
+        const waitingWorker = registration?.waiting ?? readyUpdateWorker;
         if (!waitingWorker) {
             reportUpdateFailure();
             return;

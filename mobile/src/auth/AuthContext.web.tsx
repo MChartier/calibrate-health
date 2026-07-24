@@ -3,15 +3,14 @@ import { ApiError, CalibrateApiClient, type UserClientPayload } from '@calibrate
 import { useQueryClient } from '@tanstack/react-query';
 import type { ClientUpgradeRequirement } from '@calibrate/shared';
 import {
+    getDefaultServerUrl,
     INITIAL_SERVER_CONNECTION_STATE,
-    normalizeServerUrl,
     testCalibrateServerConnection,
     type ServerConnectionResult,
     type ServerConnectionState
 } from '../config/server';
-import { authenticateAgainstConfirmedServer, confirmServerSwitch } from './serverSwitch';
+import { authenticateAgainstConfirmedServer } from './serverSwitch';
 import { getSessionRestoreErrorMessage } from './authErrors';
-import { readBrowserServerUrl, writeBrowserServerUrl } from './browserServerStorage';
 import type { AccountDeletionCleanupNotice } from '../account/accountDeletionNotice';
 import { cleanupBrowserPushBeforeSessionChange } from '../notifications/browserPush.web';
 import { restoreBrowserDevelopmentSession } from './devAutoLogin';
@@ -45,7 +44,7 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 /** Browser auth intentionally relies only on the server's HttpOnly cookie session. */
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const queryClient = useQueryClient();
-    const [serverUrl, setServerUrlState] = useState(readBrowserServerUrl);
+    const [serverUrl] = useState(getDefaultServerUrl);
     const [user, setUser] = useState<UserClientPayload | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [authError, setAuthError] = useState<string | null>(null);
@@ -82,49 +81,37 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return () => { active = false; };
     }, [api, serverUrl]);
 
-    const probeServerUrl = useCallback(async (value: string): Promise<ServerConnectionResult> => {
+    const probeCurrentServer = useCallback(async (): Promise<ServerConnectionResult> => {
         const currentRequest = requestId.current + 1;
         requestId.current = currentRequest;
-        const normalized = normalizeServerUrl(value);
         setServerConnection({
             status: 'testing',
-            testedInput: value.trim(),
-            testedUrl: normalized,
+            testedInput: serverUrl,
+            testedUrl: serverUrl,
             message: 'Testing this Calibrate server...'
         });
-        const result = await testCalibrateServerConnection(value);
+        const result = await testCalibrateServerConnection(serverUrl);
         if (requestId.current === currentRequest) {
             setServerConnection({
                 status: result.ok ? 'connected' : 'error',
-                testedInput: value.trim(),
+                testedInput: serverUrl,
                 testedUrl: result.url,
                 message: result.message
             });
         }
         return result;
-    }, []);
+    }, [serverUrl]);
 
-    const confirmSelectedServerUrl = useCallback(async (value: string) => {
-        const result = await confirmServerSwitch({
-            candidate: value,
-            currentServerUrl: serverUrl,
-            testConnection: probeServerUrl,
-            clearCurrentSession: clearSessionWithBrowserCleanup,
-            persistServerUrl: writeBrowserServerUrl
-        });
-        if (result.ok) {
-            setServerUrlState(result.url);
-            setAuthError(null);
-        } else {
-            setAuthError(result.message);
-        }
+    const confirmCurrentServer = useCallback(async () => {
+        const result = await probeCurrentServer();
+        setAuthError(result.ok ? null : result.message);
         return result;
-    }, [clearSessionWithBrowserCleanup, probeServerUrl, serverUrl]);
+    }, [probeCurrentServer]);
 
-    const login = useCallback(async (email: string, password: string, serverCandidate: string) => {
+    const login = useCallback(async (email: string, password: string, _serverCandidate: string) => {
         const payload = await authenticateAgainstConfirmedServer({
-            candidate: serverCandidate,
-            confirmServer: confirmSelectedServerUrl,
+            candidate: serverUrl,
+            confirmServer: confirmCurrentServer,
             authenticate: (baseUrl) => new CalibrateApiClient({
                 baseUrl,
                 requestCredentials: 'include'
@@ -133,12 +120,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (!payload) return false;
         setUser(payload.user);
         return true;
-    }, [confirmSelectedServerUrl]);
+    }, [confirmCurrentServer, serverUrl]);
 
-    const register = useCallback(async (email: string, password: string, serverCandidate: string) => {
+    const register = useCallback(async (email: string, password: string, _serverCandidate: string) => {
         const payload = await authenticateAgainstConfirmedServer({
-            candidate: serverCandidate,
-            confirmServer: confirmSelectedServerUrl,
+            candidate: serverUrl,
+            confirmServer: confirmCurrentServer,
             authenticate: (baseUrl) => new CalibrateApiClient({
                 baseUrl,
                 requestCredentials: 'include'
@@ -147,7 +134,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (!payload) return false;
         setUser(payload.user);
         return true;
-    }, [confirmSelectedServerUrl]);
+    }, [confirmCurrentServer, serverUrl]);
 
     const logout = useCallback(async () => {
         try {
@@ -176,8 +163,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         accountDeletionCleanupNotice: null,
         serverConnection,
         updateCurrentUser: setUser,
-        setServerUrl: async (value) => (await confirmSelectedServerUrl(value)).ok,
-        testServerUrl: async (value) => (await probeServerUrl(value)).ok,
+        setServerUrl: async () => (await confirmCurrentServer()).ok,
+        testServerUrl: async () => (await probeCurrentServer()).ok,
         login,
         register,
         logout,
@@ -185,7 +172,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         recheckClientCompatibility,
         persistAccountDeletionCleanupNotice: async () => undefined,
         acknowledgeAccountDeletionCleanupNotice: async () => undefined
-    }), [api, authError, clearSessionWithBrowserCleanup, confirmSelectedServerUrl, isLoading, login, logout, probeServerUrl, recheckClientCompatibility, register, serverConnection, serverUrl, user]);
+    }), [api, authError, clearSessionWithBrowserCleanup, confirmCurrentServer, isLoading, login, logout, probeCurrentServer, recheckClientCompatibility, register, serverConnection, serverUrl, user]);
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

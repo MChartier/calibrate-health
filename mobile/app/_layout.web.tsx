@@ -71,6 +71,13 @@ const BrowserRuntime: React.FC<{ children: React.ReactNode }> = ({ children }) =
     );
 };
 
+/** PWA updates should interrupt signed-in work, not the server-owned sign-in flow. */
+const AuthenticatedPwaStatus: React.FC = () => {
+    const { isLoading, user } = useAuth();
+    if (isLoading || !user) return null;
+    return <PwaStatusBanner />;
+};
+
 export default function RootLayout() {
     const theme = useAppTheme();
 
@@ -99,10 +106,10 @@ export default function RootLayout() {
     return (
         <AppErrorBoundary>
             <WebSkipLink />
-            <PwaStatusBanner />
             <SafeAreaProvider>
                 <QueryClientProvider client={queryClient}>
                     <AuthProvider>
+                        <AuthenticatedPwaStatus />
                         <NativePushRegistrationProvider>
                             <BrowserRuntime>
                                 <StatusBar style={theme.dark ? 'light' : 'dark'} />
