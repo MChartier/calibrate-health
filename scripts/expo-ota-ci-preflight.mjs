@@ -21,9 +21,9 @@ function requiredValue(argv, index, option) {
   return value;
 }
 
-export function parseNativeOtaCiArgs(argv) {
+export function parseExpoOtaCiArgs(argv) {
   const values = {
-    nativeBuildRef: null,
+    previousRef: null,
     channel: null,
     environment: null,
     environmentFile: null,
@@ -32,27 +32,13 @@ export function parseNativeOtaCiArgs(argv) {
   for (let index = 0; index < argv.length; index += 1) {
     const option = argv[index];
     if (option === '--help' || option === '-h') values.help = true;
-    else if (option === '--native-build-ref') values.nativeBuildRef = requiredValue(argv, index++, option);
+    else if (option === '--previous-ref') values.previousRef = requiredValue(argv, index++, option);
     else if (option === '--channel') values.channel = requiredValue(argv, index++, option);
     else if (option === '--environment') values.environment = requiredValue(argv, index++, option);
     else if (option === '--environment-file') values.environmentFile = requiredValue(argv, index++, option);
-    else throw new Error(`Unknown native OTA CI option: ${option}`);
+    else throw new Error(`Unknown Expo OTA CI option: ${option}`);
   }
   return values;
-}
-
-export function validateNativeOtaCompatibility(baseline, current) {
-  if (baseline.runtimeVersion !== current.runtimeVersion) {
-    throw new Error(
-      `Native runtime version changed from ${baseline.runtimeVersion} to ${current.runtimeVersion}. ` +
-      'Create and install a new signed phone build instead of publishing OTA.'
-    );
-  }
-  if (baseline.fingerprint !== current.fingerprint) {
-    throw new Error(
-      'Native runtime inputs changed after the installed build. Create and install a new signed phone/Watch build instead of publishing OTA.'
-    );
-  }
 }
 
 export function validateEasCiEnvironment(values, expected) {
@@ -95,6 +81,17 @@ export function validateEasCiEnvironment(values, expected) {
   return { projectId, channel, serverUrl };
 }
 
+export function validateNativeRuntimeChange(previous, current) {
+  const changed = previous.nativeFingerprint !== current.nativeFingerprint;
+  if (changed && previous.appVersion === current.appVersion) {
+    throw new Error(
+      `Native runtime inputs changed without an app version change (${current.appVersion}). ` +
+      'Increment the mobile app version and create a new signed native build before publishing OTA.'
+    );
+  }
+  return { changed };
+}
+
 function runCommand(command, args, cwd, allowFailure = false) {
   const result = spawnSync(command, args, {
     cwd,
@@ -114,22 +111,43 @@ function runCommand(command, args, cwd, allowFailure = false) {
   };
 }
 
-function readRuntimeContract(root) {
+function readExpoProject(root) {
   const appConfig = JSON.parse(fs.readFileSync(path.join(root, 'mobile', 'app.json'), 'utf8'));
   return {
-    runtimeVersion: appConfig.expo?.version,
+    appVersion: appConfig.expo?.version,
     projectId: appConfig.expo?.extra?.eas?.projectId,
-    fingerprint: createNativeRuntimeFingerprint(root).sha256
+    nativeFingerprint: createNativeRuntimeFingerprint(root).sha256
   };
 }
 
-function printHelp() {
-  process.stdout.write(`Usage: node scripts/native-ota-ci-preflight.mjs [options]
+function readPreviousExpoProject(root, previousRef) {
+  if (previousRef.startsWith('-') || /^0+$/.test(previousRef)) {
+    throw new Error('Previous master ref is invalid.');
+  }
+  const commit = runCommand('git', ['rev-parse', '--verify', `${previousRef}^{commit}`], root).stdout.trim();
+  const ancestry = runCommand('git', ['merge-base', '--is-ancestor', commit, 'HEAD'], root, true);
+  if (ancestry.status !== 0) {
+    throw new Error('The current update does not descend from the previous master ref.');
+  }
 
-Validate that a GitHub-hosted EAS Update is compatible with an installed Android phone build.
+  const temporaryDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'calibrate-expo-ota-ci-'));
+  const checkout = path.join(temporaryDirectory, 'previous-master');
+  try {
+    runCommand('git', ['worktree', 'add', '--detach', checkout, commit], root);
+    return { commit, project: readExpoProject(checkout) };
+  } finally {
+    runCommand('git', ['worktree', 'remove', '--force', checkout], root, true);
+    fs.rmSync(temporaryDirectory, { recursive: true, force: true });
+  }
+}
+
+function printHelp() {
+  process.stdout.write(`Usage: node scripts/expo-ota-ci-preflight.mjs [options]
+
+Validate native runtime changes and the EAS environment used by a GitHub-hosted Android update.
 
 Options:
-  --native-build-ref <ref>    Exact commit or tag used to create the installed native build
+  --previous-ref <ref>        Previous master commit supplied by the push event
   --channel <name>            EAS Update channel embedded in the installed build
   --environment <name>        EAS environment selected for the update
   --environment-file <path>   File produced by eas env:pull
@@ -137,68 +155,47 @@ Options:
 `);
 }
 
-export function runNativeOtaCiPreflight(options = {}) {
+export function runExpoOtaCiPreflight(options = {}) {
   const root = options.repositoryRoot ?? repositoryRoot;
-  const config = options.config ?? parseNativeOtaCiArgs(process.argv.slice(2));
+  const config = options.config ?? parseExpoOtaCiArgs(process.argv.slice(2));
   if (config.help) {
     printHelp();
     return { help: true };
   }
-  if (!config.nativeBuildRef || !config.channel || !config.environment || !config.environmentFile) {
-    throw new Error('Native build ref, channel, environment, and environment file are required.');
+  if (!config.previousRef || !config.channel || !config.environment || !config.environmentFile) {
+    throw new Error('Previous ref, channel, environment, and environment file are required.');
   }
-  if (config.nativeBuildRef.startsWith('-')) throw new Error('Native build ref must not start with a dash.');
   if (!EXPO_UPDATE_CHANNEL_PATTERN.test(config.channel)) throw new Error('Invalid EAS Update channel.');
 
-  const commit = runCommand(
-    'git',
-    ['rev-parse', '--verify', `${config.nativeBuildRef}^{commit}`],
-    root
-  ).stdout.trim();
-  const ancestry = runCommand('git', ['merge-base', '--is-ancestor', commit, 'HEAD'], root, true);
-  if (ancestry.status !== 0) {
-    throw new Error('The selected update does not descend from the installed native build ref.');
+  const project = readExpoProject(root);
+  const previous = readPreviousExpoProject(root, config.previousRef);
+  const nativeRuntime = validateNativeRuntimeChange(previous.project, project);
+  if (!EXPO_PROJECT_ID_PATTERN.test(project.projectId ?? '')) {
+    throw new Error('mobile/app.json does not contain a valid EAS project ID.');
   }
+  const environmentValues = parseEasEnvironmentFile(
+    fs.readFileSync(path.resolve(root, config.environmentFile), 'utf8')
+  );
+  const eas = validateEasCiEnvironment(environmentValues, {
+    projectId: project.projectId,
+    channel: config.channel,
+    environment: config.environment
+  });
 
-  const temporaryDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'calibrate-native-ota-ci-'));
-  const checkout = path.join(temporaryDirectory, 'native-build');
-  try {
-    runCommand('git', ['worktree', 'add', '--detach', checkout, commit], root);
-    const baseline = readRuntimeContract(checkout);
-    const current = readRuntimeContract(root);
-    validateNativeOtaCompatibility(baseline, current);
-    if (!EXPO_PROJECT_ID_PATTERN.test(current.projectId ?? '')) {
-      throw new Error('mobile/app.json does not contain a valid EAS project ID.');
-    }
-
-    const environmentValues = parseEasEnvironmentFile(
-      fs.readFileSync(path.resolve(root, config.environmentFile), 'utf8')
-    );
-    const eas = validateEasCiEnvironment(environmentValues, {
-      projectId: current.projectId,
-      channel: config.channel,
-      environment: config.environment
-    });
-
-    process.stdout.write(
-      `Native build ref: ${config.nativeBuildRef} (${commit.slice(0, 12)})\n` +
-      `Runtime: ${current.runtimeVersion} | Channel: ${eas.channel} | Environment: ${config.environment}\n` +
-      `Server: ${eas.serverUrl}\n` +
-      `Native fingerprint: ${current.fingerprint}\n` +
-      'OTA compatibility preflight passed.\n'
-    );
-    return { commit, baseline, current, eas };
-  } finally {
-    runCommand('git', ['worktree', 'remove', '--force', checkout], root, true);
-    fs.rmSync(temporaryDirectory, { recursive: true, force: true });
-  }
+  process.stdout.write(
+    `Previous master: ${previous.commit.slice(0, 12)} | Native inputs: ${nativeRuntime.changed ? 'changed with a new app version' : 'unchanged'}\n` +
+    `Runtime policy: appVersion (${project.appVersion}) | Channel: ${eas.channel} | Environment: ${config.environment}\n` +
+    `Server: ${eas.serverUrl}\n` +
+    'Expo OTA environment preflight passed. Expo will match the update runtime to compatible clients on this channel.\n'
+  );
+  return { previous, project, nativeRuntime, eas };
 }
 
 if (process.argv[1] && pathToFileURL(path.resolve(process.argv[1])).href === import.meta.url) {
   try {
-    runNativeOtaCiPreflight();
+    runExpoOtaCiPreflight();
   } catch (error) {
-    console.error(`[native-ota-ci] ${error.message}`);
+    console.error(`[expo-ota-ci] ${error.message}`);
     process.exitCode = 1;
   }
 }

@@ -73,7 +73,7 @@
     "release:metadata": "node scripts/release-config.mjs metadata",
     "test:release": "node --test scripts/release-config.test.mjs scripts/release-workflow-contract.test.mjs scripts/dependency-advisory-exceptions.test.mjs",
     "test:dev-script": "node --test scripts/dev.test.mjs scripts/docker-runtime.test.mjs",
-    "test:native-release": "node --test mobile/app.config.test.cjs scripts/native-ota-contract.test.mjs scripts/native-ota-update.test.mjs scripts/native-ota-ci-preflight.test.mjs scripts/native-release-build.test.mjs scripts/native-release-devices.test.mjs scripts/android-e2e.test.mjs",
+    "test:native-release": "node --test mobile/app.config.test.cjs scripts/native-ota-contract.test.mjs scripts/native-ota-update.test.mjs scripts/expo-ota-ci-preflight.test.mjs scripts/native-release-build.test.mjs scripts/native-release-devices.test.mjs scripts/android-e2e.test.mjs",
     "test:mobile-build-tools": "node --test scripts/xcode-uuid-compatibility.test.mjs",
     "test:native:upgrade": "node scripts/native-upgrade-rehearsal.mjs",
     "test:native:upgrade:unit": "node --test scripts/native-upgrade-rehearsal.test.mjs",
