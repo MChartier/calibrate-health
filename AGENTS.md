@@ -38,23 +38,20 @@ Calorie math:
 
 Non-goals for MVP:
 
-- No native mobile app.
-- No automatic activity import.
+- No activity-driven automatic calorie-target adjustment.
 - No smart deficit adjustment to hit a target date.
 - No advanced body composition modeling beyond optional stored fields.
 
 ## Architecture Map
 
-- Frontend: React + TypeScript + Vite, MUI, React Query.
+- Client: Expo Router + React Native + React Native Web, TypeScript, React Query.
 - Backend: Node.js + TypeScript + Express.
 - Persistence: Postgres through Prisma under `backend/prisma/`.
 - Shared domain constants live under `shared/`.
-- Localization strings live in `frontend/src/i18n/resources.ts`; supported
-  language lists live in `frontend/src/i18n/languages.ts` and
-  `backend/src/utils/language.ts`.
+- Browser and native routes live under `mobile/app/`; shared client code lives
+  under `mobile/src/`.
+- Supported server-side language values live in `backend/src/utils/language.ts`.
 - Food providers live in `backend/src/services/foodData/`.
-- The dev-only dashboard at `/dev` compares food providers and supports barcode
-  scanning tests.
 - Self-hosting uses `deploy/` and expects an external Postgres unless a deployer
   explicitly adds one.
 
@@ -92,7 +89,6 @@ Primary workflows:
 - Local dev server: `npm run dev`
 - Local dev with seeded test-user auto-login: `npm run dev:test`
 - Reset test-user onboarding: `npm run dev:reset-test-user-onboarding`
-- Storybook: `npm run dev:storybook` or `npm run codex:storybook`
 - Local CI equivalent: `npm run ci:local`
 
 Devcontainer notes:
@@ -127,22 +123,22 @@ Choose validation proportional to the change, and report what ran.
 Common checks:
 
 - Full local CI: `npm run ci:local`
-- Frontend lint: `npm --prefix frontend run lint`
-- Frontend build: `npm --prefix frontend run build`
-- Frontend tests: `npm --prefix frontend test`
+- Expo client type-check: `npm --prefix mobile run typecheck`
+- Expo web build: `npm run build:expo-web`
+- Expo client tests: `npm --prefix mobile test`
+- Expo web release checks: `npm run test:expo-web:release`
 - Backend tests: `npm --prefix backend test`
 - Backend build: `npm --prefix backend run build`
-- Storybook build: `npm --prefix frontend run storybook:build`
-- Audit from frontend dependency context: `npm --prefix frontend audit`
+- Audit from the root/mobile dependency context: `npm audit`
 - Diff hygiene: `git diff --check`
 
 Windows-specific note:
 
-- Existing issue validation may name `npm.cmd --prefix frontend run lint` and
-  `npm.cmd --prefix frontend run build`. Use those exact commands when the issue
-  or reviewer calls them out.
+- Use `npm.cmd --prefix mobile run typecheck`, `npm.cmd --prefix mobile test --
+  --runInBand`, and `npm.cmd --prefix mobile run build:web` when an issue or
+  reviewer calls for the Windows-host Expo gates.
 
-Frontend dependency/audit fixes:
+Client dependency/audit fixes:
 
 - Keep remediation narrow. Prefer lockfile-only or targeted override fixes when
   they address the advisory.
@@ -159,9 +155,8 @@ Frontend dependency/audit fixes:
 - Food logs are immutable snapshots. My Foods and recipe edits must not
   retroactively mutate existing `FoodLog` entries.
 - Preserve external provider and serving snapshot fields when editing food logs.
-- Keep FatSecret attribution intact via
-  `frontend/src/components/FatSecretAttributionLink.tsx` whenever FatSecret is
-  active.
+- Keep FatSecret attribution intact in client search/barcode results. The Expo
+  barcode path is implemented through `mobile/src/barcode/workflow.ts`.
 - Profile photos are stored inline as small processed avatars; respect
   `backend/src/utils/profileImage.ts` caps and parsing rules.
 - Prisma migrations use ordinal folder names such as `0001_init`. If
@@ -179,41 +174,40 @@ Food provider behavior:
   providers and use deterministic fallback order with the configured/default
   provider first.
 - Keep provider identity stable across paginated text-search results. Do not
-  switch providers on later empty pages if the frontend is appending results
+  switch providers on later empty pages if the client is appending results
   under first-page provider metadata.
 - Do not merge provider results unless explicitly requested; the validated shape
   is sequential fallback.
 
-## Frontend Practices
+## Expo Client Practices
 
-- Keep primary SPA route navigation fast. Do not lazy-load main dashboard/app
-  routes just to reduce bundle warnings unless the user explicitly accepts the
-  first-click latency tradeoff.
-- For bundle-warning work, prefer config/tooling fixes, explicit warning limits,
-  preloadable chunks, intent-based prefetch, or selective splitting of uncommon
-  features.
+- Keep browser and native behavior in the shared Expo source tree. Use matching
+  `.web` and `.native` modules or the contracts under `mobile/src/platform/`
+  when behavior must differ by runtime.
+- Keep primary Expo Router navigation fast. Treat route splitting and deferred
+  bundles as release behavior that requires browser and device validation.
 - Preserve the app-like PWA experience. PWA toasts should be actionable: offline,
   back-online, update-ready, and update-failed are appropriate; lifecycle-only
   "ready for offline launch" messaging is not.
 - Runtime PWA state should use React-safe external-store patterns such as
   `useSyncExternalStore` rather than setting component state from service-worker
   effects.
-- Installed-app polish belongs in the app shell. `Layout.tsx` owns top/bottom
-  navigation, window-controls-overlay spacing, account-menu entry points, and
-  global PWA status UI.
+- Installed-app polish belongs in the Expo app shell. `mobile/app/_layout.tsx`,
+  `mobile/app/_layout.web.tsx`, and `mobile/app/(tabs)/_layout.tsx` own global
+  providers, browser shell behavior, and tab navigation.
 - Keep mobile navigation focused. Do not reintroduce redundant profile/"More"
   bottom-nav entry points when top app-bar/account-menu access is sufficient.
 - For public/auth/onboarding/account surfaces, keep one cohesive layout language
   across adjacent pages instead of polishing one page in isolation.
-- Reuse `frontend/src/components/auth/AuthPageFrame.tsx` for login/register
-  shell work.
-- Use `AppCard` and existing page/card primitives where they fit. If card hover
-  or click treatment feels inconsistent, compare sibling components before
-  making one-off changes.
-- Keep `frontend/src/ui/` focused on generic primitives; put feature-specific
-  components under `frontend/src/components/` or a feature folder.
-- Visible copy changes require synchronized keys across all supported languages
-  in `frontend/src/i18n/resources.ts`.
+- Reuse the auth primitives under `mobile/src/components/auth/` for
+  login/register shell work.
+- Use `mobile/src/components/AppCard.tsx` and existing screen/card primitives
+  where they fit. If card hover or click treatment feels inconsistent, compare
+  sibling components before making one-off changes.
+- Keep generic primitives under `mobile/src/components/`; put feature-specific
+  behavior in the corresponding `mobile/src/` feature folder.
+- Keep public privacy and account-deletion copy centralized in
+  `mobile/src/legal/publicLegalContent.ts`.
 - Prefer ASCII punctuation in UI strings (`|`, `-`, `...`) over bullets,
   ellipses, or curly punctuation.
 

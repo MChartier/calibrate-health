@@ -216,30 +216,14 @@
           ]
         },
         {
-          "id": "web-domain-presentation",
-          "npmScript": "test:frontend",
-          "scriptCommand": "npm --prefix frontend test",
-          "paths": [
-            "frontend/src/utils/date.test.ts",
-            "frontend/src/utils/foodMeasure.test.ts",
-            "frontend/src/utils/goalTracking.test.ts",
-            "frontend/src/utils/goalValidation.test.ts",
-            "frontend/src/components/GoalProjection.test.tsx"
-          ],
-          "capabilities": [
-            "unit-conversion",
-            "timezone-or-local-day",
-            "boundary-values",
-            "immutable-snapshot"
-          ]
-        },
-        {
-          "id": "android-domain-presentation",
+          "id": "expo-domain-presentation",
           "npmScript": "test:mobile",
           "scriptCommand": "npm --prefix mobile test",
           "paths": [
             "mobile/src/utils/dates.test.ts",
             "mobile/src/food/serving.test.ts",
+            "mobile/src/utils/goals.test.ts",
+            "mobile/src/components/GoalProgressCard.test.tsx",
             "mobile/src/activity/presentation.test.ts"
           ],
           "capabilities": [
@@ -328,23 +312,23 @@
       ],
       "evidence": [
         {
-          "id": "web-components",
-          "npmScript": "test:frontend",
-          "scriptCommand": "npm --prefix frontend test",
+          "id": "expo-web-components",
+          "npmScript": "test:mobile",
+          "scriptCommand": "npm --prefix mobile test",
           "paths": [
-            "frontend/src/components/FoodEntryForm.test.tsx",
-            "frontend/src/components/GoalEditor.test.tsx",
-            "frontend/src/components/GoalProjection.test.tsx",
-            "frontend/src/pages/Onboarding.test.tsx",
-            "frontend/src/pages/Settings.test.tsx"
+            "mobile/src/components/DateNavigation.web.test.tsx",
+            "mobile/src/hooks/useNativePushRegistration.web.test.tsx",
+            "mobile/src/offline/indexedDbOutbox.web.test.ts",
+            "mobile/src/offline/provider.web.test.tsx",
+            "mobile/src/pwa/runtime.web.test.ts"
           ],
           "capabilities": ["web-state-transitions", "web-failure-recovery"]
         },
         {
           "id": "web-browser-tracking",
           "npmScript": "test:web:e2e",
-          "scriptCommand": "playwright test",
-          "paths": ["e2e/web/tracking.spec.ts", "e2e/web/mobile.spec.ts"],
+          "scriptCommand": "node scripts/expo-web-playwright.mjs",
+          "paths": ["e2e/expo-web/release-smoke.spec.ts"],
           "capabilities": ["web-browser-happy-path", "web-failure-recovery"]
         },
         {

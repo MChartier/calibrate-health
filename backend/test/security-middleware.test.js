@@ -39,7 +39,7 @@ test('browser mutation origin guard permits arbitrary loopback ports only when d
   const createApp = (allowDevelopmentLoopbackOrigins) => {
     const app = express();
     app.use(createBrowserMutationOriginGuard({
-      trustedOrigins: new Set(['http://localhost:5173']),
+      trustedOrigins: new Set(['http://localhost:8081']),
       useSecureRequestOrigin: false,
       allowDevelopmentLoopbackOrigins
     }));
@@ -71,8 +71,8 @@ test('browser mutation origin guard permits arbitrary loopback ports only when d
   assert.equal((await request(developmentAddress.port, 'http://localhost:8081')).status, 200);
   assert.equal((await request(developmentAddress.port, 'http://127.0.0.1:19006')).status, 200);
   assert.equal((await request(developmentAddress.port, 'http://untrusted.example:8081')).status, 403);
-  assert.equal((await request(deployedAddress.port, 'http://localhost:8081')).status, 403);
-  assert.equal((await request(deployedAddress.port, 'http://localhost:5173')).status, 200);
+  assert.equal((await request(deployedAddress.port, 'http://localhost:19006')).status, 403);
+  assert.equal((await request(deployedAddress.port, 'http://localhost:8081')).status, 200);
 });
 
 test('auth rate limiting is narrow and returns a JSON 429 response', async (t) => {

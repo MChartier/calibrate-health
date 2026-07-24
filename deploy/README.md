@@ -5,9 +5,8 @@ other cloud-specific infrastructure. Choose one proxy file and optionally add th
 overlays.
 
 The published `Dockerfile.app` image serves the Expo Router/React Native Web static export and the API from one
-origin. The legacy Vite client remains in the repository as a temporary rollback surface, but it is not copied into
-the release image. Expo documents, the service worker, and the install manifest are revalidated; hashed bundles use
-immutable caching.
+origin. Expo documents, the service worker, and the install manifest are revalidated; hashed bundles use immutable
+caching.
 
 ## Stack combinations
 

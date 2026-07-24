@@ -37,24 +37,7 @@ const packages = [
     installArgs: ["ci", "--prefer-offline", "--no-audit", "--fund=false"],
     requiredPaths: ["node_modules/ts-node/package.json"],
   },
-  {
-    name: "frontend",
-    directory: path.join(repoRoot, "frontend"),
-    installArgs: [
-      "ci",
-      "--legacy-peer-deps",
-      "--prefer-offline",
-      "--no-audit",
-      "--fund=false",
-    ],
-    requiredPaths: [
-      "node_modules/.bin/vite",
-      "node_modules/react/package.json",
-      "node_modules/react-dom/package.json",
-    ],
-  },
 ];
-const expoDevelopmentPackages = packages.filter(({ name }) => name !== "frontend");
 const packageLockHashCache = new Map();
 let cachedNpmVersion = null;
 
@@ -662,7 +645,7 @@ async function setup(doneMessage = "Setup complete.", packageConfigs = packages)
  * Ensure the app is ready, then start dev servers with the seeded test user.
  */
 async function dev() {
-  await setup("Dev setup preflight complete.", expoDevelopmentPackages);
+  await setup("Dev setup preflight complete.");
   const manualAuth = process.argv.includes("--manual-auth");
   console.log(
     manualAuth
@@ -677,7 +660,7 @@ async function dev() {
  * Prepare the local stack and validate the Expo web production export.
  */
 async function buildExpoWeb() {
-  await setup("Expo web build preflight complete.", expoDevelopmentPackages);
+  await setup("Expo web build preflight complete.");
   await timed("Build Expo web", () => {
     run("npm", ["run", "build:expo-web"]);
   });
@@ -707,7 +690,6 @@ async function ci() {
     run("npm", ["run", "test:dev-script"]);
     run("npm", ["run", "test:wear:emulator:unit"]);
     run("npm", ["run", "test:db:upgrade:unit"]);
-    run("npm", ["run", "test:build-budget"]);
     run("npm", ["run", "test:deploy"]);
     run("npm", ["run", "api:contract:check"]);
     if (process.env.DATABASE_URL) {
@@ -719,20 +701,15 @@ async function ci() {
   await timed("Build backend", () => {
     run("npm", ["--prefix", "backend", "run", "build"]);
   });
-  await timed("Build frontend", () => {
-    run("npm", ["--prefix", "frontend", "run", "build"]);
-  });
-  await timed("Lint frontend", () => {
-    run("npm", ["--prefix", "frontend", "run", "lint"]);
+  await timed("Build Expo web", () => {
+    run("npm", ["run", "build:expo-web"]);
+    run("npm", ["run", "test:expo-web:release"]);
   });
   await timed("Type-check mobile", () => {
     run("npm", ["--prefix", "mobile", "run", "typecheck"]);
   });
   await timed("Run backend tests", () => {
     run("npm", ["--prefix", "backend", "test"]);
-  });
-  await timed("Run frontend tests", () => {
-    run("npm", ["--prefix", "frontend", "test"]);
   });
   await timed("Run mobile tests", () => {
     run("npm", ["--prefix", "mobile", "test", "--", "--runInBand"]);
@@ -746,7 +723,7 @@ function printHelp() {
       "Usage: node scripts/dev-env.mjs <command>",
       "",
       "Commands:",
-      "  deps        Install backend/frontend dependencies when needed.",
+      "  deps        Install root/mobile and backend dependencies when needed.",
       "  db:migrate  Apply migrations and seed without resetting data.",
       "  db:reset    Reset the disposable worktree DB, then seed it.",
       "  setup       Install deps, generate Prisma, migrate, and seed.",
@@ -774,7 +751,7 @@ try {
   } else if (command === "setup") {
     await setup();
   } else if (command === "setup:expo") {
-    await setup("Expo development setup complete.", expoDevelopmentPackages);
+    await setup("Expo development setup complete.");
   } else if (command === "dev") {
     await dev();
   } else if (command === "build:web") {
