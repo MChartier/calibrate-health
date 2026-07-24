@@ -206,7 +206,7 @@ export const DayStatusCard: React.FC<{
                             style={[
                                 styles.action,
                                 useCompactOpenLayout && styles.actionCompact,
-                                useCompactOpenLayout && styles.primaryActionFlat
+                                styles.primaryActionFlat
                             ]}
                             leftIcon={<Ionicons
                                 name="checkmark-circle-outline"

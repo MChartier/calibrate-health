@@ -10,6 +10,7 @@ import {
   parseEasEnvironmentFile,
   parseDirtyPaths,
   parseNativeOtaArgs,
+  resolveNativeOtaInvocation,
   runNativeOtaUpdate,
   validateEasUpdateEnvironment
 } from './native-ota-update.mjs';
@@ -72,6 +73,35 @@ test('OTA publish command targets Android and the build channel', () => {
   assert.throws(
     () => nativeOtaPublishCommand({ channel: 'production', message: 'x' }, { channel: 'internal' }),
     /pinned to the internal channel/
+  );
+});
+
+test('Windows OTA commands invoke npx through Node instead of spawning a batch file', () => {
+  const npmExecPath = 'C:\\Node\\node_modules\\npm\\bin\\npm-cli.js';
+  const invocation = resolveNativeOtaInvocation({
+    command: 'npx.cmd',
+    args: ['--yes', 'eas-cli@latest', 'env:pull'],
+    env: { npm_execpath: npmExecPath }
+  }, {
+    platform: 'win32',
+    nodeExecutable: 'C:\\Node\\node.exe',
+    fileExists: (candidate) => candidate === 'C:\\Node\\node_modules\\npm\\bin\\npx-cli.js'
+  });
+  assert.deepEqual(invocation, {
+    command: 'C:\\Node\\node.exe',
+    args: [
+      'C:\\Node\\node_modules\\npm\\bin\\npx-cli.js',
+      '--yes',
+      'eas-cli@latest',
+      'env:pull'
+    ]
+  });
+  assert.deepEqual(
+    resolveNativeOtaInvocation(
+      { command: 'npx', args: ['--version'] },
+      { platform: 'linux' }
+    ),
+    { command: 'npx', args: ['--version'] }
   );
 });
 

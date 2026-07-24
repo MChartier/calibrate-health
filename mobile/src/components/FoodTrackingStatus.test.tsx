@@ -155,6 +155,17 @@ describe('food tracking day resolution', () => {
         expect(screen.getByText('Pause with this date')).toBeTruthy();
     });
 
+    it('removes the rectangular Android elevation from the past-day completion action', async () => {
+        mockApi.getFoodDay.mockResolvedValue(resolvedDay('OPEN'));
+        const screen = renderWithQuery(<DayStatusCard date="2026-07-23" isToday={false} />);
+
+        await waitFor(() => expect(screen.getByText('Day unresolved')).toBeTruthy());
+        expect(screen.getByRole('button', { name: 'Complete day' })).toHaveStyle({
+            elevation: 0,
+            shadowOpacity: 0
+        });
+    });
+
     it('presents inferred blank, incomplete, complete, and paused days without food prompts', async () => {
         const cases: Array<[FoodLogDay, string]> = [
             [resolvedDay('INCOMPLETE', 'INFERRED_EMPTY'), 'Tracking was not completed'],
