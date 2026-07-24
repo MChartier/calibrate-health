@@ -68,7 +68,8 @@ export function useFoodDayStatus(date: string, enabled = true) {
 export const DayStatusCard: React.FC<{
     date: string;
     isToday: boolean;
-}> = ({ date, isToday }) => {
+    compact?: boolean;
+}> = ({ date, isToday, compact = false }) => {
     const { api } = useAuth();
     const { enqueue } = useOfflineOutbox();
     const queryClient = useQueryClient();
@@ -147,6 +148,7 @@ export const DayStatusCard: React.FC<{
     }
 
     const day = dayQuery.data;
+    const useCompactOpenLayout = compact && isToday && day.status === 'OPEN';
     const isBusy = setStatus.isPending || startPause.isPending || resume.isPending;
     const error = dayQuery.error ?? setStatus.error ?? startPause.error ?? resume.error;
     let icon: React.ComponentProps<typeof Ionicons>['name'] = 'options-outline';
@@ -176,40 +178,50 @@ export const DayStatusCard: React.FC<{
 
     return (
         <>
-            <AppCard accessibilityLabel={`${title}. ${description}`}>
-                <View style={styles.heading}>
-                    <View style={styles.icon}>
-                        <Ionicons name={icon} size={24} color={theme.colors.primary} />
+            <AppCard
+                accessibilityLabel={`${title}. ${description}`}
+                style={useCompactOpenLayout && styles.cardCompact}
+            >
+                {useCompactOpenLayout ? (
+                    <AppText variant="label">Tracking options</AppText>
+                ) : (
+                    <View style={styles.heading}>
+                        <View style={styles.icon}>
+                            <Ionicons name={icon} size={24} color={theme.colors.primary} />
+                        </View>
+                        <View style={styles.copy}>
+                            <AppText variant="subtitle">{title}</AppText>
+                            <AppText variant="muted">{description}</AppText>
+                        </View>
                     </View>
-                    <View style={styles.copy}>
-                        <AppText variant="subtitle">{title}</AppText>
-                        <AppText variant="muted">{description}</AppText>
-                    </View>
-                </View>
+                )}
 
                 {day.status === 'OPEN' && (
-                    <View style={styles.actions}>
+                    <View style={[styles.actions, useCompactOpenLayout && styles.actionsCompact]}>
                         {isToday && (
                             <AppButton
-                                title="Pause tracking"
+                                title={useCompactOpenLayout ? 'Pause' : 'Pause tracking'}
+                                accessibilityLabel="Pause tracking"
                                 disabled={isBusy}
                                 onPress={() => setPauseSheetOpen(true)}
-                                style={styles.action}
+                                style={[styles.action, useCompactOpenLayout && styles.actionCompact]}
                             />
                         )}
                         <AppButton
-                            title="Complete day"
+                            title={useCompactOpenLayout ? 'Complete' : 'Complete day'}
+                            accessibilityLabel="Complete day"
                             variant="secondary"
                             disabled={isBusy}
                             onPress={() => setStatus.mutate('COMPLETE')}
-                            style={styles.action}
+                            style={[styles.action, useCompactOpenLayout && styles.actionCompact]}
                         />
                         <AppButton
-                            title="Mark incomplete"
+                            title={useCompactOpenLayout ? 'Incomplete' : 'Mark incomplete'}
+                            accessibilityLabel="Mark incomplete"
                             variant="secondary"
                             disabled={isBusy}
                             onPress={() => setStatus.mutate('INCOMPLETE')}
-                            style={styles.action}
+                            style={[styles.action, useCompactOpenLayout && styles.actionCompact]}
                         />
                     </View>
                 )}
@@ -406,6 +418,10 @@ export const ResumeTrackingPrompt: React.FC = () => {
 
 function createStyles(theme: AppTheme) {
     return StyleSheet.create({
+        cardCompact: {
+            padding: theme.spacing.md,
+            gap: theme.spacing.sm
+        },
         heading: {
             flexDirection: 'row',
             alignItems: 'flex-start',
@@ -429,8 +445,16 @@ function createStyles(theme: AppTheme) {
             flexWrap: 'wrap',
             gap: theme.spacing.sm
         },
+        actionsCompact: {
+            flexWrap: 'nowrap'
+        },
         action: {
             flexGrow: 1
+        },
+        actionCompact: {
+            flex: 1,
+            minWidth: 0,
+            paddingHorizontal: theme.spacing.xs
         },
         error: {
             color: theme.colors.danger

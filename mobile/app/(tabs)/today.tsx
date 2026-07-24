@@ -21,7 +21,7 @@ import { getActiveTabRoute } from '../../src/navigation/contextualFab';
 import { MEAL_OPTIONS } from '../../src/utils/meals';
 import { getTodayDate } from '../../src/utils/dates';
 import { getMetricDate } from '../../src/utils/metrics';
-import { useAppTheme } from '../../src/theme';
+import { spacing, useAppTheme } from '../../src/theme';
 
 export default function TodayScreen() {
     const { colors } = useAppTheme();
@@ -91,7 +91,7 @@ export default function TodayScreen() {
     return (
         <Screen reserveBottomTabs style={styles.screenContent}>
             <DateNavigation navigation={dateNavigation} />
-            {isPaused && <DayStatusCard date={selectedDate} isToday={isToday} />}
+            {isPaused && <DayStatusCard date={selectedDate} isToday={isToday} compact />}
 
             {showContentSkeleton ? (
                 <LogContentSkeleton />
@@ -102,6 +102,7 @@ export default function TodayScreen() {
                             totalCalories={calories}
                             targetCalories={showCalorieComparison ? target : null}
                             unavailableLabel={unavailableLabel}
+                            compact
                         />
                     )}
 
@@ -110,6 +111,7 @@ export default function TodayScreen() {
                             entries={entries}
                             trackingUnavailable={dayStatus?.status !== 'OPEN' && dayStatus?.status !== 'COMPLETE'}
                             onPress={() => router.push({ pathname: '/(tabs)/food-log', params: { date: selectedDate } })}
+                            compact
                         />
                     )}
 
@@ -118,11 +120,12 @@ export default function TodayScreen() {
                         weightUnit={user?.weight_unit}
                         isToday={isToday}
                         onPress={() => setIsWeightSheetOpen(true)}
+                        compact
                     />
                 </>
             )}
 
-            {!isPaused && <DayStatusCard date={selectedDate} isToday={isToday} />}
+            {!isPaused && <DayStatusCard date={selectedDate} isToday={isToday} compact />}
 
             {foodQuery.error && <AppText style={{ color: colors.danger }}>{foodQuery.error.message}</AppText>}
             {profileQuery.error && <AppText style={{ color: colors.danger }}>{profileQuery.error.message}</AppText>}
@@ -145,6 +148,8 @@ export default function TodayScreen() {
 
 const styles = StyleSheet.create({
     screenContent: {
-        flexGrow: 1
+        flexGrow: 1,
+        gap: spacing.md,
+        paddingTop: spacing.md
     }
 });

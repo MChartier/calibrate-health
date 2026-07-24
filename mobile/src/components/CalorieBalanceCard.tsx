@@ -10,14 +10,14 @@ type CalorieBalanceCardProps = ViewProps & {
     totalCalories: number;
     targetCalories: number | null | undefined;
     unavailableLabel?: string;
+    compact?: boolean;
 };
 
 const GAUGE_SIZE = 94;
 const GAUGE_STROKE = 9;
-const GAUGE_RADIUS = (GAUGE_SIZE - GAUGE_STROKE) / 2;
-const GAUGE_CIRCUMFERENCE = 2 * Math.PI * GAUGE_RADIUS;
-// SVG rotation keeps the progress arc's zero point at 12 o'clock on native and web.
-const GAUGE_ROTATION_TRANSFORM = `rotate(-90 ${GAUGE_SIZE / 2} ${GAUGE_SIZE / 2})`;
+// Today uses a denser gauge so the whole dashboard fits above the bottom navigation.
+const COMPACT_GAUGE_SIZE = 76;
+const COMPACT_GAUGE_STROKE = 8;
 
 function getBalanceTone(remaining: number | null, progress: number): 'primary' | 'warning' | 'danger' {
     if (remaining === null) return 'primary';
@@ -36,6 +36,7 @@ export const CalorieBalanceCard: React.FC<CalorieBalanceCardProps> = ({
     totalCalories,
     targetCalories,
     unavailableLabel = 'Target unavailable',
+    compact = false,
     style,
     ...props
 }) => {
@@ -59,25 +60,29 @@ export const CalorieBalanceCard: React.FC<CalorieBalanceCardProps> = ({
             accessibilityLabel={hasTarget
                 ? `${balanceSummary}. ${formatNumber(totalCalories, 0)} eaten out of ${formatNumber(targetCalories, 0)} calorie target.`
                 : `${balanceSummary}. ${formatNumber(totalCalories, 0)} calories logged.`}
-            style={style}
+            style={[compact && styles.cardCompact, style]}
         >
-            <View style={[styles.hero, stackHero && styles.heroStacked]}>
-                <CalorieGauge value={progressValue} tone={tone} colors={colors} styles={styles} />
+            <View style={[styles.hero, compact && styles.heroCompact, stackHero && styles.heroStacked]}>
+                <CalorieGauge value={progressValue} tone={tone} compact={compact} colors={colors} styles={styles} />
                 <View style={[styles.balanceCopy, stackHero && styles.balanceCopyStacked]}>
                     <AppText variant="label">Daily balance</AppText>
                     {remaining === null ? (
                         <AppText style={styles.unavailable}>{balanceLabel}</AppText>
                     ) : (
                         <>
-                            <AppText style={[styles.balanceValue, styles[`${tone}Text`]]}>{balanceValue}</AppText>
+                            <AppText style={[
+                                styles.balanceValue,
+                                compact && styles.balanceValueCompact,
+                                styles[`${tone}Text`]
+                            ]}>{balanceValue}</AppText>
                             <AppText style={[styles.balanceLabel, isOver && styles.dangerText]}>{balanceLabel}</AppText>
                         </>
                     )}
                 </View>
             </View>
             <View style={styles.statRow}>
-                <CalorieStat label="Eaten" value={formatNumber(totalCalories, 0)} styles={styles} />
-                <CalorieStat label="Target" value={hasTarget ? formatNumber(targetCalories, 0) : '-'} styles={styles} />
+                <CalorieStat label="Eaten" value={formatNumber(totalCalories, 0)} compact={compact} styles={styles} />
+                <CalorieStat label="Target" value={hasTarget ? formatNumber(targetCalories, 0) : '-'} compact={compact} styles={styles} />
             </View>
         </AppCard>
     );
@@ -88,35 +93,42 @@ type CalorieBalanceStyles = ReturnType<typeof createStyles>;
 const CalorieGauge: React.FC<{
     value: number;
     tone: 'primary' | 'warning' | 'danger';
+    compact: boolean;
     colors: AppThemeColors;
     styles: CalorieBalanceStyles;
-}> = ({ value, tone, colors, styles }) => {
+}> = ({ value, tone, compact, colors, styles }) => {
     const percent = Math.round(value * 100);
     const toneColor = tone === 'danger' ? colors.danger : tone === 'warning' ? colors.warningDark : colors.primary;
-    const dashOffset = GAUGE_CIRCUMFERENCE * (1 - value);
+    const size = compact ? COMPACT_GAUGE_SIZE : GAUGE_SIZE;
+    const stroke = compact ? COMPACT_GAUGE_STROKE : GAUGE_STROKE;
+    const gaugeRadius = (size - stroke) / 2;
+    const gaugeCircumference = 2 * Math.PI * gaugeRadius;
+    const dashOffset = gaugeCircumference * (1 - value);
+    // SVG rotation keeps the progress arc's zero point at 12 o'clock on native and web.
+    const rotationTransform = `rotate(-90 ${size / 2} ${size / 2})`;
 
     return (
-        <View accessibilityElementsHidden style={styles.gauge}>
-            <Svg width={GAUGE_SIZE} height={GAUGE_SIZE} viewBox={`0 0 ${GAUGE_SIZE} ${GAUGE_SIZE}`}>
+        <View accessibilityElementsHidden style={[styles.gauge, { width: size, height: size }]}>
+            <Svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
                 <Circle
-                    cx={GAUGE_SIZE / 2}
-                    cy={GAUGE_SIZE / 2}
-                    r={GAUGE_RADIUS}
+                    cx={size / 2}
+                    cy={size / 2}
+                    r={gaugeRadius}
                     fill="none"
                     stroke={colors.surfaceAlt}
-                    strokeWidth={GAUGE_STROKE}
+                    strokeWidth={stroke}
                 />
                 <Circle
-                    cx={GAUGE_SIZE / 2}
-                    cy={GAUGE_SIZE / 2}
-                    r={GAUGE_RADIUS}
+                    cx={size / 2}
+                    cy={size / 2}
+                    r={gaugeRadius}
                     fill="none"
                     stroke={toneColor}
-                    strokeWidth={GAUGE_STROKE}
+                    strokeWidth={stroke}
                     strokeLinecap="round"
-                    strokeDasharray={`${GAUGE_CIRCUMFERENCE} ${GAUGE_CIRCUMFERENCE}`}
+                    strokeDasharray={`${gaugeCircumference} ${gaugeCircumference}`}
                     strokeDashoffset={dashOffset}
-                    transform={GAUGE_ROTATION_TRANSFORM}
+                    transform={rotationTransform}
                 />
             </Svg>
             <View style={styles.gaugeLabel}>
@@ -127,8 +139,13 @@ const CalorieGauge: React.FC<{
     );
 };
 
-const CalorieStat: React.FC<{ label: string; value: string; styles: CalorieBalanceStyles }> = ({ label, value, styles }) => (
-    <View style={styles.stat}>
+const CalorieStat: React.FC<{
+    label: string;
+    value: string;
+    compact: boolean;
+    styles: CalorieBalanceStyles;
+}> = ({ label, value, compact, styles }) => (
+    <View style={[styles.stat, compact && styles.statCompact]}>
         <AppText variant="caption">{label}</AppText>
         <AppText style={styles.statValue}>{value}</AppText>
     </View>
@@ -136,6 +153,10 @@ const CalorieStat: React.FC<{ label: string; value: string; styles: CalorieBalan
 
 function createStyles(colors: AppThemeColors) {
     return StyleSheet.create({
+    cardCompact: {
+        padding: spacing.md,
+        gap: spacing.sm
+    },
     primaryText: {
         color: colors.primary
     },
@@ -150,13 +171,14 @@ function createStyles(colors: AppThemeColors) {
         alignItems: 'center',
         gap: spacing.xl
     },
+    heroCompact: {
+        gap: spacing.lg
+    },
     heroStacked: {
         flexDirection: 'column',
         alignItems: 'flex-start'
     },
     gauge: {
-        width: GAUGE_SIZE,
-        height: GAUGE_SIZE,
         alignItems: 'center',
         justifyContent: 'center'
     },
@@ -184,6 +206,10 @@ function createStyles(colors: AppThemeColors) {
         lineHeight: 42,
         fontWeight: '800'
     },
+    balanceValueCompact: {
+        fontSize: 30,
+        lineHeight: 34
+    },
     balanceLabel: {
         color: colors.muted,
         fontSize: 15,
@@ -208,6 +234,9 @@ function createStyles(colors: AppThemeColors) {
         backgroundColor: colors.surfaceAlt,
         paddingVertical: spacing.md,
         paddingHorizontal: spacing.sm
+    },
+    statCompact: {
+        paddingVertical: spacing.sm
     },
     statValue: {
         color: colors.text,

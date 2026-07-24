@@ -11,6 +11,7 @@ type FoodLogSummaryCardProps = Omit<React.ComponentProps<typeof AppPressableCard
     entries: FoodLogEntry[];
     onPress: () => void;
     trackingUnavailable?: boolean;
+    compact?: boolean;
 };
 
 type RecentMealSummary = {
@@ -40,7 +41,14 @@ function formatEntryPreview(entries: FoodLogEntry[]): string {
 }
 
 /** Compact Today summary that opens the full editable food log. */
-export const FoodLogSummaryCard: React.FC<FoodLogSummaryCardProps> = ({ entries, onPress, trackingUnavailable = false, style, ...props }) => {
+export const FoodLogSummaryCard: React.FC<FoodLogSummaryCardProps> = ({
+    entries,
+    onPress,
+    trackingUnavailable = false,
+    compact = false,
+    style,
+    ...props
+}) => {
     const theme = useAppTheme();
     const styles = React.useMemo(() => createStyles(theme), [theme]);
     // The food endpoint returns entries in creation order, so the final entry identifies the latest populated meal.
@@ -56,22 +64,26 @@ export const FoodLogSummaryCard: React.FC<FoodLogSummaryCardProps> = ({ entries,
             accessibilityLabel={`Food log. ${accessibilitySummary}. View full log`}
             accessibilityHint="Opens the full food log for this day"
             onPress={onPress}
-            style={[styles.card, style]}
+            style={[styles.card, compact && styles.cardCompact, style]}
         >
             <View style={styles.headerRow}>
-                <AppText accessibilityRole="header" aria-level={2} variant="screenTitle">Food log</AppText>
+                <AppText accessibilityRole="header" aria-level={2} variant={compact ? 'label' : 'screenTitle'}>
+                    Food log
+                </AppText>
                 <View style={styles.viewAction}>
-                    <AppText style={styles.viewActionText}>View full log</AppText>
-                    <Ionicons name="chevron-forward" size={19} color={theme.colors.primary} />
+                    <AppText style={[styles.viewActionText, compact && styles.viewActionTextCompact]}>
+                        {compact ? 'View' : 'View full log'}
+                    </AppText>
+                    <Ionicons name="chevron-forward" size={compact ? 17 : 19} color={theme.colors.primary} />
                 </View>
             </View>
 
             {recentMeal ? (
-                <View style={styles.summaryRow}>
-                    <View style={styles.mealIcon}>
-                        <Ionicons name="restaurant-outline" size={21} color={theme.colors.primary} />
+                <View style={[styles.summaryRow, compact && styles.summaryRowCompact]}>
+                    <View style={[styles.mealIcon, compact && styles.mealIconCompact]}>
+                        <Ionicons name="restaurant-outline" size={compact ? 19 : 21} color={theme.colors.primary} />
                     </View>
-                    <View style={styles.summaryText}>
+                    <View style={[styles.summaryText, compact && styles.summaryTextCompact]}>
                         <View style={styles.mealHeading}>
                             <AppText variant="subtitle" numberOfLines={1} style={styles.mealName}>
                                 {formatMealPeriod(recentMeal.meal)}
@@ -84,11 +96,11 @@ export const FoodLogSummaryCard: React.FC<FoodLogSummaryCardProps> = ({ entries,
                     </View>
                 </View>
             ) : (
-                <View style={styles.summaryRow}>
-                    <View style={styles.mealIcon}>
-                        <Ionicons name="restaurant-outline" size={21} color={theme.colors.muted} />
+                <View style={[styles.summaryRow, compact && styles.summaryRowCompact]}>
+                    <View style={[styles.mealIcon, compact && styles.mealIconCompact]}>
+                        <Ionicons name="restaurant-outline" size={compact ? 19 : 21} color={theme.colors.muted} />
                     </View>
-                    <View style={styles.summaryText}>
+                    <View style={[styles.summaryText, compact && styles.summaryTextCompact]}>
                         <AppText variant="subtitle">Nothing logged yet</AppText>
                         <AppText variant="muted">
                             {trackingUnavailable ? 'No representative calorie record for this day.' : 'Use Add food to start this day.'}
@@ -104,6 +116,10 @@ function createStyles(theme: AppTheme) {
     return StyleSheet.create({
         card: {
             gap: theme.spacing.md
+        },
+        cardCompact: {
+            padding: theme.spacing.md,
+            gap: theme.spacing.xs
         },
         headerRow: {
             flexDirection: 'row',
@@ -122,11 +138,18 @@ function createStyles(theme: AppTheme) {
             fontSize: 14,
             fontWeight: '800'
         },
+        viewActionTextCompact: {
+            fontSize: theme.typography.caption
+        },
         summaryRow: {
             minHeight: theme.interaction.minimumTouchTarget,
             flexDirection: 'row',
             alignItems: 'center',
             gap: theme.spacing.md
+        },
+        summaryRowCompact: {
+            minHeight: theme.interaction.minimumTouchTarget,
+            gap: theme.spacing.sm
         },
         mealIcon: {
             width: 42,
@@ -136,10 +159,17 @@ function createStyles(theme: AppTheme) {
             borderRadius: theme.radius.md,
             backgroundColor: theme.colors.primaryContainer
         },
+        mealIconCompact: {
+            width: theme.interaction.minimumTouchTarget - theme.spacing.md,
+            height: theme.interaction.minimumTouchTarget - theme.spacing.md
+        },
         summaryText: {
             flex: 1,
             minWidth: 0,
             gap: theme.spacing.xs
+        },
+        summaryTextCompact: {
+            gap: 0
         },
         mealHeading: {
             flexDirection: 'row',

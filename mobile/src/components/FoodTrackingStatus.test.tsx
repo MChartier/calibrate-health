@@ -130,13 +130,13 @@ describe('food tracking day resolution', () => {
 
     it('offers completion, incomplete, and pause actions for an open current day', async () => {
         mockApi.getFoodDay.mockResolvedValue(resolvedDay('OPEN'));
-        const screen = renderWithQuery(<DayStatusCard date="2026-07-23" isToday />);
+        const screen = renderWithQuery(<DayStatusCard date="2026-07-23" isToday compact />);
 
         await waitFor(() => expect(screen.getByText('Tracking options')).toBeTruthy());
-        expect(screen.getByText('Pause tracking')).toBeTruthy();
-        expect(screen.getByText('Complete day')).toBeTruthy();
-        expect(screen.getByText('Mark incomplete')).toBeTruthy();
-        fireEvent.press(screen.getByText('Pause tracking'));
+        expect(screen.getByText('Pause')).toBeTruthy();
+        expect(screen.getByText('Complete')).toBeTruthy();
+        expect(screen.getByText('Incomplete')).toBeTruthy();
+        fireEvent.press(screen.getByLabelText('Pause tracking'));
 
         expect(screen.getByText('Pause calorie tracking?')).toBeTruthy();
         expect(screen.getByText(/Calorie tracking and all reminders will stop/)).toBeTruthy();
