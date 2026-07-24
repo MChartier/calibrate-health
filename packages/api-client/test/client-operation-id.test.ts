@@ -63,6 +63,31 @@ test('updateFoodDay sends the caller operation ID for completion changes', async
     assert.equal(getOperationId(requests[0]), 'food-day-operation-1');
 });
 
+test('day status and pause lifecycle methods preserve caller operation IDs and local dates', async () => {
+    const calls: CapturedRequest[] = [];
+    const client = createClient(calls);
+
+    await client.setFoodDayStatus(
+        { date: '2026-07-11', status: 'INCOMPLETE' },
+        'day-status-operation'
+    );
+    assert.equal(getOperationId(calls[0]), 'day-status-operation');
+    assert.match(String(calls[0].init.body), /2026-07-11/);
+
+    calls.length = 0;
+    await client.startFoodTrackingPause(
+        { starts_on: '2026-07-11', expected_resume_on: '2026-07-14' },
+        'pause-start-operation'
+    );
+    assert.equal(getOperationId(calls[0]), 'pause-start-operation');
+    assert.match(String(calls[0].init.body), /2026-07-14/);
+
+    calls.length = 0;
+    await client.resumeFoodTracking({ resumed_on: '2026-07-13' }, 'pause-resume-operation');
+    assert.equal(getOperationId(calls[0]), 'pause-resume-operation');
+    assert.match(String(calls[0].init.body), /2026-07-13/);
+});
+
 test('createGoal sends the caller operation ID', async () => {
     const requests: CapturedRequest[] = [];
     const client = createClient(requests);

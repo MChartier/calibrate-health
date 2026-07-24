@@ -3,6 +3,7 @@ import {
     normalizeServerUrl,
     parseServerUrl,
     resolveDefaultWebServerUrl,
+    resolveInitialServerUrl,
     testCalibrateServerConnection
 } from './server';
 
@@ -56,6 +57,21 @@ describe('server URL parsing', () => {
     it('reads an optional Expo public server override', () => {
         expect(getConfiguredServerUrl('http://192.168.0.160:3000/api')).toBe('http://192.168.0.160:3000');
         expect(getConfiguredServerUrl('not a url')).toBeNull();
+    });
+
+    it('uses an explicit development target instead of a stale stored server', () => {
+        expect(resolveInitialServerUrl(
+            'https://previous.example',
+            'http://10.0.2.2:3329',
+            'https://calibratehealth.app',
+            true
+        )).toBe('http://10.0.2.2:3329');
+        expect(resolveInitialServerUrl(
+            'https://previous.example',
+            'https://build-default.example',
+            'https://calibratehealth.app',
+            false
+        )).toBe('https://previous.example');
     });
 
     it('targets port 3000 from a loopback Expo dev server but preserves production origins', () => {

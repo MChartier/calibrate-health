@@ -16,5 +16,9 @@ export function usePrefetchPreviousFoodLog(selectedDate: string, minDate: string
             queryKey: ['mobile-food', previousDate],
             queryFn: () => api.getFoodLog(previousDate)
         });
+        void queryClient.prefetchQuery({
+            queryKey: ['mobile-food-day', previousDate],
+            queryFn: () => api.getFoodDay(previousDate)
+        });
     }, [api, minDate, queryClient, selectedDate]);
 }

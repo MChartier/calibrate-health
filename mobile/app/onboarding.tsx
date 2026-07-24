@@ -465,9 +465,14 @@ export default function OnboardingScreen() {
                             </AppText>
                         </View>
                         {importMutation.data && (
-                            <AppText variant="muted">
-                                Imported {importMutation.data.food_logs.valid} food rows and {importMutation.data.weights.valid} weights.
-                            </AppText>
+                            <>
+                                <AppText variant="muted">
+                                    Imported {importMutation.data.food_logs.valid} food rows and {importMutation.data.weights.valid} weights.
+                                </AppText>
+                                {importMutation.data.foodDayCompletionMessage && (
+                                    <AppText variant="muted">{importMutation.data.foodDayCompletionMessage}</AppText>
+                                )}
+                            </>
                         )}
                         {importMutation.error && <AppText style={{ color: themeColors.danger }}>{importMutation.error.message}</AppText>}
                         <AppButton

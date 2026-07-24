@@ -14,12 +14,29 @@ describe('contextual tab FAB', () => {
     });
 
     it('keeps Add food on Today and the full Food log', () => {
-        expect(resolveContextualFab({ pathname: '/today', today: TODAY, metrics: undefined, metricsLoaded: false }))
+        expect(resolveContextualFab({
+            pathname: '/today', today: TODAY, metrics: undefined, metricsLoaded: false,
+            foodDayStatus: 'OPEN', foodDayStatusLoaded: true
+        }))
             .toBe('add-food');
-        expect(resolveContextualFab({ pathname: '/food-log', today: TODAY, metrics: [], metricsLoaded: true }))
+        expect(resolveContextualFab({
+            pathname: '/food-log', today: TODAY, metrics: [], metricsLoaded: true,
+            foodDayStatus: 'OPEN', foodDayStatusLoaded: true
+        }))
             .toBe('add-food');
         expect(resolveContextualFab({ pathname: '/settings', today: TODAY, metrics: [], metricsLoaded: true }))
             .toBeNull();
+    });
+
+    it.each(['COMPLETE', 'INCOMPLETE', 'PAUSED'] as const)('hides Add food when the day is %s', (status) => {
+        expect(resolveContextualFab({
+            pathname: '/today',
+            today: TODAY,
+            metrics: [],
+            metricsLoaded: true,
+            foodDayStatus: status,
+            foodDayStatusLoaded: true
+        })).toBeNull();
     });
 
     it('shows Log weight on Progress only after confirming today is empty', () => {

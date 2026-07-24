@@ -1,4 +1,5 @@
 import type { MetricEntry } from '@calibrate/api-client';
+import type { FoodLogDayStatus } from '@calibrate/api-client';
 import { hasMetricForDate } from '../utils/metrics';
 
 export type ContextualFabKind = 'add-food' | 'log-weight' | null;
@@ -15,9 +16,14 @@ export function resolveContextualFab(input: {
     today: string;
     metrics: MetricEntry[] | undefined;
     metricsLoaded: boolean;
+    foodDayStatus?: FoodLogDayStatus;
+    foodDayStatusLoaded?: boolean;
 }): ContextualFabKind {
     const activeRoute = getActiveTabRoute(input.pathname);
-    if (activeRoute === 'today' || activeRoute === 'food-log') return 'add-food';
+    if (activeRoute === 'today' || activeRoute === 'food-log') {
+        if (!input.foodDayStatusLoaded || input.foodDayStatus !== 'OPEN') return null;
+        return 'add-food';
+    }
     if (activeRoute !== 'progress' || !input.metricsLoaded) return null;
     return hasMetricForDate(input.metrics ?? [], input.today) ? null : 'log-weight';
 }

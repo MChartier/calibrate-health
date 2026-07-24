@@ -13,6 +13,7 @@ type TodayWeightCardProps = Omit<React.ComponentProps<typeof AppPressableCard>, 
     weightUnit: WeightUnit | undefined;
     isToday: boolean;
     onPress: () => void;
+    compact?: boolean;
 };
 
 /** Compact daily weigh-in summary and entry point for the Today dashboard. */
@@ -21,6 +22,7 @@ export const TodayWeightCard: React.FC<TodayWeightCardProps> = ({
     weightUnit,
     isToday,
     onPress,
+    compact = false,
     style,
     ...props
 }) => {
@@ -29,6 +31,7 @@ export const TodayWeightCard: React.FC<TodayWeightCardProps> = ({
     const title = isToday ? "Today's weight" : 'Weight';
     const action = metric ? 'Edit' : 'Log';
     const metricLabel = metric ? formatWeight(metric.weight, weightUnit) : 'No weigh-in yet';
+    const metricVariant = compact || !metric ? 'subtitle' : 'screenTitle';
     const supportingLabel = metric
         ? (isToday ? 'Logged today' : 'Logged for this day')
         : (isToday ? 'Add today\'s measurement' : 'Add a measurement for this day');
@@ -40,22 +43,24 @@ export const TodayWeightCard: React.FC<TodayWeightCardProps> = ({
             accessibilityLabel={`${title}. ${metricLabel}. ${action} weight`}
             accessibilityHint={metric ? 'Opens this weigh-in for editing' : 'Opens the weight entry form'}
             onPress={onPress}
-            style={[styles.card, style]}
+            style={[styles.card, compact && styles.cardCompact, style]}
         >
             <View style={styles.headerRow}>
-                <AppText accessibilityRole="header" aria-level={2} variant="screenTitle">{title}</AppText>
+                <AppText accessibilityRole="header" aria-level={2} variant={compact ? 'label' : 'screenTitle'}>
+                    {title}
+                </AppText>
                 <View style={styles.viewAction}>
-                    <AppText style={styles.viewActionText}>{action}</AppText>
-                    <Ionicons name="chevron-forward" size={19} color={theme.colors.primary} />
+                    <AppText style={[styles.viewActionText, compact && styles.viewActionTextCompact]}>{action}</AppText>
+                    <Ionicons name="chevron-forward" size={compact ? 17 : 19} color={theme.colors.primary} />
                 </View>
             </View>
 
-            <View style={styles.summaryRow}>
-                <View style={styles.weightIcon}>
-                    <Ionicons name="scale-outline" size={22} color={theme.colors.primary} />
+            <View style={[styles.summaryRow, compact && styles.summaryRowCompact]}>
+                <View style={[styles.weightIcon, compact && styles.weightIconCompact]}>
+                    <Ionicons name="scale-outline" size={compact ? 19 : 22} color={theme.colors.primary} />
                 </View>
-                <View style={styles.summaryText}>
-                    <AppText variant={metric ? 'screenTitle' : 'subtitle'} numberOfLines={1}>
+                <View style={[styles.summaryText, compact && styles.summaryTextCompact]}>
+                    <AppText variant={metricVariant} numberOfLines={1}>
                         {metricLabel}
                     </AppText>
                     <AppText variant="muted">{supportingLabel}</AppText>
@@ -69,6 +74,10 @@ function createStyles(theme: AppTheme) {
     return StyleSheet.create({
         card: {
             gap: theme.spacing.md
+        },
+        cardCompact: {
+            padding: theme.spacing.md,
+            gap: theme.spacing.xs
         },
         headerRow: {
             flexDirection: 'row',
@@ -87,11 +96,18 @@ function createStyles(theme: AppTheme) {
             fontSize: theme.typography.small,
             fontWeight: '800'
         },
+        viewActionTextCompact: {
+            fontSize: theme.typography.caption
+        },
         summaryRow: {
             minHeight: theme.interaction.minimumTouchTarget,
             flexDirection: 'row',
             alignItems: 'center',
             gap: theme.spacing.md
+        },
+        summaryRowCompact: {
+            minHeight: theme.interaction.minimumTouchTarget,
+            gap: theme.spacing.sm
         },
         weightIcon: {
             width: 42,
@@ -101,10 +117,17 @@ function createStyles(theme: AppTheme) {
             borderRadius: theme.radius.md,
             backgroundColor: theme.colors.primaryContainer
         },
+        weightIconCompact: {
+            width: theme.interaction.minimumTouchTarget - theme.spacing.md,
+            height: theme.interaction.minimumTouchTarget - theme.spacing.md
+        },
         summaryText: {
             flex: 1,
             minWidth: 0,
             gap: theme.spacing.xs
+        },
+        summaryTextCompact: {
+            gap: 0
         }
     });
 }

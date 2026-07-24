@@ -13,7 +13,11 @@ export const OFFLINE_MUTATION_OPERATIONS = {
     DELETE_FOOD_LOG: 'food.delete',
     ADD_METRIC: 'metric.add',
     DELETE_METRIC: 'metric.delete',
-    UPDATE_FOOD_DAY: 'food-day.update'
+    UPDATE_FOOD_DAY: 'food-day.update',
+    SET_FOOD_DAY_STATUS: 'food-day.set-status',
+    START_FOOD_TRACKING_PAUSE: 'food-tracking-pause.start',
+    UPDATE_FOOD_TRACKING_PAUSE: 'food-tracking-pause.update',
+    RESUME_FOOD_TRACKING: 'food-tracking-pause.resume'
 } as const;
 
 export type OfflineMutationOperation =
@@ -106,6 +110,41 @@ export function createQueuedMutationExecutor(api: CalibrateApiClient): QueuedMut
                     throw new Error('Queued food-day.update payload is invalid.');
                 }
                 await api.updateFoodDay({ date: payload.date, is_complete: payload.is_complete }, mutation.id);
+                return;
+            case OFFLINE_MUTATION_OPERATIONS.SET_FOOD_DAY_STATUS:
+                if (
+                    typeof payload.date !== 'string' ||
+                    (payload.status !== 'OPEN' && payload.status !== 'COMPLETE' && payload.status !== 'INCOMPLETE')
+                ) {
+                    throw new Error('Queued food-day.set-status payload is invalid.');
+                }
+                await api.setFoodDayStatus({ date: payload.date, status: payload.status }, mutation.id);
+                return;
+            case OFFLINE_MUTATION_OPERATIONS.START_FOOD_TRACKING_PAUSE:
+                if (
+                    typeof payload.starts_on !== 'string' ||
+                    !(payload.expected_resume_on === null || typeof payload.expected_resume_on === 'string')
+                ) {
+                    throw new Error('Queued food-tracking-pause.start payload is invalid.');
+                }
+                await api.startFoodTrackingPause({
+                    starts_on: payload.starts_on,
+                    expected_resume_on: payload.expected_resume_on
+                }, mutation.id);
+                return;
+            case OFFLINE_MUTATION_OPERATIONS.UPDATE_FOOD_TRACKING_PAUSE:
+                if (!(payload.expected_resume_on === null || typeof payload.expected_resume_on === 'string')) {
+                    throw new Error('Queued food-tracking-pause.update payload is invalid.');
+                }
+                await api.updateFoodTrackingPause({
+                    expected_resume_on: payload.expected_resume_on
+                }, mutation.id);
+                return;
+            case OFFLINE_MUTATION_OPERATIONS.RESUME_FOOD_TRACKING:
+                if (typeof payload.resumed_on !== 'string') {
+                    throw new Error('Queued food-tracking-pause.resume payload is invalid.');
+                }
+                await api.resumeFoodTracking({ resumed_on: payload.resumed_on }, mutation.id);
                 return;
             default:
                 throw new Error(`Unsupported queued mutation operation: ${mutation.operation}`);

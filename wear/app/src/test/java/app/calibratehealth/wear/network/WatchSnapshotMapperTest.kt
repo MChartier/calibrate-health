@@ -15,6 +15,8 @@ class WatchSnapshotMapperTest {
         assertEquals(2_000, result.dailySnapshot.calorieTarget)
         assertEquals(1_250, result.dailySnapshot.caloriesRemaining)
         assertEquals(true, result.dailySnapshot.foodDayComplete)
+        assertEquals("COMPLETE", result.dailySnapshot.foodDayStatus)
+        assertEquals(true, result.dailySnapshot.foodDayRepresentative)
         assertEquals(1_783_731_600_000L, result.dailySnapshot.foodDayCompletedAtEpochMs)
         assertEquals("fedcba9876543210fedcba98", result.dailySnapshot.foodDayRevision)
         assertEquals(81_500L, result.dailySnapshot.todayWeightGrams)
@@ -101,6 +103,36 @@ class WatchSnapshotMapperTest {
     fun `strict parser rejects duplicate keys and trailing input`() {
         assertTrue(runCatching { StrictJson.parse("{\"a\":1,\"a\":2}") }.isFailure)
         assertTrue(runCatching { StrictJson.parse("{}[]") }.isFailure)
+    }
+
+    @Test
+    fun `maps paused status and requires food actions and reminders to be absent`() {
+        val paused = validSnapshot()
+            .replace(
+                "\"food_day\":{\"is_complete\":true,\"completed_at\":\"2026-07-11T01:00:00Z\",\"revision\":\"fedcba9876543210fedcba98\"}",
+                "\"food_day\":{\"status\":\"PAUSED\",\"source\":\"PAUSE\",\"is_representative\":false,\"is_complete\":false,\"completed_at\":null,\"revision\":\"fedcba9876543210fedcba98\"}"
+            )
+            .replace(
+                Regex(
+                    "\"quick_add\":\\[.*?\\],\\s*\"reminders\"",
+                    RegexOption.DOT_MATCHES_ALL
+                ),
+                "\"quick_add\":[],\"reminders\""
+            )
+            .replace(
+                Regex(
+                    "\"reminders\":\\[.*?\\],\\s*\"undo_candidate\"",
+                    RegexOption.DOT_MATCHES_ALL
+                ),
+                "\"reminders\":[],\"undo_candidate\""
+            )
+        val mapped = WatchSnapshotMapper.map(paused, 42L)
+
+        assertEquals("PAUSED", mapped.dailySnapshot.foodDayStatus)
+        assertEquals("PAUSE", mapped.dailySnapshot.foodDaySource)
+        assertEquals(false, mapped.dailySnapshot.foodDayRepresentative)
+        assertTrue(mapped.quickAddItems.isEmpty())
+        assertTrue(mapped.reminders.isEmpty())
     }
 
     private fun validSnapshot(): String = """

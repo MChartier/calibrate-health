@@ -30,7 +30,14 @@ test('watch snapshot contract exposes unit and revisions needed for offline acti
         weight_unit: 'LB',
         revision: '0123456789abcdef01234567',
         calories: { consumed: 1200, target: 2000, remaining: 800, missing: [] },
-        food_day: { is_complete: true, completed_at: '2026-07-11T19:00:00.000Z', revision: '111111111111111111111111' },
+        food_day: {
+            status: 'COMPLETE',
+            source: 'USER',
+            is_representative: true,
+            is_complete: true,
+            completed_at: '2026-07-11T19:00:00.000Z',
+            revision: '111111111111111111111111'
+        },
         weight: {
             today_grams: 80000,
             today_revision: '222222222222222222222222',
@@ -61,6 +68,7 @@ test('watch snapshot contract exposes unit and revisions needed for offline acti
     assert.equal(snapshot.weight.latest_revision, snapshot.weight.today_revision);
     assert.equal(snapshot.goal?.remaining_weight_grams, 5000);
     assert.equal(snapshot.reminders[0]?.type, 'food');
+    assert.equal('date' in snapshot.food_day, false);
 });
 
 test('watch snapshot sends If-None-Match and returns 304 metadata without throwing', async () => {

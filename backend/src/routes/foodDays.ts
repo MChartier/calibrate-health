@@ -1,300 +1,370 @@
 import express from 'express';
 import prisma from '../config/database';
-import { MS_PER_DAY, addUtcDays, parseLocalDateOnly } from '../utils/date';
+import { MS_PER_DAY, addUtcDays, getSafeUtcTodayDateOnlyInTimeZone, parseLocalDateOnly } from '../utils/date';
 import {
-    ClientOperationConflictError,
-    executeIdempotentMutation,
-    parseClientOperationId,
-    recordSyncChange
+  ClientOperationConflictError,
+  executeIdempotentMutation,
+  parseClientOperationId,
+  recordSyncChange
 } from '../services/clientOperations';
+import {
+  type FoodDayStatus,
+  formatDateKey,
+  getActiveFoodTrackingPause,
+  getEffectiveFoodDay,
+  getEffectiveFoodDayRange,
+  isFoodDayStatus,
+  resumeFoodTracking,
+  serializeFoodDayStatus,
+  startFoodTrackingPause,
+  updateFoodTrackingPauseExpectation
+} from '../services/foodTracking';
+import { resolveInactiveReminderNotificationsForUser } from '../services/inAppNotifications';
 
-/**
- * Daily food log completion status endpoints.
- *
- * Completion is stored per local-day using the user's timezone-derived date.
- */
 const router = express.Router();
 
-/**
- * Ensure the session is authenticated before accessing food log day data.
- */
 const isAuthenticated = (req: express.Request, res: express.Response, next: express.NextFunction) => {
-    if (req.isAuthenticated()) {
-        return next();
-    }
-    res.status(401).json({ message: 'Not authenticated' });
+  if (req.isAuthenticated()) return next();
+  res.status(401).json({ message: 'Not authenticated' });
 };
 
 router.use(isAuthenticated);
 
-function formatDateKey(date: Date): string {
-    return date.toISOString().slice(0, 10);
+function parseRequestedDate(value: unknown): { ok: true; dateValue: Date; dateKey: string } | { ok: false } {
+  if (typeof value !== 'string') return { ok: false };
+  try {
+    const dateValue = parseLocalDateOnly(value);
+    return { ok: true, dateValue, dateKey: formatDateKey(dateValue) };
+  } catch {
+    return { ok: false };
+  }
 }
 
-function parseRequestedDate(value: unknown): { ok: true; dateValue: Date; dateKey: string } | { ok: false } {
-    if (typeof value !== 'string') return { ok: false };
-
-    try {
-        const dateValue = parseLocalDateOnly(value);
-        return { ok: true, dateValue, dateKey: formatDateKey(dateValue) };
-    } catch {
-        return { ok: false };
-    }
+function parseNullableDate(value: unknown): { ok: true; dateValue: Date | null } | { ok: false } {
+  if (value === null) return { ok: true, dateValue: null };
+  const parsed = parseRequestedDate(value);
+  return parsed.ok ? { ok: true, dateValue: parsed.dateValue } : { ok: false };
 }
 
 const MONTH_QUERY_PATTERN = /^(\d{4})-(\d{2})$/;
-const MAX_RANGE_QUERY_DAYS = 366; // Cap range queries to one year so calendar/status lookups remain bounded.
+const MAX_RANGE_QUERY_DAYS = 366;
 
 type ParsedDateRange =
-    | {
-          ok: true;
-          startDateValue: Date;
-          endDateValue: Date;
-          startDateKey: string;
-          endDateKey: string;
-      }
-    | {
-          ok: false;
-          message: string;
-      };
+  | {
+      ok: true;
+      startDateValue: Date;
+      endDateValue: Date;
+      startDateKey: string;
+      endDateKey: string;
+    }
+  | { ok: false; message: string };
 
-/**
- * Count inclusive UTC calendar days between two DATE-normalized values.
- *
- * We use UTC day steps to stay aligned with Postgres DATE semantics and avoid DST skew.
- */
 function countInclusiveUtcDays(startDateValue: Date, endDateValue: Date): number {
-    return Math.floor((endDateValue.getTime() - startDateValue.getTime()) / MS_PER_DAY) + 1;
+  return Math.floor((endDateValue.getTime() - startDateValue.getTime()) / MS_PER_DAY) + 1;
 }
 
-/**
- * Parse and validate a date-range query for completion lookups.
- *
- * Supported query shapes:
- * - `start=YYYY-MM-DD&end=YYYY-MM-DD` (also accepts `start_date`/`end_date`)
- * - `month=YYYY-MM` (expands to the full calendar month)
- */
 function parseRequestedRange(query: Record<string, unknown>): ParsedDateRange {
-    const monthParam = typeof query.month === 'string' ? query.month : undefined;
-    const startParam =
-        typeof query.start === 'string'
-            ? query.start
-            : typeof query.start_date === 'string'
-              ? query.start_date
-              : undefined;
-    const endParam =
-        typeof query.end === 'string'
-            ? query.end
-            : typeof query.end_date === 'string'
-              ? query.end_date
-              : undefined;
+  const monthParam = typeof query.month === 'string' ? query.month : undefined;
+  const startParam =
+    typeof query.start === 'string'
+      ? query.start
+      : typeof query.start_date === 'string'
+        ? query.start_date
+        : undefined;
+  const endParam =
+    typeof query.end === 'string'
+      ? query.end
+      : typeof query.end_date === 'string'
+        ? query.end_date
+        : undefined;
 
-    if (monthParam) {
-        if (startParam || endParam) {
-            return { ok: false, message: 'Provide either month or start/end' };
-        }
-
-        const monthMatch = monthParam.match(MONTH_QUERY_PATTERN);
-        if (!monthMatch) {
-            return { ok: false, message: 'Invalid month' };
-        }
-
-        const year = Number.parseInt(monthMatch[1], 10);
-        const month = Number.parseInt(monthMatch[2], 10);
-        if (!Number.isInteger(year) || !Number.isInteger(month) || month < 1 || month > 12) {
-            return { ok: false, message: 'Invalid month' };
-        }
-
-        const startDateValue = parseLocalDateOnly(`${monthMatch[1]}-${monthMatch[2]}-01`);
-        const endDateValue = new Date(Date.UTC(year, month, 0));
-
-        return {
-            ok: true,
-            startDateValue,
-            endDateValue,
-            startDateKey: formatDateKey(startDateValue),
-            endDateKey: formatDateKey(endDateValue)
-        };
+  if (monthParam) {
+    if (startParam || endParam) return { ok: false, message: 'Provide either month or start/end' };
+    const match = monthParam.match(MONTH_QUERY_PATTERN);
+    if (!match) return { ok: false, message: 'Invalid month' };
+    const year = Number.parseInt(match[1], 10);
+    const month = Number.parseInt(match[2], 10);
+    if (!Number.isInteger(year) || month < 1 || month > 12) {
+      return { ok: false, message: 'Invalid month' };
     }
-
-    if (!startParam || !endParam) {
-        return { ok: false, message: 'Provide start and end dates' };
-    }
-
-    const parsedStart = parseRequestedDate(startParam);
-    const parsedEnd = parseRequestedDate(endParam);
-    if (!parsedStart.ok || !parsedEnd.ok) {
-        return { ok: false, message: 'Invalid date range' };
-    }
-
-    if (parsedStart.dateValue > parsedEnd.dateValue) {
-        return { ok: false, message: 'Invalid date range' };
-    }
-
-    const rangeDays = countInclusiveUtcDays(parsedStart.dateValue, parsedEnd.dateValue);
-    if (rangeDays > MAX_RANGE_QUERY_DAYS) {
-        return { ok: false, message: 'Date range too large' };
-    }
-
+    const startDateValue = parseLocalDateOnly(`${match[1]}-${match[2]}-01`);
+    const endDateValue = new Date(Date.UTC(year, month, 0));
     return {
-        ok: true,
-        startDateValue: parsedStart.dateValue,
-        endDateValue: parsedEnd.dateValue,
-        startDateKey: parsedStart.dateKey,
-        endDateKey: parsedEnd.dateKey
+      ok: true,
+      startDateValue,
+      endDateValue,
+      startDateKey: formatDateKey(startDateValue),
+      endDateKey: formatDateKey(endDateValue)
     };
+  }
+  if (!startParam || !endParam) return { ok: false, message: 'Provide start and end dates' };
+  const start = parseRequestedDate(startParam);
+  const end = parseRequestedDate(endParam);
+  if (!start.ok || !end.ok || start.dateValue > end.dateValue) {
+    return { ok: false, message: 'Invalid date range' };
+  }
+  if (countInclusiveUtcDays(start.dateValue, end.dateValue) > MAX_RANGE_QUERY_DAYS) {
+    return { ok: false, message: 'Date range too large' };
+  }
+  return {
+    ok: true,
+    startDateValue: start.dateValue,
+    endDateValue: end.dateValue,
+    startDateKey: start.dateKey,
+    endDateKey: end.dateKey
+  };
 }
 
-router.get('/', async (req, res) => {
-    const user = req.user as any;
-    const dateParam =
-        typeof req.query.date === 'string'
-            ? req.query.date
-            : typeof req.query.local_date === 'string'
-              ? req.query.local_date
-              : undefined;
+function parseOperationId(req: express.Request): string | null | undefined {
+  return parseClientOperationId(req.get?.('x-client-operation-id') ?? req.headers?.['x-client-operation-id']);
+}
 
-    const parsedDate = parseRequestedDate(dateParam);
-    if (!parsedDate.ok) {
-        return res.status(400).json({ message: 'Invalid date' });
-    }
-
-    try {
-        const existing = await prisma.foodLogDay.findUnique({
-            where: { user_id_local_date: { user_id: user.id, local_date: parsedDate.dateValue } }
-        });
-
-        if (!existing) {
-            return res.json({ date: parsedDate.dateKey, is_complete: false, completed_at: null });
-        }
-
-        return res.json({
-            date: parsedDate.dateKey,
-            is_complete: existing.is_complete,
-            completed_at: existing.completed_at
-        });
-    } catch (err) {
-        return res.status(500).json({ message: 'Server error' });
-    }
-});
+function sendMutationError(res: express.Response, error: unknown): express.Response {
+  if (error instanceof ClientOperationConflictError) {
+    return res.status(409).json({
+      message: error.message,
+      code: error.code,
+      retryable: error.code === 'OPERATION_IN_PROGRESS'
+    });
+  }
+  if (error instanceof Error && error.message === 'ACTIVE_PAUSE_EXISTS') {
+    return res.status(409).json({ message: 'Tracking is already paused', code: 'ACTIVE_PAUSE_EXISTS' });
+  }
+  if (error instanceof Error && error.message === 'NO_ACTIVE_PAUSE') {
+    return res.status(409).json({ message: 'Tracking is not paused', code: 'NO_ACTIVE_PAUSE' });
+  }
+  if (error instanceof Error && error.message === 'INVALID_RESUME_DATE') {
+    return res.status(400).json({ message: 'Resume date cannot be before the pause start' });
+  }
+  if (error instanceof Error && error.message === 'INVALID_EXPECTED_RESUME_DATE') {
+    return res.status(400).json({ message: 'Expected resume date must be after the pause start' });
+  }
+  return res.status(500).json({ message: 'Server error' });
+}
 
 router.get('/range', async (req, res) => {
-    const user = req.user as any;
-    const parsedRange = parseRequestedRange(req.query as Record<string, unknown>);
-    if (!parsedRange.ok) {
-        return res.status(400).json({ message: parsedRange.message });
-    }
+  const user = req.user as { id: number };
+  const range = parseRequestedRange(req.query as Record<string, unknown>);
+  if (!range.ok) return res.status(400).json({ message: range.message });
+  try {
+    const days = await getEffectiveFoodDayRange(user.id, range.startDateValue, range.endDateValue);
+    if (!days) return res.status(404).json({ message: 'User not found' });
+    return res.json({ start_date: range.startDateKey, end_date: range.endDateKey, days });
+  } catch {
+    return res.status(500).json({ message: 'Server error' });
+  }
+});
 
-    try {
-        const daysInRange = await prisma.foodLogDay.findMany({
-            where: {
-                user_id: user.id,
-                local_date: {
-                    gte: parsedRange.startDateValue,
-                    lte: parsedRange.endDateValue
-                }
-            },
-            orderBy: { local_date: 'asc' }
-        });
+router.get('/pause', async (req, res) => {
+  const user = req.user as { id: number };
+  try {
+    const pause = await getActiveFoodTrackingPause(user.id);
+    if (!pause) return res.status(404).json({ message: 'User not found' });
+    return res.json({ pause });
+  } catch {
+    return res.status(500).json({ message: 'Server error' });
+  }
+});
 
-        const byDateKey = new Map(daysInRange.map((day) => [formatDateKey(day.local_date), day]));
-        const days = [];
-        for (let cursor = parsedRange.startDateValue; cursor <= parsedRange.endDateValue; cursor = addUtcDays(cursor, 1)) {
-            const dateKey = formatDateKey(cursor);
-            const existing = byDateKey.get(dateKey);
-            days.push({
-                date: dateKey,
-                is_complete: existing?.is_complete ?? false,
-                completed_at: existing?.completed_at ?? null
-            });
-        }
-
-        return res.json({
-            start_date: parsedRange.startDateKey,
-            end_date: parsedRange.endDateKey,
-            days
-        });
-    } catch {
-        return res.status(500).json({ message: 'Server error' });
-    }
+router.get('/', async (req, res) => {
+  const user = req.user as { id: number };
+  const dateParam =
+    typeof req.query.date === 'string'
+      ? req.query.date
+      : typeof req.query.local_date === 'string'
+        ? req.query.local_date
+        : undefined;
+  const parsed = parseRequestedDate(dateParam);
+  if (!parsed.ok) return res.status(400).json({ message: 'Invalid date' });
+  try {
+    const day = await getEffectiveFoodDay(user.id, parsed.dateValue);
+    if (!day) return res.status(404).json({ message: 'User not found' });
+    return res.json(day);
+  } catch {
+    return res.status(500).json({ message: 'Server error' });
+  }
 });
 
 router.patch('/', async (req, res) => {
-    const user = req.user as any;
-    if (typeof req.body !== 'object' || req.body === null) {
-        return res.status(400).json({ message: 'Invalid request body' });
+  const user = req.user as { id: number };
+  if (typeof req.body !== 'object' || req.body === null) {
+    return res.status(400).json({ message: 'Invalid request body' });
+  }
+  const { date, local_date, status: rawStatus, is_complete } = req.body as Record<string, unknown>;
+  const parsed = parseRequestedDate(date ?? local_date);
+  if (!parsed.ok) return res.status(400).json({ message: 'Invalid date' });
+
+  let status: FoodDayStatus;
+  let operationKind: string;
+  if (rawStatus !== undefined) {
+    if (!isFoodDayStatus(rawStatus) || rawStatus === 'PAUSED') {
+      return res.status(400).json({ message: 'Invalid status' });
     }
-
-    const { date, local_date, is_complete } = req.body as {
-        date?: unknown;
-        local_date?: unknown;
-        is_complete?: unknown;
-    };
-
-    const parsedDate = parseRequestedDate(date ?? local_date);
-    if (!parsedDate.ok) {
-        return res.status(400).json({ message: 'Invalid date' });
-    }
-
+    status = rawStatus;
+    operationKind = 'food_log_day.set_status';
+  } else {
     if (typeof is_complete !== 'boolean') {
-        return res.status(400).json({ message: 'Invalid is_complete' });
+      return res.status(400).json({ message: 'Invalid is_complete' });
     }
+    status = is_complete ? 'COMPLETE' : 'OPEN';
+    operationKind = 'food_log_day.set_complete';
+  }
 
-    const completedAt = is_complete ? new Date() : null;
-
-    try {
-        const operationId = parseClientOperationId(
-            req.get?.('x-client-operation-id') ?? req.headers?.['x-client-operation-id']
-        );
-        if (operationId === null) {
-            return res.status(400).json({ message: 'Invalid x-client-operation-id' });
-        }
-
-        const result = await executeIdempotentMutation<unknown>({
-            userId: user.id,
-            operationId,
-            operationKind: 'food_log_day.set_complete',
-            requestPayload: req.body,
-            mutate: async (tx, claimedOperationId) => {
-                const updated = await tx.foodLogDay.upsert({
-                    where: { user_id_local_date: { user_id: user.id, local_date: parsedDate.dateValue } },
-                    update: { is_complete, completed_at: completedAt },
-                    create: {
-                        user_id: user.id,
-                        local_date: parsedDate.dateValue,
-                        is_complete,
-                        completed_at: completedAt
-                    }
-                });
-                const body = {
-                    date: parsedDate.dateKey,
-                    is_complete: updated.is_complete,
-                    completed_at: updated.completed_at
-                };
-                await recordSyncChange({
-                    tx,
-                    userId: user.id,
-                    entityType: 'food_log_day',
-                    entityId: parsedDate.dateKey,
-                    action: 'upsert',
-                    operationId: claimedOperationId,
-                    payload: body
-                });
-                return { status: 200, body };
-            }
+  const operationId = parseOperationId(req);
+  if (operationId === null) return res.status(400).json({ message: 'Invalid x-client-operation-id' });
+  const completedAt = status === 'COMPLETE' ? new Date() : null;
+  try {
+    const result = await executeIdempotentMutation({
+      userId: user.id,
+      operationId,
+      operationKind,
+      requestPayload: req.body,
+      mutate: async (tx, claimedOperationId) => {
+        const updated = await tx.foodLogDay.upsert({
+          where: { user_id_local_date: { user_id: user.id, local_date: parsed.dateValue } },
+          update: { status, origin: 'USER', completed_at: completedAt },
+          create: {
+            user_id: user.id,
+            local_date: parsed.dateValue,
+            status,
+            origin: 'USER',
+            completed_at: completedAt
+          }
         });
+        const body = serializeFoodDayStatus({
+          date: updated.local_date,
+          status: updated.status as FoodDayStatus,
+          origin: updated.origin,
+          completedAt: updated.completed_at,
+          updatedAt: updated.updated_at
+        });
+        await recordSyncChange({
+          tx,
+          userId: user.id,
+          entityType: 'food_log_day',
+          entityId: parsed.dateKey,
+          action: 'upsert',
+          operationId: claimedOperationId,
+          payload: body
+        });
+        return { status: 200, body };
+      }
+    });
+    return res.status(result.status).json(result.body);
+  } catch (error) {
+    return sendMutationError(res, error);
+  }
+});
 
-        return res.status(result.status).json(result.body);
-    } catch (err) {
-        if (err instanceof ClientOperationConflictError) {
-            return res.status(409).json({
-                message: err.message,
-                code: err.code,
-                retryable: err.code === 'OPERATION_IN_PROGRESS'
-            });
-        }
-        return res.status(500).json({ message: 'Server error' });
+router.post('/pause', async (req, res) => {
+  const user = req.user as { id: number };
+  if (typeof req.body !== 'object' || req.body === null) {
+    return res.status(400).json({ message: 'Invalid request body' });
+  }
+  const body = req.body as Record<string, unknown>;
+  const startsOn = parseRequestedDate(body.starts_on ?? body.date);
+  const expected = parseNullableDate(body.expected_resume_on ?? null);
+  if (!startsOn.ok) return res.status(400).json({ message: 'Invalid starts_on' });
+  if (!expected.ok || (expected.dateValue !== null && expected.dateValue <= startsOn.dateValue)) {
+    return res.status(400).json({ message: 'Expected resume date must be after the pause start' });
+  }
+  const operationId = parseOperationId(req);
+  if (operationId === null) return res.status(400).json({ message: 'Invalid x-client-operation-id' });
+  const now = new Date();
+  try {
+    const result = await executeIdempotentMutation({
+      userId: user.id,
+      operationId,
+      operationKind: 'food_tracking_pause.start',
+      requestPayload: req.body,
+      mutate: async (tx, claimedOperationId) => {
+        const pause = await startFoodTrackingPause({
+          tx,
+          userId: user.id,
+          startsOn: startsOn.dateValue,
+          expectedResumeOn: expected.dateValue,
+          now,
+          operationId: claimedOperationId
+        });
+        return { status: 201, body: { pause } };
+      }
+    });
+    const dbUser = await prisma.user.findUnique({ where: { id: user.id }, select: { timezone: true } });
+    if (dbUser) {
+      await resolveInactiveReminderNotificationsForUser({ userId: user.id, timeZone: dbUser.timezone, now });
     }
+    return res.status(result.status).json(result.body);
+  } catch (error) {
+    return sendMutationError(res, error);
+  }
+});
+
+router.patch('/pause', async (req, res) => {
+  const user = req.user as { id: number };
+  if (typeof req.body !== 'object' || req.body === null || !('expected_resume_on' in req.body)) {
+    return res.status(400).json({ message: 'Invalid request body' });
+  }
+  const expected = parseNullableDate((req.body as Record<string, unknown>).expected_resume_on);
+  if (!expected.ok) return res.status(400).json({ message: 'Invalid expected_resume_on' });
+  const operationId = parseOperationId(req);
+  if (operationId === null) return res.status(400).json({ message: 'Invalid x-client-operation-id' });
+  const dbUser = await prisma.user.findUnique({ where: { id: user.id }, select: { timezone: true } });
+  if (!dbUser) return res.status(404).json({ message: 'User not found' });
+  const today = getSafeUtcTodayDateOnlyInTimeZone(dbUser.timezone);
+  try {
+    const result = await executeIdempotentMutation({
+      userId: user.id,
+      operationId,
+      operationKind: 'food_tracking_pause.set_expected_resume',
+      requestPayload: req.body,
+      mutate: async (tx, claimedOperationId) => {
+        const pause = await updateFoodTrackingPauseExpectation({
+          tx,
+          userId: user.id,
+          expectedResumeOn: expected.dateValue,
+          today,
+          operationId: claimedOperationId
+        });
+        return { status: 200, body: { pause } };
+      }
+    });
+    return res.status(result.status).json(result.body);
+  } catch (error) {
+    return sendMutationError(res, error);
+  }
+});
+
+router.post('/resume', async (req, res) => {
+  const user = req.user as { id: number };
+  if (typeof req.body !== 'object' || req.body === null) {
+    return res.status(400).json({ message: 'Invalid request body' });
+  }
+  const resumedOn = parseRequestedDate((req.body as Record<string, unknown>).resumed_on ?? (req.body as Record<string, unknown>).date);
+  if (!resumedOn.ok) return res.status(400).json({ message: 'Invalid resumed_on' });
+  const operationId = parseOperationId(req);
+  if (operationId === null) return res.status(400).json({ message: 'Invalid x-client-operation-id' });
+  const now = new Date();
+  try {
+    const result = await executeIdempotentMutation({
+      userId: user.id,
+      operationId,
+      operationKind: 'food_tracking_pause.resume',
+      requestPayload: req.body,
+      mutate: async (tx, claimedOperationId) => {
+        const resumed = await resumeFoodTracking({
+          tx,
+          userId: user.id,
+          resumedOn: resumedOn.dateValue,
+          now,
+          operationId: claimedOperationId
+        });
+        return { status: 200, body: resumed };
+      }
+    });
+    return res.status(result.status).json(result.body);
+  } catch (error) {
+    return sendMutationError(res, error);
+  }
 });
 
 export default router;

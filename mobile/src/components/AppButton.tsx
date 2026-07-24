@@ -3,11 +3,13 @@ import { Pressable, StyleSheet, View, type PressableProps, type StyleProp, type 
 import { type AppTheme, useAppTheme } from '../theme';
 import { AppText } from './AppText';
 
-export const AppButton: React.FC<PressableProps & {
+type AppButtonProps = Omit<PressableProps, 'android_ripple'> & {
     title: string;
     variant?: 'primary' | 'secondary' | 'danger' | 'ghost';
     leftIcon?: React.ReactNode;
-}> = ({
+};
+
+export const AppButton: React.FC<AppButtonProps> = ({
     title,
     variant = 'primary',
     leftIcon,

@@ -26,6 +26,16 @@ object CalorieComplicationFormatter {
             )
         }
 
+        if (snapshot.foodDayStatus == "PAUSED") {
+            return CalorieComplicationContent(
+                text = "Paused",
+                title = "tracking",
+                contentDescription = "Calorie tracking paused. Open Calibrate on your phone to review.",
+                rangeValue = 0f,
+                rangeMaximum = 1f
+            )
+        }
+
         val consumed = snapshot.caloriesConsumed?.coerceAtLeast(0)
         val target = snapshot.calorieTarget?.takeIf { it > 0 }
         val remaining = snapshot.caloriesRemaining

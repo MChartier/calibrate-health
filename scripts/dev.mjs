@@ -10,6 +10,7 @@ const repoRoot = path.resolve(path.dirname(scriptPath), '..');
 const npmCmd = process.platform === 'win32' ? 'npm.cmd' : 'npm';
 
 export const DEFAULT_EXPO_WEB_DEV_SERVER_PORT = '8081';
+export const DEFAULT_BACKEND_PORT = '3000';
 
 /** Devcontainers expose Docker's marker file even when their WSL2 kernel resembles host WSL. */
 export function isContainerizedLinux(
@@ -28,6 +29,30 @@ export function resolveExpoWebDevServerPort(environment = process.env) {
     throw new Error('EXPO_WEB_DEV_SERVER_PORT must be a whole-number TCP port from 1 through 65535.');
   }
   return String(port);
+}
+
+/** Route the host Metro process to the API port exposed by this worktree's devcontainer. */
+export function resolveExpoNativeBackendUrl({
+  root = repoRoot,
+  environment = process.env,
+  readFile = fs.readFileSync
+} = {}) {
+  const explicitUrl = environment.EXPO_PUBLIC_CALIBRATE_SERVER_URL?.trim();
+  if (explicitUrl) return explicitUrl;
+
+  let rawPort = DEFAULT_BACKEND_PORT;
+  try {
+    const devcontainerEnvironment = readFile(path.join(root, '.devcontainer', '.env'), 'utf8');
+    rawPort = devcontainerEnvironment.match(/^BACKEND_PORT=(.+)$/m)?.[1]?.trim() || rawPort;
+  } catch {
+    // A host-only backend uses the Android emulator's conventional port 3000.
+  }
+
+  const port = Number(rawPort);
+  if (!/^\d+$/.test(rawPort) || !Number.isInteger(port) || port < 1 || port > 65_535) {
+    throw new Error('BACKEND_PORT must be a whole-number TCP port from 1 through 65535.');
+  }
+  return `http://10.0.2.2:${port}`;
 }
 
 export function createDevelopmentEnvironment(
@@ -87,8 +112,16 @@ export function terminateDevelopmentChild(
 export function createDevelopmentServices({
   root = repoRoot,
   environment = process.env,
+  expoOnly = false,
   expoWebOnly = false
 } = {}) {
+  const expoService = {
+    name: 'expo',
+    cwd: path.join(root, 'mobile'),
+    args: ['run', 'dev']
+  };
+  if (expoOnly) return [expoService];
+
   const expoWebPort = resolveExpoWebDevServerPort(environment);
   const expoWebService = {
     name: 'expo-web',
@@ -109,12 +142,27 @@ export function runDevelopmentServers({
   spawnProcess = spawn
 } = {}) {
   const autoLoginTestUser = resolveTestUserAutoLogin(argv);
+  const expoOnly = argv.includes('--expo-only');
   const expoWebOnly = argv.includes('--expo-web-only');
+  if (expoOnly && expoWebOnly) {
+    throw new Error('Choose either --expo-only or --expo-web-only.');
+  }
+  const launchEnvironment = expoOnly
+    ? {
+        ...environment,
+        EXPO_PUBLIC_CALIBRATE_SERVER_URL: resolveExpoNativeBackendUrl({ root, environment })
+      }
+    : environment;
   const childEnvironment = createExpoCliEnvironment(
     root,
-    createDevelopmentEnvironment(environment, autoLoginTestUser)
+    createDevelopmentEnvironment(launchEnvironment, autoLoginTestUser)
   );
-  const services = createDevelopmentServices({ root, environment: childEnvironment, expoWebOnly });
+  const services = createDevelopmentServices({
+    root,
+    environment: childEnvironment,
+    expoOnly,
+    expoWebOnly
+  });
   const npmExecPath = childEnvironment.npm_execpath;
   const states = new Map();
   let shuttingDown = false;

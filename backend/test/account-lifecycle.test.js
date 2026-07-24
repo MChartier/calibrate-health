@@ -84,10 +84,23 @@ const exportRow = {
     id: 6,
     user_id: 7,
     local_date: at('2025-01-03T00:00:00.000Z'),
-    is_complete: true,
+    status: 'COMPLETE',
+    origin: 'IMPORT',
     completed_at: at('2025-01-04T01:00:00.000Z'),
     created_at: at('2025-01-03T00:00:00.000Z'),
     updated_at: at('2025-01-04T01:00:00.000Z')
+  }],
+  food_tracking_pauses: [{
+    id: 12,
+    user_id: 7,
+    starts_on: at('2025-01-05T00:00:00.000Z'),
+    expected_resume_on: at('2025-01-08T00:00:00.000Z'),
+    resumed_on: at('2025-01-07T00:00:00.000Z'),
+    started_at: at('2025-01-05T08:00:00.000Z'),
+    resumed_at: at('2025-01-07T08:00:00.000Z'),
+    materialized_through: at('2025-01-06T00:00:00.000Z'),
+    created_at: at('2025-01-05T08:00:00.000Z'),
+    updated_at: at('2025-01-07T08:00:00.000Z')
   }],
   my_foods: [{
     id: 5,
@@ -198,12 +211,15 @@ test('account export returns canonical versioned tracking data without credentia
   const result = await exportAccountData(7, at('2026-07-11T20:00:00.000Z'));
 
   assert.equal(result.format, 'calibrate-account-export');
-  assert.equal(result.version, 2);
+  assert.equal(result.version, 3);
   assert.equal(result.exported_at, '2026-07-11T20:00:00.000Z');
   assert.equal(result.account.date_of_birth, '1990-05-03');
   assert.deepEqual(result.account.profile_image, { mime_type: 'image/png', data_base64: 'AQID' });
   assert.equal(result.body_metrics[0].date, '2025-01-03');
   assert.equal(result.food_logs[0].serving_unit_label_snapshot, 'bowl');
+  assert.equal(result.food_log_days[0].status, 'COMPLETE');
+  assert.equal(result.food_log_days[0].origin, 'IMPORT');
+  assert.equal(result.food_tracking_pauses[0].resumed_on, '2025-01-07');
   assert.equal(result.my_foods[0].is_pinned, true);
   assert.equal(result.my_foods[0].recipe_ingredients[0].external_id, 'rice-1');
   assert.equal(result.activity_records[0].client_record_version, '2');

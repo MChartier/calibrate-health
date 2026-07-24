@@ -6,7 +6,8 @@ data class CalibrateTileSnapshot(
     val caloriesConsumed: Int?,
     val calorieTarget: Int?,
     val caloriesRemaining: Int?,
-    val cachedAtEpochMs: Long
+    val cachedAtEpochMs: Long,
+    val foodDayStatus: String = "OPEN"
 )
 
 data class CalibrateTileContent(
@@ -30,6 +31,15 @@ object CalibrateTileFormatter {
                 consumedLine = "Calories unavailable",
                 statusLine = "No cached data",
                 isStale = true
+            )
+        }
+
+        if (snapshot.foodDayStatus == "PAUSED") {
+            return CalibrateTileContent(
+                calorieLine = "Paused",
+                consumedLine = "Calorie tracking paused",
+                statusLine = "Open app to review",
+                isStale = false
             )
         }
 

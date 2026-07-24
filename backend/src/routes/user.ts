@@ -13,6 +13,7 @@ import { validatePasswordCredential } from '../utils/authCredentials';
 import { revokeOtherMobileSessionsForUser } from '../services/mobileAuth';
 import { revokeOtherBrowserSessionsForUser } from '../services/browserSessions';
 import { deleteAccountData, exportAccountData } from '../services/accountLifecycle';
+import { formatDateKey, getTrackingStartDate } from '../services/foodTracking';
 import {
   ClientOperationConflictError,
   executeIdempotentMutation,
@@ -102,6 +103,19 @@ router.get('/me', async (req, res) => {
     res.json({ user: serializeUserForClient(dbUser) });
   } catch (err) {
     res.status(500).json({ message: 'Server error' });
+  }
+});
+
+router.get('/tracking-history', async (req, res) => {
+  const user = req.user as { id: number };
+  try {
+    const trackingStart = await getTrackingStartDate(user.id);
+    if (!trackingStart) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    return res.json({ tracking_start_date: formatDateKey(trackingStart.date) });
+  } catch {
+    return res.status(500).json({ message: 'Server error' });
   }
 });
 

@@ -85,6 +85,24 @@ class CalibrateTileFormatterTest {
         assertTrue(result.isStale)
     }
 
+    @Test
+    fun `shows paused instead of calorie progress`() {
+        val result = CalibrateTileFormatter.format(
+            CalibrateTileSnapshot(
+                caloriesConsumed = 500,
+                calorieTarget = 2_000,
+                caloriesRemaining = 1_500,
+                cachedAtEpochMs = NOW,
+                foodDayStatus = "PAUSED"
+            ),
+            NOW
+        )
+
+        assertEquals("Paused", result.calorieLine)
+        assertEquals("Calorie tracking paused", result.consumedLine)
+        assertEquals("Open app to review", result.statusLine)
+    }
+
     private companion object {
         const val NOW = 1_800_000_000_000L
         const val MINUTE_MS = 60_000L

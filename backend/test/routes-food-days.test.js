@@ -13,11 +13,14 @@ function loadFoodDaysRouter(prismaStub) {
   const dbPath = require.resolve('../src/config/database');
   const routePath = require.resolve('../src/routes/foodDays');
   const clientOperationsPath = require.resolve('../src/services/clientOperations');
+  const foodTrackingPath = require.resolve('../src/services/foodTracking');
 
   const previousDbModule = require.cache[dbPath];
   const previousClientOperationsModule = require.cache[clientOperationsPath];
+  const previousFoodTrackingModule = require.cache[foodTrackingPath];
   delete require.cache[routePath];
   delete require.cache[clientOperationsPath];
+  delete require.cache[foodTrackingPath];
 
   const normalizedPrismaStub = {
     ...prismaStub,
@@ -35,6 +38,8 @@ function loadFoodDaysRouter(prismaStub) {
 
   if (previousClientOperationsModule) require.cache[clientOperationsPath] = previousClientOperationsModule;
   else delete require.cache[clientOperationsPath];
+  if (previousFoodTrackingModule) require.cache[foodTrackingPath] = previousFoodTrackingModule;
+  else delete require.cache[foodTrackingPath];
 
   return loaded.default ?? loaded;
 }
@@ -93,8 +98,13 @@ test('food-days route: GET / returns default incomplete status when no row exist
       findUnique: async ({ where }) => {
         receivedWhere = where;
         return null;
-      }
-    }
+      },
+      findFirst: async () => null
+    },
+    user: { findUnique: async () => ({ created_at: new Date('2025-01-01T00:00:00Z'), timezone: 'UTC' }) },
+    foodLog: { findFirst: async () => null, count: async () => 0 },
+    bodyMetric: { findFirst: async () => null },
+    foodTrackingPause: { findFirst: async () => null }
   };
 
   const router = loadFoodDaysRouter(prismaStub);
@@ -104,7 +114,16 @@ test('food-days route: GET / returns default incomplete status when no row exist
 
   await handler(req, res);
   assert.equal(res.statusCode, 200);
-  assert.deepEqual(res.body, { date: '2025-01-02', is_complete: false, completed_at: null });
+  assert.deepEqual(res.body, {
+    date: '2025-01-02',
+    status: 'INCOMPLETE',
+    origin: null,
+    source: 'INFERRED_EMPTY',
+    is_representative: false,
+    is_complete: false,
+    completed_at: null,
+    updated_at: null
+  });
   assert.equal(receivedWhere.user_id_local_date.user_id, 7);
   assert.equal(receivedWhere.user_id_local_date.local_date.toISOString(), '2025-01-02T00:00:00.000Z');
 });
@@ -115,17 +134,24 @@ test('food-days route: GET /range returns inclusive day statuses for start/end',
 
   const prismaStub = {
     foodLogDay: {
+      findFirst: async () => null,
       findMany: async ({ where }) => {
         receivedWhere = where;
         return [
           {
             local_date: new Date('2025-01-02T00:00:00Z'),
-            is_complete: true,
-            completed_at: completedAt
+            status: 'COMPLETE',
+            origin: 'USER',
+            completed_at: completedAt,
+            updated_at: completedAt
           }
         ];
       }
-    }
+    },
+    user: { findUnique: async () => ({ created_at: new Date('2025-01-01T00:00:00Z'), timezone: 'UTC' }) },
+    foodLog: { findFirst: async () => null, findMany: async () => [] },
+    bodyMetric: { findFirst: async () => null },
+    foodTrackingPause: { findFirst: async () => null, findMany: async () => [] }
   };
 
   const router = loadFoodDaysRouter(prismaStub);
@@ -139,9 +165,18 @@ test('food-days route: GET /range returns inclusive day statuses for start/end',
     start_date: '2025-01-01',
     end_date: '2025-01-03',
     days: [
-      { date: '2025-01-01', is_complete: false, completed_at: null },
-      { date: '2025-01-02', is_complete: true, completed_at: completedAt },
-      { date: '2025-01-03', is_complete: false, completed_at: null }
+      {
+        date: '2025-01-01', status: 'INCOMPLETE', origin: null, source: 'INFERRED_EMPTY',
+        is_representative: false, is_complete: false, completed_at: null, updated_at: null
+      },
+      {
+        date: '2025-01-02', status: 'COMPLETE', origin: 'USER', source: 'STORED',
+        is_representative: true, is_complete: true, completed_at: completedAt, updated_at: completedAt
+      },
+      {
+        date: '2025-01-03', status: 'INCOMPLETE', origin: null, source: 'INFERRED_EMPTY',
+        is_representative: false, is_complete: false, completed_at: null, updated_at: null
+      }
     ]
   });
 
@@ -153,8 +188,13 @@ test('food-days route: GET /range returns inclusive day statuses for start/end',
 test('food-days route: GET /range supports month query', async () => {
   const prismaStub = {
     foodLogDay: {
+      findFirst: async () => null,
       findMany: async () => []
-    }
+    },
+    user: { findUnique: async () => ({ created_at: new Date('2025-01-01T00:00:00Z'), timezone: 'UTC' }) },
+    foodLog: { findFirst: async () => null, findMany: async () => [] },
+    bodyMetric: { findFirst: async () => null },
+    foodTrackingPause: { findFirst: async () => null, findMany: async () => [] }
   };
 
   const router = loadFoodDaysRouter(prismaStub);

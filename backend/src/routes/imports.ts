@@ -89,6 +89,9 @@ router.post('/loseit/preview', upload.single('file'), async (req, res) => {
     warnings: parsed.warnings,
     weightUnitGuess: unitGuess.unit,
     weightUnitGuessSource: unitGuess.source,
+    foodDayCompletionStatus: parsed.foodDayCompletionStatus,
+    foodDayCompletionMessage:
+      'Lose It does not include day completion history. Imported food days remain open until you resolve them in Calibrate.',
   });
 });
 
@@ -151,6 +154,16 @@ router.post('/loseit/execute', upload.single('file'), async (req, res) => {
   }
 
   res.json({
+    food_logs: {
+      total: parsed.foodLogs.length,
+      valid: importedFoodLogs,
+      invalid: skippedFoodLogs,
+    },
+    weights: {
+      total: parsed.weights.length,
+      valid: importedWeights + updatedWeights,
+      invalid: skippedWeights,
+    },
     importedFoodLogs,
     skippedFoodLogs,
     importedWeights,
@@ -158,6 +171,9 @@ router.post('/loseit/execute', upload.single('file'), async (req, res) => {
     skippedWeights,
     updatedBodyFat,
     warnings: parsed.warnings,
+    foodDayCompletionStatus: parsed.foodDayCompletionStatus,
+    foodDayCompletionMessage:
+      'Completion history was unavailable, so imported food days remain unresolved.',
   });
 });
 

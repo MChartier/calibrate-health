@@ -110,6 +110,17 @@ export function getConfiguredServerUrl(value = process.env.EXPO_PUBLIC_CALIBRATE
     return normalizeServerUrl(value);
 }
 
+/** An explicit development target follows the active checkout instead of stale persisted server state. */
+export function resolveInitialServerUrl(
+    storedServerUrl: string | null,
+    configuredServerUrl: string | null,
+    fallbackServerUrl: string,
+    isDevelopment: boolean
+): string {
+    if (isDevelopment && configuredServerUrl) return configuredServerUrl;
+    return storedServerUrl ?? fallbackServerUrl;
+}
+
 /** Keep the Expo dev server and local API on separate ports while preserving same-origin web exports. */
 export function resolveDefaultWebServerUrl(
     location: Pick<URL, 'hostname' | 'origin' | 'protocol'>,
