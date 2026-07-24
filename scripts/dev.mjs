@@ -22,7 +22,6 @@ export function isContainerizedLinux(
 /** Keep Expo reachable through worktree-specific devcontainer port mappings. */
 export function resolveExpoWebDevServerPort(environment = process.env) {
   const rawPort = environment.EXPO_WEB_DEV_SERVER_PORT?.trim()
-    || environment.VITE_DEV_SERVER_PORT?.trim()
     || DEFAULT_EXPO_WEB_DEV_SERVER_PORT;
   const port = Number(rawPort);
   if (!/^\d+$/.test(rawPort) || !Number.isInteger(port) || port < 1 || port > 65_535) {

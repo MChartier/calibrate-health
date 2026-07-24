@@ -1,12 +1,12 @@
 # Test Coverage
 
-This repo has automated tests for the backend, web frontend, and Android phone client, plus
+This repo has automated tests for the backend and the shared Expo web/Android client, plus
 targeted Kotlin/JVM and device checks for the Wear client:
 
-- `npm run test` runs backend, frontend, and mobile tests.
-- `npm run test:coverage` runs backend `c8` coverage and frontend Vitest V8 coverage.
-- Package-specific commands include `test:backend`, `test:frontend`, `test:mobile`,
-  `test:coverage:backend`, and `test:coverage:frontend`. Wear JVM tests run from the Gradle project
+- `npm run test` runs backend, API client, and Expo client tests.
+- `npm run test:coverage` runs backend `c8` coverage and Expo client Jest coverage.
+- Package-specific commands include `test:backend`, `test:api-client`, `test:mobile`,
+  `test:coverage:backend`, and `test:coverage:mobile`. Wear JVM tests run from the Gradle project
   with `wear/gradlew testDebugUnitTest`; a non-debuggable APK smoke runs against an adb watch target
   with `npm run test:wear:emulator`. PR builds compile and run the Wear JVM suite independently of
   the longer phone build.
@@ -17,29 +17,25 @@ targeted Kotlin/JVM and device checks for the Wear client:
   encrypted production backup and guarded restore scripts, compares representative food, weight,
   and activity rows, rejects plaintext artifacts, and removes only resources owned by that run.
   `npm run test:db:backup-restore:unit` validates its safety guards without Docker.
-- `npm run test:web:e2e` launches the API and Vite directly, waits for Postgres-backed readiness,
-  and runs the critical browser path in the machine's installed Chrome. It does not download a
-  Playwright browser or add the suite to the long-running CI path.
+- `npm run test:web:e2e` builds the Expo web release export, serves it from a loopback static
+  server, and runs the critical browser path in the machine's installed Chrome. API routes are
+  deterministically fulfilled by the suite. It does not download a Playwright browser or add the
+  suite to the long-running CI path.
 - `npm run test:risk-evidence` quickly validates the six risk areas, their concrete test files and
   root npm scripts, and the verifier itself. It does not rerun the referenced product suites.
 - `npm run test:risk-evidence:release` applies the same contract as a release gate and fails while
   any explicitly release-blocking evidence remains outstanding.
 
-The browser suite resets only `test@calibratehealth.app`, completes onboarding, records food and
-weight, and then checks the narrow dashboard and Settings at a 390x844 touch viewport. It uses
-reduced-motion mode and keyboard activation for the mobile tabs. It also injects a transient food
-write failure and proves that the dialog preserves input, re-enables submission, and succeeds on
-retry. The managed server ignores the
-generic `DATABASE_URL`: its default and any `CALIBRATE_E2E_DATABASE_URL` override must target a
-loopback host and an E2E-named disposable database. Reusing a caller-owned loopback server also
-requires `CALIBRATE_E2E_ALLOW_DESTRUCTIVE_RESET=true`. `PLAYWRIGHT_CHROME_CHANNEL` or
+The browser suite exercises signed-out and authenticated shells across desktop, tablet, and phone
+viewports; deep-link reloads; offline/recovery UI; release-surface navigation; and an offline weight
+write that survives reload and replays exactly once. `PLAYWRIGHT_CHROME_CHANNEL` or
 `PLAYWRIGHT_CHROME_PATH` can select another locally installed Chromium build.
 
 ## Current Coverage Shape
 
 Backend coverage is broadest today. It includes route-level tests for the main API surfaces plus utility/service tests for profile math, food provider normalization, imports, local dates, notifications, weights, and goal rules.
 
-Frontend and mobile coverage focus on domain logic that has the highest risk of silent regressions:
+Expo client coverage focuses on domain logic that has the highest risk of silent regressions:
 
 - timezone-aware local-day helpers;
 - goal progress and projection math;

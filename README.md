@@ -6,7 +6,7 @@ If you self-host, your data stays in your own database.
 
 - Hosted instance: https://calibratehealth.app
 - Stack: Expo Router + React Native Web, Node.js + TypeScript + Express, Postgres (Prisma)
-- Clients: one Expo codebase for the installable web client and native Android client; legacy Vite/MUI remains available for rollback
+- Clients: one Expo codebase for the installable web client and native Android client
 
 Note: calibrate is not medical advice.
 
@@ -32,8 +32,8 @@ attribution requirements: https://platform.fatsecret.com/docs/guides
 
 - Weight trend model: `docs/weight-trend-model.md`
 - Deployment (Compose self-hosting): `deploy/README.md`
-- Frontend dev/build/PWA: `frontend/README.md`
-- Android native client: `mobile/README.md`
+- Expo web dev/build/PWA: `docs/expo-web.md`
+- Expo Android client: `mobile/README.md`
 - First native release scope: `docs/release-scope.md`
 - Android/Wear Play and health release worksheet: `docs/play-console-health-release-checklist.md`
 - Current release-candidate notes: `docs/releases/0.12.0-native-0.1.0-wear-0.2.0.md`
@@ -188,15 +188,13 @@ database is otherwise ready:
 - `npm run dev:reset-test-user-onboarding`: reset the dev test user to pre-onboarding.
 - `npm run dev:backend`: advanced host-only backend launcher.
 - `npm run dev:frontend` / `npm run dev:expo-web`: advanced host-only Expo web launcher.
-- `npm run dev:vite`: runs the legacy Vite rollback client (`http://localhost:5173`).
-- `npm run dev:storybook`: runs Storybook for isolated React component development. Local runs default to `http://localhost:6006`; devcontainer worktrees use the generated `STORYBOOK_PORT` so concurrent worktrees do not collide.
-- `npm run setup`: lower-level in-container/host setup for all packages, including the legacy frontend.
+- `npm run setup`: lower-level in-container/host setup for the root/mobile workspace and backend.
 - `npm run db:migrate`: applies committed migrations (use for fresh DBs, CI, and prod).
-- `npm test`: runs backend unit tests (Node.js test runner).
+- `npm test`: runs backend, API client, and Expo client unit tests.
 
 More:
 
-- `npm run setup:deps`: install backend/frontend dependencies using shared devcontainer caches when available.
+- `npm run setup:deps`: install root/mobile and backend dependencies using shared devcontainer caches when available.
 - `npm run db:migrate:dev`: apply migrations and seed dev data when missing.
 - `npm run db:migrate:create`: create/apply new Prisma migrations during local development.
 - `npm run db:reset:dev`: destructive reset for a disposable devcontainer/worktree DB, then seed it.
@@ -204,19 +202,18 @@ More:
 - `npm run db:seed`: seed deterministic dev data (test user + sample logs).
 - `npm --prefix backend run db:push:reset`: dev-only schema reset using `prisma db push` (fast, skips migrations).
 - `npm run db:studio`: Prisma Studio (DB browser).
-- `npm run build`: build the legacy Vite rollback client.
+- `npm run build`: build the Expo web production export.
 - `npm run build:expo-web`: lower-level Expo web export without the devcontainer setup preflight; prefer `dev:build` from the host.
 - `npm run build:mobile`: type-check the Expo React Native Android client.
 - `npm run test:mobile`: run mobile unit tests.
-- `npm run test:web:e2e`: run the local Chrome E2E path for onboarding, food, weight, and narrow responsive behavior.
-- `npm run build:storybook`: build the static Storybook.
-- `npm run lint`: lint the frontend.
-- `npm run ci:local`: run the local equivalent of PR CI (backend build, frontend build, frontend lint, backend tests).
-- `npm run test:coverage`: print coverage + write `backend/coverage/index.html`.
+- `npm run test:web:e2e`: build the Expo web release export and run its local Chrome E2E suite.
+- `npm run lint`: type-check the Expo client.
+- `npm run ci:local`: run the local equivalent of PR CI (backend and Expo web builds, Expo release validation, type-checking, and backend/mobile tests).
+- `npm run test:coverage`: collect backend and Expo client coverage.
 
 ### Docker Compose (dev stack)
 
-The repo root `docker-compose.yml` is a development stack that starts `postgres`, `backend`, and `frontend` with live
+The repo root `docker-compose.yml` is a development stack that starts `postgres`, `backend`, and Expo `web` with live
 reload and dev-only defaults.
 
 ```sh
@@ -265,7 +262,7 @@ the client, hashed at rest on the server, and stored on-device through Expo Secu
 
 Production is hosted at `https://calibratehealth.app` and staging is hosted at `https://staging.calibratehealth.app`.
 
-This app is configured for a "single origin" deployment where the frontend and backend share the same host. In that
+This app is configured for a "single origin" deployment where the Expo web client and backend share the same host. In that
 setup you do not need CORS, and cookies should remain host-scoped.
 
 Recommended backend env vars:

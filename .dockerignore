@@ -3,6 +3,8 @@
 **/dist
 **/build
 **/.gradle
+.env
+**/.env
 mobile/android
 .git
 .github

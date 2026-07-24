@@ -5,14 +5,12 @@ services:
       - ..:/workspaces/${WORKSPACE_FOLDER_NAME}:cached
       - workspace_node_modules:/workspaces/${WORKSPACE_FOLDER_NAME}/node_modules
       - backend_node_modules:/workspaces/${WORKSPACE_FOLDER_NAME}/backend/node_modules
-      - frontend_node_modules:/workspaces/${WORKSPACE_FOLDER_NAME}/frontend/node_modules
       - ${GIT_DIR}:/workspaces/.git-dir:cached
       - ${GIT_COMMON_DIR}:/workspaces/.git-common:cached
       - npm_cache:/home/node/.npm
     ports:
       - "${BACKEND_PORT}:3000"
-      - "${FRONTEND_PORT}:${FRONTEND_PORT}"
-      - "${STORYBOOK_PORT}:${STORYBOOK_PORT}"
+      - "${EXPO_WEB_PORT}:${EXPO_WEB_PORT}"
     command: sleep infinity
     environment:
       DATABASE_URL: postgresql://user:password@postgres:5432/fitness_app?schema=public
@@ -31,15 +29,10 @@ services:
       WORKTREE_COLOR: ${WORKTREE_COLOR}
       WORKTREE_IS_MAIN: ${WORKTREE_IS_MAIN}
       WORKTREE_NAME: ${WORKTREE_NAME}
-      STORYBOOK_PORT: ${STORYBOOK_PORT}
-      EXPO_WEB_DEV_SERVER_PORT: ${FRONTEND_PORT}
+      EXPO_WEB_DEV_SERVER_PORT: ${EXPO_WEB_PORT}
       EXPO_PUBLIC_CALIBRATE_SERVER_URL: http://localhost:${BACKEND_PORT}
       # Docker Desktop reports a WSL2 kernel, but the container cannot launch the host browser.
       BROWSER: none
-      VITE_DEV_SERVER_PORT: ${VITE_DEV_SERVER_PORT}
-      VITE_WORKTREE_COLOR: ${VITE_WORKTREE_COLOR}
-      VITE_WORKTREE_NAME: ${VITE_WORKTREE_NAME}
-      VITE_WORKTREE_IS_MAIN: ${VITE_WORKTREE_IS_MAIN}
     depends_on:
       postgres:
         condition: service_started
@@ -64,7 +57,5 @@ volumes:
     name: ${WORKSPACE_NODE_MODULES_VOLUME}
   backend_node_modules:
     name: ${BACKEND_NODE_MODULES_VOLUME}
-  frontend_node_modules:
-    name: ${FRONTEND_NODE_MODULES_VOLUME}
   npm_cache:
     name: calibrate-health-npm-cache

@@ -1,4 +1,4 @@
-import { spawn, spawnSync } from 'node:child_process';
+import { spawn } from 'node:child_process';
 import path from 'node:path';
 import process from 'node:process';
 import { fileURLToPath } from 'node:url';
@@ -6,21 +6,11 @@ import { fileURLToPath } from 'node:url';
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const npmCmd = process.platform === 'win32' ? 'npm.cmd' : 'npm';
 const backendDir = path.join(repoRoot, 'backend');
-const frontendDir = path.join(repoRoot, 'frontend');
-
-// Build once so preview serves the latest PWA manifest and service worker.
-const buildResult = spawnSync(npmCmd, ['run', 'build'], {
-  cwd: frontendDir,
-  stdio: 'inherit',
-});
-
-if (buildResult.status !== 0) {
-  process.exit(buildResult.status ?? 1);
-}
+const mobileDir = path.join(repoRoot, 'mobile');
 
 const services = [
   { name: 'backend', cwd: backendDir, args: ['run', 'dev'] },
-  { name: 'frontend-preview', cwd: frontendDir, args: ['run', 'preview'] },
+  { name: 'expo-web-preview', cwd: mobileDir, args: ['run', 'preview:web'] },
 ];
 
 const states = new Map();
@@ -56,9 +46,13 @@ function shutdown(exitCode, signal) {
 }
 
 for (const service of services) {
-  const child = spawn(npmCmd, service.args, {
+  const npmExecPath = process.env.npm_execpath;
+  const command = npmExecPath ? process.execPath : npmCmd;
+  const args = npmExecPath ? [npmExecPath, ...service.args] : service.args;
+  const child = spawn(command, args, {
     cwd: service.cwd,
     stdio: 'inherit',
+    shell: !npmExecPath && process.platform === 'win32',
   });
 
   states.set(service.name, { child, exited: false });

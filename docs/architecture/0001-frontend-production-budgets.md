@@ -1,7 +1,8 @@
 # ADR 0001: Preserve eager navigation with enforced frontend budgets
 
-- Status: Accepted
+- Status: Superseded by the Expo web cutover
 - Date: 2026-07-12
+- Superseded: 2026-07-23
 
 ## Context
 
@@ -21,7 +22,6 @@ and a follow-up reduction plan when the change is not an intentional product tra
 
 ## Consequences
 
-- Normal `npm --prefix frontend run build` and `npm run ci:local` fail on regressions.
-- Reports show initial chunk composition, making dependency growth attributable.
-- Vendor changes can invalidate a focused cache chunk instead of the full application bundle.
-- Initial download remains relatively large; real-device startup and runtime profiling remain release gates.
+- These budgets applied only to the retired client.
+- The Vite-specific budget script and configuration were removed with that client.
+- Expo web release validation now checks the Metro export, service worker, static routes, and reachable hashed bundles.

@@ -31,13 +31,9 @@ test('root development launches the backend and Expo web client', () => {
   ]);
 });
 
-test('Expo web uses an explicit port and supports existing devcontainer port configuration', () => {
+test('Expo web uses an explicit port', () => {
   assert.equal(resolveExpoWebDevServerPort({ EXPO_WEB_DEV_SERVER_PORT: '6123' }), '6123');
-  assert.equal(resolveExpoWebDevServerPort({ VITE_DEV_SERVER_PORT: '5179' }), '5179');
-  assert.equal(resolveExpoWebDevServerPort({
-    EXPO_WEB_DEV_SERVER_PORT: '6123',
-    VITE_DEV_SERVER_PORT: '5179'
-  }), '6123');
+  assert.equal(resolveExpoWebDevServerPort({}), DEFAULT_EXPO_WEB_DEV_SERVER_PORT);
   assert.throws(
     () => resolveExpoWebDevServerPort({ EXPO_WEB_DEV_SERVER_PORT: 'not-a-port' }),
     /whole-number TCP port/
@@ -186,15 +182,20 @@ test('package and devcontainer entry points target Expo web with browser-reachab
     'node scripts/codex-worktree-env.mjs reset-test-user-onboarding'
   );
   assert.equal(rootPackage.scripts['dev:host'], 'node scripts/dev-env.mjs dev');
-  assert.equal(rootPackage.scripts['dev:vite'], 'npm --prefix frontend run dev');
+  assert.equal(rootPackage.scripts.build, 'npm run build:expo-web');
+  assert.equal(rootPackage.scripts['test:web:e2e'], 'node scripts/expo-web-playwright.mjs');
+  assert.equal(rootPackage.scripts['dev:vite'], undefined);
   assert.equal(mobilePackage.scripts.web, 'expo start --web');
-  assert.match(compose, /EXPO_WEB_DEV_SERVER_PORT: \$\{FRONTEND_PORT\}/);
+  assert.match(compose, /EXPO_WEB_DEV_SERVER_PORT: \$\{EXPO_WEB_PORT\}/);
   assert.match(compose, /EXPO_PUBLIC_CALIBRATE_SERVER_URL: http:\/\/localhost:\$\{BACKEND_PORT\}/);
   assert.match(compose, /BROWSER: none/);
   assert.match(compose, /workspace_node_modules:\/workspaces\/\$\{WORKSPACE_FOLDER_NAME\}\/node_modules/);
   assert.match(compose, /name: \$\{WORKSPACE_NODE_MODULES_VOLUME\}/);
   assert.match(prepareVolumes, /prepare_owned_volume "node_modules"/);
   assert.match(initDevcontainer, /`WORKSPACE_NODE_MODULES_VOLUME=\$\{workspaceNodeModulesVolume\}`/);
+  assert.doesNotMatch(compose, /frontend_node_modules|VITE_/);
+  assert.doesNotMatch(prepareVolumes, /frontend\/node_modules/);
+  assert.doesNotMatch(initDevcontainer, /FRONTEND_|VITE_|frontendNodeModules/);
   assert.match(devEnvironmentScript, /runDevelopmentServers\(\{ argv:/);
   assert.doesNotMatch(devEnvironmentScript, /run\("node", \["scripts\/dev\.mjs"/);
 });

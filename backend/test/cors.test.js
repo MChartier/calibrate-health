@@ -31,14 +31,13 @@ async function startCorsTestServer(t, configuredOrigins, nodeEnv) {
   return `http://127.0.0.1:${address.port}/config`;
 }
 
-test('development permits loopback web dev servers on arbitrary ports despite an explicit Vite origin', () => {
-  const policy = resolveBrowserOriginPolicy('http://localhost:5173', false);
+test('development permits loopback web dev servers on arbitrary ports despite an explicit configured origin', () => {
+  const policy = resolveBrowserOriginPolicy('http://localhost:8081', false);
 
   for (const origin of [
-    'http://localhost:5173',
     'http://localhost:8081',
     'http://127.0.0.1:19006',
-    'http://[::1]:4173'
+    'http://[::1]:4174'
   ]) {
     assert.equal(isOriginTrustedByPolicy(origin, policy), true, origin);
   }
@@ -59,22 +58,22 @@ test('development loopback matching rejects non-local and lookalike origins', ()
 test('production and staging keep strict exact-origin allowlisting', () => {
   for (const nodeEnv of ['production', 'staging']) {
     const policy = resolveBrowserOriginPolicy(
-      'http://localhost:5173,https://app.calibratehealth.example',
+      'http://localhost:8081,https://app.calibratehealth.example',
       isProductionOrStagingEnv(nodeEnv)
     );
 
-    assert.equal(isOriginTrustedByPolicy('http://localhost:5173', policy), true, nodeEnv);
+    assert.equal(isOriginTrustedByPolicy('http://localhost:8081', policy), true, nodeEnv);
     assert.equal(isOriginTrustedByPolicy('https://app.calibratehealth.example', policy), true, nodeEnv);
-    assert.equal(isOriginTrustedByPolicy('http://localhost:8081', policy), false, nodeEnv);
-    assert.equal(isOriginTrustedByPolicy('http://127.0.0.1:5173', policy), false, nodeEnv);
+    assert.equal(isOriginTrustedByPolicy('http://localhost:19006', policy), false, nodeEnv);
+    assert.equal(isOriginTrustedByPolicy('http://127.0.0.1:8081', policy), false, nodeEnv);
     assert.equal(isOriginTrustedByPolicy('https://untrusted.example', policy), false, nodeEnv);
   }
 });
 
-test('CORS middleware emits headers for Expo and Vite origins while rejecting non-local origins', async (t) => {
-  const url = await startCorsTestServer(t, 'http://localhost:5173', 'development');
+test('CORS middleware emits headers for Expo origins while rejecting non-local origins', async (t) => {
+  const url = await startCorsTestServer(t, 'http://localhost:8081', 'development');
 
-  for (const origin of ['http://localhost:5173', 'http://localhost:8081', 'http://[::1]:19006']) {
+  for (const origin of ['http://localhost:8081', 'http://127.0.0.1:19006', 'http://[::1]:4174']) {
     const response = await fetch(url, { headers: { origin } });
     assert.equal(response.status, 200, origin);
     assert.equal(response.headers.get('access-control-allow-origin'), origin, origin);
@@ -87,13 +86,13 @@ test('CORS middleware emits headers for Expo and Vite origins while rejecting no
 });
 
 test('CORS middleware does not broaden an exact production origin to other local ports', async (t) => {
-  const url = await startCorsTestServer(t, 'http://localhost:5173', 'production');
+  const url = await startCorsTestServer(t, 'http://localhost:8081', 'production');
 
-  const exact = await fetch(url, { headers: { origin: 'http://localhost:5173' } });
+  const exact = await fetch(url, { headers: { origin: 'http://localhost:8081' } });
   assert.equal(exact.status, 200);
-  assert.equal(exact.headers.get('access-control-allow-origin'), 'http://localhost:5173');
+  assert.equal(exact.headers.get('access-control-allow-origin'), 'http://localhost:8081');
 
-  const alternatePort = await fetch(url, { headers: { origin: 'http://localhost:8081' } });
+  const alternatePort = await fetch(url, { headers: { origin: 'http://localhost:19006' } });
   assert.equal(alternatePort.status, 403);
   assert.equal(alternatePort.headers.get('access-control-allow-origin'), null);
 });

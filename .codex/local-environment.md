@@ -18,15 +18,10 @@ Configured Codex app actions:
 | Stop Devcontainer | `node scripts/codex-worktree-env.mjs down` |
 | Dev | `node scripts/codex-worktree-env.mjs dev` |
 | Dev test | `node scripts/codex-worktree-env.mjs dev:test` |
-| Storybook | `node scripts/codex-worktree-env.mjs storybook` |
 | Test | `node scripts/codex-worktree-env.mjs test` |
 | Lint | `node scripts/codex-worktree-env.mjs lint` |
 | Build | `node scripts/codex-worktree-env.mjs build` |
 | Shell | `node scripts/codex-worktree-env.mjs shell` |
-
-The Storybook action uses the worktree-specific `STORYBOOK_PORT` generated in
-`.devcontainer/.env`, so it can run alongside the Expo web client and other
-worktree containers without reusing port 6006.
 
 The setup script uses `CODEX_WORKTREE_PATH` when Codex provides it and falls
 back to the current directory outside the app. It is host-platform neutral, so
@@ -35,5 +30,5 @@ checkout's ignored `.env` into the new worktree if that file exists and the
 worktree does not already have one.
 
 Setup streams devcontainer logs as they are produced. The Dev and Setup actions install dependencies and seed Postgres
-when needed. Root workspace, backend, and frontend dependencies use lockfile-keyed Docker volumes, and downloads share
-the `calibrate-health-npm-cache` volume so repeated setups can reuse both installed packages and cached artifacts.
+when needed. Root/mobile workspace and backend dependencies use lockfile-keyed Docker volumes, and downloads share the
+`calibrate-health-npm-cache` volume so repeated setups can reuse both installed packages and cached artifacts.

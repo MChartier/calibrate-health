@@ -366,8 +366,7 @@ if (!isMainWorktree) {
 // Offset keeps concurrent worktree dev servers from colliding on host ports.
 const offset = hash % 1000;
 const backendPort = 3000 + offset;
-const frontendPort = 5173 + offset;
-const storybookPort = 6006 + offset;
+const expoWebPort = 8081 + offset;
 const greekLetterIndex = greekLetters.indexOf(workspaceName.toLowerCase().split("-").at(-1) ?? "");
 const colorIndex =
   greekLetterIndex === -1 ? hash % worktreeColors.length : greekLetterIndex % worktreeColors.length;
@@ -375,7 +374,6 @@ const derivedColor = worktreeColors[colorIndex];
 const worktreeColor = isMainWorktree ? basePeacockColor : derivedColor;
 const workspaceNodeModulesVolume = buildNodeModulesVolumeName("workspace", "package-lock.json");
 const backendNodeModulesVolume = buildNodeModulesVolumeName("backend", "backend/package-lock.json");
-const frontendNodeModulesVolume = buildNodeModulesVolumeName("frontend", "frontend/package-lock.json");
 
 const fatsecretClientId =
   process.env.FATSECRET_CLIENT_ID || readRepoDotenvValue("FATSECRET_CLIENT_ID");
@@ -424,18 +422,12 @@ const lines = [
   `GIT_DIR=${toComposePath(gitDir)}`,
   `GIT_COMMON_DIR=${toComposePath(gitCommonDir)}`,
   `BACKEND_PORT=${backendPort}`,
-  `FRONTEND_PORT=${frontendPort}`,
-  `STORYBOOK_PORT=${storybookPort}`,
-  `VITE_DEV_SERVER_PORT=${frontendPort}`,
+  `EXPO_WEB_PORT=${expoWebPort}`,
   `WORKSPACE_NODE_MODULES_VOLUME=${workspaceNodeModulesVolume}`,
   `BACKEND_NODE_MODULES_VOLUME=${backendNodeModulesVolume}`,
-  `FRONTEND_NODE_MODULES_VOLUME=${frontendNodeModulesVolume}`,
   `WORKTREE_NAME=${workspaceName}`,
   `WORKTREE_IS_MAIN=${isMainWorktree ? "true" : "false"}`,
   `WORKTREE_COLOR=${worktreeColor}`,
-  `VITE_WORKTREE_COLOR=${worktreeColor}`,
-  `VITE_WORKTREE_NAME=${workspaceName}`,
-  `VITE_WORKTREE_IS_MAIN=${isMainWorktree ? "true" : "false"}`,
   "# Sourced from the host environment or repo-local .env during devcontainer init so Docker can pass it into the container.",
   `FOOD_DATA_PROVIDER=${foodDataProvider}`,
   `FATSECRET_CLIENT_ID=${fatsecretClientId}`,
