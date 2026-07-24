@@ -87,83 +87,69 @@ encrypted backup monitoring, and the clean-instance restore procedure.
 
 ### One-command quickstart
 
-Prerequisites are Node.js `20.19+` or `22.12+`, npm, and Docker Desktop. The Docker daemon does not need to be open
-first on Windows or macOS; the launcher attempts to start Docker Desktop and waits for it to become ready.
+Prerequisites are Node.js `20.19+` or `22.12+`, npm, Docker Desktop, and Docker
+Compose `2.22+`. The launcher starts Docker Desktop on Windows or macOS when it
+is installed but not running.
 
 ```sh
 npm run dev
 ```
 
-That command creates or reuses an isolated devcontainer for the current worktree, starts its Postgres service, installs
-the Expo workspace and backend dependencies, generates Prisma, applies migrations, seeds deterministic test data, and
-starts the backend plus Expo web client. The generated client and API URLs are printed in the terminal. No local
-Postgres install, `.env` file, or per-machine environment variables are required for the standard workflow.
+That command installs missing host dependencies, creates an isolated Compose
+project for the current worktree, builds the shared development image, starts
+its Postgres instance, applies migrations, seeds deterministic data, and runs
+the backend and Expo web services with Compose Watch. Stable URLs are printed
+before the services attach.
 
-Dependencies use lockfile-keyed Docker volumes, including the root Expo workspace, so Linux container packages never
-overwrite host packages and sibling worktrees can reuse valid caches. Each worktree also receives stable, non-conflicting
-ports and its own database volume.
+Codex, tests, linting, builds, and Prisma run directly in the worktree on the
+host. Only the live `web`, `backend`, and `postgres` services run in Docker.
+Each worktree has its own ports, session cookie, Compose project, image, and
+persistent database volume.
 
-The normal development lifecycle is intentionally small:
+Generated local infrastructure values live in `.dev.env`. This file is
+gitignored and contains worktree-local database/session credentials and VAPID
+keys. User-owned provider credentials remain in the root `.env`; neither file
+is copied into the development image.
 
-- `npm run dev`: bootstrap anything missing and run the backend plus Expo web with the seeded user signed in.
-- `npm run dev:bootstrap`: create the devcontainer and Postgres service without installing app dependencies.
-- `npm run dev:setup`: install Expo/backend dependencies, generate Prisma, migrate, and seed without starting servers.
-- `npm run dev:build`: run the same setup preflight, then build and validate the Expo web export.
-- `npm run dev:manual-auth`: run the app without automatic test-user login.
-- `npm run dev:reset`: reset the disposable worktree database and restore seed data.
-- `npm run dev:shell`: open a shell in the worktree devcontainer.
-- `npm run dev:down`: stop and remove the worktree's containers; named dependency and database volumes are retained.
+The normal lifecycle is:
 
-Setup is incremental: current dependencies, applied migrations, and existing seed data are skipped. Run
-`npm run dev:bootstrap` only when you specifically want infrastructure without application setup; most developers can
-use `npm run dev` directly after cloning.
+- `npm run setup`: install host dependencies and generate Prisma without
+  starting Docker.
+- `npm run dev`: prepare and run the full stack with seeded-user auto-login.
+- `npm run dev:manual-auth`: run the same stack with auto-login disabled.
+- `npm run dev:expo`: run the native Expo dev-client bundler on the host
+  against the current worktree backend; keep `npm run dev` running separately.
+- `npm run dev:setup`: build images, start Postgres, migrate, and seed without
+  starting web/backend.
+- `npm run dev:build`: install host dependencies and validate the Expo web
+  production export.
+- `npm run dev:status`: show the current worktree's services and URLs.
+- `npm run dev:reset`: reset and reseed only the current worktree database.
+- `npm run dev:down`: remove the current worktree's containers and network;
+  retain its database volume.
 
-#### Advanced host and worktree commands
+Rerun `npm run dev` after changing `.env`; Compose recreates services when their
+effective environment changes. Dependency or Prisma manifest edits rebuild the
+affected development image automatically.
 
-`npm run dev:host` runs the preflight and servers directly on the host for developers who intentionally manage their own
-Postgres instance and `backend/.env`. It is not required for normal development.
+#### Food data providers
 
-The lower-level devcontainer helpers remain available for selecting another worktree by branch or path:
+Set food provider values in the repo-local `.env`. Explicit
+`FOOD_DATA_PROVIDER` wins; otherwise local development selects FatSecret when
+both FatSecret credentials exist and USDA in other cases. USDA uses
+api.data.gov's `DEMO_KEY` when no key was supplied.
 
-- `npm run devcontainer:up -- <branch|path>`
-- `npm run devcontainer:up:new -- <branch|path>`
-- `npm run devcontainer:shell -- <branch|path>`
-- `npm run devcontainer:shell:new -- <branch|path>`
-
-Codex app actions use the same devcontainer launcher and caches as the ordinary `dev:*` commands. Codex-specific aliases
-such as `npm run codex:dev`, `npm run codex:setup-app`, and `npm run codex:ci` remain available for app actions.
-
-#### Food data provider (devcontainer)
-
-The backend supports multiple food search providers. During devcontainer initialization, the repo writes
-`FOOD_DATA_PROVIDER` into `.devcontainer/.env` from explicit config first, then from available credentials:
-FatSecret when both FatSecret credentials are set, USDA when `USDA_API_KEY` is set, and USDA with api.data.gov's
-public `DEMO_KEY` when no provider credentials are available. This keeps local search usable when Open Food Facts
-anonymous access is throttled.
-
-To use FatSecret, set `FOOD_DATA_PROVIDER=fatsecret` with `FATSECRET_CLIENT_ID` and `FATSECRET_CLIENT_SECRET` (either in
-the host environment or in the repo-local `.env`) before the devcontainer is created/rebuilt. During devcontainer
-initialization we copy the provider config into `.devcontainer/.env` (gitignored), and `docker compose` uses it to pass
-the values into the container.
-
-Example (host machine):
-
-```sh
-export FATSECRET_CLIENT_ID="your-client-id"
-export FATSECRET_CLIENT_SECRET="your-client-secret"
-```
-
-If you add/change the credentials, rebuild the devcontainer so the generated `.devcontainer/.env` is refreshed.
-
-To use USDA with your own quota, set `FOOD_DATA_PROVIDER=usda` and supply `USDA_API_KEY` before rebuilding the
-devcontainer. To test Open Food Facts specifically, set `FOOD_DATA_PROVIDER=openfoodfacts`; that path depends on the
-public Open Food Facts API allowing anonymous requests.
+Supported values are `fatsecret`, `usda`, and `openfoodfacts`. The effective
+allowlisted values are copied into `.dev.env` for Compose; GitHub/Codex tokens
+are never forwarded to application containers.
 
 #### Codex app usage
 
-The Codex app runs outside the devcontainer and uses the repo-local actions above to execute commands inside it.
-The devcontainer does not install or configure the Codex CLI by default, which keeps new worktree startup focused on
-creating the app container quickly.
+The Codex worktree setup hook copies the source checkout's `.env` once,
+installs host dependencies, generates Prisma, and allocates worktree ports. It
+does not start containers, so code-only worktrees do not retain idle stacks.
+Codex actions call the same `npm run dev`, `npm test`, build, database, and CI
+commands used outside the app.
 
 #### Dev test user
 
@@ -171,61 +157,48 @@ The seed script creates a deterministic local test account (`test@calibratehealt
 iterations, the local app auto-logs in this user by default. The backend creates the seeded data on demand when the
 database is otherwise ready:
 
-- Start with automatic test-user login: `npm run dev` (`npm run dev:test` remains as a compatible alias)
+- Start with automatic test-user login: `npm run dev`
 - Exercise the login and registration screens instead: `npm run dev:manual-auth`
 - Reset the test user onboarding state: `npm run dev:reset-test-user-onboarding`
 
 ### Common scripts
 
-- `npm run dev`: provisions the devcontainer/Postgres stack, installs missing dependencies, verifies migrations and
-  seed data, then runs the backend and Expo web client with the seeded dev user logged in.
-- `npm run dev:test`: explicit alias for the same preflight and seeded-user workflow.
-- `npm run dev:manual-auth`: runs the same preflight and local stack without auto-login for authentication testing.
-- `npm run dev:setup`: prepares dependencies, Prisma, migrations, and seed data without starting the servers.
-- `npm run dev:build`: prepares the environment and validates the Expo web production export.
-- `npm run dev:reset`: reset the disposable worktree database and seed it again.
-- `npm run dev:down`: stop the current worktree's devcontainer stack.
-- `npm run dev:reset-test-user-onboarding`: reset the dev test user to pre-onboarding.
-- `npm run dev:backend`: advanced host-only backend launcher.
-- `npm run dev:frontend` / `npm run dev:expo-web`: advanced host-only Expo web launcher.
-- `npm run setup`: lower-level in-container/host setup for the root/mobile workspace and backend.
-- `npm run db:migrate`: applies committed migrations (use for fresh DBs, CI, and prod).
+- `npm run db:migrate`: start the current worktree database, apply committed
+  migrations, and seed when needed.
+- `npm run db:migrate:create -- --name <name>`: create and apply a development
+  migration against the current worktree database.
+- `npm run db:studio`: open Prisma Studio against the current worktree database.
+- `npm run setup:deps`: install root/mobile and backend host dependencies when
+  their lockfile/runtime hash changed.
 - `npm test`: runs backend, API client, and Expo client unit tests.
-
-More:
-
-- `npm run setup:deps`: install root/mobile and backend dependencies using shared devcontainer caches when available.
-- `npm run db:migrate:dev`: apply migrations and seed dev data when missing.
-- `npm run db:migrate:create`: create/apply new Prisma migrations during local development.
-- `npm run db:reset:dev`: destructive reset for a disposable devcontainer/worktree DB, then seed it.
-- `npm run db:reset`: destructive reset (drops data and recreates schema).
-- `npm run db:seed`: seed deterministic dev data (test user + sample logs).
 - `npm --prefix backend run db:push:reset`: dev-only schema reset using `prisma db push` (fast, skips migrations).
-- `npm run db:studio`: Prisma Studio (DB browser).
 - `npm run build`: build the Expo web production export.
-- `npm run build:expo-web`: lower-level Expo web export without the devcontainer setup preflight; prefer `dev:build` from the host.
 - `npm run build:mobile`: type-check the Expo React Native Android client.
+- `npm run dev:expo`: start host Metro for the native Android dev client,
+  targeting the current worktree's exposed backend port.
 - `npm run test:mobile`: run mobile unit tests.
 - `npm run test:web:e2e`: build the Expo web release export and run its local Chrome E2E suite.
 - `npm run lint`: type-check the Expo client.
 - `npm run ci:local`: run the local equivalent of PR CI (backend and Expo web builds, Expo release validation, type-checking, and backend/mobile tests).
 - `npm run test:coverage`: collect backend and Expo client coverage.
 
-### Docker Compose (dev stack)
-
-The repo root `docker-compose.yml` is a development stack that starts `postgres`, `backend`, and Expo `web` with live
-reload and dev-only defaults.
+### Docker Compose development stack
 
 ```sh
-docker compose up --build
+npm run dev
 ```
+
+`compose.dev.yaml` is intentionally launched through `scripts/dev-stack.mjs`;
+the launcher supplies the current worktree's generated project name, ports,
+credentials, and database URL. Direct `docker compose up` bypasses that
+isolation and is not the supported workflow.
 
 ## PWA (installable)
 
 The production Expo web client is configured as a Progressive Web App, so it can be installed on desktop/mobile and
 added to a home screen. The tagged `Dockerfile.app` image serves this export from the same origin as the API.
 
-- For local API work, run `npm run dev:backend`; run the Expo web client from `mobile/` when testing the production UI.
+- For local API and Expo web work, run `npm run dev`.
 - Test the release artifact locally with `npm run build:expo-web` followed by
   `npm --prefix mobile run preview:web`, then open `http://localhost:4174` and use the browser install UI.
 - iOS: open the app in Safari and use Share -> Add to Home Screen.
@@ -234,8 +207,10 @@ Push notes:
 
 - Browser push registration and delivery require backend VAPID env vars: `WEB_PUSH_PUBLIC_KEY`, `WEB_PUSH_PRIVATE_KEY`, and `WEB_PUSH_SUBJECT`.
 - Native Android push is disabled by default for self-hosting. Set `NATIVE_PUSH_MODE=expo` only when the instance intentionally uses Expo Push Service for private/internal builds.
-- In the devcontainer workflow, `.devcontainer/init-devcontainer-env.mjs` auto-generates missing VAPID keys and writes them into `.devcontainer/.env` during container initialization.
-- For local backend runs outside the devcontainer (or for plain `docker compose`), set `WEB_PUSH_*` values explicitly (see `.env.example` and `backend/.env.example`).
+- The development launcher generates missing VAPID keys in `.dev.env`. Set
+  `WEB_PUSH_*` in the root `.env` to override them.
+- Direct backend runs outside the standard stack must set `WEB_PUSH_*`
+  explicitly (see `.env.example` and `backend/.env.example`).
 
 ## Android native client
 
