@@ -8,13 +8,18 @@ import app.calibratehealth.wear.complication.CalorieComplicationDataSourceServic
 
 /** Invalidates cache-only glance surfaces after a local cache or outbox state transition. */
 object CalibrateTileUpdate {
-    fun request(context: Context): Boolean = runCatching {
+    fun request(context: Context): Boolean {
         val appContext = context.applicationContext
-        TileService.getUpdater(appContext)
-            .requestUpdate(CalibrateTileService::class.java)
-        ComplicationDataSourceUpdateRequester.create(
-            appContext,
-            ComponentName(appContext, CalorieComplicationDataSourceService::class.java)
-        ).requestUpdateAll()
-    }.isSuccess
+        val tileRequested = runCatching {
+            TileService.getUpdater(appContext)
+                .requestUpdate(CalibrateTileService::class.java)
+        }.isSuccess
+        val complicationRequested = runCatching {
+            ComplicationDataSourceUpdateRequester.create(
+                appContext,
+                ComponentName(appContext, CalorieComplicationDataSourceService::class.java)
+            ).requestUpdateAll()
+        }.isSuccess
+        return tileRequested && complicationRequested
+    }
 }

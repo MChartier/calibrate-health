@@ -141,21 +141,35 @@ export function parsePairingHello(payload: string): PairingHello | null {
     }
 }
 
-function parsePairingResult(payload: string): (
-    Omit<StoredWearPairing, 'nodeId' | 'pairedAt'> & { requestId: string }
-) | null {
+type WearPairingResult = {
+    requestId: string;
+    serverOrigin: string;
+    watchDeviceId: string;
+} & (
+    | { ok: true; watchDeviceName: string | null }
+    | { ok: false; message: string }
+);
+
+function parsePairingResult(payload: string): WearPairingResult | null {
     try {
         const parsed = JSON.parse(payload) as Record<string, unknown>;
-        if (parsed.ok !== true || parsed.protocol_version !== WEAR_PAIRING_PROTOCOL_VERSION) return null;
+        if (
+            typeof parsed.ok !== 'boolean'
+            || parsed.protocol_version !== WEAR_PAIRING_PROTOCOL_VERSION
+        ) return null;
         const watchDeviceId = requiredText(parsed.watch_device_id, MAX_DEVICE_ID_LENGTH);
         const requestId = requiredText(parsed.request_id, MAX_REQUEST_ID_LENGTH);
         const serverOrigin = requiredText(parsed.server_origin, 2048);
+        if (!requestId || !watchDeviceId || !serverOrigin || new URL(serverOrigin).origin !== serverOrigin) return null;
+        if (!parsed.ok) {
+            const message = requiredText(parsed.message, 180);
+            return message ? { ok: false, requestId, watchDeviceId, serverOrigin, message } : null;
+        }
         const watchDeviceName = parsed.watch_device_name == null
             ? null
             : requiredText(parsed.watch_device_name, MAX_DEVICE_NAME_LENGTH);
-        if (!requestId || !watchDeviceId || !serverOrigin || new URL(serverOrigin).origin !== serverOrigin) return null;
         if (parsed.watch_device_name != null && watchDeviceName === null) return null;
-        return { requestId, watchDeviceId, watchDeviceName, serverOrigin };
+        return { ok: true, requestId, watchDeviceId, watchDeviceName, serverOrigin };
     } catch {
         return null;
     }
@@ -451,6 +465,14 @@ export async function processWearPairingInbox(options: {
                 result.serverOrigin !== origin
             ) {
                 errors.push('A watch reported a pairing result for a different Calibrate server.');
+                acknowledgedMessageIds.push(message.id);
+                continue;
+            }
+            if (!result.ok) {
+                await AsyncStorage.removeItem(pendingStorageKey(origin, options.userId));
+                pending = null;
+                processed += 1;
+                errors.push(result.message);
                 acknowledgedMessageIds.push(message.id);
                 continue;
             }

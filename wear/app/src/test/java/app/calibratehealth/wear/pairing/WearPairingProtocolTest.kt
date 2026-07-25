@@ -91,6 +91,24 @@ class WearPairingProtocolTest {
     }
 
     @Test
+    fun `pairing results report both success and bounded failure to the phone`() {
+        val pending = pendingInvite()
+        assertEquals(
+            "{\"ok\":true,\"request_id\":\"b48ae280-4d9d-43d8-99cb-59c8c04ff766\"," +
+                "\"protocol_version\":1,\"server_origin\":\"https://health.example.com\"," +
+                "\"watch_device_id\":\"watch-id\",\"watch_device_name\":\"Galaxy Watch\"}",
+            buildPairingResult(pending)
+        )
+        assertEquals(
+            "{\"ok\":false,\"request_id\":\"b48ae280-4d9d-43d8-99cb-59c8c04ff766\"," +
+                "\"protocol_version\":1,\"server_origin\":\"https://health.example.com\"," +
+                "\"watch_device_id\":\"watch-id\"," +
+                "\"message\":\"Pairing response was unavailable. Start pairing again.\"}",
+            buildPairingResult(pending, " Pairing response was unavailable. Start pairing again. ")
+        )
+    }
+
+    @Test
     fun `signing payload exactly matches backend protocol bytes`() {
         val payload = buildPairingSigningPayload(
             origin,
