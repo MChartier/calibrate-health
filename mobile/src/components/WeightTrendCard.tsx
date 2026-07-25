@@ -10,7 +10,6 @@ import { AppText } from './AppText';
 import { LoadingState } from './LoadingState';
 import { SectionHeader } from './SectionHeader';
 import { useAuth } from '../auth/AuthContext';
-import { interpolateResponsiveValue } from '../hooks/useResponsiveContentLayout';
 import { radius, spacing, useAppTheme, type AppTheme } from '../theme';
 import { formatDateOnlyForDisplay } from '../utils/dates';
 import { formatWeight, formatWeightUnit } from '../utils/format';
@@ -21,7 +20,6 @@ type WeightTrendCardProps = ViewProps & {
     title?: string;
     description?: string;
     footer?: React.ReactNode;
-    contentExpansion?: number;
 };
 
 const RANGE_OPTIONS: Array<{ value: TrendRange; label: string }> = [
@@ -34,7 +32,7 @@ const RANGE_OPTIONS: Array<{ value: TrendRange; label: string }> = [
 const DEFAULT_CHART_WIDTH = 340;
 const MIN_CHART_WIDTH = 280;
 const CHART_HEIGHT = 188;
-const EXPANDED_CHART_HEIGHT = 300; // Fills tall detail screens with a more readable interactive plot.
+const MAX_CHART_HEIGHT = 420; // Caps chart growth so larger screens retain a balanced details layout.
 // Axis gutters reserve room for weight and date labels without crowding the data.
 const CHART_PADDING_LEFT = 58;
 const CHART_PADDING_RIGHT = 12;
@@ -200,7 +198,6 @@ export const WeightTrendCard: React.FC<WeightTrendCardProps> = ({
     title = 'Weight trend',
     description,
     footer,
-    contentExpansion = 0,
     style,
     ...props
 }) => {
@@ -211,7 +208,7 @@ export const WeightTrendCard: React.FC<WeightTrendCardProps> = ({
     const [range, setRange] = useState<TrendRange>('month');
     const [selectedPointKey, setSelectedPointKey] = useState<string | null>(null);
     const [chartCanvasWidth, setChartCanvasWidth] = useState(DEFAULT_CHART_WIDTH);
-    const chartHeight = interpolateResponsiveValue(CHART_HEIGHT, EXPANDED_CHART_HEIGHT, contentExpansion);
+    const [chartHeight, setChartHeight] = useState(CHART_HEIGHT);
     const trendQuery = useQuery({
         queryKey: ['mobile-metrics-trend', range],
         queryFn: () => api.getTrendMetrics({ range })
@@ -252,7 +249,7 @@ export const WeightTrendCard: React.FC<WeightTrendCardProps> = ({
     }
 
     return (
-        <AppCard {...props} style={style}>
+        <AppCard {...props} style={[styles.card, style]}>
             <SectionHeader title={title} description={description} />
             <View style={styles.rangeRow}>
                 {RANGE_OPTIONS.map((option) => (
@@ -268,16 +265,13 @@ export const WeightTrendCard: React.FC<WeightTrendCardProps> = ({
             {trendQuery.isLoading && !trendQuery.data ? (
                 <LoadingState label="Loading trend..." />
             ) : chartPoints.length === 0 ? (
-                <View style={[styles.emptyChart, { minHeight: chartHeight }]}>
+                <View style={styles.emptyChart}>
                     <AppText variant="muted">Log a weigh-in to start a trend.</AppText>
                 </View>
             ) : chartPoints.length === 1 ? (
                 <View
                     accessibilityLabel={`First weigh-in recorded at ${formatWeight(chartPoints[0].metric.weight, user?.weight_unit)}`}
-                    style={[
-                        styles.singlePointState,
-                        { minHeight: chartHeight, backgroundColor: themeColors.surfaceContainer }
-                    ]}
+                    style={[styles.singlePointState, { backgroundColor: themeColors.surfaceContainer }]}
                 >
                     <View style={[styles.singlePointIcon, { backgroundColor: themeColors.primaryContainer }]}>
                         <Ionicons name="scale-outline" size={24} color={themeColors.primary} />
@@ -294,10 +288,22 @@ export const WeightTrendCard: React.FC<WeightTrendCardProps> = ({
             ) : (
                 <View style={styles.chartShell}>
                     <View
-                        style={[styles.chartCanvas, { minHeight: chartHeight }]}
-                        onLayout={(event) => setChartCanvasWidth(event.nativeEvent.layout.width)}
+                        testID="weight-trend-chart-canvas"
+                        style={styles.chartCanvas}
+                        onLayout={(event) => {
+                            setChartCanvasWidth(event.nativeEvent.layout.width);
+                            setChartHeight(Math.min(
+                                MAX_CHART_HEIGHT,
+                                Math.max(event.nativeEvent.layout.height, CHART_HEIGHT)
+                            ));
+                        }}
                     >
-                        <Svg width="100%" height={chartHeight} viewBox={`0 0 ${chartLayout.width} ${chartHeight}`}>
+                        <Svg
+                            testID="weight-trend-chart"
+                            width="100%"
+                            height={chartHeight}
+                            viewBox={`0 0 ${chartLayout.width} ${chartHeight}`}
+                        >
                             {chartLayout.yTicks.map((tick) => (
                                 <React.Fragment key={tick.value}>
                                     <Line
@@ -425,6 +431,9 @@ const PointMetric: React.FC<{ label: string; value: string; tone: 'info' | 'prim
 };
 
 const createStyles = (theme: AppTheme) => StyleSheet.create({
+    card: {
+        width: '100%'
+    },
     rangeRow: {
         flexDirection: 'row',
         gap: spacing.sm
@@ -433,6 +442,7 @@ const createStyles = (theme: AppTheme) => StyleSheet.create({
         flex: 1
     },
     chartShell: {
+        flexGrow: 1,
         borderRadius: radius.md,
         backgroundColor: theme.colors.surface,
         borderColor: theme.colors.outlineVariant,
@@ -441,9 +451,14 @@ const createStyles = (theme: AppTheme) => StyleSheet.create({
         gap: spacing.sm
     },
     chartCanvas: {
-        position: 'relative'
+        position: 'relative',
+        flexGrow: 1,
+        flexShrink: 1,
+        minHeight: CHART_HEIGHT
     },
     emptyChart: {
+        flexGrow: 1,
+        minHeight: CHART_HEIGHT,
         borderRadius: radius.md,
         backgroundColor: theme.colors.surfaceContainer,
         alignItems: 'center',
@@ -451,6 +466,8 @@ const createStyles = (theme: AppTheme) => StyleSheet.create({
         padding: spacing.lg
     },
     singlePointState: {
+        flexGrow: 1,
+        minHeight: 116,
         flexDirection: 'row',
         alignItems: 'center',
         gap: spacing.lg,

@@ -54,17 +54,29 @@ describe('WeightTrendPreviewCard', () => {
         expect(onPress).toHaveBeenCalledTimes(1);
     });
 
-    it('uses added height and sample metadata when the screen has room', () => {
-        const screen = render(
-            <WeightTrendPreviewCard
-                contentExpansion={1}
-                showExpandedMetadata
-                onPress={jest.fn()}
-            />
+    it('uses flexed chart height and sample metadata after the card receives free space', () => {
+        const screen = render(<WeightTrendPreviewCard onPress={jest.fn()} />);
+
+        fireEvent(
+            screen.getByLabelText('Open full weight trend'),
+            'layout',
+            { nativeEvent: { layout: { width: 340, height: 360 } } }
+        );
+        fireEvent(
+            screen.getByTestId('weight-trend-preview-canvas'),
+            'layout',
+            { nativeEvent: { layout: { width: 340, height: 176 } } }
         );
 
         expect(screen.getByLabelText('30-day weight trend preview')).toHaveProp('height', 176);
         expect(screen.getByText('2 total weigh-ins')).toBeTruthy();
         expect(screen.getByText('1-day history')).toBeTruthy();
+
+        fireEvent(
+            screen.getByTestId('weight-trend-preview-canvas'),
+            'layout',
+            { nativeEvent: { layout: { width: 340, height: 500 } } }
+        );
+        expect(screen.getByLabelText('30-day weight trend preview')).toHaveProp('height', 260);
     });
 });
