@@ -210,7 +210,7 @@ export default function MyFoodsScreen() {
     }
 
     return (
-        <Screen>
+        <Screen safeTop>
             <PageHeader
                 title="My Foods"
                 description="Saved foods and recipes for fast logging."

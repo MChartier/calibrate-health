@@ -85,7 +85,7 @@ const createStyles = (theme: AppTheme) => StyleSheet.create({
         justifyContent: 'space-between',
         gap: spacing.md,
         borderRadius: radius.md,
-        borderWidth: StyleSheet.hairlineWidth,
+        borderWidth: theme.stroke.control,
         borderColor: theme.colors.outlineVariant,
         backgroundColor: theme.colors.surfaceContainerLow,
         paddingHorizontal: spacing.md

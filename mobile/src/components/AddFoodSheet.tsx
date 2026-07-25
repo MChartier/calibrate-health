@@ -402,6 +402,7 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
             }
             const hasQuery = query.trim().length > 0;
             const hasResults = recentFoodMatches.length > 0 || searchResults.length > 0;
+            const searchDisabled = !hasQuery || searchFood.isPending;
             return (
                 <View style={styles.section}>
                     <TextField
@@ -422,8 +423,14 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
                     <View style={styles.row}>
                         <AppButton
                             title={searchFood.isPending ? 'Searching...' : 'Search'}
-                            disabled={!query.trim() || searchFood.isPending}
-                            leftIcon={<Ionicons name="search" size={18} color={colors.onPrimary} />}
+                            disabled={searchDisabled}
+                            leftIcon={(
+                                <Ionicons
+                                    name="search"
+                                    size={18}
+                                    color={searchDisabled ? colors.onSurfaceVariant : colors.onPrimary}
+                                />
+                            )}
                             onPress={() => searchFood.mutate()}
                             style={styles.rowButton}
                         />

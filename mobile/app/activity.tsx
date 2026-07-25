@@ -239,7 +239,7 @@ const createStyles = (theme: AppTheme) => StyleSheet.create({
         gap: spacing.md,
         padding: spacing.md,
         borderColor: theme.colors.outlineVariant,
-        borderWidth: StyleSheet.hairlineWidth,
+        borderWidth: theme.stroke.control,
         borderRadius: radius.md
     },
     historyRowSelected: {

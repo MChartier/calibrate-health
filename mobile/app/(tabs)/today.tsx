@@ -94,7 +94,7 @@ export default function TodayScreen() {
         (profileQuery.isLoading || foodQuery.isLoading || metricsQuery.isLoading || foodDayQuery.isLoading);
 
     return (
-        <Screen reserveBottomTabs style={styles.screenContent}>
+        <Screen style={styles.screenContent}>
             <DateNavigation navigation={dateNavigation} />
             {isPaused && (
                 <DayStatusCard
@@ -122,6 +122,7 @@ export default function TodayScreen() {
                             entries={entries}
                             trackingUnavailable={dayStatus?.status !== 'OPEN' && dayStatus?.status !== 'COMPLETE'}
                             onPress={() => router.push({ pathname: '/(tabs)/food-log', params: { date: selectedDate } })}
+                            onAddFood={dayStatus?.status === 'OPEN' ? () => setAddFoodMeal(null) : undefined}
                             compact
                         />
                     )}

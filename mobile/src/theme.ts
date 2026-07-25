@@ -82,6 +82,10 @@ export const interaction = {
     minimumTouchTarget: calibrateDesignTokens.interaction.minimumTouchTarget
 };
 
+export const stroke = {
+    control: 1 // Keeps rounded interactive outlines stable across Android display densities.
+};
+
 function createShadows(mode: AppColorScheme) {
     return {
         card: {
@@ -117,6 +121,7 @@ function createTheme(mode: AppColorScheme) {
         radius,
         typography,
         interaction,
+        stroke,
         shadows: createShadows(mode)
     } as const;
 }

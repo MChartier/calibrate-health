@@ -60,12 +60,12 @@ function createStyles(theme: ReturnType<typeof useAppTheme>) {
         surface: {
             backgroundColor: theme.colors.surfaceContainerLow,
             borderColor: theme.colors.outlineVariant,
-            borderWidth: StyleSheet.hairlineWidth
+            borderWidth: theme.stroke.control
         },
         container: {
             backgroundColor: theme.colors.primaryContainer,
             borderColor: theme.colors.outlineVariant,
-            borderWidth: StyleSheet.hairlineWidth
+            borderWidth: theme.stroke.control
         },
         ghost: {
             backgroundColor: 'transparent'

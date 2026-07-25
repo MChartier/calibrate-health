@@ -13,7 +13,7 @@ import { AppText } from '../../src/components/AppText';
 import { BottomSheetModal } from '../../src/components/BottomSheetModal';
 import { DateNavigation } from '../../src/components/DateNavigation';
 import { FoodLogTimelineCard } from '../../src/components/FoodLogTimelineCard';
-import { DayStatusCard, useFoodDayStatus } from '../../src/components/FoodTrackingStatus';
+import { useFoodDayStatus } from '../../src/components/FoodTrackingStatus';
 import { NumberStepperField } from '../../src/components/NumberStepperField';
 import { OverlaySelect } from '../../src/components/OverlaySelect';
 import { PageHeader } from '../../src/components/PageHeader';
@@ -31,12 +31,11 @@ import { useOfflineOutbox } from '../../src/offline/provider';
 import { MEAL_SELECT_OPTIONS } from '../../src/utils/meals';
 import { type AppTheme, useAppTheme } from '../../src/theme';
 import { SERVING_INPUT_INCREMENT } from '../../src/config/inputPrecision';
-import { getTodayDate } from '../../src/utils/dates';
 
 export default function FoodLogScreen() {
     const routeParams = useLocalSearchParams<{ date?: string }>();
     const pathname = usePathname();
-    const { api, user } = useAuth();
+    const { api } = useAuth();
     const { enqueue } = useOfflineOutbox();
     const queryClient = useQueryClient();
     const dateNavigation = useSharedLogDateNavigation();
@@ -57,8 +56,6 @@ export default function FoodLogScreen() {
     const foodQuery = useQuery({ queryKey: ['mobile-food', selectedDate], queryFn: () => api.getFoodLog(selectedDate) });
     const foodDayQuery = useFoodDayStatus(selectedDate);
     const canEditFood = foodDayQuery.data?.status === 'OPEN';
-    const isPaused = foodDayQuery.data?.status === 'PAUSED';
-    const isToday = selectedDate === getTodayDate(user?.timezone);
 
     useEffect(() => {
         if (typeof routeParams.date === 'string') dateNavigation.setDate(routeParams.date);
@@ -183,7 +180,6 @@ export default function FoodLogScreen() {
             />
 
             <DateNavigation navigation={dateNavigation} />
-            {isPaused && <DayStatusCard date={selectedDate} isToday={isToday} />}
 
             {foodQuery.isLoading ? (
                 <FoodLogSkeleton />
@@ -196,8 +192,6 @@ export default function FoodLogScreen() {
                     onDeleteEntry={(entry) => deleteFood.mutate(entry.id)}
                 />
             )}
-
-            {!isPaused && <DayStatusCard date={selectedDate} isToday={isToday} />}
 
             {foodQuery.error && <AppText style={styles.error}>{foodQuery.error.message}</AppText>}
             {deleteFood.error && <AppText style={styles.error}>{deleteFood.error.message}</AppText>}

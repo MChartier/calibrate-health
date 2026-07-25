@@ -22,12 +22,15 @@ type PreviewPoint = {
     trendY: number;
 };
 
+type PreviewCanvasSize = {
+    width: number;
+    height: number;
+};
+
 const DEFAULT_PREVIEW_WIDTH = 340;
 const MIN_PREVIEW_WIDTH = 240;
 const PREVIEW_HEIGHT = 112; // Keeps the Progress card glanceable while preserving a meaningful trend shape.
-const MAX_PREVIEW_HEIGHT = 260; // Keeps very tall layouts focused while still enlarging the visualization substantially.
 const PREVIEW_CARD_MIN_HEIGHT = 240; // Preserves the compact chart and summary before free space is distributed.
-const EXPANDED_METADATA_CARD_HEIGHT = 330; // Shows history only after the card has absorbed meaningful free space.
 const PREVIEW_HORIZONTAL_PADDING = 8;
 const PREVIEW_VERTICAL_PADDING = 12;
 const MIN_PREVIEW_WEIGHT_SPAN = 0.4;
@@ -38,14 +41,15 @@ function buildPath(points: PreviewPoint[], key: 'measurementY' | 'trendY'): stri
         .join(' ');
 }
 
-function getPreviewPoints(metrics: TrendMetricEntry[], canvasWidth: number, previewHeight: number): PreviewPoint[] {
+function getPreviewPoints(metrics: TrendMetricEntry[], canvasSize: PreviewCanvasSize): PreviewPoint[] {
     const chronologicalMetrics = metrics
         .slice()
         .filter((metric) => Number.isFinite(metric.weight) && Number.isFinite(metric.trend_weight))
         .reverse();
     if (chronologicalMetrics.length === 0) return [];
 
-    const width = Math.max(canvasWidth, MIN_PREVIEW_WIDTH);
+    const width = Math.max(canvasSize.width, MIN_PREVIEW_WIDTH);
+    const height = Math.max(canvasSize.height, PREVIEW_HEIGHT);
     const values = chronologicalMetrics.flatMap((metric) => [metric.weight, metric.trend_weight]);
     const minimum = Math.min(...values);
     const maximum = Math.max(...values);
@@ -53,7 +57,7 @@ function getPreviewPoints(metrics: TrendMetricEntry[], canvasWidth: number, prev
     const axisMiddle = (maximum + minimum) / 2;
     const axisMinimum = axisMiddle - range / 2;
     const drawableWidth = width - (PREVIEW_HORIZONTAL_PADDING * 2);
-    const drawableHeight = previewHeight - (PREVIEW_VERTICAL_PADDING * 2);
+    const drawableHeight = height - (PREVIEW_VERTICAL_PADDING * 2);
     const lastIndex = Math.max(chronologicalMetrics.length - 1, 1);
     const yForValue = (value: number) =>
         PREVIEW_VERTICAL_PADDING + drawableHeight - ((value - axisMinimum) / range) * drawableHeight;
@@ -73,28 +77,21 @@ function describeTrend(rate: number | null | undefined, unit: string): string {
     return `Trend ${direction}${rate.toFixed(2)} ${unit} / week`;
 }
 
-function formatWeighInCount(count: number): string {
-    return `${count} total ${count === 1 ? 'weigh-in' : 'weigh-ins'}`;
-}
-
-function formatTrackingHistory(totalPoints: number, spanDays: number): string {
-    return totalPoints === 1 ? 'First day tracked' : `${spanDays}-day history`;
-}
-
 export const WeightTrendPreviewCard: React.FC<WeightTrendPreviewCardProps> = ({ onPress }) => {
     const { api, user } = useAuth();
     const theme = useAppTheme();
     const styles = useMemo(() => createStyles(theme), [theme]);
-    const [canvasWidth, setCanvasWidth] = useState(DEFAULT_PREVIEW_WIDTH);
-    const [previewHeight, setPreviewHeight] = useState(PREVIEW_HEIGHT);
-    const [cardHeight, setCardHeight] = useState(0);
+    const [canvasSize, setCanvasSize] = useState<PreviewCanvasSize>({
+        width: DEFAULT_PREVIEW_WIDTH,
+        height: PREVIEW_HEIGHT
+    });
     const trendQuery = useQuery({
         queryKey: ['mobile-metrics-trend', 'month'],
         queryFn: () => api.getTrendMetrics({ range: 'month' })
     });
     const points = useMemo(
-        () => getPreviewPoints(trendQuery.data?.metrics ?? [], canvasWidth, previewHeight),
-        [canvasWidth, previewHeight, trendQuery.data?.metrics]
+        () => getPreviewPoints(trendQuery.data?.metrics ?? [], canvasSize),
+        [canvasSize, trendQuery.data?.metrics]
     );
     const measurementPath = buildPath(points, 'measurementY');
     const trendPath = buildPath(points, 'trendY');
@@ -109,7 +106,6 @@ export const WeightTrendPreviewCard: React.FC<WeightTrendPreviewCardProps> = ({ 
                 accessibilityLabel="Open full weight trend"
                 accessibilityHint="Shows the interactive chart and time range controls"
                 onPress={onPress}
-                onLayout={(event) => setCardHeight(event.nativeEvent.layout.height)}
                 style={styles.pressable}
             >
                 {({ pressed }) => (
@@ -130,10 +126,11 @@ export const WeightTrendPreviewCard: React.FC<WeightTrendPreviewCardProps> = ({ 
                             testID="weight-trend-preview-canvas"
                             style={styles.preview}
                             onLayout={(event) => {
-                                setCanvasWidth(event.nativeEvent.layout.width);
-                                setPreviewHeight(Math.min(
-                                    MAX_PREVIEW_HEIGHT,
-                                    Math.max(event.nativeEvent.layout.height, PREVIEW_HEIGHT)
+                                const { width, height } = event.nativeEvent.layout;
+                                setCanvasSize((current) => (
+                                    current.width === width && current.height === height
+                                        ? current
+                                        : { width, height }
                                 ));
                             }}
                         >
@@ -150,14 +147,14 @@ export const WeightTrendPreviewCard: React.FC<WeightTrendPreviewCardProps> = ({ 
                                 <Svg
                                     accessibilityLabel="30-day weight trend preview"
                                     width="100%"
-                                    height={previewHeight}
-                                    viewBox={`0 0 ${Math.max(canvasWidth, MIN_PREVIEW_WIDTH)} ${previewHeight}`}
+                                    height="100%"
+                                    viewBox={`0 0 ${Math.max(canvasSize.width, MIN_PREVIEW_WIDTH)} ${Math.max(canvasSize.height, PREVIEW_HEIGHT)}`}
                                 >
                                     <Line
                                         x1={PREVIEW_HORIZONTAL_PADDING}
-                                        y1={previewHeight / 2}
-                                        x2={Math.max(canvasWidth, MIN_PREVIEW_WIDTH) - PREVIEW_HORIZONTAL_PADDING}
-                                        y2={previewHeight / 2}
+                                        y1={Math.max(canvasSize.height, PREVIEW_HEIGHT) / 2}
+                                        x2={Math.max(canvasSize.width, MIN_PREVIEW_WIDTH) - PREVIEW_HORIZONTAL_PADDING}
+                                        y2={Math.max(canvasSize.height, PREVIEW_HEIGHT) / 2}
                                         stroke={theme.colors.outlineVariant}
                                         strokeWidth={1}
                                         strokeDasharray="3 4"
@@ -198,21 +195,6 @@ export const WeightTrendPreviewCard: React.FC<WeightTrendPreviewCardProps> = ({ 
                             {trendSummary}
                             {volatility ? ` | ${volatility} volatility` : ''}
                         </AppText>
-                        {cardHeight >= EXPANDED_METADATA_CARD_HEIGHT &&
-                            trendQuery.data?.meta &&
-                            trendQuery.data.meta.total_points > 0 && (
-                            <View style={styles.metadataRow}>
-                                <AppText variant="caption" style={styles.metadataItem}>
-                                    {formatWeighInCount(trendQuery.data.meta.total_points)}
-                                </AppText>
-                                <AppText variant="caption" style={styles.metadataItem}>
-                                    {formatTrackingHistory(
-                                        trendQuery.data.meta.total_points,
-                                        trendQuery.data.meta.total_span_days
-                                    )}
-                                </AppText>
-                            </View>
-                        )}
                         {trendQuery.error && <AppText style={styles.error}>{trendQuery.error.message}</AppText>}
                     </AppCard>
                 )}
@@ -258,8 +240,7 @@ const createStyles = (theme: AppTheme) => StyleSheet.create({
         color: theme.colors.primary
     },
     preview: {
-        flexGrow: 1,
-        flexShrink: 1,
+        flex: 1,
         minHeight: PREVIEW_HEIGHT,
         alignItems: 'center',
         justifyContent: 'center',
@@ -275,18 +256,6 @@ const createStyles = (theme: AppTheme) => StyleSheet.create({
         gap: spacing.sm
     },
     summary: {
-        fontWeight: '700'
-    },
-    metadataRow: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        gap: spacing.sm
-    },
-    metadataItem: {
-        borderRadius: radius.pill,
-        backgroundColor: theme.colors.surfaceContainer,
-        paddingHorizontal: spacing.sm,
-        paddingVertical: spacing.xs,
         fontWeight: '700'
     },
     error: {

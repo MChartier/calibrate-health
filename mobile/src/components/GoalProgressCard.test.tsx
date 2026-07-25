@@ -15,11 +15,10 @@ const GOAL: GoalEntry = {
 };
 
 describe('GoalProgressCard', () => {
-    it('keeps the goal action available after the progress content', () => {
+    it('combines the latest snapshot and goal projection in one card', () => {
         const onEditGoal = jest.fn();
         const screen = render(
             <GoalProgressCard
-                title="Goal projection"
                 goal={GOAL}
                 latestMetric={{ id: 1, date: '2026-07-20', weight: 172 }}
                 user={null}
@@ -27,10 +26,12 @@ describe('GoalProgressCard', () => {
             />
         );
 
-        fireEvent.press(screen.getByLabelText('Set a new goal'));
+        fireEvent.press(screen.getByLabelText('Edit goal'));
 
+        expect(screen.getByText('Progress snapshot')).toBeTruthy();
         expect(screen.getByText('Goal projection')).toBeTruthy();
-        expect(screen.getByText('Current 172 kg')).toBeTruthy();
+        expect(screen.getByText('172 kg')).toBeTruthy();
+        expect(screen.getByText('59% complete')).toBeTruthy();
         expect(onEditGoal).toHaveBeenCalledTimes(1);
     });
 });

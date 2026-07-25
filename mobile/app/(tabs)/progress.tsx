@@ -12,14 +12,10 @@ import { NumberStepperField } from '../../src/components/NumberStepperField';
 import { Screen } from '../../src/components/Screen';
 import { SectionHeader } from '../../src/components/SectionHeader';
 import { SegmentedControl } from '../../src/components/SegmentedControl';
-import { WeightEntrySheet } from '../../src/components/WeightEntrySheet';
-import { ProgressOverviewCard } from '../../src/components/progress/ProgressOverviewCard';
 import { WeightTrendPreviewCard } from '../../src/components/progress/WeightTrendPreviewCard';
 import { useAuth } from '../../src/auth/AuthContext';
 import { gramsToDisplayWeight } from '../../src/utils/bodyMeasurements';
-import { getTodayDate } from '../../src/utils/dates';
 import { formatWeightUnit } from '../../src/utils/format';
-import { hasMetricForDate } from '../../src/utils/metrics';
 import {
     getGoalModeFromDailyDeficit,
     getSignedDailyDeficit,
@@ -63,7 +59,6 @@ export default function ProgressScreen() {
         queryFn: () => api.getTrendMetrics({ range: 'month' })
     });
     const [isGoalEditorOpen, setIsGoalEditorOpen] = useState(false);
-    const [isWeightEditorOpen, setIsWeightEditorOpen] = useState(false);
     const [startWeight, setStartWeight] = useState('');
     const [targetWeight, setTargetWeight] = useState('');
     const [goalMode, setGoalMode] = useState<GoalMode>('lose');
@@ -73,8 +68,6 @@ export default function ProgressScreen() {
 
     const signedDailyDeficit = getSignedDailyDeficit(goalMode, dailyChangeAbs);
     const canSave = Number(startWeight) > 0 && Number(targetWeight) > 0 && Number.isFinite(Number(dailyChangeAbs));
-    const today = getTodayDate(user?.timezone);
-    const hasWeightToday = hasMetricForDate(metricsQuery.data ?? [], today);
     const saveGoal = useMutation({
         mutationFn: () =>
             api.createGoal({
@@ -137,26 +130,17 @@ export default function ProgressScreen() {
     return (
         <>
             <Screen
-                reserveBottomTabs
                 style={{ backgroundColor: themeColors.background }}
             >
-                <ProgressOverviewCard
+                <GoalProgressCard
                     latestMetric={metricsQuery.data?.[0]}
+                    goal={goalQuery.data}
                     user={user}
-                    hasWeightToday={hasWeightToday}
-                    onLogWeight={() => setIsWeightEditorOpen(true)}
+                    onEditGoal={openGoalEditor}
                 />
 
                 <WeightTrendPreviewCard
                     onPress={() => router.push('/weight-trend')}
-                />
-
-                <GoalProgressCard
-                    title="Goal projection"
-                    goal={goalQuery.data}
-                    latestMetric={metricsQuery.data?.[0]}
-                    user={user}
-                    onEditGoal={openGoalEditor}
                 />
             </Screen>
 
@@ -225,11 +209,6 @@ export default function ProgressScreen() {
                 </View>
             </BottomSheetModal>
 
-            <WeightEntrySheet
-                visible={isWeightEditorOpen}
-                date={today}
-                onClose={() => setIsWeightEditorOpen(false)}
-            />
         </>
     );
 }

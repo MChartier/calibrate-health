@@ -30,9 +30,8 @@ import {
 import { useLogDateNavigation } from '../../src/hooks/useLogDateNavigation';
 import { useOfflineOutbox } from '../../src/offline/provider';
 import { OUTBOX_MUTATION_STATES } from '../../src/offline/queuedMutation';
-import { getActiveTabRoute, resolveContextualFab, type ContextualFabKind } from '../../src/navigation/contextualFab';
+import { resolveContextualFab } from '../../src/navigation/contextualFab';
 import { getNotificationAction } from '../../src/notifications/workflow';
-import { getTodayDate } from '../../src/utils/dates';
 import { isProfileSetupComplete } from '../../src/utils/profileCompletion';
 import { radius, spacing, useAppTheme, type AppTheme, type AppThemeColors } from '../../src/theme';
 
@@ -125,11 +124,6 @@ export default function TabsLayout() {
         queryFn: () => api.getInAppNotifications(),
         enabled: Boolean(user)
     });
-    const progressMetricsQuery = useQuery({
-        queryKey: ['mobile-metrics'],
-        queryFn: () => api.getMetrics(),
-        enabled: Boolean(user) && getActiveTabRoute(pathname) === 'progress'
-    });
     const dismissNotification = useMutation({
         mutationFn: (notification: InAppNotification) => api.dismissInAppNotification(notification.id),
         onSuccess: () => queryClient.invalidateQueries({ queryKey: ['mobile-in-app-notifications'] })
@@ -181,12 +175,8 @@ export default function TabsLayout() {
         spacing.xl,
         (width - DESKTOP_NAV_RAIL_WIDTH - DESKTOP_CONTENT_MAX_WIDTH) / 2 + spacing.xl
     );
-    const today = getTodayDate(user.timezone);
     const fabKind = resolveContextualFab({
         pathname,
-        today,
-        metrics: progressMetricsQuery.data,
-        metricsLoaded: progressMetricsQuery.isSuccess,
         foodDayStatus: selectedFoodDayQuery.data?.status,
         foodDayStatusLoaded: selectedFoodDayQuery.isSuccess
     });
@@ -283,22 +273,14 @@ export default function TabsLayout() {
                     <ResumeTrackingPrompt />
                     {fabKind && (
                         <ContextualFab
-                            kind={fabKind}
                             bottom={usesNavigationRail ? spacing.xxl : tabBarHeight + spacing.lg}
                             right={usesNavigationRail ? desktopContentGutter : spacing.xl}
                             compact={fontScale >= 1.6 || width < 360}
                             colors={theme.colors}
                             styles={styles}
                             onPress={() => {
-                                if (fabKind === 'add-food') {
-                                    if (selectedFoodDayQuery.data?.status !== 'OPEN') return;
-                                    requestAddFood({ date: logDateNavigation.selectedDate });
-                                    if (getActiveTabRoute(pathname) !== 'food-log') {
-                                        router.navigate('/(tabs)/today');
-                                    }
-                                    return;
-                                }
-                                router.push({ pathname: '/(tabs)/weight', params: { date: today } });
+                                if (selectedFoodDayQuery.data?.status !== 'OPEN') return;
+                                requestAddFood({ date: logDateNavigation.selectedDate });
                             }}
                         />
                     )}
@@ -420,32 +402,26 @@ const HeaderActions: React.FC<{
 );
 
 const ContextualFab: React.FC<{
-    kind: Exclude<ContextualFabKind, null>;
     bottom: number;
     right: number;
     compact: boolean;
     onPress: () => void;
     colors: AppThemeColors;
     styles: TabStyles;
-}> = ({ kind, bottom, right, compact, onPress, colors, styles }) => {
-    const isAddFood = kind === 'add-food';
-    const label = isAddFood ? 'Add food' : 'Log weight';
-
-    return (
+}> = ({ bottom, right, compact, onPress, colors, styles }) => (
         <NavigationPressable
             accessibilityRole="button"
-            accessibilityLabel={label}
-            accessibilityHint={isAddFood ? 'Opens food search for the selected day' : "Opens today's weight editor"}
+            accessibilityLabel="Add food"
+            accessibilityHint="Opens food search for the selected day"
             focusStyle={styles.fabFocus}
             hoverStyle={styles.fabHover}
             onPress={onPress}
             style={({ pressed }) => [styles.fab, compact && styles.fabCompact, { bottom, right }, pressed && styles.fabPressed]}
         >
-            <Ionicons name={isAddFood ? 'add' : 'scale-outline'} size={24} color={colors.onPrimary} />
-            {!compact && <AppText style={styles.fabLabel}>{label}</AppText>}
+            <Ionicons name="add" size={24} color={colors.onPrimary} />
+            {!compact && <AppText style={styles.fabLabel}>Add food</AppText>}
         </NavigationPressable>
-    );
-};
+);
 
 type TabStyles = ReturnType<typeof createStyles>;
 

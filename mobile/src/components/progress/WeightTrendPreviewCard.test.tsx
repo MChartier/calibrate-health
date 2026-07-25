@@ -1,6 +1,7 @@
 import React from 'react';
 import { fireEvent, render } from '@testing-library/react-native';
 import { useQuery } from '@tanstack/react-query';
+import Svg from 'react-native-svg';
 import { WeightTrendPreviewCard } from './WeightTrendPreviewCard';
 
 jest.mock('@expo/vector-icons/Ionicons', () => () => null);
@@ -54,29 +55,23 @@ describe('WeightTrendPreviewCard', () => {
         expect(onPress).toHaveBeenCalledTimes(1);
     });
 
-    it('uses flexed chart height and sample metadata after the card receives free space', () => {
+    it('fills its flexed preview immediately', () => {
+        const screen = render(<WeightTrendPreviewCard onPress={jest.fn()} />);
+
+        expect(screen.getByLabelText('30-day weight trend preview')).toHaveProp('height', '100%');
+    });
+
+    it('draws against the measured canvas without stretching its markers', () => {
         const screen = render(<WeightTrendPreviewCard onPress={jest.fn()} />);
 
         fireEvent(
-            screen.getByLabelText('Open full weight trend'),
-            'layout',
-            { nativeEvent: { layout: { width: 340, height: 360 } } }
-        );
-        fireEvent(
             screen.getByTestId('weight-trend-preview-canvas'),
             'layout',
-            { nativeEvent: { layout: { width: 340, height: 176 } } }
+            { nativeEvent: { layout: { width: 480, height: 320 } } }
         );
 
-        expect(screen.getByLabelText('30-day weight trend preview')).toHaveProp('height', 176);
-        expect(screen.getByText('2 total weigh-ins')).toBeTruthy();
-        expect(screen.getByText('1-day history')).toBeTruthy();
-
-        fireEvent(
-            screen.getByTestId('weight-trend-preview-canvas'),
-            'layout',
-            { nativeEvent: { layout: { width: 340, height: 500 } } }
-        );
-        expect(screen.getByLabelText('30-day weight trend preview')).toHaveProp('height', 260);
+        const chart = screen.UNSAFE_getByType(Svg);
+        expect(chart.props.viewBox).toBe('0 0 480 320');
+        expect(chart.props.preserveAspectRatio).toBeUndefined();
     });
 });
