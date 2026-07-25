@@ -6,7 +6,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { MEAL_PERIODS, type MealPeriod } from '@calibrate/shared';
-import type { FoodLogCreatePayload, FoodSearchResult } from '@calibrate/api-client';
+import type { FoodLogCreatePayload } from '@calibrate/api-client';
 import { AppButton } from '../src/components/AppButton';
 import { AppCard } from '../src/components/AppCard';
 import { AppText } from '../src/components/AppText';
@@ -27,30 +27,14 @@ import {
     getBarcodeLookupErrorMessage,
     getBarcodeLookupStatus,
     getCameraPermissionState,
-    getProviderAttribution
+    getProviderAttribution,
+    resolveBarcodeFoodMatch
 } from '../src/barcode/workflow';
 
 function parseMeal(value: unknown): MealPeriod {
     return typeof value === 'string' && MEAL_OPTIONS.includes(value as MealPeriod)
         ? value as MealPeriod
         : MEAL_PERIODS.BREAKFAST;
-}
-
-function buildBarcodeFoodPayload(result: FoodSearchResult, code: string, date: string, meal: MealPeriod): FoodLogCreatePayload {
-    const calories = typeof result.calories === 'number' ? Math.round(result.calories) : 0;
-
-    return {
-        date,
-        meal_period: meal,
-        name: result.name,
-        calories,
-        servings_consumed: 1,
-        calories_per_serving_snapshot: calories,
-        external_source: result.source ?? null,
-        external_id: result.id,
-        brand: result.brand ?? null,
-        barcode: result.barcode ?? code
-    };
 }
 
 export default function BarcodeScreen() {
@@ -73,14 +57,13 @@ export default function BarcodeScreen() {
         mutationFn: (code: string) => api.searchFood('', code)
     });
     const logFood = useMutation({
-        mutationFn: (result: FoodSearchResult) => {
+        mutationFn: (payload: FoodLogCreatePayload) => {
             if (foodDayQuery.data?.status !== 'OPEN') {
                 throw new Error('Backfill this day before adding food.');
             }
             if (!barcode) {
                 throw new Error('Scan a barcode before logging food.');
             }
-            const payload = buildBarcodeFoodPayload(result, barcode, selectedDate, meal);
             return executeOrQueueMutation({
                 operation: OFFLINE_MUTATION_OPERATIONS.CREATE_FOOD_LOG,
                 payload,
@@ -252,12 +235,20 @@ export default function BarcodeScreen() {
         lookup.mutate(decision.barcode);
     }
 
-    const first = lookup.data?.items[0];
+    const firstProviderItem = lookup.data?.items[0];
+    const match = barcode
+        ? resolveBarcodeFoodMatch({
+              value: firstProviderItem,
+              barcode,
+              date: selectedDate,
+              meal
+          })
+        : null;
     const lookupStatus = getBarcodeLookupStatus({
         hasBarcode: barcode !== null,
         isPending: lookup.isPending,
         isSuccess: lookup.isSuccess,
-        hasResult: Boolean(first),
+        hasResult: Boolean(match),
         hasError: Boolean(lookup.error)
     });
     const providerAttribution = getProviderAttribution(lookup.data?.provider, lookup.data?.attribution);
@@ -283,7 +274,17 @@ export default function BarcodeScreen() {
     else if (lookupStatus === 'searching') statusMessage = 'Searching food providers...';
     else if (lookupStatus === 'no-result') statusMessage = 'No matching food was found. Try again or scan a different barcode.';
     else if (lookupStatus === 'error' && lookupErrorMessage) statusMessage = lookupErrorMessage;
-    else if (lookupStatus === 'result' && first) statusMessage = `Found ${first.name}.`;
+    else if (lookupStatus === 'result' && match) statusMessage = `Found ${match.item.name}.`;
+
+    const resultDetails = match
+        ? [match.item.brand, match.measure?.label].filter(Boolean).join(' | ')
+        : '';
+    let logButtonTitle = `Log to ${selectedDate}`;
+    if (logFood.isPending) {
+        logButtonTitle = 'Logging...';
+    } else if (match?.calories !== null && match?.calories !== undefined) {
+        logButtonTitle = `Log ${formatCalories(match.calories)} to ${selectedDate}`;
+    }
 
     return (
         <Screen scroll={false} style={styles.root}>
@@ -316,15 +317,22 @@ export default function BarcodeScreen() {
                     >
                         {statusMessage}
                     </AppText>
-                    {first && (
+                    {match && (
                         <View
                             accessible
-                            accessibilityLabel={`${first.name}, ${first.brand ?? 'provider result'}, ${formatCalories(first.calories)}`}
+                            accessibilityLabel={`${match.item.name}, ${resultDetails || 'provider result'}, ${formatCalories(match.calories)}`}
                             style={styles.result}
                         >
-                            <AppText variant="body">{first.name}</AppText>
-                            <AppText variant="caption">{first.brand ?? 'Food provider result'}</AppText>
-                            <AppText variant="label">{formatCalories(first.calories)}</AppText>
+                            <AppText variant="body">{match.item.name}</AppText>
+                            <AppText variant="caption">{resultDetails || 'Food provider result'}</AppText>
+                            {match.calories !== null && (
+                                <AppText variant="label">{formatCalories(match.calories)}</AppText>
+                            )}
+                            {match.error && (
+                                <AppText accessibilityRole="alert" style={styles.error}>
+                                    {match.error}
+                                </AppText>
+                            )}
                         </View>
                     )}
                     {providerAttribution && (
@@ -360,11 +368,11 @@ export default function BarcodeScreen() {
                     <AppButton
                         accessibilityRole="button"
                         accessibilityHint="Adds the matched food to the selected day and meal."
-                        title={logFood.isPending ? 'Logging...' : `Log to ${selectedDate}`}
-                        disabled={!first || lookupStatus !== 'result' || logFood.isPending}
+                        title={logButtonTitle}
+                        disabled={!match?.payload || lookupStatus !== 'result' || logFood.isPending}
                         leftIcon={<Ionicons name="add" size={18} color={theme.colors.onPrimary} />}
                         onPress={() => {
-                            if (first) logFood.mutate(first);
+                            if (match?.payload) logFood.mutate(match.payload);
                         }}
                     />
                     {(lookupStatus === 'no-result' || lookupStatus === 'error') && barcode && (

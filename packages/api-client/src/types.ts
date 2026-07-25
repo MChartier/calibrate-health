@@ -594,20 +594,40 @@ export type FoodLogUpdatePayload = Partial<{
     servings_consumed: number | null;
 }>;
 
+export type FoodSearchNutrients = {
+    calories: number;
+    protein?: number;
+    fat?: number;
+    carbs?: number;
+};
+
+export type FoodSearchMeasure = {
+    label: string;
+    gramWeight?: number;
+    quantity?: number;
+    unit?: string;
+};
+
 export type FoodSearchResult = {
     id: string;
-    name: string;
-    brand?: string | null;
-    calories?: number | null;
-    source?: string;
-    barcode?: string | null;
-    servingSize?: string | null;
-    measures?: unknown[];
+    source: string;
+    description: string;
+    brand?: string;
+    barcode?: string;
+    locale?: string;
+    availableMeasures: FoodSearchMeasure[];
+    nutrientsPer100g?: FoodSearchNutrients;
+    nutrientsForRequest?: {
+        grams: number;
+        nutrients: FoodSearchNutrients;
+        note?: string;
+    };
 };
 
 export type FoodSearchResponse = {
     items: FoodSearchResult[];
     provider?: string;
+    supportsBarcodeLookup?: boolean;
     attribution?: string;
 };
 
