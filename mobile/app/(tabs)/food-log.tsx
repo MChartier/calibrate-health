@@ -17,7 +17,7 @@ import { useFoodDayStatus } from '../../src/components/FoodTrackingStatus';
 import { NumberStepperField } from '../../src/components/NumberStepperField';
 import { OverlaySelect } from '../../src/components/OverlaySelect';
 import { PageHeader } from '../../src/components/PageHeader';
-import { Screen } from '../../src/components/Screen';
+import { TabScreen } from '../../src/components/TabScreen';
 import { SectionHeader } from '../../src/components/SectionHeader';
 import { SkeletonBlock } from '../../src/components/SkeletonBlock';
 import { TextField } from '../../src/components/TextField';
@@ -171,7 +171,7 @@ export default function FoodLogScreen() {
     }
 
     return (
-        <Screen safeTop reserveBottomTabs>
+        <TabScreen safeTop reserveFab={canEditFood}>
             <PageHeader
                 title="Food log"
                 description="Review and edit every meal entry."
@@ -256,7 +256,7 @@ export default function FoodLogScreen() {
                     />
                 </View>
             </BottomSheetModal>
-        </Screen>
+        </TabScreen>
     );
 }
 

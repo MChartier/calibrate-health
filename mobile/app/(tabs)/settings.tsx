@@ -13,7 +13,7 @@ import { WearPairingCard } from '../../src/components/WearPairingCard';
 import { BottomSheetModal } from '../../src/components/BottomSheetModal';
 import { DatePickerField } from '../../src/components/DatePickerField';
 import { NumberStepperField } from '../../src/components/NumberStepperField';
-import { Screen } from '../../src/components/Screen';
+import { TabScreen } from '../../src/components/TabScreen';
 import { SectionHeader } from '../../src/components/SectionHeader';
 import { SegmentedControl } from '../../src/components/SegmentedControl';
 import { TextField } from '../../src/components/TextField';
@@ -344,7 +344,7 @@ export default function SettingsScreen() {
     }
 
     return (
-        <Screen reserveBottomTabs style={{ backgroundColor: themeColors.background }}>
+        <TabScreen>
             <AppCard style={{ backgroundColor: themeColors.surface, borderColor: themeColors.outlineVariant }}>
                 <View style={styles.accountSummary}>
                     <View style={[styles.summaryAvatar, { backgroundColor: themeColors.primaryContainer }]}>
@@ -933,7 +933,7 @@ export default function SettingsScreen() {
                     />
                 </View>
             </BottomSheetModal>
-        </Screen>
+        </TabScreen>
     );
 }
 
