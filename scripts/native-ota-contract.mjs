@@ -17,11 +17,9 @@ const NATIVE_INPUT_FILES = Object.freeze([
   'mobile/app.json',
   'mobile/app.config.js',
   'mobile/eas.json',
-  'mobile/package.json',
   'mobile/assets/adaptive-icon.png',
   'mobile/assets/icon.png',
-  'mobile/assets/notification-icon.png',
-  'shared/release.json'
+  'mobile/assets/notification-icon.png'
 ]);
 
 const NATIVE_INPUT_DIRECTORIES = Object.freeze([
@@ -31,6 +29,17 @@ const NATIVE_INPUT_DIRECTORIES = Object.freeze([
 ]);
 
 const GENERATED_DIRECTORY_NAMES = new Set(['.gradle', '.kotlin', '.cxx', 'build', 'node_modules']);
+
+const NATIVE_BUILD_TOOL_PACKAGES = new Set([
+  '@expo/config',
+  '@expo/config-plugins',
+  '@expo/image-utils',
+  '@expo/prebuild-config',
+  '@expo/sdk-runtime-versions',
+  'expo',
+  'hermes-engine',
+  'react-native'
+]);
 
 function normalizedRelativePath(root, file) {
   return path.relative(root, file).split(path.sep).join('/');
@@ -67,8 +76,15 @@ function dependencyPackageKey(packages, currentKey, dependencyName) {
   return packages[rootKey] ? rootKey : null;
 }
 
-/** Select only the production dependency graph reachable from the mobile workspace. */
-export function createMobileLockSnapshot(lock) {
+function packageNameFromLockEntry(key, entry) {
+  if (entry.name) return entry.name;
+  const marker = key.lastIndexOf('node_modules/');
+  if (marker < 0) return null;
+  const segments = key.slice(marker + 'node_modules/'.length).split('/');
+  return segments[0]?.startsWith('@') ? segments.slice(0, 2).join('/') : segments[0];
+}
+
+function productionPackageEntries(lock) {
   const packages = lock?.packages;
   if (!packages?.mobile) throw new Error('package-lock.json is missing the mobile workspace.');
   const selected = new Map();
@@ -90,13 +106,56 @@ export function createMobileLockSnapshot(lock) {
       if (dependencyKey) pending.push(dependencyKey);
     }
   }
-  return [...selected.entries()]
+  return selected;
+}
+
+function expoModuleSupportsAndroid(packageDirectory) {
+  const configPath = path.join(packageDirectory, 'expo-module.config.json');
+  if (!fs.existsSync(configPath)) return false;
+  const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+  return config.platforms?.includes('android') || config.android !== undefined;
+}
+
+function packageContributesAndroidNativeCode(packageDirectory, packageName) {
+  if (NATIVE_BUILD_TOOL_PACKAGES.has(packageName)) return true;
+  if (!fs.existsSync(packageDirectory)) return false;
+  return fs.existsSync(path.join(packageDirectory, 'android')) ||
+    expoModuleSupportsAndroid(packageDirectory) ||
+    fs.existsSync(path.join(packageDirectory, 'app.plugin.js')) ||
+    fs.existsSync(path.join(packageDirectory, 'react-native.config.js'));
+}
+
+/** Discover installed production packages that contribute Android code or native configuration. */
+export function discoverAndroidNativePackageNames(root, lock) {
+  const packageNames = new Set();
+  for (const [key, entry] of productionPackageEntries(lock)) {
+    const packageName = packageNameFromLockEntry(key, entry);
+    if (!packageName) continue;
+    const packageDirectory = path.join(root, key);
+    if (packageContributesAndroidNativeCode(packageDirectory, packageName)) packageNames.add(packageName);
+  }
+  return packageNames;
+}
+
+/** Snapshot resolved native package identities without hashing unrelated JS and tooling dependencies. */
+export function createAndroidNativeLockSnapshot(lock, nativePackageNames) {
+  return [...productionPackageEntries(lock).entries()]
+    .map(([key, value]) => [key, packageNameFromLockEntry(key, value), value])
+    .filter(([, packageName]) => packageName && nativePackageNames.has(packageName))
     .sort(([left], [right]) => left.localeCompare(right))
-    .map(([key, value]) => [key, value]);
+    .map(([key, packageName, value]) => [
+      key,
+      {
+        name: packageName,
+        version: value.version ?? null,
+        resolved: value.resolved ?? null,
+        integrity: value.integrity ?? null
+      }
+    ]);
 }
 
 /** Hash every tracked input that can change the Android or Wear native runtime. */
-export function createNativeRuntimeFingerprint(root) {
+export function createNativeRuntimeFingerprint(root, options = {}) {
   const files = [
     ...NATIVE_INPUT_FILES.map((file) => path.join(root, file)),
     ...NATIVE_INPUT_DIRECTORIES.flatMap((directory) => filesUnder(root, directory))
@@ -115,14 +174,20 @@ export function createNativeRuntimeFingerprint(root) {
     digest.update('\0');
   }
   const lock = JSON.parse(fs.readFileSync(path.join(root, 'package-lock.json'), 'utf8'));
-  digest.update('mobile-package-lock\0');
-  digest.update(JSON.stringify(createMobileLockSnapshot(lock)));
+  const packageMetadataRoot = options.packageMetadataRoot ?? root;
+  const metadataLock = packageMetadataRoot === root
+    ? lock
+    : JSON.parse(fs.readFileSync(path.join(packageMetadataRoot, 'package-lock.json'), 'utf8'));
+  const nativePackageNames = options.nativePackageNames ??
+    discoverAndroidNativePackageNames(packageMetadataRoot, metadataLock);
+  digest.update('android-native-package-lock\0');
+  digest.update(JSON.stringify(createAndroidNativeLockSnapshot(lock, nativePackageNames)));
   digest.update('\0');
   return {
     sha256: digest.digest('hex'),
     files: [
       ...files.map((file) => normalizedRelativePath(root, file)),
-      'package-lock.json#mobile-production-graph'
+      'package-lock.json#android-native-packages'
     ]
   };
 }
