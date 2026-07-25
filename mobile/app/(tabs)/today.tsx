@@ -96,7 +96,13 @@ export default function TodayScreen() {
     return (
         <Screen reserveBottomTabs style={styles.screenContent}>
             <DateNavigation navigation={dateNavigation} />
-            {isPaused && <DayStatusCard date={selectedDate} isToday={isToday} compact />}
+            {isPaused && (
+                <DayStatusCard
+                    date={selectedDate}
+                    isToday={isToday}
+                    compact
+                />
+            )}
 
             {showContentSkeleton ? (
                 <LogContentSkeleton />
@@ -130,7 +136,13 @@ export default function TodayScreen() {
                 </>
             )}
 
-            {!isPaused && <DayStatusCard date={selectedDate} isToday={isToday} compact />}
+            {!isPaused && (
+                <DayStatusCard
+                    date={selectedDate}
+                    isToday={isToday}
+                    compact
+                />
+            )}
 
             {foodQuery.error && <AppText style={{ color: colors.danger }}>{foodQuery.error.message}</AppText>}
             {profileQuery.error && <AppText style={{ color: colors.danger }}>{profileQuery.error.message}</AppText>}

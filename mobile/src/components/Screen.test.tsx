@@ -27,7 +27,12 @@ describe('Screen', () => {
         );
         const contentStyle = StyleSheet.flatten(view.getByTestId('responsive-screen').props.contentContainerStyle);
 
-        expect(contentStyle).toEqual(expect.objectContaining({ width: '100%', maxWidth: 1040, alignSelf: 'center' }));
+        expect(contentStyle).toEqual(expect.objectContaining({
+            minHeight: '100%',
+            width: '100%',
+            maxWidth: 1040,
+            alignSelf: 'center'
+        }));
     });
 
     it('uses FAB clearance instead of stacking it on normal bottom padding', () => {

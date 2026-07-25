@@ -106,4 +106,15 @@ describe('WeightTrendCard', () => {
         expect(getAllByText('Trend')).toHaveLength(1);
         expect(getAllByText('Expected range')).toHaveLength(1);
     });
+
+    it('uses available chart height without growing beyond the visual cap', () => {
+        const screen = render(<WeightTrendCard />);
+        const canvas = screen.getByTestId('weight-trend-chart-canvas');
+
+        fireEvent(canvas, 'layout', { nativeEvent: { layout: { width: 340, height: 343 } } });
+        expect(screen.getByTestId('weight-trend-chart')).toHaveProp('height', 343);
+
+        fireEvent(canvas, 'layout', { nativeEvent: { layout: { width: 340, height: 600 } } });
+        expect(screen.getByTestId('weight-trend-chart')).toHaveProp('height', 420);
+    });
 });

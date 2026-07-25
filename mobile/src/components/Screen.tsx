@@ -33,10 +33,11 @@ export const Screen: React.FC<ScreenProps> = ({
         ? theme.spacing.xl
         : theme.spacing.lg;
     const bottomPadding = insets.bottom + (reserveBottomTabs ? BOTTOM_TAB_RESERVED_SPACE : theme.spacing.xl);
+    const topPadding = safeTop ? insets.top + theme.spacing.lg : theme.spacing.lg;
     const contentStyle = [
         styles.content,
         {
-            paddingTop: safeTop ? insets.top + theme.spacing.lg : theme.spacing.lg,
+            paddingTop: topPadding,
             paddingBottom: bottomPadding,
             paddingHorizontal: horizontalPadding
         },
@@ -54,7 +55,7 @@ export const Screen: React.FC<ScreenProps> = ({
                 style={[
                     styles.root,
                     {
-                        paddingTop: safeTop ? insets.top + theme.spacing.lg : theme.spacing.lg,
+                        paddingTop: topPadding,
                         paddingBottom: bottomPadding,
                         paddingHorizontal: horizontalPadding
                     },
@@ -96,6 +97,7 @@ function createStyles(theme: AppTheme) {
             backgroundColor: theme.colors.background
         },
         content: {
+            minHeight: '100%',
             width: '100%',
             maxWidth: DESKTOP_CONTENT_MAX_WIDTH,
             alignSelf: 'center',

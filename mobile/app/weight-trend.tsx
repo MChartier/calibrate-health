@@ -1,4 +1,5 @@
 import React from 'react';
+import { StyleSheet } from 'react-native';
 import { router } from 'expo-router';
 import { PageHeader } from '../src/components/PageHeader';
 import { Screen } from '../src/components/Screen';
@@ -15,7 +16,15 @@ export default function WeightTrendScreen() {
             <WeightTrendCard
                 title="Weight trend"
                 description="Choose a range, then tap the chart to inspect a weigh-in."
+                style={styles.trendCard}
             />
         </Screen>
     );
 }
+
+const styles = StyleSheet.create({
+    trendCard: {
+        flexGrow: 1,
+        width: '100%'
+    }
+});

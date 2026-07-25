@@ -32,6 +32,7 @@ const RANGE_OPTIONS: Array<{ value: TrendRange; label: string }> = [
 const DEFAULT_CHART_WIDTH = 340;
 const MIN_CHART_WIDTH = 280;
 const CHART_HEIGHT = 188;
+const MAX_CHART_HEIGHT = 420; // Caps chart growth so larger screens retain a balanced details layout.
 // Axis gutters reserve room for weight and date labels without crowding the data.
 const CHART_PADDING_LEFT = 58;
 const CHART_PADDING_RIGHT = 12;
@@ -114,7 +115,7 @@ function getChartPressX(nativeEvent: ChartPressNativeEvent): number | null {
     return typeof pressX === 'number' && Number.isFinite(pressX) ? pressX : null;
 }
 
-function getChartLayout(metrics: TrendMetricEntry[], canvasWidth: number): ChartLayout {
+function getChartLayout(metrics: TrendMetricEntry[], canvasWidth: number, chartHeight: number): ChartLayout {
     const chronologicalMetrics = metrics
         .slice()
         .filter((metric) => Number.isFinite(metric.weight))
@@ -146,7 +147,7 @@ function getChartLayout(metrics: TrendMetricEntry[], canvasWidth: number): Chart
     axisMax = roundTickValue(axisMax);
     const axisRange = axisMax - axisMin;
     const drawableWidth = width - CHART_PADDING_LEFT - CHART_PADDING_RIGHT;
-    const drawableHeight = CHART_HEIGHT - CHART_PADDING_TOP - CHART_PADDING_BOTTOM;
+    const drawableHeight = chartHeight - CHART_PADDING_TOP - CHART_PADDING_BOTTOM;
     const lastIndex = Math.max(chronologicalMetrics.length - 1, 1);
     const yForValue = (value: number) => CHART_PADDING_TOP + drawableHeight - ((value - axisMin) / axisRange) * drawableHeight;
 
@@ -207,14 +208,15 @@ export const WeightTrendCard: React.FC<WeightTrendCardProps> = ({
     const [range, setRange] = useState<TrendRange>('month');
     const [selectedPointKey, setSelectedPointKey] = useState<string | null>(null);
     const [chartCanvasWidth, setChartCanvasWidth] = useState(DEFAULT_CHART_WIDTH);
+    const [chartHeight, setChartHeight] = useState(CHART_HEIGHT);
     const trendQuery = useQuery({
         queryKey: ['mobile-metrics-trend', range],
         queryFn: () => api.getTrendMetrics({ range })
     });
 
     const chartLayout = useMemo(
-        () => getChartLayout(trendQuery.data?.metrics ?? [], chartCanvasWidth),
-        [chartCanvasWidth, trendQuery.data?.metrics]
+        () => getChartLayout(trendQuery.data?.metrics ?? [], chartCanvasWidth, chartHeight),
+        [chartCanvasWidth, chartHeight, trendQuery.data?.metrics]
     );
     const chartPoints = chartLayout.points;
     const selectedPoint = useMemo(() => {
@@ -247,7 +249,7 @@ export const WeightTrendCard: React.FC<WeightTrendCardProps> = ({
     }
 
     return (
-        <AppCard {...props} style={style}>
+        <AppCard {...props} style={[styles.card, style]}>
             <SectionHeader title={title} description={description} />
             <View style={styles.rangeRow}>
                 {RANGE_OPTIONS.map((option) => (
@@ -286,10 +288,22 @@ export const WeightTrendCard: React.FC<WeightTrendCardProps> = ({
             ) : (
                 <View style={styles.chartShell}>
                     <View
+                        testID="weight-trend-chart-canvas"
                         style={styles.chartCanvas}
-                        onLayout={(event) => setChartCanvasWidth(event.nativeEvent.layout.width)}
+                        onLayout={(event) => {
+                            setChartCanvasWidth(event.nativeEvent.layout.width);
+                            setChartHeight(Math.min(
+                                MAX_CHART_HEIGHT,
+                                Math.max(event.nativeEvent.layout.height, CHART_HEIGHT)
+                            ));
+                        }}
                     >
-                        <Svg width="100%" height={CHART_HEIGHT} viewBox={`0 0 ${chartLayout.width} ${CHART_HEIGHT}`}>
+                        <Svg
+                            testID="weight-trend-chart"
+                            width="100%"
+                            height={chartHeight}
+                            viewBox={`0 0 ${chartLayout.width} ${chartHeight}`}
+                        >
                             {chartLayout.yTicks.map((tick) => (
                                 <React.Fragment key={tick.value}>
                                     <Line
@@ -315,9 +329,9 @@ export const WeightTrendCard: React.FC<WeightTrendCardProps> = ({
                             ))}
                             <Line
                                 x1={CHART_PADDING_LEFT}
-                                y1={CHART_HEIGHT - CHART_PADDING_BOTTOM}
+                                y1={chartHeight - CHART_PADDING_BOTTOM}
                                 x2={chartLayout.width - CHART_PADDING_RIGHT}
-                                y2={CHART_HEIGHT - CHART_PADDING_BOTTOM}
+                                y2={chartHeight - CHART_PADDING_BOTTOM}
                                 stroke={themeColors.outlineVariant}
                                 strokeWidth={1}
                             />
@@ -338,16 +352,16 @@ export const WeightTrendCard: React.FC<WeightTrendCardProps> = ({
                                 <React.Fragment key={tick.key}>
                                     <Line
                                         x1={tick.x}
-                                        y1={CHART_HEIGHT - CHART_PADDING_BOTTOM}
+                                        y1={chartHeight - CHART_PADDING_BOTTOM}
                                         x2={tick.x}
-                                        y2={CHART_HEIGHT - CHART_PADDING_BOTTOM + 4}
+                                        y2={chartHeight - CHART_PADDING_BOTTOM + 4}
                                         stroke={themeColors.outlineVariant}
                                         strokeWidth={1}
                                     />
                                     <SvgText
                                         accessibilityLabel={`${tick.label} date axis label`}
                                         x={tick.x}
-                                        y={CHART_HEIGHT - 6}
+                                        y={chartHeight - 6}
                                         fill={themeColors.onSurfaceVariant}
                                         fontSize={11}
                                         textAnchor={tick.textAnchor}
@@ -417,6 +431,9 @@ const PointMetric: React.FC<{ label: string; value: string; tone: 'info' | 'prim
 };
 
 const createStyles = (theme: AppTheme) => StyleSheet.create({
+    card: {
+        width: '100%'
+    },
     rangeRow: {
         flexDirection: 'row',
         gap: spacing.sm
@@ -425,6 +442,7 @@ const createStyles = (theme: AppTheme) => StyleSheet.create({
         flex: 1
     },
     chartShell: {
+        flexGrow: 1,
         borderRadius: radius.md,
         backgroundColor: theme.colors.surface,
         borderColor: theme.colors.outlineVariant,
@@ -434,9 +452,12 @@ const createStyles = (theme: AppTheme) => StyleSheet.create({
     },
     chartCanvas: {
         position: 'relative',
+        flexGrow: 1,
+        flexShrink: 1,
         minHeight: CHART_HEIGHT
     },
     emptyChart: {
+        flexGrow: 1,
         minHeight: CHART_HEIGHT,
         borderRadius: radius.md,
         backgroundColor: theme.colors.surfaceContainer,
@@ -445,6 +466,7 @@ const createStyles = (theme: AppTheme) => StyleSheet.create({
         padding: spacing.lg
     },
     singlePointState: {
+        flexGrow: 1,
         minHeight: 116,
         flexDirection: 'row',
         alignItems: 'center',
