@@ -1,9 +1,11 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Animated, Easing, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, View, type ViewStyle } from 'react-native';
+import { Animated, Easing, KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, View, type ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { type AppTheme, useAppTheme } from '../theme';
 import { useReducedMotionPreference } from '../hooks/useReducedMotionPreference';
+import { useVisualViewportHeight } from '../hooks/useVisualViewportHeight';
 import { getKeyboardAvoidingBehavior } from '../utils/keyboard';
+import { KeyboardAwareScrollView } from './KeyboardAwareScrollView';
 
 type BottomSheetModalProps = {
     visible: boolean;
@@ -27,6 +29,7 @@ export const BottomSheetModal: React.FC<BottomSheetModalProps> = ({
     const theme = useAppTheme();
     const styles = React.useMemo(() => createStyles(theme), [theme]);
     const reduceMotion = useReducedMotionPreference();
+    const visualViewportHeight = useVisualViewportHeight();
     const [shouldRender, setShouldRender] = useState(visible);
     const backdropOpacity = useRef(new Animated.Value(0)).current;
     const sheetProgress = useRef(new Animated.Value(1)).current;
@@ -86,7 +89,11 @@ export const BottomSheetModal: React.FC<BottomSheetModalProps> = ({
         <Modal visible transparent animationType="none" presentationStyle="overFullScreen" onRequestClose={onRequestClose}>
             <KeyboardAvoidingView
                 behavior={getKeyboardAvoidingBehavior(Platform.OS)}
-                style={styles.root}
+                style={[
+                    styles.root,
+                    visualViewportHeight !== undefined && styles.webViewportRoot,
+                    visualViewportHeight !== undefined && { height: visualViewportHeight }
+                ]}
             >
                 <Pressable accessibilityRole="button" accessibilityLabel="Close dialog" style={StyleSheet.absoluteFill} onPress={onRequestClose}>
                     <Animated.View style={[styles.backdrop, { opacity: backdropOpacity }]} />
@@ -101,16 +108,12 @@ export const BottomSheetModal: React.FC<BottomSheetModalProps> = ({
                         }
                     ]}
                 >
-                    <ScrollView
-                        automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}
+                    <KeyboardAwareScrollView
                         contentContainerStyle={[styles.content, { paddingBottom: Math.max(theme.spacing.lg, insets.bottom + theme.spacing.sm) }]}
-                        keyboardDismissMode="on-drag"
-                        keyboardShouldPersistTaps="handled"
-                        showsVerticalScrollIndicator={false}
                     >
                         <View style={styles.handle} />
                         {children}
-                    </ScrollView>
+                    </KeyboardAwareScrollView>
                 </Animated.View>
             </KeyboardAvoidingView>
         </Modal>
@@ -122,6 +125,10 @@ function createStyles(theme: AppTheme) {
     root: {
         flex: 1,
         justifyContent: 'flex-end'
+    },
+    webViewportRoot: {
+        flex: 0,
+        width: '100%'
     },
     backdrop: {
         flex: 1,

@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, StyleSheet, useWindowDimensions, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Redirect, router } from 'expo-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -19,6 +19,7 @@ import { CalibrateLogo } from '../src/components/CalibrateLogo';
 import { DatePickerField } from '../src/components/DatePickerField';
 import { HealthConnectOnboardingStep } from '../src/components/HealthConnectOnboardingStep';
 import { LoadingState } from '../src/components/LoadingState';
+import { KeyboardAwareScrollView } from '../src/components/KeyboardAwareScrollView';
 import { NumberStepperField } from '../src/components/NumberStepperField';
 import { GoalDailyChangeSelect } from '../src/components/GoalDailyChangeSelect';
 import { Screen } from '../src/components/Screen';
@@ -558,18 +559,15 @@ export default function OnboardingScreen() {
                 behavior={getKeyboardAvoidingBehavior(Platform.OS)}
                 style={styles.wizardRegion}
             >
-                <ScrollView
-                    automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}
+                <KeyboardAwareScrollView
                     contentContainerStyle={styles.wizardContent}
-                    keyboardDismissMode="on-drag"
-                    keyboardShouldPersistTaps="handled"
                     showsVerticalScrollIndicator={false}
                 >
                     <AppCard>
                         <SectionHeader title={activeStep.title} description={activeStep.description} />
                         {renderStepContent()}
                     </AppCard>
-                </ScrollView>
+                </KeyboardAwareScrollView>
 
                 <View style={[styles.actionBar, { borderTopColor: themeColors.outlineVariant, backgroundColor: themeColors.background }]}>
                     {(validationError || setupMutation.error) && (

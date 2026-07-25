@@ -1,7 +1,8 @@
 import React from 'react';
-import { Platform, ScrollView, StyleSheet, View, type ViewProps, useWindowDimensions } from 'react-native';
+import { Platform, StyleSheet, View, type ViewProps, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { type AppTheme, useAppTheme } from '../theme';
+import { KeyboardAwareScrollView } from './KeyboardAwareScrollView';
 
 type ScreenProps = ViewProps & {
     scroll?: boolean;
@@ -66,19 +67,17 @@ export const Screen: React.FC<ScreenProps> = ({
     }
 
     return (
-        <ScrollView
+        <KeyboardAwareScrollView
             {...viewProps}
             accessibilityRole={accessibilityRole}
             role={resolvedRole}
             focusable={Platform.OS === 'web'}
             tabIndex={Platform.OS === 'web' ? -1 : undefined}
             contentContainerStyle={contentStyle}
-            keyboardDismissMode="on-drag"
-            keyboardShouldPersistTaps="handled"
             style={styles.scroller}
         >
             {children}
-        </ScrollView>
+        </KeyboardAwareScrollView>
     );
 };
 
