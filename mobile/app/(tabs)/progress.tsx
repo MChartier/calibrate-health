@@ -9,7 +9,7 @@ import { BottomSheetModal } from '../../src/components/BottomSheetModal';
 import { GoalProgressCard } from '../../src/components/GoalProgressCard';
 import { GoalDailyChangeSelect } from '../../src/components/GoalDailyChangeSelect';
 import { NumberStepperField } from '../../src/components/NumberStepperField';
-import { Screen } from '../../src/components/Screen';
+import { TabScreen } from '../../src/components/TabScreen';
 import { SectionHeader } from '../../src/components/SectionHeader';
 import { SegmentedControl } from '../../src/components/SegmentedControl';
 import { WeightTrendPreviewCard } from '../../src/components/progress/WeightTrendPreviewCard';
@@ -129,9 +129,7 @@ export default function ProgressScreen() {
 
     return (
         <>
-            <Screen
-                style={{ backgroundColor: themeColors.background }}
-            >
+            <TabScreen>
                 <GoalProgressCard
                     latestMetric={metricsQuery.data?.[0]}
                     goal={goalQuery.data}
@@ -142,7 +140,7 @@ export default function ProgressScreen() {
                 <WeightTrendPreviewCard
                     onPress={() => router.push('/weight-trend')}
                 />
-            </Screen>
+            </TabScreen>
 
             <BottomSheetModal visible={isGoalEditorOpen} onRequestClose={() => setIsGoalEditorOpen(false)}>
                 <SectionHeader

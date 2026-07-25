@@ -7,10 +7,8 @@ import { KeyboardAwareScrollView } from './KeyboardAwareScrollView';
 type ScreenProps = ViewProps & {
     scroll?: boolean;
     safeTop?: boolean;
-    reserveBottomTabs?: boolean;
 };
 
-const BOTTOM_TAB_RESERVED_SPACE = 88; // Expanded FAB height plus two layout gaps above the tab bar.
 const DESKTOP_CONTENT_MAX_WIDTH = 1040; // Keeps forms and metrics readable on wide browser windows.
 const WIDE_LAYOUT_BREAKPOINT = 840;
 
@@ -18,7 +16,6 @@ export const Screen: React.FC<ScreenProps> = ({
     children,
     scroll = true,
     safeTop = false,
-    reserveBottomTabs = false,
     style,
     accessibilityRole,
     role,
@@ -32,7 +29,7 @@ export const Screen: React.FC<ScreenProps> = ({
     const horizontalPadding = Platform.OS === 'web' && width >= WIDE_LAYOUT_BREAKPOINT
         ? theme.spacing.xl
         : theme.spacing.lg;
-    const bottomPadding = insets.bottom + (reserveBottomTabs ? BOTTOM_TAB_RESERVED_SPACE : theme.spacing.xl);
+    const bottomPadding = insets.bottom + theme.spacing.xl;
     const topPadding = safeTop ? insets.top + theme.spacing.lg : theme.spacing.lg;
     const contentStyle = [
         styles.content,

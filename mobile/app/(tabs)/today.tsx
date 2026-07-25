@@ -10,7 +10,7 @@ import { DateNavigation } from '../../src/components/DateNavigation';
 import { FoodLogSummaryCard } from '../../src/components/FoodLogSummaryCard';
 import { DayStatusCard, useFoodDayStatus } from '../../src/components/FoodTrackingStatus';
 import { LogContentSkeleton } from '../../src/components/LogContentSkeleton';
-import { Screen } from '../../src/components/Screen';
+import { TabScreen } from '../../src/components/TabScreen';
 import { TodayWeightCard } from '../../src/components/TodayWeightCard';
 import { WeightEntrySheet } from '../../src/components/WeightEntrySheet';
 import { useAuth } from '../../src/auth/AuthContext';
@@ -94,7 +94,7 @@ export default function TodayScreen() {
         (profileQuery.isLoading || foodQuery.isLoading || metricsQuery.isLoading || foodDayQuery.isLoading);
 
     return (
-        <Screen style={styles.screenContent}>
+        <TabScreen style={styles.screenContent}>
             <DateNavigation navigation={dateNavigation} />
             {isPaused && (
                 <DayStatusCard
@@ -160,7 +160,7 @@ export default function TodayScreen() {
                 date={selectedDate}
                 onClose={() => setIsWeightSheetOpen(false)}
             />
-        </Screen>
+        </TabScreen>
     );
 }
 
