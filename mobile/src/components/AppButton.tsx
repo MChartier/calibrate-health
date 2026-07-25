@@ -25,6 +25,9 @@ export const AppButton: React.FC<AppButtonProps> = ({
     let labelStyle: StyleProp<TextStyle> = styles.secondaryLabel;
     if (variant === 'primary') labelStyle = styles.primaryLabel;
     if (variant === 'danger') labelStyle = styles.dangerLabel;
+    const renderedLeftIcon = disabled && React.isValidElement<{ color?: string }>(leftIcon)
+        ? React.cloneElement(leftIcon, { color: theme.colors.onSurfaceVariant })
+        : leftIcon;
 
     return <Pressable
         {...props}
@@ -41,7 +44,7 @@ export const AppButton: React.FC<AppButtonProps> = ({
         ]}
     >
         <View style={styles.content}>
-            {leftIcon}
+            {renderedLeftIcon}
             <AppText
                 numberOfLines={2}
                 style={[
@@ -73,7 +76,7 @@ function createStyles(theme: AppTheme) {
     secondary: {
         backgroundColor: theme.colors.surfaceContainer,
         borderColor: theme.colors.outlineVariant,
-        borderWidth: StyleSheet.hairlineWidth
+        borderWidth: theme.stroke.control
     },
     danger: {
         backgroundColor: theme.colors.danger
@@ -87,7 +90,7 @@ function createStyles(theme: AppTheme) {
     disabledSolid: {
         backgroundColor: theme.colors.surfaceContainer,
         borderColor: theme.colors.outlineVariant,
-        borderWidth: StyleSheet.hairlineWidth,
+        borderWidth: theme.stroke.control,
         shadowOpacity: 0,
         elevation: 0,
         opacity: 1

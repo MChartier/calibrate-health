@@ -117,7 +117,7 @@ function createStyles(theme: AppTheme) {
         justifyContent: 'center',
         backgroundColor: theme.colors.surfaceContainer,
         borderColor: theme.colors.outlineVariant,
-        borderWidth: StyleSheet.hairlineWidth,
+        borderWidth: theme.stroke.control,
         overflow: 'hidden'
     },
     datePill: {
@@ -130,7 +130,7 @@ function createStyles(theme: AppTheme) {
         gap: theme.spacing.sm,
         backgroundColor: theme.colors.surfaceContainerLow,
         borderColor: theme.colors.outlineVariant,
-        borderWidth: StyleSheet.hairlineWidth,
+        borderWidth: theme.stroke.control,
         paddingHorizontal: theme.spacing.md,
         paddingVertical: theme.spacing.xs,
         overflow: 'hidden'

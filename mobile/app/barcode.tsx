@@ -89,7 +89,7 @@ export default function BarcodeScreen() {
 
     if (foodDayQuery.data?.status !== 'OPEN') {
         return (
-            <Screen>
+            <Screen safeTop>
                 <AppCard>
                     <SectionHeader
                         headingLevel={1}
@@ -181,7 +181,7 @@ export default function BarcodeScreen() {
         }
 
         return (
-            <Screen>
+            <Screen safeTop>
                 <AppCard>
                     <SectionHeader
                         headingLevel={1}
@@ -287,7 +287,7 @@ export default function BarcodeScreen() {
     }
 
     return (
-        <Screen scroll={false} style={styles.root}>
+        <Screen scroll={false} safeTop style={styles.root}>
             <CameraView
                 style={styles.camera}
                 facing="back"
@@ -411,7 +411,8 @@ export default function BarcodeScreen() {
 
 const createStyles = (theme: AppTheme) => StyleSheet.create({
     root: {
-        padding: 0
+        paddingHorizontal: 0,
+        paddingBottom: 0
     },
     camera: {
         flex: 1

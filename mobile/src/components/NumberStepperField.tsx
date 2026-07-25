@@ -124,7 +124,7 @@ const createStyles = (theme: AppTheme) => StyleSheet.create({
         justifyContent: 'center',
         backgroundColor: theme.colors.surfaceContainer,
         borderColor: theme.colors.outlineVariant,
-        borderWidth: StyleSheet.hairlineWidth
+        borderWidth: theme.stroke.control
     },
     pressed: {
         backgroundColor: theme.colors.surfacePressed

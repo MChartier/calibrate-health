@@ -20,6 +20,15 @@ type GoalProgressCardProps = ViewProps & {
     onEditGoal?: () => void;
 };
 
+function formatMetricDate(value: string | null | undefined): string {
+    if (!value) return 'No weigh-in yet';
+    const [datePart] = value.split('T');
+    const [year, month, day] = datePart.split('-').map(Number);
+    const parsed = new Date(year, month - 1, day);
+    if (Number.isNaN(parsed.getTime())) return datePart;
+    return `Updated ${new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' }).format(parsed)}`;
+}
+
 function describeGoalPlan(goal: GoalEntry): string {
     const mode = getGoalModeFromDailyDeficit(goal.daily_deficit);
     const dailyChange = formatSignedCalories(-goal.daily_deficit);
@@ -33,11 +42,9 @@ function describeGoalPlan(goal: GoalEntry): string {
     }
 }
 
-/**
- * Native goal tracker with progress and projection parity with the PWA card.
- */
+/** Compact native snapshot that keeps current weight and goal projection together. */
 export const GoalProgressCard: React.FC<GoalProgressCardProps> = ({
-    title = 'Current goal',
+    title = 'Progress snapshot',
     goal,
     latestMetric,
     user,
@@ -51,14 +58,28 @@ export const GoalProgressCard: React.FC<GoalProgressCardProps> = ({
 
     if (!goal) {
         return (
-            <AppCard {...props} style={style}>
-                <SectionHeader title={title} description="Latest active goal and calorie plan." />
-                <AppText variant="muted">No goal configured yet.</AppText>
-                {onEditGoal && (
-                    <View style={styles.footerActionRow}>
-                        <GoalActionButton label="Set goal" onPress={onEditGoal} theme={theme} />
+            <AppCard {...props} style={[styles.card, style]}>
+                <View style={styles.headingRow}>
+                    <SectionHeader
+                        title={title}
+                        description={formatMetricDate(latestMetric?.date)}
+                        style={styles.heading}
+                    />
+                    {onEditGoal && <GoalActionButton label="Set goal" onPress={onEditGoal} theme={theme} />}
+                </View>
+                <View style={styles.metricsRow}>
+                    <View style={styles.metricBlock}>
+                        <AppText variant="muted">Current weight</AppText>
+                        <AppText variant="screenTitle" style={styles.currentWeight}>
+                            {formatWeight(latestMetric?.weight, user?.weight_unit)}
+                        </AppText>
                     </View>
-                )}
+                    <View style={styles.projectionBlock}>
+                        <AppText variant="muted">Goal projection</AppText>
+                        <AppText variant="screenTitle" style={styles.projectionValue}>Not configured</AppText>
+                    </View>
+                </View>
+                <AppText variant="muted">Set a goal to add progress and projection details.</AppText>
             </AppCard>
         );
     }
@@ -79,28 +100,41 @@ export const GoalProgressCard: React.FC<GoalProgressCardProps> = ({
     });
 
     return (
-        <AppCard {...props} style={style}>
-            <SectionHeader title={title} description={describeGoalPlan(goal)} />
-            <View style={styles.projectionBlock}>
-                <AppText variant="caption">Projected goal date</AppText>
-                <AppText variant="subtitle" style={styles.projectionValue}>{projection}</AppText>
+        <AppCard {...props} style={[styles.card, style]}>
+            <View style={styles.headingRow}>
+                <SectionHeader
+                    title={title}
+                    description={formatMetricDate(latestMetric?.date)}
+                    style={styles.heading}
+                />
+                {onEditGoal && <GoalActionButton label="Edit goal" onPress={onEditGoal} theme={theme} />}
             </View>
-            <View style={styles.goalEndpoints}>
-                <AppText variant="muted">Start {formatWeight(goal.start_weight, user?.weight_unit)}</AppText>
-                <AppText variant="muted">Goal {formatWeight(goal.target_weight, user?.weight_unit)}</AppText>
+            <View style={styles.metricsRow}>
+                <View style={styles.metricBlock}>
+                    <AppText variant="muted">Current weight</AppText>
+                    <AppText variant="screenTitle" style={styles.currentWeight}>
+                        {formatWeight(currentWeight, user?.weight_unit)}
+                    </AppText>
+                </View>
+                <View style={styles.projectionBlock}>
+                    <AppText variant="muted">Goal projection</AppText>
+                    <AppText variant="screenTitle" style={styles.projectionValue}>{projection}</AppText>
+                </View>
             </View>
+            <AppText variant="muted">{describeGoalPlan(goal)}</AppText>
             <ProgressBar value={(progress?.percent ?? 0) / 100} tone="primary" />
             <View style={styles.goalEndpoints}>
-                <AppText variant="body">Current {formatWeight(currentWeight, user?.weight_unit)}</AppText>
-                <AppText variant="body">{progress ? `${Math.round(progress.percent)}%` : 'Log weight'}</AppText>
+                <AppText variant="muted">Start {formatWeight(goal.start_weight, user?.weight_unit)}</AppText>
+                {progress && (
+                    <AppText variant="muted" style={styles.progressSummary}>
+                        {Math.round(progress.percent)}% complete
+                    </AppText>
+                )}
+                <AppText variant="muted">Goal {formatWeight(goal.target_weight, user?.weight_unit)}</AppText>
             </View>
+            {!progress && <AppText variant="muted">Log weight on Today to calculate progress.</AppText>}
             {typeof targetCalories === 'number' && (
-                <AppText variant="caption">Current target: {Math.round(targetCalories).toLocaleString()} kcal/day</AppText>
-            )}
-            {onEditGoal && (
-                <View style={styles.footerActionRow}>
-                    <GoalActionButton label="Set a new goal" onPress={onEditGoal} theme={theme} />
-                </View>
+                <AppText variant="muted">Current target: {Math.round(targetCalories).toLocaleString()} kcal/day</AppText>
             )}
         </AppCard>
     );
@@ -117,12 +151,25 @@ const GoalActionButton: React.FC<{ label: string; onPress: () => void; theme: Ap
             style={({ pressed }) => [styles.actionButton, pressed && styles.pressed]}
         >
             <Ionicons name="flag-outline" size={16} color={theme.colors.primary} />
-            <AppText numberOfLines={1} adjustsFontSizeToFit style={styles.actionText}>{label}</AppText>
+            <AppText variant="label" numberOfLines={1} adjustsFontSizeToFit style={styles.actionText}>{label}</AppText>
         </Pressable>
     );
 };
 
 const createStyles = (theme: AppTheme) => StyleSheet.create({
+    card: {
+        gap: spacing.sm
+    },
+    headingRow: {
+        minHeight: 48,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.md
+    },
+    heading: {
+        flex: 1,
+        minWidth: 0
+    },
     actionButton: {
         minHeight: 48,
         flexDirection: 'row',
@@ -131,7 +178,7 @@ const createStyles = (theme: AppTheme) => StyleSheet.create({
         gap: spacing.xs,
         borderRadius: radius.md,
         borderColor: theme.colors.primary,
-        borderWidth: StyleSheet.hairlineWidth,
+        borderWidth: theme.stroke.control,
         paddingHorizontal: spacing.md
     },
     actionText: {
@@ -142,9 +189,23 @@ const createStyles = (theme: AppTheme) => StyleSheet.create({
     pressed: {
         backgroundColor: theme.colors.surfacePressed
     },
-    footerActionRow: {
+    metricsRow: {
         flexDirection: 'row',
-        justifyContent: 'flex-end'
+        alignItems: 'stretch',
+        gap: spacing.sm
+    },
+    metricBlock: {
+        flex: 1,
+        minWidth: 0,
+        justifyContent: 'center',
+        gap: spacing.xs,
+        borderRadius: radius.md,
+        backgroundColor: theme.colors.primaryContainer,
+        paddingHorizontal: spacing.md,
+        paddingVertical: spacing.sm
+    },
+    currentWeight: {
+        color: theme.colors.onPrimaryContainer
     },
     goalEndpoints: {
         flexDirection: 'row',
@@ -153,6 +214,9 @@ const createStyles = (theme: AppTheme) => StyleSheet.create({
         gap: spacing.md
     },
     projectionBlock: {
+        flex: 1,
+        minWidth: 0,
+        justifyContent: 'center',
         gap: spacing.xs,
         borderRadius: radius.md,
         backgroundColor: theme.colors.warningContainer,
@@ -161,5 +225,9 @@ const createStyles = (theme: AppTheme) => StyleSheet.create({
     },
     projectionValue: {
         color: theme.colors.onWarningContainer
+    },
+    progressSummary: {
+        fontWeight: '700',
+        textAlign: 'center'
     }
 });

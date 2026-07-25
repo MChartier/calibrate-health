@@ -22,18 +22,24 @@ describe('FoodLogSummaryCard', () => {
         expect(screen.queryByText('Dinner')).toBeNull();
     });
 
-    it('keeps an empty day compact and points to the existing add-food action', () => {
-        const screen = render(<FoodLogSummaryCard entries={[]} onPress={jest.fn()} />);
+    it('keeps an empty day compact and offers the card-level add-food action', () => {
+        const onAddFood = jest.fn();
+        const screen = render(
+            <FoodLogSummaryCard entries={[]} onPress={jest.fn()} onAddFood={onAddFood} />
+        );
 
         expect(screen.getByText('Nothing logged yet')).toBeTruthy();
-        expect(screen.getByText('Use Add food to start this day.')).toBeTruthy();
+        expect(screen.getByText('Add a food to start this day.')).toBeTruthy();
+
+        fireEvent.press(screen.getByLabelText('Add food'));
+        expect(onAddFood).toHaveBeenCalledTimes(1);
     });
 
     it('opens the full log when pressed', () => {
         const onPress = jest.fn();
         const screen = render(<FoodLogSummaryCard entries={ENTRIES} onPress={onPress} />);
 
-        fireEvent.press(screen.getByRole('button'));
+        fireEvent.press(screen.getByLabelText('View full food log'));
 
         expect(onPress).toHaveBeenCalledTimes(1);
     });

@@ -185,7 +185,7 @@ function createStyles(theme: AppTheme) {
         gap: theme.spacing.md,
         borderRadius: theme.radius.md,
         borderColor: theme.colors.outline,
-        borderWidth: StyleSheet.hairlineWidth,
+        borderWidth: theme.stroke.control,
         backgroundColor: theme.colors.surfaceContainerLow,
         paddingHorizontal: theme.spacing.md,
         paddingVertical: theme.spacing.sm,

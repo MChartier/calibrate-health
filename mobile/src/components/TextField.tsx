@@ -51,7 +51,7 @@ function createStyles(theme: AppTheme) {
     input: {
         minHeight: theme.interaction.minimumTouchTarget,
         borderRadius: theme.radius.md,
-        borderWidth: 1,
+        borderWidth: theme.stroke.control,
         borderColor: theme.colors.outline,
         backgroundColor: theme.colors.surfaceContainerLow,
         paddingHorizontal: theme.spacing.md,

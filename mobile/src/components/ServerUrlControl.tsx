@@ -147,7 +147,7 @@ const createStyles = (theme: AppTheme) => StyleSheet.create({
         gap: spacing.md,
         borderRadius: radius.md,
         borderColor: theme.colors.outlineVariant,
-        borderWidth: StyleSheet.hairlineWidth,
+        borderWidth: theme.stroke.control,
         backgroundColor: theme.colors.surfaceContainer,
         paddingHorizontal: spacing.md,
         paddingVertical: spacing.sm
