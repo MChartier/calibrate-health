@@ -129,12 +129,25 @@ internal class PairingStateStore(context: Context) {
     fun setError(message: String) {
         val bounded = message.trim().take(180).ifEmpty { "Pairing failed. Start pairing again on your phone." }
         readPending()?.let { WearPairingKeyManager().deleteOwned(it.keyAlias) }
+        val hasUsableSession = try {
+            AndroidKeystoreTokenStore(appContext).read()
+                ?.refreshExpiresAtEpochMs
+                ?.let { it > System.currentTimeMillis() }
+                ?: false
+        } catch (_: SecureTokenCorruptedException) {
+            false
+        }
+        // A replacement attempt must not disable the still-valid session it was meant to supersede.
+        val editor = preferences.edit()
+            .remove(PENDING_KEY)
+            .remove(UPGRADE_REQUIRED_KEY)
+        if (hasUsableSession) {
+            editor.remove(ERROR_KEY)
+        } else {
+            editor.putString(ERROR_KEY, bounded)
+        }
         check(
-            preferences.edit()
-                .remove(PENDING_KEY)
-                .remove(UPGRADE_REQUIRED_KEY)
-                .putString(ERROR_KEY, bounded)
-                .commit()
+            editor.commit()
         ) {
             "Unable to persist Wear pairing error."
         }
