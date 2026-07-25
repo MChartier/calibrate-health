@@ -40,6 +40,26 @@ class PairingUiStateTest {
     }
 
     @Test
+    fun `server-rejected session is not a usable fallback for failed replacement pairing`() {
+        assertEquals(
+            false,
+            hasUsableFallbackSession(
+                isKnownInvalid = true,
+                refreshExpiresAtEpochMs = 2_000,
+                nowEpochMs = 1_000
+            )
+        )
+        assertEquals(
+            true,
+            hasUsableFallbackSession(
+                isKnownInvalid = false,
+                refreshExpiresAtEpochMs = 2_000,
+                nowEpochMs = 1_000
+            )
+        )
+    }
+
+    @Test
     fun `new pending pairing takes precedence over an expired session`() {
         assertEquals(
             PairingUiState.Pairing,

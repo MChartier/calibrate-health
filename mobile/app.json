@@ -93,7 +93,7 @@
     ],
     "extra": {
       "calibrate": {
-        "nativeReleaseTag": "v0.12.10"
+        "nativeReleaseTag": "v0.12.11"
       },
       "router": {
         "origin": false

@@ -29,6 +29,13 @@ internal data class PairingSessionFacts(
 internal const val SESSION_RECOVERY_MESSAGE =
     "Watch sign-in expired. Pair again from Calibrate on your phone; queued changes will be preserved."
 
+/** A locally unexpired token is not a valid fallback after the server has rejected its session. */
+internal fun hasUsableFallbackSession(
+    isKnownInvalid: Boolean,
+    refreshExpiresAtEpochMs: Long?,
+    nowEpochMs: Long
+): Boolean = !isKnownInvalid && refreshExpiresAtEpochMs?.let { it > nowEpochMs } == true
+
 /** A compatibility-blocked watch must still probe so an in-place update or server rollback can recover. */
 internal fun PairingUiState.shouldAttemptForegroundSync(): Boolean =
     this is PairingUiState.Paired || this is PairingUiState.UpgradeRequired
@@ -129,14 +136,18 @@ internal class PairingStateStore(context: Context) {
     fun setError(message: String) {
         val bounded = message.trim().take(180).ifEmpty { "Pairing failed. Start pairing again on your phone." }
         readPending()?.let { WearPairingKeyManager().deleteOwned(it.keyAlias) }
-        val hasUsableSession = try {
+        val nowEpochMs = System.currentTimeMillis()
+        val refreshExpiresAtEpochMs = try {
             AndroidKeystoreTokenStore(appContext).read()
                 ?.refreshExpiresAtEpochMs
-                ?.let { it > System.currentTimeMillis() }
-                ?: false
         } catch (_: SecureTokenCorruptedException) {
-            false
+            null
         }
+        val hasUsableSession = hasUsableFallbackSession(
+            isKnownInvalid = preferences.getBoolean(SESSION_INVALID_KEY, false),
+            refreshExpiresAtEpochMs = refreshExpiresAtEpochMs,
+            nowEpochMs = nowEpochMs
+        )
         // A replacement attempt must not disable the still-valid session it was meant to supersede.
         val editor = preferences.edit()
             .remove(PENDING_KEY)
@@ -167,7 +178,13 @@ internal class PairingStateStore(context: Context) {
         }
         if (sessionAbsent) return
         val bounded = message.trim().take(180).ifEmpty { SESSION_RECOVERY_MESSAGE }
-        check(preferences.edit().remove(UPGRADE_REQUIRED_KEY).putString(ERROR_KEY, bounded).commit()) {
+        check(
+            preferences.edit()
+                .remove(UPGRADE_REQUIRED_KEY)
+                .putString(ERROR_KEY, bounded)
+                .putBoolean(SESSION_INVALID_KEY, true)
+                .commit()
+        ) {
             "Unable to persist Wear session recovery state."
         }
         PairingStateEvents.notifyChanged()
@@ -188,7 +205,11 @@ internal class PairingStateStore(context: Context) {
     }
 
     fun clearError() {
-        preferences.edit().remove(ERROR_KEY).remove(UPGRADE_REQUIRED_KEY).commit()
+        preferences.edit()
+            .remove(ERROR_KEY)
+            .remove(UPGRADE_REQUIRED_KEY)
+            .remove(SESSION_INVALID_KEY)
+            .commit()
         PairingStateEvents.notifyChanged()
     }
 
@@ -258,6 +279,7 @@ internal class PairingStateStore(context: Context) {
                 .remove(PENDING_RESULT_KEY)
                 .remove(ERROR_KEY)
                 .remove(UPGRADE_REQUIRED_KEY)
+                .remove(SESSION_INVALID_KEY)
                 .commit()
         ) { "Unable to clear local Wear pairing state." }
         TrustedPhoneBindingStore(appContext).clear()
@@ -270,6 +292,7 @@ internal class PairingStateStore(context: Context) {
         val upgradeRequired = preferences.getString(UPGRADE_REQUIRED_KEY, null)
         if (!upgradeRequired.isNullOrBlank()) return PairingUiState.UpgradeRequired(upgradeRequired)
         val error = preferences.getString(ERROR_KEY, null)
+            ?: SESSION_RECOVERY_MESSAGE.takeIf { preferences.getBoolean(SESSION_INVALID_KEY, false) }
         val hasPendingPairing = readPending(nowEpochMs) != null
         if (!error.isNullOrBlank() || hasPendingPairing) {
             return resolvePairingUiState(error, hasPendingPairing, null, false, nowEpochMs)
@@ -296,6 +319,7 @@ internal class PairingStateStore(context: Context) {
         private const val PENDING_RESULT_KEY = "pending_result"
         private const val ERROR_KEY = "pairing_error"
         private const val UPGRADE_REQUIRED_KEY = "client_upgrade_required"
+        private const val SESSION_INVALID_KEY = "session_invalid"
     }
 }
 
