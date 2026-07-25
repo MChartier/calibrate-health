@@ -119,7 +119,13 @@ export default function RootLayout() {
                                 <Head>
                                     <title>calibrate</title>
                                 </Head>
-                                <View style={[styles.viewport, { height: visualViewportHeight }]}>
+                                <View
+                                    style={[
+                                        styles.viewport,
+                                        visualViewportHeight !== undefined && styles.visualViewport,
+                                        { height: visualViewportHeight }
+                                    ]}
+                                >
                                     <Slot />
                                 </View>
                             </BrowserRuntime>
@@ -135,5 +141,9 @@ const styles = StyleSheet.create({
     viewport: {
         flex: 1,
         minHeight: 0
+    },
+    visualViewport: {
+        flex: 0,
+        width: '100%'
     }
 });
