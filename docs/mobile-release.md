@@ -221,6 +221,9 @@ message. No native build tag is supplied. Expo selects clients by project, Andro
 receive the update. The workflow derives the previous `master` commit from the push event and stops before publishing
 if the native fingerprint changed without an app-version change. Increment the mobile app version and create a new
 signed native build whenever native dependencies, config plugins, icons, permissions, or other native inputs change.
+The fingerprint is normalized to those native inputs: Expo/EAS config, native assets, config plugins, local native
+modules, Wear sources, and resolved packages that contribute Android code. Server release policy, application
+JavaScript, root package metadata, and JS-only or tooling-only dependency changes remain OTA-compatible.
 OTA updates never update the Wear app.
 
 After testing the automatic internal deployment, open its workflow run in GitHub Actions and approve the waiting

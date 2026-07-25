@@ -111,12 +111,12 @@ function runCommand(command, args, cwd, allowFailure = false) {
   };
 }
 
-function readExpoProject(root) {
+function readExpoProject(root, packageMetadataRoot = root) {
   const appConfig = JSON.parse(fs.readFileSync(path.join(root, 'mobile', 'app.json'), 'utf8'));
   return {
     appVersion: appConfig.expo?.version,
     projectId: appConfig.expo?.extra?.eas?.projectId,
-    nativeFingerprint: createNativeRuntimeFingerprint(root).sha256
+    nativeFingerprint: createNativeRuntimeFingerprint(root, { packageMetadataRoot }).sha256
   };
 }
 
@@ -134,7 +134,7 @@ function readPreviousExpoProject(root, previousRef) {
   const checkout = path.join(temporaryDirectory, 'previous-master');
   try {
     runCommand('git', ['worktree', 'add', '--detach', checkout, commit], root);
-    return { commit, project: readExpoProject(checkout) };
+    return { commit, project: readExpoProject(checkout, root) };
   } finally {
     runCommand('git', ['worktree', 'remove', '--force', checkout], root, true);
     fs.rmSync(temporaryDirectory, { recursive: true, force: true });
