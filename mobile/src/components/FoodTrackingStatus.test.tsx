@@ -1,9 +1,10 @@
 import React from 'react';
 import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
-import { AppState } from 'react-native';
+import { AppState, StyleSheet } from 'react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { FoodLogDay, FoodTrackingPause } from '@calibrate/api-client';
 import { DayStatusCard, ResumeTrackingPrompt } from './FoodTrackingStatus';
+import { AppCard } from './AppCard';
 
 jest.mock('@expo/vector-icons/Ionicons', () => () => null);
 jest.mock('expo-crypto', () => ({ randomUUID: jest.fn(() => 'tracking-operation-id') }));
@@ -182,6 +183,32 @@ describe('food tracking day resolution', () => {
             expect(screen.queryByText('Mark incomplete')).toBeNull();
             screen.unmount();
         }
+    });
+
+    it('turns the expanded Today pause state into a centered status hero', async () => {
+        mockApi.getFoodDay.mockResolvedValue(resolvedDay('PAUSED'));
+        const screen = renderWithQuery(
+            <DayStatusCard
+                date="2026-07-23"
+                isToday
+                compact
+                expanded
+            />
+        );
+
+        await waitFor(() => expect(screen.getByText('Calorie tracking paused')).toBeTruthy());
+        expect(screen.getByText("Today's status")).toBeTruthy();
+        expect(StyleSheet.flatten(screen.UNSAFE_getByType(AppCard).props.style)).toEqual(
+            expect.objectContaining({
+                flexGrow: 1,
+                alignItems: 'center',
+                justifyContent: 'center'
+            })
+        );
+        expect(screen.getByRole('button', { name: 'Resume tracking' })).toHaveStyle({
+            width: '100%',
+            maxWidth: 320
+        });
     });
 
     it('asks for confirmation when an expected resume date is due and exposes every extension path', async () => {
