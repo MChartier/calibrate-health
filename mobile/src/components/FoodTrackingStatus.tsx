@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { AppState, StyleSheet, View } from 'react-native';
+import { AppState, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { FoodLogDay, FoodLogDayStatus, FoodTrackingPause } from '@calibrate/api-client';
@@ -17,6 +17,11 @@ import { SectionHeader } from './SectionHeader';
 
 export const foodDayQueryKey = (date: string) => ['mobile-food-day', date] as const;
 export const foodTrackingPauseQueryKey = ['mobile-food-tracking-pause'] as const;
+
+const EXPANDED_STATUS_CONTENT_MAX_WIDTH = 520; // Keeps the status message readable on wide dashboards.
+const EXPANDED_STATUS_ACTION_MAX_WIDTH = 320; // Keeps the primary action prominent without spanning a desktop card.
+const EXPANDED_STATUS_ICON_SIZE = 80; // Gives the full-height status treatment a clear visual anchor.
+const EXPANDED_STATUS_GLYPH_SIZE = 38; // Scales the pause glyph with its expanded circular container.
 
 function storedDay(date: string, status: FoodLogDayStatus): FoodLogDay {
     return {
@@ -69,7 +74,9 @@ export const DayStatusCard: React.FC<{
     date: string;
     isToday: boolean;
     compact?: boolean;
-}> = ({ date, isToday, compact = false }) => {
+    expanded?: boolean;
+    style?: StyleProp<ViewStyle>;
+}> = ({ date, isToday, compact = false, expanded = false, style }) => {
     const { api } = useAuth();
     const { enqueue } = useOfflineOutbox();
     const queryClient = useQueryClient();
@@ -149,6 +156,7 @@ export const DayStatusCard: React.FC<{
 
     const day = dayQuery.data;
     const useCompactOpenLayout = compact && isToday && day.status === 'OPEN';
+    const useExpandedPauseLayout = expanded && isToday && day.status === 'PAUSED';
     const isBusy = setStatus.isPending || startPause.isPending || resume.isPending;
     const error = dayQuery.error ?? setStatus.error ?? startPause.error ?? resume.error;
     let icon: React.ComponentProps<typeof Ionicons>['name'] = 'options-outline';
@@ -176,25 +184,60 @@ export const DayStatusCard: React.FC<{
         description = 'This past day has some tracking data but was never signed off as complete or incomplete.';
     }
 
+    let headingContent = (
+        <View style={styles.heading}>
+            <View style={styles.icon}>
+                <Ionicons name={icon} size={24} color={theme.colors.primary} />
+            </View>
+            <View style={styles.copy}>
+                <AppText variant="subtitle">{title}</AppText>
+                <AppText variant="muted">{description}</AppText>
+            </View>
+        </View>
+    );
+    if (useCompactOpenLayout) {
+        headingContent = <AppText variant="label">Tracking options</AppText>;
+    } else if (useExpandedPauseLayout) {
+        headingContent = (
+            <View style={styles.expandedContent}>
+                <View style={styles.expandedIcon}>
+                    <Ionicons
+                        name={icon}
+                        size={EXPANDED_STATUS_GLYPH_SIZE}
+                        color={theme.colors.primary}
+                    />
+                </View>
+                <View style={styles.expandedCopy}>
+                    <AppText variant="label" style={styles.expandedStatusLabel}>
+                        Today's status
+                    </AppText>
+                    <AppText
+                        accessibilityRole="header"
+                        aria-level={2}
+                        variant="title"
+                        style={styles.expandedTitle}
+                    >
+                        {title}
+                    </AppText>
+                    <AppText variant="body" style={styles.expandedDescription}>
+                        {description}
+                    </AppText>
+                </View>
+            </View>
+        );
+    }
+
     return (
         <>
             <AppCard
                 accessibilityLabel={`${title}. ${description}`}
-                style={useCompactOpenLayout && styles.cardCompact}
+                style={[
+                    useCompactOpenLayout && styles.cardCompact,
+                    useExpandedPauseLayout && styles.cardExpanded,
+                    style
+                ]}
             >
-                {useCompactOpenLayout ? (
-                    <AppText variant="label">Tracking options</AppText>
-                ) : (
-                    <View style={styles.heading}>
-                        <View style={styles.icon}>
-                            <Ionicons name={icon} size={24} color={theme.colors.primary} />
-                        </View>
-                        <View style={styles.copy}>
-                            <AppText variant="subtitle">{title}</AppText>
-                            <AppText variant="muted">{description}</AppText>
-                        </View>
-                    </View>
-                )}
+                {headingContent}
 
                 {day.status === 'OPEN' && (
                     <View style={[styles.actions, useCompactOpenLayout && styles.actionsCompact]}>
@@ -243,6 +286,14 @@ export const DayStatusCard: React.FC<{
                         title={resume.isPending ? 'Resuming...' : 'Resume tracking'}
                         disabled={isBusy}
                         onPress={() => resume.mutate()}
+                        style={useExpandedPauseLayout && styles.expandedAction}
+                        leftIcon={useExpandedPauseLayout
+                            ? <Ionicons
+                                name="play-circle-outline"
+                                size={20}
+                                color={theme.colors.onPrimary}
+                            />
+                            : undefined}
                     />
                 )}
                 {error && <AppText style={styles.error}>{error.message}</AppText>}
@@ -428,6 +479,53 @@ function createStyles(theme: AppTheme) {
         cardCompact: {
             padding: theme.spacing.md,
             gap: theme.spacing.sm
+        },
+        cardExpanded: {
+            flexGrow: 1,
+            alignItems: 'center',
+            justifyContent: 'center',
+            paddingHorizontal: theme.spacing.xxl,
+            paddingVertical: theme.spacing.xxl,
+            gap: theme.spacing.xl,
+            backgroundColor: theme.colors.surfaceContainer,
+            borderColor: theme.colors.primaryContainer,
+            borderWidth: theme.stroke.control
+        },
+        expandedContent: {
+            width: '100%',
+            maxWidth: EXPANDED_STATUS_CONTENT_MAX_WIDTH,
+            alignItems: 'center',
+            gap: theme.spacing.lg
+        },
+        expandedIcon: {
+            width: EXPANDED_STATUS_ICON_SIZE,
+            height: EXPANDED_STATUS_ICON_SIZE,
+            alignItems: 'center',
+            justifyContent: 'center',
+            borderRadius: theme.radius.pill,
+            backgroundColor: theme.colors.primaryContainer
+        },
+        expandedCopy: {
+            width: '100%',
+            alignItems: 'center',
+            gap: theme.spacing.sm
+        },
+        expandedStatusLabel: {
+            color: theme.colors.primary,
+            fontWeight: '800',
+            textTransform: 'uppercase'
+        },
+        expandedTitle: {
+            textAlign: 'center'
+        },
+        expandedDescription: {
+            color: theme.colors.onSurfaceVariant,
+            textAlign: 'center'
+        },
+        expandedAction: {
+            width: '100%',
+            maxWidth: EXPANDED_STATUS_ACTION_MAX_WIDTH,
+            paddingVertical: theme.spacing.md
         },
         heading: {
             flexDirection: 'row',

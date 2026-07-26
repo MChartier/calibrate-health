@@ -17,7 +17,7 @@ import { useAuth } from '../../src/auth/AuthContext';
 import { useSharedLogDateNavigation } from '../../src/context/LogDateContext';
 import { useAddFoodRequest } from '../../src/context/AddFoodRequestContext';
 import { usePrefetchPreviousFoodLog } from '../../src/hooks/usePrefetchPreviousFoodLog';
-import { shouldShowCalorieComparison } from '../../src/food/dayPresentation';
+import { shouldEmphasizePausedStatus, shouldShowCalorieComparison } from '../../src/food/dayPresentation';
 import { getActiveTabRoute } from '../../src/navigation/contextualFab';
 import { MEAL_OPTIONS } from '../../src/utils/meals';
 import { getTodayDate } from '../../src/utils/dates';
@@ -92,6 +92,12 @@ export default function TodayScreen() {
     const showContentSkeleton =
         (!profileQuery.data || !foodQuery.data || !metricsQuery.data || !foodDayQuery.data) &&
         (profileQuery.isLoading || foodQuery.isLoading || metricsQuery.isLoading || foodDayQuery.isLoading);
+    const emphasizePausedStatus = shouldEmphasizePausedStatus({
+        status: dayStatus?.status,
+        isToday,
+        hasFoodEntries: entries.length > 0,
+        isContentLoading: showContentSkeleton
+    });
 
     return (
         <TabScreen style={styles.screenContent}>
@@ -101,6 +107,7 @@ export default function TodayScreen() {
                     date={selectedDate}
                     isToday={isToday}
                     compact
+                    expanded={emphasizePausedStatus}
                 />
             )}
 

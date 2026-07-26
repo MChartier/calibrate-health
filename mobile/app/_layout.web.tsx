@@ -143,7 +143,10 @@ const styles = StyleSheet.create({
         minHeight: 0
     },
     visualViewport: {
-        flex: 0,
+        // Preserve the measured viewport height instead of collapsing it to a zero flex basis.
+        flexGrow: 0,
+        flexShrink: 0,
+        flexBasis: 'auto',
         width: '100%'
     }
 });
