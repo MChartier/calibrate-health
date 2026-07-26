@@ -1,7 +1,9 @@
 import React from 'react';
-import { fireEvent, render } from '@testing-library/react-native';
+import { fireEvent, render, within } from '@testing-library/react-native';
+import { StyleSheet } from 'react-native';
 import type { FoodLogEntry } from '@calibrate/api-client';
 import { FoodLogSummaryCard } from './FoodLogSummaryCard';
+import { themes } from '../theme';
 
 jest.mock('@expo/vector-icons/Ionicons', () => () => null);
 
@@ -42,5 +44,28 @@ describe('FoodLogSummaryCard', () => {
         fireEvent.press(screen.getByLabelText('View full food log'));
 
         expect(onPress).toHaveBeenCalledTimes(1);
+    });
+
+    it('keeps the compact heading separate from continuous physical and accessible log targets', () => {
+        const onPress = jest.fn();
+        const screen = render(<FoodLogSummaryCard entries={ENTRIES} onPress={onPress} compact />);
+        const heading = screen.getByRole('header', { name: 'Food log' });
+        const header = screen.getByTestId('compact-food-log-header');
+        const physicalTarget = screen.getByTestId('food-log-card-press-layer');
+        const logAction = screen.getByLabelText(/Food log.+View full log/);
+        const physicalTargetStyle = StyleSheet.flatten(physicalTarget.props.style);
+        const logActionStyle = StyleSheet.flatten(logAction.props.style);
+
+        expect(within(logAction).queryByRole('header')).toBeNull();
+        expect(heading).toBeTruthy();
+        expect(header.props.pointerEvents).toBe('none');
+        expect(physicalTarget.props.accessible).toBe(false);
+        expect(physicalTarget.props.tabIndex).toBe(-1);
+        expect(physicalTargetStyle).toMatchObject({ top: 0, right: 0, bottom: 0, left: 0 });
+        expect(logActionStyle.minHeight).toBe(themes.light.interaction.minimumTouchTarget);
+
+        fireEvent.press(physicalTarget);
+        fireEvent.press(logAction);
+        expect(onPress).toHaveBeenCalledTimes(2);
     });
 });
