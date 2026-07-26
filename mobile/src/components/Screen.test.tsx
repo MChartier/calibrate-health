@@ -19,7 +19,7 @@ describe('Screen', () => {
         expect(view.getByTestId('responsive-screen')).toHaveProp('role', 'main');
     });
 
-    it('caps wide scroll content at a readable desktop width', () => {
+    it('uses the native viewport as the flex floor for scroll content', () => {
         const view = render(
             <Screen testID="responsive-screen">
                 <AppText>Dashboard</AppText>
@@ -28,11 +28,12 @@ describe('Screen', () => {
         const contentStyle = StyleSheet.flatten(view.getByTestId('responsive-screen').props.contentContainerStyle);
 
         expect(contentStyle).toEqual(expect.objectContaining({
-            minHeight: '100%',
+            flexGrow: 1,
             width: '100%',
             maxWidth: 1040,
             alignSelf: 'center'
         }));
+        expect(contentStyle.minHeight).toBeUndefined();
     });
 
     it('uses the shared keyboard-aware scroller for form content', () => {

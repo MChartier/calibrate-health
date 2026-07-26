@@ -11,6 +11,10 @@ type ScreenProps = ViewProps & {
 
 const DESKTOP_CONTENT_MAX_WIDTH = 1040; // Keeps forms and metrics readable on wide browser windows.
 const WIDE_LAYOUT_BREAKPOINT = 840;
+// Native ScrollViews need a flex floor; web uses its measured percentage viewport.
+const SCROLL_CONTENT_VIEWPORT_FLOOR = Platform.OS === 'web'
+    ? { minHeight: '100%' as const }
+    : { flexGrow: 1 };
 
 export const Screen: React.FC<ScreenProps> = ({
     children,
@@ -94,7 +98,7 @@ function createStyles(theme: AppTheme) {
             backgroundColor: theme.colors.background
         },
         content: {
-            minHeight: '100%',
+            ...SCROLL_CONTENT_VIEWPORT_FLOOR,
             width: '100%',
             maxWidth: DESKTOP_CONTENT_MAX_WIDTH,
             alignSelf: 'center',
