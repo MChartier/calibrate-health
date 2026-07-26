@@ -12,7 +12,8 @@ import { SectionHeader } from './SectionHeader';
 import { useAuth } from '../auth/AuthContext';
 import { radius, spacing, useAppTheme, type AppTheme } from '../theme';
 import { formatDateOnlyForDisplay } from '../utils/dates';
-import { formatWeight, formatWeightUnit } from '../utils/format';
+import { formatWeight } from '../utils/format';
+import { describeVisibleWeightTrend, isVisibleWeightTrendPoint } from '../weightTrend/presentation';
 
 type TrendRange = 'week' | 'month' | 'year' | 'all';
 
@@ -23,9 +24,9 @@ type WeightTrendCardProps = ViewProps & {
 };
 
 const RANGE_OPTIONS: Array<{ value: TrendRange; label: string }> = [
-    { value: 'week', label: '7d' },
-    { value: 'month', label: '30d' },
-    { value: 'year', label: '1y' },
+    { value: 'week', label: 'Week' },
+    { value: 'month', label: 'Month' },
+    { value: 'year', label: 'Year' },
     { value: 'all', label: 'All' }
 ];
 
@@ -43,6 +44,7 @@ const MIN_WEIGHT_AXIS_SPAN = 0.4;
 
 type ChartPoint = {
     metric: TrendMetricEntry;
+    hasVisibleTrend: boolean;
     x: number;
     rawY: number;
     trendY: number;
@@ -53,6 +55,7 @@ type ChartPoint = {
 type ChartLayout = {
     width: number;
     points: ChartPoint[];
+    trendPoints: ChartPoint[];
     yTicks: Array<{ value: number; y: number }>;
     xTicks: Array<{ key: string; label: string; x: number; textAnchor: 'start' | 'middle' | 'end' }>;
 };
@@ -123,7 +126,7 @@ function getChartLayout(metrics: TrendMetricEntry[], canvasWidth: number, chartH
     const width = Math.max(canvasWidth, MIN_CHART_WIDTH);
 
     if (chronologicalMetrics.length === 0) {
-        return { width, points: [], yTicks: [], xTicks: [] };
+        return { width, points: [], trendPoints: [], yTicks: [], xTicks: [] };
     }
 
     const values = chronologicalMetrics.flatMap((metric) => [
@@ -155,6 +158,7 @@ function getChartLayout(metrics: TrendMetricEntry[], canvasWidth: number, chartH
         const x = CHART_PADDING_LEFT + (drawableWidth * index) / lastIndex;
         return {
             metric,
+            hasVisibleTrend: isVisibleWeightTrendPoint(metric),
             x,
             rawY: yForValue(metric.weight),
             trendY: yForValue(metric.trend_weight),
@@ -188,11 +192,12 @@ function getChartLayout(metrics: TrendMetricEntry[], canvasWidth: number, chartH
         };
     });
 
-    return { width, points, yTicks, xTicks };
+    const trendPoints = points.filter((point) => point.hasVisibleTrend);
+    return { width, points, trendPoints, yTicks, xTicks };
 }
 
 /**
- * Native weight trend card focused on observed weight, trend, and volatility.
+ * Native weight trend card focused on observed weight and smoothed trend.
  */
 export const WeightTrendCard: React.FC<WeightTrendCardProps> = ({
     title = 'Weight trend',
@@ -219,6 +224,7 @@ export const WeightTrendCard: React.FC<WeightTrendCardProps> = ({
         [chartCanvasWidth, chartHeight, trendQuery.data?.metrics]
     );
     const chartPoints = chartLayout.points;
+    const trendPoints = chartLayout.trendPoints;
     const selectedPoint = useMemo(() => {
         if (chartPoints.length === 0) return null;
         const fallbackPoint = chartPoints[chartPoints.length - 1];
@@ -236,9 +242,14 @@ export const WeightTrendCard: React.FC<WeightTrendCardProps> = ({
         }
     }, [chartPoints, selectedPointKey]);
 
-    const trendPath = chartPoints.length > 0 ? buildPath(chartPoints.map((point) => ({ x: point.x, y: point.trendY }))) : '';
+    const trendPath = trendPoints.length > 0 ? buildPath(trendPoints.map((point) => ({ x: point.x, y: point.trendY }))) : '';
     const rawPath = chartPoints.length > 0 ? buildPath(chartPoints.map((point) => ({ x: point.x, y: point.rawY }))) : '';
-    const bandPoints = chartPoints.length > 1 ? buildBandPoints(chartPoints) : '';
+    const bandPoints = trendPoints.length > 1 ? buildBandPoints(trendPoints) : '';
+    const hasWeightHistory = (trendQuery.data?.meta.total_points ?? 0) > 0;
+    const visibleTrendSummary = describeVisibleWeightTrend(
+        trendQuery.data?.metrics ?? [],
+        user?.weight_unit
+    );
     function selectNearestPoint(locationX: number | null) {
         if (chartPoints.length === 0 || locationX === null) return;
         const scaledX = (locationX / Math.max(chartCanvasWidth, 1)) * chartLayout.width;
@@ -266,7 +277,11 @@ export const WeightTrendCard: React.FC<WeightTrendCardProps> = ({
                 <LoadingState label="Loading trend..." />
             ) : chartPoints.length === 0 ? (
                 <View style={styles.emptyChart}>
-                    <AppText variant="muted">Log a weigh-in to start a trend.</AppText>
+                    <AppText variant="muted">
+                        {hasWeightHistory
+                            ? 'No weigh-ins in this range. Choose All to view your weight history.'
+                            : 'Log a weigh-in to start a trend.'}
+                    </AppText>
                 </View>
             ) : chartPoints.length === 1 ? (
                 <View
@@ -337,10 +352,10 @@ export const WeightTrendCard: React.FC<WeightTrendCardProps> = ({
                             />
                             {bandPoints.length > 0 && <Polygon points={bandPoints} fill={themeColors.infoContainer} opacity={0.88} />}
                             {rawPath.length > 0 && (
-                                <Path d={rawPath} stroke={themeColors.info} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" fill="none" opacity={0.55} />
+                                <Path testID="weight-trend-measurement-path" d={rawPath} stroke={themeColors.info} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" fill="none" opacity={0.55} />
                             )}
                             {trendPath.length > 0 && (
-                                <Path d={trendPath} stroke={themeColors.primary} strokeWidth={4} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+                                <Path testID="weight-trend-smoothed-path" d={trendPath} stroke={themeColors.primary} strokeWidth={4} strokeLinecap="round" strokeLinejoin="round" fill="none" />
                             )}
                             {chartPoints.map((point) => (
                                 <Circle key={getPointKey(point)} cx={point.x} cy={point.rawY} r={3.5} fill={themeColors.surface} stroke={themeColors.info} strokeWidth={1.5} />
@@ -379,11 +394,9 @@ export const WeightTrendCard: React.FC<WeightTrendCardProps> = ({
                         />
                     </View>
                     {selectedPoint && <TrendPointDetails point={selectedPoint} unit={user?.weight_unit} />}
-                    {trendQuery.data?.meta && (
-                        <AppText variant="caption" style={styles.summary}>
-                            Trend {trendQuery.data.meta.weekly_rate.toFixed(2)} {formatWeightUnit(user?.weight_unit)}/week | {trendQuery.data.meta.volatility} volatility
-                        </AppText>
-                    )}
+                    <AppText variant="caption" style={styles.summary}>
+                        {visibleTrendSummary}
+                    </AppText>
                 </View>
             )}
             {trendQuery.error && <AppText style={styles.error}>{trendQuery.error.message}</AppText>}

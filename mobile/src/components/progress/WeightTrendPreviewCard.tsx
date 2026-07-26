@@ -9,7 +9,7 @@ import { AppText } from '../AppText';
 import { SectionHeader } from '../SectionHeader';
 import { useAuth } from '../../auth/AuthContext';
 import { radius, spacing, useAppTheme, type AppTheme } from '../../theme';
-import { formatWeightUnit } from '../../utils/format';
+import { describeVisibleWeightTrend, isVisibleWeightTrendPoint } from '../../weightTrend/presentation';
 
 type WeightTrendPreviewCardProps = {
     onPress: () => void;
@@ -17,6 +17,7 @@ type WeightTrendPreviewCardProps = {
 
 type PreviewPoint = {
     key: string;
+    hasVisibleTrend: boolean;
     x: number;
     measurementY: number;
     trendY: number;
@@ -44,13 +45,17 @@ function buildPath(points: PreviewPoint[], key: 'measurementY' | 'trendY'): stri
 function getPreviewPoints(metrics: TrendMetricEntry[], canvasSize: PreviewCanvasSize): PreviewPoint[] {
     const chronologicalMetrics = metrics
         .slice()
-        .filter((metric) => Number.isFinite(metric.weight) && Number.isFinite(metric.trend_weight))
+        .filter((metric) => Number.isFinite(metric.weight))
         .reverse();
     if (chronologicalMetrics.length === 0) return [];
 
     const width = Math.max(canvasSize.width, MIN_PREVIEW_WIDTH);
     const height = Math.max(canvasSize.height, PREVIEW_HEIGHT);
-    const values = chronologicalMetrics.flatMap((metric) => [metric.weight, metric.trend_weight]);
+    const values = chronologicalMetrics.flatMap((metric) => (
+        isVisibleWeightTrendPoint(metric)
+            ? [metric.weight, metric.trend_weight]
+            : [metric.weight]
+    ));
     const minimum = Math.min(...values);
     const maximum = Math.max(...values);
     const range = Math.max(maximum - minimum, MIN_PREVIEW_WEIGHT_SPAN);
@@ -62,19 +67,17 @@ function getPreviewPoints(metrics: TrendMetricEntry[], canvasSize: PreviewCanvas
     const yForValue = (value: number) =>
         PREVIEW_VERTICAL_PADDING + drawableHeight - ((value - axisMinimum) / range) * drawableHeight;
 
-    return chronologicalMetrics.map((metric, index) => ({
-        key: `${metric.id}-${metric.date}`,
-        x: PREVIEW_HORIZONTAL_PADDING + (drawableWidth * index) / lastIndex,
-        measurementY: yForValue(metric.weight),
-        trendY: yForValue(metric.trend_weight)
-    }));
-}
-
-function describeTrend(rate: number | null | undefined, unit: string): string {
-    if (typeof rate !== 'number' || !Number.isFinite(rate)) return 'Add more weigh-ins to reveal your weekly trend';
-    if (Math.abs(rate) < 0.005) return 'Trend steady this week';
-    const direction = rate > 0 ? '+' : '';
-    return `Trend ${direction}${rate.toFixed(2)} ${unit} / week`;
+    return chronologicalMetrics.map((metric, index) => {
+        const measurementY = yForValue(metric.weight);
+        const hasVisibleTrend = isVisibleWeightTrendPoint(metric);
+        return {
+            key: `${metric.id}-${metric.date}`,
+            hasVisibleTrend,
+            x: PREVIEW_HORIZONTAL_PADDING + (drawableWidth * index) / lastIndex,
+            measurementY,
+            trendY: hasVisibleTrend ? yForValue(metric.trend_weight) : measurementY
+        };
+    });
 }
 
 export const WeightTrendPreviewCard: React.FC<WeightTrendPreviewCardProps> = ({ onPress }) => {
@@ -94,10 +97,12 @@ export const WeightTrendPreviewCard: React.FC<WeightTrendPreviewCardProps> = ({ 
         [canvasSize, trendQuery.data?.metrics]
     );
     const measurementPath = buildPath(points, 'measurementY');
-    const trendPath = buildPath(points, 'trendY');
-    const unit = formatWeightUnit(user?.weight_unit);
-    const volatility = trendQuery.data?.meta.volatility;
-    const trendSummary = describeTrend(trendQuery.data?.meta.weekly_rate, unit);
+    const trendPath = buildPath(points.filter((point) => point.hasVisibleTrend), 'trendY');
+    const hasWeightHistory = (trendQuery.data?.meta.total_points ?? 0) > 0;
+    const trendSummary = describeVisibleWeightTrend(
+        trendQuery.data?.metrics ?? [],
+        user?.weight_unit
+    );
 
     return (
         <View style={styles.flexSlot}>
@@ -113,7 +118,7 @@ export const WeightTrendPreviewCard: React.FC<WeightTrendPreviewCardProps> = ({ 
                         <View style={styles.headingRow}>
                             <SectionHeader
                                 title="Weight trend"
-                                description="Last 30 days at a glance."
+                                description="Last four weeks at a glance."
                                 style={styles.heading}
                             />
                             <View style={styles.detailsAction}>
@@ -137,7 +142,11 @@ export const WeightTrendPreviewCard: React.FC<WeightTrendPreviewCardProps> = ({ 
                             {trendQuery.isLoading && !trendQuery.data ? (
                                 <AppText variant="muted">Loading trend...</AppText>
                             ) : points.length === 0 ? (
-                                <AppText variant="muted">Log a weigh-in to start a trend.</AppText>
+                                <AppText variant="muted">
+                                    {hasWeightHistory
+                                        ? 'No weigh-ins in the last four weeks. Open Details to view your history.'
+                                        : 'Log a weigh-in to start a trend.'}
+                                </AppText>
                             ) : points.length === 1 ? (
                                 <View style={styles.firstWeighIn}>
                                     <Ionicons name="scale-outline" size={22} color={theme.colors.primary} />
@@ -145,7 +154,7 @@ export const WeightTrendPreviewCard: React.FC<WeightTrendPreviewCardProps> = ({ 
                                 </View>
                             ) : (
                                 <Svg
-                                    accessibilityLabel="30-day weight trend preview"
+                                    accessibilityLabel="Four-week weight trend preview"
                                     width="100%"
                                     height="100%"
                                     viewBox={`0 0 ${Math.max(canvasSize.width, MIN_PREVIEW_WIDTH)} ${Math.max(canvasSize.height, PREVIEW_HEIGHT)}`}
@@ -160,6 +169,7 @@ export const WeightTrendPreviewCard: React.FC<WeightTrendPreviewCardProps> = ({ 
                                         strokeDasharray="3 4"
                                     />
                                     <Path
+                                        testID="weight-trend-preview-measurement-path"
                                         d={measurementPath}
                                         stroke={theme.colors.info}
                                         strokeWidth={2}
@@ -168,14 +178,17 @@ export const WeightTrendPreviewCard: React.FC<WeightTrendPreviewCardProps> = ({ 
                                         fill="none"
                                         opacity={0.55}
                                     />
-                                    <Path
-                                        d={trendPath}
-                                        stroke={theme.colors.primary}
-                                        strokeWidth={4}
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        fill="none"
-                                    />
+                                    {trendPath.length > 0 && (
+                                        <Path
+                                            testID="weight-trend-preview-smoothed-path"
+                                            d={trendPath}
+                                            stroke={theme.colors.primary}
+                                            strokeWidth={4}
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            fill="none"
+                                        />
+                                    )}
                                     {points.map((point) => (
                                         <Circle
                                             key={point.key}
@@ -193,7 +206,6 @@ export const WeightTrendPreviewCard: React.FC<WeightTrendPreviewCardProps> = ({ 
 
                         <AppText variant="caption" style={styles.summary}>
                             {trendSummary}
-                            {volatility ? ` | ${volatility} volatility` : ''}
                         </AppText>
                         {trendQuery.error && <AppText style={styles.error}>{trendQuery.error.message}</AppText>}
                     </AppCard>

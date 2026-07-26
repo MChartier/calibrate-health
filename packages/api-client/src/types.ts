@@ -812,6 +812,7 @@ export type UpdateMyFoodPayload = CreateMyFoodPayload | CreateRecipePayload;
 export type TrendMetricEntry = MetricEntry & {
     user_id: number;
     body_fat_percent: number | null;
+    trend_is_materialized?: boolean;
     trend_weight: number;
     trend_ci_lower: number;
     trend_ci_upper: number;
