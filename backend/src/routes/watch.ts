@@ -14,6 +14,7 @@ import {
   parseWatchMutation,
   watchSnapshotEtag
 } from '../services/watch';
+import { getAuthenticatedUser } from '../middleware/authenticatedUser';
 
 const router = express.Router();
 
@@ -42,7 +43,7 @@ router.use((req, res, next) => {
 });
 
 router.get('/', async (req, res) => {
-  const user = req.user as { id: number };
+  const user = getAuthenticatedUser(req);
   try {
     const snapshot = await buildWatchSnapshot({
       userId: user.id,
@@ -68,7 +69,7 @@ router.post('/mutations', async (req, res) => {
     diagnosticOperationOutcomeForStatus(statusCode),
     Date.now() - startedAt
   );
-  const user = req.user as { id: number; timezone: string };
+  const user = getAuthenticatedUser(req);
   const operationId = parseClientOperationId(req.get('x-client-operation-id'));
   if (operationId === undefined) {
     recordOutcome(400);
@@ -78,7 +79,7 @@ router.post('/mutations', async (req, res) => {
     recordOutcome(400);
     return res.status(400).json({ message: 'Invalid x-client-operation-id' });
   }
-  const mutation = parseWatchMutation(req.body, { timezone: user.timezone });
+  const mutation = parseWatchMutation(req.body, { timezone: user.timezone ?? 'UTC' });
   if (!mutation.ok) {
     recordOutcome(mutation.status);
     return res.status(mutation.status).json({ message: mutation.message });

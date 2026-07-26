@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
-import { Platform, Pressable, StyleSheet, View } from 'react-native';
+import { Platform, Pressable, View } from 'react-native';
 import DateTimePicker, { type DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { type AppTheme, useAppTheme } from '../theme';
 import { AppText } from './AppText';
 import { dateOnlyToLocalDate, localDateToDateOnly } from '../utils/dates';
 import type { DateNavigationProps } from './DateNavigation.types';
+import {
+    DateNavigationIconButton,
+    useDateNavigationPresentation
+} from './DateNavigation.shared';
 
 /**
  * In-content local-day navigation for log-focused screens.
@@ -19,8 +22,7 @@ export const DateNavigation: React.FC<DateNavigationProps> = ({
     ...props
 }) => {
     const [pickerDate, setPickerDate] = useState<Date | null>(null);
-    const theme = useAppTheme();
-    const styles = React.useMemo(() => createStyles(theme), [theme]);
+    const { theme, styles } = useDateNavigationPresentation();
 
     function openPicker() {
         setPickerDate(dateOnlyToLocalDate(navigation.selectedDate));
@@ -39,7 +41,7 @@ export const DateNavigation: React.FC<DateNavigationProps> = ({
     return (
         <View {...props} style={[styles.container, style]}>
             <View style={styles.root}>
-                <IconPressable
+                <DateNavigationIconButton
                     label="Previous day"
                     icon="chevron-back"
                     disabled={!navigation.canGoBack}
@@ -56,7 +58,7 @@ export const DateNavigation: React.FC<DateNavigationProps> = ({
                     </AppText>
                     <Ionicons name="calendar-outline" size={20} color={theme.colors.primary} />
                 </Pressable>
-                <IconPressable
+                <DateNavigationIconButton
                     label="Next day"
                     icon="chevron-forward"
                     disabled={!navigation.canGoForward}
@@ -77,73 +79,3 @@ export const DateNavigation: React.FC<DateNavigationProps> = ({
         </View>
     );
 };
-
-type IconPressableProps = {
-    label: string;
-    icon: keyof typeof Ionicons.glyphMap;
-    disabled: boolean;
-    onPress: () => void;
-};
-
-const IconPressable: React.FC<IconPressableProps> = ({ label, icon, disabled, onPress }) => {
-    const theme = useAppTheme();
-    const styles = React.useMemo(() => createStyles(theme), [theme]);
-    return <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={label}
-        disabled={disabled}
-        onPress={onPress}
-        style={({ pressed }) => [styles.iconButton, disabled && styles.disabled, pressed && styles.pressed]}
-    >
-        <Ionicons name={icon} size={22} color={disabled ? theme.colors.onSurfaceVariant : theme.colors.onSurface} />
-    </Pressable>
-};
-
-function createStyles(theme: AppTheme) {
-    return StyleSheet.create({
-    container: {
-        gap: theme.spacing.sm
-    },
-    root: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: theme.spacing.sm
-    },
-    iconButton: {
-        width: theme.interaction.minimumTouchTarget,
-        height: theme.interaction.minimumTouchTarget,
-        borderRadius: theme.radius.md,
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: theme.colors.surfaceContainer,
-        borderColor: theme.colors.outlineVariant,
-        borderWidth: theme.stroke.control,
-        overflow: 'hidden'
-    },
-    datePill: {
-        flex: 1,
-        minHeight: theme.interaction.minimumTouchTarget,
-        flexDirection: 'row',
-        borderRadius: theme.radius.md,
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: theme.spacing.sm,
-        backgroundColor: theme.colors.surfaceContainerLow,
-        borderColor: theme.colors.outlineVariant,
-        borderWidth: theme.stroke.control,
-        paddingHorizontal: theme.spacing.md,
-        paddingVertical: theme.spacing.xs,
-        overflow: 'hidden'
-    },
-    dateText: {
-        textAlign: 'center',
-        flexShrink: 1
-    },
-    disabled: {
-        opacity: 0.45
-    },
-    pressed: {
-        backgroundColor: theme.colors.surfacePressed
-    }
-    });
-}

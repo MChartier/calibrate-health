@@ -19,7 +19,11 @@ export function parsePositiveInteger(value: unknown): number | null {
  * Returns `null` for invalid inputs rather than throwing so callers can map to 400s.
  */
 export function parseNonNegativeInteger(value: unknown): number | null {
-  const numeric = typeof value === 'number' ? value : typeof value === 'string' ? parseInt(value, 10) : Number.NaN;
+  if (typeof value === 'string' && value.trim().length === 0) {
+    return null;
+  }
+
+  const numeric = typeof value === 'number' ? value : typeof value === 'string' ? Number(value) : Number.NaN;
   if (!Number.isFinite(numeric)) {
     return null;
   }

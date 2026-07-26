@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { router, useLocalSearchParams } from 'expo-router';
 import { DateNavigation } from '../../src/components/DateNavigation';
 import { TabScreen } from '../../src/components/TabScreen';

@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { ApiError, CalibrateApiClient } from '../src/client.ts';
+import type { ClientUpgradeRequirement } from '@calibrate/shared/clientCompatibility';
 
 type InternalRequest = <T>(
     path: string,
@@ -15,6 +16,11 @@ const abortError = (): Error => {
     error.name = 'AbortError';
     return error;
 };
+
+function requireCaptured<T>(value: T | null, label: string): T {
+    assert.ok(value, `${label} was not captured`);
+    return value;
+}
 
 const createAbortAwareFetch = (): typeof fetch =>
     (async (_input, init) => {
@@ -304,7 +310,8 @@ test('browser Lose It uploads submit a real Blob instead of a React Native URI d
 
     await client.executeLoseItImport(exportBlob);
 
-    const uploadedFile = uploaded?.get('file');
+    const uploadedForm = requireCaptured<FormData>(uploaded, 'upload form');
+    const uploadedFile = uploadedForm.get('file');
     assert.ok(uploadedFile instanceof Blob);
     assert.equal(await uploadedFile.text(), 'zip export');
 });
@@ -330,7 +337,8 @@ test('browser Lose It object URLs are hydrated before upload', async () => {
     await client.executeLoseItImport({ uri: objectUrl, name: 'loseit-export.zip', type: 'application/zip' });
 
     assert.deepEqual(requestedUrls, [objectUrl, 'https://calibrate.example/api/v1/imports/loseit/execute']);
-    const uploadedFile = uploaded?.get('file');
+    const uploadedForm = requireCaptured<FormData>(uploaded, 'upload form');
+    const uploadedFile = uploadedForm.get('file');
     assert.ok(uploadedFile instanceof Blob);
     assert.equal(await uploadedFile.text(), 'zip export');
 });
@@ -350,7 +358,7 @@ test('native Lose It URIs remain FormData descriptors even when React Native exp
         }
     }
     const originalFormData = globalThis.FormData;
-    const globalWithWindow = globalThis as typeof globalThis & { window?: object };
+    const globalWithWindow = globalThis as unknown as { window?: object };
     const originalWindow = globalWithWindow.window;
     globalThis.FormData = NativeFormData as unknown as typeof FormData;
     globalWithWindow.window = {};
@@ -375,7 +383,8 @@ test('native Lose It URIs remain FormData descriptors even when React Native exp
     await client.executeLoseItImport(nativeFile);
 
     assert.deepEqual(requestedUrls, ['https://calibrate.example/api/v1/imports/loseit/execute']);
-    assert.deepEqual(uploaded?.fields, [{ name: 'file', value: nativeFile }]);
+    const uploadedForm = requireCaptured<NativeFormData>(uploaded, 'native upload form');
+    assert.deepEqual(uploadedForm.fields, [{ name: 'file', value: nativeFile }]);
 });
 
 test('a per-request credential policy overrides the browser client default', async () => {
@@ -446,7 +455,7 @@ test('browser push methods use the versioned cookie-session endpoints', async ()
 });
 
 test('upgrade-required responses notify the native shell without triggering auth logout', async () => {
-    const requirements = [];
+    const requirements: ClientUpgradeRequirement[] = [];
     let unauthorizedCalls = 0;
     const body = {
         code: 'CLIENT_UPGRADE_REQUIRED',

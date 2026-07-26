@@ -1,4 +1,3 @@
-import React from 'react';
 import { fireEvent, render, within } from '@testing-library/react-native';
 import { StyleSheet } from 'react-native';
 import type { FoodLogEntry } from '@calibrate/api-client';

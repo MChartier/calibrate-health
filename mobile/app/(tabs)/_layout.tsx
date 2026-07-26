@@ -312,7 +312,7 @@ const TabHeader: React.FC<{
             ]}
         >
             <View style={styles.headerLeading}>
-                <HeaderBrand colors={colors} styles={styles} />
+                <HeaderBrand styles={styles} />
                 <AppText accessibilityRole="header" aria-level={1} numberOfLines={2} style={styles.headerTitleText}>{title}</AppText>
             </View>
             <HeaderActions
@@ -328,7 +328,7 @@ const TabHeader: React.FC<{
     </View>
 );
 
-const HeaderBrand: React.FC<{ colors: AppThemeColors; styles: TabStyles }> = ({ colors, styles }) => (
+const HeaderBrand: React.FC<{ styles: TabStyles }> = ({ styles }) => (
     <NavigationPressable
         accessibilityRole="button"
         accessibilityLabel="Go to Today"

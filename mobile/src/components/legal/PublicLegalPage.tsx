@@ -1,4 +1,3 @@
-import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Link, type Href } from 'expo-router';
 import { AppCard } from '../AppCard';

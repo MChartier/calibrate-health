@@ -4,6 +4,7 @@ This repo has automated tests for the backend and the shared Expo web/Android cl
 targeted Kotlin/JVM and device checks for the Wear client:
 
 - `npm run test` runs backend, API client, and Expo client tests.
+- `npm run lint` type-checks backend, shared domain, API client, and Expo sources and rejects unused locals or parameters.
 - `npm run test:coverage` runs backend `c8` coverage and Expo client Jest coverage.
 - Package-specific commands include `test:backend`, `test:api-client`, `test:mobile`,
   `test:coverage:backend`, and `test:coverage:mobile`. Wear JVM tests run from the Gradle project

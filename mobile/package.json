@@ -9,10 +9,12 @@
   "scripts": {
     "dev": "expo start --dev-client",
     "start": "expo start",
+    "preweb": "npm --prefix ../shared run build",
     "web": "expo start --web",
     "android": "expo run:android",
     "ios": "expo run:ios",
     "prebuild:android": "expo prebuild --platform android --no-install",
+    "prebuild:web": "npm --prefix ../shared run build",
     "build:web": "node ../scripts/expo-web-build.mjs",
     "preview:web": "node ../scripts/expo-web-preview.mjs",
     "typecheck": "tsc --noEmit",

@@ -15,15 +15,10 @@ import {
   type ParsedActivityDaySummary
 } from './activityUtils';
 import { diagnosticOperationOutcomeForStatus, diagnosticsRegistry } from '../observability';
+import { getAuthenticatedUser, requireAuthenticatedUser } from '../middleware/authenticatedUser';
 
 const router = express.Router();
-
-const isAuthenticated = (req: express.Request, res: express.Response, next: express.NextFunction) => {
-  if (req.isAuthenticated()) return next();
-  return res.status(401).json({ message: 'Not authenticated' });
-};
-
-router.use(isAuthenticated);
+router.use(requireAuthenticatedUser);
 
 type StoredActivityRecord = {
   id: number;
@@ -180,7 +175,7 @@ async function findSourceRecord(
 
 /** Return activity aggregates and source records for an inclusive account-local date range. */
 router.get('/days', async (req, res) => {
-  const user = req.user as { id: number; timezone?: string };
+  const user = getAuthenticatedUser(req);
   const timeZone = typeof user.timezone === 'string' ? user.timezone : 'UTC';
   let range;
   try {
@@ -235,7 +230,7 @@ router.post('/health-connect/sync', async (req, res) => {
     diagnosticOperationOutcomeForStatus(statusCode),
     Date.now() - startedAt
   );
-  const user = req.user as { id: number; timezone?: string };
+  const user = getAuthenticatedUser(req);
   const sourceDeviceId = res.locals.mobileDeviceId as string | undefined;
   if (!sourceDeviceId) {
     recordOutcome(403);

@@ -1,4 +1,3 @@
-import React from 'react';
 import { fireEvent, render } from '@testing-library/react-native';
 import type { GoalEntry } from '@calibrate/api-client';
 import { GoalProgressCard } from './GoalProgressCard';

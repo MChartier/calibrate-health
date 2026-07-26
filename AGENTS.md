@@ -124,6 +124,9 @@ Choose validation proportional to the change, and report what ran.
 Common checks:
 
 - Full local CI: `npm run ci:local`
+- All TypeScript surfaces: `npm run lint`
+- Backend type-check: `npm --prefix backend run typecheck`
+- Shared API client type-check: `npm --prefix packages/api-client run typecheck`
 - Expo client type-check: `npm --prefix mobile run typecheck`
 - Expo web build: `npm run build:expo-web`
 - Expo client tests: `npm --prefix mobile test`

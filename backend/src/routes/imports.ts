@@ -12,6 +12,7 @@ import {
   type LoseItFoodLogImport,
   type LoseItWeightImport,
 } from '../services/loseItImport';
+import { getAuthenticatedUser, requireAuthenticatedUser } from '../middleware/authenticatedUser';
 
 /**
  * Import endpoints for Lose It zip exports (preview + execute).
@@ -38,20 +39,10 @@ type LoseItImportOptions = {
   includeBodyFat: boolean;
 };
 
-/**
- * Ensure the session is authenticated before importing data.
- */
-const isAuthenticated = (req: express.Request, res: express.Response, next: express.NextFunction) => {
-  if (req.isAuthenticated()) {
-    return next();
-  }
-  res.status(401).json({ message: 'Not authenticated' });
-};
-
-router.use(isAuthenticated);
+router.use(requireAuthenticatedUser);
 
 router.post('/loseit/preview', upload.single('file'), async (req, res) => {
-  const user = req.user as any;
+  const user = getAuthenticatedUser(req);
   if (!req.file) {
     return res.status(400).json({ message: 'Missing export zip' });
   }
@@ -96,7 +87,7 @@ router.post('/loseit/preview', upload.single('file'), async (req, res) => {
 });
 
 router.post('/loseit/execute', upload.single('file'), async (req, res) => {
-  const user = req.user as any;
+  const user = getAuthenticatedUser(req);
   if (!req.file) {
     return res.status(400).json({ message: 'Missing export zip' });
   }

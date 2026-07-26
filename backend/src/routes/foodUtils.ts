@@ -182,7 +182,9 @@ export function parseFoodLogCreateBody(opts: {
     }
   }
 
-  const entryTimestamp = rawDate ? new Date(rawDate as any) : now;
+  const entryTimestamp = typeof rawDate === 'string' && rawDate.trim().length > 0
+    ? new Date(rawDate)
+    : now;
   if (Number.isNaN(entryTimestamp.getTime())) {
     return { ok: false, statusCode: 400, message: 'Invalid date' };
   }

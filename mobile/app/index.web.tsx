@@ -1,4 +1,3 @@
-import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Link, Redirect } from 'expo-router';
 import { AppCard } from '../src/components/AppCard';

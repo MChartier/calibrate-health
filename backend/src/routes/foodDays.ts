@@ -1,6 +1,6 @@
 import express from 'express';
 import prisma from '../config/database';
-import { MS_PER_DAY, addUtcDays, getSafeUtcTodayDateOnlyInTimeZone, parseLocalDateOnly } from '../utils/date';
+import { MS_PER_DAY, getSafeUtcTodayDateOnlyInTimeZone, parseLocalDateOnly } from '../utils/date';
 import {
   ClientOperationConflictError,
   executeIdempotentMutation,
@@ -20,15 +20,10 @@ import {
   updateFoodTrackingPauseExpectation
 } from '../services/foodTracking';
 import { resolveInactiveReminderNotificationsForUser } from '../services/inAppNotifications';
+import { getAuthenticatedUser, requireAuthenticatedUser } from '../middleware/authenticatedUser';
 
 const router = express.Router();
-
-const isAuthenticated = (req: express.Request, res: express.Response, next: express.NextFunction) => {
-  if (req.isAuthenticated()) return next();
-  res.status(401).json({ message: 'Not authenticated' });
-};
-
-router.use(isAuthenticated);
+router.use(requireAuthenticatedUser);
 
 function parseRequestedDate(value: unknown): { ok: true; dateValue: Date; dateKey: string } | { ok: false } {
   if (typeof value !== 'string') return { ok: false };
@@ -143,7 +138,7 @@ function sendMutationError(res: express.Response, error: unknown): express.Respo
 }
 
 router.get('/range', async (req, res) => {
-  const user = req.user as { id: number };
+  const user = getAuthenticatedUser(req);
   const range = parseRequestedRange(req.query as Record<string, unknown>);
   if (!range.ok) return res.status(400).json({ message: range.message });
   try {
@@ -156,7 +151,7 @@ router.get('/range', async (req, res) => {
 });
 
 router.get('/pause', async (req, res) => {
-  const user = req.user as { id: number };
+  const user = getAuthenticatedUser(req);
   try {
     const pause = await getActiveFoodTrackingPause(user.id);
     if (!pause) return res.status(404).json({ message: 'User not found' });
@@ -167,7 +162,7 @@ router.get('/pause', async (req, res) => {
 });
 
 router.get('/', async (req, res) => {
-  const user = req.user as { id: number };
+  const user = getAuthenticatedUser(req);
   const dateParam =
     typeof req.query.date === 'string'
       ? req.query.date
@@ -186,7 +181,7 @@ router.get('/', async (req, res) => {
 });
 
 router.patch('/', async (req, res) => {
-  const user = req.user as { id: number };
+  const user = getAuthenticatedUser(req);
   if (typeof req.body !== 'object' || req.body === null) {
     return res.status(400).json({ message: 'Invalid request body' });
   }
@@ -257,7 +252,7 @@ router.patch('/', async (req, res) => {
 });
 
 router.post('/pause', async (req, res) => {
-  const user = req.user as { id: number };
+  const user = getAuthenticatedUser(req);
   if (typeof req.body !== 'object' || req.body === null) {
     return res.status(400).json({ message: 'Invalid request body' });
   }
@@ -300,7 +295,7 @@ router.post('/pause', async (req, res) => {
 });
 
 router.patch('/pause', async (req, res) => {
-  const user = req.user as { id: number };
+  const user = getAuthenticatedUser(req);
   if (typeof req.body !== 'object' || req.body === null || !('expected_resume_on' in req.body)) {
     return res.status(400).json({ message: 'Invalid request body' });
   }
@@ -335,7 +330,7 @@ router.patch('/pause', async (req, res) => {
 });
 
 router.post('/resume', async (req, res) => {
-  const user = req.user as { id: number };
+  const user = getAuthenticatedUser(req);
   if (typeof req.body !== 'object' || req.body === null) {
     return res.status(400).json({ message: 'Invalid request body' });
   }

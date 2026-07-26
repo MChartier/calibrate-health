@@ -1,5 +1,5 @@
 import express from 'express';
-import { type BodyMetric, type BodyMetricTrend } from '@prisma/client';
+import { type BodyMetric, type BodyMetricTrend, type Prisma } from '@prisma/client';
 import prisma from '../config/database';
 import {
     gramsToWeight,
@@ -28,6 +28,7 @@ import {
     parseClientOperationId,
     recordSyncChange
 } from '../services/clientOperations';
+import { getAuthenticatedUser, requireAuthenticatedUser } from '../middleware/authenticatedUser';
 
 /**
  * Weight and body metric log endpoints.
@@ -321,20 +322,10 @@ function buildTrendMetricsResponse(
     };
 }
 
-/**
- * Ensure the session is authenticated before accessing metrics.
- */
-const isAuthenticated = (req: express.Request, res: express.Response, next: express.NextFunction) => {
-    if (req.isAuthenticated()) {
-        return next();
-    }
-    res.status(401).json({ message: 'Not authenticated' });
-};
-
-router.use(isAuthenticated);
+router.use(requireAuthenticatedUser);
 
 router.get('/', async (req, res) => {
-    const user = req.user as any;
+    const user = getAuthenticatedUser(req);
     const weightUnit: WeightUnit = isWeightUnit(user.weight_unit) ? user.weight_unit : 'KG';
     const start = typeof req.query.start === 'string' ? req.query.start : undefined;
     const end = typeof req.query.end === 'string' ? req.query.end : undefined;
@@ -399,7 +390,7 @@ router.get('/', async (req, res) => {
         const queryStart =
             smoothingWindowDays && requestedStart ? addUtcDays(requestedStart, -(smoothingWindowDays - 1)) : requestedStart;
 
-        const whereClause: any = { user_id: user.id };
+        const whereClause: Prisma.BodyMetricWhereInput = { user_id: user.id };
         if (queryStart || requestedEnd) {
             whereClause.date = {};
             if (queryStart) whereClause.date.gte = queryStart;
@@ -434,7 +425,7 @@ router.get('/', async (req, res) => {
 });
 
 router.post('/', async (req, res) => {
-    const user = req.user as any;
+    const user = getAuthenticatedUser(req);
     const { weight, body_fat_percent, date } = req.body;
     const weightUnit: WeightUnit = isWeightUnit(user.weight_unit) ? user.weight_unit : 'KG';
     try {
@@ -555,7 +546,7 @@ router.post('/', async (req, res) => {
 });
 
 router.delete('/:id', async (req, res) => {
-    const user = req.user as any;
+    const user = getAuthenticatedUser(req);
     const id = parsePositiveInteger(req.params.id);
     if (id === null) {
         return res.status(400).json({ message: 'Invalid metric id' });

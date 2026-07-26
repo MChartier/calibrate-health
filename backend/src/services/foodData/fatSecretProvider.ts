@@ -445,7 +445,7 @@ class FatSecretFoodDataProvider implements FoodDataProvider {
         } catch (error) {
             if (this.shouldDisableBarcodeLookup(error)) {
                 this.supportsBarcodeLookup = false;
-                this.warnMissingBarcodeScope(error);
+                this.warnMissingBarcodeScope();
                 return null;
             }
             if (this.isBarcodeNotFoundError(error)) {
@@ -495,7 +495,7 @@ class FatSecretFoodDataProvider implements FoodDataProvider {
         return error.code === FATSECRET_BARCODE_NOT_FOUND_CODE;
     }
 
-    private warnMissingBarcodeScope(error: unknown): void {
+    private warnMissingBarcodeScope(): void {
         if (this.hasLoggedBarcodeScopeWarning) {
             return;
         }

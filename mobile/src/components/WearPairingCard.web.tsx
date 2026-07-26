@@ -1,4 +1,3 @@
-import React from 'react';
 import { AppCard } from './AppCard';
 import { SectionHeader } from './SectionHeader';
 

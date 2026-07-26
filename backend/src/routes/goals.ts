@@ -9,6 +9,7 @@ import {
     parseClientOperationId,
     recordSyncChange
 } from '../services/clientOperations';
+import { getAuthenticatedUser, requireAuthenticatedUser } from '../middleware/authenticatedUser';
 
 /**
  * Goal endpoints for creating and fetching the current goal.
@@ -17,21 +18,11 @@ import {
  */
 const router = express.Router();
 
-/**
- * Ensure the session is authenticated before accessing goal data.
- */
-const isAuthenticated = (req: express.Request, res: express.Response, next: express.NextFunction) => {
-    if (req.isAuthenticated()) {
-        return next();
-    }
-    res.status(401).json({ message: 'Not authenticated' });
-};
-
-router.use(isAuthenticated);  
+router.use(requireAuthenticatedUser);
 
 router.get('/', async (req, res) => {
-    const user = req.user as any;
-    const weightUnit = (user.weight_unit ?? 'KG') as WeightUnit;
+    const user = getAuthenticatedUser(req);
+    const weightUnit: WeightUnit = user.weight_unit ?? 'KG';
     try {
         // Goals are append-only; the latest row is treated as the active goal.
         const goal = await prisma.goal.findFirst({
@@ -54,9 +45,9 @@ router.get('/', async (req, res) => {
 });
 
 router.post('/', async (req, res) => {
-    const user = req.user as any;
+    const user = getAuthenticatedUser(req);
     const { start_weight, target_weight, target_date, daily_deficit } = req.body;
-    const weightUnit = (user.weight_unit ?? 'KG') as WeightUnit;
+    const weightUnit: WeightUnit = user.weight_unit ?? 'KG';
     try {
         const operationId = parseClientOperationId(
             req.get?.('x-client-operation-id') ?? req.headers?.['x-client-operation-id']

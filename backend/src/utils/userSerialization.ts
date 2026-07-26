@@ -43,7 +43,7 @@ export const USER_CLIENT_SELECT = {
   profile_image_mime_type: true
 } satisfies Prisma.UserSelect;
 
-type UserForClient = Omit<UserClientPayload, 'profile_image_url' | 'language'> & {
+export type UserForClient = Omit<UserClientPayload, 'profile_image_url' | 'language'> & {
   // `User.language` is stored as a string (not a Prisma enum), so validate it before returning to the client.
   language: string;
   profile_image?: Uint8Array | null;

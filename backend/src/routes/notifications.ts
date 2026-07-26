@@ -15,22 +15,13 @@ import {
 } from '../services/notificationRealtime';
 import { parsePositiveInteger } from '../utils/requestParsing';
 import { NATIVE_PUSH_PLATFORMS, NATIVE_PUSH_PROVIDERS } from '../../../shared/domain';
+import { getAuthenticatedUser, requireAuthenticatedUser } from '../middleware/authenticatedUser';
 
 /**
  * Push notification subscription endpoints plus in-app reminder feed endpoints.
  */
 const router = express.Router();
 const SSE_HEARTBEAT_INTERVAL_MS = 25_000; // Keep intermediaries from closing otherwise-idle notification streams.
-
-/**
- * Ensure the session is authenticated before accessing notification settings.
- */
-const isAuthenticated = (req: express.Request, res: express.Response, next: express.NextFunction) => {
-  if (req.isAuthenticated()) {
-    return next();
-  }
-  res.status(401).json({ message: 'Not authenticated' });
-};
 
 /** Web Push is owned by a persisted cookie session, never by a native bearer session. */
 const isBrowserSession = (req: express.Request, res: express.Response, next: express.NextFunction) => {
@@ -40,13 +31,13 @@ const isBrowserSession = (req: express.Request, res: express.Response, next: exp
   return next();
 };
 
-router.use(isAuthenticated);
+router.use(requireAuthenticatedUser);
 
 /**
  * Stream per-user notification state changes to the authenticated browser session.
  */
 router.get('/stream', (req, res) => {
-  const user = req.user as { id: number };
+  const user = getAuthenticatedUser(req);
 
   res.status(200);
   res.set({
@@ -89,7 +80,7 @@ router.get('/public-key', (_req, res) => {
 });
 
 router.post('/subscription', isBrowserSession, async (req, res) => {
-  const user = req.user as { id: number };
+  const user = getAuthenticatedUser(req);
   const endpoint = typeof req.body?.endpoint === 'string' ? req.body.endpoint.trim() : '';
   const keys = req.body?.keys as { p256dh?: unknown; auth?: unknown } | undefined;
   const p256dh = typeof keys?.p256dh === 'string' ? keys?.p256dh.trim() : '';
@@ -132,7 +123,7 @@ router.post('/subscription', isBrowserSession, async (req, res) => {
 });
 
 router.delete('/subscription', isBrowserSession, async (req, res) => {
-  const user = req.user as { id: number };
+  const user = getAuthenticatedUser(req);
   const endpoint = typeof req.body?.endpoint === 'string' ? req.body.endpoint.trim() : '';
 
   if (!endpoint) {
@@ -172,7 +163,7 @@ const isExpoPushToken = (token: string): boolean =>
   /^(?:Exponent|Expo)PushToken\[[^\[\]]+\]$/.test(token);
 
 router.post('/native-subscription', async (req, res) => {
-  const user = req.user as { id: number };
+  const user = getAuthenticatedUser(req);
   const token = normalizeNativeText(req.body?.token, 512);
   const mobileAuthSessionId = res.locals.mobileAuthSessionId as number | undefined;
   const deviceId = res.locals.mobileDeviceId as string | undefined;
@@ -243,7 +234,7 @@ router.post('/native-subscription', async (req, res) => {
 });
 
 router.delete('/native-subscription', async (req, res) => {
-  const user = req.user as { id: number };
+  const user = getAuthenticatedUser(req);
   const token = normalizeNativeText(req.body?.token, 512);
   const mobileAuthSessionId = res.locals.mobileAuthSessionId as number | undefined;
   const provider = parseNativePushProvider(req.body?.provider);
@@ -275,7 +266,7 @@ router.delete('/native-subscription', async (req, res) => {
  * Return active in-app reminders, resolving stale/completed entries first.
  */
 router.get('/in-app', async (req, res) => {
-  const user = req.user as { id: number; timezone?: string };
+  const user = getAuthenticatedUser(req);
   const timeZone = user.timezone || 'UTC';
 
   await resolveInactiveReminderNotificationsForUser({
@@ -288,7 +279,7 @@ router.get('/in-app', async (req, res) => {
 });
 
 router.patch('/in-app/:notificationId/read', async (req, res) => {
-  const user = req.user as { id: number };
+  const user = getAuthenticatedUser(req);
   const notificationId = parsePositiveInteger(req.params.notificationId);
   if (!notificationId) {
     return res.status(400).json({ message: 'Invalid notification id.' });
@@ -303,7 +294,7 @@ router.patch('/in-app/:notificationId/read', async (req, res) => {
 });
 
 router.patch('/in-app/:notificationId/dismiss', async (req, res) => {
-  const user = req.user as { id: number };
+  const user = getAuthenticatedUser(req);
   const notificationId = parsePositiveInteger(req.params.notificationId);
   if (!notificationId) {
     return res.status(400).json({ message: 'Invalid notification id.' });

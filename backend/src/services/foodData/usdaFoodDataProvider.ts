@@ -1,5 +1,14 @@
 import { FoodDataProvider, FoodMeasure, FoodSearchRequest, FoodSearchResult, NormalizedFoodItem, Nutrients } from './types';
 import { parseNumber, round, scaleNutrients } from './utils';
+import {
+    buildFoodSearchQuery,
+    buildProductTokenGroups,
+    countTokenMatches,
+    normalizeFoodSearchText,
+    scoreProductTokenGroups,
+    scoreTokenMatches,
+    tokenizeFoodSearchQuery
+} from './searchRanking';
 
 /**
  * USDA FoodData Central provider implementation with local ranking.
@@ -124,8 +133,8 @@ class UsdaFoodDataProvider implements FoodDataProvider {
         const hasExplicitProductTerms = queryTokens.productTokens.length > 0;
 
         const upstreamQuery = brandScoped && hasExplicitProductTerms
-            ? this.buildQueryFromTokens(queryTokens.productTokens, queryTokens.normalizedProductQuery)
-            : this.buildQueryFromTokens(queryTokens.productTokens, queryTokens.normalizedQuery);
+            ? buildFoodSearchQuery(queryTokens.productTokens, queryTokens.normalizedProductQuery)
+            : buildFoodSearchQuery(queryTokens.productTokens, queryTokens.normalizedQuery);
 
         const dataTypes = brandScoped ? USDA_BRANDED_DATA_TYPES : USDA_DEFAULT_DATA_TYPES;
 
@@ -140,7 +149,7 @@ class UsdaFoodDataProvider implements FoodDataProvider {
         let brandOwnerResponse: UsdaFoodsSearchResponse | null = null;
 
         if (brandScoped && hasExplicitProductTerms && queryTokens.normalizedBrandQuery) {
-            const combinedQuery = this.buildQueryFromTokens(
+            const combinedQuery = buildFoodSearchQuery(
                 [...queryTokens.brandTokens, ...queryTokens.productTokens],
                 `${queryTokens.normalizedBrandQuery} ${queryTokens.normalizedProductQuery}`.trim()
             );
@@ -184,7 +193,7 @@ class UsdaFoodDataProvider implements FoodDataProvider {
         if (brandScoped && queryTokens.normalizedBrandQuery) {
             const brandResponse = await this.executeSearchWithRequireAllWordsFallback(
                 this.buildSearchRequestBody({
-                    query: this.buildQueryFromTokens(queryTokens.brandTokens, queryTokens.normalizedBrandQuery),
+                    query: buildFoodSearchQuery(queryTokens.brandTokens, queryTokens.normalizedBrandQuery),
                     pageSize: upstreamPageSize,
                     pageNumber,
                     dataTypes: USDA_BRANDED_DATA_TYPES
@@ -423,69 +432,16 @@ class UsdaFoodDataProvider implements FoodDataProvider {
         return [...candidates].map((value) => value.trim()).filter(Boolean);
     }
 
-    /**
-     * Build an upstream query string from tokens so stemming choices ("dogs" -> "dog") carry through to `requireAllWords`.
-     */
-    private buildQueryFromTokens(tokens: string[], fallback: string): string {
-        const joined = tokens.join(' ').trim();
-        return joined || fallback;
-    }
-
-    /**
-     * Normalize text into comparable tokens for ranking and query heuristics.
-     */
+    /** Normalize text into comparable tokens for ranking and query heuristics. */
     private tokenizeQuery(query: string): string[] {
-        const normalized = this.normalizeText(query);
-        if (!normalized) {
-            return [];
-        }
-
-        const tokens = normalized.split(' ').filter(Boolean).map((token) => this.stemToken(token));
-        return Array.from(new Set(tokens)).filter(Boolean);
-    }
-
-    /**
-     * Apply very small stemming so plural query forms ("dogs") match singular descriptions ("dog").
-     */
-    private stemToken(token: string): string {
-        if (!token) {
-            return '';
-        }
-
-        if (token.length > 4 && token.endsWith('ies')) {
-            return `${token.slice(0, -3)}y`;
-        }
-
-        if (token.length > 3 && token.endsWith('s') && !token.endsWith('ss')) {
-            return token.slice(0, -1);
-        }
-
-        return token;
-    }
-
-    /**
-     * Normalize text into a comparable token string (lowercase, ASCII-ish, punctuation stripped).
-     */
-    private normalizeText(value?: string): string {
-        if (!value) {
-            return '';
-        }
-
-        return value
-            .toLowerCase()
-            .normalize('NFKD')
-            .replace(/[\u0300-\u036f]/g, '')
-            // Drop possessive suffixes so "joe's" matches "joe".
-            .replace(/['\u2019]s\b/g, '')
-            .replace(/[^a-z0-9]+/g, ' ')
-            .trim();
+        return tokenizeFoodSearchQuery(query);
     }
 
     /**
      * Split a query into brand vs. product tokens using a possessive heuristic ("trader joe's ...").
      */
     private splitQueryTokens(query: string): UsdaQueryTokens {
-        const normalizedQuery = this.normalizeText(query);
+        const normalizedQuery = normalizeFoodSearchText(query);
         const lower = query.toLowerCase();
         const straightIndex = lower.indexOf("'s");
         const curlyIndex = lower.indexOf('\u2019s');
@@ -500,8 +456,8 @@ class UsdaFoodDataProvider implements FoodDataProvider {
             const rawBrandOwnerQuery = query.slice(0, possessiveIndex + 2);
             return {
                 normalizedQuery,
-                normalizedBrandQuery: this.normalizeText(brandPart),
-                normalizedProductQuery: this.normalizeText(productPart) || normalizedQuery,
+                normalizedBrandQuery: normalizeFoodSearchText(brandPart),
+                normalizedProductQuery: normalizeFoodSearchText(productPart) || normalizedQuery,
                 rawBrandOwnerQuery,
                 brandTokens,
                 productTokens
@@ -530,18 +486,18 @@ class UsdaFoodDataProvider implements FoodDataProvider {
             return items;
         }
 
-        const productTokenGroups = this.buildProductTokenGroups(tokens.productTokens);
+        const productTokenGroups = buildProductTokenGroups(tokens.productTokens);
 
         const scored = items.map((item, index) => {
-            const description = this.normalizeText(item.description);
-            const brand = this.normalizeText(item.brand);
+            const description = normalizeFoodSearchText(item.description);
+            const brand = normalizeFoodSearchText(item.brand);
             const haystack = `${description} ${brand}`.trim();
             const haystackTokens = new Set(this.tokenizeQuery(haystack));
 
-            const productScore = this.scoreProductTokenGroups(haystackTokens, productTokenGroups);
-            const brandMatches = this.countTokenMatches(haystackTokens, tokens.brandTokens);
+            const productScore = scoreProductTokenGroups(haystackTokens, productTokenGroups);
+            const brandMatches = countTokenMatches(haystackTokens, tokens.brandTokens);
 
-            const brandScore = this.scoreTokenMatches(brandMatches, tokens.brandTokens.length, 50, 10);
+            const brandScore = scoreTokenMatches(brandMatches, tokens.brandTokens.length, 50, 10);
 
             // We weight product matching higher than brand matching so "hot dog" results outrank "Trader Joe's hot sauce".
             let score = productScore + brandScore;
@@ -579,64 +535,6 @@ class UsdaFoodDataProvider implements FoodDataProvider {
 
         scored.sort((a, b) => b.score - a.score || a.index - b.index);
         return scored.map(({ item }) => item);
-    }
-
-    /**
-     * Build alternative token groups for product matching (e.g., "hot dog" ~= "frank").
-     */
-    private buildProductTokenGroups(productTokens: string[]): string[][] {
-        const groups: string[][] = [];
-        if (productTokens.length > 0) {
-            groups.push(productTokens);
-        }
-
-        const tokenSet = new Set(productTokens);
-        if (tokenSet.has('hot') && tokenSet.has('dog')) {
-            groups.push(['frank']);
-            groups.push(['frankfurter']);
-            groups.push(['wiener']);
-        }
-
-        return groups.map((group) => group.map((token) => this.stemToken(token)).filter(Boolean));
-    }
-
-    /**
-     * Score the best-matching product token group for the given haystack.
-     */
-    private scoreProductTokenGroups(haystack: ReadonlySet<string>, groups: string[][]): number {
-        let best = 0;
-
-        for (const group of groups) {
-            const matches = this.countTokenMatches(haystack, group);
-            const score = this.scoreTokenMatches(matches, group.length, 100, 10);
-            if (score > best) {
-                best = score;
-            }
-        }
-
-        return best;
-    }
-
-    /**
-     * Count how many query tokens are present in a normalized haystack string.
-     */
-    private countTokenMatches(haystack: ReadonlySet<string>, tokens: string[]): number {
-        return tokens.reduce((count, token) => (haystack.has(token) ? count + 1 : count), 0);
-    }
-
-    /**
-     * Convert token match counts into a score, rewarding complete matches and down-weighting partial ones.
-     */
-    private scoreTokenMatches(matchCount: number, tokenCount: number, fullMatchScore: number, partialMatchWeight: number): number {
-        if (tokenCount === 0) {
-            return 0;
-        }
-
-        if (matchCount >= tokenCount) {
-            return fullMatchScore;
-        }
-
-        return matchCount * partialMatchWeight;
     }
 
     private normalizeFood(

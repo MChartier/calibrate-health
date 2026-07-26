@@ -444,6 +444,9 @@ async function ci() {
   await timed("Type-check mobile", () =>
     run("npm", ["--prefix", "mobile", "run", "typecheck"])
   );
+  await timed("Type-check API client", () =>
+    run("npm", ["--prefix", "packages/api-client", "run", "typecheck"])
+  );
   await timed("Run backend tests", () => run("npm", ["--prefix", "backend", "test"]));
   await timed("Run mobile tests", () =>
     run("npm", ["--prefix", "mobile", "test", "--", "--runInBand"])

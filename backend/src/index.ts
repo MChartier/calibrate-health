@@ -12,6 +12,7 @@ import prisma, { pgPool } from './config/database';
 import { isProductionOrStagingEnv } from './config/environment';
 import { getNativePushModeConfigurationWarning } from './config/nativePush';
 import { configureFrontendStaticAssets } from './frontendStatic';
+import { isAuthenticatedUser } from './middleware/authenticatedUser';
 import authRoutes from './routes/auth';
 import clientConfigRoutes from './routes/clientConfig';
 import devRoutes from './routes/dev';
@@ -235,8 +236,11 @@ const bootstrap = async (): Promise<void> => {
     })
   );
 
-  passport.serializeUser((user: any, done) => {
-    done(null, user.id);
+  passport.serializeUser((user, done) => {
+    if (!isAuthenticatedUser(user)) {
+      return done(new Error('Cannot serialize an invalid user principal'));
+    }
+    return done(null, user.id);
   });
 
   passport.deserializeUser(async (id: number, done) => {

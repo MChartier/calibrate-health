@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import type { WearNode } from '@calibrate/wear-pairing';
 import { useAuth } from '../auth/AuthContext';

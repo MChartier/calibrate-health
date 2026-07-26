@@ -2,16 +2,66 @@
   "name": "@calibrate/shared",
   "version": "0.0.0",
   "private": true,
-  "main": "./index.ts",
+  "main": "./dist/cjs/index.js",
   "types": "./index.ts",
   "exports": {
-    ".": "./index.ts",
-    "./domain": "./domain.ts",
-    "./date": "./date.ts",
-    "./clientCompatibility": "./clientCompatibility.ts",
-    "./goalDeficit": "./goalDeficit.ts",
-    "./inAppNotifications": "./inAppNotifications.ts",
-    "./notificationDelivery": "./notificationDelivery.ts",
-    "./designTokens": "./designTokens.ts"
+    ".": {
+      "types": "./index.ts",
+      "browser": "./index.ts",
+      "react-native": "./index.ts",
+      "default": "./dist/cjs/index.js"
+    },
+    "./domain": {
+      "types": "./domain.ts",
+      "browser": "./domain.ts",
+      "react-native": "./domain.ts",
+      "default": "./dist/cjs/domain.js"
+    },
+    "./date": {
+      "types": "./date.ts",
+      "browser": "./date.ts",
+      "react-native": "./date.ts",
+      "default": "./dist/cjs/date.js"
+    },
+    "./clientCompatibility": {
+      "types": "./clientCompatibility.ts",
+      "browser": "./clientCompatibility.ts",
+      "react-native": "./clientCompatibility.ts",
+      "default": "./dist/cjs/clientCompatibility.js"
+    },
+    "./goalDeficit": {
+      "types": "./goalDeficit.ts",
+      "browser": "./goalDeficit.ts",
+      "react-native": "./goalDeficit.ts",
+      "default": "./dist/cjs/goalDeficit.js"
+    },
+    "./inAppNotifications": {
+      "types": "./inAppNotifications.ts",
+      "browser": "./inAppNotifications.ts",
+      "react-native": "./inAppNotifications.ts",
+      "default": "./dist/cjs/inAppNotifications.js"
+    },
+    "./notificationDelivery": {
+      "types": "./notificationDelivery.ts",
+      "browser": "./notificationDelivery.ts",
+      "react-native": "./notificationDelivery.ts",
+      "default": "./dist/cjs/notificationDelivery.js"
+    },
+    "./notificationRealtime": {
+      "types": "./notificationRealtime.ts",
+      "browser": "./notificationRealtime.ts",
+      "react-native": "./notificationRealtime.ts",
+      "default": "./dist/cjs/notificationRealtime.js"
+    },
+    "./designTokens": {
+      "types": "./designTokens.ts",
+      "browser": "./designTokens.ts",
+      "react-native": "./designTokens.ts",
+      "default": "./dist/cjs/designTokens.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit -p tsconfig.build.json"
   }
 }

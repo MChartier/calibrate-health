@@ -1,4 +1,3 @@
-import React from 'react';
 import { Redirect, Stack, useSegments } from 'expo-router';
 import { LoadingState } from '../../src/components/LoadingState';
 import { useAuth } from '../../src/auth/AuthContext';
