@@ -65,25 +65,57 @@ export const FoodLogSummaryCard: React.FC<FoodLogSummaryCardProps> = ({
             {...props}
             style={[styles.card, compact && styles.cardCompact, style]}
         >
-            <View style={styles.headerRow}>
-                <AppText accessibilityRole="header" aria-level={2} variant={compact ? 'label' : 'screenTitle'}>
-                    Food log
-                </AppText>
-                <Pressable
-                    accessibilityRole="button"
-                    accessibilityLabel="View full food log"
-                    accessibilityHint="Opens the detailed food log for this day"
-                    onPress={onPress}
-                    style={({ pressed }) => [styles.viewAction, pressed && styles.pressed]}
-                >
-                    <AppText style={[styles.viewActionText, compact && styles.viewActionTextCompact]}>
-                        {compact ? 'View' : 'View full log'}
-                    </AppText>
-                    <Ionicons name="chevron-forward" size={compact ? 17 : 19} color={theme.colors.primary} />
-                </Pressable>
-            </View>
+            <View style={[styles.logSection, compact && styles.logSectionCompact]}>
+                {compact && (
+                    <Pressable
+                        testID="food-log-card-press-layer"
+                        accessible={false}
+                        tabIndex={-1}
+                        onPress={onPress}
+                        style={({ pressed }) => [
+                            StyleSheet.absoluteFill,
+                            styles.compactPressLayer,
+                            pressed && styles.pressed
+                        ]}
+                    />
+                )}
 
-            <View style={styles.contentRow}>
+                <View
+                    testID={compact ? 'compact-food-log-header' : undefined}
+                    pointerEvents={compact ? 'none' : undefined}
+                    style={styles.headerRow}
+                >
+                    <AppText accessibilityRole="header" aria-level={2} variant={compact ? 'label' : 'screenTitle'}>
+                        Food log
+                    </AppText>
+                    {compact ? (
+                        <View
+                            accessibilityElementsHidden
+                            aria-hidden
+                            importantForAccessibility="no-hide-descendants"
+                            style={styles.viewAction}
+                        >
+                            <AppText style={[styles.viewActionText, styles.viewActionTextCompact]}>View</AppText>
+                            <Ionicons name="chevron-forward" size={17} color={theme.colors.primary} />
+                        </View>
+                    ) : (
+                        <Pressable
+                            accessibilityRole="button"
+                            accessibilityLabel="View full food log"
+                            accessibilityHint="Opens the detailed food log for this day"
+                            onPress={onPress}
+                            style={({ pressed }) => [
+                                styles.viewAction,
+                                styles.viewActionFull,
+                                pressed && styles.pressed
+                            ]}
+                        >
+                            <AppText style={styles.viewActionText}>View full log</AppText>
+                            <Ionicons name="chevron-forward" size={19} color={theme.colors.primary} />
+                        </Pressable>
+                    )}
+                </View>
+
                 <Pressable
                     accessibilityRole="button"
                     accessibilityLabel={`Food log. ${accessibilitySummary}. View full log`}
@@ -125,16 +157,16 @@ export const FoodLogSummaryCard: React.FC<FoodLogSummaryCardProps> = ({
                         </View>
                     )}
                 </Pressable>
-                {onAddFood && (
-                    <AppButton
-                        title="Add food"
-                        accessibilityHint="Opens food search for this day"
-                        leftIcon={<Ionicons name="add" size={20} color={theme.colors.onPrimary} />}
-                        onPress={onAddFood}
-                        style={styles.addFoodButton}
-                    />
-                )}
             </View>
+            {onAddFood && (
+                <AppButton
+                    title="Add food"
+                    accessibilityHint="Opens food search for this day"
+                    leftIcon={<Ionicons name="add" size={20} color={theme.colors.onPrimary} />}
+                    onPress={onAddFood}
+                    style={styles.addFoodButton}
+                />
+            )}
         </AppCard>
     );
 };
@@ -142,10 +174,16 @@ export const FoodLogSummaryCard: React.FC<FoodLogSummaryCardProps> = ({
 function createStyles(theme: AppTheme) {
     return StyleSheet.create({
         card: {
-            gap: theme.spacing.md
+            gap: theme.spacing.sm
         },
         cardCompact: {
-            padding: theme.spacing.md,
+            padding: theme.spacing.md
+        },
+        logSection: {
+            position: 'relative',
+            gap: theme.spacing.md
+        },
+        logSectionCompact: {
             gap: theme.spacing.xs
         },
         headerRow: {
@@ -155,7 +193,6 @@ function createStyles(theme: AppTheme) {
             gap: theme.spacing.md
         },
         viewAction: {
-            minHeight: theme.interaction.minimumTouchTarget,
             flexDirection: 'row',
             alignItems: 'center',
             flexShrink: 0,
@@ -163,6 +200,9 @@ function createStyles(theme: AppTheme) {
             justifyContent: 'center',
             borderRadius: theme.radius.md,
             paddingLeft: theme.spacing.sm
+        },
+        viewActionFull: {
+            minHeight: theme.interaction.minimumTouchTarget
         },
         viewActionText: {
             color: theme.colors.primary,
@@ -172,11 +212,11 @@ function createStyles(theme: AppTheme) {
         viewActionTextCompact: {
             fontSize: theme.typography.caption
         },
-        contentRow: {
-            gap: theme.spacing.sm
+        compactPressLayer: {
+            borderRadius: theme.radius.md
         },
         summaryPressable: {
-            flex: 1,
+            minHeight: theme.interaction.minimumTouchTarget,
             minWidth: 0,
             justifyContent: 'center',
             borderRadius: theme.radius.md
