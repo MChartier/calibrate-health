@@ -481,7 +481,7 @@ function createStyles(theme: AppTheme) {
             gap: theme.spacing.sm
         },
         cardExpanded: {
-            flexGrow: 1,
+            flex: 1,
             alignItems: 'center',
             justifyContent: 'center',
             paddingHorizontal: theme.spacing.xxl,

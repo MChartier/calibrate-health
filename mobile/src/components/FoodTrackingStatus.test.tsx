@@ -185,7 +185,7 @@ describe('food tracking day resolution', () => {
         }
     });
 
-    it('turns the expanded Today pause state into a centered status hero', async () => {
+    it('fills only the remaining Today space with a centered status hero', async () => {
         mockApi.getFoodDay.mockResolvedValue(resolvedDay('PAUSED'));
         const screen = renderWithQuery(
             <DayStatusCard
@@ -200,7 +200,7 @@ describe('food tracking day resolution', () => {
         expect(screen.getByText("Today's status")).toBeTruthy();
         expect(StyleSheet.flatten(screen.UNSAFE_getByType(AppCard).props.style)).toEqual(
             expect.objectContaining({
-                flexGrow: 1,
+                flex: 1,
                 alignItems: 'center',
                 justifyContent: 'center'
             })
