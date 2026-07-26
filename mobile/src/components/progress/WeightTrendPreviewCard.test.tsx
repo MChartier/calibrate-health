@@ -22,12 +22,14 @@ describe('WeightTrendPreviewCard', () => {
                         id: 2,
                         date: '2026-07-20',
                         weight: 168,
+                        trend_is_materialized: true,
                         trend_weight: 168.2
                     },
                     {
                         id: 1,
                         date: '2026-07-19',
                         weight: 169,
+                        trend_is_materialized: true,
                         trend_weight: 168.8
                     }
                 ],
@@ -43,13 +45,14 @@ describe('WeightTrendPreviewCard', () => {
         });
     });
 
-    it('shows a compact 30-day summary and opens the full trend', () => {
+    it('shows a compact four-week summary and opens the full trend', () => {
         const onPress = jest.fn();
         const screen = render(<WeightTrendPreviewCard onPress={onPress} />);
 
-        expect(screen.getByText('Last 30 days at a glance.')).toBeTruthy();
-        expect(screen.getByLabelText('30-day weight trend preview')).toBeTruthy();
-        expect(screen.getByText('Trend -0.35 lb / week | low volatility')).toBeTruthy();
+        expect(screen.getByText('Last four weeks at a glance.')).toBeTruthy();
+        expect(screen.getByLabelText('Four-week weight trend preview')).toBeTruthy();
+        expect(screen.getByText('Trend line: down 0.6 lb over 1 day.')).toBeTruthy();
+        expect(screen.queryByText(/-0\.35|volatility/)).toBeNull();
 
         fireEvent.press(screen.getByLabelText('Open full weight trend'));
         expect(onPress).toHaveBeenCalledTimes(1);
@@ -58,7 +61,77 @@ describe('WeightTrendPreviewCard', () => {
     it('fills its flexed preview immediately', () => {
         const screen = render(<WeightTrendPreviewCard onPress={jest.fn()} />);
 
-        expect(screen.getByLabelText('30-day weight trend preview')).toHaveProp('height', '100%');
+        expect(screen.getByLabelText('Four-week weight trend preview')).toHaveProp('height', '100%');
+    });
+
+    it('keeps older fallback measurements out of the smoothed preview path', () => {
+        const metrics = [
+            {
+                id: 3,
+                date: '2026-07-20',
+                weight: 168,
+                trend_is_materialized: true,
+                trend_weight: 168.2
+            },
+            {
+                id: 2,
+                date: '2026-07-19',
+                weight: 169,
+                trend_is_materialized: true,
+                trend_weight: 168.8
+            },
+            {
+                id: 1,
+                date: '2026-07-18',
+                weight: 170,
+                trend_is_materialized: false,
+                trend_weight: 170
+            }
+        ];
+        (useQuery as jest.Mock).mockReturnValue({
+            data: {
+                metrics,
+                meta: {
+                    weekly_rate: -0.35,
+                    volatility: 'low',
+                    total_points: metrics.length,
+                    total_span_days: 3
+                }
+            },
+            error: null,
+            isLoading: false
+        });
+
+        const screen = render(<WeightTrendPreviewCard onPress={jest.fn()} />);
+
+        expect(screen.getByTestId('weight-trend-preview-measurement-path').props.d).toMatch(/^M 8\.00 /);
+        expect(screen.getByTestId('weight-trend-preview-smoothed-path').props.d).toMatch(/^M 170\.00 /);
+        expect(screen.getByText('Trend line: down 0.6 lb over 1 day.')).toBeTruthy();
+    });
+
+    it('links an empty current period with existing history to the full trend', () => {
+        const onPress = jest.fn();
+        (useQuery as jest.Mock).mockReturnValue({
+            data: {
+                metrics: [],
+                meta: {
+                    weekly_rate: 0,
+                    volatility: 'low',
+                    total_points: 4,
+                    total_span_days: 120
+                }
+            },
+            error: null,
+            isLoading: false
+        });
+
+        const screen = render(<WeightTrendPreviewCard onPress={onPress} />);
+
+        expect(screen.getByText('No weigh-ins in the last four weeks. Open Details to view your history.')).toBeTruthy();
+        expect(screen.queryByText('Log a weigh-in to start a trend.')).toBeNull();
+
+        fireEvent.press(screen.getByLabelText('Open full weight trend'));
+        expect(onPress).toHaveBeenCalledTimes(1);
     });
 
     it('draws against the measured canvas without stretching its markers', () => {

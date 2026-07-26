@@ -26,6 +26,7 @@ function createMetric(id: number, date: string, weight: number): TrendMetricEntr
         date,
         weight,
         body_fat_percent: null,
+        trend_is_materialized: true,
         trend_weight: 168.2,
         trend_ci_lower: 167.1,
         trend_ci_upper: 169.3,
@@ -72,6 +73,16 @@ describe('WeightTrendCard', () => {
         expect(getByText('Jul 15, 2026')).toBeTruthy();
     });
 
+    it('labels ranges by their comparison period', () => {
+        const { getByText, queryByText } = render(<WeightTrendCard />);
+
+        expect(getByText('Week')).toBeTruthy();
+        expect(getByText('Month')).toBeTruthy();
+        expect(getByText('Year')).toBeTruthy();
+        expect(getByText('All')).toBeTruthy();
+        expect(queryByText(/^(7d|30d|1y)$/)).toBeNull();
+    });
+
     it('renders the first-weigh-in state for a single metric', () => {
         (useQuery as jest.Mock).mockReturnValue({
             data: {
@@ -93,8 +104,67 @@ describe('WeightTrendCard', () => {
         expect(getByText('168.3 lb on Jul 15, 2026')).toBeTruthy();
     });
 
+    it('keeps older fallback measurements out of the smoothed trend path', () => {
+        const metrics = [
+            { ...createMetric(3, '2026-07-15', 168.3), trend_weight: 168.2 },
+            { ...createMetric(2, '2026-07-14', 168.7), trend_weight: 168.8 },
+            {
+                ...createMetric(1, '2026-07-13', 169.8),
+                trend_is_materialized: false,
+                trend_weight: 169.8,
+                trend_ci_lower: 169.8,
+                trend_ci_upper: 169.8
+            }
+        ];
+        (useQuery as jest.Mock).mockReturnValue({
+            data: {
+                metrics,
+                meta: {
+                    weekly_rate: -0.35,
+                    volatility: 'low',
+                    total_points: metrics.length,
+                    total_span_days: 3
+                }
+            },
+            error: null,
+            isLoading: false
+        });
+
+        const screen = render(<WeightTrendCard />);
+
+        expect(screen.getByTestId('weight-trend-measurement-path').props.d).toMatch(/^M 58\.00 /);
+        expect(screen.getByTestId('weight-trend-smoothed-path').props.d).toMatch(/^M 193\.00 /);
+        expect(screen.getByText('Trend line: down 0.6 lb over 1 day.')).toBeTruthy();
+    });
+
+    it('distinguishes an empty selected range from a user with no weight history', () => {
+        (useQuery as jest.Mock).mockReturnValue({
+            data: {
+                metrics: [],
+                meta: {
+                    weekly_rate: 0,
+                    volatility: 'low',
+                    total_points: 4,
+                    total_span_days: 120
+                }
+            },
+            error: null,
+            isLoading: false
+        });
+
+        const screen = render(<WeightTrendCard />);
+
+        expect(screen.getByText('No weigh-ins in this range. Choose All to view your weight history.')).toBeTruthy();
+        expect(screen.queryByText('Log a weigh-in to start a trend.')).toBeNull();
+
+        fireEvent.press(screen.getByText('All'));
+        expect(useQuery).toHaveBeenLastCalledWith(expect.objectContaining({
+            queryKey: ['mobile-metrics-trend', 'all']
+        }));
+    });
+
     it('labels the chart scale, dates, and selected-point series without a duplicate legend', () => {
-        const { getAllByText, getByLabelText, queryByLabelText } = render(<WeightTrendCard />);
+        const { getAllByText, getByLabelText, getByText, queryByLabelText, queryByText } = render(<WeightTrendCard />);
 
         expect(getByLabelText('170 lb weight axis label')).toBeTruthy();
         expect(getByLabelText('167 lb weight axis label')).toBeTruthy();
@@ -105,6 +175,8 @@ describe('WeightTrendCard', () => {
         expect(getAllByText('Measurement')).toHaveLength(1);
         expect(getAllByText('Trend')).toHaveLength(1);
         expect(getAllByText('Expected range')).toHaveLength(1);
+        expect(getByText('Trend line: steady over 2 days.')).toBeTruthy();
+        expect(queryByText(/0\.19|volatility/)).toBeNull();
     });
 
     it('uses available chart height without growing beyond the visual cap', () => {

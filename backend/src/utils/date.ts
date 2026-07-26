@@ -26,6 +26,18 @@ export function addUtcDays(date: Date, deltaDays: number): Date {
   return normalized;
 }
 
+/**
+ * Add calendar years to a UTC-normalized date, clamping leap day to the last
+ * valid day of February when the target year is not a leap year.
+ */
+export function addUtcYearsClamped(date: Date, deltaYears: number): Date {
+  const targetYear = date.getUTCFullYear() + deltaYears;
+  const month = date.getUTCMonth();
+  const day = date.getUTCDate();
+  const lastDayOfTargetMonth = new Date(Date.UTC(targetYear, month + 1, 0)).getUTCDate();
+  return new Date(Date.UTC(targetYear, month, Math.min(day, lastDayOfTargetMonth)));
+}
+
 export function getUtcTodayDateOnly(): Date {
   return normalizeToUtcDateOnly(new Date());
 }

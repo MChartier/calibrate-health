@@ -4,6 +4,15 @@ const Module = require('node:module');
 
 const POUNDS_PER_KILOGRAM = 2.2046226218487757;
 const FLOAT_TOLERANCE = 1e-9;
+const {
+  addUtcDays,
+  addUtcYearsClamped,
+  getUtcTodayDateOnly
+} = require('../src/utils/date');
+
+function formatDateOnly(date) {
+  return date.toISOString().slice(0, 10);
+}
 
 function stubModule(resolvedPath, exports) {
   const moduleInstance = new Module(resolvedPath);
@@ -200,6 +209,104 @@ test('metrics route: GET / validates range query values', async () => {
   assert.deepEqual(res.body, { message: 'Invalid range option' });
 });
 
+test('metrics route: GET / uses inclusive comparison endpoints for relative ranges', async () => {
+  const today = getUtcTodayDateOnly();
+  const cases = [
+    {
+      range: 'week',
+      includedDate: addUtcDays(today, -7)
+    },
+    {
+      range: 'month',
+      includedDate: addUtcDays(today, -28)
+    },
+    {
+      range: 'year',
+      includedDate: addUtcYearsClamped(today, -1)
+    }
+  ];
+
+  for (const rangeCase of cases) {
+    const rows = [
+      addUtcDays(rangeCase.includedDate, -1),
+      rangeCase.includedDate,
+      today,
+      addUtcDays(today, 1)
+    ].map((date, index) => ({
+      id: index + 1,
+      user_id: 7,
+      date,
+      weight_grams: 80000 + index,
+      body_fat_percent: null
+    }));
+    const router = loadMetricsRouter({
+      bodyMetric: {
+        findMany: async () => rows
+      }
+    });
+    const handler = getRouteHandler(router, 'get', '/');
+    const res = createRes();
+
+    await handler({
+      user: { id: 7, weight_unit: 'KG', timezone: 'UTC' },
+      query: { range: rangeCase.range }
+    }, res);
+
+    assert.equal(res.statusCode, 200);
+    assert.deepEqual(
+      res.body.map((metric) => metric.date.toISOString().slice(0, 10)),
+      [formatDateOnly(today), formatDateOnly(rangeCase.includedDate)],
+      `${rangeCase.range} should include its comparison endpoint`
+    );
+  }
+});
+
+test('metrics route: GET / anchors a relative trend range to an explicit historical end date', async () => {
+  const endDate = new Date('2025-02-28T00:00:00Z');
+  const includedDate = addUtcDays(endDate, -28);
+  const rows = [
+    addUtcDays(includedDate, -1),
+    includedDate,
+    endDate,
+    addUtcDays(endDate, 1)
+  ].map((date, index) => ({
+    id: index + 1,
+    user_id: 7,
+    date,
+    weight_grams: 80000 + index,
+    body_fat_percent: null,
+    trend: {
+      trend_weight_grams: 80000 + index,
+      trend_ci_lower_grams: 79800 + index,
+      trend_ci_upper_grams: 80200 + index,
+      trend_std_grams: 100
+    }
+  }));
+  const router = loadMetricsRouter({
+    bodyMetric: {
+      findFirst: async () => null,
+      findMany: async () => rows
+    }
+  });
+  const handler = getRouteHandler(router, 'get', '/');
+  const res = createRes();
+
+  await handler({
+    user: { id: 7, weight_unit: 'KG', timezone: 'UTC' },
+    query: {
+      include_trend: 'true',
+      range: 'month',
+      end: formatDateOnly(endDate)
+    }
+  }, res);
+
+  assert.equal(res.statusCode, 200);
+  assert.deepEqual(
+    res.body.metrics.map((metric) => metric.date.toISOString().slice(0, 10)),
+    [formatDateOnly(endDate), formatDateOnly(includedDate)]
+  );
+});
+
 test('metrics route: GET / returns metrics with weight converted to the user unit', async () => {
   const rows = [
     {
@@ -308,7 +415,7 @@ test('metrics route: GET / returns trend-augmented payload when include_trend=tr
 
   const req = {
     user: { id: 7, weight_unit: 'KG' },
-    query: { include_trend: 'true', range: 'week' }
+    query: { include_trend: 'true', range: 'all' }
   };
   const res = createRes();
 
@@ -323,6 +430,7 @@ test('metrics route: GET / returns trend-augmented payload when include_trend=tr
 
   const newest = res.body.metrics[0];
   assert.equal(typeof newest.weight, 'number');
+  assert.equal(newest.trend_is_materialized, true);
   assert.equal(typeof newest.trend_weight, 'number');
   assert.equal(typeof newest.trend_ci_lower, 'number');
   assert.equal(typeof newest.trend_ci_upper, 'number');
@@ -482,10 +590,15 @@ test('metrics route: GET / ignores trend rows older than the active trend horizo
   // Response is newest-first, so the old point is index 1.
   const oldMetric = res.body.metrics[1];
   assert.equal(oldMetric.date.getTime(), oldDate.getTime());
+  assert.equal(oldMetric.trend_is_materialized, false);
   assert.equal(oldMetric.trend_weight, oldMetric.weight);
   assert.equal(oldMetric.trend_ci_lower, oldMetric.weight);
   assert.equal(oldMetric.trend_ci_upper, oldMetric.weight);
   assert.equal(oldMetric.trend_std, 0);
+
+  const newestMetric = res.body.metrics[0];
+  assert.equal(newestMetric.date.getTime(), latestDate.getTime());
+  assert.equal(newestMetric.trend_is_materialized, true);
 });
 
 test('metrics route: POST / rejects invalid date values', async () => {
