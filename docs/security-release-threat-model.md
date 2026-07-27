@@ -37,10 +37,10 @@ authorize a read, update, delete, undo, or association.
 
 ## Dependency advisory resolution
 
-As of 2026-07-26, `npm audit --omit=dev` reports no production findings in either
-the root/mobile or backend lock graph. The backend's complete development graph is also clean after
-moving coverage to `c8@12` and pinning compatible patched releases used by Prisma and Redocly.
-API contract generation, backend coverage, and the full test suite exercise those overrides.
+As of 2026-07-27, `npm audit --omit=dev` reports no production findings in either
+the root/mobile or backend lock graph. Coverage runs on `c8@12`, and compatible patched releases
+remain pinned for the production and Prisma dependency edges. API contract generation, backend
+coverage, and the full test suite exercise those overrides.
 
 The root/mobile full audit still reports 23 high package entries, but every entry is the same
 development-only path to
@@ -52,6 +52,14 @@ test files; none are bundled into the server, web client, Android app, or Wear a
 `minimatch@3` calls the dependency as a function, causing test discovery to fail. Keep this finding
 visible until the React Native preset moves to a compatible Jest/tooling graph rather than masking
 it with an invalid lockfile override.
+
+The backend development graph has the same constraint on a separate OpenAPI-only edge:
+`openapi-typescript@7.13.0` depends on Redocly `1.34.17`, which pins `minimatch@5.1.9`.
+That minimatch release requires the callable `brace-expansion@2` API, while the only version
+currently accepted by the advisory scanner is the incompatible object-exporting v5 release.
+Keep Redocly on `brace-expansion@2.1.2` until its consumer upgrades to picomatch or another
+compatible implementation. A backend regression test executes a brace-bearing pattern through
+Redocly's exact minimatch dependency, and the dependency remains development-only.
 
 The separate UUID advisory is fully resolved. The root graph pins the `xcode@3.0.1` edge to patched
 `uuid@11.1.1`, and a release test executes xcode's actual `generateUuid()` path. Android prebuild,
