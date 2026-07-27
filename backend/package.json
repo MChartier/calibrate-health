@@ -5,6 +5,7 @@
   "scripts": {
     "prebuild": "npm run prisma:generate",
     "build": "tsc -p tsconfig.build.json",
+    "pretypecheck": "npm run prisma:generate",
     "typecheck": "tsc --noEmit -p tsconfig.build.json",
     "db:migrate": "prisma migrate deploy",
     "db:migrate:dev": "prisma migrate dev",
