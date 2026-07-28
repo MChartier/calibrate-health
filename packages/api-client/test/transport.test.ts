@@ -177,6 +177,57 @@ test('one successful refresh retries the original request with the replacement t
     assert.equal(unauthorizedCalls, 0);
 });
 
+test('a late 401 from the previous access token reuses the completed refresh', async () => {
+    let accessToken = 'expired-token';
+    let refreshCalls = 0;
+    let unauthorizedCalls = 0;
+    let expiredRequestCount = 0;
+    let releaseFirstExpiredRequest: () => void = () => undefined;
+    let releaseLateExpiredRequest: () => void = () => undefined;
+    const firstExpiredRequestStarted = new Promise<void>((resolve) => {
+        releaseFirstExpiredRequest = resolve;
+    });
+    const lateExpiredRequest = new Promise<void>((resolve) => {
+        releaseLateExpiredRequest = resolve;
+    });
+    const client = new CalibrateApiClient({
+        baseUrl: 'https://calibrate.example',
+        getAccessToken: () => accessToken,
+        refreshAccessToken: async () => {
+            refreshCalls += 1;
+            accessToken = 'replacement-token';
+            return true;
+        },
+        onUnauthorized: () => {
+            unauthorizedCalls += 1;
+        },
+        fetchImpl: (async (_input, init) => {
+            const authorization = new Headers(init?.headers).get('authorization');
+            if (authorization === 'Bearer expired-token') {
+                expiredRequestCount += 1;
+                if (expiredRequestCount === 1) {
+                    await firstExpiredRequestStarted;
+                } else {
+                    releaseFirstExpiredRequest();
+                    await lateExpiredRequest;
+                }
+                return new Response('{"message":"expired"}', { status: 401 });
+            }
+            return new Response('{"user":{"id":7}}', { status: 200 });
+        }) as typeof fetch
+    });
+
+    const firstRequest = client.getMe();
+    const lateRequest = client.getUserProfile();
+    await firstRequest;
+    releaseLateExpiredRequest();
+    await lateRequest;
+
+    assert.equal(expiredRequestCount, 2);
+    assert.equal(refreshCalls, 1);
+    assert.equal(unauthorizedCalls, 0);
+});
+
 test('a retried 401 does not start another refresh loop', async () => {
     let accessToken = 'expired-token';
     let fetchCalls = 0;
