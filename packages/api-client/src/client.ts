@@ -159,6 +159,7 @@ export class CalibrateApiClient {
     private readonly requestTimeoutMs: number;
     private readonly requestCredentials?: RequestCredentials;
     private refreshPromise: Promise<boolean> | null = null;
+    private refreshGeneration = 0;
 
     constructor(options: ApiClientOptions) {
         this.baseUrl = options.baseUrl;
@@ -179,6 +180,10 @@ export class CalibrateApiClient {
 
         if (!this.refreshPromise) {
             this.refreshPromise = Promise.resolve(this.refreshAccessToken())
+                .then((refreshed) => {
+                    if (refreshed) this.refreshGeneration += 1;
+                    return refreshed;
+                })
                 .finally(() => {
                     this.refreshPromise = null;
                 });
@@ -188,6 +193,7 @@ export class CalibrateApiClient {
     }
 
     private async request<T>(path: string, options: RequestOptions = {}, allowRefresh = true): Promise<T> {
+        const requestRefreshGeneration = this.refreshGeneration;
         const {
             auth = true,
             json,
@@ -281,6 +287,11 @@ export class CalibrateApiClient {
                 await this.onClientUpgradeRequired?.(body);
             }
             if (response.status === 401 && auth && allowRefresh && this.refreshAccessToken) {
+                // A slower response may have left with the access token that another request just
+                // refreshed. Retry against that replacement instead of rotating the token pair again.
+                if (requestRefreshGeneration !== this.refreshGeneration) {
+                    return this.request<T>(path, options, false);
+                }
                 const refreshed = await this.refreshAccessTokenOnce();
                 if (refreshed) {
                     return this.request<T>(path, options, false);

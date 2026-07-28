@@ -45,6 +45,57 @@ describe('CalibrateApiClient mobile authentication recovery', () => {
         expect(refreshCount).toBe(1);
     });
 
+    it('does not rotate again for a late 401 sent with the previous access token', async () => {
+        let accessToken = 'expired-access';
+        let refreshCount = 0;
+        let unauthorizedCount = 0;
+        let expiredRequestCount = 0;
+        let releaseFirstExpiredRequest!: () => void;
+        let releaseLateExpiredRequest!: () => void;
+        const firstExpiredRequestStarted = new Promise<void>((resolve) => {
+            releaseFirstExpiredRequest = resolve;
+        });
+        const lateExpiredRequest = new Promise<void>((resolve) => {
+            releaseLateExpiredRequest = resolve;
+        });
+        const client = new CalibrateApiClient({
+            baseUrl: 'https://example.test',
+            getAccessToken: () => accessToken,
+            refreshAccessToken: async () => {
+                refreshCount += 1;
+                accessToken = 'fresh-access';
+                return true;
+            },
+            onUnauthorized: async () => {
+                unauthorizedCount += 1;
+            },
+            fetchImpl: async (_input, init) => {
+                const authorization = new Headers(init?.headers).get('authorization');
+                if (authorization === 'Bearer expired-access') {
+                    expiredRequestCount += 1;
+                    if (expiredRequestCount === 1) {
+                        await firstExpiredRequestStarted;
+                    } else {
+                        releaseFirstExpiredRequest();
+                        await lateExpiredRequest;
+                    }
+                    return jsonResponse({ message: 'expired' }, 401);
+                }
+                return jsonResponse({ user: { id: 1 } });
+            }
+        });
+
+        const firstRequest = client.getMe();
+        const lateRequest = client.getUserProfile();
+        await firstRequest;
+        releaseLateExpiredRequest();
+        await lateRequest;
+
+        expect(expiredRequestCount).toBe(2);
+        expect(refreshCount).toBe(1);
+        expect(unauthorizedCount).toBe(0);
+    });
+
     it('retries only once before clearing an unauthorized session', async () => {
         let requestCount = 0;
         let refreshCount = 0;
