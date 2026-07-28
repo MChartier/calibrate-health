@@ -1,4 +1,3 @@
-import React from 'react';
 import { render, waitFor } from '@testing-library/react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import LogScreen from '../../app/(tabs)/log';

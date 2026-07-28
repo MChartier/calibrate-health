@@ -178,8 +178,8 @@ database is otherwise ready:
   targeting the current worktree's exposed backend port.
 - `npm run test:mobile`: run mobile unit tests.
 - `npm run test:web:e2e`: build the Expo web release export and run its local Chrome E2E suite.
-- `npm run lint`: type-check the Expo client.
-- `npm run ci:local`: run the local equivalent of PR CI (backend and Expo web builds, Expo release validation, type-checking, and backend/mobile tests).
+- `npm run lint`: type-check the backend, shared domain package, API client, and Expo client with unused-code checks.
+- `npm run ci:local`: run the local equivalent of PR CI (backend and Expo web builds, Expo release validation, backend/API/mobile type-checking, and backend/mobile tests).
 - `npm run test:coverage`: collect backend and Expo client coverage.
 
 ### Docker Compose development stack

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Platform, Pressable, StyleSheet } from 'react-native';
 import { Link, useLocalSearchParams } from 'expo-router';
 import { AppButton } from '../../src/components/AppButton';

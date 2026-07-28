@@ -1,4 +1,3 @@
-import React from 'react';
 import { StyleSheet } from 'react-native';
 import { router } from 'expo-router';
 import { PageHeader } from '../src/components/PageHeader';

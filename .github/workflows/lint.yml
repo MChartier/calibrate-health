@@ -11,8 +11,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  mobile-typecheck:
-    name: Mobile Typecheck
+  typecheck:
+    name: Backend, Shared, API Client, and Mobile Typecheck
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
@@ -25,10 +25,15 @@ jobs:
         with:
           node-version: 22.13.0
           cache: npm
-          cache-dependency-path: package-lock.json
+          cache-dependency-path: |
+            package-lock.json
+            backend/package-lock.json
 
-      - name: Install deps
+      - name: Install workspace deps
         run: npm ci --no-audit --fund=false
 
-      - name: Type-check mobile
-        run: npm --prefix mobile run typecheck
+      - name: Install backend deps
+        run: npm ci --prefix backend --no-audit --fund=false
+
+      - name: Type-check all TypeScript surfaces
+        run: npm run lint

@@ -1,4 +1,3 @@
-import React from 'react';
 import { render } from '@testing-library/react-native';
 import type { FoodLogEntry } from '@calibrate/api-client';
 import { FoodLogTimelineCard } from './FoodLogTimelineCard';

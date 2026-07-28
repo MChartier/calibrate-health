@@ -1,4 +1,3 @@
-import React from 'react';
 import { Alert, Linking } from 'react-native';
 import { router } from 'expo-router';
 import { AppButton } from '../src/components/AppButton';

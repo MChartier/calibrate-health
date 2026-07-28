@@ -1,5 +1,5 @@
 import crypto from 'node:crypto';
-import { MobileDevicePlatform, Prisma } from '@prisma/client';
+import { Prisma, type FoodLog } from '@prisma/client';
 import prisma from '../config/database';
 import { getRecentFoodSuggestions, type RecentFoodSuggestion } from './recentFoods';
 import { buildCalorieSummary } from '../utils/profile';
@@ -173,7 +173,7 @@ const responseFoodLogId = (body: unknown): number | null => {
   return parsePositiveInteger(body.food_log.id);
 };
 
-const serializeWatchFoodLog = (log: any) => ({
+const serializeWatchFoodLog = (log: FoodLog) => ({
   id: log.id,
   date: log.date.toISOString(),
   local_date: log.local_date.toISOString().slice(0, 10),

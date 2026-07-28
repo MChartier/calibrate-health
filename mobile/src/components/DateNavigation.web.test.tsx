@@ -30,6 +30,7 @@ jest.mock('../theme', () => ({
         },
         interaction: { minimumTouchTarget: 48 },
         radius: { md: 12 },
+        stroke: { control: 1 },
         spacing: { xs: 4, sm: 8, md: 16 },
         typography: {
             title: 28,

@@ -1,0 +1,98 @@
+import React from 'react';
+import { Pressable, StyleSheet, Switch, View } from 'react-native';
+import { AppText } from '../components/AppText';
+import { BottomSheetModal } from '../components/BottomSheetModal';
+import { spacing, useAppTheme } from '../theme';
+
+type PreferenceSwitchProps = {
+    label: string;
+    value: boolean;
+    onValueChange: (value: boolean) => void;
+};
+
+export const PreferenceSwitch: React.FC<PreferenceSwitchProps> = ({
+    label,
+    value,
+    onValueChange
+}) => {
+    const { colors } = useAppTheme();
+
+    return (
+        <Pressable
+            accessibilityRole="switch"
+            accessibilityState={{ checked: value }}
+            onPress={() => onValueChange(!value)}
+            style={({ pressed }) => [styles.switchRow, pressed && styles.pressedRow]}
+        >
+            <AppText variant="body" style={styles.switchLabel}>{label}</AppText>
+            <Switch
+                accessible={false}
+                importantForAccessibility="no-hide-descendants"
+                pointerEvents="none"
+                value={value}
+                trackColor={{ false: colors.outlineVariant, true: colors.primaryContainer }}
+                thumbColor={value ? colors.primary : colors.outline}
+            />
+        </Pressable>
+    );
+};
+
+export const SummaryRow: React.FC<{ label: string; value: string }> = ({
+    label,
+    value
+}) => (
+    <View style={styles.summaryRow}>
+        <AppText variant="caption">{label}</AppText>
+        <AppText variant="body" numberOfLines={1} style={styles.summaryValue}>{value}</AppText>
+    </View>
+);
+
+type SettingsDetailSheetProps = {
+    visible: boolean;
+    maxHeight?: React.ComponentProps<typeof BottomSheetModal>['maxHeight'];
+    onClose: () => void;
+    children: React.ReactNode;
+};
+
+export const SettingsDetailSheet: React.FC<SettingsDetailSheetProps> = ({
+    visible,
+    maxHeight,
+    onClose,
+    children
+}) => (
+    <BottomSheetModal visible={visible} maxHeight={maxHeight} onRequestClose={onClose}>
+        <View style={styles.sheetContent}>{children}</View>
+    </BottomSheetModal>
+);
+
+const styles = StyleSheet.create({
+    sheetContent: {
+        gap: spacing.md
+    },
+    switchRow: {
+        minHeight: 48,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: spacing.md
+    },
+    switchLabel: {
+        flex: 1,
+        fontWeight: '700'
+    },
+    pressedRow: {
+        opacity: 0.78
+    },
+    summaryRow: {
+        minHeight: 30,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: spacing.md
+    },
+    summaryValue: {
+        flexShrink: 1,
+        textAlign: 'right',
+        fontWeight: '800'
+    }
+});

@@ -13,10 +13,8 @@ import {
 } from '@calibrate/shared';
 import { AppButton } from '../src/components/AppButton';
 import { AppCard } from '../src/components/AppCard';
-import { AppChip } from '../src/components/AppChip';
 import { AppText } from '../src/components/AppText';
 import { CalibrateLogo } from '../src/components/CalibrateLogo';
-import { DatePickerField } from '../src/components/DatePickerField';
 import { HealthConnectOnboardingStep } from '../src/components/HealthConnectOnboardingStep';
 import { LoadingState } from '../src/components/LoadingState';
 import { KeyboardAwareScrollView } from '../src/components/KeyboardAwareScrollView';
@@ -25,8 +23,11 @@ import { GoalDailyChangeSelect } from '../src/components/GoalDailyChangeSelect';
 import { Screen } from '../src/components/Screen';
 import { SectionHeader } from '../src/components/SectionHeader';
 import { SegmentedControl } from '../src/components/SegmentedControl';
-import { TimeZonePickerField } from '../src/components/TimeZonePickerField';
 import { WearPairingCard } from '../src/components/WearPairingCard';
+import {
+    ProfileEnergyFields,
+    ProfileIdentityFields
+} from '../src/components/profile/ProfileDetailsFields';
 import { useAuth } from '../src/auth/AuthContext';
 import { gramsToDisplayWeight, millimetersToCentimeters, millimetersToFeetInches } from '../src/utils/bodyMeasurements';
 import { getTodayDate } from '../src/utils/dates';
@@ -39,7 +40,7 @@ import {
     type GoalMode
 } from '../src/utils/goals';
 import { isProfileSetupComplete } from '../src/utils/profileCompletion';
-import { ACTIVITY_OPTIONS, HEIGHT_UNIT_OPTIONS, SEX_OPTIONS, WEIGHT_UNIT_OPTIONS } from '../src/utils/profileOptions';
+import { ACTIVITY_OPTIONS, SEX_OPTIONS, WEIGHT_UNIT_OPTIONS } from '../src/utils/profileOptions';
 import { getKeyboardAvoidingBehavior } from '../src/utils/keyboard';
 import { detectDeviceTimeZone, formatTimeZoneLabel, resolveOnboardingTimeZone } from '../src/utils/timezones';
 import {
@@ -395,66 +396,30 @@ export default function OnboardingScreen() {
                 );
             case 'about':
                 return (
-                    <>
-                        <DatePickerField
-                            label="Date of birth"
-                            value={dateOfBirth}
-                            onChangeDate={setDateOfBirth}
-                            maximumDate={getTodayDate(timezone)}
-                            fallbackDate="1990-01-01"
-                        />
-                        <AppText variant="label">Sex</AppText>
-                        <View style={styles.chips}>
-                            {SEX_OPTIONS.map((option) => (
-                                <AppChip
-                                    key={option.value}
-                                    label={option.label}
-                                    selected={sex === option.value}
-                                    onPress={() => setSex(option.value)}
-                                />
-                            ))}
-                        </View>
-                    </>
+                    <ProfileIdentityFields
+                        dateOfBirth={dateOfBirth}
+                        maximumDate={getTodayDate(timezone)}
+                        onDateOfBirthChange={setDateOfBirth}
+                        sex={sex}
+                        onSexChange={setSex}
+                    />
                 );
             case 'burn':
                 return (
-                    <>
-                        <AppText variant="label">Activity level</AppText>
-                        <View style={styles.chips}>
-                            {ACTIVITY_OPTIONS.map((option) => (
-                                <AppChip
-                                    key={option.value}
-                                    label={option.label}
-                                    selected={activityLevel === option.value}
-                                    onPress={() => setActivityLevel(option.value)}
-                                />
-                            ))}
-                        </View>
-                        <AppText variant="label">Height unit</AppText>
-                        <SegmentedControl options={HEIGHT_UNIT_OPTIONS} value={heightUnit} onChange={setHeightUnit} />
-                        {heightUnit === HEIGHT_UNITS.CM ? (
-                            <NumberStepperField label="Height" value={heightCm} onChangeText={setHeightCm} step={1} min={0} suffix="cm" />
-                        ) : (
-                            <View style={styles.fieldStack}>
-                                <NumberStepperField
-                                    label="Feet"
-                                    value={heightFeet}
-                                    onChangeText={setHeightFeet}
-                                    step={1}
-                                    min={0}
-                                />
-                                <NumberStepperField
-                                    label="Inches"
-                                    value={heightInches}
-                                    onChangeText={setHeightInches}
-                                    step={1}
-                                    min={0}
-                                    max={11}
-                                />
-                            </View>
-                        )}
-                        <TimeZonePickerField value={timezone} onChange={setTimezone} />
-                    </>
+                    <ProfileEnergyFields
+                        activityLevel={activityLevel}
+                        onActivityLevelChange={setActivityLevel}
+                        heightUnit={heightUnit}
+                        onHeightUnitChange={setHeightUnit}
+                        heightCm={heightCm}
+                        onHeightCmChange={setHeightCm}
+                        heightFeet={heightFeet}
+                        onHeightFeetChange={setHeightFeet}
+                        heightInches={heightInches}
+                        onHeightInchesChange={setHeightInches}
+                        timezone={timezone}
+                        onTimezoneChange={setTimezone}
+                    />
                 );
             case 'import':
                 return (

@@ -1,4 +1,3 @@
-import React from 'react';
 import { fireEvent, render } from '@testing-library/react-native';
 import { useQuery } from '@tanstack/react-query';
 import type { TrendMetricEntry } from '@calibrate/api-client';

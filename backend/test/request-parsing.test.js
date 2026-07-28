@@ -36,6 +36,7 @@ test('requestParsing: parseNonNegativeInteger accepts finite integers >= 0 (trun
   assert.equal(parseNonNegativeInteger(-1), null);
   assert.equal(parseNonNegativeInteger('-1'), null);
   assert.equal(parseNonNegativeInteger(''), null);
+  assert.equal(parseNonNegativeInteger('10 calories'), null);
   assert.equal(parseNonNegativeInteger('not-a-number'), null);
   assert.equal(parseNonNegativeInteger({}), null);
   assert.equal(parseNonNegativeInteger(Number.NaN), null);

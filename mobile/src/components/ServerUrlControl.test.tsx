@@ -1,4 +1,3 @@
-import React from 'react';
 import { fireEvent, render } from '@testing-library/react-native';
 import { ServerUrlControl } from './ServerUrlControl';
 import { HOSTED_SERVER_URL, type ServerConnectionState } from '../config/server';
