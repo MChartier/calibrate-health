@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
-import { Platform, Pressable, View } from 'react-native';
-import DateTimePicker, { type DateTimePickerEvent } from '@react-native-community/datetimepicker';
+import { Pressable, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { AppText } from './AppText';
-import { dateOnlyToLocalDate, localDateToDateOnly } from '../utils/dates';
 import type { DateNavigationProps } from './DateNavigation.types';
+import { HistoricalDatePicker } from './HistoricalDatePicker';
 import {
     DateNavigationIconButton,
     useDateNavigationPresentation
@@ -21,21 +20,11 @@ export const DateNavigation: React.FC<DateNavigationProps> = ({
     style,
     ...props
 }) => {
-    const [pickerDate, setPickerDate] = useState<Date | null>(null);
+    const [pickerOpen, setPickerOpen] = useState(false);
     const { theme, styles } = useDateNavigationPresentation();
 
     function openPicker() {
-        setPickerDate(dateOnlyToLocalDate(navigation.selectedDate));
-    }
-
-    function handleDatePicked(event: DateTimePickerEvent, date?: Date) {
-        if (Platform.OS === 'android') {
-            setPickerDate(null);
-        }
-
-        if (event.type === 'set' && date) {
-            navigation.setDate(localDateToDateOnly(date));
-        }
+        setPickerOpen(true);
     }
 
     return (
@@ -66,16 +55,14 @@ export const DateNavigation: React.FC<DateNavigationProps> = ({
                 />
             </View>
 
-            {pickerDate && (
-                <DateTimePicker
-                    value={pickerDate}
-                    mode="date"
-                    display={Platform.OS === 'android' ? 'calendar' : 'inline'}
-                    minimumDate={dateOnlyToLocalDate(navigation.minDate)}
-                    maximumDate={dateOnlyToLocalDate(navigation.maxDate)}
-                    onChange={handleDatePicked}
-                />
-            )}
+            <HistoricalDatePicker
+                visible={pickerOpen}
+                selectedDate={navigation.selectedDate}
+                minDate={navigation.minDate}
+                maxDate={navigation.maxDate}
+                onSelectDate={navigation.setDate}
+                onRequestClose={() => setPickerOpen(false)}
+            />
         </View>
     );
 };
