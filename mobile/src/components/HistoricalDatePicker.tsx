@@ -29,7 +29,8 @@ type HistoricalDatePickerProps = {
 
 const WEEKDAY_LABELS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'] as const;
 const CALENDAR_DAY_HEIGHT = 48; // Keeps each compact calendar row physically tappable.
-const CALENDAR_MARKER_SIZE = 9; // Keeps completion marks visible without competing with day numbers.
+const CALENDAR_STATUS_BADGE_SIZE = 34; // Makes the historical state the primary calendar-day silhouette.
+const CALENDAR_LEGEND_MARKER_SIZE = 10; // Keeps legend symbols proportional to their compact labels.
 const CALENDAR_CONTENT_MAX_WIDTH = 560; // Prevents calendar cells from stretching across wide browser sheets.
 
 function formatMonth(monthKey: string): string {
@@ -207,18 +208,37 @@ export const HistoricalDatePicker: React.FC<HistoricalDatePickerProps> = ({
                                             pressed && styles.pressed
                                         ]}
                                     >
-                                        <AppText
-                                            variant="label"
+                                        <View
+                                            testID={`calendar-date-badge-${date}`}
                                             style={[
-                                                styles.dayNumber,
-                                                isToday && styles.todayNumber,
-                                                isSelected && styles.selectedDayNumber
+                                                styles.dateBadge,
+                                                marker === 'complete' && styles.completeDateBadge,
+                                                marker === 'incomplete' && styles.incompleteDateBadge,
+                                                marker === 'not-started' && styles.notStartedDateBadge,
+                                                marker === 'paused' && styles.pausedDateBadge
                                             ]}
                                         >
-                                            {Number(date.slice(-2))}
-                                        </AppText>
-                                        <View style={styles.markerSlot}>
-                                            <CalendarMarker marker={marker} theme={theme} styles={styles} />
+                                            <AppText
+                                                variant="label"
+                                                style={[
+                                                    styles.dayNumber,
+                                                    isToday && styles.todayNumber,
+                                                    isSelected && marker === 'none' && styles.selectedDayNumber,
+                                                    marker === 'complete' && styles.completeDayNumber,
+                                                    marker === 'incomplete' && styles.incompleteDayNumber,
+                                                    marker === 'not-started' && styles.notStartedDayNumber,
+                                                    marker === 'paused' && styles.pausedDayNumber
+                                                ]}
+                                            >
+                                                {Number(date.slice(-2))}
+                                            </AppText>
+                                            {marker === 'paused' && (
+                                                <Ionicons
+                                                    name="pause"
+                                                    size={9}
+                                                    color={theme.colors.onSurfaceVariant}
+                                                />
+                                            )}
                                         </View>
                                     </Pressable>
                                 );
@@ -324,6 +344,28 @@ function createStyles(theme: AppTheme) {
             color: theme.colors.onSurface,
             lineHeight: 20
         },
+        dateBadge: {
+            width: CALENDAR_STATUS_BADGE_SIZE,
+            height: CALENDAR_STATUS_BADGE_SIZE,
+            alignItems: 'center',
+            justifyContent: 'center',
+            borderRadius: CALENDAR_STATUS_BADGE_SIZE / 2
+        },
+        completeDateBadge: {
+            backgroundColor: theme.colors.success
+        },
+        incompleteDateBadge: {
+            borderWidth: 2,
+            borderColor: theme.colors.success
+        },
+        notStartedDateBadge: {
+            backgroundColor: theme.colors.surfaceContainer
+        },
+        pausedDateBadge: {
+            borderWidth: theme.stroke.control,
+            borderColor: theme.colors.outline,
+            backgroundColor: theme.colors.surfaceContainerHigh
+        },
         todayNumber: {
             color: theme.colors.primary,
             fontWeight: '800'
@@ -331,33 +373,44 @@ function createStyles(theme: AppTheme) {
         selectedDayNumber: {
             color: theme.colors.onPrimaryContainer
         },
-        markerSlot: {
-            height: 14,
-            alignItems: 'center',
-            justifyContent: 'center'
+        completeDayNumber: {
+            color: theme.colors.onSuccess,
+            fontWeight: '800'
+        },
+        incompleteDayNumber: {
+            color: theme.colors.success,
+            fontWeight: '800'
+        },
+        notStartedDayNumber: {
+            color: theme.colors.onSurfaceVariant
+        },
+        pausedDayNumber: {
+            color: theme.colors.onSurfaceVariant,
+            fontWeight: '700',
+            lineHeight: 14
         },
         markerPlaceholder: {
-            width: CALENDAR_MARKER_SIZE,
-            height: CALENDAR_MARKER_SIZE
+            width: CALENDAR_LEGEND_MARKER_SIZE,
+            height: CALENDAR_LEGEND_MARKER_SIZE
         },
         completeMarker: {
-            width: CALENDAR_MARKER_SIZE,
-            height: CALENDAR_MARKER_SIZE,
-            borderRadius: CALENDAR_MARKER_SIZE / 2,
+            width: CALENDAR_LEGEND_MARKER_SIZE,
+            height: CALENDAR_LEGEND_MARKER_SIZE,
+            borderRadius: CALENDAR_LEGEND_MARKER_SIZE / 2,
             backgroundColor: theme.colors.success
         },
         incompleteMarker: {
-            width: CALENDAR_MARKER_SIZE,
-            height: CALENDAR_MARKER_SIZE,
-            borderRadius: CALENDAR_MARKER_SIZE / 2,
+            width: CALENDAR_LEGEND_MARKER_SIZE,
+            height: CALENDAR_LEGEND_MARKER_SIZE,
+            borderRadius: CALENDAR_LEGEND_MARKER_SIZE / 2,
             borderWidth: 2,
             borderColor: theme.colors.success
         },
         notStartedMarker: {
-            width: 4,
-            height: 4,
-            borderRadius: 2,
-            backgroundColor: theme.colors.outline
+            width: CALENDAR_LEGEND_MARKER_SIZE,
+            height: CALENDAR_LEGEND_MARKER_SIZE,
+            borderRadius: CALENDAR_LEGEND_MARKER_SIZE / 2,
+            backgroundColor: theme.colors.surfaceContainer
         },
         queryStatus: {
             minHeight: 20,

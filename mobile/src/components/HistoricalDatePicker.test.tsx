@@ -1,7 +1,9 @@
 import React from 'react';
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
+import { StyleSheet } from 'react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { FoodLogDay, FoodLogDaySource, FoodLogDayStatus } from '@calibrate/api-client';
+import { themes } from '../theme';
 import { HistoricalDatePicker } from './HistoricalDatePicker';
 
 const mockGetFoodDays = jest.fn();
@@ -78,6 +80,34 @@ describe('HistoricalDatePicker', () => {
         expect(screen.getByLabelText(/Jul 13, 2026, not started/i)).toBeTruthy();
         expect(screen.getByLabelText(/Jul 14, 2026, tracking paused/i)).toBeTruthy();
         expect(screen.getByLabelText(/Jul 18, 2026, today, in progress/i)).toBeTruthy();
+
+        expect(StyleSheet.flatten(screen.getByTestId('calendar-date-badge-2026-07-11').props.style)).toEqual(
+            expect.objectContaining({
+                width: 34,
+                height: 34,
+                borderRadius: 17,
+                backgroundColor: themes.light.colors.success
+            })
+        );
+        expect(StyleSheet.flatten(screen.getByTestId('calendar-date-badge-2026-07-12').props.style)).toEqual(
+            expect.objectContaining({
+                width: 34,
+                height: 34,
+                borderWidth: 2,
+                borderColor: themes.light.colors.success
+            })
+        );
+        expect(StyleSheet.flatten(screen.getByTestId('calendar-date-badge-2026-07-13').props.style)).toEqual(
+            expect.objectContaining({
+                backgroundColor: themes.light.colors.surfaceContainer
+            })
+        );
+        expect(StyleSheet.flatten(screen.getByTestId('calendar-date-badge-2026-07-14').props.style)).toEqual(
+            expect.objectContaining({
+                borderColor: themes.light.colors.outline,
+                backgroundColor: themes.light.colors.surfaceContainerHigh
+            })
+        );
 
         fireEvent.press(completeDay);
         expect(onSelectDate).toHaveBeenCalledWith('2026-07-11');
