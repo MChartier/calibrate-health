@@ -12,7 +12,7 @@ jest.mock('@expo/vector-icons/Ionicons', () => () => null);
 jest.mock('../auth/AuthContext', () => ({
     useAuth: () => ({ api: { getFoodDays: mockGetFoodDays } })
 }));
-jest.mock('./BottomSheetModal', () => {
+jest.mock('../components/BottomSheetModal', () => {
     const ReactModule = require('react') as typeof import('react');
     const { View } = require('react-native') as typeof import('react-native');
     return {

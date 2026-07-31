@@ -1,10 +1,76 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useAppTheme } from '../theme';
 import type { CalendarModalProps } from './CalendarModal';
 
 const CALENDAR_MODAL_Z_INDEX = 1_000; // Keeps the date picker above the fixed web app shell.
 const CALENDAR_SHEET_MAX_HEIGHT = '94vh'; // Leaves context around the modal on short browser viewports.
+const FOCUSABLE_ELEMENT_SELECTOR = [
+    'button:not([disabled])',
+    'a[href]',
+    'input:not([disabled])',
+    'select:not([disabled])',
+    'textarea:not([disabled])',
+    '[tabindex]:not([tabindex="-1"])'
+].join(','); // Covers native controls plus focusable elements emitted by React Native Web.
+
+function getFocusableElements(container: HTMLElement): HTMLElement[] {
+    return Array.from(container.querySelectorAll<HTMLElement>(FOCUSABLE_ELEMENT_SELECTOR))
+        .filter((element) => element.getAttribute('aria-hidden') !== 'true');
+}
+
+function activateFocusTrap(sheet: HTMLElement, onRequestClose: () => void): () => void {
+    const ownerDocument = sheet.ownerDocument;
+    const previouslyFocusedElement = ownerDocument.activeElement instanceof HTMLElement
+        ? ownerDocument.activeElement
+        : null;
+
+    function focusFirstElement() {
+        (getFocusableElements(sheet)[0] ?? sheet).focus();
+    }
+
+    function containKeyboardFocus(event: KeyboardEvent) {
+        if (event.key === 'Escape') {
+            event.preventDefault();
+            onRequestClose();
+            return;
+        }
+        if (event.key !== 'Tab') return;
+
+        const focusableElements = getFocusableElements(sheet);
+        if (focusableElements.length === 0) {
+            event.preventDefault();
+            sheet.focus();
+            return;
+        }
+
+        const firstElement = focusableElements[0];
+        const lastElement = focusableElements[focusableElements.length - 1];
+        const activeElement = ownerDocument.activeElement;
+        if (event.shiftKey && (activeElement === firstElement || !sheet.contains(activeElement))) {
+            event.preventDefault();
+            lastElement.focus();
+        } else if (!event.shiftKey && (activeElement === lastElement || !sheet.contains(activeElement))) {
+            event.preventDefault();
+            firstElement.focus();
+        }
+    }
+
+    function containProgrammaticFocus(event: FocusEvent) {
+        if (event.target instanceof Node && sheet.contains(event.target)) return;
+        focusFirstElement();
+    }
+
+    ownerDocument.addEventListener('keydown', containKeyboardFocus);
+    ownerDocument.addEventListener('focusin', containProgrammaticFocus);
+    focusFirstElement();
+
+    return () => {
+        ownerDocument.removeEventListener('keydown', containKeyboardFocus);
+        ownerDocument.removeEventListener('focusin', containProgrammaticFocus);
+        if (previouslyFocusedElement?.isConnected) previouslyFocusedElement.focus();
+    };
+}
 
 /** Web portal avoids React Native Modal painting and hit-testing inconsistencies in browsers. */
 export const CalendarModal: React.FC<CalendarModalProps> = ({
@@ -13,30 +79,32 @@ export const CalendarModal: React.FC<CalendarModalProps> = ({
     children
 }) => {
     const theme = useAppTheme();
+    const sheetRef = useRef<HTMLDivElement>(null);
+    const onRequestCloseRef = useRef(onRequestClose);
+
+    useEffect(() => {
+        onRequestCloseRef.current = onRequestClose;
+    }, [onRequestClose]);
 
     useEffect(() => {
         if (!visible || typeof document === 'undefined') return;
-        function closeOnEscape(event: KeyboardEvent) {
-            if (event.key === 'Escape') onRequestClose();
-        }
-        document.addEventListener('keydown', closeOnEscape);
-        return () => document.removeEventListener('keydown', closeOnEscape);
-    }, [onRequestClose, visible]);
+        const sheet = sheetRef.current;
+        if (!sheet) return;
+        return activateFocusTrap(sheet, () => onRequestCloseRef.current());
+    }, [visible]);
 
     if (!visible || typeof document === 'undefined') return null;
 
     return createPortal(
         <div
-            aria-modal="true"
-            role="dialog"
             style={{
                 position: 'fixed',
                 inset: 0,
                 zIndex: CALENDAR_MODAL_Z_INDEX
             }}
         >
-            <button
-                aria-label="Close dialog"
+            <div
+                aria-hidden="true"
                 onClick={onRequestClose}
                 style={{
                     position: 'absolute',
@@ -48,9 +116,13 @@ export const CalendarModal: React.FC<CalendarModalProps> = ({
                     background: theme.colors.scrim,
                     cursor: 'default'
                 }}
-                type="button"
             />
             <div
+                ref={sheetRef}
+                aria-label="Calendar"
+                aria-modal="true"
+                role="dialog"
+                tabIndex={-1}
                 style={{
                     position: 'absolute',
                     right: 0,

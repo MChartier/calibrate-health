@@ -377,14 +377,25 @@ test('authenticated shell renders real dashboard data and navigates release surf
     expect(todayBox!.y).toBeGreaterThan(viewport!.height - 110);
   }
 
-  const dateInput = page.getByLabel('Choose date');
-  await expect(dateInput).toBeVisible();
-  const currentDate = await dateInput.inputValue();
-  const previousDate = new Date(`${currentDate}T12:00:00Z`);
-  previousDate.setUTCDate(previousDate.getUTCDate() - 1);
-  const previousDateValue = previousDate.toISOString().slice(0, 10);
-  await dateInput.fill(previousDateValue);
-  await expect(dateInput).toHaveValue(previousDateValue);
+  const datePickerTrigger = page.getByRole('button', { name: 'Choose date', exact: true });
+  await expect(datePickerTrigger).toBeVisible();
+  await datePickerTrigger.focus();
+  await datePickerTrigger.press('Enter');
+
+  const calendarDialog = page.getByRole('dialog', { name: 'Calendar', exact: true });
+  const closeDatePicker = calendarDialog.getByRole('button', { name: 'Close date picker', exact: true });
+  await expect(calendarDialog).toBeVisible();
+  await expect(closeDatePicker).toBeFocused();
+
+  await page.keyboard.press('Shift+Tab');
+  expect(await page.evaluate(() => document.activeElement?.closest('[role="dialog"]')?.getAttribute('aria-label')))
+    .toBe('Calendar');
+  await page.keyboard.press('Tab');
+  await expect(closeDatePicker).toBeFocused();
+
+  await page.keyboard.press('Escape');
+  await expect(calendarDialog).toBeHidden();
+  await expect(datePickerTrigger).toBeFocused();
 
   await page.getByRole('tab', { name: /Progress$/ }).click();
   await expect(page).toHaveURL(/\/progress$/);

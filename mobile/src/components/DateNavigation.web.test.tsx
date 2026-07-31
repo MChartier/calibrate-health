@@ -17,7 +17,7 @@ const testRenderer = require('react-test-renderer') as {
 };
 
 jest.mock('@expo/vector-icons/Ionicons', () => () => null);
-jest.mock('./HistoricalDatePicker', () => {
+jest.mock('../food/HistoricalDatePicker', () => {
     const ReactModule = require('react') as typeof import('react');
     return {
         HistoricalDatePicker: (props: Record<string, unknown>) =>

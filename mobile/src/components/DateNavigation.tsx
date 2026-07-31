@@ -3,7 +3,7 @@ import { Pressable, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { AppText } from './AppText';
 import type { DateNavigationProps } from './DateNavigation.types';
-import { HistoricalDatePicker } from './HistoricalDatePicker';
+import { HistoricalDatePicker } from '../food/HistoricalDatePicker';
 import {
     DateNavigationIconButton,
     useDateNavigationPresentation

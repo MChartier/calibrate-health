@@ -12,11 +12,11 @@ import {
     getMonthKey,
     shiftMonth,
     type FoodDayCalendarMarker
-} from '../food/calendar';
+} from './calendar';
 import { formatDateOnlyForDisplay } from '../utils/dates';
 import { type AppTheme, useAppTheme } from '../theme';
-import { AppText } from './AppText';
-import { CalendarModal } from './CalendarModal';
+import { AppText } from '../components/AppText';
+import { CalendarModal } from '../components/CalendarModal';
 
 type HistoricalDatePickerProps = {
     visible: boolean;
