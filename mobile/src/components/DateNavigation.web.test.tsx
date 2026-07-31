@@ -17,6 +17,13 @@ const testRenderer = require('react-test-renderer') as {
 };
 
 jest.mock('@expo/vector-icons/Ionicons', () => () => null);
+jest.mock('../food/HistoricalDatePicker', () => {
+    const ReactModule = require('react') as typeof import('react');
+    return {
+        HistoricalDatePicker: (props: Record<string, unknown>) =>
+            ReactModule.createElement('historical-date-picker', props)
+    };
+});
 jest.mock('../theme', () => ({
     useAppTheme: () => ({
         colors: {
@@ -45,9 +52,8 @@ jest.mock('../theme', () => ({
 }));
 
 describe('DateNavigation web', () => {
-    it('uses a constrained browser date input and forwards date selection', () => {
+    it('opens the decorated history calendar and forwards date selection', () => {
         const setDate = jest.fn();
-        const showPicker = jest.fn();
         const navigation: LogDateNavigation = {
             selectedDate: '2026-07-17',
             selectedDateLabel: 'Jul 17, 2026',
@@ -65,32 +71,29 @@ describe('DateNavigation web', () => {
         let tree: { root: TestInstance };
 
         testRenderer.act(() => {
-            tree = testRenderer.create(<DateNavigation navigation={navigation} />, {
-                createNodeMock: (element) => element.type === 'input'
-                    ? { showPicker, focus: jest.fn(), click: jest.fn() }
-                    : null
-            });
+            tree = testRenderer.create(<DateNavigation navigation={navigation} />);
         });
 
-        const input = tree!.root.findByType('input');
-        expect(input.props).toMatchObject({
-            'aria-label': 'Choose date',
-            min: '2026-01-01',
-            max: '2026-07-18',
-            type: 'date',
-            value: '2026-07-17'
-        });
-
+        const trigger = tree!.root.findByProps({ accessibilityLabel: 'Choose date' });
         testRenderer.act(() => {
-            (input.props.onInput as (event: { currentTarget: { value: string } }) => void)({
-                currentTarget: { value: '2026-07-16' }
-            });
+            (trigger.props.onPress as () => void)();
+        });
+
+        const picker = tree!.root.findByType('historical-date-picker');
+        expect(picker.props).toMatchObject({
+            visible: true,
+            selectedDate: '2026-07-17',
+            minDate: '2026-01-01',
+            maxDate: '2026-07-18'
+        });
+        testRenderer.act(() => {
+            (picker.props.onSelectDate as (date: string) => void)('2026-07-16');
         });
         expect(setDate).toHaveBeenCalledWith('2026-07-16');
 
         testRenderer.act(() => {
-            (input.props.onClick as () => void)();
+            (picker.props.onRequestClose as () => void)();
         });
-        expect(showPicker).toHaveBeenCalledTimes(1);
+        expect(tree!.root.findByType('historical-date-picker').props.visible).toBe(false);
     });
 });

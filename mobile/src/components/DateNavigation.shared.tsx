@@ -81,10 +81,6 @@ function createDateNavigationStyles(theme: AppTheme) {
             paddingVertical: theme.spacing.xs,
             overflow: 'hidden'
         },
-        datePillFocused: {
-            borderColor: theme.colors.primary,
-            borderWidth: 2
-        },
         dateText: {
             textAlign: 'center',
             flexShrink: 1
