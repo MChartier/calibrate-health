@@ -18,6 +18,7 @@ import { LineChart, lineClasses } from '@mui/x-charts/LineChart';
 import { ChartsReferenceLine } from '@mui/x-charts/ChartsReferenceLine';
 import { alpha, useTheme, type SxProps, type Theme } from '@mui/material/styles';
 import { useQuery } from '@tanstack/react-query';
+import { Link as RouterLink } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../context/useAuth';
 import { METRICS_RANGE_OPTIONS, type MetricsRange } from '../constants/metricsRanges';
@@ -140,10 +141,8 @@ function getRequestedWindow(range: MetricsRange, latestMetricDateIso: string | n
 /**
  * Choose x-axis date label granularity based on the displayed span.
  */
-function getAxisLabelOptions(spanDays: number, useCompactLayout: boolean): Intl.DateTimeFormatOptions {
-    if (spanDays <= 14) {
-        return useCompactLayout ? { weekday: 'short' } : { weekday: 'short', month: 'short', day: 'numeric' };
-    }
+function getAxisLabelOptions(spanDays: number): Intl.DateTimeFormatOptions {
+    if (spanDays <= 14) return { weekday: 'short', month: 'short', day: 'numeric' };
     if (spanDays <= 120) return { month: 'short', day: 'numeric' };
     if (spanDays <= 370) return { month: 'short' };
     return { month: 'short', year: 'numeric' };
@@ -487,10 +486,7 @@ const WeightTrend: React.FC<WeightTrendProps> = ({
         const diffDays = Math.round((xDomain.max.getTime() - xDomain.min.getTime()) / MS_PER_DAY);
         return Math.max(1, diffDays + 1);
     }, [requestedWindow, xDomain]);
-    const xAxisLabelOptions = useMemo(
-        () => getAxisLabelOptions(activeSpanDays, useCompactLayout),
-        [activeSpanDays, useCompactLayout]
-    );
+    const xAxisLabelOptions = useMemo(() => getAxisLabelOptions(activeSpanDays), [activeSpanDays]);
     const xAxisFormatter = useMemo(() => new Intl.DateTimeFormat(undefined, xAxisLabelOptions), [xAxisLabelOptions]);
     const yAxisFormatter = useMemo(
         () => new Intl.NumberFormat(undefined, { maximumFractionDigits: 1 }),
@@ -739,7 +735,7 @@ const WeightTrend: React.FC<WeightTrendProps> = ({
         setPanWindowIndex((current) => Math.max(0, current - 1));
     }, [scheduleRawMarkReveal]);
 
-    const controlsRow = points.length > 0 ? (
+    const controlsRow = points.length > 0 && !compactPreview ? (
         <WeightTrendControls
             selectedRange={selectedRange}
             isCompactViewport={isCompactViewport}
@@ -948,7 +944,7 @@ const WeightTrend: React.FC<WeightTrendProps> = ({
         );
     }
 
-    return (
+    const card = (
         <AppCard
             sx={mergeSx(shouldStretchChart ? { height: '100%', minHeight: 0 } : null, sx)}
             contentSx={{
@@ -975,18 +971,32 @@ const WeightTrend: React.FC<WeightTrendProps> = ({
                     }}
                 >
                     <Typography variant="h6" sx={{ minWidth: 0, flexGrow: 1 }}>{cardTitle}</Typography>
-                    <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5, ml: 'auto' }}>
-                        {action}
-                        <Tooltip title={weightHistoryTooltipContent} arrow enterTouchDelay={0}>
-                            <IconButton size="small" aria-label={t('goals.weightHistoryExplainer.tooltipAria')}>
-                                <InfoOutlinedIcon fontSize="small" />
-                            </IconButton>
-                        </Tooltip>
-                    </Box>
+                    {!compactPreview && (
+                        <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5, ml: 'auto' }}>
+                            {action}
+                            <Tooltip title={weightHistoryTooltipContent} arrow enterTouchDelay={0}>
+                                <IconButton size="small" aria-label={t('goals.weightHistoryExplainer.tooltipAria')}>
+                                    <InfoOutlinedIcon fontSize="small" />
+                                </IconButton>
+                            </Tooltip>
+                        </Box>
+                    )}
                 </Box>
                 {content}
             </Stack>
         </AppCard>
+    );
+
+    if (!compactPreview) return card;
+
+    return (
+        <RouterLink
+            to="/weight/history"
+            aria-label={t('today.weightTrend.expandGraph')}
+            style={{ display: 'block', color: 'inherit', textDecoration: 'none' }}
+        >
+            {card}
+        </RouterLink>
     );
 };
 
