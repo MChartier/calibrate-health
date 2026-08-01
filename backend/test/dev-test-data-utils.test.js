@@ -3,13 +3,19 @@ const assert = require('node:assert/strict');
 
 const {
   addUtcDays,
+  buildCompletedFoodLogDays,
   buildMealLogsForDay,
+  DEV_SEED_FOOD_HISTORY_DAYS,
   getPastDateRangeDates,
   getMealTemplatesForSeedDayIndex,
   getPastWeekDates,
   getSeedUserCreatedAt,
   getSeedWeightGramsForDayIndex
 } = require('../src/services/devTestDataUtils');
+
+test('devTestDataUtils: seed history is long enough for calibration recommendations', () => {
+  assert.equal(DEV_SEED_FOOD_HISTORY_DAYS, 28);
+});
 
 test('devTestDataUtils: addUtcDays adds days using UTC math without mutating the input', () => {
   const input = new Date('2025-01-15T12:34:56Z');
@@ -89,6 +95,28 @@ test('devTestDataUtils: buildMealLogsForDay stamps log timestamps using the temp
   assert.equal(logs[0].local_date.toISOString(), day.toISOString());
   assert.equal(logs[0].name, 'Spinach omelet');
   assert.equal(logs[0].date.toISOString(), '2025-01-01T07:00:00.000Z');
+});
+
+test('devTestDataUtils: buildCompletedFoodLogDays marks every seeded day as representative import data', () => {
+  const days = [new Date('2025-01-01T00:00:00Z'), new Date('2025-01-02T00:00:00Z')];
+  const completedAt = new Date('2025-01-03T08:00:00Z');
+
+  assert.deepEqual(buildCompletedFoodLogDays(123, days, completedAt), [
+    {
+      user_id: 123,
+      local_date: days[0],
+      status: 'COMPLETE',
+      origin: 'IMPORT',
+      completed_at: completedAt
+    },
+    {
+      user_id: 123,
+      local_date: days[1],
+      status: 'COMPLETE',
+      origin: 'IMPORT',
+      completed_at: completedAt
+    }
+  ]);
 });
 
 test('devTestDataUtils: getSeedWeightGramsForDayIndex yields a long-term downtrend with daily volatility', () => {

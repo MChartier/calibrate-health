@@ -15,6 +15,7 @@ type BottomSheetModalProps = {
 };
 
 const SHEET_TRANSLATE_Y = 32; // Subtle sheet-only movement; the backdrop fades independently.
+const WEB_FIXED_POSITION = 'fixed' as ViewStyle['position']; // Keeps portal sheets anchored while the underlying web page is scrolled.
 
 /**
  * Native-feeling bottom sheet with a non-sliding dimmed backdrop.
@@ -88,6 +89,7 @@ export const BottomSheetModal: React.FC<BottomSheetModalProps> = ({
     return (
         <Modal visible transparent animationType="none" presentationStyle="overFullScreen" onRequestClose={onRequestClose}>
             <KeyboardAvoidingView
+                testID="bottom-sheet-root"
                 behavior={getKeyboardAvoidingBehavior(Platform.OS)}
                 style={[
                     styles.root,
@@ -128,7 +130,11 @@ function createStyles(theme: AppTheme) {
     },
     webViewportRoot: {
         flex: 0,
-        width: '100%'
+        width: '100%',
+        position: WEB_FIXED_POSITION,
+        top: 0,
+        left: 0,
+        right: 0
     },
     backdrop: {
         flex: 1,

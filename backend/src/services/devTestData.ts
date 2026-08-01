@@ -2,11 +2,17 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import prisma from '../config/database';
 import { SUPPORTED_LANGUAGES } from '../utils/language';
-import { ActivityLevel, HeightUnit, Sex, WeightUnit } from '@prisma/client';
 import {
+  ActivityLevel,
+  HeightUnit,
+  Sex,
+  WeightUnit
+} from '@prisma/client';
+import {
+  buildCompletedFoodLogDays,
   buildMealLogsForDay,
+  DEV_SEED_FOOD_HISTORY_DAYS,
   getPastDateRangeDates,
-  getPastWeekDates,
   getSeedUserCreatedAt,
   getSeedWeightGramsForDayIndex
 } from './devTestDataUtils';
@@ -130,9 +136,21 @@ const ensureTestUser = async (createdAt: Date): Promise<{ id: number }> => {
 /**
  * Ensure the test user has a starting goal for deficit calculations.
  */
-const ensureTestGoal = async (userId: number): Promise<void> => {
-  const existing = await prisma.goal.findFirst({ where: { user_id: userId } });
-  if (existing) return;
+const ensureTestGoal = async (userId: number, createdAt: Date): Promise<void> => {
+  const existing = await prisma.goal.findFirst({
+    where: { user_id: userId },
+    orderBy: [{ created_at: 'desc' }, { id: 'desc' }],
+  });
+  if (existing) {
+    const isUnmodifiedSeedGoal =
+      existing.start_weight_grams === TEST_USER_WEIGHT_GRAMS &&
+      existing.target_weight_grams === TEST_GOAL_TARGET_WEIGHT_GRAMS &&
+      existing.daily_deficit === 500;
+    if (isUnmodifiedSeedGoal && existing.created_at > createdAt) {
+      await prisma.goal.update({ where: { id: existing.id }, data: { created_at: createdAt } });
+    }
+    return;
+  }
 
   await prisma.goal.create({
     data: {
@@ -140,6 +158,7 @@ const ensureTestGoal = async (userId: number): Promise<void> => {
       start_weight_grams: TEST_USER_WEIGHT_GRAMS,
       target_weight_grams: TEST_GOAL_TARGET_WEIGHT_GRAMS,
       daily_deficit: 500,
+      created_at: createdAt,
     },
   });
 };
@@ -195,22 +214,45 @@ const ensureFoodLogs = async (userId: number, days: Date[]): Promise<void> => {
 };
 
 /**
+ * Mark seeded food history as representative so calibration can evaluate it immediately.
+ */
+const ensureCompletedFoodLogDays = async (userId: number, days: Date[]): Promise<void> => {
+  const existingDays = await prisma.foodLogDay.findMany({
+    where: { user_id: userId, local_date: { in: days } },
+    select: { local_date: true },
+  });
+  const existingDateKeys = new Set(existingDays.map((day) => day.local_date.toISOString().slice(0, 10)));
+  const completedAt = new Date();
+  const missingDays = buildCompletedFoodLogDays(
+    userId,
+    days.filter((day) => !existingDateKeys.has(day.toISOString().slice(0, 10))),
+    completedAt
+  );
+
+  if (missingDays.length > 0) {
+    await prisma.foodLogDay.createMany({ data: missingDays });
+  }
+};
+
+/**
  * Seed the local database with a deterministic test user and sample tracking history.
  */
 export const seedDevTestData = async (options: SeedDevTestDataOptions = {}): Promise<void> => {
   const startedAt = Date.now();
   const metricDays = getPastDateRangeDates(TEST_USER_TIMEZONE, TEST_METRIC_HISTORY_DAYS);
-  const foodLogDays = getPastWeekDates(TEST_USER_TIMEZONE);
+  const foodLogDays = getPastDateRangeDates(TEST_USER_TIMEZONE, DEV_SEED_FOOD_HISTORY_DAYS);
   const createdAt = getSeedUserCreatedAt(metricDays, TEST_USER_TIMEZONE);
+  const goalCreatedAt = getSeedUserCreatedAt(foodLogDays, TEST_USER_TIMEZONE);
 
   const user = await timedSeedPhase(options, 'user', () => ensureTestUser(createdAt));
 
-  await timedSeedPhase(options, 'goal', () => ensureTestGoal(user.id));
+  await timedSeedPhase(options, 'goal', () => ensureTestGoal(user.id, goalCreatedAt));
   const createdBodyMetrics = await timedSeedPhase(options, 'body metrics', () => ensureBodyMetrics(user.id, metricDays));
   if (createdBodyMetrics) {
     await timedSeedPhase(options, 'weight trends', () => refreshMaterializedWeightTrendsBestEffort(user.id));
   }
   await timedSeedPhase(options, 'food logs', () => ensureFoodLogs(user.id, foodLogDays));
+  await timedSeedPhase(options, 'completed food days', () => ensureCompletedFoodLogDays(user.id, foodLogDays));
 
   if (options.logTimings) {
     const elapsedSeconds = ((Date.now() - startedAt) / 1000).toFixed(1);
@@ -237,6 +279,7 @@ export const resetDevTestUserToPreOnboardingState = async (): Promise<number> =>
     await tx.goal.deleteMany({ where: { user_id: user.id } });
     await tx.bodyMetric.deleteMany({ where: { user_id: user.id } });
     await tx.foodLog.deleteMany({ where: { user_id: user.id } });
+    await tx.foodLogDay.deleteMany({ where: { user_id: user.id } });
 
     await tx.user.update({
       where: { id: user.id },

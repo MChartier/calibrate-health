@@ -11,10 +11,10 @@ Tested on August 1, 2026 against the calibration history lab on PR #269.
 - Ran a complementary 384-case deterministic invariant matrix across history length, age, pace, missing-day rate, weight uncertainty, and BMR floor position.
 - Benchmarked 2,800 evaluations across the 14 presets: 2,353.1 ms total, or 0.84 ms per evaluation on this development machine.
 - Repeated the rendered recommendation and uncertainty checks after rebasing onto the current mobile/day-status architecture and applying review feedback.
-- Ran the full automated suites after the rebase: 415 backend tests, 363 mobile tests, 45 API-client tests, and 18 development-script tests.
+- Ran the full automated suites after the product pass: 417 backend tests, 364 mobile tests, 45 API-client tests, and 18 development-script tests.
 - Built the production Expo web export and regenerated the Prisma and OpenAPI clients.
 
-The lab invokes the same pure evaluator used by the service. This pass did not apply the Prisma migration to a live database because Docker was unavailable, so persistence and next-local-day activation remain covered by route and service tests rather than this browser pass.
+The lab invokes the same pure evaluator used by the service. A follow-up seeded-product pass applied all migrations to an isolated local Postgres database and exercised recommendation materialization and approval through the real Expo web client. Next-local-day activation remains covered by service tests because the browser pass did not advance the user's local date.
 
 ## Result matrix
 
@@ -56,6 +56,10 @@ The lab invokes the same pure evaluator used by the service. This pass did not a
 10. **The public result exposed a weight-derived expenditure estimate.** The evaluator now exposes only the bounded target correction; displayed calories out remains the profile-estimated TDEE.
 11. **Accepted revisions could carry into a later goal.** Recommendations and plan revisions are now tied to their source goal, so a new maintenance or gain goal cannot inherit an older loss-goal adjustment.
 12. **The feature migration collided with a migration added on `master`.** Calibration now uses migration `0031`, following the day-resolution migration at `0030`.
+13. **The seeded account could not demonstrate calibration.** It now has 28 varied, explicitly completed food days aligned with the active goal plus 120 days of weight history, producing a conservative recommendation through the production service path.
+14. **The web target-review sheet was offscreen after scrolling.** The sheet now stays fixed to the visual viewport, restoring visible and clickable approval controls.
+15. **Negative estimate bounds displayed as a double hyphen.** The review sheet now renders ranges as `-484 to -188`.
+16. **Scheduled changes exposed a raw ISO date.** The confirmation now displays a user-facing date such as `Aug 2, 2026`.
 
 ## Screenshots
 
@@ -85,8 +89,32 @@ The lab invokes the same pure evaluator used by the service. This pass did not a
 
 ![Activity context insight](screenshots/calibration-qa/06-activity-context.jpg)
 
+## Seeded product experience
+
+The seeded account was exercised through auto-login, current and historical completed food days, the full food-log view, Progress, all weight-trend ranges, recommendation review, keep-current-target, approval, reload, and persisted scheduled-change states.
+
+### Recommendation in Progress
+
+![Seeded Progress recommendation](screenshots/calibration-product/01-progress-recommendation.png)
+
+### Explicit target review
+
+![Seeded target review sheet](screenshots/calibration-product/02-review-target.png)
+
+### Persisted next-day adjustment
+
+![Seeded scheduled adjustment](screenshots/calibration-product/03-adjustment-scheduled.png)
+
+### Completed current food day
+
+![Seeded Today experience](screenshots/calibration-product/04-seeded-today.png)
+
+### Detailed weight history
+
+![Seeded weight trend](screenshots/calibration-product/05-seeded-weight-trend.png)
+
 ## Assessment
 
 The evaluator is behaving conservatively without requiring perfect logging. A single missing or suspicious day can still produce a recommendation when the full modeled interval remains directional, while larger gaps or broad weight uncertainty suppress action and explain why. The shortest sufficient history is selected for action, the longest bounded history supports descriptive insights, and accepted-adjustment feedback can move in either direction without exceeding the configured step cap.
 
-The remaining manual-testing gap is the end-to-end database lifecycle: materializing, accepting, and activating a recommendation on the next user-local day. That flow should receive a live integration pass once a local Postgres environment is available.
+The recommendation now materializes, opens, applies, and persists after reload against a live development database. The remaining manual-testing gap is observing activation after the user's local date advances; automated service coverage continues to verify that boundary.

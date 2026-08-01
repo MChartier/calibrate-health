@@ -2,7 +2,7 @@ import type { CalibrationInterval, CalibrationResult } from '@calibrate/shared';
 
 export function formatCalorieInterval(value: CalibrationInterval | null): string {
     if (!value) return 'Not enough evidence';
-    return `${Math.round(value.midpoint).toLocaleString()} kcal (${Math.round(value.low).toLocaleString()}-${Math.round(value.high).toLocaleString()})`;
+    return `${Math.round(value.midpoint).toLocaleString()} kcal (${Math.round(value.low).toLocaleString()} to ${Math.round(value.high).toLocaleString()})`;
 }
 
 export function formatWeightPace(value: CalibrationInterval | null): string {

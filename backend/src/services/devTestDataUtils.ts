@@ -1,5 +1,7 @@
-import { MealPeriod } from '@prisma/client';
+import { FoodLogDayOrigin, FoodLogDayStatus, MealPeriod } from '@prisma/client';
 import { formatDateToLocalDateString, normalizeToUtcDateOnly } from '../utils/date';
+
+export const DEV_SEED_FOOD_HISTORY_DAYS = 28;
 
 /**
  * Pure helpers for building deterministic dev seed data.
@@ -257,4 +259,15 @@ export function buildMealLogsForDay(
       calories: template.calories,
     };
   });
+}
+
+/** Build representative completion rows for the seeded calibration history. */
+export function buildCompletedFoodLogDays(userId: number, days: Date[], completedAt: Date) {
+  return days.map((day) => ({
+    user_id: userId,
+    local_date: day,
+    status: FoodLogDayStatus.COMPLETE,
+    origin: FoodLogDayOrigin.IMPORT,
+    completed_at: completedAt,
+  }));
 }

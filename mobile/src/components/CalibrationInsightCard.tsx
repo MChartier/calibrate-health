@@ -16,6 +16,7 @@ import {
     formatCalorieInterval,
     formatWeightPace
 } from '../calibration/presentation';
+import { formatDateOnlyForDisplay } from '../utils/dates';
 import { colors, spacing } from '../theme';
 
 export const CALIBRATION_STATUS_QUERY_KEY = ['mobile-calibration-status'] as const;
@@ -91,7 +92,7 @@ export const CalibrationInsightCard: React.FC<ViewProps> = ({ style, ...props })
                     <View style={styles.scheduledRow}>
                         <Ionicons name="calendar-outline" size={18} color={colors.primaryDark} />
                         <AppText style={styles.scheduledText}>
-                            Accepted adjustment {scheduledChange.targetAdjustmentKcal > 0 ? '+' : ''}{scheduledChange.targetAdjustmentKcal} kcal starts {scheduledChange.effectiveLocalDate}.
+                            Accepted adjustment {scheduledChange.targetAdjustmentKcal > 0 ? '+' : ''}{scheduledChange.targetAdjustmentKcal} kcal starts {formatDateOnlyForDisplay(scheduledChange.effectiveLocalDate)}.
                         </AppText>
                     </View>
                 )}

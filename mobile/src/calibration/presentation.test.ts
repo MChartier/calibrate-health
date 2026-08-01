@@ -3,7 +3,9 @@ import { describeCalibrationEvidence, formatCalorieInterval, formatWeightPace } 
 describe('calibration presentation', () => {
     it('formats transparent intervals rather than showing false precision', () => {
         expect(formatCalorieInterval({ low: 2100.2, midpoint: 2210.6, high: 2325.1 }))
-            .toBe('2,211 kcal (2,100-2,325)');
+            .toBe('2,211 kcal (2,100 to 2,325)');
+        expect(formatCalorieInterval({ low: -484.2, midpoint: -349.3, high: -188.1 }))
+            .toBe('-349 kcal (-484 to -188)');
         expect(formatWeightPace({ low: -0.5, midpoint: -0.32, high: -0.1 })).toBe('-0.32 kg/week');
     });
 
