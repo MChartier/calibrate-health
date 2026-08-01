@@ -66,9 +66,10 @@ const TODAY_TREND_CHART_FILL_MIN_HEIGHT_PX = 176; // Right-rail preview floor le
 const WEIGHT_TREND_FULLSCREEN_CHART_MIN_HEIGHT_PX = { xs: 360, sm: 440 }; // Full-screen history keeps the chart dominant in portrait and landscape.
 const TODAY_TREND_MARGIN_COMPACT = { top: 8, right: 6, bottom: 26, left: 30 }; // Compact margin maximizes chart width in narrow panels.
 const TODAY_TREND_MARGIN_DEFAULT = { top: 6, right: 6, bottom: 26, left: 30 }; // Desktop margin avoids the oversized left gutter from the full goals page.
-const TODAY_TREND_MARGIN_FILL = { top: 4, right: 12, bottom: 2, left: 2 }; // Flexible Today chart keeps a small right buffer so edge markers do not clip.
-const TODAY_TREND_Y_AXIS_WIDTH_PX = 30; // Short weight tick labels do not need MUI's default axis-title gutter.
-const TODAY_TREND_X_AXIS_HEIGHT_PX = 24; // Date tick labels need a compact baseline but no extra title space.
+const TODAY_TREND_MARGIN_FILL = { top: 4, right: 12, bottom: 8, left: 8 }; // Preview margins keep edge date and weight labels inside the chart surface.
+const TODAY_TREND_Y_AXIS_WIDTH_PX = 50; // Weight ticks include the user's unit while preserving most of the compact plot width.
+const TODAY_TREND_X_AXIS_HEIGHT_PX = 28; // Date tick labels need a compact baseline without clipping descenders.
+const TODAY_TREND_AXIS_TICK_SIZE_PX = 4; // Short tick marks make both preview axes visually explicit.
 const CONTROLS_ROW_GAP = 1; // Spacing between range selection and pan controls when the row wraps.
 const LEGEND_SWATCH_SIZE_PX = 10; // Small legend swatches fit the Today context card.
 const CHART_GAP_BREAK_DAYS = 21; // Break sparse histories instead of implying continuous measurements.
@@ -139,8 +140,10 @@ function getRequestedWindow(range: MetricsRange, latestMetricDateIso: string | n
 /**
  * Choose x-axis date label granularity based on the displayed span.
  */
-function getAxisLabelOptions(spanDays: number): Intl.DateTimeFormatOptions {
-    if (spanDays <= 14) return { weekday: 'short', month: 'short', day: 'numeric' };
+function getAxisLabelOptions(spanDays: number, useCompactLayout: boolean): Intl.DateTimeFormatOptions {
+    if (spanDays <= 14) {
+        return useCompactLayout ? { weekday: 'short' } : { weekday: 'short', month: 'short', day: 'numeric' };
+    }
     if (spanDays <= 120) return { month: 'short', day: 'numeric' };
     if (spanDays <= 370) return { month: 'short' };
     return { month: 'short', year: 'numeric' };
@@ -484,8 +487,15 @@ const WeightTrend: React.FC<WeightTrendProps> = ({
         const diffDays = Math.round((xDomain.max.getTime() - xDomain.min.getTime()) / MS_PER_DAY);
         return Math.max(1, diffDays + 1);
     }, [requestedWindow, xDomain]);
-    const xAxisLabelOptions = useMemo(() => getAxisLabelOptions(activeSpanDays), [activeSpanDays]);
+    const xAxisLabelOptions = useMemo(
+        () => getAxisLabelOptions(activeSpanDays, useCompactLayout),
+        [activeSpanDays, useCompactLayout]
+    );
     const xAxisFormatter = useMemo(() => new Intl.DateTimeFormat(undefined, xAxisLabelOptions), [xAxisLabelOptions]);
+    const yAxisFormatter = useMemo(
+        () => new Intl.NumberFormat(undefined, { maximumFractionDigits: 1 }),
+        []
+    );
     const tooltipDateFormatter = useMemo(
         () => new Intl.DateTimeFormat(undefined, { year: 'numeric', month: 'short', day: 'numeric' }),
         []
@@ -781,7 +791,7 @@ const WeightTrend: React.FC<WeightTrendProps> = ({
                                     min: xDomain?.min,
                                     max: xDomain?.max,
                                     height: useCompactLayout ? TODAY_TREND_X_AXIS_HEIGHT_PX : undefined,
-                                    tickSize: useCompactLayout ? 0 : undefined,
+                                    tickSize: useCompactLayout ? TODAY_TREND_AXIS_TICK_SIZE_PX : undefined,
                                     valueFormatter: (value, context) =>
                                         context?.location === 'tooltip'
                                             ? tooltipDateFormatter.format(value)
@@ -793,7 +803,8 @@ const WeightTrend: React.FC<WeightTrendProps> = ({
                                     min: yDomain?.min,
                                     max: yDomain?.max,
                                     width: useCompactLayout ? TODAY_TREND_Y_AXIS_WIDTH_PX : undefined,
-                                    tickSize: useCompactLayout ? 0 : undefined
+                                    tickSize: useCompactLayout ? TODAY_TREND_AXIS_TICK_SIZE_PX : undefined,
+                                    valueFormatter: (value: number) => `${yAxisFormatter.format(value)} ${unitLabel}`
                                 }
                             ]}
                             series={[
