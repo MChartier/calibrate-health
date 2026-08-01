@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../auth/AuthContext';
 import { addDaysToDateOnly, clampDateOnly, formatDateOnlyForDisplay, getLocalDateForTimestamp, getTodayDate } from '../utils/dates';
 
@@ -21,10 +22,20 @@ export type LogDateNavigation = {
  * Native counterpart to the PWA local-day navigation model.
  */
 export function useLogDateNavigation(initialDate?: string | null): LogDateNavigation {
-    const { user } = useAuth();
+    const { api, user } = useAuth();
     const timezone = user?.timezone || 'UTC';
     const today = useMemo(() => getTodayDate(timezone), [timezone]);
-    const minDate = useMemo(() => getLocalDateForTimestamp(user?.created_at, timezone) ?? today, [timezone, today, user?.created_at]);
+    const trackingHistoryQuery = useQuery({
+        queryKey: ['mobile-tracking-history'],
+        queryFn: () => api.getTrackingHistory(),
+        enabled: Boolean(user)
+    });
+    const minDate = useMemo(
+        () => trackingHistoryQuery.data?.tracking_start_date
+            ?? getLocalDateForTimestamp(user?.created_at, timezone)
+            ?? today,
+        [timezone, today, trackingHistoryQuery.data?.tracking_start_date, user?.created_at]
+    );
     const maxDate = today;
     const [selectedDate, setSelectedDate] = useState(initialDate || today);
 

@@ -1,4 +1,3 @@
-import React from 'react';
 import { PublicLegalPage } from '../src/components/legal/PublicLegalPage';
 import {
     ACCOUNT_DELETION_INTRO,

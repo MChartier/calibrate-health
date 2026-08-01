@@ -60,6 +60,7 @@ export type LoseItExportParseResult = {
   bodyFat: LoseItBodyFatImport[];
   profile: Record<string, string>;
   warnings: string[];
+  foodDayCompletionStatus: 'unavailable';
 };
 
 /**
@@ -86,7 +87,7 @@ export function parseLoseItExport(zipBuffer: Buffer): LoseItExportParseResult {
   const bodyFat = bodyFatCsv ? parseBodyFat(bodyFatCsv, warnings) : [];
   const profile = profileCsv ? parseProfile(profileCsv) : {};
 
-  return { foodLogs, weights, bodyFat, profile, warnings };
+  return { foodLogs, weights, bodyFat, profile, warnings, foodDayCompletionStatus: 'unavailable' };
 }
 
 /**

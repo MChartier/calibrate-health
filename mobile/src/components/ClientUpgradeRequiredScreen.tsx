@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import type { ClientUpgradeRequirement } from '@calibrate/shared';
 import { AppButton } from './AppButton';
 import { AppText } from './AppText';
 import { CalibrateLogo } from './CalibrateLogo';
-import { colors, radius, spacing } from '../theme';
+import { radius, spacing, useAppTheme, type AppTheme } from '../theme';
 
 type ClientUpgradeRequiredScreenProps = {
     requirement: ClientUpgradeRequirement;
@@ -20,6 +20,8 @@ export const ClientUpgradeRequiredScreen: React.FC<ClientUpgradeRequiredScreenPr
     onRecheck,
     onChooseServer
 }) => {
+    const theme = useAppTheme();
+    const styles = useMemo(() => createStyles(theme), [theme]);
     const [checking, setChecking] = useState(false);
     const [retryError, setRetryError] = useState<string | null>(null);
 
@@ -41,7 +43,7 @@ export const ClientUpgradeRequiredScreen: React.FC<ClientUpgradeRequiredScreenPr
         <View style={styles.screen} accessibilityRole="alert" accessibilityLabel="Calibrate update required">
             <View style={styles.card}>
                 <CalibrateLogo size={48} />
-                <AppText variant="screenTitle" accessibilityRole="header">Update Calibrate to continue</AppText>
+                <AppText variant="screenTitle" accessibilityRole="header" aria-level={1}>Update Calibrate to continue</AppText>
                 <AppText>
                     This server requires Android version {requirement.minimum_supported_version} or newer.
                     Your session and pending offline changes are still stored on this device.
@@ -57,7 +59,7 @@ export const ClientUpgradeRequiredScreen: React.FC<ClientUpgradeRequiredScreenPr
                     title={checking ? 'Checking...' : 'Check again'}
                     onPress={() => void recheck()}
                     disabled={checking}
-                    leftIcon={checking ? <ActivityIndicator color="#ffffff" /> : undefined}
+                    leftIcon={checking ? <ActivityIndicator color={theme.colors.onPrimary} /> : undefined}
                 />
                 <AppButton
                     title="Sign out and choose another server"
@@ -70,28 +72,28 @@ export const ClientUpgradeRequiredScreen: React.FC<ClientUpgradeRequiredScreenPr
     );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: AppTheme) => StyleSheet.create({
     screen: {
         flex: 1,
         justifyContent: 'center',
-        backgroundColor: colors.background,
+        backgroundColor: theme.colors.background,
         padding: spacing.xl
     },
     card: {
         gap: spacing.lg,
         borderWidth: StyleSheet.hairlineWidth,
-        borderColor: colors.border,
+        borderColor: theme.colors.outlineVariant,
         borderRadius: radius.md,
-        backgroundColor: colors.surface,
+        backgroundColor: theme.colors.surface,
         padding: spacing.xl
     },
     details: {
         gap: spacing.sm,
         borderRadius: radius.sm,
-        backgroundColor: colors.surfaceAlt,
+        backgroundColor: theme.colors.surfaceContainer,
         padding: spacing.lg
     },
     error: {
-        color: colors.danger
+        color: theme.colors.danger
     }
 });

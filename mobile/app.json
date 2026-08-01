@@ -1,9 +1,10 @@
 {
   "expo": {
     "name": "calibrate",
-    "slug": "calibrate",
+    "slug": "calibrate-health-app",
+    "owner": "calibrate-health",
     "scheme": "calibrate",
-    "version": "0.1.0",
+    "version": "0.2.4",
     "orientation": "default",
     "userInterfaceStyle": "automatic",
     "icon": "./assets/icon.png",
@@ -17,8 +18,9 @@
     ],
     "android": {
       "package": "app.calibratehealth.mobile",
-      "versionCode": 1,
+      "versionCode": 6,
       "allowBackup": false,
+      "softwareKeyboardLayoutMode": "resize",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#F6F8F4"
@@ -90,8 +92,14 @@
       "expo-status-bar"
     ],
     "extra": {
+      "calibrate": {
+        "nativeReleaseTag": "v0.12.11"
+      },
       "router": {
         "origin": false
+      },
+      "eas": {
+        "projectId": "fda8f8c5-e646-47ac-82fb-35003c9cbec7"
       }
     }
   }

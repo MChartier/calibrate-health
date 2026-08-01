@@ -2,7 +2,9 @@ import {
     getConfiguredServerUrl,
     normalizeServerUrl,
     parseServerUrl,
+    resolveBrowserServerUrl,
     resolveDefaultWebServerUrl,
+    resolveInitialServerUrl,
     testCalibrateServerConnection
 } from './server';
 
@@ -58,12 +60,38 @@ describe('server URL parsing', () => {
         expect(getConfiguredServerUrl('not a url')).toBeNull();
     });
 
+    it('uses an explicit development target instead of a stale stored server', () => {
+        expect(resolveInitialServerUrl(
+            'https://previous.example',
+            'http://10.0.2.2:3329',
+            'https://calibratehealth.app',
+            true
+        )).toBe('http://10.0.2.2:3329');
+        expect(resolveInitialServerUrl(
+            'https://previous.example',
+            'https://build-default.example',
+            'https://calibratehealth.app',
+            false
+        )).toBe('https://previous.example');
+    });
+
     it('targets port 3000 from a loopback Expo dev server but preserves production origins', () => {
         const expoLocation = new URL('http://localhost:8081/login');
         expect(resolveDefaultWebServerUrl(expoLocation, true)).toBe('http://localhost:3000');
         expect(resolveDefaultWebServerUrl(expoLocation, false)).toBe('http://localhost:8081');
         expect(resolveDefaultWebServerUrl(new URL('https://self-hosted.example/app'), true))
             .toBe('https://self-hosted.example');
+    });
+
+    it('binds production web auth to the serving origin while allowing an explicit development backend', () => {
+        const location = new URL('https://self-hosted.example/login');
+        expect(resolveBrowserServerUrl(location, 'https://other.example', false))
+            .toBe('https://self-hosted.example');
+        expect(resolveBrowserServerUrl(
+            new URL('http://localhost:41508/login'),
+            'http://localhost:21508',
+            true
+        )).toBe('http://localhost:21508');
     });
 });
 

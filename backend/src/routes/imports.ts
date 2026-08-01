@@ -12,6 +12,7 @@ import {
   type LoseItFoodLogImport,
   type LoseItWeightImport,
 } from '../services/loseItImport';
+import { getAuthenticatedUser, requireAuthenticatedUser } from '../middleware/authenticatedUser';
 
 /**
  * Import endpoints for Lose It zip exports (preview + execute).
@@ -38,20 +39,10 @@ type LoseItImportOptions = {
   includeBodyFat: boolean;
 };
 
-/**
- * Ensure the session is authenticated before importing data.
- */
-const isAuthenticated = (req: express.Request, res: express.Response, next: express.NextFunction) => {
-  if (req.isAuthenticated()) {
-    return next();
-  }
-  res.status(401).json({ message: 'Not authenticated' });
-};
-
-router.use(isAuthenticated);
+router.use(requireAuthenticatedUser);
 
 router.post('/loseit/preview', upload.single('file'), async (req, res) => {
-  const user = req.user as any;
+  const user = getAuthenticatedUser(req);
   if (!req.file) {
     return res.status(400).json({ message: 'Missing export zip' });
   }
@@ -89,11 +80,14 @@ router.post('/loseit/preview', upload.single('file'), async (req, res) => {
     warnings: parsed.warnings,
     weightUnitGuess: unitGuess.unit,
     weightUnitGuessSource: unitGuess.source,
+    foodDayCompletionStatus: parsed.foodDayCompletionStatus,
+    foodDayCompletionMessage:
+      'Lose It does not include day completion history. Imported food days remain open until you resolve them in Calibrate.',
   });
 });
 
 router.post('/loseit/execute', upload.single('file'), async (req, res) => {
-  const user = req.user as any;
+  const user = getAuthenticatedUser(req);
   if (!req.file) {
     return res.status(400).json({ message: 'Missing export zip' });
   }
@@ -151,6 +145,16 @@ router.post('/loseit/execute', upload.single('file'), async (req, res) => {
   }
 
   res.json({
+    food_logs: {
+      total: parsed.foodLogs.length,
+      valid: importedFoodLogs,
+      invalid: skippedFoodLogs,
+    },
+    weights: {
+      total: parsed.weights.length,
+      valid: importedWeights + updatedWeights,
+      invalid: skippedWeights,
+    },
     importedFoodLogs,
     skippedFoodLogs,
     importedWeights,
@@ -158,6 +162,9 @@ router.post('/loseit/execute', upload.single('file'), async (req, res) => {
     skippedWeights,
     updatedBodyFat,
     warnings: parsed.warnings,
+    foodDayCompletionStatus: parsed.foodDayCompletionStatus,
+    foodDayCompletionMessage:
+      'Completion history was unavailable, so imported food days remain unresolved.',
   });
 });
 

@@ -8,7 +8,7 @@ This document explains the weight trend model used by the Goals chart so we can:
 - reason about the assumptions in the model
 - tune behavior safely when we want different responsiveness or stability
 
-The implementation lives primarily in `backend/src/services/weightTrend.ts`, with materialization + recompute windowing in `backend/src/services/materializedWeightTrend.ts`, API wiring in `backend/src/routes/metrics.ts`, and chart rendering in `frontend/src/pages/Goals.tsx`.
+The implementation lives primarily in `backend/src/services/weightTrend.ts`, with materialization + recompute windowing in `backend/src/services/materializedWeightTrend.ts`, API wiring in `backend/src/routes/metrics.ts`, and chart rendering in `mobile/src/components/WeightTrendCard.tsx`.
 
 ## High-Level Flow
 
@@ -82,10 +82,11 @@ Effect on old points:
 - points older than the active horizon fall back to raw-weight trend fields (`trend_weight = weight`, `trend_ci_* = weight`, `trend_std = 0`).
 - this is intentional: recent trend interpretation remains responsive and computationally bounded.
 
-Important chart behavior (`frontend/src/pages/Goals.tsx`):
+Important chart behavior (`mobile/src/components/WeightTrendCard.tsx`):
 
-- if two adjacent dates are separated by more than 21 days, the chart inserts a null break so the line and band do not interpolate across long gaps
-- range controls are shown when total span or point count exceeds the configured thresholds
+- range controls request 7-day, 30-day, 1-year, or all-history API windows
+- raw points, trend, and the expected-range band share a stable axis with a minimum weight span
+- pointer/touch selection supports both native `locationX` and browser `offsetX` coordinates
 
 ## Model Inputs And Outputs
 
@@ -277,8 +278,8 @@ Materialization window constants in `backend/src/services/materializedWeightTren
 - `DRIFT_RECENCY_HALF_LIFE_DAYS = 30`:
   - Sets how fast historical influence decays in drift estimation.
   - Every additional 30 days of age halves an observation's drift weight.
-- Frontend chart break at `> 21` day gaps (`frontend/src/pages/Goals.tsx`):
-  - Prevents drawing continuous lines/bands across sparse periods where continuity would be visually misleading.
+- Expo chart minimum axis span (`MIN_WEIGHT_AXIS_SPAN = 0.4` in `mobile/src/components/WeightTrendCard.tsx`):
+  - Prevents small or identical readings from collapsing the vertical scale.
 - Weekly rate window (`RECENT_WINDOW_POINTS = 14`):
   - Balances recency with noise suppression by using trend points (not raw scale readings).
 

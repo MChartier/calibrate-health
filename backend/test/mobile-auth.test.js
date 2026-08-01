@@ -13,9 +13,15 @@ function stubModule(resolvedPath, exports) {
 function loadMobileAuthService({ prismaStub }) {
   const dbPath = require.resolve('../src/config/database');
   const servicePath = require.resolve('../src/services/mobileAuth');
+  const dependencyPaths = [
+    require.resolve('../src/services/mobileSessionCredentials'),
+    require.resolve('../src/services/wearPairing')
+  ];
 
   const previousDbModule = require.cache[dbPath];
+  const previousDependencyModules = dependencyPaths.map((path) => require.cache[path]);
   delete require.cache[servicePath];
+  dependencyPaths.forEach((path) => delete require.cache[path]);
 
   stubModule(dbPath, prismaStub);
 
@@ -23,6 +29,11 @@ function loadMobileAuthService({ prismaStub }) {
 
   if (previousDbModule) require.cache[dbPath] = previousDbModule;
   else delete require.cache[dbPath];
+  dependencyPaths.forEach((path, index) => {
+    const previous = previousDependencyModules[index];
+    if (previous) require.cache[path] = previous;
+    else delete require.cache[path];
+  });
 
   return loaded;
 }

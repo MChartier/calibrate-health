@@ -95,7 +95,11 @@ describe('createQueuedMutationExecutor', () => {
             deleteFoodLog: jest.fn(async () => undefined),
             addMetric: jest.fn(async () => undefined),
             deleteMetric: jest.fn(async () => undefined),
-            updateFoodDay: jest.fn(async () => undefined)
+            updateFoodDay: jest.fn(async () => undefined),
+            setFoodDayStatus: jest.fn(async () => undefined),
+            startFoodTrackingPause: jest.fn(async () => undefined),
+            updateFoodTrackingPause: jest.fn(async () => undefined),
+            resumeFoodTracking: jest.fn(async () => undefined)
         } as unknown as CalibrateApiClient;
         const execute = createQueuedMutationExecutor(api);
 
@@ -113,6 +117,18 @@ describe('createQueuedMutationExecutor', () => {
         await execute(queuedMutation(OFFLINE_MUTATION_OPERATIONS.UPDATE_FOOD_DAY, {
             date: '2026-07-11', is_complete: true
         }));
+        await execute(queuedMutation(OFFLINE_MUTATION_OPERATIONS.SET_FOOD_DAY_STATUS, {
+            date: '2026-07-11', status: 'INCOMPLETE'
+        }));
+        await execute(queuedMutation(OFFLINE_MUTATION_OPERATIONS.START_FOOD_TRACKING_PAUSE, {
+            starts_on: '2026-07-11', expected_resume_on: '2026-07-14'
+        }));
+        await execute(queuedMutation(OFFLINE_MUTATION_OPERATIONS.UPDATE_FOOD_TRACKING_PAUSE, {
+            expected_resume_on: null
+        }));
+        await execute(queuedMutation(OFFLINE_MUTATION_OPERATIONS.RESUME_FOOD_TRACKING, {
+            resumed_on: '2026-07-13'
+        }));
 
         expect(api.createFoodLog).toHaveBeenCalledWith(expect.objectContaining({ name: 'Dinner' }), 'stable-operation-id');
         expect(api.addMetric).toHaveBeenCalledWith({ date: '2026-07-11', weight: 82.5 }, 'stable-operation-id');
@@ -125,6 +141,22 @@ describe('createQueuedMutationExecutor', () => {
         expect(api.deleteMetric).toHaveBeenCalledWith(44, 'stable-operation-id');
         expect(api.updateFoodDay).toHaveBeenCalledWith(
             { date: '2026-07-11', is_complete: true },
+            'stable-operation-id'
+        );
+        expect(api.setFoodDayStatus).toHaveBeenCalledWith(
+            { date: '2026-07-11', status: 'INCOMPLETE' },
+            'stable-operation-id'
+        );
+        expect(api.startFoodTrackingPause).toHaveBeenCalledWith(
+            { starts_on: '2026-07-11', expected_resume_on: '2026-07-14' },
+            'stable-operation-id'
+        );
+        expect(api.updateFoodTrackingPause).toHaveBeenCalledWith(
+            { expected_resume_on: null },
+            'stable-operation-id'
+        );
+        expect(api.resumeFoodTracking).toHaveBeenCalledWith(
+            { resumed_on: '2026-07-13' },
             'stable-operation-id'
         );
     });

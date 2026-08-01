@@ -17,7 +17,6 @@ import type {
 } from './types';
 
 const HEALTH_CONNECT_PROVIDER_PACKAGE = 'com.google.android.apps.healthdata';
-const SDK_UNAVAILABLE = 1;
 const SDK_PROVIDER_UPDATE_REQUIRED = 2;
 const SDK_AVAILABLE = 3;
 

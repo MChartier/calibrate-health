@@ -360,4 +360,43 @@ describe('Wear phone pairing coordinator', () => {
         expect(await readStoredWearPairing(ORIGIN, USER_ID + 1)).toBeNull();
         expect(transport.acknowledgeMessages).toHaveBeenLastCalledWith(['result']);
     });
+
+    it('retires a consumed request when the watch reports an exchange failure', async () => {
+        const transport = await beginPairing();
+        transport.listMessages.mockReturnValueOnce([{
+            id: 'hello', nodeId: 'node-1', path: WEAR_PAIRING_PATHS.HELLO,
+            payload: helloPayload(), receivedAt: NOW.getTime()
+        }]);
+        await processWearPairingInbox({
+            api: { issueWearPairingCredential: jest.fn().mockResolvedValue({ pairing_token: 'token' }) },
+            serverOrigin: ORIGIN, userId: USER_ID, transport, now: NOW
+        });
+        transport.listMessages.mockReturnValueOnce([{
+            id: 'failed-result',
+            nodeId: 'node-1',
+            path: WEAR_PAIRING_PATHS.RESULT,
+            payload: JSON.stringify({
+                ok: false,
+                request_id: 'request-1',
+                protocol_version: 1,
+                server_origin: ORIGIN,
+                watch_device_id: 'watch-1',
+                message: 'Pairing response was unavailable. Start pairing again.'
+            }),
+            receivedAt: NOW.getTime()
+        }]);
+
+        const result = await processWearPairingInbox({
+            api: { issueWearPairingCredential: jest.fn() },
+            serverOrigin: ORIGIN, userId: USER_ID, transport, now: NOW
+        });
+
+        expect(result).toEqual({
+            processed: 1,
+            paired: null,
+            errors: ['Pairing response was unavailable. Start pairing again.']
+        });
+        expect([...mockStorage.values()].some((value) => value.includes('"requestId":"request-1"'))).toBe(false);
+        expect(transport.acknowledgeMessages).toHaveBeenLastCalledWith(['failed-result']);
+    });
 });

@@ -1,5 +1,5 @@
 import express from 'express';
-import { type BodyMetric, type BodyMetricTrend } from '@prisma/client';
+import { type BodyMetric, type BodyMetricTrend, type Prisma } from '@prisma/client';
 import prisma from '../config/database';
 import {
     gramsToWeight,
@@ -7,7 +7,14 @@ import {
     parseWeightToGrams,
     type WeightUnit
 } from '../utils/units';
-import { MS_PER_DAY, addUtcDays, getUtcTodayDateOnlyInTimeZone, parseLocalDateOnly } from '../utils/date';
+import {
+    MS_PER_DAY,
+    addUtcDays,
+    addUtcYearsClamped,
+    getSafeUtcTodayDateOnlyInTimeZone,
+    getUtcTodayDateOnlyInTimeZone,
+    parseLocalDateOnly
+} from '../utils/date';
 import { parseNonNegativeNumber, parsePositiveInteger } from '../utils/requestParsing';
 import { summarizeWeightTrend, type VolatilityLevel } from '../services/weightTrend';
 import {
@@ -21,6 +28,7 @@ import {
     parseClientOperationId,
     recordSyncChange
 } from '../services/clientOperations';
+import { getAuthenticatedUser, requireAuthenticatedUser } from '../middleware/authenticatedUser';
 
 /**
  * Weight and body metric log endpoints.
@@ -30,6 +38,8 @@ import {
 const router = express.Router();
 
 const ROLLING_WEIGHT_AVERAGE_DAYS = 7; // Rolling window length for weight smoothing requests.
+const WEEK_COMPARISON_DAYS = 7; // Includes both endpoints so the chart can compare the same weekday.
+const FOUR_WEEK_COMPARISON_DAYS = 28; // Includes both endpoints for a four-weeks-ago comparison.
 const GRAMS_PER_KILOGRAM = 1000; // Canonical conversion used for trend serialization.
 const POUNDS_PER_KILOGRAM = 2.2046226218487757; // High-precision factor so trend math stays unit-invariant.
 const METRICS_RANGE_OPTIONS = {
@@ -56,6 +66,7 @@ type SerializedMetric = {
     weight: number;
 };
 type SerializedTrendMetric = SerializedMetric & {
+    trend_is_materialized: boolean;
     trend_weight: number;
     trend_ci_lower: number;
     trend_ci_upper: number;
@@ -178,18 +189,36 @@ function applyAbsoluteDateFilter<T extends { date: Date }>(rows: T[], start?: Da
 }
 
 /**
- * Apply a relative date window anchored to the latest metric date in the current set.
+ * Apply a relative date window anchored to the user's current local date.
  */
-function applyRelativeRangeFilter<T>(rows: T[], range: MetricsRange | null, getDate: (row: T) => Date): T[] {
+function applyRelativeRangeFilter<T>(
+    rows: T[],
+    range: MetricsRange | null,
+    rangeEndDate: Date,
+    getDate: (row: T) => Date
+): T[] {
     if (range === null || range === METRICS_RANGE_OPTIONS.ALL || rows.length === 0) {
         return rows;
     }
 
-    const latestDate = getDate(rows[rows.length - 1]);
-    const daysToInclude =
-        range === METRICS_RANGE_OPTIONS.WEEK ? 7 : range === METRICS_RANGE_OPTIONS.MONTH ? 30 : 365;
-    const startDate = addUtcDays(latestDate, -(daysToInclude - 1));
-    return rows.filter((row) => getDate(row) >= startDate);
+    let startDate: Date;
+    switch (range) {
+        case METRICS_RANGE_OPTIONS.WEEK:
+            startDate = addUtcDays(rangeEndDate, -WEEK_COMPARISON_DAYS);
+            break;
+        case METRICS_RANGE_OPTIONS.MONTH:
+            startDate = addUtcDays(rangeEndDate, -FOUR_WEEK_COMPARISON_DAYS);
+            break;
+        case METRICS_RANGE_OPTIONS.YEAR:
+            startDate = addUtcYearsClamped(rangeEndDate, -1);
+            break;
+        default:
+            return rows;
+    }
+    return rows.filter((row) => {
+        const rowDate = getDate(row);
+        return rowDate >= startDate && rowDate <= rangeEndDate;
+    });
 }
 
 /**
@@ -274,6 +303,7 @@ function buildTrendMetricsResponse(
                 date: metric.date,
                 body_fat_percent: metric.body_fat_percent,
                 weight,
+                trend_is_materialized: trend !== null,
                 trend_weight: trend ? trendGramsToWeightUnit(trend.trend_weight_grams, weightUnit) : weight,
                 trend_ci_lower: trend ? trendGramsToWeightUnit(trend.trend_ci_lower_grams, weightUnit) : weight,
                 trend_ci_upper: trend ? trendGramsToWeightUnit(trend.trend_ci_upper_grams, weightUnit) : weight,
@@ -292,20 +322,10 @@ function buildTrendMetricsResponse(
     };
 }
 
-/**
- * Ensure the session is authenticated before accessing metrics.
- */
-const isAuthenticated = (req: express.Request, res: express.Response, next: express.NextFunction) => {
-    if (req.isAuthenticated()) {
-        return next();
-    }
-    res.status(401).json({ message: 'Not authenticated' });
-};
-
-router.use(isAuthenticated);
+router.use(requireAuthenticatedUser);
 
 router.get('/', async (req, res) => {
-    const user = req.user as any;
+    const user = getAuthenticatedUser(req);
     const weightUnit: WeightUnit = isWeightUnit(user.weight_unit) ? user.weight_unit : 'KG';
     const start = typeof req.query.start === 'string' ? req.query.start : undefined;
     const end = typeof req.query.end === 'string' ? req.query.end : undefined;
@@ -333,6 +353,7 @@ router.get('/', async (req, res) => {
                 return res.status(400).json({ message: 'Invalid date range' });
             }
         }
+        const relativeRangeEndDate = requestedEnd ?? getSafeUtcTodayDateOnlyInTimeZone(user.timezone);
 
         if (includeTrend) {
             await ensureMaterializedWeightTrends(user.id);
@@ -352,7 +373,12 @@ router.get('/', async (req, res) => {
             });
 
             const absoluteFiltered = applyAbsoluteDateFilter(metricsAsc, requestedStart, requestedEnd);
-            const relativeFiltered = applyRelativeRangeFilter(absoluteFiltered, rangeOption ?? null, (row) => row.date);
+            const relativeFiltered = applyRelativeRangeFilter(
+                absoluteFiltered,
+                rangeOption ?? null,
+                relativeRangeEndDate,
+                (row) => row.date
+            );
             const activeTrendStartDate =
                 metricsAsc.length > 0
                     ? getMaterializedTrendWindowFromLatestDate(metricsAsc[metricsAsc.length - 1].date).activeStartDate
@@ -364,7 +390,7 @@ router.get('/', async (req, res) => {
         const queryStart =
             smoothingWindowDays && requestedStart ? addUtcDays(requestedStart, -(smoothingWindowDays - 1)) : requestedStart;
 
-        const whereClause: any = { user_id: user.id };
+        const whereClause: Prisma.BodyMetricWhereInput = { user_id: user.id };
         if (queryStart || requestedEnd) {
             whereClause.date = {};
             if (queryStart) whereClause.date.gte = queryStart;
@@ -385,7 +411,12 @@ router.get('/', async (req, res) => {
             if (requestedEnd && metric.date > requestedEnd) return false;
             return true;
         });
-        const relativeFiltered = applyRelativeRangeFilter(absoluteFiltered, rangeOption ?? null, (row) => row.metric.date);
+        const relativeFiltered = applyRelativeRangeFilter(
+            absoluteFiltered,
+            rangeOption ?? null,
+            relativeRangeEndDate,
+            (row) => row.metric.date
+        );
 
         res.json(serializeMetrics(relativeFiltered, weightUnit));
     } catch (err) {
@@ -394,7 +425,7 @@ router.get('/', async (req, res) => {
 });
 
 router.post('/', async (req, res) => {
-    const user = req.user as any;
+    const user = getAuthenticatedUser(req);
     const { weight, body_fat_percent, date } = req.body;
     const weightUnit: WeightUnit = isWeightUnit(user.weight_unit) ? user.weight_unit : 'KG';
     try {
@@ -515,7 +546,7 @@ router.post('/', async (req, res) => {
 });
 
 router.delete('/:id', async (req, res) => {
-    const user = req.user as any;
+    const user = getAuthenticatedUser(req);
     const id = parsePositiveInteger(req.params.id);
     if (id === null) {
         return res.status(400).json({ message: 'Invalid metric id' });

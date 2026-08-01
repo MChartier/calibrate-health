@@ -2,6 +2,7 @@ node_modules
 dist
 .env
 backend/.env
+.dev.env
 backend/prisma/*.db
 backend/prisma/*.db-journal
 backend/prisma/*.db-shm
@@ -17,5 +18,4 @@ coverage
 .c8_output
 deploy/backups/
 deploy/*age-identity*
-.devcontainer/.env
 .vscode/settings.json

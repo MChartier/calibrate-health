@@ -2,6 +2,7 @@ import 'react-native-gesture-handler';
 import React from 'react';
 import { Slot } from 'expo-router';
 import Head from 'expo-router/head';
+import { StyleSheet, View } from 'react-native';
 import { QueryClient, QueryClientProvider, useQueryClient } from '@tanstack/react-query';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
@@ -14,6 +15,7 @@ import { AppErrorBoundary } from '../src/components/AppErrorBoundary';
 import { HealthConnectProvider } from '../src/healthConnect/provider';
 import { PwaStatusBanner } from '../src/pwa/PwaStatusBanner.web';
 import { useBrowserNotificationStream } from '../src/notifications/useBrowserNotificationStream.web';
+import { useVisualViewportHeight } from '../src/hooks/useVisualViewportHeight';
 
 const queryClient = new QueryClient();
 
@@ -71,8 +73,16 @@ const BrowserRuntime: React.FC<{ children: React.ReactNode }> = ({ children }) =
     );
 };
 
+/** PWA updates should interrupt signed-in work, not the server-owned sign-in flow. */
+const AuthenticatedPwaStatus: React.FC = () => {
+    const { isLoading, user } = useAuth();
+    if (isLoading || !user) return null;
+    return <PwaStatusBanner />;
+};
+
 export default function RootLayout() {
     const theme = useAppTheme();
+    const visualViewportHeight = useVisualViewportHeight();
 
     React.useEffect(() => {
         const previousRootBackground = document.documentElement.style.backgroundColor;
@@ -99,17 +109,25 @@ export default function RootLayout() {
     return (
         <AppErrorBoundary>
             <WebSkipLink />
-            <PwaStatusBanner />
             <SafeAreaProvider>
                 <QueryClientProvider client={queryClient}>
                     <AuthProvider>
+                        <AuthenticatedPwaStatus />
                         <NativePushRegistrationProvider>
                             <BrowserRuntime>
                                 <StatusBar style={theme.dark ? 'light' : 'dark'} />
                                 <Head>
                                     <title>calibrate</title>
                                 </Head>
-                                <Slot />
+                                <View
+                                    style={[
+                                        styles.viewport,
+                                        visualViewportHeight !== undefined && styles.visualViewport,
+                                        { height: visualViewportHeight }
+                                    ]}
+                                >
+                                    <Slot />
+                                </View>
                             </BrowserRuntime>
                         </NativePushRegistrationProvider>
                     </AuthProvider>
@@ -118,3 +136,17 @@ export default function RootLayout() {
         </AppErrorBoundary>
     );
 }
+
+const styles = StyleSheet.create({
+    viewport: {
+        flex: 1,
+        minHeight: 0
+    },
+    visualViewport: {
+        // Preserve the measured viewport height instead of collapsing it to a zero flex basis.
+        flexGrow: 0,
+        flexShrink: 0,
+        flexBasis: 'auto',
+        width: '100%'
+    }
+});

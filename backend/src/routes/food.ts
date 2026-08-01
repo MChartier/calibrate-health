@@ -1,4 +1,5 @@
 import express from 'express';
+import type { Prisma } from '@prisma/client';
 import prisma from '../config/database';
 import {
     getEnabledFoodDataProviders,
@@ -21,6 +22,8 @@ import {
     RECENT_FOOD_DEFAULT_LIMIT,
     RECENT_FOOD_MAX_LIMIT
 } from '../services/recentFoods';
+import { getFoodDayWriteBlock } from '../services/foodTracking';
+import { getAuthenticatedUser, requireAuthenticatedUser } from '../middleware/authenticatedUser';
 
 /**
  * Food log and food search endpoints.
@@ -116,6 +119,7 @@ const searchEnabledProviders = async (
                 result.items.length > 0 ? 'success' : 'empty',
                 Date.now() - startedAt
             );
+            // A provider may disable barcode support after an upstream scope error during this request.
             if (opts.requireBarcodeLookup && !resolution.provider.supportsBarcodeLookup) {
                 attempts.push({
                     name: providerInfo.name,
@@ -147,24 +151,14 @@ const searchEnabledProviders = async (
     return { found: false, attempts, sawSuccessfulResponse, lastError };
 };
 
-/**
- * Ensure the session is authenticated before accessing food data.
- */
-const isAuthenticated = (req: express.Request, res: express.Response, next: express.NextFunction) => {
-    if (req.isAuthenticated()) {
-        return next();
-    }
-    res.status(401).json({ message: 'Not authenticated' });
-};
-
-router.use(isAuthenticated);
+router.use(requireAuthenticatedUser);
 
 router.get('/recent', async (req, res) => {
-    const user = req.user as any;
+    const user = getAuthenticatedUser(req);
     const q = typeof req.query.q === 'string' ? req.query.q.trim().toLowerCase() : '';
-    const limitRaw = typeof req.query.limit === 'string' ? Number.parseInt(req.query.limit, 10) : undefined;
+    const limitRaw = parsePositiveInteger(req.query.limit);
     const limit =
-        typeof limitRaw === 'number' && Number.isFinite(limitRaw)
+        limitRaw !== null
             ? Math.min(Math.max(limitRaw, 1), RECENT_FOOD_MAX_LIMIT)
             : RECENT_FOOD_DEFAULT_LIMIT;
 
@@ -223,12 +217,12 @@ router.get('/search', async (req, res) => {
 });
 
 router.get('/', async (req, res) => {
-    const user = req.user as any;
+    const user = getAuthenticatedUser(req);
     const dateParam = typeof req.query.date === 'string' ? req.query.date : undefined;
     const localDateParam = typeof req.query.local_date === 'string' ? req.query.local_date : undefined;
     const requestedDate = localDateParam ?? dateParam;
 
-    let whereClause: any = { user_id: user.id };
+    const whereClause: Prisma.FoodLogWhereInput = { user_id: user.id };
     if (requestedDate !== undefined) {
         try {
             // Treat date strings as local-date values (no timezone math).
@@ -250,7 +244,7 @@ router.get('/', async (req, res) => {
 });
 
 router.post('/', async (req, res) => {
-    const user = req.user as any;
+    const user = getAuthenticatedUser(req);
     try {
         const operationId = parseClientOperationId(
             req.get?.('x-client-operation-id') ?? req.headers?.['x-client-operation-id']
@@ -275,6 +269,13 @@ router.post('/', async (req, res) => {
             operationKind: 'food_log.create',
             requestPayload: req.body,
             mutate: async (tx, claimedOperationId) => {
+                const writeBlock = await getFoodDayWriteBlock({
+                    userId: user.id,
+                    localDate: parsedBody.localDate,
+                    db: tx
+                });
+                if (writeBlock) return writeBlock;
+
                 if (parsedBody.kind === 'MY_FOOD') {
                     // Snapshot serving details so later edits to "my foods" do not mutate historical logs.
                     const myFood = await tx.myFood.findFirst({
@@ -362,7 +363,7 @@ router.post('/', async (req, res) => {
 });
 
 router.patch('/:id', async (req, res) => {
-    const user = req.user as any;
+    const user = getAuthenticatedUser(req);
     const id = parsePositiveInteger(req.params.id);
     if (id === null) {
         return res.status(400).json({ message: 'Invalid food log id' });
@@ -422,7 +423,7 @@ router.patch('/:id', async (req, res) => {
 });
 
 router.delete('/:id', async (req, res) => {
-    const user = req.user as any;
+    const user = getAuthenticatedUser(req);
     const id = parsePositiveInteger(req.params.id);
     if (id === null) {
         return res.status(400).json({ message: 'Invalid food log id' });

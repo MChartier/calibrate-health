@@ -145,5 +145,10 @@ config.resolver.extraNodeModules = {
   '@calibrate/shared': sharedRoot,
   ...hoistedRuntimeRoots
 };
+config.resolver.blockList = [
+  ...config.resolver.blockList,
+  // npm executable shims are not runtime modules, and Linux-created shims can be unreadable to Metro on Windows.
+  /[\\/]node_modules[\\/]\.bin(?:[\\/].*)?$/
+];
 
 module.exports = config;

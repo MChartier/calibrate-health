@@ -1,4 +1,4 @@
-import type { Prisma } from '@prisma/client';
+import type { FoodLog, Prisma } from '@prisma/client';
 import prisma from '../config/database';
 
 const RECENT_FOOD_LOOKBACK_LIMIT = 200;
@@ -32,7 +32,7 @@ export type RecentFoodSuggestion = {
 type RecentFoodDatabase = Prisma.TransactionClient | typeof prisma;
 
 /** Build a stable key so repeated logs collapse into one reusable suggestion. */
-export const getRecentFoodKey = (log: any): string => {
+export const getRecentFoodKey = (log: FoodLog): string => {
   if (typeof log.my_food_id === 'number') return `my-food:${log.my_food_id}`;
   if (log.external_source && log.external_id) {
     return [
@@ -52,7 +52,7 @@ export const getRecentFoodKey = (log: any): string => {
   ].join(':');
 };
 
-const buildSuggestion = (log: any, key: string): RecentFoodSuggestion => ({
+const buildSuggestion = (log: FoodLog, key: string): RecentFoodSuggestion => ({
   id: key,
   name: log.name,
   meal_period: log.meal_period,

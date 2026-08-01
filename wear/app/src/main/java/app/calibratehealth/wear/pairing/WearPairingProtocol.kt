@@ -112,6 +112,25 @@ internal fun buildAccountDisconnectResult(command: PhoneAccountDisconnect): Stri
     )
 )
 
+/** Report both successful and failed exchanges so the phone can retire the consumed one-time request. */
+internal fun buildPairingResult(pending: PendingPairingInvite, errorMessage: String? = null): String {
+    val values = linkedMapOf(
+        "ok" to StrictJson.boolean(errorMessage == null),
+        "request_id" to StrictJson.string(pending.requestId),
+        "protocol_version" to StrictJson.number(WEAR_PAIRING_PROTOCOL_VERSION),
+        "server_origin" to StrictJson.string(pending.serverOrigin),
+        "watch_device_id" to StrictJson.string(pending.watchDeviceId)
+    )
+    if (errorMessage == null) {
+        values["watch_device_name"] = StrictJson.string(pending.watchDeviceName)
+    } else {
+        values["message"] = StrictJson.string(
+            errorMessage.trim().take(180).ifEmpty { "Pairing failed. Start pairing again on your phone." }
+        )
+    }
+    return StrictJson.stringify(StrictJson.objectOf(*values.toList().toTypedArray()))
+}
+
 internal fun parsePhonePairingInvite(
     fields: PairingFields,
     expectedServerOrigin: String,

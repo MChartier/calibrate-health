@@ -1,36 +1,29 @@
-import React, { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
+import { router } from 'expo-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ALLOWED_DAILY_DEFICIT_ABS_VALUES } from '@calibrate/shared';
 import { AppButton } from '../../src/components/AppButton';
 import { AppText } from '../../src/components/AppText';
 import { BottomSheetModal } from '../../src/components/BottomSheetModal';
 import { GoalProgressCard } from '../../src/components/GoalProgressCard';
+import { GoalDailyChangeSelect } from '../../src/components/GoalDailyChangeSelect';
 import { NumberStepperField } from '../../src/components/NumberStepperField';
-import { OverlaySelect, type OverlaySelectOption } from '../../src/components/OverlaySelect';
-import { Screen } from '../../src/components/Screen';
+import { TabScreen } from '../../src/components/TabScreen';
 import { SectionHeader } from '../../src/components/SectionHeader';
 import { SegmentedControl } from '../../src/components/SegmentedControl';
-import { WeightEntrySheet } from '../../src/components/WeightEntrySheet';
-import { WeightTrendCard } from '../../src/components/WeightTrendCard';
-import { ProgressOverviewCard } from '../../src/components/progress/ProgressOverviewCard';
+import { WeightTrendPreviewCard } from '../../src/components/progress/WeightTrendPreviewCard';
 import { useAuth } from '../../src/auth/AuthContext';
 import { gramsToDisplayWeight } from '../../src/utils/bodyMeasurements';
-import { getTodayDate } from '../../src/utils/dates';
 import { formatWeightUnit } from '../../src/utils/format';
-import { colors, radius, spacing, useAppTheme } from '../../src/theme';
-
-type GoalMode = 'lose' | 'maintain' | 'gain';
-
-const GOAL_MODES: Array<{ value: GoalMode; label: string }> = [
-    { value: 'lose', label: 'Lose' },
-    { value: 'maintain', label: 'Maintain' },
-    { value: 'gain', label: 'Gain' }
-];
-
-const DAILY_CHANGE_OPTIONS = ALLOWED_DAILY_DEFICIT_ABS_VALUES.filter((value) => value !== 0);
-const WEIGHT_GOAL_STEP = 0.1; // Goal weights should match daily weigh-in precision.
+import {
+    getGoalModeFromDailyDeficit,
+    getSignedDailyDeficit,
+    GOAL_MODE_OPTIONS,
+    type GoalMode
+} from '../../src/utils/goals';
+import { radius, spacing, useAppTheme, type AppTheme } from '../../src/theme';
+import { WEIGHT_INPUT_INCREMENT } from '../../src/config/inputPrecision';
 
 function formatWeightInput(value: number): string {
     return value.toFixed(1).replace(/\.0$/, '');
@@ -52,37 +45,11 @@ function getGoalValidationError(goalMode: GoalMode, startWeight: number, targetW
     return null;
 }
 
-function getSignedDailyDeficit(goalMode: GoalMode, dailyChangeAbs: string): number {
-    if (goalMode === 'maintain') return 0;
-    const magnitude = Math.abs(Number(dailyChangeAbs));
-    return goalMode === 'gain' ? -magnitude : magnitude;
-}
-
-function getDailyChangeCopy(goalMode: GoalMode, dailyChangeAbs: string): { label: string; description: string } {
-    const magnitude = Math.abs(Number(dailyChangeAbs));
-    const formattedMagnitude = Number.isFinite(magnitude) ? magnitude.toLocaleString() : dailyChangeAbs;
-
-    if (goalMode === 'gain') {
-        return {
-            label: `${formattedMagnitude} kcal/day surplus`,
-            description: `Targets eating ${formattedMagnitude} kcal above estimated burn.`
-        };
-    }
-
-    return {
-        label: `${formattedMagnitude} kcal/day deficit`,
-        description: `Targets eating ${formattedMagnitude} kcal below estimated burn.`
-    };
-}
-
-function inferGoalMode(dailyDeficit?: number | null): GoalMode {
-    if (typeof dailyDeficit !== 'number' || dailyDeficit === 0) return 'maintain';
-    return dailyDeficit > 0 ? 'lose' : 'gain';
-}
-
 export default function ProgressScreen() {
     const { api, user } = useAuth();
-    const { colors: themeColors } = useAppTheme();
+    const theme = useAppTheme();
+    const { colors: themeColors } = theme;
+    const styles = useMemo(() => createStyles(theme), [theme]);
     const queryClient = useQueryClient();
     const goalQuery = useQuery({ queryKey: ['mobile-goal'], queryFn: () => api.getGoals() });
     const profileQuery = useQuery({ queryKey: ['mobile-profile'], queryFn: () => api.getUserProfile() });
@@ -92,7 +59,6 @@ export default function ProgressScreen() {
         queryFn: () => api.getTrendMetrics({ range: 'month' })
     });
     const [isGoalEditorOpen, setIsGoalEditorOpen] = useState(false);
-    const [isWeightEditorOpen, setIsWeightEditorOpen] = useState(false);
     const [startWeight, setStartWeight] = useState('');
     const [targetWeight, setTargetWeight] = useState('');
     const [goalMode, setGoalMode] = useState<GoalMode>('lose');
@@ -102,7 +68,6 @@ export default function ProgressScreen() {
 
     const signedDailyDeficit = getSignedDailyDeficit(goalMode, dailyChangeAbs);
     const canSave = Number(startWeight) > 0 && Number(targetWeight) > 0 && Number.isFinite(Number(dailyChangeAbs));
-
     const saveGoal = useMutation({
         mutationFn: () =>
             api.createGoal({
@@ -150,7 +115,7 @@ export default function ProgressScreen() {
         const currentGoal = goalQuery.data;
         setStartWeight(getDefaultStartWeight());
         setTargetWeight(currentGoal ? formatWeightInput(currentGoal.target_weight) : '');
-        setGoalMode(inferGoalMode(currentGoal?.daily_deficit));
+        setGoalMode(getGoalModeFromDailyDeficit(currentGoal?.daily_deficit));
         setDailyChangeAbs(String(Math.abs(currentGoal?.daily_deficit ?? 500) || 500));
         setValidationError(null);
         setIsDailyChangeSelectorOpen(false);
@@ -163,37 +128,29 @@ export default function ProgressScreen() {
     }
 
     return (
-        <Screen reserveBottomTabs style={{ backgroundColor: themeColors.background }}>
-            <ProgressOverviewCard
-                latestMetric={metricsQuery.data?.[0]}
-                trendMeta={trendSummaryQuery.data?.meta}
-                goal={goalQuery.data}
-                user={user}
-                onLogWeight={() => setIsWeightEditorOpen(true)}
-            />
+        <>
+            <TabScreen>
+                <GoalProgressCard
+                    latestMetric={metricsQuery.data?.[0]}
+                    goal={goalQuery.data}
+                    user={user}
+                    onEditGoal={openGoalEditor}
+                />
 
-            <WeightTrendCard
-                title="Weight trend"
-                description="Daily weigh-ins and your smoothed trend over time."
-            />
-
-            <GoalProgressCard
-                title="Goal projection"
-                goal={goalQuery.data}
-                latestMetric={metricsQuery.data?.[0]}
-                user={user}
-                onEditGoal={openGoalEditor}
-            />
+                <WeightTrendPreviewCard
+                    onPress={() => router.push('/weight-trend')}
+                />
+            </TabScreen>
 
             <BottomSheetModal visible={isGoalEditorOpen} onRequestClose={() => setIsGoalEditorOpen(false)}>
                 <SectionHeader
                     title="Set a new goal"
                     description={`Weights are entered in ${formatWeightUnit(user?.weight_unit)}.`}
                 />
-                <SegmentedControl options={GOAL_MODES} value={goalMode} onChange={handleGoalModeChange} />
+                <SegmentedControl options={GOAL_MODE_OPTIONS} value={goalMode} onChange={handleGoalModeChange} />
                 <View style={styles.goalEditorBody}>
                     <View style={styles.startingContext}>
-                        <Ionicons name="scale-outline" size={18} color={colors.primaryDark} />
+                        <Ionicons name="scale-outline" size={18} color={themeColors.primary} />
                         <View style={styles.startingText}>
                             <AppText variant="label">Starting from</AppText>
                             <AppText style={styles.startingValue}>
@@ -205,8 +162,8 @@ export default function ProgressScreen() {
                         label="Target"
                         value={targetWeight}
                         onChangeText={setTargetWeight}
-                        step={WEIGHT_GOAL_STEP}
-                        min={WEIGHT_GOAL_STEP}
+                        step={WEIGHT_INPUT_INCREMENT}
+                        min={WEIGHT_INPUT_INCREMENT}
                         suffix={formatWeightUnit(user?.weight_unit)}
                     />
                     <View style={styles.dailyChangeSlot}>
@@ -216,12 +173,12 @@ export default function ProgressScreen() {
                                 <AppText variant="muted">Maintenance goals use a steady calorie target with no daily deficit or surplus.</AppText>
                             </View>
                         ) : (
-                            <DailyChangeSelector
+                            <GoalDailyChangeSelect
                                 goalMode={goalMode}
                                 value={dailyChangeAbs}
                                 isOpen={isDailyChangeSelectorOpen}
                                 onToggle={() => setIsDailyChangeSelectorOpen((current) => !current)}
-                                onSelect={(nextValue) => {
+                                onChange={(nextValue) => {
                                     setDailyChangeAbs(nextValue);
                                     setIsDailyChangeSelectorOpen(false);
                                 }}
@@ -236,67 +193,25 @@ export default function ProgressScreen() {
                     <AppButton
                         title="Cancel"
                         variant="secondary"
-                        leftIcon={<Ionicons name="close" size={18} color={colors.text} />}
+                        leftIcon={<Ionicons name="close" size={18} color={themeColors.onSurface} />}
                         onPress={() => setIsGoalEditorOpen(false)}
                         style={styles.rowField}
                     />
                     <AppButton
                         title={saveGoal.isPending ? 'Saving...' : 'Save goal'}
                         disabled={!canSave || saveGoal.isPending}
-                        leftIcon={<Ionicons name="flag-outline" size={18} color="#ffffff" />}
+                        leftIcon={<Ionicons name="flag-outline" size={18} color={themeColors.onPrimary} />}
                         onPress={handleSave}
                         style={styles.rowField}
                     />
                 </View>
             </BottomSheetModal>
 
-            <WeightEntrySheet
-                visible={isWeightEditorOpen}
-                date={getTodayDate(user?.timezone)}
-                onClose={() => setIsWeightEditorOpen(false)}
-            />
-        </Screen>
+        </>
     );
 }
 
-type DailyChangeSelectorProps = {
-    goalMode: Exclude<GoalMode, 'maintain'>;
-    value: string;
-    isOpen: boolean;
-    onToggle: () => void;
-    onSelect: (value: string) => void;
-};
-
-const DailyChangeSelector: React.FC<DailyChangeSelectorProps> = ({
-    goalMode,
-    value,
-    isOpen,
-    onToggle,
-    onSelect
-}) => {
-    const options: Array<OverlaySelectOption<string>> = DAILY_CHANGE_OPTIONS.map((option) => {
-        const optionValue = String(option);
-        const optionCopy = getDailyChangeCopy(goalMode, optionValue);
-        return {
-            value: optionValue,
-            label: optionCopy.label,
-            description: optionCopy.description
-        };
-    });
-
-    return (
-        <OverlaySelect
-            accessibilityLabel="Select daily calorie change"
-            value={value}
-            options={options}
-            isOpen={isOpen}
-            onToggle={onToggle}
-            onChange={onSelect}
-        />
-    );
-};
-
-const styles = StyleSheet.create({
+const createStyles = (theme: AppTheme) => StyleSheet.create({
     row: {
         flexDirection: 'row',
         gap: spacing.md
@@ -314,7 +229,7 @@ const styles = StyleSheet.create({
     },
     maintenanceNote: {
         borderRadius: radius.md,
-        backgroundColor: colors.surfaceAlt,
+        backgroundColor: theme.colors.surfaceContainer,
         padding: spacing.md
     },
     startingContext: {
@@ -322,8 +237,8 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         gap: spacing.md,
         borderRadius: radius.md,
-        backgroundColor: colors.primarySoft,
-        borderColor: colors.border,
+        backgroundColor: theme.colors.primaryContainer,
+        borderColor: theme.colors.outlineVariant,
         borderWidth: StyleSheet.hairlineWidth,
         padding: spacing.md
     },
@@ -332,10 +247,10 @@ const styles = StyleSheet.create({
         minWidth: 0
     },
     startingValue: {
-        color: colors.primaryDark,
+        color: theme.colors.onPrimaryContainer,
         fontWeight: '900'
     },
     error: {
-        color: colors.danger
+        color: theme.colors.danger
     }
 });

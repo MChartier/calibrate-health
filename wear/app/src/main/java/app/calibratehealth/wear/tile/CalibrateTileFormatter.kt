@@ -6,8 +6,8 @@ data class CalibrateTileSnapshot(
     val caloriesConsumed: Int?,
     val calorieTarget: Int?,
     val caloriesRemaining: Int?,
-    val isComplete: Boolean?,
-    val cachedAtEpochMs: Long
+    val cachedAtEpochMs: Long,
+    val foodDayStatus: String = "OPEN"
 )
 
 data class CalibrateTileContent(
@@ -34,6 +34,15 @@ object CalibrateTileFormatter {
             )
         }
 
+        if (snapshot.foodDayStatus == "PAUSED") {
+            return CalibrateTileContent(
+                calorieLine = "Paused",
+                consumedLine = "Calorie tracking paused",
+                statusLine = "Open app to review",
+                isStale = false
+            )
+        }
+
         val calories = calorieLine(
             snapshot.caloriesConsumed,
             snapshot.calorieTarget,
@@ -41,16 +50,11 @@ object CalibrateTileFormatter {
         )
         val ageMs = (nowEpochMs - snapshot.cachedAtEpochMs).coerceAtLeast(0L)
         val cacheIsStale = ageMs >= STALE_AFTER_MS
-        val completion = when (snapshot.isComplete) {
-            true -> "Day complete"
-            false -> "Day open"
-            null -> null
-        }
         val age = ageLabel(ageMs, cacheIsStale)
         return CalibrateTileContent(
             calorieLine = calories,
             consumedLine = consumedLine(snapshot.caloriesConsumed, snapshot.calorieTarget),
-            statusLine = listOfNotNull(completion, age).joinToString(" | "),
+            statusLine = age,
             isStale = cacheIsStale
         )
     }

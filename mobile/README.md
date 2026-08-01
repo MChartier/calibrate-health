@@ -7,9 +7,18 @@ builds are the primary native workflow; Expo Go is useful for lightweight checks
 
 ## Development
 
-- Use Node.js 22.13 or newer for Expo commands.
-- Run from the repo root after installing workspace dependencies: `npm install`.
-- Start the Expo development server: `npm --prefix mobile run dev`.
+- Use Node.js 22.13 or newer and Docker Desktop for the standard local workflow.
+- From the repo root, run `npm run dev`. It starts Docker Desktop when needed, provisions Postgres, installs dependencies,
+  migrates and seeds the database, then starts the backend and Expo web client. No prior `npm install` or local `.env`
+  file is required.
+- The launcher prints the worktree-specific web and API URLs and automatically signs in the seeded local test user.
+- Use `npm run dev:manual-auth` when testing login or registration instead.
+- Use `npm run dev:build` to bootstrap the environment and validate the Expo web production export.
+- `npm run dev:expo-web` starts only Expo web on the host and is intended for advanced workflows where the backend is
+  already running.
+- `npm run dev:expo` starts the native Expo dev-client server on the host and targets the current worktree's mapped
+  backend from the Android emulator. Keep `npm run dev` running in another terminal, then launch the installed
+  development build in the emulator.
 - Build/install on an Android emulator or device: `npm --prefix mobile run android`.
 - The Android emulator dev default server is `http://10.0.2.2:3000`.
 - For Expo Go on a physical Android phone, start Expo with a LAN-reachable backend URL:
@@ -38,4 +47,6 @@ CI also prebuilds Android and runs a debug Gradle build so native config drift i
 For local release validation, provide the four shared `CALIBRATE_ANDROID_SIGNING_*` values documented in
 `docs/mobile-release.md`, then run `npm run build:native:release` from the repository root. It performs a clean phone
 prebuild and produces signed phone and Wear APKs and AABs with one certificate; local development does not need to
-wait for the remote CI build.
+wait for the remote CI build. An OTA-enabled phone build also requires a linked EAS project ID (or the
+`EXPO_PUBLIC_EAS_PROJECT_ID` override); after installing that build, publish compatible JavaScript/assets changes
+with `npm run release:native:ota`. Wear changes always require another signed native build.

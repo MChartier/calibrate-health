@@ -122,8 +122,7 @@ class WearPairingListenerService : WearableListenerService() {
             if (stateStore.consumePending(pending) == null) return
 
             val keyManager = WearPairingKeyManager()
-            val resultPayload: String
-            try {
+            val resultPayload = try {
                 val exchangeId = UUID.randomUUID().toString()
                 val signature = keyManager.sign(
                     pending.keyAlias,
@@ -162,21 +161,15 @@ class WearPairingListenerService : WearableListenerService() {
                 CalibrateTileUpdate.request(context)
                 stateStore.clearError()
                 runCatching { WearSyncScheduler.scheduleAfterPairing(context) }
-                resultPayload = JSONObject()
-                    .put("ok", true)
-                    .put("request_id", pending.requestId)
-                    .put("protocol_version", WEAR_PAIRING_PROTOCOL_VERSION)
-                    .put("server_origin", pending.serverOrigin)
-                    .put("watch_device_id", pending.watchDeviceId)
-                    .put("watch_device_name", pending.watchDeviceName)
-                    .toString()
+                buildPairingResult(pending)
             } catch (error: Exception) {
+                val message = safeError(error)
                 if (error is WearUpgradeRequiredException) {
-                    stateStore.setUpgradeRequired(error.message ?: "Update Calibrate on this watch to continue.")
+                    stateStore.setUpgradeRequired(message)
                 } else {
-                    stateStore.setError(safeError(error))
+                    stateStore.setError(message)
                 }
-                return
+                buildPairingResult(pending, message)
             } finally {
                 keyManager.deleteOwned(pending.keyAlias)
             }

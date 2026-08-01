@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { Pressable, StyleSheet } from 'react-native';
+import { useEffect, useState } from 'react';
+import { Platform, Pressable, StyleSheet } from 'react-native';
 import { Link, useLocalSearchParams } from 'expo-router';
 import { AppButton } from '../../src/components/AppButton';
 import { AppCard } from '../../src/components/AppCard';
@@ -23,7 +23,8 @@ export default function LoginScreen() {
     } = useAuth();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const routedServerDraft = readAuthServerDraft(params.serverUrl);
+    const canSelectServer = Platform.OS !== 'web';
+    const routedServerDraft = canSelectServer ? readAuthServerDraft(params.serverUrl) : null;
     const [serverInput, setServerInput] = useState(routedServerDraft ?? serverUrl);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -87,12 +88,14 @@ export default function LoginScreen() {
                     onChangeText={setPassword}
                     onSubmitEditing={() => void handleLogin()}
                 />
-                <ServerUrlControl
-                    value={serverInput}
-                    onChangeText={setServerInput}
-                    connection={serverConnection}
-                    onTestConnection={testServerUrl}
-                />
+                {canSelectServer && (
+                    <ServerUrlControl
+                        value={serverInput}
+                        onChangeText={setServerInput}
+                        connection={serverConnection}
+                        onTestConnection={testServerUrl}
+                    />
+                )}
                 {(error || authError) && <AppText accessibilityRole="alert" style={{ color: colors.danger }}>{error ?? authError}</AppText>}
                 <AppButton
                     title={isSubmitting ? 'Signing in...' : 'Sign in'}
@@ -103,7 +106,10 @@ export default function LoginScreen() {
 
             {!accountDeletionCleanupNotice && (
                 <Link
-                    href={{ pathname: '/(auth)/register', params: { serverUrl: serverInput } }}
+                    href={canSelectServer ? {
+                        pathname: '/(auth)/register',
+                        params: { serverUrl: serverInput }
+                    } : '/(auth)/register'}
                     asChild
                 >
                     <Pressable accessibilityRole="link" style={styles.linkTarget}>

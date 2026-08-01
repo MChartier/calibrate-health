@@ -1,4 +1,5 @@
 import React from 'react';
+import { Platform } from 'react-native';
 import { fireEvent, render, waitFor, within } from '@testing-library/react-native';
 import LoginScreen from '../../app/(auth)/login';
 import RegisterScreen from '../../app/(auth)/register';
@@ -7,7 +8,7 @@ import { Link, useLocalSearchParams } from 'expo-router';
 
 jest.mock('./AuthContext', () => ({ useAuth: jest.fn() }));
 jest.mock('../account/accountDeletionNotice', () => ({ accountDeletionCleanupGuidance: jest.fn(() => '') }));
-jest.mock('@expo/vector-icons', () => ({ Ionicons: () => null }));
+jest.mock('@expo/vector-icons/Ionicons', () => () => null);
 jest.mock('react-native-safe-area-context', () => ({
     useSafeAreaInsets: () => ({ top: 0, right: 0, bottom: 0, left: 0 })
 }));
@@ -60,6 +61,10 @@ describe('auth screen server navigation', () => {
         mockUseAuth.mockReturnValue(authContextStub() as unknown as ReturnType<typeof useAuth>);
     });
 
+    afterEach(() => {
+        jest.restoreAllMocks();
+    });
+
     it('carries the login server draft into the registration link', () => {
         const screen = render(<LoginScreen />);
 
@@ -95,11 +100,35 @@ describe('auth screen server navigation', () => {
 
         fireEvent.changeText(screen.getByLabelText('Email'), 'new@example.com');
         fireEvent.changeText(screen.getByLabelText('Password'), 'secret');
+        fireEvent.changeText(screen.getByLabelText('Confirm password'), 'secret');
         fireEvent.press(screen.getByLabelText('Create account'));
 
         await waitFor(() => {
             expect(auth.register).toHaveBeenCalledWith('new@example.com', 'secret', SELF_HOSTED_URL);
         });
+    });
+
+    it('hides server selection and uses the serving server on web', async () => {
+        jest.replaceProperty(Platform, 'OS', 'web');
+        const auth = authContextStub();
+        mockUseAuth.mockReturnValue(auth as unknown as ReturnType<typeof useAuth>);
+        const screen = render(<LoginScreen />);
+
+        expect(screen.queryByText(SELF_HOSTED_URL)).toBeNull();
+        expect(screen.queryByLabelText('Change server URL')).toBeNull();
+
+        fireEvent.changeText(screen.getByLabelText('Email'), 'user@example.com');
+        fireEvent.changeText(screen.getByLabelText('Password'), 'secret');
+        fireEvent.press(screen.getByLabelText('Sign in'));
+
+        await waitFor(() => {
+            expect(auth.login).toHaveBeenCalledWith(
+                'user@example.com',
+                'secret',
+                auth.serverUrl
+            );
+        });
+        expect(mockLink.mock.calls[0][0].href).toBe('/(auth)/register');
     });
 
     it('restores the create-account action after registration fails', async () => {
@@ -110,6 +139,7 @@ describe('auth screen server navigation', () => {
 
         fireEvent.changeText(screen.getByLabelText('Email'), 'existing@example.com');
         fireEvent.changeText(screen.getByLabelText('Password'), 'secret');
+        fireEvent.changeText(screen.getByLabelText('Confirm password'), 'secret');
         fireEvent.press(screen.getByLabelText('Create account'));
 
         await waitFor(() => {
@@ -117,5 +147,19 @@ describe('auth screen server navigation', () => {
         });
         const createAccountButton = screen.getByRole('button', { name: 'Create account' });
         expect(within(createAccountButton).getByText('Create account')).toBeTruthy();
+    });
+
+    it('prevents account creation when password confirmation does not match', () => {
+        const auth = authContextStub();
+        mockUseAuth.mockReturnValue(auth as unknown as ReturnType<typeof useAuth>);
+        const screen = render(<RegisterScreen />);
+
+        fireEvent.changeText(screen.getByLabelText('Email'), 'new@example.com');
+        fireEvent.changeText(screen.getByLabelText('Password'), 'secret');
+        fireEvent.changeText(screen.getByLabelText('Confirm password'), 'different');
+        fireEvent.press(screen.getByLabelText('Create account'));
+
+        expect(screen.getByRole('alert')).toHaveTextContent('Passwords do not match.');
+        expect(auth.register).not.toHaveBeenCalled();
     });
 });

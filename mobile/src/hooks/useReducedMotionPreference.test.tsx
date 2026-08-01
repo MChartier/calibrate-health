@@ -1,4 +1,3 @@
-import React from 'react';
 import { AccessibilityInfo } from 'react-native';
 import { act, render, waitFor } from '@testing-library/react-native';
 import { AppText } from '../components/AppText';

@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import { router, useLocalSearchParams } from 'expo-router';
 import type { MealPeriod } from '@calibrate/shared';
 import { LoadingState } from '../../src/components/LoadingState';

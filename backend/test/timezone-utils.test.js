@@ -2,12 +2,24 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 
 const {
+  addUtcYearsClamped,
   isValidIanaTimeZone,
   formatDateToLocalDateString,
   getUtcTodayDateOnly,
   getUtcTodayDateOnlyInTimeZone,
   normalizeToUtcDateOnly
 } = require('../src/utils/date');
+
+test('addUtcYearsClamped preserves calendar dates and clamps leap day', () => {
+  assert.equal(
+    addUtcYearsClamped(new Date('2024-03-01T00:00:00.000Z'), -1).toISOString(),
+    '2023-03-01T00:00:00.000Z'
+  );
+  assert.equal(
+    addUtcYearsClamped(new Date('2024-02-29T00:00:00.000Z'), -1).toISOString(),
+    '2023-02-28T00:00:00.000Z'
+  );
+});
 
 test('isValidIanaTimeZone validates common IANA time zones', () => {
   assert.equal(isValidIanaTimeZone('UTC'), true);

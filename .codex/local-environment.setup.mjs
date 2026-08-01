@@ -2,7 +2,6 @@
 import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
-import { ensureDevcontainerCliCache } from "../scripts/devcontainer-cli-cache.mjs";
 
 const workspacePath = path.resolve(process.env.CODEX_WORKTREE_PATH || process.cwd());
 const sourceTreePath = process.env.CODEX_SOURCE_TREE_PATH
@@ -13,13 +12,13 @@ const sourceTreePath = process.env.CODEX_SOURCE_TREE_PATH
  * Run a setup command with inherited stdio so Codex shows actionable logs.
  * @param {string} command - Executable to run.
  * @param {string[]} args - Arguments for the executable.
- * @param {Record<string, string>} env - Extra environment variables.
  */
-function run(command, args, env = {}) {
+function run(command, args) {
   const result = spawnSync(command, args, {
     cwd: workspacePath,
-    env: { ...process.env, ...env },
+    env: process.env,
     stdio: "inherit",
+    shell: false,
   });
   if (result.error) {
     throw result.error;
@@ -43,9 +42,5 @@ if (sourceTreePath && sourceTreePath !== workspacePath) {
   }
 }
 
-const devcontainerCli = ensureDevcontainerCliCache(workspacePath);
-const codexWorktreeEnvScript = path.join(workspacePath, "scripts", "codex-worktree-env.mjs");
-
-run(process.execPath, [codexWorktreeEnvScript, "devcontainer:start"], {
-  DEVCONTAINER_CLI_JS: devcontainerCli.cliJs,
-});
+run(process.execPath, [path.join(workspacePath, "scripts", "dev-env.mjs"), "setup:host"]);
+run(process.execPath, [path.join(workspacePath, "scripts", "dev-stack.mjs"), "configure"]);

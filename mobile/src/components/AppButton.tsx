@@ -3,11 +3,13 @@ import { Pressable, StyleSheet, View, type PressableProps, type StyleProp, type 
 import { type AppTheme, useAppTheme } from '../theme';
 import { AppText } from './AppText';
 
-export const AppButton: React.FC<PressableProps & {
+type AppButtonProps = Omit<PressableProps, 'android_ripple'> & {
     title: string;
     variant?: 'primary' | 'secondary' | 'danger' | 'ghost';
     leftIcon?: React.ReactNode;
-}> = ({
+};
+
+export const AppButton: React.FC<AppButtonProps> = ({
     title,
     variant = 'primary',
     leftIcon,
@@ -23,6 +25,9 @@ export const AppButton: React.FC<PressableProps & {
     let labelStyle: StyleProp<TextStyle> = styles.secondaryLabel;
     if (variant === 'primary') labelStyle = styles.primaryLabel;
     if (variant === 'danger') labelStyle = styles.dangerLabel;
+    const renderedLeftIcon = disabled && React.isValidElement<{ color?: string }>(leftIcon)
+        ? React.cloneElement(leftIcon, { color: theme.colors.onSurfaceVariant })
+        : leftIcon;
 
     return <Pressable
         {...props}
@@ -39,7 +44,7 @@ export const AppButton: React.FC<PressableProps & {
         ]}
     >
         <View style={styles.content}>
-            {leftIcon}
+            {renderedLeftIcon}
             <AppText
                 numberOfLines={2}
                 style={[
@@ -71,7 +76,7 @@ function createStyles(theme: AppTheme) {
     secondary: {
         backgroundColor: theme.colors.surfaceContainer,
         borderColor: theme.colors.outlineVariant,
-        borderWidth: StyleSheet.hairlineWidth
+        borderWidth: theme.stroke.control
     },
     danger: {
         backgroundColor: theme.colors.danger
@@ -85,7 +90,7 @@ function createStyles(theme: AppTheme) {
     disabledSolid: {
         backgroundColor: theme.colors.surfaceContainer,
         borderColor: theme.colors.outlineVariant,
-        borderWidth: StyleSheet.hairlineWidth,
+        borderWidth: theme.stroke.control,
         shadowOpacity: 0,
         elevation: 0,
         opacity: 1

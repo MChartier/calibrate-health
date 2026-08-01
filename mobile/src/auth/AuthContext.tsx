@@ -33,6 +33,7 @@ import {
     writeAccountDeletionCleanupNotice,
     type AccountDeletionCleanupNotice
 } from '../account/accountDeletionNotice';
+import { DEV_TEST_EMAIL, DEV_TEST_PASSWORD, shouldDevAutoLogin } from './devAutoLogin';
 
 type AuthContextValue = {
     api: CalibrateApiClient;
@@ -59,39 +60,6 @@ type AuthContextValue = {
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
-const DEV_TEST_EMAIL = 'test@calibratehealth.app';
-const DEV_TEST_PASSWORD = 'password123';
-
-function isLanOrLoopbackHost(hostname: string): boolean {
-    const normalized = hostname.toLowerCase();
-    if (normalized === 'localhost' || normalized === '127.0.0.1' || normalized === '10.0.2.2') {
-        return true;
-    }
-
-    if (normalized.startsWith('192.168.') || normalized.startsWith('10.')) {
-        return true;
-    }
-
-    const private172Match = /^172\.(1[6-9]|2\d|3[01])\./.test(normalized);
-    return private172Match;
-}
-
-/**
- * Native auth cannot inherit the backend's cookie-session dev auto-login, so
- * local Expo builds mint a normal mobile token for the deterministic test user.
- */
-function shouldDevAutoLoginMobile(serverUrl: string): boolean {
-    if (!__DEV__) {
-        return false;
-    }
-
-    try {
-        const url = new URL(serverUrl);
-        return isLanOrLoopbackHost(url.hostname);
-    } catch {
-        return false;
-    }
-}
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const queryClient = useQueryClient();
@@ -250,14 +218,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                         }
                         return;
                     } catch (refreshError) {
-                        if (!shouldDevAutoLoginMobile(storedServerUrl)) {
+                        if (!shouldDevAutoLogin(storedServerUrl)) {
                             throw refreshError;
                         }
                         await clearStoredTokens();
                     }
                 }
 
-                if (shouldDevAutoLoginMobile(storedServerUrl)) {
+                if (shouldDevAutoLogin(storedServerUrl)) {
                     const devAuthPayload = await getDevTestUserAuthPayload(storedServerUrl, nextDeviceId);
                     if (isMounted && devAuthPayload) {
                         await persistAuthPayload(devAuthPayload);

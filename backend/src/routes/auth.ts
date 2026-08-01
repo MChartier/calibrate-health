@@ -3,7 +3,11 @@ import passport from 'passport';
 import bcrypt from 'bcryptjs';
 import prisma from '../config/database';
 import { DUMMY_AUTH_PASSWORD_HASH, normalizeEmailCredential, validatePasswordCredential } from '../utils/authCredentials';
-import { serializeUserForClient, USER_CLIENT_SELECT } from '../utils/userSerialization';
+import {
+    serializeUserForClient,
+    USER_CLIENT_SELECT,
+    type UserForClient
+} from '../utils/userSerialization';
 import {
     exchangeWearPairingCredential,
     formatMobileAuthResponse,
@@ -20,6 +24,7 @@ import {
 } from '../services/mobileAuth';
 import { diagnosticsRegistry, logSafeOperationalError } from '../observability';
 import { clearSessionCookie } from '../utils/sessionCookie';
+import { getAuthenticatedUser } from '../middleware/authenticatedUser';
 
 /**
  * Session-based auth endpoints (register/login/logout/me).
@@ -163,7 +168,7 @@ router.post('/login', (req, res, next) => {
         req.login(user, (loginErr) => {
             if (loginErr) return next(loginErr);
             return res.json({
-                user: serializeUserForClient(user as any)
+                user: serializeUserForClient(user as UserForClient)
             });
         });
     })(req, res, next);
@@ -241,7 +246,7 @@ router.post('/mobile/wear/pairing-credential', async (req, res) => {
     if (!req.isAuthenticated()) {
         return res.status(401).json({ message: 'Not authenticated' });
     }
-    const user = req.user as { id: number };
+    const user = getAuthenticatedUser(req);
     const issuingSessionId = res.locals.mobileAuthSessionId as number | undefined;
     if (!issuingSessionId) {
         return res.status(403).json({
@@ -350,7 +355,7 @@ router.get('/mobile/sessions', async (req, res) => {
         return res.status(401).json({ message: 'Not authenticated' });
     }
 
-    const user = req.user as { id: number };
+    const user = getAuthenticatedUser(req);
     const sessions = await listMobileSessionsForUser(user.id, res.locals.mobileAuthSessionId);
     res.json({ sessions });
 });
@@ -365,7 +370,7 @@ router.delete('/mobile/sessions/:sessionId', async (req, res) => {
         return res.status(400).json({ message: 'Invalid mobile session id' });
     }
 
-    const user = req.user as { id: number };
+    const user = getAuthenticatedUser(req);
     const revoked = await revokeMobileSessionForUser(user.id, sessionId);
     res.json({ ok: true, revoked });
 });
@@ -375,14 +380,14 @@ router.post('/mobile/sessions/revoke-others', async (req, res) => {
         return res.status(401).json({ message: 'Not authenticated' });
     }
 
-    const user = req.user as { id: number };
+    const user = getAuthenticatedUser(req);
     const revoked = await revokeOtherMobileSessionsForUser(user.id, res.locals.mobileAuthSessionId);
     res.json({ ok: true, revoked });
 });
 
 router.get('/me', async (req, res) => {
     if (req.isAuthenticated()) {
-        const user = req.user as any;
+        const user = getAuthenticatedUser(req);
         try {
             // Refresh from the database to avoid stale session snapshots.
             const dbUser = await prisma.user.findUnique({ where: { id: user.id }, select: USER_CLIENT_SELECT });

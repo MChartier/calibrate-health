@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { Pressable, StyleSheet } from 'react-native';
+import { useEffect, useState } from 'react';
+import { Platform, Pressable, StyleSheet } from 'react-native';
 import { Link, useLocalSearchParams } from 'expo-router';
 import { AppButton } from '../../src/components/AppButton';
 import { AppCard } from '../../src/components/AppCard';
@@ -17,10 +17,12 @@ export default function RegisterScreen() {
     const { colors } = useAppTheme();
     const params = useLocalSearchParams<{ serverUrl?: string | string[] }>();
     const { register, serverUrl, testServerUrl, serverConnection, authError } = useAuth();
-    const routedServerDraft = readAuthServerDraft(params.serverUrl);
+    const canSelectServer = Platform.OS !== 'web';
+    const routedServerDraft = canSelectServer ? readAuthServerDraft(params.serverUrl) : null;
     const [serverInput, setServerInput] = useState(routedServerDraft ?? serverUrl);
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -29,6 +31,19 @@ export default function RegisterScreen() {
     }, [routedServerDraft, serverUrl]);
 
     async function handleRegister() {
+        if (!email.trim()) {
+            setError('Enter your email address.');
+            return;
+        }
+        if (!password) {
+            setError('Enter a password.');
+            return;
+        }
+        if (password !== confirmPassword) {
+            setError('Passwords do not match.');
+            return;
+        }
+
         setIsSubmitting(true);
         setError(null);
         try {
@@ -62,24 +77,40 @@ export default function RegisterScreen() {
                     autoComplete="new-password"
                     autoCorrect={false}
                     textContentType="newPassword"
-                    returnKeyType="go"
+                    returnKeyType="next"
                     secureTextEntry
                     value={password}
                     onChangeText={setPassword}
+                />
+                <TextField
+                    label="Confirm password"
+                    autoCapitalize="none"
+                    autoComplete="new-password"
+                    autoCorrect={false}
+                    textContentType="newPassword"
+                    returnKeyType="go"
+                    secureTextEntry
+                    value={confirmPassword}
+                    onChangeText={setConfirmPassword}
                     onSubmitEditing={() => void handleRegister()}
                 />
-                <ServerUrlControl
-                    value={serverInput}
-                    onChangeText={setServerInput}
-                    connection={serverConnection}
-                    onTestConnection={testServerUrl}
-                />
+                {canSelectServer && (
+                    <ServerUrlControl
+                        value={serverInput}
+                        onChangeText={setServerInput}
+                        connection={serverConnection}
+                        onTestConnection={testServerUrl}
+                    />
+                )}
                 {(error || authError) && <AppText accessibilityRole="alert" style={{ color: colors.danger }}>{error ?? authError}</AppText>}
                 <AppButton title={isSubmitting ? 'Creating...' : 'Create account'} disabled={isSubmitting} onPress={() => void handleRegister()} />
             </AppCard>
 
             <Link
-                href={{ pathname: '/(auth)/login', params: { serverUrl: serverInput } }}
+                href={canSelectServer ? {
+                    pathname: '/(auth)/login',
+                    params: { serverUrl: serverInput }
+                } : '/(auth)/login'}
                 asChild
             >
                 <Pressable accessibilityRole="link" style={styles.linkTarget}>

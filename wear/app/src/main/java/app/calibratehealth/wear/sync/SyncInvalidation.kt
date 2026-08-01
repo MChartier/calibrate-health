@@ -23,7 +23,7 @@ internal object SyncInvalidationInbox {
         check(preferences.edit().putString(PENDING, invalidation.id).commit()) {
             "Unable to persist sync invalidation receipt."
         }
-        WorkManagerOutboxScheduler(context).schedule()
+        WorkManagerOutboxScheduler(context).scheduleAuthoritativeRefresh()
         return true
     }
 
@@ -31,7 +31,7 @@ internal object SyncInvalidationInbox {
     fun recover(context: Context): Boolean {
         val preferences = context.getSharedPreferences(PREFERENCES, Context.MODE_PRIVATE)
         val pending = preferences.getString(PENDING, null)?.takeIf(SYNC_INVALIDATION_ID::matches) ?: return false
-        WorkManagerOutboxScheduler(context).schedule()
+        WorkManagerOutboxScheduler(context).scheduleAuthoritativeRefresh()
         return true
     }
 

@@ -276,6 +276,56 @@ class WearPersistenceInstrumentedTest {
     }
 
     @Test
+    fun versionFiveMigrationBackfillsDayResolutionFromLegacyCompletion() {
+        val configuration = SupportSQLiteOpenHelper.Configuration.builder(context)
+            .name(migrationDatabaseName)
+            .callback(object : SupportSQLiteOpenHelper.Callback(5) {
+                override fun onCreate(database: SupportSQLiteDatabase) {
+                    database.execSQL(
+                        """
+                        CREATE TABLE daily_snapshots (
+                            local_date TEXT NOT NULL PRIMARY KEY,
+                            food_day_complete INTEGER NOT NULL DEFAULT 0
+                        )
+                        """.trimIndent()
+                    )
+                    database.execSQL(
+                        """
+                        INSERT INTO daily_snapshots (local_date, food_day_complete)
+                        VALUES ('2026-07-11', 1), ('2026-07-12', 0)
+                        """.trimIndent()
+                    )
+                }
+
+                override fun onUpgrade(database: SupportSQLiteDatabase, oldVersion: Int, newVersion: Int) = Unit
+            })
+            .build()
+        val helper = FrameworkSQLiteOpenHelperFactory().create(configuration)
+        val database = helper.writableDatabase
+
+        CalibrateWearDatabase.MIGRATION_5_6.migrate(database)
+
+        database.query(
+            """
+            SELECT local_date, food_day_status, food_day_source, food_day_representative
+            FROM daily_snapshots
+            ORDER BY local_date
+            """.trimIndent()
+        ).use { cursor ->
+            assertEquals(true, cursor.moveToFirst())
+            assertEquals("COMPLETE", cursor.getString(1))
+            assertEquals(true, cursor.isNull(2))
+            assertEquals(1, cursor.getInt(3))
+
+            assertEquals(true, cursor.moveToNext())
+            assertEquals("OPEN", cursor.getString(1))
+            assertEquals(true, cursor.isNull(2))
+            assertEquals(0, cursor.getInt(3))
+        }
+        helper.close()
+    }
+
+    @Test
     fun roomAccountDataStoreClearsEveryAccountScopedTable() = runBlocking {
         val database = CalibrateWearDatabase.open(context, databaseName)
         database.dailySnapshotDao().cacheBounded(snapshot("2026-07-11"), maxRows = 2)

@@ -47,6 +47,27 @@ object WatchSnapshotMapper {
 
         val foodDay = root.requiredObject("food_day")
         val foodDayComplete = foodDay.requiredBoolean("is_complete")
+        val foodDayStatus = when (val value = foodDay.values["status"]) {
+            null, JsonValue.Null -> if (foodDayComplete) "COMPLETE" else "OPEN"
+            is JsonValue.StringValue -> value.value
+            else -> throw InvalidJsonException("food_day.status must be a string.")
+        }
+        require(foodDayStatus in setOf("OPEN", "COMPLETE", "INCOMPLETE", "PAUSED")) {
+            "Invalid food day status."
+        }
+        val foodDaySource = when (val value = foodDay.values["source"]) {
+            null, JsonValue.Null -> null
+            is JsonValue.StringValue -> value.value
+            else -> throw InvalidJsonException("food_day.source must be a string.")
+        }?.also {
+            require(it in setOf("USER", "PAUSE", "IMPORT")) { "Invalid food day source." }
+        }
+        val foodDayRepresentative = foodDay.values["is_representative"]?.let {
+            (it as? JsonValue.BooleanValue)?.value
+                ?: throw InvalidJsonException("food_day.is_representative must be a boolean.")
+        } ?: foodDayComplete
+        require(foodDayComplete == (foodDayStatus == "COMPLETE"))
+        require(foodDayRepresentative == (foodDayStatus == "COMPLETE"))
         val foodDayCompletedAt = foodDay.optionalString("completed_at")?.let {
             requireInstant(it, "food_day.completed_at")
         }
@@ -134,6 +155,9 @@ object WatchSnapshotMapper {
                 calorieTarget = target,
                 caloriesRemaining = remaining,
                 foodDayComplete = foodDayComplete,
+                foodDayStatus = foodDayStatus,
+                foodDaySource = foodDaySource,
+                foodDayRepresentative = foodDayRepresentative,
                 foodDayCompletedAtEpochMs = foodDayCompletedAt,
                 foodDayRevision = foodDayRevision,
                 todayWeightGrams = todayWeight,

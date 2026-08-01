@@ -78,10 +78,10 @@ export const calibrateDesignTokens = {
             warningAccent: '#FFB95C',
             warningContainer: '#633F00',
             onWarningContainer: '#FFDEA6',
-            danger: '#FFB4AB',
-            onDanger: '#690005',
-            dangerContainer: '#93000A',
-            onDangerContainer: '#FFDAD6',
+            danger: '#FF5F56',
+            onDanger: '#210101',
+            dangerContainer: '#5C1717',
+            onDangerContainer: '#FFE2DE',
             scrim: 'rgba(0, 0, 0, 0.64)',
             ripple: 'rgba(141, 217, 144, 0.20)'
         }

@@ -135,6 +135,86 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/food-days": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getFoodLogDay"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["setFoodLogDayStatus"];
+        trace?: never;
+    };
+    "/api/v1/food-days/range": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getFoodLogDayRange"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/food-days/pause": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getFoodTrackingPause"];
+        put?: never;
+        post: operations["startFoodTrackingPause"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["updateFoodTrackingPause"];
+        trace?: never;
+    };
+    "/api/v1/food-days/resume": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["resumeFoodTracking"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/user/tracking-history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getTrackingHistory"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/watch/mutations": {
         parameters: {
             query?: never;
@@ -273,7 +353,7 @@ export interface components {
             /** @constant */
             format: "calibrate-account-export";
             /** @constant */
-            version: 2;
+            version: 3;
             /** Format: date-time */
             exported_at: string;
             account: components["schemas"]["AccountExportProfile"];
@@ -281,6 +361,7 @@ export interface components {
             body_metrics: components["schemas"]["AccountExportBodyMetric"][];
             food_logs: components["schemas"]["AccountExportFoodLog"][];
             food_log_days: components["schemas"]["AccountExportFoodLogDay"][];
+            food_tracking_pauses: components["schemas"]["AccountExportFoodTrackingPause"][];
             my_foods: components["schemas"]["AccountExportMyFood"][];
             in_app_notifications: components["schemas"]["AccountExportNotification"][];
             activity_records: components["schemas"]["AccountExportActivityRecord"][];
@@ -361,6 +442,10 @@ export interface components {
             id: number;
             /** Format: date */
             local_date: string;
+            /** @enum {string} */
+            status: "OPEN" | "COMPLETE" | "INCOMPLETE" | "PAUSED";
+            /** @enum {string} */
+            origin: "USER" | "PAUSE" | "IMPORT";
             is_complete: boolean;
             /** Format: date-time */
             completed_at: string | null;
@@ -368,6 +453,58 @@ export interface components {
             created_at: string;
             /** Format: date-time */
             updated_at: string;
+        };
+        AccountExportFoodTrackingPause: {
+            id: number;
+            /** Format: date */
+            starts_on: string;
+            /** Format: date */
+            expected_resume_on: string | null;
+            /** Format: date */
+            resumed_on: string | null;
+            /** Format: date-time */
+            started_at: string;
+            /** Format: date-time */
+            resumed_at: string | null;
+            /** Format: date */
+            materialized_through: string;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        FoodLogDay: {
+            /** Format: date */
+            date: string;
+            /** @enum {string} */
+            status: "OPEN" | "COMPLETE" | "INCOMPLETE" | "PAUSED";
+            /** @enum {string|null} */
+            origin: "USER" | "PAUSE" | "IMPORT" | null;
+            /** @enum {string} */
+            source: "STORED" | "ACTIVE_PAUSE" | "INFERRED_EMPTY" | "DEFAULT" | "BEFORE_TRACKING_START";
+            is_representative: boolean;
+            is_complete: boolean;
+            /** Format: date-time */
+            completed_at: string | null;
+            /** Format: date-time */
+            updated_at: string | null;
+        };
+        FoodTrackingPause: {
+            active: boolean;
+            id: number | null;
+            /** Format: date */
+            starts_on: string | null;
+            /** Format: date */
+            expected_resume_on: string | null;
+            /** Format: date */
+            resumed_on: string | null;
+            /** Format: date-time */
+            started_at: string | null;
+            /** Format: date-time */
+            resumed_at: string | null;
+            /** Format: date */
+            materialized_through: string | null;
+            resume_confirmation_due: boolean;
         };
         AccountExportRecipeIngredient: {
             id: number;
@@ -822,6 +959,11 @@ export interface components {
                 missing: string[];
             };
             food_day: {
+                /** @enum {string} */
+                status: "OPEN" | "COMPLETE" | "INCOMPLETE" | "PAUSED";
+                /** @enum {string|null} */
+                source: "USER" | "PAUSE" | "IMPORT" | null;
+                is_representative: boolean;
                 is_complete: boolean;
                 /** Format: date-time */
                 completed_at: string | null;
@@ -945,6 +1087,11 @@ export interface components {
             food_day: {
                 /** Format: date */
                 date: string;
+                /** @enum {string} */
+                status: "OPEN" | "COMPLETE" | "INCOMPLETE" | "PAUSED";
+                /** @enum {string|null} */
+                source: "USER" | "PAUSE" | "IMPORT" | null;
+                is_representative: boolean;
                 is_complete: boolean;
                 /** Format: date-time */
                 completed_at: string | null;
@@ -1293,6 +1440,252 @@ export interface operations {
                 };
             };
             /** @description Snapshot generation failed. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    getFoodLogDay: {
+        parameters: {
+            query: {
+                date: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Effective resolution for one account-local food day. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FoodLogDay"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    setFoodLogDayStatus: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Client-Operation-Id"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** Format: date */
+                    date: string;
+                    /** @enum {string} */
+                    status: "OPEN" | "COMPLETE" | "INCOMPLETE";
+                } | {
+                    /** Format: date */
+                    date: string;
+                    is_complete: boolean;
+                };
+            };
+        };
+        responses: {
+            /** @description Stored day resolution. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FoodLogDay"];
+                };
+            };
+        };
+    };
+    getFoodLogDayRange: {
+        parameters: {
+            query: {
+                start: string;
+                end: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Inclusive bounded effective day resolutions. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** Format: date */
+                        start_date: string;
+                        /** Format: date */
+                        end_date: string;
+                        days: components["schemas"]["FoodLogDay"][];
+                    };
+                };
+            };
+        };
+    };
+    getFoodTrackingPause: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Current pause state and foreground confirmation status. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        pause: components["schemas"]["FoodTrackingPause"];
+                    };
+                };
+            };
+        };
+    };
+    startFoodTrackingPause: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Client-Operation-Id"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** Format: date */
+                    starts_on: string;
+                    /** Format: date */
+                    expected_resume_on: string | null;
+                };
+            };
+        };
+        responses: {
+            /** @description Tracking pause started. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        pause: components["schemas"]["FoodTrackingPause"];
+                    };
+                };
+            };
+        };
+    };
+    updateFoodTrackingPause: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Client-Operation-Id"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** Format: date */
+                    expected_resume_on: string | null;
+                };
+            };
+        };
+        responses: {
+            /** @description Expected resume date updated without resuming. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        pause: components["schemas"]["FoodTrackingPause"];
+                    };
+                };
+            };
+        };
+    };
+    resumeFoodTracking: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Client-Operation-Id"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** Format: date */
+                    resumed_on: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Pause closed and resume day reopened. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        pause: components["schemas"]["FoodTrackingPause"];
+                        day: components["schemas"]["FoodLogDay"];
+                    };
+                };
+            };
+        };
+    };
+    getTrackingHistory: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Earliest account or imported tracking date. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** Format: date */
+                        tracking_start_date: string;
+                    };
+                };
+            };
+            /** @description Account no longer exists. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Tracking history lookup failed. */
             500: {
                 headers: {
                     [name: string]: unknown;

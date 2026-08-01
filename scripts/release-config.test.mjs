@@ -8,7 +8,12 @@ const validManifest = {
   server: { version: '1.2.3', api: { current: 'v1', supported: ['v1'] } },
   android: {
     application_id: 'app.calibratehealth.mobile',
-    mobile: { version_name: '2.0.0', version_code: 20, minimum_supported_version: '1.5.0' },
+    mobile: {
+      version_name: '2.0.0',
+      version_code: 20,
+      native_release_tag: 'v1.2.3',
+      minimum_supported_version: '1.5.0'
+    },
     wear: { version_name: '2.0.0', version_code: 10, minimum_supported_version: '1.0.0' },
     channels: { debug: {}, internal: {}, production: {} }
   }
@@ -32,6 +37,12 @@ test('manifest rejects a minimum client version newer than the release', () => {
   const manifest = structuredClone(validManifest);
   manifest.android.wear.minimum_supported_version = '2.1.0';
   assert.match(validateManifest(manifest).join('\n'), /minimum_supported_version cannot exceed/);
+});
+
+test('manifest requires a stable native build tag', () => {
+  const manifest = structuredClone(validManifest);
+  manifest.android.mobile.native_release_tag = 'master';
+  assert.match(validateManifest(manifest).join('\n'), /native_release_tag must be a stable/);
 });
 
 test('release metadata is deterministic when source date epoch is supplied', async () => {

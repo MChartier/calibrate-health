@@ -1,0 +1,386 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 6,
+    "identityHash": "b54c424ceb241ce1ada49389e3582ecf",
+    "entities": [
+      {
+        "tableName": "daily_snapshots",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`local_date` TEXT NOT NULL, `calories_consumed` INTEGER, `calorie_target` INTEGER, `calories_remaining` INTEGER, `food_day_complete` INTEGER NOT NULL DEFAULT 0, `food_day_status` TEXT NOT NULL DEFAULT 'OPEN', `food_day_source` TEXT, `food_day_representative` INTEGER NOT NULL DEFAULT 0, `food_day_completed_at_epoch_ms` INTEGER, `food_day_revision` TEXT, `today_weight_grams` INTEGER, `today_weight_revision` TEXT, `latest_weight_grams` INTEGER, `latest_weight_revision` TEXT, `latest_weight_date` TEXT, `weight_unit` TEXT NOT NULL DEFAULT 'KG', `goal_start_weight_grams` INTEGER, `goal_target_weight_grams` INTEGER, `goal_current_weight_grams` INTEGER, `goal_daily_deficit` INTEGER, `goal_progress_percent` REAL, `goal_remaining_weight_grams` INTEGER, `goal_is_complete` INTEGER, `undo_food_log_id` INTEGER, `undo_name` TEXT, `undo_calories` INTEGER, `undo_created_at_epoch_ms` INTEGER, `server_revision` TEXT, `fetched_at_epoch_ms` INTEGER NOT NULL, PRIMARY KEY(`local_date`))",
+        "fields": [
+          {
+            "fieldPath": "localDate",
+            "columnName": "local_date",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "caloriesConsumed",
+            "columnName": "calories_consumed",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "calorieTarget",
+            "columnName": "calorie_target",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "caloriesRemaining",
+            "columnName": "calories_remaining",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "foodDayComplete",
+            "columnName": "food_day_complete",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "0"
+          },
+          {
+            "fieldPath": "foodDayStatus",
+            "columnName": "food_day_status",
+            "affinity": "TEXT",
+            "notNull": true,
+            "defaultValue": "'OPEN'"
+          },
+          {
+            "fieldPath": "foodDaySource",
+            "columnName": "food_day_source",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "foodDayRepresentative",
+            "columnName": "food_day_representative",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "0"
+          },
+          {
+            "fieldPath": "foodDayCompletedAtEpochMs",
+            "columnName": "food_day_completed_at_epoch_ms",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "foodDayRevision",
+            "columnName": "food_day_revision",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "todayWeightGrams",
+            "columnName": "today_weight_grams",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "todayWeightRevision",
+            "columnName": "today_weight_revision",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "latestWeightGrams",
+            "columnName": "latest_weight_grams",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "latestWeightRevision",
+            "columnName": "latest_weight_revision",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "latestWeightDate",
+            "columnName": "latest_weight_date",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "weightUnit",
+            "columnName": "weight_unit",
+            "affinity": "TEXT",
+            "notNull": true,
+            "defaultValue": "'KG'"
+          },
+          {
+            "fieldPath": "goalStartWeightGrams",
+            "columnName": "goal_start_weight_grams",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "goalTargetWeightGrams",
+            "columnName": "goal_target_weight_grams",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "goalCurrentWeightGrams",
+            "columnName": "goal_current_weight_grams",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "goalDailyDeficit",
+            "columnName": "goal_daily_deficit",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "goalProgressPercent",
+            "columnName": "goal_progress_percent",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "goalRemainingWeightGrams",
+            "columnName": "goal_remaining_weight_grams",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "goalIsComplete",
+            "columnName": "goal_is_complete",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "undoFoodLogId",
+            "columnName": "undo_food_log_id",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "undoName",
+            "columnName": "undo_name",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "undoCalories",
+            "columnName": "undo_calories",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "undoCreatedAtEpochMs",
+            "columnName": "undo_created_at_epoch_ms",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "serverRevision",
+            "columnName": "server_revision",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "fetchedAtEpochMs",
+            "columnName": "fetched_at_epoch_ms",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "local_date"
+          ]
+        }
+      },
+      {
+        "tableName": "quick_add_items",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`quick_add_id` TEXT NOT NULL, `name` TEXT NOT NULL, `meal_period` TEXT, `calories` INTEGER NOT NULL, `serving_description` TEXT NOT NULL, `mutation_payload_json` TEXT NOT NULL, `sort_rank` INTEGER NOT NULL, `updated_at_epoch_ms` INTEGER NOT NULL, PRIMARY KEY(`quick_add_id`))",
+        "fields": [
+          {
+            "fieldPath": "quickAddId",
+            "columnName": "quick_add_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "mealPeriod",
+            "columnName": "meal_period",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "calories",
+            "columnName": "calories",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "servingDescription",
+            "columnName": "serving_description",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "mutationPayloadJson",
+            "columnName": "mutation_payload_json",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sortRank",
+            "columnName": "sort_rank",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "updatedAtEpochMs",
+            "columnName": "updated_at_epoch_ms",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "quick_add_id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_quick_add_items_sort_rank_updated_at_epoch_ms",
+            "unique": false,
+            "columnNames": [
+              "sort_rank",
+              "updated_at_epoch_ms"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_quick_add_items_sort_rank_updated_at_epoch_ms` ON `${TABLE_NAME}` (`sort_rank`, `updated_at_epoch_ms`)"
+          }
+        ]
+      },
+      {
+        "tableName": "queued_mutations",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`sequence_id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `operation_id` TEXT NOT NULL, `mutation_type` TEXT NOT NULL, `payload_json` TEXT NOT NULL, `created_at_epoch_ms` INTEGER NOT NULL, `state` TEXT NOT NULL, `attempt_count` INTEGER NOT NULL, `last_error` TEXT)",
+        "fields": [
+          {
+            "fieldPath": "sequenceId",
+            "columnName": "sequence_id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "operationId",
+            "columnName": "operation_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "mutationType",
+            "columnName": "mutation_type",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "payloadJson",
+            "columnName": "payload_json",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAtEpochMs",
+            "columnName": "created_at_epoch_ms",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "state",
+            "columnName": "state",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "attemptCount",
+            "columnName": "attempt_count",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lastError",
+            "columnName": "last_error",
+            "affinity": "TEXT"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "sequence_id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_queued_mutations_operation_id",
+            "unique": true,
+            "columnNames": [
+              "operation_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_queued_mutations_operation_id` ON `${TABLE_NAME}` (`operation_id`)"
+          },
+          {
+            "name": "index_queued_mutations_state_sequence_id",
+            "unique": false,
+            "columnNames": [
+              "state",
+              "sequence_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_queued_mutations_state_sequence_id` ON `${TABLE_NAME}` (`state`, `sequence_id`)"
+          },
+          {
+            "name": "index_queued_mutations_state_attempt_count",
+            "unique": false,
+            "columnNames": [
+              "state",
+              "attempt_count"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_queued_mutations_state_attempt_count` ON `${TABLE_NAME}` (`state`, `attempt_count`)"
+          }
+        ]
+      },
+      {
+        "tableName": "sync_metadata",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER NOT NULL, `server_origin` TEXT NOT NULL, `sync_cursor` TEXT, `last_success_at_epoch_ms` INTEGER, `invalidated_at_epoch_ms` INTEGER, `protocol_version` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "serverOrigin",
+            "columnName": "server_origin",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "syncCursor",
+            "columnName": "sync_cursor",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "lastSuccessAtEpochMs",
+            "columnName": "last_success_at_epoch_ms",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "invalidatedAtEpochMs",
+            "columnName": "invalidated_at_epoch_ms",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "protocolVersion",
+            "columnName": "protocol_version",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        }
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'b54c424ceb241ce1ada49389e3582ecf')"
+    ]
+  }
+}

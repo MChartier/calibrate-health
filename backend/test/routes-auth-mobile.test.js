@@ -20,14 +20,22 @@ function loadAuthRouter({ prismaStub, passportStub, bcryptStub }) {
   const passportPath = require.resolve('passport');
   const bcryptPath = require.resolve('bcryptjs');
   const mobileAuthPath = require.resolve('../src/services/mobileAuth');
+  const mobileAuthDependencyPaths = [
+    require.resolve('../src/services/mobileSessionCredentials'),
+    require.resolve('../src/services/wearPairing')
+  ];
   const authPath = require.resolve('../src/routes/auth');
 
   const previousDbModule = require.cache[dbPath];
   const previousPassportModule = require.cache[passportPath];
   const previousBcryptModule = require.cache[bcryptPath];
   const previousMobileAuthModule = require.cache[mobileAuthPath];
+  const previousMobileAuthDependencyModules = mobileAuthDependencyPaths.map(
+    (path) => require.cache[path]
+  );
   delete require.cache[authPath];
   delete require.cache[mobileAuthPath];
+  mobileAuthDependencyPaths.forEach((path) => delete require.cache[path]);
 
   stubModule(dbPath, prismaStub);
   stubModule(passportPath, passportStub);
@@ -43,6 +51,11 @@ function loadAuthRouter({ prismaStub, passportStub, bcryptStub }) {
   else delete require.cache[bcryptPath];
   if (previousMobileAuthModule) require.cache[mobileAuthPath] = previousMobileAuthModule;
   else delete require.cache[mobileAuthPath];
+  mobileAuthDependencyPaths.forEach((path, index) => {
+    const previous = previousMobileAuthDependencyModules[index];
+    if (previous) require.cache[path] = previous;
+    else delete require.cache[path];
+  });
 
   return loaded.default ?? loaded;
 }

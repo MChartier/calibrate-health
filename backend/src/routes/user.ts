@@ -13,6 +13,7 @@ import { validatePasswordCredential } from '../utils/authCredentials';
 import { revokeOtherMobileSessionsForUser } from '../services/mobileAuth';
 import { revokeOtherBrowserSessionsForUser } from '../services/browserSessions';
 import { deleteAccountData, exportAccountData } from '../services/accountLifecycle';
+import { formatDateKey, getTrackingStartDate } from '../services/foodTracking';
 import {
   ClientOperationConflictError,
   executeIdempotentMutation,
@@ -21,6 +22,7 @@ import {
 } from '../services/clientOperations';
 import { logSafeOperationalError } from '../observability';
 import { clearSessionCookie } from '../utils/sessionCookie';
+import { getAuthenticatedUser, requireAuthenticatedUser } from '../middleware/authenticatedUser';
 
 /**
  * Authenticated user account routes (profile, preferences, password, avatar).
@@ -75,24 +77,10 @@ const destroyRequestSession = (req: express.Request): Promise<void> =>
     req.session.destroy((error) => error ? reject(error) : resolve());
   });
 
-/**
- * Ensure the session is authenticated before accessing user settings.
- */
-const isAuthenticated = (
-  req: express.Request,
-  res: express.Response,
-  next: express.NextFunction
-) => {
-  if (req.isAuthenticated()) {
-    return next();
-  }
-  res.status(401).json({ message: 'Not authenticated' });
-};
-
-router.use(isAuthenticated);
+router.use(requireAuthenticatedUser);
 
 router.get('/me', async (req, res) => {
-  const user = req.user as any;
+  const user = getAuthenticatedUser(req);
   try {
     const dbUser = await prisma.user.findUnique({ where: { id: user.id }, select: USER_CLIENT_SELECT });
     if (!dbUser) {
@@ -105,8 +93,21 @@ router.get('/me', async (req, res) => {
   }
 });
 
+router.get('/tracking-history', async (req, res) => {
+  const user = getAuthenticatedUser(req);
+  try {
+    const trackingStart = await getTrackingStartDate(user.id);
+    if (!trackingStart) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    return res.json({ tracking_start_date: formatDateKey(trackingStart.date) });
+  } catch {
+    return res.status(500).json({ message: 'Server error' });
+  }
+});
+
 router.put('/profile-image', async (req, res) => {
-  const user = req.user as any;
+  const user = getAuthenticatedUser(req);
   const dataUrl = (req.body as { data_url?: unknown } | undefined)?.data_url;
 
   if (typeof dataUrl !== 'string' || dataUrl.trim().length === 0) {
@@ -139,7 +140,7 @@ router.put('/profile-image', async (req, res) => {
 });
 
 router.delete('/profile-image', async (req, res) => {
-  const user = req.user as any;
+  const user = getAuthenticatedUser(req);
 
   try {
     const updatedUser = await prisma.user.update({
@@ -158,7 +159,7 @@ router.delete('/profile-image', async (req, res) => {
 });
 
 router.patch('/password', async (req, res) => {
-  const user = req.user as any;
+  const user = getAuthenticatedUser(req);
   const parsed = parsePasswordChangePayload(req.body);
   if (!parsed.ok) {
     return res.status(400).json({ message: parsed.message });
@@ -199,7 +200,7 @@ router.patch('/password', async (req, res) => {
 });
 
 router.get('/account/export', async (req, res) => {
-  const user = req.user as { id: number };
+  const user = getAuthenticatedUser(req);
   try {
     const accountExport = await exportAccountData(user.id);
     if (!accountExport) {
@@ -217,7 +218,7 @@ router.get('/account/export', async (req, res) => {
 });
 
 router.delete('/account', async (req, res) => {
-  const user = req.user as { id: number };
+  const user = getAuthenticatedUser(req);
   const currentPassword = parseCurrentPassword(req.body);
   if (!currentPassword) {
     return res.status(400).json({ message: 'Current password is required' });
@@ -257,7 +258,7 @@ router.delete('/account', async (req, res) => {
 });
 
 router.patch('/preferences', async (req, res) => {
-  const user = req.user as any;
+  const user = getAuthenticatedUser(req);
   const { weight_unit, height_unit, language, reminder_log_weight_enabled, reminder_log_food_enabled, haptics_enabled } = req.body as {
     weight_unit?: unknown;
     height_unit?: unknown;
@@ -376,7 +377,7 @@ router.patch('/preferences', async (req, res) => {
 });
 
 router.get('/profile', async (req, res) => {
-  const user = req.user as any;
+  const user = getAuthenticatedUser(req);
   try {
     const dbUser = await prisma.user.findUnique({ where: { id: user.id } });
     if (!dbUser) {
@@ -425,7 +426,7 @@ router.get('/profile', async (req, res) => {
 });
 
 router.patch('/profile', async (req, res) => {
-  const user = req.user as any;
+  const user = getAuthenticatedUser(req);
   const { timezone, date_of_birth, sex, height_cm, height_mm, height_feet, height_inches, activity_level } = req.body;
 
   const updateData: Partial<{

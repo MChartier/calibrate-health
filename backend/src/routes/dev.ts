@@ -20,6 +20,11 @@ import { getSafeUtcTodayDateOnlyInTimeZone } from '../utils/date';
 import { deliverUserNotification, type DeliverUserNotificationResult } from '../services/notificationDelivery';
 import { publishNotificationRealtimeUpdate } from '../services/notificationRealtime';
 import { NOTIFICATION_REALTIME_REASONS } from '../../../shared/notificationRealtime';
+import {
+    getAuthenticatedUser,
+    requireAuthenticatedUser,
+    type AuthenticatedUser
+} from '../middleware/authenticatedUser';
 
 /**
  * Dev-only endpoints for food provider diagnostics and comparisons.
@@ -76,21 +81,6 @@ const resolveRequestedProviders = (req: express.Request, available: FoodDataProv
         .filter((name): name is FoodDataSource => availableNames.has(name as FoodDataSource));
 
     return requested.length ? requested : readyProviders;
-};
-
-/**
- * Ensure the session is authenticated before executing dev-only notification actions.
- */
-const requireAuthenticatedUser = (req: express.Request, res: express.Response, next: express.NextFunction) => {
-    if (req.isAuthenticated()) {
-        return next();
-    }
-    res.status(401).json({ message: 'Not authenticated' });
-};
-
-type AuthenticatedDevUser = {
-    id: number;
-    timezone?: string;
 };
 
 const DEV_NOTIFICATION_TYPES = {
@@ -202,7 +192,7 @@ const buildDeliveryResponse = (
     };
 };
 
-const getUserLocalDate = (user: AuthenticatedDevUser, now = new Date()): Date => {
+const getUserLocalDate = (user: AuthenticatedUser, now = new Date()): Date => {
     return getSafeUtcTodayDateOnlyInTimeZone(user.timezone || 'UTC', now);
 };
 
@@ -231,7 +221,7 @@ const supportsReminderDedupe = (notificationType: DevNotificationType): boolean 
     return notificationType !== DEV_NOTIFICATION_TYPES.TEST;
 };
 
-router.get('/food/providers', (req, res) => {
+router.get('/food/providers', (_req, res) => {
     res.json({ providers: listFoodDataProviders() });
 });
 
@@ -306,7 +296,7 @@ router.get('/food/search', async (req, res) => {
 });
 
 router.get('/notifications/status', requireAuthenticatedUser, async (req, res) => {
-    const user = req.user as AuthenticatedDevUser;
+    const user = getAuthenticatedUser(req);
     const notificationType = parseDevNotificationType(req.query.type);
     if (!notificationType) {
         return res.status(400).json({
@@ -402,7 +392,7 @@ router.get('/notifications/status', requireAuthenticatedUser, async (req, res) =
 });
 
 router.post('/notifications/clear', requireAuthenticatedUser, async (req, res) => {
-    const user = req.user as AuthenticatedDevUser;
+    const user = getAuthenticatedUser(req);
     const body = (req.body ?? {}) as DevNotificationClearRequestBody;
     const notificationType = parseDevNotificationType(body.type);
     if (!notificationType) {
@@ -487,7 +477,7 @@ router.post('/notifications/clear', requireAuthenticatedUser, async (req, res) =
 });
 
 router.post('/notifications/test', requireAuthenticatedUser, async (req, res) => {
-    const user = req.user as AuthenticatedDevUser;
+    const user = getAuthenticatedUser(req);
     const channels = resolveRequestedChannels(req.body);
     if (channels.length === 0) {
         return res.status(400).json({ message: 'Select at least one notification channel.' });
@@ -529,7 +519,7 @@ router.post('/notifications/test', requireAuthenticatedUser, async (req, res) =>
 });
 
 router.post('/notifications/log-weight', requireAuthenticatedUser, async (req, res) => {
-    const user = req.user as AuthenticatedDevUser;
+    const user = getAuthenticatedUser(req);
     const channels = resolveRequestedChannels(req.body);
     if (channels.length === 0) {
         return res.status(400).json({ message: 'Select at least one notification channel.' });
@@ -563,7 +553,7 @@ router.post('/notifications/log-weight', requireAuthenticatedUser, async (req, r
 });
 
 router.post('/notifications/log-food', requireAuthenticatedUser, async (req, res) => {
-    const user = req.user as AuthenticatedDevUser;
+    const user = getAuthenticatedUser(req);
     const channels = resolveRequestedChannels(req.body);
     if (channels.length === 0) {
         return res.status(400).json({ message: 'Select at least one notification channel.' });

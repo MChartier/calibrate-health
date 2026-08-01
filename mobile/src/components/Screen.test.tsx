@@ -1,5 +1,4 @@
-import React from 'react';
-import { StyleSheet } from 'react-native';
+import { ScrollView, StyleSheet } from 'react-native';
 import { render } from '@testing-library/react-native';
 import { AppText } from './AppText';
 import { Screen } from './Screen';
@@ -19,7 +18,7 @@ describe('Screen', () => {
         expect(view.getByTestId('responsive-screen')).toHaveProp('role', 'main');
     });
 
-    it('caps wide scroll content at a readable desktop width', () => {
+    it('uses the native viewport as the flex floor for scroll content', () => {
         const view = render(
             <Screen testID="responsive-screen">
                 <AppText>Dashboard</AppText>
@@ -27,6 +26,24 @@ describe('Screen', () => {
         );
         const contentStyle = StyleSheet.flatten(view.getByTestId('responsive-screen').props.contentContainerStyle);
 
-        expect(contentStyle).toEqual(expect.objectContaining({ width: '100%', maxWidth: 1040, alignSelf: 'center' }));
+        expect(contentStyle).toEqual(expect.objectContaining({
+            flexGrow: 1,
+            width: '100%',
+            maxWidth: 1040,
+            alignSelf: 'center'
+        }));
+        expect(contentStyle.minHeight).toBeUndefined();
+    });
+
+    it('uses the shared keyboard-aware scroller for form content', () => {
+        const view = render(
+            <Screen testID="responsive-screen">
+                <AppText>Account form</AppText>
+            </Screen>
+        );
+
+        const scroller = view.UNSAFE_getByType(ScrollView);
+        expect(scroller.props.keyboardDismissMode).toBe('on-drag');
+        expect(scroller.props.keyboardShouldPersistTaps).toBe('handled');
     });
 });

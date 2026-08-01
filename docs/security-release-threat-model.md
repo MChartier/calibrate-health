@@ -37,20 +37,32 @@ authorize a read, update, delete, undo, or association.
 
 ## Dependency advisory resolution
 
-As of 2026-07-12, `npm audit --omit=dev` reports no production findings. A scoped
-Expo Metro override keeps PostCSS on patched `8.5.18`; an Android Expo/Metro export verifies that
-the compatible patch still bundles successfully. The former 15 moderate package entries all
-collapsed to
-[`GHSA-w5hq-g745-h8pq`](https://github.com/advisories/GHSA-w5hq-g745-h8pq) through the Expo 54
-build-tool chain: `@expo/config-plugins` -> `xcode@3.0.1` -> `uuid@7.0.3`. The advisory affects
-UUID v3/v5/v6 only when a caller supplies an undersized output buffer. The installed `xcode`
-package calls only `uuid.v4()` without a buffer while generating project identifiers, so the
-affected path is not reachable through this dependency. This code runs while generating native
-projects and is not bundled into the server, web client, Android app, or Wear app.
+As of 2026-07-27, `npm audit --omit=dev` reports no production findings in either
+the root/mobile or backend lock graph. Coverage runs on `c8@12`, and compatible patched releases
+remain pinned for the production and Prisma dependency edges. API contract generation, backend
+coverage, and the full test suite exercise those overrides.
 
-Rather than changing Expo or Health Connect majors, the root lock graph now pins the CommonJS
-`xcode@3.0.1` edge to patched `uuid@11.1.1`. UUID 11 exposes a CommonJS entry point, and a release
-test executes xcode's actual `generateUuid()` path to guard that compatibility. Android prebuild,
-bundle export, mobile typecheck/tests, and the production dependency audit must remain green. The
-advisory scanner still models all published vulnerable ranges and inspects every root or nested UUID
-copy, so a future Expo/config-plugin update cannot silently reintroduce the advisory.
+The root/mobile full audit still reports 23 high package entries, but every entry is the same
+development-only path to
+[`GHSA-mh99-v99m-4gvg`](https://github.com/advisories/GHSA-mh99-v99m-4gvg):
+React Native 0.86's Jest preset pins Babel/Jest 29, which reaches `brace-expansion@1.1.16` through
+`test-exclude@6` and `minimatch@3`. These packages only discover and instrument repository-owned
+test files; none are bundled into the server, web client, Android app, or Wear app. A forced
+`brace-expansion@5.0.8` resolution is not compatible: v5's CommonJS export is an object while
+`minimatch@3` calls the dependency as a function, causing test discovery to fail. Keep this finding
+visible until the React Native preset moves to a compatible Jest/tooling graph rather than masking
+it with an invalid lockfile override.
+
+The backend development graph has the same constraint on a separate OpenAPI-only edge:
+`openapi-typescript@7.13.0` depends on Redocly `1.34.17`, which pins `minimatch@5.1.9`.
+That minimatch release requires the callable `brace-expansion@2` API, while the only version
+currently accepted by the advisory scanner is the incompatible object-exporting v5 release.
+Keep Redocly on `brace-expansion@2.1.2` until its consumer upgrades to picomatch or another
+compatible implementation. A backend regression test executes a brace-bearing pattern through
+Redocly's exact minimatch dependency, and the dependency remains development-only.
+
+The separate UUID advisory is fully resolved. The root graph pins the `xcode@3.0.1` edge to patched
+`uuid@11.1.1`, and a release test executes xcode's actual `generateUuid()` path. Android prebuild,
+bundle export, mobile typecheck/tests, and both production dependency audits must remain green.
+The advisory scanner inspects every root or nested UUID copy so a future Expo/config-plugin update
+cannot silently reintroduce an affected version.

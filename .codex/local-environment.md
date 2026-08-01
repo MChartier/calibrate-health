@@ -1,36 +1,36 @@
 # Codex Local Environment
 
-Use this repo-owned setup script for Codex app worktrees:
+Codex runs on the host, while the live application uses a worktree-scoped
+Docker Compose stack. The setup hook installs host dependencies so tests,
+builds, linting, and Prisma commands use the same checkout that Codex edits.
+It does not start Docker containers.
+
+Use the repo-owned setup script manually when needed:
 
 ```sh
 node .codex/local-environment.setup.mjs
 ```
 
-Configured Codex app actions:
+The script uses `CODEX_WORKTREE_PATH` when Codex provides it, copies the source
+checkout's ignored `.env` into a new worktree once, installs the root/mobile and
+backend dependency trees, generates Prisma, and writes the ignored `.dev.env`
+with stable worktree ports and local secrets.
+
+Configured actions use the ordinary repo scripts:
 
 | Name | Script |
 | --- | --- |
-| Recreate Devcontainer | `node scripts/codex-worktree-env.mjs devcontainer:recreate` |
-| Stop Devcontainer | `node scripts/codex-worktree-env.mjs down` |
-| Dev | `node scripts/codex-worktree-env.mjs dev` |
-| Dev test | `node scripts/codex-worktree-env.mjs dev:test` |
-| Storybook | `node scripts/codex-worktree-env.mjs storybook` |
-| Test | `node scripts/codex-worktree-env.mjs test` |
-| Lint | `node scripts/codex-worktree-env.mjs lint` |
-| Build | `node scripts/codex-worktree-env.mjs build` |
-| Shell | `node scripts/codex-worktree-env.mjs shell` |
+| Setup Host | `npm run setup` |
+| Prepare Stack | `npm run dev:setup` |
+| Dev | `npm run dev` |
+| Stop Stack | `npm run dev:down` |
+| Stack Status | `npm run dev:status` |
+| Migrate DB | `npm run db:migrate` |
+| Reset DB | `npm run dev:reset` |
+| Test | `npm test` |
+| Build | `npm run build` |
+| Full CI | `npm run ci:local` |
 
-The Storybook action uses the worktree-specific `STORYBOOK_PORT` generated in
-`.devcontainer/.env`, so it can run alongside the Vite frontend and other
-worktree containers without reusing port 6006.
-
-The setup script uses `CODEX_WORKTREE_PATH` when Codex provides it and falls
-back to the current directory outside the app. It is host-platform neutral, so
-Windows Codex execution does not need WSL bash. It also copies the source
-checkout's ignored `.env` into the new worktree if that file exists and the
-worktree does not already have one.
-
-Setup streams devcontainer logs as they are produced. New worktrees still need
-to install backend/frontend dependencies and seed Postgres, but the devcontainer
-shares a Docker npm cache volume named `calibrate-health-npm-cache` so repeated
-setups can reuse downloaded packages.
+`npm run dev` builds and starts `web`, `backend`, and `postgres` services for
+only the current worktree. Compose Watch syncs source edits into the app
+containers. Host checks never need a container shell or a Codex-specific alias.

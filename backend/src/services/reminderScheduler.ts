@@ -8,12 +8,10 @@ import {
     getReminderMissingStatusForDate,
     resolveInactiveReminderNotificationsForUser
 } from './inAppNotifications';
+import { materializeActiveFoodTrackingPauses } from './foodTracking';
 import { deliverUserNotification, type InAppNotificationDeliveryRequest } from './notificationDelivery';
 import { buildReminderPayload } from './pushNotificationPayloads';
-import {
-    DEFAULT_NOTIFICATION_DELIVERY_CHANNELS,
-    NOTIFICATION_DELIVERY_CHANNELS
-} from '../../../shared/notificationDelivery';
+import { DEFAULT_NOTIFICATION_DELIVERY_CHANNELS } from '../../../shared/notificationDelivery';
 import {
     diagnosticsRegistry,
     emitDiagnosticEvent,
@@ -183,6 +181,7 @@ const runReminderCheck = async (): Promise<void> => {
     const reminderHour = resolveReminderHour();
     const now = new Date();
 
+    await materializeActiveFoodTrackingPauses(now);
     await resolveInactiveInAppReminders(now);
     await createAndSendScheduledReminders(reminderHour, now);
 };

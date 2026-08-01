@@ -132,6 +132,14 @@ async function insertRepresentativeLegacyData(client, schemaName) {
     ) VALUES ($1, $2, $3, 'DINNER', 'Upgrade smoke burrito', 640, 1, 640, 'openfoodfacts', 'smoke-food-1')`,
     [userId, new Date('2026-07-11T02:30:00Z'), '2026-07-10']
   );
+  await client.query(
+    `INSERT INTO ${schema}."FoodLogDay" (
+      "user_id", "local_date", "is_complete", "completed_at"
+    ) VALUES
+      ($1, '2026-07-10', true, $2),
+      ($1, '2026-07-11', false, null)`,
+    [userId, new Date('2026-07-11T06:00:00Z')]
+  );
   return userId;
 }
 
@@ -181,6 +189,7 @@ async function verifyUpgradedSchema(client, schemaName, userId, migrationNames) 
     'NativePushSubscription',
     'SyncChange',
     'WearPairingCredential',
+    'FoodTrackingPause',
   ];
   const tableResult = await client.query(
     `SELECT "table_name" FROM information_schema.tables
@@ -196,6 +205,35 @@ async function verifyUpgradedSchema(client, schemaName, userId, migrationNames) 
     [schemaName]
   );
   assert.equal(columnResult.rowCount, 1);
+
+  const foodDayResult = await client.query(
+    `SELECT "local_date"::text AS "local_date", "status"::text AS "status",
+      "origin"::text AS "origin", "completed_at"
+    FROM ${schema}."FoodLogDay"
+    WHERE "user_id" = $1
+    ORDER BY "local_date"`,
+    [userId]
+  );
+  assert.deepEqual(
+    foodDayResult.rows.map((row) => ({
+      ...row,
+      completed_at: row.completed_at?.toISOString() ?? null,
+    })),
+    [
+      {
+        local_date: '2026-07-10',
+        status: 'COMPLETE',
+        origin: 'USER',
+        completed_at: '2026-07-11T06:00:00.000Z',
+      },
+      {
+        local_date: '2026-07-11',
+        status: 'OPEN',
+        origin: 'USER',
+        completed_at: null,
+      },
+    ]
+  );
 
   const appliedResult = await client.query(
     `SELECT "migration_name" FROM ${schema}."_prisma_migrations"
@@ -228,7 +266,7 @@ export async function runPopulatedUpgradeSmoke(rawDatabaseUrl = process.env.DATA
     migrateDeploy(databaseUrl, legacyTree.schemaPath);
     const userId = await insertRepresentativeLegacyData(adminClient, schemaName);
 
-    console.log('[db-upgrade-smoke] Applying migrations 0021-0029 to populated data.');
+    console.log(`[db-upgrade-smoke] Applying migrations 0021-${migrationNames.at(-1)?.slice(0, 4)} to populated data.`);
     migrateDeploy(databaseUrl, path.join(prismaDirectory, 'schema.prisma'));
     await verifyUpgradedSchema(adminClient, schemaName, userId, migrationNames);
     console.log(`[db-upgrade-smoke] PASS: retained core data across ${migrationNames.length} migrations.`);

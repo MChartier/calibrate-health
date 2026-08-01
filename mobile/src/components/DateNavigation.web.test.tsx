@@ -5,14 +5,25 @@ import type { LogDateNavigation } from '../hooks/useLogDateNavigation';
 type TestInstance = {
     props: Record<string, unknown>;
     findByType: (type: string) => TestInstance;
+    findByProps: (props: Record<string, unknown>) => TestInstance;
 };
 
 const testRenderer = require('react-test-renderer') as {
     act: (callback: () => void) => void;
-    create: (element: React.ReactElement) => { root: TestInstance };
+    create: (
+        element: React.ReactElement,
+        options?: { createNodeMock: (element: { type: unknown }) => unknown }
+    ) => { root: TestInstance };
 };
 
-jest.mock('@expo/vector-icons', () => ({ Ionicons: () => null }));
+jest.mock('@expo/vector-icons/Ionicons', () => () => null);
+jest.mock('../food/HistoricalDatePicker', () => {
+    const ReactModule = require('react') as typeof import('react');
+    return {
+        HistoricalDatePicker: (props: Record<string, unknown>) =>
+            ReactModule.createElement('historical-date-picker', props)
+    };
+});
 jest.mock('../theme', () => ({
     useAppTheme: () => ({
         colors: {
@@ -26,6 +37,7 @@ jest.mock('../theme', () => ({
         },
         interaction: { minimumTouchTarget: 48 },
         radius: { md: 12 },
+        stroke: { control: 1 },
         spacing: { xs: 4, sm: 8, md: 16 },
         typography: {
             title: 28,
@@ -40,7 +52,7 @@ jest.mock('../theme', () => ({
 }));
 
 describe('DateNavigation web', () => {
-    it('uses a constrained browser date input and forwards date selection', () => {
+    it('opens the decorated history calendar and forwards date selection', () => {
         const setDate = jest.fn();
         const navigation: LogDateNavigation = {
             selectedDate: '2026-07-17',
@@ -62,20 +74,26 @@ describe('DateNavigation web', () => {
             tree = testRenderer.create(<DateNavigation navigation={navigation} />);
         });
 
-        const input = tree!.root.findByType('input');
-        expect(input.props).toMatchObject({
-            'aria-label': 'Choose date',
-            min: '2026-01-01',
-            max: '2026-07-18',
-            type: 'date',
-            value: '2026-07-17'
+        const trigger = tree!.root.findByProps({ accessibilityLabel: 'Choose date' });
+        testRenderer.act(() => {
+            (trigger.props.onPress as () => void)();
         });
 
+        const picker = tree!.root.findByType('historical-date-picker');
+        expect(picker.props).toMatchObject({
+            visible: true,
+            selectedDate: '2026-07-17',
+            minDate: '2026-01-01',
+            maxDate: '2026-07-18'
+        });
         testRenderer.act(() => {
-            (input.props.onInput as (event: { currentTarget: { value: string } }) => void)({
-                currentTarget: { value: '2026-07-16' }
-            });
+            (picker.props.onSelectDate as (date: string) => void)('2026-07-16');
         });
         expect(setDate).toHaveBeenCalledWith('2026-07-16');
+
+        testRenderer.act(() => {
+            (picker.props.onRequestClose as () => void)();
+        });
+        expect(tree!.root.findByType('historical-date-picker').props.visible).toBe(false);
     });
 });

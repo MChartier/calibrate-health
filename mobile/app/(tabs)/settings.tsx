@@ -1,30 +1,22 @@
-import React, { useEffect, useState } from 'react';
-import { Alert, Image, Platform, Pressable, StyleSheet, Switch, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { useEffect, useState } from 'react';
+import { Alert, Image, Platform, StyleSheet, View } from 'react-native';
+import Ionicons from '@expo/vector-icons/Ionicons';
+import { useRouter } from 'expo-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import * as DocumentPicker from 'expo-document-picker';
-import * as ImagePicker from 'expo-image-picker';
 import { ACTIVITY_LEVELS, HEIGHT_UNITS, WEIGHT_UNITS, type ActivityLevel, type HeightUnit, type Sex, type WeightUnit } from '@calibrate/shared';
 import { AppButton } from '../../src/components/AppButton';
-import { AppCard } from '../../src/components/AppCard';
-import { AppChip } from '../../src/components/AppChip';
 import { AppText } from '../../src/components/AppText';
 import { HealthConnectCard } from '../../src/components/HealthConnectCard';
 import { WearPairingCard } from '../../src/components/WearPairingCard';
 import { BottomSheetModal } from '../../src/components/BottomSheetModal';
-import { DatePickerField } from '../../src/components/DatePickerField';
-import { NumberStepperField } from '../../src/components/NumberStepperField';
-import { Screen } from '../../src/components/Screen';
+import { TabScreen } from '../../src/components/TabScreen';
 import { SectionHeader } from '../../src/components/SectionHeader';
 import { SegmentedControl } from '../../src/components/SegmentedControl';
 import { TextField } from '../../src/components/TextField';
-import { TimeZonePickerField } from '../../src/components/TimeZonePickerField';
-import { SettingsRow, SettingsSection } from '../../src/components/settings/SettingsList';
 import { useAuth } from '../../src/auth/AuthContext';
 import {
     canSubmitAccountDeletion,
     deleteAccountAndClearLocalData,
-    DELETE_ACCOUNT_CONFIRMATION,
     shareAccountExport
 } from '../../src/account/accountData';
 import { OUTBOX_MUTATION_STATES } from '../../src/offline/queuedMutation';
@@ -32,28 +24,23 @@ import { useOfflineOutbox } from '../../src/offline/provider';
 import { useNativePushRegistration } from '../../src/hooks/useNativePushRegistration';
 import { getPushStatusPresentation } from '../../src/notifications/workflow';
 import { millimetersToCentimeters, millimetersToFeetInches } from '../../src/utils/bodyMeasurements';
-import { getTodayDate } from '../../src/utils/dates';
-import { formatCalories } from '../../src/utils/format';
-import { ACTIVITY_OPTIONS, HEIGHT_UNIT_OPTIONS, SEX_OPTIONS, WEIGHT_UNIT_OPTIONS } from '../../src/utils/profileOptions';
-import { formatTimeZoneLabel } from '../../src/utils/timezones';
-import { colors, radius, spacing, useAppTheme } from '../../src/theme';
+import { formatGoalSummary } from '../../src/utils/goals';
+import { HEIGHT_UNIT_OPTIONS, WEIGHT_UNIT_OPTIONS } from '../../src/utils/profileOptions';
+import { radius, spacing, useAppTheme } from '../../src/theme';
 import { useHealthConnect } from '../../src/healthConnect/provider';
 import { clearWearAccountData } from '../../src/wear/accountCleanup';
+import {
+    DeleteAccountSheet,
+    ProfileEditorSheet
+} from '../../src/settings/AccountSettingsSheets';
+import { SettingsHome, type SettingsSheetId } from '../../src/settings/SettingsHome';
+import {
+    PreferenceSwitch,
+    SettingsDetailSheet,
+    SummaryRow
+} from '../../src/settings/SettingsPrimitives';
 
 const MIN_PASSWORD_LENGTH = 8;
-type SettingsSheet =
-    | 'preferences'
-    | 'health-connect'
-    | 'watch'
-    | 'import'
-    | 'profile-photo'
-    | 'password'
-    | 'devices'
-    | 'offline'
-    | 'data'
-    | 'server'
-    | null;
-
 function getAvatarLabel(email?: string | null): string {
     return email?.trim().charAt(0).toUpperCase() || 'C';
 }
@@ -65,6 +52,7 @@ function formatSessionActivity(value: string | null, fallback: string): string {
 }
 
 export default function SettingsScreen() {
+    const router = useRouter();
     const {
         api, user, clearLocalSession, logout, persistAccountDeletionCleanupNotice,
         serverUrl, setServerUrl, updateCurrentUser
@@ -101,13 +89,14 @@ export default function SettingsScreen() {
     const [newPassword, setNewPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [isProfileEditorOpen, setIsProfileEditorOpen] = useState(false);
-    const [activeSheet, setActiveSheet] = useState<SettingsSheet>(null);
+    const [activeSheet, setActiveSheet] = useState<SettingsSheetId | null>(null);
     const [isDeleteAccountOpen, setIsDeleteAccountOpen] = useState(false);
     const [deleteAccountPassword, setDeleteAccountPassword] = useState('');
     const [deleteAccountConfirmation, setDeleteAccountConfirmation] = useState('');
     const [passwordError, setPasswordError] = useState<string | null>(null);
     const [passwordStatus, setPasswordStatus] = useState<string | null>(null);
     const profileQuery = useQuery({ queryKey: ['mobile-profile'], queryFn: () => api.getUserProfile() });
+    const goalQuery = useQuery({ queryKey: ['mobile-goal'], queryFn: () => api.getGoals() });
     const sessionsQuery = useQuery({
         queryKey: ['mobile-sessions'],
         queryFn: () => api.getMobileSessions()
@@ -202,6 +191,7 @@ export default function SettingsScreen() {
 
     const updateProfileImage = useMutation({
         mutationFn: async () => {
+            const ImagePicker = await import('expo-image-picker');
             const result = await ImagePicker.launchImageLibraryAsync({
                 mediaTypes: 'images',
                 allowsEditing: true,
@@ -278,6 +268,7 @@ export default function SettingsScreen() {
 
     const importMutation = useMutation({
         mutationFn: async () => {
+            const DocumentPicker = await import('expo-document-picker');
             const result = await DocumentPicker.getDocumentAsync({
                 type: 'application/zip',
                 copyToCacheDirectory: true
@@ -340,131 +331,26 @@ export default function SettingsScreen() {
     }
 
     return (
-        <Screen reserveBottomTabs style={{ backgroundColor: themeColors.background }}>
-            <AppCard style={{ backgroundColor: themeColors.surface, borderColor: themeColors.outlineVariant }}>
-                <View style={styles.accountSummary}>
-                    <View style={[styles.summaryAvatar, { backgroundColor: themeColors.primaryContainer }]}>
-                        {user?.profile_image_url ? (
-                            <Image source={{ uri: user.profile_image_url }} style={styles.avatarImage} />
-                        ) : (
-                            <AppText variant="subtitle" style={{ color: themeColors.onPrimaryContainer }}>{getAvatarLabel(user?.email)}</AppText>
-                        )}
-                    </View>
-                    <SectionHeader
-                        title="Account overview"
-                        description={user?.email ?? 'Account and app settings.'}
-                        style={styles.summaryText}
-                    />
-                </View>
-                <View style={[styles.summaryRows, { backgroundColor: themeColors.surfaceContainer }]}>
-                    <SummaryRow label="Calorie target" value={formatCalories(profileQuery.data?.calorieSummary.dailyCalorieTarget)} />
-                    <SummaryRow
-                        label="Units"
-                        value={`${weightUnit === WEIGHT_UNITS.LB ? 'lb' : 'kg'} | ${heightUnit === HEIGHT_UNITS.FT_IN ? 'ft/in' : 'cm'}`}
-                    />
-                    <SummaryRow label="Time zone" value={formatTimeZoneLabel(timezone)} />
-                </View>
-            </AppCard>
-
-            <SettingsSection title="Personal" description="Your profile and how Calibrate works for you.">
-                <SettingsRow
-                    icon="person-outline"
-                    label="Profile details"
-                    supportingText="Body details, activity level, and time zone"
-                    onPress={() => setIsProfileEditorOpen(true)}
-                />
-                <SettingsRow
-                    icon="options-outline"
-                    label="Preferences"
-                    supportingText="Units, reminders, notifications, and haptics"
-                    value={`${weightUnit === WEIGHT_UNITS.LB ? 'lb' : 'kg'} | ${heightUnit === HEIGHT_UNITS.FT_IN ? 'ft/in' : 'cm'}`}
-                    onPress={() => setActiveSheet('preferences')}
-                />
-                <SettingsRow
-                    icon="image-outline"
-                    label="Profile photo"
-                    supportingText="Your avatar across Calibrate"
-                    showDivider={false}
-                    onPress={() => setActiveSheet('profile-photo')}
-                />
-            </SettingsSection>
-
-            <SettingsSection title="Connections" description="Health data and companion devices.">
-                <SettingsRow
-                    icon="fitness-outline"
-                    label="Health Connect"
-                    supportingText="Read activity and weight from Android"
-                    onPress={() => setActiveSheet('health-connect')}
-                />
-                <SettingsRow
-                    icon="watch-outline"
-                    label="Galaxy Watch"
-                    supportingText="Pair, sync, and manage the Wear OS companion"
-                    onPress={() => setActiveSheet('watch')}
-                />
-                <SettingsRow
-                    icon="phone-portrait-outline"
-                    label="Signed-in devices"
-                    supportingText="Review and revoke phone and watch sessions"
-                    value={sessionsQuery.data ? String(sessionsQuery.data.sessions.length) : undefined}
-                    showDivider={false}
-                    onPress={() => setActiveSheet('devices')}
-                />
-            </SettingsSection>
-
-            <SettingsSection title="Data" description="Import, sync, export, and privacy controls.">
-                <SettingsRow
-                    icon="cloud-upload-outline"
-                    label="Import from Lose It"
-                    supportingText="Bring in a ZIP export"
-                    onPress={() => setActiveSheet('import')}
-                />
-                <SettingsRow
-                    icon="sync-outline"
-                    label="Offline changes"
-                    supportingText={isOutboxReady
-                        ? 'Review work waiting to sync'
-                        : 'Browser changes require an active server connection'}
-                    value={isOutboxReady
-                        ? (failedMutations.length > 0 ? `${failedMutations.length} failed` : `${pendingMutationCount} pending`)
-                        : 'Online only'}
-                    onPress={() => setActiveSheet('offline')}
-                />
-                <SettingsRow
-                    icon="shield-checkmark-outline"
-                    label="Your data"
-                    supportingText="Export or permanently delete your account"
-                    showDivider={false}
-                    onPress={() => setActiveSheet('data')}
-                />
-            </SettingsSection>
-
-            <SettingsSection title="Security & server">
-                <SettingsRow
-                    icon="key-outline"
-                    label="Password"
-                    supportingText="Change your account password"
-                    onPress={() => setActiveSheet('password')}
-                />
-                <SettingsRow
-                    icon="server-outline"
-                    label="Calibrate server"
-                    supportingText="Hosted or self-hosted connection"
-                    value={serverUrl.replace(/^https?:\/\//, '')}
-                    showDivider={false}
-                    onPress={() => setActiveSheet('server')}
-                />
-            </SettingsSection>
-
-            <SettingsSection title="Account">
-                <SettingsRow
-                    icon="log-out-outline"
-                    label="Log out"
-                    danger
-                    showDivider={false}
-                    onPress={() => void logout()}
-                />
-            </SettingsSection>
+        <TabScreen>
+            <SettingsHome
+                email={user?.email}
+                profileImageUrl={user?.profile_image_url}
+                goalSummary={goalQuery.isLoading
+                    ? 'Loading current goal...'
+                    : formatGoalSummary(goalQuery.data, user?.weight_unit)}
+                weightUnit={weightUnit}
+                heightUnit={heightUnit}
+                sessionCount={sessionsQuery.data?.sessions.length}
+                isOutboxReady={isOutboxReady}
+                failedMutationCount={failedMutations.length}
+                pendingMutationCount={pendingMutationCount}
+                isWeb={isWeb}
+                serverUrl={serverUrl}
+                onEditProfile={() => setIsProfileEditorOpen(true)}
+                onOpenSheet={setActiveSheet}
+                onOpenAbout={() => router.push('/about')}
+                onLogout={() => void logout()}
+            />
 
             <SettingsDetailSheet
                 visible={activeSheet === 'preferences'}
@@ -491,7 +377,7 @@ export default function SettingsScreen() {
                     <AppText
                         accessibilityLiveRegion="polite"
                         accessibilityRole={pushStatus.isError ? 'alert' : undefined}
-                        style={pushStatus.isError ? styles.error : undefined}
+                        style={pushStatus.isError ? [styles.error, { color: themeColors.danger }] : undefined}
                         variant={pushStatus.isError ? 'body' : 'muted'}
                     >
                         {pushStatus.message}
@@ -555,12 +441,11 @@ export default function SettingsScreen() {
                     value={hapticsEnabled}
                     onValueChange={setHapticsEnabled}
                 />
-                {savePreferences.error && <AppText style={styles.error}>{savePreferences.error.message}</AppText>}
+                {savePreferences.error && <AppText style={[styles.error, { color: themeColors.danger }]}>{savePreferences.error.message}</AppText>}
                 <AppButton
                     title={savePreferences.isPending ? 'Saving...' : 'Save preferences'}
                     disabled={savePreferences.isPending}
-                    variant="secondary"
-                    leftIcon={<Ionicons name="options-outline" size={18} color={themeColors.onSurface} />}
+                    leftIcon={<Ionicons name="options-outline" size={18} color={themeColors.onPrimary} />}
                     onPress={() => savePreferences.mutate()}
                 />
             </SettingsDetailSheet>
@@ -586,11 +471,16 @@ export default function SettingsScreen() {
             >
                 <SectionHeader title="Import" description="Import a Lose It ZIP export into food logs and weigh-ins." />
                 {importMutation.data && (
-                    <AppText variant="muted">
-                        Imported {importMutation.data.food_logs.valid} food rows and {importMutation.data.weights.valid} weights.
-                    </AppText>
+                    <>
+                        <AppText variant="muted">
+                            Imported {importMutation.data.food_logs.valid} food rows and {importMutation.data.weights.valid} weights.
+                        </AppText>
+                        {importMutation.data.foodDayCompletionMessage && (
+                            <AppText variant="muted">{importMutation.data.foodDayCompletionMessage}</AppText>
+                        )}
+                    </>
                 )}
-                {importMutation.error && <AppText style={styles.error}>{importMutation.error.message}</AppText>}
+                {importMutation.error && <AppText style={[styles.error, { color: themeColors.danger }]}>{importMutation.error.message}</AppText>}
                 <AppButton
                     title={importMutation.isPending ? 'Importing...' : 'Import Lose It ZIP'}
                     variant="secondary"
@@ -640,7 +530,7 @@ export default function SettingsScreen() {
                     </View>
                 </View>
                 {(updateProfileImage.error || removeProfileImage.error) && (
-                    <AppText style={styles.error}>
+                    <AppText style={[styles.error, { color: themeColors.danger }]}>
                         {updateProfileImage.error?.message ?? removeProfileImage.error?.message}
                     </AppText>
                 )}
@@ -655,13 +545,12 @@ export default function SettingsScreen() {
                 <TextField label="Current password" secureTextEntry value={currentPassword} onChangeText={setCurrentPassword} />
                 <TextField label="New password" secureTextEntry value={newPassword} onChangeText={setNewPassword} helperText={`At least ${MIN_PASSWORD_LENGTH} characters.`} />
                 <TextField label="Confirm new password" secureTextEntry value={confirmPassword} onChangeText={setConfirmPassword} />
-                {passwordError && <AppText style={styles.error}>{passwordError}</AppText>}
-                {passwordStatus && <AppText style={styles.success}>{passwordStatus}</AppText>}
+                {passwordError && <AppText style={[styles.error, { color: themeColors.danger }]}>{passwordError}</AppText>}
+                {passwordStatus && <AppText style={[styles.success, { color: themeColors.success }]}>{passwordStatus}</AppText>}
                 <AppButton
                     title={changePassword.isPending ? 'Updating...' : 'Update password'}
                     disabled={changePassword.isPending}
-                    variant="secondary"
-                    leftIcon={<Ionicons name="key-outline" size={18} color={themeColors.onSurface} />}
+                    leftIcon={<Ionicons name="key-outline" size={18} color={themeColors.onPrimary} />}
                     onPress={handleChangePassword}
                 />
             </SettingsDetailSheet>
@@ -673,9 +562,9 @@ export default function SettingsScreen() {
             >
                 <SectionHeader title="Devices" description="Review and revoke active phone and watch sessions." />
                 {sessionsQuery.isLoading && <AppText variant="muted">Loading active devices...</AppText>}
-                {sessionsQuery.error && <AppText style={styles.error}>{sessionsQuery.error.message}</AppText>}
+                {sessionsQuery.error && <AppText style={[styles.error, { color: themeColors.danger }]}>{sessionsQuery.error.message}</AppText>}
                 {sessionsQuery.data?.sessions.map((session) => (
-                    <View key={session.id} style={styles.deviceRow}>
+                    <View key={session.id} style={[styles.deviceRow, { borderBottomColor: themeColors.outlineVariant }]}>
                         <View style={styles.deviceText}>
                             <AppText variant="body" style={styles.deviceName}>
                                 {session.device_name || (session.device_platform === 'wear_os' ? 'Wear OS device' : 'Android device')}
@@ -721,9 +610,9 @@ export default function SettingsScreen() {
                             <SummaryRow label="Failed" value={String(failedMutations.length)} />
                         </View>
                         {failedMutations[0]?.lastError && (
-                            <AppText style={styles.error}>Last failure: {failedMutations[0].lastError}</AppText>
+                            <AppText style={[styles.error, { color: themeColors.danger }]}>Last failure: {failedMutations[0].lastError}</AppText>
                         )}
-                        {outboxErrorMessage && <AppText style={styles.error}>{outboxErrorMessage}</AppText>}
+                        {outboxErrorMessage && <AppText style={[styles.error, { color: themeColors.danger }]}>{outboxErrorMessage}</AppText>}
                         <View style={styles.row}>
                             <AppButton
                                 title={syncOutbox.isPending ? 'Syncing...' : 'Sync now'}
@@ -761,7 +650,7 @@ export default function SettingsScreen() {
                     description="Export a portable JSON copy or permanently delete this account."
                 />
                 {exportAccount.error && (
-                    <AppText style={styles.error}>
+                    <AppText style={[styles.error, { color: themeColors.danger }]}>
                         {exportAccount.error instanceof Error ? exportAccount.error.message : 'Unable to export account data.'}
                     </AppText>
                 )}
@@ -781,188 +670,60 @@ export default function SettingsScreen() {
                 />
             </SettingsDetailSheet>
 
-            <SettingsDetailSheet
-                visible={activeSheet === 'server'}
-                onClose={() => setActiveSheet(null)}
-            >
-                <SectionHeader title="Advanced" description="Hosted and self-hosted server connection." />
-                <TextField label="Server URL" value={serverInput} onChangeText={setServerInput} autoCapitalize="none" />
-                <AppButton
-                    title="Save connection"
-                    variant="secondary"
-                    leftIcon={<Ionicons name="server-outline" size={18} color={themeColors.onSurface} />}
-                    onPress={() => void handleSaveServer()}
-                />
-            </SettingsDetailSheet>
+            {!isWeb && (
+                <SettingsDetailSheet
+                    visible={activeSheet === 'server'}
+                    onClose={() => setActiveSheet(null)}
+                >
+                    <SectionHeader title="Advanced" description="Hosted and self-hosted server connection." />
+                    <TextField label="Server URL" value={serverInput} onChangeText={setServerInput} autoCapitalize="none" />
+                    <AppButton
+                        title="Save connection"
+                        leftIcon={<Ionicons name="server-outline" size={18} color={themeColors.onPrimary} />}
+                        onPress={() => void handleSaveServer()}
+                    />
+                </SettingsDetailSheet>
+            )}
 
-            <BottomSheetModal
+            <ProfileEditorSheet
                 visible={isProfileEditorOpen}
-                maxHeight="92%"
-                onRequestClose={() => setIsProfileEditorOpen(false)}
-            >
-                <SectionHeader title="Profile details" description="Time zone and body details used for calorie targets." />
-                <TimeZonePickerField value={timezone} onChange={setTimezone} />
-                <DatePickerField
-                    label="Date of birth"
-                    value={dateOfBirth}
-                    onChangeDate={setDateOfBirth}
-                    maximumDate={getTodayDate(user?.timezone)}
-                    fallbackDate="1990-01-01"
-                />
-                <AppText variant="label">Sex</AppText>
-                <View style={styles.chips}>
-                    {SEX_OPTIONS.map((option) => (
-                        <AppChip
-                            key={option.value}
-                            label={option.label}
-                            selected={sex === option.value}
-                            onPress={() => setSex(option.value)}
-                        />
-                    ))}
-                </View>
-                <AppText variant="label">Activity level</AppText>
-                <View style={styles.chips}>
-                    {ACTIVITY_OPTIONS.map((option) => (
-                        <AppChip
-                            key={option.value}
-                            label={option.label}
-                            selected={activityLevel === option.value}
-                            onPress={() => setActivityLevel(option.value)}
-                        />
-                    ))}
-                </View>
-                {heightUnit === HEIGHT_UNITS.CM ? (
-                    <NumberStepperField label="Height" value={heightCm} onChangeText={setHeightCm} step={1} min={0} suffix="cm" />
-                ) : (
-                    <View style={styles.row}>
-                        <NumberStepperField label="Feet" value={heightFeet} onChangeText={setHeightFeet} step={1} min={0} containerStyle={styles.rowButton} />
-                        <NumberStepperField label="Inches" value={heightInches} onChangeText={setHeightInches} step={1} min={0} max={11} containerStyle={styles.rowButton} />
-                    </View>
-                )}
-                <AppText variant="muted">Current calorie target: {formatCalories(profileQuery.data?.calorieSummary.dailyCalorieTarget)}</AppText>
-                {saveProfile.error && <AppText style={styles.error}>{saveProfile.error.message}</AppText>}
-                <View style={styles.row}>
-                    <AppButton
-                        title="Cancel"
-                        variant="secondary"
-                        leftIcon={<Ionicons name="close" size={18} color={themeColors.onSurface} />}
-                        onPress={() => setIsProfileEditorOpen(false)}
-                        style={styles.rowButton}
-                    />
-                    <AppButton
-                        title={saveProfile.isPending ? 'Saving...' : 'Save'}
-                        disabled={saveProfile.isPending}
-                        leftIcon={<Ionicons name="checkmark" size={18} color={themeColors.onPrimary} />}
-                        onPress={() => saveProfile.mutate()}
-                        style={styles.rowButton}
-                    />
-                </View>
-            </BottomSheetModal>
+                timezone={timezone}
+                onTimezoneChange={setTimezone}
+                dateOfBirth={dateOfBirth}
+                onDateOfBirthChange={setDateOfBirth}
+                sex={sex}
+                onSexChange={setSex}
+                activityLevel={activityLevel}
+                onActivityLevelChange={setActivityLevel}
+                heightUnit={heightUnit}
+                heightCm={heightCm}
+                onHeightCmChange={setHeightCm}
+                heightFeet={heightFeet}
+                onHeightFeetChange={setHeightFeet}
+                heightInches={heightInches}
+                onHeightInchesChange={setHeightInches}
+                calorieTarget={profileQuery.data?.calorieSummary.dailyCalorieTarget}
+                saveError={saveProfile.error}
+                isSaving={saveProfile.isPending}
+                onClose={() => setIsProfileEditorOpen(false)}
+                onSave={() => saveProfile.mutate()}
+            />
 
-            <BottomSheetModal
+            <DeleteAccountSheet
                 visible={isDeleteAccountOpen}
-                onRequestClose={() => setIsDeleteAccountOpen(false)}
-            >
-                <SectionHeader
-                    title="Delete account permanently"
-                    description={isOutboxReady
-                        ? 'This cannot be undone. Pending offline changes on this device will also be discarded.'
-                        : 'This cannot be undone. Browser changes are sent directly and there is no local write queue to discard.'}
-                />
-                <TextField
-                    label="Current password"
-                    secureTextEntry
-                    value={deleteAccountPassword}
-                    onChangeText={setDeleteAccountPassword}
-                    editable={!deleteAccount.isPending}
-                />
-                <TextField
-                    label={`Type ${DELETE_ACCOUNT_CONFIRMATION}`}
-                    value={deleteAccountConfirmation}
-                    onChangeText={setDeleteAccountConfirmation}
-                    autoCapitalize="characters"
-                    editable={!deleteAccount.isPending}
-                />
-                {deleteAccount.error && (
-                    <AppText style={styles.error}>
-                        {deleteAccount.error instanceof Error ? deleteAccount.error.message : 'Unable to delete account.'}
-                    </AppText>
-                )}
-                <View style={styles.row}>
-                    <AppButton
-                        title="Cancel"
-                        variant="secondary"
-                        disabled={deleteAccount.isPending}
-                        onPress={() => setIsDeleteAccountOpen(false)}
-                        style={styles.rowButton}
-                    />
-                    <AppButton
-                        title={deleteAccount.isPending ? 'Deleting...' : 'Delete forever'}
-                        variant="danger"
-                        disabled={
-                            deleteAccount.isPending ||
-                            !canSubmitAccountDeletion(deleteAccountPassword, deleteAccountConfirmation)
-                        }
-                        onPress={confirmDeleteAccount}
-                        style={styles.rowButton}
-                    />
-                </View>
-            </BottomSheetModal>
-        </Screen>
+                isOutboxReady={isOutboxReady}
+                password={deleteAccountPassword}
+                onPasswordChange={setDeleteAccountPassword}
+                confirmation={deleteAccountConfirmation}
+                onConfirmationChange={setDeleteAccountConfirmation}
+                error={deleteAccount.error}
+                isDeleting={deleteAccount.isPending}
+                onClose={() => setIsDeleteAccountOpen(false)}
+                onConfirm={confirmDeleteAccount}
+            />
+        </TabScreen>
     );
 }
-
-type PreferenceSwitchProps = {
-    label: string;
-    value: boolean;
-    onValueChange: (value: boolean) => void;
-};
-
-const PreferenceSwitch: React.FC<PreferenceSwitchProps> = ({ label, value, onValueChange }) => {
-    const { colors: themeColors } = useAppTheme();
-
-    return (
-        <Pressable
-            accessibilityRole="switch"
-            accessibilityState={{ checked: value }}
-            onPress={() => onValueChange(!value)}
-            style={({ pressed }) => [styles.switchRow, pressed && styles.pressedRow]}
-        >
-            <AppText variant="body" style={styles.switchLabel}>{label}</AppText>
-            <Switch
-                value={value}
-                onValueChange={onValueChange}
-                trackColor={{ false: themeColors.outlineVariant, true: themeColors.primaryContainer }}
-                thumbColor={value ? themeColors.primary : themeColors.outline}
-            />
-        </Pressable>
-    );
-};
-
-const SummaryRow: React.FC<{ label: string; value: string }> = ({ label, value }) => (
-    <View style={styles.summaryRow}>
-        <AppText variant="caption">{label}</AppText>
-        <AppText variant="body" numberOfLines={1} style={styles.summaryValue}>{value}</AppText>
-    </View>
-);
-
-type SettingsDetailSheetProps = {
-    visible: boolean;
-    maxHeight?: React.ComponentProps<typeof BottomSheetModal>['maxHeight'];
-    onClose: () => void;
-    children: React.ReactNode;
-};
-
-const SettingsDetailSheet: React.FC<SettingsDetailSheetProps> = ({
-    visible,
-    maxHeight,
-    onClose,
-    children
-}) => (
-    <BottomSheetModal visible={visible} maxHeight={maxHeight} onRequestClose={onClose}>
-        <View style={styles.sheetContent}>{children}</View>
-    </BottomSheetModal>
-);
 
 const styles = StyleSheet.create({
     row: {
@@ -972,45 +733,11 @@ const styles = StyleSheet.create({
     rowButton: {
         flex: 1
     },
-    sheetContent: {
-        gap: spacing.md
-    },
-    accountSummary: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: spacing.md
-    },
-    summaryAvatar: {
-        width: 54,
-        height: 54,
-        borderRadius: 27,
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: colors.primarySoft,
-        overflow: 'hidden'
-    },
-    summaryText: {
-        flex: 1,
-        minWidth: 0
-    },
     summaryRows: {
         borderRadius: radius.md,
-        backgroundColor: colors.surfaceAlt,
         paddingHorizontal: spacing.md,
         paddingVertical: spacing.sm,
         gap: spacing.xs
-    },
-    summaryRow: {
-        minHeight: 30,
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        gap: spacing.md
-    },
-    summaryValue: {
-        flexShrink: 1,
-        textAlign: 'right',
-        fontWeight: '800'
     },
     avatarRow: {
         flexDirection: 'row',
@@ -1023,17 +750,12 @@ const styles = StyleSheet.create({
         borderRadius: 38,
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: colors.primarySoft,
-        borderColor: colors.border,
         borderWidth: StyleSheet.hairlineWidth,
         overflow: 'hidden'
     },
     avatarImage: {
         width: '100%',
         height: '100%'
-    },
-    avatarLabel: {
-        color: colors.primaryDark
     },
     avatarActions: {
         flex: 1,
@@ -1044,8 +766,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         gap: spacing.md,
         paddingVertical: spacing.sm,
-        borderBottomWidth: StyleSheet.hairlineWidth,
-        borderBottomColor: colors.border
+        borderBottomWidth: StyleSheet.hairlineWidth
     },
     deviceText: {
         flex: 1,
@@ -1059,27 +780,9 @@ const styles = StyleSheet.create({
         flexWrap: 'wrap',
         gap: spacing.sm
     },
-    switchRow: {
-        minHeight: 48,
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        gap: spacing.md
-    },
-    switchLabel: {
-        flex: 1,
-        fontWeight: '700'
-    },
-    pressedRow: {
-        opacity: 0.78
-    },
     notificationStatus: {
         gap: spacing.sm
     },
-    success: {
-        color: colors.success
-    },
-    error: {
-        color: colors.danger
-    }
+    success: {},
+    error: {}
 });

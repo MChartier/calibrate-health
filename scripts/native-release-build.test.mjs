@@ -1,9 +1,13 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
+  assertNativeReleaseArtifacts,
+  nativeReleaseArtifactPaths,
   nativeReleaseGradleCommands,
   nativeReleaseInvocation,
   nativeReleasePrebuildCommand,
+  prepareNativeReleaseArtifacts,
+  RELEASE_GRADLE_JVM_ARGS,
   resolveNativeReleaseEnvironment
 } from './native-release-build.mjs';
 
@@ -26,6 +30,7 @@ test('native release environment enforces one complete signing identity and a pr
   assert.equal(resolved.EXPO_PUBLIC_CALIBRATE_SERVER_URL, 'https://health.example');
   assert.equal(resolved.EXPO_NO_METRO_WORKSPACE_ROOT, '1');
   assert.equal(resolved.NODE_ENV, 'production');
+  assert.equal(resolved.EXPO_UPDATES_CHANNEL, 'internal');
   assert.match(resolved.CALIBRATE_ANDROID_SIGNING_STORE_FILE, /signing[\\/]calibrate\.p12$/);
 });
 
@@ -52,6 +57,13 @@ test('native release environment rejects incomplete signing and non-origin HTTP 
     () => resolveNativeReleaseEnvironment(signingEnvironment, { fileExists: () => false }),
     /does not point to a file/
   );
+  assert.throws(
+    () => resolveNativeReleaseEnvironment({
+      ...signingEnvironment,
+      EXPO_PUBLIC_EAS_PROJECT_ID: 'not-a-uuid'
+    }, { fileExists: () => true }),
+    /project UUID/
+  );
 });
 
 test('native release build always produces phone and Wear APK plus AAB tasks', () => {
@@ -62,8 +74,25 @@ test('native release build always produces phone and Wear APK plus AAB tasks', (
       assert.ok(command.args.includes(':app:bundleRelease'));
       assert.ok(command.args.includes(':app:assembleRelease'));
       assert.ok(command.args.includes('--no-daemon'));
+      assert.ok(command.args.includes(`-Dorg.gradle.jvmargs=${RELEASE_GRADLE_JVM_ARGS}`));
     }
   }
+});
+
+test('native release builds require freshly generated APK and AAB outputs', () => {
+  const build = { label: 'phone', cwd: 'C:/repo/mobile/android' };
+  const artifacts = nativeReleaseArtifactPaths(build);
+  assert.match(artifacts[0], /outputs[\\/]apk[\\/]release[\\/]app-release\.apk$/);
+  assert.match(artifacts[1], /outputs[\\/]bundle[\\/]release[\\/]app-release\.aab$/);
+
+  const removed = [];
+  prepareNativeReleaseArtifacts(build, (file) => removed.push(file));
+  assert.deepEqual(removed, artifacts);
+  assert.doesNotThrow(() => assertNativeReleaseArtifacts(build, () => true));
+  assert.throws(
+    () => assertNativeReleaseArtifacts(build, (file) => file.endsWith('.apk')),
+    /phone Gradle completed without producing.*app-release\.aab.*masked daemon, lint, or memory failure/s
+  );
 });
 
 test('native release build regenerates the ignored phone project before Gradle', () => {

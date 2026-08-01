@@ -2,7 +2,7 @@ import { Prisma } from '@prisma/client';
 import prisma from '../config/database';
 
 export const ACCOUNT_EXPORT_FORMAT = 'calibrate-account-export';
-export const ACCOUNT_EXPORT_VERSION = 2;
+export const ACCOUNT_EXPORT_VERSION = 3;
 
 // Auth sessions, password hashes, push endpoints/tokens, and internal replay metadata are
 // deliberately absent. Only account profile and user-authored tracking records are exported.
@@ -34,6 +34,9 @@ const ACCOUNT_EXPORT_SELECT = {
   },
   food_log_days: {
     orderBy: [{ local_date: 'asc' as const }, { id: 'asc' as const }]
+  },
+  food_tracking_pauses: {
+    orderBy: [{ starts_on: 'asc' as const }, { id: 'asc' as const }]
   },
   my_foods: {
     orderBy: [{ created_at: 'asc' as const }, { id: 'asc' as const }],
@@ -117,8 +120,21 @@ export type AccountExport = {
   food_log_days: Array<{
     id: number;
     local_date: string;
+    status: string;
+    origin: string;
     is_complete: boolean;
     completed_at: string | null;
+    created_at: string;
+    updated_at: string;
+  }>;
+  food_tracking_pauses: Array<{
+    id: number;
+    starts_on: string;
+    expected_resume_on: string | null;
+    resumed_on: string | null;
+    started_at: string;
+    resumed_at: string | null;
+    materialized_through: string;
     created_at: string;
     updated_at: string;
   }>;
@@ -289,13 +305,30 @@ export function serializeAccountExport(user: AccountExportRow, now = new Date())
       grams_total_snapshot: log.grams_total_snapshot,
       created_at: toIsoDateTime(log.created_at)
     })),
-    food_log_days: user.food_log_days.map((day) => ({
+    food_log_days: user.food_log_days.map((day) => {
+      const legacyDay = day as typeof day & { is_complete?: boolean };
+      const status = day.status ?? (legacyDay.is_complete ? 'COMPLETE' : 'OPEN');
+      return {
       id: day.id,
       local_date: toIsoDate(day.local_date),
-      is_complete: day.is_complete,
+      status,
+      origin: day.origin ?? 'USER',
+      is_complete: status === 'COMPLETE',
       completed_at: day.completed_at ? toIsoDateTime(day.completed_at) : null,
       created_at: toIsoDateTime(day.created_at),
       updated_at: toIsoDateTime(day.updated_at)
+    };
+    }),
+    food_tracking_pauses: (user.food_tracking_pauses ?? []).map((pause) => ({
+      id: pause.id,
+      starts_on: toIsoDate(pause.starts_on),
+      expected_resume_on: pause.expected_resume_on ? toIsoDate(pause.expected_resume_on) : null,
+      resumed_on: pause.resumed_on ? toIsoDate(pause.resumed_on) : null,
+      started_at: toIsoDateTime(pause.started_at),
+      resumed_at: pause.resumed_at ? toIsoDateTime(pause.resumed_at) : null,
+      materialized_through: toIsoDate(pause.materialized_through),
+      created_at: toIsoDateTime(pause.created_at),
+      updated_at: toIsoDateTime(pause.updated_at)
     })),
     my_foods: user.my_foods.map((food) => ({
       id: food.id,

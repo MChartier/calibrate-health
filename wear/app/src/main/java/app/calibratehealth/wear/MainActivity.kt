@@ -92,7 +92,6 @@ class MainActivity : ComponentActivity() {
                 serverConfig = WearServerConfig.fromBuildConfig(),
                 homeState = homeState,
                 onQuickAdd = homeController::quickAdd,
-                onToggleFoodDay = homeController::toggleFoodDay,
                 onUndo = homeController::undo,
                 onSaveWeight = homeController::saveWeight,
                 onContinueOnPhone = homeController::continueOnPhone,

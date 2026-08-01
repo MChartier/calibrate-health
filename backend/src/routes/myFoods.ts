@@ -5,6 +5,7 @@ import { parseNonNegativeNumber, parsePositiveInteger, parsePositiveNumber } fro
 import { buildExternalIngredientSnapshotRow, parseMyFoodIngredientInput } from './myFoodsRecipeUtils';
 import { createHttpError, isHttpError, normalizeMyFoodName, normalizeServingUnitLabel } from './myFoodsUtils';
 import { logSafeOperationalError } from '../observability';
+import { getAuthenticatedUser, requireAuthenticatedUser } from '../middleware/authenticatedUser';
 
 /**
  * "My Foods" endpoints for user-defined foods and immutable recipe snapshots.
@@ -16,21 +17,14 @@ const router = express.Router();
 /**
  * Ensure the session is authenticated before accessing "My Foods".
  */
-const isAuthenticated = (req: express.Request, res: express.Response, next: express.NextFunction) => {
-    if (req.isAuthenticated()) {
-        return next();
-    }
-    res.status(401).json({ message: 'Not authenticated' });
-};
-
-router.use(isAuthenticated);
+router.use(requireAuthenticatedUser);
 
 router.get('/', async (req, res) => {
-    const user = req.user as any;
+    const user = getAuthenticatedUser(req);
     const q = typeof req.query.q === 'string' ? req.query.q.trim() : '';
     const type = typeof req.query.type === 'string' ? req.query.type.trim().toUpperCase() : undefined;
 
-    const where: any = { user_id: user.id };
+    const where: Prisma.MyFoodWhereInput = { user_id: user.id };
     if (q) {
         where.name = { contains: q, mode: 'insensitive' };
     }
@@ -52,7 +46,7 @@ router.get('/', async (req, res) => {
 });
 
 router.patch('/:id/pin', async (req, res) => {
-    const user = req.user as any;
+    const user = getAuthenticatedUser(req);
     const id = parsePositiveInteger(req.params.id);
     if (id === null) {
         return res.status(400).json({ message: 'Invalid my food id' });
@@ -83,7 +77,7 @@ router.patch('/:id/pin', async (req, res) => {
 });
 
 router.get('/:id', async (req, res) => {
-    const user = req.user as any;
+    const user = getAuthenticatedUser(req);
     const id = parsePositiveInteger(req.params.id);
     if (id === null) {
         return res.status(400).json({ message: 'Invalid my food id' });
@@ -109,7 +103,7 @@ router.get('/:id', async (req, res) => {
 });
 
 router.post('/foods', async (req, res) => {
-    const user = req.user as any;
+    const user = getAuthenticatedUser(req);
     const name = normalizeMyFoodName(req.body?.name);
     if (!name) {
         return res.status(400).json({ message: 'Invalid name' });
@@ -201,9 +195,9 @@ async function resolveRecipeIngredientRows(
     const rows: RecipeIngredientSnapshotRow[] = [];
     for (let idx = 0; idx < ingredients.length; idx += 1) {
         const ingredient = ingredients[idx];
-        const sortOrderRaw = ingredient && typeof ingredient === 'object' ? (ingredient as any).sort_order : undefined;
+        const sortOrderRaw = ingredient.sort_order;
         const sortOrder = parsePositiveInteger(sortOrderRaw) ?? idx + 1;
-        const source = (ingredient as any)?.source;
+        const source = ingredient.source;
         if (source !== 'MY_FOOD' && source !== 'EXTERNAL') {
             throw createHttpError(400, 'Invalid ingredient source');
         }
@@ -264,7 +258,7 @@ function toRecipeIngredientCreateRow(recipeId: number, row: RecipeIngredientSnap
  * Create a recipe from ingredient snapshots. Recipes are stored as immutable snapshots (by design).
  */
 router.post('/recipes', async (req, res) => {
-    const user = req.user as any;
+    const user = getAuthenticatedUser(req);
     const name = normalizeMyFoodName(req.body?.name);
     if (!name) {
         return res.status(400).json({ message: 'Invalid name' });
@@ -331,7 +325,7 @@ router.post('/recipes', async (req, res) => {
 });
 
 router.patch('/:id', async (req, res) => {
-    const user = req.user as any;
+    const user = getAuthenticatedUser(req);
     const id = parsePositiveInteger(req.params.id);
     if (id === null) return res.status(400).json({ message: 'Invalid my food id' });
 
@@ -404,7 +398,7 @@ router.patch('/:id', async (req, res) => {
 });
 
 router.delete('/:id', async (req, res) => {
-    const user = req.user as any;
+    const user = getAuthenticatedUser(req);
     const id = parsePositiveInteger(req.params.id);
     if (id === null) return res.status(400).json({ message: 'Invalid my food id' });
 

@@ -67,7 +67,26 @@ const TREND_METRICS = [
   { id: 1, user_id: 17, date: '2026-07-04', weight: 90.0, body_fat_percent: null, trend_weight: 89.8, trend_ci_lower: 89.4, trend_ci_upper: 90.2 },
 ];
 
-async function stubAuthenticatedApi(page: Page): Promise<void> {
+type AuthenticatedApiOptions = {
+  foodDayStatus?: 'OPEN' | 'PAUSED';
+  foodEntries?: Array<{
+    id: number;
+    meal_period: 'BREAKFAST';
+    name: string;
+    calories: number;
+    servings_consumed: number;
+  }>;
+};
+
+const DEFAULT_FOOD_ENTRIES: NonNullable<AuthenticatedApiOptions['foodEntries']> = [{
+  id: 31,
+  meal_period: 'BREAKFAST',
+  name: 'Greek yogurt and berries',
+  calories: 360,
+  servings_consumed: 1,
+}];
+
+async function stubAuthenticatedApi(page: Page, options: AuthenticatedApiOptions = {}): Promise<void> {
   unexpectedApiRequests.set(page, []);
   await page.route('**/*', (route) => {
     const url = new URL(route.request().url());
@@ -99,16 +118,56 @@ async function stubAuthenticatedApi(page: Page): Promise<void> {
       });
     }
     if (pathname === '/api/v1/food') {
-      return fulfillJson(route, [{
-        id: 31,
-        meal_period: 'BREAKFAST',
-        name: 'Greek yogurt and berries',
-        calories: 360,
-        servings_consumed: 1,
-      }]);
+      return fulfillJson(route, options.foodEntries ?? DEFAULT_FOOD_ENTRIES);
+    }
+    if (pathname === '/api/v1/food-days/pause') {
+      const isPaused = options.foodDayStatus === 'PAUSED';
+      return fulfillJson(route, {
+        pause: {
+          active: isPaused,
+          id: isPaused ? 9 : null,
+          starts_on: isPaused ? '2026-07-21' : null,
+          expected_resume_on: isPaused ? '2099-12-31' : null,
+          resumed_on: null,
+          started_at: isPaused ? '2026-07-21T08:00:00.000Z' : null,
+          resumed_at: null,
+          materialized_through: isPaused ? '2026-07-23' : null,
+          resume_confirmation_due: false,
+        },
+      });
+    }
+    if (pathname === '/api/v1/food-days/range') {
+      const startDate = url.searchParams.get('start') ?? '2026-07-18';
+      const endDate = url.searchParams.get('end') ?? startDate;
+      return fulfillJson(route, {
+        start_date: startDate,
+        end_date: endDate,
+        days: [{
+          date: startDate,
+          status: options.foodDayStatus ?? 'OPEN',
+          origin: options.foodDayStatus === 'PAUSED' ? 'PAUSE' : null,
+          source: options.foodDayStatus === 'PAUSED' ? 'STORED' : 'DEFAULT',
+          is_representative: false,
+          is_complete: false,
+          completed_at: null,
+          updated_at: null,
+        }],
+      });
     }
     if (pathname === '/api/v1/food-days') {
-      return fulfillJson(route, { date: url.searchParams.get('date'), is_complete: false, completed_at: null });
+      return fulfillJson(route, {
+        date: url.searchParams.get('date'),
+        status: options.foodDayStatus ?? 'OPEN',
+        origin: options.foodDayStatus === 'PAUSED' ? 'PAUSE' : null,
+        source: options.foodDayStatus === 'PAUSED' ? 'STORED' : 'DEFAULT',
+        is_representative: false,
+        is_complete: false,
+        completed_at: null,
+        updated_at: null,
+      });
+    }
+    if (pathname === '/api/v1/user/tracking-history') {
+      return fulfillJson(route, { tracking_start_date: '2026-01-01' });
     }
     if (pathname === '/api/v1/activity/days') {
       const localDate = url.searchParams.get('start') ?? '2026-07-18';
@@ -280,10 +339,24 @@ test('authenticated shell renders real dashboard data and navigates release surf
   await expect(page).toHaveURL(/\/today$/);
   await expect(page.getByRole('heading', { name: 'Today', exact: true })).toBeVisible();
   await expect(page.getByText('Daily balance', { exact: true })).toBeVisible();
+  const foodLogSummary = page.getByRole('button', { name: /Food log.*View full log/ });
+  await expect(foodLogSummary).toContainText('Breakfast');
+  await expect(foodLogSummary).toContainText('Greek yogurt and berries');
+  await foodLogSummary.click();
+  await expect(page).toHaveURL((url) => url.pathname === '/food-log' && Boolean(url.searchParams.get('date')));
+  await expect(page.getByRole('heading', { name: 'Food log', exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Expand Breakfast', exact: true }).click();
-  await expect(page.getByText('Greek yogurt and berries', { exact: true })).toBeVisible();
-  await expect(page.getByText('Activity', { exact: true })).toBeVisible();
+  await expect(page.getByRole('main').getByText('Greek yogurt and berries', { exact: true })).toBeVisible();
   await expectNoHorizontalOverflow(page);
+
+  await page.getByRole('tab', { name: /Today$/ }).click();
+  await expect(page).toHaveURL(/\/today$/);
+
+  await page.getByRole('button', { name: 'Open notifications', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Notifications', exact: true })).toBeVisible();
+  await expect(page.getByText('All caught up', { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Close notifications', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Notifications', exact: true })).toBeHidden();
 
   await page.goto('/log?date=2026-07-18&meal=DINNER');
   await expect(page).toHaveURL((url) => url.pathname === '/today' && url.searchParams.get('openAddFood') === 'true');
@@ -304,14 +377,25 @@ test('authenticated shell renders real dashboard data and navigates release surf
     expect(todayBox!.y).toBeGreaterThan(viewport!.height - 110);
   }
 
-  const dateInput = page.getByLabel('Choose date');
-  await expect(dateInput).toBeVisible();
-  const currentDate = await dateInput.inputValue();
-  const previousDate = new Date(`${currentDate}T12:00:00Z`);
-  previousDate.setUTCDate(previousDate.getUTCDate() - 1);
-  const previousDateValue = previousDate.toISOString().slice(0, 10);
-  await dateInput.fill(previousDateValue);
-  await expect(dateInput).toHaveValue(previousDateValue);
+  const datePickerTrigger = page.getByRole('button', { name: 'Choose date', exact: true });
+  await expect(datePickerTrigger).toBeVisible();
+  await datePickerTrigger.focus();
+  await datePickerTrigger.press('Enter');
+
+  const calendarDialog = page.getByRole('dialog', { name: 'Calendar', exact: true });
+  const closeDatePicker = calendarDialog.getByRole('button', { name: 'Close date picker', exact: true });
+  await expect(calendarDialog).toBeVisible();
+  await expect(closeDatePicker).toBeFocused();
+
+  await page.keyboard.press('Shift+Tab');
+  expect(await page.evaluate(() => document.activeElement?.closest('[role="dialog"]')?.getAttribute('aria-label')))
+    .toBe('Calendar');
+  await page.keyboard.press('Tab');
+  await expect(closeDatePicker).toBeFocused();
+
+  await page.keyboard.press('Escape');
+  await expect(calendarDialog).toBeHidden();
+  await expect(datePickerTrigger).toBeFocused();
 
   await page.getByRole('tab', { name: /Progress$/ }).click();
   await expect(page).toHaveURL(/\/progress$/);
@@ -325,12 +409,35 @@ test('authenticated shell renders real dashboard data and navigates release surf
   await expect(page).toHaveURL(/\/progress$/);
   await expect(page.getByText('Goal projection', { exact: true })).toBeVisible();
 
-  await page.getByRole('tab', { name: /Account$/ }).click();
+  await page.getByRole('button', { name: 'Open account', exact: true }).click();
   await expect(page).toHaveURL(/\/settings$/);
   await expect(page.getByRole('heading', { name: 'Account', exact: true })).toBeVisible();
   await expect(page.getByText('Personal', { exact: true })).toBeVisible();
   await expect(page.getByText('Connections', { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: /Health Connect/ }).click();
+  await expect(page.getByRole('button', { name: 'View activity history', exact: true })).toBeVisible();
   await expectNoHorizontalOverflow(page);
+});
+
+test('paused days omit calorie progress and only preview food when entries exist', async ({ page }) => {
+  const options: AuthenticatedApiOptions = {
+    foodDayStatus: 'PAUSED',
+    foodEntries: [...DEFAULT_FOOD_ENTRIES],
+  };
+  await stubAuthenticatedApi(page, options);
+  await page.goto('/today');
+
+  await expect(page.getByText('Calorie tracking paused', { exact: true })).toBeVisible();
+  await expect(page.getByText('Daily balance', { exact: true })).toBeHidden();
+  await expect(page.getByText('0%', { exact: true })).toBeHidden();
+  await expect(page.getByRole('button', { name: /Food log.*View full log/ })).toContainText('Greek yogurt and berries');
+
+  options.foodEntries = [];
+  await page.reload();
+
+  await expect(page.getByText('Calorie tracking paused', { exact: true })).toBeVisible();
+  await expect(page.getByText('Daily balance', { exact: true })).toBeHidden();
+  await expect(page.getByRole('button', { name: /Food log.*View full log/ })).toBeHidden();
 });
 
 test('a browser write survives reload and replays exactly once with its operation id', async ({ page }, testInfo) => {
@@ -364,7 +471,7 @@ test('a browser write survives reload and replays exactly once with its operatio
   const increaseWeight = page.getByRole('button', { name: 'Increase Weight', exact: true });
   await expect(increaseWeight).toBeEnabled();
   await increaseWeight.click();
-  await page.getByRole('button', { name: 'Save weight', exact: true }).click();
+  await page.getByRole('button', { name: 'Log weight', exact: true }).click();
 
   await expect(page.getByRole('button', { name: '1 offline changes pending' })).toBeVisible();
   expect(operationIds).toHaveLength(1);

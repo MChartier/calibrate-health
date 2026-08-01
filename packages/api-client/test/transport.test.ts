@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { ApiError, CalibrateApiClient } from '../src/client.ts';
+import type { ClientUpgradeRequirement } from '@calibrate/shared/clientCompatibility';
 
 type InternalRequest = <T>(
     path: string,
@@ -15,6 +16,11 @@ const abortError = (): Error => {
     error.name = 'AbortError';
     return error;
 };
+
+function requireCaptured<T>(value: T | null, label: string): T {
+    assert.ok(value, `${label} was not captured`);
+    return value;
+}
 
 const createAbortAwareFetch = (): typeof fetch =>
     (async (_input, init) => {
@@ -171,6 +177,57 @@ test('one successful refresh retries the original request with the replacement t
     assert.equal(unauthorizedCalls, 0);
 });
 
+test('a late 401 from the previous access token reuses the completed refresh', async () => {
+    let accessToken = 'expired-token';
+    let refreshCalls = 0;
+    let unauthorizedCalls = 0;
+    let expiredRequestCount = 0;
+    let releaseFirstExpiredRequest: () => void = () => undefined;
+    let releaseLateExpiredRequest: () => void = () => undefined;
+    const firstExpiredRequestStarted = new Promise<void>((resolve) => {
+        releaseFirstExpiredRequest = resolve;
+    });
+    const lateExpiredRequest = new Promise<void>((resolve) => {
+        releaseLateExpiredRequest = resolve;
+    });
+    const client = new CalibrateApiClient({
+        baseUrl: 'https://calibrate.example',
+        getAccessToken: () => accessToken,
+        refreshAccessToken: async () => {
+            refreshCalls += 1;
+            accessToken = 'replacement-token';
+            return true;
+        },
+        onUnauthorized: () => {
+            unauthorizedCalls += 1;
+        },
+        fetchImpl: (async (_input, init) => {
+            const authorization = new Headers(init?.headers).get('authorization');
+            if (authorization === 'Bearer expired-token') {
+                expiredRequestCount += 1;
+                if (expiredRequestCount === 1) {
+                    await firstExpiredRequestStarted;
+                } else {
+                    releaseFirstExpiredRequest();
+                    await lateExpiredRequest;
+                }
+                return new Response('{"message":"expired"}', { status: 401 });
+            }
+            return new Response('{"user":{"id":7}}', { status: 200 });
+        }) as typeof fetch
+    });
+
+    const firstRequest = client.getMe();
+    const lateRequest = client.getUserProfile();
+    await firstRequest;
+    releaseLateExpiredRequest();
+    await lateRequest;
+
+    assert.equal(expiredRequestCount, 2);
+    assert.equal(refreshCalls, 1);
+    assert.equal(unauthorizedCalls, 0);
+});
+
 test('a retried 401 does not start another refresh loop', async () => {
     let accessToken = 'expired-token';
     let fetchCalls = 0;
@@ -233,6 +290,28 @@ test('native identity is attached to public and authenticated requests and canno
     }
 });
 
+test('legacy food-day responses remain open and editable', async () => {
+    const client = new CalibrateApiClient({
+        baseUrl: 'https://calibrate.example',
+        fetchImpl: (async () => new Response(JSON.stringify({
+            date: '2026-07-23',
+            is_complete: false,
+            completed_at: null
+        }), { status: 200 })) as typeof fetch
+    });
+
+    assert.deepEqual(await client.getFoodDay('2026-07-23'), {
+        date: '2026-07-23',
+        status: 'OPEN',
+        origin: null,
+        source: 'STORED',
+        is_representative: false,
+        is_complete: false,
+        completed_at: null,
+        updated_at: null
+    });
+});
+
 test('browser cookie transport uses session endpoints without native or bearer credentials', async () => {
     const requests: Array<{ url: string; init: RequestInit }> = [];
     const client = new CalibrateApiClient({
@@ -282,7 +361,8 @@ test('browser Lose It uploads submit a real Blob instead of a React Native URI d
 
     await client.executeLoseItImport(exportBlob);
 
-    const uploadedFile = uploaded?.get('file');
+    const uploadedForm = requireCaptured<FormData>(uploaded, 'upload form');
+    const uploadedFile = uploadedForm.get('file');
     assert.ok(uploadedFile instanceof Blob);
     assert.equal(await uploadedFile.text(), 'zip export');
 });
@@ -308,7 +388,8 @@ test('browser Lose It object URLs are hydrated before upload', async () => {
     await client.executeLoseItImport({ uri: objectUrl, name: 'loseit-export.zip', type: 'application/zip' });
 
     assert.deepEqual(requestedUrls, [objectUrl, 'https://calibrate.example/api/v1/imports/loseit/execute']);
-    const uploadedFile = uploaded?.get('file');
+    const uploadedForm = requireCaptured<FormData>(uploaded, 'upload form');
+    const uploadedFile = uploadedForm.get('file');
     assert.ok(uploadedFile instanceof Blob);
     assert.equal(await uploadedFile.text(), 'zip export');
 });
@@ -328,7 +409,7 @@ test('native Lose It URIs remain FormData descriptors even when React Native exp
         }
     }
     const originalFormData = globalThis.FormData;
-    const globalWithWindow = globalThis as typeof globalThis & { window?: object };
+    const globalWithWindow = globalThis as unknown as { window?: object };
     const originalWindow = globalWithWindow.window;
     globalThis.FormData = NativeFormData as unknown as typeof FormData;
     globalWithWindow.window = {};
@@ -353,7 +434,8 @@ test('native Lose It URIs remain FormData descriptors even when React Native exp
     await client.executeLoseItImport(nativeFile);
 
     assert.deepEqual(requestedUrls, ['https://calibrate.example/api/v1/imports/loseit/execute']);
-    assert.deepEqual(uploaded?.fields, [{ name: 'file', value: nativeFile }]);
+    const uploadedForm = requireCaptured<NativeFormData>(uploaded, 'native upload form');
+    assert.deepEqual(uploadedForm.fields, [{ name: 'file', value: nativeFile }]);
 });
 
 test('a per-request credential policy overrides the browser client default', async () => {
@@ -424,7 +506,7 @@ test('browser push methods use the versioned cookie-session endpoints', async ()
 });
 
 test('upgrade-required responses notify the native shell without triggering auth logout', async () => {
-    const requirements = [];
+    const requirements: ClientUpgradeRequirement[] = [];
     let unauthorizedCalls = 0;
     const body = {
         code: 'CLIENT_UPGRADE_REQUIRED',

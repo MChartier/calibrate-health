@@ -1,2 +1,2 @@
-# Prefer ChatGPT auth so devcontainers use the mounted host credentials.
+# Prefer the Codex app's existing ChatGPT authentication.
 preferred_auth_method = "chatgpt"

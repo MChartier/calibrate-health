@@ -71,7 +71,7 @@ function createStyles(theme: AppTheme) {
         borderRadius: theme.radius.md,
         backgroundColor: theme.colors.surfaceContainer,
         borderColor: theme.colors.outlineVariant,
-        borderWidth: StyleSheet.hairlineWidth,
+        borderWidth: theme.stroke.control,
         padding: theme.spacing.xs,
         gap: theme.spacing.xs
     },
@@ -81,7 +81,7 @@ function createStyles(theme: AppTheme) {
         borderRadius: theme.radius.sm,
         backgroundColor: theme.colors.surfaceContainer,
         borderColor: 'transparent',
-        borderWidth: StyleSheet.hairlineWidth,
+        borderWidth: theme.stroke.control,
         alignItems: 'center',
         justifyContent: 'center',
         paddingHorizontal: theme.spacing.sm,
@@ -90,7 +90,7 @@ function createStyles(theme: AppTheme) {
     segmentSelected: {
         backgroundColor: theme.colors.surface,
         borderColor: theme.colors.outlineVariant,
-        borderWidth: StyleSheet.hairlineWidth
+        borderWidth: theme.stroke.control
     },
     segmentPressed: {
         backgroundColor: theme.colors.surfacePressed

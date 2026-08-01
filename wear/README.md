@@ -79,9 +79,9 @@ $env:ANDROID_HOME="$env:LOCALAPPDATA\Android\Sdk"
 
 The runtime derives unpaired, pairing, recovery, and paired states from durable storage; deterministic health values
 remain limited to tests. The glance-first home emphasizes consumed and remaining calories plus goal progress, while
-quick add, undo, completion, rotary weight entry, and continue-on-phone live on a secondary Actions screen. The
-cache-only Tile exposes calorie progress, completion, and cache freshness without initiating network work from the
-Tile service.
+quick add, undo, rotary weight entry, continue-on-phone, and connection controls live on a secondary Actions screen.
+The cache-only Tile and calorie-balance complication expose calorie progress and cache freshness without initiating
+network work from their system-rendered services.
 
 `WearDataLayerContract` defines versioned coordination paths for pairing, sync invalidation, and continue-on-phone
 handoffs. Health summaries do not travel over Data Layer: the paired watch calls the selected server directly and
@@ -147,17 +147,17 @@ On Android 13 / Wear OS 4 and later, local watch reminders require the watch app
 permission does not affect tracking, synchronization, or phone reminders, and the same server reminder remains
 eligible if permission is granted later.
 
-## Deferred sensors and complication evaluation
+## Deferred sensors
 
 The initial companion does not request continuous heart-rate, body-sensor, or workout permissions. Galaxy Watch
 activity reaches Calibrate through Samsung Health and the phone's Health Connect sync. A future Calibrate-owned
 workout feature would use Health Services `ExerciseClient` only after defining a concrete workout UX, sampling and
 battery budget, retention policy, and privacy value that justifies collecting sensor data directly on the watch.
 
-A complication is also deferred until the main app and Tile have completed device dogfood. The Tile already provides
-the useful glance surface without placing health progress on every watch face. Any later complication should be
-opt-in, limited to a concise remaining-calorie or daily-progress value, sourced only from the local cache, visibly
-safe when stale, and free of food names, weight values, or background network access.
+The optional calorie-balance complication supports short-text and ranged-value watch-face slots. It is limited to a
+concise remaining/over value and consumed-target progress, reads only the account-scoped Room cache, opens Calibrate
+when tapped, and requests a system refresh after the same cache transitions that invalidate the Tile. It never
+includes food names or weight values and never initiates network work.
 
 Fast JVM contract tests cover cache bounds, FIFO ordering, stable IDs, retry behavior, and fake-store recreation.
 On-device instrumentation tests close and reopen the real Room database and Keystore token store to verify durable

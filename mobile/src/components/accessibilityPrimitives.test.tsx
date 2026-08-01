@@ -1,15 +1,27 @@
-import React from 'react';
 import { render } from '@testing-library/react-native';
+import { StyleSheet, Text } from 'react-native';
 import { AppButton } from './AppButton';
 import { AppChip } from './AppChip';
 import { SectionHeader } from './SectionHeader';
 import { TextField } from './TextField';
+import { themes } from '../theme';
 
 describe('mobile accessibility primitives', () => {
     it('gives buttons a useful default role, label, and disabled state', () => {
         const { getByRole } = render(<AppButton title="Save meal" disabled />);
         const button = getByRole('button', { name: 'Save meal' });
         expect(button.props.accessibilityState).toEqual(expect.objectContaining({ disabled: true }));
+    });
+
+    it('keeps a disabled button icon legible on its disabled surface', () => {
+        const TestIcon = ({ color }: { color: string }) => <Text testID="button-icon" style={{ color }}>icon</Text>;
+        const { getByTestId } = render(
+            <AppButton title="Search" disabled leftIcon={<TestIcon color={themes.light.colors.onPrimary} />} />
+        );
+
+        expect(StyleSheet.flatten(getByTestId('button-icon').props.style)).toEqual(
+            expect.objectContaining({ color: themes.light.colors.onSurfaceVariant })
+        );
     });
 
     it('uses pressed styling without the clipped Android ripple that can hide labels', () => {

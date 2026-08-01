@@ -27,11 +27,15 @@ data class WearSummary(
     val undoName: String?,
     val undoCalories: Int?,
     val fetchedAtEpochMs: Long,
-    val lastSyncAtEpochMs: Long?
+    val lastSyncAtEpochMs: Long?,
+    val foodDayStatus: String = if (foodDayComplete) "COMPLETE" else "OPEN",
+    val foodDaySource: String? = null,
+    val foodDayRepresentative: Boolean = foodDayComplete
 ) {
     val editableWeightGrams: Long? get() = todayWeightGrams ?: latestWeightGrams
     val hasUndoCandidate: Boolean
         get() = undoFoodLogId != null && !undoName.isNullOrBlank() && undoCalories != null
+    val isFoodTrackingPaused: Boolean get() = foodDayStatus == "PAUSED"
 }
 
 sealed interface WearAppState {
@@ -67,9 +71,6 @@ object SummaryFormatter {
         }
 
     fun calorieCount(value: Int?): String = value?.let(::formatWholeNumber) ?: "--"
-
-    fun completion(summary: WearSummary): String =
-        if (summary.foodDayComplete) "Food day complete" else "Food day in progress"
 
     fun weight(grams: Long?, unit: String): String {
         if (grams == null) return "--"

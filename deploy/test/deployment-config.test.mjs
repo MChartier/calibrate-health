@@ -25,6 +25,10 @@ test('production image and Compose serve the Expo web artifact', () => {
   const dockerfile = fs.readFileSync(path.join(repositoryRoot, 'Dockerfile.app'), 'utf8');
   const caddyCompose = readDeploy('docker-compose.yml');
   const traefikCompose = readDeploy('docker-compose.traefik.yml');
+  assert.match(
+    dockerfile,
+    /COPY scripts\/expo-cli-environment\.mjs scripts\/expo-web-build\.mjs scripts\/expo-web-release\.mjs \.\/scripts\//
+  );
   assert.match(dockerfile, /RUN npm run build:expo-web/);
   assert.match(dockerfile, /COPY --from=build \/app\/mobile\/dist \/app\/web\/dist/);
   assert.doesNotMatch(dockerfile, /COPY --from=build \/app\/frontend\/dist/);

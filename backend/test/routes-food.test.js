@@ -30,6 +30,16 @@ function loadFoodRouter({ prismaStub, foodDataStub }) {
   // Mutation routes always append to the sync feed, including legacy clients
   // that have not started sending an idempotency key yet.
   prismaStub.syncChange ??= { create: async () => ({ id: 1n }) };
+  prismaStub.foodLogDay ??= {
+    findUnique: async ({ where }) => ({
+      id: 1,
+      local_date: where.user_id_local_date.local_date,
+      status: 'OPEN',
+      origin: 'USER',
+      completed_at: null,
+      updated_at: new Date('2025-01-01T12:00:00.000Z')
+    })
+  };
   prismaStub.$transaction ??= async (callback) => callback(prismaStub);
 
   stubModule(dbPath, prismaStub);
@@ -624,6 +634,46 @@ test('food route: POST / creates a manual log after validating inputs', async ()
   assert.equal(receivedData.name, 'Apple');
   assert.equal(receivedData.calories, 12);
   assert.equal(receivedData.meal_period, 'BREAKFAST');
+});
+
+test('food route: POST / rejects writes when the canonical day is paused', async () => {
+  let createCalled = false;
+  const prismaStub = {
+    foodLogDay: {
+      findUnique: async ({ where }) => ({
+        id: 8,
+        local_date: where.user_id_local_date.local_date,
+        status: 'PAUSED',
+        origin: 'PAUSE',
+        completed_at: null,
+        updated_at: new Date('2025-01-01T12:00:00.000Z')
+      })
+    },
+    foodLog: {
+      create: async () => {
+        createCalled = true;
+        throw new Error('Paused day must not write');
+      }
+    }
+  };
+  const router = loadFoodRouter({
+    prismaStub,
+    foodDataStub: { getFoodDataProvider: () => ({}) }
+  });
+  const handler = getRouteHandler(router, 'post', '/');
+  const req = {
+    user: { id: 7, timezone: 'UTC' },
+    body: { meal_period: 'BREAKFAST', name: 'Apple', calories: 12, date: '2025-01-01' }
+  };
+  const res = createRes();
+
+  await handler(req, res);
+
+  assert.equal(res.statusCode, 409);
+  assert.equal(res.body.code, 'FOOD_DAY_NOT_OPEN');
+  assert.equal(res.body.retryable, false);
+  assert.equal(res.body.food_day.status, 'PAUSED');
+  assert.equal(createCalled, false);
 });
 
 test('food route: POST / stores external serving snapshots for search-backed logs', async () => {

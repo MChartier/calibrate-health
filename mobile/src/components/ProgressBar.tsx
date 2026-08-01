@@ -1,26 +1,26 @@
 import React from 'react';
 import { StyleSheet, View, type ViewProps } from 'react-native';
-import { colors, radius } from '../theme';
+import { radius, useAppTheme } from '../theme';
 
 type ProgressBarProps = ViewProps & {
     value: number;
     tone?: 'primary' | 'warning' | 'danger';
 };
 
-const toneColors = {
-    primary: colors.primary,
-    warning: colors.warning,
-    danger: colors.danger
-};
-
 /**
  * Stable-width progress indicator for calorie and goal summaries.
  */
 export const ProgressBar: React.FC<ProgressBarProps> = ({ value, tone = 'primary', style, ...props }) => {
+    const { colors } = useAppTheme();
     const clampedValue = Math.max(0, Math.min(1, value));
+    const toneColors = {
+        primary: colors.primary,
+        warning: colors.warning,
+        danger: colors.danger
+    };
 
     return (
-        <View {...props} style={[styles.track, style]}>
+        <View {...props} style={[styles.track, { backgroundColor: colors.surfaceContainer, borderColor: colors.outlineVariant }, style]}>
             <View style={[styles.fill, { width: `${clampedValue * 100}%`, backgroundColor: toneColors[tone] }]} />
         </View>
     );
@@ -31,8 +31,6 @@ const styles = StyleSheet.create({
         height: 8,
         borderRadius: radius.pill,
         overflow: 'hidden',
-        backgroundColor: colors.surfaceAlt,
-        borderColor: colors.border,
         borderWidth: StyleSheet.hairlineWidth
     },
     fill: {

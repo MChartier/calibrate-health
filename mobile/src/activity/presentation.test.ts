@@ -19,17 +19,19 @@ const summary: ActivityDaySummary = {
 };
 
 describe('activity presentation', () => {
-    it('attributes known packages while preserving their provenance', () => {
-        expect(formatActivitySource('com.sec.android.app.shealth')).toBe(
-            'Samsung Health (com.sec.android.app.shealth)'
-        );
+    it('uses friendly source labels without exposing package identifiers', () => {
+        expect(formatActivitySource('com.sec.android.app.shealth')).toBe('Samsung Health');
+        expect(formatActivitySource('com.android.healthconnect.phone.abc123')).toBe('Health Connect');
+        expect(formatActivitySource('other.app')).toBe('Connected health app');
         expect(getActivitySourceLabels([
             { data_origin: 'other.app' },
             { data_origin: 'com.sec.android.app.shealth' },
-            { data_origin: 'other.app' }
+            { data_origin: 'com.android.healthconnect.phone.abc123' },
+            { data_origin: 'another.app' }
         ] as ActivityRecordEntry[])).toEqual([
-            'Samsung Health (com.sec.android.app.shealth)',
-            'other.app'
+            'Connected health app',
+            'Health Connect',
+            'Samsung Health'
         ]);
     });
 

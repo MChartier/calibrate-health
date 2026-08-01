@@ -31,7 +31,7 @@ export type UserClientPayload = {
 
 export type AccountExport = {
     format: 'calibrate-account-export';
-    version: 2;
+    version: 3;
     exported_at: string;
     account: {
         id: number;
@@ -90,8 +90,21 @@ export type AccountExport = {
     food_log_days: Array<{
         id: number;
         local_date: string;
+        status: FoodLogDayStatus;
+        origin: FoodLogDayOrigin;
         is_complete: boolean;
         completed_at: string | null;
+        created_at: string;
+        updated_at: string;
+    }>;
+    food_tracking_pauses: Array<{
+        id: number;
+        starts_on: string;
+        expected_resume_on: string | null;
+        resumed_on: string | null;
+        started_at: string;
+        resumed_at: string | null;
+        materialized_through: string;
         created_at: string;
         updated_at: string;
     }>;
@@ -267,6 +280,20 @@ export type WatchQuickAddDraft = {
     draft: FoodLogCreatePayload;
 };
 
+export type WatchFoodDaySnapshot = {
+    status: FoodLogDayStatus;
+    source: FoodLogDayOrigin | null;
+    is_representative: boolean;
+    is_complete: boolean;
+    completed_at: string | null;
+    revision: string | null;
+};
+
+export type WatchFoodDayMutation = Omit<WatchFoodDaySnapshot, 'revision'> & {
+    date: string;
+    revision: string;
+};
+
 export type WatchSnapshot = {
     server_time: string;
     timezone: string;
@@ -279,7 +306,7 @@ export type WatchSnapshot = {
         remaining: number | null;
         missing: string[];
     };
-    food_day: { is_complete: boolean; completed_at: string | null; revision: string | null };
+    food_day: WatchFoodDaySnapshot;
     weight: {
         today_grams: number | null;
         today_revision: string | null;
@@ -328,7 +355,7 @@ export type WatchMutationResponse =
     | { type: 'food.create'; food_log: WatchFoodLog }
     | { type: 'food.delete'; food_log_id: number; deleted: true }
     | { type: 'metric.upsert'; metric: { id: number; local_date: string; weight_grams: number; revision: string } }
-    | { type: 'food_day.set_complete'; food_day: FoodLogDay & { revision: string } };
+    | { type: 'food_day.set_complete'; food_day: WatchFoodDayMutation };
 
 export type ClientConfigResponse = {
     api_version: number;
@@ -567,27 +594,79 @@ export type FoodLogUpdatePayload = Partial<{
     servings_consumed: number | null;
 }>;
 
+export type FoodSearchNutrients = {
+    calories: number;
+    protein?: number;
+    fat?: number;
+    carbs?: number;
+};
+
+export type FoodSearchMeasure = {
+    label: string;
+    gramWeight?: number;
+    quantity?: number;
+    unit?: string;
+};
+
 export type FoodSearchResult = {
     id: string;
-    name: string;
-    brand?: string | null;
-    calories?: number | null;
-    source?: string;
-    barcode?: string | null;
-    servingSize?: string | null;
-    measures?: unknown[];
+    source: string;
+    description: string;
+    brand?: string;
+    barcode?: string;
+    locale?: string;
+    availableMeasures: FoodSearchMeasure[];
+    nutrientsPer100g?: FoodSearchNutrients;
+    nutrientsForRequest?: {
+        grams: number;
+        nutrients: FoodSearchNutrients;
+        note?: string;
+    };
 };
 
 export type FoodSearchResponse = {
     items: FoodSearchResult[];
     provider?: string;
+    supportsBarcodeLookup?: boolean;
     attribution?: string;
 };
 
+export type FoodLogDayStatus = 'OPEN' | 'COMPLETE' | 'INCOMPLETE' | 'PAUSED';
+export type FoodLogDayOrigin = 'USER' | 'PAUSE' | 'IMPORT';
+export type FoodLogDaySource =
+    | 'STORED'
+    | 'ACTIVE_PAUSE'
+    | 'INFERRED_EMPTY'
+    | 'DEFAULT'
+    | 'BEFORE_TRACKING_START';
+
 export type FoodLogDay = {
     date: string;
+    status: FoodLogDayStatus;
+    origin: FoodLogDayOrigin | null;
+    source: FoodLogDaySource;
+    is_representative: boolean;
     is_complete: boolean;
     completed_at: string | null;
+    updated_at?: string | null;
+};
+
+export type FoodLogDayRange = {
+    start_date: string;
+    end_date: string;
+    days: FoodLogDay[];
+};
+
+export type FoodTrackingPause = {
+    active: boolean;
+    id: number | null;
+    starts_on: string | null;
+    expected_resume_on: string | null;
+    resumed_on: string | null;
+    started_at: string | null;
+    resumed_at: string | null;
+    materialized_through: string | null;
+    resume_confirmation_due: boolean;
 };
 
 export type InAppNotification = {
@@ -733,6 +812,7 @@ export type UpdateMyFoodPayload = CreateMyFoodPayload | CreateRecipePayload;
 export type TrendMetricEntry = MetricEntry & {
     user_id: number;
     body_fat_percent: number | null;
+    trend_is_materialized?: boolean;
     trend_weight: number;
     trend_ci_lower: number;
     trend_ci_upper: number;
@@ -761,6 +841,8 @@ export type LoseItImportSummary = {
         invalid: number;
     };
     warnings: string[];
+    foodDayCompletionStatus?: 'unavailable';
+    foodDayCompletionMessage?: string;
 };
 
 export type SyncChange = {

@@ -189,18 +189,23 @@ class WorkManagerOutboxScheduler(context: Context) : OutboxScheduler {
 
     /** Avoids duplicate cold-start/onStart refreshes while still refreshing a surviving process. */
     fun scheduleForegroundRefresh() {
-        if (foregroundRefreshGate.tryAcquire(SystemClock.elapsedRealtime())) schedule()
+        if (foregroundRefreshGate.tryAcquire(SystemClock.elapsedRealtime())) {
+            enqueue(OutboxEnqueueMode.AUTHORITATIVE_REFRESH)
+        }
     }
 
-    override fun schedule() = enqueue()
+    /** A phone invalidation must not wait behind a stale WorkManager retry chain. */
+    fun scheduleAuthoritativeRefresh() = enqueue(OutboxEnqueueMode.AUTHORITATIVE_REFRESH)
 
-    override fun scheduleContinuation() = enqueue()
+    override fun schedule() = enqueue(OutboxEnqueueMode.ORDERED)
 
-    private fun enqueue() = synchronized(enqueueLock) {
+    override fun scheduleContinuation() = enqueue(OutboxEnqueueMode.ORDERED)
+
+    private fun enqueue(mode: OutboxEnqueueMode) = synchronized(enqueueLock) {
         val request = workRequest()
         workManager.enqueueUniqueWork(
             OutboxWorkPolicy.UNIQUE_WORK_NAME,
-            ExistingWorkPolicy.APPEND_OR_REPLACE,
+            existingWorkPolicy(mode),
             request
         )
         OutboxWorkPolicy.recordLatestWorkId(appContext, request.id)
@@ -225,6 +230,20 @@ class WorkManagerOutboxScheduler(context: Context) : OutboxScheduler {
         val enqueueLock = Any()
         val foregroundRefreshGate = ForegroundRefreshGate(minimumIntervalMs = 60_000L)
     }
+}
+
+internal enum class OutboxEnqueueMode {
+    ORDERED,
+    AUTHORITATIVE_REFRESH
+}
+
+/**
+ * Mutations and worker continuations preserve FIFO ordering. User-visible refresh events replace
+ * an old delayed chain; the new worker still drains the durable Room outbox before fetching.
+ */
+internal fun existingWorkPolicy(mode: OutboxEnqueueMode): ExistingWorkPolicy = when (mode) {
+    OutboxEnqueueMode.ORDERED -> ExistingWorkPolicy.APPEND_OR_REPLACE
+    OutboxEnqueueMode.AUTHORITATIVE_REFRESH -> ExistingWorkPolicy.REPLACE
 }
 
 internal class ForegroundRefreshGate(private val minimumIntervalMs: Long) {

@@ -2,12 +2,36 @@
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
-    android:viewportWidth="108"
-    android:viewportHeight="108">
-    <path
-        android:fillColor="#2E7D32"
-        android:pathData="M54,24A30,30 0,1 0,54 84A30,30 0,1 0,54 24M54,36A18,18 0,1 1,54 72A18,18 0,1 1,54 36" />
-    <path
-        android:fillColor="#F6F8F4"
-        android:pathData="M52,38H62V70H52Z" />
+    android:viewportWidth="512"
+    android:viewportHeight="512">
+    <!-- Adaptive launchers may crop everything outside the centered 66dp safe zone. -->
+    <group
+        android:pivotX="256"
+        android:pivotY="256"
+        android:scaleX="0.68"
+        android:scaleY="0.68">
+        <path
+            android:fillColor="@android:color/transparent"
+            android:pathData="M360,151A164,164 0,1 0,363 365"
+            android:strokeColor="#1F2937"
+            android:strokeWidth="57" />
+        <path
+            android:fillColor="@android:color/transparent"
+            android:pathData="M256,93L256,141"
+            android:strokeColor="#1F2937"
+            android:strokeLineCap="round"
+            android:strokeWidth="36" />
+        <path
+            android:fillColor="@android:color/transparent"
+            android:pathData="M239,291L351,179"
+            android:strokeColor="#8DDD2B"
+            android:strokeLineCap="round"
+            android:strokeWidth="43" />
+        <path
+            android:fillColor="#2E7D32"
+            android:pathData="M239,247A44,44 0,1 0,239 335A44,44 0,1 0,239 247" />
+        <path
+            android:fillColor="#F6F8F4"
+            android:pathData="M239,273A18,18 0,1 0,239 309A18,18 0,1 0,239 273" />
+    </group>
 </vector>

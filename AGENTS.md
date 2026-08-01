@@ -38,23 +38,20 @@ Calorie math:
 
 Non-goals for MVP:
 
-- No native mobile app.
-- No automatic activity import.
+- No activity-driven automatic calorie-target adjustment.
 - No smart deficit adjustment to hit a target date.
 - No advanced body composition modeling beyond optional stored fields.
 
 ## Architecture Map
 
-- Frontend: React + TypeScript + Vite, MUI, React Query.
+- Client: Expo Router + React Native + React Native Web, TypeScript, React Query.
 - Backend: Node.js + TypeScript + Express.
 - Persistence: Postgres through Prisma under `backend/prisma/`.
 - Shared domain constants live under `shared/`.
-- Localization strings live in `frontend/src/i18n/resources.ts`; supported
-  language lists live in `frontend/src/i18n/languages.ts` and
-  `backend/src/utils/language.ts`.
+- Browser and native routes live under `mobile/app/`; shared client code lives
+  under `mobile/src/`.
+- Supported server-side language values live in `backend/src/utils/language.ts`.
 - Food providers live in `backend/src/services/foodData/`.
-- The dev-only dashboard at `/dev` compares food providers and supports barcode
-  scanning tests.
 - Self-hosting uses `deploy/` and expects an external Postgres unless a deployer
   explicitly adds one.
 
@@ -74,49 +71,49 @@ Non-goals for MVP:
   verify the repo-owned setup path before changing app code.
 - Keep secrets out of the database. Provider API keys and client IDs are sourced
   from environment variables unless the product direction changes explicitly.
-- For commands that need to run inside the devcontainer from the host, prefer the
-  worktree-aware helpers:
-  - `npm run devcontainer:up -- <branch|path>`
-  - `npm run devcontainer:exec -- -- <command...>`
-  - `npm run devcontainer:shell -- <branch|path>`
-  - `npm run codex:<action>` when using Codex app actions.
+- Keep Codex and validation commands on the host. Use the repo-owned Compose
+  launcher for the live application stack; do not add container-shell wrappers
+  for ordinary tests, linting, builds, or Prisma work.
 
 ## Local Development
 
 Primary workflows:
 
 - Codex setup: `node .codex/local-environment.setup.mjs`
-- Codex dev action: `npm run codex:dev`
-- Codex setup action: `npm run codex:setup-app`
-- Codex shell: `npm run codex:shell`
+- Host dependency setup: `npm run setup`
+- Prepare the worktree stack: `npm run dev:setup`
 - Local dev server: `npm run dev`
-- Local dev with seeded test-user auto-login: `npm run dev:test`
+- Native Expo dev-client bundler: `npm run dev:expo` (with the Compose stack
+  running separately)
+- Local dev without seeded-user auto-login: `npm run dev:manual-auth`
+- Inspect the current stack: `npm run dev:status`
 - Reset test-user onboarding: `npm run dev:reset-test-user-onboarding`
-- Storybook: `npm run dev:storybook` or `npm run codex:storybook`
 - Local CI equivalent: `npm run ci:local`
 
-Devcontainer notes:
+Worktree stack notes:
 
-- The devcontainer intentionally starts quickly. Run setup when dependencies,
-  Prisma generation, migrations, or seed data are needed.
-- `scripts/dev-env.mjs` is the supported dependency/setup orchestrator.
-  `setup:deps` repairs dependency volumes; `setup` installs dependencies,
-  generates Prisma, waits for DB readiness, migrates, and seeds.
-- Dependency caches are lockfile-and-runtime based. Keep cache-hit/cache-miss
-  output explicit when editing setup scripts.
-- A healthy backend dependency volume contains `backend/node_modules/.bin/prisma`,
-  `backend/node_modules/.bin/ts-node`, and
-  `backend/node_modules/.calibrate-install-complete.json`.
-- If Prisma disappears inside the container, rerun the repo setup/deps path
-  before treating it as an app regression.
+- `scripts/dev-stack.mjs` owns Docker/Compose lifecycle, stable ports, and the
+  current worktree database. It always targets the current checkout.
+- `scripts/dev-env.mjs` owns host dependency setup, Prisma commands, and local
+  CI. Host dependency caches are lockfile-and-runtime based; keep cache-hit and
+  cache-miss output explicit when editing setup.
+- `compose.dev.yaml` runs separate `web`, `backend`, and `postgres` services.
+  Compose Watch syncs source changes; package-lock and Prisma changes rebuild
+  the affected image.
+- Codex setup installs host dependencies and allocates `.dev.env`, but it does
+  not start containers. This prevents idle stacks in code-only worktrees.
+- `npm run dev:down` retains the current database volume. `npm run dev:reset`
+  resets only that worktree's database.
 - Repo root `.env` is gitignored. Do not assume it propagates to new worktrees
   unless setup copies it or the user sets machine/user environment variables.
 
 Environment conventions:
 
-- Devcontainer and docker-compose read repo root `.env`.
-- Local backend runs outside the devcontainer use `backend/.env`.
-- `.devcontainer/.env` is generated and gitignored.
+- Root `.env` stores user-provided application credentials.
+- `.dev.env` is generated, gitignored, worktree-specific, and contains only the
+  allowlisted application configuration plus local ports/secrets.
+- Direct backend package runs may use `backend/.env`; standard root database
+  commands inject the current worktree database automatically.
 - The seeded account is `test@calibratehealth.app`.
 - `AUTO_LOGIN_TEST_USER=true` enables local auto-login for that seeded account.
 
@@ -127,22 +124,25 @@ Choose validation proportional to the change, and report what ran.
 Common checks:
 
 - Full local CI: `npm run ci:local`
-- Frontend lint: `npm --prefix frontend run lint`
-- Frontend build: `npm --prefix frontend run build`
-- Frontend tests: `npm --prefix frontend test`
+- All TypeScript surfaces: `npm run lint`
+- Backend type-check: `npm --prefix backend run typecheck`
+- Shared API client type-check: `npm --prefix packages/api-client run typecheck`
+- Expo client type-check: `npm --prefix mobile run typecheck`
+- Expo web build: `npm run build:expo-web`
+- Expo client tests: `npm --prefix mobile test`
+- Expo web release checks: `npm run test:expo-web:release`
 - Backend tests: `npm --prefix backend test`
 - Backend build: `npm --prefix backend run build`
-- Storybook build: `npm --prefix frontend run storybook:build`
-- Audit from frontend dependency context: `npm --prefix frontend audit`
+- Audit from the root/mobile dependency context: `npm audit`
 - Diff hygiene: `git diff --check`
 
 Windows-specific note:
 
-- Existing issue validation may name `npm.cmd --prefix frontend run lint` and
-  `npm.cmd --prefix frontend run build`. Use those exact commands when the issue
-  or reviewer calls them out.
+- Use `npm.cmd --prefix mobile run typecheck`, `npm.cmd --prefix mobile test --
+  --runInBand`, and `npm.cmd --prefix mobile run build:web` when an issue or
+  reviewer calls for the Windows-host Expo gates.
 
-Frontend dependency/audit fixes:
+Client dependency/audit fixes:
 
 - Keep remediation narrow. Prefer lockfile-only or targeted override fixes when
   they address the advisory.
@@ -159,9 +159,8 @@ Frontend dependency/audit fixes:
 - Food logs are immutable snapshots. My Foods and recipe edits must not
   retroactively mutate existing `FoodLog` entries.
 - Preserve external provider and serving snapshot fields when editing food logs.
-- Keep FatSecret attribution intact via
-  `frontend/src/components/FatSecretAttributionLink.tsx` whenever FatSecret is
-  active.
+- Keep FatSecret attribution intact in client search/barcode results. The Expo
+  barcode path is implemented through `mobile/src/barcode/workflow.ts`.
 - Profile photos are stored inline as small processed avatars; respect
   `backend/src/utils/profileImage.ts` caps and parsing rules.
 - Prisma migrations use ordinal folder names such as `0001_init`. If
@@ -173,47 +172,46 @@ Food provider behavior:
 - `FOOD_DATA_PROVIDER` selects the preferred provider: `fatsecret`, `usda`, or
   `openfoodfacts`.
 - FatSecret requires `FATSECRET_CLIENT_ID` and `FATSECRET_CLIENT_SECRET`.
-- USDA requires `USDA_API_KEY`, though devcontainers may use USDA `DEMO_KEY` for
+- USDA requires `USDA_API_KEY`, though local development may use USDA `DEMO_KEY` for
   local fallback when no provider credentials exist.
 - Missing credentials should not crash normal dev search. Detect available
   providers and use deterministic fallback order with the configured/default
   provider first.
 - Keep provider identity stable across paginated text-search results. Do not
-  switch providers on later empty pages if the frontend is appending results
+  switch providers on later empty pages if the client is appending results
   under first-page provider metadata.
 - Do not merge provider results unless explicitly requested; the validated shape
   is sequential fallback.
 
-## Frontend Practices
+## Expo Client Practices
 
-- Keep primary SPA route navigation fast. Do not lazy-load main dashboard/app
-  routes just to reduce bundle warnings unless the user explicitly accepts the
-  first-click latency tradeoff.
-- For bundle-warning work, prefer config/tooling fixes, explicit warning limits,
-  preloadable chunks, intent-based prefetch, or selective splitting of uncommon
-  features.
+- Keep browser and native behavior in the shared Expo source tree. Use matching
+  `.web` and `.native` modules or the contracts under `mobile/src/platform/`
+  when behavior must differ by runtime.
+- Keep primary Expo Router navigation fast. Treat route splitting and deferred
+  bundles as release behavior that requires browser and device validation.
 - Preserve the app-like PWA experience. PWA toasts should be actionable: offline,
   back-online, update-ready, and update-failed are appropriate; lifecycle-only
   "ready for offline launch" messaging is not.
 - Runtime PWA state should use React-safe external-store patterns such as
   `useSyncExternalStore` rather than setting component state from service-worker
   effects.
-- Installed-app polish belongs in the app shell. `Layout.tsx` owns top/bottom
-  navigation, window-controls-overlay spacing, account-menu entry points, and
-  global PWA status UI.
+- Installed-app polish belongs in the Expo app shell. `mobile/app/_layout.tsx`,
+  `mobile/app/_layout.web.tsx`, and `mobile/app/(tabs)/_layout.tsx` own global
+  providers, browser shell behavior, and tab navigation.
 - Keep mobile navigation focused. Do not reintroduce redundant profile/"More"
   bottom-nav entry points when top app-bar/account-menu access is sufficient.
 - For public/auth/onboarding/account surfaces, keep one cohesive layout language
   across adjacent pages instead of polishing one page in isolation.
-- Reuse `frontend/src/components/auth/AuthPageFrame.tsx` for login/register
-  shell work.
-- Use `AppCard` and existing page/card primitives where they fit. If card hover
-  or click treatment feels inconsistent, compare sibling components before
-  making one-off changes.
-- Keep `frontend/src/ui/` focused on generic primitives; put feature-specific
-  components under `frontend/src/components/` or a feature folder.
-- Visible copy changes require synchronized keys across all supported languages
-  in `frontend/src/i18n/resources.ts`.
+- Reuse the auth primitives under `mobile/src/components/auth/` for
+  login/register shell work.
+- Use `mobile/src/components/AppCard.tsx` and existing screen/card primitives
+  where they fit. If card hover or click treatment feels inconsistent, compare
+  sibling components before making one-off changes.
+- Keep generic primitives under `mobile/src/components/`; put feature-specific
+  behavior in the corresponding `mobile/src/` feature folder.
+- Keep public privacy and account-deletion copy centralized in
+  `mobile/src/legal/publicLegalContent.ts`.
 - Prefer ASCII punctuation in UI strings (`|`, `-`, `...`) over bullets,
   ellipses, or curly punctuation.
 

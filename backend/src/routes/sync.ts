@@ -1,16 +1,12 @@
 import express from 'express';
 import prisma from '../config/database';
+import { getAuthenticatedUser, requireAuthenticatedUser } from '../middleware/authenticatedUser';
 
 const router = express.Router();
 const DEFAULT_PAGE_SIZE = 200;
 const MAX_PAGE_SIZE = 500;
 
-const isAuthenticated = (req: express.Request, res: express.Response, next: express.NextFunction) => {
-  if (req.isAuthenticated()) return next();
-  return res.status(401).json({ message: 'Not authenticated' });
-};
-
-router.use(isAuthenticated);
+router.use(requireAuthenticatedUser);
 
 function parseCursor(value: unknown): bigint | null {
   if (value === undefined) return 0n;
@@ -32,7 +28,7 @@ function parseLimit(value: unknown): number | null {
 
 /** Return an ordered, resumable change page with JSON-safe string cursors. */
 router.get('/changes', async (req, res) => {
-  const user = req.user as { id: number };
+  const user = getAuthenticatedUser(req);
   const after = parseCursor(req.query.after);
   const limit = parseLimit(req.query.limit);
   if (after === null || limit === null) {

@@ -110,6 +110,17 @@ export function getConfiguredServerUrl(value = process.env.EXPO_PUBLIC_CALIBRATE
     return normalizeServerUrl(value);
 }
 
+/** An explicit development target follows the active checkout instead of stale persisted server state. */
+export function resolveInitialServerUrl(
+    storedServerUrl: string | null,
+    configuredServerUrl: string | null,
+    fallbackServerUrl: string,
+    isDevelopment: boolean
+): string {
+    if (isDevelopment && configuredServerUrl) return configuredServerUrl;
+    return storedServerUrl ?? fallbackServerUrl;
+}
+
 /** Keep the Expo dev server and local API on separate ports while preserving same-origin web exports. */
 export function resolveDefaultWebServerUrl(
     location: Pick<URL, 'hostname' | 'origin' | 'protocol'>,
@@ -122,15 +133,27 @@ export function resolveDefaultWebServerUrl(
     return backendUrl.origin;
 }
 
+/** Production web sessions are bound to the origin that served the app. */
+export function resolveBrowserServerUrl(
+    location: Pick<URL, 'hostname' | 'origin' | 'protocol'> | null,
+    configuredServerUrl: string | null,
+    isDevelopment: boolean
+): string {
+    if (isDevelopment && configuredServerUrl) return configuredServerUrl;
+    if (location) return resolveDefaultWebServerUrl(location, isDevelopment);
+    return configuredServerUrl ?? HOSTED_SERVER_URL;
+}
+
 /** Default to an explicit env value, hosted production, or Android emulator loopback in development. */
 export function getDefaultServerUrl(): string {
     const configuredServerUrl = getConfiguredServerUrl();
-    if (configuredServerUrl) return configuredServerUrl;
     // Production web exports use their serving origin for HttpOnly cookie sessions.
-    // Local Expo development targets the backend's stable port instead of Metro.
-    if (Platform.OS === 'web' && typeof window !== 'undefined' && window.location.origin) {
-        return resolveDefaultWebServerUrl(window.location, __DEV__);
+    // Local Expo development may target a separately configured backend port.
+    if (Platform.OS === 'web') {
+        const location = typeof window !== 'undefined' && window.location.origin ? window.location : null;
+        return resolveBrowserServerUrl(location, configuredServerUrl, __DEV__);
     }
+    if (configuredServerUrl) return configuredServerUrl;
     if (__DEV__ && Platform.OS === 'android') return ANDROID_EMULATOR_SERVER_URL;
     return HOSTED_SERVER_URL;
 }

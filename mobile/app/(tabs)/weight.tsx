@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { router, useLocalSearchParams } from 'expo-router';
 import { DateNavigation } from '../../src/components/DateNavigation';
-import { Screen } from '../../src/components/Screen';
+import { TabScreen } from '../../src/components/TabScreen';
 import { WeightEntrySheet } from '../../src/components/WeightEntrySheet';
 import { useLogDateNavigation } from '../../src/hooks/useLogDateNavigation';
 
@@ -16,7 +16,7 @@ export default function WeightScreen() {
     }
 
     return (
-        <Screen reserveBottomTabs>
+        <TabScreen>
             <DateNavigation navigation={dateNavigation} />
 
             <WeightEntrySheet
@@ -24,6 +24,6 @@ export default function WeightScreen() {
                 date={dateNavigation.selectedDate}
                 onClose={closeSheet}
             />
-        </Screen>
+        </TabScreen>
     );
 }

@@ -84,7 +84,7 @@ export function runWearEmulatorSmoke(environment = process.env) {
   if (!launch.includes('Status: ok')) throw new Error(`Wear activity failed to launch:\n${launch}`);
 
   const home = dumpUi(adb, serial);
-  requireText(home, 'Calories today');
+  requireText(home, 'calibrate');
   requireText(home, "Pair with Calibrate on your phone to see today's summary.");
   const connection = requireText(home, 'Connection');
   requireText(home, 'Phone setup required');

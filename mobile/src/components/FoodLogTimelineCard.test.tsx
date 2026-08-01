@@ -1,9 +1,8 @@
-import React from 'react';
 import { render } from '@testing-library/react-native';
 import type { FoodLogEntry } from '@calibrate/api-client';
 import { FoodLogTimelineCard } from './FoodLogTimelineCard';
 
-jest.mock('@expo/vector-icons', () => ({ Ionicons: () => null }));
+jest.mock('@expo/vector-icons/Ionicons', () => () => null);
 
 const MORNING_SNACK_ENTRY: FoodLogEntry = {
     id: 1,
@@ -13,7 +12,7 @@ const MORNING_SNACK_ENTRY: FoodLogEntry = {
 };
 
 describe('FoodLogTimelineCard', () => {
-    it('uses the persistent FAB as the only add-food entry point', () => {
+    it('leaves the detailed page add-food entry point to its FAB', () => {
         const { queryByLabelText, getByLabelText } = render(
             <FoodLogTimelineCard
                 entries={[MORNING_SNACK_ENTRY]}

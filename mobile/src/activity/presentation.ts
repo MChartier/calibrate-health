@@ -10,17 +10,21 @@ const KNOWN_ACTIVITY_SOURCES: Record<string, string> = {
     android: 'Android'
 };
 
+const HEALTH_CONNECT_PACKAGE_PATTERN = /(?:^|\.)healthconnect(?:\.|$)/i;
+
 export function formatActivitySource(packageName: string): string {
     const normalized = packageName.trim();
     if (!normalized) return 'Health Connect';
     const friendly = KNOWN_ACTIVITY_SOURCES[normalized];
-    return friendly ? `${friendly} (${normalized})` : normalized;
+    if (friendly) return friendly;
+    if (HEALTH_CONNECT_PACKAGE_PATTERN.test(normalized)) return 'Health Connect';
+    return 'Connected health app';
 }
 
 export function getActivitySourceLabels(records: ActivityRecordEntry[]): string[] {
-    const packages = new Set(records.map((record) => record.data_origin.trim()).filter(Boolean));
-    if (packages.size === 0) return ['Health Connect'];
-    return Array.from(packages).sort().map(formatActivitySource);
+    const labels = new Set(records.map((record) => formatActivitySource(record.data_origin)));
+    if (labels.size === 0) return ['Health Connect'];
+    return Array.from(labels).sort();
 }
 
 export function isActivitySummaryEmpty(summary: ActivityDaySummary | null | undefined): boolean {

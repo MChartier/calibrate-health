@@ -63,19 +63,22 @@ npm.cmd run release:check
 npm.cmd run test:release
 ```
 
-These checks parse configuration only. They do not invoke Gradle, Expo, Docker, or the full CI suite.
+These checks parse release configuration, dependency policy, workflow contracts, and retained risk-evidence
+references. They do not invoke Gradle, Expo, Docker, or the full CI suite.
 
 The `Publish Manifest Release` workflow does not calculate or mutate versions. Every merge to `master` validates the
 exact stable `server.version` declared in `shared/release.json`. If that version is newer than the latest stable tag,
-the workflow runs the container release gates, creates the tag, and dispatches the current GHCR-only image workflow.
+the workflow runs the container release gates, creates the tag, and directly calls the current GHCR-only image
+workflow as a dependent job.
 If the version is already published, it exits without building an image. Regressions and prerelease versions fail
 closed. A manual dispatch on `master` is retained only as a recovery mechanism; ordinary releases require no step
 beyond merging the reviewed version bump.
 
-The image workflow receives the immutable tag as an explicit input while its workflow definition is loaded from
-`master`. This prevents rebuilding an older tag from executing historical AWS/ECS deployment jobs. It publishes only
-the version and source-SHA tags to GHCR; deployment to a self-host remains an operator-controlled Docker Compose
-operation.
+The reusable image workflow receives the immutable tag as an explicit input while its workflow definition is loaded
+from `master`. This prevents rebuilding an older tag from executing historical AWS/ECS deployment jobs. Validated
+manifest releases publish version, source-SHA, and moving `latest` tags to GHCR. Manual recovery builds leave `latest`
+unchanged by default and reject attempts to move it to anything other than the highest stable release. Deployment to
+a self-host remains an operator-controlled Docker Compose operation.
 
 Container publication runs `release:check:container`, including the encrypted backup/restore drill, strict dependency
 policy, canonical version checks, and risk-contract validation. It intentionally does not claim physical Android/Wear

@@ -196,6 +196,192 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/ApiError' }
+  /api/v1/food-days:
+    get:
+      operationId: getFoodLogDay
+      parameters:
+        - in: query
+          name: date
+          required: true
+          schema: { type: string, format: date }
+      responses:
+        '200':
+          description: Effective resolution for one account-local food day.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/FoodLogDay' }
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    patch:
+      operationId: setFoodLogDayStatus
+      parameters:
+        - in: header
+          name: X-Client-Operation-Id
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - type: object
+                  required: [date, status]
+                  properties:
+                    date: { type: string, format: date }
+                    status: { type: string, enum: [OPEN, COMPLETE, INCOMPLETE] }
+                - type: object
+                  description: Legacy completion mutation retained for queued clients.
+                  required: [date, is_complete]
+                  properties:
+                    date: { type: string, format: date }
+                    is_complete: { type: boolean }
+      responses:
+        '200':
+          description: Stored day resolution.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/FoodLogDay' }
+  /api/v1/food-days/range:
+    get:
+      operationId: getFoodLogDayRange
+      parameters:
+        - in: query
+          name: start
+          required: true
+          schema: { type: string, format: date }
+        - in: query
+          name: end
+          required: true
+          schema: { type: string, format: date }
+      responses:
+        '200':
+          description: Inclusive bounded effective day resolutions.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [start_date, end_date, days]
+                properties:
+                  start_date: { type: string, format: date }
+                  end_date: { type: string, format: date }
+                  days:
+                    type: array
+                    maxItems: 366
+                    items: { $ref: '#/components/schemas/FoodLogDay' }
+  /api/v1/food-days/pause:
+    get:
+      operationId: getFoodTrackingPause
+      responses:
+        '200':
+          description: Current pause state and foreground confirmation status.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [pause]
+                properties:
+                  pause: { $ref: '#/components/schemas/FoodTrackingPause' }
+    post:
+      operationId: startFoodTrackingPause
+      parameters:
+        - in: header
+          name: X-Client-Operation-Id
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [starts_on, expected_resume_on]
+              properties:
+                starts_on: { type: string, format: date }
+                expected_resume_on: { type: [string, 'null'], format: date }
+      responses:
+        '201':
+          description: Tracking pause started.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [pause]
+                properties:
+                  pause: { $ref: '#/components/schemas/FoodTrackingPause' }
+    patch:
+      operationId: updateFoodTrackingPause
+      parameters:
+        - in: header
+          name: X-Client-Operation-Id
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [expected_resume_on]
+              properties:
+                expected_resume_on: { type: [string, 'null'], format: date }
+      responses:
+        '200':
+          description: Expected resume date updated without resuming.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [pause]
+                properties:
+                  pause: { $ref: '#/components/schemas/FoodTrackingPause' }
+  /api/v1/food-days/resume:
+    post:
+      operationId: resumeFoodTracking
+      parameters:
+        - in: header
+          name: X-Client-Operation-Id
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [resumed_on]
+              properties:
+                resumed_on: { type: string, format: date }
+      responses:
+        '200':
+          description: Pause closed and resume day reopened.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [pause, day]
+                properties:
+                  pause: { $ref: '#/components/schemas/FoodTrackingPause' }
+                  day: { $ref: '#/components/schemas/FoodLogDay' }
+  /api/v1/user/tracking-history:
+    get:
+      operationId: getTrackingHistory
+      responses:
+        '200':
+          description: Earliest account or imported tracking date.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [tracking_start_date]
+                properties:
+                  tracking_start_date: { type: string, format: date }
+        '404':
+          description: Account no longer exists.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiError' }
+        '500':
+          description: Tracking history lookup failed.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiError' }
   /api/v1/watch/mutations:
     post:
       operationId: executeWatchMutation
@@ -441,14 +627,14 @@ components:
     AccountExport:
       type: object
       additionalProperties: false
-      required: [format, version, exported_at, account, goals, body_metrics, food_logs, food_log_days, my_foods, in_app_notifications, activity_records, activity_day_summaries]
+      required: [format, version, exported_at, account, goals, body_metrics, food_logs, food_log_days, food_tracking_pauses, my_foods, in_app_notifications, activity_records, activity_day_summaries]
       properties:
         format:
           type: string
           const: calibrate-account-export
         version:
           type: integer
-          const: 2
+          const: 3
         exported_at:
           type: string
           format: date-time
@@ -470,6 +656,10 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/AccountExportFoodLogDay'
+        food_tracking_pauses:
+          type: array
+          items:
+            $ref: '#/components/schemas/AccountExportFoodTrackingPause'
         my_foods:
           type: array
           items:
@@ -555,14 +745,56 @@ components:
         created_at: { type: string, format: date-time }
     AccountExportFoodLogDay:
       type: object
-      required: [id, local_date, is_complete, completed_at, created_at, updated_at]
+      required: [id, local_date, status, origin, is_complete, completed_at, created_at, updated_at]
       properties:
         id: { type: integer }
         local_date: { type: string, format: date }
+        status: { type: string, enum: [OPEN, COMPLETE, INCOMPLETE, PAUSED] }
+        origin: { type: string, enum: [USER, PAUSE, IMPORT] }
         is_complete: { type: boolean }
         completed_at: { type: [string, 'null'], format: date-time }
         created_at: { type: string, format: date-time }
         updated_at: { type: string, format: date-time }
+    AccountExportFoodTrackingPause:
+      type: object
+      required: [id, starts_on, expected_resume_on, resumed_on, started_at, resumed_at, materialized_through, created_at, updated_at]
+      properties:
+        id: { type: integer }
+        starts_on: { type: string, format: date }
+        expected_resume_on: { type: [string, 'null'], format: date }
+        resumed_on: { type: [string, 'null'], format: date }
+        started_at: { type: string, format: date-time }
+        resumed_at: { type: [string, 'null'], format: date-time }
+        materialized_through: { type: string, format: date }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+    FoodLogDay:
+      type: object
+      additionalProperties: false
+      required: [date, status, origin, source, is_representative, is_complete, completed_at, updated_at]
+      properties:
+        date: { type: string, format: date }
+        status: { type: string, enum: [OPEN, COMPLETE, INCOMPLETE, PAUSED] }
+        origin: { type: [string, 'null'], enum: [USER, PAUSE, IMPORT, null] }
+        source: { type: string, enum: [STORED, ACTIVE_PAUSE, INFERRED_EMPTY, DEFAULT, BEFORE_TRACKING_START] }
+        is_representative: { type: boolean }
+        is_complete: { type: boolean }
+        completed_at: { type: [string, 'null'], format: date-time }
+        updated_at: { type: [string, 'null'], format: date-time }
+    FoodTrackingPause:
+      type: object
+      additionalProperties: false
+      required: [active, id, starts_on, expected_resume_on, resumed_on, started_at, resumed_at, materialized_through, resume_confirmation_due]
+      properties:
+        active: { type: boolean }
+        id: { type: [integer, 'null'] }
+        starts_on: { type: [string, 'null'], format: date }
+        expected_resume_on: { type: [string, 'null'], format: date }
+        resumed_on: { type: [string, 'null'], format: date }
+        started_at: { type: [string, 'null'], format: date-time }
+        resumed_at: { type: [string, 'null'], format: date-time }
+        materialized_through: { type: [string, 'null'], format: date }
+        resume_confirmation_due: { type: boolean }
     AccountExportRecipeIngredient:
       type: object
       required: [id, sort_order, source, name_snapshot, calories_total_snapshot, source_my_food_id, quantity_servings, serving_size_quantity_snapshot, serving_unit_label_snapshot, calories_per_serving_snapshot, external_source, external_id, brand_snapshot, locale_snapshot, barcode_snapshot, measure_label_snapshot, grams_per_measure_snapshot, measure_quantity_snapshot, grams_total_snapshot, created_at]
@@ -1203,8 +1435,11 @@ components:
             missing: { type: array, items: { type: string } }
         food_day:
           type: object
-          required: [is_complete, completed_at, revision]
+          required: [status, source, is_representative, is_complete, completed_at, revision]
           properties:
+            status: { type: string, enum: [OPEN, COMPLETE, INCOMPLETE, PAUSED] }
+            source: { type: [string, 'null'], enum: [USER, PAUSE, IMPORT, null] }
+            is_representative: { type: boolean }
             is_complete: { type: boolean }
             completed_at: { type: [string, 'null'], format: date-time }
             revision: { type: [string, 'null'] }
@@ -1366,9 +1601,12 @@ components:
             food_day:
               type: object
               additionalProperties: false
-              required: [date, is_complete, completed_at, revision]
+              required: [date, status, source, is_representative, is_complete, completed_at, revision]
               properties:
                 date: { type: string, format: date }
+                status: { type: string, enum: [OPEN, COMPLETE, INCOMPLETE, PAUSED] }
+                source: { type: [string, 'null'], enum: [USER, PAUSE, IMPORT, null] }
+                is_representative: { type: boolean }
                 is_complete: { type: boolean }
                 completed_at: { type: [string, 'null'], format: date-time }
                 revision: { type: string }

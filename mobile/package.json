@@ -1,6 +1,6 @@
 {
   "name": "mobile",
-  "version": "0.1.0",
+  "version": "0.2.4",
   "private": true,
   "main": "index.js",
   "engines": {
@@ -9,9 +9,12 @@
   "scripts": {
     "dev": "expo start --dev-client",
     "start": "expo start",
+    "preweb": "npm --prefix ../shared run build",
+    "web": "expo start --web",
     "android": "expo run:android",
     "ios": "expo run:ios",
     "prebuild:android": "expo prebuild --platform android --no-install",
+    "prebuild:web": "npm --prefix ../shared run build",
     "build:web": "node ../scripts/expo-web-build.mjs",
     "preview:web": "node ../scripts/expo-web-preview.mjs",
     "typecheck": "tsc --noEmit",
@@ -47,6 +50,7 @@
     "expo-sqlite": "~57.0.1",
     "expo-status-bar": "~57.0.1",
     "expo-system-ui": "~57.0.1",
+    "expo-updates": "~57.0.8",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "react-native": "0.86.0",
@@ -66,6 +70,7 @@
     "@testing-library/react-native": "^13.3.3",
     "@types/jest": "^29.5.14",
     "@types/react": "~19.2.10",
+    "@types/react-dom": "~19.2.3",
     "babel-preset-expo": "~57.0.0",
     "fake-indexeddb": "^6.2.5",
     "jest": "^29.7.0",

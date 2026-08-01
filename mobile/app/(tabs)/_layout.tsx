@@ -1,5 +1,6 @@
 import React from 'react';
 import {
+    Image,
     Platform,
     Pressable,
     StyleSheet,
@@ -9,13 +10,16 @@ import {
     type StyleProp,
     type ViewStyle
 } from 'react-native';
-import { Redirect, router, Tabs } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import { useQuery } from '@tanstack/react-query';
+import { Redirect, router, Tabs, usePathname, type Href } from 'expo-router';
+import Ionicons from '@expo/vector-icons/Ionicons';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import type { InAppNotification } from '@calibrate/api-client';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppText } from '../../src/components/AppText';
 import { CalibrateLogo } from '../../src/components/CalibrateLogo';
 import { LoadingState } from '../../src/components/LoadingState';
+import { NotificationsDrawer } from '../../src/components/NotificationsDrawer';
+import { ResumeTrackingPrompt, useFoodDayStatus } from '../../src/components/FoodTrackingStatus';
 import { useAuth } from '../../src/auth/AuthContext';
 import { LogDateProvider } from '../../src/context/LogDateContext';
 import {
@@ -26,6 +30,8 @@ import {
 import { useLogDateNavigation } from '../../src/hooks/useLogDateNavigation';
 import { useOfflineOutbox } from '../../src/offline/provider';
 import { OUTBOX_MUTATION_STATES } from '../../src/offline/queuedMutation';
+import { resolveContextualFab } from '../../src/navigation/contextualFab';
+import { getNotificationAction } from '../../src/notifications/workflow';
 import { isProfileSetupComplete } from '../../src/utils/profileCompletion';
 import { radius, spacing, useAppTheme, type AppTheme, type AppThemeColors } from '../../src/theme';
 
@@ -92,14 +98,18 @@ const NavigationPressable: React.FC<NavigationPressableProps> = ({
 
 export default function TabsLayout() {
     const { api, user, isLoading } = useAuth();
+    const queryClient = useQueryClient();
     const theme = useAppTheme();
     const styles = React.useMemo(() => createStyles(theme.colors, theme.shadows), [theme]);
     const insets = useSafeAreaInsets();
     const { fontScale, width } = useWindowDimensions();
+    const pathname = usePathname();
     const usesNavigationRail = Platform.OS === 'web' && width >= DESKTOP_NAV_BREAKPOINT;
     const logDateNavigation = useLogDateNavigation();
+    const selectedFoodDayQuery = useFoodDayStatus(logDateNavigation.selectedDate, Boolean(user));
     const addFoodRequestSequence = React.useRef(0);
     const [addFoodRequest, setAddFoodRequest] = React.useState<AddFoodRequest | null>(null);
+    const [isNotificationDrawerOpen, setIsNotificationDrawerOpen] = React.useState(false);
     const { mutations: queuedMutations } = useOfflineOutbox();
     const hasFailedOfflineChanges = queuedMutations.some(
         (mutation) => mutation.state === OUTBOX_MUTATION_STATES.FAILED
@@ -113,6 +123,21 @@ export default function TabsLayout() {
         queryKey: ['mobile-in-app-notifications'],
         queryFn: () => api.getInAppNotifications(),
         enabled: Boolean(user)
+    });
+    const dismissNotification = useMutation({
+        mutationFn: (notification: InAppNotification) => api.dismissInAppNotification(notification.id),
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['mobile-in-app-notifications'] })
+    });
+    const openNotification = useMutation({
+        mutationFn: async (notification: InAppNotification) => {
+            await api.markInAppNotificationRead(notification.id);
+            return notification;
+        },
+        onSuccess: async (notification) => {
+            await queryClient.invalidateQueries({ queryKey: ['mobile-in-app-notifications'] });
+            setIsNotificationDrawerOpen(false);
+            router.push(getNotificationAction(notification.action_url, notification.local_date).href as Href);
+        }
     });
     const requestAddFood = React.useCallback((input: AddFoodRequestInput = {}) => {
         addFoodRequestSequence.current += 1;
@@ -150,6 +175,11 @@ export default function TabsLayout() {
         spacing.xl,
         (width - DESKTOP_NAV_RAIL_WIDTH - DESKTOP_CONTENT_MAX_WIDTH) / 2 + spacing.xl
     );
+    const fabKind = resolveContextualFab({
+        pathname,
+        foodDayStatus: selectedFoodDayQuery.data?.status,
+        foodDayStatusLoaded: selectedFoodDayQuery.isSuccess
+    });
 
     return (
         <LogDateProvider value={logDateNavigation}>
@@ -184,6 +214,8 @@ export default function TabsLayout() {
                                     unreadCount={notificationsQuery.data?.unread_count ?? 0}
                                     offlineChangeCount={queuedMutations.length}
                                     hasFailedOfflineChanges={hasFailedOfflineChanges}
+                                    profileImageUrl={user.profile_image_url}
+                                    onOpenNotifications={() => setIsNotificationDrawerOpen(true)}
                                     colors={theme.colors}
                                     styles={styles}
                                     desktop={usesNavigationRail}
@@ -210,26 +242,48 @@ export default function TabsLayout() {
                         <Tabs.Screen
                             name="settings"
                             options={{
+                                ...HIDDEN_TAB_OPTIONS,
                                 title: 'Account',
-                                headerTitle: 'Account',
-                                tabBarIcon: ({ color, size }) => <Ionicons name="person-circle-outline" color={color} size={size} />
+                                headerTitle: 'Account'
                             }}
                         />
                         <Tabs.Screen name="log" options={{ ...HIDDEN_TAB_OPTIONS, title: 'Add food' }} />
+                        <Tabs.Screen name="food-log" options={{ ...HIDDEN_TAB_OPTIONS, headerShown: false, title: 'Food log' }} />
                         <Tabs.Screen name="weight" options={{ ...HIDDEN_TAB_OPTIONS, title: 'Log weight' }} />
                         <Tabs.Screen name="goals" options={HIDDEN_TAB_OPTIONS} />
                     </Tabs>
-                    <QuickAddFab
-                        bottom={usesNavigationRail ? spacing.xxl : tabBarHeight + spacing.lg}
-                        right={usesNavigationRail ? desktopContentGutter : spacing.xl}
-                        compact={fontScale >= 1.6 || width < 360}
-                        colors={theme.colors}
-                        styles={styles}
-                        onPress={() => {
-                            requestAddFood({ date: logDateNavigation.selectedDate });
-                            router.navigate('/(tabs)/today');
+                    <NotificationsDrawer
+                        visible={isNotificationDrawerOpen}
+                        notifications={notificationsQuery.data?.notifications ?? []}
+                        unreadCount={notificationsQuery.data?.unread_count ?? 0}
+                        isLoading={notificationsQuery.isLoading}
+                        isBusy={dismissNotification.isPending || openNotification.isPending}
+                        errorMessage={notificationsQuery.error?.message
+                            ?? dismissNotification.error?.message
+                            ?? openNotification.error?.message}
+                        onClose={() => setIsNotificationDrawerOpen(false)}
+                        onOpenNotification={(notification) => openNotification.mutate(notification)}
+                        onDismissNotification={(notification) => dismissNotification.mutate(notification)}
+                        onRetry={() => {
+                            dismissNotification.reset();
+                            openNotification.reset();
+                            void notificationsQuery.refetch();
                         }}
                     />
+                    <ResumeTrackingPrompt />
+                    {fabKind && (
+                        <ContextualFab
+                            bottom={usesNavigationRail ? spacing.xxl : tabBarHeight + spacing.lg}
+                            right={usesNavigationRail ? desktopContentGutter : spacing.xl}
+                            compact={fontScale >= 1.6 || width < 360}
+                            colors={theme.colors}
+                            styles={styles}
+                            onPress={() => {
+                                if (selectedFoodDayQuery.data?.status !== 'OPEN') return;
+                                requestAddFood({ date: logDateNavigation.selectedDate });
+                            }}
+                        />
+                    )}
                 </View>
             </AddFoodRequestProvider>
         </LogDateProvider>
@@ -243,10 +297,12 @@ const TabHeader: React.FC<{
     unreadCount: number;
     offlineChangeCount: number;
     hasFailedOfflineChanges: boolean;
+    profileImageUrl: string | null;
+    onOpenNotifications: () => void;
     colors: AppThemeColors;
     styles: TabStyles;
     desktop: boolean;
-}> = ({ topInset, fontScale, title, unreadCount, offlineChangeCount, hasFailedOfflineChanges, colors, styles, desktop }) => (
+}> = ({ topInset, fontScale, title, unreadCount, offlineChangeCount, hasFailedOfflineChanges, profileImageUrl, onOpenNotifications, colors, styles, desktop }) => (
     <View role="banner" style={[styles.headerRoot, { paddingTop: topInset }]}>
         <View
             style={[
@@ -256,13 +312,15 @@ const TabHeader: React.FC<{
             ]}
         >
             <View style={styles.headerLeading}>
-                <HeaderBrand colors={colors} styles={styles} />
+                <HeaderBrand styles={styles} />
                 <AppText accessibilityRole="header" aria-level={1} numberOfLines={2} style={styles.headerTitleText}>{title}</AppText>
             </View>
             <HeaderActions
                 unreadCount={unreadCount}
                 offlineChangeCount={offlineChangeCount}
                 hasFailedOfflineChanges={hasFailedOfflineChanges}
+                profileImageUrl={profileImageUrl}
+                onOpenNotifications={onOpenNotifications}
                 colors={colors}
                 styles={styles}
             />
@@ -270,12 +328,11 @@ const TabHeader: React.FC<{
     </View>
 );
 
-const HeaderBrand: React.FC<{ colors: AppThemeColors; styles: TabStyles }> = ({ colors, styles }) => (
+const HeaderBrand: React.FC<{ styles: TabStyles }> = ({ styles }) => (
     <NavigationPressable
         accessibilityRole="button"
         accessibilityLabel="Go to Today"
         accessibilityHint="Opens the Today dashboard"
-        android_ripple={{ color: colors.surfacePressed, borderless: false }}
         focusStyle={styles.navigationFocus}
         hoverStyle={styles.navigationHover}
         onPress={() => router.push('/(tabs)/today')}
@@ -289,15 +346,16 @@ const HeaderActions: React.FC<{
     unreadCount: number;
     offlineChangeCount: number;
     hasFailedOfflineChanges: boolean;
+    profileImageUrl: string | null;
+    onOpenNotifications: () => void;
     colors: AppThemeColors;
     styles: TabStyles;
-}> = ({ unreadCount, offlineChangeCount, hasFailedOfflineChanges, colors, styles }) => (
+}> = ({ unreadCount, offlineChangeCount, hasFailedOfflineChanges, profileImageUrl, onOpenNotifications, colors, styles }) => (
     <View accessibilityRole="toolbar" accessibilityLabel="App actions" style={styles.headerActions}>
         {offlineChangeCount > 0 && (
             <NavigationPressable
                 accessibilityRole="button"
                 accessibilityLabel={`${offlineChangeCount} offline changes ${hasFailedOfflineChanges ? 'need attention' : 'pending'}`}
-                android_ripple={{ color: colors.surfacePressed, borderless: false }}
                 focusStyle={styles.navigationFocus}
                 hoverStyle={styles.navigationHover}
                 onPress={() => router.push('/(tabs)/settings')}
@@ -313,10 +371,9 @@ const HeaderActions: React.FC<{
         <NavigationPressable
             accessibilityRole="button"
             accessibilityLabel={unreadCount > 0 ? `Open notifications, ${unreadCount} unread` : 'Open notifications'}
-            android_ripple={{ color: colors.surfacePressed, borderless: false }}
             focusStyle={styles.navigationFocus}
             hoverStyle={styles.navigationHover}
-            onPress={() => router.push('/notifications')}
+            onPress={onOpenNotifications}
             style={({ pressed }) => [styles.headerButton, pressed && styles.pressed]}
         >
             <Ionicons name="notifications-outline" size={21} color={colors.text} />
@@ -326,10 +383,25 @@ const HeaderActions: React.FC<{
                 </View>
             )}
         </NavigationPressable>
+        <NavigationPressable
+            accessibilityRole="button"
+            accessibilityLabel="Open account"
+            accessibilityHint="Opens profile and app settings"
+            focusStyle={styles.navigationFocus}
+            hoverStyle={styles.navigationHover}
+            onPress={() => router.push('/(tabs)/settings')}
+            style={({ pressed }) => [styles.headerButton, pressed && styles.pressed]}
+        >
+            {profileImageUrl ? (
+                <Image source={{ uri: profileImageUrl }} resizeMode="cover" style={styles.headerAvatarImage} />
+            ) : (
+                <Ionicons name="person-circle-outline" size={29} color={colors.text} />
+            )}
+        </NavigationPressable>
     </View>
 );
 
-const QuickAddFab: React.FC<{
+const ContextualFab: React.FC<{
     bottom: number;
     right: number;
     compact: boolean;
@@ -337,19 +409,18 @@ const QuickAddFab: React.FC<{
     colors: AppThemeColors;
     styles: TabStyles;
 }> = ({ bottom, right, compact, onPress, colors, styles }) => (
-    <NavigationPressable
-        accessibilityRole="button"
-        accessibilityLabel="Add food"
-        accessibilityHint="Opens food search for the selected day"
-        android_ripple={{ color: colors.ripple, borderless: false }}
-        focusStyle={styles.fabFocus}
-        hoverStyle={styles.fabHover}
-        onPress={onPress}
-        style={({ pressed }) => [styles.fab, compact && styles.fabCompact, { bottom, right }, pressed && styles.fabPressed]}
-    >
-        <Ionicons name="add" size={24} color={colors.onPrimary} />
-        {!compact && <AppText style={styles.fabLabel}>Add food</AppText>}
-    </NavigationPressable>
+        <NavigationPressable
+            accessibilityRole="button"
+            accessibilityLabel="Add food"
+            accessibilityHint="Opens food search for the selected day"
+            focusStyle={styles.fabFocus}
+            hoverStyle={styles.fabHover}
+            onPress={onPress}
+            style={({ pressed }) => [styles.fab, compact && styles.fabCompact, { bottom, right }, pressed && styles.fabPressed]}
+        >
+            <Ionicons name="add" size={24} color={colors.onPrimary} />
+            {!compact && <AppText style={styles.fabLabel}>Add food</AppText>}
+        </NavigationPressable>
 );
 
 type TabStyles = ReturnType<typeof createStyles>;
@@ -433,8 +504,17 @@ function createStyles(colors: AppThemeColors, shadows: AppTheme['shadows']) {
         alignItems: 'center',
         justifyContent: 'center'
     },
+    headerAvatarImage: {
+        width: 34,
+        height: 34,
+        borderRadius: 17,
+        borderWidth: StyleSheet.hairlineWidth,
+        borderColor: colors.outline,
+        backgroundColor: colors.surfaceContainer,
+        overflow: 'hidden'
+    },
     pressed: {
-        backgroundColor: colors.surfaceAlt
+        backgroundColor: colors.surfacePressed
     },
     navigationHover: {
         backgroundColor: colors.surfaceAlt

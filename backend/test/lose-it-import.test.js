@@ -55,6 +55,7 @@ test('parseLoseItExport parses Lose It exports with warnings for invalid rows', 
   assert.equal(result.weights.length, 2);
   assert.equal(result.bodyFat.length, 1);
   assert.equal(result.profile.Plan, 'Weight Loss (lb)');
+  assert.equal(result.foodDayCompletionStatus, 'unavailable');
 
   const greek = result.foodLogs.find((log) => log.name === 'Greek Yogurt');
   assert.ok(greek);

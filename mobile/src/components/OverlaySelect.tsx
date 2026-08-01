@@ -10,7 +10,7 @@ import {
     type ViewStyle,
     useWindowDimensions
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { AppText } from './AppText';
 import { type AppTheme, spacing, useAppTheme } from '../theme';
 
@@ -107,7 +107,6 @@ export function OverlaySelect<T extends string>({
                 accessibilityRole="button"
                 accessibilityLabel={accessibilityLabel}
                 accessibilityState={{ expanded: isOpen }}
-                android_ripple={{ color: theme.colors.ripple }}
                 onLayout={handleButtonLayout}
                 onPress={handleToggle}
                 style={({ pressed }) => [styles.button, pressed && styles.pressedSurface]}
@@ -145,7 +144,6 @@ export function OverlaySelect<T extends string>({
                                     key={option.value}
                                     accessibilityRole="button"
                                     accessibilityState={{ selected: isSelected }}
-                                    android_ripple={{ color: theme.colors.ripple }}
                                     onPress={() => onChange(option.value)}
                                     style={({ pressed }) => [
                                         styles.option,
@@ -187,7 +185,7 @@ function createStyles(theme: AppTheme) {
         gap: theme.spacing.md,
         borderRadius: theme.radius.md,
         borderColor: theme.colors.outline,
-        borderWidth: StyleSheet.hairlineWidth,
+        borderWidth: theme.stroke.control,
         backgroundColor: theme.colors.surfaceContainerLow,
         paddingHorizontal: theme.spacing.md,
         paddingVertical: theme.spacing.sm,

@@ -119,8 +119,8 @@ android {
         applicationId = "app.calibratehealth.mobile"
         minSdk = 30
         targetSdk = 36
-        versionCode = 2
-        versionName = "0.2.0"
+        versionCode = 5
+        versionName = "0.2.3"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         buildConfigField("String", "DEFAULT_SERVER_URL", quoteBuildConfig(configuredServerOrigin))
@@ -267,6 +267,7 @@ dependencies {
     implementation(libs.androidx.wear.tiles)
     implementation(libs.androidx.wear.protolayout)
     implementation(libs.androidx.wear.protolayout.material3)
+    implementation(libs.androidx.wear.watchface.complications.data.source.ktx)
 
     debugImplementation(libs.androidx.compose.ui.tooling)
     testImplementation(libs.junit4)
