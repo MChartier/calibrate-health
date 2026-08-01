@@ -126,7 +126,7 @@ export const ACCOUNT_DELETION_SECTIONS: PublicLegalSection[] = [
     {
         title: 'Data deleted with the account',
         bullets: [
-            'Profile, preferences, inline avatar, goals, body metrics, food logs, day resolutions, tracking-pause history, My Foods, and recipes.',
+            'Profile, preferences, inline avatar, goals, accepted calorie-target calibration revisions, body metrics, food logs, day resolutions, tracking-pause history, My Foods, and recipes.',
             'Imported Health Connect source records, daily activity summaries, notifications, and internal synchronization records.',
             'Browser and mobile sessions, authentication tokens, and browser or native push subscriptions.'
         ]

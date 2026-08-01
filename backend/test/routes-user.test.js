@@ -16,6 +16,7 @@ function loadUserRouter({ prismaStub, bcryptStub, accountLifecycleStub }) {
   const browserSessionsPath = require.resolve('../src/services/browserSessions');
   const accountLifecyclePath = require.resolve('../src/services/accountLifecycle');
   const clientOperationsPath = require.resolve('../src/services/clientOperations');
+  const caloriePlanPath = require.resolve('../src/services/caloriePlan');
   const userPath = require.resolve('../src/routes/user');
 
   const previousDbModule = require.cache[dbPath];
@@ -24,15 +25,21 @@ function loadUserRouter({ prismaStub, bcryptStub, accountLifecycleStub }) {
   const previousBrowserSessionsModule = require.cache[browserSessionsPath];
   const previousAccountLifecycleModule = require.cache[accountLifecyclePath];
   const previousClientOperationsModule = require.cache[clientOperationsPath];
+  const previousCaloriePlanModule = require.cache[caloriePlanPath];
 
   delete require.cache[userPath];
   delete require.cache[mobileAuthPath];
   delete require.cache[browserSessionsPath];
   delete require.cache[accountLifecyclePath];
   delete require.cache[clientOperationsPath];
+  delete require.cache[caloriePlanPath];
 
   const normalizedPrismaStub = {
     ...prismaStub,
+    caloriePlanRevision: {
+      findFirst: async () => null,
+      ...(prismaStub.caloriePlanRevision ?? {})
+    },
     syncChange: {
       create: async () => ({ id: 1n }),
       ...(prismaStub.syncChange ?? {})
@@ -62,6 +69,9 @@ function loadUserRouter({ prismaStub, bcryptStub, accountLifecycleStub }) {
 
   if (previousClientOperationsModule) require.cache[clientOperationsPath] = previousClientOperationsModule;
   else delete require.cache[clientOperationsPath];
+
+  if (previousCaloriePlanModule) require.cache[caloriePlanPath] = previousCaloriePlanModule;
+  else delete require.cache[caloriePlanPath];
 
   return loaded.default ?? loaded;
 }

@@ -83,7 +83,8 @@ export const WeightEntrySheet: React.FC<WeightEntrySheetProps> = ({ visible, dat
             await Promise.all([
                 queryClient.invalidateQueries({ queryKey: ['mobile-metrics'] }),
                 queryClient.invalidateQueries({ queryKey: ['mobile-metrics-trend'] }),
-                queryClient.invalidateQueries({ queryKey: ['mobile-profile'] })
+                queryClient.invalidateQueries({ queryKey: ['mobile-profile'] }),
+                queryClient.invalidateQueries({ queryKey: ['mobile-calibration-status'] })
             ]);
             onSaved?.();
             onClose();
@@ -109,7 +110,8 @@ export const WeightEntrySheet: React.FC<WeightEntrySheetProps> = ({ visible, dat
             await Promise.all([
                 queryClient.invalidateQueries({ queryKey: ['mobile-metrics'] }),
                 queryClient.invalidateQueries({ queryKey: ['mobile-metrics-trend'] }),
-                queryClient.invalidateQueries({ queryKey: ['mobile-profile'] })
+                queryClient.invalidateQueries({ queryKey: ['mobile-profile'] }),
+                queryClient.invalidateQueries({ queryKey: ['mobile-calibration-status'] })
             ]);
             onSaved?.();
             onClose();

@@ -4,7 +4,8 @@ import bcrypt from 'bcryptjs';
 import { isHeightUnit, isWeightUnit } from '../utils/units';
 import { ActivityLevel, HeightUnit, Sex, WeightUnit } from '@prisma/client';
 import { buildCalorieSummary, isActivityLevel, isSex } from '../utils/profile';
-import { isValidIanaTimeZone } from '../utils/date';
+import { getSafeUtcTodayDateOnlyInTimeZone, isValidIanaTimeZone } from '../utils/date';
+import { getEffectiveCaloriePlan } from '../services/caloriePlan';
 import { resolveHeightMmUpdate } from '../utils/height';
 import { isSupportedLanguage, type SupportedLanguage } from '../utils/language';
 import { MAX_PROFILE_IMAGE_BYTES, parseBase64DataUrl } from '../utils/profileImage';
@@ -395,6 +396,8 @@ router.get('/profile', async (req, res) => {
       orderBy: [{ date: 'desc' }, { id: 'desc' }],
       select: { weight_grams: true }
     });
+    const localToday = getSafeUtcTodayDateOnlyInTimeZone(dbUser.timezone);
+    const effectivePlan = await getEffectiveCaloriePlan(user.id, localToday);
 
     // Shape the profile subset used by the settings UI and calorie math.
     const profile = {
@@ -411,13 +414,15 @@ router.get('/profile', async (req, res) => {
     const calorieSummary = buildCalorieSummary({
       weight_grams: latestMetric?.weight_grams ?? null,
       profile,
-      daily_deficit: latestGoal?.daily_deficit ?? null
+      daily_deficit: latestGoal?.daily_deficit ?? null,
+      target_adjustment_kcal: effectivePlan?.targetAdjustmentKcal ?? 0
     });
 
     res.json({
       profile,
       latest_weight_grams: latestMetric?.weight_grams ?? null,
       goal_daily_deficit: latestGoal?.daily_deficit ?? null,
+      calorie_target_adjustment: effectivePlan?.targetAdjustmentKcal ?? 0,
       calorieSummary
     });
   } catch (err) {

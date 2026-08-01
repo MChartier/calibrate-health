@@ -1,6 +1,7 @@
 import type {
     ActivityLevel,
     ActivityRecordType,
+    CalibrationResult,
     HeightUnit,
     MealPeriod,
     MobileDevicePlatform,
@@ -192,6 +193,13 @@ export type AccountExport = {
         observed_at: string;
         created_at: string;
         updated_at: string;
+    }>;
+    calorie_plan_revisions: Array<{
+        id: number;
+        recommendation_id: number | null;
+        target_adjustment_kcal: number;
+        effective_local_date: string;
+        created_at: string;
     }>;
 };
 
@@ -516,10 +524,12 @@ export type UserProfile = {
 };
 
 export type CalorieSummary = {
+    baseDailyCalorieTarget?: number;
     dailyCalorieTarget?: number;
     tdee?: number;
     bmr?: number;
     deficit?: number | null;
+    targetAdjustment?: number;
     missing: string[];
 };
 
@@ -527,7 +537,27 @@ export type UserProfileResponse = {
     profile: UserProfile;
     latest_weight_grams: number | null;
     goal_daily_deficit: number | null;
+    calorie_target_adjustment: number;
     calorieSummary: CalorieSummary;
+};
+
+export type ScheduledCalibrationChange = {
+    recommendationId: number | null;
+    targetAdjustmentKcal: number;
+    effectiveLocalDate: string;
+};
+
+export type CalibrationStatusResponse = {
+    generatedAt: string;
+    inputFingerprint: string | null;
+    evaluation: CalibrationResult;
+    recommendation: {
+        id: number;
+        status: 'pending';
+        inputFingerprint: string;
+        effectiveLocalDate: string;
+    } | null;
+    scheduledChange: ScheduledCalibrationChange | null;
 };
 
 export type GoalEntry = {

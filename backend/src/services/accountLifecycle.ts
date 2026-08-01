@@ -54,6 +54,9 @@ const ACCOUNT_EXPORT_SELECT = {
   },
   activity_day_summaries: {
     orderBy: [{ local_date: 'asc' as const }, { id: 'asc' as const }]
+  },
+  calorie_plan_revisions: {
+    orderBy: [{ effective_local_date: 'asc' as const }, { id: 'asc' as const }]
   }
 } satisfies Prisma.UserSelect;
 
@@ -222,6 +225,13 @@ export type AccountExport = {
     observed_at: string;
     created_at: string;
     updated_at: string;
+  }>;
+  calorie_plan_revisions: Array<{
+    id: number;
+    recommendation_id: number | null;
+    target_adjustment_kcal: number;
+    effective_local_date: string;
+    created_at: string;
   }>;
 };
 
@@ -415,6 +425,13 @@ export function serializeAccountExport(user: AccountExportRow, now = new Date())
       observed_at: toIsoDateTime(summary.observed_at),
       created_at: toIsoDateTime(summary.created_at),
       updated_at: toIsoDateTime(summary.updated_at)
+    })),
+    calorie_plan_revisions: user.calorie_plan_revisions.map((revision) => ({
+      id: revision.id,
+      recommendation_id: revision.recommendation_id,
+      target_adjustment_kcal: revision.target_adjustment_kcal,
+      effective_local_date: toIsoDate(revision.effective_local_date),
+      created_at: toIsoDateTime(revision.created_at)
     }))
   };
 }

@@ -194,6 +194,14 @@ const exportRow = {
     observed_at: at('2025-01-04T01:00:00.000Z'),
     created_at: at('2025-01-04T01:00:00.000Z'),
     updated_at: at('2025-01-04T01:00:00.000Z')
+  }],
+  calorie_plan_revisions: [{
+    id: 12,
+    user_id: 7,
+    recommendation_id: 4,
+    target_adjustment_kcal: -125,
+    effective_local_date: at('2025-01-05T00:00:00.000Z'),
+    created_at: at('2025-01-04T20:00:00.000Z')
   }]
 };
 
@@ -224,6 +232,7 @@ test('account export returns canonical versioned tracking data without credentia
   assert.equal(result.my_foods[0].recipe_ingredients[0].external_id, 'rice-1');
   assert.equal(result.activity_records[0].client_record_version, '2');
   assert.equal(result.activity_day_summaries[0].total_calories_kcal, 2400);
+  assert.equal(result.calorie_plan_revisions[0].effective_local_date, '2025-01-05');
 
   assert.equal(findArgs.where.id, 7);
   assert.equal(findArgs.select.password_hash, undefined);
@@ -238,6 +247,10 @@ test('account export returns canonical versioned tracking data without credentia
   assert.deepEqual(findArgs.select.food_logs.orderBy, [
     { local_date: 'asc' },
     { created_at: 'asc' },
+    { id: 'asc' }
+  ]);
+  assert.deepEqual(findArgs.select.calorie_plan_revisions.orderBy, [
+    { effective_local_date: 'asc' },
     { id: 'asc' }
   ]);
 

@@ -13,6 +13,7 @@ import { TabScreen } from '../../src/components/TabScreen';
 import { SectionHeader } from '../../src/components/SectionHeader';
 import { SegmentedControl } from '../../src/components/SegmentedControl';
 import { WeightTrendPreviewCard } from '../../src/components/progress/WeightTrendPreviewCard';
+import { CalibrationInsightCard } from '../../src/components/CalibrationInsightCard';
 import { useAuth } from '../../src/auth/AuthContext';
 import { gramsToDisplayWeight } from '../../src/utils/bodyMeasurements';
 import { formatWeightUnit } from '../../src/utils/format';
@@ -81,7 +82,8 @@ export default function ProgressScreen() {
             await Promise.all([
                 queryClient.invalidateQueries({ queryKey: ['mobile-goal'] }),
                 queryClient.invalidateQueries({ queryKey: ['mobile-profile'] }),
-                queryClient.invalidateQueries({ queryKey: ['mobile-metrics-trend'] })
+                queryClient.invalidateQueries({ queryKey: ['mobile-metrics-trend'] }),
+                queryClient.invalidateQueries({ queryKey: ['mobile-calibration-status'] })
             ]);
         }
     });
@@ -140,6 +142,8 @@ export default function ProgressScreen() {
                 <WeightTrendPreviewCard
                     onPress={() => router.push('/weight-trend')}
                 />
+
+                <CalibrationInsightCard />
             </TabScreen>
 
             <BottomSheetModal visible={isGoalEditorOpen} onRequestClose={() => setIsGoalEditorOpen(false)}>

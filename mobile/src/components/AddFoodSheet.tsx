@@ -196,6 +196,8 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
     async function invalidateLogQueries() {
         await Promise.all([
             queryClient.invalidateQueries({ queryKey: ['mobile-food', date] }),
+            queryClient.invalidateQueries({ queryKey: ['mobile-food-day', date] }),
+            queryClient.invalidateQueries({ queryKey: ['mobile-calibration-status'] }),
             queryClient.invalidateQueries({ queryKey: ['mobile-profile'] }),
             queryClient.invalidateQueries({ queryKey: ['mobile-recent-foods'] }),
             queryClient.invalidateQueries({ queryKey: ['mobile-in-app-notifications'] })

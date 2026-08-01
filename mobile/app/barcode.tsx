@@ -74,6 +74,8 @@ export default function BarcodeScreen() {
         onSuccess: async () => {
             await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
             await queryClient.invalidateQueries({ queryKey: ['mobile-food', selectedDate] });
+            await queryClient.invalidateQueries({ queryKey: ['mobile-food-day', selectedDate] });
+            await queryClient.invalidateQueries({ queryKey: ['mobile-calibration-status'] });
             await queryClient.invalidateQueries({ queryKey: ['mobile-profile'] });
             await queryClient.invalidateQueries({ queryKey: ['mobile-recent-foods'] });
             await queryClient.invalidateQueries({ queryKey: ['mobile-in-app-notifications'] });

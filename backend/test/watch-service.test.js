@@ -85,6 +85,7 @@ test('watch snapshot is bounded, timezone-local, and derives current-session und
       sex: 'MALE', date_of_birth: new Date('1990-01-01T00:00:00.000Z'), height_mm: 1800, activity_level: 'SEDENTARY'
     }) },
     goal: { findFirst: async () => ({ start_weight_grams: 90000, target_weight_grams: 75000, daily_deficit: 500 }) },
+    caloriePlanRevision: { findFirst: async () => null },
     bodyMetric: {
       findFirst: async () => ({ id: 4, date: new Date('2026-07-10T00:00:00.000Z'), weight_grams: 80000 }),
       findUnique: async () => null

@@ -546,6 +546,46 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiError'
+  /api/v1/calibration/status:
+    get:
+      operationId: getCalibrationStatus
+      description: Lazily evaluate bounded food and weight history and materialize any current actionable suggestion.
+      responses:
+        '200':
+          description: Current deterministic calibration status.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CalibrationStatusResponse' }
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /api/v1/calibration/recommendations/{recommendationId}/apply:
+    post:
+      operationId: applyCalibrationRecommendation
+      description: Revalidate and accept a current recommendation as a next-local-day target revision.
+      parameters:
+        - name: recommendationId
+          in: path
+          required: true
+          schema: { type: integer, minimum: 1 }
+        - $ref: '#/components/parameters/ClientOperationId'
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: { type: object, additionalProperties: false }
+      responses:
+        '200':
+          description: Accepted target revision and its effective local date.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ScheduledCalibrationChange' }
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          description: Recommendation is stale, already applied, or conflicts with another operation.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiError' }
   /api/v1/user/account/export:
     get:
       operationId: exportAccount
@@ -627,7 +667,7 @@ components:
     AccountExport:
       type: object
       additionalProperties: false
-      required: [format, version, exported_at, account, goals, body_metrics, food_logs, food_log_days, food_tracking_pauses, my_foods, in_app_notifications, activity_records, activity_day_summaries]
+      required: [format, version, exported_at, account, goals, body_metrics, food_logs, food_log_days, food_tracking_pauses, my_foods, in_app_notifications, activity_records, activity_day_summaries, calorie_plan_revisions]
       properties:
         format:
           type: string
@@ -676,6 +716,10 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/AccountExportActivityDaySummary'
+        calorie_plan_revisions:
+          type: array
+          items:
+            $ref: '#/components/schemas/AccountExportCaloriePlanRevision'
     AccountExportProfile:
       type: object
       required: [id, email, created_at, weight_unit, height_unit, timezone, language, reminder_log_weight_enabled, reminder_log_food_enabled, haptics_enabled, date_of_birth, sex, height_mm, activity_level, profile_image]
@@ -895,6 +939,106 @@ components:
         observed_at: { type: string, format: date-time }
         created_at: { type: string, format: date-time }
         updated_at: { type: string, format: date-time }
+    AccountExportCaloriePlanRevision:
+      type: object
+      required: [id, recommendation_id, target_adjustment_kcal, effective_local_date, created_at]
+      properties:
+        id: { type: integer }
+        recommendation_id: { type: [integer, 'null'] }
+        target_adjustment_kcal: { type: integer }
+        effective_local_date: { type: string, format: date }
+        created_at: { type: string, format: date-time }
+    CalibrationInterval:
+      type: object
+      required: [low, midpoint, high]
+      properties:
+        low: { type: number }
+        midpoint: { type: number }
+        high: { type: number }
+    CalibrationDataQuality:
+      type: object
+      required: [observationDays, completeDays, confidentDays, suspiciousDays, incompleteDays, missingDays, weightPoints, weightSpanDays]
+      properties:
+        observationDays: { type: integer, minimum: 0 }
+        completeDays: { type: integer, minimum: 0 }
+        confidentDays: { type: integer, minimum: 0 }
+        suspiciousDays: { type: integer, minimum: 0 }
+        incompleteDays: { type: integer, minimum: 0 }
+        missingDays: { type: integer, minimum: 0 }
+        weightPoints: { type: integer, minimum: 0 }
+        weightSpanDays: { type: integer, minimum: 0 }
+    CalibrationRecommendation:
+      type: object
+      required: [currentTargetKcal, recommendedTargetKcal, adjustmentStepKcal, currentTargetAdjustmentKcal, recommendedTargetAdjustmentKcal]
+      properties:
+        currentTargetKcal: { type: integer }
+        recommendedTargetKcal: { type: integer }
+        adjustmentStepKcal: { type: integer, minimum: -150, maximum: 150 }
+        currentTargetAdjustmentKcal: { type: integer }
+        recommendedTargetAdjustmentKcal: { type: integer }
+    CalibrationEvaluation:
+      type: object
+      required: [modelVersion, asOfDate, status, headline, summary, selectedWindowDays, dataQuality, missingCriteria, assumptions, estimates, recommendation, activityContext]
+      properties:
+        modelVersion: { type: integer }
+        asOfDate: { type: string, format: date }
+        status: { type: string, enum: [not_ready, learning, insight, recommendation] }
+        headline: { type: string }
+        summary: { type: string }
+        selectedWindowDays: { type: [integer, 'null'] }
+        dataQuality: { $ref: '#/components/schemas/CalibrationDataQuality' }
+        missingCriteria:
+          type: array
+          items: { type: string }
+        assumptions:
+          type: array
+          items: { type: string }
+        estimates:
+          type: object
+          required: [averageIntakeKcal, observedWeeklyWeightChangeKg, inferredTdeeKcal, targetAdjustmentKcal, configuredWeeklyWeightChangeKg]
+          properties:
+            averageIntakeKcal:
+              oneOf: [{ $ref: '#/components/schemas/CalibrationInterval' }, { type: 'null' }]
+            observedWeeklyWeightChangeKg:
+              oneOf: [{ $ref: '#/components/schemas/CalibrationInterval' }, { type: 'null' }]
+            inferredTdeeKcal:
+              oneOf: [{ $ref: '#/components/schemas/CalibrationInterval' }, { type: 'null' }]
+            targetAdjustmentKcal:
+              oneOf: [{ $ref: '#/components/schemas/CalibrationInterval' }, { type: 'null' }]
+            configuredWeeklyWeightChangeKg: { type: number }
+        recommendation:
+          oneOf: [{ $ref: '#/components/schemas/CalibrationRecommendation' }, { type: 'null' }]
+        activityContext:
+          type: [object, 'null']
+          required: [observedDays, averageSteps, averageActiveCaloriesKcal]
+          properties:
+            observedDays: { type: integer, minimum: 0 }
+            averageSteps: { type: [integer, 'null'] }
+            averageActiveCaloriesKcal: { type: [integer, 'null'] }
+    ScheduledCalibrationChange:
+      type: object
+      required: [recommendationId, targetAdjustmentKcal, effectiveLocalDate]
+      properties:
+        recommendationId: { type: [integer, 'null'] }
+        targetAdjustmentKcal: { type: integer }
+        effectiveLocalDate: { type: string, format: date }
+    CalibrationStatusResponse:
+      type: object
+      required: [generatedAt, inputFingerprint, evaluation, recommendation, scheduledChange]
+      properties:
+        generatedAt: { type: string, format: date-time }
+        inputFingerprint: { type: [string, 'null'] }
+        evaluation: { $ref: '#/components/schemas/CalibrationEvaluation' }
+        recommendation:
+          type: [object, 'null']
+          required: [id, status, inputFingerprint, effectiveLocalDate]
+          properties:
+            id: { type: integer }
+            status: { type: string, const: pending }
+            inputFingerprint: { type: string }
+            effectiveLocalDate: { type: string, format: date }
+        scheduledChange:
+          oneOf: [{ $ref: '#/components/schemas/ScheduledCalibrationChange' }, { type: 'null' }]
     ActivityRecordType:
       type: string
       enum: [STEPS, ACTIVE_CALORIES, TOTAL_CALORIES, EXERCISE_SESSION, WEIGHT]

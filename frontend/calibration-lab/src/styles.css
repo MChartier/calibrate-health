@@ -1,0 +1,35 @@
+:root { color: #17211d; background: #eef3ef; font-family: Inter, ui-sans-serif, system-ui, sans-serif; font-synthesis: none; }
+* { box-sizing: border-box; }
+body { margin: 0; min-width: 320px; }
+button, select, textarea { font: inherit; }
+main { width: min(1500px, calc(100% - 40px)); margin: 0 auto; padding: 36px 0 64px; }
+header { display: flex; align-items: end; justify-content: space-between; gap: 28px; margin-bottom: 24px; }
+h1, h2, p { margin: 0; }
+h1 { margin-top: 6px; font-size: clamp(32px, 5vw, 58px); letter-spacing: -0.045em; }
+h2 { font-size: 20px; }
+p { margin-top: 8px; color: #506159; line-height: 1.5; max-width: 760px; }
+.eyebrow, .status { color: #18764f; font-size: 12px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; }
+label { display: grid; gap: 8px; min-width: 290px; font-size: 13px; font-weight: 750; }
+select, button { border: 1px solid #b7c7be; border-radius: 10px; background: white; color: #17211d; min-height: 44px; padding: 0 14px; }
+button { background: #18764f; border-color: #18764f; color: white; cursor: pointer; font-weight: 750; }
+.outcome, .panel { border: 1px solid #c9d5ce; border-radius: 18px; background: rgba(255, 255, 255, 0.92); box-shadow: 0 12px 30px rgba(29, 56, 43, 0.07); }
+.outcome { display: flex; justify-content: space-between; gap: 28px; padding: 24px; border-left: 6px solid #728078; }
+.outcome.recommendation { border-left-color: #18764f; }
+.outcome.learning, .outcome.not_ready { border-left-color: #c77a18; }
+.metrics { display: grid; grid-template-columns: repeat(4, minmax(105px, 1fr)); gap: 10px; }
+.metric { background: #eff5f1; border-radius: 12px; padding: 14px; display: grid; gap: 5px; }
+.metric strong { font-size: 18px; }
+.metric span { color: #65766d; font-size: 12px; }
+.workspace { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; margin-top: 20px; }
+.panel { min-width: 0; overflow: hidden; }
+.panel-heading { min-height: 95px; padding: 20px; display: flex; align-items: center; justify-content: space-between; gap: 16px; border-bottom: 1px solid #dce5df; }
+.panel-heading p { font-size: 13px; margin-top: 5px; }
+textarea, pre { width: 100%; height: 680px; margin: 0; padding: 20px; border: 0; outline: 0; background: #13231b; color: #dcefe4; font: 13px/1.55 "SFMono-Regular", Consolas, monospace; overflow: auto; resize: vertical; }
+pre { white-space: pre-wrap; overflow-wrap: anywhere; }
+.error { padding: 12px 20px; background: #ffe9e5; color: #9e2f1f; font-weight: 700; }
+@media (max-width: 980px) {
+    header, .outcome { align-items: stretch; flex-direction: column; }
+    label { min-width: 0; }
+    .metrics { grid-template-columns: repeat(2, 1fr); }
+    .workspace { grid-template-columns: 1fr; }
+}
