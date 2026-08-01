@@ -2,7 +2,7 @@ import { Prisma } from '@prisma/client';
 import prisma from '../config/database';
 
 export const ACCOUNT_EXPORT_FORMAT = 'calibrate-account-export';
-export const ACCOUNT_EXPORT_VERSION = 3;
+export const ACCOUNT_EXPORT_VERSION = 4;
 
 // Auth sessions, password hashes, push endpoints/tokens, and internal replay metadata are
 // deliberately absent. Only account profile and user-authored tracking records are exported.
@@ -228,6 +228,7 @@ export type AccountExport = {
   }>;
   calorie_plan_revisions: Array<{
     id: number;
+    source_goal_id: number;
     recommendation_id: number | null;
     target_adjustment_kcal: number;
     effective_local_date: string;
@@ -428,6 +429,7 @@ export function serializeAccountExport(user: AccountExportRow, now = new Date())
     })),
     calorie_plan_revisions: user.calorie_plan_revisions.map((revision) => ({
       id: revision.id,
+      source_goal_id: revision.source_goal_id,
       recommendation_id: revision.recommendation_id,
       target_adjustment_kcal: revision.target_adjustment_kcal,
       effective_local_date: toIsoDate(revision.effective_local_date),

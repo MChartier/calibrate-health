@@ -103,7 +103,6 @@ function buildUnavailableEvaluation(options: {
         estimates: {
             averageIntakeKcal: null,
             observedWeeklyWeightChangeKg: null,
-            inferredTdeeKcal: null,
             targetAdjustmentKcal: null,
             configuredWeeklyWeightChangeKg: -((options.configuredDailyDeficitKcal ?? 0) * 7) / 7700
         },
@@ -114,7 +113,7 @@ function buildUnavailableEvaluation(options: {
 
 function buildFoodEvidence(options: {
     logs: Array<{ local_date: Date; calories: number; meal_period: string }>;
-    completionDays: Array<{ local_date: Date; is_complete: boolean }>;
+    completionDays: Array<{ local_date: Date; status: string }>;
     planStartDate: string;
     asOfDate: string;
 }): CalibrationFoodDay[] {
@@ -127,7 +126,7 @@ function buildFoodEvidence(options: {
             calories: 0,
             entryCount: 0,
             mealPeriodCount: 0,
-            isComplete: completion.is_complete
+            isComplete: completion.status === 'COMPLETE'
         });
     }
     const mealPeriodsByDate = new Map<string, Set<string>>();
@@ -228,10 +227,10 @@ export async function buildCalibrationStatus(userId: number, now = new Date()): 
     const today = getSafeUtcTodayDateOnlyInTimeZone(user.timezone, now);
     const todayCompletion = await prisma.foodLogDay.findUnique({
         where: { user_id_local_date: { user_id: userId, local_date: today } },
-        select: { is_complete: true }
+        select: { status: true }
     });
     // An in-progress current day is not evidence of a missing log. Once completed, it participates immediately.
-    const asOfDate = todayCompletion?.is_complete ? today : addUtcDays(today, -1);
+    const asOfDate = todayCompletion?.status === 'COMPLETE' ? today : addUtcDays(today, -1);
     const asOfDateKey = toDateKey(asOfDate);
     const generatedAt = now.toISOString();
 
@@ -264,9 +263,9 @@ export async function buildCalibrationStatus(userId: number, now = new Date()): 
             orderBy: [{ date: 'desc' }, { id: 'desc' }],
             select: { weight_grams: true }
         }),
-        getEffectiveCaloriePlan(userId, today),
+        getEffectiveCaloriePlan(userId, goal.id, today),
         prisma.caloriePlanRevision.findFirst({
-            where: { user_id: userId, effective_local_date: { gt: today } },
+            where: { user_id: userId, source_goal_id: goal.id, effective_local_date: { gt: today } },
             orderBy: [{ effective_local_date: 'asc' }, { id: 'asc' }],
             select: { recommendation_id: true, target_adjustment_kcal: true, effective_local_date: true }
         }),
@@ -278,7 +277,7 @@ export async function buildCalibrationStatus(userId: number, now = new Date()): 
         prisma.foodLogDay.findMany({
             where: { user_id: userId, local_date: { gte: historyStart, lte: asOfDate } },
             orderBy: { local_date: 'asc' },
-            select: { local_date: true, is_complete: true }
+            select: { local_date: true, status: true }
         }),
         prisma.bodyMetric.findMany({
             where: { user_id: userId, date: { gte: weightStart, lte: asOfDate } },
@@ -426,6 +425,7 @@ export async function applyCalibrationRecommendation(options: {
                 const revision = await tx.caloriePlanRevision.create({
                     data: {
                         user_id: options.userId,
+                        source_goal_id: recommendation.source_goal_id,
                         recommendation_id: recommendation.id,
                         target_adjustment_kcal: recommendation.recommended_target_adjustment_kcal,
                         effective_local_date: effectiveLocalDate

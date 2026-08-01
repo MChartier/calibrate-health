@@ -198,6 +198,7 @@ const exportRow = {
   calorie_plan_revisions: [{
     id: 12,
     user_id: 7,
+    source_goal_id: 2,
     recommendation_id: 4,
     target_adjustment_kcal: -125,
     effective_local_date: at('2025-01-05T00:00:00.000Z'),
@@ -219,7 +220,7 @@ test('account export returns canonical versioned tracking data without credentia
   const result = await exportAccountData(7, at('2026-07-11T20:00:00.000Z'));
 
   assert.equal(result.format, 'calibrate-account-export');
-  assert.equal(result.version, 3);
+  assert.equal(result.version, 4);
   assert.equal(result.exported_at, '2026-07-11T20:00:00.000Z');
   assert.equal(result.account.date_of_birth, '1990-05-03');
   assert.deepEqual(result.account.profile_image, { mime_type: 'image/png', data_base64: 'AQID' });
@@ -233,6 +234,7 @@ test('account export returns canonical versioned tracking data without credentia
   assert.equal(result.activity_records[0].client_record_version, '2');
   assert.equal(result.activity_day_summaries[0].total_calories_kcal, 2400);
   assert.equal(result.calorie_plan_revisions[0].effective_local_date, '2025-01-05');
+  assert.equal(result.calorie_plan_revisions[0].source_goal_id, 2);
 
   assert.equal(findArgs.where.id, 7);
   assert.equal(findArgs.select.password_hash, undefined);

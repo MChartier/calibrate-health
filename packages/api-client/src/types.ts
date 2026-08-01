@@ -32,7 +32,7 @@ export type UserClientPayload = {
 
 export type AccountExport = {
     format: 'calibrate-account-export';
-    version: 3;
+    version: 4;
     exported_at: string;
     account: {
         id: number;
@@ -196,6 +196,7 @@ export type AccountExport = {
     }>;
     calorie_plan_revisions: Array<{
         id: number;
+        source_goal_id: number;
         recommendation_id: number | null;
         target_adjustment_kcal: number;
         effective_local_date: string;

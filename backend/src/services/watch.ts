@@ -580,13 +580,19 @@ export async function buildWatchSnapshot(options: {
           select: { id: true }
         })
       : Promise.resolve(null);
-    const [goal, effectivePlan, latestWeight, todayWeight, foodAggregate, foodDay, activePause, pinned, recent, undoCandidate, activeReminderRows] = await Promise.all([
-      tx.goal.findFirst({ where: { user_id: options.userId }, orderBy: [{ created_at: 'desc' }, { id: 'desc' }] }),
-      tx.caloriePlanRevision.findFirst({
-        where: { user_id: options.userId, effective_local_date: { lte: localDate } },
-        orderBy: [{ effective_local_date: 'desc' }, { id: 'desc' }],
-        select: { target_adjustment_kcal: true }
-      }),
+    const goal = await tx.goal.findFirst({
+      where: { user_id: options.userId },
+      orderBy: [{ created_at: 'desc' }, { id: 'desc' }]
+    });
+    const effectivePlanPromise = goal
+      ? tx.caloriePlanRevision.findFirst({
+          where: { user_id: options.userId, source_goal_id: goal.id, effective_local_date: { lte: localDate } },
+          orderBy: [{ effective_local_date: 'desc' }, { id: 'desc' }],
+          select: { target_adjustment_kcal: true }
+        })
+      : Promise.resolve(null);
+    const [effectivePlan, latestWeight, todayWeight, foodAggregate, foodDay, activePause, pinned, recent, undoCandidate, activeReminderRows] = await Promise.all([
+      effectivePlanPromise,
       tx.bodyMetric.findFirst({ where: { user_id: options.userId, date: { lte: localDate } }, orderBy: [{ date: 'desc' }, { id: 'desc' }] }),
       tx.bodyMetric.findUnique({ where: { user_id_date: { user_id: options.userId, date: localDate } } }),
       tx.foodLog.aggregate({ where: { user_id: options.userId, local_date: localDate }, _sum: { calories: true } }),

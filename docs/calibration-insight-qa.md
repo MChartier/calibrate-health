@@ -10,6 +10,9 @@ Tested on August 1, 2026 against the calibration history lab on PR #269.
 - Inspected the rendered status, headline, evidence metrics, modeled intervals, target change, and gating criteria for each case.
 - Ran a complementary 384-case deterministic invariant matrix across history length, age, pace, missing-day rate, weight uncertainty, and BMR floor position.
 - Benchmarked 2,800 evaluations across the 14 presets: 2,353.1 ms total, or 0.84 ms per evaluation on this development machine.
+- Repeated the rendered recommendation and uncertainty checks after rebasing onto the current mobile/day-status architecture and applying review feedback.
+- Ran the full automated suites after the rebase: 415 backend tests, 363 mobile tests, 45 API-client tests, and 18 development-script tests.
+- Built the production Expo web export and regenerated the Prisma and OpenAPI clients.
 
 The lab invokes the same pure evaluator used by the service. This pass did not apply the Prisma migration to a live database because Docker was unavailable, so persistence and next-local-day activation remain covered by route and service tests rather than this browser pass.
 
@@ -48,8 +51,11 @@ The lab invokes the same pure evaluator used by the service. This pass did not a
 5. **Non-actionable criteria were hidden in the client.** The Progress card now lists what would improve an insight whenever no recommendation is available.
 6. **Malformed structured JSON crashed the lab.** The editor now validates top-level and nested food, weight, and activity fields and preserves the last valid output on error.
 7. **Single-day uncertainty copy had incorrect agreement.** Messages now use "looks/widens" for one day and "look/widen" for plural counts.
-8. **Hot reload recreated the React root.** The lab now reuses its root during Vite updates.
+8. **The original lab depended on the retired Vite frontend workspace.** The lab now runs as a dependency-free local Node server against the compiled shared evaluator.
 9. **The original six presets did not cover the full state space.** The lab now has 14 described, deep-linkable histories plus a clearly labeled custom-edit state and visual evidence summaries.
+10. **The public result exposed a weight-derived expenditure estimate.** The evaluator now exposes only the bounded target correction; displayed calories out remains the profile-estimated TDEE.
+11. **Accepted revisions could carry into a later goal.** Recommendations and plan revisions are now tied to their source goal, so a new maintenance or gain goal cannot inherit an older loss-goal adjustment.
+12. **The feature migration collided with a migration added on `master`.** Calibration now uses migration `0031`, following the day-resolution migration at `0030`.
 
 ## Screenshots
 
@@ -63,7 +69,7 @@ The lab invokes the same pure evaluator used by the service. This pass did not a
 
 ### Conservative target corrections in both directions
 
-![Target decrease recommendation](screenshots/calibration-qa/recommendation-decrease.jpg)
+![Target decrease recommendation after review fixes and rebase](screenshots/calibration-qa/recommendation-decrease-rebased.png)
 
 ![Target increase recommendation](screenshots/calibration-qa/03-recommendation-increase.jpg)
 

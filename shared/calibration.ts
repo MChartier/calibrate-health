@@ -1,4 +1,4 @@
-export const CALIBRATION_MODEL_VERSION = 1;
+export const CALIBRATION_MODEL_VERSION = 2;
 export const CALIBRATION_MAX_OBSERVATION_DAYS = 42;
 export const CALIBRATION_REFERENCE_DAYS = 90;
 export const CALIBRATION_MIN_INSIGHT_DAYS = 7;
@@ -83,7 +83,6 @@ export type CalibrationResult = {
     estimates: {
         averageIntakeKcal: CalibrationInterval | null;
         observedWeeklyWeightChangeKg: CalibrationInterval | null;
-        inferredTdeeKcal: CalibrationInterval | null;
         targetAdjustmentKcal: CalibrationInterval | null;
         configuredWeeklyWeightChangeKg: number;
     };
@@ -106,7 +105,6 @@ type WindowEvaluation = {
     dataQuality: CalibrationDataQuality;
     averageIntake: CalibrationInterval | null;
     weeklyWeightChange: CalibrationInterval | null;
-    inferredTdee: CalibrationInterval | null;
     targetAdjustment: CalibrationInterval | null;
     recommendation: CalibrationRecommendation | null;
     actionable: boolean;
@@ -328,7 +326,6 @@ function evaluateWindow(input: CalibrationInput, windowDays: number): WindowEval
             dataQuality,
             averageIntake: null,
             weeklyWeightChange: null,
-            inferredTdee: null,
             targetAdjustment: null,
             recommendation: null,
             actionable: false,
@@ -339,7 +336,6 @@ function evaluateWindow(input: CalibrationInput, windowDays: number): WindowEval
     const random = createRandom(seedFromInput(input, windowDays));
     const averageIntakeSamples: number[] = [];
     const weeklyWeightChangeSamples: number[] = [];
-    const inferredTdeeSamples: number[] = [];
     const adjustmentSamples: number[] = [];
     const weightSpanDays = Math.max(1, inclusiveDateSpan(firstWeight.date, lastWeight.date) - 1);
 
@@ -354,17 +350,15 @@ function evaluateWindow(input: CalibrationInput, windowDays: number): WindowEval
         const sampledEndWeight = lastWeight.lowerKg + random() * (lastWeight.upperKg - lastWeight.lowerKg);
         const dailyWeightChange = (sampledEndWeight - sampledStartWeight) / weightSpanDays;
         const observedDeficit = -dailyWeightChange * KCAL_PER_KILOGRAM;
-        const inferredTdee = averageIntake + observedDeficit;
+        const targetAdjustment = averageIntake + observedDeficit - input.profileTdeeKcal;
 
         averageIntakeSamples.push(averageIntake);
         weeklyWeightChangeSamples.push(dailyWeightChange * 7);
-        inferredTdeeSamples.push(inferredTdee);
-        adjustmentSamples.push(inferredTdee - input.profileTdeeKcal);
+        adjustmentSamples.push(targetAdjustment);
     }
 
     const averageIntake = interval(averageIntakeSamples);
     const weeklyWeightChange = interval(weeklyWeightChangeSamples, 3);
-    const inferredTdee = interval(inferredTdeeSamples);
     const targetAdjustment = interval(adjustmentSamples);
     let recommendation: CalibrationRecommendation | null = null;
     let actionable = false;
@@ -444,7 +438,6 @@ function evaluateWindow(input: CalibrationInput, windowDays: number): WindowEval
         dataQuality,
         averageIntake,
         weeklyWeightChange,
-        inferredTdee,
         targetAdjustment,
         recommendation,
         actionable: actionable && recommendation !== null,
@@ -519,7 +512,6 @@ export function evaluateCalibration(input: CalibrationInput): CalibrationResult 
             estimates: {
                 averageIntakeKcal: null,
                 observedWeeklyWeightChangeKg: null,
-                inferredTdeeKcal: null,
                 targetAdjustmentKcal: null,
                 configuredWeeklyWeightChangeKg
             },
@@ -579,7 +571,6 @@ export function evaluateCalibration(input: CalibrationInput): CalibrationResult 
         estimates: {
             averageIntakeKcal: selected.averageIntake,
             observedWeeklyWeightChangeKg: selected.weeklyWeightChange,
-            inferredTdeeKcal: selected.inferredTdee,
             targetAdjustmentKcal: selected.targetAdjustment,
             configuredWeeklyWeightChangeKg
         },

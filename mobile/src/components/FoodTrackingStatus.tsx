@@ -58,6 +58,7 @@ function useRefreshTrackingState(date?: string) {
             date ? queryClient.invalidateQueries({ queryKey: foodDayQueryKey(date) }) : Promise.resolve(),
             queryClient.invalidateQueries({ queryKey: foodDayRangeQueryRoot }),
             queryClient.invalidateQueries({ queryKey: foodTrackingPauseQueryKey }),
+            queryClient.invalidateQueries({ queryKey: ['mobile-calibration-status'] }),
             queryClient.invalidateQueries({ queryKey: ['mobile-in-app-notifications'] })
         ]);
     };

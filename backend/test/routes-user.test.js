@@ -373,7 +373,7 @@ test('user route: PATCH /password updates password when current password matches
 test('user route: GET /account/export returns a no-store attachment', async () => {
   const accountExport = {
     format: 'calibrate-account-export',
-    version: 3,
+    version: 4,
     exported_at: '2026-07-11T20:00:00.000Z'
   };
   const router = loadUserRouter({
@@ -599,6 +599,7 @@ test('user route: PATCH /preferences updates haptics_enabled field', async () =>
 
 test('user route: GET /profile reads the latest goal with deterministic ordering', async () => {
   let goalFindFirstArgs = null;
+  let revisionFindFirstArgs = null;
   const dbUser = {
     id: 7,
     timezone: 'UTC',
@@ -617,7 +618,13 @@ test('user route: GET /profile reads the latest goal with deterministic ordering
     goal: {
       findFirst: async (args) => {
         goalFindFirstArgs = args;
-        return { daily_deficit: 500 };
+        return { id: 41, daily_deficit: 500 };
+      }
+    },
+    caloriePlanRevision: {
+      findFirst: async (args) => {
+        revisionFindFirstArgs = args;
+        return null;
       }
     },
     bodyMetric: {
@@ -636,5 +643,6 @@ test('user route: GET /profile reads the latest goal with deterministic ordering
 
   assert.equal(res.statusCode, 200);
   assert.deepEqual(goalFindFirstArgs.orderBy, [{ created_at: 'desc' }, { id: 'desc' }]);
+  assert.equal(revisionFindFirstArgs.where.source_goal_id, 41);
   assert.equal(res.body.goal_daily_deficit, 500);
 });

@@ -32,8 +32,8 @@ test('calorie plan resolves only revisions effective on the requested local date
       }
     }
   };
-  const result = await getEffectiveCaloriePlan(7, localDate, database);
-  assert.deepEqual(query.where, { user_id: 7, effective_local_date: { lte: localDate } });
+  const result = await getEffectiveCaloriePlan(7, 41, localDate, database);
+  assert.deepEqual(query.where, { user_id: 7, source_goal_id: 41, effective_local_date: { lte: localDate } });
   assert.deepEqual(query.orderBy, [{ effective_local_date: 'desc' }, { id: 'desc' }]);
   assert.equal(result.targetAdjustmentKcal, -125);
 });

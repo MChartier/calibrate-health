@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calibrate history lab</title>
+    <link rel="stylesheet" href="/styles.css">
+  </head>
+  <body>
+    <main>
+      <header>
+        <div>
+          <span class="eyebrow">Development tool</span>
+          <h1>Calibration history lab</h1>
+          <p>Explore deterministic food, weight, uncertainty, and recommendation states without waiting weeks for real history.</p>
+        </div>
+        <div class="scenario-control">
+          <label for="preset-history">Preset history</label>
+          <select id="preset-history"></select>
+          <span id="scenario-description" class="scenario-description"></span>
+        </div>
+      </header>
+
+      <section id="outcome" class="outcome">
+        <div class="outcome-copy">
+          <span id="status" class="status">Loading</span>
+          <h2 id="headline">Loading evaluator...</h2>
+          <p id="summary"></p>
+          <div id="target-change" class="target-change" hidden></div>
+        </div>
+        <div id="metrics" class="metrics"></div>
+      </section>
+
+      <section class="evidence-grid">
+        <article class="panel evidence-panel">
+          <div class="panel-heading compact"><div><h2>Evidence summary</h2><p>Median estimate with the modeled 95% interval.</p></div></div>
+          <div id="estimates" class="estimate-grid"></div>
+        </article>
+        <article id="criteria-panel" class="panel criteria-panel">
+          <div class="panel-heading compact">
+            <div><h2 id="criteria-title">Evidence criteria</h2><p>Requirements and uncertainty limits applied to this result.</p></div>
+          </div>
+          <div id="criteria"></div>
+          <div id="activity-context" class="activity-context" hidden></div>
+        </article>
+      </section>
+
+      <section class="workspace">
+        <div class="panel editor">
+          <div class="panel-heading">
+            <div><h2>History input</h2><p>Edit any preset directly. The lab sends nothing beyond this local process.</p></div>
+            <button id="evaluate" type="button">Evaluate</button>
+          </div>
+          <div id="error" class="error" role="alert" hidden></div>
+          <textarea id="history-input" spellcheck="false"></textarea>
+        </div>
+
+        <div class="panel result">
+          <div class="panel-heading">
+            <div><h2>Evaluator output</h2><p>Full wire-shaped result, including intervals and missing criteria.</p></div>
+          </div>
+          <pre id="output"></pre>
+        </div>
+      </section>
+    </main>
+    <script type="module" src="/main.js"></script>
+  </body>
+</html>

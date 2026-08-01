@@ -31,10 +31,13 @@ Calorie math:
 
 - BMR uses Mifflin-St Jeor.
 - TDEE is `BMR * activityMultiplier`.
-- Daily target is `TDEE - daily_deficit`.
+- Baseline daily target is `TDEE - daily_deficit`.
+- A user-approved calibration revision may add a bounded target correction while
+  leaving the configured deficit and profile-estimated TDEE unchanged.
 - Projection uses a constant rate of `3500 kcal/lb` or `7700 kcal/kg`.
-- Do not infer expenditure from weight changes for MVP; "calories out" is the
-  profile-estimated TDEE.
+- "Calories out" remains the profile-estimated TDEE. Weight and intake trends
+  may support a bounded calorie-target correction, but must not replace or be
+  displayed as the user's TDEE.
 
 Non-goals for MVP:
 

@@ -257,6 +257,8 @@ model Goal {
   target_date   DateTime?
   daily_deficit Int       @default(500)
   created_at    DateTime  @default(now())
+  calibration_recommendations CalibrationRecommendation[]
+  calorie_plan_revisions CaloriePlanRevision[]
 
   @@index([user_id, created_at(sort: Desc), id(sort: Desc)])
 }
@@ -385,6 +387,7 @@ model CalibrationRecommendation {
   user_id                           Int
   user                              User                            @relation(fields: [user_id], references: [id], onDelete: Cascade)
   source_goal_id                    Int
+  source_goal                       Goal                            @relation(fields: [source_goal_id], references: [id], onDelete: Cascade)
   input_fingerprint                 String
   model_version                     Int
   as_of_local_date                  DateTime                        @db.Date
@@ -407,13 +410,15 @@ model CaloriePlanRevision {
   id                     Int                        @id @default(autoincrement())
   user_id                Int
   user                   User                       @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  source_goal_id         Int
+  source_goal            Goal                       @relation(fields: [source_goal_id], references: [id], onDelete: Cascade)
   recommendation_id      Int?                       @unique
   recommendation         CalibrationRecommendation? @relation(fields: [recommendation_id], references: [id], onDelete: SetNull)
   target_adjustment_kcal Int
   effective_local_date   DateTime                   @db.Date
   created_at             DateTime                   @default(now())
 
-  @@index([user_id, effective_local_date(sort: Desc), id(sort: Desc)])
+  @@index([user_id, source_goal_id, effective_local_date(sort: Desc), id(sort: Desc)])
 }
 
 model MyFood {

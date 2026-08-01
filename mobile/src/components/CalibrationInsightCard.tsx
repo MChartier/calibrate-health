@@ -118,7 +118,7 @@ export const CalibrationInsightCard: React.FC<ViewProps> = ({ style, ...props })
                         </View>
                         <View style={styles.tileRow}>
                             <MetricTile label="observed pace" value={formatWeightPace(evaluation.estimates.observedWeeklyWeightChangeKg)} />
-                            <MetricTile label="inferred TDEE" value={formatCalorieInterval(evaluation.estimates.inferredTdeeKcal)} />
+                            <MetricTile label="estimated correction" value={formatCalorieInterval(evaluation.estimates.targetAdjustmentKcal)} />
                         </View>
                     </>
                 )}

@@ -76,6 +76,8 @@ export default function FoodLogScreen() {
     async function invalidateLogQueries() {
         await Promise.all([
             queryClient.invalidateQueries({ queryKey: ['mobile-food', selectedDate] }),
+            queryClient.invalidateQueries({ queryKey: ['mobile-food-day', selectedDate] }),
+            queryClient.invalidateQueries({ queryKey: ['mobile-calibration-status'] }),
             queryClient.invalidateQueries({ queryKey: ['mobile-profile'] }),
             queryClient.invalidateQueries({ queryKey: ['mobile-recent-foods'] })
         ]);

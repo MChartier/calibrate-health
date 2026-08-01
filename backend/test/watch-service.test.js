@@ -79,13 +79,17 @@ test('watch mutation parser accepts canonical grams and rejects unknown fields',
 
 test('watch snapshot is bounded, timezone-local, and derives current-session undo', async () => {
   let isolationLevel;
+  let revisionFindFirstArgs = null;
   const tx = {
     user: { findUnique: async () => ({
       id: 9, timezone: 'America/Los_Angeles', language: 'en', weight_unit: 'KG', height_unit: 'CM',
       sex: 'MALE', date_of_birth: new Date('1990-01-01T00:00:00.000Z'), height_mm: 1800, activity_level: 'SEDENTARY'
     }) },
-    goal: { findFirst: async () => ({ start_weight_grams: 90000, target_weight_grams: 75000, daily_deficit: 500 }) },
-    caloriePlanRevision: { findFirst: async () => null },
+    goal: { findFirst: async () => ({ id: 41, start_weight_grams: 90000, target_weight_grams: 75000, daily_deficit: 500 }) },
+    caloriePlanRevision: { findFirst: async (args) => {
+      revisionFindFirstArgs = args;
+      return null;
+    } },
     bodyMetric: {
       findFirst: async () => ({ id: 4, date: new Date('2026-07-10T00:00:00.000Z'), weight_grams: 80000 }),
       findUnique: async () => null
@@ -145,6 +149,7 @@ test('watch snapshot is bounded, timezone-local, and derives current-session und
   const snapshot = await buildWatchSnapshot({ userId: 9, mobileAuthSessionId: 73, now: new Date('2026-07-11T20:00:00.000Z') });
 
   assert.equal(isolationLevel, 'RepeatableRead');
+  assert.equal(revisionFindFirstArgs.where.source_goal_id, 41);
   assert.equal(snapshot.local_date, '2026-07-11');
   assert.equal(snapshot.weight_unit, 'KG');
   assert.equal(snapshot.calories.consumed, 1200);

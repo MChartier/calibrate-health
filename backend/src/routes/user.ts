@@ -388,7 +388,7 @@ router.get('/profile', async (req, res) => {
     const latestGoal = await prisma.goal.findFirst({
       where: { user_id: user.id },
       orderBy: [{ created_at: 'desc' }, { id: 'desc' }],
-      select: { daily_deficit: true }
+      select: { id: true, daily_deficit: true }
     });
 
     const latestMetric = await prisma.bodyMetric.findFirst({
@@ -397,7 +397,9 @@ router.get('/profile', async (req, res) => {
       select: { weight_grams: true }
     });
     const localToday = getSafeUtcTodayDateOnlyInTimeZone(dbUser.timezone);
-    const effectivePlan = await getEffectiveCaloriePlan(user.id, localToday);
+    const effectivePlan = latestGoal
+      ? await getEffectiveCaloriePlan(user.id, latestGoal.id, localToday)
+      : null;
 
     // Shape the profile subset used by the settings UI and calorie math.
     const profile = {

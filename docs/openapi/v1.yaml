@@ -674,7 +674,7 @@ components:
           const: calibrate-account-export
         version:
           type: integer
-          const: 3
+          const: 4
         exported_at:
           type: string
           format: date-time
@@ -941,9 +941,10 @@ components:
         updated_at: { type: string, format: date-time }
     AccountExportCaloriePlanRevision:
       type: object
-      required: [id, recommendation_id, target_adjustment_kcal, effective_local_date, created_at]
+      required: [id, source_goal_id, recommendation_id, target_adjustment_kcal, effective_local_date, created_at]
       properties:
         id: { type: integer }
+        source_goal_id: { type: integer }
         recommendation_id: { type: [integer, 'null'] }
         target_adjustment_kcal: { type: integer }
         effective_local_date: { type: string, format: date }
@@ -995,13 +996,11 @@ components:
           items: { type: string }
         estimates:
           type: object
-          required: [averageIntakeKcal, observedWeeklyWeightChangeKg, inferredTdeeKcal, targetAdjustmentKcal, configuredWeeklyWeightChangeKg]
+          required: [averageIntakeKcal, observedWeeklyWeightChangeKg, targetAdjustmentKcal, configuredWeeklyWeightChangeKg]
           properties:
             averageIntakeKcal:
               oneOf: [{ $ref: '#/components/schemas/CalibrationInterval' }, { type: 'null' }]
             observedWeeklyWeightChangeKg:
-              oneOf: [{ $ref: '#/components/schemas/CalibrationInterval' }, { type: 'null' }]
-            inferredTdeeKcal:
               oneOf: [{ $ref: '#/components/schemas/CalibrationInterval' }, { type: 'null' }]
             targetAdjustmentKcal:
               oneOf: [{ $ref: '#/components/schemas/CalibrationInterval' }, { type: 'null' }]

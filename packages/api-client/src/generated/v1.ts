@@ -387,7 +387,7 @@ export interface components {
             /** @constant */
             format: "calibrate-account-export";
             /** @constant */
-            version: 3;
+            version: 4;
             /** Format: date-time */
             exported_at: string;
             account: components["schemas"]["AccountExportProfile"];
@@ -652,6 +652,7 @@ export interface components {
         };
         AccountExportCaloriePlanRevision: {
             id: number;
+            source_goal_id: number;
             recommendation_id: number | null;
             target_adjustment_kcal: number;
             /** Format: date */
@@ -696,7 +697,6 @@ export interface components {
             estimates: {
                 averageIntakeKcal: components["schemas"]["CalibrationInterval"] | null;
                 observedWeeklyWeightChangeKg: components["schemas"]["CalibrationInterval"] | null;
-                inferredTdeeKcal: components["schemas"]["CalibrationInterval"] | null;
                 targetAdjustmentKcal: components["schemas"]["CalibrationInterval"] | null;
                 configuredWeeklyWeightChangeKg: number;
             };
