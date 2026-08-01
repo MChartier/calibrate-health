@@ -79,6 +79,14 @@ export const CalibrationInsightCard: React.FC<ViewProps> = ({ style, ...props })
                 {evaluation.selectedWindowDays && (
                     <AppText variant="caption">{describeCalibrationEvidence(evaluation)}</AppText>
                 )}
+                {evaluation.missingCriteria.length > 0 && !status?.recommendation && (
+                    <View style={styles.list}>
+                        <AppText variant="label">What would improve this insight</AppText>
+                        {evaluation.missingCriteria.map((criterion) => (
+                            <AppText key={criterion} variant="caption">- {criterion}</AppText>
+                        ))}
+                    </View>
+                )}
                 {scheduledChange && (
                     <View style={styles.scheduledRow}>
                         <Ionicons name="calendar-outline" size={18} color={colors.primaryDark} />

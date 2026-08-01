@@ -23,7 +23,7 @@ The pure evaluator lives in `shared/calibration.ts` and is shared by the service
 - Four hundred deterministic bootstrap samples propagate food-range and weight-trend uncertainty into the inferred TDEE and target-correction intervals.
 - Health Connect activity is returned as observational context only.
 
-Recommendations are limited to 150 kcal per accepted revision, rounded to 25 kcal, and cannot lower the target below `max(BMR, 1000 kcal/day)`. The service currently materializes recommendations only for adult users with an active weight-loss goal.
+Recommendations are limited to 150 kcal per accepted revision and rounded to 25 kcal. A downward correction cannot take the target below `max(BMR, 1000 kcal/day)`; when the current target is already at or below that floor, calibration does not reverse a downward signal into an upward recommendation. The service currently materializes recommendations only for adult users with an active weight-loss goal.
 
 ## Development history lab
 
@@ -33,4 +33,12 @@ Run the stateless preset explorer with:
 npm run dev:calibration-lab
 ```
 
-The lab includes early, on-track, adherence-driven, target-error, incomplete-history, and BMR-floor scenarios. Its JSON editor can exercise additional histories without writing user data or waiting for real-world observation windows.
+The lab includes 14 histories covering all four statuses, both target-change directions, a prior-adjustment reversal, adherence-driven pacing, incomplete history, activity context, weight uncertainty, BMR-floor behavior, and the 42-day observation cap. Its JSON editor validates edited histories without writing user data or waiting for real-world observation windows.
+
+Preset states can be linked directly with `?scenario=<scenario-id>`, for example:
+
+```text
+http://localhost:5173/?scenario=missing-and-suspicious
+```
+
+See [Calibration insight manual QA](calibration-insight-qa.md) for the tested state matrix, findings, screenshots, and remaining limitations.

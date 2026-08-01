@@ -144,13 +144,13 @@ function quantile(sorted: number[], fraction: number): number {
     return sorted[lowerIndex] * (1 - portion) + sorted[upperIndex] * portion;
 }
 
-function interval(values: number[]): CalibrationInterval | null {
+function interval(values: number[], precision = 1): CalibrationInterval | null {
     if (values.length === 0) return null;
     const sorted = values.slice().sort((a, b) => a - b);
     return {
-        low: round(quantile(sorted, 0.025)),
-        midpoint: round(quantile(sorted, 0.5)),
-        high: round(quantile(sorted, 0.975))
+        low: round(quantile(sorted, 0.025), precision),
+        midpoint: round(quantile(sorted, 0.5), precision),
+        high: round(quantile(sorted, 0.975), precision)
     };
 }
 
@@ -311,8 +311,10 @@ function evaluateWindow(input: CalibrationInput, windowDays: number): WindowEval
     const missingCriteria: string[] = [];
 
     if (input.ageYears < 18) missingCriteria.push('Calibration recommendations are currently available to adults only.');
-    if (dataQuality.weightPoints < 3 || dataQuality.weightSpanDays < CALIBRATION_MIN_INSIGHT_DAYS) {
-        missingCriteria.push('Log weights across at least 7 days so a pace can be estimated.');
+    if (dataQuality.weightPoints < 2 || dataQuality.weightSpanDays < CALIBRATION_MIN_INSIGHT_DAYS) {
+        missingCriteria.push('Record weights spanning at least 7 days so a pace can be estimated.');
+    } else if (dataQuality.weightPoints < 3) {
+        missingCriteria.push('Record at least 3 weights before a target change can be suggested.');
     }
     if (dataQuality.confidentDays < Math.min(7, windowDays)) {
         missingCriteria.push('Complete at least 7 plausible food-log days with entries across multiple meals.');
@@ -361,7 +363,7 @@ function evaluateWindow(input: CalibrationInput, windowDays: number): WindowEval
     }
 
     const averageIntake = interval(averageIntakeSamples);
-    const weeklyWeightChange = interval(weeklyWeightChangeSamples);
+    const weeklyWeightChange = interval(weeklyWeightChangeSamples, 3);
     const inferredTdee = interval(inferredTdeeSamples);
     const targetAdjustment = interval(adjustmentSamples);
     let recommendation: CalibrationRecommendation | null = null;
@@ -376,6 +378,7 @@ function evaluateWindow(input: CalibrationInput, windowDays: number): WindowEval
         const hasMinimumHistory =
             windowDays >= CALIBRATION_MIN_ACTIONABLE_DAYS &&
             dataQuality.weightSpanDays >= CALIBRATION_MIN_ACTIONABLE_DAYS &&
+            dataQuality.weightPoints >= 3 &&
             dataQuality.confidentDays >= 7;
         actionable =
             input.ageYears >= 18 &&
@@ -383,19 +386,32 @@ function evaluateWindow(input: CalibrationInput, windowDays: number): WindowEval
             intervalWidth <= MAX_ACTIONABLE_INTERVAL_WIDTH_KCAL &&
             supportsChange;
 
+        if (supportsChange && (windowDays < CALIBRATION_MIN_ACTIONABLE_DAYS || dataQuality.weightSpanDays < CALIBRATION_MIN_ACTIONABLE_DAYS)) {
+            missingCriteria.push('Track food and weight across at least 14 days before a target change can be suggested.');
+        }
+
+        let floorBlocksDecrease = false;
         if (actionable) {
             const rawStep = targetAdjustment.midpoint - currentAdjustment;
             const boundedStep = clamp(rawStep, -CALIBRATION_MAX_ADJUSTMENT_STEP_KCAL, CALIBRATION_MAX_ADJUSTMENT_STEP_KCAL);
             let roundedStep = Math.round(boundedStep / 25) * 25;
             const baseTarget = input.profileTdeeKcal - input.configuredDailyDeficitKcal;
+            const currentTarget = baseTarget + currentAdjustment;
             const minimumTarget = Math.max(input.bmrKcal, CALIBRATION_MIN_TARGET_KCAL);
-            const floorLimitedAdjustment = minimumTarget - (baseTarget + currentAdjustment);
-            roundedStep = Math.max(roundedStep, Math.ceil(floorLimitedAdjustment / 25) * 25);
+            if (roundedStep < 0) {
+                const maximumDecrease = Math.max(0, currentTarget - minimumTarget);
+                if (maximumDecrease < 25) {
+                    floorBlocksDecrease = true;
+                    actionable = false;
+                } else {
+                    roundedStep = Math.max(roundedStep, -Math.floor(maximumDecrease / 25) * 25);
+                }
+            }
 
-            if (Math.abs(roundedStep) >= 25) {
+            if (actionable && Math.abs(roundedStep) >= 25) {
                 const recommendedAdjustment = currentAdjustment + roundedStep;
                 recommendation = {
-                    currentTargetKcal: Math.round(baseTarget + currentAdjustment),
+                    currentTargetKcal: Math.round(currentTarget),
                     recommendedTargetKcal: Math.round(baseTarget + recommendedAdjustment),
                     adjustmentStepKcal: roundedStep,
                     currentTargetAdjustmentKcal: currentAdjustment,
@@ -406,15 +422,20 @@ function evaluateWindow(input: CalibrationInput, windowDays: number): WindowEval
             }
         }
 
+        if (floorBlocksDecrease) {
+            missingCriteria.push('The current target is already at or below the calibration safety floor, so no lower target can be suggested.');
+        }
+
         if (hasMinimumHistory && intervalWidth > MAX_ACTIONABLE_INTERVAL_WIDTH_KCAL) {
             missingCriteria.push('The plausible calorie range is still too wide for a safe target change.');
         }
         if (dataQuality.suspiciousDays > 0) {
-            missingCriteria.push(`${dataQuality.suspiciousDays} completed day${dataQuality.suspiciousDays === 1 ? '' : 's'} look incomplete and widen the estimate.`);
+            const count = dataQuality.suspiciousDays;
+            missingCriteria.push(`${count} completed day${count === 1 ? '' : 's'} ${count === 1 ? 'looks' : 'look'} incomplete and ${count === 1 ? 'widens' : 'widen'} the estimate.`);
         }
         if (dataQuality.missingDays > 0 || dataQuality.incompleteDays > 0) {
             const uncertainDays = dataQuality.missingDays + dataQuality.incompleteDays;
-            missingCriteria.push(`${uncertainDays} uncompleted or missing day${uncertainDays === 1 ? '' : 's'} widen the estimate.`);
+            missingCriteria.push(`${uncertainDays} uncompleted or missing day${uncertainDays === 1 ? '' : 's'} ${uncertainDays === 1 ? 'widens' : 'widen'} the estimate.`);
         }
     }
 
@@ -479,6 +500,12 @@ export function evaluateCalibration(input: CalibrationInput): CalibrationResult 
     );
 
     if (availableSpan < CALIBRATION_MIN_INSIGHT_DAYS) {
+        const previewDays = availableSpan > 0 ? classifyFoodDays(input, availableSpan) : [];
+        const previewStart = addDateDays(input.asOfDate, -(Math.max(1, availableSpan) - 1));
+        const previewWeights = input.weightPoints
+            .filter((point) => point.date >= previewStart && point.date <= input.asOfDate)
+            .slice()
+            .sort((left, right) => left.date.localeCompare(right.date));
         return {
             modelVersion: CALIBRATION_MODEL_VERSION,
             asOfDate: input.asOfDate,
@@ -486,7 +513,7 @@ export function evaluateCalibration(input: CalibrationInput): CalibrationResult 
             headline: 'Building your calibration history',
             summary: `Track food and weight across ${CALIBRATION_MIN_INSIGHT_DAYS} days to unlock an initial pace insight.`,
             selectedWindowDays: null,
-            dataQuality: emptyQuality(),
+            dataQuality: availableSpan > 0 ? summarizeDataQuality(previewDays, previewWeights) : emptyQuality(),
             missingCriteria: ['Track food and weight across at least 7 days.'],
             assumptions: [],
             estimates: {
@@ -528,7 +555,10 @@ export function evaluateCalibration(input: CalibrationInput): CalibrationResult 
         headline = 'Your latest pace is available';
         const weekly = selected.weeklyWeightChange?.midpoint ?? 0;
         const direction = weekly < -0.01 ? 'losing' : weekly > 0.01 ? 'gaining' : 'maintaining';
-        summary = `The trend currently indicates ${direction} about ${Math.abs(weekly).toFixed(2)} kg per week. The evidence does not support a target change yet.`;
+        const actionSummary = selected.missingCriteria.length > 0
+            ? 'A target change is not available yet; see the remaining criteria.'
+            : 'The evidence does not support a target change yet.';
+        summary = `The trend currently indicates ${direction} about ${Math.abs(weekly).toFixed(2)} kg per week. ${actionSummary}`;
     }
 
     return {
