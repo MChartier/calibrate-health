@@ -387,7 +387,7 @@ export interface components {
             /** @constant */
             format: "calibrate-account-export";
             /** @constant */
-            version: 4;
+            version: 5;
             /** Format: date-time */
             exported_at: string;
             account: components["schemas"]["AccountExportProfile"];
@@ -400,6 +400,7 @@ export interface components {
             in_app_notifications: components["schemas"]["AccountExportNotification"][];
             activity_records: components["schemas"]["AccountExportActivityRecord"][];
             activity_day_summaries: components["schemas"]["AccountExportActivityDaySummary"][];
+            calibration_recommendations: components["schemas"]["AccountExportCalibrationRecommendation"][];
             calorie_plan_revisions: components["schemas"]["AccountExportCaloriePlanRevision"][];
         };
         AccountExportProfile: {
@@ -650,6 +651,26 @@ export interface components {
             /** Format: date-time */
             updated_at: string;
         };
+        AccountExportCalibrationRecommendation: {
+            id: number;
+            source_goal_id: number;
+            model_version: number;
+            /** Format: date */
+            as_of_local_date: string;
+            current_target_adjustment_kcal: number;
+            recommended_target_adjustment_kcal: number;
+            current_target_kcal: number;
+            recommended_target_kcal: number;
+            /** @enum {string} */
+            status: "PENDING" | "APPLIED" | "STALE";
+            result_snapshot: {
+                [key: string]: unknown;
+            };
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            applied_at: string | null;
+        };
         AccountExportCaloriePlanRevision: {
             id: number;
             source_goal_id: number;
@@ -687,6 +708,8 @@ export interface components {
             /** Format: date */
             asOfDate: string;
             /** @enum {string} */
+            weightUnit: "KG" | "LB";
+            /** @enum {string} */
             status: "not_ready" | "learning" | "insight" | "recommendation";
             headline: string;
             summary: string;
@@ -710,6 +733,7 @@ export interface components {
         ScheduledCalibrationChange: {
             recommendationId: number | null;
             targetAdjustmentKcal: number;
+            dailyCalorieBudgetKcal: number | null;
             /** Format: date */
             effectiveLocalDate: string;
         };

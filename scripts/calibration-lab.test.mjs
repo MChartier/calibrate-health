@@ -6,6 +6,7 @@ import {
   formatBudgetChange,
   formatBudgetInterval,
   formatDayCount,
+  formatWeightInterval,
   getWindowMetric
 } from '../tools/calibration-lab/presentation.mjs';
 
@@ -13,6 +14,7 @@ const labStyles = await readFile(new URL('../tools/calibration-lab/styles.css', 
 
 const validInput = {
   asOfDate: '2026-07-31',
+  weightUnit: 'KG',
   ageYears: 38,
   bmrKcal: 1650,
   profileTdeeKcal: 2400,
@@ -46,6 +48,18 @@ test('calibration lab rejects malformed nested history before evaluation', () =>
     () => parseCalibrationInput({ ...validInput, weightPoints: [{ ...validInput.weightPoints[0], lowerKg: 91 }] }),
     /lowerKg cannot exceed upperKg/
   );
+  assert.throws(
+    () => parseCalibrationInput({ ...validInput, foodDays: [validInput.foodDays[0], validInput.foodDays[0]] }),
+    /duplicates 2026-07-31/
+  );
+  assert.throws(
+    () => parseCalibrationInput({ ...validInput, asOfDate: '2026-02-30' }),
+    /valid YYYY-MM-DD date/
+  );
+  assert.throws(
+    () => parseCalibrationInput({ ...validInput, weightUnit: 'STONE' }),
+    /weightUnit must be KG or LB/
+  );
 });
 
 test('calibration lab hides empty optional sections', () => {
@@ -78,6 +92,13 @@ test('calibration lab describes budget changes without ambiguous signs', () => {
   assert.equal(formatBudgetChange(150), '150 kcal more');
   assert.equal(formatBudgetInterval({ low: -291, midpoint: -246, high: -198 }), '246 kcal/day lower (198 to 291)');
   assert.equal(formatBudgetInterval({ low: 279, midpoint: 327, high: 373 }), '327 kcal/day higher (279 to 373)');
+  assert.equal(formatBudgetInterval({ low: -43, midpoint: -1, high: 43 }), 'Near baseline (43 lower to 43 higher)');
+});
+
+test('calibration lab displays pace in the configured weight unit', () => {
+  const interval = { low: -0.5, midpoint: -0.45, high: -0.4 };
+  assert.equal(formatWeightInterval(interval, 'KG'), '-0.45 kg/week (-0.50 to -0.40)');
+  assert.equal(formatWeightInterval(interval, 'LB'), '-0.99 lb/week (-1.10 to -0.88)');
 });
 
 test('calibration lab serves the window-presentation module', async (context) => {

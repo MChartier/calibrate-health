@@ -24,6 +24,7 @@ import { TextField } from '../../src/components/TextField';
 import { useAuth } from '../../src/auth/AuthContext';
 import { useAddFoodRequest } from '../../src/context/AddFoodRequestContext';
 import { useSharedLogDateNavigation } from '../../src/context/LogDateContext';
+import { calibrationStatusQueryKey } from '../../src/calibration/queryKeys';
 import { usePrefetchPreviousFoodLog } from '../../src/hooks/usePrefetchPreviousFoodLog';
 import { getActiveTabRoute } from '../../src/navigation/contextualFab';
 import { executeOrQueueMutation, OFFLINE_MUTATION_OPERATIONS } from '../../src/offline/operations';
@@ -77,7 +78,7 @@ export default function FoodLogScreen() {
         await Promise.all([
             queryClient.invalidateQueries({ queryKey: ['mobile-food', selectedDate] }),
             queryClient.invalidateQueries({ queryKey: ['mobile-food-day', selectedDate] }),
-            queryClient.invalidateQueries({ queryKey: ['mobile-calibration-status'] }),
+            queryClient.invalidateQueries({ queryKey: calibrationStatusQueryKey }),
             queryClient.invalidateQueries({ queryKey: ['mobile-profile'] }),
             queryClient.invalidateQueries({ queryKey: ['mobile-recent-foods'] })
         ]);

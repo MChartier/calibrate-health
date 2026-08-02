@@ -16,7 +16,12 @@ test('uses the versioned calibration status and apply routes', async () => {
                     recommendation: null,
                     scheduledChange: null
                 }
-                : { recommendationId: 7, targetAdjustmentKcal: -150, effectiveLocalDate: '2026-08-01' };
+                : {
+                    recommendationId: 7,
+                    targetAdjustmentKcal: -150,
+                    dailyCalorieBudgetKcal: 1750,
+                    effectiveLocalDate: '2026-08-01'
+                };
             return new Response(JSON.stringify(body), { status: 200, headers: { 'content-type': 'application/json' } });
         }
     });

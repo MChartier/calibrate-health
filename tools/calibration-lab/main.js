@@ -1,4 +1,4 @@
-import { formatBudgetChange, formatBudgetInterval, formatDayCount, getWindowMetric } from './presentation.mjs';
+import { formatBudgetChange, formatBudgetInterval, formatDayCount, formatWeightInterval, getWindowMetric } from './presentation.mjs';
 
 const elements = {
   scenario: document.querySelector('#preset-history'),
@@ -32,6 +32,10 @@ function formatNumber(value, precision = 0) {
     minimumFractionDigits: precision,
     maximumFractionDigits: precision
   });
+}
+
+function formatOptionalNumber(value, suffix) {
+  return value === null ? 'Not available' : `${formatNumber(value)} ${suffix}`;
 }
 
 function formatInterval(value, unit, precision = 0) {
@@ -88,7 +92,7 @@ function renderResult(result) {
   elements.estimates.replaceChildren();
   const estimates = [
     ['Average intake', formatInterval(result.estimates.averageIntakeKcal, 'kcal/day')],
-    ['Observed pace', formatInterval(result.estimates.observedWeeklyWeightChangeKg, 'kg/week', 2)],
+    ['Observed pace', formatWeightInterval(result.estimates.observedWeeklyWeightChangeKg, result.weightUnit)],
     ['Estimated budget difference', formatBudgetInterval(result.estimates.targetAdjustmentKcal)]
   ];
   for (const [label, value] of estimates) {
@@ -103,13 +107,17 @@ function renderResult(result) {
   }
 
   const criteriaSatisfied = result.missingCriteria.length === 0;
+  const safetyLimited = result.missingCriteria.some((criterion) => criterion.includes('safety floor'));
   elements.criteriaPanel.classList.toggle('satisfied', criteriaSatisfied);
-  elements.criteriaTitle.textContent = criteriaSatisfied ? 'Criteria satisfied' : 'Why no stronger action';
+  let criteriaTitle = 'What would strengthen this insight';
+  if (criteriaSatisfied) criteriaTitle = 'Criteria satisfied';
+  if (safetyLimited) criteriaTitle = 'Safety limit';
+  elements.criteriaTitle.textContent = criteriaTitle;
   elements.criteria.replaceChildren();
   if (criteriaSatisfied) {
     const copy = document.createElement('p');
     copy.className = 'criteria-copy';
-    copy.textContent = 'No missing evidence criteria for this observation window.';
+    copy.textContent = 'This observation window meets all evidence criteria.';
     elements.criteria.append(copy);
   } else {
     const list = document.createElement('ul');
@@ -127,7 +135,7 @@ function renderResult(result) {
     const strong = document.createElement('strong');
     const span = document.createElement('span');
     strong.textContent = 'Activity context only';
-    span.textContent = `${result.activityContext.observedDays} days | ${formatNumber(result.activityContext.averageSteps ?? 0)} steps | ${formatNumber(result.activityContext.averageActiveCaloriesKcal ?? 0)} active kcal`;
+    span.textContent = `${result.activityContext.observedDays} days | ${formatOptionalNumber(result.activityContext.averageSteps, 'steps')} | ${formatOptionalNumber(result.activityContext.averageActiveCaloriesKcal, 'active kcal')}`;
     elements.activity.append(strong, span);
   }
   elements.output.textContent = formatJson(result);

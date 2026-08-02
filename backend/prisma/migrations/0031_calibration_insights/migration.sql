@@ -1,5 +1,5 @@
 -- CreateEnum
-CREATE TYPE "CalibrationRecommendationStatus" AS ENUM ('PENDING', 'APPLIED', 'DISMISSED', 'STALE');
+CREATE TYPE "CalibrationRecommendationStatus" AS ENUM ('PENDING', 'APPLIED', 'STALE');
 
 -- CreateTable
 CREATE TABLE "CalibrationRecommendation" (
@@ -17,7 +17,6 @@ CREATE TABLE "CalibrationRecommendation" (
     "result_snapshot" JSONB NOT NULL,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "applied_at" TIMESTAMP(3),
-    "dismissed_at" TIMESTAMP(3),
 
     CONSTRAINT "CalibrationRecommendation_pkey" PRIMARY KEY ("id")
 );

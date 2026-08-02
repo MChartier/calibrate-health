@@ -5,5 +5,3 @@ export * from './goalDeficit';
 export * from './inAppNotifications';
 export * from './notificationDelivery';
 export * from './designTokens';
-export * from './calibration';
-export * from './calibrationScenarios';

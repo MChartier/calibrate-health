@@ -8,6 +8,7 @@ import { parseFoodLogCreateBody } from '../routes/foodUtils';
 import { executeIdempotentMutation, recordSyncChange, type MutationDatabase } from './clientOperations';
 import { refreshMaterializedWeightTrendsBestEffort } from './materializedWeightTrend';
 import { getFoodDayWriteBlock } from './foodTracking';
+import { getEffectiveCaloriePlan } from './caloriePlan';
 
 const WATCH_QUICK_ADD_LIMIT = 12;
 const WATCH_PINNED_LIMIT = 6;
@@ -585,11 +586,7 @@ export async function buildWatchSnapshot(options: {
       orderBy: [{ created_at: 'desc' }, { id: 'desc' }]
     });
     const effectivePlanPromise = goal
-      ? tx.caloriePlanRevision.findFirst({
-          where: { user_id: options.userId, source_goal_id: goal.id, effective_local_date: { lte: localDate } },
-          orderBy: [{ effective_local_date: 'desc' }, { id: 'desc' }],
-          select: { target_adjustment_kcal: true }
-        })
+      ? getEffectiveCaloriePlan(options.userId, goal.id, localDate, tx)
       : Promise.resolve(null);
     const [effectivePlan, latestWeight, todayWeight, foodAggregate, foodDay, activePause, pinned, recent, undoCandidate, activeReminderRows] = await Promise.all([
       effectivePlanPromise,
@@ -608,7 +605,7 @@ export async function buildWatchSnapshot(options: {
       weight_grams: latestWeight?.weight_grams,
       profile: user,
       daily_deficit: goal?.daily_deficit,
-      target_adjustment_kcal: effectivePlan?.target_adjustment_kcal ?? 0,
+      target_adjustment_kcal: effectivePlan?.targetAdjustmentKcal ?? 0,
       now
     });
     const caloriesConsumed = foodAggregate._sum.calories ?? 0;

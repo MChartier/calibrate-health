@@ -667,14 +667,14 @@ components:
     AccountExport:
       type: object
       additionalProperties: false
-      required: [format, version, exported_at, account, goals, body_metrics, food_logs, food_log_days, food_tracking_pauses, my_foods, in_app_notifications, activity_records, activity_day_summaries, calorie_plan_revisions]
+      required: [format, version, exported_at, account, goals, body_metrics, food_logs, food_log_days, food_tracking_pauses, my_foods, in_app_notifications, activity_records, activity_day_summaries, calibration_recommendations, calorie_plan_revisions]
       properties:
         format:
           type: string
           const: calibrate-account-export
         version:
           type: integer
-          const: 4
+          const: 5
         exported_at:
           type: string
           format: date-time
@@ -716,6 +716,10 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/AccountExportActivityDaySummary'
+        calibration_recommendations:
+          type: array
+          items:
+            $ref: '#/components/schemas/AccountExportCalibrationRecommendation'
         calorie_plan_revisions:
           type: array
           items:
@@ -939,6 +943,22 @@ components:
         observed_at: { type: string, format: date-time }
         created_at: { type: string, format: date-time }
         updated_at: { type: string, format: date-time }
+    AccountExportCalibrationRecommendation:
+      type: object
+      required: [id, source_goal_id, model_version, as_of_local_date, current_target_adjustment_kcal, recommended_target_adjustment_kcal, current_target_kcal, recommended_target_kcal, status, result_snapshot, created_at, applied_at]
+      properties:
+        id: { type: integer }
+        source_goal_id: { type: integer }
+        model_version: { type: integer }
+        as_of_local_date: { type: string, format: date }
+        current_target_adjustment_kcal: { type: integer }
+        recommended_target_adjustment_kcal: { type: integer }
+        current_target_kcal: { type: integer }
+        recommended_target_kcal: { type: integer }
+        status: { type: string, enum: [PENDING, APPLIED, STALE] }
+        result_snapshot: { type: object, additionalProperties: true }
+        created_at: { type: string, format: date-time }
+        applied_at: { type: [string, 'null'], format: date-time }
     AccountExportCaloriePlanRevision:
       type: object
       required: [id, source_goal_id, recommendation_id, target_adjustment_kcal, effective_local_date, created_at]
@@ -979,10 +999,11 @@ components:
         recommendedTargetAdjustmentKcal: { type: integer }
     CalibrationEvaluation:
       type: object
-      required: [modelVersion, asOfDate, status, headline, summary, selectedWindowDays, dataQuality, missingCriteria, assumptions, estimates, recommendation, activityContext]
+      required: [modelVersion, asOfDate, weightUnit, status, headline, summary, selectedWindowDays, dataQuality, missingCriteria, assumptions, estimates, recommendation, activityContext]
       properties:
         modelVersion: { type: integer }
         asOfDate: { type: string, format: date }
+        weightUnit: { type: string, enum: [KG, LB] }
         status: { type: string, enum: [not_ready, learning, insight, recommendation] }
         headline: { type: string }
         summary: { type: string }
@@ -1016,10 +1037,11 @@ components:
             averageActiveCaloriesKcal: { type: [integer, 'null'] }
     ScheduledCalibrationChange:
       type: object
-      required: [recommendationId, targetAdjustmentKcal, effectiveLocalDate]
+      required: [recommendationId, targetAdjustmentKcal, dailyCalorieBudgetKcal, effectiveLocalDate]
       properties:
         recommendationId: { type: [integer, 'null'] }
         targetAdjustmentKcal: { type: integer }
+        dailyCalorieBudgetKcal: { type: [integer, 'null'], minimum: 0 }
         effectiveLocalDate: { type: string, format: date }
     CalibrationStatusResponse:
       type: object

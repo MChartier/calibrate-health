@@ -1,7 +1,6 @@
 import type {
     ActivityLevel,
     ActivityRecordType,
-    CalibrationResult,
     HeightUnit,
     MealPeriod,
     MobileDevicePlatform,
@@ -10,6 +9,7 @@ import type {
     Sex,
     WeightUnit
 } from '@calibrate/shared';
+import type { CalibrationResult } from '@calibrate/shared/calibration';
 import type { InAppNotificationType } from '@calibrate/shared/inAppNotifications';
 
 export type UserClientPayload = {
@@ -32,7 +32,7 @@ export type UserClientPayload = {
 
 export type AccountExport = {
     format: 'calibrate-account-export';
-    version: 4;
+    version: 5;
     exported_at: string;
     account: {
         id: number;
@@ -193,6 +193,20 @@ export type AccountExport = {
         observed_at: string;
         created_at: string;
         updated_at: string;
+    }>;
+    calibration_recommendations: Array<{
+        id: number;
+        source_goal_id: number;
+        model_version: number;
+        as_of_local_date: string;
+        current_target_adjustment_kcal: number;
+        recommended_target_adjustment_kcal: number;
+        current_target_kcal: number;
+        recommended_target_kcal: number;
+        status: 'PENDING' | 'APPLIED' | 'STALE';
+        result_snapshot: unknown;
+        created_at: string;
+        applied_at: string | null;
     }>;
     calorie_plan_revisions: Array<{
         id: number;
@@ -545,6 +559,7 @@ export type UserProfileResponse = {
 export type ScheduledCalibrationChange = {
     recommendationId: number | null;
     targetAdjustmentKcal: number;
+    dailyCalorieBudgetKcal: number | null;
     effectiveLocalDate: string;
 };
 

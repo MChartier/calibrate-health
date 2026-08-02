@@ -1,3 +1,5 @@
+import type { WeightUnit } from './domain';
+
 export const CALIBRATION_MODEL_VERSION = 2;
 export const CALIBRATION_MAX_OBSERVATION_DAYS = 42;
 export const CALIBRATION_REFERENCE_DAYS = 90;
@@ -11,6 +13,7 @@ const KCAL_PER_KILOGRAM = 7700;
 const ACTION_THRESHOLD_KCAL = 75;
 const MAX_ACTIONABLE_INTERVAL_WIDTH_KCAL = 300;
 const OBSERVATION_WINDOWS = [14, 21, 28, 35, 42] as const;
+const POUNDS_PER_KILOGRAM = 2.2046226218;
 
 export type CalibrationFoodDay = {
     date: string;
@@ -35,6 +38,7 @@ export type CalibrationActivityDay = {
 
 export type CalibrationInput = {
     asOfDate: string;
+    weightUnit: WeightUnit;
     ageYears: number;
     bmrKcal: number;
     profileTdeeKcal: number;
@@ -73,6 +77,7 @@ export type CalibrationRecommendation = {
 export type CalibrationResult = {
     modelVersion: number;
     asOfDate: string;
+    weightUnit: WeightUnit;
     status: 'not_ready' | 'learning' | 'insight' | 'recommendation';
     headline: string;
     summary: string;
@@ -154,6 +159,8 @@ function interval(values: number[], precision = 1): CalibrationInterval | null {
 }
 
 function seedFromInput(input: CalibrationInput, windowDays: number): number {
+    const byDate = <T extends { date: string }>(values: T[]) =>
+        values.slice().sort((left, right) => left.date.localeCompare(right.date));
     const canonical = JSON.stringify({
         asOfDate: input.asOfDate,
         windowDays,
@@ -161,8 +168,8 @@ function seedFromInput(input: CalibrationInput, windowDays: number): number {
         profileTdeeKcal: input.profileTdeeKcal,
         configuredDailyDeficitKcal: input.configuredDailyDeficitKcal,
         currentTargetAdjustmentKcal: input.currentTargetAdjustmentKcal,
-        foodDays: input.foodDays,
-        weightPoints: input.weightPoints
+        foodDays: byDate(input.foodDays),
+        weightPoints: byDate(input.weightPoints)
     });
     let hash = 2166136261;
     for (let index = 0; index < canonical.length; index += 1) {
@@ -201,7 +208,11 @@ function getReferenceIntakeBounds(input: CalibrationInput): { low: number; midpo
         .sort((a, b) => a - b);
 
     if (confidentCalories.length < 3) {
-        const midpoint = input.profileTdeeKcal - input.configuredDailyDeficitKcal + input.currentTargetAdjustmentKcal;
+        const midpoint = clamp(
+            input.profileTdeeKcal - input.configuredDailyDeficitKcal + input.currentTargetAdjustmentKcal,
+            plausibleMinimum,
+            plausibleMaximum
+        );
         return {
             low: Math.max(plausibleMinimum, midpoint - 350),
             midpoint,
@@ -233,6 +244,7 @@ function classifyFoodDays(input: CalibrationInput, windowDays: number): Classifi
         const date = addDateDays(startDate, offset);
         const source = sourceByDate.get(date);
         if (!source) {
+            const low = Math.max(reference.midpoint, currentTarget);
             result.push({
                 date,
                 calories: 0,
@@ -241,8 +253,8 @@ function classifyFoodDays(input: CalibrationInput, windowDays: number): Classifi
                 isComplete: false,
                 classification: 'missing',
                 // A skipped log is conservatively treated as at least a typical/target day, not as zero intake.
-                low: Math.max(reference.midpoint, currentTarget),
-                high: Math.min(plausibleMaximum, Math.max(reference.high, currentTarget + 750))
+                low,
+                high: Math.max(low, Math.min(plausibleMaximum, Math.max(reference.high, currentTarget + 750)))
             });
             continue;
         }
@@ -264,20 +276,24 @@ function classifyFoodDays(input: CalibrationInput, windowDays: number): Classifi
         }
 
         if (source.isComplete) {
+            const low = Math.max(source.calories, reference.low * 0.75);
             result.push({
                 ...source,
                 classification: 'suspicious',
-                low: Math.max(source.calories, reference.low * 0.75),
-                high: Math.min(plausibleMaximum, Math.max(reference.high, source.calories + 500))
+                low,
+                // A suspicious total may itself exceed the normal plausibility ceiling. Preserve
+                // what was logged and widen upward instead of creating an inverted range.
+                high: Math.max(low, reference.high, source.calories + 500)
             });
             continue;
         }
 
+        const low = Math.max(0, source.calories);
         result.push({
             ...source,
             classification: 'incomplete',
-            low: Math.max(0, source.calories),
-            high: Math.min(plausibleMaximum, Math.max(reference.high, source.calories + 750))
+            low,
+            high: Math.max(low, reference.high, source.calories + 750)
         });
     }
 
@@ -313,7 +329,7 @@ function evaluateWindow(input: CalibrationInput, windowDays: number): WindowEval
     if (dataQuality.weightPoints < 2 || dataQuality.weightSpanDays < CALIBRATION_MIN_INSIGHT_DAYS) {
         missingCriteria.push('Record weights spanning at least 7 days so a pace can be estimated.');
     } else if (dataQuality.weightPoints < 3) {
-        missingCriteria.push('Record at least 3 weights before a target change can be suggested.');
+        missingCriteria.push('Record at least 3 weights before a calorie-budget adjustment can be assessed.');
     }
     if (dataQuality.confidentDays < Math.min(7, windowDays)) {
         missingCriteria.push('Complete at least 7 plausible food-log days with entries across multiple meals.');
@@ -384,7 +400,7 @@ function evaluateWindow(input: CalibrationInput, windowDays: number): WindowEval
             supportsChange;
 
         if (supportsChange && (windowDays < CALIBRATION_MIN_ACTIONABLE_DAYS || dataQuality.weightSpanDays < CALIBRATION_MIN_ACTIONABLE_DAYS)) {
-            missingCriteria.push('Track food and weight across at least 14 days before a target change can be suggested.');
+            missingCriteria.push('Track food and weight across at least 14 days before a calorie-budget adjustment can be assessed.');
         }
 
         if (actionable) {
@@ -423,7 +439,7 @@ function evaluateWindow(input: CalibrationInput, windowDays: number): WindowEval
         }
 
         if (hasMinimumHistory && intervalWidth > MAX_ACTIONABLE_INTERVAL_WIDTH_KCAL) {
-            missingCriteria.push('The plausible calorie range is still too wide for a safe target change.');
+            missingCriteria.push('The estimated calorie-budget range is still too wide for a safe suggestion.');
         }
         if (dataQuality.suspiciousDays > 0) {
             const count = dataQuality.suspiciousDays;
@@ -431,7 +447,7 @@ function evaluateWindow(input: CalibrationInput, windowDays: number): WindowEval
         }
         if (dataQuality.missingDays > 0 || dataQuality.incompleteDays > 0) {
             const uncertainDays = dataQuality.missingDays + dataQuality.incompleteDays;
-            missingCriteria.push(`${uncertainDays} uncompleted or missing day${uncertainDays === 1 ? '' : 's'} ${uncertainDays === 1 ? 'widens' : 'widen'} the estimate.`);
+            missingCriteria.push(`${uncertainDays} incomplete or missing day${uncertainDays === 1 ? '' : 's'} ${uncertainDays === 1 ? 'widens' : 'widen'} the estimate.`);
         }
     }
 
@@ -479,11 +495,13 @@ function emptyQuality(): CalibrationDataQuality {
 
 function describeRecommendationPace(observedWeeklyKg: number, configuredWeeklyKg: number): string {
     if (configuredWeeklyKg < -0.01) {
+        if (observedWeeklyKg > 0.01) return 'Weight is trending up instead of down';
         return observedWeeklyKg < configuredWeeklyKg
             ? 'Weight loss is trending faster than projected'
             : 'Weight loss is trending slower than projected';
     }
     if (configuredWeeklyKg > 0.01) {
+        if (observedWeeklyKg < -0.01) return 'Weight is trending down instead of up';
         return observedWeeklyKg > configuredWeeklyKg
             ? 'Weight gain is trending faster than projected'
             : 'Weight gain is trending slower than projected';
@@ -492,19 +510,47 @@ function describeRecommendationPace(observedWeeklyKg: number, configuredWeeklyKg
     return 'Weight is trending up instead of staying steady';
 }
 
-function describeWeeklyTrend(weeklyKg: number): string {
-    if (Math.abs(weeklyKg) <= 0.01) return 'weight stayed about steady';
-    return `weight trended ${weeklyKg < 0 ? 'down' : 'up'} about ${Math.abs(weeklyKg).toFixed(2)} kg per week`;
+function displayWeeklyWeightChange(weeklyKg: number, weightUnit: WeightUnit): { value: number; unit: string } {
+    return weightUnit === 'LB'
+        ? { value: weeklyKg * POUNDS_PER_KILOGRAM, unit: 'lb' }
+        : { value: weeklyKg, unit: 'kg' };
 }
 
-function describeProjectedWeeklyTrend(weeklyKg: number): string {
-    if (Math.abs(weeklyKg) <= 0.01) return 'staying steady as projected';
-    return `${Math.abs(weeklyKg).toFixed(2)} kg per week projected`;
+function describeWeeklyTrend(weeklyKg: number, weightUnit: WeightUnit): string {
+    if (Math.abs(weeklyKg) <= 0.01) return 'weight stayed about steady';
+    const display = displayWeeklyWeightChange(weeklyKg, weightUnit);
+    return `weight trended ${weeklyKg < 0 ? 'down' : 'up'} about ${Math.abs(display.value).toFixed(2)} ${display.unit} per week`;
+}
+
+function capitalizeSentence(value: string): string {
+    return value.charAt(0).toUpperCase() + value.slice(1);
+}
+
+function describeProjectedWeeklyTrend(weeklyKg: number, weightUnit: WeightUnit): string {
+    if (Math.abs(weeklyKg) <= 0.01) return 'a steady-weight projection';
+    const display = displayWeeklyWeightChange(weeklyKg, weightUnit);
+    return `a projected ${weeklyKg < 0 ? 'loss' : 'gain'} of ${Math.abs(display.value).toFixed(2)} ${display.unit} per week`;
+}
+
+function describeWeeklyRange(value: CalibrationInterval, weightUnit: WeightUnit): string {
+    const low = displayWeeklyWeightChange(value.low, weightUnit);
+    const high = displayWeeklyWeightChange(value.high, weightUnit);
+    if (value.high < -0.01) {
+        return `losing ${Math.abs(high.value).toFixed(2)} to ${Math.abs(low.value).toFixed(2)} ${low.unit} per week`;
+    }
+    if (value.low > 0.01) {
+        return `gaining ${low.value.toFixed(2)} to ${high.value.toFixed(2)} ${low.unit} per week`;
+    }
+    return `losing up to ${Math.abs(Math.min(0, low.value)).toFixed(2)} or gaining up to ${Math.max(0, high.value).toFixed(2)} ${low.unit} per week`;
 }
 
 function averageLoggedIntake(input: CalibrationInput, windowDays: number): number {
     const startDate = addDateDays(input.asOfDate, -(windowDays - 1));
-    const loggedDays = input.foodDays.filter((day) => day.date >= startDate && day.date <= input.asOfDate);
+    const loggedDays = input.foodDays.filter((day) =>
+        day.date >= startDate &&
+        day.date <= input.asOfDate &&
+        day.entryCount > 0
+    );
     if (loggedDays.length === 0) return 0;
     return Math.round(loggedDays.reduce((sum, day) => sum + day.calories, 0) / loggedDays.length);
 }
@@ -537,6 +583,7 @@ export function evaluateCalibration(input: CalibrationInput): CalibrationResult 
         return {
             modelVersion: CALIBRATION_MODEL_VERSION,
             asOfDate: input.asOfDate,
+            weightUnit: input.weightUnit,
             status: 'not_ready',
             headline: 'Building your calibration history',
             summary: `Track food and weight across ${CALIBRATION_MIN_INSIGHT_DAYS} days to unlock an initial pace insight.`,
@@ -569,21 +616,33 @@ export function evaluateCalibration(input: CalibrationInput): CalibrationResult 
     let status: CalibrationResult['status'];
     let headline: string;
     let summary: string;
-    if (!hasPace || !hasFoodEvidence) {
+    if (!hasPace && hasFoodEvidence) {
+        status = 'learning';
+        headline = 'More weight history is needed';
+        const foodDayCount = selected.dataQuality.confidentDays;
+        const weightCount = selected.dataQuality.weightPoints;
+        let weightEvidence = `${weightCount} weights do not yet span enough time to establish a reliable trend`;
+        if (weightCount === 0) weightEvidence = 'no weights have been recorded yet';
+        if (weightCount === 1) weightEvidence = 'one weight cannot establish a reliable trend';
+        summary = `You have ${foodDayCount} well-tracked food day${foodDayCount === 1 ? '' : 's'}, but ${weightEvidence}. Keep recording your weight over at least 7 days to estimate your pace.`;
+    } else if (hasPace && !hasFoodEvidence) {
+        status = 'learning';
+        headline = 'More complete food history is needed';
+        summary = `${capitalizeSentence(describeWeeklyTrend(selected.weeklyWeightChange?.midpoint ?? 0, input.weightUnit))}, but there are not enough complete multi-meal food logs to compare that pace with your calorie budget.`;
+    } else if (!hasPace || !hasFoodEvidence) {
         status = 'learning';
         headline = 'More consistent evidence is needed';
-        summary = 'Keep logging food across multiple meals and recording weights. Missing days remain part of the uncertainty rather than being ignored.';
+        summary = 'Keep completing food logs across multiple meals and recording weights over time. Both are needed to compare your pace with your calorie budget.';
     } else if (recommendation) {
         status = 'recommendation';
         const observedWeekly = selected.weeklyWeightChange?.midpoint ?? 0;
         const averageIntake = averageLoggedIntake(input, selected.windowDays).toLocaleString('en-US');
         const budgetDirection = recommendation.adjustmentStepKcal < 0 ? 'lower' : 'higher';
         headline = describeRecommendationPace(observedWeekly, configuredWeeklyWeightChangeKg);
-        summary = `You logged about ${averageIntake} kcal per day, and ${describeWeeklyTrend(observedWeekly)} versus ${describeProjectedWeeklyTrend(configuredWeeklyWeightChangeKg)}. This suggests a ${Math.abs(recommendation.adjustmentStepKcal)} kcal ${budgetDirection} daily calorie budget could bring your pace closer to your goal.`;
+        summary = `You logged about ${averageIntake} kcal per day, and ${describeWeeklyTrend(observedWeekly, input.weightUnit)} versus ${describeProjectedWeeklyTrend(configuredWeeklyWeightChangeKg, input.weightUnit)}. This suggests a ${Math.abs(recommendation.adjustmentStepKcal)} kcal ${budgetDirection} daily calorie budget could bring your pace closer to your goal.`;
     } else {
         status = 'insight';
         const weekly = selected.weeklyWeightChange?.midpoint ?? 0;
-        const direction = weekly < -0.01 ? 'losing' : weekly > 0.01 ? 'gaining' : 'maintaining';
         if (selected.safetyFloorBlocked) {
             const averageIntake = averageLoggedIntake(input, selected.windowDays).toLocaleString('en-US');
             const currentTarget = Math.round(
@@ -593,19 +652,44 @@ export function evaluateCalibration(input: CalibrationInput): CalibrationResult 
             const floorName = input.bmrKcal >= CALIBRATION_MIN_TARGET_KCAL ? 'BMR safety floor' : 'calorie safety floor';
             const floorPosition = currentTarget < minimumTarget ? 'below' : 'at';
             headline = `Your current budget is already ${floorPosition} the ${floorName}`;
-            summary = `You logged about ${averageIntake} kcal per day, and ${describeWeeklyTrend(weekly)} versus ${describeProjectedWeeklyTrend(configuredWeeklyWeightChangeKg)}. This pattern points to a lower budget, but your current ${currentTarget.toLocaleString('en-US')} kcal daily budget is already ${floorPosition} the ${minimumTarget.toLocaleString('en-US')} kcal ${floorName}. Calibrate will not suggest reducing it further.`;
+            summary = `You logged about ${averageIntake} kcal per day, and ${describeWeeklyTrend(weekly, input.weightUnit)} versus ${describeProjectedWeeklyTrend(configuredWeeklyWeightChangeKg, input.weightUnit)}. This pattern points to a lower budget, but your current ${currentTarget.toLocaleString('en-US')} kcal daily budget is already ${floorPosition} the ${minimumTarget.toLocaleString('en-US')} kcal ${floorName}. Calibrate will not suggest reducing it further.`;
         } else if (selected.missingCriteria.length === 0) {
-            headline = 'Your progress is tracking as expected';
-            summary = `The trend currently indicates ${direction} about ${Math.abs(weekly).toFixed(2)} kg per week. The evidence shows progress is consistent with tracking expectations.`;
+            const averageIntake = averageLoggedIntake(input, selected.windowDays);
+            const currentTarget = Math.round(
+                input.profileTdeeKcal - input.configuredDailyDeficitKcal + input.currentTargetAdjustmentKcal
+            );
+            if (Math.abs(averageIntake - currentTarget) >= ACTION_THRESHOLD_KCAL) {
+                const intakeDirection = averageIntake > currentTarget ? 'higher' : 'lower';
+                headline = 'Your pace matches your logged intake';
+                summary = `You logged about ${averageIntake.toLocaleString('en-US')} kcal per day against a ${currentTarget.toLocaleString('en-US')} kcal daily budget, and ${describeWeeklyTrend(weekly, input.weightUnit)}. That pace is consistent with the ${intakeDirection} logged intake, so the calorie budget estimate itself does not appear to need adjustment.`;
+            } else {
+                headline = 'Your progress is tracking as expected';
+                summary = `${capitalizeSentence(describeWeeklyTrend(weekly, input.weightUnit))} versus ${describeProjectedWeeklyTrend(configuredWeeklyWeightChangeKg, input.weightUnit)}. The evidence shows progress is consistent with tracking expectations.`;
+            }
         } else {
-            headline = 'Your latest pace is available';
-            summary = `The trend currently indicates ${direction} about ${Math.abs(weekly).toFixed(2)} kg per week. More consistent evidence will make this comparison more reliable; see the remaining criteria.`;
+            const uncertainFoodDays = selected.dataQuality.missingDays
+                + selected.dataQuality.incompleteDays
+                + selected.dataQuality.suspiciousDays;
+            const intervalWidth = selected.targetAdjustment
+                ? selected.targetAdjustment.high - selected.targetAdjustment.low
+                : 0;
+            if (uncertainFoodDays > 0) {
+                headline = 'Food-log uncertainty limits this insight';
+                summary = `${capitalizeSentence(describeWeeklyTrend(weekly, input.weightUnit))}, but ${uncertainFoodDays} uncertain food day${uncertainFoodDays === 1 ? '' : 's'} ${uncertainFoodDays === 1 ? 'widens' : 'widen'} the calorie-budget estimate. Complete daily logs across multiple meals to make the comparison more reliable.`;
+            } else if (selected.weeklyWeightChange && intervalWidth > MAX_ACTIONABLE_INTERVAL_WIDTH_KCAL) {
+                headline = 'Weight uncertainty limits this insight';
+                summary = `${capitalizeSentence(describeWeeklyTrend(weekly, input.weightUnit))}, but the plausible pace could mean ${describeWeeklyRange(selected.weeklyWeightChange, input.weightUnit)}. More consistent weigh-ins can narrow the estimate enough to assess the calorie budget safely.`;
+            } else {
+                headline = 'Your latest pace is available';
+                summary = `${capitalizeSentence(describeWeeklyTrend(weekly, input.weightUnit))}. The remaining evidence criteria explain what would make this comparison more reliable.`;
+            }
         }
     }
 
     return {
         modelVersion: CALIBRATION_MODEL_VERSION,
         asOfDate: input.asOfDate,
+        weightUnit: input.weightUnit,
         status,
         headline,
         summary,

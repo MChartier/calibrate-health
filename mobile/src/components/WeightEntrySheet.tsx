@@ -12,6 +12,7 @@ import { SectionHeader } from './SectionHeader';
 import { useAuth } from '../auth/AuthContext';
 import { executeOrQueueMutation, OFFLINE_MUTATION_OPERATIONS } from '../offline/operations';
 import { useOfflineOutbox } from '../offline/provider';
+import { calibrationStatusQueryKey } from '../calibration/queryKeys';
 import { formatDateOnlyForDisplay } from '../utils/dates';
 import { formatWeightUnit } from '../utils/format';
 import { getMetricDate } from '../utils/metrics';
@@ -84,7 +85,7 @@ export const WeightEntrySheet: React.FC<WeightEntrySheetProps> = ({ visible, dat
                 queryClient.invalidateQueries({ queryKey: ['mobile-metrics'] }),
                 queryClient.invalidateQueries({ queryKey: ['mobile-metrics-trend'] }),
                 queryClient.invalidateQueries({ queryKey: ['mobile-profile'] }),
-                queryClient.invalidateQueries({ queryKey: ['mobile-calibration-status'] })
+                queryClient.invalidateQueries({ queryKey: calibrationStatusQueryKey })
             ]);
             onSaved?.();
             onClose();
@@ -111,7 +112,7 @@ export const WeightEntrySheet: React.FC<WeightEntrySheetProps> = ({ visible, dat
                 queryClient.invalidateQueries({ queryKey: ['mobile-metrics'] }),
                 queryClient.invalidateQueries({ queryKey: ['mobile-metrics-trend'] }),
                 queryClient.invalidateQueries({ queryKey: ['mobile-profile'] }),
-                queryClient.invalidateQueries({ queryKey: ['mobile-calibration-status'] })
+                queryClient.invalidateQueries({ queryKey: calibrationStatusQueryKey })
             ]);
             onSaved?.();
             onClose();

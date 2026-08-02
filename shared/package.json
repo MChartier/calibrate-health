@@ -64,12 +64,6 @@
       "browser": "./calibration.ts",
       "react-native": "./calibration.ts",
       "default": "./dist/cjs/calibration.js"
-    },
-    "./calibrationScenarios": {
-      "types": "./calibrationScenarios.ts",
-      "browser": "./calibrationScenarios.ts",
-      "react-native": "./calibrationScenarios.ts",
-      "default": "./dist/cjs/calibrationScenarios.js"
     }
   },
   "scripts": {

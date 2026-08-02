@@ -64,6 +64,7 @@ function buildWeights(days: number, startWeightKg: number, weeklyChangeKg: numbe
 
 const baseInput = {
     asOfDate: AS_OF_DATE,
+    weightUnit: 'KG',
     ageYears: 38,
     bmrKcal: 1650,
     profileTdeeKcal: 2400,
@@ -95,7 +96,7 @@ export const CALIBRATION_SCENARIOS: CalibrationScenario[] = [
     {
         id: 'early-insight',
         name: 'Early 7-day insight',
-        description: 'Good first-week tracking produces pace context but cannot change the target yet.',
+        description: 'Seven well-tracked days provide an initial comparison between observed and projected pace.',
         input: {
             ...baseInput,
             foodDays: buildFoodDays({ days: 7, calories: 1900 }),
@@ -105,7 +106,7 @@ export const CALIBRATION_SCENARIOS: CalibrationScenario[] = [
     {
         id: 'on-track',
         name: 'On-track complete history',
-        description: 'The configured target and observed weight pace agree.',
+        description: 'The current calorie budget and observed weight pace agree.',
         input: {
             ...baseInput,
             foodDays: buildFoodDays({ days: 28, calories: 1900 }),
@@ -134,8 +135,8 @@ export const CALIBRATION_SCENARIOS: CalibrationScenario[] = [
     },
     {
         id: 'prior-adjustment-rollback',
-        name: 'Prior decrease is corrected',
-        description: 'New evidence supports reversing a previous -150 kcal calibration adjustment.',
+        name: 'Previous budget decrease is reversed',
+        description: 'New evidence shows the reduced budget is now too low, so returning to the prior 1,900 kcal budget may help.',
         input: {
             ...baseInput,
             currentTargetAdjustmentKcal: -150,
@@ -146,7 +147,7 @@ export const CALIBRATION_SCENARIOS: CalibrationScenario[] = [
     {
         id: 'adherence-not-target',
         name: 'Pace explained by intake',
-        description: 'Higher logged intake explains the slower loss, so the target estimate itself is not blamed.',
+        description: 'Higher logged intake explains the slower loss, so the calorie budget estimate itself does not need adjustment.',
         input: {
             ...baseInput,
             foodDays: buildFoodDays({ days: 28, calories: 2200 }),

@@ -36,6 +36,7 @@ type MaterializedRecommendation = {
 export type ScheduledCalibrationChange = {
     recommendationId: number | null;
     targetAdjustmentKcal: number;
+    dailyCalorieBudgetKcal: number | null;
     effectiveLocalDate: string;
 };
 
@@ -79,11 +80,13 @@ function buildUnavailableEvaluation(options: {
     headline: string;
     summary: string;
     missingCriteria: string[];
+    weightUnit: 'KG' | 'LB';
     configuredDailyDeficitKcal?: number;
 }): CalibrationResult {
     return {
         modelVersion: CALIBRATION_MODEL_VERSION,
         asOfDate: options.asOfDate,
+        weightUnit: options.weightUnit,
         status: 'not_ready',
         headline: options.headline,
         summary: options.summary,
@@ -109,6 +112,13 @@ function buildUnavailableEvaluation(options: {
         recommendation: null,
         activityContext: null
     };
+}
+
+async function stalePendingRecommendations(userId: number): Promise<void> {
+    await prisma.calibrationRecommendation.updateMany({
+        where: { user_id: userId, status: 'PENDING' },
+        data: { status: 'STALE' }
+    });
 }
 
 function buildFoodEvidence(options: {
@@ -161,10 +171,7 @@ async function materializeRecommendation(options: {
 }): Promise<MaterializedRecommendation | null> {
     const suggested = options.evaluation.recommendation;
     if (!suggested) {
-        await prisma.calibrationRecommendation.updateMany({
-            where: { user_id: options.userId, status: 'PENDING' },
-            data: { status: 'STALE' }
-        });
+        await stalePendingRecommendations(options.userId);
         return null;
     }
 
@@ -219,7 +226,8 @@ export async function buildCalibrationStatus(userId: number, now = new Date()): 
             date_of_birth: true,
             sex: true,
             height_mm: true,
-            activity_level: true
+            activity_level: true,
+            weight_unit: true
         }
     });
     if (!user) throw new CalibrationConflictError('User not found.');
@@ -239,6 +247,7 @@ export async function buildCalibrationStatus(userId: number, now = new Date()): 
         orderBy: [{ created_at: 'desc' }, { id: 'desc' }]
     });
     if (!goal || goal.daily_deficit <= 0) {
+        await stalePendingRecommendations(userId);
         return {
             generatedAt,
             inputFingerprint: null,
@@ -247,6 +256,7 @@ export async function buildCalibrationStatus(userId: number, now = new Date()): 
                 headline: 'Calibration is available for active weight-loss goals',
                 summary: 'Choose a calorie-deficit goal before Calibrate evaluates weight-loss pacing.',
                 missingCriteria: ['Set an active weight-loss goal with a daily calorie deficit.'],
+                weightUnit: user.weight_unit,
                 configuredDailyDeficitKcal: goal?.daily_deficit
             }),
             recommendation: null,
@@ -313,6 +323,7 @@ export async function buildCalibrationStatus(userId: number, now = new Date()): 
         !user.date_of_birth
     ) {
         const missing = calorieSummary.missing.map((field) => `Complete profile field: ${field.replace(/_/g, ' ')}.`);
+        await stalePendingRecommendations(userId);
         return {
             generatedAt,
             inputFingerprint: null,
@@ -321,12 +332,14 @@ export async function buildCalibrationStatus(userId: number, now = new Date()): 
                 headline: 'Complete your calorie profile first',
                 summary: 'Calibration needs the same profile and current-weight inputs used to establish your baseline target.',
                 missingCriteria: missing,
+                weightUnit: user.weight_unit,
                 configuredDailyDeficitKcal: goal.daily_deficit
             }),
             recommendation: null,
             scheduledChange: scheduledRevision ? {
                 recommendationId: scheduledRevision.recommendation_id,
                 targetAdjustmentKcal: scheduledRevision.target_adjustment_kcal,
+                dailyCalorieBudgetKcal: null,
                 effectiveLocalDate: toDateKey(scheduledRevision.effective_local_date)
             } : null
         };
@@ -338,6 +351,7 @@ export async function buildCalibrationStatus(userId: number, now = new Date()): 
     const foodDays = buildFoodEvidence({ logs, completionDays, planStartDate, asOfDate: asOfDateKey });
     const input: CalibrationInput = {
         asOfDate: asOfDateKey,
+        weightUnit: user.weight_unit,
         ageYears: calculateAge(user.date_of_birth, asOfDate),
         bmrKcal: calorieSummary.bmr,
         profileTdeeKcal: calorieSummary.tdee,
@@ -361,15 +375,27 @@ export async function buildCalibrationStatus(userId: number, now = new Date()): 
             }))
     };
     const evaluation = evaluateCalibration(input);
-    const inputFingerprint = fingerprintInput({ goalId: goal.id, planStartDate, input });
+    const { activityDays: _activityContext, weightUnit: _displayWeightUnit, ...actionEvidence } = input;
+    const inputFingerprint = fingerprintInput({
+        modelVersion: CALIBRATION_MODEL_VERSION,
+        goalId: goal.id,
+        planStartDate,
+        actionEvidence
+    });
     const scheduledChange = scheduledRevision ? {
         recommendationId: scheduledRevision.recommendation_id,
         targetAdjustmentKcal: scheduledRevision.target_adjustment_kcal,
+        dailyCalorieBudgetKcal: Math.max(
+            0,
+            Math.round(calorieSummary.tdee - goal.daily_deficit + scheduledRevision.target_adjustment_kcal)
+        ),
         effectiveLocalDate: toDateKey(scheduledRevision.effective_local_date)
     } : null;
-    const recommendation = scheduledChange
-        ? null
-        : await materializeRecommendation({
+    let recommendation: MaterializedRecommendation | null = null;
+    if (scheduledChange) {
+        await stalePendingRecommendations(userId);
+    } else {
+        recommendation = await materializeRecommendation({
             userId,
             goalId: goal.id,
             inputFingerprint,
@@ -377,6 +403,7 @@ export async function buildCalibrationStatus(userId: number, now = new Date()): 
             effectiveLocalDate: addUtcDays(today, 1),
             evaluation
         });
+    }
 
     return { generatedAt, inputFingerprint, evaluation, recommendation, scheduledChange };
 }
@@ -396,6 +423,7 @@ export async function applyCalibrationRecommendation(options: {
         return {
             recommendationId: existing.id,
             targetAdjustmentKcal: existing.plan_revision.target_adjustment_kcal,
+            dailyCalorieBudgetKcal: existing.recommended_target_kcal,
             effectiveLocalDate: toDateKey(existing.plan_revision.effective_local_date)
         };
     }
@@ -433,11 +461,12 @@ export async function applyCalibrationRecommendation(options: {
                 });
                 await tx.calibrationRecommendation.update({
                     where: { id: recommendation.id },
-                    data: { status: 'APPLIED', applied_at: new Date() }
+                    data: { status: 'APPLIED', applied_at: options.now ?? new Date() }
                 });
                 const body = {
                     recommendationId: recommendation.id,
                     targetAdjustmentKcal: revision.target_adjustment_kcal,
+                    dailyCalorieBudgetKcal: recommendation.recommended_target_kcal,
                     effectiveLocalDate: toDateKey(revision.effective_local_date)
                 };
                 await recordSyncChange({

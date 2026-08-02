@@ -10,6 +10,7 @@ Calibrate evaluates recent food and weight evidence to determine whether the pro
 - The current local day participates only after the user marks it complete. Otherwise the observation end is the prior local day.
 - No nightly scheduler is required. A new local date changes the input fingerprint on the next read.
 - `POST /api/v1/calibration/recommendations/:id/apply` re-evaluates the evidence and rejects stale suggestions before creating a revision effective on the next user-local day.
+- Once a revision is scheduled, status returns the resulting absolute daily calorie budget and suppresses stale recommendation narrative until the revision becomes effective.
 
 ## Evidence and uncertainty
 
@@ -22,8 +23,11 @@ The pure evaluator lives in `shared/calibration.ts` and is shared by the service
 - Missing, incomplete, and suspicious completed days remain in the calculation as conservative personal intake ranges. They are never treated as zero intake or silently discarded.
 - Four hundred deterministic bootstrap samples propagate food-range and weight-trend uncertainty into a target-correction interval. The result is not presented or persisted as a replacement TDEE.
 - Health Connect activity is returned as observational context only.
+- User-facing pace copy follows the configured weight unit; persisted and API estimate fields remain kilograms so the model contract stays stable.
 
 Recommendations are limited to 150 kcal per accepted revision and rounded to 25 kcal. A downward correction cannot take the target below `max(BMR, 1000 kcal/day)`; when the current target is already at or below that floor, calibration does not reverse a downward signal into an upward recommendation. Accepted revisions apply only to the goal that produced them, so creating a maintenance, gain, or replacement loss goal restores that goal's unadjusted profile target. The service currently materializes recommendations only for adult users with an active weight-loss goal.
+
+Recommendation fingerprints include the model version, goal and plan boundary, profile-derived calorie inputs, food history, and weight history. Display-unit and observational activity changes are intentionally excluded because they can change presentation without changing the suggested action. Pending recommendations are marked stale whenever the action evidence changes, the goal or profile becomes ineligible, or another revision is already scheduled.
 
 ## Development history lab
 
@@ -33,7 +37,7 @@ Run the stateless preset explorer with:
 npm run dev:calibration-lab
 ```
 
-The local Node lab uses the same compiled shared evaluator as the service. It includes 14 histories covering all four statuses, both target-change directions, a prior-adjustment reversal, adherence-driven pacing, incomplete history, activity context, weight uncertainty, BMR-floor behavior, and the 42-day observation cap. Its JSON editor validates edited histories without writing user data or waiting for real-world observation windows.
+The local Node lab uses the same compiled shared evaluator as the service. It includes 14 histories covering all four statuses, both budget-adjustment directions, a prior-adjustment reversal, adherence-driven pacing, incomplete history, activity context, weight uncertainty, BMR-floor behavior, and the 42-day observation cap. Its JSON editor validates structure and semantic constraints, including date uniqueness, units, nonnegative inputs, and ordered weight intervals, without writing user data or waiting for real-world observation windows.
 
 Preset states can be linked directly with `?scenario=<scenario-id>`, for example:
 

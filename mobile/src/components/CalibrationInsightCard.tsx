@@ -13,14 +13,12 @@ import { SectionHeader } from './SectionHeader';
 import { useAuth } from '../auth/AuthContext';
 import {
     describeCalibrationEvidence,
-    formatCalorieBudgetChange,
     formatCalorieBudgetInterval,
     formatWeightPace
 } from '../calibration/presentation';
 import { formatDateOnlyForDisplay } from '../utils/dates';
+import { calibrationStatusQueryKey } from '../calibration/queryKeys';
 import { colors, spacing } from '../theme';
-
-export const CALIBRATION_STATUS_QUERY_KEY = ['mobile-calibration-status'] as const;
 
 /** On-demand calibration insight and explicit target-adjustment approval. */
 export const CalibrationInsightCard: React.FC<ViewProps> = ({ style, ...props }) => {
@@ -28,7 +26,7 @@ export const CalibrationInsightCard: React.FC<ViewProps> = ({ style, ...props })
     const queryClient = useQueryClient();
     const [isReviewOpen, setIsReviewOpen] = useState(false);
     const statusQuery = useQuery({
-        queryKey: CALIBRATION_STATUS_QUERY_KEY,
+        queryKey: calibrationStatusQueryKey,
         queryFn: () => api.getCalibrationStatus()
     });
     const applyRecommendation = useMutation({
@@ -39,9 +37,9 @@ export const CalibrationInsightCard: React.FC<ViewProps> = ({ style, ...props })
         },
         onSuccess: async () => {
             setIsReviewOpen(false);
-            await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
             await Promise.all([
-                queryClient.invalidateQueries({ queryKey: CALIBRATION_STATUS_QUERY_KEY }),
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => undefined),
+                queryClient.invalidateQueries({ queryKey: calibrationStatusQueryKey }),
                 queryClient.invalidateQueries({ queryKey: ['mobile-profile'] })
             ]);
         }
@@ -51,6 +49,14 @@ export const CalibrationInsightCard: React.FC<ViewProps> = ({ style, ...props })
     const evaluation = status?.evaluation;
     const recommendation = evaluation?.recommendation;
     const scheduledChange = status?.scheduledChange;
+    const closeReview = () => {
+        applyRecommendation.reset();
+        setIsReviewOpen(false);
+    };
+    const openReview = () => {
+        applyRecommendation.reset();
+        setIsReviewOpen(true);
+    };
 
     if (statusQuery.error) {
         return (
@@ -75,39 +81,44 @@ export const CalibrationInsightCard: React.FC<ViewProps> = ({ style, ...props })
             <AppCard {...props} style={style}>
                 <SectionHeader
                     title="Calibration"
-                    description={evaluation.headline}
+                    description={scheduledChange ? 'Your calorie budget update is scheduled' : evaluation.headline}
                 />
-                <AppText variant="muted">{evaluation.summary}</AppText>
-                {evaluation.selectedWindowDays && (
-                    <AppText variant="caption">{describeCalibrationEvidence(evaluation)}</AppText>
-                )}
-                {evaluation.missingCriteria.length > 0 && !status?.recommendation && (
-                    <View style={styles.list}>
-                        <AppText variant="label">What would improve this insight</AppText>
-                        {evaluation.missingCriteria.map((criterion) => (
-                            <AppText key={criterion} variant="caption">- {criterion}</AppText>
-                        ))}
-                    </View>
-                )}
-                {scheduledChange && (
+                {scheduledChange ? (
                     <View style={styles.scheduledRow}>
                         <Ionicons name="calendar-outline" size={18} color={colors.primaryDark} />
                         <AppText style={styles.scheduledText}>
-                            Your {formatCalorieBudgetChange(scheduledChange.targetAdjustmentKcal)} daily calorie budget starts {formatDateOnlyForDisplay(scheduledChange.effectiveLocalDate)}.
+                            {scheduledChange.dailyCalorieBudgetKcal === null
+                                ? `Your updated daily calorie budget starts ${formatDateOnlyForDisplay(scheduledChange.effectiveLocalDate)}.`
+                                : `Your daily calorie budget will be ${scheduledChange.dailyCalorieBudgetKcal.toLocaleString()} kcal starting ${formatDateOnlyForDisplay(scheduledChange.effectiveLocalDate)}.`}
                         </AppText>
                     </View>
+                ) : (
+                    <>
+                        <AppText variant="muted">{evaluation.summary}</AppText>
+                        {evaluation.selectedWindowDays && (
+                            <AppText variant="caption">{describeCalibrationEvidence(evaluation)}</AppText>
+                        )}
+                        {evaluation.missingCriteria.length > 0 && !status?.recommendation && (
+                            <View style={styles.list}>
+                                <AppText variant="label">What would improve this insight</AppText>
+                                {evaluation.missingCriteria.map((criterion) => (
+                                    <AppText key={criterion} variant="caption">- {criterion}</AppText>
+                                ))}
+                            </View>
+                        )}
+                    </>
                 )}
                 {status?.recommendation && recommendation && (
                     <AppButton
                         title="Review suggested budget"
                         variant="secondary"
                         leftIcon={<Ionicons name="options-outline" size={18} color={colors.text} />}
-                        onPress={() => setIsReviewOpen(true)}
+                        onPress={openReview}
                     />
                 )}
             </AppCard>
 
-            <BottomSheetModal visible={isReviewOpen} onRequestClose={() => setIsReviewOpen(false)}>
+            <BottomSheetModal visible={isReviewOpen} onRequestClose={closeReview}>
                 <SectionHeader
                     title="Review calorie budget"
                     description="Compare the current and suggested daily budgets. Your weight goal stays the same."
@@ -119,7 +130,7 @@ export const CalibrationInsightCard: React.FC<ViewProps> = ({ style, ...props })
                             <MetricTile label="suggested budget" value={`${recommendation.recommendedTargetKcal.toLocaleString()} kcal`} tone="success" />
                         </View>
                         <View style={styles.tileRow}>
-                            <MetricTile label="observed pace" value={formatWeightPace(evaluation.estimates.observedWeeklyWeightChangeKg)} />
+                            <MetricTile label="observed pace" value={formatWeightPace(evaluation.estimates.observedWeeklyWeightChangeKg, evaluation.weightUnit)} />
                             <MetricTile label="estimated budget difference" value={formatCalorieBudgetInterval(evaluation.estimates.targetAdjustmentKcal)} />
                         </View>
                     </>
@@ -139,10 +150,10 @@ export const CalibrationInsightCard: React.FC<ViewProps> = ({ style, ...props })
                 {applyRecommendation.error && <AppText style={styles.error}>{applyRecommendation.error.message}</AppText>}
                 <View style={styles.actions}>
                     <AppButton
-                        title="Keep current budget"
+                        title="Not now"
                         variant="secondary"
                         disabled={applyRecommendation.isPending}
-                        onPress={() => setIsReviewOpen(false)}
+                        onPress={closeReview}
                         style={styles.action}
                     />
                     <AppButton

@@ -7,6 +7,7 @@ import { useAuth } from '../auth/AuthContext';
 import { executeOrQueueMutation, OFFLINE_MUTATION_OPERATIONS } from '../offline/operations';
 import { useOfflineOutbox } from '../offline/provider';
 import { foodDayRangeQueryRoot } from '../food/calendar';
+import { calibrationStatusQueryKey } from '../calibration/queryKeys';
 import { addDaysToDateOnly, getTodayDate } from '../utils/dates';
 import { type AppTheme, useAppTheme } from '../theme';
 import { AppButton } from './AppButton';
@@ -58,7 +59,7 @@ function useRefreshTrackingState(date?: string) {
             date ? queryClient.invalidateQueries({ queryKey: foodDayQueryKey(date) }) : Promise.resolve(),
             queryClient.invalidateQueries({ queryKey: foodDayRangeQueryRoot }),
             queryClient.invalidateQueries({ queryKey: foodTrackingPauseQueryKey }),
-            queryClient.invalidateQueries({ queryKey: ['mobile-calibration-status'] }),
+            queryClient.invalidateQueries({ queryKey: calibrationStatusQueryKey }),
             queryClient.invalidateQueries({ queryKey: ['mobile-in-app-notifications'] })
         ]);
     };

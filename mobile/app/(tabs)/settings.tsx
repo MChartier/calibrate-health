@@ -14,6 +14,7 @@ import { SectionHeader } from '../../src/components/SectionHeader';
 import { SegmentedControl } from '../../src/components/SegmentedControl';
 import { TextField } from '../../src/components/TextField';
 import { useAuth } from '../../src/auth/AuthContext';
+import { calibrationStatusQueryKey } from '../../src/calibration/queryKeys';
 import {
     canSubmitAccountDeletion,
     deleteAccountAndClearLocalData,
@@ -168,7 +169,10 @@ export default function SettingsScreen() {
             }),
         onSuccess: async (response) => {
             updateCurrentUser(response.user);
-            await queryClient.invalidateQueries({ queryKey: ['mobile-profile'] });
+            await Promise.all([
+                queryClient.invalidateQueries({ queryKey: ['mobile-profile'] }),
+                queryClient.invalidateQueries({ queryKey: calibrationStatusQueryKey })
+            ]);
             setIsProfileEditorOpen(false);
         }
     });
@@ -184,7 +188,10 @@ export default function SettingsScreen() {
             }),
         onSuccess: async (response) => {
             updateCurrentUser(response.user);
-            await queryClient.invalidateQueries({ queryKey: ['mobile-profile'] });
+            await Promise.all([
+                queryClient.invalidateQueries({ queryKey: ['mobile-profile'] }),
+                queryClient.invalidateQueries({ queryKey: calibrationStatusQueryKey })
+            ]);
             setActiveSheet(null);
         }
     });

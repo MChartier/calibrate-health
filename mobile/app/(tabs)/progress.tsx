@@ -14,6 +14,7 @@ import { SectionHeader } from '../../src/components/SectionHeader';
 import { SegmentedControl } from '../../src/components/SegmentedControl';
 import { WeightTrendPreviewCard } from '../../src/components/progress/WeightTrendPreviewCard';
 import { CalibrationInsightCard } from '../../src/components/CalibrationInsightCard';
+import { calibrationStatusQueryKey } from '../../src/calibration/queryKeys';
 import { useAuth } from '../../src/auth/AuthContext';
 import { gramsToDisplayWeight } from '../../src/utils/bodyMeasurements';
 import { formatWeightUnit } from '../../src/utils/format';
@@ -83,7 +84,7 @@ export default function ProgressScreen() {
                 queryClient.invalidateQueries({ queryKey: ['mobile-goal'] }),
                 queryClient.invalidateQueries({ queryKey: ['mobile-profile'] }),
                 queryClient.invalidateQueries({ queryKey: ['mobile-metrics-trend'] }),
-                queryClient.invalidateQueries({ queryKey: ['mobile-calibration-status'] })
+                queryClient.invalidateQueries({ queryKey: calibrationStatusQueryKey })
             ]);
         }
     });

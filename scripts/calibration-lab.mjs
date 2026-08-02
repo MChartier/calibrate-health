@@ -35,6 +35,35 @@ function requireFiniteNumber(value, label) {
   return value;
 }
 
+function requireNonNegativeNumber(value, label) {
+  const parsed = requireFiniteNumber(value, label);
+  if (parsed < 0) throw new Error(`${label} must be zero or greater.`);
+  return parsed;
+}
+
+function requireNonNegativeInteger(value, label) {
+  const parsed = requireNonNegativeNumber(value, label);
+  if (!Number.isInteger(parsed)) throw new Error(`${label} must be an integer.`);
+  return parsed;
+}
+
+function requireDateOnly(value, label) {
+  const parsed = requireString(value, label);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(parsed) || new Date(`${parsed}T00:00:00.000Z`).toISOString().slice(0, 10) !== parsed) {
+    throw new Error(`${label} must be a valid YYYY-MM-DD date.`);
+  }
+  return parsed;
+}
+
+function requireUniqueDates(values, label) {
+  const seen = new Set();
+  values.forEach((value, index) => {
+    const date = value.date;
+    if (seen.has(date)) throw new Error(`${label}[${index}].date duplicates ${date}.`);
+    seen.add(date);
+  });
+}
+
 export function parseCalibrationInput(value) {
   const parsed = requireRecord(value, 'History input');
   if (!Array.isArray(parsed.foodDays)) throw new Error('foodDays must be an array.');
@@ -42,41 +71,53 @@ export function parseCalibrationInput(value) {
 
   parsed.foodDays.forEach((value, index) => {
     const day = requireRecord(value, `foodDays[${index}]`);
-    requireString(day.date, `foodDays[${index}].date`);
-    requireFiniteNumber(day.calories, `foodDays[${index}].calories`);
-    requireFiniteNumber(day.entryCount, `foodDays[${index}].entryCount`);
-    requireFiniteNumber(day.mealPeriodCount, `foodDays[${index}].mealPeriodCount`);
+    requireDateOnly(day.date, `foodDays[${index}].date`);
+    requireNonNegativeNumber(day.calories, `foodDays[${index}].calories`);
+    requireNonNegativeInteger(day.entryCount, `foodDays[${index}].entryCount`);
+    requireNonNegativeInteger(day.mealPeriodCount, `foodDays[${index}].mealPeriodCount`);
     if (typeof day.isComplete !== 'boolean') {
       throw new Error(`foodDays[${index}].isComplete must be a boolean.`);
     }
   });
+  requireUniqueDates(parsed.foodDays, 'foodDays');
   parsed.weightPoints.forEach((value, index) => {
     const point = requireRecord(value, `weightPoints[${index}]`);
-    requireString(point.date, `weightPoints[${index}].date`);
-    requireFiniteNumber(point.trendWeightKg, `weightPoints[${index}].trendWeightKg`);
-    const lower = requireFiniteNumber(point.lowerKg, `weightPoints[${index}].lowerKg`);
-    const upper = requireFiniteNumber(point.upperKg, `weightPoints[${index}].upperKg`);
+    requireDateOnly(point.date, `weightPoints[${index}].date`);
+    const trend = requireNonNegativeNumber(point.trendWeightKg, `weightPoints[${index}].trendWeightKg`);
+    const lower = requireNonNegativeNumber(point.lowerKg, `weightPoints[${index}].lowerKg`);
+    const upper = requireNonNegativeNumber(point.upperKg, `weightPoints[${index}].upperKg`);
     if (lower > upper) throw new Error(`weightPoints[${index}] lowerKg cannot exceed upperKg.`);
+    if (trend < lower || trend > upper) {
+      throw new Error(`weightPoints[${index}].trendWeightKg must fall between lowerKg and upperKg.`);
+    }
   });
+  requireUniqueDates(parsed.weightPoints, 'weightPoints');
 
   if (parsed.activityDays !== undefined) {
     if (!Array.isArray(parsed.activityDays)) throw new Error('activityDays must be an array when provided.');
     parsed.activityDays.forEach((value, index) => {
       const day = requireRecord(value, `activityDays[${index}]`);
-      requireString(day.date, `activityDays[${index}].date`);
+      requireDateOnly(day.date, `activityDays[${index}].date`);
       if (day.steps !== undefined && day.steps !== null) {
-        requireFiniteNumber(day.steps, `activityDays[${index}].steps`);
+        requireNonNegativeNumber(day.steps, `activityDays[${index}].steps`);
       }
       if (day.activeCaloriesKcal !== undefined && day.activeCaloriesKcal !== null) {
-        requireFiniteNumber(day.activeCaloriesKcal, `activityDays[${index}].activeCaloriesKcal`);
+        requireNonNegativeNumber(day.activeCaloriesKcal, `activityDays[${index}].activeCaloriesKcal`);
       }
     });
+    requireUniqueDates(parsed.activityDays, 'activityDays');
   }
 
-  requireString(parsed.asOfDate, 'asOfDate');
-  requireFiniteNumber(parsed.ageYears, 'ageYears');
-  requireFiniteNumber(parsed.bmrKcal, 'bmrKcal');
-  requireFiniteNumber(parsed.profileTdeeKcal, 'profileTdeeKcal');
+  requireDateOnly(parsed.asOfDate, 'asOfDate');
+  if (parsed.weightUnit !== 'KG' && parsed.weightUnit !== 'LB') {
+    throw new Error('weightUnit must be KG or LB.');
+  }
+  const ageYears = requireNonNegativeNumber(parsed.ageYears, 'ageYears');
+  if (ageYears > 120) throw new Error('ageYears must be 120 or less.');
+  const bmrKcal = requireNonNegativeNumber(parsed.bmrKcal, 'bmrKcal');
+  const profileTdeeKcal = requireNonNegativeNumber(parsed.profileTdeeKcal, 'profileTdeeKcal');
+  if (bmrKcal === 0 || profileTdeeKcal === 0) throw new Error('bmrKcal and profileTdeeKcal must be greater than zero.');
+  if (profileTdeeKcal < bmrKcal) throw new Error('profileTdeeKcal cannot be lower than bmrKcal.');
   requireFiniteNumber(parsed.configuredDailyDeficitKcal, 'configuredDailyDeficitKcal');
   requireFiniteNumber(parsed.currentTargetAdjustmentKcal, 'currentTargetAdjustmentKcal');
   return parsed;

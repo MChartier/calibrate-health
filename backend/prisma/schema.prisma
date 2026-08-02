@@ -96,7 +96,6 @@ enum FoodLogDayOrigin {
 enum CalibrationRecommendationStatus {
   PENDING
   APPLIED
-  DISMISSED
   STALE
 }
 
@@ -399,7 +398,6 @@ model CalibrationRecommendation {
   result_snapshot                   Json
   created_at                        DateTime                        @default(now())
   applied_at                        DateTime?
-  dismissed_at                      DateTime?
   plan_revision                     CaloriePlanRevision?
 
   @@unique([user_id, input_fingerprint])

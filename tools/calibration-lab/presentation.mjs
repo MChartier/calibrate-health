@@ -28,5 +28,12 @@ export function formatBudgetInterval(value) {
   if (value.low > 0) {
     return `${Math.round(value.midpoint).toLocaleString()} kcal/day higher (${Math.round(value.low).toLocaleString()} to ${Math.round(value.high).toLocaleString()})`;
   }
-  return `${Math.round(value.midpoint).toLocaleString()} kcal/day (${Math.round(value.low).toLocaleString()} to ${Math.round(value.high).toLocaleString()})`;
+  return `Near baseline (${Math.abs(Math.round(value.low)).toLocaleString()} lower to ${Math.round(value.high).toLocaleString()} higher)`;
+}
+
+export function formatWeightInterval(value, weightUnit) {
+  if (!value) return 'Not enough evidence';
+  const multiplier = weightUnit === 'LB' ? 2.2046226218 : 1;
+  const unit = weightUnit === 'LB' ? 'lb/week' : 'kg/week';
+  return `${(value.midpoint * multiplier).toFixed(2)} ${unit} (${(value.low * multiplier).toFixed(2)} to ${(value.high * multiplier).toFixed(2)})`;
 }

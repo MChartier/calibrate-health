@@ -69,7 +69,12 @@ test('apply route forwards the recommendation and operation identifiers', async 
   const router = loadRouter({
     applyCalibrationRecommendation: async (options) => {
       received = options;
-      return { recommendationId: options.recommendationId, targetAdjustmentKcal: -125, effectiveLocalDate: '2026-08-01' };
+      return {
+        recommendationId: options.recommendationId,
+        targetAdjustmentKcal: -125,
+        dailyCalorieBudgetKcal: 1775,
+        effectiveLocalDate: '2026-08-01'
+      };
     }
   });
   const res = response();
