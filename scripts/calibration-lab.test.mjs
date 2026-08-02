@@ -1,6 +1,9 @@
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 import { parseCalibrationInput } from './calibration-lab.mjs';
+
+const labStyles = await readFile(new URL('../tools/calibration-lab/styles.css', import.meta.url), 'utf8');
 
 const validInput = {
   asOfDate: '2026-07-31',
@@ -37,4 +40,8 @@ test('calibration lab rejects malformed nested history before evaluation', () =>
     () => parseCalibrationInput({ ...validInput, weightPoints: [{ ...validInput.weightPoints[0], lowerKg: 91 }] }),
     /lowerKg cannot exceed upperKg/
   );
+});
+
+test('calibration lab hides empty optional sections', () => {
+  assert.match(labStyles, /\[hidden\]\s*\{\s*display:\s*none\s*!important;\s*\}/);
 });
