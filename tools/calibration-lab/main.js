@@ -1,3 +1,5 @@
+import { formatDayCount, getWindowMetric } from './presentation.mjs';
+
 const elements = {
   scenario: document.querySelector('#preset-history'),
   description: document.querySelector('#scenario-description'),
@@ -77,10 +79,11 @@ function renderResult(result) {
   }
 
   elements.metrics.replaceChildren();
-  appendLabeledValue(elements.metrics, 'metric', 'window', result.selectedWindowDays ? `${result.selectedWindowDays} days` : '-');
+  const windowMetric = getWindowMetric(result);
+  appendLabeledValue(elements.metrics, 'metric', windowMetric.label, windowMetric.value);
   appendLabeledValue(elements.metrics, 'metric', 'confident days', result.dataQuality.confidentDays);
   appendLabeledValue(elements.metrics, 'metric', 'uncertain days', uncertainDays);
-  appendLabeledValue(elements.metrics, 'metric', 'weight span', `${result.dataQuality.weightSpanDays} days`);
+  appendLabeledValue(elements.metrics, 'metric', 'weight span', formatDayCount(result.dataQuality.weightSpanDays));
 
   elements.estimates.replaceChildren();
   const estimates = [

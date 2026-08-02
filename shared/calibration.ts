@@ -544,13 +544,15 @@ export function evaluateCalibration(input: CalibrationInput): CalibrationResult 
         summary = `The observed intake and weight trend support changing the daily target by ${recommendation.adjustmentStepKcal > 0 ? '+' : ''}${recommendation.adjustmentStepKcal} kcal. Nothing changes without approval.`;
     } else {
         status = 'insight';
-        headline = 'Your latest pace is available';
         const weekly = selected.weeklyWeightChange?.midpoint ?? 0;
         const direction = weekly < -0.01 ? 'losing' : weekly > 0.01 ? 'gaining' : 'maintaining';
-        const actionSummary = selected.missingCriteria.length > 0
-            ? 'A target change is not available yet; see the remaining criteria.'
-            : 'The evidence does not support a target change yet.';
-        summary = `The trend currently indicates ${direction} about ${Math.abs(weekly).toFixed(2)} kg per week. ${actionSummary}`;
+        if (selected.missingCriteria.length === 0) {
+            headline = 'Your progress is tracking as expected';
+            summary = `The trend currently indicates ${direction} about ${Math.abs(weekly).toFixed(2)} kg per week. The evidence shows progress is consistent with tracking expectations.`;
+        } else {
+            headline = 'Your latest pace is available';
+            summary = `The trend currently indicates ${direction} about ${Math.abs(weekly).toFixed(2)} kg per week. More consistent evidence will make this comparison more reliable; see the remaining criteria.`;
+        }
     }
 
     return {

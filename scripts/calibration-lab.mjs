@@ -10,6 +10,7 @@ const assetDirectory = resolve(repositoryRoot, 'tools', 'calibration-lab');
 const responseAssets = new Map([
   ['/', { path: resolve(assetDirectory, 'index.html'), contentType: 'text/html; charset=utf-8' }],
   ['/main.js', { path: resolve(assetDirectory, 'main.js'), contentType: 'text/javascript; charset=utf-8' }],
+  ['/presentation.mjs', { path: resolve(assetDirectory, 'presentation.mjs'), contentType: 'text/javascript; charset=utf-8' }],
   ['/styles.css', { path: resolve(assetDirectory, 'styles.css'), contentType: 'text/css; charset=utf-8' }]
 ]);
 

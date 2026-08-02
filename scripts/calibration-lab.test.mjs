@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
-import { parseCalibrationInput } from './calibration-lab.mjs';
+import { createCalibrationLabServer, parseCalibrationInput } from './calibration-lab.mjs';
+import { formatDayCount, getWindowMetric } from '../tools/calibration-lab/presentation.mjs';
 
 const labStyles = await readFile(new URL('../tools/calibration-lab/styles.css', import.meta.url), 'utf8');
 
@@ -44,4 +45,43 @@ test('calibration lab rejects malformed nested history before evaluation', () =>
 
 test('calibration lab hides empty optional sections', () => {
   assert.match(labStyles, /\[hidden\]\s*\{\s*display:\s*none\s*!important;\s*\}/);
+});
+
+test('calibration lab describes pre-threshold history without implying the window is absent', () => {
+  assert.deepEqual(getWindowMetric({
+    selectedWindowDays: null,
+    dataQuality: { observationDays: 6 }
+  }), {
+    label: 'history observed',
+    value: '6 days'
+  });
+});
+
+test('calibration lab labels a qualifying evaluator window explicitly', () => {
+  assert.deepEqual(getWindowMetric({
+    selectedWindowDays: 14,
+    dataQuality: { observationDays: 28 }
+  }), {
+    label: 'evaluation window',
+    value: '14 days'
+  });
+  assert.equal(formatDayCount(1), '1 day');
+});
+
+test('calibration lab serves the window-presentation module', async (context) => {
+  const server = createCalibrationLabServer({ evaluateCalibration: () => ({}), scenarios: [] });
+  await new Promise((resolve, reject) => {
+    server.once('error', reject);
+    server.listen(0, '127.0.0.1', resolve);
+  });
+  context.after(() => new Promise((resolve, reject) => {
+    server.close((error) => error ? reject(error) : resolve());
+  }));
+
+  const address = server.address();
+  assert.ok(address && typeof address === 'object');
+  const response = await fetch(`http://127.0.0.1:${address.port}/presentation.mjs`);
+  assert.equal(response.status, 200);
+  assert.match(response.headers.get('content-type') ?? '', /^text\/javascript/);
+  assert.match(await response.text(), /export function getWindowMetric/);
 });

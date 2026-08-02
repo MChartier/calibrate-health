@@ -80,6 +80,9 @@ test('does not adjust a target when intake and observed pace agree with the prof
   assert.equal(result.status, 'insight');
   assert.equal(result.recommendation, null);
   assert.ok(Math.abs(result.estimates.targetAdjustmentKcal.midpoint) < 75);
+  assert.equal(result.headline, 'Your progress is tracking as expected');
+  assert.match(result.summary, /The evidence shows progress is consistent with tracking expectations\./);
+  assert.doesNotMatch(result.summary, /target change/i);
 });
 
 test('caps an actionable target correction at 150 kcal', () => {
@@ -104,6 +107,8 @@ test('requires at least three weights before recommending a change', () => {
   assert.equal(result.status, 'insight');
   assert.equal(result.recommendation, null);
   assert.ok(result.missingCriteria.some((criterion) => criterion.includes('at least 3 weights')));
+  assert.match(result.summary, /More consistent evidence will make this comparison more reliable/);
+  assert.doesNotMatch(result.summary, /target change is not available yet/i);
 });
 
 test('explains the 14-day action threshold when directional evidence appears earlier', () => {
