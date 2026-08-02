@@ -145,11 +145,14 @@ test('keeps skipped and suspicious days in the uncertainty calculation', () => {
   assert.ok(result.missingCriteria.some((criterion) => criterion.includes('widen')));
 });
 
-test('never recommends a target below max(BMR, 1000 kcal)', () => {
+test('truncates a supported decrease when the normal step would cross the BMR floor', () => {
   const result = evaluateScenario('bmr-floor');
-  if (result.recommendation) {
-    assert.ok(result.recommendation.recommendedTargetKcal >= 1850);
-  }
+  assert.equal(result.status, 'recommendation');
+  assert.ok(result.estimates.targetAdjustmentKcal.midpoint < -150);
+  assert.equal(result.recommendation.currentTargetKcal, 2000);
+  assert.equal(result.recommendation.adjustmentStepKcal, -100);
+  assert.equal(result.recommendation.recommendedTargetKcal, 1900);
+  assert.ok(result.recommendation.currentTargetKcal - 150 < 1900);
 });
 
 test('does not reverse recommendation direction when the current target is below the BMR floor', () => {

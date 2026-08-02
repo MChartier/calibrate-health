@@ -190,11 +190,11 @@ export const CALIBRATION_SCENARIOS: CalibrationScenario[] = [
     },
     {
         id: 'bmr-floor',
-        name: 'BMR safety floor',
-        description: 'Evidence points down, but the recommended target cannot cross the BMR floor.',
+        name: 'Decrease capped at BMR floor',
+        description: 'Evidence supports a larger decrease, but the suggested budget stops at the 1,900 kcal BMR floor.',
         input: {
             ...baseInput,
-            bmrKcal: 1850,
+            bmrKcal: 1900,
             profileTdeeKcal: 2250,
             configuredDailyDeficitKcal: 250,
             currentTargetAdjustmentKcal: 0,
