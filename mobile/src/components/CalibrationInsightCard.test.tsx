@@ -198,6 +198,10 @@ describe('CalibrationInsightCard', () => {
 
         fireEvent.press(screen.getByText('Review suggested budget'));
         expect(screen.getByText('Review calorie budget')).toBeTruthy();
+        expect(screen.getByText('proposed change')).toBeTruthy();
+        expect(screen.getByText('150 kcal less/day')).toBeTruthy();
+        expect(screen.queryByText('estimated budget difference')).toBeNull();
+        expect(screen.queryByText(/200 kcal lower/)).toBeNull();
         fireEvent.press(screen.getByText('Not now'));
 
         expect(screen.queryByText('Review calorie budget')).toBeNull();

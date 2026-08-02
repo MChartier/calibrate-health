@@ -1,17 +1,17 @@
 import {
     describeCalibrationEvidence,
-    formatCalorieBudgetInterval,
+    formatCalorieBudgetChange,
     formatWeightPace
 } from './presentation';
 
 describe('calibration presentation', () => {
-    it('formats transparent intervals rather than showing false precision', () => {
-        expect(formatCalorieBudgetInterval({ low: 2100.2, midpoint: 2210.6, high: 2325.1 }))
-            .toBe('2,211 kcal higher (2,100 to 2,325)');
-        expect(formatCalorieBudgetInterval({ low: -484.2, midpoint: -349.3, high: -188.1 }))
-            .toBe('349 kcal lower (188 to 484)');
-        expect(formatCalorieBudgetInterval({ low: -43.2, midpoint: -1.1, high: 42.7 }))
-            .toBe('Near baseline (43 lower to 43 higher)');
+    it('formats the proposed daily budget change without ambiguous signs', () => {
+        expect(formatCalorieBudgetChange(-150)).toBe('150 kcal less/day');
+        expect(formatCalorieBudgetChange(150)).toBe('150 kcal more/day');
+        expect(formatCalorieBudgetChange(0)).toBe('No change');
+    });
+
+    it('formats observed pace in the selected weight unit', () => {
         expect(formatWeightPace({ low: -0.5, midpoint: -0.32, high: -0.1 }, 'KG')).toBe('-0.32 kg/week');
         expect(formatWeightPace({ low: -0.5, midpoint: -0.32, high: -0.1 }, 'LB')).toBe('-0.71 lb/week');
     });

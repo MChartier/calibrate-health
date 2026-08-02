@@ -14,7 +14,7 @@ import { SectionHeader } from './SectionHeader';
 import { useAuth } from '../auth/AuthContext';
 import {
     describeCalibrationEvidence,
-    formatCalorieBudgetInterval,
+    formatCalorieBudgetChange,
     formatWeightPace
 } from '../calibration/presentation';
 import { formatDateOnlyForDisplay } from '../utils/dates';
@@ -160,7 +160,7 @@ export const CalibrationInsightCard: React.FC<ViewProps> = ({ style, ...props })
                         </View>
                         <View style={styles.tileRow}>
                             <MetricTile label="observed pace" value={formatWeightPace(evaluation.estimates.observedWeeklyWeightChangeKg, evaluation.weightUnit)} />
-                            <MetricTile label="estimated budget difference" value={formatCalorieBudgetInterval(evaluation.estimates.targetAdjustmentKcal)} />
+                            <MetricTile label="proposed change" value={formatCalorieBudgetChange(recommendation.adjustmentStepKcal)} />
                         </View>
                     </>
                 )}

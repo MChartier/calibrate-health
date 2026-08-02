@@ -3,15 +3,11 @@ import type { CalibrationInterval, CalibrationResult } from '@calibrate/shared/c
 
 const POUNDS_PER_KILOGRAM = 2.2046226218;
 
-export function formatCalorieBudgetInterval(value: CalibrationInterval | null): string {
-    if (!value) return 'Not enough evidence';
-    if (value.high < 0) {
-        return `${Math.abs(Math.round(value.midpoint)).toLocaleString()} kcal lower (${Math.abs(Math.round(value.high)).toLocaleString()} to ${Math.abs(Math.round(value.low)).toLocaleString()})`;
-    }
-    if (value.low > 0) {
-        return `${Math.round(value.midpoint).toLocaleString()} kcal higher (${Math.round(value.low).toLocaleString()} to ${Math.round(value.high).toLocaleString()})`;
-    }
-    return `Near baseline (${Math.abs(Math.round(value.low)).toLocaleString()} lower to ${Math.round(value.high).toLocaleString()} higher)`;
+export function formatCalorieBudgetChange(adjustmentKcal: number): string {
+    const magnitude = Math.abs(Math.round(adjustmentKcal)).toLocaleString();
+    if (adjustmentKcal < 0) return `${magnitude} kcal less/day`;
+    if (adjustmentKcal > 0) return `${magnitude} kcal more/day`;
+    return 'No change';
 }
 
 export function formatWeightPace(value: CalibrationInterval | null, weightUnit: WeightUnit): string {
