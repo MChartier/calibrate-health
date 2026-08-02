@@ -50,8 +50,13 @@ describe('WeightTrendPreviewCard', () => {
 
         expect(screen.getByText('Last four weeks at a glance.')).toBeTruthy();
         expect(screen.getByLabelText('Four-week weight trend preview')).toBeTruthy();
+        expect(screen.getByLabelText('169 lb weight axis label')).toBeTruthy();
+        expect(screen.getByLabelText('168 lb weight axis label')).toBeTruthy();
+        expect(screen.getByLabelText('Jul 19 date axis label')).toBeTruthy();
+        expect(screen.getByLabelText('Jul 20 date axis label')).toBeTruthy();
         expect(screen.getByText('Trend line: down 0.6 lb over 1 day.')).toBeTruthy();
         expect(screen.queryByText(/-0\.35|volatility/)).toBeNull();
+        expect(screen.queryByText(/^(Week|Month|Year|All)$/)).toBeNull();
 
         fireEvent.press(screen.getByLabelText('Open full weight trend'));
         expect(onPress).toHaveBeenCalledTimes(1);
@@ -103,8 +108,8 @@ describe('WeightTrendPreviewCard', () => {
 
         const screen = render(<WeightTrendPreviewCard onPress={jest.fn()} />);
 
-        expect(screen.getByTestId('weight-trend-preview-measurement-path').props.d).toMatch(/^M 8\.00 /);
-        expect(screen.getByTestId('weight-trend-preview-smoothed-path').props.d).toMatch(/^M 170\.00 /);
+        expect(screen.getByTestId('weight-trend-preview-measurement-path').props.d).toMatch(/^M 48\.00 /);
+        expect(screen.getByTestId('weight-trend-preview-smoothed-path').props.d).toMatch(/^M 190\.00 /);
         expect(screen.getByText('Trend line: down 0.6 lb over 1 day.')).toBeTruthy();
     });
 
