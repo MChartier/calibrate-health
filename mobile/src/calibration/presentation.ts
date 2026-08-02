@@ -15,7 +15,11 @@ export function describeCalorieBudgetEstimate(
     value: CalibrationInterval | null,
     currentAdjustmentKcal: number,
     recommendedStepKcal: number
-): string | null {
+): {
+    signal: string;
+    range: string;
+    firstStep: string;
+} | null {
     if (!value || recommendedStepKcal === 0) return null;
 
     const relativeLow = value.low - currentAdjustmentKcal;
@@ -27,7 +31,11 @@ export function describeCalorieBudgetEstimate(
     const rangeHigh = recommendedStepKcal < 0 ? Math.abs(Math.round(relativeLow)) : Math.round(relativeHigh);
     const firstStep = Math.abs(Math.round(recommendedStepKcal)).toLocaleString();
 
-    return `The model estimates that a daily budget about ${estimatedMagnitude} kcal ${direction} would better match the relationship between your logged intake and weight trend. Food logs and short-term weight trends always contain some uncertainty, so the plausible adjustment is ${rangeLow.toLocaleString()}-${rangeHigh.toLocaleString()} kcal ${direction}. Calibrate recommends a smaller first step of ${firstStep} kcal per day to avoid overcorrecting. Your next pace check will incorporate the new data.`;
+    return {
+        signal: `Based on this history, a budget about ${estimatedMagnitude} kcal ${direction} than your current budget could bring your pace closer to plan if the recent pattern continues.`,
+        range: `The estimate could reasonably be ${rangeLow.toLocaleString()}-${rangeHigh.toLocaleString()} kcal ${direction}.`,
+        firstStep: `Food logs and short-term scale trends are imperfect, so Calibrate limits this first change to ${firstStep} kcal per day to avoid overcorrecting. Your next pace check will use the new trend before suggesting another change.`
+    };
 }
 
 export function formatWeightPaceMagnitude(valueKgPerWeek: number | null, weightUnit: WeightUnit): string {

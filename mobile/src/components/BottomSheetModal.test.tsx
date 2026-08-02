@@ -1,6 +1,8 @@
 import { StyleSheet, Text } from 'react-native';
-import { render } from '@testing-library/react-native';
+import { fireEvent, render } from '@testing-library/react-native';
 import { BottomSheetModal } from './BottomSheetModal';
+
+jest.mock('@expo/vector-icons/Ionicons', () => () => null);
 
 jest.mock('../hooks/useReducedMotionPreference', () => ({
     useReducedMotionPreference: () => true
@@ -29,5 +31,28 @@ describe('BottomSheetModal', () => {
             right: 0,
             height: 720
         });
+    });
+
+    it('keeps the backdrop out of keyboard navigation and provides an explicit close action', () => {
+        const onRequestClose = jest.fn();
+        const screen = render(
+            <BottomSheetModal
+                visible
+                accessibilityLabel="Calibration details"
+                showCloseButton
+                showHandle={false}
+                onRequestClose={onRequestClose}
+            >
+                <Text>Review calorie target</Text>
+            </BottomSheetModal>
+        );
+
+        expect(screen.getByTestId('bottom-sheet-backdrop', { includeHiddenElements: true }).props).toMatchObject({
+            accessible: false,
+            importantForAccessibility: 'no-hide-descendants',
+            'aria-hidden': true
+        });
+        fireEvent.press(screen.getByLabelText('Close calibration details'));
+        expect(onRequestClose).toHaveBeenCalledTimes(1);
     });
 });

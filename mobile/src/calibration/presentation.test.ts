@@ -26,12 +26,16 @@ describe('calibration presentation', () => {
             { low: -471, midpoint: -329, high: -199 },
             0,
             -150
-        )).toBe('The model estimates that a daily budget about 329 kcal lower would better match the relationship between your logged intake and weight trend. Food logs and short-term weight trends always contain some uncertainty, so the plausible adjustment is 199-471 kcal lower. Calibrate recommends a smaller first step of 150 kcal per day to avoid overcorrecting. Your next pace check will incorporate the new data.');
+        )).toEqual({
+            signal: 'Based on this history, a budget about 329 kcal lower than your current budget could bring your pace closer to plan if the recent pattern continues.',
+            range: 'The estimate could reasonably be 199-471 kcal lower.',
+            firstStep: 'Food logs and short-term scale trends are imperfect, so Calibrate limits this first change to 150 kcal per day to avoid overcorrecting. Your next pace check will use the new trend before suggesting another change.'
+        });
         expect(describeCalorieBudgetEstimate(
             { low: -20, midpoint: 0, high: 20 },
             -150,
             150
-        )).toContain('about 150 kcal higher');
+        )?.signal).toContain('about 150 kcal higher');
     });
 
     it('summarizes confident and uncertain history', () => {

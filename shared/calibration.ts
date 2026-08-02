@@ -502,14 +502,14 @@ function describeRecommendationPace(observedWeeklyKg: number, configuredWeeklyKg
     if (configuredWeeklyKg < -0.01) {
         if (observedWeeklyKg > 0.01) return 'Weight is trending up instead of down';
         return observedWeeklyKg < configuredWeeklyKg
-            ? 'Weight loss is trending faster than planned'
-            : 'Weight loss is trending slower than planned';
+            ? "You're losing weight faster than planned"
+            : "You're losing weight, but slower than planned";
     }
     if (configuredWeeklyKg > 0.01) {
         if (observedWeeklyKg < -0.01) return 'Weight is trending down instead of up';
         return observedWeeklyKg > configuredWeeklyKg
-            ? 'Weight gain is trending faster than planned'
-            : 'Weight gain is trending slower than planned';
+            ? "You're gaining weight faster than planned"
+            : "You're gaining weight, but slower than planned";
     }
     if (observedWeeklyKg < -0.01) return 'Weight is trending down instead of staying steady';
     return 'Weight is trending up instead of staying steady';

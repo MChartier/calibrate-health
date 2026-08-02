@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { StyleSheet, View, useWindowDimensions, type ViewProps } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import type { CalibrationStatusResponse } from '@calibrate/api-client';
 import * as Crypto from 'expo-crypto';
 import * as Haptics from 'expo-haptics';
 import { AppButton } from './AppButton';
@@ -20,7 +21,7 @@ import {
     describeWeightPaceDirection,
     formatWeightPaceMagnitude
 } from '../calibration/presentation';
-import { formatDateOnlyForDisplay } from '../utils/dates';
+import { addDaysToDateOnly, formatDateOnlyForDisplay, getTodayDate } from '../utils/dates';
 import { calibrationStatusQueryKey } from '../calibration/queryKeys';
 import { spacing, type AppTheme, useAppTheme } from '../theme';
 
@@ -28,7 +29,7 @@ const RECOMMENDATION_STACK_BREAKPOINT = 560; // Keeps paired panels and action l
 
 /** On-demand calibration insight and explicit target-adjustment approval. */
 export const CalibrationInsightCard: React.FC<ViewProps> = ({ style, ...props }) => {
-    const { api } = useAuth();
+    const { api, user } = useAuth();
     const queryClient = useQueryClient();
     const theme = useAppTheme();
     const styles = React.useMemo(() => createStyles(theme), [theme]);
@@ -45,18 +46,30 @@ export const CalibrationInsightCard: React.FC<ViewProps> = ({ style, ...props })
             if (!recommendationId) throw new Error('This recommendation is no longer available.');
             return api.applyCalibrationRecommendation(recommendationId, Crypto.randomUUID());
         },
-        onSuccess: async () => {
+        onSuccess: (change) => {
             setIsReviewOpen(false);
-            await Promise.all([
-                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => undefined),
+            queryClient.setQueryData<CalibrationStatusResponse>(calibrationStatusQueryKey, (current) => current ? ({
+                ...current,
+                recommendation: null,
+                scheduledChange: change
+            }) : current);
+            void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => undefined);
+            void Promise.all([
                 queryClient.invalidateQueries({ queryKey: calibrationStatusQueryKey }),
                 queryClient.invalidateQueries({ queryKey: ['mobile-profile'] })
-            ]);
+            ]).catch(() => undefined);
         }
     });
 
     const status = statusQuery.data;
     const evaluation = status?.evaluation;
+    const hasActionableRecommendation = Boolean(status?.recommendation && evaluation?.recommendation);
+    useEffect(() => {
+        if (!isReviewOpen || !status || hasActionableRecommendation) return;
+        applyRecommendation.reset();
+        setIsReviewOpen(false);
+    }, [applyRecommendation, hasActionableRecommendation, isReviewOpen, status]);
+
     const recommendation = evaluation?.recommendation;
     const scheduledChange = status?.scheduledChange;
     const closeReview = () => {
@@ -68,7 +81,7 @@ export const CalibrationInsightCard: React.FC<ViewProps> = ({ style, ...props })
         setIsReviewOpen(true);
     };
 
-    if (statusQuery.error) {
+    if (statusQuery.error && !status) {
         return (
             <AppCard {...props} style={style}>
                 <SectionHeader title="Calibration" description="Unable to evaluate your latest history." />
@@ -94,13 +107,14 @@ export const CalibrationInsightCard: React.FC<ViewProps> = ({ style, ...props })
     const observedDirection = observedPaceKg === null ? null : describeWeightPaceDirection(observedPaceKg);
     const plannedDirection = describeWeightPaceDirection(plannedPaceKg);
     const selectedHistoryDays = evaluation.selectedWindowDays ?? evaluation.dataQuality.observationDays;
-    const conciseHeadline = evaluation.headline.replace(' is trending ', ' is ');
-    const headlineFinding = `${conciseHeadline.charAt(0).toLowerCase()}${conciseHeadline.slice(1)}`;
+    const observedPaceWithDirection = observedDirection && observedDirection !== 'stable'
+        ? `${observedPace} ${observedDirection}`
+        : observedPace;
     const averageIntake = evaluation.estimates.averageIntakeKcal
         ? `${Math.round(evaluation.estimates.averageIntakeKcal.midpoint).toLocaleString()} kcal`
         : 'Not enough evidence';
     const recommendationReason = actionableRecommendation
-        ? `Your recent ${selectedHistoryDays}-day trend shows ${headlineFinding}. Taken together with your food logs, this suggests the current daily budget estimate may be ${actionableRecommendation.adjustmentStepKcal < 0 ? 'too high' : 'lower than needed'} for your planned pace.`
+        ? `Over the last ${selectedHistoryDays} days, you logged an average of ${averageIntake} per day and your recent pace was ${observedPaceWithDirection}, compared with a planned ${plannedPace}${plannedDirection === 'stable' ? '' : ` ${plannedDirection}`}. If that pattern continues, a slightly ${actionableRecommendation.adjustmentStepKcal < 0 ? 'lower' : 'higher'} daily budget could bring your pace closer to plan.`
         : null;
     const budgetEstimateExplanation = actionableRecommendation
         ? describeCalorieBudgetEstimate(
@@ -109,9 +123,17 @@ export const CalibrationInsightCard: React.FC<ViewProps> = ({ style, ...props })
             actionableRecommendation.adjustmentStepKcal
         )
         : null;
+    const effectiveLocalDate = status?.recommendation?.effectiveLocalDate ?? null;
+    const tomorrow = addDaysToDateOnly(getTodayDate(user?.timezone), 1);
+    let effectiveDateLabel = 'on the next local day';
+    if (effectiveLocalDate === tomorrow) effectiveDateLabel = 'tomorrow';
+    else if (effectiveLocalDate) effectiveDateLabel = `on ${formatDateOnlyForDisplay(effectiveLocalDate)}`;
     const applyButtonTitle = actionableRecommendation
-        ? `Apply ${actionableRecommendation.recommendedTargetKcal.toLocaleString()} kcal tomorrow`
-        : 'Apply tomorrow';
+        ? `Apply ${actionableRecommendation.recommendedTargetKcal.toLocaleString()} kcal`
+        : 'Apply suggested budget';
+    const reviewApplyButtonTitle = actionableRecommendation
+        ? `${applyButtonTitle} ${effectiveDateLabel}`
+        : applyButtonTitle;
 
     return (
         <>
@@ -125,8 +147,12 @@ export const CalibrationInsightCard: React.FC<ViewProps> = ({ style, ...props })
                     />
                 )}
                 {scheduledChange ? (
-                    <View style={styles.scheduledRow}>
-                        <Ionicons name="calendar-outline" size={18} color={theme.colors.primary} />
+                    <View
+                        role="status"
+                        accessibilityLiveRegion="polite"
+                        style={styles.scheduledRow}
+                    >
+                        <Ionicons name="checkmark-circle" size={20} color={theme.colors.success} />
                         <AppText style={styles.scheduledText}>
                             {scheduledChange.dailyCalorieBudgetKcal === null
                                 ? `Your updated daily calorie budget starts ${formatDateOnlyForDisplay(scheduledChange.effectiveLocalDate)}.`
@@ -138,12 +164,12 @@ export const CalibrationInsightCard: React.FC<ViewProps> = ({ style, ...props })
                         <View style={[
                             styles.recommendationPanels,
                             stackRecommendation && styles.recommendationPanelsStacked
-                        ]}>
+                        ]} testID="calibration-recommendation-panels">
                             <View style={styles.pacePanel}>
-                                <AppText variant="metric">{observedPace}</AppText>
-                                <AppText variant="label">your recent pace</AppText>
+                                <AppText variant="metric">{observedPaceWithDirection}</AppText>
+                                <AppText variant="label">{selectedHistoryDays}-day pace</AppText>
                                 <AppText variant="caption">
-                                    Plan: {plannedPace}{plannedDirection === 'stable' ? '' : ` ${plannedDirection}`}
+                                    Planned: {plannedPace}{plannedDirection === 'stable' ? '' : ` ${plannedDirection}`}
                                 </AppText>
                             </View>
                             <View style={styles.budgetPanel}>
@@ -161,12 +187,18 @@ export const CalibrationInsightCard: React.FC<ViewProps> = ({ style, ...props })
                         </View>
                         <View style={styles.assuranceRow}>
                             <Ionicons name="calendar-outline" size={18} color={theme.colors.primary} />
-                            <AppText variant="muted">Starts tomorrow. Your weight goal stays the same.</AppText>
+                            <AppText variant="muted">
+                                If applied, your new budget starts {effectiveDateLabel}. Your weight goal stays the same.
+                            </AppText>
                         </View>
-                        <View style={[styles.actions, stackRecommendation && styles.actionsStacked]}>
+                        <View
+                            testID="calibration-recommendation-actions"
+                            style={[styles.actions, stackRecommendation && styles.actionsStacked]}
+                        >
                             <AppButton
                                 title={applyRecommendation.isPending ? 'Applying...' : applyButtonTitle}
                                 disabled={applyRecommendation.isPending}
+                                accessibilityState={{ busy: applyRecommendation.isPending }}
                                 leftIcon={<Ionicons name="checkmark" size={18} color={theme.colors.onPrimary} />}
                                 onPress={() => applyRecommendation.mutate()}
                                 style={styles.action}
@@ -176,12 +208,15 @@ export const CalibrationInsightCard: React.FC<ViewProps> = ({ style, ...props })
                                 accessibilityLabel="See evidence behind this budget suggestion"
                                 variant="secondary"
                                 disabled={applyRecommendation.isPending}
+                                accessibilityState={{ busy: applyRecommendation.isPending }}
                                 leftIcon={<Ionicons name="information-circle-outline" size={18} color={theme.colors.onSurface} />}
                                 onPress={openReview}
                                 style={styles.action}
                             />
                         </View>
-                        {applyRecommendation.error && <AppText style={styles.error}>{applyRecommendation.error.message}</AppText>}
+                        {applyRecommendation.error && (
+                            <AppText accessibilityRole="alert" style={styles.error}>{applyRecommendation.error.message}</AppText>
+                        )}
                     </>
                 ) : (
                     <>
@@ -229,7 +264,13 @@ export const CalibrationInsightCard: React.FC<ViewProps> = ({ style, ...props })
                 )}
             </AppCard>
 
-            <BottomSheetModal visible={isReviewOpen} onRequestClose={closeReview}>
+            <BottomSheetModal
+                visible={isReviewOpen}
+                accessibilityLabel="Calibration suggestion details"
+                showCloseButton
+                showHandle={false}
+                onRequestClose={closeReview}
+            >
                 <View style={styles.sheetContent}>
                 {actionableRecommendation && (
                     <>
@@ -245,7 +286,7 @@ export const CalibrationInsightCard: React.FC<ViewProps> = ({ style, ...props })
                             <MetricTile label="average logged per day" value={averageIntake} />
                             <MetricTile
                                 label={observedDirection === null ? 'recent pace' : `recent ${observedDirection}`}
-                                value={observedPace}
+                                value={observedPaceWithDirection}
                             />
                             <MetricTile
                                 label={plannedDirection === 'stable' ? 'planned pace' : `planned ${plannedDirection}`}
@@ -253,27 +294,62 @@ export const CalibrationInsightCard: React.FC<ViewProps> = ({ style, ...props })
                             />
                         </View>
                         <View style={styles.explanationSection}>
-                            <AppText variant="label">How Calibrate reached this suggestion</AppText>
+                            <AppText variant="label">What the pattern suggests</AppText>
                             <AppText variant="muted">{recommendationReason}</AppText>
                         </View>
                         {budgetEstimateExplanation && (
                             <View style={styles.explanationSection}>
                                 <AppText variant="label">
-                                    Why a {Math.abs(actionableRecommendation.adjustmentStepKcal).toLocaleString()} kcal first step?
+                                    Why start with {Math.abs(actionableRecommendation.adjustmentStepKcal).toLocaleString()} kcal?
                                 </AppText>
-                                <AppText variant="muted">{budgetEstimateExplanation}</AppText>
+                                <View style={styles.reasoningSteps}>
+                                    <View style={styles.reasoningStep}>
+                                        <AppText variant="label">Estimated change</AppText>
+                                        <AppText variant="muted">{budgetEstimateExplanation.signal}</AppText>
+                                    </View>
+                                    <View style={styles.reasoningStep}>
+                                        <AppText variant="label">Uncertainty</AppText>
+                                        <AppText variant="caption">{budgetEstimateExplanation.range}</AppText>
+                                    </View>
+                                    <View style={[styles.reasoningStep, styles.recommendedStep]}>
+                                        <AppText variant="label" style={styles.budgetPanelText}>Recommended first step</AppText>
+                                        <AppText variant="muted" style={styles.budgetPanelText}>
+                                            {budgetEstimateExplanation.firstStep}
+                                        </AppText>
+                                    </View>
+                                </View>
                             </View>
                         )}
                         <View style={styles.explanationSection}>
                             <AppText variant="label">Evidence quality</AppText>
                             <AppText variant="muted">{describeCalibrationEvidenceForReview(evaluation)}</AppText>
                         </View>
-                        <View style={styles.decisionSummary}>
-                            <AppText variant="label">Tomorrow's budget</AppText>
-                            <AppText variant="subtitle" style={styles.budgetPanelText}>
-                                {actionableRecommendation.recommendedTargetKcal.toLocaleString()} kcal
+                        <View style={styles.safetyRow}>
+                            <Ionicons name="shield-checkmark-outline" size={18} color={theme.colors.primary} />
+                            <AppText variant="caption" style={styles.safetyText}>
+                                Calibrate checks every suggestion against a BMR-based safety floor before showing it.
                             </AppText>
-                            <AppText variant="caption" style={styles.budgetPanelText}>Your weight goal stays the same.</AppText>
+                        </View>
+                        <View style={styles.decisionSummary}>
+                            <AppText variant="label">
+                                {effectiveLocalDate === tomorrow ? 'Proposed budget for tomorrow' : 'Proposed budget update'}
+                            </AppText>
+                            <View style={styles.budgetTransition}>
+                                <View style={styles.transitionBudget}>
+                                    <AppText variant="caption" style={styles.budgetPanelText}>Current</AppText>
+                                    <AppText variant="subtitle" style={styles.budgetPanelText}>
+                                        {actionableRecommendation.currentTargetKcal.toLocaleString()} kcal
+                                    </AppText>
+                                </View>
+                                <Ionicons name="arrow-forward" size={20} color={theme.colors.onSuccessContainer} />
+                                <View style={styles.transitionBudget}>
+                                    <AppText variant="caption" style={styles.budgetPanelText}>Proposed</AppText>
+                                    <AppText variant="subtitle" style={styles.budgetPanelText}>
+                                        {actionableRecommendation.recommendedTargetKcal.toLocaleString()} kcal
+                                    </AppText>
+                                </View>
+                            </View>
+                            <AppText variant="caption" style={styles.budgetPanelText}>Starts {effectiveDateLabel} if applied. Your weight goal stays the same.</AppText>
                         </View>
                     </>
                 )}
@@ -284,19 +360,23 @@ export const CalibrationInsightCard: React.FC<ViewProps> = ({ style, ...props })
                         ))}
                     </View>
                 )}
-                {applyRecommendation.error && <AppText style={styles.error}>{applyRecommendation.error.message}</AppText>}
+                {applyRecommendation.error && (
+                    <AppText accessibilityRole="alert" style={styles.error}>{applyRecommendation.error.message}</AppText>
+                )}
                 <View style={[styles.actions, stackRecommendation && styles.actionsStacked]}>
                     <AppButton
-                        title={applyRecommendation.isPending ? 'Applying...' : applyButtonTitle}
+                        title={applyRecommendation.isPending ? 'Applying...' : reviewApplyButtonTitle}
                         disabled={applyRecommendation.isPending}
+                        accessibilityState={{ busy: applyRecommendation.isPending }}
                         leftIcon={<Ionicons name="checkmark" size={18} color={theme.colors.onPrimary} />}
                         onPress={() => applyRecommendation.mutate()}
                         style={styles.action}
                     />
                     <AppButton
-                        title="Not now"
+                        title="Close"
                         variant="secondary"
                         disabled={applyRecommendation.isPending}
+                        accessibilityState={{ busy: applyRecommendation.isPending }}
                         onPress={closeReview}
                         style={styles.action}
                     />
@@ -356,11 +436,45 @@ function createStyles(theme: AppTheme) {
     explanationSection: {
         gap: spacing.xs
     },
+    reasoningSteps: {
+        gap: spacing.sm
+    },
+    reasoningStep: {
+        gap: spacing.xs,
+        borderRadius: theme.radius.md,
+        padding: spacing.md,
+        backgroundColor: theme.colors.surfaceContainer
+    },
+    recommendedStep: {
+        backgroundColor: theme.colors.successContainer
+    },
+    safetyRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.sm,
+        borderRadius: theme.radius.md,
+        padding: spacing.md,
+        backgroundColor: theme.colors.primaryContainer
+    },
+    safetyText: {
+        flex: 1,
+        color: theme.colors.onPrimaryContainer
+    },
     decisionSummary: {
         gap: spacing.xs,
         borderRadius: theme.radius.md,
         padding: spacing.md,
         backgroundColor: theme.colors.successContainer
+    },
+    budgetTransition: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.md
+    },
+    transitionBudget: {
+        flex: 1,
+        minWidth: 0,
+        gap: spacing.xs
     },
     scheduledRow: {
         flexDirection: 'row',
