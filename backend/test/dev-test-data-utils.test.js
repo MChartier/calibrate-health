@@ -1,5 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const { evaluateCalibration } = require('../../shared/calibration');
 
 const {
   addUtcDays,
@@ -15,6 +16,51 @@ const {
 
 test('devTestDataUtils: seed history is long enough for calibration recommendations', () => {
   assert.equal(DEV_SEED_FOOD_HISTORY_DAYS, 28);
+});
+
+test('devTestDataUtils: seeded history produces a meaningful calibration result', () => {
+  const now = new Date('2026-08-01T19:00:00Z');
+  const foodDates = getPastDateRangeDates('America/Los_Angeles', DEV_SEED_FOOD_HISTORY_DAYS, now);
+  const metricDates = getPastDateRangeDates('America/Los_Angeles', 120, now);
+  const foodDays = foodDates.map((day, dayIndex) => {
+    const logs = buildMealLogsForDay(1, day, dayIndex);
+    return {
+      date: day.toISOString().slice(0, 10),
+      calories: logs.reduce((sum, log) => sum + log.calories, 0),
+      entryCount: logs.length,
+      mealPeriodCount: new Set(logs.map((log) => log.meal_period)).size,
+      isComplete: true
+    };
+  });
+  const weightPoints = metricDates.slice(-DEV_SEED_FOOD_HISTORY_DAYS).map((day, recentIndex) => {
+    const dayIndex = metricDates.length - DEV_SEED_FOOD_HISTORY_DAYS + recentIndex;
+    const weightKg = getSeedWeightGramsForDayIndex(dayIndex, 82000) / 1000;
+    return {
+      date: day.toISOString().slice(0, 10),
+      trendWeightKg: weightKg,
+      lowerKg: weightKg - 0.1,
+      upperKg: weightKg + 0.1
+    };
+  });
+
+  const result = evaluateCalibration({
+    asOfDate: foodDates.at(-1).toISOString().slice(0, 10),
+    weightUnit: 'KG',
+    ageYears: 36,
+    bmrKcal: 1750,
+    profileTdeeKcal: 2700,
+    configuredDailyDeficitKcal: 500,
+    currentTargetAdjustmentKcal: 0,
+    foodDays,
+    weightPoints
+  });
+
+  assert.notEqual(result.status, 'not_ready');
+  assert.notEqual(result.status, 'learning');
+  assert.ok(result.selectedWindowDays >= 14);
+  assert.equal(result.dataQuality.observationDays, result.selectedWindowDays);
+  assert.equal(result.dataQuality.confidentDays, result.selectedWindowDays);
+  assert.equal(result.dataQuality.weightSpanDays, result.selectedWindowDays);
 });
 
 test('devTestDataUtils: addUtcDays adds days using UTC math without mutating the input', () => {

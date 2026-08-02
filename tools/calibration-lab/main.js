@@ -12,6 +12,7 @@ const elements = {
   estimates: document.querySelector('#estimates'),
   criteriaPanel: document.querySelector('#criteria-panel'),
   criteriaTitle: document.querySelector('#criteria-title'),
+  criteriaDescription: document.querySelector('#criteria-description'),
   criteria: document.querySelector('#criteria'),
   activity: document.querySelector('#activity-context'),
   input: document.querySelector('#history-input'),
@@ -112,12 +113,46 @@ function renderResult(result) {
   let criteriaTitle = 'What would strengthen this insight';
   if (criteriaSatisfied) criteriaTitle = 'Criteria satisfied';
   if (safetyLimited) criteriaTitle = 'Safety limit';
+  if (result.nextStep) criteriaTitle = 'Next step';
   elements.criteriaTitle.textContent = criteriaTitle;
+  elements.criteriaDescription.textContent = result.nextStep
+    ? 'One clear action to keep building useful evidence.'
+    : 'Requirements and uncertainty limits applied to this result.';
   elements.criteria.replaceChildren();
   if (criteriaSatisfied) {
     const copy = document.createElement('p');
     copy.className = 'criteria-copy';
     copy.textContent = 'This observation window meets all evidence criteria.';
+    elements.criteria.append(copy);
+  } else if (result.nextStep) {
+    if (result.historyProgress) {
+      const progress = document.createElement('div');
+      progress.className = 'history-progress';
+      const progressSummary = document.createElement('div');
+      progressSummary.className = 'history-progress-summary';
+      const progressLabel = document.createElement('strong');
+      const progressValue = document.createElement('span');
+      const progressText = `${result.historyProgress.observedDays} of ${result.historyProgress.requiredDays} days`;
+      progressLabel.textContent = 'Progress toward first pace check';
+      progressValue.textContent = progressText;
+      progressSummary.append(progressLabel, progressValue);
+      const progressTrack = document.createElement('div');
+      progressTrack.className = 'history-progress-track';
+      progressTrack.setAttribute('role', 'progressbar');
+      progressTrack.setAttribute('aria-label', 'History for first pace check');
+      progressTrack.setAttribute('aria-valuemin', '0');
+      progressTrack.setAttribute('aria-valuemax', String(result.historyProgress.requiredDays));
+      progressTrack.setAttribute('aria-valuenow', String(result.historyProgress.observedDays));
+      progressTrack.setAttribute('aria-valuetext', progressText);
+      const progressFill = document.createElement('span');
+      progressFill.style.width = `${Math.min(100, Math.max(0, result.historyProgress.observedDays / result.historyProgress.requiredDays * 100))}%`;
+      progressTrack.append(progressFill);
+      progress.append(progressSummary, progressTrack);
+      elements.criteria.append(progress);
+    }
+    const copy = document.createElement('p');
+    copy.className = 'criteria-copy';
+    copy.textContent = result.nextStep;
     elements.criteria.append(copy);
   } else {
     const list = document.createElement('ul');

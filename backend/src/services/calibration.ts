@@ -90,6 +90,8 @@ function buildUnavailableEvaluation(options: {
         status: 'not_ready',
         headline: options.headline,
         summary: options.summary,
+        nextStep: null,
+        historyProgress: null,
         selectedWindowDays: null,
         dataQuality: {
             observationDays: 0,

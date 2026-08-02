@@ -81,6 +81,11 @@ export type CalibrationResult = {
     status: 'not_ready' | 'learning' | 'insight' | 'recommendation';
     headline: string;
     summary: string;
+    nextStep: string | null;
+    historyProgress: {
+        observedDays: number;
+        requiredDays: number;
+    } | null;
     selectedWindowDays: number | null;
     dataQuality: CalibrationDataQuality;
     missingCriteria: string[];
@@ -585,11 +590,16 @@ export function evaluateCalibration(input: CalibrationInput): CalibrationResult 
             asOfDate: input.asOfDate,
             weightUnit: input.weightUnit,
             status: 'not_ready',
-            headline: 'Building your calibration history',
-            summary: `Track food and weight across ${CALIBRATION_MIN_INSIGHT_DAYS} days to unlock an initial pace insight.`,
+            headline: 'See how your calorie plan is working',
+            summary: 'Calibrate compares your logged food with your weight trend to show whether your plan is on track or a small calorie-budget adjustment could improve your pace.',
+            nextStep: 'Keep following your current plan and log food and weight consistently so Calibrate can make its first pace check.',
+            historyProgress: {
+                observedDays: availableSpan,
+                requiredDays: CALIBRATION_MIN_INSIGHT_DAYS
+            },
             selectedWindowDays: null,
             dataQuality: availableSpan > 0 ? summarizeDataQuality(previewDays, previewWeights) : emptyQuality(),
-            missingCriteria: ['Track food and weight across at least 7 days.'],
+            missingCriteria: [`Build at least ${CALIBRATION_MIN_INSIGHT_DAYS} days of food and weight history.`],
             assumptions: [],
             estimates: {
                 averageIntakeKcal: null,
@@ -693,6 +703,8 @@ export function evaluateCalibration(input: CalibrationInput): CalibrationResult 
         status,
         headline,
         summary,
+        nextStep: null,
+        historyProgress: null,
         selectedWindowDays: selected.windowDays,
         dataQuality: selected.dataQuality,
         missingCriteria: selected.missingCriteria,

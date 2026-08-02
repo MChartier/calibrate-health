@@ -50,6 +50,12 @@ button:disabled { cursor: wait; opacity: 0.65; }
 .criteria-panel.satisfied { border-left-color: #18764f; }
 .criteria-panel ul { display: grid; gap: 10px; margin: 0; padding: 18px 24px 20px 40px; color: #5b4933; font-size: 14px; line-height: 1.45; }
 .criteria-copy { padding: 18px 20px 20px; margin: 0; color: #18764f; font-weight: 700; }
+.history-progress { display: grid; gap: 8px; padding: 18px 20px 0; }
+.history-progress + .criteria-copy { padding-top: 14px; }
+.history-progress-summary { display: flex; align-items: center; justify-content: space-between; gap: 12px; color: #33483e; font-size: 13px; }
+.history-progress-summary span { color: #65766d; }
+.history-progress-track { height: 8px; overflow: hidden; border-radius: 999px; background: #dce5df; }
+.history-progress-track span { display: block; height: 100%; border-radius: inherit; background: #18764f; }
 .activity-context { display: grid; gap: 5px; margin: 0 20px 20px; padding: 12px 14px; border-radius: 12px; background: #edf2fa; color: #32475e; }
 .activity-context span { font-size: 13px; }
 .workspace { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; margin-top: 20px; }

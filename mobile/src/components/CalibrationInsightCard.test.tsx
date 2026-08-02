@@ -54,6 +54,8 @@ function recommendationStatus(weightUnit: 'KG' | 'LB' = 'KG'): CalibrationStatus
             status: 'recommendation',
             headline: 'Weight loss is trending slower than projected',
             summary: 'Current evidence supports a lower calorie budget.',
+            nextStep: null,
+            historyProgress: null,
             selectedWindowDays: 28,
             dataQuality: {
                 observationDays: 28,
@@ -105,6 +107,45 @@ function scheduledStatus(): CalibrationStatusResponse {
     };
 }
 
+function buildingHistoryStatus(): CalibrationStatusResponse {
+    const status = recommendationStatus();
+    return {
+        ...status,
+        evaluation: {
+            ...status.evaluation,
+            status: 'not_ready',
+            headline: 'See how your calorie plan is working',
+            summary: 'Calibrate compares your logged food with your weight trend to show whether your plan is on track or a small calorie-budget adjustment could improve your pace.',
+            nextStep: 'Keep following your current plan and log food and weight consistently so Calibrate can make its first pace check.',
+            historyProgress: {
+                observedDays: 6,
+                requiredDays: 7
+            },
+            selectedWindowDays: null,
+            dataQuality: {
+                observationDays: 6,
+                completeDays: 6,
+                confidentDays: 6,
+                suspiciousDays: 0,
+                incompleteDays: 0,
+                missingDays: 0,
+                weightPoints: 6,
+                weightSpanDays: 6
+            },
+            missingCriteria: ['Build at least 7 days of food and weight history.'],
+            estimates: {
+                averageIntakeKcal: null,
+                observedWeeklyWeightChangeKg: null,
+                targetAdjustmentKcal: null,
+                configuredWeeklyWeightChangeKg: -0.455
+            },
+            recommendation: null
+        },
+        recommendation: null,
+        scheduledChange: null
+    };
+}
+
 function renderCard() {
     const queryClient = new QueryClient({
         defaultOptions: {
@@ -129,6 +170,26 @@ describe('CalibrationInsightCard', () => {
             dailyCalorieBudgetKcal: 1750,
             effectiveLocalDate: '2026-08-01'
         });
+    });
+
+    it('explains the value of calibration and presents one next step before the first insight', async () => {
+        mockApi.getCalibrationStatus.mockResolvedValue(buildingHistoryStatus());
+        const screen = renderCard();
+
+        await waitFor(() => expect(screen.getByText('See how your calorie plan is working')).toBeTruthy());
+        expect(screen.getByText(/whether your plan is on track or a small calorie-budget adjustment/)).toBeTruthy();
+        expect(screen.getByText('Progress toward your first pace check')).toBeTruthy();
+        expect(screen.getByText('6 of 7 days')).toBeTruthy();
+        expect(screen.getByRole('progressbar', { name: 'History for your first pace check' }).props.accessibilityValue).toEqual({
+            min: 0,
+            max: 7,
+            now: 6,
+            text: '6 of 7 days'
+        });
+        expect(screen.getByText('Next step')).toBeTruthy();
+        expect(screen.getByText(/Keep following your current plan/)).toBeTruthy();
+        expect(screen.queryByText('What would improve this insight')).toBeNull();
+        expect(screen.queryByText(/^- Track food and weight/)).toBeNull();
     });
 
     it('keeps a recommendation available when the user closes review without applying it', async () => {

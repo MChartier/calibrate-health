@@ -66,6 +66,12 @@ test('reports progress before the seven-day insight threshold', () => {
   assert.equal(result.status, 'not_ready');
   assert.equal(result.dataQuality.confidentDays, 6);
   assert.equal(result.dataQuality.weightSpanDays, 6);
+  assert.equal(result.headline, 'See how your calorie plan is working');
+  assert.match(result.summary, /whether your plan is on track or a small calorie-budget adjustment/);
+  assert.equal(result.nextStep, 'Keep following your current plan and log food and weight consistently so Calibrate can make its first pace check.');
+  assert.deepEqual(result.historyProgress, { observedDays: 6, requiredDays: 7 });
+  assert.deepEqual(result.missingCriteria, ['Build at least 7 days of food and weight history.']);
+  assert.doesNotMatch(`${result.headline} ${result.summary} ${result.nextStep}`, /building your calibration history|unlock an initial|track food and weight across/i);
 });
 
 test('provides a descriptive insight after seven days without recommending a change', () => {

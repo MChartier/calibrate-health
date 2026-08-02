@@ -999,7 +999,7 @@ components:
         recommendedTargetAdjustmentKcal: { type: integer }
     CalibrationEvaluation:
       type: object
-      required: [modelVersion, asOfDate, weightUnit, status, headline, summary, selectedWindowDays, dataQuality, missingCriteria, assumptions, estimates, recommendation, activityContext]
+      required: [modelVersion, asOfDate, weightUnit, status, headline, summary, nextStep, historyProgress, selectedWindowDays, dataQuality, missingCriteria, assumptions, estimates, recommendation, activityContext]
       properties:
         modelVersion: { type: integer }
         asOfDate: { type: string, format: date }
@@ -1007,6 +1007,13 @@ components:
         status: { type: string, enum: [not_ready, learning, insight, recommendation] }
         headline: { type: string }
         summary: { type: string }
+        nextStep: { type: [string, 'null'] }
+        historyProgress:
+          type: [object, 'null']
+          required: [observedDays, requiredDays]
+          properties:
+            observedDays: { type: integer, minimum: 0 }
+            requiredDays: { type: integer, minimum: 1 }
         selectedWindowDays: { type: [integer, 'null'] }
         dataQuality: { $ref: '#/components/schemas/CalibrationDataQuality' }
         missingCriteria:

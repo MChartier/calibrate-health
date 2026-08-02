@@ -713,6 +713,11 @@ export interface components {
             status: "not_ready" | "learning" | "insight" | "recommendation";
             headline: string;
             summary: string;
+            nextStep: string | null;
+            historyProgress: {
+                observedDays: number;
+                requiredDays: number;
+            } | null;
             selectedWindowDays: number | null;
             dataQuality: components["schemas"]["CalibrationDataQuality"];
             missingCriteria: string[];

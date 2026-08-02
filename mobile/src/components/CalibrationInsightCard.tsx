@@ -9,6 +9,7 @@ import { AppCard } from './AppCard';
 import { AppText } from './AppText';
 import { BottomSheetModal } from './BottomSheetModal';
 import { MetricTile } from './MetricTile';
+import { ProgressBar } from './ProgressBar';
 import { SectionHeader } from './SectionHeader';
 import { useAuth } from '../auth/AuthContext';
 import {
@@ -95,10 +96,38 @@ export const CalibrationInsightCard: React.FC<ViewProps> = ({ style, ...props })
                 ) : (
                     <>
                         <AppText variant="muted">{evaluation.summary}</AppText>
+                        {evaluation.historyProgress && (
+                            <View style={styles.historyProgress}>
+                                <View style={styles.historyProgressHeader}>
+                                    <AppText variant="label">Progress toward your first pace check</AppText>
+                                    <AppText variant="caption">
+                                        {evaluation.historyProgress.observedDays} of {evaluation.historyProgress.requiredDays} days
+                                    </AppText>
+                                </View>
+                                <ProgressBar
+                                    accessible
+                                    accessibilityRole="progressbar"
+                                    accessibilityLabel="History for your first pace check"
+                                    accessibilityValue={{
+                                        min: 0,
+                                        max: evaluation.historyProgress.requiredDays,
+                                        now: evaluation.historyProgress.observedDays,
+                                        text: `${evaluation.historyProgress.observedDays} of ${evaluation.historyProgress.requiredDays} days`
+                                    }}
+                                    value={evaluation.historyProgress.observedDays / evaluation.historyProgress.requiredDays}
+                                />
+                            </View>
+                        )}
                         {evaluation.selectedWindowDays && (
                             <AppText variant="caption">{describeCalibrationEvidence(evaluation)}</AppText>
                         )}
-                        {evaluation.missingCriteria.length > 0 && !status?.recommendation && (
+                        {evaluation.nextStep && (
+                            <View style={styles.list}>
+                                <AppText variant="label">Next step</AppText>
+                                <AppText variant="muted">{evaluation.nextStep}</AppText>
+                            </View>
+                        )}
+                        {evaluation.missingCriteria.length > 0 && !status?.recommendation && !evaluation.nextStep && (
                             <View style={styles.list}>
                                 <AppText variant="label">What would improve this insight</AppText>
                                 {evaluation.missingCriteria.map((criterion) => (
@@ -187,6 +216,16 @@ const styles = StyleSheet.create({
     },
     list: {
         gap: spacing.xs
+    },
+    historyProgress: {
+        gap: spacing.xs
+    },
+    historyProgressHeader: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: spacing.sm
     },
     actions: {
         flexDirection: 'row',

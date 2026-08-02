@@ -76,6 +76,15 @@ test('calibration lab describes pre-threshold history without implying the windo
   });
 });
 
+test('calibration lab presents pre-threshold guidance as one next step', async () => {
+  const labMain = await readFile(new URL('../tools/calibration-lab/main.js', import.meta.url), 'utf8');
+  assert.match(labMain, /result\.nextStep\) criteriaTitle = 'Next step'/);
+  assert.match(labMain, /copy\.textContent = result\.nextStep/);
+  assert.match(labMain, /One clear action to keep building useful evidence/);
+  assert.match(labMain, /Progress toward first pace check/);
+  assert.match(labMain, /role', 'progressbar'/);
+});
+
 test('calibration lab labels a qualifying evaluator window explicitly', () => {
   assert.deepEqual(getWindowMetric({
     selectedWindowDays: 14,
