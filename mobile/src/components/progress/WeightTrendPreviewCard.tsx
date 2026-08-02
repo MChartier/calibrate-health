@@ -41,11 +41,11 @@ const MIN_PREVIEW_WIDTH = 240;
 const PREVIEW_HEIGHT = 112; // Keeps the Progress card glanceable while preserving a meaningful trend shape.
 const PREVIEW_CARD_MIN_HEIGHT = 240; // Preserves the compact chart and summary before free space is distributed.
 const PREVIEW_PADDING_LEFT = 48; // Reserves a compact gutter for weight labels without widening the card.
-const PREVIEW_PADDING_RIGHT = 8;
-const PREVIEW_PADDING_TOP = 10;
+const PREVIEW_PADDING_RIGHT = 8; // Keeps the final point and end-date label clear of the rounded chart edge.
+const PREVIEW_PADDING_TOP = 10; // Leaves headroom for the top gridline and measurement markers.
 const PREVIEW_PADDING_BOTTOM = 24; // Keeps endpoint dates inside the existing preview canvas.
-const PREVIEW_AXIS_FONT_SIZE = 10;
-const PREVIEW_AXIS_TICK_SIZE = 4;
+const PREVIEW_AXIS_FONT_SIZE = 10; // Keeps preview labels legible without competing with the trend lines.
+const PREVIEW_AXIS_TICK_SIZE = 4; // Marks the date endpoints without adding interactive chart controls.
 const MIN_PREVIEW_WEIGHT_SPAN = 0.4;
 
 function buildPath(points: PreviewPoint[], key: 'measurementY' | 'trendY'): string {
