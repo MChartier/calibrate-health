@@ -205,7 +205,7 @@ export const CALIBRATION_SCENARIOS: CalibrationScenario[] = [
     {
         id: 'bmr-floor-blocked',
         name: 'Decrease blocked at BMR floor',
-        description: 'Evidence points down, but the current target is already below the calibration safety floor.',
+        description: 'Evidence supports a lower budget, but the current calorie budget is already below the BMR safety floor.',
         input: {
             ...baseInput,
             bmrKcal: 1850,

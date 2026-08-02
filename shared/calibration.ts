@@ -108,6 +108,7 @@ type WindowEvaluation = {
     targetAdjustment: CalibrationInterval | null;
     recommendation: CalibrationRecommendation | null;
     actionable: boolean;
+    safetyFloorBlocked: boolean;
     missingCriteria: string[];
 };
 
@@ -329,6 +330,7 @@ function evaluateWindow(input: CalibrationInput, windowDays: number): WindowEval
             targetAdjustment: null,
             recommendation: null,
             actionable: false,
+            safetyFloorBlocked: false,
             missingCriteria
         };
     }
@@ -362,6 +364,7 @@ function evaluateWindow(input: CalibrationInput, windowDays: number): WindowEval
     const targetAdjustment = interval(adjustmentSamples);
     let recommendation: CalibrationRecommendation | null = null;
     let actionable = false;
+    let safetyFloorBlocked = false;
 
     if (targetAdjustment) {
         const intervalWidth = targetAdjustment.high - targetAdjustment.low;
@@ -384,7 +387,6 @@ function evaluateWindow(input: CalibrationInput, windowDays: number): WindowEval
             missingCriteria.push('Track food and weight across at least 14 days before a target change can be suggested.');
         }
 
-        let floorBlocksDecrease = false;
         if (actionable) {
             const rawStep = targetAdjustment.midpoint - currentAdjustment;
             const boundedStep = clamp(rawStep, -CALIBRATION_MAX_ADJUSTMENT_STEP_KCAL, CALIBRATION_MAX_ADJUSTMENT_STEP_KCAL);
@@ -395,7 +397,7 @@ function evaluateWindow(input: CalibrationInput, windowDays: number): WindowEval
             if (roundedStep < 0) {
                 const maximumDecrease = Math.max(0, currentTarget - minimumTarget);
                 if (maximumDecrease < 25) {
-                    floorBlocksDecrease = true;
+                    safetyFloorBlocked = true;
                     actionable = false;
                 } else {
                     roundedStep = Math.max(roundedStep, -Math.floor(maximumDecrease / 25) * 25);
@@ -416,8 +418,8 @@ function evaluateWindow(input: CalibrationInput, windowDays: number): WindowEval
             }
         }
 
-        if (floorBlocksDecrease) {
-            missingCriteria.push('The current target is already at or below the calibration safety floor, so no lower target can be suggested.');
+        if (safetyFloorBlocked) {
+            missingCriteria.push('The current daily calorie budget is already at or below the safety floor, so no lower budget can be suggested.');
         }
 
         if (hasMinimumHistory && intervalWidth > MAX_ACTIONABLE_INTERVAL_WIDTH_KCAL) {
@@ -441,6 +443,7 @@ function evaluateWindow(input: CalibrationInput, windowDays: number): WindowEval
         targetAdjustment,
         recommendation,
         actionable: actionable && recommendation !== null,
+        safetyFloorBlocked,
         missingCriteria: Array.from(new Set(missingCriteria))
     };
 }
@@ -497,6 +500,13 @@ function describeWeeklyTrend(weeklyKg: number): string {
 function describeProjectedWeeklyTrend(weeklyKg: number): string {
     if (Math.abs(weeklyKg) <= 0.01) return 'staying steady as projected';
     return `${Math.abs(weeklyKg).toFixed(2)} kg per week projected`;
+}
+
+function averageLoggedIntake(input: CalibrationInput, windowDays: number): number {
+    const startDate = addDateDays(input.asOfDate, -(windowDays - 1));
+    const loggedDays = input.foodDays.filter((day) => day.date >= startDate && day.date <= input.asOfDate);
+    if (loggedDays.length === 0) return 0;
+    return Math.round(loggedDays.reduce((sum, day) => sum + day.calories, 0) / loggedDays.length);
 }
 
 /**
@@ -566,7 +576,7 @@ export function evaluateCalibration(input: CalibrationInput): CalibrationResult 
     } else if (recommendation) {
         status = 'recommendation';
         const observedWeekly = selected.weeklyWeightChange?.midpoint ?? 0;
-        const averageIntake = Math.round(selected.averageIntake?.midpoint ?? 0).toLocaleString('en-US');
+        const averageIntake = averageLoggedIntake(input, selected.windowDays).toLocaleString('en-US');
         const budgetDirection = recommendation.adjustmentStepKcal < 0 ? 'lower' : 'higher';
         headline = describeRecommendationPace(observedWeekly, configuredWeeklyWeightChangeKg);
         summary = `You logged about ${averageIntake} kcal per day, and ${describeWeeklyTrend(observedWeekly)} versus ${describeProjectedWeeklyTrend(configuredWeeklyWeightChangeKg)}. This suggests a ${Math.abs(recommendation.adjustmentStepKcal)} kcal ${budgetDirection} daily calorie budget could bring your pace closer to your goal.`;
@@ -574,7 +584,17 @@ export function evaluateCalibration(input: CalibrationInput): CalibrationResult 
         status = 'insight';
         const weekly = selected.weeklyWeightChange?.midpoint ?? 0;
         const direction = weekly < -0.01 ? 'losing' : weekly > 0.01 ? 'gaining' : 'maintaining';
-        if (selected.missingCriteria.length === 0) {
+        if (selected.safetyFloorBlocked) {
+            const averageIntake = averageLoggedIntake(input, selected.windowDays).toLocaleString('en-US');
+            const currentTarget = Math.round(
+                input.profileTdeeKcal - input.configuredDailyDeficitKcal + input.currentTargetAdjustmentKcal
+            );
+            const minimumTarget = Math.round(Math.max(input.bmrKcal, CALIBRATION_MIN_TARGET_KCAL));
+            const floorName = input.bmrKcal >= CALIBRATION_MIN_TARGET_KCAL ? 'BMR safety floor' : 'calorie safety floor';
+            const floorPosition = currentTarget < minimumTarget ? 'below' : 'at';
+            headline = `Your current budget is already ${floorPosition} the ${floorName}`;
+            summary = `You logged about ${averageIntake} kcal per day, and ${describeWeeklyTrend(weekly)} versus ${describeProjectedWeeklyTrend(configuredWeeklyWeightChangeKg)}. This pattern points to a lower budget, but your current ${currentTarget.toLocaleString('en-US')} kcal daily budget is already ${floorPosition} the ${minimumTarget.toLocaleString('en-US')} kcal ${floorName}. Calibrate will not suggest reducing it further.`;
+        } else if (selected.missingCriteria.length === 0) {
             headline = 'Your progress is tracking as expected';
             summary = `The trend currently indicates ${direction} about ${Math.abs(weekly).toFixed(2)} kg per week. The evidence shows progress is consistent with tracking expectations.`;
         } else {

@@ -161,6 +161,12 @@ test('does not reverse recommendation direction when the current target is below
   assert.equal(result.status, 'insight');
   assert.equal(result.recommendation, null);
   assert.ok(result.missingCriteria.some((criterion) => criterion.includes('at or below')));
+  assert.equal(result.headline, 'Your current budget is already below the BMR safety floor');
+  assert.match(result.summary, /logged about 1,750 kcal per day/);
+  assert.match(result.summary, /weight trended up about 0\.05 kg per week versus 0\.46 kg per week projected/);
+  assert.match(result.summary, /current 1,750 kcal daily budget is already below the 1,850 kcal BMR safety floor/);
+  assert.match(result.summary, /will not suggest reducing it further/);
+  assert.doesNotMatch(result.summary, /more consistent evidence/i);
 });
 
 test('uses singular grammar for one uncertain day', () => {
