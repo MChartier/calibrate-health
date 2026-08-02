@@ -57,10 +57,15 @@ test('devTestDataUtils: seeded history produces a meaningful calibration result'
 
   assert.notEqual(result.status, 'not_ready');
   assert.notEqual(result.status, 'learning');
+  assert.equal(result.status, 'recommendation');
   assert.ok(result.selectedWindowDays >= 14);
   assert.equal(result.dataQuality.observationDays, result.selectedWindowDays);
   assert.equal(result.dataQuality.confidentDays, result.selectedWindowDays);
   assert.equal(result.dataQuality.weightSpanDays, result.selectedWindowDays);
+  assert.ok(result.estimates.averageIntakeKcal.midpoint >= 2050);
+  assert.ok(result.estimates.averageIntakeKcal.midpoint <= 2200);
+  assert.ok(Math.abs(result.estimates.observedWeeklyWeightChangeKg.midpoint) < Math.abs(result.estimates.configuredWeeklyWeightChangeKg));
+  assert.equal(result.recommendation.adjustmentStepKcal, -150);
 });
 
 test('devTestDataUtils: addUtcDays adds days using UTC math without mutating the input', () => {

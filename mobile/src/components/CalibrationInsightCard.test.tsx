@@ -52,7 +52,7 @@ function recommendationStatus(weightUnit: 'KG' | 'LB' = 'KG'): CalibrationStatus
             asOfDate: '2026-07-31',
             weightUnit,
             status: 'recommendation',
-            headline: 'Weight loss is trending slower than projected',
+            headline: 'Weight loss is trending slower than planned',
             summary: 'Current evidence supports a lower calorie budget.',
             nextStep: null,
             historyProgress: null,
@@ -71,7 +71,7 @@ function recommendationStatus(weightUnit: 'KG' | 'LB' = 'KG'): CalibrationStatus
             assumptions: [],
             estimates: {
                 averageIntakeKcal: { low: 1825, midpoint: 1900, high: 1975 },
-                observedWeeklyWeightChangeKg: { low: -0.5, midpoint: -0.455, high: -0.4 },
+                observedWeeklyWeightChangeKg: { low: -0.4, midpoint: -0.36, high: -0.3 },
                 targetAdjustmentKcal: { low: -250, midpoint: -200, high: -150 },
                 configuredWeeklyWeightChangeKg: -0.455
             },
@@ -91,6 +91,29 @@ function recommendationStatus(weightUnit: 'KG' | 'LB' = 'KG'): CalibrationStatus
             effectiveLocalDate: '2026-08-01'
         },
         scheduledChange: null
+    };
+}
+
+function fasterRecommendationStatus(): CalibrationStatusResponse {
+    const status = recommendationStatus();
+    return {
+        ...status,
+        evaluation: {
+            ...status.evaluation,
+            headline: 'Weight loss is trending faster than planned',
+            estimates: {
+                ...status.evaluation.estimates,
+                observedWeeklyWeightChangeKg: { low: -0.7, midpoint: -0.61, high: -0.55 },
+                targetAdjustmentKcal: { low: 175, midpoint: 225, high: 275 }
+            },
+            recommendation: {
+                currentTargetKcal: 1900,
+                recommendedTargetKcal: 2050,
+                adjustmentStepKcal: 150,
+                currentTargetAdjustmentKcal: 0,
+                recommendedTargetAdjustmentKcal: 150
+            }
+        }
     };
 }
 
@@ -192,21 +215,53 @@ describe('CalibrationInsightCard', () => {
         expect(screen.queryByText(/^- Track food and weight/)).toBeNull();
     });
 
-    it('keeps a recommendation available when the user closes review without applying it', async () => {
+    it('makes the recommendation visual and directly actionable without opening the evidence sheet', async () => {
         const screen = renderCard();
-        await waitFor(() => expect(screen.getByText('Review suggested budget')).toBeTruthy());
+        await waitFor(() => expect(screen.getByText('CALIBRATION SUGGESTION')).toBeTruthy());
 
-        fireEvent.press(screen.getByText('Review suggested budget'));
-        expect(screen.getByText('Review calorie budget')).toBeTruthy();
-        expect(screen.getByText('proposed change')).toBeTruthy();
-        expect(screen.getByText('150 kcal less/day')).toBeTruthy();
+        expect(screen.getByText('Weight loss is trending slower than planned')).toBeTruthy();
+        expect(screen.getByText('0.36 kg/week')).toBeTruthy();
+        expect(screen.getByText('Plan: 0.46 kg/week loss')).toBeTruthy();
+        expect(screen.getByText('1,750 kcal')).toBeTruthy();
+        expect(screen.getByText('150 kcal less than your current 1,900 kcal budget.')).toBeTruthy();
+        expect(screen.getByText('Starts tomorrow. Your weight goal stays the same.')).toBeTruthy();
+        expect(screen.getByText('Apply 1,750 kcal tomorrow')).toBeTruthy();
+        expect(screen.getByText('See why')).toBeTruthy();
+        expect(screen.queryByText('Current evidence supports a lower calorie budget.')).toBeNull();
+        expect(screen.queryByText(/confident food days/)).toBeNull();
+        expect(screen.queryByText('Why we suggest 1,750 kcal')).toBeNull();
+    });
+
+    it('uses the evidence sheet to explain the model estimate and conservative first step', async () => {
+        const screen = renderCard();
+        await waitFor(() => expect(screen.getByText('See why')).toBeTruthy());
+
+        fireEvent.press(screen.getByText('See why'));
+        expect(screen.getByText('Why we suggest 1,750 kcal')).toBeTruthy();
+        expect(screen.getByText('What we observed')).toBeTruthy();
+        expect(screen.getByText('1,900 kcal')).toBeTruthy();
+        expect(screen.getByText('How Calibrate reached this suggestion')).toBeTruthy();
+        expect(screen.getByText('Why a 150 kcal first step?')).toBeTruthy();
+        expect(screen.getByText(/daily budget about 200 kcal lower/)).toBeTruthy();
+        expect(screen.getByText(/plausible adjustment is 150-250 kcal lower/)).toBeTruthy();
+        expect(screen.getByText('This review uses 28 well-tracked food days and 14 weigh-ins across 28 days.')).toBeTruthy();
         expect(screen.queryByText('estimated budget difference')).toBeNull();
-        expect(screen.queryByText(/200 kcal lower/)).toBeNull();
         fireEvent.press(screen.getByText('Not now'));
 
-        expect(screen.queryByText('Review calorie budget')).toBeNull();
-        expect(screen.getByText('Review suggested budget')).toBeTruthy();
+        expect(screen.queryByText('Why we suggest 1,750 kcal')).toBeNull();
+        expect(screen.getByText('Apply 1,750 kcal tomorrow')).toBeTruthy();
         expect(mockApi.applyCalibrationRecommendation).not.toHaveBeenCalled();
+    });
+
+    it('mirrors the visual hierarchy for a higher-budget recommendation', async () => {
+        mockApi.getCalibrationStatus.mockResolvedValue(fasterRecommendationStatus());
+        const screen = renderCard();
+
+        await waitFor(() => expect(screen.getByText('Weight loss is trending faster than planned')).toBeTruthy());
+        expect(screen.getByText('0.61 kg/week')).toBeTruthy();
+        expect(screen.getByText('2,050 kcal')).toBeTruthy();
+        expect(screen.getByText('150 kcal more than your current 1,900 kcal budget.')).toBeTruthy();
+        expect(screen.getByText('Apply 2,050 kcal tomorrow')).toBeTruthy();
     });
 
     it('renders a scheduled rollback as its resulting budget instead of an ambiguous zero-kcal change', async () => {
@@ -216,32 +271,60 @@ describe('CalibrationInsightCard', () => {
         await waitFor(() => expect(screen.getByText('Your calorie budget update is scheduled')).toBeTruthy());
         expect(screen.getByText(/daily calorie budget will be 1,900 kcal starting/)).toBeTruthy();
         expect(screen.queryByText('Current evidence supports a lower calorie budget.')).toBeNull();
-        expect(screen.queryByText('Review suggested budget')).toBeNull();
+        expect(screen.queryByText('See why')).toBeNull();
     });
 
     it('formats observed pace in the evaluation display unit', async () => {
         mockApi.getCalibrationStatus.mockResolvedValue(recommendationStatus('LB'));
         const screen = renderCard();
-        await waitFor(() => expect(screen.getByText('Review suggested budget')).toBeTruthy());
+        await waitFor(() => expect(screen.getByText('0.79 lb/week')).toBeTruthy());
 
-        fireEvent.press(screen.getByText('Review suggested budget'));
-        expect(screen.getByText('-1.00 lb/week')).toBeTruthy();
+        expect(screen.getByText('Plan: 1.00 lb/week loss')).toBeTruthy();
     });
 
-    it('applies the materialized recommendation with a fresh operation id', async () => {
+    it('applies directly from the card with a fresh operation id', async () => {
         mockApi.getCalibrationStatus
             .mockResolvedValueOnce(recommendationStatus())
             .mockResolvedValue(scheduledStatus());
         const screen = renderCard();
-        await waitFor(() => expect(screen.getByText('Review suggested budget')).toBeTruthy());
+        await waitFor(() => expect(screen.getByText('Apply 1,750 kcal tomorrow')).toBeTruthy());
 
-        fireEvent.press(screen.getByText('Review suggested budget'));
-        fireEvent.press(screen.getByText('Apply tomorrow'));
+        expect(screen.queryByText('Why we suggest 1,750 kcal')).toBeNull();
+        fireEvent.press(screen.getByText('Apply 1,750 kcal tomorrow'));
 
         await waitFor(() => expect(mockApi.applyCalibrationRecommendation).toHaveBeenCalledWith(
             7,
             'calibration-operation-id'
         ));
         await waitFor(() => expect(screen.getByText('Your calorie budget update is scheduled')).toBeTruthy());
+    });
+
+    it('keeps the apply action available after the user reviews the evidence', async () => {
+        mockApi.getCalibrationStatus
+            .mockResolvedValueOnce(recommendationStatus())
+            .mockResolvedValue(scheduledStatus());
+        const screen = renderCard();
+        await waitFor(() => expect(screen.getByText('See why')).toBeTruthy());
+
+        fireEvent.press(screen.getByText('See why'));
+        const applyButtons = screen.getAllByText('Apply 1,750 kcal tomorrow');
+        fireEvent.press(applyButtons[applyButtons.length - 1]);
+
+        await waitFor(() => expect(mockApi.applyCalibrationRecommendation).toHaveBeenCalledWith(
+            7,
+            'calibration-operation-id'
+        ));
+        await waitFor(() => expect(screen.getByText('Your calorie budget update is scheduled')).toBeTruthy());
+    });
+
+    it('keeps direct-apply errors visible on the card', async () => {
+        mockApi.applyCalibrationRecommendation.mockRejectedValueOnce(new Error('Recommendation is no longer current.'));
+        const screen = renderCard();
+        await waitFor(() => expect(screen.getByText('Apply 1,750 kcal tomorrow')).toBeTruthy());
+
+        fireEvent.press(screen.getByText('Apply 1,750 kcal tomorrow'));
+
+        await waitFor(() => expect(screen.getByText('Recommendation is no longer current.')).toBeTruthy());
+        expect(screen.queryByText('Why we suggest 1,750 kcal')).toBeNull();
     });
 });

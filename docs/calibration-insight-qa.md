@@ -12,7 +12,7 @@ Tested on August 2, 2026 against the calibration history lab on PR #269.
 - Benchmarked 2,800 evaluations across the 14 presets: 2,081 ms total, or 0.74 ms per evaluation on this development machine.
 - Repeated the rendered recommendation and uncertainty checks after rebasing onto the current mobile/day-status architecture and applying review feedback.
 - Re-reviewed every preset at desktop and 390 px mobile widths after the final copy pass, including URL selection, optional-section visibility, metric wrapping, criteria language, and custom-input error recovery.
-- Ran the full automated suites after the final preset pass: 428 backend tests, 370 mobile tests, 45 API-client tests, and 25 development-script tests.
+- Ran the full automated suites after the final preset pass: 428 backend tests, 375 mobile tests, 45 API-client tests, and 25 development-script tests.
 - Built the production Expo web export and regenerated the Prisma and OpenAPI clients.
 
 The lab invokes the same pure evaluator used by the service. The seeded-product pass applied all migrations to an isolated local Postgres database and exercised recommendation materialization and approval through the real Expo web client. The final audit added direct service tests for materialization, revalidation, idempotent approval, scheduled-state suppression, exact resulting budgets, and next-local-day activation. A final live rerun restored the dedicated test account from the authoritative seed, verified a 21-day recommendation beside the 28-day weight chart, and captured the current product state below.
@@ -84,7 +84,9 @@ The lab invokes the same pure evaluator used by the service. The seeded-product 
 37. **The pre-insight card repeated generic tracking instructions without explaining Calibrate's value.** It now introduces the food-and-weight comparison once and gives one focused next step.
 38. **The seven-day threshold gave no sense of current progress.** The result now carries explicit observed and required history days, and both product and lab render an accessible progress bar such as `6 of 7 days`.
 39. **Prior test-account activity could make seeded calibration disappear.** The dedicated dev account now resets stale goals, plan revisions, recommendations, pauses, food history, and weight history once per backend process before rebuilding its deterministic baseline. A regression test sends the generated seed shape through the real evaluator and requires a meaningful insight.
-40. **The budget review mixed the model estimate with the capped recommendation.** The sheet showed a 329 kcal modeled difference and unexplained interval beside an actionable 150 kcal decrease. It now presents only the proposed change (`150 kcal less/day`); the full estimate remains available in developer diagnostics rather than competing with the decision being reviewed.
+40. **The budget review mixed the model estimate with the capped recommendation.** The sheet showed a 329 kcal modeled difference and unexplained interval beside an actionable 150 kcal decrease. The decision card now presents only the bounded action. The detailed sheet labels the wider value as a model estimate, calls its bounds a plausible adjustment range, and explains why Calibrate recommends a smaller first step to avoid overcorrecting.
+41. **The recommendation required two clicks without creating a useful information hierarchy.** The main card was a dense paragraph leading to a review sheet that repeated the same facts more visually. The card is now the decision surface: recent pace, planned pace, suggested budget, exact change, effective date, and a primary Apply action. `See why` opens a constrained evidence sheet that explains the inputs, model estimate, uncertainty, conservative cap, and evidence quality.
+42. **The seeded story could make the lower-budget guidance look contradictory.** Average logged intake was already below the conservatively suggested budget. The deterministic seed now depicts logging near the current budget with slower-than-planned loss, so reducing the displayed budget by 150 kcal is an intuitive behavioral recommendation as well as a mathematically valid calibration.
 
 ## Screenshots
 
@@ -132,16 +134,16 @@ The seeded account was exercised through auto-login, current and historical comp
 
 ![Seeded weight trend](screenshots/calibration-product/05-seeded-weight-trend.png)
 
-### Seeded calibration insight
+### Actionable recommendation card
 
-![Seeded account recommendation beside its 28-day trend](screenshots/calibration-product/06-seeded-calibration-insight.jpg)
+![Seeded calibration recommendation with a direct Apply action](screenshots/calibration-product/08-calibration-decision-card.jpg)
 
-### Coherent budget review
+### Evidence and conservative-step explanation
 
-![Seeded budget review showing the exact proposed daily change](screenshots/calibration-product/07-budget-review-action.jpg)
+![Detailed calibration sheet explaining the model estimate, plausible range, and bounded first step](screenshots/calibration-product/09-calibration-evidence-sheet.jpg)
 
 ## Assessment
 
 The evaluator is behaving conservatively without requiring perfect logging. A single missing or suspicious day can still produce a recommendation when the full modeled interval remains directional, while larger gaps or broad weight uncertainty suppress action and explain why. The shortest sufficient history is selected for action, the longest bounded history supports descriptive insights, and accepted-adjustment feedback can move in either direction without exceeding the configured step cap. The final copy pass also makes a clear distinction between a calorie-budget issue, an adherence pattern, insufficient weight history, and uncertainty that still needs to narrow.
 
-The recommendation materializes, opens, applies, and persists after reload against a live development database. The final seeded-account rerun also proves that restarting or explicitly reseeding restores enough aligned food, weight, goal, and plan history to show a useful recommendation consistently. The review sheet now keeps its current budget, suggested budget, and proposed change mathematically aligned, without exposing an unexplained model interval as a competing number.
+The recommendation materializes, opens, applies, and persists after reload against a live development database. The final seeded-account rerun also proves that restarting or explicitly reseeding restores enough aligned food, weight, goal, and plan history to show a useful recommendation consistently. The card now makes the bounded action immediately available, while the optional evidence sheet explains how the broader model estimate and plausible range led to a deliberately conservative first step.

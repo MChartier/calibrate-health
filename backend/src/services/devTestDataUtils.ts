@@ -18,7 +18,7 @@ export type MealTemplate = {
 };
 
 const SEED_MEAL_ITEMS = {
-  spinachOmelet: { mealPeriod: MealPeriod.BREAKFAST, name: 'Spinach omelet', calories: 320, hour: 7 },
+  spinachOmelet: { mealPeriod: MealPeriod.BREAKFAST, name: 'Spinach omelet', calories: 380, hour: 7 },
   sourdoughToast: { mealPeriod: MealPeriod.BREAKFAST, name: 'Sourdough toast', calories: 150, hour: 7, minute: 20 },
   latte: { mealPeriod: MealPeriod.BREAKFAST, name: 'Latte', calories: 120, hour: 8, minute: 10 },
 
@@ -30,7 +30,7 @@ const SEED_MEAL_ITEMS = {
   },
   greekYogurt: { mealPeriod: MealPeriod.MORNING_SNACK, name: 'Greek yogurt', calories: 190, hour: 10 },
 
-  turkeySandwich: { mealPeriod: MealPeriod.LUNCH, name: 'Turkey sandwich', calories: 520, hour: 13 },
+  turkeySandwich: { mealPeriod: MealPeriod.LUNCH, name: 'Turkey sandwich', calories: 640, hour: 13 },
   sideSalad: { mealPeriod: MealPeriod.LUNCH, name: 'Side salad', calories: 180, hour: 13, minute: 15 },
   chickenBurritoBowl: { mealPeriod: MealPeriod.LUNCH, name: 'Chicken burrito bowl', calories: 680, hour: 13 },
 
@@ -38,7 +38,7 @@ const SEED_MEAL_ITEMS = {
   trailMix: { mealPeriod: MealPeriod.AFTERNOON_SNACK, name: 'Trail mix', calories: 160, hour: 16, minute: 25 },
   granolaBar: { mealPeriod: MealPeriod.AFTERNOON_SNACK, name: 'Granola bar', calories: 140, hour: 16, minute: 20 },
 
-  chickenStirFry: { mealPeriod: MealPeriod.DINNER, name: 'Chicken stir-fry', calories: 650, hour: 19 },
+  chickenStirFry: { mealPeriod: MealPeriod.DINNER, name: 'Chicken stir-fry', calories: 770, hour: 19 },
   steamedRice: { mealPeriod: MealPeriod.DINNER, name: 'Steamed rice', calories: 200, hour: 19, minute: 15 },
   roastedVeggies: { mealPeriod: MealPeriod.DINNER, name: 'Roasted veggies', calories: 110, hour: 19, minute: 20 },
 
@@ -48,7 +48,7 @@ const SEED_MEAL_ITEMS = {
 } satisfies Record<string, MealTemplate>;
 
 const WEEK_MEAL_PLANS: MealTemplate[][] = [
-  // 2160 kcal: full day + extra afternoon snack item (multi-item meal).
+  // 2460 kcal: full day + extra afternoon snack item (multi-item meal).
   [
     SEED_MEAL_ITEMS.spinachOmelet,
     SEED_MEAL_ITEMS.appleWithPeanutButter,
@@ -58,7 +58,7 @@ const WEEK_MEAL_PLANS: MealTemplate[][] = [
     SEED_MEAL_ITEMS.chickenStirFry,
     SEED_MEAL_ITEMS.darkChocolateSquare,
   ],
-  // 1900 kcal: no morning snack / evening snack, dinner has multiple items.
+  // 2200 kcal: no morning snack / evening snack, dinner has multiple items.
   [
     SEED_MEAL_ITEMS.spinachOmelet,
     SEED_MEAL_ITEMS.turkeySandwich,
@@ -66,7 +66,7 @@ const WEEK_MEAL_PLANS: MealTemplate[][] = [
     SEED_MEAL_ITEMS.chickenStirFry,
     SEED_MEAL_ITEMS.steamedRice,
   ],
-  // 1740 kcal: lunch empty, breakfast + afternoon snack have multiple items.
+  // 1920 kcal: lunch empty, breakfast + afternoon snack have multiple items.
   [
     SEED_MEAL_ITEMS.spinachOmelet,
     SEED_MEAL_ITEMS.latte,
@@ -76,7 +76,7 @@ const WEEK_MEAL_PLANS: MealTemplate[][] = [
     SEED_MEAL_ITEMS.chickenStirFry,
     SEED_MEAL_ITEMS.darkChocolateSquare,
   ],
-  // 1870 kcal: breakfast empty, lunch has multiple items.
+  // 2110 kcal: breakfast empty, lunch has multiple items.
   [
     SEED_MEAL_ITEMS.greekYogurt,
     SEED_MEAL_ITEMS.turkeySandwich,
@@ -85,7 +85,7 @@ const WEEK_MEAL_PLANS: MealTemplate[][] = [
     SEED_MEAL_ITEMS.chickenStirFry,
     SEED_MEAL_ITEMS.darkChocolateSquare,
   ],
-  // 1540 kcal: dinner empty, swapped lunch + swapped evening snack.
+  // 1600 kcal: dinner empty, swapped lunch + swapped evening snack.
   [
     SEED_MEAL_ITEMS.spinachOmelet,
     SEED_MEAL_ITEMS.appleWithPeanutButter,
@@ -93,7 +93,7 @@ const WEEK_MEAL_PLANS: MealTemplate[][] = [
     SEED_MEAL_ITEMS.proteinShake,
     SEED_MEAL_ITEMS.popcorn,
   ],
-  // 2050 kcal: afternoon snack empty, breakfast + dinner have multiple items.
+  // 2350 kcal: afternoon snack empty, breakfast + dinner have multiple items.
   [
     SEED_MEAL_ITEMS.spinachOmelet,
     SEED_MEAL_ITEMS.sourdoughToast,
@@ -103,7 +103,7 @@ const WEEK_MEAL_PLANS: MealTemplate[][] = [
     SEED_MEAL_ITEMS.roastedVeggies,
     SEED_MEAL_ITEMS.darkChocolateSquare,
   ],
-  // 2040 kcal: morning snack empty, breakfast swapped in extra item + higher-cal evening snack.
+  // 2340 kcal: morning snack empty, breakfast swapped in extra item + higher-cal evening snack.
   [
     SEED_MEAL_ITEMS.spinachOmelet,
     SEED_MEAL_ITEMS.latte,
@@ -119,7 +119,7 @@ const SEED_WEIGHT_PHASE_ONE_DAYS = 35;
 const SEED_WEIGHT_PHASE_TWO_DAYS = 30;
 const SEED_WEIGHT_PHASE_ONE_DAILY_CHANGE_GRAMS = -35;
 const SEED_WEIGHT_PHASE_TWO_DAILY_CHANGE_GRAMS = -8;
-const SEED_WEIGHT_PHASE_THREE_DAILY_CHANGE_GRAMS = -55;
+const SEED_WEIGHT_PHASE_THREE_DAILY_CHANGE_GRAMS = -28;
 const SEED_WEIGHT_MONTHLY_WAVE_AMPLITUDE_GRAMS = 120;
 const SEED_WEIGHT_SPIKE_PRIMARY_GRAMS = 360;
 const SEED_WEIGHT_SPIKE_SECONDARY_GRAMS = 180;
