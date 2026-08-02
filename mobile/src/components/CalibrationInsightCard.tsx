@@ -13,7 +13,8 @@ import { SectionHeader } from './SectionHeader';
 import { useAuth } from '../auth/AuthContext';
 import {
     describeCalibrationEvidence,
-    formatCalorieInterval,
+    formatCalorieBudgetChange,
+    formatCalorieBudgetInterval,
     formatWeightPace
 } from '../calibration/presentation';
 import { formatDateOnlyForDisplay } from '../utils/dates';
@@ -92,13 +93,13 @@ export const CalibrationInsightCard: React.FC<ViewProps> = ({ style, ...props })
                     <View style={styles.scheduledRow}>
                         <Ionicons name="calendar-outline" size={18} color={colors.primaryDark} />
                         <AppText style={styles.scheduledText}>
-                            Accepted adjustment {scheduledChange.targetAdjustmentKcal > 0 ? '+' : ''}{scheduledChange.targetAdjustmentKcal} kcal starts {formatDateOnlyForDisplay(scheduledChange.effectiveLocalDate)}.
+                            Your {formatCalorieBudgetChange(scheduledChange.targetAdjustmentKcal)} daily calorie budget starts {formatDateOnlyForDisplay(scheduledChange.effectiveLocalDate)}.
                         </AppText>
                     </View>
                 )}
                 {status?.recommendation && recommendation && (
                     <AppButton
-                        title="Review suggested target"
+                        title="Review suggested budget"
                         variant="secondary"
                         leftIcon={<Ionicons name="options-outline" size={18} color={colors.text} />}
                         onPress={() => setIsReviewOpen(true)}
@@ -108,18 +109,18 @@ export const CalibrationInsightCard: React.FC<ViewProps> = ({ style, ...props })
 
             <BottomSheetModal visible={isReviewOpen} onRequestClose={() => setIsReviewOpen(false)}>
                 <SectionHeader
-                    title="Review calorie target"
-                    description="This changes the calibrated target, not your configured deficit goal."
+                    title="Review calorie budget"
+                    description="Compare the current and suggested daily budgets. Your weight goal stays the same."
                 />
                 {recommendation && (
                     <>
                         <View style={styles.tileRow}>
-                            <MetricTile label="current target" value={`${recommendation.currentTargetKcal.toLocaleString()} kcal`} />
-                            <MetricTile label="suggested target" value={`${recommendation.recommendedTargetKcal.toLocaleString()} kcal`} tone="success" />
+                            <MetricTile label="current budget" value={`${recommendation.currentTargetKcal.toLocaleString()} kcal`} />
+                            <MetricTile label="suggested budget" value={`${recommendation.recommendedTargetKcal.toLocaleString()} kcal`} tone="success" />
                         </View>
                         <View style={styles.tileRow}>
                             <MetricTile label="observed pace" value={formatWeightPace(evaluation.estimates.observedWeeklyWeightChangeKg)} />
-                            <MetricTile label="estimated correction" value={formatCalorieInterval(evaluation.estimates.targetAdjustmentKcal)} />
+                            <MetricTile label="estimated budget difference" value={formatCalorieBudgetInterval(evaluation.estimates.targetAdjustmentKcal)} />
                         </View>
                     </>
                 )}
@@ -133,12 +134,12 @@ export const CalibrationInsightCard: React.FC<ViewProps> = ({ style, ...props })
                     </View>
                 )}
                 <AppText variant="caption">
-                    If accepted, the adjustment takes effect on your next local day. Future evidence can support another bounded change.
+                    If you apply this budget, it starts on your next local day. You can review future suggestions the same way.
                 </AppText>
                 {applyRecommendation.error && <AppText style={styles.error}>{applyRecommendation.error.message}</AppText>}
                 <View style={styles.actions}>
                     <AppButton
-                        title="Keep current target"
+                        title="Keep current budget"
                         variant="secondary"
                         disabled={applyRecommendation.isPending}
                         onPress={() => setIsReviewOpen(false)}

@@ -2,7 +2,12 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 import { createCalibrationLabServer, parseCalibrationInput } from './calibration-lab.mjs';
-import { formatDayCount, getWindowMetric } from '../tools/calibration-lab/presentation.mjs';
+import {
+  formatBudgetChange,
+  formatBudgetInterval,
+  formatDayCount,
+  getWindowMetric
+} from '../tools/calibration-lab/presentation.mjs';
 
 const labStyles = await readFile(new URL('../tools/calibration-lab/styles.css', import.meta.url), 'utf8');
 
@@ -66,6 +71,13 @@ test('calibration lab labels a qualifying evaluator window explicitly', () => {
     value: '14 days'
   });
   assert.equal(formatDayCount(1), '1 day');
+});
+
+test('calibration lab describes budget changes without ambiguous signs', () => {
+  assert.equal(formatBudgetChange(-150), '150 kcal less');
+  assert.equal(formatBudgetChange(150), '150 kcal more');
+  assert.equal(formatBudgetInterval({ low: -291, midpoint: -246, high: -198 }), '246 kcal/day lower (198 to 291)');
+  assert.equal(formatBudgetInterval({ low: 279, midpoint: 327, high: 373 }), '327 kcal/day higher (279 to 373)');
 });
 
 test('calibration lab serves the window-presentation module', async (context) => {

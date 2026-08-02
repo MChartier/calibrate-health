@@ -114,8 +114,8 @@ export const CALIBRATION_SCENARIOS: CalibrationScenario[] = [
     },
     {
         id: 'target-too-high',
-        name: 'Target appears too high',
-        description: 'Consistent target adherence with a slower trend supports a conservative decrease.',
+        name: 'Weight loss slower than projected',
+        description: 'Weight is falling more slowly than projected despite consistent logs, so a lower calorie budget may help.',
         input: {
             ...baseInput,
             foodDays: buildFoodDays({ days: 28, calories: 1900 }),
@@ -124,8 +124,8 @@ export const CALIBRATION_SCENARIOS: CalibrationScenario[] = [
     },
     {
         id: 'target-too-low',
-        name: 'Target appears too low',
-        description: 'Faster-than-configured loss with consistent intake supports a conservative target increase.',
+        name: 'Weight loss faster than projected',
+        description: 'Weight is falling faster than projected with consistent logs, so a higher calorie budget may help.',
         input: {
             ...baseInput,
             foodDays: buildFoodDays({ days: 28, calories: 1900 }),

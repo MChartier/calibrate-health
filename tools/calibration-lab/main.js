@@ -1,4 +1,4 @@
-import { formatDayCount, getWindowMetric } from './presentation.mjs';
+import { formatBudgetChange, formatBudgetInterval, formatDayCount, getWindowMetric } from './presentation.mjs';
 
 const elements = {
   scenario: document.querySelector('#preset-history'),
@@ -61,8 +61,8 @@ function renderResult(result) {
   elements.targetChange.hidden = !result.recommendation;
   if (result.recommendation) {
     for (const [label, value] of [
-      ['Current target', `${formatNumber(result.recommendation.currentTargetKcal)} kcal`],
-      ['Suggested target', `${formatNumber(result.recommendation.recommendedTargetKcal)} kcal`]
+      ['Current daily budget', `${formatNumber(result.recommendation.currentTargetKcal)} kcal`],
+      ['Suggested daily budget', `${formatNumber(result.recommendation.recommendedTargetKcal)} kcal`]
     ]) {
       const group = document.createElement('span');
       const small = document.createElement('small');
@@ -74,7 +74,7 @@ function renderResult(result) {
     }
     const change = document.createElement('em');
     const step = result.recommendation.adjustmentStepKcal;
-    change.textContent = `${step > 0 ? '+' : ''}${step} kcal`;
+    change.textContent = formatBudgetChange(step);
     elements.targetChange.append(change);
   }
 
@@ -89,7 +89,7 @@ function renderResult(result) {
   const estimates = [
     ['Average intake', formatInterval(result.estimates.averageIntakeKcal, 'kcal/day')],
     ['Observed pace', formatInterval(result.estimates.observedWeeklyWeightChangeKg, 'kg/week', 2)],
-    ['Target correction', formatInterval(result.estimates.targetAdjustmentKcal, 'kcal/day')]
+    ['Estimated budget difference', formatBudgetInterval(result.estimates.targetAdjustmentKcal)]
   ];
   for (const [label, value] of estimates) {
     const item = document.createElement('div');

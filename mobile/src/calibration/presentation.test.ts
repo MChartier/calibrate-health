@@ -1,11 +1,16 @@
-import { describeCalibrationEvidence, formatCalorieInterval, formatWeightPace } from './presentation';
+import {
+    describeCalibrationEvidence,
+    formatCalorieBudgetChange,
+    formatCalorieBudgetInterval,
+    formatWeightPace
+} from './presentation';
 
 describe('calibration presentation', () => {
     it('formats transparent intervals rather than showing false precision', () => {
-        expect(formatCalorieInterval({ low: 2100.2, midpoint: 2210.6, high: 2325.1 }))
-            .toBe('2,211 kcal (2,100 to 2,325)');
-        expect(formatCalorieInterval({ low: -484.2, midpoint: -349.3, high: -188.1 }))
-            .toBe('-349 kcal (-484 to -188)');
+        expect(formatCalorieBudgetInterval({ low: 2100.2, midpoint: 2210.6, high: 2325.1 }))
+            .toBe('2,211 kcal higher (2,100 to 2,325)');
+        expect(formatCalorieBudgetInterval({ low: -484.2, midpoint: -349.3, high: -188.1 }))
+            .toBe('349 kcal lower (188 to 484)');
         expect(formatWeightPace({ low: -0.5, midpoint: -0.32, high: -0.1 })).toBe('-0.32 kg/week');
     });
 
@@ -23,5 +28,10 @@ describe('calibration presentation', () => {
                 weightSpanDays: 20
             }
         } as never)).toBe('16 confident food days | 9 weights across 20 days | 3 uncertain days');
+    });
+
+    it('describes calorie budget changes without ambiguous signs', () => {
+        expect(formatCalorieBudgetChange(-150)).toBe('150 kcal lower');
+        expect(formatCalorieBudgetChange(150)).toBe('150 kcal higher');
     });
 });

@@ -91,6 +91,11 @@ test('caps an actionable target correction at 150 kcal', () => {
   assert.equal(result.selectedWindowDays, 14);
   assert.equal(result.recommendation.adjustmentStepKcal, -150);
   assert.equal(result.recommendation.recommendedTargetKcal, 1750);
+  assert.equal(result.headline, 'Weight loss is trending slower than projected');
+  assert.match(result.summary, /logged about 1,900 kcal per day/);
+  assert.match(result.summary, /weight trended down about 0\.23 kg per week versus 0\.46 kg per week projected/);
+  assert.match(result.summary, /150 kcal lower daily calorie budget/);
+  assert.doesNotMatch(result.summary, /approval|target decrease|change the daily target/i);
 });
 
 test('caps an upward target correction at 150 kcal', () => {
@@ -98,6 +103,10 @@ test('caps an upward target correction at 150 kcal', () => {
   assert.equal(result.status, 'recommendation');
   assert.equal(result.recommendation.adjustmentStepKcal, 150);
   assert.equal(result.recommendation.recommendedTargetKcal, 2050);
+  assert.equal(result.headline, 'Weight loss is trending faster than projected');
+  assert.match(result.summary, /weight trended down about 0\.75 kg per week versus 0\.46 kg per week projected/);
+  assert.match(result.summary, /150 kcal higher daily calorie budget/);
+  assert.doesNotMatch(result.summary, /approval|target increase|change the daily target/i);
 });
 
 test('requires at least three weights before recommending a change', () => {

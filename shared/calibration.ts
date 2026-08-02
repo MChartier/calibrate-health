@@ -474,6 +474,31 @@ function emptyQuality(): CalibrationDataQuality {
     };
 }
 
+function describeRecommendationPace(observedWeeklyKg: number, configuredWeeklyKg: number): string {
+    if (configuredWeeklyKg < -0.01) {
+        return observedWeeklyKg < configuredWeeklyKg
+            ? 'Weight loss is trending faster than projected'
+            : 'Weight loss is trending slower than projected';
+    }
+    if (configuredWeeklyKg > 0.01) {
+        return observedWeeklyKg > configuredWeeklyKg
+            ? 'Weight gain is trending faster than projected'
+            : 'Weight gain is trending slower than projected';
+    }
+    if (observedWeeklyKg < -0.01) return 'Weight is trending down instead of staying steady';
+    return 'Weight is trending up instead of staying steady';
+}
+
+function describeWeeklyTrend(weeklyKg: number): string {
+    if (Math.abs(weeklyKg) <= 0.01) return 'weight stayed about steady';
+    return `weight trended ${weeklyKg < 0 ? 'down' : 'up'} about ${Math.abs(weeklyKg).toFixed(2)} kg per week`;
+}
+
+function describeProjectedWeeklyTrend(weeklyKg: number): string {
+    if (Math.abs(weeklyKg) <= 0.01) return 'staying steady as projected';
+    return `${Math.abs(weeklyKg).toFixed(2)} kg per week projected`;
+}
+
 /**
  * Evaluate recent intake and weight evidence without mutating state.
  *
@@ -540,8 +565,11 @@ export function evaluateCalibration(input: CalibrationInput): CalibrationResult 
         summary = 'Keep logging food across multiple meals and recording weights. Missing days remain part of the uncertainty rather than being ignored.';
     } else if (recommendation) {
         status = 'recommendation';
-        headline = recommendation.adjustmentStepKcal < 0 ? 'A modest target decrease may improve pacing' : 'A modest target increase may improve pacing';
-        summary = `The observed intake and weight trend support changing the daily target by ${recommendation.adjustmentStepKcal > 0 ? '+' : ''}${recommendation.adjustmentStepKcal} kcal. Nothing changes without approval.`;
+        const observedWeekly = selected.weeklyWeightChange?.midpoint ?? 0;
+        const averageIntake = Math.round(selected.averageIntake?.midpoint ?? 0).toLocaleString('en-US');
+        const budgetDirection = recommendation.adjustmentStepKcal < 0 ? 'lower' : 'higher';
+        headline = describeRecommendationPace(observedWeekly, configuredWeeklyWeightChangeKg);
+        summary = `You logged about ${averageIntake} kcal per day, and ${describeWeeklyTrend(observedWeekly)} versus ${describeProjectedWeeklyTrend(configuredWeeklyWeightChangeKg)}. This suggests a ${Math.abs(recommendation.adjustmentStepKcal)} kcal ${budgetDirection} daily calorie budget could bring your pace closer to your goal.`;
     } else {
         status = 'insight';
         const weekly = selected.weeklyWeightChange?.midpoint ?? 0;
