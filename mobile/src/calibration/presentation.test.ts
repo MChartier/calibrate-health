@@ -29,6 +29,7 @@ describe('calibration presentation', () => {
         )).toEqual({
             signal: 'Based on this history, a budget about 329 kcal lower than your current budget could bring your pace closer to plan if the recent pattern continues.',
             range: 'The estimate could reasonably be 199-471 kcal lower.',
+            firstStepLabel: 'Recommended first step',
             firstStep: 'Food logs and short-term scale trends are imperfect, so Calibrate limits this first change to 150 kcal per day to avoid overcorrecting. Your next pace check will use the new trend before suggesting another change.'
         });
         expect(describeCalorieBudgetEstimate(
@@ -36,6 +37,20 @@ describe('calibration presentation', () => {
             -150,
             150
         )?.signal).toContain('about 150 kcal higher');
+    });
+
+    it('explains when the BMR-based limit makes the proposed decrease smaller', () => {
+        expect(describeCalorieBudgetEstimate(
+            { low: -347, midpoint: -302, high: -255 },
+            0,
+            -100,
+            1900
+        )).toEqual({
+            signal: 'Based on this history, a budget about 302 kcal lower than your current budget could bring your pace closer to plan if the recent pattern continues.',
+            range: 'The estimate could reasonably be 255-347 kcal lower.',
+            firstStepLabel: 'Safety limit',
+            firstStep: "Calibrate's BMR-based limit caps this suggestion at 1,900 kcal, so the proposed change is 100 kcal less per day. Calibrate will not suggest a lower budget."
+        });
     });
 
     it('summarizes confident and uncertain history', () => {
@@ -51,7 +66,7 @@ describe('calibration presentation', () => {
                 weightPoints: 9,
                 weightSpanDays: 20
             }
-        } as never)).toBe('16 confident food days | 9 weights across 20 days | 5 uncertain days');
+        } as never)).toBe('16 well-tracked food days | 9 weigh-ins across 20 days | 5 days with uncertain food logs');
         expect(describeCalibrationEvidenceForReview({
             selectedWindowDays: 21,
             dataQuality: {
@@ -65,5 +80,18 @@ describe('calibration presentation', () => {
                 weightSpanDays: 21
             }
         } as never)).toBe('This review uses 21 well-tracked food days and 21 weigh-ins across 21 days.');
+        expect(describeCalibrationEvidence({
+            selectedWindowDays: 14,
+            dataQuality: {
+                observationDays: 14,
+                completeDays: 14,
+                confidentDays: 14,
+                suspiciousDays: 0,
+                incompleteDays: 0,
+                missingDays: 0,
+                weightPoints: 1,
+                weightSpanDays: 1
+            }
+        } as never)).toBe('14 well-tracked food days | 1 weigh-in across 1 day | 0 days with uncertain food logs');
     });
 });

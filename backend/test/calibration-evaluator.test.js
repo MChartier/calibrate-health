@@ -77,6 +77,7 @@ test('reports progress before the seven-day insight threshold', () => {
 test('provides a descriptive insight after seven days without recommending a change', () => {
   const result = evaluateScenario('early-insight');
   assert.equal(result.status, 'insight');
+  assert.equal(result.headline, 'Your early pace check is tracking as expected');
   assert.equal(result.selectedWindowDays, 7);
   assert.equal(result.recommendation, null);
   assert.ok(Math.abs(result.estimates.observedWeeklyWeightChangeKg.midpoint + 0.45) < 0.01);
@@ -87,7 +88,8 @@ test('explains when food history is strong but weight history cannot establish a
   assert.equal(result.status, 'learning');
   assert.equal(result.headline, 'More weight history is needed');
   assert.match(result.summary, /14 well-tracked food days/);
-  assert.match(result.summary, /one weight cannot establish a reliable trend/);
+  assert.match(result.summary, /a single weigh-in cannot establish a reliable trend/);
+  assert.equal(result.nextStep, 'Add more weigh-ins until they span at least 7 days so Calibrate can estimate your pace.');
   assert.doesNotMatch(result.summary, /missing days/i);
 });
 
@@ -96,8 +98,8 @@ test('uses natural learning copy before any weights are recorded', () => {
   input.weightPoints = [];
   const result = evaluateCalibration(input);
   assert.equal(result.status, 'learning');
-  assert.match(result.summary, /no weights have been recorded yet/);
-  assert.doesNotMatch(result.summary, /0 weights/);
+  assert.match(result.summary, /no weigh-ins have been recorded yet/);
+  assert.doesNotMatch(result.summary, /0 weigh-ins/);
 });
 
 test('does not adjust a target when intake and observed pace agree with the profile estimate', () => {
@@ -164,9 +166,10 @@ test('attributes slow progress to logged intake rather than changing a sound tar
   assert.equal(result.status, 'insight');
   assert.equal(result.recommendation, null);
   assert.equal(result.headline, 'Your pace matches your logged intake');
-  assert.match(result.summary, /logged about 2,200 kcal per day against a 1,900 kcal daily budget/);
+  assert.match(result.summary, /logged about 2,200 kcal per day compared with your 1,900 kcal daily budget/);
   assert.match(result.summary, /weight trended down about 0\.18 kg per week/);
-  assert.match(result.summary, /calorie budget estimate itself does not appear to need adjustment/);
+  assert.match(result.summary, /calorie budget estimate itself appears sound/);
+  assert.match(result.nextStep, /aim to average nearer your current 1,900 kcal budget/);
 });
 
 test('keeps skipped and suspicious days in the uncertainty calculation', () => {
@@ -203,7 +206,8 @@ test('explains when weight uncertainty prevents a safe budget assessment', () =>
   assert.equal(result.recommendation, null);
   assert.equal(result.headline, 'Weight uncertainty limits this insight');
   assert.match(result.summary, /plausible pace could mean losing 0\.04 to 0\.43 kg per week/);
-  assert.match(result.summary, /More consistent weigh-ins can narrow the estimate/);
+  assert.match(result.summary, /not enough certainty to assess the calorie budget safely yet/);
+  assert.match(result.nextStep, /same time of day/);
 });
 
 test('describes a broad pace range that includes both loss and gain', () => {
@@ -235,12 +239,14 @@ test('does not reverse recommendation direction when the current target is below
   assert.ok(result.estimates.targetAdjustmentKcal.midpoint < 0);
   assert.equal(result.status, 'insight');
   assert.equal(result.recommendation, null);
-  assert.ok(result.missingCriteria.some((criterion) => criterion.includes('at or below')));
-  assert.equal(result.headline, 'Your current budget is already below the BMR safety floor');
+  assert.ok(result.missingCriteria.some((criterion) => criterion.includes('BMR-based limit')));
+  assert.equal(result.headline, "Calibrate won't recommend a lower budget");
   assert.match(result.summary, /logged about 1,750 kcal per day/);
   assert.match(result.summary, /weight trended up about 0\.05 kg per week versus a projected loss of 0\.46 kg per week/);
-  assert.match(result.summary, /current 1,750 kcal daily budget is already below the 1,850 kcal BMR safety floor/);
-  assert.match(result.summary, /will not suggest reducing it further/);
+  assert.match(result.summary, /current 1,750 kcal daily budget is already below Calibrate's BMR-based limit of 1,850 kcal/);
+  assert.match(result.summary, /Calibrate won't reduce it further/);
+  assert.match(result.nextStep, /Calibrate won't lower your current budget/);
+  assert.match(result.nextStep, /qualified health professional first/);
   assert.doesNotMatch(result.summary, /more consistent evidence/i);
 });
 
@@ -248,13 +254,52 @@ test('uses singular grammar for one uncertain day', () => {
   const missingInput = cloneScenarioInput('target-too-high');
   missingInput.foodDays.pop();
   const missingResult = evaluateCalibration(missingInput);
-  assert.ok(missingResult.missingCriteria.includes('1 incomplete or missing day widens the estimate.'));
+  assert.ok(missingResult.missingCriteria.includes('1 day has no food log, so its intake remains uncertain.'));
 
   const suspiciousInput = cloneScenarioInput('target-too-high');
   suspiciousInput.foodDays[suspiciousInput.foodDays.length - 1].entryCount = 1;
   suspiciousInput.foodDays[suspiciousInput.foodDays.length - 1].mealPeriodCount = 1;
   const suspiciousResult = evaluateCalibration(suspiciousInput);
-  assert.ok(suspiciousResult.missingCriteria.includes('1 completed day looks incomplete and widens the estimate.'));
+  assert.ok(suspiciousResult.missingCriteria.includes('1 day was marked complete but did not provide a plausible full-day total, so it widens the estimate.'));
+});
+
+test('covers pounds in the lab and preserves maintenance and gain evaluator direction', () => {
+  const pounds = evaluateScenario('on-track-pounds');
+  assert.equal(pounds.status, 'insight');
+  assert.match(pounds.summary, /1\.00 lb per week/);
+  assert.doesNotMatch(pounds.summary, /kg per week/);
+
+  const maintenanceInput = buildInvariantInput({
+    days: 28,
+    ageYears: 38,
+    weeklyChangeKg: -0.3,
+    missingEvery: 0,
+    uncertaintyKg: 0.04,
+    bmrKcal: 1650
+  });
+  maintenanceInput.configuredDailyDeficitKcal = 0;
+  maintenanceInput.foodDays.forEach((day) => { day.calories = 2400; });
+  const maintenance = evaluateCalibration(maintenanceInput);
+  assert.equal(maintenance.status, 'recommendation');
+  assert.equal(maintenance.headline, 'Weight is trending down instead of staying steady');
+  assert.equal(maintenance.recommendation.adjustmentStepKcal, 150);
+  assert.match(maintenance.summary, /steady-weight projection/);
+
+  const gainInput = buildInvariantInput({
+    days: 28,
+    ageYears: 38,
+    weeklyChangeKg: 0.23,
+    missingEvery: 0,
+    uncertaintyKg: 0.04,
+    bmrKcal: 1650
+  });
+  gainInput.configuredDailyDeficitKcal = -500;
+  gainInput.foodDays.forEach((day) => { day.calories = 2900; });
+  const gain = evaluateCalibration(gainInput);
+  assert.equal(gain.status, 'recommendation');
+  assert.equal(gain.headline, "You're gaining weight, but slower than planned");
+  assert.equal(gain.recommendation.adjustmentStepKcal, 150);
+  assert.match(gain.summary, /projected gain of 0\.46 kg per week/);
 });
 
 test('keeps activity observational and caps the selected window at 42 days', () => {

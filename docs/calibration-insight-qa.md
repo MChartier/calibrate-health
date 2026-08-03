@@ -4,15 +4,15 @@ Tested on August 2, 2026 against the calibration history lab on PR #269.
 
 ## Scope and method
 
-- Exercised all 14 shareable preset histories through the rendered development tool.
+- Exercised all 15 shareable preset histories through the shared product component in the development tool.
 - Evaluated 7 additional edited histories for exact duration, weight-count, uncertainty, and age boundaries.
 - Verified malformed JSON and structurally incomplete JSON remain in the lab with an actionable validation error.
 - Inspected the rendered status, headline, evidence metrics, modeled intervals, target change, and gating criteria for each case.
 - Ran a complementary 384-case deterministic invariant matrix across history length, age, pace, missing-day rate, weight uncertainty, and BMR floor position.
-- Benchmarked 2,800 evaluations across the 14 presets: 2,081 ms total, or 0.74 ms per evaluation on this development machine.
+- Benchmarked 3,000 evaluations across the 15 presets: 3,115 ms total, or 1.04 ms per evaluation on this development machine.
 - Repeated the rendered recommendation and uncertainty checks after rebasing onto the current mobile/day-status architecture and applying review feedback.
 - Re-reviewed every preset at desktop and 390 px mobile widths after the final copy pass, including URL selection, optional-section visibility, metric wrapping, criteria language, and custom-input error recovery.
-- Ran the full automated suites after the final preset pass: 431 backend tests, 383 mobile tests, 45 API-client tests, and 25 development-script tests.
+- Ran the full automated suites after the final preset pass: 432 backend tests, 387 mobile tests, 45 API-client tests, and 25 development-script tests.
 - Built the production Expo web export and regenerated the Prisma and OpenAPI clients.
 
 The lab invokes the same pure evaluator used by the service. The seeded-product pass applied all migrations to an isolated local Postgres database and exercised recommendation materialization and approval through the real Expo web client. The final audit added direct service tests for materialization, revalidation, idempotent approval, scheduled-state suppression, exact resulting budgets, and next-local-day activation. A final live rerun restored the dedicated test account from the authoritative seed, verified a 28-day recommendation beside the 28-day weight chart, and captured the current product state below.
@@ -25,15 +25,16 @@ The lab invokes the same pure evaluator used by the service. The seeded-product 
 | 14 food days, 1 weight | `learning` | Passed: credits 14 well-tracked food days and asks specifically for more weight history |
 | 7 complete days | Descriptive insight only | Passed: validates the observed -0.45 kg/week pace without implying a later adjustment is inevitable |
 | 28 on-track days | Positive validation, no budget adjustment | Passed: observed and projected pace agree, and the conclusion is reassuring |
+| 28 on-track days in pounds | Positive validation in the configured unit | Passed: pace and supporting evidence use pounds without leaking kilogram copy |
 | Consistent slow loss | Decrease recommendation | Passed: shortest sufficient 14-day window, -150 kcal cap |
 | Consistent fast loss | Increase recommendation | Passed: shortest sufficient 14-day window, +150 kcal cap |
 | Prior 150 kcal budget decrease | Reverse prior decrease | Passed: the suggested budget returns directly from 1,750 to 1,900 kcal |
 | Higher intake explains slow loss | Intake-matched insight | Passed: the conclusion compares 2,200 kcal logged with the 1,900 kcal budget and does not change the budget estimate |
 | 7 missing and 4 suspicious days | Food-log uncertainty insight | Passed: all 11 days remain in the interval and the conclusion explains how to improve confidence |
 | Broad weight confidence intervals | Weight-uncertainty insight | Passed: the plausible 0.04 to 0.43 kg/week loss range is explained and no budget is suggested |
-| Activity data present | Observational context only | Passed: same calorie estimate as on-track history |
-| Downward signal above BMR floor | Floor-limited decrease | Passed: suggested budget stops at the preset's 1,900 kcal BMR floor |
-| Downward signal below BMR floor | No contradictory recommendation | Passed: downward evidence remains an insight with a floor explanation |
+| Activity data present | Observational context only | Passed: same calorie estimate as on-track history, with a clearly non-adjusting steps note |
+| Downward signal above BMR-based limit | Limit-capped decrease | Passed: suggested budget stops at 1,900 kcal and the evidence sheet attributes the 100 kcal cap to that limit |
+| Downward signal below BMR-based limit | No contradictory recommendation | Passed: downward evidence remains an insight with a responsible explanation and next step |
 | 90 days supplied | 42-day cap | Passed: latest 42 days selected |
 | 13 days with directional evidence | No early recommendation | Passed: explicitly requests 14 days |
 | 2 weights spanning 14 days | Insight, no recommendation | Passed: explicitly requests a third weight |
@@ -51,9 +52,9 @@ The lab invokes the same pure evaluator used by the service. The seeded-product 
 4. **Weight pace was rounded too aggressively.** Weekly weight intervals now preserve three decimal places internally, producing accurate two-decimal user-facing pace text.
 5. **Non-actionable criteria were hidden in the client.** The Progress card now lists what would improve an insight whenever no recommendation is available.
 6. **Malformed structured JSON crashed the lab.** The editor now validates top-level and nested food, weight, and activity fields and preserves the last valid output on error.
-7. **Single-day uncertainty copy had incorrect agreement.** Messages now use "looks/widens" for one day and "look/widen" for plural counts.
+7. **Single-day uncertainty copy had incorrect agreement.** Messages now pluralize correctly and distinguish days with no food log, partial logs, and completed logs that do not provide a plausible full-day total.
 8. **The original lab depended on the retired Vite frontend workspace.** The lab now runs from a focused local Node server against the compiled shared evaluator and a dev-only React bundle.
-9. **The original six presets did not cover the full state space.** The lab now has 14 described, deep-linkable histories plus a clearly labeled custom-edit state and an end-user product preview.
+9. **The original six presets did not cover the supported state space.** The lab now has 15 described, deep-linkable histories, including pounds, plus a clearly labeled custom-edit state and an end-user product preview. Maintenance and gain behavior remains evaluator-tested rather than being presented as a currently available v1 product experience.
 10. **The public result exposed a weight-derived expenditure estimate.** The evaluator now exposes only the bounded target correction; displayed calories out remains the profile-estimated TDEE.
 11. **Accepted revisions could carry into a later goal.** Recommendations and plan revisions are now tied to their source goal, so a new maintenance or gain goal cannot inherit an older loss-goal adjustment.
 12. **The feature migration collided with a migration added on `master`.** Calibration now uses migration `0031`, following the day-resolution migration at `0030`.
@@ -65,7 +66,7 @@ The lab invokes the same pure evaluator used by the service. The seeded-product 
 18. **Pre-threshold history displayed a nonexistent window.** The six-day state now labels the metric `history observed` instead of rendering `window -`.
 19. **On-track results sounded inconclusive.** The evaluator now presents agreement between observed and projected pace as a positive, reassuring outcome.
 20. **Recommendation copy used ambiguous signed target changes.** Conclusions and controls now say whether the daily calorie budget would be higher or lower and show the current and suggested budgets directly.
-21. **BMR presets did not clearly exercise or explain the floor.** The cap preset now visibly stops at BMR, while the blocked preset explains the observed pace, current budget, floor value, and safety decision.
+21. **BMR presets did not clearly exercise or explain the product limit.** The cap preset now visibly stops at the BMR-based limit and attributes its smaller step to that constraint. The blocked preset explains the evidence, current budget, limit value, conservative decision, and responsible next step without presenting BMR as a universal medical threshold.
 22. **Different evidence gaps shared generic copy.** Strong food history with insufficient weights, uncertain food logs, broad weight intervals, and intake-explained pace now receive evidence-specific conclusions and next steps.
 23. **Cross-zero budget estimates showed misleading signed midpoints.** Intervals that include zero now read `Near baseline` with explicit lower and higher bounds.
 24. **A floor-cap preset described actual gain as merely slower loss.** Direction-reversal recommendations now say when weight is trending up instead of down (or down instead of up).
@@ -99,7 +100,8 @@ The lab invokes the same pure evaluator used by the service. The seeded-product 
 52. **The modal close action scrolled out of reach.** Sheet controls now live outside the content scroller, so the close button remains visible and operable at the top of the container after scrolling to the decision actions.
 53. **The recommendation card did not follow the Progress page's heading pattern.** `Calibration` is now the stable card heading in every state, with the current conclusion presented as its description like the neighboring Progress cards.
 54. **An accepted update offered no visible way to reconsider it.** The scheduled state now names the current budget that remains active, provides an `Undo and review` action until the effective local date, removes the future revision atomically, and restores the original recommendation for another review. The real seeded flow was verified from acceptance through cancellation and restoration.
-55. **The scenario lab had drifted into a second calibration UI.** Its hand-written HTML used different hierarchy, terminology, metrics, and interactions from Progress, so a passing preset did not prove the product experience. The lab now renders the exported `CalibrationInsightCardView` used by Progress for all 14 histories. `See why`, apply, scheduled confirmation, and undo use that shared presentation; only persistence is simulated locally. Raw JSON remains a separate developer diagnostic.
+55. **The scenario lab had drifted into a second calibration UI.** Its hand-written HTML used different hierarchy, terminology, metrics, and interactions from Progress, so a passing preset did not prove the product experience. The lab now renders the exported `CalibrationInsightCardView` used by Progress for all 15 histories. `See why`, apply, scheduled confirmation, and undo use that shared presentation; only persistence is simulated locally. Raw JSON remains a separate developer diagnostic.
+56. **A final independent product/content audit found trust and actionability gaps across edge states.** Evidence summaries now use well-tracked days and weigh-ins with correct pluralization; early results identify themselves as an early pace check; intake-explained pacing has a constructive next step; activity is explicitly observational; prior-adjustment reversal names the restored budget; uncertain histories give specific actions; and BMR-limited states accurately explain why Calibrate caps or withholds a suggestion.
 
 ## Screenshots
 

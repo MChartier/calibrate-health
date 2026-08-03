@@ -114,6 +114,17 @@ export const CALIBRATION_SCENARIOS: CalibrationScenario[] = [
         }
     },
     {
+        id: 'on-track-pounds',
+        name: 'On-track history in pounds',
+        description: 'The same reassuring on-track conclusion is presented entirely in the user\'s pounds preference.',
+        input: {
+            ...baseInput,
+            weightUnit: 'LB',
+            foodDays: buildFoodDays({ days: 28, calories: 1900 }),
+            weightPoints: buildWeights(28, 90, -0.455)
+        }
+    },
+    {
         id: 'target-too-high',
         name: 'Weight loss slower than projected',
         description: 'Weight is falling more slowly than projected despite consistent logs, so a lower calorie budget may help.',
@@ -177,7 +188,7 @@ export const CALIBRATION_SCENARIOS: CalibrationScenario[] = [
     {
         id: 'activity-context',
         name: 'Activity context is observational',
-        description: 'Activity averages are displayed without changing an otherwise on-track calorie estimate.',
+        description: 'Activity is shown as supporting context without changing an otherwise on-track calorie-budget review.',
         input: {
             ...baseInput,
             foodDays: buildFoodDays({ days: 28, calories: 1900 }),
@@ -191,8 +202,8 @@ export const CALIBRATION_SCENARIOS: CalibrationScenario[] = [
     },
     {
         id: 'bmr-floor',
-        name: 'Decrease capped at BMR floor',
-        description: 'Evidence supports a larger decrease, but the suggested budget stops at the 1,900 kcal BMR floor.',
+        name: 'Decrease capped by BMR-based limit',
+        description: "Evidence supports a larger decrease, but the suggested budget stops at Calibrate's 1,900 kcal BMR-based limit.",
         input: {
             ...baseInput,
             bmrKcal: 1900,
@@ -205,8 +216,8 @@ export const CALIBRATION_SCENARIOS: CalibrationScenario[] = [
     },
     {
         id: 'bmr-floor-blocked',
-        name: 'Decrease blocked at BMR floor',
-        description: 'Evidence supports a lower budget, but the current calorie budget is already below the BMR safety floor.',
+        name: 'Decrease blocked by BMR-based limit',
+        description: "Evidence supports a lower budget, but the current calorie budget is already below Calibrate's BMR-based limit.",
         input: {
             ...baseInput,
             bmrKcal: 1850,

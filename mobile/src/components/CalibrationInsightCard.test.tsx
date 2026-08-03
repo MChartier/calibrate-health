@@ -291,6 +291,82 @@ describe('CalibrationInsightCard', () => {
         expect(screen.getByText('Apply 2,050 kcal')).toBeTruthy();
     });
 
+    it('explains when the BMR-based limit caps a decrease below the normal step', async () => {
+        const status = recommendationStatus();
+        mockApi.getCalibrationStatus.mockResolvedValue({
+            ...status,
+            evaluation: {
+                ...status.evaluation,
+                headline: 'Weight is trending up instead of down',
+                estimates: {
+                    ...status.evaluation.estimates,
+                    observedWeeklyWeightChangeKg: { low: 0.02, midpoint: 0.05, high: 0.08 },
+                    targetAdjustmentKcal: { low: -347, midpoint: -302, high: -255 },
+                    configuredWeeklyWeightChangeKg: -0.227
+                },
+                recommendation: {
+                    currentTargetKcal: 2000,
+                    recommendedTargetKcal: 1900,
+                    adjustmentStepKcal: -100,
+                    currentTargetAdjustmentKcal: 0,
+                    recommendedTargetAdjustmentKcal: -100
+                }
+            }
+        });
+        const screen = renderCard();
+
+        await waitFor(() => expect(screen.getByText('Apply 1,900 kcal')).toBeTruthy());
+        fireEvent.press(screen.getByText('See why'));
+        expect(screen.getByText('Safety limit')).toBeTruthy();
+        expect(screen.getByText(/BMR-based limit caps this suggestion at 1,900 kcal/)).toBeTruthy();
+        expect(screen.queryByText(/limits this first change to 100 kcal per day to avoid overcorrecting/)).toBeNull();
+    });
+
+    it('identifies a suggestion that restores the previous baseline budget', async () => {
+        const status = fasterRecommendationStatus();
+        mockApi.getCalibrationStatus.mockResolvedValue({
+            ...status,
+            evaluation: {
+                ...status.evaluation,
+                recommendation: {
+                    currentTargetKcal: 1750,
+                    recommendedTargetKcal: 1900,
+                    adjustmentStepKcal: 150,
+                    currentTargetAdjustmentKcal: -150,
+                    recommendedTargetAdjustmentKcal: 0
+                }
+            }
+        });
+        const screen = renderCard();
+
+        await waitFor(() => expect(screen.getByText('This returns you to your previous 1,900 kcal daily budget.')).toBeTruthy());
+    });
+
+    it('shows activity as supporting context without changing the calorie-budget conclusion', async () => {
+        const status = recommendationStatus();
+        mockApi.getCalibrationStatus.mockResolvedValue({
+            ...status,
+            evaluation: {
+                ...status.evaluation,
+                status: 'insight',
+                headline: 'Your progress is tracking as expected',
+                summary: 'The evidence shows progress is consistent with tracking expectations.',
+                recommendation: null,
+                activityContext: {
+                    observedDays: 28,
+                    averageSteps: 8135,
+                    averageActiveCaloriesKcal: 364
+                }
+            },
+            recommendation: null
+        });
+        const screen = renderCard();
+
+        await waitFor(() => expect(screen.getByText('Activity context')).toBeTruthy());
+        expect(screen.getByText(/averaged 8,135 steps per day across 28 days/)).toBeTruthy();
+        expect(screen.getByText(/supporting context only and did not change this calorie-budget review/)).toBeTruthy();
+    });
+
     it.each([
         ['compact width', { width: 390, height: 844, scale: 1, fontScale: 1 }],
         ['large text', { width: 800, height: 900, scale: 1, fontScale: 1.5 }]

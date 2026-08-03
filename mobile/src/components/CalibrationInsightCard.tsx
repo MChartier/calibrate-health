@@ -189,16 +189,23 @@ export const CalibrationInsightCardView: React.FC<CalibrationInsightCardViewProp
     const averageIntake = evaluation.estimates.averageIntakeKcal
         ? `${Math.round(evaluation.estimates.averageIntakeKcal.midpoint).toLocaleString()} kcal`
         : 'Not enough evidence';
+    const plannedPaceDescription = plannedDirection === 'stable'
+        ? 'your planned steady pace'
+        : `your planned ${plannedPace} ${plannedDirection}`;
     const recommendationReason = actionableRecommendation
-        ? `Your logged intake and weight trend are moving at a different pace than planned. If this pattern continues, a slightly ${actionableRecommendation.adjustmentStepKcal < 0 ? 'lower' : 'higher'} daily budget could bring your pace closer to plan.`
+        ? `Your recent pace is ${observedPaceWithDirection}, compared with ${plannedPaceDescription}. If this pattern continues, a slightly ${actionableRecommendation.adjustmentStepKcal < 0 ? 'lower' : 'higher'} daily budget could bring your pace closer to plan.`
         : null;
     const budgetEstimateExplanation = actionableRecommendation
         ? describeCalorieBudgetEstimate(
             evaluation.estimates.targetAdjustmentKcal,
             actionableRecommendation.currentTargetAdjustmentKcal,
-            actionableRecommendation.adjustmentStepKcal
+            actionableRecommendation.adjustmentStepKcal,
+            actionableRecommendation.recommendedTargetKcal
         )
         : null;
+    const restoresBaselineBudget = Boolean(actionableRecommendation
+        && actionableRecommendation.currentTargetAdjustmentKcal !== 0
+        && actionableRecommendation.recommendedTargetAdjustmentKcal === 0);
     const effectiveLocalDate = status?.recommendation?.effectiveLocalDate ?? null;
     const tomorrow = addDaysToDateOnly(todayDate ?? getTodayDate(timezone), 1);
     let effectiveDateLabel = 'on the next local day';
@@ -285,6 +292,11 @@ export const CalibrationInsightCardView: React.FC<CalibrationInsightCardViewProp
                                         actionableRecommendation.currentTargetKcal
                                     )}
                                 </AppText>
+                                {restoresBaselineBudget && (
+                                    <AppText variant="caption" style={styles.budgetPanelText}>
+                                        This returns you to your previous {actionableRecommendation.recommendedTargetKcal.toLocaleString()} kcal daily budget.
+                                    </AppText>
+                                )}
                             </View>
                         </View>
                         <View style={styles.assuranceRow}>
@@ -347,6 +359,14 @@ export const CalibrationInsightCardView: React.FC<CalibrationInsightCardViewProp
                         )}
                         {evaluation.selectedWindowDays && (
                             <AppText variant="caption">{describeCalibrationEvidence(evaluation)}</AppText>
+                        )}
+                        {evaluation.activityContext?.averageSteps != null && (
+                            <View style={styles.contextPanel}>
+                                <AppText variant="label">Activity context</AppText>
+                                <AppText variant="muted">
+                                    You averaged {evaluation.activityContext.averageSteps.toLocaleString()} steps per day across {evaluation.activityContext.observedDays} days. Activity data is supporting context only and did not change this calorie-budget review.
+                                </AppText>
+                            </View>
                         )}
                         {evaluation.nextStep && (
                             <View style={styles.list}>
@@ -431,7 +451,7 @@ export const CalibrationInsightCardView: React.FC<CalibrationInsightCardViewProp
                                     </View>
                                     <View style={styles.evidenceDivider} />
                                     <View style={styles.reasoningItem}>
-                                        <AppText variant="label">Recommended first step</AppText>
+                                        <AppText variant="label">{budgetEstimateExplanation.firstStepLabel}</AppText>
                                         <AppText variant="muted">{budgetEstimateExplanation.firstStep}</AppText>
                                     </View>
                                 </View>
@@ -442,7 +462,7 @@ export const CalibrationInsightCardView: React.FC<CalibrationInsightCardViewProp
                             <View style={styles.safetyText}>
                                 <AppText variant="label">Evidence and safety</AppText>
                                 <AppText variant="caption">
-                                    {describeCalibrationEvidenceForReview(evaluation)} Calibrate checks every suggestion against a BMR-based safety floor before showing it.
+                                    {describeCalibrationEvidenceForReview(evaluation)} Calibrate applies a conservative BMR-based limit to every calorie-budget suggestion.
                                 </AppText>
                             </View>
                         </View>
@@ -629,6 +649,12 @@ function createStyles(theme: AppTheme) {
     },
     list: {
         gap: spacing.xs
+    },
+    contextPanel: {
+        gap: spacing.xs,
+        borderRadius: theme.radius.md,
+        padding: spacing.md,
+        backgroundColor: theme.colors.surfaceContainer
     },
     historyProgress: {
         gap: spacing.xs
