@@ -10,7 +10,8 @@ Calibrate evaluates recent food and weight evidence to determine whether the pro
 - The current local day participates only after the user marks it complete. Otherwise the observation end is the prior local day.
 - No nightly scheduler is required. A new local date changes the input fingerprint on the next read.
 - `POST /api/v1/calibration/recommendations/:id/apply` re-evaluates the evidence and rejects stale suggestions before creating a revision effective on the next user-local day.
-- Once a revision is scheduled, status returns the resulting absolute daily calorie budget and suppresses stale recommendation narrative until the revision becomes effective.
+- `POST /api/v1/calibration/recommendations/:id/cancel` lets the user undo a scheduled revision before it becomes effective and restores the recommendation for review.
+- Once a revision is scheduled, status returns the resulting absolute daily calorie budget and suppresses stale recommendation narrative until the revision becomes effective or is canceled.
 
 ## Evidence and uncertainty
 

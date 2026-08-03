@@ -59,6 +59,18 @@ export const CalibrationInsightCard: React.FC<ViewProps> = ({ style, ...props })
             ]).catch(() => undefined);
         }
     });
+    const cancelScheduledChange = useMutation({
+        mutationFn: () => {
+            const recommendationId = statusQuery.data?.scheduledChange?.recommendationId;
+            if (!recommendationId) throw new Error('This scheduled update is no longer available.');
+            return api.cancelCalibrationRecommendation(recommendationId, Crypto.randomUUID());
+        },
+        onSuccess: (nextStatus) => {
+            queryClient.setQueryData<CalibrationStatusResponse>(calibrationStatusQueryKey, nextStatus);
+            void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => undefined);
+            void queryClient.invalidateQueries({ queryKey: ['mobile-profile'] }).catch(() => undefined);
+        }
+    });
 
     const status = statusQuery.data;
     const evaluation = status?.evaluation;
@@ -136,6 +148,9 @@ export const CalibrationInsightCard: React.FC<ViewProps> = ({ style, ...props })
     const cardDescription = scheduledChange && !actionableRecommendation
         ? 'Your calorie budget update is scheduled'
         : evaluation.headline;
+    const scheduledReviewMessage = recommendation
+        ? `Your current ${recommendation.currentTargetKcal.toLocaleString()} kcal budget stays in place until then. Changed your mind? Undo this update before it starts to review the suggestion again.`
+        : 'Changed your mind? Undo this update before it starts to keep your current budget and review the suggestion again.';
 
     return (
         <>
@@ -145,17 +160,41 @@ export const CalibrationInsightCard: React.FC<ViewProps> = ({ style, ...props })
                     description={cardDescription}
                 />
                 {scheduledChange ? (
-                    <View
-                        role="status"
-                        accessibilityLiveRegion="polite"
-                        style={styles.scheduledRow}
-                    >
-                        <Ionicons name="checkmark-circle" size={20} color={theme.colors.success} />
-                        <AppText style={styles.scheduledText}>
-                            {scheduledChange.dailyCalorieBudgetKcal === null
-                                ? `Your updated daily calorie budget starts ${formatDateOnlyForDisplay(scheduledChange.effectiveLocalDate)}.`
-                                : `Your daily calorie budget will be ${scheduledChange.dailyCalorieBudgetKcal.toLocaleString()} kcal starting ${formatDateOnlyForDisplay(scheduledChange.effectiveLocalDate)}.`}
-                        </AppText>
+                    <View style={styles.scheduledPanel}>
+                        <View
+                            role="status"
+                            accessibilityLiveRegion="polite"
+                            style={styles.scheduledRow}
+                        >
+                            <Ionicons name="checkmark-circle" size={20} color={theme.colors.success} />
+                            <AppText style={styles.scheduledText}>
+                                {scheduledChange.dailyCalorieBudgetKcal === null
+                                    ? `Your updated daily calorie budget starts ${formatDateOnlyForDisplay(scheduledChange.effectiveLocalDate)}.`
+                                    : `Your daily calorie budget will be ${scheduledChange.dailyCalorieBudgetKcal.toLocaleString()} kcal starting ${formatDateOnlyForDisplay(scheduledChange.effectiveLocalDate)}.`}
+                            </AppText>
+                        </View>
+                        {scheduledChange.recommendationId !== null && (
+                            <View style={styles.scheduledReview}>
+                                <AppText variant="muted">
+                                    {scheduledReviewMessage}
+                                </AppText>
+                                <AppButton
+                                    title={cancelScheduledChange.isPending ? 'Undoing...' : 'Undo and review'}
+                                    accessibilityLabel="Undo scheduled calorie budget update and review the suggestion again"
+                                    variant="secondary"
+                                    disabled={cancelScheduledChange.isPending}
+                                    accessibilityState={{ busy: cancelScheduledChange.isPending }}
+                                    leftIcon={<Ionicons name="arrow-undo-outline" size={18} color={theme.colors.onSurface} />}
+                                    onPress={() => cancelScheduledChange.mutate()}
+                                    style={styles.scheduledAction}
+                                />
+                            </View>
+                        )}
+                        {cancelScheduledChange.error && (
+                            <AppText accessibilityRole="alert" style={styles.error}>
+                                {cancelScheduledChange.error.message}
+                            </AppText>
+                        )}
                     </View>
                 ) : actionableRecommendation ? (
                     <>
@@ -509,10 +548,19 @@ function createStyles(theme: AppTheme) {
         gap: spacing.sm,
         paddingVertical: spacing.sm
     },
+    scheduledPanel: {
+        gap: spacing.md
+    },
     scheduledText: {
         flex: 1,
         color: theme.colors.primary,
         fontWeight: '700'
+    },
+    scheduledReview: {
+        gap: spacing.sm
+    },
+    scheduledAction: {
+        alignSelf: 'flex-start'
     },
     list: {
         gap: spacing.xs

@@ -88,3 +88,24 @@ test('apply route forwards the recommendation and operation identifiers', async 
   assert.deepEqual(received, { userId: 17, recommendationId: 9, operationId: 'calibration-op-1' });
   assert.equal(res.body.effectiveLocalDate, '2026-08-01');
 });
+
+test('cancel route forwards the scheduled recommendation and operation identifiers', async () => {
+  let received = null;
+  const router = loadRouter({
+    cancelScheduledCalibrationChange: async (options) => {
+      received = options;
+      return { recommendation: { id: options.recommendationId }, scheduledChange: null };
+    }
+  });
+  const res = response();
+  const req = {
+    user: { id: 17 },
+    params: { id: '9' },
+    headers: { 'x-client-operation-id': 'calibration-op-2' },
+    get: () => 'calibration-op-2'
+  };
+  await handler(router, 'post', '/recommendations/:id/cancel')(req, res);
+  assert.deepEqual(received, { userId: 17, recommendationId: 9, operationId: 'calibration-op-2' });
+  assert.equal(res.body.recommendation.id, 9);
+  assert.equal(res.body.scheduledChange, null);
+});

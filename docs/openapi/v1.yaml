@@ -586,6 +586,34 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/ApiError' }
+  /api/v1/calibration/recommendations/{recommendationId}/cancel:
+    post:
+      operationId: cancelCalibrationRecommendation
+      description: Cancel a calibration revision before its effective local date and restore the recommendation for review.
+      parameters:
+        - name: recommendationId
+          in: path
+          required: true
+          schema: { type: integer, minimum: 1 }
+        - $ref: '#/components/parameters/ClientOperationId'
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: { type: object, additionalProperties: false }
+      responses:
+        '200':
+          description: Current calibration status after the scheduled revision is canceled.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CalibrationStatusResponse' }
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          description: The revision is no longer scheduled, has already started, or conflicts with another operation.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiError' }
   /api/v1/user/account/export:
     get:
       operationId: exportAccount

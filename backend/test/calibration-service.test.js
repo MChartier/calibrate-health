@@ -65,7 +65,15 @@ function fingerprint(value) {
 function createHarness({ scenarioId = 'target-too-high', scheduledRevision = null, currentPlan = null } = {}) {
   const scenario = getCalibrationScenario(scenarioId);
   assert.ok(scenario);
-  const captured = { upserts: [], staleUpdates: [], operation: null, revision: null, appliedAt: null, sync: null };
+  const captured = {
+    upserts: [],
+    staleUpdates: [],
+    operation: null,
+    revision: null,
+    deletedRevisionId: null,
+    appliedAt: null,
+    sync: null
+  };
   let storedRecommendation = null;
   const logs = scenario.input.foodDays.flatMap((day) => [
     { local_date: new Date(`${day.date}T00:00:00.000Z`), calories: Math.floor(day.calories / 2), meal_period: 'BREAKFAST' },
@@ -141,6 +149,12 @@ function createHarness({ scenarioId = 'target-too-high', scheduledRevision = nul
         captured.revision = revision;
         if (storedRecommendation) storedRecommendation.plan_revision = revision;
         return revision;
+      },
+      delete: async ({ where }) => {
+        captured.deletedRevisionId = where.id;
+        const deleted = storedRecommendation?.plan_revision;
+        if (storedRecommendation) storedRecommendation.plan_revision = null;
+        return deleted;
       }
     },
     calibrationRecommendation: {
@@ -253,4 +267,54 @@ test('applying a recommendation revalidates, schedules one revision, and replays
     now
   });
   assert.deepEqual(replay, result);
+});
+
+test('canceling a future revision restores the recommendation for review', async () => {
+  const harness = createHarness();
+  const now = new Date('2026-08-01T12:00:00.000Z');
+  const status = await harness.service.buildCalibrationStatus(7, now);
+  await harness.service.applyCalibrationRecommendation({
+    userId: 7,
+    recommendationId: status.recommendation.id,
+    operationId: 'calibration-op-apply',
+    now
+  });
+
+  const restored = await harness.service.cancelScheduledCalibrationChange({
+    userId: 7,
+    recommendationId: status.recommendation.id,
+    operationId: 'calibration-op-cancel',
+    now
+  });
+
+  assert.equal(harness.captured.deletedRevisionId, 12);
+  assert.equal(harness.getStoredRecommendation().status, 'PENDING');
+  assert.equal(harness.getStoredRecommendation().applied_at, null);
+  assert.equal(restored.scheduledChange, null);
+  assert.equal(restored.recommendation.id, status.recommendation.id);
+  assert.equal(harness.captured.operation.operationKind, 'calibration_recommendation.cancel');
+  assert.equal(harness.captured.sync.action, 'delete');
+});
+
+test('a scheduled revision cannot be canceled after its effective local date', async () => {
+  const harness = createHarness();
+  const applyNow = new Date('2026-08-01T12:00:00.000Z');
+  const status = await harness.service.buildCalibrationStatus(7, applyNow);
+  await harness.service.applyCalibrationRecommendation({
+    userId: 7,
+    recommendationId: status.recommendation.id,
+    operationId: 'calibration-op-apply',
+    now: applyNow
+  });
+
+  await assert.rejects(
+    harness.service.cancelScheduledCalibrationChange({
+      userId: 7,
+      recommendationId: status.recommendation.id,
+      operationId: 'calibration-op-cancel-late',
+      now: new Date('2026-08-02T12:00:00.000Z')
+    }),
+    /already started/
+  );
+  assert.equal(harness.captured.deletedRevisionId, null);
 });

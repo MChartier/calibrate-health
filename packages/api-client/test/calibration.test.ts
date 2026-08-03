@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { CalibrateApiClient } from '../src/client.ts';
 
-test('uses the versioned calibration status and apply routes', async () => {
+test('uses the versioned calibration status, apply, and cancel routes', async () => {
     const requests: Array<{ url: string; init?: RequestInit }> = [];
     const client = new CalibrateApiClient({
         baseUrl: 'https://calibrate.example',
@@ -28,8 +28,11 @@ test('uses the versioned calibration status and apply routes', async () => {
 
     await client.getCalibrationStatus();
     await client.applyCalibrationRecommendation(7, 'calibration-op-0001');
+    await client.cancelCalibrationRecommendation(7, 'calibration-op-0002');
 
     assert.equal(requests[0]?.url, 'https://calibrate.example/api/v1/calibration/status');
     assert.equal(requests[1]?.url, 'https://calibrate.example/api/v1/calibration/recommendations/7/apply');
     assert.equal(new Headers(requests[1]?.init?.headers).get('x-client-operation-id'), 'calibration-op-0001');
+    assert.equal(requests[2]?.url, 'https://calibrate.example/api/v1/calibration/recommendations/7/cancel');
+    assert.equal(new Headers(requests[2]?.init?.headers).get('x-client-operation-id'), 'calibration-op-0002');
 });

@@ -478,6 +478,17 @@ export class CalibrateApiClient {
         );
     }
 
+    cancelCalibrationRecommendation(id: number, operationId?: string): Promise<CalibrationStatusResponse> {
+        return this.request<CalibrationStatusResponse>(
+            `/api/calibration/recommendations/${encodeURIComponent(String(id))}/cancel`,
+            {
+                method: 'POST',
+                headers: buildOperationHeaders(operationId),
+                json: {}
+            }
+        );
+    }
+
     getMetrics(): Promise<MetricEntry[]> {
         return this.request<MetricEntry[]>('/api/metrics');
     }

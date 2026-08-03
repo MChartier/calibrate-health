@@ -15,7 +15,8 @@ jest.mock('expo-haptics', () => ({
 
 const mockApi = {
     getCalibrationStatus: jest.fn(),
-    applyCalibrationRecommendation: jest.fn()
+    applyCalibrationRecommendation: jest.fn(),
+    cancelCalibrationRecommendation: jest.fn()
 };
 
 jest.mock('../auth/AuthContext', () => ({
@@ -205,6 +206,7 @@ describe('CalibrationInsightCard', () => {
             dailyCalorieBudgetKcal: 1750,
             effectiveLocalDate: '2026-08-01'
         });
+        mockApi.cancelCalibrationRecommendation.mockResolvedValue(recommendationStatus());
     });
 
     afterEach(async () => {
@@ -346,8 +348,26 @@ describe('CalibrationInsightCard', () => {
 
         await waitFor(() => expect(screen.getByText('Your calorie budget update is scheduled')).toBeTruthy());
         expect(screen.getByText(/daily calorie budget will be 1,900 kcal starting/)).toBeTruthy();
+        expect(screen.getByText(/Undo this update before it starts/)).toBeTruthy();
+        expect(screen.getByText('Undo and review')).toBeTruthy();
         expect(screen.queryByText('Current evidence supports a lower calorie budget.')).toBeNull();
         expect(screen.queryByText('See why')).toBeNull();
+    });
+
+    it('undoes a scheduled update and restores the recommendation for review', async () => {
+        mockApi.getCalibrationStatus.mockResolvedValue(scheduledStatus());
+        mockApi.cancelCalibrationRecommendation.mockResolvedValue(recommendationStatus());
+        const screen = renderCard();
+
+        await waitFor(() => expect(screen.getByText('Undo and review')).toBeTruthy());
+        fireEvent.press(screen.getByText('Undo and review'));
+
+        await waitFor(() => expect(mockApi.cancelCalibrationRecommendation).toHaveBeenCalledWith(
+            7,
+            'calibration-operation-id'
+        ));
+        await waitFor(() => expect(screen.getByText('Apply 1,750 kcal')).toBeTruthy());
+        expect(screen.queryByText('Your calorie budget update is scheduled')).toBeNull();
     });
 
     it('formats observed pace in the evaluation display unit', async () => {

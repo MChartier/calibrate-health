@@ -492,3 +492,66 @@ export async function applyCalibrationRecommendation(options: {
         throw error;
     }
 }
+
+/** Undo a not-yet-effective calibration revision and restore its recommendation for review. */
+export async function cancelScheduledCalibrationChange(options: {
+    userId: number;
+    recommendationId: number;
+    operationId?: string;
+    now?: Date;
+}): Promise<CalibrationStatus> {
+    const user = await prisma.user.findUnique({
+        where: { id: options.userId },
+        select: { timezone: true }
+    });
+    if (!user) throw new CalibrationConflictError('User not found.');
+
+    const today = getSafeUtcTodayDateOnlyInTimeZone(user.timezone, options.now ?? new Date());
+    await executeIdempotentMutation<{ recommendationId: number; canceled: true }>({
+        userId: options.userId,
+        operationId: options.operationId,
+        operationKind: 'calibration_recommendation.cancel',
+        requestPayload: { recommendation_id: options.recommendationId },
+        mutate: async (tx, claimedOperationId) => {
+            const recommendation = await tx.calibrationRecommendation.findFirst({
+                where: {
+                    id: options.recommendationId,
+                    user_id: options.userId,
+                    status: 'APPLIED'
+                },
+                include: { plan_revision: true }
+            });
+            const revision = recommendation?.plan_revision;
+            if (!recommendation || !revision) {
+                throw new CalibrationConflictError('This calorie budget update is no longer scheduled. Refresh calibration to see the latest plan.');
+            }
+            if (revision.effective_local_date <= today) {
+                throw new CalibrationConflictError('This calorie budget update has already started and can no longer be undone as a scheduled change.');
+            }
+
+            await tx.caloriePlanRevision.delete({ where: { id: revision.id } });
+            await tx.calibrationRecommendation.update({
+                where: { id: recommendation.id },
+                data: { status: 'PENDING', applied_at: null }
+            });
+            await recordSyncChange({
+                tx,
+                userId: options.userId,
+                entityType: 'calorie_plan_revision',
+                entityId: revision.id,
+                action: 'delete',
+                operationId: claimedOperationId,
+                payload: {
+                    recommendationId: recommendation.id,
+                    effectiveLocalDate: toDateKey(revision.effective_local_date)
+                }
+            });
+            return {
+                status: 200,
+                body: { recommendationId: recommendation.id, canceled: true }
+            };
+        }
+    });
+
+    return buildCalibrationStatus(options.userId, options.now);
+}

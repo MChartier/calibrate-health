@@ -347,6 +347,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/calibration/recommendations/{recommendationId}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Cancel a calibration revision before its effective local date and restore the recommendation for review. */
+        post: operations["cancelCalibrationRecommendation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/user/account/export": {
         parameters: {
             query?: never;
@@ -2119,6 +2136,45 @@ export interface operations {
             };
             401: components["responses"]["Unauthorized"];
             /** @description Recommendation is stale, already applied, or conflicts with another operation. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    cancelCalibrationRecommendation: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Stable client-generated identifier used to safely replay a mutation. */
+                "x-client-operation-id"?: components["parameters"]["ClientOperationId"];
+            };
+            path: {
+                recommendationId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": Record<string, never>;
+            };
+        };
+        responses: {
+            /** @description Current calibration status after the scheduled revision is canceled. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CalibrationStatusResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            /** @description The revision is no longer scheduled, has already started, or conflicts with another operation. */
             409: {
                 headers: {
                     [name: string]: unknown;
