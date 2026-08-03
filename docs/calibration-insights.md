@@ -38,7 +38,9 @@ Run the stateless preset explorer with:
 npm run dev:calibration-lab
 ```
 
-The local Node lab uses the same compiled shared evaluator as the service. It includes 14 histories covering all four statuses, both budget-adjustment directions, a prior-adjustment reversal, adherence-driven pacing, incomplete history, activity context, weight uncertainty, BMR-floor behavior, and the 42-day observation cap. Its JSON editor validates structure and semantic constraints, including date uniqueness, units, nonnegative inputs, and ordered weight intervals, without writing user data or waiting for real-world observation windows.
+The local Node lab uses the same compiled shared evaluator as the service and renders the same `CalibrationInsightCardView` React component shown on Progress. The end-user preview therefore stays aligned with product copy, hierarchy, evidence details, responsive behavior, and interaction states. Recommendation apply, scheduled confirmation, and undo are simulated locally; the JSON editor and raw evaluator output remain available as developer diagnostics.
+
+The lab includes 14 histories covering all four statuses, both budget-adjustment directions, a prior-adjustment reversal, adherence-driven pacing, incomplete history, activity context, weight uncertainty, BMR-floor behavior, and the 42-day observation cap. Its JSON editor validates structure and semantic constraints, including date uniqueness, units, nonnegative inputs, and ordered weight intervals, without writing user data or waiting for real-world observation windows.
 
 Preset states can be linked directly with `?scenario=<scenario-id>`, for example:
 

@@ -3,16 +3,66 @@ import { readFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { build } from 'esbuild-wasm';
 
 const scriptDirectory = dirname(fileURLToPath(import.meta.url));
 const repositoryRoot = resolve(scriptDirectory, '..');
 const assetDirectory = resolve(repositoryRoot, 'tools', 'calibration-lab');
 const responseAssets = new Map([
   ['/', { path: resolve(assetDirectory, 'index.html'), contentType: 'text/html; charset=utf-8' }],
-  ['/main.js', { path: resolve(assetDirectory, 'main.js'), contentType: 'text/javascript; charset=utf-8' }],
-  ['/presentation.mjs', { path: resolve(assetDirectory, 'presentation.mjs'), contentType: 'text/javascript; charset=utf-8' }],
   ['/styles.css', { path: resolve(assetDirectory, 'styles.css'), contentType: 'text/css; charset=utf-8' }]
 ]);
+
+export async function buildCalibrationLabBundle() {
+  const result = await build({
+    absWorkingDir: repositoryRoot,
+    entryPoints: ['tools/calibration-lab/main.tsx'],
+    bundle: true,
+    write: false,
+    platform: 'browser',
+    format: 'iife',
+    target: ['es2022'],
+    banner: {
+      js: 'var process = globalThis.process ?? { env: { NODE_ENV: "development" } };'
+    },
+    alias: {
+      'react-native': 'react-native-web'
+    },
+    conditions: ['browser', 'react-native', 'default'],
+    mainFields: ['browser', 'module', 'main'],
+    resolveExtensions: ['.web.tsx', '.web.ts', '.tsx', '.ts', '.web.jsx', '.web.js', '.jsx', '.js', '.json'],
+    define: {
+      __DEV__: 'true',
+      global: 'globalThis',
+      'process.env.NODE_ENV': '"development"',
+      'process.env.EXPO_OS': '"web"'
+    },
+    loader: {
+      '.js': 'jsx',
+      '.ttf': 'dataurl',
+      '.woff': 'dataurl',
+      '.woff2': 'dataurl',
+      '.png': 'dataurl'
+    },
+    plugins: [{
+      name: 'browser-only-expo-font-context',
+      setup(builder) {
+        builder.onResolve({ filter: /^node:async_hooks$/ }, () => ({
+          path: 'async-hooks-browser-stub',
+          namespace: 'calibration-lab'
+        }));
+        builder.onLoad({ filter: /.*/, namespace: 'calibration-lab' }, () => ({
+          contents: 'export class AsyncLocalStorage { getStore() { return undefined; } run(_store, callback) { return callback(); } }',
+          loader: 'js'
+        }));
+      }
+    }],
+    logLevel: 'silent'
+  });
+  const output = result.outputFiles?.[0];
+  if (!output) throw new Error('Calibration lab browser bundle was not generated.');
+  return output.contents;
+}
 
 function requireRecord(value, label) {
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
@@ -142,7 +192,7 @@ function sendJson(response, status, body) {
   response.end(JSON.stringify(body));
 }
 
-export function createCalibrationLabServer({ evaluateCalibration, scenarios }) {
+export function createCalibrationLabServer({ evaluateCalibration, scenarios, browserBundle = new Uint8Array() }) {
   return createServer(async (request, response) => {
     const url = new URL(request.url ?? '/', 'http://localhost');
     try {
@@ -153,6 +203,14 @@ export function createCalibrationLabServer({ evaluateCalibration, scenarios }) {
       if (request.method === 'POST' && url.pathname === '/api/evaluate') {
         const input = parseCalibrationInput(await readJsonBody(request));
         sendJson(response, 200, evaluateCalibration(input));
+        return;
+      }
+      if (request.method === 'GET' && url.pathname === '/main.js') {
+        response.writeHead(200, {
+          'content-type': 'text/javascript; charset=utf-8',
+          'cache-control': 'no-store'
+        });
+        response.end(browserBundle);
         return;
       }
       const asset = request.method === 'GET' ? responseAssets.get(url.pathname) : undefined;
@@ -175,7 +233,8 @@ async function start() {
   const { evaluateCalibration } = require(resolve(repositoryRoot, 'shared', 'dist', 'cjs', 'calibration.js'));
   const { CALIBRATION_SCENARIOS } = require(resolve(repositoryRoot, 'shared', 'dist', 'cjs', 'calibrationScenarios.js'));
   const port = Number.parseInt(process.env.CALIBRATION_LAB_PORT ?? '5173', 10);
-  const server = createCalibrationLabServer({ evaluateCalibration, scenarios: CALIBRATION_SCENARIOS });
+  const browserBundle = await buildCalibrationLabBundle();
+  const server = createCalibrationLabServer({ evaluateCalibration, scenarios: CALIBRATION_SCENARIOS, browserBundle });
   server.listen(port, '127.0.0.1', () => {
     process.stdout.write(`Calibration history lab: http://127.0.0.1:${port}\n`);
   });

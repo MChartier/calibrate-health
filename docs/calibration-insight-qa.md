@@ -52,8 +52,8 @@ The lab invokes the same pure evaluator used by the service. The seeded-product 
 5. **Non-actionable criteria were hidden in the client.** The Progress card now lists what would improve an insight whenever no recommendation is available.
 6. **Malformed structured JSON crashed the lab.** The editor now validates top-level and nested food, weight, and activity fields and preserves the last valid output on error.
 7. **Single-day uncertainty copy had incorrect agreement.** Messages now use "looks/widens" for one day and "look/widen" for plural counts.
-8. **The original lab depended on the retired Vite frontend workspace.** The lab now runs as a dependency-free local Node server against the compiled shared evaluator.
-9. **The original six presets did not cover the full state space.** The lab now has 14 described, deep-linkable histories plus a clearly labeled custom-edit state and visual evidence summaries.
+8. **The original lab depended on the retired Vite frontend workspace.** The lab now runs from a focused local Node server against the compiled shared evaluator and a dev-only React bundle.
+9. **The original six presets did not cover the full state space.** The lab now has 14 described, deep-linkable histories plus a clearly labeled custom-edit state and an end-user product preview.
 10. **The public result exposed a weight-derived expenditure estimate.** The evaluator now exposes only the bounded target correction; displayed calories out remains the profile-estimated TDEE.
 11. **Accepted revisions could carry into a later goal.** Recommendations and plan revisions are now tied to their source goal, so a new maintenance or gain goal cannot inherit an older loss-goal adjustment.
 12. **The feature migration collided with a migration added on `master`.** Calibration now uses migration `0031`, following the day-resolution migration at `0030`.
@@ -99,6 +99,7 @@ The lab invokes the same pure evaluator used by the service. The seeded-product 
 52. **The modal close action scrolled out of reach.** Sheet controls now live outside the content scroller, so the close button remains visible and operable at the top of the container after scrolling to the decision actions.
 53. **The recommendation card did not follow the Progress page's heading pattern.** `Calibration` is now the stable card heading in every state, with the current conclusion presented as its description like the neighboring Progress cards.
 54. **An accepted update offered no visible way to reconsider it.** The scheduled state now names the current budget that remains active, provides an `Undo and review` action until the effective local date, removes the future revision atomically, and restores the original recommendation for another review. The real seeded flow was verified from acceptance through cancellation and restoration.
+55. **The scenario lab had drifted into a second calibration UI.** Its hand-written HTML used different hierarchy, terminology, metrics, and interactions from Progress, so a passing preset did not prove the product experience. The lab now renders the exported `CalibrationInsightCardView` used by Progress for all 14 histories. `See why`, apply, scheduled confirmation, and undo use that shared presentation; only persistence is simulated locally. Raw JSON remains a separate developer diagnostic.
 
 ## Screenshots
 

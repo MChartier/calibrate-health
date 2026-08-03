@@ -1,16 +1,12 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
-import { createCalibrationLabServer, parseCalibrationInput } from './calibration-lab.mjs';
+import { buildCalibrationLabBundle, createCalibrationLabServer, parseCalibrationInput } from './calibration-lab.mjs';
 import {
-  formatBudgetChange,
-  formatBudgetInterval,
-  formatDayCount,
-  formatWeightInterval,
-  getWindowMetric
-} from '../tools/calibration-lab/presentation.mjs';
-
-const labStyles = await readFile(new URL('../tools/calibration-lab/styles.css', import.meta.url), 'utf8');
+  applyPreviewRecommendation,
+  buildPreviewStatus,
+  cancelPreviewScheduledChange
+} from '../tools/calibration-lab/status.mjs';
 
 const validInput = {
   asOfDate: '2026-07-31',
@@ -33,6 +29,17 @@ const validInput = {
     lowerKg: 89.9,
     upperKg: 90.1
   }]
+};
+
+const previewEvaluation = {
+  asOfDate: '2026-07-31',
+  recommendation: {
+    currentTargetKcal: 1900,
+    recommendedTargetKcal: 2050,
+    adjustmentStepKcal: 150,
+    currentTargetAdjustmentKcal: 0,
+    recommendedTargetAdjustmentKcal: 150
+  }
 };
 
 test('calibration lab accepts a complete editable history shape', () => {
@@ -62,56 +69,63 @@ test('calibration lab rejects malformed nested history before evaluation', () =>
   );
 });
 
-test('calibration lab hides empty optional sections', () => {
-  assert.match(labStyles, /\[hidden\]\s*\{\s*display:\s*none\s*!important;\s*\}/);
+test('calibration lab creates product-shaped recommendation metadata', () => {
+  const status = buildPreviewStatus(previewEvaluation, 'lab-target-too-low', '2026-08-01T00:00:00.000Z');
+  assert.equal(status.generatedAt, '2026-08-01T00:00:00.000Z');
+  assert.deepEqual(status.recommendation, {
+    id: 1,
+    status: 'pending',
+    inputFingerprint: 'lab-target-too-low',
+    effectiveLocalDate: '2026-08-01'
+  });
+  assert.equal(status.scheduledChange, null);
 });
 
-test('calibration lab describes pre-threshold history without implying the window is absent', () => {
-  assert.deepEqual(getWindowMetric({
-    selectedWindowDays: null,
-    dataQuality: { observationDays: 6 }
-  }), {
-    label: 'history observed',
-    value: '6 days'
+test('calibration lab leaves non-actionable evaluations without recommendation metadata', () => {
+  const status = buildPreviewStatus({ ...previewEvaluation, recommendation: null }, 'lab-on-track');
+  assert.equal(status.recommendation, null);
+  assert.equal(status.scheduledChange, null);
+});
+
+test('calibration lab simulates the resulting scheduled budget after apply', () => {
+  const status = buildPreviewStatus(previewEvaluation, 'lab-target-too-low');
+  const scheduled = applyPreviewRecommendation(status, 1);
+  assert.equal(scheduled.recommendation, null);
+  assert.deepEqual(scheduled.scheduledChange, {
+    recommendationId: 1,
+    targetAdjustmentKcal: 150,
+    dailyCalorieBudgetKcal: 2050,
+    effectiveLocalDate: '2026-08-01'
   });
 });
 
-test('calibration lab presents pre-threshold guidance as one next step', async () => {
-  const labMain = await readFile(new URL('../tools/calibration-lab/main.js', import.meta.url), 'utf8');
-  assert.match(labMain, /result\.nextStep\) criteriaTitle = 'Next step'/);
-  assert.match(labMain, /copy\.textContent = result\.nextStep/);
-  assert.match(labMain, /One clear action to keep building useful evidence/);
-  assert.match(labMain, /Progress toward first pace check/);
-  assert.match(labMain, /role', 'progressbar'/);
+test('calibration lab simulates undo by restoring the pending recommendation', () => {
+  const status = buildPreviewStatus(previewEvaluation, 'lab-target-too-low');
+  const restored = cancelPreviewScheduledChange(applyPreviewRecommendation(status, 1), 1);
+  assert.equal(restored.scheduledChange, null);
+  assert.deepEqual(restored.recommendation, status.recommendation);
 });
 
-test('calibration lab labels a qualifying evaluator window explicitly', () => {
-  assert.deepEqual(getWindowMetric({
-    selectedWindowDays: 14,
-    dataQuality: { observationDays: 28 }
-  }), {
-    label: 'evaluation window',
-    value: '14 days'
-  });
-  assert.equal(formatDayCount(1), '1 day');
+test('calibration lab ignores apply and undo actions for a different recommendation', () => {
+  const status = buildPreviewStatus(previewEvaluation, 'lab-target-too-low');
+  assert.equal(applyPreviewRecommendation(status, 99), status);
+  const scheduled = applyPreviewRecommendation(status, 1);
+  assert.equal(cancelPreviewScheduledChange(scheduled, 99), scheduled);
 });
 
-test('calibration lab describes budget changes without ambiguous signs', () => {
-  assert.equal(formatBudgetChange(-150), '150 kcal less');
-  assert.equal(formatBudgetChange(150), '150 kcal more');
-  assert.equal(formatBudgetInterval({ low: -291, midpoint: -246, high: -198 }), '246 kcal/day lower (198 to 291)');
-  assert.equal(formatBudgetInterval({ low: 279, midpoint: 327, high: 373 }), '327 kcal/day higher (279 to 373)');
-  assert.equal(formatBudgetInterval({ low: -43, midpoint: -1, high: 43 }), 'Near baseline (43 lower to 43 higher)');
+test('calibration lab uses the same React presentation as Progress', async () => {
+  const labMain = await readFile(new URL('../tools/calibration-lab/main.tsx', import.meta.url), 'utf8');
+  assert.match(labMain, /import \{ CalibrationInsightCardView \}/);
+  assert.match(labMain, /<CalibrationInsightCardView/);
+  assert.match(labMain, /onApplyRecommendation=\{applyRecommendation\}/);
+  assert.match(labMain, /onCancelScheduledChange=\{cancelScheduledChange\}/);
+  assert.doesNotMatch(labMain, /Estimated budget difference/);
 });
 
-test('calibration lab displays pace in the configured weight unit', () => {
-  const interval = { low: -0.5, midpoint: -0.45, high: -0.4 };
-  assert.equal(formatWeightInterval(interval, 'KG'), '-0.45 kg/week (-0.50 to -0.40)');
-  assert.equal(formatWeightInterval(interval, 'LB'), '-0.99 lb/week (-1.10 to -0.88)');
-});
-
-test('calibration lab serves the window-presentation module', async (context) => {
-  const server = createCalibrationLabServer({ evaluateCalibration: () => ({}), scenarios: [] });
+test('calibration lab builds and serves its shared React preview bundle', async (context) => {
+  const browserBundle = await buildCalibrationLabBundle();
+  assert.ok(browserBundle.byteLength > 100_000);
+  const server = createCalibrationLabServer({ evaluateCalibration: () => ({}), scenarios: [], browserBundle });
   await new Promise((resolve, reject) => {
     server.once('error', reject);
     server.listen(0, '127.0.0.1', resolve);
@@ -122,8 +136,8 @@ test('calibration lab serves the window-presentation module', async (context) =>
 
   const address = server.address();
   assert.ok(address && typeof address === 'object');
-  const response = await fetch(`http://127.0.0.1:${address.port}/presentation.mjs`);
+  const response = await fetch(`http://127.0.0.1:${address.port}/main.js`);
   assert.equal(response.status, 200);
   assert.match(response.headers.get('content-type') ?? '', /^text\/javascript/);
-  assert.match(await response.text(), /export function getWindowMetric/);
+  assert.match(await response.text(), /Calibration history lab/);
 });

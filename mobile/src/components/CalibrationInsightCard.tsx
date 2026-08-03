@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { StyleSheet, View, useWindowDimensions, type ViewProps } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { CalibrationStatusResponse } from '@calibrate/api-client';
 import * as Crypto from 'expo-crypto';
 import * as Haptics from 'expo-haptics';
@@ -26,83 +26,148 @@ import { spacing, type AppTheme, useAppTheme } from '../theme';
 
 const RECOMMENDATION_STACK_BREAKPOINT = 560; // Keeps paired panels and action labels legible on compact screens.
 
-/** On-demand calibration insight and explicit target-adjustment approval. */
-export const CalibrationInsightCard: React.FC<ViewProps> = ({ style, ...props }) => {
+type CalibrationInsightCardViewProps = ViewProps & {
+    status?: CalibrationStatusResponse;
+    isLoading?: boolean;
+    error?: Error | null;
+    timezone?: string | null;
+    todayDate?: string;
+    onRetry?: () => void;
+    onApplyRecommendation?: (recommendationId: number) => Promise<void>;
+    onCancelScheduledChange?: (recommendationId: number) => Promise<void>;
+};
+
+/** Production data wrapper for the shared calibration presentation. */
+export const CalibrationInsightCard: React.FC<ViewProps> = (props) => {
     const { api, user } = useAuth();
     const queryClient = useQueryClient();
+    const statusQuery = useQuery({
+        queryKey: calibrationStatusQueryKey,
+        queryFn: () => api.getCalibrationStatus()
+    });
+
+    async function applyRecommendation(recommendationId: number) {
+        const change = await api.applyCalibrationRecommendation(recommendationId, Crypto.randomUUID());
+        queryClient.setQueryData<CalibrationStatusResponse>(calibrationStatusQueryKey, (current) => current ? ({
+            ...current,
+            recommendation: null,
+            scheduledChange: change
+        }) : current);
+        void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => undefined);
+        void Promise.all([
+            queryClient.invalidateQueries({ queryKey: calibrationStatusQueryKey }),
+            queryClient.invalidateQueries({ queryKey: ['mobile-profile'] })
+        ]).catch(() => undefined);
+    }
+
+    async function cancelScheduledChange(recommendationId: number) {
+        const nextStatus = await api.cancelCalibrationRecommendation(recommendationId, Crypto.randomUUID());
+        queryClient.setQueryData<CalibrationStatusResponse>(calibrationStatusQueryKey, nextStatus);
+        void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => undefined);
+        void queryClient.invalidateQueries({ queryKey: ['mobile-profile'] }).catch(() => undefined);
+    }
+
+    return (
+        <CalibrationInsightCardView
+            {...props}
+            status={statusQuery.data}
+            isLoading={statusQuery.isLoading}
+            error={statusQuery.error}
+            timezone={user?.timezone}
+            onRetry={() => void statusQuery.refetch()}
+            onApplyRecommendation={applyRecommendation}
+            onCancelScheduledChange={cancelScheduledChange}
+        />
+    );
+};
+
+/** Shared end-user presentation used by Progress and the calibration scenario lab. */
+export const CalibrationInsightCardView: React.FC<CalibrationInsightCardViewProps> = ({
+    status,
+    isLoading = false,
+    error = null,
+    timezone,
+    todayDate,
+    onRetry,
+    onApplyRecommendation,
+    onCancelScheduledChange,
+    style,
+    ...props
+}) => {
     const theme = useAppTheme();
     const styles = React.useMemo(() => createStyles(theme), [theme]);
     const { width, fontScale } = useWindowDimensions();
     const stackRecommendation = width < RECOMMENDATION_STACK_BREAKPOINT || fontScale >= 1.4;
     const [isReviewOpen, setIsReviewOpen] = useState(false);
-    const statusQuery = useQuery({
-        queryKey: calibrationStatusQueryKey,
-        queryFn: () => api.getCalibrationStatus()
-    });
-    const applyRecommendation = useMutation({
-        mutationFn: () => {
-            const recommendationId = statusQuery.data?.recommendation?.id;
-            if (!recommendationId) throw new Error('This recommendation is no longer available.');
-            return api.applyCalibrationRecommendation(recommendationId, Crypto.randomUUID());
-        },
-        onSuccess: (change) => {
-            setIsReviewOpen(false);
-            queryClient.setQueryData<CalibrationStatusResponse>(calibrationStatusQueryKey, (current) => current ? ({
-                ...current,
-                recommendation: null,
-                scheduledChange: change
-            }) : current);
-            void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => undefined);
-            void Promise.all([
-                queryClient.invalidateQueries({ queryKey: calibrationStatusQueryKey }),
-                queryClient.invalidateQueries({ queryKey: ['mobile-profile'] })
-            ]).catch(() => undefined);
-        }
-    });
-    const cancelScheduledChange = useMutation({
-        mutationFn: () => {
-            const recommendationId = statusQuery.data?.scheduledChange?.recommendationId;
-            if (!recommendationId) throw new Error('This scheduled update is no longer available.');
-            return api.cancelCalibrationRecommendation(recommendationId, Crypto.randomUUID());
-        },
-        onSuccess: (nextStatus) => {
-            queryClient.setQueryData<CalibrationStatusResponse>(calibrationStatusQueryKey, nextStatus);
-            void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => undefined);
-            void queryClient.invalidateQueries({ queryKey: ['mobile-profile'] }).catch(() => undefined);
-        }
-    });
-
-    const status = statusQuery.data;
+    const [isApplying, setIsApplying] = useState(false);
+    const [applyError, setApplyError] = useState<Error | null>(null);
+    const [isCancelling, setIsCancelling] = useState(false);
+    const [cancelError, setCancelError] = useState<Error | null>(null);
     const evaluation = status?.evaluation;
     const hasActionableRecommendation = Boolean(status?.recommendation && evaluation?.recommendation);
     useEffect(() => {
         if (!isReviewOpen || !status || hasActionableRecommendation) return;
-        applyRecommendation.reset();
+        setApplyError(null);
         setIsReviewOpen(false);
-    }, [applyRecommendation, hasActionableRecommendation, isReviewOpen, status]);
+    }, [hasActionableRecommendation, isReviewOpen, status]);
 
     const recommendation = evaluation?.recommendation;
     const scheduledChange = status?.scheduledChange;
     const closeReview = () => {
-        applyRecommendation.reset();
+        setApplyError(null);
         setIsReviewOpen(false);
     };
     const openReview = () => {
-        applyRecommendation.reset();
+        setApplyError(null);
         setIsReviewOpen(true);
     };
 
-    if (statusQuery.error && !status) {
+    async function applyRecommendation() {
+        const recommendationId = status?.recommendation?.id;
+        if (!recommendationId || !onApplyRecommendation) {
+            setApplyError(new Error('This recommendation is no longer available.'));
+            return;
+        }
+        setIsApplying(true);
+        setApplyError(null);
+        try {
+            await onApplyRecommendation(recommendationId);
+            setIsReviewOpen(false);
+        } catch (nextError) {
+            setApplyError(nextError instanceof Error ? nextError : new Error('Unable to apply this recommendation.'));
+        } finally {
+            setIsApplying(false);
+        }
+    }
+
+    async function cancelScheduledChange() {
+        const recommendationId = status?.scheduledChange?.recommendationId;
+        if (!recommendationId || !onCancelScheduledChange) {
+            setCancelError(new Error('This scheduled update is no longer available.'));
+            return;
+        }
+        setIsCancelling(true);
+        setCancelError(null);
+        try {
+            await onCancelScheduledChange(recommendationId);
+        } catch (nextError) {
+            setCancelError(nextError instanceof Error ? nextError : new Error('Unable to undo this scheduled update.'));
+        } finally {
+            setIsCancelling(false);
+        }
+    }
+
+    if (error && !status) {
         return (
             <AppCard {...props} style={style}>
                 <SectionHeader title="Calibration" description="Unable to evaluate your latest history." />
-                <AppText style={styles.error}>{statusQuery.error.message}</AppText>
-                <AppButton title="Try again" variant="secondary" onPress={() => void statusQuery.refetch()} />
+                <AppText style={styles.error}>{error.message}</AppText>
+                {onRetry && <AppButton title="Try again" variant="secondary" onPress={onRetry} />}
             </AppCard>
         );
     }
 
-    if (statusQuery.isLoading || !evaluation) {
+    if (isLoading || !evaluation) {
         return (
             <AppCard {...props} style={style} accessibilityLabel="Loading calibration insight">
                 <SectionHeader title="Calibration" description="Checking your latest completed history..." />
@@ -135,7 +200,7 @@ export const CalibrationInsightCard: React.FC<ViewProps> = ({ style, ...props })
         )
         : null;
     const effectiveLocalDate = status?.recommendation?.effectiveLocalDate ?? null;
-    const tomorrow = addDaysToDateOnly(getTodayDate(user?.timezone), 1);
+    const tomorrow = addDaysToDateOnly(todayDate ?? getTodayDate(timezone), 1);
     let effectiveDateLabel = 'on the next local day';
     if (effectiveLocalDate === tomorrow) effectiveDateLabel = 'tomorrow';
     else if (effectiveLocalDate) effectiveDateLabel = `on ${formatDateOnlyForDisplay(effectiveLocalDate)}`;
@@ -179,20 +244,20 @@ export const CalibrationInsightCard: React.FC<ViewProps> = ({ style, ...props })
                                     {scheduledReviewMessage}
                                 </AppText>
                                 <AppButton
-                                    title={cancelScheduledChange.isPending ? 'Undoing...' : 'Undo and review'}
+                                    title={isCancelling ? 'Undoing...' : 'Undo and review'}
                                     accessibilityLabel="Undo scheduled calorie budget update and review the suggestion again"
                                     variant="secondary"
-                                    disabled={cancelScheduledChange.isPending}
-                                    accessibilityState={{ busy: cancelScheduledChange.isPending }}
+                                    disabled={isCancelling}
+                                    accessibilityState={{ busy: isCancelling }}
                                     leftIcon={<Ionicons name="arrow-undo-outline" size={18} color={theme.colors.onSurface} />}
-                                    onPress={() => cancelScheduledChange.mutate()}
+                                    onPress={() => void cancelScheduledChange()}
                                     style={styles.scheduledAction}
                                 />
                             </View>
                         )}
-                        {cancelScheduledChange.error && (
+                        {cancelError && (
                             <AppText accessibilityRole="alert" style={styles.error}>
-                                {cancelScheduledChange.error.message}
+                                {cancelError.message}
                             </AppText>
                         )}
                     </View>
@@ -233,26 +298,26 @@ export const CalibrationInsightCard: React.FC<ViewProps> = ({ style, ...props })
                             style={[styles.actions, stackRecommendation && styles.actionsStacked]}
                         >
                             <AppButton
-                                title={applyRecommendation.isPending ? 'Applying...' : applyButtonTitle}
-                                disabled={applyRecommendation.isPending}
-                                accessibilityState={{ busy: applyRecommendation.isPending }}
+                                title={isApplying ? 'Applying...' : applyButtonTitle}
+                                disabled={isApplying}
+                                accessibilityState={{ busy: isApplying }}
                                 leftIcon={<Ionicons name="checkmark" size={18} color={theme.colors.onPrimary} />}
-                                onPress={() => applyRecommendation.mutate()}
+                                onPress={() => void applyRecommendation()}
                                 style={styles.action}
                             />
                             <AppButton
                                 title="See why"
                                 accessibilityLabel="See evidence behind this budget suggestion"
                                 variant="secondary"
-                                disabled={applyRecommendation.isPending}
-                                accessibilityState={{ busy: applyRecommendation.isPending }}
+                                disabled={isApplying}
+                                accessibilityState={{ busy: isApplying }}
                                 leftIcon={<Ionicons name="information-circle-outline" size={18} color={theme.colors.onSurface} />}
                                 onPress={openReview}
                                 style={styles.action}
                             />
                         </View>
-                        {applyRecommendation.error && (
-                            <AppText accessibilityRole="alert" style={styles.error}>{applyRecommendation.error.message}</AppText>
+                        {applyError && (
+                            <AppText accessibilityRole="alert" style={styles.error}>{applyError.message}</AppText>
                         )}
                     </>
                 ) : (
@@ -411,23 +476,23 @@ export const CalibrationInsightCard: React.FC<ViewProps> = ({ style, ...props })
                         ))}
                     </View>
                 )}
-                {applyRecommendation.error && (
-                    <AppText accessibilityRole="alert" style={styles.error}>{applyRecommendation.error.message}</AppText>
+                {applyError && (
+                    <AppText accessibilityRole="alert" style={styles.error}>{applyError.message}</AppText>
                 )}
                 <View style={[styles.actions, stackRecommendation && styles.actionsStacked]}>
                     <AppButton
-                        title={applyRecommendation.isPending ? 'Applying...' : reviewApplyButtonTitle}
-                        disabled={applyRecommendation.isPending}
-                        accessibilityState={{ busy: applyRecommendation.isPending }}
+                        title={isApplying ? 'Applying...' : reviewApplyButtonTitle}
+                        disabled={isApplying}
+                        accessibilityState={{ busy: isApplying }}
                         leftIcon={<Ionicons name="checkmark" size={18} color={theme.colors.onPrimary} />}
-                        onPress={() => applyRecommendation.mutate()}
+                        onPress={() => void applyRecommendation()}
                         style={styles.action}
                     />
                     <AppButton
                         title="Close"
                         variant="secondary"
-                        disabled={applyRecommendation.isPending}
-                        accessibilityState={{ busy: applyRecommendation.isPending }}
+                        disabled={isApplying}
+                        accessibilityState={{ busy: isApplying }}
                         onPress={closeReview}
                         style={styles.action}
                     />
