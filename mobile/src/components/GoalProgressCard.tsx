@@ -8,7 +8,7 @@ import { ProgressBar } from './ProgressBar';
 import { SectionHeader } from './SectionHeader';
 import { radius, spacing, useAppTheme, type AppTheme } from '../theme';
 import { computeGoalProgress, computeGoalProjection, getGoalModeFromDailyDeficit } from '../utils/goals';
-import { formatSignedCalories, formatWeight, formatWeightUnit } from '../utils/format';
+import { formatWeight, formatWeightUnit } from '../utils/format';
 import type { UserClientPayload } from '@calibrate/api-client';
 
 type GoalProgressCardProps = ViewProps & {
@@ -31,14 +31,14 @@ function formatMetricDate(value: string | null | undefined): string {
 
 function describeGoalPlan(goal: GoalEntry): string {
     const mode = getGoalModeFromDailyDeficit(goal.daily_deficit);
-    const dailyChange = formatSignedCalories(-goal.daily_deficit);
+    const dailyChange = `${Math.abs(goal.daily_deficit).toLocaleString()} kcal`;
     switch (mode) {
         case 'gain':
-            return `Gaining weight with a ${dailyChange}/day plan.`;
+            return `Gaining weight with a ${dailyChange}/day surplus.`;
         case 'maintain':
             return 'Maintaining weight with a steady calorie target.';
         default:
-            return `Losing weight with a ${dailyChange}/day plan.`;
+            return `Losing weight with a ${dailyChange}/day deficit.`;
     }
 }
 

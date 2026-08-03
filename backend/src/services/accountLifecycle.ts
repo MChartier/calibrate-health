@@ -2,10 +2,10 @@ import { Prisma } from '@prisma/client';
 import prisma from '../config/database';
 
 export const ACCOUNT_EXPORT_FORMAT = 'calibrate-account-export';
-export const ACCOUNT_EXPORT_VERSION = 3;
+export const ACCOUNT_EXPORT_VERSION = 5;
 
 // Auth sessions, password hashes, push endpoints/tokens, and internal replay metadata are
-// deliberately absent. Only account profile and user-authored tracking records are exported.
+// deliberately absent. User-visible account, tracking, and derived plan history is exported.
 const ACCOUNT_EXPORT_SELECT = {
   id: true,
   email: true,
@@ -54,6 +54,12 @@ const ACCOUNT_EXPORT_SELECT = {
   },
   activity_day_summaries: {
     orderBy: [{ local_date: 'asc' as const }, { id: 'asc' as const }]
+  },
+  calibration_recommendations: {
+    orderBy: [{ created_at: 'asc' as const }, { id: 'asc' as const }]
+  },
+  calorie_plan_revisions: {
+    orderBy: [{ effective_local_date: 'asc' as const }, { id: 'asc' as const }]
   }
 } satisfies Prisma.UserSelect;
 
@@ -222,6 +228,28 @@ export type AccountExport = {
     observed_at: string;
     created_at: string;
     updated_at: string;
+  }>;
+  calibration_recommendations: Array<{
+    id: number;
+    source_goal_id: number;
+    model_version: number;
+    as_of_local_date: string;
+    current_target_adjustment_kcal: number;
+    recommended_target_adjustment_kcal: number;
+    current_target_kcal: number;
+    recommended_target_kcal: number;
+    status: string;
+    result_snapshot: unknown;
+    created_at: string;
+    applied_at: string | null;
+  }>;
+  calorie_plan_revisions: Array<{
+    id: number;
+    source_goal_id: number;
+    recommendation_id: number | null;
+    target_adjustment_kcal: number;
+    effective_local_date: string;
+    created_at: string;
   }>;
 };
 
@@ -415,6 +443,28 @@ export function serializeAccountExport(user: AccountExportRow, now = new Date())
       observed_at: toIsoDateTime(summary.observed_at),
       created_at: toIsoDateTime(summary.created_at),
       updated_at: toIsoDateTime(summary.updated_at)
+    })),
+    calibration_recommendations: user.calibration_recommendations.map((recommendation) => ({
+      id: recommendation.id,
+      source_goal_id: recommendation.source_goal_id,
+      model_version: recommendation.model_version,
+      as_of_local_date: toIsoDate(recommendation.as_of_local_date),
+      current_target_adjustment_kcal: recommendation.current_target_adjustment_kcal,
+      recommended_target_adjustment_kcal: recommendation.recommended_target_adjustment_kcal,
+      current_target_kcal: recommendation.current_target_kcal,
+      recommended_target_kcal: recommendation.recommended_target_kcal,
+      status: recommendation.status,
+      result_snapshot: recommendation.result_snapshot,
+      created_at: toIsoDateTime(recommendation.created_at),
+      applied_at: recommendation.applied_at ? toIsoDateTime(recommendation.applied_at) : null
+    })),
+    calorie_plan_revisions: user.calorie_plan_revisions.map((revision) => ({
+      id: revision.id,
+      source_goal_id: revision.source_goal_id,
+      recommendation_id: revision.recommendation_id,
+      target_adjustment_kcal: revision.target_adjustment_kcal,
+      effective_local_date: toIsoDate(revision.effective_local_date),
+      created_at: toIsoDateTime(revision.created_at)
     }))
   };
 }

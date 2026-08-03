@@ -16,6 +16,7 @@ function loadUserRouter({ prismaStub, bcryptStub, accountLifecycleStub }) {
   const browserSessionsPath = require.resolve('../src/services/browserSessions');
   const accountLifecyclePath = require.resolve('../src/services/accountLifecycle');
   const clientOperationsPath = require.resolve('../src/services/clientOperations');
+  const caloriePlanPath = require.resolve('../src/services/caloriePlan');
   const userPath = require.resolve('../src/routes/user');
 
   const previousDbModule = require.cache[dbPath];
@@ -24,15 +25,21 @@ function loadUserRouter({ prismaStub, bcryptStub, accountLifecycleStub }) {
   const previousBrowserSessionsModule = require.cache[browserSessionsPath];
   const previousAccountLifecycleModule = require.cache[accountLifecyclePath];
   const previousClientOperationsModule = require.cache[clientOperationsPath];
+  const previousCaloriePlanModule = require.cache[caloriePlanPath];
 
   delete require.cache[userPath];
   delete require.cache[mobileAuthPath];
   delete require.cache[browserSessionsPath];
   delete require.cache[accountLifecyclePath];
   delete require.cache[clientOperationsPath];
+  delete require.cache[caloriePlanPath];
 
   const normalizedPrismaStub = {
     ...prismaStub,
+    caloriePlanRevision: {
+      findFirst: async () => null,
+      ...(prismaStub.caloriePlanRevision ?? {})
+    },
     syncChange: {
       create: async () => ({ id: 1n }),
       ...(prismaStub.syncChange ?? {})
@@ -62,6 +69,9 @@ function loadUserRouter({ prismaStub, bcryptStub, accountLifecycleStub }) {
 
   if (previousClientOperationsModule) require.cache[clientOperationsPath] = previousClientOperationsModule;
   else delete require.cache[clientOperationsPath];
+
+  if (previousCaloriePlanModule) require.cache[caloriePlanPath] = previousCaloriePlanModule;
+  else delete require.cache[caloriePlanPath];
 
   return loaded.default ?? loaded;
 }
@@ -363,7 +373,7 @@ test('user route: PATCH /password updates password when current password matches
 test('user route: GET /account/export returns a no-store attachment', async () => {
   const accountExport = {
     format: 'calibrate-account-export',
-    version: 3,
+    version: 5,
     exported_at: '2026-07-11T20:00:00.000Z'
   };
   const router = loadUserRouter({
@@ -589,6 +599,7 @@ test('user route: PATCH /preferences updates haptics_enabled field', async () =>
 
 test('user route: GET /profile reads the latest goal with deterministic ordering', async () => {
   let goalFindFirstArgs = null;
+  let revisionFindFirstArgs = null;
   const dbUser = {
     id: 7,
     timezone: 'UTC',
@@ -607,7 +618,13 @@ test('user route: GET /profile reads the latest goal with deterministic ordering
     goal: {
       findFirst: async (args) => {
         goalFindFirstArgs = args;
-        return { daily_deficit: 500 };
+        return { id: 41, daily_deficit: 500 };
+      }
+    },
+    caloriePlanRevision: {
+      findFirst: async (args) => {
+        revisionFindFirstArgs = args;
+        return null;
       }
     },
     bodyMetric: {
@@ -626,5 +643,6 @@ test('user route: GET /profile reads the latest goal with deterministic ordering
 
   assert.equal(res.statusCode, 200);
   assert.deepEqual(goalFindFirstArgs.orderBy, [{ created_at: 'desc' }, { id: 'desc' }]);
+  assert.equal(revisionFindFirstArgs.where.source_goal_id, 41);
   assert.equal(res.body.goal_daily_deficit, 500);
 });

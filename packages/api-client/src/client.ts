@@ -4,6 +4,7 @@ import type {
     BrowserAuthRequest,
     BrowserAuthResponse,
     BrowserPushSubscriptionPayload,
+    CalibrationStatusResponse,
     ClientConfigResponse,
     CreateMyFoodPayload,
     FoodLogCreatePayload,
@@ -37,6 +38,7 @@ import type {
     NativePushSubscriptionPayload,
     RecentFoodsResponse,
     SyncChangesResponse,
+    ScheduledCalibrationChange,
     TrendMetricsResponse,
     UpdateMyFoodPayload,
     UserClientPayload,
@@ -459,6 +461,32 @@ export class CalibrateApiClient {
             headers: buildOperationHeaders(operationId),
             json: payload
         });
+    }
+
+    getCalibrationStatus(): Promise<CalibrationStatusResponse> {
+        return this.request<CalibrationStatusResponse>('/api/calibration/status');
+    }
+
+    applyCalibrationRecommendation(id: number, operationId?: string): Promise<ScheduledCalibrationChange> {
+        return this.request<ScheduledCalibrationChange>(
+            `/api/calibration/recommendations/${encodeURIComponent(String(id))}/apply`,
+            {
+                method: 'POST',
+                headers: buildOperationHeaders(operationId),
+                json: {}
+            }
+        );
+    }
+
+    cancelCalibrationRecommendation(id: number, operationId?: string): Promise<CalibrationStatusResponse> {
+        return this.request<CalibrationStatusResponse>(
+            `/api/calibration/recommendations/${encodeURIComponent(String(id))}/cancel`,
+            {
+                method: 'POST',
+                headers: buildOperationHeaders(operationId),
+                json: {}
+            }
+        );
     }
 
     getMetrics(): Promise<MetricEntry[]> {

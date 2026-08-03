@@ -93,6 +93,12 @@ enum FoodLogDayOrigin {
   IMPORT
 }
 
+enum CalibrationRecommendationStatus {
+  PENDING
+  APPLIED
+  STALE
+}
+
 model User {
   id            Int       @id @default(autoincrement())
   email         String    @unique
@@ -151,6 +157,10 @@ model User {
   health_connect_sync_states HealthConnectSyncState[]
   /// Deleted Health Connect ids retained to prevent stale replay resurrection.
   health_connect_tombstones HealthConnectTombstone[]
+  /// Materialized target suggestions generated from bounded food/weight evidence.
+  calibration_recommendations CalibrationRecommendation[]
+  /// Accepted target adjustments, dated so changes take effect on a user-local day boundary.
+  calorie_plan_revisions CaloriePlanRevision[]
 }
 
 model ActivityRecord {
@@ -246,6 +256,8 @@ model Goal {
   target_date   DateTime?
   daily_deficit Int       @default(500)
   created_at    DateTime  @default(now())
+  calibration_recommendations CalibrationRecommendation[]
+  calorie_plan_revisions CaloriePlanRevision[]
 
   @@index([user_id, created_at(sort: Desc), id(sort: Desc)])
 }
@@ -367,6 +379,44 @@ model FoodTrackingPause {
 
   @@index([user_id, starts_on])
   @@index([user_id, resumed_on])
+}
+
+model CalibrationRecommendation {
+  id                                Int                             @id @default(autoincrement())
+  user_id                           Int
+  user                              User                            @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  source_goal_id                    Int
+  source_goal                       Goal                            @relation(fields: [source_goal_id], references: [id], onDelete: Cascade)
+  input_fingerprint                 String
+  model_version                     Int
+  as_of_local_date                  DateTime                        @db.Date
+  current_target_adjustment_kcal    Int
+  recommended_target_adjustment_kcal Int
+  current_target_kcal               Int
+  recommended_target_kcal           Int
+  status                            CalibrationRecommendationStatus @default(PENDING)
+  result_snapshot                   Json
+  created_at                        DateTime                        @default(now())
+  applied_at                        DateTime?
+  plan_revision                     CaloriePlanRevision?
+
+  @@unique([user_id, input_fingerprint])
+  @@index([user_id, status, created_at(sort: Desc)])
+}
+
+model CaloriePlanRevision {
+  id                     Int                        @id @default(autoincrement())
+  user_id                Int
+  user                   User                       @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  source_goal_id         Int
+  source_goal            Goal                       @relation(fields: [source_goal_id], references: [id], onDelete: Cascade)
+  recommendation_id      Int?                       @unique
+  recommendation         CalibrationRecommendation? @relation(fields: [recommendation_id], references: [id], onDelete: SetNull)
+  target_adjustment_kcal Int
+  effective_local_date   DateTime                   @db.Date
+  created_at             DateTime                   @default(now())
+
+  @@index([user_id, source_goal_id, effective_local_date(sort: Desc), id(sort: Desc)])
 }
 
 model MyFood {

@@ -31,6 +31,19 @@ describe('GoalProgressCard', () => {
         expect(screen.getByText('Goal projection')).toBeTruthy();
         expect(screen.getByText('172 kg')).toBeTruthy();
         expect(screen.getByText('59% complete')).toBeTruthy();
+        expect(screen.getByText('Losing weight with a 500 kcal/day deficit.')).toBeTruthy();
         expect(onEditGoal).toHaveBeenCalledTimes(1);
+    });
+
+    it('describes a gain plan as an unsigned surplus', () => {
+        const screen = render(
+            <GoalProgressCard
+                goal={{ ...GOAL, daily_deficit: -250, target_weight: 190 }}
+                latestMetric={{ id: 1, date: '2026-07-20', weight: 184 }}
+                user={null}
+            />
+        );
+
+        expect(screen.getByText('Gaining weight with a 250 kcal/day surplus.')).toBeTruthy();
     });
 });

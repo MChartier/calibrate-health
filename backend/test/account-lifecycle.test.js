@@ -194,6 +194,31 @@ const exportRow = {
     observed_at: at('2025-01-04T01:00:00.000Z'),
     created_at: at('2025-01-04T01:00:00.000Z'),
     updated_at: at('2025-01-04T01:00:00.000Z')
+  }],
+  calibration_recommendations: [{
+    id: 4,
+    user_id: 7,
+    source_goal_id: 2,
+    input_fingerprint: 'private-calibration-fingerprint',
+    model_version: 2,
+    as_of_local_date: at('2025-01-04T00:00:00.000Z'),
+    current_target_adjustment_kcal: 0,
+    recommended_target_adjustment_kcal: -125,
+    current_target_kcal: 1900,
+    recommended_target_kcal: 1775,
+    status: 'APPLIED',
+    result_snapshot: { status: 'recommendation', headline: 'Weight loss is trending slower than projected' },
+    created_at: at('2025-01-04T18:00:00.000Z'),
+    applied_at: at('2025-01-04T20:00:00.000Z')
+  }],
+  calorie_plan_revisions: [{
+    id: 12,
+    user_id: 7,
+    source_goal_id: 2,
+    recommendation_id: 4,
+    target_adjustment_kcal: -125,
+    effective_local_date: at('2025-01-05T00:00:00.000Z'),
+    created_at: at('2025-01-04T20:00:00.000Z')
   }]
 };
 
@@ -211,7 +236,7 @@ test('account export returns canonical versioned tracking data without credentia
   const result = await exportAccountData(7, at('2026-07-11T20:00:00.000Z'));
 
   assert.equal(result.format, 'calibrate-account-export');
-  assert.equal(result.version, 3);
+  assert.equal(result.version, 5);
   assert.equal(result.exported_at, '2026-07-11T20:00:00.000Z');
   assert.equal(result.account.date_of_birth, '1990-05-03');
   assert.deepEqual(result.account.profile_image, { mime_type: 'image/png', data_base64: 'AQID' });
@@ -224,6 +249,11 @@ test('account export returns canonical versioned tracking data without credentia
   assert.equal(result.my_foods[0].recipe_ingredients[0].external_id, 'rice-1');
   assert.equal(result.activity_records[0].client_record_version, '2');
   assert.equal(result.activity_day_summaries[0].total_calories_kcal, 2400);
+  assert.equal(result.calibration_recommendations[0].as_of_local_date, '2025-01-04');
+  assert.equal(result.calibration_recommendations[0].status, 'APPLIED');
+  assert.equal(result.calibration_recommendations[0].input_fingerprint, undefined);
+  assert.equal(result.calorie_plan_revisions[0].effective_local_date, '2025-01-05');
+  assert.equal(result.calorie_plan_revisions[0].source_goal_id, 2);
 
   assert.equal(findArgs.where.id, 7);
   assert.equal(findArgs.select.password_hash, undefined);
@@ -240,9 +270,17 @@ test('account export returns canonical versioned tracking data without credentia
     { created_at: 'asc' },
     { id: 'asc' }
   ]);
+  assert.deepEqual(findArgs.select.calorie_plan_revisions.orderBy, [
+    { effective_local_date: 'asc' },
+    { id: 'asc' }
+  ]);
+  assert.deepEqual(findArgs.select.calibration_recommendations.orderBy, [
+    { created_at: 'asc' },
+    { id: 'asc' }
+  ]);
 
   const serialized = JSON.stringify(result);
-  assert.doesNotMatch(serialized, /password_hash|access_token|refresh_token|p256dh|private-internal-dedupe|private-device-id/);
+  assert.doesNotMatch(serialized, /password_hash|access_token|refresh_token|p256dh|private-internal-dedupe|private-device-id|private-calibration-fingerprint/);
 });
 
 test('account export returns null for a missing account', async () => {

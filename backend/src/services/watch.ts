@@ -8,6 +8,7 @@ import { parseFoodLogCreateBody } from '../routes/foodUtils';
 import { executeIdempotentMutation, recordSyncChange, type MutationDatabase } from './clientOperations';
 import { refreshMaterializedWeightTrendsBestEffort } from './materializedWeightTrend';
 import { getFoodDayWriteBlock } from './foodTracking';
+import { getEffectiveCaloriePlan } from './caloriePlan';
 
 const WATCH_QUICK_ADD_LIMIT = 12;
 const WATCH_PINNED_LIMIT = 6;
@@ -580,8 +581,15 @@ export async function buildWatchSnapshot(options: {
           select: { id: true }
         })
       : Promise.resolve(null);
-    const [goal, latestWeight, todayWeight, foodAggregate, foodDay, activePause, pinned, recent, undoCandidate, activeReminderRows] = await Promise.all([
-      tx.goal.findFirst({ where: { user_id: options.userId }, orderBy: [{ created_at: 'desc' }, { id: 'desc' }] }),
+    const goal = await tx.goal.findFirst({
+      where: { user_id: options.userId },
+      orderBy: [{ created_at: 'desc' }, { id: 'desc' }]
+    });
+    const effectivePlanPromise = goal
+      ? getEffectiveCaloriePlan(options.userId, goal.id, localDate, tx)
+      : Promise.resolve(null);
+    const [effectivePlan, latestWeight, todayWeight, foodAggregate, foodDay, activePause, pinned, recent, undoCandidate, activeReminderRows] = await Promise.all([
+      effectivePlanPromise,
       tx.bodyMetric.findFirst({ where: { user_id: options.userId, date: { lte: localDate } }, orderBy: [{ date: 'desc' }, { id: 'desc' }] }),
       tx.bodyMetric.findUnique({ where: { user_id_date: { user_id: options.userId, date: localDate } } }),
       tx.foodLog.aggregate({ where: { user_id: options.userId, local_date: localDate }, _sum: { calories: true } }),
@@ -597,6 +605,7 @@ export async function buildWatchSnapshot(options: {
       weight_grams: latestWeight?.weight_grams,
       profile: user,
       daily_deficit: goal?.daily_deficit,
+      target_adjustment_kcal: effectivePlan?.targetAdjustmentKcal ?? 0,
       now
     });
     const caloriesConsumed = foodAggregate._sum.calories ?? 0;

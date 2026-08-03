@@ -266,3 +266,5 @@ Optional redacted JSON request logs and bearer-protected, process-local counters
 The shared client uses the stable `/api/v1` resource API. See
 [docs/api-versioning.md](docs/api-versioning.md) and [docs/openapi/v1.yaml](docs/openapi/v1.yaml)
 for compatibility and wire-contract policy.
+
+To explore calorie-calibration outcomes with editable preset histories, run `npm run dev:calibration-lab`. See [docs/calibration-insights.md](docs/calibration-insights.md) for the evaluator and execution contract.

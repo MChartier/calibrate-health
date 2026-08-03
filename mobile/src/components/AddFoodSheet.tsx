@@ -15,6 +15,7 @@ import { SectionHeader } from './SectionHeader';
 import { SegmentedControl } from './SegmentedControl';
 import { TextField } from './TextField';
 import { useAuth } from '../auth/AuthContext';
+import { calibrationStatusQueryKey } from '../calibration/queryKeys';
 import { executeOrQueueMutation, OFFLINE_MUTATION_OPERATIONS } from '../offline/operations';
 import { useOfflineOutbox } from '../offline/provider';
 import { useFoodDayStatus } from './FoodTrackingStatus';
@@ -196,6 +197,8 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
     async function invalidateLogQueries() {
         await Promise.all([
             queryClient.invalidateQueries({ queryKey: ['mobile-food', date] }),
+            queryClient.invalidateQueries({ queryKey: ['mobile-food-day', date] }),
+            queryClient.invalidateQueries({ queryKey: calibrationStatusQueryKey }),
             queryClient.invalidateQueries({ queryKey: ['mobile-profile'] }),
             queryClient.invalidateQueries({ queryKey: ['mobile-recent-foods'] }),
             queryClient.invalidateQueries({ queryKey: ['mobile-in-app-notifications'] })

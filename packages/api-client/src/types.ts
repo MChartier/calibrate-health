@@ -9,6 +9,7 @@ import type {
     Sex,
     WeightUnit
 } from '@calibrate/shared';
+import type { CalibrationResult } from '@calibrate/shared/calibration';
 import type { InAppNotificationType } from '@calibrate/shared/inAppNotifications';
 
 export type UserClientPayload = {
@@ -31,7 +32,7 @@ export type UserClientPayload = {
 
 export type AccountExport = {
     format: 'calibrate-account-export';
-    version: 3;
+    version: 5;
     exported_at: string;
     account: {
         id: number;
@@ -192,6 +193,28 @@ export type AccountExport = {
         observed_at: string;
         created_at: string;
         updated_at: string;
+    }>;
+    calibration_recommendations: Array<{
+        id: number;
+        source_goal_id: number;
+        model_version: number;
+        as_of_local_date: string;
+        current_target_adjustment_kcal: number;
+        recommended_target_adjustment_kcal: number;
+        current_target_kcal: number;
+        recommended_target_kcal: number;
+        status: 'PENDING' | 'APPLIED' | 'STALE';
+        result_snapshot: unknown;
+        created_at: string;
+        applied_at: string | null;
+    }>;
+    calorie_plan_revisions: Array<{
+        id: number;
+        source_goal_id: number;
+        recommendation_id: number | null;
+        target_adjustment_kcal: number;
+        effective_local_date: string;
+        created_at: string;
     }>;
 };
 
@@ -516,10 +539,12 @@ export type UserProfile = {
 };
 
 export type CalorieSummary = {
+    baseDailyCalorieTarget?: number;
     dailyCalorieTarget?: number;
     tdee?: number;
     bmr?: number;
     deficit?: number | null;
+    targetAdjustment?: number;
     missing: string[];
 };
 
@@ -527,7 +552,28 @@ export type UserProfileResponse = {
     profile: UserProfile;
     latest_weight_grams: number | null;
     goal_daily_deficit: number | null;
+    calorie_target_adjustment: number;
     calorieSummary: CalorieSummary;
+};
+
+export type ScheduledCalibrationChange = {
+    recommendationId: number | null;
+    targetAdjustmentKcal: number;
+    dailyCalorieBudgetKcal: number | null;
+    effectiveLocalDate: string;
+};
+
+export type CalibrationStatusResponse = {
+    generatedAt: string;
+    inputFingerprint: string | null;
+    evaluation: CalibrationResult;
+    recommendation: {
+        id: number;
+        status: 'pending';
+        inputFingerprint: string;
+        effectiveLocalDate: string;
+    } | null;
+    scheduledChange: ScheduledCalibrationChange | null;
 };
 
 export type GoalEntry = {

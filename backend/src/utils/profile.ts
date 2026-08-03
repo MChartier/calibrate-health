@@ -89,7 +89,9 @@ export const gramsToKg = (grams: number): number => Math.round((grams / 1000) * 
 export type CalorieSummary = {
     bmr?: number;
     tdee?: number;
+    baseDailyCalorieTarget?: number;
     dailyCalorieTarget?: number;
+    targetAdjustment?: number;
     missing: string[];
     sourceWeightKg?: number;
     deficit?: number | null;
@@ -104,10 +106,13 @@ export const buildCalorieSummary = (opts: {
     weight_grams?: number | null;
     profile: ProfileInput;
     daily_deficit?: number | null;
+    target_adjustment_kcal?: number;
     now?: Date;
 }): CalorieSummary => {
     const missing: string[] = [];
     const { weight_grams, profile, daily_deficit } = opts;
+    const hasTargetAdjustment = opts.target_adjustment_kcal !== undefined;
+    const targetAdjustment = opts.target_adjustment_kcal ?? 0;
     const { sex, date_of_birth, height_mm, activity_level } = profile;
 
     if (!weight_grams) missing.push('latest_weight');
@@ -126,9 +131,18 @@ export const buildCalorieSummary = (opts: {
     const bmr = calculateBmr(sex!, weightKg, height_mm! / 10, age);
     const tdee = Math.round(bmr * activityMultiplier(activity_level!) * 10) / 10;
 
-    const summary: CalorieSummary = { bmr, tdee, missing, sourceWeightKg: weightKg, deficit: daily_deficit ?? null };
+    const summary: CalorieSummary = {
+        bmr,
+        tdee,
+        missing,
+        sourceWeightKg: weightKg,
+        deficit: daily_deficit ?? null
+    };
+    if (hasTargetAdjustment) summary.targetAdjustment = targetAdjustment;
     if (typeof daily_deficit === 'number') {
-        summary.dailyCalorieTarget = Math.max(Math.round((tdee - daily_deficit) * 10) / 10, 0);
+        const baseDailyCalorieTarget = Math.max(Math.round((tdee - daily_deficit) * 10) / 10, 0);
+        if (hasTargetAdjustment) summary.baseDailyCalorieTarget = baseDailyCalorieTarget;
+        summary.dailyCalorieTarget = Math.max(Math.round((tdee - daily_deficit + targetAdjustment) * 10) / 10, 0);
     }
 
     return summary;

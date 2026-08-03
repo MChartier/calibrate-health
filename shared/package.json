@@ -58,6 +58,12 @@
       "browser": "./designTokens.ts",
       "react-native": "./designTokens.ts",
       "default": "./dist/cjs/designTokens.js"
+    },
+    "./calibration": {
+      "types": "./calibration.ts",
+      "browser": "./calibration.ts",
+      "react-native": "./calibration.ts",
+      "default": "./dist/cjs/calibration.js"
     }
   },
   "scripts": {

@@ -5,6 +5,7 @@ import { type AppTheme, useAppTheme } from '../theme';
 import { useReducedMotionPreference } from '../hooks/useReducedMotionPreference';
 import { useVisualViewportHeight } from '../hooks/useVisualViewportHeight';
 import { getKeyboardAvoidingBehavior } from '../utils/keyboard';
+import { AppIconButton } from './AppIconButton';
 import { KeyboardAwareScrollView } from './KeyboardAwareScrollView';
 
 type BottomSheetModalProps = {
@@ -12,9 +13,42 @@ type BottomSheetModalProps = {
     onRequestClose: () => void;
     children: React.ReactNode;
     maxHeight?: ViewStyle['maxHeight'];
+    accessibilityLabel?: string;
+    showCloseButton?: boolean;
+    showHandle?: boolean;
 };
 
 const SHEET_TRANSLATE_Y = 32; // Subtle sheet-only movement; the backdrop fades independently.
+const WEB_FIXED_POSITION = 'fixed' as ViewStyle['position']; // Keeps portal sheets anchored while the underlying web page is scrolled.
+const SHEET_CLOSE_ROW_MAX_WIDTH = 800; // Aligns an optional close action with wide detail-sheet content.
+let activeWebBottomSheets = 0;
+let webAppRoot: HTMLElement | null = null;
+let webAppRootAriaHidden: string | null = null;
+let webAppRootWasInert = false;
+
+function hideWebAppFromModalAccessibility(): (() => void) | undefined {
+    if (Platform.OS !== 'web' || typeof document === 'undefined') return;
+    const appRoot = document.getElementById('root');
+    if (!appRoot) return;
+    if (activeWebBottomSheets === 0) {
+        webAppRoot = appRoot;
+        webAppRootAriaHidden = appRoot.getAttribute('aria-hidden');
+        webAppRootWasInert = appRoot.inert;
+        appRoot.setAttribute('aria-hidden', 'true');
+        appRoot.inert = true;
+    }
+    activeWebBottomSheets += 1;
+    return () => {
+        activeWebBottomSheets = Math.max(0, activeWebBottomSheets - 1);
+        if (activeWebBottomSheets > 0 || !webAppRoot) return;
+        if (webAppRootAriaHidden === null) webAppRoot.removeAttribute('aria-hidden');
+        else webAppRoot.setAttribute('aria-hidden', webAppRootAriaHidden);
+        webAppRoot.inert = webAppRootWasInert;
+        webAppRoot = null;
+        webAppRootAriaHidden = null;
+        webAppRootWasInert = false;
+    };
+}
 
 /**
  * Native-feeling bottom sheet with a non-sliding dimmed backdrop.
@@ -23,7 +57,10 @@ export const BottomSheetModal: React.FC<BottomSheetModalProps> = ({
     visible,
     onRequestClose,
     children,
-    maxHeight = '88%'
+    maxHeight = '88%',
+    accessibilityLabel = 'Details',
+    showCloseButton = false,
+    showHandle = true
 }) => {
     const insets = useSafeAreaInsets();
     const theme = useAppTheme();
@@ -33,6 +70,11 @@ export const BottomSheetModal: React.FC<BottomSheetModalProps> = ({
     const [shouldRender, setShouldRender] = useState(visible);
     const backdropOpacity = useRef(new Animated.Value(0)).current;
     const sheetProgress = useRef(new Animated.Value(1)).current;
+
+    useEffect(() => {
+        if (!visible) return;
+        return hideWebAppFromModalAccessibility();
+    }, [visible]);
 
     useEffect(() => {
         if (visible) {
@@ -84,10 +126,34 @@ export const BottomSheetModal: React.FC<BottomSheetModalProps> = ({
         inputRange: [0, 1],
         outputRange: [0, SHEET_TRANSLATE_Y]
     });
+    let sheetTopControl: React.ReactNode = null;
+    if (showCloseButton) {
+        sheetTopControl = (
+            <View style={styles.closeRow}>
+                <AppIconButton
+                    icon="close"
+                    accessibilityLabel={`Close ${accessibilityLabel.toLowerCase()}`}
+                    variant="ghost"
+                    onPress={onRequestClose}
+                />
+            </View>
+        );
+    } else if (showHandle) {
+        sheetTopControl = <View accessible={false} aria-hidden style={styles.handle} />;
+    }
 
     return (
-        <Modal visible transparent animationType="none" presentationStyle="overFullScreen" onRequestClose={onRequestClose}>
+        <Modal
+            visible
+            transparent
+            animationType="none"
+            presentationStyle="overFullScreen"
+            accessibilityLabel={accessibilityLabel}
+            aria-label={accessibilityLabel}
+            onRequestClose={onRequestClose}
+        >
             <KeyboardAvoidingView
+                testID="bottom-sheet-root"
                 behavior={getKeyboardAvoidingBehavior(Platform.OS)}
                 style={[
                     styles.root,
@@ -95,7 +161,15 @@ export const BottomSheetModal: React.FC<BottomSheetModalProps> = ({
                     visualViewportHeight !== undefined && { height: visualViewportHeight }
                 ]}
             >
-                <Pressable accessibilityRole="button" accessibilityLabel="Close dialog" style={StyleSheet.absoluteFill} onPress={onRequestClose}>
+                <Pressable
+                    testID="bottom-sheet-backdrop"
+                    accessible={false}
+                    focusable={false}
+                    importantForAccessibility="no-hide-descendants"
+                    aria-hidden
+                    style={StyleSheet.absoluteFill}
+                    onPress={onRequestClose}
+                >
                     <Animated.View style={[styles.backdrop, { opacity: backdropOpacity }]} />
                 </Pressable>
                 <Animated.View
@@ -108,10 +182,22 @@ export const BottomSheetModal: React.FC<BottomSheetModalProps> = ({
                         }
                     ]}
                 >
+                    {sheetTopControl && (
+                        <View testID="bottom-sheet-fixed-controls" style={styles.topControls}>
+                            {sheetTopControl}
+                        </View>
+                    )}
                     <KeyboardAwareScrollView
-                        contentContainerStyle={[styles.content, { paddingBottom: Math.max(theme.spacing.lg, insets.bottom + theme.spacing.sm) }]}
+                        testID="bottom-sheet-scroll"
+                        style={styles.scroll}
+                        contentContainerStyle={[
+                            styles.content,
+                            {
+                                paddingTop: sheetTopControl ? theme.spacing.sm : theme.spacing.md,
+                                paddingBottom: Math.max(theme.spacing.lg, insets.bottom + theme.spacing.sm)
+                            }
+                        ]}
                     >
-                        <View style={styles.handle} />
                         {children}
                     </KeyboardAwareScrollView>
                 </Animated.View>
@@ -128,7 +214,11 @@ function createStyles(theme: AppTheme) {
     },
     webViewportRoot: {
         flex: 0,
-        width: '100%'
+        width: '100%',
+        position: WEB_FIXED_POSITION,
+        top: 0,
+        left: 0,
+        right: 0
     },
     backdrop: {
         flex: 1,
@@ -144,18 +234,33 @@ function createStyles(theme: AppTheme) {
         borderColor: theme.colors.outlineVariant,
         borderTopWidth: StyleSheet.hairlineWidth
     },
+    topControls: {
+        width: '100%',
+        paddingHorizontal: theme.spacing.lg,
+        paddingTop: theme.spacing.sm,
+        backgroundColor: theme.colors.surfaceContainerLow
+    },
+    scroll: {
+        flexShrink: 1
+    },
     content: {
         gap: theme.spacing.md,
-        paddingHorizontal: theme.spacing.lg,
-        paddingTop: theme.spacing.md
+        paddingHorizontal: theme.spacing.lg
+    },
+    closeRow: {
+        alignSelf: 'center',
+        width: '100%',
+        maxWidth: SHEET_CLOSE_ROW_MAX_WIDTH,
+        minHeight: theme.interaction.minimumTouchTarget,
+        alignItems: 'flex-end',
+        justifyContent: 'center'
     },
     handle: {
         alignSelf: 'center',
         width: 44,
         height: 4,
         borderRadius: theme.radius.pill,
-        backgroundColor: theme.colors.outline,
-        marginBottom: theme.spacing.xs
+        backgroundColor: theme.colors.outline
     }
     });
 }

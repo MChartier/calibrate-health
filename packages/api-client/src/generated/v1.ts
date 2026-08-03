@@ -313,6 +313,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/calibration/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Lazily evaluate bounded food and weight history and materialize any current actionable suggestion. */
+        get: operations["getCalibrationStatus"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/calibration/recommendations/{recommendationId}/apply": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Revalidate and accept a current recommendation as a next-local-day target revision. */
+        post: operations["applyCalibrationRecommendation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/calibration/recommendations/{recommendationId}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Cancel a calibration revision before its effective local date and restore the recommendation for review. */
+        post: operations["cancelCalibrationRecommendation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/user/account/export": {
         parameters: {
             query?: never;
@@ -353,7 +404,7 @@ export interface components {
             /** @constant */
             format: "calibrate-account-export";
             /** @constant */
-            version: 3;
+            version: 5;
             /** Format: date-time */
             exported_at: string;
             account: components["schemas"]["AccountExportProfile"];
@@ -366,6 +417,8 @@ export interface components {
             in_app_notifications: components["schemas"]["AccountExportNotification"][];
             activity_records: components["schemas"]["AccountExportActivityRecord"][];
             activity_day_summaries: components["schemas"]["AccountExportActivityDaySummary"][];
+            calibration_recommendations: components["schemas"]["AccountExportCalibrationRecommendation"][];
+            calorie_plan_revisions: components["schemas"]["AccountExportCaloriePlanRevision"][];
         };
         AccountExportProfile: {
             id: number;
@@ -614,6 +667,112 @@ export interface components {
             created_at: string;
             /** Format: date-time */
             updated_at: string;
+        };
+        AccountExportCalibrationRecommendation: {
+            id: number;
+            source_goal_id: number;
+            model_version: number;
+            /** Format: date */
+            as_of_local_date: string;
+            current_target_adjustment_kcal: number;
+            recommended_target_adjustment_kcal: number;
+            current_target_kcal: number;
+            recommended_target_kcal: number;
+            /** @enum {string} */
+            status: "PENDING" | "APPLIED" | "STALE";
+            result_snapshot: {
+                [key: string]: unknown;
+            };
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            applied_at: string | null;
+        };
+        AccountExportCaloriePlanRevision: {
+            id: number;
+            source_goal_id: number;
+            recommendation_id: number | null;
+            target_adjustment_kcal: number;
+            /** Format: date */
+            effective_local_date: string;
+            /** Format: date-time */
+            created_at: string;
+        };
+        CalibrationInterval: {
+            low: number;
+            midpoint: number;
+            high: number;
+        };
+        CalibrationDataQuality: {
+            observationDays: number;
+            completeDays: number;
+            confidentDays: number;
+            suspiciousDays: number;
+            incompleteDays: number;
+            missingDays: number;
+            weightPoints: number;
+            weightSpanDays: number;
+        };
+        CalibrationRecommendation: {
+            currentTargetKcal: number;
+            recommendedTargetKcal: number;
+            adjustmentStepKcal: number;
+            currentTargetAdjustmentKcal: number;
+            recommendedTargetAdjustmentKcal: number;
+        };
+        CalibrationEvaluation: {
+            modelVersion: number;
+            /** Format: date */
+            asOfDate: string;
+            /** @enum {string} */
+            weightUnit: "KG" | "LB";
+            /** @enum {string} */
+            status: "not_ready" | "learning" | "insight" | "recommendation";
+            headline: string;
+            summary: string;
+            nextStep: string | null;
+            historyProgress: {
+                observedDays: number;
+                requiredDays: number;
+            } | null;
+            selectedWindowDays: number | null;
+            dataQuality: components["schemas"]["CalibrationDataQuality"];
+            missingCriteria: string[];
+            assumptions: string[];
+            estimates: {
+                averageIntakeKcal: components["schemas"]["CalibrationInterval"] | null;
+                observedWeeklyWeightChangeKg: components["schemas"]["CalibrationInterval"] | null;
+                targetAdjustmentKcal: components["schemas"]["CalibrationInterval"] | null;
+                configuredWeeklyWeightChangeKg: number;
+            };
+            recommendation: components["schemas"]["CalibrationRecommendation"] | null;
+            activityContext: {
+                observedDays: number;
+                averageSteps: number | null;
+                averageActiveCaloriesKcal: number | null;
+            } | null;
+        };
+        ScheduledCalibrationChange: {
+            recommendationId: number | null;
+            targetAdjustmentKcal: number;
+            dailyCalorieBudgetKcal: number | null;
+            /** Format: date */
+            effectiveLocalDate: string;
+        };
+        CalibrationStatusResponse: {
+            /** Format: date-time */
+            generatedAt: string;
+            inputFingerprint: string | null;
+            evaluation: components["schemas"]["CalibrationEvaluation"];
+            recommendation: {
+                id: number;
+                /** @constant */
+                status: "pending";
+                inputFingerprint: string;
+                /** Format: date */
+                effectiveLocalDate: string;
+            } | null;
+            scheduledChange: components["schemas"]["ScheduledCalibrationChange"] | null;
         };
         /** @enum {string} */
         ActivityRecordType: "STEPS" | "ACTIVE_CALORIES" | "TOTAL_CALORIES" | "EXERCISE_SESSION" | "WEIGHT";
@@ -1917,6 +2076,105 @@ export interface operations {
                 };
             };
             /** @description Operation-id or Health Connect checkpoint conflict. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    getCalibrationStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Current deterministic calibration status. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CalibrationStatusResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    applyCalibrationRecommendation: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Stable client-generated identifier used to safely replay a mutation. */
+                "x-client-operation-id"?: components["parameters"]["ClientOperationId"];
+            };
+            path: {
+                recommendationId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": Record<string, never>;
+            };
+        };
+        responses: {
+            /** @description Accepted target revision and its effective local date. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScheduledCalibrationChange"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            /** @description Recommendation is stale, already applied, or conflicts with another operation. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    cancelCalibrationRecommendation: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Stable client-generated identifier used to safely replay a mutation. */
+                "x-client-operation-id"?: components["parameters"]["ClientOperationId"];
+            };
+            path: {
+                recommendationId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": Record<string, never>;
+            };
+        };
+        responses: {
+            /** @description Current calibration status after the scheduled revision is canceled. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CalibrationStatusResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            /** @description The revision is no longer scheduled, has already started, or conflicts with another operation. */
             409: {
                 headers: {
                     [name: string]: unknown;

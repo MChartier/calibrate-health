@@ -1,15 +1,72 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const { evaluateCalibration } = require('../../shared/calibration');
 
 const {
   addUtcDays,
+  buildCompletedFoodLogDays,
   buildMealLogsForDay,
+  DEV_SEED_FOOD_HISTORY_DAYS,
   getPastDateRangeDates,
   getMealTemplatesForSeedDayIndex,
   getPastWeekDates,
   getSeedUserCreatedAt,
   getSeedWeightGramsForDayIndex
 } = require('../src/services/devTestDataUtils');
+
+test('devTestDataUtils: seed history is long enough for calibration recommendations', () => {
+  assert.equal(DEV_SEED_FOOD_HISTORY_DAYS, 28);
+});
+
+test('devTestDataUtils: seeded history produces a meaningful calibration result', () => {
+  const now = new Date('2026-08-01T19:00:00Z');
+  const foodDates = getPastDateRangeDates('America/Los_Angeles', DEV_SEED_FOOD_HISTORY_DAYS, now);
+  const metricDates = getPastDateRangeDates('America/Los_Angeles', 120, now);
+  const foodDays = foodDates.map((day, dayIndex) => {
+    const logs = buildMealLogsForDay(1, day, dayIndex);
+    return {
+      date: day.toISOString().slice(0, 10),
+      calories: logs.reduce((sum, log) => sum + log.calories, 0),
+      entryCount: logs.length,
+      mealPeriodCount: new Set(logs.map((log) => log.meal_period)).size,
+      isComplete: true
+    };
+  });
+  const weightPoints = metricDates.slice(-DEV_SEED_FOOD_HISTORY_DAYS).map((day, recentIndex) => {
+    const dayIndex = metricDates.length - DEV_SEED_FOOD_HISTORY_DAYS + recentIndex;
+    const weightKg = getSeedWeightGramsForDayIndex(dayIndex, 82000) / 1000;
+    return {
+      date: day.toISOString().slice(0, 10),
+      trendWeightKg: weightKg,
+      lowerKg: weightKg - 0.1,
+      upperKg: weightKg + 0.1
+    };
+  });
+
+  const result = evaluateCalibration({
+    asOfDate: foodDates.at(-1).toISOString().slice(0, 10),
+    weightUnit: 'KG',
+    ageYears: 36,
+    bmrKcal: 1750,
+    profileTdeeKcal: 2700,
+    configuredDailyDeficitKcal: 500,
+    currentTargetAdjustmentKcal: 0,
+    foodDays,
+    weightPoints
+  });
+
+  assert.notEqual(result.status, 'not_ready');
+  assert.notEqual(result.status, 'learning');
+  assert.equal(result.status, 'recommendation');
+  assert.ok(result.selectedWindowDays >= 14);
+  assert.equal(result.dataQuality.observationDays, result.selectedWindowDays);
+  assert.equal(result.dataQuality.confidentDays, result.selectedWindowDays);
+  assert.equal(result.dataQuality.weightSpanDays, result.selectedWindowDays);
+  assert.ok(result.estimates.averageIntakeKcal.midpoint >= 2050);
+  assert.ok(result.estimates.averageIntakeKcal.midpoint <= 2200);
+  assert.ok(Math.abs(result.estimates.observedWeeklyWeightChangeKg.midpoint) < Math.abs(result.estimates.configuredWeeklyWeightChangeKg));
+  assert.equal(result.recommendation.adjustmentStepKcal, -150);
+});
 
 test('devTestDataUtils: addUtcDays adds days using UTC math without mutating the input', () => {
   const input = new Date('2025-01-15T12:34:56Z');
@@ -89,6 +146,28 @@ test('devTestDataUtils: buildMealLogsForDay stamps log timestamps using the temp
   assert.equal(logs[0].local_date.toISOString(), day.toISOString());
   assert.equal(logs[0].name, 'Spinach omelet');
   assert.equal(logs[0].date.toISOString(), '2025-01-01T07:00:00.000Z');
+});
+
+test('devTestDataUtils: buildCompletedFoodLogDays marks every seeded day as representative import data', () => {
+  const days = [new Date('2025-01-01T00:00:00Z'), new Date('2025-01-02T00:00:00Z')];
+  const completedAt = new Date('2025-01-03T08:00:00Z');
+
+  assert.deepEqual(buildCompletedFoodLogDays(123, days, completedAt), [
+    {
+      user_id: 123,
+      local_date: days[0],
+      status: 'COMPLETE',
+      origin: 'IMPORT',
+      completed_at: completedAt
+    },
+    {
+      user_id: 123,
+      local_date: days[1],
+      status: 'COMPLETE',
+      origin: 'IMPORT',
+      completed_at: completedAt
+    }
+  ]);
 });
 
 test('devTestDataUtils: getSeedWeightGramsForDayIndex yields a long-term downtrend with daily volatility', () => {

@@ -16,6 +16,7 @@ import { OverlaySelect } from '../src/components/OverlaySelect';
 import { Screen } from '../src/components/Screen';
 import { SectionHeader } from '../src/components/SectionHeader';
 import { useAuth } from '../src/auth/AuthContext';
+import { calibrationStatusQueryKey } from '../src/calibration/queryKeys';
 import { executeOrQueueMutation, OFFLINE_MUTATION_OPERATIONS } from '../src/offline/operations';
 import { useOfflineOutbox } from '../src/offline/provider';
 import { getTodayDate } from '../src/utils/dates';
@@ -74,6 +75,8 @@ export default function BarcodeScreen() {
         onSuccess: async () => {
             await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
             await queryClient.invalidateQueries({ queryKey: ['mobile-food', selectedDate] });
+            await queryClient.invalidateQueries({ queryKey: ['mobile-food-day', selectedDate] });
+            await queryClient.invalidateQueries({ queryKey: calibrationStatusQueryKey });
             await queryClient.invalidateQueries({ queryKey: ['mobile-profile'] });
             await queryClient.invalidateQueries({ queryKey: ['mobile-recent-foods'] });
             await queryClient.invalidateQueries({ queryKey: ['mobile-in-app-notifications'] });
