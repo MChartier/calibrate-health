@@ -12,6 +12,7 @@ Tested on August 2, 2026 against the calibration history lab on PR #269.
 - Benchmarked 3,000 evaluations across the 15 presets: 3,115 ms total, or 1.04 ms per evaluation on this development machine.
 - Repeated the rendered recommendation and uncertainty checks after rebasing onto the current mobile/day-status architecture and applying review feedback.
 - Re-reviewed every preset at desktop and 390 px mobile widths after the final copy pass, including URL selection, optional-section visibility, metric wrapping, criteria language, and custom-input error recovery.
+- Recaptured the evaluator and seeded-product screenshots below from the final shared-component and live-product states after the final copy pass.
 - Ran the full automated suites after the final preset pass: 432 backend tests, 387 mobile tests, 45 API-client tests, and 25 development-script tests.
 - Built the production Expo web export and regenerated the Prisma and OpenAPI clients.
 
@@ -129,9 +130,9 @@ The lab invokes the same pure evaluator used by the service. The seeded-product 
 
 ### BMR floor caps or blocks unsafe reductions
 
-![BMR floor-limited recommendation](screenshots/calibration-qa/08-bmr-floor-cap.jpg)
+![BMR-based limit-capped recommendation](screenshots/calibration-qa/08-bmr-floor-cap.jpg)
 
-![BMR floor blocked insight](screenshots/calibration-qa/05-bmr-floor-block.jpg)
+![BMR-based limit blocked insight](screenshots/calibration-qa/05-bmr-floor-block.jpg)
 
 ### Activity remains observational context
 
