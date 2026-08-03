@@ -52,6 +52,8 @@ describe('BottomSheetModal', () => {
             importantForAccessibility: 'no-hide-descendants',
             'aria-hidden': true
         });
+        expect(screen.getByTestId('bottom-sheet-fixed-controls')).toBeTruthy();
+        expect(screen.getByTestId('bottom-sheet-scroll')).toBeTruthy();
         fireEvent.press(screen.getByLabelText('Close calibration details'));
         expect(onRequestClose).toHaveBeenCalledTimes(1);
     });

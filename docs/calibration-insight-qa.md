@@ -95,6 +95,9 @@ The lab invokes the same pure evaluator used by the service. The seeded-product 
 48. **A refetch could invalidate an open recommendation or obscure a successfully accepted change.** An open review now closes when its recommendation disappears. Applying updates the cached status immediately, and a later refresh failure remains non-blocking instead of replacing the accepted schedule with a generic error.
 49. **The surrounding goal card reintroduced signed calorie ambiguity.** `-500 kcal/day plan` is now the direct `500 kcal/day deficit`, with gain goals mirrored as an unsigned surplus.
 50. **Compact and large-text layouts were only manually checked.** Component tests now assert stacked panels and actions at 390 px and at a 1.5 font scale, alongside the live responsive browser pass.
+51. **The evidence sheet used too many competing surfaces and typographic treatments.** Supporting metrics now share one compact evidence block, model reasoning uses one consistently formatted block, evidence quality and safety share a quiet inline note, and only the final budget decision receives the green emphasis.
+52. **The modal close action scrolled out of reach.** Sheet controls now live outside the content scroller, so the close button remains visible and operable at the top of the container after scrolling to the decision actions.
+53. **The recommendation card did not follow the Progress page's heading pattern.** `Calibration` is now the stable card heading in every state, with the current conclusion presented as its description like the neighboring Progress cards.
 
 ## Screenshots
 
@@ -132,7 +135,7 @@ The lab invokes the same pure evaluator used by the service. The seeded-product 
 
 ## Seeded product experience
 
-The seeded account was exercised through auto-login, current and historical completed food days, the full food-log view, Progress, all weight-trend ranges, recommendation review, the non-applying `Close` path, approval, reload, and persisted scheduled-change states. The final pass also verified dialog focus containment, background inertness, focus restoration, and effective-date copy in the real Expo web client.
+The seeded account was exercised through auto-login, current and historical completed food days, the full food-log view, Progress, all weight-trend ranges, recommendation review, the non-applying `Close` path, approval, reload, and persisted scheduled-change states. The final pass also verified dialog focus containment, background inertness, focus restoration, effective-date copy, and fixed dismissal after scrolling in the real Expo web client.
 
 ### Completed current food day
 

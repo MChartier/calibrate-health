@@ -182,10 +182,22 @@ export const BottomSheetModal: React.FC<BottomSheetModalProps> = ({
                         }
                     ]}
                 >
+                    {sheetTopControl && (
+                        <View testID="bottom-sheet-fixed-controls" style={styles.topControls}>
+                            {sheetTopControl}
+                        </View>
+                    )}
                     <KeyboardAwareScrollView
-                        contentContainerStyle={[styles.content, { paddingBottom: Math.max(theme.spacing.lg, insets.bottom + theme.spacing.sm) }]}
+                        testID="bottom-sheet-scroll"
+                        style={styles.scroll}
+                        contentContainerStyle={[
+                            styles.content,
+                            {
+                                paddingTop: sheetTopControl ? theme.spacing.sm : theme.spacing.md,
+                                paddingBottom: Math.max(theme.spacing.lg, insets.bottom + theme.spacing.sm)
+                            }
+                        ]}
                     >
-                        {sheetTopControl}
                         {children}
                     </KeyboardAwareScrollView>
                 </Animated.View>
@@ -222,10 +234,18 @@ function createStyles(theme: AppTheme) {
         borderColor: theme.colors.outlineVariant,
         borderTopWidth: StyleSheet.hairlineWidth
     },
+    topControls: {
+        width: '100%',
+        paddingHorizontal: theme.spacing.lg,
+        paddingTop: theme.spacing.sm,
+        backgroundColor: theme.colors.surfaceContainerLow
+    },
+    scroll: {
+        flexShrink: 1
+    },
     content: {
         gap: theme.spacing.md,
-        paddingHorizontal: theme.spacing.lg,
-        paddingTop: theme.spacing.md
+        paddingHorizontal: theme.spacing.lg
     },
     closeRow: {
         alignSelf: 'center',
@@ -240,8 +260,7 @@ function createStyles(theme: AppTheme) {
         width: 44,
         height: 4,
         borderRadius: theme.radius.pill,
-        backgroundColor: theme.colors.outline,
-        marginBottom: theme.spacing.xs
+        backgroundColor: theme.colors.outline
     }
     });
 }

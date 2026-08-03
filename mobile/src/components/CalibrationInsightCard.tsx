@@ -9,7 +9,6 @@ import { AppButton } from './AppButton';
 import { AppCard } from './AppCard';
 import { AppText } from './AppText';
 import { BottomSheetModal } from './BottomSheetModal';
-import { MetricTile } from './MetricTile';
 import { ProgressBar } from './ProgressBar';
 import { SectionHeader } from './SectionHeader';
 import { useAuth } from '../auth/AuthContext';
@@ -114,7 +113,7 @@ export const CalibrationInsightCard: React.FC<ViewProps> = ({ style, ...props })
         ? `${Math.round(evaluation.estimates.averageIntakeKcal.midpoint).toLocaleString()} kcal`
         : 'Not enough evidence';
     const recommendationReason = actionableRecommendation
-        ? `Over the last ${selectedHistoryDays} days, you logged an average of ${averageIntake} per day and your recent pace was ${observedPaceWithDirection}, compared with a planned ${plannedPace}${plannedDirection === 'stable' ? '' : ` ${plannedDirection}`}. If that pattern continues, a slightly ${actionableRecommendation.adjustmentStepKcal < 0 ? 'lower' : 'higher'} daily budget could bring your pace closer to plan.`
+        ? `Your logged intake and weight trend are moving at a different pace than planned. If this pattern continues, a slightly ${actionableRecommendation.adjustmentStepKcal < 0 ? 'lower' : 'higher'} daily budget could bring your pace closer to plan.`
         : null;
     const budgetEstimateExplanation = actionableRecommendation
         ? describeCalorieBudgetEstimate(
@@ -134,18 +133,17 @@ export const CalibrationInsightCard: React.FC<ViewProps> = ({ style, ...props })
     const reviewApplyButtonTitle = actionableRecommendation
         ? `${applyButtonTitle} ${effectiveDateLabel}`
         : applyButtonTitle;
+    const cardDescription = scheduledChange && !actionableRecommendation
+        ? 'Your calorie budget update is scheduled'
+        : evaluation.headline;
 
     return (
         <>
             <AppCard {...props} style={style}>
-                {actionableRecommendation ? (
-                    <SectionHeader eyebrow="CALIBRATION SUGGESTION" title={evaluation.headline} />
-                ) : (
-                    <SectionHeader
-                        title="Calibration"
-                        description={scheduledChange ? 'Your calorie budget update is scheduled' : evaluation.headline}
-                    />
-                )}
+                <SectionHeader
+                    title="Calibration"
+                    description={cardDescription}
+                />
                 {scheduledChange ? (
                     <View
                         role="status"
@@ -278,20 +276,35 @@ export const CalibrationInsightCard: React.FC<ViewProps> = ({ style, ...props })
                             title={`Why we suggest ${actionableRecommendation.recommendedTargetKcal.toLocaleString()} kcal`}
                             description="Here is how your recent logs and weight trend informed this suggestion."
                         />
-                        <AppText variant="label">What we observed</AppText>
-                        <View style={[
-                            styles.observationGrid,
-                            stackRecommendation && styles.observationGridStacked
-                        ]}>
-                            <MetricTile label="average logged per day" value={averageIntake} />
-                            <MetricTile
-                                label={observedDirection === null ? 'recent pace' : `recent ${observedDirection}`}
-                                value={observedPaceWithDirection}
-                            />
-                            <MetricTile
-                                label={plannedDirection === 'stable' ? 'planned pace' : `planned ${plannedDirection}`}
-                                value={plannedPace}
-                            />
+                        <View style={styles.explanationSection}>
+                            <AppText variant="label">What we observed</AppText>
+                            <View style={styles.evidencePanel}>
+                                <View style={[
+                                    styles.evidenceRow,
+                                    stackRecommendation && styles.evidenceRowStacked
+                                ]}>
+                                    <AppText variant="muted" style={styles.evidenceLabel}>Average logged</AppText>
+                                    <AppText variant="subtitle" style={styles.evidenceValue}>{averageIntake}/day</AppText>
+                                </View>
+                                <View style={styles.evidenceDivider} />
+                                <View style={[
+                                    styles.evidenceRow,
+                                    stackRecommendation && styles.evidenceRowStacked
+                                ]}>
+                                    <AppText variant="muted" style={styles.evidenceLabel}>Recent pace</AppText>
+                                    <AppText variant="subtitle" style={styles.evidenceValue}>{observedPaceWithDirection}</AppText>
+                                </View>
+                                <View style={styles.evidenceDivider} />
+                                <View style={[
+                                    styles.evidenceRow,
+                                    stackRecommendation && styles.evidenceRowStacked
+                                ]}>
+                                    <AppText variant="muted" style={styles.evidenceLabel}>Planned pace</AppText>
+                                    <AppText variant="subtitle" style={styles.evidenceValue}>
+                                        {plannedPace}{plannedDirection === 'stable' ? '' : ` ${plannedDirection}`}
+                                    </AppText>
+                                </View>
+                            </View>
                         </View>
                         <View style={styles.explanationSection}>
                             <AppText variant="label">What the pattern suggests</AppText>
@@ -302,33 +315,32 @@ export const CalibrationInsightCard: React.FC<ViewProps> = ({ style, ...props })
                                 <AppText variant="label">
                                     Why start with {Math.abs(actionableRecommendation.adjustmentStepKcal).toLocaleString()} kcal?
                                 </AppText>
-                                <View style={styles.reasoningSteps}>
-                                    <View style={styles.reasoningStep}>
+                                <View style={styles.reasoningPanel}>
+                                    <View style={styles.reasoningItem}>
                                         <AppText variant="label">Estimated change</AppText>
                                         <AppText variant="muted">{budgetEstimateExplanation.signal}</AppText>
                                     </View>
-                                    <View style={styles.reasoningStep}>
+                                    <View style={styles.evidenceDivider} />
+                                    <View style={styles.reasoningItem}>
                                         <AppText variant="label">Uncertainty</AppText>
-                                        <AppText variant="caption">{budgetEstimateExplanation.range}</AppText>
+                                        <AppText variant="muted">{budgetEstimateExplanation.range}</AppText>
                                     </View>
-                                    <View style={[styles.reasoningStep, styles.recommendedStep]}>
-                                        <AppText variant="label" style={styles.budgetPanelText}>Recommended first step</AppText>
-                                        <AppText variant="muted" style={styles.budgetPanelText}>
-                                            {budgetEstimateExplanation.firstStep}
-                                        </AppText>
+                                    <View style={styles.evidenceDivider} />
+                                    <View style={styles.reasoningItem}>
+                                        <AppText variant="label">Recommended first step</AppText>
+                                        <AppText variant="muted">{budgetEstimateExplanation.firstStep}</AppText>
                                     </View>
                                 </View>
                             </View>
                         )}
-                        <View style={styles.explanationSection}>
-                            <AppText variant="label">Evidence quality</AppText>
-                            <AppText variant="muted">{describeCalibrationEvidenceForReview(evaluation)}</AppText>
-                        </View>
                         <View style={styles.safetyRow}>
                             <Ionicons name="shield-checkmark-outline" size={18} color={theme.colors.primary} />
-                            <AppText variant="caption" style={styles.safetyText}>
-                                Calibrate checks every suggestion against a BMR-based safety floor before showing it.
-                            </AppText>
+                            <View style={styles.safetyText}>
+                                <AppText variant="label">Evidence and safety</AppText>
+                                <AppText variant="caption">
+                                    {describeCalibrationEvidenceForReview(evaluation)} Calibrate checks every suggestion against a BMR-based safety floor before showing it.
+                                </AppText>
+                            </View>
                         </View>
                         <View style={styles.decisionSummary}>
                             <AppText variant="label">
@@ -426,39 +438,54 @@ function createStyles(theme: AppTheme) {
         maxWidth: 800,
         gap: spacing.md
     },
-    observationGrid: {
-        flexDirection: 'row',
-        gap: spacing.md
-    },
-    observationGridStacked: {
-        flexDirection: 'column'
-    },
     explanationSection: {
         gap: spacing.xs
     },
-    reasoningSteps: {
-        gap: spacing.sm
-    },
-    reasoningStep: {
-        gap: spacing.xs,
+    evidencePanel: {
+        gap: spacing.sm,
         borderRadius: theme.radius.md,
         padding: spacing.md,
         backgroundColor: theme.colors.surfaceContainer
     },
-    recommendedStep: {
-        backgroundColor: theme.colors.successContainer
-    },
-    safetyRow: {
+    evidenceRow: {
         flexDirection: 'row',
         alignItems: 'center',
+        gap: spacing.md
+    },
+    evidenceRowStacked: {
+        flexDirection: 'column',
+        alignItems: 'flex-start',
+        gap: spacing.xs
+    },
+    evidenceLabel: {
+        flex: 1,
+        minWidth: 0
+    },
+    evidenceValue: {
+        flexShrink: 1,
+        textAlign: 'right'
+    },
+    evidenceDivider: {
+        height: StyleSheet.hairlineWidth,
+        backgroundColor: theme.colors.outlineVariant
+    },
+    reasoningPanel: {
         gap: spacing.sm,
         borderRadius: theme.radius.md,
         padding: spacing.md,
-        backgroundColor: theme.colors.primaryContainer
+        backgroundColor: theme.colors.surfaceContainer
+    },
+    reasoningItem: {
+        gap: spacing.xs,
+    },
+    safetyRow: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        gap: spacing.sm
     },
     safetyText: {
         flex: 1,
-        color: theme.colors.onPrimaryContainer
+        gap: spacing.xs
     },
     decisionSummary: {
         gap: spacing.xs,

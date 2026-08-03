@@ -235,9 +235,9 @@ describe('CalibrationInsightCard', () => {
 
     it('makes the recommendation visual and directly actionable without opening the evidence sheet', async () => {
         const screen = renderCard();
-        await waitFor(() => expect(screen.getByText('CALIBRATION SUGGESTION')).toBeTruthy());
+        await waitFor(() => expect(screen.getByText("You're losing weight, but slower than planned")).toBeTruthy());
 
-        expect(screen.getByText("You're losing weight, but slower than planned")).toBeTruthy();
+        expect(screen.getByText('Calibration')).toBeTruthy();
         expect(screen.getByText('0.36 kg/week loss')).toBeTruthy();
         expect(screen.getByText('28-day pace')).toBeTruthy();
         expect(screen.getByText('Planned: 0.46 kg/week loss')).toBeTruthy();
@@ -258,7 +258,8 @@ describe('CalibrationInsightCard', () => {
         fireEvent.press(screen.getByText('See why'));
         expect(screen.getByText('Why we suggest 1,750 kcal')).toBeTruthy();
         expect(screen.getByText('What we observed')).toBeTruthy();
-        expect(screen.getAllByText('1,900 kcal')).toHaveLength(2);
+        expect(screen.getByText('1,900 kcal/day')).toBeTruthy();
+        expect(screen.getByText('1,900 kcal')).toBeTruthy();
         expect(screen.getByText('What the pattern suggests')).toBeTruthy();
         expect(screen.getByText('Why start with 150 kcal?')).toBeTruthy();
         expect(screen.getByText('Estimated change')).toBeTruthy();
@@ -268,7 +269,7 @@ describe('CalibrationInsightCard', () => {
         expect(screen.getByText('Recommended first step')).toBeTruthy();
         expect(screen.getByText('Current')).toBeTruthy();
         expect(screen.getByText('Proposed')).toBeTruthy();
-        expect(screen.getByText('This review uses 28 well-tracked food days and 14 weigh-ins across 28 days.')).toBeTruthy();
+        expect(screen.getByText(/This review uses 28 well-tracked food days and 14 weigh-ins across 28 days/)).toBeTruthy();
         expect(screen.queryByText('estimated budget difference')).toBeNull();
         fireEvent.press(screen.getByText('Close'));
 
@@ -295,7 +296,7 @@ describe('CalibrationInsightCard', () => {
         Dimensions.set({ window: dimensions, screen: dimensions });
         const screen = renderCard();
 
-        await waitFor(() => expect(screen.getByText('CALIBRATION SUGGESTION')).toBeTruthy());
+        await waitFor(() => expect(screen.getByText('Apply 1,750 kcal')).toBeTruthy());
         expect(StyleSheet.flatten(screen.getByTestId('calibration-recommendation-panels').props.style))
             .toMatchObject({ flexDirection: 'column' });
         expect(StyleSheet.flatten(screen.getByTestId('calibration-recommendation-actions').props.style))
