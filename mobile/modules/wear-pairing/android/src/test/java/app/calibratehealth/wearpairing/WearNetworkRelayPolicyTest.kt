@@ -1,5 +1,6 @@
 package app.calibratehealth.wearpairing
 
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -76,5 +77,20 @@ class WearNetworkRelayPolicyTest {
         )
 
         assertFalse(WearNetworkRelayPolicy.hasValidHeaders(WearNetworkRelayPolicy.WATCH_SNAPSHOT_PATH, headers))
+    }
+
+    @Test
+    fun `retains a successful refresh response for the correlated watch retry`() {
+        var nowEpochMs = 1_000L
+        val cache = WearRefreshRelayResponseCache { nowEpochMs }
+        cache.retain("refresh-request", "phone-node", "https://health.example.com", "rotated-response")
+
+        assertEquals(
+            "rotated-response",
+            cache.find("refresh-request", "phone-node", "https://health.example.com")
+        )
+        assertEquals(null, cache.find("refresh-request", "other-node", "https://health.example.com"))
+        nowEpochMs += 10 * 60 * 1_000L
+        assertEquals(null, cache.find("refresh-request", "phone-node", "https://health.example.com"))
     }
 }

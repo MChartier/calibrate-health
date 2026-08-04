@@ -17,6 +17,7 @@ internal object WearNetworkRelayPolicy {
     const val SESSION_REFRESH_PATH = "/auth/mobile/refresh"
     const val WATCH_SNAPSHOT_PATH = "/api/v1/watch"
     const val WATCH_MUTATION_PATH = "/api/v1/watch/mutations"
+    const val OUTCOME_UNKNOWN_ERROR_CODE = "PHONE_REQUEST_OUTCOME_UNKNOWN"
 
     private val allowedHeaders = setOf(
         "authorization",
@@ -76,8 +77,52 @@ private data class WearNetworkRelayRequest(
     val body: String?
 )
 
+/** Retains only successful refresh rotations long enough to recover a lost Data Layer response. */
+internal class WearRefreshRelayResponseCache(
+    private val nowEpochMs: () -> Long = System::currentTimeMillis
+) {
+    private data class Entry(
+        val nodeId: String,
+        val serverOrigin: String,
+        val payload: String,
+        val expiresAtEpochMs: Long
+    )
+
+    private val entries = linkedMapOf<String, Entry>()
+
+    @Synchronized
+    fun find(requestId: String, nodeId: String, serverOrigin: String): String? {
+        removeExpired()
+        val entry = entries[requestId] ?: return null
+        return entry.payload.takeIf { entry.nodeId == nodeId && entry.serverOrigin == serverOrigin }
+    }
+
+    @Synchronized
+    fun retain(requestId: String, nodeId: String, serverOrigin: String, payload: String) {
+        removeExpired()
+        entries[requestId] = Entry(
+            nodeId = nodeId,
+            serverOrigin = serverOrigin,
+            payload = payload,
+            expiresAtEpochMs = nowEpochMs() + RETENTION_MS
+        )
+        while (entries.size > MAX_ENTRIES) entries.remove(entries.keys.first())
+    }
+
+    private fun removeExpired() {
+        val now = nowEpochMs()
+        entries.entries.removeAll { (_, entry) -> entry.expiresAtEpochMs <= now }
+    }
+
+    private companion object {
+        const val RETENTION_MS = 10 * 60 * 1_000L
+        const val MAX_ENTRIES = 8
+    }
+}
+
 /** Executes a bounded, allowlisted Watch request on the paired phone's network. */
 internal object WearNetworkRelay {
+    private val refreshResponseCache = WearRefreshRelayResponseCache()
     private val executor = ThreadPoolExecutor(
         1,
         1,
@@ -103,17 +148,34 @@ internal object WearNetworkRelay {
         val response = if (!bindingStore.isAuthorized(nodeId, request.serverOrigin, request.path)) {
             failure(request.requestId, request.serverOrigin, "RELAY_NOT_AUTHORIZED", "Pair Calibrate with this phone again.")
         } else {
-            runCatching { execute(request) }.getOrElse {
-                failure(
-                    request.requestId,
-                    request.serverOrigin,
-                    "PHONE_NETWORK_UNAVAILABLE",
-                    "The paired phone could not reach the Calibrate server."
-                )
+            val retainedRefresh = if (request.path == WearNetworkRelayPolicy.SESSION_REFRESH_PATH) {
+                refreshResponseCache.find(request.requestId, nodeId, request.serverOrigin)
+            } else {
+                null
             }
+            retainedRefresh
+                ?: runCatching { execute(request) }.getOrElse {
+                    failure(
+                        request.requestId,
+                        request.serverOrigin,
+                        if (request.path == WearNetworkRelayPolicy.SESSION_REFRESH_PATH) {
+                            WearNetworkRelayPolicy.OUTCOME_UNKNOWN_ERROR_CODE
+                        } else {
+                            "PHONE_NETWORK_UNAVAILABLE"
+                        },
+                        if (request.path == WearNetworkRelayPolicy.SESSION_REFRESH_PATH) {
+                            "The phone could not confirm whether session refresh completed."
+                        } else {
+                            "The paired phone could not reach the Calibrate server."
+                        }
+                    )
+                }
         }
         val bytes = response.toByteArray(Charsets.UTF_8)
         if (bytes.size > MAX_RELAY_MESSAGE_BYTES) return
+        if (request.path == WearNetworkRelayPolicy.SESSION_REFRESH_PATH && isSuccessfulResponse(response)) {
+            refreshResponseCache.retain(request.requestId, nodeId, request.serverOrigin, response)
+        }
         runCatching {
             Tasks.await(
                 Wearable.getMessageClient(context).sendMessage(nodeId, WearPairingProtocol.NETWORK_RESPONSE, bytes),
@@ -122,6 +184,11 @@ internal object WearNetworkRelay {
             )
         }
     }
+
+    private fun isSuccessfulResponse(payload: String): Boolean = runCatching {
+        val response = JSONObject(payload)
+        response.getBoolean("ok") && response.getInt("status") in 200..299
+    }.getOrDefault(false)
 
     private fun parseRequest(payload: ByteArray): WearNetworkRelayRequest? = runCatching {
         val value = JSONObject(payload.toString(Charsets.UTF_8))

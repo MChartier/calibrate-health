@@ -8,8 +8,10 @@ import com.google.android.gms.tasks.Tasks
 import com.google.android.gms.wearable.Wearable
 import java.io.IOException
 import java.net.URI
+import java.security.MessageDigest
 import java.util.UUID
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.TimeoutException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
@@ -40,13 +42,28 @@ internal class PhoneRelayWatchHttpTransport(
         val target = targetResolver.resolve(endpoint.serverOrigin)
             ?: throw IOException("The paired phone relay is unavailable.")
         require(target.serverOrigin == endpoint.serverOrigin) { "Phone relay origin changed." }
-        val requestId = UUID.randomUUID().toString()
+        val requestId = relayRequestId(endpoint, request)
         val payload = buildRelayRequest(requestId, endpoint, request)
         if (payload.toByteArray(Charsets.UTF_8).size > PhoneRelayContract.MAX_MESSAGE_BYTES) {
             throw IOException("Watch request is too large for the paired phone relay.")
         }
         val response = messenger.exchange(target, requestId, payload)
-        return parseRelayResponse(response, requestId, endpoint.serverOrigin)
+        return parseRelayResponse(response, requestId, endpoint.serverOrigin, endpoint.path)
+    }
+
+    private fun relayRequestId(endpoint: RelayEndpoint, request: WatchHttpRequest): String {
+        if (endpoint.path != PhoneRelayContract.SESSION_REFRESH_PATH) return UUID.randomUUID().toString()
+        val digest = MessageDigest.getInstance("SHA-256").digest(
+            StrictJson.stringify(
+                StrictJson.objectOf(
+                    "server_origin" to StrictJson.string(endpoint.serverOrigin),
+                    "method" to StrictJson.string(request.method),
+                    "path" to StrictJson.string(endpoint.path),
+                    "body" to StrictJson.string(request.body.orEmpty())
+                )
+            ).toByteArray(Charsets.UTF_8)
+        )
+        return "refresh-${digest.joinToString("") { byte -> "%02x".format(byte.toInt() and 0xff) }}"
     }
 
     private fun buildRelayRequest(
@@ -72,7 +89,8 @@ internal class PhoneRelayWatchHttpTransport(
     private fun parseRelayResponse(
         payload: String,
         expectedRequestId: String,
-        expectedServerOrigin: String
+        expectedServerOrigin: String,
+        expectedPath: String
     ): WatchHttpResponse {
         val root = StrictJson.parse(payload).requireObject("phone relay response")
         require(root.requiredString("kind") == "phone_http_response")
@@ -80,7 +98,15 @@ internal class PhoneRelayWatchHttpTransport(
         require(root.requiredString("request_id") == expectedRequestId)
         require(root.requiredString("server_origin") == expectedServerOrigin)
         if (!root.requiredBoolean("ok")) {
+            val errorCode = root.requiredString("error_code")
             val message = root.requiredString("message").take(180)
+            val refreshOutcomeUnknown = expectedPath == PhoneRelayContract.SESSION_REFRESH_PATH &&
+                errorCode == PhoneRelayContract.NETWORK_UNAVAILABLE_ERROR_CODE
+            if (errorCode == PhoneRelayContract.OUTCOME_UNKNOWN_ERROR_CODE || refreshOutcomeUnknown) {
+                throw PhoneRelayOutcomeUnknownException(
+                    message.ifBlank { "The paired phone may have completed the Watch request." }
+                )
+            }
             throw IOException(message.ifBlank { "The paired phone could not relay the Watch request." })
         }
         val status = root.requiredLong("status").toInt()
@@ -116,10 +142,14 @@ internal class PhoneFirstWatchHttpTransport(
 ) : WatchHttpTransport {
     override suspend fun execute(request: WatchHttpRequest): WatchHttpResponse = try {
         phoneRelay.execute(request)
+    } catch (error: PhoneRelayOutcomeUnknownException) {
+        throw error
     } catch (_: IOException) {
         directFallback.execute(request)
     }
 }
+
+internal class PhoneRelayOutcomeUnknownException(message: String) : IOException(message)
 
 internal object PhoneRelayContract {
     const val PAIRING_EXCHANGE_PATH = "/auth/mobile/wear/pair"
@@ -128,6 +158,8 @@ internal object PhoneRelayContract {
     const val WATCH_MUTATION_PATH = "/api/v1/watch/mutations"
     const val MAX_MESSAGE_BYTES = 64 * 1024
     const val MAX_BODY_BYTES = 48 * 1024
+    const val OUTCOME_UNKNOWN_ERROR_CODE = "PHONE_REQUEST_OUTCOME_UNKNOWN"
+    const val NETWORK_UNAVAILABLE_ERROR_CODE = "PHONE_NETWORK_UNAVAILABLE"
 
     fun supports(method: String, path: String): Boolean = when (path) {
         WATCH_SNAPSHOT_PATH -> method == "GET"
@@ -165,6 +197,7 @@ internal object PhoneRelayResponseInbox {
 internal class GooglePlayPhoneRelayMessenger(private val context: Context) : PhoneRelayMessenger {
     override suspend fun exchange(target: PhoneRelayTarget, requestId: String, payload: String): String =
         withContext(Dispatchers.IO) {
+            PhoneRelayResponseInbox.consume(requestId, target.nodeId)?.let { return@withContext it }
             val bytes = payload.toByteArray(Charsets.UTF_8)
             try {
                 Tasks.await(
@@ -176,6 +209,10 @@ internal class GooglePlayPhoneRelayMessenger(private val context: Context) : Pho
                     MESSAGE_SEND_TIMEOUT_SECONDS,
                     TimeUnit.SECONDS
                 )
+            } catch (error: TimeoutException) {
+                throw PhoneRelayOutcomeUnknownException(
+                    "The paired phone may have received the Watch request."
+                )
             } catch (error: Exception) {
                 throw IOException("The paired phone could not receive the Watch request.", error)
             }
@@ -184,7 +221,7 @@ internal class GooglePlayPhoneRelayMessenger(private val context: Context) : Pho
                 PhoneRelayResponseInbox.consume(requestId, target.nodeId)?.let { return@withContext it }
                 delay(POLL_INTERVAL_MS)
             }
-            throw IOException("The paired phone did not return the Watch request.")
+            throw PhoneRelayOutcomeUnknownException("The paired phone did not return the Watch request.")
         }
 
     private companion object {
