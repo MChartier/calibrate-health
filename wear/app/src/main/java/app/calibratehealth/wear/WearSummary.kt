@@ -104,6 +104,8 @@ data class WeightEditorState(val grams: Long, val unit: String) {
     fun label(): String = SummaryFormatter.weight(grams, unit)
 
     companion object {
+        // Gives a first-time weigh-in a neutral crown-adjustable starting point on the watch.
+        const val DEFAULT_WEIGHT_GRAMS = 70_000L
         const val MIN_WEIGHT_GRAMS = 20_000L
         const val MAX_WEIGHT_GRAMS = 500_000L
         private const val METRIC_STEP_GRAMS = 100L

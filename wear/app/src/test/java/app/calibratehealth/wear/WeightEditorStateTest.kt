@@ -6,10 +6,10 @@ import org.junit.Test
 class WeightEditorStateTest {
     @Test
     fun `first weight starts from an explicit canonical gram default`() {
-        val metric = WeightEditorState(70_000L, "kg")
-        val imperial = WeightEditorState(70_000L, "lb")
+        val metric = WeightEditorState(WeightEditorState.DEFAULT_WEIGHT_GRAMS, "kg")
+        val imperial = WeightEditorState(WeightEditorState.DEFAULT_WEIGHT_GRAMS, "lb")
 
-        assertEquals(70_000L, metric.grams)
+        assertEquals(WeightEditorState.DEFAULT_WEIGHT_GRAMS, metric.grams)
         assertEquals("70.0 kg", metric.label())
         assertEquals("154.3 lb", imperial.label())
     }
