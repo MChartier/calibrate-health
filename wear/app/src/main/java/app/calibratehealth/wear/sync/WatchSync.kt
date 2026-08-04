@@ -22,7 +22,7 @@ import app.calibratehealth.wear.data.security.accountScope
 import app.calibratehealth.wear.network.AuthenticatedApiResult
 import app.calibratehealth.wear.network.AuthenticatedWatchApi
 import app.calibratehealth.wear.network.InvalidJsonException
-import app.calibratehealth.wear.network.UrlConnectionWatchHttpTransport
+import app.calibratehealth.wear.network.pairedPhoneFirstHttpTransport
 import app.calibratehealth.wear.network.WatchSnapshotMapper
 import app.calibratehealth.wear.network.requireObject
 import app.calibratehealth.wear.network.WatchMutationApi
@@ -220,7 +220,7 @@ object WearSyncRuntime {
         val database = CalibrateWearDatabase.get(appContext)
         val tokenStore = AndroidKeystoreTokenStore(appContext)
         val coordinator = AccountSessionCoordinator(tokenStore, RoomAccountDataStore(database))
-        val api = AuthenticatedWatchApi(tokenStore, coordinator, UrlConnectionWatchHttpTransport())
+        val api = AuthenticatedWatchApi(tokenStore, coordinator, pairedPhoneFirstHttpTransport(appContext))
         val noOpScheduler = object : OutboxScheduler {
             override fun schedule() = Unit
             override fun scheduleContinuation() = Unit

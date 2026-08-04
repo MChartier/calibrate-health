@@ -10,6 +10,8 @@ object WearDataLayerContract {
     const val CONTINUE_ON_PHONE = "/calibrate/v1/continue-on-phone"
     const val ACCOUNT_DISCONNECT = "/calibrate/v1/account/disconnect"
     const val ACCOUNT_DISCONNECT_RESULT = "/calibrate/v1/account/disconnect-result"
+    const val NETWORK_REQUEST = "/calibrate/v1/network/request"
+    const val NETWORK_RESPONSE = "/calibrate/v1/network/response"
 
     fun supports(path: String): Boolean =
         path == PAIR_HELLO ||
@@ -18,5 +20,7 @@ object WearDataLayerContract {
             path == SYNC_INVALIDATE ||
             path == CONTINUE_ON_PHONE ||
             path == ACCOUNT_DISCONNECT ||
-            path == ACCOUNT_DISCONNECT_RESULT
+            path == ACCOUNT_DISCONNECT_RESULT ||
+            path == NETWORK_REQUEST ||
+            path == NETWORK_RESPONSE
 }

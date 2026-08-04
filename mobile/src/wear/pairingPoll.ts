@@ -23,7 +23,8 @@ type WearPairingPollOptions = {
 
 // Keep native inbox reads responsive without leaving an unbounded background loop.
 const PAIRING_POLL_INTERVAL_MS = 500;
-const PAIRING_POLL_TIMEOUT_MS = 20_000;
+// Allow a background phone relay plus one mixed-version direct failover to finish pairing.
+const PAIRING_POLL_TIMEOUT_MS = 75_000;
 
 function waitFor(milliseconds: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, milliseconds));

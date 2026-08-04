@@ -38,6 +38,44 @@ class CalibrateWearPairingModule : Module() {
             Wearable.getMessageClient(context).sendMessage(nodeId, path, bytes).await()
         }
 
+        Function("prepareNetworkRelay") { nodeId: String, serverOrigin: String, requestId: String, expiresAtEpochMs: Double ->
+            val context = appContext.reactContext
+                ?: throw IllegalStateException("Android context is unavailable")
+            require(expiresAtEpochMs.isFinite() && expiresAtEpochMs % 1.0 == 0.0) {
+                "Wear relay expiry must be an integer epoch millisecond value"
+            }
+            WearNetworkRelayBindingStore(context).prepare(
+                nodeId,
+                serverOrigin,
+                requestId,
+                expiresAtEpochMs.toLong()
+            )
+        }
+
+        Function("commitNetworkRelay") { nodeId: String, serverOrigin: String, requestId: String ->
+            val context = appContext.reactContext
+                ?: throw IllegalStateException("Android context is unavailable")
+            WearNetworkRelayBindingStore(context).commit(nodeId, serverOrigin, requestId)
+        }
+
+        Function("restoreNetworkRelay") { nodeId: String, serverOrigin: String ->
+            val context = appContext.reactContext
+                ?: throw IllegalStateException("Android context is unavailable")
+            WearNetworkRelayBindingStore(context).restore(nodeId, serverOrigin)
+        }
+
+        Function("clearPendingNetworkRelay") { nodeId: String, serverOrigin: String, requestId: String ->
+            val context = appContext.reactContext
+                ?: throw IllegalStateException("Android context is unavailable")
+            WearNetworkRelayBindingStore(context).clearPending(nodeId, serverOrigin, requestId)
+        }
+
+        Function("clearNetworkRelay") { nodeId: String, serverOrigin: String ->
+            val context = appContext.reactContext
+                ?: throw IllegalStateException("Android context is unavailable")
+            WearNetworkRelayBindingStore(context).clearActive(nodeId, serverOrigin)
+        }
+
         Function("listMessages") {
             val context = appContext.reactContext
                 ?: throw IllegalStateException("Android context is unavailable")

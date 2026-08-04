@@ -46,7 +46,12 @@ function makeTransport(messages: Array<{
         getPairingNodes: jest.fn(),
         sendMessage: jest.fn().mockResolvedValue(1),
         acknowledgeMessages: jest.fn(),
-        listMessages: jest.fn(() => messages)
+        listMessages: jest.fn(() => messages),
+        prepareNetworkRelay: jest.fn(),
+        commitNetworkRelay: jest.fn(),
+        restoreNetworkRelay: jest.fn(),
+        clearPendingNetworkRelay: jest.fn(),
+        clearNetworkRelay: jest.fn()
     };
 }
 
@@ -197,6 +202,12 @@ describe('Wear phone pairing coordinator', () => {
             WEAR_PAIRING_PATHS.HELLO,
             expect.stringContaining('"request_id":"request-1"')
         );
+        expect(transport.prepareNetworkRelay).toHaveBeenCalledWith(
+            'node-1',
+            ORIGIN,
+            'request-1',
+            new Date(EXPIRES_AT).getTime()
+        );
         expect([...mockStorage.values()].some((value) => value.includes('"userId":7'))).toBe(true);
         expect([...mockStorage.values()].some((value) => value.includes('"issuedAt":"2026-07-11T20:00:00.000Z"'))).toBe(true);
     });
@@ -228,6 +239,19 @@ describe('Wear phone pairing coordinator', () => {
 
         await expect(beginPairing(transport)).rejects.toThrow('Watch unavailable');
         expect(mockStorage.size).toBe(0);
+        expect(transport.clearPendingNetworkRelay).toHaveBeenCalledWith('node-1', ORIGIN, 'request-1');
+    });
+
+    it('removes the pending invite when native relay preparation fails', async () => {
+        const transport = makeTransport();
+        transport.prepareNetworkRelay.mockImplementationOnce(() => {
+            throw new Error('Relay storage unavailable');
+        });
+
+        await expect(beginPairing(transport)).rejects.toThrow('Relay storage unavailable');
+        expect(mockStorage.size).toBe(0);
+        expect(transport.sendMessage).not.toHaveBeenCalled();
+        expect(transport.clearPendingNetworkRelay).toHaveBeenCalledWith('node-1', ORIGIN, 'request-1');
     });
 
     it('exchanges only a one-time server credential with the correlated node', async () => {
@@ -356,6 +380,7 @@ describe('Wear phone pairing coordinator', () => {
         });
 
         expect(result.paired?.watchDeviceId).toBe('watch-1');
+        expect(transport.commitNetworkRelay).toHaveBeenCalledWith('node-1', ORIGIN, 'request-1');
         expect(await readStoredWearPairing(ORIGIN, USER_ID)).toEqual(result.paired);
         expect(await readStoredWearPairing(ORIGIN, USER_ID + 1)).toBeNull();
         expect(transport.acknowledgeMessages).toHaveBeenLastCalledWith(['result']);
@@ -396,6 +421,7 @@ describe('Wear phone pairing coordinator', () => {
             paired: null,
             errors: ['Pairing response was unavailable. Start pairing again.']
         });
+        expect(transport.clearPendingNetworkRelay).toHaveBeenCalledWith('node-1', ORIGIN, 'request-1');
         expect([...mockStorage.values()].some((value) => value.includes('"requestId":"request-1"'))).toBe(false);
         expect(transport.acknowledgeMessages).toHaveBeenLastCalledWith(['failed-result']);
     });

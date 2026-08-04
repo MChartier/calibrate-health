@@ -49,6 +49,11 @@ type WearPairingTransport = {
     sendMessage(nodeId: string, path: string, payload: string): Promise<number>;
     listMessages(): WearPairingMessage[];
     acknowledgeMessages(messageIds: string[]): void;
+    prepareNetworkRelay?(nodeId: string, serverOrigin: string, requestId: string, expiresAtEpochMs: number): void;
+    commitNetworkRelay?(nodeId: string, serverOrigin: string, requestId: string): void;
+    restoreNetworkRelay?(nodeId: string, serverOrigin: string): void;
+    clearPendingNetworkRelay?(nodeId: string, serverOrigin: string, requestId: string): void;
+    clearNetworkRelay?(nodeId: string, serverOrigin: string): void;
 };
 
 /** Resolve lazily so Expo Go/web/Jest can render settings without the Android module installed. */
@@ -195,7 +200,15 @@ export async function readStoredWearPairing(
     if (!raw) return null;
     try {
         const parsed = JSON.parse(raw) as unknown;
-        if (isStoredWearPairing(parsed, serverOrigin)) return parsed;
+        if (isStoredWearPairing(parsed, serverOrigin)) {
+            // Backfill native relay authorization for pairings created before phone relaying existed.
+            try {
+                getNativeTransport()?.restoreNetworkRelay?.(parsed.nodeId, parsed.serverOrigin);
+            } catch {
+                // The stored pairing remains usable through the watch's bounded direct fallback.
+            }
+            return parsed;
+        }
         await AsyncStorage.removeItem(key);
         return null;
     } catch {
@@ -207,9 +220,24 @@ export async function readStoredWearPairing(
 /** Remove both completed and in-flight pairing metadata for exactly one server account. */
 export async function clearWearPairingStorage(serverOrigin: string, userId: number): Promise<void> {
     const origin = new URL(serverOrigin).origin;
+    const [pairing, pending] = await Promise.all([
+        readStoredWearPairing(origin, userId).catch(() => null),
+        readPendingWearPairing(origin, userId).catch(() => null)
+    ]);
+    const transport = getNativeTransport();
     const results = await Promise.allSettled([
         AsyncStorage.removeItem(scopedStorageKey(origin, userId)),
-        AsyncStorage.removeItem(pendingStorageKey(origin, userId))
+        AsyncStorage.removeItem(pendingStorageKey(origin, userId)),
+        Promise.resolve().then(() => {
+            if (pending) {
+                transport?.clearPendingNetworkRelay?.(
+                    pending.nodeId,
+                    pending.serverOrigin,
+                    pending.requestId
+                );
+            }
+            if (pairing) transport?.clearNetworkRelay?.(pairing.nodeId, pairing.serverOrigin);
+        })
     ]);
     if (results.some(({ status }) => status === 'rejected')) {
         throw new Error('Phone-side Wear pairing state could not be cleared.');
@@ -369,6 +397,12 @@ export async function startWearPairing(options: {
     };
     await AsyncStorage.setItem(pendingStorageKey(pending.serverOrigin, pending.userId), JSON.stringify(pending));
     try {
+        transport.prepareNetworkRelay?.(
+            pending.nodeId,
+            pending.serverOrigin,
+            pending.requestId,
+            new Date(pending.expiresAt).getTime()
+        );
         await transport.sendMessage(pending.nodeId, WEAR_PAIRING_PATHS.HELLO, JSON.stringify({
             kind: 'phone_pairing_invite',
             request_id: pending.requestId,
@@ -379,6 +413,11 @@ export async function startWearPairing(options: {
         }));
     } catch (error) {
         await AsyncStorage.removeItem(pendingStorageKey(pending.serverOrigin, pending.userId));
+        transport.clearPendingNetworkRelay?.(
+            pending.nodeId,
+            pending.serverOrigin,
+            pending.requestId
+        );
         throw error;
     }
     return pending;
@@ -470,20 +509,36 @@ export async function processWearPairingInbox(options: {
             }
             if (!result.ok) {
                 await AsyncStorage.removeItem(pendingStorageKey(origin, options.userId));
+                transport.clearPendingNetworkRelay?.(
+                    pending.nodeId,
+                    pending.serverOrigin,
+                    pending.requestId
+                );
                 pending = null;
                 processed += 1;
                 errors.push(result.message);
                 acknowledgedMessageIds.push(message.id);
                 continue;
             }
-            paired = {
+            const completedPairing: StoredWearPairing = {
                 watchDeviceId: result.watchDeviceId,
                 watchDeviceName: result.watchDeviceName,
                 serverOrigin: result.serverOrigin,
                 nodeId: message.nodeId,
                 pairedAt: (options.now ?? new Date()).toISOString()
             };
-            await AsyncStorage.setItem(scopedStorageKey(result.serverOrigin, options.userId), JSON.stringify(paired));
+            try {
+                transport.commitNetworkRelay?.(
+                    pending.nodeId,
+                    pending.serverOrigin,
+                    pending.requestId
+                );
+            } catch {
+                errors.push('The phone could not activate its watch network relay. Keep both apps open and try again.');
+                continue;
+            }
+            paired = completedPairing;
+            await AsyncStorage.setItem(scopedStorageKey(result.serverOrigin, options.userId), JSON.stringify(completedPairing));
             await AsyncStorage.removeItem(pendingStorageKey(origin, options.userId));
             pending = null;
             processed += 1;

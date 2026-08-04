@@ -4,7 +4,7 @@
     "slug": "calibrate-health-app",
     "owner": "calibrate-health",
     "scheme": "calibrate",
-    "version": "0.2.4",
+    "version": "0.2.5",
     "orientation": "default",
     "userInterfaceStyle": "automatic",
     "icon": "./assets/icon.png",
@@ -18,7 +18,7 @@
     ],
     "android": {
       "package": "app.calibratehealth.mobile",
-      "versionCode": 6,
+      "versionCode": 7,
       "allowBackup": false,
       "softwareKeyboardLayoutMode": "resize",
       "adaptiveIcon": {
@@ -93,7 +93,7 @@
     ],
     "extra": {
       "calibrate": {
-        "nativeReleaseTag": "v0.12.11"
+        "nativeReleaseTag": "v0.13.0"
       },
       "router": {
         "origin": false

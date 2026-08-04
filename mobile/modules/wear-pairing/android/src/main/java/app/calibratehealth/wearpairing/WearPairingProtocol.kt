@@ -9,6 +9,8 @@ internal object WearPairingProtocol {
     const val CONTINUE_ON_PHONE = "/calibrate/v1/continue-on-phone"
     const val ACCOUNT_DISCONNECT = "/calibrate/v1/account/disconnect"
     const val ACCOUNT_DISCONNECT_RESULT = "/calibrate/v1/account/disconnect-result"
+    const val NETWORK_REQUEST = "/calibrate/v1/network/request"
+    const val NETWORK_RESPONSE = "/calibrate/v1/network/response"
     const val MAX_MESSAGE_BYTES = 32 * 1024
 
     private val allowedPaths = setOf(

@@ -11,4 +11,11 @@ class WearPairingProtocolTest {
         assertTrue(WearPairingProtocol.isAllowed(WearPairingProtocol.ACCOUNT_DISCONNECT_RESULT))
         assertFalse(WearPairingProtocol.isAllowed("${WearPairingProtocol.ACCOUNT_DISCONNECT_RESULT}/other"))
     }
+
+    @Test
+    fun `keeps native network relay paths out of the JavaScript bridge`() {
+        assertFalse(WearPairingProtocol.isAllowed(WearPairingProtocol.NETWORK_REQUEST))
+        assertFalse(WearPairingProtocol.isAllowed(WearPairingProtocol.NETWORK_RESPONSE))
+        assertFalse(WearPairingProtocol.isAllowed("${WearPairingProtocol.NETWORK_REQUEST}/other"))
+    }
 }
