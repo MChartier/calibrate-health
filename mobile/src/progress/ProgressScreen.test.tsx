@@ -1,5 +1,6 @@
 import React from 'react';
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
+import { StyleSheet } from 'react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import type { GoalEntry } from '@calibrate/api-client';
@@ -78,7 +79,13 @@ describe('Progress goal completion flow', () => {
 
         expect(screen.getByText('Set a new goal')).toBeTruthy();
         expect(screen.getAllByText('169 lb')).toHaveLength(2);
-        expect(screen.getByLabelText('Target')).toHaveProp('value', '169');
+        const targetInput = screen.getByLabelText('Target in pounds');
+        expect(targetInput).toHaveProp('value', '169');
+        expect(StyleSheet.flatten(targetInput.props.style)).toEqual(expect.objectContaining({
+            fontSize: 52,
+            textAlign: 'center',
+            textAlignVertical: 'center'
+        }));
         await waitFor(() => {
             expect(screen.getAllByRole('radio').map((radio) => radio.props.accessibilityState.checked))
                 .toEqual([false, true, false]);
@@ -108,7 +115,7 @@ describe('Progress goal completion flow', () => {
         );
 
         expect(await screen.findByText('Set a new goal')).toBeTruthy();
-        expect(screen.getByLabelText('Target')).toHaveProp('value', '169');
+        expect(screen.getByLabelText('Target in pounds')).toHaveProp('value', '169');
         expect(mockApi.createGoal).not.toHaveBeenCalled();
         screen.unmount();
         queryClient.clear();

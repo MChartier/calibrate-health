@@ -22,7 +22,7 @@ import { AppText } from './AppText';
 import { BottomSheetModal } from './BottomSheetModal';
 import { SectionHeader } from './SectionHeader';
 import { WeightSaveResult } from '../weightEntry/WeightSaveResult';
-import { WeightValueInput } from '../weightEntry/WeightValueInput';
+import { WeightValueInput } from './WeightValueInput';
 import { formatWeightInput, isWeightOutlier, parseWeightInput } from '../weightEntry/input';
 import { useAuth } from '../auth/AuthContext';
 import { executeOrQueueMutation, OFFLINE_MUTATION_OPERATIONS } from '../offline/operations';

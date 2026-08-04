@@ -615,7 +615,17 @@ test('mobile weight logging keeps the progress result visible and hands off a re
   await expect(goalEditor.getByText('Set a new goal', { exact: true })).toBeVisible();
   await expect(goalEditor.getByRole('radio', { name: 'Maintain', exact: true })).toBeChecked();
   await expect(goalEditor.getByText('87.5 kg', { exact: true })).toBeVisible();
-  await expect(goalEditor.getByLabel('Target', { exact: true })).toHaveValue('87.5');
+  const targetInput = goalEditor.getByLabel('Target in kilograms', { exact: true });
+  await expect(targetInput).toHaveValue('87.5');
+  const targetInputGeometry = await targetInput.evaluate((element) => {
+    const styles = window.getComputedStyle(element);
+    return {
+      fontSize: Number.parseFloat(styles.fontSize),
+      textAlign: styles.textAlign,
+    };
+  });
+  expect(targetInputGeometry.fontSize).toBeGreaterThanOrEqual(48);
+  expect(targetInputGeometry.textAlign).toBe('center');
   expect(goalPostCount).toBe(0);
 });
 

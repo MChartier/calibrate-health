@@ -9,12 +9,19 @@ import {
 } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import type { WeightUnit } from '@calibrate/shared';
-import { AppText } from '../components/AppText';
+import { AppText } from './AppText';
 import { type AppTheme, useAppTheme } from '../theme';
 import { formatWeightUnit } from '../utils/format';
-import { formatWeightInput, getSpokenWeightUnit, normalizeWeightInputText, parseWeightInput } from './input';
+import {
+    formatWeightInput,
+    getSpokenWeightUnit,
+    normalizeWeightInputText,
+    parseWeightInput
+} from '../weightEntry/input';
 
 type WeightValueInputProps = {
+    label?: string;
+    helperText?: string | null;
     value: string;
     unit: WeightUnit | undefined;
     step: number;
@@ -28,10 +35,14 @@ type WeightValueInputProps = {
 
 const WEIGHT_VALUE_FONT_SIZE = 52; // Makes the single central measurement the visual anchor of the sheet.
 const WEIGHT_VALUE_LINE_HEIGHT = 62;
-const WEIGHT_VALUE_MIN_HEIGHT = 96;
+const WEIGHT_VALUE_HEIGHT = 96;
+const WEIGHT_VALUE_UNIT_GUTTER = 64; // Keeps centered text clear of the unit suffix on narrow screens.
 const WEIGHT_STEPPER_SIZE = 56;
+const DEFAULT_HELPER_TEXT = 'Use one decimal place for a precise, consistent trend.';
 
 export const WeightValueInput: React.FC<WeightValueInputProps> = ({
+    label = 'Weight',
+    helperText = DEFAULT_HELPER_TEXT,
     value,
     unit,
     step,
@@ -45,6 +56,7 @@ export const WeightValueInput: React.FC<WeightValueInputProps> = ({
     const theme = useAppTheme();
     const styles = useMemo(() => createStyles(theme), [theme]);
     const spokenUnit = getSpokenWeightUnit(unit);
+    const measurementLabel = label.toLowerCase();
     const parsedValue = parseWeightInput(value);
 
     function adjust(delta: number) {
@@ -60,11 +72,11 @@ export const WeightValueInput: React.FC<WeightValueInputProps> = ({
 
     return (
         <View style={styles.root}>
-            <AppText variant="label">Weight</AppText>
-            <View style={styles.valueSurface}>
+            <AppText variant="label">{label}</AppText>
+            <View testID="weight-value-surface" style={styles.valueSurface}>
                 <TextInput
                     ref={inputRef}
-                    accessibilityLabel={`Weight in ${spokenUnit}`}
+                    accessibilityLabel={`${label} in ${spokenUnit}`}
                     accessibilityHint="Enter a weight using one decimal place."
                     autoCorrect={false}
                     editable={editable}
@@ -80,12 +92,14 @@ export const WeightValueInput: React.FC<WeightValueInputProps> = ({
                     style={styles.input}
                     value={value}
                 />
-                <AppText accessible={false} style={styles.unit}>{formatWeightUnit(unit)}</AppText>
+                <View pointerEvents="none" style={styles.unitSlot}>
+                    <AppText accessible={false} style={styles.unit}>{formatWeightUnit(unit)}</AppText>
+                </View>
             </View>
             <View style={styles.stepperRow}>
                 <Pressable
                     accessibilityRole="button"
-                    accessibilityLabel={`Decrease weight by ${step} ${getSpokenWeightUnit(unit, step !== 1)}`}
+                    accessibilityLabel={`Decrease ${measurementLabel} by ${step} ${getSpokenWeightUnit(unit, step !== 1)}`}
                     accessibilityValue={{ text: accessibleValue }}
                     disabled={!editable}
                     onPress={() => adjust(-step)}
@@ -99,7 +113,7 @@ export const WeightValueInput: React.FC<WeightValueInputProps> = ({
                 </Pressable>
                 <Pressable
                     accessibilityRole="button"
-                    accessibilityLabel={`Increase weight by ${step} ${getSpokenWeightUnit(unit, step !== 1)}`}
+                    accessibilityLabel={`Increase ${measurementLabel} by ${step} ${getSpokenWeightUnit(unit, step !== 1)}`}
                     accessibilityValue={{ text: accessibleValue }}
                     disabled={!editable}
                     onPress={() => adjust(step)}
@@ -112,7 +126,7 @@ export const WeightValueInput: React.FC<WeightValueInputProps> = ({
                     <Ionicons name="add" size={24} color={theme.colors.onSurface} />
                 </Pressable>
             </View>
-            <AppText variant="caption">Use one decimal place for a precise, consistent trend.</AppText>
+            {helperText ? <AppText variant="caption">{helperText}</AppText> : null}
         </View>
     );
 };
@@ -122,29 +136,35 @@ const createStyles = (theme: AppTheme) => StyleSheet.create({
         gap: theme.spacing.sm
     },
     valueSurface: {
-        minHeight: WEIGHT_VALUE_MIN_HEIGHT,
-        flexDirection: 'row',
-        alignItems: 'baseline',
+        height: WEIGHT_VALUE_HEIGHT,
+        alignItems: 'center',
         justifyContent: 'center',
-        gap: theme.spacing.sm,
         borderRadius: theme.radius.lg,
         borderColor: theme.colors.outline,
         borderWidth: theme.stroke.control,
         backgroundColor: theme.colors.surface,
-        paddingHorizontal: theme.spacing.lg,
-        paddingVertical: theme.spacing.sm
+        overflow: 'hidden'
     },
     input: {
-        minWidth: 0,
-        flexShrink: 1,
+        width: '100%',
+        height: '100%',
         color: theme.colors.onSurface,
         fontSize: WEIGHT_VALUE_FONT_SIZE,
         lineHeight: WEIGHT_VALUE_LINE_HEIGHT,
         fontWeight: '800',
         fontVariant: ['tabular-nums'],
         letterSpacing: -0.6,
-        padding: 0,
-        textAlign: 'right'
+        paddingHorizontal: WEIGHT_VALUE_UNIT_GUTTER,
+        paddingVertical: 0,
+        textAlign: 'center',
+        textAlignVertical: 'center'
+    },
+    unitSlot: {
+        position: 'absolute',
+        top: 0,
+        right: theme.spacing.lg,
+        bottom: 0,
+        justifyContent: 'center'
     },
     unit: {
         color: theme.colors.onSurfaceVariant,

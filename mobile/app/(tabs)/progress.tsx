@@ -8,7 +8,7 @@ import { AppText } from '../../src/components/AppText';
 import { BottomSheetModal } from '../../src/components/BottomSheetModal';
 import { GoalProgressCard } from '../../src/components/GoalProgressCard';
 import { GoalDailyChangeSelect } from '../../src/components/GoalDailyChangeSelect';
-import { NumberStepperField } from '../../src/components/NumberStepperField';
+import { WeightValueInput } from '../../src/components/WeightValueInput';
 import { TabScreen } from '../../src/components/TabScreen';
 import { SectionHeader } from '../../src/components/SectionHeader';
 import { SegmentedControl } from '../../src/components/SegmentedControl';
@@ -198,13 +198,15 @@ export default function ProgressScreen() {
                             </AppText>
                         </View>
                     </View>
-                    <NumberStepperField
+                    <WeightValueInput
                         label="Target"
                         value={targetWeight}
+                        unit={user?.weight_unit}
                         onChangeText={setTargetWeight}
                         step={WEIGHT_INPUT_INCREMENT}
                         min={WEIGHT_INPUT_INCREMENT}
-                        suffix={formatWeightUnit(user?.weight_unit)}
+                        editable={!saveGoal.isPending}
+                        helperText="Use one decimal place to set a precise goal."
                     />
                     <View style={styles.dailyChangeSlot}>
                         <AppText variant="label">Daily calorie change</AppText>

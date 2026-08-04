@@ -18,9 +18,38 @@ describe('WeightValueInput', () => {
         );
 
         const input = screen.getByLabelText('Weight in pounds');
-        expect(StyleSheet.flatten(input.props.style)).toEqual(expect.objectContaining({ fontSize: 52 }));
+        expect(StyleSheet.flatten(input.props.style)).toEqual(expect.objectContaining({
+            fontSize: 52,
+            height: '100%',
+            textAlign: 'center',
+            textAlignVertical: 'center'
+        }));
+        expect(screen.getByTestId('weight-value-surface')).toHaveStyle({
+            height: 96,
+            alignItems: 'center',
+            justifyContent: 'center'
+        });
         expect(screen.getByRole('button', { name: 'Decrease weight by 0.1 pounds' })).toHaveStyle({ minHeight: 56 });
         expect(screen.getByRole('button', { name: 'Increase weight by 0.1 pounds' })).toHaveStyle({ minHeight: 56 });
+    });
+
+    it('supports goal-specific labeling without changing the control geometry', () => {
+        const screen = render(
+            <WeightValueInput
+                label="Target"
+                value="165"
+                unit="LB"
+                step={0.1}
+                min={0.1}
+                editable
+                onChangeText={jest.fn()}
+            />
+        );
+
+        expect(screen.getByText('Target')).toBeTruthy();
+        expect(screen.getByLabelText('Target in pounds')).toHaveProp('value', '165');
+        expect(screen.getByTestId('weight-value-surface')).toHaveStyle({ height: 96 });
+        expect(screen.getByRole('button', { name: 'Decrease target by 0.1 pounds' })).toBeTruthy();
     });
 
     it('normalizes a decimal comma and steps at one tenth', () => {
