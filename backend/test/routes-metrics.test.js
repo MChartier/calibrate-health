@@ -38,9 +38,14 @@ function loadMetricsRouter(prismaStub) {
     ...prismaStub,
     $transaction: prismaStub.$transaction ?? (async (callback) => callback(normalizedPrismaStub)),
     bodyMetric: {
+      findUnique: async () => null,
       findFirst: async () => null,
       findMany: async () => [],
       ...(prismaStub.bodyMetric ?? {})
+    },
+    goal: {
+      findFirst: async () => null,
+      ...(prismaStub.goal ?? {})
     },
     bodyMetricTrend: {
       deleteMany: async () => ({ count: 0 }),
@@ -757,7 +762,80 @@ test('metrics route: POST / upserts metrics when weight is provided', async () =
     user_id: upsertedRow.user_id,
     date: upsertedRow.date,
     body_fat_percent: upsertedRow.body_fat_percent,
-    weight: 150
+    weight: 150,
+    progress_update: {
+      save_kind: 'created',
+      local_date: '2025-01-01',
+      is_current_day: false,
+      current_weight_grams: 68039,
+      goal: null,
+      recognitions: []
+    }
+  });
+});
+
+test('metrics route: POST / evaluates goal recognition from pre-save history inside the transaction', async () => {
+  const today = getUtcTodayDateOnly();
+  const todayKey = formatDateOnly(today);
+  const priorDate = addUtcDays(today, -1);
+  let historyWhere = null;
+  const upsertedRow = {
+    id: 12,
+    user_id: 7,
+    date: today,
+    weight_grams: 79000,
+    body_fat_percent: null
+  };
+  const prismaStub = {
+    bodyMetric: {
+      findUnique: async () => null,
+      findFirst: async () => ({ id: 8 }),
+      findMany: async ({ where }) => {
+        historyWhere = where;
+        return [{ date: priorDate, weight_grams: 85000 }];
+      },
+      upsert: async () => upsertedRow
+    },
+    goal: {
+      findFirst: async () => ({
+        id: 4,
+        user_id: 7,
+        start_weight_grams: 100000,
+        target_weight_grams: 80000,
+        daily_deficit: 500,
+        created_at: addUtcDays(today, -30)
+      })
+    }
+  };
+  const router = loadMetricsRouter(prismaStub);
+  const handler = getRouteHandler(router, 'post', '/');
+  const res = createRes();
+
+  await handler(
+    { user: { id: 7, weight_unit: 'KG', timezone: 'UTC' }, body: { date: todayKey, weight: 79 } },
+    res
+  );
+
+  assert.equal(res.statusCode, 200);
+  assert.deepEqual(historyWhere, {
+    user_id: 7,
+    date: { gte: addUtcDays(today, -30), lte: today }
+  });
+  assert.deepEqual(res.body.progress_update, {
+    save_kind: 'created',
+    local_date: todayKey,
+    is_current_day: true,
+    current_weight_grams: 79000,
+    goal: {
+      id: 4,
+      mode: 'lose',
+      previous_progress_percent: 75,
+      current_progress_percent: 100,
+      remaining_weight_grams: 0,
+      is_complete: true,
+      reached_local_date: todayKey
+    },
+    recognitions: [{ type: 'goal_reached' }]
   });
 });
 

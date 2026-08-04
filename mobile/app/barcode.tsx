@@ -3,7 +3,6 @@ import { Linking, Platform, Pressable, StyleSheet, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { CameraView, useCameraPermissions, type BarcodeScanningResult } from 'expo-camera';
 import { router, useLocalSearchParams } from 'expo-router';
-import * as Haptics from 'expo-haptics';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { MEAL_PERIODS, type MealPeriod } from '@calibrate/shared';
 import type { FoodSearchResponse } from '@calibrate/api-client';
@@ -24,6 +23,7 @@ import { calibrationStatusQueryKey } from '../src/calibration/queryKeys';
 import { executeOrQueueMutation, OFFLINE_MUTATION_OPERATIONS } from '../src/offline/operations';
 import { useOfflineOutbox } from '../src/offline/provider';
 import { getTodayDate } from '../src/utils/dates';
+import { triggerHapticFeedback } from '../src/utils/haptics';
 import { MEAL_OPTIONS, MEAL_SELECT_OPTIONS } from '../src/utils/meals';
 import { createProviderFoodSelection, type FoodLogSelection } from '../src/food/foodLogSelection';
 import { radius, spacing, useAppTheme, type AppTheme } from '../src/theme';
@@ -97,7 +97,7 @@ export default function BarcodeScreen() {
             });
         },
         onSuccess: async (_result, request) => {
-            await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            triggerHapticFeedback(user?.haptics_enabled, 'success');
             await queryClient.invalidateQueries({ queryKey: ['mobile-food', selectedDate] });
             await queryClient.invalidateQueries({ queryKey: ['mobile-food-day', selectedDate] });
             await queryClient.invalidateQueries({ queryKey: calibrationStatusQueryKey });

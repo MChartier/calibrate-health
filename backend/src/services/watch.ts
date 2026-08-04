@@ -9,6 +9,7 @@ import { executeIdempotentMutation, recordSyncChange, type MutationDatabase } fr
 import { refreshMaterializedWeightTrendsBestEffort } from './materializedWeightTrend';
 import { getFoodDayWriteBlock } from './foodTracking';
 import { getEffectiveCaloriePlan } from './caloriePlan';
+import { calculateCanonicalGoalProgress } from '../../../shared/goalProgress';
 
 const WATCH_QUICK_ADD_LIMIT = 12;
 const WATCH_PINNED_LIMIT = 6;
@@ -498,50 +499,26 @@ export type WatchGoalSnapshot = {
 /** Derive bounded, direction-aware goal progress once so every Watch surface agrees. */
 export function buildWatchGoalSnapshot(
   goal: { start_weight_grams: number; target_weight_grams: number; daily_deficit: number } | null,
-  currentWeightGrams: number | null,
-  weightUnit: 'KG' | 'LB'
+  currentWeightGrams: number | null
 ): WatchGoalSnapshot | null {
   if (!goal) return null;
-  const totalDelta = goal.target_weight_grams - goal.start_weight_grams;
-  if (currentWeightGrams === null) {
-    return {
-      start_weight_grams: goal.start_weight_grams,
-      target_weight_grams: goal.target_weight_grams,
-      daily_deficit: goal.daily_deficit,
-      current_weight_grams: null,
-      progress_percent: null,
-      remaining_weight_grams: Math.abs(totalDelta),
-      is_complete: false
-    };
-  }
-
-  let isComplete: boolean;
-  let remainingWeightGrams: number;
-  let progressPercent: number;
-  if (totalDelta > 0) {
-    isComplete = currentWeightGrams >= goal.target_weight_grams;
-    remainingWeightGrams = Math.max(0, goal.target_weight_grams - currentWeightGrams);
-    progressPercent = ((currentWeightGrams - goal.start_weight_grams) / totalDelta) * 100;
-  } else if (totalDelta < 0) {
-    isComplete = currentWeightGrams <= goal.target_weight_grams;
-    remainingWeightGrams = Math.max(0, currentWeightGrams - goal.target_weight_grams);
-    progressPercent = ((currentWeightGrams - goal.start_weight_grams) / totalDelta) * 100;
-  } else {
-    // Match the existing 0.1 display-unit maintenance tolerance at the canonical gram edge.
-    const toleranceGrams = weightUnit === 'LB' ? 45 : 100;
-    remainingWeightGrams = Math.abs(currentWeightGrams - goal.target_weight_grams);
-    isComplete = remainingWeightGrams <= toleranceGrams;
-    progressPercent = isComplete ? 100 : 0;
-  }
+  const progress = calculateCanonicalGoalProgress(
+    {
+      startWeightGrams: goal.start_weight_grams,
+      targetWeightGrams: goal.target_weight_grams,
+      dailyDeficit: goal.daily_deficit
+    },
+    currentWeightGrams
+  );
 
   return {
     start_weight_grams: goal.start_weight_grams,
     target_weight_grams: goal.target_weight_grams,
     daily_deficit: goal.daily_deficit,
     current_weight_grams: currentWeightGrams,
-    progress_percent: Math.round(Math.max(0, Math.min(100, progressPercent)) * 10) / 10,
-    remaining_weight_grams: remainingWeightGrams,
-    is_complete: isComplete
+    progress_percent: progress.progressPercent,
+    remaining_weight_grams: progress.remainingWeightGrams,
+    is_complete: progress.isComplete
   };
 }
 
@@ -611,7 +588,7 @@ export async function buildWatchSnapshot(options: {
     const caloriesConsumed = foodAggregate._sum.calories ?? 0;
     const calorieTarget = calorieSummary.dailyCalorieTarget === undefined ? null : Math.round(calorieSummary.dailyCalorieTarget);
     const defaultMealPeriod = suggestedMealPeriod(now, user.timezone);
-    const goalProgress = buildWatchGoalSnapshot(goal, latestWeight?.weight_grams ?? null, user.weight_unit);
+    const goalProgress = buildWatchGoalSnapshot(goal, latestWeight?.weight_grams ?? null);
     const recentMyFoodIds = Array.from(new Set(
       recent.map((item) => item.my_food_id).filter((id): id is number => id !== null)
     ));

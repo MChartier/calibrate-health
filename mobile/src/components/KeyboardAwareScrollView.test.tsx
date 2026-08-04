@@ -32,6 +32,21 @@ describe('KeyboardAwareScrollView', () => {
         expect(scroller.props.showsVerticalScrollIndicator).toBe(false);
     });
 
+    it('does not move the viewport merely because an input receives focus', () => {
+        const animationFrame = jest.spyOn(global, 'requestAnimationFrame').mockImplementation(() => 1);
+        const view = render(
+            <KeyboardAwareScrollView>
+                <AppText>Form content</AppText>
+            </KeyboardAwareScrollView>
+        );
+
+        act(() => {
+            view.UNSAFE_getByType(ScrollView).props.onFocus({ target: {} });
+        });
+
+        expect(animationFrame).not.toHaveBeenCalled();
+    });
+
     it('reserves room for related content while the software keyboard is visible', () => {
         const view = render(
             <KeyboardAwareScrollView

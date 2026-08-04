@@ -248,6 +248,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/metrics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Upsert one account-local body metric and optionally return a transactional weight-progress receipt. */
+        post: operations["addMetric"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/metrics/{metricId}": {
         parameters: {
             query?: never;
@@ -400,6 +417,56 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        MetricSaveResponse: {
+            id: number;
+            user_id?: number;
+            /** Format: date */
+            date: string;
+            body_fat_percent?: number | null;
+            weight: number;
+            progress_update?: components["schemas"]["MetricProgressUpdate"];
+        };
+        MetricProgressUpdate: {
+            /** @enum {string} */
+            save_kind: "created" | "updated" | "unchanged";
+            /** Format: date */
+            local_date: string;
+            is_current_day: boolean;
+            current_weight_grams: number;
+            goal: null | components["schemas"]["MetricGoalProgressUpdate"];
+            recognitions: components["schemas"]["MetricProgressRecognition"][];
+        };
+        MetricGoalProgressUpdate: {
+            id: number;
+            /** @enum {string} */
+            mode: "lose" | "gain" | "maintain";
+            previous_progress_percent: number | null;
+            current_progress_percent: number | null;
+            remaining_weight_grams: number;
+            is_complete: boolean;
+            /** Format: date */
+            reached_local_date: string | null;
+        };
+        MetricProgressRecognition: {
+            /** @constant */
+            type: "goal_reached";
+        } | {
+            /** @constant */
+            type: "goal_percent";
+            /** @enum {integer} */
+            threshold_percent: 25 | 50 | 75;
+        } | {
+            /** @constant */
+            type: "goal_weight";
+            threshold_grams: number;
+        } | {
+            /** @constant */
+            type: "meaningful_best";
+            improvement_grams: number;
+        } | {
+            /** @constant */
+            type: "baseline_recorded";
+        };
         AccountExport: {
             /** @constant */
             format: "calibrate-account-export";
@@ -1948,6 +2015,62 @@ export interface operations {
                 content?: never;
             };
             401: components["responses"]["Unauthorized"];
+        };
+    };
+    addMetric: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Stable client-generated identifier used to safely replay a mutation. */
+                "x-client-operation-id"?: components["parameters"]["ClientOperationId"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** Format: date */
+                    date?: string;
+                    weight: number;
+                    body_fat_percent?: number | null;
+                } | {
+                    /** Format: date */
+                    date?: string;
+                    weight?: number;
+                    body_fat_percent: number | null;
+                };
+            };
+        };
+        responses: {
+            /** @description Saved metric. Weight writes from newer servers include progress_update; older servers omit it. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MetricSaveResponse"];
+                };
+            };
+            /** @description Invalid date, weight, body-fat value, operation ID, or empty update. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            /** @description The client operation is still running or was reused for another payload. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
         };
     };
     deleteMetric: {

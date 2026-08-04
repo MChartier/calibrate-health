@@ -22,6 +22,7 @@ import type {
     InAppNotificationsResponse,
     LoseItImportSummary,
     MetricEntry,
+    MetricSaveResponse,
     MobileAuthRequest,
     MobileAuthResponse,
     MobileSessionSummary,
@@ -503,8 +504,8 @@ export class CalibrateApiClient {
         return this.request<TrendMetricsResponse>(`/api/metrics?${query.toString()}`);
     }
 
-    addMetric(payload: { weight: number; date: string }, operationId?: string): Promise<MetricEntry> {
-        return this.request<MetricEntry>('/api/metrics', {
+    addMetric(payload: { weight: number; date: string }, operationId?: string): Promise<MetricSaveResponse> {
+        return this.request<MetricSaveResponse>('/api/metrics', {
             method: 'POST',
             headers: buildOperationHeaders(operationId),
             json: payload

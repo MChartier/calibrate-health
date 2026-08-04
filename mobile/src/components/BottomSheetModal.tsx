@@ -17,6 +17,10 @@ type BottomSheetModalProps = {
     showCloseButton?: boolean;
     showHandle?: boolean;
     scrollable?: boolean;
+    footer?: React.ReactNode;
+    dismissDisabled?: boolean;
+    contentKey?: React.Key;
+    onShow?: () => void;
 };
 
 const SHEET_TRANSLATE_Y = 32; // Subtle sheet-only movement; the backdrop fades independently.
@@ -73,7 +77,11 @@ export const BottomSheetModal: React.FC<BottomSheetModalProps> = ({
     accessibilityLabel = 'Details',
     showCloseButton = false,
     showHandle = true,
-    scrollable = true
+    scrollable = true,
+    footer,
+    dismissDisabled = false,
+    contentKey,
+    onShow
 }) => {
     const insets = useSafeAreaInsets();
     const theme = useAppTheme();
@@ -155,17 +163,19 @@ export const BottomSheetModal: React.FC<BottomSheetModalProps> = ({
         sheetTopControl = <View accessible={false} aria-hidden style={styles.handle} />;
     }
     const fixedSheetHeight = resolveFixedSheetHeight(maxHeight, visualViewportHeight);
-    const resolvedMaxHeight = scrollable ? maxHeight : fixedSheetHeight;
+    const usesFixedSheetHeight = !scrollable || Boolean(footer);
 
     return (
         <Modal
             visible
             transparent
             animationType="none"
-            presentationStyle="overFullScreen"
             accessibilityLabel={accessibilityLabel}
             aria-label={accessibilityLabel}
-            onRequestClose={onRequestClose}
+            accessibilityViewIsModal
+            presentationStyle="overFullScreen"
+            onRequestClose={dismissDisabled ? () => undefined : onRequestClose}
+            onShow={onShow}
         >
             <KeyboardAvoidingView
                 testID="bottom-sheet-root"
@@ -182,19 +192,19 @@ export const BottomSheetModal: React.FC<BottomSheetModalProps> = ({
                     focusable={false}
                     importantForAccessibility="no-hide-descendants"
                     aria-hidden
-                    style={StyleSheet.absoluteFill}
+                    disabled={dismissDisabled}
+                    style={[StyleSheet.absoluteFill, styles.backdropPressable]}
                     onPress={onRequestClose}
                 >
                     <Animated.View style={[styles.backdrop, { opacity: backdropOpacity }]} />
                 </Pressable>
                 <Animated.View
-                    accessibilityViewIsModal
                     style={[
                         styles.sheet,
-                        !scrollable && styles.fixedHeightSheet,
+                        usesFixedSheetHeight && styles.fixedHeightSheet,
                         {
-                            maxHeight: resolvedMaxHeight,
-                            height: scrollable ? undefined : fixedSheetHeight,
+                            maxHeight: usesFixedSheetHeight ? fixedSheetHeight : maxHeight,
+                            height: usesFixedSheetHeight ? fixedSheetHeight : undefined,
                             transform: [{ translateY }]
                         }
                     ]}
@@ -206,13 +216,16 @@ export const BottomSheetModal: React.FC<BottomSheetModalProps> = ({
                     )}
                     {scrollable ? (
                         <KeyboardAwareScrollView
+                            key={contentKey}
                             testID="bottom-sheet-scroll"
                             style={styles.scroll}
                             contentContainerStyle={[
                                 styles.content,
                                 {
                                     paddingTop: sheetTopControl ? theme.spacing.sm : theme.spacing.md,
-                                    paddingBottom: Math.max(theme.spacing.lg, insets.bottom + theme.spacing.sm)
+                                    paddingBottom: footer
+                                        ? 0
+                                        : Math.max(theme.spacing.lg, insets.bottom + theme.spacing.sm)
                                 }
                             ]}
                         >
@@ -225,11 +238,23 @@ export const BottomSheetModal: React.FC<BottomSheetModalProps> = ({
                                 styles.fixedContent,
                                 {
                                     paddingTop: sheetTopControl ? theme.spacing.sm : theme.spacing.md,
-                                    paddingBottom: Math.max(theme.spacing.lg, insets.bottom + theme.spacing.sm)
+                                    paddingBottom: footer
+                                        ? 0
+                                        : Math.max(theme.spacing.lg, insets.bottom + theme.spacing.sm)
                                 }
                             ]}
                         >
                             {children}
+                        </View>
+                    )}
+                    {footer && (
+                        <View
+                            style={[
+                                styles.footer,
+                                { paddingBottom: Math.max(theme.spacing.md, insets.bottom + theme.spacing.sm) }
+                            ]}
+                        >
+                            {footer}
                         </View>
                     )}
                 </Animated.View>
@@ -258,8 +283,13 @@ function createStyles(theme: AppTheme) {
         flex: 1,
         backgroundColor: theme.colors.scrim
     },
+    backdropPressable: {
+        zIndex: 0
+    },
     sheet: {
         ...theme.shadows.raised,
+        position: 'relative',
+        zIndex: 1,
         width: '100%',
         overflow: 'hidden',
         borderTopLeftRadius: theme.radius.sheet,
@@ -295,6 +325,14 @@ function createStyles(theme: AppTheme) {
     fixedContent: {
         flex: 1,
         minHeight: 0
+    },
+    footer: {
+        gap: theme.spacing.sm,
+        paddingHorizontal: theme.spacing.lg,
+        paddingTop: theme.spacing.md,
+        borderTopColor: theme.colors.outlineVariant,
+        borderTopWidth: StyleSheet.hairlineWidth,
+        backgroundColor: theme.colors.surfaceContainerLow
     },
     handle: {
         alignSelf: 'center',

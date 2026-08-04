@@ -191,45 +191,45 @@ test('watch snapshot is bounded, timezone-local, and derives current-session und
 
 test('watch goal progress covers loss, gain, maintenance, missing goals, and completed targets', () => {
   const { buildWatchGoalSnapshot } = loadWatchService({ prismaStub: {} });
-  assert.equal(buildWatchGoalSnapshot(null, 80000, 'KG'), null);
+  assert.equal(buildWatchGoalSnapshot(null, 80000), null);
   const serialized = buildWatchGoalSnapshot({
     id: 99, user_id: 9, start_weight_grams: 90000, target_weight_grams: 80000,
     daily_deficit: 500, target_date: new Date(), created_at: new Date()
-  }, 85000, 'KG');
+  }, 85000);
   assert.deepEqual(Object.keys(serialized).sort(), [
     'current_weight_grams', 'daily_deficit', 'is_complete', 'progress_percent',
     'remaining_weight_grams', 'start_weight_grams', 'target_weight_grams'
   ]);
   assert.deepEqual(
-    buildWatchGoalSnapshot({ start_weight_grams: 90000, target_weight_grams: 80000, daily_deficit: 500 }, 85000, 'KG'),
+    buildWatchGoalSnapshot({ start_weight_grams: 90000, target_weight_grams: 80000, daily_deficit: 500 }, 85000),
     {
       start_weight_grams: 90000, target_weight_grams: 80000, current_weight_grams: 85000,
       daily_deficit: 500, progress_percent: 50, remaining_weight_grams: 5000, is_complete: false
     }
   );
   assert.deepEqual(
-    buildWatchGoalSnapshot({ start_weight_grams: 70000, target_weight_grams: 80000, daily_deficit: -500 }, 75000, 'KG'),
+    buildWatchGoalSnapshot({ start_weight_grams: 70000, target_weight_grams: 80000, daily_deficit: -500 }, 75000),
     {
       start_weight_grams: 70000, target_weight_grams: 80000, current_weight_grams: 75000,
       daily_deficit: -500, progress_percent: 50, remaining_weight_grams: 5000, is_complete: false
     }
   );
   assert.deepEqual(
-    buildWatchGoalSnapshot({ start_weight_grams: 75000, target_weight_grams: 75000, daily_deficit: 0 }, 75090, 'KG'),
+    buildWatchGoalSnapshot({ start_weight_grams: 75000, target_weight_grams: 75000, daily_deficit: 0 }, 75090),
     {
       start_weight_grams: 75000, target_weight_grams: 75000, current_weight_grams: 75090,
-      daily_deficit: 0, progress_percent: 100, remaining_weight_grams: 90, is_complete: true
+      daily_deficit: 0, progress_percent: null, remaining_weight_grams: 90, is_complete: false
     }
   );
   assert.deepEqual(
-    buildWatchGoalSnapshot({ start_weight_grams: 90000, target_weight_grams: 80000, daily_deficit: 500 }, 79000, 'KG'),
+    buildWatchGoalSnapshot({ start_weight_grams: 90000, target_weight_grams: 80000, daily_deficit: 500 }, 79000),
     {
       start_weight_grams: 90000, target_weight_grams: 80000, current_weight_grams: 79000,
       daily_deficit: 500, progress_percent: 100, remaining_weight_grams: 0, is_complete: true
     }
   );
   assert.deepEqual(
-    buildWatchGoalSnapshot({ start_weight_grams: 90000, target_weight_grams: 80000, daily_deficit: 500 }, null, 'KG'),
+    buildWatchGoalSnapshot({ start_weight_grams: 90000, target_weight_grams: 80000, daily_deficit: 500 }, null),
     {
       start_weight_grams: 90000, target_weight_grams: 80000, current_weight_grams: null,
       daily_deficit: 500, progress_percent: null, remaining_weight_grams: 10000, is_complete: false

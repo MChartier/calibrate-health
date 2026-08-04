@@ -75,7 +75,15 @@ function Notice({ role, title, detail, background, foreground, border, action }:
     );
 }
 
-export function PwaStatusBanner({ runtime = browserPwaRuntime }: { runtime?: PwaRuntime }) {
+type PwaStatusBannerProps = {
+    runtime?: PwaRuntime;
+    showUpdateNotices?: boolean;
+};
+
+export function PwaStatusBanner({
+    runtime = browserPwaRuntime,
+    showUpdateNotices = true
+}: PwaStatusBannerProps) {
     const theme = useAppTheme();
     const { network, update, applyUpdate, retryUpdate } = usePwaStatus(runtime);
     const containerStyle: React.CSSProperties = {
@@ -118,7 +126,7 @@ export function PwaStatusBanner({ runtime = browserPwaRuntime }: { runtime?: Pwa
         );
     }
 
-    if (update === PWA_UPDATE_STATES.READY || update === PWA_UPDATE_STATES.APPLYING) {
+    if (showUpdateNotices && (update === PWA_UPDATE_STATES.READY || update === PWA_UPDATE_STATES.APPLYING)) {
         const applying = update === PWA_UPDATE_STATES.APPLYING;
         notices.push(
             <Notice
@@ -132,7 +140,7 @@ export function PwaStatusBanner({ runtime = browserPwaRuntime }: { runtime?: Pwa
                 action={{ label: applying ? 'Refreshing' : 'Refresh', disabled: applying, onClick: applyUpdate }}
             />
         );
-    } else if (update === PWA_UPDATE_STATES.ERROR) {
+    } else if (showUpdateNotices && update === PWA_UPDATE_STATES.ERROR) {
         notices.push(
             <Notice
                 key="update-error"

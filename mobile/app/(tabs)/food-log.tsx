@@ -3,7 +3,6 @@ import { StyleSheet, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router, useLocalSearchParams, usePathname } from 'expo-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import * as Haptics from 'expo-haptics';
 import type { FoodLogEntry, FoodLogUpdatePayload } from '@calibrate/api-client';
 import type { MealPeriod } from '@calibrate/shared';
 import { AddFoodSheet } from '../../src/components/AddFoodSheet';
@@ -31,6 +30,7 @@ import { getFoodLogEditableAmount } from '../../src/food/foodLogAmount';
 import { getActiveTabRoute } from '../../src/navigation/contextualFab';
 import { executeOrQueueMutation, OFFLINE_MUTATION_OPERATIONS } from '../../src/offline/operations';
 import { useOfflineOutbox } from '../../src/offline/provider';
+import { triggerHapticFeedback } from '../../src/utils/haptics';
 import { MEAL_SELECT_OPTIONS } from '../../src/utils/meals';
 import { type AppTheme, useAppTheme } from '../../src/theme';
 import { SERVING_INPUT_INCREMENT } from '../../src/config/inputPrecision';
@@ -38,7 +38,7 @@ import { SERVING_INPUT_INCREMENT } from '../../src/config/inputPrecision';
 export default function FoodLogScreen() {
     const routeParams = useLocalSearchParams<{ date?: string }>();
     const pathname = usePathname();
-    const { api } = useAuth();
+    const { api, user } = useAuth();
     const { enqueue } = useOfflineOutbox();
     const queryClient = useQueryClient();
     const dateNavigation = useSharedLogDateNavigation();
@@ -103,7 +103,7 @@ export default function FoodLogScreen() {
             });
         },
         onSuccess: async () => {
-            await Haptics.selectionAsync();
+            triggerHapticFeedback(user?.haptics_enabled, 'selection');
             await invalidateLogQueries();
         }
     });
@@ -136,7 +136,7 @@ export default function FoodLogScreen() {
         },
         onSuccess: async () => {
             setEditEntry(null);
-            await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            triggerHapticFeedback(user?.haptics_enabled, 'success');
             await invalidateLogQueries();
         },
         onError: (error) => {

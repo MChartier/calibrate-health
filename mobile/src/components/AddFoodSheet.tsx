@@ -3,7 +3,6 @@ import { FlatList, Linking, Pressable, StyleSheet, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router } from 'expo-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import * as Haptics from 'expo-haptics';
 import { MEAL_PERIODS, type MealPeriod } from '@calibrate/shared';
 import type { FoodLogCreatePayload, MyFoodSummary, RecentFoodSummary } from '@calibrate/api-client';
 import { AppButton } from './AppButton';
@@ -23,6 +22,7 @@ import { useOfflineOutbox } from '../offline/provider';
 import { useFoodDayStatus } from './FoodTrackingStatus';
 import { formatDateOnlyForDisplay } from '../utils/dates';
 import { formatCalories, formatMealPeriod } from '../utils/format';
+import { triggerHapticFeedback } from '../utils/haptics';
 import { MEAL_OPTIONS, MEAL_SELECT_OPTIONS } from '../utils/meals';
 import { selectQuickRecentFoods } from '../utils/myFoods';
 import { getFoodLogAmountText } from '../food/foodLogAmount';
@@ -134,7 +134,7 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
 }) => {
     const theme = useAppTheme();
     const styles = useMemo(() => createStyles(theme), [theme]);
-    const { api } = useAuth();
+    const { api, user } = useAuth();
     const { enqueue } = useOfflineOutbox();
     const queryClient = useQueryClient();
     const foodDayQuery = useFoodDayStatus(date, visible);
@@ -201,7 +201,7 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
     }
 
     async function confirmLogged(closeAfterLogging: boolean) {
-        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        triggerHapticFeedback(user?.haptics_enabled, 'success');
         onLogged?.();
         if (closeAfterLogging) onClose();
         await invalidateLogQueries();

@@ -1,23 +1,31 @@
 import React, { useMemo } from 'react';
 import { Pressable, StyleSheet, View, type ViewProps } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import type { GoalEntry, MetricEntry } from '@calibrate/api-client';
+import type { GoalEntry, MetricEntry, UserClientPayload } from '@calibrate/api-client';
 import { AppCard } from './AppCard';
 import { AppText } from './AppText';
 import { ProgressBar } from './ProgressBar';
 import { SectionHeader } from './SectionHeader';
 import { radius, spacing, useAppTheme, type AppTheme } from '../theme';
-import { computeGoalProgress, computeGoalProjection, getGoalModeFromDailyDeficit } from '../utils/goals';
+import { formatDateOnlyForDisplay } from '../utils/dates';
+import {
+    computeGoalProgress,
+    computeGoalProjection,
+    formatDailyGoalChange,
+    getGoalModeFromDailyDeficit,
+    getGoalReachedDate
+} from '../utils/goals';
 import { formatWeight, formatWeightUnit } from '../utils/format';
-import type { UserClientPayload } from '@calibrate/api-client';
 
 type GoalProgressCardProps = ViewProps & {
     title?: string;
     goal: GoalEntry | null | undefined;
     latestMetric: MetricEntry | null | undefined;
+    metrics?: ReadonlyArray<MetricEntry>;
     user: UserClientPayload | null;
     targetCalories?: number | null;
     onEditGoal?: () => void;
+    onSetNextGoal?: () => void;
 };
 
 function formatMetricDate(value: string | null | undefined): string {
@@ -47,9 +55,11 @@ export const GoalProgressCard: React.FC<GoalProgressCardProps> = ({
     title = 'Progress snapshot',
     goal,
     latestMetric,
+    metrics,
     user,
     targetCalories,
     onEditGoal,
+    onSetNextGoal,
     style,
     ...props
 }) => {
@@ -86,18 +96,106 @@ export const GoalProgressCard: React.FC<GoalProgressCardProps> = ({
 
     const unitLabel = formatWeightUnit(user?.weight_unit);
     const currentWeight = latestMetric?.weight ?? null;
-    const progress = computeGoalProgress({
-        startWeight: goal.start_weight,
-        targetWeight: goal.target_weight,
-        currentWeight
+    const goalMode = getGoalModeFromDailyDeficit(goal.daily_deficit);
+    const isMaintenance = goalMode === 'maintain';
+    const reachedDate = getGoalReachedDate({
+        goal,
+        metrics: metrics ?? (latestMetric ? [latestMetric] : []),
+        timezone: user?.timezone
     });
-    const projection = computeGoalProjection({
-        startWeight: goal.start_weight,
-        targetWeight: goal.target_weight,
-        currentWeight,
-        dailyDeficit: goal.daily_deficit,
-        unitLabel
-    });
+    const hasReachedGoal = reachedDate !== null;
+    const progress = isMaintenance || hasReachedGoal
+        ? null
+        : computeGoalProgress({
+            startWeight: goal.start_weight,
+            targetWeight: goal.target_weight,
+            currentWeight
+        });
+    const projection = isMaintenance || hasReachedGoal
+        ? null
+        : computeGoalProjection({
+            startWeight: goal.start_weight,
+            targetWeight: goal.target_weight,
+            currentWeight,
+            dailyDeficit: goal.daily_deficit,
+            unitLabel
+        });
+
+    let goalAction: React.ReactNode = null;
+    if (hasReachedGoal && onSetNextGoal) {
+        goalAction = <GoalActionButton label="Set next goal" onPress={onSetNextGoal} theme={theme} />;
+    } else if (onEditGoal) {
+        goalAction = <GoalActionButton label="Edit goal" onPress={onEditGoal} theme={theme} />;
+    }
+
+    let goalStatus: React.ReactNode;
+    if (isMaintenance) {
+        goalStatus = (
+            <View style={styles.statusBlock}>
+                <AppText variant="muted">Goal status</AppText>
+                <AppText variant="screenTitle" style={styles.statusValue}>Ongoing</AppText>
+            </View>
+        );
+    } else if (hasReachedGoal) {
+        goalStatus = (
+            <View style={styles.reachedBlock}>
+                <AppText variant="muted">Goal status</AppText>
+                <AppText variant="screenTitle" style={styles.reachedValue}>Reached</AppText>
+            </View>
+        );
+    } else {
+        goalStatus = (
+            <View style={styles.projectionBlock}>
+                <AppText variant="muted">Goal projection</AppText>
+                <AppText variant="screenTitle" style={styles.projectionValue}>{projection}</AppText>
+            </View>
+        );
+    }
+
+    let progressDetails: React.ReactNode;
+    if (isMaintenance) {
+        progressDetails = (
+            <AppText variant="muted">
+                Maintenance is ongoing, with no completion percentage or projected end date.
+            </AppText>
+        );
+    } else if (hasReachedGoal) {
+        progressDetails = (
+            <>
+                <ProgressBar value={1} tone="primary" />
+                <View style={styles.goalEndpoints}>
+                    <AppText variant="muted">Start {formatWeight(goal.start_weight, user?.weight_unit)}</AppText>
+                    <AppText variant="muted" style={styles.progressSummary}>100% reached</AppText>
+                    <AppText variant="muted">Goal {formatWeight(goal.target_weight, user?.weight_unit)}</AppText>
+                </View>
+                <AppText variant="muted">
+                    Goal reached on {formatDateOnlyForDisplay(reachedDate)}.
+                </AppText>
+                <View style={styles.planWarning}>
+                    <Ionicons name="information-circle-outline" size={18} color={theme.colors.onWarningContainer} />
+                    <AppText style={styles.planWarningText}>
+                        Your {formatDailyGoalChange(goal.daily_deficit)} plan remains active until you set another goal.
+                    </AppText>
+                </View>
+            </>
+        );
+    } else {
+        progressDetails = (
+            <>
+                <ProgressBar value={(progress?.percent ?? 0) / 100} tone="primary" />
+                <View style={styles.goalEndpoints}>
+                    <AppText variant="muted">Start {formatWeight(goal.start_weight, user?.weight_unit)}</AppText>
+                    {progress && (
+                        <AppText variant="muted" style={styles.progressSummary}>
+                            {Math.round(progress.percent)}% complete
+                        </AppText>
+                    )}
+                    <AppText variant="muted">Goal {formatWeight(goal.target_weight, user?.weight_unit)}</AppText>
+                </View>
+                {!progress && <AppText variant="muted">Log weight on Today to calculate progress.</AppText>}
+            </>
+        );
+    }
 
     return (
         <AppCard {...props} style={[styles.card, style]}>
@@ -107,7 +205,7 @@ export const GoalProgressCard: React.FC<GoalProgressCardProps> = ({
                     description={formatMetricDate(latestMetric?.date)}
                     style={styles.heading}
                 />
-                {onEditGoal && <GoalActionButton label="Edit goal" onPress={onEditGoal} theme={theme} />}
+                {goalAction}
             </View>
             <View style={styles.metricsRow}>
                 <View style={styles.metricBlock}>
@@ -116,23 +214,10 @@ export const GoalProgressCard: React.FC<GoalProgressCardProps> = ({
                         {formatWeight(currentWeight, user?.weight_unit)}
                     </AppText>
                 </View>
-                <View style={styles.projectionBlock}>
-                    <AppText variant="muted">Goal projection</AppText>
-                    <AppText variant="screenTitle" style={styles.projectionValue}>{projection}</AppText>
-                </View>
+                {goalStatus}
             </View>
             <AppText variant="muted">{describeGoalPlan(goal)}</AppText>
-            <ProgressBar value={(progress?.percent ?? 0) / 100} tone="primary" />
-            <View style={styles.goalEndpoints}>
-                <AppText variant="muted">Start {formatWeight(goal.start_weight, user?.weight_unit)}</AppText>
-                {progress && (
-                    <AppText variant="muted" style={styles.progressSummary}>
-                        {Math.round(progress.percent)}% complete
-                    </AppText>
-                )}
-                <AppText variant="muted">Goal {formatWeight(goal.target_weight, user?.weight_unit)}</AppText>
-            </View>
-            {!progress && <AppText variant="muted">Log weight on Today to calculate progress.</AppText>}
+            {progressDetails}
             {typeof targetCalories === 'number' && (
                 <AppText variant="muted">Current target: {Math.round(targetCalories).toLocaleString()} kcal/day</AppText>
             )}
@@ -224,6 +309,44 @@ const createStyles = (theme: AppTheme) => StyleSheet.create({
         paddingVertical: spacing.sm
     },
     projectionValue: {
+        color: theme.colors.onWarningContainer
+    },
+    statusBlock: {
+        flex: 1,
+        minWidth: 0,
+        justifyContent: 'center',
+        gap: spacing.xs,
+        borderRadius: radius.md,
+        backgroundColor: theme.colors.surfaceContainer,
+        paddingHorizontal: spacing.md,
+        paddingVertical: spacing.sm
+    },
+    statusValue: {
+        color: theme.colors.onSurface
+    },
+    reachedBlock: {
+        flex: 1,
+        minWidth: 0,
+        justifyContent: 'center',
+        gap: spacing.xs,
+        borderRadius: radius.md,
+        backgroundColor: theme.colors.successContainer,
+        paddingHorizontal: spacing.md,
+        paddingVertical: spacing.sm
+    },
+    reachedValue: {
+        color: theme.colors.onSuccessContainer
+    },
+    planWarning: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        gap: spacing.sm,
+        borderRadius: radius.md,
+        backgroundColor: theme.colors.warningContainer,
+        padding: spacing.md
+    },
+    planWarningText: {
+        flex: 1,
         color: theme.colors.onWarningContainer
     },
     progressSummary: {

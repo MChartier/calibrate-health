@@ -81,7 +81,23 @@ class WatchSnapshotMapperTest {
     }
 
     @Test
-    fun `rejects incomplete or out-of-range goal progress`() {
+    fun `maps maintenance as ongoing neutral progress`() {
+        val maintenanceGoal =
+            "\"goal\":{\"start_weight_grams\":80000,\"target_weight_grams\":80000," +
+                "\"current_weight_grams\":80100,\"daily_deficit\":0,\"progress_percent\":null," +
+                "\"remaining_weight_grams\":100,\"is_complete\":false},"
+        val mapped = WatchSnapshotMapper.map(
+            validSnapshot().replace("\"quick_add\":", "$maintenanceGoal\"quick_add\":"),
+            42L
+        ).dailySnapshot
+
+        assertEquals(80_100L, mapped.goalCurrentWeightGrams)
+        assertEquals(null, mapped.goalProgressPercent)
+        assertEquals(false, mapped.goalIsComplete)
+    }
+
+    @Test
+    fun `rejects incomplete directional or out-of-range goal progress`() {
         val incompleteGoal =
             "\"goal\":{\"start_weight_grams\":90000,\"target_weight_grams\":75000," +
                 "\"current_weight_grams\":80000,\"daily_deficit\":500,\"progress_percent\":null," +

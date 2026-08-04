@@ -1,6 +1,8 @@
-import type { GoalEntry } from '@calibrate/api-client';
+import type { GoalEntry, MetricEntry } from '@calibrate/api-client';
 import { ALLOWED_DAILY_DEFICIT_ABS_VALUES, type WeightUnit } from '@calibrate/shared';
+import { getLocalDateForTimestamp } from './dates';
 import { formatCalories, formatWeight } from './format';
+import { getMetricDate } from './metrics';
 
 export type GoalMode = 'lose' | 'maintain' | 'gain';
 
@@ -24,6 +26,15 @@ export function getSignedDailyDeficit(goalMode: GoalMode, dailyChangeAbs: string
     if (goalMode === 'maintain') return 0;
     const magnitude = Math.abs(Number(dailyChangeAbs));
     return goalMode === 'gain' ? -magnitude : magnitude;
+}
+
+/** Maintenance starts from the current weight; other modes preserve the user's target draft. */
+export function getTargetWeightAfterGoalModeChange(
+    goalMode: GoalMode,
+    startWeight: string,
+    currentTargetWeight: string
+): string {
+    return goalMode === 'maintain' ? startWeight : currentTargetWeight;
 }
 
 export function getDailyGoalChangeCopy(
@@ -70,14 +81,36 @@ export function computeGoalProgress(args: {
 
     const totalDelta = targetWeight - startWeight;
     const achievedDelta = currentWeight - startWeight;
-    if (totalDelta === 0) {
-        const isComplete = Math.abs(currentWeight - targetWeight) <= 0.1;
-        return { percent: isComplete ? 100 : 0, isComplete };
-    }
+    if (totalDelta === 0) return null;
 
     const percent = Math.max(0, Math.min(100, (achievedDelta / totalDelta) * 100));
     const isComplete = totalDelta > 0 ? currentWeight >= targetWeight : currentWeight <= targetWeight;
     return { percent, isComplete };
+}
+
+/** Goal completion is durable once a goal-period weigh-in reaches a loss or gain target. */
+export function getGoalReachedDate(args: {
+    goal: GoalEntry;
+    metrics: ReadonlyArray<MetricEntry>;
+    timezone?: string | null;
+}): string | null {
+    const { goal, metrics, timezone } = args;
+    const mode = getGoalModeFromDailyDeficit(goal.daily_deficit);
+    if (mode === 'maintain') return null;
+
+    const goalStartDate = getLocalDateForTimestamp(goal.created_at, timezone);
+    const reachedMetric = metrics
+        .filter((metric) => {
+            if (!Number.isFinite(metric.weight)) return false;
+            const metricDate = getMetricDate(metric);
+            if (goalStartDate && metricDate < goalStartDate) return false;
+            return mode === 'lose'
+                ? metric.weight <= goal.target_weight
+                : metric.weight >= goal.target_weight;
+        })
+        .sort((left, right) => getMetricDate(left).localeCompare(getMetricDate(right)))[0];
+
+    return reachedMetric ? getMetricDate(reachedMetric) : null;
 }
 
 export function computeGoalProjection(args: {

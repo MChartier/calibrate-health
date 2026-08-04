@@ -109,7 +109,7 @@ export const KeyboardAwareScrollView: React.FC<KeyboardAwareScrollViewProps> = (
             onFocus={(event) => {
                 onFocus?.(event);
                 focusedInputRef.current = event.target;
-                revealFocusedInput(event.target);
+                if (shouldRevealKeyboardContext) revealFocusedInput(event.target);
             }}
             showsVerticalScrollIndicator={showsVerticalScrollIndicator}
         />

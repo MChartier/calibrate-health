@@ -11,6 +11,7 @@ import {
     MS_PER_DAY,
     addUtcDays,
     addUtcYearsClamped,
+    formatDateToLocalDateString,
     getSafeUtcTodayDateOnlyInTimeZone,
     getUtcTodayDateOnlyInTimeZone,
     parseLocalDateOnly
@@ -29,6 +30,12 @@ import {
     recordSyncChange
 } from '../services/clientOperations';
 import { getAuthenticatedUser, requireAuthenticatedUser } from '../middleware/authenticatedUser';
+import {
+    evaluateMetricProgressUpdate,
+    type MetricProgressGoal,
+    type MetricProgressHistoryEntry,
+    type MetricSaveKind
+} from '../services/metricProgress';
 
 /**
  * Weight and body metric log endpoints.
@@ -81,6 +88,14 @@ type TrendMetricsResponse = {
         total_span_days: number;
     };
 };
+
+function formatLocalDateForTimeZone(date: Date, timeZone: string): string {
+    try {
+        return formatDateToLocalDateString(date, timeZone);
+    } catch {
+        return formatDateToLocalDateString(date, 'UTC');
+    }
+}
 
 /**
  * Parse the smoothing query parameter into a rolling window size.
@@ -436,9 +451,9 @@ router.post('/', async (req, res) => {
             return res.status(400).json({ message: 'Invalid x-client-operation-id' });
         }
 
+        const timeZone = typeof user.timezone === 'string' ? user.timezone : 'UTC';
         let metricDate: Date;
         try {
-            const timeZone = typeof user.timezone === 'string' ? user.timezone : 'UTC';
             // Store date-only values in UTC, derived from the user's local day.
             metricDate = date
                 ? parseLocalDateOnly(date)
@@ -480,6 +495,9 @@ router.post('/', async (req, res) => {
         }
 
         const whereUnique = { user_id_date: { user_id: user.id, date: metricDate } } as const;
+        const currentLocalDateValue = getSafeUtcTodayDateOnlyInTimeZone(timeZone);
+        const currentLocalDate = currentLocalDateValue.toISOString().slice(0, 10);
+        const savedLocalDate = metricDate.toISOString().slice(0, 10);
 
         const result = await executeIdempotentMutation<unknown>({
             userId: user.id,
@@ -487,9 +505,57 @@ router.post('/', async (req, res) => {
             operationKind: 'body_metric.upsert',
             requestPayload: req.body,
             mutate: async (tx, claimedOperationId) => {
+                const existing = await tx.bodyMetric.findUnique({ where: whereUnique });
+                let progressGoal: MetricProgressGoal | null = null;
+                let previousMetrics: MetricProgressHistoryEntry[] = [];
+                let hadAnyMetricBeforeSave = false;
+                let saveKind: MetricSaveKind | null = null;
+
+                if (updateData.weight_grams !== undefined) {
+                    saveKind =
+                        existing === null
+                            ? 'created'
+                            : existing.weight_grams === updateData.weight_grams
+                              ? 'unchanged'
+                              : 'updated';
+                    hadAnyMetricBeforeSave = (await tx.bodyMetric.findFirst({
+                        where: { user_id: user.id },
+                        select: { id: true }
+                    })) !== null;
+
+                    const activeGoal = await tx.goal.findFirst({
+                        where: { user_id: user.id },
+                        orderBy: [{ created_at: 'desc' }, { id: 'desc' }]
+                    });
+                    if (activeGoal) {
+                        const createdLocalDate = formatLocalDateForTimeZone(activeGoal.created_at, timeZone);
+                        progressGoal = {
+                            id: activeGoal.id,
+                            startWeightGrams: activeGoal.start_weight_grams,
+                            targetWeightGrams: activeGoal.target_weight_grams,
+                            dailyDeficit: activeGoal.daily_deficit,
+                            createdLocalDate
+                        };
+                        const history = await tx.bodyMetric.findMany({
+                            where: {
+                                user_id: user.id,
+                                date: {
+                                    gte: parseLocalDateOnly(createdLocalDate),
+                                    lte: currentLocalDateValue
+                                }
+                            },
+                            orderBy: [{ date: 'asc' }, { id: 'asc' }],
+                            select: { date: true, weight_grams: true }
+                        });
+                        previousMetrics = history.map((metric) => ({
+                            localDate: metric.date.toISOString().slice(0, 10),
+                            weightGrams: metric.weight_grams
+                        }));
+                    }
+                }
+
                 let metric;
                 if (updateData.weight_grams === undefined) {
-                    const existing = await tx.bodyMetric.findUnique({ where: whereUnique });
                     if (!existing) {
                         return { status: 400, body: { message: 'Weight is required for a new day' } };
                     }
@@ -521,9 +587,26 @@ router.post('/', async (req, res) => {
                 });
 
                 const { weight_grams: savedWeightGrams, ...savedMetric } = metric;
+                const progressUpdate =
+                    saveKind === null
+                        ? null
+                        : evaluateMetricProgressUpdate({
+                              saveKind,
+                              savedLocalDate,
+                              currentLocalDate,
+                              currentWeightGrams: savedWeightGrams,
+                              weightUnit,
+                              goal: progressGoal,
+                              previousMetrics,
+                              hadAnyMetricBeforeSave
+                          });
                 return {
                     status: 200,
-                    body: { ...savedMetric, weight: gramsToWeight(savedWeightGrams, weightUnit) }
+                    body: {
+                        ...savedMetric,
+                        weight: gramsToWeight(savedWeightGrams, weightUnit),
+                        ...(progressUpdate === null ? {} : { progress_update: progressUpdate })
+                    }
                 };
             }
         });

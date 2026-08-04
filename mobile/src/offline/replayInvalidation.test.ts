@@ -1,0 +1,48 @@
+import { OFFLINE_MUTATION_OPERATIONS } from './operations';
+import { invalidateQueriesAfterOfflineReplay } from './replayInvalidation';
+
+jest.mock('expo-crypto', () => ({ randomUUID: jest.fn(() => 'generated-operation-id') }));
+
+function replayResult(replayedOperations: string[]) {
+    return {
+        replayed: replayedOperations.length,
+        replayedOperations,
+        failedMutation: null
+    };
+}
+
+describe('offline replay query invalidation', () => {
+    it.each([
+        OFFLINE_MUTATION_OPERATIONS.ADD_METRIC,
+        OFFLINE_MUTATION_OPERATIONS.DELETE_METRIC
+    ])('refreshes metric-derived and notification state after %s', async (operation) => {
+        const receivedQueryKeys: unknown[] = [];
+        const invalidateQueries = jest.fn(async (filters: { queryKey?: readonly unknown[] }) => {
+            receivedQueryKeys.push(filters.queryKey);
+        });
+
+        await invalidateQueriesAfterOfflineReplay(
+            { invalidateQueries } as never,
+            replayResult([operation])
+        );
+
+        expect(receivedQueryKeys).toEqual([
+            ['mobile-metrics'],
+            ['mobile-metrics-trend'],
+            ['mobile-profile'],
+            ['mobile-in-app-notifications'],
+            ['mobile-calibration-status']
+        ]);
+    });
+
+    it('does not refresh weight state for unrelated replayed operations', async () => {
+        const invalidateQueries = jest.fn(async () => undefined);
+
+        await invalidateQueriesAfterOfflineReplay(
+            { invalidateQueries } as never,
+            replayResult([OFFLINE_MUTATION_OPERATIONS.CREATE_FOOD_LOG])
+        );
+
+        expect(invalidateQueries).not.toHaveBeenCalled();
+    });
+});
