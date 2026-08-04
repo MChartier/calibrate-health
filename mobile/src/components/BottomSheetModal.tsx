@@ -16,6 +16,7 @@ type BottomSheetModalProps = {
     accessibilityLabel?: string;
     showCloseButton?: boolean;
     showHandle?: boolean;
+    scrollable?: boolean;
 };
 
 const SHEET_TRANSLATE_Y = 32; // Subtle sheet-only movement; the backdrop fades independently.
@@ -50,6 +51,17 @@ function hideWebAppFromModalAccessibility(): (() => void) | undefined {
     };
 }
 
+/** React Native Web portals need a pixel height because percentage heights resolve against a zero-height wrapper. */
+export function resolveFixedSheetHeight(
+    maxHeight: ViewStyle['maxHeight'],
+    visualViewportHeight: number | undefined
+): ViewStyle['height'] {
+    if (visualViewportHeight === undefined || typeof maxHeight !== 'string') return maxHeight;
+    const percentageMatch = maxHeight.match(/^(\d+(?:\.\d+)?)%$/);
+    if (!percentageMatch) return maxHeight;
+    return visualViewportHeight * (Number(percentageMatch[1]) / 100);
+}
+
 /**
  * Native-feeling bottom sheet with a non-sliding dimmed backdrop.
  */
@@ -60,7 +72,8 @@ export const BottomSheetModal: React.FC<BottomSheetModalProps> = ({
     maxHeight = '88%',
     accessibilityLabel = 'Details',
     showCloseButton = false,
-    showHandle = true
+    showHandle = true,
+    scrollable = true
 }) => {
     const insets = useSafeAreaInsets();
     const theme = useAppTheme();
@@ -141,6 +154,8 @@ export const BottomSheetModal: React.FC<BottomSheetModalProps> = ({
     } else if (showHandle) {
         sheetTopControl = <View accessible={false} aria-hidden style={styles.handle} />;
     }
+    const fixedSheetHeight = resolveFixedSheetHeight(maxHeight, visualViewportHeight);
+    const resolvedMaxHeight = scrollable ? maxHeight : fixedSheetHeight;
 
     return (
         <Modal
@@ -176,8 +191,10 @@ export const BottomSheetModal: React.FC<BottomSheetModalProps> = ({
                     accessibilityViewIsModal
                     style={[
                         styles.sheet,
+                        !scrollable && styles.fixedHeightSheet,
                         {
-                            maxHeight,
+                            maxHeight: resolvedMaxHeight,
+                            height: scrollable ? undefined : fixedSheetHeight,
                             transform: [{ translateY }]
                         }
                     ]}
@@ -187,19 +204,34 @@ export const BottomSheetModal: React.FC<BottomSheetModalProps> = ({
                             {sheetTopControl}
                         </View>
                     )}
-                    <KeyboardAwareScrollView
-                        testID="bottom-sheet-scroll"
-                        style={styles.scroll}
-                        contentContainerStyle={[
-                            styles.content,
-                            {
-                                paddingTop: sheetTopControl ? theme.spacing.sm : theme.spacing.md,
-                                paddingBottom: Math.max(theme.spacing.lg, insets.bottom + theme.spacing.sm)
-                            }
-                        ]}
-                    >
-                        {children}
-                    </KeyboardAwareScrollView>
+                    {scrollable ? (
+                        <KeyboardAwareScrollView
+                            testID="bottom-sheet-scroll"
+                            style={styles.scroll}
+                            contentContainerStyle={[
+                                styles.content,
+                                {
+                                    paddingTop: sheetTopControl ? theme.spacing.sm : theme.spacing.md,
+                                    paddingBottom: Math.max(theme.spacing.lg, insets.bottom + theme.spacing.sm)
+                                }
+                            ]}
+                        >
+                            {children}
+                        </KeyboardAwareScrollView>
+                    ) : (
+                        <View
+                            style={[
+                                styles.content,
+                                styles.fixedContent,
+                                {
+                                    paddingTop: sheetTopControl ? theme.spacing.sm : theme.spacing.md,
+                                    paddingBottom: Math.max(theme.spacing.lg, insets.bottom + theme.spacing.sm)
+                                }
+                            ]}
+                        >
+                            {children}
+                        </View>
+                    )}
                 </Animated.View>
             </KeyboardAvoidingView>
         </Modal>
@@ -213,7 +245,9 @@ function createStyles(theme: AppTheme) {
         justifyContent: 'flex-end'
     },
     webViewportRoot: {
-        flex: 0,
+        flexGrow: 0,
+        flexShrink: 0,
+        flexBasis: 'auto',
         width: '100%',
         position: WEB_FIXED_POSITION,
         top: 0,
@@ -243,6 +277,9 @@ function createStyles(theme: AppTheme) {
     scroll: {
         flexShrink: 1
     },
+    fixedHeightSheet: {
+        minHeight: 0
+    },
     content: {
         gap: theme.spacing.md,
         paddingHorizontal: theme.spacing.lg
@@ -254,6 +291,10 @@ function createStyles(theme: AppTheme) {
         minHeight: theme.interaction.minimumTouchTarget,
         alignItems: 'flex-end',
         justifyContent: 'center'
+    },
+    fixedContent: {
+        flex: 1,
+        minHeight: 0
     },
     handle: {
         alignSelf: 'center',

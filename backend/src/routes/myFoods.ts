@@ -2,7 +2,11 @@ import express from 'express';
 import type { Prisma } from '@prisma/client';
 import prisma from '../config/database';
 import { parseNonNegativeNumber, parsePositiveInteger, parsePositiveNumber } from '../utils/requestParsing';
-import { buildExternalIngredientSnapshotRow, parseMyFoodIngredientInput } from './myFoodsRecipeUtils';
+import {
+    buildExternalIngredientSnapshotRow,
+    buildFoodLogIngredientSnapshotRow,
+    parseMyFoodIngredientInput
+} from './myFoodsRecipeUtils';
 import { createHttpError, isHttpError, normalizeMyFoodName, normalizeServingUnitLabel } from './myFoodsUtils';
 import { logSafeOperationalError } from '../observability';
 import { getAuthenticatedUser, requireAuthenticatedUser } from '../middleware/authenticatedUser';
@@ -160,6 +164,10 @@ type CreateRecipeIngredientInput =
           brand?: unknown;
           locale?: unknown;
           barcode?: unknown;
+          quantity_servings?: unknown;
+          serving_size_quantity?: unknown;
+          serving_unit_label?: unknown;
+          calories_per_serving?: unknown;
           measure_label?: unknown;
           grams_per_measure?: unknown;
           measure_quantity?: unknown;
@@ -253,6 +261,95 @@ function toRecipeIngredientCreateRow(recipeId: number, row: RecipeIngredientSnap
         grams_total_snapshot: row.grams_total_snapshot ?? null
     };
 }
+
+/**
+ * Create a detached recipe snapshot from food logs in one meal.
+ */
+router.post('/recipes/from-food-logs', async (req, res) => {
+    const user = getAuthenticatedUser(req);
+    const name = normalizeMyFoodName(req.body?.name);
+    if (!name) {
+        return res.status(400).json({ message: 'Invalid name' });
+    }
+
+    const yieldServings = parsePositiveNumber(req.body?.yield_servings);
+    if (yieldServings === null) {
+        return res.status(400).json({ message: 'Invalid yield servings' });
+    }
+
+    const foodLogIdsRaw = req.body?.food_log_ids;
+    if (!Array.isArray(foodLogIdsRaw) || foodLogIdsRaw.length === 0) {
+        return res.status(400).json({ message: 'Recipe must include at least one food log' });
+    }
+
+    const foodLogIds: number[] = [];
+    const seenFoodLogIds = new Set<number>();
+    for (const rawId of foodLogIdsRaw) {
+        const id = parsePositiveInteger(rawId);
+        if (id === null) {
+            return res.status(400).json({ message: 'Invalid food log id' });
+        }
+        if (seenFoodLogIds.has(id)) {
+            return res.status(400).json({ message: 'Duplicate food log id' });
+        }
+        seenFoodLogIds.add(id);
+        foodLogIds.push(id);
+    }
+
+    try {
+        const created = await prisma.$transaction(async (tx) => {
+            const logs = await tx.foodLog.findMany({
+                where: { id: { in: foodLogIds }, user_id: user.id }
+            });
+            if (logs.length !== foodLogIds.length) {
+                throw createHttpError(404, 'Food log not found');
+            }
+
+            const logsById = new Map(logs.map((log) => [log.id, log]));
+            const orderedLogs = foodLogIds.map((id) => logsById.get(id)!);
+            const firstLog = orderedLogs[0];
+            const firstLocalDate = firstLog.local_date.getTime();
+            if (
+                orderedLogs.some(
+                    (log) => log.local_date.getTime() !== firstLocalDate || log.meal_period !== firstLog.meal_period
+                )
+            ) {
+                throw createHttpError(400, 'Food logs must belong to the same meal and date');
+            }
+
+            const ingredientRows = orderedLogs.map((log, index) =>
+                buildFoodLogIngredientSnapshotRow(log, index + 1)
+            );
+            const recipeTotalCalories = ingredientRows.reduce((sum, row) => sum + row.calories_total_snapshot, 0);
+            const recipe = await tx.myFood.create({
+                data: {
+                    user_id: user.id,
+                    type: 'RECIPE',
+                    name,
+                    serving_size_quantity: 1,
+                    serving_unit_label: 'serving',
+                    calories_per_serving: recipeTotalCalories / yieldServings,
+                    recipe_total_calories: recipeTotalCalories,
+                    yield_servings: yieldServings
+                }
+            });
+
+            await tx.recipeIngredient.createMany({
+                data: ingredientRows.map((row) => toRecipeIngredientCreateRow(recipe.id, row))
+            });
+
+            return recipe;
+        });
+
+        return res.json(created);
+    } catch (err) {
+        logSafeOperationalError('my_foods.create_recipe_from_food_logs', err, res.locals?.requestId);
+        if (isHttpError(err)) {
+            return res.status(err.statusCode).json({ message: err.message || 'Request failed' });
+        }
+        return res.status(500).json({ message: 'Server error' });
+    }
+});
 
 /**
  * Create a recipe from ingredient snapshots. Recipes are stored as immutable snapshots (by design).

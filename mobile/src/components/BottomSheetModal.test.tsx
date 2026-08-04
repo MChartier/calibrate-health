@@ -1,6 +1,6 @@
 import { StyleSheet, Text } from 'react-native';
 import { fireEvent, render } from '@testing-library/react-native';
-import { BottomSheetModal } from './BottomSheetModal';
+import { BottomSheetModal, resolveFixedSheetHeight } from './BottomSheetModal';
 
 jest.mock('@expo/vector-icons/Ionicons', () => () => null);
 
@@ -17,6 +17,15 @@ jest.mock('react-native-safe-area-context', () => ({
 }));
 
 describe('BottomSheetModal', () => {
+    it('resolves percentage heights against the web visual viewport', () => {
+        expect(resolveFixedSheetHeight('92%', 844)).toBeCloseTo(776.48);
+    });
+
+    it('preserves native percentages and explicit dimensions', () => {
+        expect(resolveFixedSheetHeight('92%', undefined)).toBe('92%');
+        expect(resolveFixedSheetHeight(640, 844)).toBe(640);
+    });
+
     it('anchors the web viewport root while the underlying page is scrolled', () => {
         const screen = render(
             <BottomSheetModal visible onRequestClose={jest.fn()}>

@@ -7,6 +7,7 @@ import type {
     CalibrationStatusResponse,
     ClientConfigResponse,
     CreateMyFoodPayload,
+    CreateRecipeFromFoodLogsPayload,
     FoodLogCreatePayload,
     FoodLogDay,
     FoodLogDayRange,
@@ -583,6 +584,13 @@ export class CalibrateApiClient {
 
     createRecipe(payload: CreateRecipePayload): Promise<MyFoodSummary> {
         return this.request<MyFoodSummary>('/api/my-foods/recipes', {
+            method: 'POST',
+            json: payload
+        });
+    }
+
+    createRecipeFromFoodLogs(payload: CreateRecipeFromFoodLogsPayload): Promise<MyFoodSummary> {
+        return this.request<MyFoodSummary>('/api/my-foods/recipes/from-food-logs', {
             method: 'POST',
             json: payload
         });

@@ -1,12 +1,4 @@
-import type { FoodLogCreatePayload } from '@calibrate/api-client';
-import type { MealPeriod } from '@calibrate/shared';
-import {
-    buildSearchedFoodLogPayload,
-    getPreferredFoodMeasureIndex,
-    normalizeSearchedFoodItem,
-    type ProviderFoodMeasure,
-    type SearchedFoodItem
-} from '../food/serving';
+import { normalizeSearchedFoodItem, type SearchedFoodItem } from '../food/serving';
 
 const BARCODE_DUPLICATE_WINDOW_MS = 1_200;
 const SUPPORTED_BARCODE_LENGTHS = new Set([6, 7, 8, 12, 13]);
@@ -26,58 +18,17 @@ export type ProviderAttribution = {
     url?: string;
 };
 
-export type BarcodeFoodMatch = {
-    item: SearchedFoodItem;
-    measure: ProviderFoodMeasure | null;
-    calories: number | null;
-    payload: FoodLogCreatePayload | null;
-    error: string | null;
-};
-
 /**
- * Convert the provider wire shape into the same complete serving snapshot used by text search.
- * Barcode providers return `description`, nested nutrients, and measures rather than flattened
- * `name` and `calories` fields.
+ * Normalize every provider barcode match into the same selectable item used by text search.
+ * Providers do not always echo the requested barcode, so retain the scanned value in the snapshot.
  */
-export function resolveBarcodeFoodMatch(options: {
-    value: unknown;
-    barcode: string;
-    date: string;
-    meal: MealPeriod;
-}): BarcodeFoodMatch | null {
-    const normalizedItem = normalizeSearchedFoodItem(options.value);
-    if (!normalizedItem) return null;
-
-    const item = normalizedItem.barcode
-        ? normalizedItem
-        : { ...normalizedItem, barcode: options.barcode };
-    const preferredMeasureIndex = getPreferredFoodMeasureIndex(item);
-    const measure = preferredMeasureIndex === null ? null : item.measures[preferredMeasureIndex];
-    const result = buildSearchedFoodLogPayload({
-        item,
-        measure,
-        quantity: 1,
-        date: options.date,
-        meal: options.meal
+export function resolveBarcodeFoodCandidates(values: unknown, barcode: string): SearchedFoodItem[] {
+    if (!Array.isArray(values)) return [];
+    return values.flatMap((value) => {
+        const item = normalizeSearchedFoodItem(value);
+        if (!item) return [];
+        return [item.barcode ? item : { ...item, barcode }];
     });
-
-    if (!result.ok) {
-        return {
-            item,
-            measure,
-            calories: null,
-            payload: null,
-            error: result.message
-        };
-    }
-
-    return {
-        item,
-        measure,
-        calories: result.calculation.calories,
-        payload: result.payload,
-        error: null
-    };
 }
 
 /** Decide whether the current platform can prompt again or must hand control to settings. */

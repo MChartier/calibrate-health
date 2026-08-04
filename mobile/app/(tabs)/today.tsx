@@ -160,6 +160,7 @@ export default function TodayScreen() {
                 visible={addFoodMeal !== undefined && dayStatus?.status === 'OPEN'}
                 date={selectedDate}
                 initialMeal={addFoodMeal}
+                returnTo="today"
                 onClose={() => setAddFoodMeal(undefined)}
             />
             <WeightEntrySheet

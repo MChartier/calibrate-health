@@ -27,9 +27,20 @@ export type FoodServingCalculation = {
     gramsTotal: number;
 };
 
+export type FoodMeasureDisplayAmount = {
+    quantity: number;
+    unit: string;
+};
+
 export type FoodServingPayloadResult =
     | { ok: true; payload: FoodLogCreatePayload; calculation: FoodServingCalculation }
     | { ok: false; message: string };
+
+const GENERIC_PER_100_GRAMS_LABEL = 'per 100g';
+const SYNTHETIC_GRAMS_LABEL = 'grams';
+const LABELED_MEASURE_AMOUNT_PATTERN = /^(\d+(?:\.\d+)?)\s*(\D.*)$/;
+// Keeps low-density per-gram calorie bases precise while avoiding floating-point noise in snapshots.
+const SNAPSHOT_DECIMAL_PLACES = 6;
 
 const roundTo = (value: number, decimalPlaces: number): number => {
     const scale = 10 ** decimalPlaces;
@@ -48,6 +59,28 @@ const optionalPositiveNumber = (value: unknown): number | null =>
 const optionalNonNegativeNumber = (value: unknown): number | null =>
     typeof value === 'number' && Number.isFinite(value) && value >= 0 ? value : null;
 
+const isGenericPer100GramsLabel = (label: string): boolean =>
+    label.trim().toLowerCase() === GENERIC_PER_100_GRAMS_LABEL;
+
+/** Identify the client-only gram measure used in place of a provider's generic per-100g option. */
+export const isSyntheticGramMeasure = (measure: ProviderFoodMeasure): boolean =>
+    measure.label === SYNTHETIC_GRAMS_LABEL &&
+    measure.gramWeight === 1 &&
+    measure.quantity === 1 &&
+    measure.unit === 'g';
+
+const isEquivalentOneGramMeasure = (measure: ProviderFoodMeasure): boolean => {
+    if (measure.gramWeight !== 1) return false;
+    const normalizedUnit = measure.unit?.trim().toLowerCase();
+    const normalizedLabel = measure.label.replace(/\s+/g, '').toLowerCase();
+    return normalizedUnit === 'g' ||
+        normalizedUnit === 'gram' ||
+        normalizedUnit === 'grams' ||
+        normalizedLabel === '1g' ||
+        normalizedLabel === 'gram' ||
+        normalizedLabel === 'grams';
+};
+
 /** Normalize the provider wire object without trusting optional third-party fields. */
 export function normalizeSearchedFoodItem(value: unknown): SearchedFoodItem | null {
     if (!value || typeof value !== 'object') return null;
@@ -62,12 +95,20 @@ export function normalizeSearchedFoodItem(value: unknown): SearchedFoodItem | nu
     } else if (Array.isArray(record.measures)) {
         rawMeasures = record.measures;
     }
-    const measures = rawMeasures.flatMap((rawMeasure): ProviderFoodMeasure[] => {
+    const normalizedMeasures = rawMeasures.flatMap((rawMeasure): ProviderFoodMeasure[] => {
         if (!rawMeasure || typeof rawMeasure !== 'object') return [];
         const measure = rawMeasure as Record<string, unknown>;
         const label = optionalText(measure.label);
         const gramWeight = optionalPositiveNumber(measure.gramWeight);
         if (!label || !gramWeight) return [];
+        if (isGenericPer100GramsLabel(label)) {
+            return [{
+                label: SYNTHETIC_GRAMS_LABEL,
+                gramWeight: 1,
+                quantity: 1,
+                unit: 'g'
+            }];
+        }
         return [{
             label,
             gramWeight,
@@ -75,6 +116,12 @@ export function normalizeSearchedFoodItem(value: unknown): SearchedFoodItem | nu
             unit: optionalText(measure.unit)
         }];
     });
+    const syntheticGramIndex = normalizedMeasures.findIndex(isSyntheticGramMeasure);
+    const measures = syntheticGramIndex < 0
+        ? normalizedMeasures
+        : normalizedMeasures.filter(
+            (measure, index) => index === syntheticGramIndex || !isEquivalentOneGramMeasure(measure)
+        );
 
     const nutrients = record.nutrientsPer100g;
     const caloriesPer100g = nutrients && typeof nutrients === 'object'
@@ -93,13 +140,49 @@ export function normalizeSearchedFoodItem(value: unknown): SearchedFoodItem | nu
     };
 }
 
+/** Resolve the amount represented by one measure for consistent input and snapshot labels. */
+export function getFoodMeasureDisplayAmount(measure: ProviderFoodMeasure): FoodMeasureDisplayAmount {
+    const explicitUnit = optionalText(measure.unit);
+    if (explicitUnit) {
+        return {
+            quantity: optionalPositiveNumber(measure.quantity) ?? 1,
+            unit: explicitUnit
+        };
+    }
+
+    const normalizedLabel = measure.label.replace(/^per\s+/i, '').trim();
+    const labeledAmount = normalizedLabel.match(LABELED_MEASURE_AMOUNT_PATTERN);
+    if (labeledAmount) {
+        const quantity = Number(labeledAmount[1]);
+        const unit = labeledAmount[2].trim();
+        if (Number.isFinite(quantity) && quantity > 0 && unit) {
+            return { quantity, unit };
+        }
+    }
+
+    return {
+        quantity: optionalPositiveNumber(measure.quantity) ?? 1,
+        unit: normalizedLabel || 'serving'
+    };
+}
+
 /** Prefer a practical serving over a provider's generic per-100g measure. */
 export function getPreferredFoodMeasureIndex(item: SearchedFoodItem): number | null {
     if (item.measures.length === 0) return null;
     const practicalIndex = item.measures.findIndex(
-        (measure) => measure.label.trim().toLowerCase() !== 'per 100g'
+        (measure) => !isSyntheticGramMeasure(measure)
     );
     return practicalIndex >= 0 ? practicalIndex : 0;
+}
+
+/** Start grams-only foods at a familiar 100 g amount; practical measures start at one. */
+export function getDefaultFoodMeasureQuantity(
+    item: SearchedFoodItem,
+    measure: ProviderFoodMeasure | null
+): number {
+    if (!measure) return 1;
+    const hasOnlySyntheticGramMeasures = item.measures.length > 0 && item.measures.every(isSyntheticGramMeasure);
+    return hasOnlySyntheticGramMeasures && isSyntheticGramMeasure(measure) ? 100 : 1;
 }
 
 /** Scale provider per-100g energy into the selected measure and user-entered quantity. */
@@ -110,9 +193,12 @@ export function calculateFoodServing(
 ): FoodServingCalculation | null {
     if (!Number.isFinite(quantity) || quantity <= 0 || item.caloriesPer100g === null) return null;
 
-    const gramsPerMeasure = roundTo(measure.gramWeight, 3);
-    const gramsTotal = roundTo(gramsPerMeasure * quantity, 3);
-    const caloriesPerMeasure = roundTo((item.caloriesPer100g * gramsPerMeasure) / 100, 1);
+    const gramsPerMeasure = roundTo(measure.gramWeight, SNAPSHOT_DECIMAL_PLACES);
+    const gramsTotal = roundTo(gramsPerMeasure * quantity, SNAPSHOT_DECIMAL_PLACES);
+    const caloriesPerMeasure = roundTo(
+        (item.caloriesPer100g * gramsPerMeasure) / 100,
+        SNAPSHOT_DECIMAL_PLACES
+    );
     const caloriesTotal = (item.caloriesPer100g * gramsTotal) / 100;
     return {
         quantity,
@@ -122,9 +208,6 @@ export function calculateFoodServing(
         gramsTotal
     };
 }
-
-const getServingUnitLabel = (measure: ProviderFoodMeasure): string =>
-    measure.unit ?? measure.label.replace(/^per\s+/i, '').trim();
 
 /** Build an immutable external-food snapshot from one deterministic serving calculation. */
 export function buildSearchedFoodLogPayload(options: {
@@ -145,6 +228,7 @@ export function buildSearchedFoodLogPayload(options: {
     if (!calculation) {
         return { ok: false, message: 'This food does not include enough nutrition data to calculate calories.' };
     }
+    const displayAmount = getFoodMeasureDisplayAmount(options.measure);
 
     return {
         ok: true,
@@ -155,8 +239,8 @@ export function buildSearchedFoodLogPayload(options: {
             name: options.item.name,
             calories: calculation.calories,
             servings_consumed: calculation.quantity,
-            serving_size_quantity_snapshot: options.measure.quantity ?? 1,
-            serving_unit_label_snapshot: getServingUnitLabel(options.measure),
+            serving_size_quantity_snapshot: displayAmount.quantity,
+            serving_unit_label_snapshot: displayAmount.unit,
             calories_per_serving_snapshot: calculation.caloriesPerMeasure,
             external_source: options.item.source,
             external_id: options.item.id,

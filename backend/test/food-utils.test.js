@@ -168,8 +168,49 @@ test('foodUtils: parseFoodLogUpdateBody computes calories from servings when sna
   assert.equal(parsed.ok, true);
   assert.deepEqual(parsed.updateData, {
     servings_consumed: 2,
-    calories: 220,
-    calories_per_serving_snapshot: 110
+    calories: 220
+  });
+});
+
+test('foodUtils: parseFoodLogUpdateBody updates measure and gram snapshots without losing a precise calorie basis', () => {
+  const parsed = parseFoodLogUpdateBody({
+    body: { servings_consumed: 142 },
+    existing: {
+      calories_per_serving_snapshot: 0.04,
+      servings_consumed: 100,
+      grams_per_measure_snapshot: 1,
+      measure_quantity_snapshot: 100,
+      grams_total_snapshot: 100
+    }
+  });
+
+  assert.equal(parsed.ok, true);
+  assert.deepEqual(parsed.updateData, {
+    servings_consumed: 142,
+    calories: 6,
+    measure_quantity_snapshot: 142,
+    grams_total_snapshot: 142
+  });
+});
+
+test('foodUtils: parseFoodLogUpdateBody derives legacy per-100g totals from the stored measure ratio', () => {
+  const parsed = parseFoodLogUpdateBody({
+    body: { servings_consumed: 1.42 },
+    existing: {
+      calories_per_serving_snapshot: 59,
+      servings_consumed: 1,
+      grams_per_measure_snapshot: 100,
+      measure_quantity_snapshot: 1,
+      grams_total_snapshot: 100
+    }
+  });
+
+  assert.equal(parsed.ok, true);
+  assert.deepEqual(parsed.updateData, {
+    servings_consumed: 1.42,
+    calories: 84,
+    measure_quantity_snapshot: 1.42,
+    grams_total_snapshot: 142
   });
 });
 
@@ -193,5 +234,49 @@ test('foodUtils: parseFoodLogUpdateBody derives calories_per_serving_snapshot fr
   assert.deepEqual(parsed.updateData, {
     calories: 250,
     calories_per_serving_snapshot: 125
+  });
+});
+
+test('foodUtils: parseFoodLogUpdateBody treats supplied calories as an explicit per-serving override', () => {
+  const parsed = parseFoodLogUpdateBody({
+    body: { servings_consumed: 142, calories: 90 },
+    existing: {
+      calories_per_serving_snapshot: 0.59,
+      servings_consumed: 100,
+      grams_per_measure_snapshot: 1,
+      measure_quantity_snapshot: 100,
+      grams_total_snapshot: 100
+    }
+  });
+
+  assert.equal(parsed.ok, true);
+  assert.deepEqual(parsed.updateData, {
+    servings_consumed: 142,
+    calories: 90,
+    measure_quantity_snapshot: 142,
+    grams_total_snapshot: 142,
+    calories_per_serving_snapshot: 90 / 142
+  });
+});
+
+test('foodUtils: parseFoodLogUpdateBody clears a stale gram total when no conversion ratio exists', () => {
+  const parsed = parseFoodLogUpdateBody({
+    body: { servings_consumed: 2, calories: 200 },
+    existing: {
+      calories_per_serving_snapshot: null,
+      servings_consumed: null,
+      grams_per_measure_snapshot: null,
+      measure_quantity_snapshot: null,
+      grams_total_snapshot: 142
+    }
+  });
+
+  assert.equal(parsed.ok, true);
+  assert.deepEqual(parsed.updateData, {
+    servings_consumed: 2,
+    calories: 200,
+    measure_quantity_snapshot: 2,
+    grams_total_snapshot: null,
+    calories_per_serving_snapshot: 100
   });
 });

@@ -33,6 +33,10 @@ export function hydrateRecipeIngredientDrafts(
             name: ingredient.name_snapshot,
             caloriesTotal: ingredient.calories_total_snapshot,
             snapshot: {
+                quantity_servings: ingredient.quantity_servings,
+                serving_size_quantity: ingredient.serving_size_quantity_snapshot,
+                serving_unit_label: ingredient.serving_unit_label_snapshot,
+                calories_per_serving: ingredient.calories_per_serving_snapshot,
                 external_source: ingredient.external_source,
                 external_id: ingredient.external_id,
                 brand: ingredient.brand_snapshot,
