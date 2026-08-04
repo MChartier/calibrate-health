@@ -6,7 +6,8 @@ import {
     createFoodSelectionDraft,
     createMyFoodSelection,
     createProviderFoodSelection,
-    createRecentFoodSelection
+    createRecentFoodSelection,
+    isRecentFoodSelectionReady
 } from './foodLogSelection';
 import { normalizeSearchedFoodItem } from './serving';
 
@@ -282,6 +283,24 @@ describe('food log selection', () => {
             my_food_id: 12,
             servings_consumed: 1.333333
         });
+    });
+
+    it('waits for My Foods before enabling a linked recent selection', () => {
+        const linkedRecent = recent({ my_food_id: 12 });
+        const currentMyFood: MyFoodSummary = {
+            id: 12,
+            type: 'FOOD',
+            name: 'Greek yogurt',
+            serving_size_quantity: 1,
+            serving_unit_label: 'container',
+            calories_per_serving: 120,
+            is_pinned: false
+        };
+
+        expect(isRecentFoodSelectionReady(linkedRecent, null, false)).toBe(false);
+        expect(isRecentFoodSelectionReady(linkedRecent, currentMyFood, false)).toBe(true);
+        expect(isRecentFoodSelectionReady(linkedRecent, null, true)).toBe(true);
+        expect(isRecentFoodSelectionReady(recent({ my_food_id: null }), null, false)).toBe(true);
     });
 
     it('converts legacy per-100g recent snapshots to grams', () => {

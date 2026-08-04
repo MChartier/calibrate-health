@@ -186,6 +186,21 @@ export function createRecentFoodSelection(
     };
 }
 
+/**
+ * Keep saved-food recents inert until My Foods has resolved. Once it has, a
+ * missing source means the saved food was deleted and its historical snapshot
+ * is the correct fallback.
+ */
+export function isRecentFoodSelectionReady(
+    recent: RecentFoodSummary,
+    currentMyFood: MyFoodSummary | null | undefined,
+    hasResolvedMyFoods: boolean
+): boolean {
+    if (recent.my_food_id === null) return true;
+    if (currentMyFood?.id === recent.my_food_id) return true;
+    return hasResolvedMyFoods;
+}
+
 export function createMyFoodSelection(item: MyFoodSummary): FoodLogSelection {
     return {
         kind: 'my-food',

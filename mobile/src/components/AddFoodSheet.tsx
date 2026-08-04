@@ -30,6 +30,7 @@ import {
     createMyFoodSelection,
     createProviderFoodSelection,
     createRecentFoodSelection,
+    isRecentFoodSelectionReady,
     type FoodLogSelection
 } from '../food/foodLogSelection';
 import {
@@ -61,6 +62,8 @@ type FoodBrowseRow =
           title: string;
           subtitle: string;
           selection: FoodLogSelection;
+          disabled?: boolean;
+          disabledReason?: string;
       };
 
 const DEFAULT_ADD_FOOD_MODE: AddFoodMode = 'search';
@@ -248,6 +251,22 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
     const searchRows = useMemo(() => {
         const rows: FoodBrowseRow[] = [];
         const recentFoods = recentData?.items ?? [];
+        const createRecentRow = (item: RecentFoodSummary): FoodBrowseRow => {
+            const currentMyFood = savedFoods.find((savedFood) => savedFood.id === item.my_food_id);
+            const isReady = isRecentFoodSelectionReady(item, currentMyFood, myFoodsQuery.isSuccess);
+            const unavailableMessage = myFoodsQuery.isError
+                ? 'Saved food could not be loaded.'
+                : 'Loading saved food...';
+            return {
+                kind: 'selection',
+                key: `recent:${item.id}`,
+                title: item.name,
+                subtitle: isReady ? describeRecentFood(item, currentMyFood) : unavailableMessage,
+                selection: createRecentFoodSelection(item, currentMyFood),
+                disabled: !isReady,
+                disabledReason: isReady ? undefined : unavailableMessage
+            };
+        };
         if (normalizedQuery.length === 0) {
             const pinnedFoods = savedFoods.filter((item) => item.is_pinned).slice(0, DEFAULT_PINNED_LIMIT);
             const recentWithoutPinned = selectQuickRecentFoods(recentFoods, pinnedFoods, DEFAULT_RECENT_LIMIT);
@@ -258,16 +277,7 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
                 subtitle: describeMyFood(item),
                 selection: createMyFoodSelection(item)
             })));
-            appendSection(rows, 'Recent', recentWithoutPinned.map((item) => {
-                const currentMyFood = savedFoods.find((savedFood) => savedFood.id === item.my_food_id);
-                return {
-                    kind: 'selection' as const,
-                    key: `recent:${item.id}`,
-                    title: item.name,
-                    subtitle: describeRecentFood(item, currentMyFood),
-                    selection: createRecentFoodSelection(item, currentMyFood)
-                };
-            }));
+            appendSection(rows, 'Recent', recentWithoutPinned.map(createRecentRow));
             return rows;
         }
         if (normalizedQuery.length < MINIMUM_SEARCH_LENGTH || requestedQuery !== normalizedQuery) return rows;
@@ -277,16 +287,7 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
             item.name.toLocaleLowerCase().includes(normalizedQuery.toLocaleLowerCase())
             && !recentMyFoodIds.has(item.id)
         ));
-        appendSection(rows, 'Recent matches', recentFoods.map((item) => {
-            const currentMyFood = savedFoods.find((savedFood) => savedFood.id === item.my_food_id);
-            return {
-                kind: 'selection' as const,
-                key: `recent:${item.id}`,
-                title: item.name,
-                subtitle: describeRecentFood(item, currentMyFood),
-                selection: createRecentFoodSelection(item, currentMyFood)
-            };
-        }));
+        appendSection(rows, 'Recent matches', recentFoods.map(createRecentRow));
         appendSection(rows, 'Saved matches', matchingSaved.map((item) => ({
             kind: 'selection' as const,
             key: `saved:${item.id}`,
@@ -302,7 +303,15 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
             selection: createProviderFoodSelection(item)
         })));
         return rows;
-    }, [normalizedQuery, providerResults, recentData?.items, requestedQuery, savedFoods]);
+    }, [
+        myFoodsQuery.isError,
+        myFoodsQuery.isSuccess,
+        normalizedQuery,
+        providerResults,
+        recentData?.items,
+        requestedQuery,
+        savedFoods
+    ]);
 
     const recipes = savedFoods.filter((item) => item.type === 'RECIPE');
     const normalizedRecipeQuery = recipeQuery.trim().toLocaleLowerCase();
@@ -357,7 +366,8 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
             <FoodActionRow
                 title={item.title}
                 subtitle={item.subtitle}
-                disabled={logFood.isPending}
+                disabled={logFood.isPending || item.disabled}
+                disabledReason={item.disabledReason}
                 onPress={() => {
                     logFood.reset();
                     setSelection(item.selection);
@@ -608,16 +618,25 @@ type FoodActionRowProps = {
     title: string;
     subtitle: string;
     disabled?: boolean;
+    disabledReason?: string;
     onPress: () => void;
 };
 
-const FoodActionRow: React.FC<FoodActionRowProps> = ({ title, subtitle, disabled, onPress }) => {
+const FoodActionRow: React.FC<FoodActionRowProps> = ({
+    title,
+    subtitle,
+    disabled,
+    disabledReason,
+    onPress
+}) => {
     const theme = useAppTheme();
     const styles = useMemo(() => createStyles(theme), [theme]);
     return (
         <Pressable
             accessibilityRole="button"
             accessibilityLabel={`Choose amount for ${title}`}
+            accessibilityHint={disabled ? disabledReason : undefined}
+            accessibilityState={{ disabled: Boolean(disabled) }}
             disabled={disabled}
             onPress={onPress}
             style={({ pressed }) => [styles.foodRow, disabled && styles.disabled, pressed && styles.pressed]}
