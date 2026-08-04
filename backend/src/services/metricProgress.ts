@@ -99,6 +99,13 @@ function findReachedLocalDate(goal: CanonicalGoal, metrics: MetricProgressHistor
     return reached[0]?.localDate ?? null;
 }
 
+function getLatestMetric(metrics: MetricProgressHistoryEntry[]): MetricProgressHistoryEntry | null {
+    return metrics.reduce<MetricProgressHistoryEntry | null>((latest, metric) => {
+        if (!latest) return metric;
+        return metric.localDate > latest.localDate ? metric : latest;
+    }, null);
+}
+
 function getMeaningfulBestRecognition(
     goal: CanonicalGoal,
     mode: GoalProgressMode,
@@ -152,7 +159,7 @@ export function evaluateMetricProgressUpdate(options: EvaluateMetricProgressOpti
     const previousReachedLocalDate = findReachedLocalDate(goal, previousGoalMetrics);
     const previousProgressPercent =
         previousReachedLocalDate === null ? getHighestProgressPercent(goal, previousGoalMetrics) : 100;
-    const currentProgress = calculateCanonicalGoalProgress(goal, options.currentWeightGrams);
+    const savedProgress = calculateCanonicalGoalProgress(goal, options.currentWeightGrams);
 
     // Replace a same-day value rather than retaining both versions when evaluating durable completion.
     const retainedMetrics = previousGoalMetrics.filter((metric) => metric.localDate !== options.savedLocalDate);
@@ -164,17 +171,22 @@ export function evaluateMetricProgressUpdate(options: EvaluateMetricProgressOpti
     }
     const reachedLocalDate = findReachedLocalDate(goal, retainedMetrics);
     const isComplete = reachedLocalDate !== null;
+    const latestMetric = getLatestMetric(retainedMetrics);
+    const currentProgress = calculateCanonicalGoalProgress(
+        goal,
+        latestMetric?.weightGrams ?? goal.startWeightGrams
+    );
 
     let recognition: MetricProgressRecognition | null = null;
-    if (canRecognize && currentProgress.mode !== 'maintain') {
-        if (currentProgress.isComplete && previousReachedLocalDate === null) {
+    if (canRecognize && savedProgress.mode !== 'maintain') {
+        if (savedProgress.isComplete && previousReachedLocalDate === null) {
             recognition = { type: 'goal_reached' };
         } else {
             const previousBestPercent = previousProgressPercent ?? 0;
             const crossedPercentThresholds = GOAL_PERCENT_THRESHOLDS.filter(
                 (threshold) =>
-                    currentProgress.progressPercent !== null &&
-                    currentProgress.progressPercent >= threshold &&
+                    savedProgress.progressPercent !== null &&
+                    savedProgress.progressPercent >= threshold &&
                     previousBestPercent < threshold
             );
             const crossedPercentThreshold = crossedPercentThresholds[crossedPercentThresholds.length - 1];
@@ -183,7 +195,7 @@ export function evaluateMetricProgressUpdate(options: EvaluateMetricProgressOpti
             } else {
                 const incrementGrams = GOAL_WEIGHT_INCREMENT_GRAMS[options.weightUnit];
                 const previousProgressGrams = getHighestProgressWeightGrams(goal, previousGoalMetrics);
-                const currentProgressGrams = currentProgress.progressWeightGrams ?? 0;
+                const currentProgressGrams = savedProgress.progressWeightGrams ?? 0;
                 const previousIncrement = Math.floor(
                     (previousProgressGrams + CANONICAL_ROUNDING_TOLERANCE_GRAMS) / incrementGrams
                 );
@@ -198,7 +210,7 @@ export function evaluateMetricProgressUpdate(options: EvaluateMetricProgressOpti
                 } else {
                     recognition = getMeaningfulBestRecognition(
                         goal,
-                        currentProgress.mode,
+                        savedProgress.mode,
                         previousGoalMetrics,
                         options.currentWeightGrams,
                         options.weightUnit

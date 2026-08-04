@@ -19,8 +19,8 @@ const mockApi = {
     getGoals: jest.fn(async () => GOAL),
     getUserProfile: jest.fn(async () => ({ latest_weight_grams: 76657 })),
     getMetrics: jest.fn(async () => [
-        { id: 2, date: '2026-07-24', weight: 169 },
-        { id: 1, date: '2026-07-20', weight: 171 }
+        { id: 1, date: '2026-07-20', weight: 171 },
+        { id: 2, date: '2026-07-24', weight: 169 }
     ]),
     getTrendMetrics: jest.fn(async () => ({ metrics: [], meta: { total_points: 2 } })),
     createGoal: jest.fn(async () => GOAL)
@@ -58,7 +58,7 @@ describe('Progress goal completion flow', () => {
         mockSearchParams = {};
     });
 
-    it('opens Set next goal as an unsaved maintenance draft at the latest weight', async () => {
+    it('opens Set next goal at the latest dated weight regardless of metric order', async () => {
         const queryClient = new QueryClient({
             defaultOptions: { queries: { retry: false }, mutations: { retry: false } }
         });

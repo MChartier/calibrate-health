@@ -82,6 +82,19 @@ describe('goal progress state', () => {
             .toBeNull();
     });
 
+    it('excludes weigh-ins after the user current local day from goal completion', () => {
+        jest.useFakeTimers().setSystemTime(new Date('2026-07-25T01:00:00.000Z'));
+        try {
+            expect(getGoalReachedDate({
+                goal: createGoal(500, 150),
+                timezone: 'America/Los_Angeles',
+                metrics: [{ id: 1, date: '2026-07-25', weight: 149 }]
+            })).toBeNull();
+        } finally {
+            jest.useRealTimers();
+        }
+    });
+
     it('syncs a maintenance target to the start weight without changing other mode drafts', () => {
         expect(getTargetWeightAfterGoalModeChange('maintain', '172.4', '165')).toBe('172.4');
         expect(getTargetWeightAfterGoalModeChange('lose', '172.4', '165')).toBe('165');

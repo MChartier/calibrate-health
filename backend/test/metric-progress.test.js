@@ -77,6 +77,25 @@ test('metric progress recognizes a first current-day measurement but not backfil
   assert.deepEqual(evaluate({ saveKind: 'unchanged' }).recognitions, []);
 });
 
+test('metric progress reports a historical save against the latest retained weigh-in', () => {
+  const update = evaluate({
+    savedLocalDate: '2026-08-01',
+    goal: goal(),
+    currentWeightGrams: 90000,
+    previousMetrics: [
+      { localDate: '2026-08-03', weightGrams: 87000 },
+      { localDate: '2026-08-01', weightGrams: 95000 },
+      { localDate: '2026-08-02', weightGrams: 88000 }
+    ],
+    hadAnyMetricBeforeSave: true
+  });
+
+  assert.equal(update.current_weight_grams, 90000);
+  assert.deepEqual(update.recognitions, []);
+  assert.equal(update.goal.current_progress_percent, 65);
+  assert.equal(update.goal.remaining_weight_grams, 7000);
+});
+
 test('metric progress reports only the highest newly crossed percentage milestone', () => {
   const update = evaluate({
     goal: goal(),

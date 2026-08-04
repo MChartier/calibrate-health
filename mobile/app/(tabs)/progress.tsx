@@ -25,6 +25,7 @@ import {
     GOAL_MODE_OPTIONS,
     type GoalMode
 } from '../../src/utils/goals';
+import { getLatestMetric } from '../../src/utils/metrics';
 import { radius, spacing, useAppTheme, type AppTheme } from '../../src/theme';
 import { WEIGHT_INPUT_INCREMENT } from '../../src/config/inputPrecision';
 
@@ -70,6 +71,8 @@ export default function ProgressScreen() {
     const [validationError, setValidationError] = useState<string | null>(null);
     const [isDailyChangeSelectorOpen, setIsDailyChangeSelectorOpen] = useState(false);
     const handledNextGoalRouteRef = useRef(false);
+    const latestMetric = getLatestMetric(metricsQuery.data);
+    const latestTrendMetric = getLatestMetric(trendSummaryQuery.data?.metrics);
 
     const signedDailyDeficit = getSignedDailyDeficit(goalMode, dailyChangeAbs);
     const canSave = Number(startWeight) > 0 && Number(targetWeight) > 0 && Number.isFinite(Number(dailyChangeAbs));
@@ -100,12 +103,12 @@ export default function ProgressScreen() {
     }
 
     function getDefaultStartWeight(): string {
-        const latestWeight = metricsQuery.data?.[0]?.weight;
+        const latestWeight = latestMetric?.weight;
         if (typeof latestWeight === 'number' && Number.isFinite(latestWeight)) {
             return formatWeightInput(latestWeight);
         }
 
-        const trendWeight = trendSummaryQuery.data?.metrics[0]?.trend_weight;
+        const trendWeight = latestTrendMetric?.trend_weight;
         if (typeof trendWeight === 'number' && Number.isFinite(trendWeight)) {
             return formatWeightInput(trendWeight);
         }
@@ -167,7 +170,7 @@ export default function ProgressScreen() {
         <>
             <TabScreen>
                 <GoalProgressCard
-                    latestMetric={metricsQuery.data?.[0]}
+                    latestMetric={latestMetric}
                     metrics={metricsQuery.data}
                     goal={goalQuery.data}
                     user={user}

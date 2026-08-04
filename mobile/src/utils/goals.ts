@@ -1,6 +1,6 @@
 import type { GoalEntry, MetricEntry } from '@calibrate/api-client';
 import { ALLOWED_DAILY_DEFICIT_ABS_VALUES, type WeightUnit } from '@calibrate/shared';
-import { getLocalDateForTimestamp } from './dates';
+import { getLocalDateForTimestamp, getTodayDate } from './dates';
 import { formatCalories, formatWeight } from './format';
 import { getMetricDate } from './metrics';
 
@@ -99,11 +99,13 @@ export function getGoalReachedDate(args: {
     if (mode === 'maintain') return null;
 
     const goalStartDate = getLocalDateForTimestamp(goal.created_at, timezone);
+    const currentLocalDate = getTodayDate(timezone);
     const reachedMetric = metrics
         .filter((metric) => {
             if (!Number.isFinite(metric.weight)) return false;
             const metricDate = getMetricDate(metric);
             if (goalStartDate && metricDate < goalStartDate) return false;
+            if (metricDate > currentLocalDate) return false;
             return mode === 'lose'
                 ? metric.weight <= goal.target_weight
                 : metric.weight >= goal.target_weight;
