@@ -9,6 +9,7 @@ import {
 } from '../../../shared/calibration';
 import prisma from '../config/database';
 import { ensureMaterializedWeightTrends } from './materializedWeightTrend';
+import { computeWeightTrend } from './weightTrend';
 import { getEffectiveCaloriePlan } from './caloriePlan';
 import { calculateAge, buildCalorieSummary } from '../utils/profile';
 import {
@@ -138,7 +139,8 @@ function buildFoodEvidence(options: {
             calories: 0,
             entryCount: 0,
             mealPeriodCount: 0,
-            isComplete: completion.status === 'COMPLETE'
+            isComplete: completion.status === 'COMPLETE',
+            isPaused: completion.status === 'PAUSED'
         });
     }
     const mealPeriodsByDate = new Map<string, Set<string>>();
@@ -150,7 +152,8 @@ function buildFoodEvidence(options: {
             calories: 0,
             entryCount: 0,
             mealPeriodCount: 0,
-            isComplete: false
+            isComplete: false,
+            isPaused: false
         };
         day.calories += log.calories;
         day.entryCount += 1;
@@ -161,6 +164,44 @@ function buildFoodEvidence(options: {
         byDate.set(date, day);
     }
     return Array.from(byDate.values()).sort((left, right) => left.date.localeCompare(right.date));
+}
+
+function buildWeightEvidence(options: {
+    rows: Array<{
+        date: Date;
+        weight_grams: number;
+        trend: {
+            trend_weight_grams: number;
+            trend_ci_lower_grams: number;
+            trend_ci_upper_grams: number;
+        } | null;
+    }>;
+    planStartDate: string;
+    latestPausedDate: string | null;
+}): CalibrationInput['weightPoints'] {
+    const rows = options.rows.filter((row) => {
+        const date = toDateKey(row.date);
+        return date >= options.planStartDate && (!options.latestPausedDate || date > options.latestPausedDate);
+    });
+    if (!options.latestPausedDate) {
+        return rows.map((row) => ({
+            date: toDateKey(row.date),
+            trendWeightKg: (row.trend?.trend_weight_grams ?? row.weight_grams) / 1000,
+            lowerKg: (row.trend?.trend_ci_lower_grams ?? row.weight_grams) / 1000,
+            upperKg: (row.trend?.trend_ci_upper_grams ?? row.weight_grams) / 1000
+        }));
+    }
+
+    // A post-pause pace must not inherit smoothing state from weights recorded before the break.
+    return computeWeightTrend(rows.map((row) => ({
+        date: row.date,
+        weight: row.weight_grams / 1000
+    }))).points.map((point) => ({
+        date: toDateKey(point.date),
+        trendWeightKg: point.trendWeight,
+        lowerKg: point.lower95,
+        upperKg: point.upper95
+    }));
 }
 
 async function materializeRecommendation(options: {
@@ -269,7 +310,7 @@ export async function buildCalibrationStatus(userId: number, now = new Date()): 
     await ensureMaterializedWeightTrends(userId);
     const historyStart = addUtcDays(asOfDate, -(CALIBRATION_HISTORY_DAYS - 1));
     const weightStart = addUtcDays(asOfDate, -(CALIBRATION_WEIGHT_DAYS - 1));
-    const [latestMetric, currentPlan, scheduledRevision, logs, completionDays, weightRows, activityDays] = await Promise.all([
+    const [latestMetric, currentPlan, scheduledRevision, logs, completionDays, weightRows] = await Promise.all([
         prisma.bodyMetric.findFirst({
             where: { user_id: userId, date: { lte: asOfDate } },
             orderBy: [{ date: 'desc' }, { id: 'desc' }],
@@ -305,11 +346,6 @@ export async function buildCalibrationStatus(userId: number, now = new Date()): 
                     }
                 }
             }
-        }),
-        prisma.activityDaySummary.findMany({
-            where: { user_id: userId, local_date: { gte: weightStart, lte: asOfDate } },
-            orderBy: { local_date: 'asc' },
-            select: { local_date: true, steps: true, active_calories_kcal: true }
         })
     ]);
 
@@ -351,6 +387,10 @@ export async function buildCalibrationStatus(userId: number, now = new Date()): 
     const revisionStartDate = currentPlan ? toDateKey(currentPlan.effectiveLocalDate) : goalStartDate;
     const planStartDate = goalStartDate > revisionStartDate ? goalStartDate : revisionStartDate;
     const foodDays = buildFoodEvidence({ logs, completionDays, planStartDate, asOfDate: asOfDateKey });
+    const latestPausedDate = foodDays
+        .filter((day) => day.isPaused)
+        .map((day) => day.date)
+        .sort((left, right) => right.localeCompare(left))[0] ?? null;
     const input: CalibrationInput = {
         asOfDate: asOfDateKey,
         weightUnit: user.weight_unit,
@@ -360,24 +400,11 @@ export async function buildCalibrationStatus(userId: number, now = new Date()): 
         configuredDailyDeficitKcal: goal.daily_deficit,
         currentTargetAdjustmentKcal: currentPlan?.targetAdjustmentKcal ?? 0,
         foodDays,
-        weightPoints: weightRows
-            .filter((row) => toDateKey(row.date) >= planStartDate)
-            .map((row) => ({
-                date: toDateKey(row.date),
-                trendWeightKg: (row.trend?.trend_weight_grams ?? row.weight_grams) / 1000,
-                lowerKg: (row.trend?.trend_ci_lower_grams ?? row.weight_grams) / 1000,
-                upperKg: (row.trend?.trend_ci_upper_grams ?? row.weight_grams) / 1000
-            })),
-        activityDays: activityDays
-            .filter((day) => toDateKey(day.local_date) >= planStartDate)
-            .map((day) => ({
-                date: toDateKey(day.local_date),
-                steps: day.steps,
-                activeCaloriesKcal: day.active_calories_kcal
-            }))
+        trackingPaused: todayCompletion?.status === 'PAUSED',
+        weightPoints: buildWeightEvidence({ rows: weightRows, planStartDate, latestPausedDate })
     };
     const evaluation = evaluateCalibration(input);
-    const { activityDays: _activityContext, weightUnit: _displayWeightUnit, ...actionEvidence } = input;
+    const { weightUnit: _displayWeightUnit, ...actionEvidence } = input;
     const inputFingerprint = fingerprintInput({
         modelVersion: CALIBRATION_MODEL_VERSION,
         goalId: goal.id,

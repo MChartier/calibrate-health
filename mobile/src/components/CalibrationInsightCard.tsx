@@ -223,6 +223,25 @@ export const CalibrationInsightCardView: React.FC<CalibrationInsightCardViewProp
     const scheduledReviewMessage = recommendation
         ? `Your current ${recommendation.currentTargetKcal.toLocaleString()} kcal budget stays in place until then. Changed your mind? Undo this update before it starts to review the suggestion again.`
         : 'Changed your mind? Undo this update before it starts to keep your current budget and review the suggestion again.';
+    const historyProgress = evaluation.historyProgress;
+    let historyProgressTitle = '';
+    let foodProgressLabel = '';
+    let weightProgressLabel = '';
+    let weighInProgressLabel = '';
+    if (historyProgress) {
+        historyProgressTitle = historyProgress.stage === 'pace_check'
+            ? `Progress toward your ${historyProgress.restartedAfterPause ? 'next' : 'first'} pace check`
+            : 'Progress toward a calorie-budget review';
+        foodProgressLabel = historyProgress.completeFoodDays >= historyProgress.requiredCompleteFoodDays
+            ? `${historyProgress.completeFoodDays} logged - ready`
+            : `${historyProgress.completeFoodDays} of ${historyProgress.requiredCompleteFoodDays}`;
+        weightProgressLabel = historyProgress.weightSpanDays >= historyProgress.requiredWeightSpanDays
+            ? `${historyProgress.weightSpanDays} days - ready`
+            : `${historyProgress.weightSpanDays} of ${historyProgress.requiredWeightSpanDays} days`;
+        weighInProgressLabel = historyProgress.weightPoints >= historyProgress.requiredWeightPoints
+            ? `${historyProgress.weightPoints} logged - ready`
+            : `${historyProgress.weightPoints} of ${historyProgress.requiredWeightPoints}`;
+    }
 
     return (
         <>
@@ -335,38 +354,69 @@ export const CalibrationInsightCardView: React.FC<CalibrationInsightCardViewProp
                 ) : (
                     <>
                         <AppText variant="muted">{evaluation.summary}</AppText>
-                        {evaluation.historyProgress && (
+                        {historyProgress && (
                             <View style={styles.historyProgress}>
-                                <View style={styles.historyProgressHeader}>
-                                    <AppText variant="label">Progress toward your first pace check</AppText>
-                                    <AppText variant="caption">
-                                        {evaluation.historyProgress.observedDays} of {evaluation.historyProgress.requiredDays} days
-                                    </AppText>
+                                <AppText variant="label">{historyProgressTitle}</AppText>
+                                <View style={styles.historyRequirement}>
+                                    <View style={styles.historyProgressHeader}>
+                                        <AppText variant="muted">Well-tracked food days</AppText>
+                                        <AppText variant="caption">{foodProgressLabel}</AppText>
+                                    </View>
+                                    <ProgressBar
+                                        accessible
+                                        accessibilityRole="progressbar"
+                                        accessibilityLabel="Well-tracked food days for calibration"
+                                        accessibilityValue={{
+                                            min: 0,
+                                            max: historyProgress.requiredCompleteFoodDays,
+                                            now: Math.min(historyProgress.completeFoodDays, historyProgress.requiredCompleteFoodDays),
+                                            text: `${historyProgress.completeFoodDays} of ${historyProgress.requiredCompleteFoodDays} well-tracked food days`
+                                        }}
+                                        value={Math.min(1, historyProgress.completeFoodDays / historyProgress.requiredCompleteFoodDays)}
+                                    />
                                 </View>
-                                <ProgressBar
-                                    accessible
-                                    accessibilityRole="progressbar"
-                                    accessibilityLabel="History for your first pace check"
-                                    accessibilityValue={{
-                                        min: 0,
-                                        max: evaluation.historyProgress.requiredDays,
-                                        now: evaluation.historyProgress.observedDays,
-                                        text: `${evaluation.historyProgress.observedDays} of ${evaluation.historyProgress.requiredDays} days`
-                                    }}
-                                    value={evaluation.historyProgress.observedDays / evaluation.historyProgress.requiredDays}
-                                />
+                                <View style={styles.historyRequirement}>
+                                    <View style={styles.historyProgressHeader}>
+                                        <AppText variant="muted">Weight history</AppText>
+                                        <AppText variant="caption">{weightProgressLabel}</AppText>
+                                    </View>
+                                    <ProgressBar
+                                        accessible
+                                        accessibilityRole="progressbar"
+                                        accessibilityLabel="Weight history for calibration"
+                                        accessibilityValue={{
+                                            min: 0,
+                                            max: historyProgress.requiredWeightSpanDays,
+                                            now: Math.min(historyProgress.weightSpanDays, historyProgress.requiredWeightSpanDays),
+                                            text: `${historyProgress.weightSpanDays} of ${historyProgress.requiredWeightSpanDays} days of weight history`
+                                        }}
+                                        value={Math.min(1, historyProgress.weightSpanDays / historyProgress.requiredWeightSpanDays)}
+                                    />
+                                </View>
+                                {historyProgress.stage === 'budget_review' && (
+                                    <View style={styles.historyRequirement}>
+                                        <View style={styles.historyProgressHeader}>
+                                            <AppText variant="muted">Weigh-ins</AppText>
+                                            <AppText variant="caption">{weighInProgressLabel}</AppText>
+                                        </View>
+                                        <ProgressBar
+                                            accessible
+                                            accessibilityRole="progressbar"
+                                            accessibilityLabel="Weigh-ins for a calorie-budget review"
+                                            accessibilityValue={{
+                                                min: 0,
+                                                max: historyProgress.requiredWeightPoints,
+                                                now: Math.min(historyProgress.weightPoints, historyProgress.requiredWeightPoints),
+                                                text: `${historyProgress.weightPoints} of ${historyProgress.requiredWeightPoints} weigh-ins`
+                                            }}
+                                            value={Math.min(1, historyProgress.weightPoints / historyProgress.requiredWeightPoints)}
+                                        />
+                                    </View>
+                                )}
                             </View>
                         )}
                         {evaluation.selectedWindowDays && (
                             <AppText variant="caption">{describeCalibrationEvidence(evaluation)}</AppText>
-                        )}
-                        {evaluation.activityContext?.averageSteps != null && (
-                            <View style={styles.contextPanel}>
-                                <AppText variant="label">Activity context</AppText>
-                                <AppText variant="muted">
-                                    You averaged {evaluation.activityContext.averageSteps.toLocaleString()} steps per day across {evaluation.activityContext.observedDays} days. Activity data is supporting context only and did not change this calorie-budget review.
-                                </AppText>
-                            </View>
                         )}
                         {evaluation.nextStep && (
                             <View style={styles.list}>
@@ -376,7 +426,7 @@ export const CalibrationInsightCardView: React.FC<CalibrationInsightCardViewProp
                         )}
                         {evaluation.missingCriteria.length > 0 && !status?.recommendation && !evaluation.nextStep && (
                             <View style={styles.list}>
-                                <AppText variant="label">What would improve this insight</AppText>
+                                <AppText variant="label">Why no insight is available yet</AppText>
                                 {evaluation.missingCriteria.map((criterion) => (
                                     <AppText key={criterion} variant="caption">- {criterion}</AppText>
                                 ))}
@@ -650,13 +700,10 @@ function createStyles(theme: AppTheme) {
     list: {
         gap: spacing.xs
     },
-    contextPanel: {
-        gap: spacing.xs,
-        borderRadius: theme.radius.md,
-        padding: spacing.md,
-        backgroundColor: theme.colors.surfaceContainer
-    },
     historyProgress: {
+        gap: spacing.md
+    },
+    historyRequirement: {
         gap: spacing.xs
     },
     historyProgressHeader: {

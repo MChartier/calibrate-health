@@ -1,6 +1,6 @@
 import type { WeightUnit } from './domain';
 
-export const CALIBRATION_MODEL_VERSION = 2;
+export const CALIBRATION_MODEL_VERSION = 3;
 export const CALIBRATION_MAX_OBSERVATION_DAYS = 42;
 export const CALIBRATION_REFERENCE_DAYS = 90;
 export const CALIBRATION_MIN_INSIGHT_DAYS = 7;
@@ -21,6 +21,7 @@ export type CalibrationFoodDay = {
     entryCount: number;
     mealPeriodCount: number;
     isComplete: boolean;
+    isPaused?: boolean;
 };
 
 export type CalibrationWeightPoint = {
@@ -47,6 +48,7 @@ export type CalibrationInput = {
     foodDays: CalibrationFoodDay[];
     weightPoints: CalibrationWeightPoint[];
     activityDays?: CalibrationActivityDay[];
+    trackingPaused?: boolean;
 };
 
 export type CalibrationInterval = {
@@ -83,8 +85,16 @@ export type CalibrationResult = {
     summary: string;
     nextStep: string | null;
     historyProgress: {
+        stage: 'pace_check' | 'budget_review';
         observedDays: number;
         requiredDays: number;
+        completeFoodDays: number;
+        requiredCompleteFoodDays: number;
+        weightSpanDays: number;
+        requiredWeightSpanDays: number;
+        weightPoints: number;
+        requiredWeightPoints: number;
+        restartedAfterPause: boolean;
     } | null;
     selectedWindowDays: number | null;
     dataQuality: CalibrationDataQuality;
@@ -122,6 +132,12 @@ type WindowEvaluation = {
     missingCriteria: string[];
 };
 
+type CalibrationPeriod = {
+    input: CalibrationInput;
+    restartedAfterPause: boolean;
+    startsOn: string | null;
+};
+
 function clamp(value: number, low: number, high: number): number {
     return Math.min(high, Math.max(low, value));
 }
@@ -141,6 +157,28 @@ function inclusiveDateSpan(start: string, end: string): number {
     const startMs = new Date(`${start}T00:00:00.000Z`).getTime();
     const endMs = new Date(`${end}T00:00:00.000Z`).getTime();
     return Math.max(0, Math.round((endMs - startMs) / 86_400_000) + 1);
+}
+
+function getCalibrationPeriod(input: CalibrationInput): CalibrationPeriod {
+    const latestPausedDate = input.foodDays
+        .filter((day) => day.isPaused && day.date <= input.asOfDate)
+        .map((day) => day.date)
+        .sort((left, right) => right.localeCompare(left))[0] ?? null;
+    if (!latestPausedDate) {
+        return { input, restartedAfterPause: false, startsOn: null };
+    }
+
+    const startsOn = addDateDays(latestPausedDate, 1);
+    return {
+        input: {
+            ...input,
+            foodDays: input.foodDays.filter((day) => day.date >= startsOn && !day.isPaused),
+            weightPoints: input.weightPoints.filter((point) => point.date >= startsOn),
+            activityDays: input.activityDays?.filter((day) => day.date >= startsOn)
+        },
+        restartedAfterPause: true,
+        startsOn
+    };
 }
 
 function quantile(sorted: number[], fraction: number): number {
@@ -473,22 +511,6 @@ function evaluateWindow(input: CalibrationInput, windowDays: number): WindowEval
     };
 }
 
-function summarizeActivity(input: CalibrationInput, windowDays: number | null): CalibrationResult['activityContext'] {
-    if (!input.activityDays || input.activityDays.length === 0 || windowDays === null) return null;
-    const startDate = addDateDays(input.asOfDate, -(windowDays - 1));
-    const days = input.activityDays.filter((day) => day.date >= startDate && day.date <= input.asOfDate);
-    if (days.length === 0) return null;
-    const steps = days.flatMap((day) => typeof day.steps === 'number' ? [day.steps] : []);
-    const activeCalories = days.flatMap((day) => typeof day.activeCaloriesKcal === 'number' ? [day.activeCaloriesKcal] : []);
-    return {
-        observedDays: days.length,
-        averageSteps: steps.length > 0 ? Math.round(steps.reduce((sum, value) => sum + value, 0) / steps.length) : null,
-        averageActiveCaloriesKcal: activeCalories.length > 0
-            ? Math.round(activeCalories.reduce((sum, value) => sum + value, 0) / activeCalories.length)
-            : null
-    };
-}
-
 function emptyQuality(): CalibrationDataQuality {
     return {
         observationDays: 0,
@@ -499,6 +521,33 @@ function emptyQuality(): CalibrationDataQuality {
         missingDays: 0,
         weightPoints: 0,
         weightSpanDays: 0
+    };
+}
+
+function buildHistoryProgress(
+    dataQuality: CalibrationDataQuality,
+    stage: 'pace_check' | 'budget_review',
+    restartedAfterPause: boolean
+): NonNullable<CalibrationResult['historyProgress']> {
+    const requiredDays = stage === 'pace_check' ? CALIBRATION_MIN_INSIGHT_DAYS : CALIBRATION_MIN_ACTIONABLE_DAYS;
+    const requiredWeightPoints = stage === 'pace_check' ? 2 : 3;
+    const observedDays = Math.min(
+        requiredDays,
+        dataQuality.observationDays,
+        dataQuality.weightSpanDays,
+        stage === 'pace_check' ? dataQuality.confidentDays : requiredDays
+    );
+    return {
+        stage,
+        observedDays,
+        requiredDays,
+        completeFoodDays: dataQuality.confidentDays,
+        requiredCompleteFoodDays: CALIBRATION_MIN_INSIGHT_DAYS,
+        weightSpanDays: dataQuality.weightSpanDays,
+        requiredWeightSpanDays: requiredDays,
+        weightPoints: dataQuality.weightPoints,
+        requiredWeightPoints,
+        restartedAfterPause
     };
 }
 
@@ -571,16 +620,22 @@ function averageLoggedIntake(input: CalibrationInput, windowDays: number): numbe
  * being silently discarded. The shortest window with a sufficiently narrow interval wins;
  * otherwise the longest available window powers a descriptive, non-actionable insight.
  */
-export function evaluateCalibration(input: CalibrationInput): CalibrationResult {
+export function evaluateCalibration(sourceInput: CalibrationInput): CalibrationResult {
+    const period = getCalibrationPeriod(sourceInput);
+    const input = period.input;
     const configuredWeeklyWeightChangeKg = round((-input.configuredDailyDeficitKcal * 7) / KCAL_PER_KILOGRAM, 3);
-    const availableSpan = Math.min(
-        CALIBRATION_MAX_OBSERVATION_DAYS,
-        Math.max(
-            0,
-            ...input.foodDays.map((day) => inclusiveDateSpan(day.date, input.asOfDate)),
-            ...input.weightPoints.map((point) => inclusiveDateSpan(point.date, input.asOfDate))
-        )
-    );
+    const availableSpan = input.trackingPaused
+        ? 0
+        : Math.min(
+            CALIBRATION_MAX_OBSERVATION_DAYS,
+            period.startsOn
+                ? (period.startsOn <= input.asOfDate ? inclusiveDateSpan(period.startsOn, input.asOfDate) : 0)
+                : Math.max(
+                    0,
+                    ...input.foodDays.map((day) => inclusiveDateSpan(day.date, input.asOfDate)),
+                    ...input.weightPoints.map((point) => inclusiveDateSpan(point.date, input.asOfDate))
+                )
+        );
 
     if (availableSpan < CALIBRATION_MIN_INSIGHT_DAYS) {
         const previewDays = availableSpan > 0 ? classifyFoodDays(input, availableSpan) : [];
@@ -589,21 +644,35 @@ export function evaluateCalibration(input: CalibrationInput): CalibrationResult 
             .filter((point) => point.date >= previewStart && point.date <= input.asOfDate)
             .slice()
             .sort((left, right) => left.date.localeCompare(right.date));
+        const dataQuality = availableSpan > 0 ? summarizeDataQuality(previewDays, previewWeights) : emptyQuality();
+        const trackingPaused = Boolean(input.trackingPaused);
+        let headline = 'See how your calorie plan is working';
+        let summary = 'Calibrate compares your logged food with your weight trend to show whether your plan is on track or a small calorie-budget adjustment could improve your pace.';
+        let nextStep = 'Your first pace check is available after 7 well-tracked food days and weigh-ins spanning 7 days.';
+        if (period.restartedAfterPause) {
+            headline = trackingPaused ? 'Calibration is paused with food tracking' : 'Gathering new history after your break';
+            summary = trackingPaused
+                ? 'Paused days are excluded from calibration, so your break is not treated as uncertain intake.'
+                : 'Paused days and history from before your break are excluded, so they are not averaged into your current pace check.';
+            nextStep = trackingPaused
+                ? 'After you resume, your next pace check will be available after 7 well-tracked food days and weigh-ins spanning 7 days.'
+                : 'Your next pace check is available after 7 well-tracked food days and weigh-ins spanning 7 days.';
+        }
         return {
             modelVersion: CALIBRATION_MODEL_VERSION,
             asOfDate: input.asOfDate,
             weightUnit: input.weightUnit,
             status: 'not_ready',
-            headline: 'See how your calorie plan is working',
-            summary: 'Calibrate compares your logged food with your weight trend to show whether your plan is on track or a small calorie-budget adjustment could improve your pace.',
-            nextStep: 'Keep following your current plan and log food and weight consistently so Calibrate can make its first pace check.',
-            historyProgress: {
-                observedDays: availableSpan,
-                requiredDays: CALIBRATION_MIN_INSIGHT_DAYS
-            },
+            headline,
+            summary,
+            nextStep,
+            historyProgress: buildHistoryProgress(dataQuality, 'pace_check', period.restartedAfterPause),
             selectedWindowDays: null,
-            dataQuality: availableSpan > 0 ? summarizeDataQuality(previewDays, previewWeights) : emptyQuality(),
-            missingCriteria: [`Build at least ${CALIBRATION_MIN_INSIGHT_DAYS} days of food and weight history.`],
+            dataQuality,
+            missingCriteria: [
+                'Complete at least 7 plausible food-log days with entries across multiple meals.',
+                'Record weights spanning at least 7 days so a pace can be estimated.'
+            ],
             assumptions: [],
             estimates: {
                 averageIntakeKcal: null,
@@ -624,13 +693,14 @@ export function evaluateCalibration(input: CalibrationInput): CalibrationResult 
     const selected = evaluations.find((candidate) => candidate.actionable)
         ?? evaluations.slice().sort((left, right) => right.windowDays - left.windowDays)[0];
     const hasPace = selected.weeklyWeightChange !== null && selected.dataQuality.weightSpanDays >= CALIBRATION_MIN_INSIGHT_DAYS;
-    const hasFoodEvidence = selected.dataQuality.confidentDays > 0;
+    const hasFoodEvidence = selected.dataQuality.confidentDays >= CALIBRATION_MIN_INSIGHT_DAYS;
     const recommendation = selected.recommendation;
 
     let status: CalibrationResult['status'];
     let headline: string;
     let summary: string;
     let nextStep: string | null = null;
+    let historyProgress: CalibrationResult['historyProgress'] = null;
     if (!hasPace && hasFoodEvidence) {
         status = 'learning';
         headline = 'More weight history is needed';
@@ -640,17 +710,20 @@ export function evaluateCalibration(input: CalibrationInput): CalibrationResult 
         if (weightCount === 0) weightEvidence = 'no weigh-ins have been recorded yet';
         if (weightCount === 1) weightEvidence = 'a single weigh-in cannot establish a reliable trend';
         summary = `You have ${foodDayCount} well-tracked food day${foodDayCount === 1 ? '' : 's'}, but ${weightEvidence}.`;
-        nextStep = 'Add more weigh-ins until they span at least 7 days so Calibrate can estimate your pace.';
+        nextStep = 'Your next pace check is available once your weigh-ins span 7 days.';
+        historyProgress = buildHistoryProgress(selected.dataQuality, 'pace_check', period.restartedAfterPause);
     } else if (hasPace && !hasFoodEvidence) {
         status = 'learning';
         headline = 'More complete food history is needed';
         summary = `${capitalizeSentence(describeWeeklyTrend(selected.weeklyWeightChange?.midpoint ?? 0, input.weightUnit))}, but there are not enough complete multi-meal food logs to compare that pace with your calorie budget.`;
-        nextStep = 'Complete food logs across multiple meals on at least 7 days so Calibrate can compare your pace with your budget.';
+        nextStep = 'Your next pace check is available after 7 well-tracked food days with entries across multiple meals.';
+        historyProgress = buildHistoryProgress(selected.dataQuality, 'pace_check', period.restartedAfterPause);
     } else if (!hasPace || !hasFoodEvidence) {
         status = 'learning';
         headline = 'More consistent evidence is needed';
         summary = 'Calibrate needs both complete food logs and a weight trend to compare your pace with your calorie budget.';
-        nextStep = 'Keep logging food across multiple meals and recording weigh-ins over time.';
+        nextStep = 'Your next pace check is available after 7 well-tracked food days and weigh-ins spanning 7 days.';
+        historyProgress = buildHistoryProgress(selected.dataQuality, 'pace_check', period.restartedAfterPause);
     } else if (recommendation) {
         status = 'recommendation';
         const observedWeekly = selected.weeklyWeightChange?.midpoint ?? 0;
@@ -698,6 +771,7 @@ export function evaluateCalibration(input: CalibrationInput): CalibrationResult 
             if (uncertainFoodDays > 0) {
                 headline = 'Food-log uncertainty limits this insight';
                 summary = `${capitalizeSentence(describeWeeklyTrend(weekly, input.weightUnit))}, but ${uncertainFoodDays} uncertain food day${uncertainFoodDays === 1 ? '' : 's'} ${uncertainFoodDays === 1 ? 'widens' : 'widen'} the calorie-budget estimate. Complete daily logs across multiple meals to make the comparison more reliable.`;
+                nextStep = `Complete each current food day across multiple meals. Calibrate rechecks after every completed day and will show a budget suggestion once the estimate is narrow enough to support a safe change.`;
             } else if (selected.weeklyWeightChange && intervalWidth > MAX_ACTIONABLE_INTERVAL_WIDTH_KCAL) {
                 headline = 'Weight uncertainty limits this insight';
                 summary = `${capitalizeSentence(describeWeeklyTrend(weekly, input.weightUnit))}, but the plausible pace could mean ${describeWeeklyRange(selected.weeklyWeightChange, input.weightUnit)}. There is not enough certainty to assess the calorie budget safely yet.`;
@@ -705,6 +779,20 @@ export function evaluateCalibration(input: CalibrationInput): CalibrationResult 
             } else {
                 headline = 'Your latest pace is available';
                 summary = `${capitalizeSentence(describeWeeklyTrend(weekly, input.weightUnit))}. The remaining evidence criteria explain what would make this comparison more reliable.`;
+                if (selected.missingCriteria.some((criterion) => criterion.includes('at least 3 weights'))) {
+                    const remainingWeights = Math.max(0, 3 - selected.dataQuality.weightPoints);
+                    nextStep = `Add ${remainingWeights} more weigh-in${remainingWeights === 1 ? '' : 's'} before Calibrate can assess a calorie-budget change.`;
+                    historyProgress = buildHistoryProgress(selected.dataQuality, 'budget_review', period.restartedAfterPause);
+                } else if (selected.missingCriteria.some((criterion) => criterion.includes('at least 14 days'))) {
+                    const observedDays = Math.min(selected.windowDays, selected.dataQuality.weightSpanDays);
+                    const remainingDays = Math.max(0, CALIBRATION_MIN_ACTIONABLE_DAYS - observedDays);
+                    nextStep = `Keep tracking for ${remainingDays} more day${remainingDays === 1 ? '' : 's'}. Calibrate can assess a budget change after at least 14 days of food and weight history.`;
+                    historyProgress = buildHistoryProgress(selected.dataQuality, 'budget_review', period.restartedAfterPause);
+                } else if (input.ageYears < 18) {
+                    nextStep = 'Calorie-budget suggestions are currently available only to adults.';
+                } else {
+                    nextStep = 'Keep completing food logs and weighing in regularly. Calibrate rechecks automatically as new evidence becomes available.';
+                }
             }
         }
     }
@@ -717,7 +805,7 @@ export function evaluateCalibration(input: CalibrationInput): CalibrationResult 
         headline,
         summary,
         nextStep,
-        historyProgress: null,
+        historyProgress,
         selectedWindowDays: selected.windowDays,
         dataQuality: selected.dataQuality,
         missingCriteria: selected.missingCriteria,
@@ -725,7 +813,9 @@ export function evaluateCalibration(input: CalibrationInput): CalibrationResult 
             'Weight change is converted using 7,700 kcal per kilogram.',
             'Completed multi-meal days receive a small tracking allowance.',
             'Missing and suspicious days use conservative personal intake ranges and are not treated as zero or discarded.',
-            'Health Connect activity is context only and does not change the calorie estimate.'
+            ...(period.restartedAfterPause
+                ? ['Paused days and all earlier evidence are excluded so calibration restarts after the latest break.']
+                : [])
         ],
         estimates: {
             averageIntakeKcal: selected.averageIntake,
@@ -734,6 +824,6 @@ export function evaluateCalibration(input: CalibrationInput): CalibrationResult 
             configuredWeeklyWeightChangeKg
         },
         recommendation,
-        activityContext: summarizeActivity(input, selected.windowDays)
+        activityContext: null
     };
 }
