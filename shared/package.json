@@ -35,6 +35,12 @@
       "react-native": "./goalDeficit.ts",
       "default": "./dist/cjs/goalDeficit.js"
     },
+    "./goalProgress": {
+      "types": "./goalProgress.ts",
+      "browser": "./goalProgress.ts",
+      "react-native": "./goalProgress.ts",
+      "default": "./dist/cjs/goalProgress.js"
+    },
     "./inAppNotifications": {
       "types": "./inAppNotifications.ts",
       "browser": "./inAppNotifications.ts",

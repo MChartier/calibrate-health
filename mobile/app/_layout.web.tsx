@@ -10,6 +10,7 @@ import { AuthProvider, useAuth } from '../src/auth/AuthContext';
 import { NativePushRegistrationProvider } from '../src/hooks/useNativePushRegistration';
 import { createQueuedMutationExecutor } from '../src/offline/operations';
 import { OfflineOutboxProvider } from '../src/offline/provider';
+import { invalidateQueriesAfterOfflineReplay } from '../src/offline/replayInvalidation';
 import { useAppTheme } from '../src/theme';
 import { AppErrorBoundary } from '../src/components/AppErrorBoundary';
 import { HealthConnectProvider } from '../src/healthConnect/provider';
@@ -65,19 +66,23 @@ const BrowserRuntime: React.FC<{ children: React.ReactNode }> = ({ children }) =
     const { api, serverUrl, user } = useAuth();
     const queryClient = useQueryClient();
     const executeMutation = React.useMemo(() => createQueuedMutationExecutor(api), [api]);
+    const onReplayCompleted = React.useCallback(
+        (result: Parameters<typeof invalidateQueriesAfterOfflineReplay>[1]) =>
+            invalidateQueriesAfterOfflineReplay(queryClient, result),
+        [queryClient]
+    );
     useBrowserNotificationStream({ enabled: Boolean(user), serverUrl, queryClient });
     return (
-        <OfflineOutboxProvider executeMutation={executeMutation}>
+        <OfflineOutboxProvider executeMutation={executeMutation} onReplayCompleted={onReplayCompleted}>
             <HealthConnectProvider>{children}</HealthConnectProvider>
         </OfflineOutboxProvider>
     );
 };
 
-/** PWA updates should interrupt signed-in work, not the server-owned sign-in flow. */
-const AuthenticatedPwaStatus: React.FC = () => {
-    const { isLoading, user } = useAuth();
-    if (isLoading || !user) return null;
-    return <PwaStatusBanner />;
+/** Network status belongs to the whole web shell; update prompts wait until the user is signed in. */
+const BrowserPwaStatus: React.FC = () => {
+    const { user } = useAuth();
+    return <PwaStatusBanner showUpdateNotices={Boolean(user)} />;
 };
 
 export default function RootLayout() {
@@ -112,7 +117,7 @@ export default function RootLayout() {
             <SafeAreaProvider>
                 <QueryClientProvider client={queryClient}>
                     <AuthProvider>
-                        <AuthenticatedPwaStatus />
+                        <BrowserPwaStatus />
                         <NativePushRegistrationProvider>
                             <BrowserRuntime>
                                 <StatusBar style={theme.dark ? 'light' : 'dark'} />

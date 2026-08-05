@@ -23,6 +23,7 @@ type BrowserConnectivity = {
 type OfflineOutboxProviderProps = {
     children: React.ReactNode;
     executeMutation: QueuedMutationExecutor;
+    onReplayCompleted?: (result: ReconcileResult) => void | Promise<void>;
     openDatabase?: () => Promise<IDBDatabase>;
     connectivity?: BrowserConnectivity;
 };
@@ -54,6 +55,7 @@ function getNamespace(serverUrl: string, userId: number | undefined): { value: s
 export function OfflineOutboxProvider({
     children,
     executeMutation,
+    onReplayCompleted,
     openDatabase = openBrowserOutboxDatabase,
     connectivity = DEFAULT_BROWSER_CONNECTIVITY
 }: OfflineOutboxProviderProps) {
@@ -105,6 +107,11 @@ export function OfflineOutboxProvider({
         setMutations(await requireOutbox().list());
     }, [requireOutbox]);
 
+    const notifyAfterReplay = useCallback(async (result: ReconcileResult) => {
+        if (result.replayed === 0 || !onReplayCompleted) return;
+        await onReplayCompleted(result);
+    }, [onReplayCompleted]);
+
     const enqueue = useCallback(async (operation: string, payload: unknown, operationId?: string) => {
         const mutation = await requireOutbox().enqueue({ id: operationId, operation, payload });
         await refresh();
@@ -114,16 +121,18 @@ export function OfflineOutboxProvider({
     const reconcile = useCallback(async () => {
         if (!reconciler) throw new Error(initializationError ?? 'Browser offline storage is unavailable until authentication is ready.');
         const result = await reconciler.reconcile();
+        await notifyAfterReplay(result);
         await refresh();
         return result;
-    }, [initializationError, reconciler, refresh]);
+    }, [initializationError, notifyAfterReplay, reconciler, refresh]);
 
     const retryFailed = useCallback(async (id?: string) => {
         if (!reconciler) throw new Error(initializationError ?? 'Browser offline storage is unavailable until authentication is ready.');
         const result = await reconciler.retryFailed(id);
+        await notifyAfterReplay(result);
         await refresh();
         return result;
-    }, [initializationError, reconciler, refresh]);
+    }, [initializationError, notifyAfterReplay, reconciler, refresh]);
 
     const discardAll = useCallback(async () => {
         await requireOutbox().clear();
@@ -138,6 +147,7 @@ export function OfflineOutboxProvider({
                 const result = includeFailures
                     ? await reconciler.retryFailed()
                     : await reconciler.reconcile();
+                await notifyAfterReplay(result);
                 if (active) setMutations(await requireOutbox().list());
                 return result;
             } catch {
@@ -152,7 +162,7 @@ export function OfflineOutboxProvider({
             active = false;
             unsubscribe();
         };
-    }, [connectivity, reconciler, refresh, requireOutbox]);
+    }, [connectivity, notifyAfterReplay, reconciler, refresh, requireOutbox]);
 
     const value = useMemo<OfflineOutboxContextValue>(() => ({
         isReady: outbox !== null,

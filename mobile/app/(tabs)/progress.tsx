@@ -1,14 +1,14 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { AppButton } from '../../src/components/AppButton';
 import { AppText } from '../../src/components/AppText';
 import { BottomSheetModal } from '../../src/components/BottomSheetModal';
 import { GoalProgressCard } from '../../src/components/GoalProgressCard';
 import { GoalDailyChangeSelect } from '../../src/components/GoalDailyChangeSelect';
-import { NumberStepperField } from '../../src/components/NumberStepperField';
+import { WeightValueInput } from '../../src/components/WeightValueInput';
 import { TabScreen } from '../../src/components/TabScreen';
 import { SectionHeader } from '../../src/components/SectionHeader';
 import { SegmentedControl } from '../../src/components/SegmentedControl';
@@ -21,9 +21,11 @@ import { formatWeightUnit } from '../../src/utils/format';
 import {
     getGoalModeFromDailyDeficit,
     getSignedDailyDeficit,
+    getTargetWeightAfterGoalModeChange,
     GOAL_MODE_OPTIONS,
     type GoalMode
 } from '../../src/utils/goals';
+import { getLatestMetric } from '../../src/utils/metrics';
 import { radius, spacing, useAppTheme, type AppTheme } from '../../src/theme';
 import { WEIGHT_INPUT_INCREMENT } from '../../src/config/inputPrecision';
 
@@ -48,6 +50,7 @@ function getGoalValidationError(goalMode: GoalMode, startWeight: number, targetW
 }
 
 export default function ProgressScreen() {
+    const routeParams = useLocalSearchParams<{ openNextGoal?: string }>();
     const { api, user } = useAuth();
     const theme = useAppTheme();
     const { colors: themeColors } = theme;
@@ -67,6 +70,9 @@ export default function ProgressScreen() {
     const [dailyChangeAbs, setDailyChangeAbs] = useState('500');
     const [validationError, setValidationError] = useState<string | null>(null);
     const [isDailyChangeSelectorOpen, setIsDailyChangeSelectorOpen] = useState(false);
+    const handledNextGoalRouteRef = useRef(false);
+    const latestMetric = getLatestMetric(metricsQuery.data);
+    const latestTrendMetric = getLatestMetric(trendSummaryQuery.data?.metrics);
 
     const signedDailyDeficit = getSignedDailyDeficit(goalMode, dailyChangeAbs);
     const canSave = Number(startWeight) > 0 && Number(targetWeight) > 0 && Number.isFinite(Number(dailyChangeAbs));
@@ -97,12 +103,12 @@ export default function ProgressScreen() {
     }
 
     function getDefaultStartWeight(): string {
-        const latestWeight = metricsQuery.data?.[0]?.weight;
+        const latestWeight = latestMetric?.weight;
         if (typeof latestWeight === 'number' && Number.isFinite(latestWeight)) {
             return formatWeightInput(latestWeight);
         }
 
-        const trendWeight = trendSummaryQuery.data?.metrics[0]?.trend_weight;
+        const trendWeight = latestTrendMetric?.trend_weight;
         if (typeof trendWeight === 'number' && Number.isFinite(trendWeight)) {
             return formatWeightInput(trendWeight);
         }
@@ -125,19 +131,51 @@ export default function ProgressScreen() {
         setIsGoalEditorOpen(true);
     }
 
+    function openNextGoalEditor() {
+        const latestWeight = getDefaultStartWeight();
+        setStartWeight(latestWeight);
+        setTargetWeight(getTargetWeightAfterGoalModeChange('maintain', latestWeight, ''));
+        setGoalMode('maintain');
+        setDailyChangeAbs('500');
+        setValidationError(null);
+        setIsDailyChangeSelectorOpen(false);
+        setIsGoalEditorOpen(true);
+    }
+
     function handleGoalModeChange(nextMode: GoalMode) {
         setGoalMode(nextMode);
+        setTargetWeight((currentTarget) =>
+            getTargetWeightAfterGoalModeChange(nextMode, startWeight, currentTarget)
+        );
         setIsDailyChangeSelectorOpen(false);
     }
+
+    useEffect(() => {
+        if (routeParams.openNextGoal !== 'true') {
+            handledNextGoalRouteRef.current = false;
+            return;
+        }
+        if (handledNextGoalRouteRef.current || !getDefaultStartWeight()) return;
+        handledNextGoalRouteRef.current = true;
+        openNextGoalEditor();
+    }, [
+        goalQuery.data,
+        metricsQuery.data,
+        profileQuery.data,
+        routeParams.openNextGoal,
+        trendSummaryQuery.data
+    ]); // Query data completes the one-shot handoff from a goal-reached receipt.
 
     return (
         <>
             <TabScreen>
                 <GoalProgressCard
-                    latestMetric={metricsQuery.data?.[0]}
+                    latestMetric={latestMetric}
+                    metrics={metricsQuery.data}
                     goal={goalQuery.data}
                     user={user}
                     onEditGoal={openGoalEditor}
+                    onSetNextGoal={openNextGoalEditor}
                 />
 
                 <WeightTrendPreviewCard
@@ -163,13 +201,15 @@ export default function ProgressScreen() {
                             </AppText>
                         </View>
                     </View>
-                    <NumberStepperField
+                    <WeightValueInput
                         label="Target"
                         value={targetWeight}
+                        unit={user?.weight_unit}
                         onChangeText={setTargetWeight}
                         step={WEIGHT_INPUT_INCREMENT}
                         min={WEIGHT_INPUT_INCREMENT}
-                        suffix={formatWeightUnit(user?.weight_unit)}
+                        editable={!saveGoal.isPending}
+                        helperText="Use one decimal place to set a precise goal."
                     />
                     <View style={styles.dailyChangeSlot}>
                         <AppText variant="label">Daily calorie change</AppText>

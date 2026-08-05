@@ -5,6 +5,7 @@ export type QueuedMutationExecutor = (mutation: QueuedMutation) => Promise<void>
 
 export type ReconcileResult = {
     replayed: number;
+    replayedOperations: string[];
     failedMutation: QueuedMutation | null;
 };
 
@@ -42,18 +43,20 @@ export class OutboxReconciler {
     private async runReconciliation(): Promise<ReconcileResult> {
         await this.outbox.recoverInterrupted();
         let replayed = 0;
+        const replayedOperations: string[] = [];
 
         while (true) {
             const mutation = await this.outbox.claimNext();
-            if (!mutation) return { replayed, failedMutation: null };
+            if (!mutation) return { replayed, replayedOperations, failedMutation: null };
 
             try {
                 await this.executeMutation(mutation);
                 await this.outbox.complete(mutation.id);
                 replayed += 1;
+                replayedOperations.push(mutation.operation);
             } catch (error) {
                 const failedMutation = await this.outbox.fail(mutation.id, describeReplayError(error));
-                return { replayed, failedMutation };
+                return { replayed, replayedOperations, failedMutation };
             }
         }
     }

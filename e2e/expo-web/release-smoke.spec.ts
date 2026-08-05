@@ -67,6 +67,56 @@ const TREND_METRICS = [
   { id: 1, user_id: 17, date: '2026-07-04', weight: 90.0, body_fat_percent: null, trend_weight: 89.8, trend_ci_lower: 89.4, trend_ci_upper: 90.2 },
 ];
 
+const DEFAULT_GOAL = {
+  id: 7,
+  start_weight: 90,
+  target_weight: 82,
+  target_date: null,
+  daily_deficit: 500,
+  created_at: '2026-07-01T12:00:00.000Z',
+};
+
+const CALIBRATION_STATUS_RESPONSE = {
+  generatedAt: '2026-07-18T12:00:00.000Z',
+  inputFingerprint: null,
+  evaluation: {
+    modelVersion: 2,
+    asOfDate: '2026-07-18',
+    weightUnit: 'KG',
+    status: 'not_ready',
+    headline: 'See how your calorie plan is working',
+    summary: 'Keep logging food and weight to build your first pace check.',
+    nextStep: 'Keep following your current plan and log consistently.',
+    historyProgress: { observedDays: 6, requiredDays: 7 },
+    selectedWindowDays: null,
+    dataQuality: {
+      observationDays: 6,
+      completeDays: 6,
+      confidentDays: 6,
+      suspiciousDays: 0,
+      incompleteDays: 0,
+      missingDays: 0,
+      weightPoints: 6,
+      weightSpanDays: 6,
+    },
+    missingCriteria: ['Build at least 7 days of food and weight history.'],
+    assumptions: [],
+    estimates: {
+      averageIntakeKcal: null,
+      observedWeeklyWeightChangeKg: null,
+      targetAdjustmentKcal: null,
+      configuredWeeklyWeightChangeKg: -0.455,
+    },
+    recommendation: null,
+    activityContext: null,
+  },
+  recommendation: null,
+  scheduledChange: null,
+};
+
+type StubMetricEntry = { id: number; date: string; weight: number };
+type StubTrendMetricEntry = (typeof TREND_METRICS)[number];
+
 type AuthenticatedApiOptions = {
   foodDayStatus?: 'OPEN' | 'PAUSED';
   foodEntries?: Array<{
@@ -76,6 +126,10 @@ type AuthenticatedApiOptions = {
     calories: number;
     servings_consumed: number;
   }>;
+  profileResponse?: typeof PROFILE_RESPONSE;
+  goal?: typeof DEFAULT_GOAL;
+  metrics?: StubMetricEntry[];
+  trendMetrics?: StubTrendMetricEntry[];
 };
 
 const DEFAULT_FOOD_ENTRIES: NonNullable<AuthenticatedApiOptions['foodEntries']> = [{
@@ -106,7 +160,9 @@ async function stubAuthenticatedApi(page: Page, options: AuthenticatedApiOptions
       });
     }
     if (pathname === '/auth/mobile/sessions') return fulfillJson(route, { sessions: [] });
-    if (pathname === '/api/v1/user/profile') return fulfillJson(route, PROFILE_RESPONSE);
+    if (pathname === '/api/v1/user/profile') {
+      return fulfillJson(route, options.profileResponse ?? PROFILE_RESPONSE);
+    }
     if (pathname === '/api/v1/notifications/in-app') {
       return fulfillJson(route, { notifications: [], unread_count: 0 });
     }
@@ -116,6 +172,12 @@ async function stubAuthenticatedApi(page: Page, options: AuthenticatedApiOptions
         contentType: 'text/event-stream',
         body: ': release-smoke heartbeat\n\n',
       });
+    }
+    if (pathname === '/api/v1/food/recent') {
+      return fulfillJson(route, { items: [] });
+    }
+    if (pathname === '/api/v1/my-foods') {
+      return fulfillJson(route, []);
     }
     if (pathname === '/api/v1/food') {
       return fulfillJson(route, options.foodEntries ?? DEFAULT_FOOD_ENTRIES);
@@ -169,6 +231,9 @@ async function stubAuthenticatedApi(page: Page, options: AuthenticatedApiOptions
     if (pathname === '/api/v1/user/tracking-history') {
       return fulfillJson(route, { tracking_start_date: '2026-01-01' });
     }
+    if (pathname === '/api/v1/calibration/status') {
+      return fulfillJson(route, CALIBRATION_STATUS_RESPONSE);
+    }
     if (pathname === '/api/v1/activity/days') {
       const localDate = url.searchParams.get('start') ?? '2026-07-18';
       return fulfillJson(route, {
@@ -217,23 +282,19 @@ async function stubAuthenticatedApi(page: Page, options: AuthenticatedApiOptions
       });
     }
     if (pathname === '/api/v1/goals') {
-      return fulfillJson(route, {
-        id: 7,
-        start_weight: 90,
-        target_weight: 82,
-        target_date: null,
-        daily_deficit: 500,
-        created_at: '2026-07-01T12:00:00.000Z',
-      });
+      return fulfillJson(route, options.goal ?? DEFAULT_GOAL);
     }
     if (pathname === '/api/v1/metrics' && url.searchParams.get('include_trend') === 'true') {
+      const trendMetrics = options.trendMetrics ?? TREND_METRICS;
       return fulfillJson(route, {
-        metrics: TREND_METRICS,
-        meta: { weekly_rate: -0.55, volatility: 'low', total_points: 3, total_span_days: 14 },
+        metrics: trendMetrics,
+        meta: { weekly_rate: -0.55, volatility: 'low', total_points: trendMetrics.length, total_span_days: 14 },
       });
     }
     if (pathname === '/api/v1/metrics') {
-      return fulfillJson(route, TREND_METRICS.map(({ id, date, weight }) => ({ id, date, weight })));
+      const metrics = options.metrics
+        ?? (options.trendMetrics ?? TREND_METRICS).map(({ id, date, weight }) => ({ id, date, weight }));
+      return fulfillJson(route, metrics);
     }
     if (pathname.startsWith('/api/') || pathname.startsWith('/auth/')) {
       unexpectedApiRequests.get(page)?.push(`${route.request().method()} ${pathname}${url.search}`);
@@ -440,6 +501,140 @@ test('paused days omit calorie progress and only preview food when entries exist
   await expect(page.getByRole('button', { name: /Food log.*View full log/ })).toBeHidden();
 });
 
+test('mobile weight logging keeps the progress result visible and hands off a reached goal', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'android-phone-chrome', 'The weight editor geometry is mobile-specific.');
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+
+  const options: AuthenticatedApiOptions = {
+    goal: { ...DEFAULT_GOAL, target_weight: 87.5 },
+    profileResponse: { ...PROFILE_RESPONSE },
+    metrics: TREND_METRICS.map(({ id, date, weight }) => ({ id, date, weight })),
+    trendMetrics: [...TREND_METRICS],
+  };
+  await stubAuthenticatedApi(page, options);
+
+  let metricPostCount = 0;
+  let goalPostCount = 0;
+  await page.route('**/api/v1/goals', async (route) => {
+    if (route.request().method() !== 'POST') {
+      await route.fallback();
+      return;
+    }
+    goalPostCount += 1;
+    await fulfillJson(route, options.goal ?? DEFAULT_GOAL);
+  });
+  await page.route('**/api/v1/metrics', async (route) => {
+    if (route.request().method() !== 'POST') {
+      await route.fallback();
+      return;
+    }
+
+    metricPostCount += 1;
+    const request = route.request().postDataJSON() as { date: string; weight: number };
+    expect(request.weight).toBe(87.5);
+    const savedMetric = { id: 4, date: request.date, weight: request.weight };
+    options.metrics = [savedMetric, ...(options.metrics ?? [])];
+    options.trendMetrics = [
+      {
+        id: 4,
+        user_id: AUTHENTICATED_USER.id,
+        date: request.date,
+        weight: request.weight,
+        body_fat_percent: null,
+        trend_weight: 87.8,
+        trend_ci_lower: 87.4,
+        trend_ci_upper: 88.2,
+      },
+      ...TREND_METRICS,
+    ];
+    options.profileResponse = { ...PROFILE_RESPONSE, latest_weight_grams: 87_500 };
+
+    await fulfillJson(route, {
+      ...savedMetric,
+      progress_update: {
+        save_kind: 'created',
+        local_date: request.date,
+        is_current_day: true,
+        current_weight_grams: 87_500,
+        goal: {
+          id: DEFAULT_GOAL.id,
+          mode: 'lose',
+          previous_progress_percent: 72.5,
+          current_progress_percent: 100,
+          remaining_weight_grams: 0,
+          is_complete: true,
+          reached_local_date: request.date,
+        },
+        recognitions: [{ type: 'goal_reached' }],
+      },
+    });
+  });
+
+  await page.goto('/weight');
+  const entrySheet = page.getByRole('dialog', { name: 'Weight entry' });
+  const weightInput = entrySheet.getByRole('textbox', { name: 'Weight in kilograms', exact: true });
+  const increaseWeight = entrySheet.getByRole('button', {
+    name: 'Increase weight by 0.1 kilograms',
+    exact: true,
+  });
+  await expect(weightInput).toHaveValue('88.2');
+
+  const inputGeometry = await weightInput.evaluate((element) => {
+    const styles = window.getComputedStyle(element);
+    return {
+      fontSize: Number.parseFloat(styles.fontSize),
+      height: element.getBoundingClientRect().height,
+    };
+  });
+  expect(inputGeometry.fontSize).toBeGreaterThanOrEqual(48);
+  expect(inputGeometry.height).toBeGreaterThanOrEqual(56);
+  const stepperBox = await increaseWeight.boundingBox();
+  expect(stepperBox).not.toBeNull();
+  expect(stepperBox!.width).toBeGreaterThanOrEqual(48);
+  expect(stepperBox!.height).toBeGreaterThanOrEqual(48);
+  await expectNoHorizontalOverflow(page);
+
+  await weightInput.fill('87.5');
+  await entrySheet.getByRole('button', { name: 'Log weight', exact: true }).click();
+
+  const resultSheet = page.getByRole('dialog', { name: 'Weight progress update' });
+  await expect(resultSheet.getByText('Goal reached!', { exact: true })).toBeVisible();
+  await expect(resultSheet.getByLabel('Saved weight 87.5 kg', { exact: true })).toBeVisible();
+  await expect(resultSheet.getByText(/^Trend line: down 2 kg over \d+ days\.$/)).toBeVisible();
+  await expect(resultSheet.getByRole('progressbar', { name: 'Goal progress' })).toHaveAttribute(
+    'aria-valuenow',
+    '100',
+  );
+  await expect(resultSheet.getByText('100%', { exact: true })).toBeVisible();
+  await expect(resultSheet.getByText('Target reached', { exact: true })).toBeVisible();
+  await expect(resultSheet.getByTestId('goal-celebration-static')).toBeVisible();
+  await expect(resultSheet.getByTestId('goal-confetti')).toHaveCount(0);
+  await expect(resultSheet.getByRole('button', { name: 'Done', exact: true })).toBeVisible();
+  expect(metricPostCount).toBe(1);
+
+  await resultSheet.getByRole('button', { name: 'Set next goal', exact: true }).click();
+  await expect(page).toHaveURL((url) => (
+    url.pathname === '/progress' && url.searchParams.get('openNextGoal') === 'true'
+  ));
+
+  const goalEditor = page.getByRole('dialog').filter({ hasText: 'Set a new goal' });
+  await expect(goalEditor.getByText('Set a new goal', { exact: true })).toBeVisible();
+  await expect(goalEditor.getByRole('radio', { name: 'Maintain', exact: true })).toBeChecked();
+  await expect(goalEditor.getByText('87.5 kg', { exact: true })).toBeVisible();
+  const targetInput = goalEditor.getByLabel('Target in kilograms', { exact: true });
+  await expect(targetInput).toHaveValue('87.5');
+  const targetInputGeometry = await targetInput.evaluate((element) => {
+    const styles = window.getComputedStyle(element);
+    return {
+      fontSize: Number.parseFloat(styles.fontSize),
+      textAlign: styles.textAlign,
+    };
+  });
+  expect(targetInputGeometry.fontSize).toBeGreaterThanOrEqual(48);
+  expect(targetInputGeometry.textAlign).toBe('center');
+  expect(goalPostCount).toBe(0);
+});
+
 test('a browser write survives reload and replays exactly once with its operation id', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'desktop-chrome', 'IndexedDB integrity is viewport-independent.');
   await stubAuthenticatedApi(page);
@@ -466,13 +661,19 @@ test('a browser write survives reload and replays exactly once with its operatio
   });
 
   await page.goto('/weight');
-  const weightInput = page.getByRole('textbox', { name: 'Weight', exact: true });
+  const weightInput = page.getByRole('textbox', { name: 'Weight in kilograms', exact: true });
   await expect(weightInput).toBeVisible();
-  const increaseWeight = page.getByRole('button', { name: 'Increase Weight', exact: true });
+  const increaseWeight = page.getByRole('button', {
+    name: 'Increase weight by 0.1 kilograms',
+    exact: true,
+  });
   await expect(increaseWeight).toBeEnabled();
   await increaseWeight.click();
   await page.getByRole('button', { name: 'Log weight', exact: true }).click();
 
+  const queuedResultSheet = page.getByRole('dialog', { name: 'Weight progress update' });
+  await expect(queuedResultSheet.getByText('Saved on this device', { exact: true })).toBeVisible();
+  await queuedResultSheet.getByRole('button', { name: 'Done', exact: true }).click();
   await expect(page.getByRole('button', { name: '1 offline changes pending' })).toBeVisible();
   expect(operationIds).toHaveLength(1);
   expect(operationIds[0]).not.toBe('');

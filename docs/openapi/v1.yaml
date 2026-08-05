@@ -438,6 +438,48 @@ paths:
           description: Food log deleted; response has no body.
         '401':
           $ref: '#/components/responses/Unauthorized'
+  /api/v1/metrics:
+    post:
+      operationId: addMetric
+      description: Upsert one account-local body metric and optionally return a transactional weight-progress receipt.
+      parameters:
+        - $ref: '#/components/parameters/ClientOperationId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              anyOf:
+                - type: object
+                  required: [weight]
+                  properties:
+                    date: { type: string, format: date }
+                    weight: { type: number, exclusiveMinimum: 0 }
+                    body_fat_percent: { type: [number, 'null'], minimum: 0, maximum: 100 }
+                - type: object
+                  required: [body_fat_percent]
+                  properties:
+                    date: { type: string, format: date }
+                    weight: { type: number, exclusiveMinimum: 0 }
+                    body_fat_percent: { type: [number, 'null'], minimum: 0, maximum: 100 }
+      responses:
+        '200':
+          description: Saved metric. Weight writes from newer servers include progress_update; older servers omit it.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MetricSaveResponse' }
+        '400':
+          description: Invalid date, weight, body-fat value, operation ID, or empty update.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiError' }
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          description: The client operation is still running or was reused for another payload.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiError' }
   /api/v1/metrics/{metricId}:
     delete:
       operationId: deleteMetric
@@ -692,6 +734,74 @@ components:
           schema:
             $ref: '#/components/schemas/ApiError'
   schemas:
+    MetricSaveResponse:
+      type: object
+      required: [id, date, weight]
+      properties:
+        id: { type: integer }
+        user_id: { type: integer }
+        date: { type: string, format: date }
+        body_fat_percent: { type: [number, 'null'] }
+        weight: { type: number, exclusiveMinimum: 0 }
+        progress_update: { $ref: '#/components/schemas/MetricProgressUpdate' }
+    MetricProgressUpdate:
+      type: object
+      additionalProperties: false
+      required: [save_kind, local_date, is_current_day, current_weight_grams, goal, recognitions]
+      properties:
+        save_kind: { type: string, enum: [created, updated, unchanged] }
+        local_date: { type: string, format: date }
+        is_current_day: { type: boolean }
+        current_weight_grams: { type: integer, minimum: 1 }
+        goal:
+          oneOf:
+            - type: 'null'
+            - $ref: '#/components/schemas/MetricGoalProgressUpdate'
+        recognitions:
+          type: array
+          items: { $ref: '#/components/schemas/MetricProgressRecognition' }
+    MetricGoalProgressUpdate:
+      type: object
+      additionalProperties: false
+      required: [id, mode, previous_progress_percent, current_progress_percent, remaining_weight_grams, is_complete, reached_local_date]
+      properties:
+        id: { type: integer }
+        mode: { type: string, enum: [lose, gain, maintain] }
+        previous_progress_percent: { type: [number, 'null'], minimum: 0, maximum: 100 }
+        current_progress_percent: { type: [number, 'null'], minimum: 0, maximum: 100 }
+        remaining_weight_grams: { type: integer, minimum: 0 }
+        is_complete: { type: boolean }
+        reached_local_date: { type: [string, 'null'], format: date }
+    MetricProgressRecognition:
+      oneOf:
+        - type: object
+          additionalProperties: false
+          required: [type]
+          properties:
+            type: { type: string, const: goal_reached }
+        - type: object
+          additionalProperties: false
+          required: [type, threshold_percent]
+          properties:
+            type: { type: string, const: goal_percent }
+            threshold_percent: { type: integer, enum: [25, 50, 75] }
+        - type: object
+          additionalProperties: false
+          required: [type, threshold_grams]
+          properties:
+            type: { type: string, const: goal_weight }
+            threshold_grams: { type: integer, minimum: 1 }
+        - type: object
+          additionalProperties: false
+          required: [type, improvement_grams]
+          properties:
+            type: { type: string, const: meaningful_best }
+            improvement_grams: { type: integer, minimum: 1 }
+        - type: object
+          additionalProperties: false
+          required: [type]
+          properties:
+            type: { type: string, const: baseline_recorded }
     AccountExport:
       type: object
       additionalProperties: false

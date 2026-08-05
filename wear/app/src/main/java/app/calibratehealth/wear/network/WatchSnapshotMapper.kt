@@ -104,11 +104,18 @@ object WatchSnapshotMapper {
             require(it in 0..MAX_WEIGHT_GRAMS) { "Goal remaining weight is outside its allowed range." }
         }
         val goalIsComplete = goal?.requiredBoolean("is_complete")
-        require((goalCurrentWeight == null) == (goalProgressPercent == null)) {
-            "Goal current weight and progress must both be present or absent."
-        }
-        if (goalCurrentWeight == null) require(goalIsComplete != true) {
-            "A goal without a current weight cannot be complete."
+        if (goalCurrentWeight == null) {
+            require(goalProgressPercent == null && goalIsComplete != true) {
+                "A goal without a current weight cannot have progress or be complete."
+            }
+        } else if (goalDailyDeficit == 0) {
+            require(goalProgressPercent == null && goalIsComplete == false) {
+                "A maintenance goal must remain ongoing without completion progress."
+            }
+        } else {
+            require(goalProgressPercent != null) {
+                "A loss or gain goal with a current weight requires progress."
+            }
         }
 
         val quickAdds = root.requiredArray("quick_add")

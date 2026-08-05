@@ -1,7 +1,7 @@
 import 'react-native-gesture-handler';
 import React from 'react';
 import { Slot } from 'expo-router';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClient, QueryClientProvider, useQueryClient } from '@tanstack/react-query';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { AuthProvider, useAuth } from '../src/auth/AuthContext';
@@ -9,6 +9,7 @@ import { NativePushRegistrationProvider } from '../src/hooks/useNativePushRegist
 import { useNotificationTapRouting } from '../src/notifications/useNotificationTapRouting';
 import { createQueuedMutationExecutor } from '../src/offline/operations';
 import { OfflineOutboxProvider } from '../src/offline/provider';
+import { invalidateQueriesAfterOfflineReplay } from '../src/offline/replayInvalidation';
 import { useAppTheme } from '../src/theme';
 import { AppErrorBoundary } from '../src/components/AppErrorBoundary';
 import { ClientUpgradeRequiredScreen } from '../src/components/ClientUpgradeRequiredScreen';
@@ -52,9 +53,15 @@ const ClientCompatibilityGate: React.FC<{ children: React.ReactNode }> = ({ chil
 
 const AuthenticatedRuntime: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const { api } = useAuth();
+    const runtimeQueryClient = useQueryClient();
     const executeMutation = React.useMemo(() => createQueuedMutationExecutor(api), [api]);
+    const onReplayCompleted = React.useCallback(
+        (result: Parameters<typeof invalidateQueriesAfterOfflineReplay>[1]) =>
+            invalidateQueriesAfterOfflineReplay(runtimeQueryClient, result),
+        [runtimeQueryClient]
+    );
     return (
-        <OfflineOutboxProvider executeMutation={executeMutation}>
+        <OfflineOutboxProvider executeMutation={executeMutation} onReplayCompleted={onReplayCompleted}>
             <HealthConnectProvider>{children}</HealthConnectProvider>
         </OfflineOutboxProvider>
     );

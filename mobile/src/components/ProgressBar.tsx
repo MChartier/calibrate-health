@@ -13,6 +13,11 @@ type ProgressBarProps = ViewProps & {
 export const ProgressBar: React.FC<ProgressBarProps> = ({ value, tone = 'primary', style, ...props }) => {
     const { colors } = useAppTheme();
     const clampedValue = Math.max(0, Math.min(1, value));
+    const accessibilityValue = props.accessibilityValue ?? {
+        min: 0,
+        max: 100,
+        now: Math.round(clampedValue * 100)
+    };
     const toneColors = {
         primary: colors.primary,
         warning: colors.warning,
@@ -20,7 +25,16 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({ value, tone = 'primary
     };
 
     return (
-        <View {...props} style={[styles.track, { backgroundColor: colors.surfaceContainer, borderColor: colors.outlineVariant }, style]}>
+        <View
+            {...props}
+            accessible={props.accessible ?? true}
+            accessibilityRole={props.accessibilityRole ?? 'progressbar'}
+            accessibilityValue={accessibilityValue}
+            aria-valuemin={accessibilityValue.min}
+            aria-valuemax={accessibilityValue.max}
+            aria-valuenow={accessibilityValue.now}
+            style={[styles.track, { backgroundColor: colors.surfaceContainer, borderColor: colors.outlineVariant }, style]}
+        >
             <View style={[styles.fill, { width: `${clampedValue * 100}%`, backgroundColor: toneColors[tone] }]} />
         </View>
     );

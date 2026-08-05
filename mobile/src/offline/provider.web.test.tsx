@@ -96,10 +96,12 @@ describe('browser offline outbox provider', () => {
             payload: { date: '2026-07-18', is_complete: true }
         });
         const executeMutation = jest.fn(async () => undefined);
+        const onReplayCompleted = jest.fn(async () => undefined);
         const connectivity = createConnectivity(true);
         const wrapper = ({ children }: { children: React.ReactNode }) => (
             <OfflineOutboxProvider
                 executeMutation={executeMutation}
+                onReplayCompleted={onReplayCompleted}
                 openDatabase={openDatabase}
                 connectivity={connectivity.value}
             >
@@ -112,6 +114,11 @@ describe('browser offline outbox provider', () => {
             expect.objectContaining({ id: 'startup-operation', operation: 'food-day.update' })
         ));
         await waitFor(() => expect(result.current.mutations).toEqual([]));
+        expect(onReplayCompleted).toHaveBeenCalledWith({
+            replayed: 1,
+            replayedOperations: ['food-day.update'],
+            failedMutation: null
+        });
     });
 
     it('retries a durable startup failure when the browser comes online', async () => {

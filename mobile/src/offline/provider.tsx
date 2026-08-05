@@ -21,12 +21,13 @@ type OfflineOutboxContextValue = {
 type OfflineOutboxProviderProps = {
     children: React.ReactNode;
     executeMutation: QueuedMutationExecutor;
+    onReplayCompleted?: (result: ReconcileResult) => void | Promise<void>;
 };
 
 const OfflineOutboxContext = createContext<OfflineOutboxContextValue | null>(null);
 
 /** Binds SQLite queue access to the currently authenticated server and user. */
-export function OfflineOutboxProvider({ children, executeMutation }: OfflineOutboxProviderProps) {
+export function OfflineOutboxProvider({ children, executeMutation, onReplayCompleted }: OfflineOutboxProviderProps) {
     const { serverUrl, user } = useAuth();
     const userId = user?.id;
     const [outbox, setOutbox] = useState<SqliteOutbox | null>(null);
@@ -78,6 +79,12 @@ export function OfflineOutboxProvider({ children, executeMutation }: OfflineOutb
         }
     }, [serverUrl, userId]);
 
+    const notifyAfterReplay = useCallback(async (result: ReconcileResult) => {
+        notifyWearAfterReplay(result);
+        if (result.replayed === 0 || !onReplayCompleted) return;
+        await onReplayCompleted(result);
+    }, [notifyWearAfterReplay, onReplayCompleted]);
+
     const enqueue = useCallback(async (operation: string, payload: unknown, operationId?: string) => {
         const mutation = await requireOutbox().enqueue({ id: operationId, operation, payload });
         await refresh();
@@ -87,18 +94,18 @@ export function OfflineOutboxProvider({ children, executeMutation }: OfflineOutb
     const reconcile = useCallback(async () => {
         if (!reconciler) throw new Error('Offline outbox is unavailable until authentication is ready.');
         const result = await reconciler.reconcile();
-        notifyWearAfterReplay(result);
+        await notifyAfterReplay(result);
         await refresh();
         return result;
-    }, [notifyWearAfterReplay, reconciler, refresh]);
+    }, [notifyAfterReplay, reconciler, refresh]);
 
     const retryFailed = useCallback(async (id?: string) => {
         if (!reconciler) throw new Error('Offline outbox is unavailable until authentication is ready.');
         const result = await reconciler.retryFailed(id);
-        notifyWearAfterReplay(result);
+        await notifyAfterReplay(result);
         await refresh();
         return result;
-    }, [notifyWearAfterReplay, reconciler, refresh]);
+    }, [notifyAfterReplay, reconciler, refresh]);
 
     const discardAll = useCallback(async () => {
         await requireOutbox().clear();
@@ -111,12 +118,12 @@ export function OfflineOutboxProvider({ children, executeMutation }: OfflineOutb
             const result = includeFailures
                 ? await reconciler.retryFailed()
                 : await reconciler.reconcile();
-            notifyWearAfterReplay(result);
+            await notifyAfterReplay(result);
             await refresh();
         } catch {
             await refresh().catch(() => undefined);
         }
-    }, [notifyWearAfterReplay, reconciler, refresh]);
+    }, [notifyAfterReplay, reconciler, refresh]);
 
     useEffect(() => {
         if (!reconciler) return;

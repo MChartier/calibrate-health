@@ -98,7 +98,11 @@ describe('OutboxReconciler', () => {
             activeExecutions -= 1;
         });
 
-        await expect(reconciler.reconcile()).resolves.toEqual({ replayed: 2, failedMutation: null });
+        await expect(reconciler.reconcile()).resolves.toEqual({
+            replayed: 2,
+            replayedOperations: ['food.create', 'weight.create'],
+            failedMutation: null
+        });
         expect(events).toEqual(['food.create', 'weight.create']);
         expect(outbox.mutations).toEqual([]);
     });
@@ -114,6 +118,7 @@ describe('OutboxReconciler', () => {
         const result = await reconciler.reconcile();
 
         expect(result.replayed).toBe(0);
+        expect(result.replayedOperations).toEqual([]);
         expect(result.failedMutation).toEqual(expect.objectContaining({
             id: failed.id,
             state: 'failed',
@@ -142,7 +147,11 @@ describe('OutboxReconciler', () => {
         expect(second).toBe(first);
         releaseExecution();
 
-        await expect(first).resolves.toEqual({ replayed: 1, failedMutation: null });
+        await expect(first).resolves.toEqual({
+            replayed: 1,
+            replayedOperations: ['weight.create'],
+            failedMutation: null
+        });
         expect(executor).toHaveBeenCalledTimes(1);
     });
 
@@ -158,7 +167,26 @@ describe('OutboxReconciler', () => {
         await reconciler.reconcile();
 
         shouldFail = false;
-        await expect(reconciler.retryFailed(first.id)).resolves.toEqual({ replayed: 2, failedMutation: null });
+        await expect(reconciler.retryFailed(first.id)).resolves.toEqual({
+            replayed: 2,
+            replayedOperations: ['food.create', 'food.delete'],
+            failedMutation: null
+        });
         expect(outbox.mutations).toEqual([]);
+    });
+
+    it('reports operations that succeeded before a later replay fails', async () => {
+        const outbox = new MemoryOutbox();
+        await outbox.enqueue({ operation: 'metric.add', payload: { weight: 80 } });
+        const failed = await outbox.enqueue({ operation: 'food.create', payload: {} });
+        const reconciler = new OutboxReconciler(outbox, async (mutation) => {
+            if (mutation.operation === 'food.create') throw new Error('invalid food');
+        });
+
+        await expect(reconciler.reconcile()).resolves.toEqual({
+            replayed: 1,
+            replayedOperations: ['metric.add'],
+            failedMutation: expect.objectContaining({ id: failed.id, state: 'failed' })
+        });
     });
 });

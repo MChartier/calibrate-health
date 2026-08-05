@@ -9,8 +9,12 @@ const mockOutbox = {
     list: jest.fn(async () => []),
     clear: jest.fn(async () => undefined)
 };
-const mockReconcile = jest.fn(async () => ({ replayed: 0, failedMutation: null }));
-const mockRetryFailed = jest.fn(async () => ({ replayed: 1, failedMutation: null }));
+const mockReconcile = jest.fn(async () => ({ replayed: 0, replayedOperations: [], failedMutation: null }));
+const mockRetryFailed = jest.fn(async () => ({
+    replayed: 1,
+    replayedOperations: ['metric.add'],
+    failedMutation: null
+}));
 
 jest.mock('../auth/AuthContext', () => ({
     useAuth: () => ({ serverUrl: 'https://health.example', user: { id: 7 } })
@@ -41,8 +45,11 @@ describe('native offline outbox provider recovery', () => {
             appStateListener = listener as (state: string) => void;
             return { remove } as ReturnType<typeof AppState.addEventListener>;
         });
+        const onReplayCompleted = jest.fn(async () => undefined);
         const wrapper = ({ children }: { children: React.ReactNode }) => (
-            <OfflineOutboxProvider executeMutation={jest.fn()}>{children}</OfflineOutboxProvider>
+            <OfflineOutboxProvider executeMutation={jest.fn()} onReplayCompleted={onReplayCompleted}>
+                {children}
+            </OfflineOutboxProvider>
         );
         const { result, unmount } = renderHook(() => useOfflineOutbox(), { wrapper });
 
@@ -57,6 +64,11 @@ describe('native offline outbox provider recovery', () => {
         expect(mockRetryFailed).not.toHaveBeenCalled();
         act(() => appStateListener?.('active'));
         await waitFor(() => expect(mockRetryFailed).toHaveBeenCalledTimes(1));
+        await waitFor(() => expect(onReplayCompleted).toHaveBeenCalledWith({
+            replayed: 1,
+            replayedOperations: ['metric.add'],
+            failedMutation: null
+        }));
 
         unmount();
         expect(remove).toHaveBeenCalledTimes(1);

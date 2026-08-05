@@ -591,6 +591,39 @@ export type MetricEntry = {
     weight: number;
 };
 
+export type MetricSaveKind = 'created' | 'updated' | 'unchanged';
+
+export type MetricProgressRecognition =
+    | { type: 'goal_reached' }
+    | { type: 'goal_percent'; threshold_percent: 25 | 50 | 75 }
+    | { type: 'goal_weight'; threshold_grams: number }
+    | { type: 'meaningful_best'; improvement_grams: number }
+    | { type: 'baseline_recorded' };
+
+export type MetricGoalProgressUpdate = {
+    id: number;
+    mode: 'lose' | 'gain' | 'maintain';
+    previous_progress_percent: number | null;
+    current_progress_percent: number | null;
+    remaining_weight_grams: number;
+    is_complete: boolean;
+    reached_local_date: string | null;
+};
+
+export type MetricProgressUpdate = {
+    save_kind: MetricSaveKind;
+    local_date: string;
+    is_current_day: boolean;
+    current_weight_grams: number;
+    goal: MetricGoalProgressUpdate | null;
+    recognitions: MetricProgressRecognition[];
+};
+
+/** New servers attach a transactional progress receipt; older servers return only MetricEntry. */
+export type MetricSaveResponse = MetricEntry & {
+    progress_update?: MetricProgressUpdate;
+};
+
 export type FoodLogEntry = {
     id: number;
     meal_period: MealPeriod;
