@@ -217,9 +217,16 @@ private fun ReadySummaryDashboard(
     onOpenConnection: () -> Unit
 ) {
     val listState = rememberTransformingLazyColumnState()
+    val ringVisible = !listState.canScrollBackward
     val ringVisibility by animateFloatAsState(
-        targetValue = if (listState.canScrollBackward) 0f else 1f,
-        animationSpec = tween(durationMillis = SUMMARY_RING_EXIT_DURATION_MS),
+        targetValue = if (ringVisible) 1f else 0f,
+        animationSpec = tween(
+            durationMillis = if (ringVisible) {
+                SUMMARY_RING_ENTER_DURATION_MS
+            } else {
+                SUMMARY_RING_EXIT_DURATION_MS
+            }
+        ),
         label = "calorie ring visibility"
     )
     val progress = if (summary.isFoodTrackingPaused) {
@@ -553,8 +560,9 @@ private val CALIBRATE_DANGER = Color(0xFFFF796E)
 private const val CALORIE_RING_START_ANGLE = 140f
 private const val CALORIE_RING_SWEEP_ANGLE = 260f
 private const val SUMMARY_COMPACT_DIAMETER_DP = 160f
-// The edge ring fades while expanding beyond the viewport as the dashboard begins scrolling.
-private const val SUMMARY_RING_EXIT_DURATION_MS = 180
+// The ring returns quickly, then lingers while expanding outward so the exit motion reads clearly.
+private const val SUMMARY_RING_ENTER_DURATION_MS = 180
+private const val SUMMARY_RING_EXIT_DURATION_MS = 320
 private const val SUMMARY_RING_MAX_SCALE = 1.12f
 // Centers the calorie copy independently of the list's first-item placement on a round screen.
 private val SUMMARY_HERO_VERTICAL_OFFSET = (-18).dp
