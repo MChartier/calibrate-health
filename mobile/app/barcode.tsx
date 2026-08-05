@@ -1,15 +1,19 @@
 import { useMemo, useRef, useState } from 'react';
-import { Linking, Platform, StyleSheet, View } from 'react-native';
+import { Linking, Platform, Pressable, StyleSheet, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { CameraView, useCameraPermissions, type BarcodeScanningResult } from 'expo-camera';
 import { router, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { MEAL_PERIODS, type MealPeriod } from '@calibrate/shared';
-import type { FoodLogCreatePayload } from '@calibrate/api-client';
+import type { FoodSearchResponse } from '@calibrate/api-client';
 import { AppButton } from '../src/components/AppButton';
 import { AppCard } from '../src/components/AppCard';
 import { AppText } from '../src/components/AppText';
+import {
+    FoodSelectionEditor,
+    type FoodSelectionSubmitRequest
+} from '../src/components/FoodSelectionEditor';
 import { LoadingState } from '../src/components/LoadingState';
 import { useFoodDayStatus } from '../src/components/FoodTrackingStatus';
 import { OverlaySelect } from '../src/components/OverlaySelect';
@@ -20,8 +24,8 @@ import { calibrationStatusQueryKey } from '../src/calibration/queryKeys';
 import { executeOrQueueMutation, OFFLINE_MUTATION_OPERATIONS } from '../src/offline/operations';
 import { useOfflineOutbox } from '../src/offline/provider';
 import { getTodayDate } from '../src/utils/dates';
-import { formatCalories } from '../src/utils/format';
 import { MEAL_OPTIONS, MEAL_SELECT_OPTIONS } from '../src/utils/meals';
+import { createProviderFoodSelection, type FoodLogSelection } from '../src/food/foodLogSelection';
 import { radius, spacing, useAppTheme, type AppTheme } from '../src/theme';
 import {
     BarcodeScanGate,
@@ -29,7 +33,7 @@ import {
     getBarcodeLookupStatus,
     getCameraPermissionState,
     getProviderAttribution,
-    resolveBarcodeFoodMatch
+    resolveBarcodeFoodCandidates
 } from '../src/barcode/workflow';
 
 function parseMeal(value: unknown): MealPeriod {
@@ -38,10 +42,20 @@ function parseMeal(value: unknown): MealPeriod {
         : MEAL_PERIODS.BREAKFAST;
 }
 
+type BarcodeReturnTo = 'today' | 'food-log';
+
+function parseReturnTo(value: unknown): BarcodeReturnTo {
+    return value === 'food-log' ? 'food-log' : 'today';
+}
+
 export default function BarcodeScreen() {
     const theme = useAppTheme();
     const styles = useMemo(() => createStyles(theme), [theme]);
-    const { date, meal: mealParam } = useLocalSearchParams<{ date?: string; meal?: string }>();
+    const { date, meal: mealParam, returnTo: returnToParam } = useLocalSearchParams<{
+        date?: string;
+        meal?: string;
+        returnTo?: string;
+    }>();
     const { api, user } = useAuth();
     const { enqueue } = useOfflineOutbox();
     const queryClient = useQueryClient();
@@ -50,15 +64,25 @@ export default function BarcodeScreen() {
     const [cameraMessage, setCameraMessage] = useState<string | null>(null);
     const [scanError, setScanError] = useState<string | null>(null);
     const [meal, setMeal] = useState<MealPeriod>(() => parseMeal(mealParam));
+    const [selection, setSelection] = useState<FoodLogSelection | null>(null);
+    const [lookupResult, setLookupResult] = useState<FoodSearchResponse | null>(null);
     const [isMealSelectorOpen, setIsMealSelectorOpen] = useState(false);
     const scanGate = useRef(new BarcodeScanGate());
+    const activeBarcodeRef = useRef<string | null>(null);
     const selectedDate = typeof date === 'string' ? date : getTodayDate(user?.timezone);
+    const returnTo = parseReturnTo(returnToParam);
     const foodDayQuery = useFoodDayStatus(selectedDate);
     const lookup = useMutation({
-        mutationFn: (code: string) => api.searchFood('', code)
+        mutationFn: (code: string) => api.searchFood('', code),
+        onSuccess: (response, scannedBarcode) => {
+            if (activeBarcodeRef.current !== scannedBarcode) return;
+            setLookupResult(response);
+            const candidates = resolveBarcodeFoodCandidates(response.items, scannedBarcode);
+            setSelection(candidates.length === 1 ? createProviderFoodSelection(candidates[0]) : null);
+        }
     });
     const logFood = useMutation({
-        mutationFn: (payload: FoodLogCreatePayload) => {
+        mutationFn: ({ payload }: FoodSelectionSubmitRequest) => {
             if (foodDayQuery.data?.status !== 'OPEN') {
                 throw new Error('Backfill this day before adding food.');
             }
@@ -72,7 +96,7 @@ export default function BarcodeScreen() {
                 enqueue
             });
         },
-        onSuccess: async () => {
+        onSuccess: async (_result, request) => {
             await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
             await queryClient.invalidateQueries({ queryKey: ['mobile-food', selectedDate] });
             await queryClient.invalidateQueries({ queryKey: ['mobile-food-day', selectedDate] });
@@ -80,6 +104,14 @@ export default function BarcodeScreen() {
             await queryClient.invalidateQueries({ queryKey: ['mobile-profile'] });
             await queryClient.invalidateQueries({ queryKey: ['mobile-recent-foods'] });
             await queryClient.invalidateQueries({ queryKey: ['mobile-in-app-notifications'] });
+            if (!request.closeAfterLogging) {
+                resetScanner();
+                return;
+            }
+            if (returnTo === 'food-log') {
+                router.replace({ pathname: '/(tabs)/food-log', params: { date: selectedDate } });
+                return;
+            }
             router.replace('/(tabs)/today');
         }
     });
@@ -234,33 +266,33 @@ export default function BarcodeScreen() {
         }
 
         setScanError(null);
+        setSelection(null);
+        setLookupResult(null);
+        activeBarcodeRef.current = decision.barcode;
         setBarcode(decision.barcode);
         lookup.mutate(decision.barcode);
     }
 
-    const firstProviderItem = lookup.data?.items[0];
-    const match = barcode
-        ? resolveBarcodeFoodMatch({
-              value: firstProviderItem,
-              barcode,
-              date: selectedDate,
-              meal
-          })
-        : null;
+    const candidates = barcode
+        ? resolveBarcodeFoodCandidates(lookupResult?.items, barcode)
+        : [];
     const lookupStatus = getBarcodeLookupStatus({
         hasBarcode: barcode !== null,
         isPending: lookup.isPending,
         isSuccess: lookup.isSuccess,
-        hasResult: Boolean(match),
+        hasResult: candidates.length > 0,
         hasError: Boolean(lookup.error)
     });
-    const providerAttribution = getProviderAttribution(lookup.data?.provider, lookup.data?.attribution);
+    const providerAttribution = getProviderAttribution(lookupResult?.provider, lookupResult?.attribution);
     const lookupErrorMessage = lookup.error ? getBarcodeLookupErrorMessage(lookup.error) : null;
 
     function resetScanner() {
         scanGate.current.reset();
+        activeBarcodeRef.current = null;
         setBarcode(null);
         setScanError(null);
+        setSelection(null);
+        setLookupResult(null);
         setIsMealSelectorOpen(false);
         lookup.reset();
         logFood.reset();
@@ -268,6 +300,9 @@ export default function BarcodeScreen() {
 
     function retryLookup() {
         if (!barcode) return;
+        setSelection(null);
+        setLookupResult(null);
+        activeBarcodeRef.current = barcode;
         lookup.reset();
         lookup.mutate(barcode);
     }
@@ -277,80 +312,84 @@ export default function BarcodeScreen() {
     else if (lookupStatus === 'searching') statusMessage = 'Searching food providers...';
     else if (lookupStatus === 'no-result') statusMessage = 'No matching food was found. Try again or scan a different barcode.';
     else if (lookupStatus === 'error' && lookupErrorMessage) statusMessage = lookupErrorMessage;
-    else if (lookupStatus === 'result' && match) statusMessage = `Found ${match.item.name}.`;
+    else if (lookupStatus === 'result' && candidates.length === 1) statusMessage = `Found ${candidates[0].name}.`;
+    else if (lookupStatus === 'result') statusMessage = `Found ${candidates.length} possible matches. Choose the right food.`;
 
-    const resultDetails = match
-        ? [match.item.brand, match.measure?.label].filter(Boolean).join(' | ')
-        : '';
-    let logButtonTitle = `Log to ${selectedDate}`;
-    if (logFood.isPending) {
-        logButtonTitle = 'Logging...';
-    } else if (match?.calories !== null && match?.calories !== undefined) {
-        logButtonTitle = `Log ${formatCalories(match.calories)} to ${selectedDate}`;
+    if (!barcode) {
+        return (
+            <Screen scroll={false} safeTop style={styles.scannerRoot}>
+                <CameraView
+                    style={styles.camera}
+                    facing="back"
+                    accessible
+                    accessibilityLabel="Barcode camera preview"
+                    barcodeScannerSettings={{
+                        barcodeTypes: ['ean13', 'ean8', 'upc_a', 'upc_e']
+                    }}
+                    onBarcodeScanned={handleBarcodeScanned}
+                >
+                    <View style={styles.scanOverlay}>
+                        <View accessible={false} style={styles.scanFrame} />
+                    </View>
+                </CameraView>
+                <View style={styles.panel}>
+                    <AppCard>
+                        <SectionHeader
+                            headingLevel={1}
+                            title="Scan barcode"
+                            description="Center the packaged-food barcode in the frame."
+                        />
+                        <AppText
+                            accessibilityLiveRegion="polite"
+                            accessibilityRole={scanError ? 'alert' : undefined}
+                            style={scanError ? styles.error : undefined}
+                            variant={scanError ? 'body' : 'muted'}
+                        >
+                            {statusMessage}
+                        </AppText>
+                        <AppButton
+                            accessibilityRole="button"
+                            title="Back to log"
+                            variant="secondary"
+                            leftIcon={<Ionicons name="arrow-back" size={18} color={theme.colors.onSurface} />}
+                            onPress={() => router.back()}
+                        />
+                    </AppCard>
+                </View>
+            </Screen>
+        );
     }
 
     return (
-        <Screen scroll={false} safeTop style={styles.root}>
-            <CameraView
-                style={styles.camera}
-                facing="back"
-                accessible
-                accessibilityLabel="Barcode camera preview"
-                barcodeScannerSettings={{
-                    barcodeTypes: ['ean13', 'ean8', 'upc_a', 'upc_e']
-                }}
-                onBarcodeScanned={barcode ? undefined : handleBarcodeScanned}
-            >
-                <View style={styles.scanOverlay}>
-                    <View accessible={false} style={styles.scanFrame} />
-                </View>
-            </CameraView>
-            <View style={styles.panel}>
-                <AppCard>
-                    <SectionHeader
-                        headingLevel={1}
-                        title={barcode ? `Barcode ${barcode}` : 'Scan barcode'}
-                        description="Center the packaged-food barcode in the frame."
-                    />
+        <Screen safeTop>
+            <AppCard>
+                <SectionHeader
+                    headingLevel={1}
+                    title={`Barcode ${barcode}`}
+                    description="Choose the food, then confirm its amount before logging."
+                />
+                <AppText
+                    accessibilityLiveRegion="polite"
+                    accessibilityRole={lookupStatus === 'error' ? 'alert' : undefined}
+                    style={lookupStatus === 'error' ? styles.error : undefined}
+                    variant={lookupStatus === 'error' ? 'body' : 'muted'}
+                >
+                    {statusMessage}
+                </AppText>
+                {providerAttribution && (
                     <AppText
-                        accessibilityLiveRegion="polite"
-                        accessibilityRole={lookupStatus === 'error' || Boolean(scanError) ? 'alert' : undefined}
-                        style={lookupStatus === 'error' || scanError ? styles.error : undefined}
-                        variant={lookupStatus === 'error' || scanError ? 'body' : 'muted'}
+                        accessibilityRole={providerAttribution.url ? 'link' : undefined}
+                        accessibilityHint={providerAttribution.url ? 'Opens the food provider website.' : undefined}
+                        onPress={providerAttribution.url
+                            ? () => void Linking.openURL(providerAttribution.url!)
+                            : undefined}
+                        style={providerAttribution.url ? styles.attributionLink : undefined}
+                        variant="caption"
                     >
-                        {statusMessage}
+                        {providerAttribution.text}
                     </AppText>
-                    {match && (
-                        <View
-                            accessible
-                            accessibilityLabel={`${match.item.name}, ${resultDetails || 'provider result'}, ${formatCalories(match.calories)}`}
-                            style={styles.result}
-                        >
-                            <AppText variant="body">{match.item.name}</AppText>
-                            <AppText variant="caption">{resultDetails || 'Food provider result'}</AppText>
-                            {match.calories !== null && (
-                                <AppText variant="label">{formatCalories(match.calories)}</AppText>
-                            )}
-                            {match.error && (
-                                <AppText accessibilityRole="alert" style={styles.error}>
-                                    {match.error}
-                                </AppText>
-                            )}
-                        </View>
-                    )}
-                    {providerAttribution && (
-                        <AppText
-                            accessibilityRole={providerAttribution.url ? 'link' : undefined}
-                            accessibilityHint={providerAttribution.url ? 'Opens the food provider website.' : undefined}
-                            onPress={providerAttribution.url
-                                ? () => void Linking.openURL(providerAttribution.url!)
-                                : undefined}
-                            style={providerAttribution.url ? styles.attributionLink : undefined}
-                            variant="caption"
-                        >
-                            {providerAttribution.text}
-                        </AppText>
-                    )}
+                )}
+                <View style={styles.mealField}>
                     <AppText variant="label">Meal</AppText>
                     <OverlaySelect
                         accessibilityLabel="Select meal"
@@ -363,57 +402,81 @@ export default function BarcodeScreen() {
                             setIsMealSelectorOpen(false);
                         }}
                     />
-                    {logFood.error && (
-                        <AppText accessibilityLiveRegion="assertive" accessibilityRole="alert" style={styles.error}>
-                            {logFood.error.message}
-                        </AppText>
-                    )}
+                </View>
+                {selection ? (
+                    <FoodSelectionEditor
+                        selection={selection}
+                        date={selectedDate}
+                        meal={meal}
+                        isSubmitting={logFood.isPending}
+                        error={logFood.error?.message ?? null}
+                        onCancel={() => {
+                            logFood.reset();
+                            setSelection(null);
+                        }}
+                        onSubmit={(request) => logFood.mutate(request)}
+                    />
+                ) : (
+                    <View style={styles.results}>
+                        {candidates.map((candidate) => (
+                            <Pressable
+                                key={`${candidate.source ?? 'food'}:${candidate.id}`}
+                                accessibilityRole="button"
+                                accessibilityLabel={`Choose ${candidate.name}`}
+                                disabled={logFood.isPending}
+                                onPress={() => {
+                                    logFood.reset();
+                                    setSelection(createProviderFoodSelection(candidate));
+                                }}
+                                style={({ pressed }) => [styles.resultRow, pressed && styles.pressed]}
+                            >
+                                <View style={styles.resultText}>
+                                    <AppText variant="body" numberOfLines={2}>{candidate.name}</AppText>
+                                    <AppText variant="caption" numberOfLines={2}>
+                                        {candidate.brand ?? `${candidate.measures.length} serving option${candidate.measures.length === 1 ? '' : 's'}`}
+                                    </AppText>
+                                </View>
+                                <Ionicons name="chevron-forward" size={20} color={theme.colors.onSurfaceVariant} />
+                            </Pressable>
+                        ))}
+                    </View>
+                )}
+                {(lookupStatus === 'no-result' || lookupStatus === 'error') && (
                     <AppButton
                         accessibilityRole="button"
-                        accessibilityHint="Adds the matched food to the selected day and meal."
-                        title={logButtonTitle}
-                        disabled={!match?.payload || lookupStatus !== 'result' || logFood.isPending}
-                        leftIcon={<Ionicons name="add" size={18} color={theme.colors.onPrimary} />}
-                        onPress={() => {
-                            if (match?.payload) logFood.mutate(match.payload);
-                        }}
+                        accessibilityHint="Repeats the provider lookup for the scanned barcode."
+                        title="Try lookup again"
+                        variant="secondary"
+                        leftIcon={<Ionicons name="cloud-download-outline" size={18} color={theme.colors.onSurface} />}
+                        onPress={retryLookup}
                     />
-                    {(lookupStatus === 'no-result' || lookupStatus === 'error') && barcode && (
-                        <AppButton
-                            accessibilityRole="button"
-                            accessibilityHint="Repeats the provider lookup for the scanned barcode."
-                            title="Try lookup again"
-                            variant="secondary"
-                            leftIcon={<Ionicons name="cloud-download-outline" size={18} color={theme.colors.onSurface} />}
-                            onPress={retryLookup}
-                        />
-                    )}
-                    <View style={styles.actions}>
-                        <AppButton
-                            accessibilityRole="button"
-                            accessibilityHint="Clears this result and re-enables the camera scanner."
-                            title="Scan again"
-                            variant="secondary"
-                            leftIcon={<Ionicons name="refresh-outline" size={18} color={theme.colors.onSurface} />}
-                            onPress={resetScanner}
-                            style={styles.actionButton}
-                        />
-                        <AppButton
-                            accessibilityRole="button"
-                            title="Back to log"
-                            leftIcon={<Ionicons name="arrow-back" size={18} color={theme.colors.onPrimary} />}
-                            onPress={() => router.back()}
-                            style={styles.actionButton}
-                        />
-                    </View>
-                </AppCard>
-            </View>
+                )}
+                <View style={styles.actions}>
+                    <AppButton
+                        accessibilityRole="button"
+                        accessibilityHint="Clears this result and re-enables the camera scanner."
+                        title="Scan again"
+                        variant="secondary"
+                        disabled={lookup.isPending || logFood.isPending}
+                        leftIcon={<Ionicons name="refresh-outline" size={18} color={theme.colors.onSurface} />}
+                        onPress={resetScanner}
+                        style={styles.actionButton}
+                    />
+                    <AppButton
+                        accessibilityRole="button"
+                        title="Back to log"
+                        leftIcon={<Ionicons name="arrow-back" size={18} color={theme.colors.onPrimary} />}
+                        onPress={() => router.back()}
+                        style={styles.actionButton}
+                    />
+                </View>
+            </AppCard>
         </Screen>
     );
 }
 
 const createStyles = (theme: AppTheme) => StyleSheet.create({
-    root: {
+    scannerRoot: {
         paddingHorizontal: 0,
         paddingBottom: 0
     },
@@ -438,10 +501,26 @@ const createStyles = (theme: AppTheme) => StyleSheet.create({
         padding: spacing.lg,
         backgroundColor: theme.colors.background
     },
-    result: {
+    mealField: {
+        gap: spacing.sm
+    },
+    results: {
+        gap: spacing.sm
+    },
+    resultRow: {
+        minHeight: theme.interaction.minimumTouchTarget,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.md,
         borderRadius: radius.md,
+        borderWidth: theme.stroke.control,
+        borderColor: theme.colors.outlineVariant,
         backgroundColor: theme.colors.surfaceContainer,
-        padding: spacing.md,
+        padding: spacing.md
+    },
+    resultText: {
+        flex: 1,
+        minWidth: 0,
         gap: spacing.xs
     },
     actions: {
@@ -460,5 +539,8 @@ const createStyles = (theme: AppTheme) => StyleSheet.create({
     attributionLink: {
         color: theme.colors.primary,
         textDecorationLine: 'underline'
+    },
+    pressed: {
+        opacity: 0.82
     }
 });

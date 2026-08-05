@@ -8,6 +8,7 @@ import { AppText } from './AppText';
 import { type AppTheme, useAppTheme } from '../theme';
 import { formatCalories, formatMealPeriod } from '../utils/format';
 import { MEAL_OPTIONS } from '../utils/meals';
+import { getFoodLogAmountText } from '../food/foodLogAmount';
 
 type FoodLogTimelineCardProps = ViewProps & {
     title?: string;
@@ -15,6 +16,7 @@ type FoodLogTimelineCardProps = ViewProps & {
     disabled?: boolean;
     onEditEntry: (entry: FoodLogEntry) => void;
     onDeleteEntry: (entry: FoodLogEntry) => void;
+    onSaveMealAsRecipe?: (meal: MealPeriod, entries: FoodLogEntry[]) => void;
 };
 
 type MealGroup = {
@@ -33,11 +35,6 @@ const DEFAULT_EXPANDED_MEALS: Record<MealPeriod, boolean> = {
     EVENING_SNACK: false
 };
 
-function getServingText(entry: FoodLogEntry): string | null {
-    if (typeof entry.servings_consumed !== 'number' || !Number.isFinite(entry.servings_consumed)) return null;
-    return `${entry.servings_consumed} serving${entry.servings_consumed === 1 ? '' : 's'}`;
-}
-
 /**
  * Full meal log with expansion for populated meals and snapshot edit/delete actions.
  */
@@ -47,6 +44,7 @@ export const FoodLogTimelineCard: React.FC<FoodLogTimelineCardProps> = ({
     disabled,
     onEditEntry,
     onDeleteEntry,
+    onSaveMealAsRecipe,
     style,
     ...props
 }) => {
@@ -87,6 +85,7 @@ export const FoodLogTimelineCard: React.FC<FoodLogTimelineCardProps> = ({
                         disabled={disabled}
                         onEditEntry={onEditEntry}
                         onDeleteEntry={onDeleteEntry}
+                        onSaveMealAsRecipe={onSaveMealAsRecipe}
                         onToggleMeal={toggleMeal}
                     />
                 ))}
@@ -102,6 +101,7 @@ type MealTimelineRowProps = {
     disabled?: boolean;
     onEditEntry: (entry: FoodLogEntry) => void;
     onDeleteEntry: (entry: FoodLogEntry) => void;
+    onSaveMealAsRecipe?: (meal: MealPeriod, entries: FoodLogEntry[]) => void;
     onToggleMeal: (meal: MealPeriod) => void;
 };
 
@@ -112,6 +112,7 @@ const MealTimelineRow: React.FC<MealTimelineRowProps> = ({
     disabled,
     onEditEntry,
     onDeleteEntry,
+    onSaveMealAsRecipe,
     onToggleMeal
 }) => {
     const hasEntries = group.entries.length > 0;
@@ -160,6 +161,17 @@ const MealTimelineRow: React.FC<MealTimelineRowProps> = ({
                                 onDeleteEntry={onDeleteEntry}
                             />
                         ))}
+                        {onSaveMealAsRecipe && (
+                            <Pressable
+                                accessibilityRole="button"
+                                accessibilityLabel={`Save ${formatMealPeriod(group.meal)} as recipe`}
+                                onPress={() => onSaveMealAsRecipe(group.meal, group.entries)}
+                                style={({ pressed }) => [styles.saveRecipeAction, pressed && styles.pressed]}
+                            >
+                                <Ionicons name="bookmark-outline" size={20} color={theme.colors.primary} />
+                                <AppText variant="label" style={styles.saveRecipeText}>Save as recipe</AppText>
+                            </Pressable>
+                        )}
                     </View>
                 )}
             </View>
@@ -175,7 +187,7 @@ type FoodEntryRowProps = {
 };
 
 const FoodEntryRow: React.FC<FoodEntryRowProps> = ({ entry, disabled, onEditEntry, onDeleteEntry }) => {
-    const servingText = getServingText(entry);
+    const servingText = getFoodLogAmountText(entry);
     const theme = useAppTheme();
     const styles = React.useMemo(() => createStyles(theme), [theme]);
     const { fontScale } = useWindowDimensions();
@@ -328,6 +340,18 @@ function createStyles(theme: AppTheme) {
         justifyContent: 'center',
         borderRadius: theme.radius.md,
         overflow: 'hidden'
+    },
+    saveRecipeAction: {
+        minHeight: theme.interaction.minimumTouchTarget,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: theme.spacing.xs,
+        borderRadius: theme.radius.md,
+        overflow: 'hidden'
+    },
+    saveRecipeText: {
+        color: theme.colors.primary
     },
     disabled: {
         opacity: 0.45

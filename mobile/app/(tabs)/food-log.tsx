@@ -4,7 +4,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { router, useLocalSearchParams, usePathname } from 'expo-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as Haptics from 'expo-haptics';
-import type { FoodLogEntry } from '@calibrate/api-client';
+import type { FoodLogEntry, FoodLogUpdatePayload } from '@calibrate/api-client';
 import type { MealPeriod } from '@calibrate/shared';
 import { AddFoodSheet } from '../../src/components/AddFoodSheet';
 import { AppButton } from '../../src/components/AppButton';
@@ -19,6 +19,7 @@ import { OverlaySelect } from '../../src/components/OverlaySelect';
 import { PageHeader } from '../../src/components/PageHeader';
 import { TabScreen } from '../../src/components/TabScreen';
 import { SectionHeader } from '../../src/components/SectionHeader';
+import { SaveMealAsRecipeSheet } from '../../src/components/SaveMealAsRecipeSheet';
 import { SkeletonBlock } from '../../src/components/SkeletonBlock';
 import { TextField } from '../../src/components/TextField';
 import { useAuth } from '../../src/auth/AuthContext';
@@ -26,6 +27,7 @@ import { useAddFoodRequest } from '../../src/context/AddFoodRequestContext';
 import { useSharedLogDateNavigation } from '../../src/context/LogDateContext';
 import { calibrationStatusQueryKey } from '../../src/calibration/queryKeys';
 import { usePrefetchPreviousFoodLog } from '../../src/hooks/usePrefetchPreviousFoodLog';
+import { getFoodLogEditableAmount } from '../../src/food/foodLogAmount';
 import { getActiveTabRoute } from '../../src/navigation/contextualFab';
 import { executeOrQueueMutation, OFFLINE_MUTATION_OPERATIONS } from '../../src/offline/operations';
 import { useOfflineOutbox } from '../../src/offline/provider';
@@ -47,9 +49,14 @@ export default function FoodLogScreen() {
     const [editName, setEditName] = useState('');
     const [editCalories, setEditCalories] = useState('');
     const [editMeal, setEditMeal] = useState<MealPeriod>('BREAKFAST');
-    const [editServings, setEditServings] = useState('');
+    const [editAmount, setEditAmount] = useState('');
+    const [editAmountDirty, setEditAmountDirty] = useState(false);
+    const [editCaloriesOverridden, setEditCaloriesOverridden] = useState(false);
     const [editError, setEditError] = useState<string | null>(null);
     const [isEditMealSelectorOpen, setIsEditMealSelectorOpen] = useState(false);
+    const [recipeDraftMeal, setRecipeDraftMeal] = useState<MealPeriod | null>(null);
+    const [recipeDraftEntries, setRecipeDraftEntries] = useState<FoodLogEntry[]>([]);
+    const [recipeSavedMessage, setRecipeSavedMessage] = useState<string | null>(null);
     const theme = useAppTheme();
     const styles = React.useMemo(() => createStyles(theme), [theme]);
     usePrefetchPreviousFoodLog(selectedDate, dateNavigation.minDate);
@@ -57,6 +64,7 @@ export default function FoodLogScreen() {
     const foodQuery = useQuery({ queryKey: ['mobile-food', selectedDate], queryFn: () => api.getFoodLog(selectedDate) });
     const foodDayQuery = useFoodDayStatus(selectedDate);
     const canEditFood = foodDayQuery.data?.status === 'OPEN';
+    const editAmountConfig = editEntry ? getFoodLogEditableAmount(editEntry) : null;
 
     useEffect(() => {
         if (typeof routeParams.date === 'string') dateNavigation.setDate(routeParams.date);
@@ -104,18 +112,19 @@ export default function FoodLogScreen() {
         mutationFn: () => {
             if (!editEntry) throw new Error('Choose a food entry to edit.');
 
-            const payload: {
-                name: string;
-                calories: number;
-                meal_period: MealPeriod;
-                servings_consumed?: number;
-            } = {
+            const payload: FoodLogUpdatePayload = {
                 name: editName.trim(),
-                calories: Number(editCalories),
                 meal_period: editMeal
             };
 
-            if (editServings.trim()) payload.servings_consumed = Number(editServings);
+            if (editAmountConfig && editAmountDirty && editAmount.trim()) {
+                payload.servings_consumed = editAmountConfig.toServings(Number(editAmount));
+            }
+            const hasPreciseCalorieBasis = typeof editEntry.calories_per_serving_snapshot === 'number'
+                && Number.isFinite(editEntry.calories_per_serving_snapshot);
+            if (editCaloriesOverridden || (editAmountDirty && !hasPreciseCalorieBasis)) {
+                payload.calories = Number(editCalories);
+            }
 
             const queuedPayload = { id: editEntry.id, update: payload };
             return executeOrQueueMutation({
@@ -136,17 +145,35 @@ export default function FoodLogScreen() {
     });
 
     function openEditEntry(entry: FoodLogEntry) {
+        const amountConfig = getFoodLogEditableAmount(entry);
         setEditEntry(entry);
         setEditName(entry.name);
         setEditCalories(String(entry.calories));
+        setEditAmountDirty(false);
+        setEditCaloriesOverridden(false);
         setEditMeal(entry.meal_period);
-        setEditServings(
-            typeof entry.servings_consumed === 'number' && Number.isFinite(entry.servings_consumed)
-                ? String(entry.servings_consumed)
-                : ''
-        );
+        setEditAmount(amountConfig ? String(amountConfig.amount) : '');
         setEditError(null);
         setIsEditMealSelectorOpen(false);
+    }
+
+    function handleEditAmountChange(nextAmount: string) {
+        setEditAmount(nextAmount);
+        const parsedAmount = Number(nextAmount);
+        setEditAmountDirty(
+            !nextAmount.trim()
+            || !Number.isFinite(parsedAmount)
+            || !editAmountConfig
+            || Math.abs(parsedAmount - editAmountConfig.amount) > 0.000001
+        );
+        if (editCaloriesOverridden || !editEntry || !editAmountConfig) return;
+
+        if (!Number.isFinite(parsedAmount) || parsedAmount <= 0) return;
+        const servings = editAmountConfig.toServings(parsedAmount);
+        const caloriesPerServing = editEntry.calories_per_serving_snapshot;
+        if (typeof caloriesPerServing === 'number' && Number.isFinite(caloriesPerServing)) {
+            setEditCalories(String(Math.round(servings * caloriesPerServing)));
+        }
     }
 
     function handleSaveEdit() {
@@ -155,16 +182,20 @@ export default function FoodLogScreen() {
             return;
         }
 
+        if (!editCalories.trim()) {
+            setEditError('Calories are required.');
+            return;
+        }
         const parsedCalories = Number(editCalories);
         if (!Number.isFinite(parsedCalories) || parsedCalories < 0) {
             setEditError('Calories must be a non-negative number.');
             return;
         }
 
-        if (editServings.trim()) {
-            const parsedServings = Number(editServings);
-            if (!Number.isFinite(parsedServings) || parsedServings <= 0) {
-                setEditError('Servings must be a positive number.');
+        if (editAmountConfig) {
+            const parsedAmount = Number(editAmount);
+            if (!Number.isFinite(parsedAmount) || parsedAmount <= 0) {
+                setEditError('Amount must be a positive number.');
                 return;
             }
         }
@@ -193,9 +224,17 @@ export default function FoodLogScreen() {
                     disabled={!canEditFood}
                     onEditEntry={openEditEntry}
                     onDeleteEntry={(entry) => deleteFood.mutate(entry.id)}
+                    onSaveMealAsRecipe={(meal, entries) => {
+                        setRecipeSavedMessage(null);
+                        setRecipeDraftMeal(meal);
+                        setRecipeDraftEntries(entries);
+                    }}
                 />
             )}
 
+            {recipeSavedMessage && (
+                <AppText accessibilityLiveRegion="polite" variant="muted">{recipeSavedMessage}</AppText>
+            )}
             {foodQuery.error && <AppText style={styles.error}>{foodQuery.error.message}</AppText>}
             {deleteFood.error && <AppText style={styles.error}>{deleteFood.error.message}</AppText>}
             {foodDayQuery.error && <AppText style={styles.error}>{foodDayQuery.error.message}</AppText>}
@@ -204,7 +243,24 @@ export default function FoodLogScreen() {
                 visible={addFoodMeal !== undefined && canEditFood}
                 date={selectedDate}
                 initialMeal={addFoodMeal}
+                returnTo="food-log"
                 onClose={() => setAddFoodMeal(undefined)}
+            />
+
+            <SaveMealAsRecipeSheet
+                visible={recipeDraftMeal !== null}
+                date={selectedDate}
+                meal={recipeDraftMeal}
+                entries={recipeDraftEntries}
+                onClose={() => {
+                    setRecipeDraftMeal(null);
+                    setRecipeDraftEntries([]);
+                }}
+                onSaved={(recipeName) => {
+                    setRecipeDraftMeal(null);
+                    setRecipeDraftEntries([]);
+                    setRecipeSavedMessage(`${recipeName} saved to Recipes.`);
+                }}
             />
 
             <BottomSheetModal
@@ -216,16 +272,27 @@ export default function FoodLogScreen() {
             >
                 <SectionHeader title="Edit food" description="Update this log entry snapshot." />
                 <TextField label="Food name" value={editName} onChangeText={setEditName} />
-                <NumberStepperField label="Calories" value={editCalories} onChangeText={setEditCalories} step={25} min={0} suffix="kcal" />
-                {editEntry?.serving_unit_label_snapshot && (
+                {editAmountConfig && (
                     <NumberStepperField
-                        label={`Servings (${editEntry.serving_unit_label_snapshot})`}
-                        value={editServings}
-                        onChangeText={setEditServings}
-                        step={SERVING_INPUT_INCREMENT}
-                        min={SERVING_INPUT_INCREMENT}
+                        label="Amount"
+                        value={editAmount}
+                        onChangeText={handleEditAmountChange}
+                        step={editAmountConfig.unitLabel.toLowerCase() === 'g' ? 1 : SERVING_INPUT_INCREMENT}
+                        min={editAmountConfig.unitLabel.toLowerCase() === 'g' ? 1 : SERVING_INPUT_INCREMENT}
+                        suffix={editAmountConfig.unitLabel}
                     />
                 )}
+                <NumberStepperField
+                    label="Calories"
+                    value={editCalories}
+                    onChangeText={(nextCalories) => {
+                        setEditCalories(nextCalories);
+                        setEditCaloriesOverridden(true);
+                    }}
+                    step={25}
+                    min={0}
+                    suffix="kcal"
+                />
                 <AppText variant="label">Meal</AppText>
                 <OverlaySelect
                     accessibilityLabel="Select meal"

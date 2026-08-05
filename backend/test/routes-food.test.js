@@ -815,7 +815,7 @@ test('food route: PATCH /:id validates and computes updateData', async () => {
   assert.equal(res.statusCode, 200);
   assert.deepEqual(res.body, updatedRow);
   assert.deepEqual(receivedOwnershipLookup.where, { id: 1, user_id: 7 });
-  assert.deepEqual(receivedUpdateData, { servings_consumed: 2, calories: 220, calories_per_serving_snapshot: 110 });
+  assert.deepEqual(receivedUpdateData, { servings_consumed: 2, calories: 220 });
 });
 
 test('food route: DELETE /:id validates ids and returns 204 on delete', async () => {

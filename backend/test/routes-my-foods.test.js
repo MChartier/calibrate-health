@@ -343,6 +343,201 @@ test('myFoods route: POST /recipes creates a recipe and ingredient snapshots', a
   assert.equal(receivedIngredientData[0].calories_total_snapshot, 100);
 });
 
+test('myFoods route: POST /recipes/from-food-logs validates its payload before opening a transaction', async () => {
+  let transactionCalls = 0;
+  const router = loadMyFoodsRouter({
+    $transaction: async () => {
+      transactionCalls += 1;
+    }
+  });
+  const handler = getRouteHandler(router, 'post', '/recipes/from-food-logs');
+  const cases = [
+    [{ name: '', yield_servings: 1, food_log_ids: [1] }, 'Invalid name'],
+    [{ name: 'Meal', yield_servings: 0, food_log_ids: [1] }, 'Invalid yield servings'],
+    [{ name: 'Meal', yield_servings: 1, food_log_ids: [] }, 'Recipe must include at least one food log'],
+    [{ name: 'Meal', yield_servings: 1, food_log_ids: [0] }, 'Invalid food log id'],
+    [{ name: 'Meal', yield_servings: 1, food_log_ids: [1, 1] }, 'Duplicate food log id']
+  ];
+
+  for (const [body, message] of cases) {
+    const res = createRes();
+    await handler({ user: { id: 7 }, body }, res);
+    assert.equal(res.statusCode, 400);
+    assert.deepEqual(res.body, { message });
+  }
+  assert.equal(transactionCalls, 0);
+});
+
+test('myFoods route: POST /recipes/from-food-logs hides missing and foreign log ownership', async () => {
+  let receivedWhere = null;
+  let createCalls = 0;
+  const txStub = {
+    foodLog: {
+      findMany: async ({ where }) => {
+        receivedWhere = where;
+        return [{ id: 10 }];
+      }
+    },
+    myFood: { create: async () => { createCalls += 1; } },
+    recipeIngredient: { createMany: async () => {} }
+  };
+  const handler = getRouteHandler(loadMyFoodsRouter({ $transaction: async (fn) => fn(txStub) }), 'post', '/recipes/from-food-logs');
+  const res = createRes();
+
+  await handler({
+    user: { id: 7 },
+    body: { name: 'Dinner', yield_servings: 1, food_log_ids: [10, 11] }
+  }, res);
+
+  assert.equal(res.statusCode, 404);
+  assert.deepEqual(res.body, { message: 'Food log not found' });
+  assert.deepEqual(receivedWhere, { id: { in: [10, 11] }, user_id: 7 });
+  assert.equal(createCalls, 0);
+});
+
+test('myFoods route: POST /recipes/from-food-logs requires one local meal before writing', async () => {
+  const localDate = new Date('2026-08-02T00:00:00.000Z');
+  let createCalls = 0;
+  let returnedLogs = [
+    { id: 10, local_date: localDate, meal_period: 'DINNER' },
+    { id: 11, local_date: localDate, meal_period: 'EVENING_SNACK' }
+  ];
+  const txStub = {
+    foodLog: {
+      findMany: async () => returnedLogs
+    },
+    myFood: { create: async () => { createCalls += 1; } },
+    recipeIngredient: { createMany: async () => {} }
+  };
+  const handler = getRouteHandler(loadMyFoodsRouter({ $transaction: async (fn) => fn(txStub) }), 'post', '/recipes/from-food-logs');
+  const res = createRes();
+
+  await handler({
+    user: { id: 7 },
+    body: { name: 'Dinner', yield_servings: 1, food_log_ids: [10, 11] }
+  }, res);
+
+  assert.equal(res.statusCode, 400);
+  assert.deepEqual(res.body, { message: 'Food logs must belong to the same meal and date' });
+
+  returnedLogs = [
+    { id: 10, local_date: localDate, meal_period: 'DINNER' },
+    { id: 11, local_date: new Date('2026-08-03T00:00:00.000Z'), meal_period: 'DINNER' }
+  ];
+  const otherDateRes = createRes();
+  await handler({
+    user: { id: 7 },
+    body: { name: 'Dinner', yield_servings: 1, food_log_ids: [10, 11] }
+  }, otherDateRes);
+  assert.equal(otherDateRes.statusCode, 400);
+  assert.deepEqual(otherDateRes.body, { message: 'Food logs must belong to the same meal and date' });
+  assert.equal(createCalls, 0);
+});
+
+test('myFoods route: POST /recipes/from-food-logs preserves caller order and all log snapshots', async () => {
+  const localDate = new Date('2026-08-02T00:00:00.000Z');
+  const makeLog = (overrides) => ({
+    id: 1,
+    local_date: localDate,
+    meal_period: 'EVENING_SNACK',
+    name: 'Ingredient',
+    calories: 0,
+    servings_consumed: null,
+    serving_size_quantity_snapshot: null,
+    serving_unit_label_snapshot: null,
+    calories_per_serving_snapshot: null,
+    external_source: null,
+    external_id: null,
+    brand_snapshot: null,
+    locale_snapshot: null,
+    barcode_snapshot: null,
+    measure_label_snapshot: null,
+    grams_per_measure_snapshot: null,
+    measure_quantity_snapshot: null,
+    grams_total_snapshot: null,
+    ...overrides
+  });
+  const logs = [
+    makeLog({ id: 11, name: 'Lime juice', calories: 0 }),
+    makeLog({
+      id: 22,
+      name: 'Tequila',
+      calories: 194,
+      servings_consumed: 1.5,
+      serving_size_quantity_snapshot: 1,
+      serving_unit_label_snapshot: 'fl oz',
+      calories_per_serving_snapshot: 129.3333333333,
+      external_source: 'fatsecret',
+      external_id: 'spirit-22',
+      brand_snapshot: 'House',
+      locale_snapshot: 'en-US',
+      barcode_snapshot: '0123456789012',
+      measure_label_snapshot: 'jigger',
+      grams_per_measure_snapshot: 42,
+      measure_quantity_snapshot: 1.5,
+      grams_total_snapshot: 63
+    })
+  ];
+  let recipeData = null;
+  let ingredientData = null;
+  const txStub = {
+    // Deliberately return database order instead of the caller's requested [22, 11] order.
+    foodLog: { findMany: async () => logs },
+    myFood: {
+      create: async ({ data }) => {
+        recipeData = data;
+        return { id: 55, ...data };
+      }
+    },
+    recipeIngredient: {
+      createMany: async ({ data }) => {
+        ingredientData = data;
+      }
+    }
+  };
+  const handler = getRouteHandler(loadMyFoodsRouter({ $transaction: async (fn) => fn(txStub) }), 'post', '/recipes/from-food-logs');
+  const res = createRes();
+
+  await handler({
+    user: { id: 7 },
+    body: { name: '  Margarita  ', yield_servings: 2, food_log_ids: [22, 11] }
+  }, res);
+
+  assert.equal(res.statusCode, 200);
+  assert.equal(res.body.id, 55);
+  assert.deepEqual(recipeData, {
+    user_id: 7,
+    type: 'RECIPE',
+    name: 'Margarita',
+    serving_size_quantity: 1,
+    serving_unit_label: 'serving',
+    calories_per_serving: 97,
+    recipe_total_calories: 194,
+    yield_servings: 2
+  });
+  assert.equal(ingredientData.length, 2);
+  assert.equal(ingredientData[0].sort_order, 1);
+  assert.equal(ingredientData[0].name_snapshot, 'Tequila');
+  assert.equal(ingredientData[0].source, 'EXTERNAL');
+  assert.equal(ingredientData[0].source_my_food_id, null);
+  assert.equal(ingredientData[0].quantity_servings, 1.5);
+  assert.equal(ingredientData[0].serving_size_quantity_snapshot, 1);
+  assert.equal(ingredientData[0].serving_unit_label_snapshot, 'fl oz');
+  assert.equal(ingredientData[0].calories_per_serving_snapshot, 129.3333333333);
+  assert.equal(ingredientData[0].external_source, 'fatsecret');
+  assert.equal(ingredientData[0].external_id, 'spirit-22');
+  assert.equal(ingredientData[0].brand_snapshot, 'House');
+  assert.equal(ingredientData[0].locale_snapshot, 'en-US');
+  assert.equal(ingredientData[0].barcode_snapshot, '0123456789012');
+  assert.equal(ingredientData[0].measure_label_snapshot, 'jigger');
+  assert.equal(ingredientData[0].grams_per_measure_snapshot, 42);
+  assert.equal(ingredientData[0].measure_quantity_snapshot, 1.5);
+  assert.equal(ingredientData[0].grams_total_snapshot, 63);
+  assert.equal(ingredientData[1].sort_order, 2);
+  assert.equal(ingredientData[1].name_snapshot, 'Lime juice');
+  assert.equal(ingredientData[1].calories_total_snapshot, 0);
+});
+
 test('myFoods route: PATCH /:id updates an owned food without touching historical logs', async () => {
   let readCount = 0;
   let receivedUpdate = null;

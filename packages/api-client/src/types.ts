@@ -845,12 +845,22 @@ export type CreateRecipePayload = {
               brand?: string | null;
               locale?: string | null;
               barcode?: string | null;
+              quantity_servings?: number | null;
+              serving_size_quantity?: number | null;
+              serving_unit_label?: string | null;
+              calories_per_serving?: number | null;
               measure_label?: string | null;
               grams_per_measure?: number | null;
               measure_quantity?: number | null;
               grams_total?: number | null;
           }
     >;
+};
+
+export type CreateRecipeFromFoodLogsPayload = {
+    name: string;
+    yield_servings: number;
+    food_log_ids: number[];
 };
 
 export type UpdateMyFoodPayload = CreateMyFoodPayload | CreateRecipePayload;

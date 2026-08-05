@@ -3,6 +3,7 @@ const assert = require('node:assert/strict');
 
 const {
   buildExternalIngredientSnapshotRow,
+  buildFoodLogIngredientSnapshotRow,
   parseMyFoodIngredientInput
 } = require('../src/routes/myFoodsRecipeUtils');
 
@@ -28,6 +29,10 @@ test('myFoodsRecipeUtils: buildExternalIngredientSnapshotRow validates required 
       name: '  Tomato   sauce ',
       calories_total: '120',
       external_source: '   OF  ',
+      quantity_servings: '1.5',
+      serving_size_quantity: '30',
+      serving_unit_label: '  fl   oz ',
+      calories_per_serving: '80.5',
       grams_total: '250',
       grams_per_measure: 'abc' // invalid optional value -> becomes null
     },
@@ -40,6 +45,10 @@ test('myFoodsRecipeUtils: buildExternalIngredientSnapshotRow validates required 
   assert.equal(ok.value.name_snapshot, 'Tomato sauce');
   assert.equal(ok.value.calories_total_snapshot, 120);
   assert.equal(ok.value.external_source, 'OF');
+  assert.equal(ok.value.quantity_servings, 1.5);
+  assert.equal(ok.value.serving_size_quantity_snapshot, 30);
+  assert.equal(ok.value.serving_unit_label_snapshot, 'fl oz');
+  assert.equal(ok.value.calories_per_serving_snapshot, 80.5);
   assert.equal(ok.value.grams_total_snapshot, 250);
   assert.equal(ok.value.grams_per_measure_snapshot, null);
 });
@@ -56,3 +65,42 @@ test('myFoodsRecipeUtils: buildExternalIngredientSnapshotRow rejects invalid inp
   assert.equal(badCalories.error.message, 'Invalid external ingredient calories_total');
 });
 
+test('myFoodsRecipeUtils: buildFoodLogIngredientSnapshotRow preserves every historical snapshot', () => {
+  const row = buildFoodLogIngredientSnapshotRow({
+    name: 'Logged margarita',
+    calories: 0,
+    servings_consumed: 1.25,
+    serving_size_quantity_snapshot: 4,
+    serving_unit_label_snapshot: 'fl oz',
+    calories_per_serving_snapshot: 0,
+    external_source: 'fatsecret',
+    external_id: 'drink-42',
+    brand_snapshot: 'House brand',
+    locale_snapshot: 'en-US',
+    barcode_snapshot: '0123456789012',
+    measure_label_snapshot: 'glass',
+    grams_per_measure_snapshot: 118.25,
+    measure_quantity_snapshot: 1.25,
+    grams_total_snapshot: 147.8125
+  }, 3);
+
+  assert.deepEqual(row, {
+    sort_order: 3,
+    source: 'EXTERNAL',
+    name_snapshot: 'Logged margarita',
+    calories_total_snapshot: 0,
+    quantity_servings: 1.25,
+    serving_size_quantity_snapshot: 4,
+    serving_unit_label_snapshot: 'fl oz',
+    calories_per_serving_snapshot: 0,
+    external_source: 'fatsecret',
+    external_id: 'drink-42',
+    brand_snapshot: 'House brand',
+    locale_snapshot: 'en-US',
+    barcode_snapshot: '0123456789012',
+    measure_label_snapshot: 'glass',
+    grams_per_measure_snapshot: 118.25,
+    measure_quantity_snapshot: 1.25,
+    grams_total_snapshot: 147.8125
+  });
+});

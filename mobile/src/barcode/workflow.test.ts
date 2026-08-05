@@ -1,4 +1,3 @@
-import { MEAL_PERIODS } from '@calibrate/shared';
 import {
     BarcodeScanGate,
     getBarcodeLookupErrorMessage,
@@ -6,7 +5,7 @@ import {
     getCameraPermissionState,
     getProviderAttribution,
     normalizeBarcode,
-    resolveBarcodeFoodMatch
+    resolveBarcodeFoodCandidates
 } from './workflow';
 
 describe('barcode workflow', () => {
@@ -71,9 +70,9 @@ describe('barcode workflow', () => {
         expect(getProviderAttribution(undefined, 'Provider attribution')).toEqual({ text: 'Provider attribution' });
     });
 
-    it('converts provider barcode metadata into a complete one-serving food log', () => {
-        const match = resolveBarcodeFoodMatch({
-            value: {
+    it('normalizes every provider match and keeps the scanned barcode for the quantity editor', () => {
+        const matches = resolveBarcodeFoodCandidates([
+            {
                 id: 'provider-food-1',
                 source: 'openFoodFacts',
                 description: 'Greek yogurt',
@@ -84,58 +83,40 @@ describe('barcode workflow', () => {
                 ],
                 nutrientsPer100g: { calories: 59 }
             },
-            barcode: '012345678905',
-            date: '2026-07-24',
-            meal: MEAL_PERIODS.BREAKFAST
-        });
+            { id: 'provider-food-2', description: 'Vanilla yogurt', availableMeasures: [] },
+            { malformed: true }
+        ], '012345678905');
 
-        expect(match).toMatchObject({
-            item: {
+        expect(matches).toHaveLength(2);
+        expect(matches[0]).toMatchObject({
                 name: 'Greek yogurt',
-                brand: 'Example Dairy',
-                barcode: '012345678905'
-            },
-            measure: { label: '1 container', gramWeight: 170 },
-            calories: 100,
-            error: null,
-            payload: {
-                date: '2026-07-24',
-                meal_period: MEAL_PERIODS.BREAKFAST,
-                name: 'Greek yogurt',
-                calories: 100,
-                external_source: 'openFoodFacts',
-                external_id: 'provider-food-1',
                 brand: 'Example Dairy',
                 barcode: '012345678905',
-                measure_label: '1 container',
-                grams_per_measure_snapshot: 170,
-                grams_total_snapshot: 170
-            }
+                measures: [
+                    { label: 'grams', gramWeight: 1, quantity: 1, unit: 'g' },
+                    { label: '1 container', gramWeight: 170, quantity: 1, unit: 'container' }
+                ]
         });
+        expect(matches[1]).toMatchObject({ name: 'Vanilla yogurt', barcode: '012345678905' });
     });
 
-    it('keeps partial provider matches readable but blocks logging without serving metadata', () => {
-        const match = resolveBarcodeFoodMatch({
-            value: {
+    it('keeps partial provider matches selectable so the shared editor can explain missing serving data', () => {
+        const matches = resolveBarcodeFoodCandidates([
+            {
                 id: 'partial-food',
                 source: 'openFoodFacts',
                 description: 'Mystery snack',
                 brand: 'Corner Market',
                 availableMeasures: []
-            },
-            barcode: '012345678905',
-            date: '2026-07-24',
-            meal: MEAL_PERIODS.LUNCH
-        });
+            }
+        ], '012345678905');
 
-        expect(match).toMatchObject({
-            item: {
+        expect(matches).toEqual([
+            expect.objectContaining({
                 name: 'Mystery snack',
-                brand: 'Corner Market'
-            },
-            calories: null,
-            payload: null,
-            error: 'This food does not include a usable serving measure.'
-        });
+                brand: 'Corner Market',
+                measures: []
+            })
+        ]);
     });
 });

@@ -344,18 +344,29 @@ export type FoodLogUpdateData = Partial<{
   meal_period: MealPeriod;
   servings_consumed: number | null;
   calories_per_serving_snapshot: number | null;
+  measure_quantity_snapshot: number | null;
+  grams_total_snapshot: number | null;
 }>;
 
 export type FoodLogUpdateParseResult =
   | { ok: true; updateData: FoodLogUpdateData }
   | { ok: false; statusCode: number; message: string };
 
+// Retains precise gram snapshots without persisting floating-point noise.
+const FOOD_LOG_SNAPSHOT_DECIMAL_SCALE = 1_000_000;
+
 /**
  * Parse and validate a PATCH-food-log request body.
  */
 export function parseFoodLogUpdateBody(opts: {
   body: unknown;
-  existing: { calories_per_serving_snapshot?: number | null; servings_consumed?: number | null };
+  existing: {
+    calories_per_serving_snapshot?: number | null;
+    servings_consumed?: number | null;
+    grams_per_measure_snapshot?: number | null;
+    measure_quantity_snapshot?: number | null;
+    grams_total_snapshot?: number | null;
+  };
 }): FoodLogUpdateParseResult {
   if (!opts.body || typeof opts.body !== 'object') {
     return { ok: false, statusCode: 400, message: 'Invalid request body' };
@@ -364,6 +375,7 @@ export function parseFoodLogUpdateBody(opts: {
   const body = opts.body as Record<string, unknown>;
 
   const updateData: FoodLogUpdateData = {};
+  const hasExplicitCalories = body.calories !== undefined;
 
   if (body.name !== undefined) {
     if (typeof body.name !== 'string' || !body.name.trim()) {
@@ -394,18 +406,58 @@ export function parseFoodLogUpdateBody(opts: {
       return { ok: false, statusCode: 400, message: 'Invalid servings consumed' };
     }
 
-    if (opts.existing.calories_per_serving_snapshot === null || opts.existing.calories_per_serving_snapshot === undefined) {
+    if (
+      !hasExplicitCalories &&
+      (opts.existing.calories_per_serving_snapshot === null || opts.existing.calories_per_serving_snapshot === undefined)
+    ) {
       return { ok: false, statusCode: 400, message: 'This entry does not include serving info.' };
     }
 
     updateData.servings_consumed = parsedServings;
 
-    if (updateData.calories === undefined) {
+    if (
+      !hasExplicitCalories &&
+      opts.existing.calories_per_serving_snapshot !== null &&
+      opts.existing.calories_per_serving_snapshot !== undefined
+    ) {
       updateData.calories = Math.round(parsedServings * opts.existing.calories_per_serving_snapshot);
+    }
+
+    const hasMeasureSnapshots =
+      (opts.existing.measure_quantity_snapshot !== null && opts.existing.measure_quantity_snapshot !== undefined) ||
+      (opts.existing.grams_per_measure_snapshot !== null && opts.existing.grams_per_measure_snapshot !== undefined) ||
+      (opts.existing.grams_total_snapshot !== null && opts.existing.grams_total_snapshot !== undefined);
+    if (hasMeasureSnapshots) {
+      updateData.measure_quantity_snapshot = parsedServings;
+
+      let gramsPerMeasure = opts.existing.grams_per_measure_snapshot;
+      if (gramsPerMeasure === null || gramsPerMeasure === undefined || gramsPerMeasure <= 0) {
+        const previousMeasureQuantity =
+          opts.existing.measure_quantity_snapshot ?? opts.existing.servings_consumed;
+        if (
+          previousMeasureQuantity !== null && previousMeasureQuantity !== undefined && previousMeasureQuantity > 0 &&
+          opts.existing.grams_total_snapshot !== null && opts.existing.grams_total_snapshot !== undefined &&
+          opts.existing.grams_total_snapshot > 0
+        ) {
+          gramsPerMeasure = opts.existing.grams_total_snapshot / previousMeasureQuantity;
+        }
+      }
+
+      if (gramsPerMeasure !== null && gramsPerMeasure !== undefined && gramsPerMeasure > 0) {
+        updateData.grams_total_snapshot =
+          Math.round(parsedServings * gramsPerMeasure * FOOD_LOG_SNAPSHOT_DECIMAL_SCALE) /
+          FOOD_LOG_SNAPSHOT_DECIMAL_SCALE;
+      } else if (
+        opts.existing.grams_total_snapshot !== null &&
+        opts.existing.grams_total_snapshot !== undefined
+      ) {
+        // A total without a per-measure ratio cannot be rescaled; do not retain a stale total.
+        updateData.grams_total_snapshot = null;
+      }
     }
   }
 
-  if (updateData.calories !== undefined) {
+  if (hasExplicitCalories && updateData.calories !== undefined) {
     const servings =
       updateData.servings_consumed ??
       (opts.existing.servings_consumed !== null && opts.existing.servings_consumed !== undefined
