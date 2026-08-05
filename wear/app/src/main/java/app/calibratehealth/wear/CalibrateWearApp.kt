@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -388,7 +389,6 @@ private fun CalorieHero(
                 .offset(y = SUMMARY_HERO_VERTICAL_OFFSET)
                 .padding(horizontal = 18.dp)
         ) {
-            CalibrateBrand(showWordmark = !compactDashboard)
             Text(
                 balanceValue,
                 style = if (compactDashboard) {
@@ -572,8 +572,11 @@ private val SUMMARY_SECTION_HORIZONTAL_PADDING = 26.dp
 // Lets the final action scroll above the curved bottom edge instead of stopping inside it.
 private val SUMMARY_BOTTOM_SPACER_HEIGHT = 48.dp
 private val WEIGHT_PICKER_HEIGHT = 76.dp
-private val WEIGHT_PICKER_WHOLE_WIDTH = 70.dp
-private val WEIGHT_PICKER_DECIMAL_WIDTH = 88.dp
+// Keeps the numeric picker columns visually joined while leaving room for three whole digits.
+private val WEIGHT_PICKER_WHOLE_WIDTH = 58.dp
+private val WEIGHT_PICKER_DECIMAL_WIDTH = 48.dp
+private val WEIGHT_PICKER_GROUP_WIDTH = WEIGHT_PICKER_WHOLE_WIDTH + WEIGHT_PICKER_DECIMAL_WIDTH
+private val WEIGHT_PICKER_UNIT_SPACING = 4.dp
 private val GOAL_DATE_FORMATTER = DateTimeFormatter.ofPattern("MMM d, uuuu", Locale.US)
 
 internal fun summaryDashboardDiameter(widthDp: Float, heightDp: Float): Float =
@@ -699,42 +702,56 @@ private fun WeightScreen(summary: WearSummary, saving: Boolean, onSave: (Long) -
                 style = MaterialTheme.typography.labelSmall,
                 color = CALIBRATE_SECONDARY_TEXT
             )
-            PickerGroup(
-                selectedPickerState = selectedPickerState,
-                autoCenter = false,
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(WEIGHT_PICKER_HEIGHT)
+                    .height(WEIGHT_PICKER_HEIGHT),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                PickerGroupItem(
-                    pickerState = wholePickerState,
-                    selected = selectedPickerIndex == 0,
-                    onSelected = { selectedPickerIndex = 0 },
-                    contentDescription = {
-                        "Whole number ${pickerValues.wholeAt(wholePickerState.selectedOptionIndex)}"
-                    },
-                    modifier = Modifier.size(WEIGHT_PICKER_WHOLE_WIDTH, WEIGHT_PICKER_HEIGHT),
-                    option = { optionIndex, _ ->
-                        Text(
-                            text = pickerValues.wholeAt(optionIndex).toString(),
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                )
-                PickerGroupItem(
-                    pickerState = decimalPickerState,
-                    selected = selectedPickerIndex == 1,
-                    onSelected = { selectedPickerIndex = 1 },
-                    contentDescription = { "Decimal $boundedDecimal" },
-                    modifier = Modifier.size(WEIGHT_PICKER_DECIMAL_WIDTH, WEIGHT_PICKER_HEIGHT),
-                    option = { optionIndex, _ ->
-                        Text(
-                            text = ".$optionIndex ${pickerValues.unitLabel}",
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
+                PickerGroup(
+                    selectedPickerState = selectedPickerState,
+                    autoCenter = false,
+                    modifier = Modifier
+                        .width(WEIGHT_PICKER_GROUP_WIDTH)
+                        .height(WEIGHT_PICKER_HEIGHT)
+                ) {
+                    PickerGroupItem(
+                        pickerState = wholePickerState,
+                        selected = selectedPickerIndex == 0,
+                        onSelected = { selectedPickerIndex = 0 },
+                        contentDescription = {
+                            "Whole number ${pickerValues.wholeAt(wholePickerState.selectedOptionIndex)}"
+                        },
+                        modifier = Modifier.size(WEIGHT_PICKER_WHOLE_WIDTH, WEIGHT_PICKER_HEIGHT),
+                        option = { optionIndex, _ ->
+                            Text(
+                                text = pickerValues.wholeAt(optionIndex).toString(),
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    )
+                    PickerGroupItem(
+                        pickerState = decimalPickerState,
+                        selected = selectedPickerIndex == 1,
+                        onSelected = { selectedPickerIndex = 1 },
+                        contentDescription = { "Decimal $boundedDecimal" },
+                        modifier = Modifier.size(WEIGHT_PICKER_DECIMAL_WIDTH, WEIGHT_PICKER_HEIGHT),
+                        option = { optionIndex, _ ->
+                            Text(
+                                text = ".$optionIndex",
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    )
+                }
+                Spacer(modifier = Modifier.width(WEIGHT_PICKER_UNIT_SPACING))
+                Text(
+                    text = pickerValues.unitLabel,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = CALIBRATE_SECONDARY_TEXT
                 )
             }
             Button(
