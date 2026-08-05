@@ -576,7 +576,8 @@ private val WEIGHT_PICKER_HEIGHT = 76.dp
 private val WEIGHT_PICKER_WHOLE_WIDTH = 58.dp
 private val WEIGHT_PICKER_DECIMAL_WIDTH = 48.dp
 private val WEIGHT_PICKER_GROUP_WIDTH = WEIGHT_PICKER_WHOLE_WIDTH + WEIGHT_PICKER_DECIMAL_WIDTH
-private val WEIGHT_PICKER_UNIT_SPACING = 4.dp
+// Pulls the static unit beside the edge-aligned picker text without shrinking either touch target.
+private val WEIGHT_PICKER_UNIT_JOIN_OFFSET = (-26).dp
 private val GOAL_DATE_FORMATTER = DateTimeFormatter.ofPattern("MMM d, uuuu", Locale.US)
 
 internal fun summaryDashboardDiameter(widthDp: Float, heightDp: Float): Float =
@@ -697,11 +698,6 @@ private fun WeightScreen(summary: WearSummary, saving: Boolean, onSave: (Long) -
                 .padding(horizontal = 20.dp, vertical = 8.dp)
         ) {
             Text("Log weight", style = MaterialTheme.typography.titleMedium)
-            Text(
-                if (selectedPickerIndex == 0) "Whole number" else "Decimal",
-                style = MaterialTheme.typography.labelSmall,
-                color = CALIBRATE_SECONDARY_TEXT
-            )
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -728,7 +724,9 @@ private fun WeightScreen(summary: WearSummary, saving: Boolean, onSave: (Long) -
                             Text(
                                 text = pickerValues.wholeAt(optionIndex).toString(),
                                 style = MaterialTheme.typography.titleLarge,
-                                fontWeight = FontWeight.Bold
+                                fontWeight = FontWeight.Bold,
+                                textAlign = TextAlign.End,
+                                modifier = Modifier.width(WEIGHT_PICKER_WHOLE_WIDTH)
                             )
                         }
                     )
@@ -742,23 +740,25 @@ private fun WeightScreen(summary: WearSummary, saving: Boolean, onSave: (Long) -
                             Text(
                                 text = ".$optionIndex",
                                 style = MaterialTheme.typography.titleLarge,
-                                fontWeight = FontWeight.Bold
+                                fontWeight = FontWeight.Bold,
+                                textAlign = TextAlign.Start,
+                                modifier = Modifier.width(WEIGHT_PICKER_DECIMAL_WIDTH)
                             )
                         }
                     )
                 }
-                Spacer(modifier = Modifier.width(WEIGHT_PICKER_UNIT_SPACING))
                 Text(
                     text = pickerValues.unitLabel,
                     style = MaterialTheme.typography.titleMedium,
-                    color = CALIBRATE_SECONDARY_TEXT
+                    color = CALIBRATE_SECONDARY_TEXT,
+                    modifier = Modifier.offset(x = WEIGHT_PICKER_UNIT_JOIN_OFFSET)
                 )
             }
             Button(
                 onClick = { onSave(selectedGrams) },
                 enabled = !saving,
                 label = {
-                    Text(if (saving) "Saving..." else "Save ${pickerValues.labelFor(selectedGrams)}")
+                    Text(if (saving) "Saving..." else "Save")
                 },
                 colors = ButtonDefaults.buttonColors(
                     containerColor = CALIBRATE_GREEN,

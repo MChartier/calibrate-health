@@ -133,8 +133,6 @@ class WeightPickerValues private constructor(
         return grams.coerceIn(MIN_WEIGHT_GRAMS, MAX_WEIGHT_GRAMS)
     }
 
-    fun labelFor(grams: Long): String = SummaryFormatter.weight(grams, unitLabel)
-
     companion object {
         // Gives a first-time weigh-in a neutral picker starting point on the watch.
         const val DEFAULT_WEIGHT_GRAMS = 70_000L

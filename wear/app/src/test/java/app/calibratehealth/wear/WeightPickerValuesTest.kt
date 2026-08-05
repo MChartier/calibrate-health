@@ -13,7 +13,6 @@ class WeightPickerValuesTest {
         assertEquals(72, picker.wholeAt(picker.selectedWholeIndex))
         assertEquals(4, picker.selectedDecimal)
         assertEquals(72_400, picker.gramsFor(picker.selectedWholeIndex, picker.selectedDecimal))
-        assertEquals("72.4 kg", picker.labelFor(72_400))
     }
 
     @Test
