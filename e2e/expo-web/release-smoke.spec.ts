@@ -173,6 +173,12 @@ async function stubAuthenticatedApi(page: Page, options: AuthenticatedApiOptions
         body: ': release-smoke heartbeat\n\n',
       });
     }
+    if (pathname === '/api/v1/food/recent') {
+      return fulfillJson(route, { items: [] });
+    }
+    if (pathname === '/api/v1/my-foods') {
+      return fulfillJson(route, []);
+    }
     if (pathname === '/api/v1/food') {
       return fulfillJson(route, options.foodEntries ?? DEFAULT_FOOD_ENTRIES);
     }
