@@ -4,31 +4,29 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Size
@@ -36,7 +34,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.input.rotary.onRotaryScrollEvent
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.progressBarRangeInfo
@@ -50,10 +47,13 @@ import androidx.wear.compose.foundation.lazy.TransformingLazyColumn
 import androidx.wear.compose.foundation.lazy.rememberTransformingLazyColumnState
 import androidx.wear.compose.material3.AppScaffold
 import androidx.wear.compose.material3.Button
+import androidx.wear.compose.material3.ButtonDefaults
 import androidx.wear.compose.material3.MaterialTheme
+import androidx.wear.compose.material3.PickerGroup
 import androidx.wear.compose.material3.ScreenScaffold
 import androidx.wear.compose.material3.Text
 import androidx.wear.compose.material3.TimeText
+import androidx.wear.compose.material3.rememberPickerState
 import androidx.wear.compose.navigation.SwipeDismissableNavHost
 import androidx.wear.compose.navigation.composable
 import androidx.wear.compose.navigation.rememberSwipeDismissableNavController
@@ -237,7 +237,7 @@ private fun ReadySummaryDashboard(
         val dashboardDiameter = summaryDashboardDiameter(maxWidth.value, maxHeight.value).dp
         val dashboardHeight = maxHeight
         val compactDashboard = dashboardDiameter.value < SUMMARY_COMPACT_DIAMETER_DP
-        val ringScale = SUMMARY_RING_MIN_SCALE + ((1f - SUMMARY_RING_MIN_SCALE) * ringVisibility)
+        val ringScale = calorieRingScale(ringVisibility)
         CalorieProgressRing(
             progress = progress,
             progressColor = progressColor,
@@ -280,7 +280,14 @@ private fun ReadySummaryDashboard(
                                 } ?: "Enter today's weight"
                             )
                         },
-                        modifier = Modifier.fillMaxWidth()
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = CALIBRATE_GREEN,
+                            contentColor = CALIBRATE_BACKGROUND,
+                            secondaryContentColor = CALIBRATE_BACKGROUND
+                        ),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = SUMMARY_ITEM_HORIZONTAL_PADDING)
                     )
                 }
                 item(key = "goal") { GoalProgressSection(summary) }
@@ -300,8 +307,13 @@ private fun ReadySummaryDashboard(
                         onClick = onOpenConnection,
                         label = { Text("Connection") },
                         secondaryLabel = { Text(connectionLabel(WearAppState.Ready(summary), homeState.syncStatus)) },
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = SUMMARY_ITEM_HORIZONTAL_PADDING)
                     )
+                }
+                item(key = "bottom-space") {
+                    Spacer(modifier = Modifier.height(SUMMARY_BOTTOM_SPACER_HEIGHT))
                 }
             }
         }
@@ -365,7 +377,9 @@ private fun CalorieHero(
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(1.dp),
-            modifier = Modifier.padding(horizontal = 18.dp)
+            modifier = Modifier
+                .offset(y = SUMMARY_HERO_VERTICAL_OFFSET)
+                .padding(horizontal = 18.dp)
         ) {
             CalibrateBrand(showWordmark = !compactDashboard)
             Text(
@@ -426,8 +440,7 @@ private fun GoalProgressSection(summary: WearSummary) {
         verticalArrangement = Arrangement.spacedBy(6.dp),
         modifier = Modifier
             .fillMaxWidth()
-            .background(CALIBRATE_SURFACE, RoundedCornerShape(22.dp))
-            .padding(horizontal = 14.dp, vertical = 12.dp)
+            .padding(horizontal = SUMMARY_SECTION_HORIZONTAL_PADDING, vertical = 12.dp)
             .semantics(mergeDescendants = true) {
                 contentDescription = goalAccessibilityDescription(summary)
                 progress?.let { progressBarRangeInfo = ProgressBarRangeInfo(it, 0f..1f) }
@@ -532,7 +545,6 @@ private val CALIBRATE_BACKGROUND = Color(0xFF0E1510)
 private val CALIBRATE_FOREGROUND = Color(0xFFF3F7F1)
 private val CALIBRATE_SECONDARY_TEXT = Color(0xFFB6C5B6)
 private val CALIBRATE_RING_TRACK = Color(0xFF29382B)
-private val CALIBRATE_SURFACE = Color(0xFF18241A)
 private val CALIBRATE_GREEN = Color(0xFF71D478)
 private val CALIBRATE_GOAL = Color(0xFF8DDD2B)
 private val CALIBRATE_NEEDLE = Color(0xFF8DDD2B)
@@ -541,13 +553,28 @@ private val CALIBRATE_DANGER = Color(0xFFFF796E)
 private const val CALORIE_RING_START_ANGLE = 140f
 private const val CALORIE_RING_SWEEP_ANGLE = 260f
 private const val SUMMARY_COMPACT_DIAMETER_DP = 160f
-// The edge ring fades and contracts as soon as the dashboard leaves its top position.
+// The edge ring fades while expanding beyond the viewport as the dashboard begins scrolling.
 private const val SUMMARY_RING_EXIT_DURATION_MS = 180
-private const val SUMMARY_RING_MIN_SCALE = 0.88f
+private const val SUMMARY_RING_MAX_SCALE = 1.12f
+// Centers the calorie copy independently of the list's first-item placement on a round screen.
+private val SUMMARY_HERO_VERTICAL_OFFSET = (-18).dp
+// Keeps full-width dashboard content inside the usable horizontal chord of a round display.
+private val SUMMARY_ITEM_HORIZONTAL_PADDING = 12.dp
+private val SUMMARY_SECTION_HORIZONTAL_PADDING = 26.dp
+// Lets the final action scroll above the curved bottom edge instead of stopping inside it.
+private val SUMMARY_BOTTOM_SPACER_HEIGHT = 48.dp
+private val WEIGHT_PICKER_HEIGHT = 76.dp
+private val WEIGHT_PICKER_WHOLE_WIDTH = 70.dp
+private val WEIGHT_PICKER_DECIMAL_WIDTH = 88.dp
 private val GOAL_DATE_FORMATTER = DateTimeFormatter.ofPattern("MMM d, uuuu", Locale.US)
 
 internal fun summaryDashboardDiameter(widthDp: Float, heightDp: Float): Float =
     minOf(widthDp, heightDp).coerceAtLeast(0f)
+
+internal fun calorieRingScale(visibility: Float): Float {
+    val boundedVisibility = visibility.coerceIn(0f, 1f)
+    return 1f + ((1f - boundedVisibility) * (SUMMARY_RING_MAX_SCALE - 1f))
+}
 
 internal fun calorieProgressFraction(consumed: Int?, target: Int?): Float? = when {
     consumed == null || target == null || target <= 0 -> null
@@ -619,59 +646,105 @@ private const val CALORIES_PER_KILOGRAM = 7_700.0
 
 @Composable
 private fun WeightScreen(summary: WearSummary, saving: Boolean, onSave: (Long) -> Unit) {
-    val startingWeight = summary.editableWeightGrams ?: WeightEditorState.DEFAULT_WEIGHT_GRAMS
-    var editor by remember(summary.localDate, startingWeight, summary.weightUnit) {
-        mutableStateOf(WeightEditorState(startingWeight, summary.weightUnit))
+    val startingWeight = summary.editableWeightGrams ?: WeightPickerValues.DEFAULT_WEIGHT_GRAMS
+    val pickerValues = remember(summary.localDate, startingWeight, summary.weightUnit) {
+        WeightPickerValues.from(startingWeight, summary.weightUnit)
     }
-    var rotaryPixels by remember { mutableFloatStateOf(0f) }
-    val focusRequester = remember { FocusRequester() }
-    val listState = rememberTransformingLazyColumnState()
-    LaunchedEffect(focusRequester) { focusRequester.requestFocus() }
-    ScreenScaffold(scrollState = listState, edgeButton = {}) { contentPadding ->
-        TransformingLazyColumn(
-            state = listState,
-            contentPadding = contentPadding,
+    val wholePickerState = rememberPickerState(
+        initialNumberOfOptions = pickerValues.wholeOptionCount,
+        initiallySelectedIndex = pickerValues.selectedWholeIndex
+    )
+    val decimalPickerState = rememberPickerState(
+        initialNumberOfOptions = WeightPickerValues.DECIMAL_OPTION_COUNT,
+        initiallySelectedIndex = pickerValues.selectedDecimal
+    )
+    var selectedPickerIndex by remember { mutableIntStateOf(0) }
+    val selectedPickerState = if (selectedPickerIndex == 0) wholePickerState else decimalPickerState
+    val scaffoldState = rememberTransformingLazyColumnState()
+    val boundedDecimal = pickerValues.decimalAt(
+        wholeOptionIndex = wholePickerState.selectedOptionIndex,
+        decimal = decimalPickerState.selectedOptionIndex
+    )
+    LaunchedEffect(wholePickerState.selectedOptionIndex, decimalPickerState.selectedOptionIndex, boundedDecimal) {
+        if (decimalPickerState.selectedOptionIndex != boundedDecimal) {
+            decimalPickerState.scrollToOption(boundedDecimal)
+        }
+    }
+    val selectedGrams = pickerValues.gramsFor(
+        wholeOptionIndex = wholePickerState.selectedOptionIndex,
+        decimal = boundedDecimal
+    )
+
+    ScreenScaffold(scrollState = scaffoldState, edgeButton = {}) { contentPadding ->
+        Column(
             horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(4.dp),
             modifier = Modifier
                 .fillMaxSize()
-                .onRotaryScrollEvent { event ->
-                    val change = accumulateRotaryWeight(rotaryPixels, event.verticalScrollPixels)
-                    rotaryPixels = change.remainingPixels
-                    if (change.steps != 0) editor = editor.adjust(change.steps)
-                    true
-                }
-                .focusRequester(focusRequester)
-                .focusable()
+                .background(MaterialTheme.colorScheme.background)
+                .padding(contentPadding)
+                .padding(horizontal = 20.dp, vertical = 8.dp)
         ) {
-            item { SectionTitle("Log weight") }
-            item { Text(editor.label(), style = MaterialTheme.typography.titleLarge) }
-                item {
-                    Button(
-                        onClick = { editor = editor.adjust(-1) },
-                        enabled = !saving,
-                        label = { Text("Decrease") },
-                        secondaryLabel = { Text(if (summary.weightUnit.equals("lb", ignoreCase = true)) "0.1 lb" else "0.1 kg") },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
-                item {
-                    Button(
-                        onClick = { editor = editor.adjust(1) },
-                        enabled = !saving,
-                        label = { Text("Increase") },
-                        secondaryLabel = { Text(if (summary.weightUnit.equals("lb", ignoreCase = true)) "0.1 lb" else "0.1 kg") },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
-                item {
-                    Button(
-                        onClick = { onSave(editor.grams) },
-                        enabled = !saving,
-                        label = { Text("Save") },
-                        secondaryLabel = { Text("Submit today's weigh-in") },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
+            Text("Log weight", style = MaterialTheme.typography.titleMedium)
+            Text(
+                if (selectedPickerIndex == 0) "Whole number" else "Decimal",
+                style = MaterialTheme.typography.labelSmall,
+                color = CALIBRATE_SECONDARY_TEXT
+            )
+            PickerGroup(
+                selectedPickerState = selectedPickerState,
+                autoCenter = false,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(WEIGHT_PICKER_HEIGHT)
+            ) {
+                PickerGroupItem(
+                    pickerState = wholePickerState,
+                    selected = selectedPickerIndex == 0,
+                    onSelected = { selectedPickerIndex = 0 },
+                    contentDescription = {
+                        "Whole number ${pickerValues.wholeAt(wholePickerState.selectedOptionIndex)}"
+                    },
+                    modifier = Modifier.size(WEIGHT_PICKER_WHOLE_WIDTH, WEIGHT_PICKER_HEIGHT),
+                    option = { optionIndex, _ ->
+                        Text(
+                            text = pickerValues.wholeAt(optionIndex).toString(),
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                )
+                PickerGroupItem(
+                    pickerState = decimalPickerState,
+                    selected = selectedPickerIndex == 1,
+                    onSelected = { selectedPickerIndex = 1 },
+                    contentDescription = { "Decimal $boundedDecimal" },
+                    modifier = Modifier.size(WEIGHT_PICKER_DECIMAL_WIDTH, WEIGHT_PICKER_HEIGHT),
+                    option = { optionIndex, _ ->
+                        Text(
+                            text = ".$optionIndex ${pickerValues.unitLabel}",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                )
+            }
+            Button(
+                onClick = { onSave(selectedGrams) },
+                enabled = !saving,
+                label = {
+                    Text(if (saving) "Saving..." else "Save ${pickerValues.labelFor(selectedGrams)}")
+                },
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = CALIBRATE_GREEN,
+                    contentColor = CALIBRATE_BACKGROUND,
+                    secondaryContentColor = CALIBRATE_BACKGROUND
+                ),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp)
+            )
+            Spacer(modifier = Modifier.height(8.dp))
         }
     }
 }

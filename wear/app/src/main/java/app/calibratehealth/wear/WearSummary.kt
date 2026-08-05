@@ -2,6 +2,7 @@ package app.calibratehealth.wear
 
 import java.util.Locale
 import kotlin.math.roundToInt
+import kotlin.math.roundToLong
 
 /** Cached, account-scoped health state rendered by the watch without waiting for the network. */
 data class WearSummary(
@@ -94,39 +95,80 @@ object SummaryFormatter {
     private const val GRAMS_PER_POUND = 453.59237
 }
 
-/** Canonical gram editor keeps unit conversion at the display edge. */
-data class WeightEditorState(val grams: Long, val unit: String) {
-    fun adjust(direction: Int): WeightEditorState {
-        val step = if (unit.lowercase(Locale.US) == "lb") IMPERIAL_STEP_GRAMS else METRIC_STEP_GRAMS
-        return copy(grams = (grams + (step * direction)).coerceIn(MIN_WEIGHT_GRAMS, MAX_WEIGHT_GRAMS))
+/** Maps canonical grams to the whole/decimal columns shown by the native Wear picker. */
+class WeightPickerValues private constructor(
+    val initialGrams: Long,
+    val unitLabel: String,
+    private val minimumTenths: Int,
+    private val maximumTenths: Int,
+    val minimumWhole: Int,
+    val maximumWhole: Int,
+    val selectedWhole: Int,
+    val selectedDecimal: Int
+) {
+    val wholeOptionCount: Int get() = maximumWhole - minimumWhole + 1
+    val selectedWholeIndex: Int get() = selectedWhole - minimumWhole
+
+    fun wholeAt(optionIndex: Int): Int =
+        (minimumWhole + optionIndex).coerceIn(minimumWhole, maximumWhole)
+
+    fun decimalAt(wholeOptionIndex: Int, decimal: Int): Int {
+        val whole = wholeAt(wholeOptionIndex)
+        val minimumDecimal = if (whole == minimumWhole) minimumTenths % DECIMAL_OPTION_COUNT else 0
+        val maximumDecimal = if (whole == maximumWhole) maximumTenths % DECIMAL_OPTION_COUNT else DECIMAL_OPTION_COUNT - 1
+        return decimal.coerceIn(minimumDecimal, maximumDecimal)
     }
 
-    fun label(): String = SummaryFormatter.weight(grams, unit)
+    fun gramsFor(wholeOptionIndex: Int, decimal: Int): Long {
+        val whole = wholeAt(wholeOptionIndex)
+        val boundedDecimal = decimalAt(wholeOptionIndex, decimal)
+        if (whole == selectedWhole && boundedDecimal == selectedDecimal) return initialGrams
+
+        val displayedTenths = (whole * DECIMAL_OPTION_COUNT) + boundedDecimal
+        val grams = if (unitLabel == IMPERIAL_UNIT) {
+            (displayedTenths * GRAMS_PER_POUND / DECIMAL_OPTION_COUNT).roundToLong()
+        } else {
+            displayedTenths * METRIC_TENTH_GRAMS
+        }
+        return grams.coerceIn(MIN_WEIGHT_GRAMS, MAX_WEIGHT_GRAMS)
+    }
+
+    fun labelFor(grams: Long): String = SummaryFormatter.weight(grams, unitLabel)
 
     companion object {
-        // Gives a first-time weigh-in a neutral crown-adjustable starting point on the watch.
+        // Gives a first-time weigh-in a neutral picker starting point on the watch.
         const val DEFAULT_WEIGHT_GRAMS = 70_000L
         const val MIN_WEIGHT_GRAMS = 20_000L
         const val MAX_WEIGHT_GRAMS = 500_000L
-        private const val METRIC_STEP_GRAMS = 100L
-        // 0.1 lb rounded to whole grams, which is the API's canonical storage unit.
-        private val IMPERIAL_STEP_GRAMS = (45.359237).roundToInt().toLong()
+        const val DECIMAL_OPTION_COUNT = 10
+        private const val IMPERIAL_UNIT = "lb"
+        private const val METRIC_UNIT = "kg"
+        private const val METRIC_TENTH_GRAMS = 100L
+        private const val GRAMS_PER_POUND = 453.59237
+
+        fun from(grams: Long, unit: String): WeightPickerValues {
+            val boundedGrams = grams.coerceIn(MIN_WEIGHT_GRAMS, MAX_WEIGHT_GRAMS)
+            val unitLabel = if (unit.lowercase(Locale.US) == IMPERIAL_UNIT) IMPERIAL_UNIT else METRIC_UNIT
+            val selectedTenths = displayTenths(boundedGrams, unitLabel)
+            val minimumTenths = displayTenths(MIN_WEIGHT_GRAMS, unitLabel)
+            val maximumTenths = displayTenths(MAX_WEIGHT_GRAMS, unitLabel)
+            return WeightPickerValues(
+                initialGrams = boundedGrams,
+                unitLabel = unitLabel,
+                minimumTenths = minimumTenths,
+                maximumTenths = maximumTenths,
+                minimumWhole = minimumTenths / DECIMAL_OPTION_COUNT,
+                maximumWhole = maximumTenths / DECIMAL_OPTION_COUNT,
+                selectedWhole = selectedTenths / DECIMAL_OPTION_COUNT,
+                selectedDecimal = selectedTenths % DECIMAL_OPTION_COUNT
+            )
+        }
+
+        private fun displayTenths(grams: Long, unit: String): Int =
+            if (unit == IMPERIAL_UNIT) {
+                (grams * DECIMAL_OPTION_COUNT / GRAMS_PER_POUND).roundToInt()
+            } else {
+                (grams / METRIC_TENTH_GRAMS.toDouble()).roundToInt()
+            }
     }
 }
-
-data class RotaryWeightChange(val remainingPixels: Float, val steps: Int)
-
-/** Accumulates high-resolution crown motion into bounded, intentional weight steps. */
-fun accumulateRotaryWeight(currentPixels: Float, deltaPixels: Float): RotaryWeightChange {
-    val total = currentPixels + deltaPixels
-    if (!total.isFinite()) return RotaryWeightChange(0f, 0)
-    val rawSteps = (total / ROTARY_WEIGHT_STEP_PIXELS).toInt()
-    return RotaryWeightChange(
-        remainingPixels = total % ROTARY_WEIGHT_STEP_PIXELS,
-        steps = rawSteps.coerceIn(-MAX_ROTARY_WEIGHT_STEPS_PER_EVENT, MAX_ROTARY_WEIGHT_STEPS_PER_EVENT)
-    )
-}
-
-// Prevents a high-resolution crown from changing weight on incidental movement.
-private const val ROTARY_WEIGHT_STEP_PIXELS = 36f
-private const val MAX_ROTARY_WEIGHT_STEPS_PER_EVENT = 5
