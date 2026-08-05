@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "server": {
-    "version": "0.13.1",
+    "version": "0.13.2",
     "api": {
       "current": "v1",
       "supported": [
@@ -15,7 +15,7 @@
     "mobile": {
       "version_name": "0.2.5",
       "version_code": 7,
-      "native_release_tag": "v0.13.0",
+      "native_release_tag": "v0.13.2",
       "minimum_supported_version": "0.1.0"
     },
     "wear": {
