@@ -165,7 +165,8 @@ function getCalibrationPeriod(input: CalibrationInput): CalibrationPeriod {
         .map((day) => day.date)
         .sort((left, right) => right.localeCompare(left))[0] ?? null;
     if (!latestPausedDate) {
-        return { input, restartedAfterPause: false, startsOn: null };
+        // A pause started after asOfDate still resets the next evidence window.
+        return { input, restartedAfterPause: Boolean(input.trackingPaused), startsOn: null };
     }
 
     const startsOn = addDateDays(latestPausedDate, 1);

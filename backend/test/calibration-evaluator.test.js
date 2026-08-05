@@ -354,6 +354,21 @@ test('restarts evidence after the latest tracking pause instead of averaging acr
   assert.match(result.nextStep, /next pace check is available after 7 well-tracked food days/);
 });
 
+test('acknowledges an active pause that starts after the latest completed evidence day', () => {
+  const input = cloneScenarioInput('target-too-high');
+  input.trackingPaused = true;
+
+  const result = evaluateCalibration(input);
+
+  assert.equal(result.status, 'not_ready');
+  assert.equal(result.headline, 'Calibration is paused with food tracking');
+  assert.equal(result.summary, 'Paused days are excluded from calibration, so your break is not treated as uncertain intake.');
+  assert.equal(result.nextStep, 'After you resume, your next pace check will be available after 7 well-tracked food days and weigh-ins spanning 7 days.');
+  assert.equal(result.dataQuality.observationDays, 0);
+  assert.equal(result.historyProgress.restartedAfterPause, true);
+  assert.equal(result.recommendation, null);
+});
+
 test('preserves calibration safety invariants across a broad deterministic matrix', () => {
   let evaluated = 0;
   for (const days of [6, 7, 13, 14, 21, 42]) {

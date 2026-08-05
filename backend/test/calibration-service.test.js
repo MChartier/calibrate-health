@@ -62,7 +62,7 @@ function fingerprint(value) {
   return crypto.createHash('sha256').update(JSON.stringify(canonicalize(value)), 'utf8').digest('hex');
 }
 
-function createHarness({ scenarioId = 'target-too-high', scheduledRevision = null, currentPlan = null, pausedDates = [] } = {}) {
+function createHarness({ scenarioId = 'target-too-high', scheduledRevision = null, currentPlan = null, pausedDates = [], todayStatus = null } = {}) {
   const scenario = getCalibrationScenario(scenarioId);
   assert.ok(scenario);
   const captured = {
@@ -110,7 +110,7 @@ function createHarness({ scenarioId = 'target-too-high', scheduledRevision = nul
       isComplete: pausedDateSet.has(day.date) ? false : day.isComplete,
       isPaused: pausedDateSet.has(day.date)
     })),
-    trackingPaused: false,
+    trackingPaused: todayStatus === 'PAUSED',
     weightPoints: weightRows.map((row) => ({
       date: row.date.toISOString().slice(0, 10),
       trendWeightKg: row.trend.trend_weight_grams / 1000,
@@ -135,7 +135,7 @@ function createHarness({ scenarioId = 'target-too-high', scheduledRevision = nul
       created_at: new Date('2026-06-01T00:00:00.000Z')
     }) },
     foodLogDay: {
-      findUnique: async () => null,
+      findUnique: async () => todayStatus ? { status: todayStatus } : null,
       findMany: async () => completionDays
     },
     foodLog: { findMany: async () => logs },
@@ -233,6 +233,19 @@ test('calibration status maps paused food days into a post-break evidence restar
   assert.equal(status.evaluation.dataQuality.incompleteDays, 0);
   assert.equal(status.evaluation.historyProgress.restartedAfterPause, true);
   assert.equal(status.recommendation, null);
+});
+
+test('calibration status acknowledges a pause started on the current incomplete day', async () => {
+  const harness = createHarness({ todayStatus: 'PAUSED' });
+  const status = await harness.service.buildCalibrationStatus(7, new Date('2026-08-01T12:00:00.000Z'));
+
+  assert.equal(status.evaluation.asOfDate, '2026-07-31');
+  assert.equal(status.evaluation.status, 'not_ready');
+  assert.equal(status.evaluation.headline, 'Calibration is paused with food tracking');
+  assert.equal(status.evaluation.summary, 'Paused days are excluded from calibration, so your break is not treated as uncertain intake.');
+  assert.equal(status.evaluation.historyProgress.restartedAfterPause, true);
+  assert.equal(status.recommendation, null);
+  assert.equal(harness.captured.upserts.length, 0);
 });
 
 test('scheduled revisions suppress new materialization and report the resulting budget', async () => {
