@@ -62,7 +62,7 @@ function fingerprint(value) {
   return crypto.createHash('sha256').update(JSON.stringify(canonicalize(value)), 'utf8').digest('hex');
 }
 
-function createHarness({ scenarioId = 'target-too-high', scheduledRevision = null, currentPlan = null } = {}) {
+function createHarness({ scenarioId = 'target-too-high', scheduledRevision = null, currentPlan = null, pausedDates = [], todayStatus = null } = {}) {
   const scenario = getCalibrationScenario(scenarioId);
   assert.ok(scenario);
   const captured = {
@@ -75,13 +75,14 @@ function createHarness({ scenarioId = 'target-too-high', scheduledRevision = nul
     sync: null
   };
   let storedRecommendation = null;
+  const pausedDateSet = new Set(pausedDates);
   const logs = scenario.input.foodDays.flatMap((day) => [
     { local_date: new Date(`${day.date}T00:00:00.000Z`), calories: Math.floor(day.calories / 2), meal_period: 'BREAKFAST' },
     { local_date: new Date(`${day.date}T00:00:00.000Z`), calories: Math.ceil(day.calories / 2), meal_period: 'DINNER' }
   ]);
   const completionDays = scenario.input.foodDays.map((day) => ({
     local_date: new Date(`${day.date}T00:00:00.000Z`),
-    status: day.isComplete ? 'COMPLETE' : 'INCOMPLETE'
+    status: pausedDateSet.has(day.date) ? 'PAUSED' : (day.isComplete ? 'COMPLETE' : 'INCOMPLETE')
   }));
   const weightRows = scenario.input.weightPoints.map((point, index) => ({
     id: index + 1,
@@ -106,15 +107,16 @@ function createHarness({ scenarioId = 'target-too-high', scheduledRevision = nul
       calories: day.calories,
       entryCount: 2,
       mealPeriodCount: 2,
-      isComplete: day.isComplete
+      isComplete: pausedDateSet.has(day.date) ? false : day.isComplete,
+      isPaused: pausedDateSet.has(day.date)
     })),
+    trackingPaused: todayStatus === 'PAUSED',
     weightPoints: weightRows.map((row) => ({
       date: row.date.toISOString().slice(0, 10),
       trendWeightKg: row.trend.trend_weight_grams / 1000,
       lowerKg: row.trend.trend_ci_lower_grams / 1000,
       upperKg: row.trend.trend_ci_upper_grams / 1000
-    })),
-    activityDays: []
+    }))
   };
   const prisma = {
     user: { findUnique: async () => ({
@@ -133,7 +135,7 @@ function createHarness({ scenarioId = 'target-too-high', scheduledRevision = nul
       created_at: new Date('2026-06-01T00:00:00.000Z')
     }) },
     foodLogDay: {
-      findUnique: async () => null,
+      findUnique: async () => todayStatus ? { status: todayStatus } : null,
       findMany: async () => completionDays
     },
     foodLog: { findMany: async () => logs },
@@ -196,7 +198,7 @@ test('calibration status materializes a deterministic model-scoped recommendatio
   assert.equal(status.recommendation.id, 9);
   assert.equal(status.recommendation.effectiveLocalDate, '2026-08-02');
   assert.equal(harness.captured.upserts.length, 1);
-  const { activityDays: _activityContext, weightUnit: _displayWeightUnit, ...actionEvidence } = harness.serviceInput;
+  const { weightUnit: _displayWeightUnit, ...actionEvidence } = harness.serviceInput;
   assert.equal(status.inputFingerprint, fingerprint({
     modelVersion: CALIBRATION_MODEL_VERSION,
     goalId: 41,
@@ -214,6 +216,36 @@ test('calibration status materializes a deterministic model-scoped recommendatio
     planStartDate: '2026-06-01',
     input: harness.serviceInput
   }));
+});
+
+test('calibration status maps paused food days into a post-break evidence restart', async () => {
+  const pausedDates = [
+    '2026-07-18', '2026-07-19', '2026-07-20', '2026-07-21', '2026-07-22', '2026-07-23',
+    '2026-07-24', '2026-07-25', '2026-07-26', '2026-07-27', '2026-07-28'
+  ];
+  const harness = createHarness({ pausedDates });
+  const status = await harness.service.buildCalibrationStatus(7, new Date('2026-08-01T12:00:00.000Z'));
+
+  assert.equal(status.evaluation.status, 'not_ready');
+  assert.equal(status.evaluation.headline, 'Gathering new history after your break');
+  assert.equal(status.evaluation.dataQuality.observationDays, 3);
+  assert.equal(status.evaluation.dataQuality.confidentDays, 3);
+  assert.equal(status.evaluation.dataQuality.incompleteDays, 0);
+  assert.equal(status.evaluation.historyProgress.restartedAfterPause, true);
+  assert.equal(status.recommendation, null);
+});
+
+test('calibration status acknowledges a pause started on the current incomplete day', async () => {
+  const harness = createHarness({ todayStatus: 'PAUSED' });
+  const status = await harness.service.buildCalibrationStatus(7, new Date('2026-08-01T12:00:00.000Z'));
+
+  assert.equal(status.evaluation.asOfDate, '2026-07-31');
+  assert.equal(status.evaluation.status, 'not_ready');
+  assert.equal(status.evaluation.headline, 'Calibration is paused with food tracking');
+  assert.equal(status.evaluation.summary, 'Paused days are excluded from calibration, so your break is not treated as uncertain intake.');
+  assert.equal(status.evaluation.historyProgress.restartedAfterPause, true);
+  assert.equal(status.recommendation, null);
+  assert.equal(harness.captured.upserts.length, 0);
 });
 
 test('scheduled revisions suppress new materialization and report the resulting budget', async () => {

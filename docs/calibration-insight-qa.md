@@ -1,15 +1,15 @@
 # Calibration insight manual QA
 
-Tested on August 2, 2026 against the calibration history lab on PR #269.
+Tested through August 4, 2026 against the shared calibration history lab and product component.
 
 ## Scope and method
 
-- Exercised all 15 shareable preset histories through the shared product component in the development tool.
+- Exercised all 16 shareable preset histories through the shared product component in the development tool.
 - Evaluated 7 additional edited histories for exact duration, weight-count, uncertainty, and age boundaries.
 - Verified malformed JSON and structurally incomplete JSON remain in the lab with an actionable validation error.
 - Inspected the rendered status, headline, evidence metrics, modeled intervals, target change, and gating criteria for each case.
 - Ran a complementary 384-case deterministic invariant matrix across history length, age, pace, missing-day rate, weight uncertainty, and BMR floor position.
-- Benchmarked 3,000 evaluations across the 15 presets: 3,115 ms total, or 1.04 ms per evaluation on this development machine.
+- The original 15-preset benchmark completed 3,000 evaluations in 3,115 ms total, or 1.04 ms per evaluation on this development machine; the post-pause preset was added afterward as a focused regression state.
 - Repeated the rendered recommendation and uncertainty checks after rebasing onto the current mobile/day-status architecture and applying review feedback.
 - Re-reviewed every preset at desktop and 390 px mobile widths after the final copy pass, including URL selection, optional-section visibility, metric wrapping, criteria language, and custom-input error recovery.
 - Recaptured the evaluator and seeded-product screenshots below from the final shared-component and live-product states after the final copy pass.
@@ -23,6 +23,7 @@ The lab invokes the same pure evaluator used by the service. The seeded-product 
 | History | Expected result | Observed result |
 | --- | --- | --- |
 | 6 complete days | `not_ready`, progress retained | Passed: 6 confident days and 6-day weight span are shown |
+| Tracking resumes after a pause | `not_ready`, fresh post-pause progress | Passed: paused and pre-break days are excluded; only post-resume food and weight evidence count |
 | 14 food days, 1 weight | `learning` | Passed: credits 14 well-tracked food days and asks specifically for more weight history |
 | 7 complete days | Descriptive insight only | Passed: validates the observed -0.45 kg/week pace without implying a later adjustment is inevitable |
 | 28 on-track days | Positive validation, no budget adjustment | Passed: observed and projected pace agree, and the conclusion is reassuring |
@@ -33,7 +34,7 @@ The lab invokes the same pure evaluator used by the service. The seeded-product 
 | Higher intake explains slow loss | Intake-matched insight | Passed: the conclusion compares 2,200 kcal logged with the 1,900 kcal budget and does not change the budget estimate |
 | 7 missing and 4 suspicious days | Food-log uncertainty insight | Passed: all 11 days remain in the interval and the conclusion explains how to improve confidence |
 | Broad weight confidence intervals | Weight-uncertainty insight | Passed: the plausible 0.04 to 0.43 kg/week loss range is explained and no budget is suggested |
-| Activity data present | Observational context only | Passed: same calorie estimate as on-track history, with a clearly non-adjusting steps note |
+| Activity data present | No estimate change and no user-facing activity panel | Passed: same calorie estimate as on-track history; irrelevant steps context is omitted |
 | Downward signal above BMR-based limit | Limit-capped decrease | Passed: suggested budget stops at 1,900 kcal and the evidence sheet attributes the 100 kcal cap to that limit |
 | Downward signal below BMR-based limit | No contradictory recommendation | Passed: downward evidence remains an insight with a responsible explanation and next step |
 | 90 days supplied | 42-day cap | Passed: latest 42 days selected |
@@ -55,7 +56,7 @@ The lab invokes the same pure evaluator used by the service. The seeded-product 
 6. **Malformed structured JSON crashed the lab.** The editor now validates top-level and nested food, weight, and activity fields and preserves the last valid output on error.
 7. **Single-day uncertainty copy had incorrect agreement.** Messages now pluralize correctly and distinguish days with no food log, partial logs, and completed logs that do not provide a plausible full-day total.
 8. **The original lab depended on the retired Vite frontend workspace.** The lab now runs from a focused local Node server against the compiled shared evaluator and a dev-only React bundle.
-9. **The original six presets did not cover the supported state space.** The lab now has 15 described, deep-linkable histories, including pounds, plus a clearly labeled custom-edit state and an end-user product preview. Maintenance and gain behavior remains evaluator-tested rather than being presented as a currently available v1 product experience.
+9. **The original six presets did not cover the supported state space.** The lab now has 16 described, deep-linkable histories, including pounds and a post-pause restart, plus a clearly labeled custom-edit state and an end-user product preview. Maintenance and gain behavior remains evaluator-tested rather than being presented as a currently available v1 product experience.
 10. **The public result exposed a weight-derived expenditure estimate.** The evaluator now exposes only the bounded target correction; displayed calories out remains the profile-estimated TDEE.
 11. **Accepted revisions could carry into a later goal.** Recommendations and plan revisions are now tied to their source goal, so a new maintenance or gain goal cannot inherit an older loss-goal adjustment.
 12. **The feature migration collided with a migration added on `master`.** Calibration now uses migration `0031`, following the day-resolution migration at `0030`.
@@ -74,7 +75,7 @@ The lab invokes the same pure evaluator used by the service. The seeded-product 
 25. **High incomplete totals could create inverted intake ranges.** Logged calories are now always preserved as the lower bound and uncertainty only widens upward, preventing impossible intervals and unsafe suggestions.
 26. **User-facing pace copy was hard-coded to kilograms.** Summaries, uncertainty ranges, and review metrics now honor the user's weight unit while the model retains kilograms internally.
 27. **A scheduled rollback could be described as a zero or negative change.** Scheduled responses now include the resulting daily calorie budget, and the client renders a dedicated confirmation with that absolute budget and effective date.
-28. **Presentation-only changes could stale a recommendation.** Activity context and display units no longer participate in the action fingerprint, while the model version, goal, plan boundary, food evidence, and weight evidence do.
+28. **Presentation-only changes could stale a recommendation.** Display units no longer participate in the action fingerprint, while the model version, goal, plan boundary, food evidence, and weight evidence do. Activity summaries are no longer calibration inputs.
 29. **Stateful service behavior lacked direct coverage.** Recommendation creation, replacement, application, sync recording, idempotent replay, and scheduled suppression now have isolated service tests.
 30. **Account exports omitted the source recommendation for accepted revisions.** Exports now include user-visible recommendation history and result snapshots without leaking the internal input fingerprint.
 31. **The mobile evidence count disagreed with the evaluator.** Suspicious completed days now count as uncertain everywhere.
@@ -101,10 +102,20 @@ The lab invokes the same pure evaluator used by the service. The seeded-product 
 52. **The modal close action scrolled out of reach.** Sheet controls now live outside the content scroller, so the close button remains visible and operable at the top of the container after scrolling to the decision actions.
 53. **The recommendation card did not follow the Progress page's heading pattern.** `Calibration` is now the stable card heading in every state, with the current conclusion presented as its description like the neighboring Progress cards.
 54. **An accepted update offered no visible way to reconsider it.** The scheduled state now names the current budget that remains active, provides an `Undo and review` action until the effective local date, removes the future revision atomically, and restores the original recommendation for another review. The real seeded flow was verified from acceptance through cancellation and restoration.
-55. **The scenario lab had drifted into a second calibration UI.** Its hand-written HTML used different hierarchy, terminology, metrics, and interactions from Progress, so a passing preset did not prove the product experience. The lab now renders the exported `CalibrationInsightCardView` used by Progress for all 15 histories. `See why`, apply, scheduled confirmation, and undo use that shared presentation; only persistence is simulated locally. Raw JSON remains a separate developer diagnostic.
-56. **A final independent product/content audit found trust and actionability gaps across edge states.** Evidence summaries now use well-tracked days and weigh-ins with correct pluralization; early results identify themselves as an early pace check; intake-explained pacing has a constructive next step; activity is explicitly observational; prior-adjustment reversal names the restored budget; uncertain histories give specific actions; and BMR-limited states accurately explain why Calibrate caps or withholds a suggestion.
+55. **The scenario lab had drifted into a second calibration UI.** Its hand-written HTML used different hierarchy, terminology, metrics, and interactions from Progress, so a passing preset did not prove the product experience. The lab now renders the exported `CalibrationInsightCardView` used by Progress for all 16 histories. `See why`, apply, scheduled confirmation, and undo use that shared presentation; only persistence is simulated locally. Raw JSON remains a separate developer diagnostic.
+56. **A final independent product/content audit found trust and actionability gaps across edge states.** Evidence summaries now use well-tracked days and weigh-ins with correct pluralization; early results identify themselves as an early pace check; intake-explained pacing has a constructive next step; irrelevant activity context is omitted; prior-adjustment reversal names the restored budget; uncertain histories give specific actions; and BMR-limited states accurately explain why Calibrate caps or withholds a suggestion.
 
 ## Screenshots
+
+### Gathering history after a tracking break
+
+Calibration Lab preset: `Gathering history after a break`
+
+Scenario description: `A tracking pause resets the evidence window and shows fresh progress instead of uncertain intake.`
+
+![Post-pause calibration progress at desktop width](screenshots/calibration-readiness/after-pause-desktop.png)
+
+![Post-pause calibration progress at compact width](screenshots/calibration-readiness/after-pause-compact.png)
 
 ### Building toward the first insight
 
@@ -133,10 +144,6 @@ The lab invokes the same pure evaluator used by the service. The seeded-product 
 ![BMR-based limit-capped recommendation](screenshots/calibration-qa/08-bmr-floor-cap.jpg)
 
 ![BMR-based limit blocked insight](screenshots/calibration-qa/05-bmr-floor-block.jpg)
-
-### Activity remains observational context
-
-![Activity context insight](screenshots/calibration-qa/06-activity-context.jpg)
 
 ## Seeded product experience
 

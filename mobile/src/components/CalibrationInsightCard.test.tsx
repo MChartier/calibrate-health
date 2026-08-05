@@ -147,10 +147,18 @@ function buildingHistoryStatus(): CalibrationStatusResponse {
             status: 'not_ready',
             headline: 'See how your calorie plan is working',
             summary: 'Calibrate compares your logged food with your weight trend to show whether your plan is on track or a small calorie-budget adjustment could improve your pace.',
-            nextStep: 'Keep following your current plan and log food and weight consistently so Calibrate can make its first pace check.',
+            nextStep: 'Your first pace check is available after 7 well-tracked food days and weigh-ins spanning 7 days.',
             historyProgress: {
+                stage: 'pace_check',
                 observedDays: 6,
-                requiredDays: 7
+                requiredDays: 7,
+                completeFoodDays: 6,
+                requiredCompleteFoodDays: 7,
+                weightSpanDays: 6,
+                requiredWeightSpanDays: 7,
+                weightPoints: 6,
+                requiredWeightPoints: 2,
+                restartedAfterPause: false
             },
             selectedWindowDays: null,
             dataQuality: {
@@ -163,7 +171,10 @@ function buildingHistoryStatus(): CalibrationStatusResponse {
                 weightPoints: 6,
                 weightSpanDays: 6
             },
-            missingCriteria: ['Build at least 7 days of food and weight history.'],
+            missingCriteria: [
+                'Complete at least 7 plausible food-log days with entries across multiple meals.',
+                'Record weights spanning at least 7 days so a pace can be estimated.'
+            ],
             estimates: {
                 averageIntakeKcal: null,
                 observedWeeklyWeightChangeKg: null,
@@ -222,17 +233,93 @@ describe('CalibrationInsightCard', () => {
         await waitFor(() => expect(screen.getByText('See how your calorie plan is working')).toBeTruthy());
         expect(screen.getByText(/whether your plan is on track or a small calorie-budget adjustment/)).toBeTruthy();
         expect(screen.getByText('Progress toward your first pace check')).toBeTruthy();
-        expect(screen.getByText('6 of 7 days')).toBeTruthy();
-        expect(screen.getByRole('progressbar', { name: 'History for your first pace check' }).props.accessibilityValue).toEqual({
+        expect(screen.getByRole('progressbar', { name: 'Well-tracked food days for calibration' }).props.accessibilityValue).toEqual({
             min: 0,
             max: 7,
             now: 6,
-            text: '6 of 7 days'
+            text: '6 of 7 well-tracked food days'
+        });
+        expect(screen.getByRole('progressbar', { name: 'Weight history for calibration' }).props.accessibilityValue).toEqual({
+            min: 0,
+            max: 7,
+            now: 6,
+            text: '6 of 7 days of weight history'
         });
         expect(screen.getByText('Next step')).toBeTruthy();
-        expect(screen.getByText(/Keep following your current plan/)).toBeTruthy();
+        expect(screen.getByText(/first pace check is available after 7 well-tracked food days/)).toBeTruthy();
         expect(screen.queryByText('What would improve this insight')).toBeNull();
         expect(screen.queryByText(/^- Track food and weight/)).toBeNull();
+    });
+
+    it('acknowledges a tracking break and shows fresh post-pause progress', async () => {
+        const status = buildingHistoryStatus();
+        mockApi.getCalibrationStatus.mockResolvedValue({
+            ...status,
+            evaluation: {
+                ...status.evaluation,
+                headline: 'Gathering new history after your break',
+                summary: 'Paused days and history from before your break are excluded, so they are not averaged into your current pace check.',
+                nextStep: 'Your next pace check is available after 7 well-tracked food days and weigh-ins spanning 7 days.',
+                historyProgress: {
+                    ...status.evaluation.historyProgress!,
+                    observedDays: 1,
+                    completeFoodDays: 1,
+                    weightSpanDays: 1,
+                    weightPoints: 1,
+                    restartedAfterPause: true
+                }
+            }
+        });
+        const screen = renderCard();
+
+        await waitFor(() => expect(screen.getByText('Gathering new history after your break')).toBeTruthy());
+        expect(screen.getByText(/not averaged into your current pace check/)).toBeTruthy();
+        expect(screen.getByText('Progress toward your next pace check')).toBeTruthy();
+        expect(screen.getByText('1 of 7')).toBeTruthy();
+        expect(screen.getByText('1 of 7 days')).toBeTruthy();
+    });
+
+    it('shows the exact remaining gates before a calorie-budget review', async () => {
+        const status = buildingHistoryStatus();
+        mockApi.getCalibrationStatus.mockResolvedValue({
+            ...status,
+            evaluation: {
+                ...status.evaluation,
+                status: 'insight',
+                headline: 'Your latest pace is available',
+                summary: 'Your latest pace can be described, but a budget review needs more history.',
+                nextStep: 'Keep tracking for 1 more day. Calibrate can assess a budget change after at least 14 days of food and weight history.',
+                historyProgress: {
+                    stage: 'budget_review',
+                    observedDays: 13,
+                    requiredDays: 14,
+                    completeFoodDays: 13,
+                    requiredCompleteFoodDays: 7,
+                    weightSpanDays: 13,
+                    requiredWeightSpanDays: 14,
+                    weightPoints: 2,
+                    requiredWeightPoints: 3,
+                    restartedAfterPause: false
+                },
+                selectedWindowDays: 13,
+                dataQuality: {
+                    ...status.evaluation.dataQuality,
+                    observationDays: 13,
+                    completeDays: 13,
+                    confidentDays: 13,
+                    weightPoints: 2,
+                    weightSpanDays: 13
+                }
+            }
+        });
+        const screen = renderCard();
+
+        await waitFor(() => expect(screen.getByText('Progress toward a calorie-budget review')).toBeTruthy());
+        expect(screen.getByText('13 logged - ready')).toBeTruthy();
+        expect(screen.getByText('13 of 14 days')).toBeTruthy();
+        expect(screen.getByText('2 of 3')).toBeTruthy();
+        expect(screen.getByRole('progressbar', { name: 'Weigh-ins for a calorie-budget review' })).toBeTruthy();
+        expect(screen.getByText(/Keep tracking for 1 more day/)).toBeTruthy();
     });
 
     it('makes the recommendation visual and directly actionable without opening the evidence sheet', async () => {
@@ -342,7 +429,7 @@ describe('CalibrationInsightCard', () => {
         await waitFor(() => expect(screen.getByText('This returns you to your previous 1,900 kcal daily budget.')).toBeTruthy());
     });
 
-    it('shows activity as supporting context without changing the calorie-budget conclusion', async () => {
+    it('does not show observational activity that cannot change the conclusion', async () => {
         const status = recommendationStatus();
         mockApi.getCalibrationStatus.mockResolvedValue({
             ...status,
@@ -362,9 +449,9 @@ describe('CalibrationInsightCard', () => {
         });
         const screen = renderCard();
 
-        await waitFor(() => expect(screen.getByText('Activity context')).toBeTruthy());
-        expect(screen.getByText(/averaged 8,135 steps per day across 28 days/)).toBeTruthy();
-        expect(screen.getByText(/supporting context only and did not change this calorie-budget review/)).toBeTruthy();
+        await waitFor(() => expect(screen.getByText('Your progress is tracking as expected')).toBeTruthy());
+        expect(screen.queryByText('Activity context')).toBeNull();
+        expect(screen.queryByText(/8,135 steps/)).toBeNull();
     });
 
     it.each([

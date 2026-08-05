@@ -1148,10 +1148,18 @@ components:
         nextStep: { type: [string, 'null'] }
         historyProgress:
           type: [object, 'null']
-          required: [observedDays, requiredDays]
+          required: [stage, observedDays, requiredDays, completeFoodDays, requiredCompleteFoodDays, weightSpanDays, requiredWeightSpanDays, weightPoints, requiredWeightPoints, restartedAfterPause]
           properties:
+            stage: { type: string, enum: [pace_check, budget_review] }
             observedDays: { type: integer, minimum: 0 }
             requiredDays: { type: integer, minimum: 1 }
+            completeFoodDays: { type: integer, minimum: 0 }
+            requiredCompleteFoodDays: { type: integer, minimum: 1 }
+            weightSpanDays: { type: integer, minimum: 0 }
+            requiredWeightSpanDays: { type: integer, minimum: 1 }
+            weightPoints: { type: integer, minimum: 0 }
+            requiredWeightPoints: { type: integer, minimum: 1 }
+            restartedAfterPause: { type: boolean }
         selectedWindowDays: { type: [integer, 'null'] }
         dataQuality: { $ref: '#/components/schemas/CalibrationDataQuality' }
         missingCriteria:

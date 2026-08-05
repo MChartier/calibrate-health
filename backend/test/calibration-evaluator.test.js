@@ -68,9 +68,23 @@ test('reports progress before the seven-day insight threshold', () => {
   assert.equal(result.dataQuality.weightSpanDays, 6);
   assert.equal(result.headline, 'See how your calorie plan is working');
   assert.match(result.summary, /whether your plan is on track or a small calorie-budget adjustment/);
-  assert.equal(result.nextStep, 'Keep following your current plan and log food and weight consistently so Calibrate can make its first pace check.');
-  assert.deepEqual(result.historyProgress, { observedDays: 6, requiredDays: 7 });
-  assert.deepEqual(result.missingCriteria, ['Build at least 7 days of food and weight history.']);
+  assert.equal(result.nextStep, 'Your first pace check is available after 7 well-tracked food days and weigh-ins spanning 7 days.');
+  assert.deepEqual(result.historyProgress, {
+    stage: 'pace_check',
+    observedDays: 6,
+    requiredDays: 7,
+    completeFoodDays: 6,
+    requiredCompleteFoodDays: 7,
+    weightSpanDays: 6,
+    requiredWeightSpanDays: 7,
+    weightPoints: 4,
+    requiredWeightPoints: 2,
+    restartedAfterPause: false
+  });
+  assert.deepEqual(result.missingCriteria, [
+    'Complete at least 7 plausible food-log days with entries across multiple meals.',
+    'Record weights spanning at least 7 days so a pace can be estimated.'
+  ]);
   assert.doesNotMatch(`${result.headline} ${result.summary} ${result.nextStep}`, /building your calibration history|unlock an initial|track food and weight across/i);
 });
 
@@ -89,7 +103,7 @@ test('explains when food history is strong but weight history cannot establish a
   assert.equal(result.headline, 'More weight history is needed');
   assert.match(result.summary, /14 well-tracked food days/);
   assert.match(result.summary, /a single weigh-in cannot establish a reliable trend/);
-  assert.equal(result.nextStep, 'Add more weigh-ins until they span at least 7 days so Calibrate can estimate your pace.');
+  assert.equal(result.nextStep, 'Your next pace check is available once your weigh-ins span 7 days.');
   assert.doesNotMatch(result.summary, /missing days/i);
 });
 
@@ -144,6 +158,10 @@ test('requires at least three weights before recommending a change', () => {
   assert.equal(result.status, 'insight');
   assert.equal(result.recommendation, null);
   assert.ok(result.missingCriteria.some((criterion) => criterion.includes('at least 3 weights')));
+  assert.equal(result.historyProgress.stage, 'budget_review');
+  assert.equal(result.historyProgress.weightPoints, 2);
+  assert.equal(result.historyProgress.requiredWeightPoints, 3);
+  assert.equal(result.nextStep, 'Add 1 more weigh-in before Calibrate can assess a calorie-budget change.');
   assert.match(result.summary, /remaining evidence criteria explain what would make this comparison more reliable/);
   assert.match(result.summary, /lb per week/);
   assert.doesNotMatch(result.summary, /kg per week/);
@@ -159,6 +177,9 @@ test('explains the 14-day action threshold when directional evidence appears ear
   assert.equal(result.selectedWindowDays, 13);
   assert.equal(result.recommendation, null);
   assert.ok(result.missingCriteria.some((criterion) => criterion.includes('at least 14 days')));
+  assert.equal(result.historyProgress.stage, 'budget_review');
+  assert.equal(result.historyProgress.requiredWeightSpanDays, 14);
+  assert.match(result.nextStep, /Keep tracking for 2 more days/);
 });
 
 test('attributes slow progress to logged intake rather than changing a sound target estimate', () => {
@@ -302,15 +323,50 @@ test('covers pounds in the lab and preserves maintenance and gain evaluator dire
   assert.match(gain.summary, /projected gain of 0\.46 kg per week/);
 });
 
-test('keeps activity observational and caps the selected window at 42 days', () => {
+test('does not surface unused activity data and caps the selected window at 42 days', () => {
   const onTrack = evaluateScenario('on-track');
   const withActivity = evaluateScenario('activity-context');
   assert.deepEqual(withActivity.estimates.targetAdjustmentKcal, onTrack.estimates.targetAdjustmentKcal);
-  assert.equal(withActivity.activityContext.observedDays, 28);
+  assert.equal(withActivity.activityContext, null);
 
   const maximumWindow = evaluateScenario('maximum-window');
   assert.equal(maximumWindow.selectedWindowDays, 42);
   assert.equal(maximumWindow.dataQuality.observationDays, 42);
+});
+
+test('restarts evidence after the latest tracking pause instead of averaging across the break', () => {
+  const input = cloneScenarioInput('target-too-high');
+  for (const day of input.foodDays) {
+    day.isPaused = day.date >= '2026-07-18' && day.date <= '2026-07-28';
+  }
+
+  const result = evaluateCalibration(input);
+
+  assert.equal(result.status, 'not_ready');
+  assert.equal(result.headline, 'Gathering new history after your break');
+  assert.match(result.summary, /history from before your break are excluded/);
+  assert.equal(result.dataQuality.observationDays, 3);
+  assert.equal(result.dataQuality.confidentDays, 3);
+  assert.equal(result.dataQuality.incompleteDays, 0);
+  assert.equal(result.dataQuality.missingDays, 0);
+  assert.equal(result.historyProgress.restartedAfterPause, true);
+  assert.equal(result.historyProgress.completeFoodDays, 3);
+  assert.match(result.nextStep, /next pace check is available after 7 well-tracked food days/);
+});
+
+test('acknowledges an active pause that starts after the latest completed evidence day', () => {
+  const input = cloneScenarioInput('target-too-high');
+  input.trackingPaused = true;
+
+  const result = evaluateCalibration(input);
+
+  assert.equal(result.status, 'not_ready');
+  assert.equal(result.headline, 'Calibration is paused with food tracking');
+  assert.equal(result.summary, 'Paused days are excluded from calibration, so your break is not treated as uncertain intake.');
+  assert.equal(result.nextStep, 'After you resume, your next pace check will be available after 7 well-tracked food days and weigh-ins spanning 7 days.');
+  assert.equal(result.dataQuality.observationDays, 0);
+  assert.equal(result.historyProgress.restartedAfterPause, true);
+  assert.equal(result.recommendation, null);
 });
 
 test('preserves calibration safety invariants across a broad deterministic matrix', () => {

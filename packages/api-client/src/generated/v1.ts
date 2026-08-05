@@ -799,8 +799,17 @@ export interface components {
             summary: string;
             nextStep: string | null;
             historyProgress: {
+                /** @enum {string} */
+                stage: "pace_check" | "budget_review";
                 observedDays: number;
                 requiredDays: number;
+                completeFoodDays: number;
+                requiredCompleteFoodDays: number;
+                weightSpanDays: number;
+                requiredWeightSpanDays: number;
+                weightPoints: number;
+                requiredWeightPoints: number;
+                restartedAfterPause: boolean;
             } | null;
             selectedWindowDays: number | null;
             dataQuality: components["schemas"]["CalibrationDataQuality"];

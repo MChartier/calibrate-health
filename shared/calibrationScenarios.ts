@@ -84,6 +84,20 @@ export const CALIBRATION_SCENARIOS: CalibrationScenario[] = [
         }
     },
     {
+        id: 'after-pause',
+        name: 'Gathering history after a break',
+        description: 'A tracking pause resets the evidence window and shows fresh progress instead of uncertain intake.',
+        input: {
+            ...baseInput,
+            foodDays: buildFoodDays({ days: 28, calories: 1900 }).map((day) => ({
+                ...day,
+                isComplete: day.date > '2026-07-28',
+                isPaused: day.date >= '2026-07-18' && day.date <= '2026-07-28'
+            })),
+            weightPoints: buildWeights(28, 90, -0.23)
+        }
+    },
+    {
         id: 'learning-weights',
         name: 'Learning - insufficient weights',
         description: 'Food tracking is strong, but a single weight cannot establish a reliable pace.',
@@ -187,8 +201,8 @@ export const CALIBRATION_SCENARIOS: CalibrationScenario[] = [
     },
     {
         id: 'activity-context',
-        name: 'Activity context is observational',
-        description: 'Activity is shown as supporting context without changing an otherwise on-track calorie-budget review.',
+        name: 'Activity input is ignored',
+        description: 'Activity does not change the calorie estimate and is not surfaced in an otherwise on-track review.',
         input: {
             ...baseInput,
             foodDays: buildFoodDays({ days: 28, calories: 1900 }),
