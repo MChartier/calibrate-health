@@ -12,6 +12,13 @@ class CalorieProgressTest {
     }
 
     @Test
+    fun `ring expands outward while it fades away`() {
+        assertEquals(1f, calorieRingScale(1f))
+        assertEquals(1.06f, calorieRingScale(0.5f), 0.001f)
+        assertEquals(1.12f, calorieRingScale(0f), 0.001f)
+    }
+
+    @Test
     fun `progress is bounded and handles unavailable targets`() {
         assertEquals(0.5f, calorieProgressFraction(consumed = 1_000, target = 2_000))
         assertEquals(1f, calorieProgressFraction(consumed = 2_500, target = 2_000))
@@ -47,13 +54,21 @@ class CalorieProgressTest {
         assertEquals("42% to goal", goalProgressHeadline(goal))
         assertEquals(0.42f, goalProgressFraction(goal))
         assertEquals("Current 85.8 kg | Goal 80.0 kg", goalProgressDetail(goal))
+        assertEquals("Projected Oct 10, 2026", goalProjectionLabel(goal))
+        assertEquals("Projected Oct 10, 2026", goalProjectionLabel(goal.copy(goalDailyDeficit = -500)))
         assertEquals("Goal reached", goalProgressHeadline(goal.copy(goalIsComplete = true)))
         assertEquals(1f, goalProgressFraction(goal.copy(goalIsComplete = true)))
+        assertEquals("Goal reached", goalProjectionLabel(goal.copy(goalIsComplete = true)))
         assertEquals("Maintenance goal", goalProgressHeadline(goal.copy(goalDailyDeficit = 0, goalIsComplete = true)))
         assertEquals(null, goalProgressFraction(goal.copy(goalDailyDeficit = 0, goalIsComplete = true)))
+        assertEquals("No projected date", goalProjectionLabel(goal.copy(goalDailyDeficit = 0)))
         assertEquals(
-            "Maintenance goal. Current 85.8 kg. Goal 80.0 kg. 5.8 kg from target.",
+            "Maintenance goal. Current 85.8 kg. Goal 80.0 kg. 5.8 kg from target. No projected date.",
             goalAccessibilityDescription(goal.copy(goalDailyDeficit = 0, goalIsComplete = true))
+        )
+        assertEquals(
+            "Projection unavailable",
+            goalProjectionLabel(goal.copy(localDate = "not-a-date"))
         )
     }
 

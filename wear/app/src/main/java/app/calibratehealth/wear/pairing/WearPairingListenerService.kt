@@ -8,6 +8,7 @@ import app.calibratehealth.wear.data.security.AccountSessionCoordinator
 import app.calibratehealth.wear.data.security.AndroidKeystoreTokenStore
 import app.calibratehealth.wear.data.security.RoomAccountDataStore
 import app.calibratehealth.wear.notifications.WearReminderNotifier
+import app.calibratehealth.wear.network.pairingPhoneFirstHttpTransport
 import app.calibratehealth.wear.sync.SyncInvalidationInbox
 import app.calibratehealth.wear.sync.WearSyncScheduler
 import app.calibratehealth.wear.tile.CalibrateTileUpdate
@@ -133,15 +134,21 @@ class WearPairingListenerService : WearableListenerService() {
                         credential.challenge
                     )
                 )
-                val session = WearPairingHttpClient().exchange(
-                    PairingExchangeRequest(
-                        pairingToken = credential.pairingToken,
-                        serverOrigin = credential.serverOrigin,
-                        watchDeviceId = credential.watchDeviceId,
-                        exchangeId = exchangeId,
-                        challengeSignature = signature
+                val session = runBlocking {
+                    WearPairingHttpClient(
+                        transport = pairingPhoneFirstHttpTransport(context, nodeId, credential.serverOrigin),
+                        // The phone-first transport already includes one bounded direct failover.
+                        maxTransportAttempts = 1
+                    ).exchange(
+                        PairingExchangeRequest(
+                            pairingToken = credential.pairingToken,
+                            serverOrigin = credential.serverOrigin,
+                            watchDeviceId = credential.watchDeviceId,
+                            exchangeId = exchangeId,
+                            challengeSignature = signature
+                        )
                     )
-                )
+                }
                 val coordinator = sessionCoordinator(context)
                 // Notification state is account-scoped even though it is intentionally not stored in Room.
                 WearReminderNotifier(context).clear()

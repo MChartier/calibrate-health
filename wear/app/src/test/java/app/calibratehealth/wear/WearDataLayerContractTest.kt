@@ -19,6 +19,8 @@ class WearDataLayerContractTest {
         assertTrue(WearDataLayerContract.supports(WearDataLayerContract.CONTINUE_ON_PHONE))
         assertTrue(WearDataLayerContract.supports(WearDataLayerContract.ACCOUNT_DISCONNECT))
         assertTrue(WearDataLayerContract.supports(WearDataLayerContract.ACCOUNT_DISCONNECT_RESULT))
+        assertTrue(WearDataLayerContract.supports(WearDataLayerContract.NETWORK_REQUEST))
+        assertTrue(WearDataLayerContract.supports(WearDataLayerContract.NETWORK_RESPONSE))
         assertFalse(WearDataLayerContract.supports("/calibrate/v1/summary"))
         assertFalse(WearDataLayerContract.supports("/other/v1/summary"))
     }

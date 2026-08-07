@@ -17,6 +17,11 @@ export type WearPairingMessage = {
 type CalibrateWearPairingModule = {
     getPairingNodes(): Promise<WearNode[]>;
     sendMessage(nodeId: string, path: string, payload: string): Promise<number>;
+    prepareNetworkRelay(nodeId: string, serverOrigin: string, requestId: string, expiresAtEpochMs: number): void;
+    commitNetworkRelay(nodeId: string, serverOrigin: string, requestId: string): void;
+    restoreNetworkRelay(nodeId: string, serverOrigin: string): void;
+    clearPendingNetworkRelay(nodeId: string, serverOrigin: string, requestId: string): void;
+    clearNetworkRelay(nodeId: string, serverOrigin: string): void;
     listMessages(): WearPairingMessage[];
     acknowledgeMessages(messageIds: string[]): void;
 };
