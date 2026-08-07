@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Keyboard, Pressable, StyleSheet, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import type { FoodLogCreatePayload } from '@calibrate/api-client';
 import type { MealPeriod } from '@calibrate/shared';
@@ -81,7 +81,10 @@ export const FoodSelectionEditor: React.FC<FoodSelectionEditorProps> = ({
                     accessibilityRole="button"
                     accessibilityLabel="Back to food results"
                     disabled={isSubmitting}
-                    onPress={onCancel}
+                    onPress={() => {
+                        Keyboard.dismiss();
+                        onCancel();
+                    }}
                     style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}
                 >
                     <Ionicons name="arrow-back" size={20} color={theme.colors.onSurface} />

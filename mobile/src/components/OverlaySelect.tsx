@@ -1,5 +1,6 @@
 import React, { useRef, useState } from 'react';
 import {
+    Keyboard,
     Modal,
     Pressable,
     ScrollView,
@@ -67,6 +68,7 @@ export function OverlaySelect<T extends string>({
     }
 
     function openMenu() {
+        Keyboard.dismiss();
         anchorRef.current?.measureInWindow((x, y, width, height) => {
             setAnchorFrame({ x, y, width, height });
             onToggle();
