@@ -3,7 +3,7 @@ import { StyleSheet, View, useWindowDimensions, type ViewProps } from 'react-nat
 import Svg, { Circle } from 'react-native-svg';
 import { AppCard } from './AppCard';
 import { AppText } from './AppText';
-import { radius, spacing, useAppTheme, type AppThemeColors } from '../theme';
+import { spacing, useAppTheme, type AppThemeColors } from '../theme';
 import { formatNumber } from '../utils/format';
 
 type CalorieBalanceCardProps = ViewProps & {
@@ -15,9 +15,9 @@ type CalorieBalanceCardProps = ViewProps & {
 
 const GAUGE_SIZE = 94;
 const GAUGE_STROKE = 9;
-// Today uses a denser gauge so the whole dashboard fits above the bottom navigation.
-const COMPACT_GAUGE_SIZE = 76;
-const COMPACT_GAUGE_STROKE = 8;
+// Today gives the actionable percentage more prominence while keeping the card compact.
+const COMPACT_GAUGE_SIZE = 88;
+const COMPACT_GAUGE_STROKE = 9;
 
 function getBalanceTone(remaining: number | null, progress: number): 'primary' | 'warning' | 'danger' {
     if (remaining === null) return 'primary';
@@ -65,7 +65,7 @@ export const CalorieBalanceCard: React.FC<CalorieBalanceCardProps> = ({
             <View style={[styles.hero, compact && styles.heroCompact, stackHero && styles.heroStacked]}>
                 <CalorieGauge value={progressValue} tone={tone} compact={compact} colors={colors} styles={styles} />
                 <View style={[styles.balanceCopy, stackHero && styles.balanceCopyStacked]}>
-                    <AppText variant="label">Daily balance</AppText>
+                    <AppText style={styles.balanceTitle}>Daily balance</AppText>
                     {remaining === null ? (
                         <AppText style={styles.unavailable}>{balanceLabel}</AppText>
                     ) : (
@@ -79,10 +79,6 @@ export const CalorieBalanceCard: React.FC<CalorieBalanceCardProps> = ({
                         </>
                     )}
                 </View>
-            </View>
-            <View style={styles.statRow}>
-                <CalorieStat label="Eaten" value={formatNumber(totalCalories, 0)} compact={compact} styles={styles} />
-                <CalorieStat label="Target" value={hasTarget ? formatNumber(targetCalories, 0) : '-'} compact={compact} styles={styles} />
             </View>
         </AppCard>
     );
@@ -132,24 +128,12 @@ const CalorieGauge: React.FC<{
                 />
             </Svg>
             <View style={styles.gaugeLabel}>
-                <AppText style={styles.gaugePercent}>{percent}%</AppText>
-                <AppText variant="caption">eaten</AppText>
+                <AppText style={styles.gaugePercent}>{`${percent}%`}</AppText>
+                <AppText style={styles.gaugeCaption}>eaten</AppText>
             </View>
         </View>
     );
 };
-
-const CalorieStat: React.FC<{
-    label: string;
-    value: string;
-    compact: boolean;
-    styles: CalorieBalanceStyles;
-}> = ({ label, value, compact, styles }) => (
-    <View style={[styles.stat, compact && styles.statCompact]}>
-        <AppText variant="caption">{label}</AppText>
-        <AppText style={styles.statValue}>{value}</AppText>
-    </View>
-);
 
 function createStyles(colors: AppThemeColors) {
     return StyleSheet.create({
@@ -190,9 +174,14 @@ function createStyles(colors: AppThemeColors) {
     },
     gaugePercent: {
         color: colors.text,
-        fontSize: 16,
-        lineHeight: 20,
+        fontSize: 18,
+        lineHeight: 22,
         fontWeight: '800'
+    },
+    gaugeCaption: {
+        color: colors.muted,
+        fontSize: 13,
+        lineHeight: 18
     },
     balanceCopy: {
         flex: 1,
@@ -201,19 +190,25 @@ function createStyles(colors: AppThemeColors) {
     balanceCopyStacked: {
         paddingTop: spacing.xs
     },
+    balanceTitle: {
+        color: colors.muted,
+        fontSize: 16,
+        lineHeight: 22,
+        fontWeight: '700'
+    },
     balanceValue: {
         fontSize: 36,
         lineHeight: 42,
         fontWeight: '800'
     },
     balanceValueCompact: {
-        fontSize: 30,
-        lineHeight: 34
+        fontSize: 34,
+        lineHeight: 40
     },
     balanceLabel: {
         color: colors.muted,
-        fontSize: 15,
-        lineHeight: 21,
+        fontSize: 16,
+        lineHeight: 22,
         fontWeight: '600'
     },
     unavailable: {
@@ -221,27 +216,6 @@ function createStyles(colors: AppThemeColors) {
         fontSize: 20,
         lineHeight: 26,
         fontWeight: '700'
-    },
-    statRow: {
-        flexDirection: 'row',
-        gap: spacing.md
-    },
-    stat: {
-        flex: 1,
-        minWidth: 0,
-        alignItems: 'center',
-        borderRadius: radius.md,
-        backgroundColor: colors.surfaceAlt,
-        paddingVertical: spacing.md,
-        paddingHorizontal: spacing.sm
-    },
-    statCompact: {
-        paddingVertical: spacing.sm
-    },
-    statValue: {
-        color: colors.text,
-        fontSize: 15,
-        fontWeight: '800'
     }
     });
 }
