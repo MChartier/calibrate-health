@@ -40,6 +40,18 @@ test('prefers a generated static route over the SPA fallback', (t) => {
   });
 });
 
+test('uses the generated not-found document for unknown static routes', (t) => {
+  const distDir = createFixture(t);
+  const notFoundFile = path.join(distDir, '+not-found.html');
+  fs.writeFileSync(notFoundFile, '<!doctype html><title>Not found</title>');
+
+  assert.deepEqual(resolveExpoWebRequest(distDir, '/missing-route'), {
+    status: 200,
+    filePath: notFoundFile,
+    spaFallback: true,
+  });
+});
+
 test('does not let SPA fallback mask backend, missing static, or traversal requests', (t) => {
   const distDir = createFixture(t);
   assert.deepEqual(resolveExpoWebRequest(distDir, '/auth/me'), { status: 404 });

@@ -2,7 +2,7 @@ import { useMemo, useRef, useState } from 'react';
 import { Linking, Platform, Pressable, StyleSheet, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { CameraView, useCameraPermissions, type BarcodeScanningResult } from 'expo-camera';
-import { router, useLocalSearchParams } from 'expo-router';
+import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { MEAL_PERIODS, type MealPeriod } from '@calibrate/shared';
 import type { FoodSearchResponse } from '@calibrate/api-client';
@@ -56,7 +56,7 @@ export default function BarcodeScreen() {
         meal?: string;
         returnTo?: string;
     }>();
-    const { api, user } = useAuth();
+    const { api, user, isLoading: isAuthLoading } = useAuth();
     const { enqueue } = useOfflineOutbox();
     const queryClient = useQueryClient();
     const [permission, requestPermission, refreshPermission] = useCameraPermissions();
@@ -71,7 +71,7 @@ export default function BarcodeScreen() {
     const activeBarcodeRef = useRef<string | null>(null);
     const selectedDate = typeof date === 'string' ? date : getTodayDate(user?.timezone);
     const returnTo = parseReturnTo(returnToParam);
-    const foodDayQuery = useFoodDayStatus(selectedDate);
+    const foodDayQuery = useFoodDayStatus(selectedDate, Boolean(user));
     const lookup = useMutation({
         mutationFn: (code: string) => api.searchFood('', code),
         onSuccess: (response, scannedBarcode) => {
@@ -117,6 +117,14 @@ export default function BarcodeScreen() {
     });
 
     const cameraPermissionState = getCameraPermissionState(permission);
+
+    if (isAuthLoading) {
+        return <LoadingState label="Restoring session..." />;
+    }
+
+    if (!user) {
+        return <Redirect href="/(auth)/login" />;
+    }
 
     if (foodDayQuery.isLoading) {
         return <LoadingState label="Checking tracking status..." />;
