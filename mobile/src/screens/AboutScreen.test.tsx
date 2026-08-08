@@ -1,6 +1,6 @@
 import { fireEvent, render } from '@testing-library/react-native';
 import { useAppUpdateController } from '../updates/useAppUpdateController';
-import AboutScreen from '../../app/about';
+import AboutScreen from '../../app/(tabs)/about';
 
 const mockRouter = {
     back: jest.fn(),
@@ -64,7 +64,6 @@ describe('AboutScreen', () => {
     it('shows the native tag, native version, runtime, channel, and embedded update state', () => {
         const view = render(<AboutScreen />);
 
-        expect(view.getByRole('header')).toHaveTextContent('About Calibrate');
         expect(view.getByText('v0.12.3')).toBeTruthy();
         expect(view.getByText('0.2.2 (build 4)')).toBeTruthy();
         expect(view.getAllByText('0.2.2')).toHaveLength(1);

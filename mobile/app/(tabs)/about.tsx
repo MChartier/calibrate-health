@@ -1,15 +1,13 @@
 import React from 'react';
 import { ActivityIndicator, Platform, StyleSheet, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { useRouter } from 'expo-router';
-import { AppButton } from '../src/components/AppButton';
-import { AppCard } from '../src/components/AppCard';
-import { AppText } from '../src/components/AppText';
-import { CalibrateLogo } from '../src/components/CalibrateLogo';
-import { PageHeader } from '../src/components/PageHeader';
-import { Screen } from '../src/components/Screen';
-import { radius, spacing, useAppTheme } from '../src/theme';
-import { useAppUpdateController } from '../src/updates/useAppUpdateController';
+import { AppButton } from '../../src/components/AppButton';
+import { AppCard } from '../../src/components/AppCard';
+import { AppText } from '../../src/components/AppText';
+import { CalibrateLogo } from '../../src/components/CalibrateLogo';
+import { TabScreen } from '../../src/components/TabScreen';
+import { radius, spacing, useAppTheme } from '../../src/theme';
+import { useAppUpdateController } from '../../src/updates/useAppUpdateController';
 
 function formatUpdateDate(value: Date | null): string {
     if (!value || Number.isNaN(value.getTime())) return 'Unknown';
@@ -32,7 +30,6 @@ function getUpdateActionIcon(
 }
 
 export default function AboutScreen() {
-    const router = useRouter();
     const theme = useAppTheme();
     const updates = useAppUpdateController();
     const { versionInfo } = updates;
@@ -47,20 +44,8 @@ export default function AboutScreen() {
         : updates.status;
     const actionIcon = getUpdateActionIcon(updates.isUpdatePending, updates.isUpdateAvailable);
 
-    function goBack() {
-        if (router.canGoBack()) router.back();
-        else router.replace('/settings');
-    }
-
     return (
-        <Screen safeTop>
-            <PageHeader
-                title="About Calibrate"
-                description="Installed build and software update details."
-                onBack={goBack}
-                backLabel="Back to Settings"
-            />
-
+        <TabScreen>
             <AppCard style={styles.brandCard}>
                 <View style={[styles.logoSurface, { backgroundColor: theme.colors.primaryContainer }]}>
                     <CalibrateLogo size={52} />
@@ -161,7 +146,7 @@ export default function AboutScreen() {
                     </AppText>
                 ) : null}
             </AppCard>
-        </Screen>
+        </TabScreen>
     );
 }
 

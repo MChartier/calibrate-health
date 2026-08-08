@@ -1,24 +1,23 @@
 import { useMemo } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { router, useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { ACTIVITY_RECORD_TYPES, WEIGHT_UNITS } from '@calibrate/shared';
 import type { ActivityRecordEntry } from '@calibrate/api-client';
-import { formatActivitySource } from '../src/activity/presentation';
-import { ActivitySummaryCard } from '../src/components/ActivitySummaryCard';
-import { AppCard } from '../src/components/AppCard';
-import { AppText } from '../src/components/AppText';
-import { DateNavigation } from '../src/components/DateNavigation';
-import { PageHeader } from '../src/components/PageHeader';
-import { Screen } from '../src/components/Screen';
-import { SectionHeader } from '../src/components/SectionHeader';
-import { useAuth } from '../src/auth/AuthContext';
-import { useLogDateNavigation } from '../src/hooks/useLogDateNavigation';
-import { radius, spacing, useAppTheme, type AppTheme } from '../src/theme';
-import { addDaysToDateOnly, formatDateOnlyForDisplay } from '../src/utils/dates';
-import { gramsToDisplayWeight } from '../src/utils/bodyMeasurements';
-import { formatNumber, formatWeightUnit } from '../src/utils/format';
+import { formatActivitySource } from '../../src/activity/presentation';
+import { ActivitySummaryCard } from '../../src/components/ActivitySummaryCard';
+import { AppCard } from '../../src/components/AppCard';
+import { AppText } from '../../src/components/AppText';
+import { DateNavigation } from '../../src/components/DateNavigation';
+import { SectionHeader } from '../../src/components/SectionHeader';
+import { TabScreen } from '../../src/components/TabScreen';
+import { useAuth } from '../../src/auth/AuthContext';
+import { useLogDateNavigation } from '../../src/hooks/useLogDateNavigation';
+import { radius, spacing, useAppTheme, type AppTheme } from '../../src/theme';
+import { addDaysToDateOnly, formatDateOnlyForDisplay } from '../../src/utils/dates';
+import { gramsToDisplayWeight } from '../../src/utils/bodyMeasurements';
+import { formatNumber, formatWeightUnit } from '../../src/utils/format';
 
 const HISTORY_DAY_COUNT = 14; // Keep the history useful on a phone without downloading the user's full activity archive.
 
@@ -71,13 +70,7 @@ export default function ActivityScreen() {
     const historyDays = (historyQuery.data?.days ?? []).slice().reverse();
 
     return (
-        <Screen safeTop>
-            <PageHeader
-                title="Activity history"
-                description="Observed through Health Connect"
-                onBack={() => router.back()}
-            />
-
+        <TabScreen>
             <DateNavigation navigation={navigation} />
             <ActivitySummaryCard
                 day={selectedDay}
@@ -189,7 +182,7 @@ export default function ActivityScreen() {
                     Samsung Health can take time to publish Galaxy Watch activity to Health Connect, so recent totals may change.
                 </AppText>
             </AppCard>
-        </Screen>
+        </TabScreen>
     );
 }
 

@@ -194,13 +194,19 @@ export const DayStatusCard: React.FC<{
                 <Ionicons name={icon} size={24} color={theme.colors.primary} />
             </View>
             <View style={styles.copy}>
-                <AppText variant="subtitle">{title}</AppText>
+                <AppText accessibilityRole="header" aria-level={2} variant="label" style={styles.cardHeadingTitle}>
+                    {title}
+                </AppText>
                 <AppText variant="muted">{description}</AppText>
             </View>
         </View>
     );
     if (useCompactOpenLayout) {
-        headingContent = <AppText variant="label">Tracking options</AppText>;
+        headingContent = (
+            <AppText accessibilityRole="header" aria-level={2} variant="label" style={styles.cardHeadingTitle}>
+                Tracking options
+            </AppText>
+        );
     } else if (useExpandedPauseLayout) {
         headingContent = (
             <View style={styles.expandedContent}>
@@ -482,6 +488,7 @@ function createStyles(theme: AppTheme) {
     return StyleSheet.create({
         cardCompact: {
             padding: theme.spacing.md,
+            paddingTop: theme.spacing.lg,
             gap: theme.spacing.sm
         },
         cardExpanded: {
@@ -548,6 +555,10 @@ function createStyles(theme: AppTheme) {
             flex: 1,
             minWidth: 0,
             gap: theme.spacing.xs
+        },
+        cardHeadingTitle: {
+            color: theme.colors.onSurface,
+            fontWeight: '800'
         },
         actions: {
             flexDirection: 'row',

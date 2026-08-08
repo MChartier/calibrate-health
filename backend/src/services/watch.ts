@@ -3,7 +3,11 @@ import { Prisma, type FoodLog } from '@prisma/client';
 import prisma from '../config/database';
 import { getRecentFoodSuggestions, type RecentFoodSuggestion } from './recentFoods';
 import { buildCalorieSummary } from '../utils/profile';
-import { formatDateToLocalDateString, parseLocalDateOnly } from '../utils/date';
+import {
+  formatDateToLocalDateString,
+  getSafeUtcTodayDateOnlyInTimeZone,
+  parseLocalDateOnly
+} from '../utils/date';
 import { parseFoodLogCreateBody } from '../routes/foodUtils';
 import { executeIdempotentMutation, recordSyncChange, type MutationDatabase } from './clientOperations';
 import { refreshMaterializedWeightTrendsBestEffort } from './materializedWeightTrend';
@@ -134,6 +138,10 @@ export function parseWatchMutation(body: unknown, options: {
     try {
       if (typeof payload.local_date !== 'string') throw new Error('Invalid local date');
       const metricDate = parseLocalDateOnly(payload.local_date);
+      const currentLocalDate = getSafeUtcTodayDateOnlyInTimeZone(options.timezone, now);
+      if (metricDate > currentLocalDate) {
+        return { ok: false, status: 400, message: 'Weight date cannot be in the future' };
+      }
       return {
         ok: true,
         type,

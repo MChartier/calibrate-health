@@ -4,8 +4,8 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import type { GoalEntry, MetricEntry, UserClientPayload } from '@calibrate/api-client';
 import { AppCard } from './AppCard';
 import { AppText } from './AppText';
+import { CompactCardHeader } from './CompactCardHeader';
 import { ProgressBar } from './ProgressBar';
-import { SectionHeader } from './SectionHeader';
 import { radius, spacing, useAppTheme, type AppTheme } from '../theme';
 import { formatDateOnlyForDisplay } from '../utils/dates';
 import {
@@ -52,7 +52,7 @@ function describeGoalPlan(goal: GoalEntry): string {
 
 /** Compact native snapshot that keeps current weight and goal projection together. */
 export const GoalProgressCard: React.FC<GoalProgressCardProps> = ({
-    title = 'Progress snapshot',
+    title = 'Snapshot',
     goal,
     latestMetric,
     metrics,
@@ -69,14 +69,12 @@ export const GoalProgressCard: React.FC<GoalProgressCardProps> = ({
     if (!goal) {
         return (
             <AppCard {...props} style={[styles.card, style]}>
-                <View style={styles.headingRow}>
-                    <SectionHeader
-                        title={title}
-                        description={formatMetricDate(latestMetric?.date)}
-                        style={styles.heading}
-                    />
-                    {onEditGoal && <GoalActionButton label="Set goal" onPress={onEditGoal} theme={theme} />}
-                </View>
+                <CompactCardHeader
+                    title={title}
+                    metadata={formatMetricDate(latestMetric?.date)}
+                    headingTestID="snapshot-heading-line"
+                    action={onEditGoal && <GoalActionButton label="Set goal" onPress={onEditGoal} theme={theme} />}
+                />
                 <View style={styles.metricsRow}>
                     <View style={styles.metricBlock}>
                         <AppText variant="muted">Current weight</AppText>
@@ -84,7 +82,7 @@ export const GoalProgressCard: React.FC<GoalProgressCardProps> = ({
                             {formatWeight(latestMetric?.weight, user?.weight_unit)}
                         </AppText>
                     </View>
-                    <View style={styles.projectionBlock}>
+                    <View testID="goal-projection" style={styles.projectionBlock}>
                         <AppText variant="muted">Goal projection</AppText>
                         <AppText variant="screenTitle" style={styles.projectionValue}>Not configured</AppText>
                     </View>
@@ -145,7 +143,7 @@ export const GoalProgressCard: React.FC<GoalProgressCardProps> = ({
         );
     } else {
         goalStatus = (
-            <View style={styles.projectionBlock}>
+            <View testID="goal-projection" style={styles.projectionBlock}>
                 <AppText variant="muted">Goal projection</AppText>
                 <AppText variant="screenTitle" style={styles.projectionValue}>{projection}</AppText>
             </View>
@@ -199,14 +197,12 @@ export const GoalProgressCard: React.FC<GoalProgressCardProps> = ({
 
     return (
         <AppCard {...props} style={[styles.card, style]}>
-            <View style={styles.headingRow}>
-                <SectionHeader
-                    title={title}
-                    description={formatMetricDate(latestMetric?.date)}
-                    style={styles.heading}
-                />
-                {goalAction}
-            </View>
+            <CompactCardHeader
+                title={title}
+                metadata={formatMetricDate(latestMetric?.date)}
+                headingTestID="snapshot-heading-line"
+                action={goalAction}
+            />
             <View style={styles.metricsRow}>
                 <View style={styles.metricBlock}>
                     <AppText variant="muted">Current weight</AppText>
@@ -244,16 +240,6 @@ const GoalActionButton: React.FC<{ label: string; onPress: () => void; theme: Ap
 const createStyles = (theme: AppTheme) => StyleSheet.create({
     card: {
         gap: spacing.sm
-    },
-    headingRow: {
-        minHeight: 48,
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: spacing.md
-    },
-    heading: {
-        flex: 1,
-        minWidth: 0
     },
     actionButton: {
         minHeight: 48,
@@ -304,12 +290,13 @@ const createStyles = (theme: AppTheme) => StyleSheet.create({
         justifyContent: 'center',
         gap: spacing.xs,
         borderRadius: radius.md,
-        backgroundColor: theme.colors.warningContainer,
+        // A projection is informational; warning colors remain reserved for actionable caution states.
+        backgroundColor: theme.colors.infoContainer,
         paddingHorizontal: spacing.md,
         paddingVertical: spacing.sm
     },
     projectionValue: {
-        color: theme.colors.onWarningContainer
+        color: theme.colors.onInfoContainer
     },
     statusBlock: {
         flex: 1,

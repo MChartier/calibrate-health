@@ -439,6 +439,48 @@ paths:
         '401':
           $ref: '#/components/responses/Unauthorized'
   /api/v1/metrics:
+    get:
+      operationId: listMetrics
+      description: >-
+        List account-local body metrics. With include_trend=true, returns the
+        forward-only weight-trend model and an as-of-scoped v2 summary. The 95%
+        bounds describe uncertainty in underlying weight, not the expected range
+        of the next scale reading.
+      parameters:
+        - name: start
+          in: query
+          schema: { type: string, format: date }
+        - name: end
+          in: query
+          description: An explicit historical end date also scopes trend fitting and freshness.
+          schema: { type: string, format: date }
+        - name: range
+          in: query
+          schema: { type: string, enum: [week, month, year, all] }
+        - name: include_trend
+          in: query
+          schema: { type: boolean, default: false }
+        - name: smoothing
+          in: query
+          description: Legacy rolling-average window used only when include_trend is false.
+          schema: { type: integer, minimum: 1 }
+      responses:
+        '200':
+          description: Newest-first measurements or a trend-augmented response in the account weight unit.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - type: array
+                    items: { $ref: '#/components/schemas/MetricEntry' }
+                  - $ref: '#/components/schemas/TrendMetricsResponse'
+        '400':
+          description: Invalid range, date, smoothing, or trend option.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiError' }
+        '401':
+          $ref: '#/components/responses/Unauthorized'
     post:
       operationId: addMetric
       description: Upsert one account-local body metric and optionally return a transactional weight-progress receipt.
@@ -734,6 +776,141 @@ components:
           schema:
             $ref: '#/components/schemas/ApiError'
   schemas:
+    MetricEntry:
+      type: object
+      required: [id, date, weight]
+      properties:
+        id: { type: integer }
+        user_id: { type: integer }
+        date: { type: string, format: date-time }
+        weight: { type: number, exclusiveMinimum: 0 }
+        body_fat_percent: { type: [number, 'null'] }
+    TrendMetricEntry:
+      allOf:
+        - $ref: '#/components/schemas/MetricEntry'
+        - type: object
+          required: [user_id, body_fat_percent, trend_weight, trend_ci_lower, trend_ci_upper, trend_std]
+          properties:
+            trend_is_materialized:
+              type: boolean
+              description: False for raw context outside the recent modeled window.
+            trend_segment_start:
+              type: boolean
+              description: True where a new independent trend segment begins.
+            trend_weight: { type: number }
+            trend_ci_lower: { type: number }
+            trend_ci_upper: { type: number }
+            trend_std: { type: number, minimum: 0 }
+    WeightTrendLatestEstimate:
+      type: object
+      required: [weight, lower, upper]
+      properties:
+        weight: { type: number }
+        lower: { type: number }
+        upper: { type: number }
+    WeightTrendWeeklyRate:
+      type: object
+      description: Latest local-velocity state estimate and its model uncertainty, scaled to the user's display unit per week.
+      required: [estimate, std, lower, upper, point_count, span_days, evidence, interval_kind]
+      properties:
+        estimate: { type: number }
+        std: { type: number, minimum: 0 }
+        lower: { type: number }
+        upper: { type: number }
+        point_count: { type: integer, minimum: 0 }
+        span_days: { type: number, minimum: 0 }
+        evidence: { type: string, enum: [insufficient, provisional, sufficient] }
+        interval_kind:
+          type: string
+          const: local_velocity_state_model_uncertainty
+    WeightTrendReadingVariation:
+      type: object
+      description: Robust short-term scale-reading variation, separate from the graphed trend interval.
+      required: [standard_deviation, central_80_half_width]
+      properties:
+        standard_deviation: { type: number, minimum: 0 }
+        central_80_half_width: { type: number, minimum: 0 }
+    WeightTrendSummary:
+      type: object
+      required:
+        - model_version
+        - as_of_date
+        - scope_start_date
+        - scope_end_date
+        - latest_observation_date
+        - days_since_latest
+        - modeled_points
+        - modeled_start_date
+        - returned_points
+        - observation_span_days
+        - segment_start_date
+        - interval_kind
+        - confidence_level
+        - status
+        - evidence
+        - freshness
+        - latest_trend
+        - weekly_rate
+        - short_term_variation
+      properties:
+        model_version: { type: integer, enum: [1, 2] }
+        status:
+          type: string
+          enum: [insufficient, provisional, sufficient, stale]
+          deprecated: true
+          description: Compatibility field; use evidence and freshness independently.
+        as_of_date: { type: string, format: date }
+        scope_start_date: { type: [string, 'null'], format: date }
+        scope_end_date: { type: [string, 'null'], format: date }
+        latest_observation_date: { type: [string, 'null'], format: date }
+        days_since_latest: { type: [integer, 'null'], minimum: 0 }
+        modeled_start_date: { type: [string, 'null'], format: date }
+        returned_points: { type: integer, minimum: 0 }
+        modeled_points: { type: integer, minimum: 0 }
+        observation_span_days: { type: number, minimum: 0 }
+        segment_start_date: { type: [string, 'null'], format: date }
+        interval_kind:
+          type: string
+          const: latent_weight_model_uncertainty
+        confidence_level: { type: number, const: 0.95 }
+        evidence: { type: string, enum: [insufficient, provisional, sufficient] }
+        freshness: { type: string, enum: [current, stale, outdated] }
+        latest_trend:
+          oneOf:
+            - type: 'null'
+            - $ref: '#/components/schemas/WeightTrendLatestEstimate'
+        weekly_rate:
+          oneOf:
+            - type: 'null'
+            - $ref: '#/components/schemas/WeightTrendWeeklyRate'
+        short_term_variation:
+          oneOf:
+            - type: 'null'
+            - $ref: '#/components/schemas/WeightTrendReadingVariation'
+    TrendMetricsResponse:
+      type: object
+      required: [metrics, meta]
+      properties:
+        metrics:
+          type: array
+          description: Newest-first measurements; entries outside the modeled window are raw context.
+          items: { $ref: '#/components/schemas/TrendMetricEntry' }
+        meta:
+          type: object
+          required: [weekly_rate, volatility, total_points, total_span_days, trend_summary]
+          properties:
+            weekly_rate:
+              type: number
+              deprecated: true
+              description: Legacy compatibility estimate; use trend_summary.weekly_rate.
+            volatility:
+              type: string
+              enum: [low, medium, high]
+              deprecated: true
+              description: Legacy compatibility label; use trend_summary.short_term_variation.
+            total_points: { type: integer, minimum: 0 }
+            total_span_days: { type: number, minimum: 0 }
+            trend_summary: { $ref: '#/components/schemas/WeightTrendSummary' }
     MetricSaveResponse:
       type: object
       required: [id, date, weight]

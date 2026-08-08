@@ -328,7 +328,7 @@ describe('CalibrationInsightCard', () => {
 
         expect(screen.getByText('Calibration')).toBeTruthy();
         expect(screen.getByText('0.36 kg/week loss')).toBeTruthy();
-        expect(screen.getByText('28-day pace')).toBeTruthy();
+        expect(screen.getByText('28-day average pace')).toBeTruthy();
         expect(screen.getByText('Planned: 0.46 kg/week loss')).toBeTruthy();
         expect(screen.getByText('1,750 kcal')).toBeTruthy();
         expect(screen.getByText('150 kcal less than your current 1,900 kcal budget.')).toBeTruthy();

@@ -11,6 +11,7 @@ import { AppText } from './AppText';
 import { BottomSheetModal } from './BottomSheetModal';
 import { ProgressBar } from './ProgressBar';
 import { SectionHeader } from './SectionHeader';
+import { CompactCardHeader } from './CompactCardHeader';
 import { useAuth } from '../auth/AuthContext';
 import {
     describeCalorieBudgetChange,
@@ -160,7 +161,7 @@ export const CalibrationInsightCardView: React.FC<CalibrationInsightCardViewProp
     if (error && !status) {
         return (
             <AppCard {...props} style={style}>
-                <SectionHeader title="Calibration" description="Unable to evaluate your latest history." />
+                <CompactCardHeader title="Calibration" metadata="Unable to evaluate your latest history." />
                 <AppText style={styles.error}>{error.message}</AppText>
                 {onRetry && <AppButton title="Try again" variant="secondary" onPress={onRetry} />}
             </AppCard>
@@ -170,7 +171,7 @@ export const CalibrationInsightCardView: React.FC<CalibrationInsightCardViewProp
     if (isLoading || !evaluation) {
         return (
             <AppCard {...props} style={style} accessibilityLabel="Loading calibration insight">
-                <SectionHeader title="Calibration" description="Checking your latest completed history..." />
+                <CompactCardHeader title="Calibration" metadata="Checking your latest completed history..." />
             </AppCard>
         );
     }
@@ -193,7 +194,7 @@ export const CalibrationInsightCardView: React.FC<CalibrationInsightCardViewProp
         ? 'your planned steady pace'
         : `your planned ${plannedPace} ${plannedDirection}`;
     const recommendationReason = actionableRecommendation
-        ? `Your recent pace is ${observedPaceWithDirection}, compared with ${plannedPaceDescription}. If this pattern continues, a slightly ${actionableRecommendation.adjustmentStepKcal < 0 ? 'lower' : 'higher'} daily budget could bring your pace closer to plan.`
+        ? `Your average pace across this ${selectedHistoryDays}-day window is ${observedPaceWithDirection}, compared with ${plannedPaceDescription}. If this pattern continues, a slightly ${actionableRecommendation.adjustmentStepKcal < 0 ? 'lower' : 'higher'} daily budget could bring your pace closer to plan.`
         : null;
     const budgetEstimateExplanation = actionableRecommendation
         ? describeCalorieBudgetEstimate(
@@ -246,10 +247,7 @@ export const CalibrationInsightCardView: React.FC<CalibrationInsightCardViewProp
     return (
         <>
             <AppCard {...props} style={style}>
-                <SectionHeader
-                    title="Calibration"
-                    description={cardDescription}
-                />
+                <CompactCardHeader title="Calibration" metadata={cardDescription} />
                 {scheduledChange ? (
                     <View style={styles.scheduledPanel}>
                         <View
@@ -295,7 +293,7 @@ export const CalibrationInsightCardView: React.FC<CalibrationInsightCardViewProp
                         ]} testID="calibration-recommendation-panels">
                             <View style={styles.pacePanel}>
                                 <AppText variant="metric">{observedPaceWithDirection}</AppText>
-                                <AppText variant="label">{selectedHistoryDays}-day pace</AppText>
+                                <AppText variant="label">{selectedHistoryDays}-day average pace</AppText>
                                 <AppText variant="caption">
                                     Planned: {plannedPace}{plannedDirection === 'stable' ? '' : ` ${plannedDirection}`}
                                 </AppText>
@@ -448,7 +446,7 @@ export const CalibrationInsightCardView: React.FC<CalibrationInsightCardViewProp
                     <>
                         <SectionHeader
                             title={`Why we suggest ${actionableRecommendation.recommendedTargetKcal.toLocaleString()} kcal`}
-                            description="Here is how your recent logs and weight trend informed this suggestion."
+                            description="Here is how your recent logs and window-average weight trend informed this suggestion."
                         />
                         <View style={styles.explanationSection}>
                             <AppText variant="label">What we observed</AppText>
@@ -465,7 +463,9 @@ export const CalibrationInsightCardView: React.FC<CalibrationInsightCardViewProp
                                     styles.evidenceRow,
                                     stackRecommendation && styles.evidenceRowStacked
                                 ]}>
-                                    <AppText variant="muted" style={styles.evidenceLabel}>Recent pace</AppText>
+                                    <AppText variant="muted" style={styles.evidenceLabel}>
+                                        Average pace ({selectedHistoryDays} days)
+                                    </AppText>
                                     <AppText variant="subtitle" style={styles.evidenceValue}>{observedPaceWithDirection}</AppText>
                                 </View>
                                 <View style={styles.evidenceDivider} />

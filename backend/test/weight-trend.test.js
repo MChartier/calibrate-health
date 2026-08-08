@@ -1,7 +1,14 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
-const { computeWeightTrend } = require('../src/services/weightTrend');
+const {
+  WEIGHT_TREND_HUBER_K,
+  WEIGHT_TREND_SEGMENT_RESET_DAYS,
+  classifyWeightTrendEvidence,
+  classifyWeightTrendRate,
+  computeWeightTrend,
+  hasSufficientWeightTrendEvidence
+} = require('../../shared/weightTrend.ts');
 
 const LB_TO_KG = 0.45359237;
 
@@ -184,4 +191,187 @@ test('computeWeightTrend: recency-weighted drift adapts when recent direction di
 
   assert.ok(unweightedSlope > 0, 'global unweighted slope should reflect the longer historical gain');
   assert.ok(result.params.driftPerDay < 0, 'recency-weighted drift should align with the recent loss period');
+});
+
+test('computeWeightTrend: does not assimilate a segment-start observation twice', () => {
+  const result = computeWeightTrend([
+    { date: new Date('2026-01-01T00:00:00Z'), weight: 80 }
+  ]);
+
+  assert.equal(result.points.length, 1);
+  assert.equal(result.points[0].trendWeight, 80);
+  assert.equal(result.points[0].trendStd, result.measurementVariabilityKg);
+  assert.equal(result.points[0].trendRatePerDay, 0);
+  assert.equal(result.points[0].trendRateStdPerDay, 0.15);
+  assert.equal(result.points[0].huberWeight, 1);
+  assert.equal(result.points[0].isSegmentStart, true);
+});
+
+test('computeWeightTrend: uses actual elapsed time and resets only after gaps greater than 14 days', () => {
+  const observations = [
+    { date: new Date('2026-01-01T00:00:00Z'), weight: 80 },
+    { date: new Date('2026-01-15T00:00:00Z'), weight: 79 },
+    { date: new Date('2026-01-30T00:00:00Z'), weight: 75 }
+  ];
+
+  const result = computeWeightTrend(observations);
+  assert.equal(WEIGHT_TREND_SEGMENT_RESET_DAYS, 14);
+  assert.deepEqual(result.points.map((point) => point.gapDays), [0, 14, 15]);
+  assert.deepEqual(result.points.map((point) => point.segmentId), [1, 1, 2]);
+  assert.equal(result.points[1].isSegmentStart, false);
+  assert.equal(result.points[2].isSegmentStart, true);
+  assert.equal(result.points[2].trendWeight, observations[2].weight);
+  assert.equal(result.points[2].trendRatePerDay, 0);
+  assert.equal(result.segments[1].resetGapDays, 15);
+  assert.equal(result.evidence.latestSegmentPointCount, 1);
+  assert.equal(result.evidence.status, 'insufficient');
+});
+
+test('computeWeightTrend: exposes coherent level and rate uncertainty bounds', () => {
+  const start = new Date('2026-01-01T00:00:00Z');
+  const observations = Array.from({ length: 30 }, (_unused, index) => ({
+    date: addDays(start, index),
+    weight: 85 - index * 0.06 + (index % 2 === 0 ? 0.15 : -0.15)
+  }));
+  const result = computeWeightTrend(observations);
+  const latest = result.points[result.points.length - 1];
+
+  assert.ok(Math.abs(latest.lower95 - (latest.trendWeight - 1.96 * latest.trendStd)) < 1e-12);
+  assert.ok(Math.abs(latest.upper95 - (latest.trendWeight + 1.96 * latest.trendStd)) < 1e-12);
+  assert.ok(Math.abs(latest.trendRateLower95PerDay - (latest.trendRatePerDay - 1.96 * latest.trendRateStdPerDay)) < 1e-12);
+  assert.ok(Math.abs(latest.trendRateUpper95PerDay - (latest.trendRatePerDay + 1.96 * latest.trendRateStdPerDay)) < 1e-12);
+  assert.equal(result.currentRate.estimateKgPerWeek, latest.trendRatePerDay * 7);
+  assert.equal(result.currentRate.stdKgPerWeek, latest.trendRateStdPerDay * 7);
+  assert.equal(result.currentRate.lower95KgPerWeek, latest.trendRateLower95PerDay * 7);
+  assert.equal(result.currentRate.upper95KgPerWeek, latest.trendRateUpper95PerDay * 7);
+  assert.ok(Math.abs(result.windowAverageRate.lower95KgPerWeek - (
+    result.windowAverageRate.estimateKgPerWeek - 1.96 * result.windowAverageRate.stdKgPerWeek
+  )) < 1e-12);
+  assert.ok(Math.abs(result.windowAverageRate.upper95KgPerWeek - (
+    result.windowAverageRate.estimateKgPerWeek + 1.96 * result.windowAverageRate.stdKgPerWeek
+  )) < 1e-12);
+  assert.equal(result.currentRate.pointCount, 30);
+  assert.equal(result.currentRate.spanDays, 29);
+  assert.equal(result.windowAverageRate.pointCount, 29);
+  assert.equal(result.windowAverageRate.spanDays, 28);
+});
+
+test('computeWeightTrend: bounds the configurable window-average pace scope', () => {
+  const start = new Date('2026-01-01T00:00:00Z');
+  const observations = Array.from({ length: 60 }, (_unused, index) => ({
+    date: addDays(start, index),
+    weight: 85 - index * 0.05
+  }));
+
+  const minimum = computeWeightTrend(observations, { rateWindowDays: 1 });
+  const selected = computeWeightTrend(observations, { rateWindowDays: 35 });
+  const maximum = computeWeightTrend(observations, { rateWindowDays: 1000 });
+
+  assert.equal(minimum.windowAverageRate.spanDays, 7);
+  assert.equal(selected.windowAverageRate.spanDays, 35);
+  assert.equal(maximum.windowAverageRate.spanDays, 42);
+  assert.equal(selected.currentRate.spanDays, 59, 'current velocity evidence is not truncated to the regression window');
+});
+
+test('computeWeightTrend: Huber weighting limits an isolated extreme observation', () => {
+  const start = new Date('2026-01-01T00:00:00Z');
+  const baseline = Array.from({ length: 30 }, (_unused, index) => ({
+    date: addDays(start, index),
+    weight: 80 - index * 0.05 + (index % 2 === 0 ? -0.1 : 0.1)
+  }));
+  const withOutlier = baseline.map((point, index) => ({
+    ...point,
+    weight: point.weight + (index === 15 ? 10 : 0)
+  }));
+
+  const baselineResult = computeWeightTrend(baseline);
+  const outlierResult = computeWeightTrend(withOutlier);
+  assert.equal(WEIGHT_TREND_HUBER_K, 2.5);
+  assert.ok(outlierResult.points[15].huberWeight < 0.2);
+  assert.ok(Math.abs(outlierResult.points[15].trendWeight - baselineResult.points[15].trendWeight) < 0.5);
+  assert.ok(Math.abs(outlierResult.points[29].trendWeight - baselineResult.points[29].trendWeight) < 0.05);
+});
+
+test('computeWeightTrend: estimates bounded two-pass measurement variability with sparse-data shrinkage', () => {
+  const start = new Date('2026-01-01T00:00:00Z');
+  const quiet = Array.from({ length: 60 }, (_unused, index) => ({
+    date: addDays(start, index),
+    weight: 80 - index * 0.02 + (index % 2 === 0 ? -0.05 : 0.05)
+  }));
+  const noisy = quiet.map((point, index) => ({
+    ...point,
+    weight: point.weight + (index % 2 === 0 ? -2 : 2)
+  }));
+
+  const sparse = computeWeightTrend(quiet.slice(0, 2));
+  const quietResult = computeWeightTrend(quiet);
+  const noisyResult = computeWeightTrend(noisy);
+  assert.equal(sparse.measurementVariabilityKg, 0.9);
+  assert.ok(quietResult.measurementVariabilityKg >= 0.25);
+  assert.ok(quietResult.measurementVariabilityKg < 0.9);
+  assert.ok(noisyResult.measurementVariabilityKg > quietResult.measurementVariabilityKg);
+  assert.ok(noisyResult.measurementVariabilityKg <= 3.5);
+});
+
+test('computeWeightTrend: limits as-of results and derives evidence from the latest segment', () => {
+  const start = new Date('2026-01-01T00:00:00Z');
+  const observations = Array.from({ length: 20 }, (_unused, index) => ({
+    date: addDays(start, index),
+    weight: 80 - index * 0.05
+  }));
+  const asOfDate = addDays(start, 9);
+  const result = computeWeightTrend(observations, { asOfDate });
+
+  assert.equal(result.points.length, 10);
+  assert.equal(result.asOfDate.getTime(), asOfDate.getTime());
+  assert.equal(result.evidence.latestSegmentPointCount, 10);
+  assert.equal(result.evidence.latestSegmentSpanDays, 9);
+  assert.equal(result.evidence.status, 'sufficient');
+  assert.equal(hasSufficientWeightTrendEvidence(result.evidence), true);
+});
+
+test('classifyWeightTrendEvidence: uses raw point count and elapsed span boundaries', () => {
+  assert.equal(classifyWeightTrendEvidence(1, 30, 1), 'insufficient');
+  assert.equal(classifyWeightTrendEvidence(2, 0, 0), 'limited');
+  assert.equal(classifyWeightTrendEvidence(2, 7, 0), 'limited');
+  assert.equal(classifyWeightTrendEvidence(3, 6, 0), 'limited');
+  assert.equal(classifyWeightTrendEvidence(3, 7, 0), 'sufficient');
+});
+
+test('computeWeightTrend: withholds pace until the latest segment spans seven elapsed days', () => {
+  const start = new Date('2026-01-01T00:00:00Z');
+  const spanSix = computeWeightTrend([
+    { date: start, weight: 80 },
+    { date: addDays(start, 6), weight: 79.7 }
+  ]);
+  const spanSeven = computeWeightTrend([
+    { date: start, weight: 80 },
+    { date: addDays(start, 7), weight: 79.65 }
+  ]);
+
+  assert.equal(spanSix.evidence.status, 'limited');
+  assert.equal(spanSix.currentRate.status, 'insufficient');
+  assert.equal(spanSix.windowAverageRate.status, 'insufficient');
+  assert.equal(spanSeven.evidence.status, 'limited');
+  assert.equal(spanSeven.currentRate.status, 'limited');
+  assert.equal(spanSeven.windowAverageRate.status, 'limited');
+});
+
+test('classifyWeightTrendRate: requires sufficient evidence before assigning a confident direction', () => {
+  assert.deepEqual(classifyWeightTrendRate(-0.8, -0.1, 'sufficient'), {
+    direction: 'down',
+    status: 'confident'
+  });
+  assert.deepEqual(classifyWeightTrendRate(0.1, 0.8, 'sufficient'), {
+    direction: 'up',
+    status: 'confident'
+  });
+  assert.deepEqual(classifyWeightTrendRate(-0.2, 0.2, 'sufficient'), {
+    direction: 'uncertain',
+    status: 'uncertain'
+  });
+  assert.deepEqual(classifyWeightTrendRate(-0.8, -0.1, 'limited'), {
+    direction: 'uncertain',
+    status: 'limited'
+  });
 });

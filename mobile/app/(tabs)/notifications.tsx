@@ -3,17 +3,16 @@ import { StyleSheet, View } from 'react-native';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router, type Href } from 'expo-router';
 import type { InAppNotification } from '@calibrate/api-client';
-import { AppButton } from '../src/components/AppButton';
-import { AppCard } from '../src/components/AppCard';
-import { AppText } from '../src/components/AppText';
-import { NotificationCard } from '../src/components/NotificationCard';
-import { PageHeader } from '../src/components/PageHeader';
-import { Screen } from '../src/components/Screen';
-import { SectionHeader } from '../src/components/SectionHeader';
-import { SkeletonBlock } from '../src/components/SkeletonBlock';
-import { useAuth } from '../src/auth/AuthContext';
-import { getNotificationAction } from '../src/notifications/workflow';
-import { spacing, useAppTheme, type AppTheme } from '../src/theme';
+import { AppButton } from '../../src/components/AppButton';
+import { AppCard } from '../../src/components/AppCard';
+import { AppText } from '../../src/components/AppText';
+import { NotificationCard } from '../../src/components/NotificationCard';
+import { SectionHeader } from '../../src/components/SectionHeader';
+import { SkeletonBlock } from '../../src/components/SkeletonBlock';
+import { TabScreen } from '../../src/components/TabScreen';
+import { useAuth } from '../../src/auth/AuthContext';
+import { getNotificationAction } from '../../src/notifications/workflow';
+import { spacing, useAppTheme, type AppTheme } from '../../src/theme';
 
 export default function NotificationsScreen() {
     const theme = useAppTheme();
@@ -39,16 +38,9 @@ export default function NotificationsScreen() {
     });
 
     const notifications = notificationsQuery.data?.notifications ?? [];
-    const unreadCount = notificationsQuery.data?.unread_count ?? 0;
 
     return (
-        <Screen safeTop>
-            <PageHeader
-                title="Notifications"
-                description={`${unreadCount} unread`}
-                onBack={() => router.back()}
-            />
-
+        <TabScreen>
             {notificationsQuery.isLoading && (
                 <AppCard>
                     {[0, 1, 2].map((row) => (
@@ -94,7 +86,7 @@ export default function NotificationsScreen() {
                     )}
                 </AppCard>
             )}
-        </Screen>
+        </TabScreen>
     );
 }
 

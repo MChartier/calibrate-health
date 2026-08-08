@@ -319,6 +319,7 @@ export async function resolveDevConfig({
     AUTO_LOGIN_TEST_USER: "true",
     EXPO_PUBLIC_CALIBRATE_AUTO_LOGIN_TEST_USER: "true",
     FOOD_DATA_PROVIDER: foodDataProvider,
+    WEIGHT_TREND_MODEL: readUserValue("WEIGHT_TREND_MODEL") || "v2",
     FATSECRET_CLIENT_ID: fatsecretClientId,
     FATSECRET_CLIENT_SECRET: fatsecretClientSecret,
     USDA_API_KEY: usdaApiKey,

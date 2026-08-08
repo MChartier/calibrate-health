@@ -1,6 +1,7 @@
-import { fireEvent, render } from '@testing-library/react-native';
+import { fireEvent, render, within } from '@testing-library/react-native';
 import type { GoalEntry } from '@calibrate/api-client';
 import { GoalProgressCard } from './GoalProgressCard';
+import { themes } from '../theme';
 
 jest.mock('@expo/vector-icons/Ionicons', () => () => null);
 
@@ -27,8 +28,21 @@ describe('GoalProgressCard', () => {
 
         fireEvent.press(screen.getByLabelText('Edit goal'));
 
-        expect(screen.getByText('Progress snapshot')).toBeTruthy();
+        expect(screen.getByText('Snapshot')).toBeTruthy();
+        expect(screen.getByText('Updated Jul 20')).toBeTruthy();
+        expect(screen.getByTestId('snapshot-heading-line')).toHaveStyle({
+            flexDirection: 'row',
+            alignItems: 'center',
+            flexWrap: 'wrap'
+        });
         expect(screen.getByText('Goal projection')).toBeTruthy();
+        const projection = screen.getByTestId('goal-projection');
+        expect(projection).toHaveStyle({
+            backgroundColor: themes.light.colors.infoContainer
+        });
+        expect(within(projection).getByText(/, 2026$/)).toHaveStyle({
+            color: themes.light.colors.onInfoContainer
+        });
         expect(screen.getByText('172 kg')).toBeTruthy();
         expect(screen.getByText('59% complete')).toBeTruthy();
         expect(screen.getByText('Losing weight with a 500 kcal/day deficit.')).toBeTruthy();

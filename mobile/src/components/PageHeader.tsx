@@ -13,7 +13,7 @@ type PageHeaderProps = ViewProps & {
     actions?: React.ReactNode;
 };
 
-/** Shared top-level header for routes that sit outside the primary tab destinations. */
+/** Header for public and pre-shell routes that cannot use authenticated app navigation. */
 export const PageHeader: React.FC<PageHeaderProps> = ({
     title,
     description,

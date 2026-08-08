@@ -1,6 +1,7 @@
 import crypto from 'node:crypto';
 import { Prisma } from '@prisma/client';
 import {
+    CALIBRATION_MAX_OBSERVATION_DAYS,
     CALIBRATION_MODEL_VERSION,
     evaluateCalibration,
     type CalibrationFoodDay,
@@ -8,8 +9,6 @@ import {
     type CalibrationResult
 } from '../../../shared/calibration';
 import prisma from '../config/database';
-import { ensureMaterializedWeightTrends } from './materializedWeightTrend';
-import { computeWeightTrend } from './weightTrend';
 import { getEffectiveCaloriePlan } from './caloriePlan';
 import { calculateAge, buildCalorieSummary } from '../utils/profile';
 import {
@@ -23,9 +22,11 @@ import {
     executeIdempotentMutation,
     recordSyncChange
 } from './clientOperations';
+import { WEIGHT_TREND_MODEL_VERSION } from './weightTrend';
 
 const CALIBRATION_HISTORY_DAYS = 90; // Includes the bounded personal intake reference horizon.
-const CALIBRATION_WEIGHT_DAYS = 42;
+// One boundary day lets the largest food window support a full 42 elapsed days of pace evidence.
+const CALIBRATION_WEIGHT_LOOKBACK_DAYS = CALIBRATION_MAX_OBSERVATION_DAYS + 1;
 
 type MaterializedRecommendation = {
     id: number;
@@ -170,11 +171,6 @@ function buildWeightEvidence(options: {
     rows: Array<{
         date: Date;
         weight_grams: number;
-        trend: {
-            trend_weight_grams: number;
-            trend_ci_lower_grams: number;
-            trend_ci_upper_grams: number;
-        } | null;
     }>;
     planStartDate: string;
     latestPausedDate: string | null;
@@ -183,24 +179,9 @@ function buildWeightEvidence(options: {
         const date = toDateKey(row.date);
         return date >= options.planStartDate && (!options.latestPausedDate || date > options.latestPausedDate);
     });
-    if (!options.latestPausedDate) {
-        return rows.map((row) => ({
-            date: toDateKey(row.date),
-            trendWeightKg: (row.trend?.trend_weight_grams ?? row.weight_grams) / 1000,
-            lowerKg: (row.trend?.trend_ci_lower_grams ?? row.weight_grams) / 1000,
-            upperKg: (row.trend?.trend_ci_upper_grams ?? row.weight_grams) / 1000
-        }));
-    }
-
-    // A post-pause pace must not inherit smoothing state from weights recorded before the break.
-    return computeWeightTrend(rows.map((row) => ({
-        date: row.date,
-        weight: row.weight_grams / 1000
-    }))).points.map((point) => ({
-        date: toDateKey(point.date),
-        trendWeightKg: point.trendWeight,
-        lowerKg: point.lower95,
-        upperKg: point.upper95
+    return rows.map((row) => ({
+        date: toDateKey(row.date),
+        weightKg: row.weight_grams / 1000
     }));
 }
 
@@ -307,9 +288,8 @@ export async function buildCalibrationStatus(userId: number, now = new Date()): 
         };
     }
 
-    await ensureMaterializedWeightTrends(userId);
     const historyStart = addUtcDays(asOfDate, -(CALIBRATION_HISTORY_DAYS - 1));
-    const weightStart = addUtcDays(asOfDate, -(CALIBRATION_WEIGHT_DAYS - 1));
+    const weightStart = addUtcDays(asOfDate, -(CALIBRATION_WEIGHT_LOOKBACK_DAYS - 1));
     const [latestMetric, currentPlan, scheduledRevision, logs, completionDays, weightRows] = await Promise.all([
         prisma.bodyMetric.findFirst({
             where: { user_id: userId, date: { lte: asOfDate } },
@@ -337,14 +317,7 @@ export async function buildCalibrationStatus(userId: number, now = new Date()): 
             orderBy: [{ date: 'asc' }, { id: 'asc' }],
             select: {
                 date: true,
-                weight_grams: true,
-                trend: {
-                    select: {
-                        trend_weight_grams: true,
-                        trend_ci_lower_grams: true,
-                        trend_ci_upper_grams: true
-                    }
-                }
+                weight_grams: true
             }
         })
     ]);
@@ -403,14 +376,6 @@ export async function buildCalibrationStatus(userId: number, now = new Date()): 
         trackingPaused: todayCompletion?.status === 'PAUSED',
         weightPoints: buildWeightEvidence({ rows: weightRows, planStartDate, latestPausedDate })
     };
-    const evaluation = evaluateCalibration(input);
-    const { weightUnit: _displayWeightUnit, ...actionEvidence } = input;
-    const inputFingerprint = fingerprintInput({
-        modelVersion: CALIBRATION_MODEL_VERSION,
-        goalId: goal.id,
-        planStartDate,
-        actionEvidence
-    });
     const scheduledChange = scheduledRevision ? {
         recommendationId: scheduledRevision.recommendation_id,
         targetAdjustmentKcal: scheduledRevision.target_adjustment_kcal,
@@ -420,6 +385,31 @@ export async function buildCalibrationStatus(userId: number, now = new Date()): 
         ),
         effectiveLocalDate: toDateKey(scheduledRevision.effective_local_date)
     } : null;
+    if (WEIGHT_TREND_MODEL_VERSION !== 2) {
+        await stalePendingRecommendations(userId);
+        return {
+            generatedAt,
+            inputFingerprint: null,
+            evaluation: buildUnavailableEvaluation({
+                asOfDate: asOfDateKey,
+                headline: 'Calibration is temporarily unavailable',
+                summary: 'The active compatibility weight trend does not provide the pace uncertainty needed for safe calorie-budget suggestions. Existing approved plan changes remain in effect.',
+                missingCriteria: ['Calibration resumes when the current weight-trend model is available.'],
+                weightUnit: user.weight_unit,
+                configuredDailyDeficitKcal: goal.daily_deficit
+            }),
+            recommendation: null,
+            scheduledChange
+        };
+    }
+    const evaluation = evaluateCalibration(input);
+    const { weightUnit: _displayWeightUnit, ...actionEvidence } = input;
+    const inputFingerprint = fingerprintInput({
+        modelVersion: CALIBRATION_MODEL_VERSION,
+        goalId: goal.id,
+        planStartDate,
+        actionEvidence
+    });
     let recommendation: MaterializedRecommendation | null = null;
     if (scheduledChange) {
         await stalePendingRecommendations(userId);

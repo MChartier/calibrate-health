@@ -31,6 +31,11 @@ import { useLogDateNavigation } from '../../src/hooks/useLogDateNavigation';
 import { useOfflineOutbox } from '../../src/offline/provider';
 import { OUTBOX_MUTATION_STATES } from '../../src/offline/queuedMutation';
 import { resolveContextualFab } from '../../src/navigation/contextualFab';
+import {
+    getSecondaryRouteHeader,
+    SECONDARY_ROUTE_HEADERS,
+    type SecondaryRouteHeader
+} from '../../src/navigation/secondaryRoutes';
 import { getNotificationAction } from '../../src/notifications/workflow';
 import { isProfileSetupComplete } from '../../src/utils/profileCompletion';
 import { radius, spacing, useAppTheme, type AppTheme, type AppThemeColors } from '../../src/theme';
@@ -47,6 +52,18 @@ const LARGE_TEXT_HEIGHT_INCREMENT = 18; // Adds vertical room as Android font sc
 const DESKTOP_NAV_BREAKPOINT = 1024;
 const DESKTOP_NAV_RAIL_WIDTH = 104;
 const DESKTOP_CONTENT_MAX_WIDTH = 1040;
+
+function navigateBackFromSecondaryRoute(config: SecondaryRouteHeader) {
+    if (config.fixedDestination) {
+        router.navigate(config.fallbackHref);
+        return;
+    }
+    if (router.canGoBack()) {
+        router.back();
+        return;
+    }
+    router.replace(config.fallbackHref);
+}
 
 type NavigationPressableProps = PressableProps & {
     focusStyle: StyleProp<ViewStyle>;
@@ -206,21 +223,28 @@ export default function TabsLayout() {
                                 },
                             tabBarItemStyle: [styles.tabBarItem, usesNavigationRail && styles.navigationRailItem],
                             tabBarLabelStyle: styles.tabBarLabel,
-                            header: ({ options }) => (
-                                <TabHeader
-                                    topInset={insets.top}
-                                    fontScale={fontScale}
-                                    title={typeof options.headerTitle === 'string' ? options.headerTitle : ''}
-                                    unreadCount={notificationsQuery.data?.unread_count ?? 0}
-                                    offlineChangeCount={queuedMutations.length}
-                                    hasFailedOfflineChanges={hasFailedOfflineChanges}
-                                    profileImageUrl={user.profile_image_url}
-                                    onOpenNotifications={() => setIsNotificationDrawerOpen(true)}
-                                    colors={theme.colors}
-                                    styles={styles}
-                                    desktop={usesNavigationRail}
-                                />
-                            )
+                            header: ({ options, route }) => {
+                                const secondaryRoute = getSecondaryRouteHeader(route.name);
+                                return (
+                                    <TabHeader
+                                        topInset={insets.top}
+                                        fontScale={fontScale}
+                                        title={typeof options.headerTitle === 'string' ? options.headerTitle : ''}
+                                        backAction={secondaryRoute ? {
+                                            label: secondaryRoute.backLabel,
+                                            onPress: () => navigateBackFromSecondaryRoute(secondaryRoute)
+                                        } : undefined}
+                                        unreadCount={notificationsQuery.data?.unread_count ?? 0}
+                                        offlineChangeCount={queuedMutations.length}
+                                        hasFailedOfflineChanges={hasFailedOfflineChanges}
+                                        profileImageUrl={user.profile_image_url}
+                                        onOpenNotifications={() => setIsNotificationDrawerOpen(true)}
+                                        colors={theme.colors}
+                                        styles={styles}
+                                        desktop={usesNavigationRail}
+                                    />
+                                );
+                            }
                         }}
                     >
                         <Tabs.Screen
@@ -248,9 +272,56 @@ export default function TabsLayout() {
                             }}
                         />
                         <Tabs.Screen name="log" options={{ ...HIDDEN_TAB_OPTIONS, title: 'Add food' }} />
-                        <Tabs.Screen name="food-log" options={{ ...HIDDEN_TAB_OPTIONS, headerShown: false, title: 'Food log' }} />
+                        <Tabs.Screen
+                            name="food-log"
+                            options={{
+                                ...HIDDEN_TAB_OPTIONS,
+                                headerTitle: SECONDARY_ROUTE_HEADERS['food-log'].title,
+                                title: SECONDARY_ROUTE_HEADERS['food-log'].title
+                            }}
+                        />
                         <Tabs.Screen name="weight" options={{ ...HIDDEN_TAB_OPTIONS, title: 'Log weight' }} />
                         <Tabs.Screen name="goals" options={HIDDEN_TAB_OPTIONS} />
+                        <Tabs.Screen
+                            name="weight-trend"
+                            options={{
+                                ...HIDDEN_TAB_OPTIONS,
+                                headerTitle: SECONDARY_ROUTE_HEADERS['weight-trend'].title,
+                                title: SECONDARY_ROUTE_HEADERS['weight-trend'].title
+                            }}
+                        />
+                        <Tabs.Screen
+                            name="activity"
+                            options={{
+                                ...HIDDEN_TAB_OPTIONS,
+                                headerTitle: SECONDARY_ROUTE_HEADERS.activity.title,
+                                title: SECONDARY_ROUTE_HEADERS.activity.title
+                            }}
+                        />
+                        <Tabs.Screen
+                            name="my-foods"
+                            options={{
+                                ...HIDDEN_TAB_OPTIONS,
+                                headerTitle: SECONDARY_ROUTE_HEADERS['my-foods'].title,
+                                title: SECONDARY_ROUTE_HEADERS['my-foods'].title
+                            }}
+                        />
+                        <Tabs.Screen
+                            name="notifications"
+                            options={{
+                                ...HIDDEN_TAB_OPTIONS,
+                                headerTitle: SECONDARY_ROUTE_HEADERS.notifications.title,
+                                title: SECONDARY_ROUTE_HEADERS.notifications.title
+                            }}
+                        />
+                        <Tabs.Screen
+                            name="about"
+                            options={{
+                                ...HIDDEN_TAB_OPTIONS,
+                                headerTitle: SECONDARY_ROUTE_HEADERS.about.title,
+                                title: SECONDARY_ROUTE_HEADERS.about.title
+                            }}
+                        />
                     </Tabs>
                     <NotificationsDrawer
                         visible={isNotificationDrawerOpen}
@@ -294,6 +365,7 @@ const TabHeader: React.FC<{
     topInset: number;
     fontScale: number;
     title: string;
+    backAction?: { label: string; onPress: () => void };
     unreadCount: number;
     offlineChangeCount: number;
     hasFailedOfflineChanges: boolean;
@@ -302,7 +374,7 @@ const TabHeader: React.FC<{
     colors: AppThemeColors;
     styles: TabStyles;
     desktop: boolean;
-}> = ({ topInset, fontScale, title, unreadCount, offlineChangeCount, hasFailedOfflineChanges, profileImageUrl, onOpenNotifications, colors, styles, desktop }) => (
+}> = ({ topInset, fontScale, title, backAction, unreadCount, offlineChangeCount, hasFailedOfflineChanges, profileImageUrl, onOpenNotifications, colors, styles, desktop }) => (
     <View role="banner" style={[styles.headerRoot, { paddingTop: topInset }]}>
         <View
             style={[
@@ -312,7 +384,20 @@ const TabHeader: React.FC<{
             ]}
         >
             <View style={styles.headerLeading}>
-                <HeaderBrand styles={styles} />
+                {backAction ? (
+                    <NavigationPressable
+                        accessibilityRole="button"
+                        accessibilityLabel={backAction.label}
+                        focusStyle={styles.navigationFocus}
+                        hoverStyle={styles.navigationHover}
+                        onPress={backAction.onPress}
+                        style={({ pressed }) => [styles.headerButton, pressed && styles.pressed]}
+                    >
+                        <Ionicons name="chevron-back" size={24} color={colors.text} />
+                    </NavigationPressable>
+                ) : (
+                    <HeaderBrand styles={styles} />
+                )}
                 <AppText accessibilityRole="header" aria-level={1} numberOfLines={2} style={styles.headerTitleText}>{title}</AppText>
             </View>
             <HeaderActions

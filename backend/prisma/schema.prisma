@@ -291,6 +291,10 @@ model BodyMetricTrend {
   trend_ci_upper_grams Int
   /// Materialized posterior standard deviation in grams.
   trend_std_grams    Int
+  /// Materialized local rate estimate in grams per day when the model has enough evidence.
+  trend_rate_grams_per_day Float?
+  /// Materialized posterior standard deviation for the local rate in grams per day.
+  trend_rate_std_grams_per_day Float?
   /// Version marker for invalidating persisted rows if model behavior changes later.
   model_version      Int       @default(1)
   /// Timestamp for operational visibility into the latest recompute.

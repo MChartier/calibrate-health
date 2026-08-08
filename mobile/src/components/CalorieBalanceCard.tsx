@@ -3,6 +3,7 @@ import { StyleSheet, View, useWindowDimensions, type ViewProps } from 'react-nat
 import Svg, { Circle } from 'react-native-svg';
 import { AppCard } from './AppCard';
 import { AppText } from './AppText';
+import { CompactCardHeader } from './CompactCardHeader';
 import { spacing, useAppTheme, type AppThemeColors } from '../theme';
 import { formatNumber } from '../utils/format';
 
@@ -65,7 +66,7 @@ export const CalorieBalanceCard: React.FC<CalorieBalanceCardProps> = ({
             <View style={[styles.hero, compact && styles.heroCompact, stackHero && styles.heroStacked]}>
                 <CalorieGauge value={progressValue} tone={tone} compact={compact} colors={colors} styles={styles} />
                 <View style={[styles.balanceCopy, stackHero && styles.balanceCopyStacked]}>
-                    <AppText style={styles.balanceTitle}>Daily balance</AppText>
+                    <CompactCardHeader title="Daily balance" />
                     {remaining === null ? (
                         <AppText style={styles.unavailable}>{balanceLabel}</AppText>
                     ) : (
@@ -139,6 +140,7 @@ function createStyles(colors: AppThemeColors) {
     return StyleSheet.create({
     cardCompact: {
         padding: spacing.md,
+        paddingTop: spacing.lg,
         gap: spacing.sm
     },
     primaryText: {
@@ -156,6 +158,7 @@ function createStyles(colors: AppThemeColors) {
         gap: spacing.xl
     },
     heroCompact: {
+        alignItems: 'flex-start',
         gap: spacing.lg
     },
     heroStacked: {
@@ -189,12 +192,6 @@ function createStyles(colors: AppThemeColors) {
     },
     balanceCopyStacked: {
         paddingTop: spacing.xs
-    },
-    balanceTitle: {
-        color: colors.muted,
-        fontSize: 16,
-        lineHeight: 22,
-        fontWeight: '700'
     },
     balanceValue: {
         fontSize: 36,
