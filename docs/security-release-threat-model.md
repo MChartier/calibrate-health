@@ -37,29 +37,26 @@ authorize a read, update, delete, undo, or association.
 
 ## Dependency advisory resolution
 
-As of 2026-07-27, `npm audit --omit=dev` reports no production findings in either
-the root/mobile or backend lock graph. Coverage runs on `c8@12`, and compatible patched releases
-remain pinned for the production and Prisma dependency edges. API contract generation, backend
-coverage, and the full test suite exercise those overrides.
+As of 2026-08-07, the backend lock graph has no high or critical production findings. The
+root/mobile graph has no unexcepted high or critical production findings. Coverage runs on `c8@12`,
+and compatible patched releases remain pinned for the production and Prisma dependency edges. API
+contract generation, backend coverage, and the full test suite exercise those overrides.
 
-The root/mobile full audit still reports 23 high package entries, but every entry is the same
-development-only path to
-[`GHSA-mh99-v99m-4gvg`](https://github.com/advisories/GHSA-mh99-v99m-4gvg):
-React Native 0.86's Jest preset pins Babel/Jest 29, which reaches `brace-expansion@1.1.16` through
-`test-exclude@6` and `minimatch@3`. These packages only discover and instrument repository-owned
-test files; none are bundled into the server, web client, Android app, or Wear app. A forced
-`brace-expansion@5.0.8` resolution is not compatible: v5's CommonJS export is an object while
-`minimatch@3` calls the dependency as a function, causing test discovery to fail. Keep this finding
-visible until the React Native preset moves to a compatible Jest/tooling graph rather than masking
-it with an invalid lockfile override.
+The root/mobile production graph temporarily reports two no-fix `image-size` advisories:
+[`GHSA-w3rx-r6r6-pgpr`](https://github.com/advisories/GHSA-w3rx-r6r6-pgpr) and
+[`GHSA-5p2g-fcmc-qvqq`](https://github.com/advisories/GHSA-5p2g-fcmc-qvqq). Both describe parser
+infinite loops and affect every published version through `2.0.2`; no patched release is available.
+The locked `image-size@1.2.1` copy is reached only through Expo's Metro build-tool chain, where it
+inspects repository-owned assets. User uploads and food-provider images do not pass through Metro.
+The production audit may filter only package entries whose complete advisory chain resolves to
+these two ids, only while the lock graph remains exactly `image-size@1.2.1`, and only through
+2026-08-20. A changed dependency version, another advisory, the deadline, or strict production
+release validation fails the exception.
 
-The backend development graph has the same constraint on a separate OpenAPI-only edge:
-`openapi-typescript@7.13.0` depends on Redocly `1.34.17`, which pins `minimatch@5.1.9`.
-That minimatch release requires the callable `brace-expansion@2` API, while the only version
-currently accepted by the advisory scanner is the incompatible object-exporting v5 release.
-Keep Redocly on `brace-expansion@2.1.2` until its consumer upgrades to picomatch or another
-compatible implementation. A backend regression test executes a brace-bearing pattern through
-Redocly's exact minimatch dependency, and the dependency remains development-only.
+The full root/mobile audit reports the same 15 package entries rooted in those two `image-size`
+advisories and no additional findings. A separate development-only Istanbul edge is pinned to
+patched `js-yaml@3.15.1`; keeping the override scoped to `@istanbuljs/load-nyc-config@1.1.0`
+prevents it from changing Expo's independent `js-yaml@4` dependency.
 
 The separate UUID advisory is fully resolved. The root graph pins the `xcode@3.0.1` edge to patched
 `uuid@11.1.1`, and a release test executes xcode's actual `generateUuid()` path. Android prebuild,

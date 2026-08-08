@@ -1,4 +1,5 @@
 import { fireEvent, render } from '@testing-library/react-native';
+import { Keyboard } from 'react-native';
 import { TimeZonePickerField } from './TimeZonePickerField';
 
 jest.mock('@expo/vector-icons/Ionicons', () => () => null);
@@ -12,6 +13,16 @@ jest.mock('../utils/timezones', () => {
 });
 
 describe('TimeZonePickerField', () => {
+    it('dismisses active text input before opening an overlay selector', () => {
+        const dismiss = jest.spyOn(Keyboard, 'dismiss').mockImplementation(jest.fn());
+        const screen = render(<TimeZonePickerField value="America/New_York" onChange={jest.fn()} />);
+
+        fireEvent.press(screen.getByLabelText('Select time zone'));
+
+        expect(dismiss).toHaveBeenCalledTimes(1);
+        dismiss.mockRestore();
+    });
+
     it('offers the permission-free device timezone as a clear action', () => {
         const onChange = jest.fn();
         const screen = render(<TimeZonePickerField value="America/New_York" onChange={onChange} />);

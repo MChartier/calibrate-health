@@ -1,5 +1,5 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { FlatList, Linking, Pressable, StyleSheet, View } from 'react-native';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Animated, Easing, FlatList, Keyboard, Linking, Pressable, StyleSheet, View, type LayoutChangeEvent } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router } from 'expo-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -26,6 +26,7 @@ import { triggerHapticFeedback } from '../utils/haptics';
 import { MEAL_OPTIONS, MEAL_SELECT_OPTIONS } from '../utils/meals';
 import { selectQuickRecentFoods } from '../utils/myFoods';
 import { getFoodLogAmountText } from '../food/foodLogAmount';
+import { useReducedMotionPreference } from '../hooks/useReducedMotionPreference';
 import {
     createMyFoodSelection,
     createProviderFoodSelection,
@@ -77,6 +78,7 @@ const MINIMUM_SEARCH_LENGTH = 2;
 const DEFAULT_RECENT_LIMIT = 8;
 const DEFAULT_PINNED_LIMIT = 8;
 const ADD_FOOD_SHEET_HEIGHT = '92%';
+const SEARCH_CONTEXT_TRANSITION_MS = 180; // Collapses setup controls quickly enough for search to feel like an in-sheet navigation.
 
 function describeSearchedFood(item: SearchedFoodItem): string {
     const preferredIndex = getPreferredFoodMeasureIndex(item);
@@ -134,6 +136,7 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
 }) => {
     const theme = useAppTheme();
     const styles = useMemo(() => createStyles(theme), [theme]);
+    const reduceMotion = useReducedMotionPreference();
     const { api, user } = useAuth();
     const { enqueue } = useOfflineOutbox();
     const queryClient = useQueryClient();
@@ -147,7 +150,26 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
     const [recipeQuery, setRecipeQuery] = useState('');
     const [selection, setSelection] = useState<FoodLogSelection | null>(null);
     const [isMealSelectorOpen, setIsMealSelectorOpen] = useState(false);
+    const [isSearchExpanded, setIsSearchExpanded] = useState(false);
+    const [searchContextHeight, setSearchContextHeight] = useState<number | null>(null);
+    const searchContextProgress = useRef(new Animated.Value(1)).current;
+    const isSearchContextAnimating = useRef(false);
     const normalizedQuery = query.trim();
+    const isSearchExperienceExpanded = mode === 'search' && isSearchExpanded && selection === null;
+
+    useEffect(() => {
+        isSearchContextAnimating.current = true;
+        const animation = Animated.timing(searchContextProgress, {
+            toValue: isSearchExperienceExpanded ? 0 : 1,
+            duration: reduceMotion ? 0 : SEARCH_CONTEXT_TRANSITION_MS,
+            easing: Easing.out(Easing.cubic),
+            useNativeDriver: false
+        });
+        animation.start(() => {
+            isSearchContextAnimating.current = false;
+        });
+        return () => animation.stop();
+    }, [isSearchExperienceExpanded, reduceMotion, searchContextProgress]);
 
     useEffect(() => {
         if (!visible || mode !== 'search' || normalizedQuery.length < MINIMUM_SEARCH_LENGTH) {
@@ -234,6 +256,7 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
         setRecipeQuery('');
         setSelection(null);
         setIsMealSelectorOpen(false);
+        setIsSearchExpanded(false);
         logFood.reset();
     }, [initialMeal, visible]);
 
@@ -352,6 +375,8 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
     }
 
     function selectMode(nextMode: AddFoodMode) {
+        Keyboard.dismiss();
+        setIsSearchExpanded(false);
         setMode(nextMode);
         setSelection(null);
         setIsMealSelectorOpen(false);
@@ -369,6 +394,8 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
                 disabled={logFood.isPending || item.disabled}
                 disabledReason={item.disabledReason}
                 onPress={() => {
+                    Keyboard.dismiss();
+                    setIsSearchExpanded(false);
                     logFood.reset();
                     setSelection(item.selection);
                 }}
@@ -451,6 +478,12 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
         );
     }
 
+    function handleSearchContextLayout(event: LayoutChangeEvent) {
+        if (isSearchExperienceExpanded || isSearchContextAnimating.current) return;
+        const nextHeight = event.nativeEvent.layout.height;
+        if (nextHeight > 0 && nextHeight !== searchContextHeight) setSearchContextHeight(nextHeight);
+    }
+
     function renderModeContent() {
         if (mode === 'quick') {
             return (
@@ -507,6 +540,7 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
                         <TextField
                             label="Search foods"
                             value={query}
+                            onFocus={() => setIsSearchExpanded(true)}
                             onChangeText={(value) => {
                                 setQuery(value);
                                 setSelection(null);
@@ -515,6 +549,7 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
                             returnKeyType="search"
                             editable={!logFood.isPending}
                             onSubmitEditing={() => {
+                                Keyboard.dismiss();
                                 if (normalizedQuery.length >= MINIMUM_SEARCH_LENGTH) {
                                     setRequestedQuery(normalizedQuery);
                                 }
@@ -522,11 +557,19 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
                             containerStyle={styles.searchField}
                         />
                         <AppButton
-                            title="Scan"
+                            title={isSearchExperienceExpanded ? 'Done' : 'Scan'}
                             variant="secondary"
                             disabled={logFood.isPending}
-                            leftIcon={<Ionicons name="barcode-outline" size={18} color={theme.colors.onSurface} />}
-                            onPress={openBarcodeScanner}
+                            leftIcon={(
+                                <Ionicons
+                                    name={isSearchExperienceExpanded ? 'checkmark' : 'barcode-outline'}
+                                    size={18}
+                                    color={theme.colors.onSurface}
+                                />
+                            )}
+                            onPress={isSearchExperienceExpanded
+                                ? () => setIsSearchExpanded(false)
+                                : openBarcodeScanner}
                             style={styles.scanButton}
                         />
                     </View>
@@ -538,7 +581,7 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
                             ListEmptyComponent={renderSearchEmpty}
                             ListFooterComponent={renderSearchFooter}
                             contentContainerStyle={styles.resultsContent}
-                            keyboardDismissMode="none"
+                            keyboardDismissMode="on-drag"
                             keyboardShouldPersistTaps="always"
                             showsVerticalScrollIndicator
                             style={styles.resultsList}
@@ -559,7 +602,9 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
                         logFood.reset();
                     }}
                     placeholder="e.g. chili, overnight oats"
+                    returnKeyType="search"
                     editable={!logFood.isPending}
+                    onSubmitEditing={Keyboard.dismiss}
                 />
                 {selection ? renderSelectionEditor() : (
                     <FlatList
@@ -576,7 +621,7 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
                             </AppText>
                         )}
                         contentContainerStyle={styles.resultsContent}
-                        keyboardDismissMode="none"
+                        keyboardDismissMode="on-drag"
                         keyboardShouldPersistTaps="always"
                         showsVerticalScrollIndicator
                         style={styles.resultsList}
@@ -593,22 +638,47 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
             scrollable={false}
             onRequestClose={onClose}
         >
-            <SectionHeader title="Add food" description={`${formatDateOnlyForDisplay(date)} | ${formatMealPeriod(meal)}`} />
-            <View style={styles.mealControl}>
-                <AppText variant="label">Meal</AppText>
-                <OverlaySelect
-                    accessibilityLabel="Select meal"
-                    value={meal}
-                    options={MEAL_SELECT_OPTIONS}
-                    isOpen={isMealSelectorOpen}
-                    onToggle={() => setIsMealSelectorOpen((current) => !current)}
-                    onChange={(nextMeal) => {
-                        setMeal(nextMeal);
-                        setIsMealSelectorOpen(false);
-                    }}
-                />
-            </View>
-            <SegmentedControl options={ADD_FOOD_MODES} value={mode} onChange={selectMode} />
+            <Animated.View
+                testID="add-food-search-context"
+                accessibilityElementsHidden={isSearchExperienceExpanded}
+                importantForAccessibility={isSearchExperienceExpanded ? 'no-hide-descendants' : 'auto'}
+                pointerEvents={isSearchExperienceExpanded ? 'none' : 'auto'}
+                onLayout={handleSearchContextLayout}
+                style={[
+                    styles.searchContext,
+                    searchContextHeight !== null && {
+                        height: searchContextProgress.interpolate({
+                            inputRange: [0, 1],
+                            outputRange: [0, searchContextHeight]
+                        }),
+                        opacity: searchContextProgress,
+                        transform: [{
+                            translateY: searchContextProgress.interpolate({
+                                inputRange: [0, 1],
+                                outputRange: [-spacing.sm, 0]
+                            })
+                        }]
+                    },
+                    searchContextHeight === null && isSearchExperienceExpanded && styles.searchContextHidden
+                ]}
+            >
+                <SectionHeader title="Add food" description={`${formatDateOnlyForDisplay(date)} | ${formatMealPeriod(meal)}`} />
+                <View style={styles.mealControl}>
+                    <AppText variant="label">Meal</AppText>
+                    <OverlaySelect
+                        accessibilityLabel="Select meal"
+                        value={meal}
+                        options={MEAL_SELECT_OPTIONS}
+                        isOpen={isMealSelectorOpen}
+                        onToggle={() => setIsMealSelectorOpen((current) => !current)}
+                        onChange={(nextMeal) => {
+                            setMeal(nextMeal);
+                            setIsMealSelectorOpen(false);
+                        }}
+                    />
+                </View>
+                <SegmentedControl options={ADD_FOOD_MODES} value={mode} onChange={selectMode} />
+            </Animated.View>
             <View style={styles.modeContent}>{renderModeContent()}</View>
         </BottomSheetModal>
     );
@@ -659,6 +729,14 @@ const createStyles = (theme: AppTheme) => StyleSheet.create({
     },
     mealControl: {
         gap: spacing.sm
+    },
+    searchContext: {
+        gap: spacing.md,
+        overflow: 'hidden'
+    },
+    searchContextHidden: {
+        height: 0,
+        opacity: 0
     },
     modeContent: {
         flex: 1,

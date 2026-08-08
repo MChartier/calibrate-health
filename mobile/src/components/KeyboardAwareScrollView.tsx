@@ -13,7 +13,7 @@ type KeyboardAwareScrollViewProps = ScrollViewProps & {
     keyboardContextHeight?: number;
 };
 
-const DEFAULT_KEYBOARD_CONTEXT_HEIGHT = 192; // Keeps validation, actions, or the first search result visible below the active field.
+const DEFAULT_KEYBOARD_CONTEXT_HEIGHT = 72; // Keeps one compact validation or action row visible without floating the input far above the keyboard.
 const WEB_KEYBOARD_OVERLAY_THRESHOLD = 80; // Ignores small visual-viewport changes caused by mobile browser chrome.
 
 /**

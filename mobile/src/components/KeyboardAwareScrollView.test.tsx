@@ -69,6 +69,24 @@ describe('KeyboardAwareScrollView', () => {
         expect(contentStyle.paddingBottom).toBe(220);
     });
 
+    it('uses compact default context spacing above the software keyboard', () => {
+        const view = render(
+            <KeyboardAwareScrollView contentContainerStyle={{ paddingBottom: 24 }}>
+                <AppText>Form content</AppText>
+            </KeyboardAwareScrollView>
+        );
+
+        act(() => {
+            const showKeyboard = keyboardListeners.keyboardDidShow ?? keyboardListeners.keyboardWillShow;
+            showKeyboard?.();
+        });
+
+        const contentStyle = StyleSheet.flatten(
+            view.UNSAFE_getByType(ScrollView).props.contentContainerStyle
+        );
+        expect(contentStyle.paddingBottom).toBe(72);
+    });
+
     it('preserves larger configured bottom padding when the keyboard opens', () => {
         const view = render(
             <KeyboardAwareScrollView

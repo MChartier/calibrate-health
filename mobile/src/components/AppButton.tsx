@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pressable, StyleSheet, View, type PressableProps, type StyleProp, type TextStyle } from 'react-native';
+import { Keyboard, Pressable, StyleSheet, View, type PressableProps, type StyleProp, type TextStyle } from 'react-native';
 import { type AppTheme, useAppTheme } from '../theme';
 import { AppText } from './AppText';
 
@@ -7,16 +7,20 @@ type AppButtonProps = Omit<PressableProps, 'android_ripple'> & {
     title: string;
     variant?: 'primary' | 'secondary' | 'danger' | 'ghost';
     leftIcon?: React.ReactNode;
+    /** App actions finish current text entry unless they explicitly operate in place. */
+    dismissKeyboardOnPress?: boolean;
 };
 
 export const AppButton: React.FC<AppButtonProps> = ({
     title,
     variant = 'primary',
     leftIcon,
+    dismissKeyboardOnPress = true,
     disabled,
     accessibilityLabel,
     accessibilityRole,
     accessibilityState,
+    onPress,
     style,
     ...props
 }) => {
@@ -35,6 +39,10 @@ export const AppButton: React.FC<AppButtonProps> = ({
         accessibilityLabel={accessibilityLabel ?? title}
         accessibilityRole={accessibilityRole ?? 'button'}
         accessibilityState={{ ...accessibilityState, disabled: Boolean(disabled) }}
+        onPress={(event) => {
+            if (dismissKeyboardOnPress) Keyboard.dismiss();
+            onPress?.(event);
+        }}
         style={({ pressed }) => [
             styles.base,
             styles[variant],

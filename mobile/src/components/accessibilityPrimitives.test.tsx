@@ -1,5 +1,5 @@
-import { render } from '@testing-library/react-native';
-import { StyleSheet, Text } from 'react-native';
+import { fireEvent, render } from '@testing-library/react-native';
+import { Keyboard, StyleSheet, Text } from 'react-native';
 import { AppButton } from './AppButton';
 import { AppChip } from './AppChip';
 import { SectionHeader } from './SectionHeader';
@@ -28,6 +28,39 @@ describe('mobile accessibility primitives', () => {
         const { getByRole } = render(<AppButton title="Create account" />);
 
         expect(getByRole('button', { name: 'Create account' }).props.android_ripple).toBeUndefined();
+    });
+
+    it('dismisses the keyboard before running a completed action by default', () => {
+        const calls: string[] = [];
+        const dismiss = jest.spyOn(Keyboard, 'dismiss').mockImplementation(() => {
+            calls.push('dismiss');
+        });
+        const { getByRole } = render(
+            <AppButton title="Save meal" onPress={() => calls.push('press')} />
+        );
+
+        fireEvent.press(getByRole('button', { name: 'Save meal' }));
+
+        expect(calls).toEqual(['dismiss', 'press']);
+        dismiss.mockRestore();
+    });
+
+    it('allows an in-place button action to preserve the keyboard', () => {
+        const dismiss = jest.spyOn(Keyboard, 'dismiss').mockImplementation(jest.fn());
+        const onPress = jest.fn();
+        const { getByRole } = render(
+            <AppButton
+                title="Keep editing"
+                dismissKeyboardOnPress={false}
+                onPress={onPress}
+            />
+        );
+
+        fireEvent.press(getByRole('button', { name: 'Keep editing' }));
+
+        expect(dismiss).not.toHaveBeenCalled();
+        expect(onPress).toHaveBeenCalledTimes(1);
+        dismiss.mockRestore();
     });
 
     it('uses a text field label as its accessible name even when the visual label is hidden', () => {
