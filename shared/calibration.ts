@@ -205,6 +205,8 @@ function interval(values: number[], precision = 1): CalibrationInterval | null {
 function seedFromInput(input: CalibrationInput, windowDays: number): number {
     const byDate = <T extends { date: string }>(values: T[]) =>
         values.slice().sort((left, right) => left.date.localeCompare(right.date));
+    const foodStartDate = addDateDays(input.asOfDate, -(windowDays - 1));
+    const weightStartDate = addDateDays(foodStartDate, -1);
     const canonical = JSON.stringify({
         asOfDate: input.asOfDate,
         windowDays,
@@ -212,8 +214,10 @@ function seedFromInput(input: CalibrationInput, windowDays: number): number {
         profileTdeeKcal: input.profileTdeeKcal,
         configuredDailyDeficitKcal: input.configuredDailyDeficitKcal,
         currentTargetAdjustmentKcal: input.currentTargetAdjustmentKcal,
-        foodDays: byDate(input.foodDays),
-        weightPoints: byDate(input.weightPoints)
+        foodDays: byDate(input.foodDays.filter((day) => day.date >= foodStartDate && day.date <= input.asOfDate)),
+        weightPoints: byDate(input.weightPoints.filter((point) => (
+            point.date >= weightStartDate && point.date <= input.asOfDate
+        )))
     });
     let hash = 2166136261;
     for (let index = 0; index < canonical.length; index += 1) {
@@ -384,7 +388,10 @@ function evaluateWindow(input: CalibrationInput, windowDays: number): WindowEval
         asOfDate: new Date(`${input.asOfDate}T23:59:59.999Z`),
         // Energy balance compares average intake with average weight change over the same window;
         // the instantaneous Kalman velocity remains a separate current-momentum estimate.
-        rateWindowDays: windowDays
+        calibrationWindow: {
+            startDate: new Date(`${weightStartDate}T00:00:00.000Z`),
+            endDate: new Date(`${input.asOfDate}T00:00:00.000Z`)
+        }
     });
     const latestSegmentId = trendResult.points[trendResult.points.length - 1]?.segmentId;
     const weights = latestSegmentId === undefined

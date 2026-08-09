@@ -47,8 +47,14 @@ jobs:
       - name: Install backend dependencies
         run: npm --prefix backend ci --no-audit --fund=false
 
+      - name: Generate Prisma client
+        run: npm run prisma:generate
+
       - name: Validate upgrade-smoke helpers
         run: node --test scripts/postgres-populated-upgrade-smoke.test.mjs
 
       - name: Upgrade populated schema from 0020 through current
         run: node scripts/postgres-populated-upgrade-smoke.mjs
+
+      - name: Serialize concurrent weight-trend materialization
+        run: node scripts/postgres-weight-trend-concurrency-smoke.mjs

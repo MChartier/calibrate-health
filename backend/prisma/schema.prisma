@@ -297,6 +297,8 @@ model BodyMetricTrend {
   trend_rate_std_grams_per_day Float?
   /// Version marker for invalidating persisted rows if model behavior changes later.
   model_version      Int       @default(1)
+  /// SHA-256 fingerprint of the exact raw observations used by this materialized batch.
+  source_revision    String?   @db.VarChar(64)
   /// Timestamp for operational visibility into the latest recompute.
   computed_at        DateTime  @default(now())
 

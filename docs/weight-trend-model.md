@@ -77,11 +77,15 @@ direction and rate are as of the latest observation. The deterministic lab
 calibrates that state interval against changing pace paths generated at the
 versioned process-noise scale.
 
-A separate robust actual-date regression estimates average pace over a bounded
-7-42 day window (28 days by default). It is named `windowAverageRate` in the
-shared result and is used by calibration with the same window as the food
-evidence. Huber weights limit isolated spikes. The state and regression answer
-different questions and are not interchangeable.
+A separate robust actual-date regression estimates average pace over an explicit,
+exact 7-42 day window. It is named `windowAverageRate` in the shared result and is
+calibration-only: ordinary public-model calls omit the window and receive no
+window-average estimate. Calibration supplies the same exact bounds as its food
+evidence. Data before those bounds cannot affect the regression or its
+deterministic bootstrap seed. A reset gap inside the selected window makes the
+window estimate unavailable; it never falls back to the current velocity state.
+Huber weights limit isolated spikes. The state and regression answer different
+questions and are not interchangeable.
 
 Short-term reading variability is the robust measurement standard deviation.
 Trend Details reports its central-80% half-width as:
@@ -123,9 +127,18 @@ active-horizon points are materialized. Older Year/All measurements remain raw
 context and have no synthetic zero-width trend interval.
 
 `BodyMetricTrend` stores level and 95% bounds in integer grams and nullable pace
-state/standard deviation in floating-point grams per day. Rows are replaced in a
-single database transaction and carry `model_version = 2`, so stale v1 rows are
-recomputed.
+state/standard deviation in floating-point grams per day. Each user recompute
+takes a transaction-scoped advisory lock and performs its source-history reads,
+fit, and row replacement at RepeatableRead isolation. A bounded whole-
+transaction retry handles serialization or unique conflicts caused when a waiter
+pins its first snapshot before the preceding lock holder commits. The fit
+completes before existing rows are removed. Refresh failures retain the last-known-good
+materialization rather than invalidating it. Rows carry model version 2 and one
+shared source revision: a SHA-256 fingerprint of the exact metric ids, dates, and
+weights in the bounded warmup/model snapshot. Same-day weight edits, inserts,
+deletes, and warmup changes therefore invalidate the old batch even when the
+newest date and model version are unchanged. Legacy rows with a null revision
+are refreshed after upgrade.
 
 Future-local-date rows are excluded from modeling. New future-local-date metric
 writes are rejected at the API boundary.
@@ -134,7 +147,10 @@ writes are rejected at the API boundary.
 
 `GET /api/v1/metrics?include_trend=true` preserves the legacy per-point fields and
 newest-first response ordering. Modeled points additionally identify segment
-starts. Older context remains a measurement-only point.
+starts. Older context remains a measurement-only point. For available current
+and historical requests, point bands, summary fields, counts, freshness, and
+model version are computed from one queried raw-metric snapshot; stored rows from
+a different revision cannot be mixed into the response.
 
 The additive `meta.trend_summary` contains:
 
@@ -144,9 +160,27 @@ The additive `meta.trend_summary` contains:
 - nullable current weekly velocity-state estimate and bounds
 - measurement standard deviation and central-80% reading-variation half-width
 
-Legacy `meta.weekly_rate` and `meta.volatility` remain for older clients but are
-deprecated. New fields use `null` when evidence is unavailable; zero is a valid
-estimate and is never used as an availability sentinel.
+`modeled_observations` counts distinct raw observations used by the model,
+`returned_modeled_points` counts modeled points inside the requested response,
+and deprecated `modeled_points` remains an alias of the returned count. This
+keeps a narrow date slice from erasing the model's evidence count.
+
+When refresh or staleness inspection fails, the endpoint returns the queried raw
+measurements without attempting another fit. A defensive read-path fit guard also
+degrades unexpected fitting races instead of returning a 500. Raw point
+intervals collapse to the measurement and their model standard deviation is zero. Trend status and
+freshness are `unavailable`; model version, segment/model dates, and estimates in
+`trend_summary` are `null`; modeled counts and observation span are zero. Factual
+latest-observation date and recency remain populated. No unavailable summary
+estimate is represented as zero.
+
+Legacy `meta.weekly_rate` and `meta.volatility` remain required for older clients.
+When available, legacy weekly rate comes from the latest uninterrupted segment
+rather than averaging across a reset gap. When unavailable, these fields use the
+last-known-good materialization only if its active model version and source
+revision match the current bounded raw snapshot and cover the newest observation;
+otherwise they retain the established zero/low fallback. The
+`trend_summary` availability fields remain authoritative.
 
 ## Client Presentation
 
@@ -197,20 +231,43 @@ and segment gaps. Release gates require:
 - exact segment, evidence, freshness, materialization, and historical-as-of
   behavior
 
+The versioned machine-readable parameter manifest is
+`shared/weightTrendParameters.ts`. It also pins the approved v2 numeric-parameter
+SHA-256 fingerprint and model version. The report derives `constantsChanged`
+from that fingerprint; regenerating it after a numeric change fails the release
+gate until `modelVersion` is greater than the approved baseline version. Keep the
+approved baseline pinned while evaluating a candidate and advance it only after
+the new model version is accepted.
+
 Process-noise constants are selected deterministically: first meet coverage and
 safety gates, then minimize level RMSE and sustained-change detection lag. Any
 future constant change must bump the model version and rerun the comparison lab.
+A change is accepted only when every checked-in tuning gate passes.
 
-Run the deterministic comparison lab with:
+Run the deterministic comparison lab and verify the reproducible tuning report
+with:
 
 ```sh
 npm run test:weight-trend-lab
+npm run weight-trend:tuning-report:check
+npm run test:weight-trend:postgres
 ```
 
-The checked-in benchmark reports both v1 and v2 level RMSE, empirical level,
-velocity-state, and window-average pace coverage, reversal lag, spike recovery,
-cadence behavior, and bounded-run
-performance.
+The Postgres gate requires an existing DATABASE_URL; it migrates a disposable,
+validated schema, observes two real recomputations queued on the same advisory
+key, verifies one final source revision, and removes only that schema.
+
+Regenerate the checked-in tuning report after an intentional model
+or fixture change with:
+
+```sh
+npm --prefix backend run weight-trend:tuning-report -- --write
+```
+
+The checked-in report records manifest/model versions, its deterministic seed,
+v1/v2 level RMSE, empirical level, velocity-state, and window-average pace
+coverage, reversal detection, spike recovery, unit stability, every release-gate
+result, and the resulting constant-change decision.
 
 Deployment accepts `WEIGHT_TREND_MODEL=v1|v2` and defaults to v2. Enable v2
 together with its schema migration and retain v1 as a rollback path during

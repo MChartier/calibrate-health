@@ -45,6 +45,7 @@ export type AuthenticatedApiOptions = {
   }>;
   metrics?: StubMetricEntry[];
   trendMetrics?: StubTrendMetricEntry[];
+  trendAvailability?: 'available' | 'unavailable';
 };
 
 type FixtureDiagnostics = {
@@ -287,6 +288,7 @@ async function installAuthenticatedApi(
   const metrics = options.metrics
     ?? (state === 'empty' ? [] : TREND_METRICS.map(({ id, date, weight }) => ({ id, date, weight })));
   const trendMetrics = options.trendMetrics ?? (state === 'empty' ? [] : TREND_METRICS);
+  const trendUnavailable = options.trendAvailability === 'unavailable';
   const foodDayStatus = options.foodDayStatus ?? (state === 'paused' ? 'PAUSED' : 'OPEN');
   const foodRequestCounts = new Map<string, number>();
   if (state === 'failed-request' || state === 'stale') {
@@ -395,6 +397,48 @@ async function installAuthenticatedApi(
     }
     if (pathname === '/api/v1/goals') return fulfillJson(route, DEFAULT_GOAL);
     if (pathname === '/api/v1/metrics' && url.searchParams.get('include_trend') === 'true') {
+      if (trendUnavailable) {
+        const rawTrendMetrics = trendMetrics.map((metric) => ({
+          ...metric,
+          trend_is_materialized: false,
+          trend_weight: metric.weight,
+          trend_ci_lower: metric.weight,
+          trend_ci_upper: metric.weight,
+          trend_std: 0,
+        }));
+        return fulfillJson(route, {
+          metrics: rawTrendMetrics,
+          meta: {
+            weekly_rate: 0,
+            volatility: 'low',
+            total_points: rawTrendMetrics.length,
+            total_span_days: 14,
+            trend_summary: {
+              status: 'unavailable',
+              evidence: 'insufficient',
+              freshness: 'unavailable',
+              model_version: null,
+              as_of_date: FROZEN_LOCAL_DATE,
+              scope_start_date: '2026-07-04',
+              scope_end_date: '2026-07-18',
+              latest_observation_date: '2026-07-18',
+              days_since_latest: 3,
+              modeled_start_date: null,
+              returned_points: rawTrendMetrics.length,
+              modeled_points: 0,
+              modeled_observations: 0,
+              returned_modeled_points: 0,
+              observation_span_days: 0,
+              segment_start_date: null,
+              interval_kind: 'latent_weight_model_uncertainty',
+              confidence_level: 0.95,
+              latest_trend: null,
+              weekly_rate: null,
+              short_term_variation: null,
+            },
+          },
+        });
+      }
       return fulfillJson(route, {
         metrics: trendMetrics,
         meta: { weekly_rate: -0.55, volatility: 'low', total_points: trendMetrics.length, total_span_days: 14 },

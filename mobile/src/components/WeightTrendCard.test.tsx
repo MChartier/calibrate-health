@@ -216,6 +216,53 @@ describe('WeightTrendCard', () => {
         expect(screen.getByText('Trend line: steady over 2 days.')).toBeTruthy();
     });
 
+    it('keeps raw readings usable and labels trend fitting as unavailable', () => {
+        const summary: WeightTrendSummary = {
+            ...createTrendSummary(),
+            status: 'unavailable',
+            evidence: 'insufficient',
+            freshness: 'unavailable',
+            model_version: null,
+            modeled_start_date: null,
+            modeled_observations: 0,
+            returned_modeled_points: 0,
+            modeled_points: 0,
+            observation_span_days: 0,
+            segment_start_date: null,
+            latest_trend: null,
+            weekly_rate: null,
+            short_term_variation: null
+        };
+        const rawMetrics = METRICS.map((metric) => ({
+            ...metric,
+            trend_is_materialized: false,
+            trend_weight: metric.weight,
+            trend_ci_lower: metric.weight,
+            trend_ci_upper: metric.weight,
+            trend_std: 0
+        }));
+        (useQuery as jest.Mock).mockReturnValue({
+            data: response(rawMetrics, summary),
+            error: null,
+            isLoading: false,
+            status: 'success'
+        });
+
+        const screen = render(<WeightTrendCard />);
+        expect(screen.getByTestId('weight-trend-unavailable')).toHaveProp('accessibilityRole', 'alert');
+        expect(screen.getByText('Trend estimate temporarily unavailable')).toBeTruthy();
+        expect(screen.getByText('Your scale readings are still shown. Try again later for the underlying trend.')).toBeTruthy();
+        expect(screen.queryByTestId('weight-trend-smoothed-path-0')).toBeNull();
+        expect(screen.queryByText('Underlying trend')).toBeNull();
+        expect(screen.queryByText('95% estimate range')).toBeNull();
+
+        const selected = within(screen.getByTestId('selected-trend-summary'));
+        expect(selected.getByText('168.3 lb')).toBeTruthy();
+        expect(selected.getByText(
+            'The underlying trend is temporarily unavailable, but this scale reading is saved.'
+        )).toBeTruthy();
+    });
+
     it('shows estimate freshness without adding pace information', () => {
         const summary = createTrendSummary();
         summary.freshness = 'outdated';

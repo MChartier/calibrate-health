@@ -1,28 +1,30 @@
+import { WEIGHT_TREND_PARAMETER_MANIFEST } from './weightTrendParameters';
+
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
-export const WEIGHT_TREND_MODEL_VERSION = 2;
-export const WEIGHT_TREND_SEGMENT_RESET_DAYS = 14;
-export const WEIGHT_TREND_HUBER_K = 2.5;
-/** Default window-average pace scope used by calibration. */
-export const WEIGHT_TREND_RATE_WINDOW_DAYS = 28;
-export const WEIGHT_TREND_MIN_RATE_WINDOW_DAYS = 7;
-export const WEIGHT_TREND_MAX_RATE_WINDOW_DAYS = 42;
+export const WEIGHT_TREND_MODEL_VERSION = WEIGHT_TREND_PARAMETER_MANIFEST.modelVersion;
+export const WEIGHT_TREND_SEGMENT_RESET_DAYS = WEIGHT_TREND_PARAMETER_MANIFEST.filter.segmentResetDays;
+export const WEIGHT_TREND_HUBER_K = WEIGHT_TREND_PARAMETER_MANIFEST.filter.huberK;
+/** Default exact-window pace scope used by calibration scenarios and tuning gates. */
+export const WEIGHT_TREND_RATE_WINDOW_DAYS = WEIGHT_TREND_PARAMETER_MANIFEST.calibrationWindowAverageRate.defaultWindowDays;
+export const WEIGHT_TREND_MIN_RATE_WINDOW_DAYS = WEIGHT_TREND_PARAMETER_MANIFEST.calibrationWindowAverageRate.minimumWindowDays;
+export const WEIGHT_TREND_MAX_RATE_WINDOW_DAYS = WEIGHT_TREND_PARAMETER_MANIFEST.calibrationWindowAverageRate.maximumWindowDays;
 
-const CONFIDENCE_Z_SCORE = 1.96;
-const DEFAULT_MEASUREMENT_STD_KG = 0.9;
-const MIN_MEASUREMENT_STD_KG = 0.25;
-const MAX_MEASUREMENT_STD_KG = 3.5;
-const MEASUREMENT_NOISE_SHRINKAGE_POINTS = 10;
-const INITIAL_RATE_STD_KG_PER_DAY = 0.15;
-const RATE_PROCESS_STD_KG_PER_DAY_SQRT_DAY = 0.007;
-const MIN_VARIANCE = 1e-10;
-const RECENT_WINDOW_POINTS = 14;
-const LOW_VOLATILITY_STD_KG = 0.5;
-const MEDIUM_VOLATILITY_STD_KG = 1.2;
-const STEADY_RATE_KG_PER_WEEK = 0.05;
-const MIN_RATE_RESIDUAL_STD_KG = 0.02;
-const SUFFICIENT_EVIDENCE_POINTS = 3;
-const SUFFICIENT_EVIDENCE_SPAN_DAYS = 7;
+const CONFIDENCE_Z_SCORE = WEIGHT_TREND_PARAMETER_MANIFEST.confidence.zScore;
+const DEFAULT_MEASUREMENT_STD_KG = WEIGHT_TREND_PARAMETER_MANIFEST.measurement.defaultStdKg;
+const MIN_MEASUREMENT_STD_KG = WEIGHT_TREND_PARAMETER_MANIFEST.measurement.minimumStdKg;
+const MAX_MEASUREMENT_STD_KG = WEIGHT_TREND_PARAMETER_MANIFEST.measurement.maximumStdKg;
+const MEASUREMENT_NOISE_SHRINKAGE_POINTS = WEIGHT_TREND_PARAMETER_MANIFEST.measurement.shrinkagePoints;
+const INITIAL_RATE_STD_KG_PER_DAY = WEIGHT_TREND_PARAMETER_MANIFEST.filter.initialRateStdKgPerDay;
+const RATE_PROCESS_STD_KG_PER_DAY_SQRT_DAY = WEIGHT_TREND_PARAMETER_MANIFEST.filter.rateProcessStdKgPerDaySqrtDay;
+const MIN_VARIANCE = WEIGHT_TREND_PARAMETER_MANIFEST.filter.minimumVariance;
+const RECENT_WINDOW_POINTS = WEIGHT_TREND_PARAMETER_MANIFEST.legacySummary.recentWindowPoints;
+const LOW_VOLATILITY_STD_KG = WEIGHT_TREND_PARAMETER_MANIFEST.legacySummary.lowVolatilityStdKg;
+const MEDIUM_VOLATILITY_STD_KG = WEIGHT_TREND_PARAMETER_MANIFEST.legacySummary.mediumVolatilityStdKg;
+const STEADY_RATE_KG_PER_WEEK = WEIGHT_TREND_PARAMETER_MANIFEST.legacySummary.steadyRateKgPerWeek;
+const MIN_RATE_RESIDUAL_STD_KG = WEIGHT_TREND_PARAMETER_MANIFEST.calibrationWindowAverageRate.minimumResidualStdKg;
+const SUFFICIENT_EVIDENCE_POINTS = WEIGHT_TREND_PARAMETER_MANIFEST.currentRate.sufficientEvidencePoints;
+const SUFFICIENT_EVIDENCE_SPAN_DAYS = WEIGHT_TREND_PARAMETER_MANIFEST.currentRate.sufficientEvidenceSpanDays;
 
 export type WeightTrendObservation = {
     date: Date;
@@ -32,8 +34,14 @@ export type WeightTrendObservation = {
 export type WeightTrendOptions = {
     /** Ignore observations after this instant, allowing reproducible historical/as-of evaluation. */
     asOfDate?: Date;
-    /** Window-average pace scope, bounded to 7-42 elapsed days. Defaults to 28. */
-    rateWindowDays?: number;
+    /**
+     * Exact calendar bounds for calibration's average-pace estimand.
+     * Omit this outside calibration; the result then exposes no window-average estimate.
+     */
+    calibrationWindow?: {
+        startDate: Date;
+        endDate: Date;
+    };
 };
 
 export type VolatilityLevel = 'low' | 'medium' | 'high';
@@ -169,7 +177,6 @@ export function computeWeightTrend(
     observations: WeightTrendObservation[],
     options: WeightTrendOptions = {}
 ): WeightTrendResult {
-    const rateWindowDays = normalizeRateWindowDays(options.rateWindowDays);
     const sorted = normalizeObservations(observations, options.asOfDate);
     if (sorted.length === 0) {
         return emptyResult(
@@ -189,12 +196,13 @@ export function computeWeightTrend(
     const points = finalPass.points.map(stripInternalPoint);
     const evidence = summarizeWeightTrendEvidence(points);
     const currentRate = summarizeCurrentRate(points, evidence);
-    const windowAverageRate = summarizeWindowAverageRate(points, evidence, rateWindowDays);
+    const windowAverageRate = summarizeWindowAverageRate(points, options.calibrationWindow);
     const latestPoint = points[points.length - 1];
+    const latestSegmentPoints = points.filter((point) => point.segmentId === latestPoint.segmentId);
 
     return {
         points,
-        weeklyRate: computeRecentWeeklyRate(points),
+        weeklyRate: computeRecentWeeklyRate(latestSegmentPoints),
         volatility: classifyVolatility(points),
         currentRate,
         windowAverageRate,
@@ -311,16 +319,7 @@ export function classifyWeightTrendRate(
 
 function emptyResult(asOfDate: Date | null): WeightTrendResult {
     const evidence = summarizeWeightTrendEvidence([]);
-    const unavailableRate: WeightTrendRate = {
-        estimateKgPerWeek: 0,
-        stdKgPerWeek: 0,
-        lower95KgPerWeek: 0,
-        upper95KgPerWeek: 0,
-        pointCount: 0,
-        spanDays: 0,
-        direction: 'uncertain',
-        status: 'insufficient'
-    };
+    const unavailableRate = buildUnavailableRate();
     return {
         points: [],
         weeklyRate: 0,
@@ -520,18 +519,7 @@ function estimateCausalMeasurementVariability(points: InternalFilterPoint[]): nu
 
 /** Package the latest Kalman velocity state without substituting a windowed estimator. */
 function summarizeCurrentRate(points: WeightTrendPoint[], evidence: WeightTrendEvidence): WeightTrendRate {
-    if (points.length === 0) {
-        return {
-            estimateKgPerWeek: 0,
-            stdKgPerWeek: 0,
-            lower95KgPerWeek: 0,
-            upper95KgPerWeek: 0,
-            pointCount: 0,
-            spanDays: 0,
-            direction: 'uncertain',
-            status: 'insufficient'
-        };
-    }
+    if (points.length === 0) return buildUnavailableRate();
 
     const latest = points[points.length - 1];
     const estimateKgPerWeek = latest.trendRatePerDay * 7;
@@ -555,71 +543,75 @@ function summarizeCurrentRate(points: WeightTrendPoint[], evidence: WeightTrendE
 
 function summarizeWindowAverageRate(
     points: WeightTrendPoint[],
-    evidence: WeightTrendEvidence,
-    rateWindowDays: number
+    window: WeightTrendOptions['calibrationWindow']
 ): WeightTrendRate {
-    if (points.length === 0) {
-        return {
-            estimateKgPerWeek: 0,
-            stdKgPerWeek: 0,
-            lower95KgPerWeek: 0,
-            upper95KgPerWeek: 0,
-            pointCount: 0,
-            spanDays: 0,
-            direction: 'uncertain',
-            status: 'insufficient'
-        };
+    if (!window || !validDate(window.startDate) || !validDate(window.endDate)) {
+        return buildUnavailableRate();
     }
 
-    const latest = points[points.length - 1];
-    const rateWindowStartMs = latest.date.getTime() - rateWindowDays * MS_PER_DAY;
-    const segmentPoints = points.filter((point) => (
-        point.segmentId === latest.segmentId && point.date.getTime() >= rateWindowStartMs
-    ));
-    const regression = estimateRobustSegmentRate(segmentPoints);
-    const spanDays = segmentPoints.length > 0
-        ? elapsedDays(segmentPoints[0].date, segmentPoints[segmentPoints.length - 1].date)
+    const startMs = window.startDate.getTime();
+    const endMs = window.endDate.getTime();
+    const requestedSpanDays = elapsedDays(window.startDate, window.endDate);
+    if (
+        startMs > endMs ||
+        requestedSpanDays < WEIGHT_TREND_MIN_RATE_WINDOW_DAYS ||
+        requestedSpanDays > WEIGHT_TREND_MAX_RATE_WINDOW_DAYS
+    ) {
+        return buildUnavailableRate();
+    }
+
+    const windowPoints = points.filter((point) => {
+        const pointMs = point.date.getTime();
+        return pointMs >= startMs && pointMs <= endMs;
+    });
+    const spanDays = windowPoints.length > 0
+        ? elapsedDays(windowPoints[0].date, windowPoints[windowPoints.length - 1].date)
         : 0;
-    if (!regression) {
-        return {
-            estimateKgPerWeek: 0,
-            stdKgPerWeek: 0,
-            lower95KgPerWeek: 0,
-            upper95KgPerWeek: 0,
-            pointCount: segmentPoints.length,
-            spanDays,
-            direction: 'uncertain',
-            status: 'insufficient'
-        };
+    const segmentIds = new Set(windowPoints.map((point) => point.segmentId));
+    if (segmentIds.size > 1) {
+        return buildUnavailableRate(windowPoints.length, spanDays);
     }
 
+    const regression = estimateRobustSegmentRate(windowPoints);
+    if (!regression) {
+        return buildUnavailableRate(windowPoints.length, spanDays);
+    }
+
+    const effectiveObservationCount = windowPoints.reduce(
+        (sum, point) => sum + clamp(point.huberWeight, 0, 1),
+        0
+    );
+    const evidenceStatus = classifyWeightTrendEvidence(windowPoints.length, spanDays, effectiveObservationCount);
     const estimateKgPerWeek = regression.ratePerDay * 7;
     const stdKgPerWeek = regression.rateStdPerDay * 7;
     const lower95KgPerWeek = estimateKgPerWeek - CONFIDENCE_Z_SCORE * stdKgPerWeek;
     const upper95KgPerWeek = estimateKgPerWeek + CONFIDENCE_Z_SCORE * stdKgPerWeek;
-    const classification = evidence.latestSegmentSpanDays < SUFFICIENT_EVIDENCE_SPAN_DAYS
+    const classification = spanDays < SUFFICIENT_EVIDENCE_SPAN_DAYS
         ? { direction: 'uncertain' as const, status: 'insufficient' as const }
-        : classifyWeightTrendRate(lower95KgPerWeek, upper95KgPerWeek, evidence.status);
+        : classifyWeightTrendRate(lower95KgPerWeek, upper95KgPerWeek, evidenceStatus);
     return {
         estimateKgPerWeek,
         stdKgPerWeek,
         lower95KgPerWeek,
         upper95KgPerWeek,
-        pointCount: segmentPoints.length,
+        pointCount: windowPoints.length,
         spanDays,
         ...classification
     };
 }
 
-function normalizeRateWindowDays(value: number | undefined): number {
-    if (!Number.isFinite(value)) return WEIGHT_TREND_RATE_WINDOW_DAYS;
-    return clamp(
-        Math.round(value as number),
-        WEIGHT_TREND_MIN_RATE_WINDOW_DAYS,
-        WEIGHT_TREND_MAX_RATE_WINDOW_DAYS
-    );
+function buildUnavailableRate(pointCount = 0, spanDays = 0): WeightTrendRate {
+    return {
+        estimateKgPerWeek: Number.NaN,
+        stdKgPerWeek: Number.NaN,
+        lower95KgPerWeek: Number.NaN,
+        upper95KgPerWeek: Number.NaN,
+        pointCount,
+        spanDays,
+        direction: 'uncertain',
+        status: 'insufficient'
+    };
 }
-
 type WeightedLineFit = {
     intercept: number;
     slope: number;

@@ -23,6 +23,7 @@ import {
     describeVisibleWeightTrend,
     formatEstimatedTrendRange,
     getLatestWeightTrendSnapshot,
+    isVisibleWeightTrendPoint,
 } from '../weightTrend/presentation';
 
 type TrendRange = 'week' | 'month' | 'year' | 'all';
@@ -122,6 +123,8 @@ export const WeightTrendCard: React.FC<WeightTrendCardProps> = ({
     const selectedPoint = selectedPointIndex >= 0 ? chartPoints[selectedPointIndex] : null;
 
     const hasWeightHistory = (trendQuery.data?.meta.total_points ?? 0) > 0;
+    const trendUnavailable = trendSummary?.status === 'unavailable';
+    const hasVisibleTrend = metrics.some(isVisibleWeightTrendPoint);
     const latestSnapshot = getLatestWeightTrendSnapshot(metrics, trendSummary);
     const visibleTrendSummary = describeVisibleWeightTrend(metrics, user?.weight_unit);
     const showModelBoundary = (range === 'year' || range === 'all') && chartLayout.modelBoundaryPoint !== null;
@@ -179,6 +182,14 @@ export const WeightTrendCard: React.FC<WeightTrendCardProps> = ({
                 onRetry={isOnline ? () => trendQuery.refetch() : undefined}
                 retrying={trendQuery.isFetching}
             >
+            {trendUnavailable ? (
+                <View testID="weight-trend-unavailable" accessibilityRole="alert" style={styles.unavailableNotice}>
+                    <AppText variant="subtitle">Trend estimate temporarily unavailable</AppText>
+                    <AppText variant="body">
+                        Your scale readings are still shown. Try again later for the underlying trend.
+                    </AppText>
+                </View>
+            ) : null}
             {chartPoints.length === 1 ? (
                 <View
                     accessibilityLabel={`First weigh-in recorded at ${formatWeight(chartPoints[0].metric.weight, user?.weight_unit)}`}
@@ -350,11 +361,12 @@ export const WeightTrendCard: React.FC<WeightTrendCardProps> = ({
                             Smoothed trend starts {formatDateOnlyForDisplay(chartLayout.modelBoundaryPoint.dateKey)}. Earlier dots are measurements only.
                         </AppText>
                     )}
-                    <TrendChartLegend />
+                    <TrendChartLegend showModeledTrend={hasVisibleTrend} />
                     {selectedPoint && (
                         <SelectedTrendPanel
                             point={selectedPoint}
                             unit={user?.weight_unit}
+                            trendUnavailable={trendUnavailable}
                             freshness={selectedPointIndex === chartPoints.length - 1
                                 ? trendSummary?.freshness ?? (trendSummary?.status === 'stale' ? 'stale' : 'current')
                                 : null}
@@ -390,8 +402,9 @@ export const WeightTrendCard: React.FC<WeightTrendCardProps> = ({
 const SelectedTrendPanel: React.FC<{
     point: WeightTrendChartPoint;
     unit: Parameters<typeof formatWeight>[1];
-    freshness: 'current' | 'stale' | 'outdated' | null;
-}> = ({ point, unit, freshness }) => {
+    freshness: 'current' | 'stale' | 'outdated' | 'unavailable' | null;
+    trendUnavailable: boolean;
+}> = ({ point, unit, freshness, trendUnavailable }) => {
     const theme = useAppTheme();
     const styles = useMemo(() => createStyles(theme), [theme]);
     const [isRangeInfoHovered, setIsRangeInfoHovered] = useState(false);
@@ -471,7 +484,9 @@ const SelectedTrendPanel: React.FC<{
                         {formatWeight(point.metric.weight, unit)}
                     </AppText>
                     <AppText variant="caption">
-                        This older point has no underlying trend estimate.
+                        {trendUnavailable
+                            ? 'The underlying trend is temporarily unavailable, but this scale reading is saved.'
+                            : 'This older point has no underlying trend estimate.'}
                     </AppText>
                 </>
             )}
@@ -504,7 +519,7 @@ const PointNavigationButton: React.FC<{
     );
 };
 
-const TrendChartLegend: React.FC = () => {
+const TrendChartLegend: React.FC<{ showModeledTrend: boolean }> = ({ showModeledTrend }) => {
     const theme = useAppTheme();
     const styles = useMemo(() => createStyles(theme), [theme]);
     return (
@@ -513,14 +528,18 @@ const TrendChartLegend: React.FC = () => {
                 <View style={styles.readingLegendMarker} />
                 <AppText variant="caption">Scale reading</AppText>
             </View>
-            <View style={styles.chartLegendItem}>
-                <View style={styles.trendLegendMarker} />
-                <AppText variant="caption">Underlying trend</AppText>
-            </View>
-            <View style={styles.chartLegendItem}>
-                <View style={styles.rangeLegendMarker} />
-                <AppText variant="caption">95% estimate range</AppText>
-            </View>
+            {showModeledTrend ? (
+                <>
+                    <View style={styles.chartLegendItem}>
+                        <View style={styles.trendLegendMarker} />
+                        <AppText variant="caption">Underlying trend</AppText>
+                    </View>
+                    <View style={styles.chartLegendItem}>
+                        <View style={styles.rangeLegendMarker} />
+                        <AppText variant="caption">95% estimate range</AppText>
+                    </View>
+                </>
+            ) : null}
         </View>
     );
 };
@@ -528,7 +547,7 @@ const TrendChartLegend: React.FC = () => {
 const createStyles = (theme: AppTheme) => StyleSheet.create({
     card: { width: '100%' },
     rangeRow: { flexDirection: 'row', gap: spacing.sm },
-    rangeChip: { flex: 1 },
+    rangeChip: { flex: 1, paddingHorizontal: spacing.xs },
     chartShell: {
         flexGrow: 1,
         borderRadius: radius.md,
@@ -578,6 +597,12 @@ const createStyles = (theme: AppTheme) => StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         padding: spacing.lg
+    },
+    unavailableNotice: {
+        borderRadius: radius.md,
+        backgroundColor: theme.colors.infoContainer,
+        padding: spacing.md,
+        gap: spacing.xs
     },
     singlePointState: {
         flexGrow: 1,

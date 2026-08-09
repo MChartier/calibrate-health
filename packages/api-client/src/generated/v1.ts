@@ -460,14 +460,17 @@ export interface components {
             central_80_half_width: number;
         };
         WeightTrendSummary: {
-            /** @enum {integer} */
-            model_version: 1 | 2;
+            /**
+             * @description Null when trend fitting or refresh is unavailable and only raw measurements are returned.
+             * @enum {integer|null}
+             */
+            model_version: 1 | 2 | null;
             /**
              * @deprecated
              * @description Compatibility field; use evidence and freshness independently.
              * @enum {string}
              */
-            status: "insufficient" | "provisional" | "sufficient" | "stale";
+            status: "insufficient" | "provisional" | "sufficient" | "stale" | "unavailable";
             /** Format: date */
             as_of_date: string;
             /** Format: date */
@@ -479,7 +482,16 @@ export interface components {
             days_since_latest: number | null;
             /** Format: date */
             modeled_start_date: string | null;
+            /** @description All measurements returned for the requested display scope. */
             returned_points: number;
+            /** @description Source observations included in the coherent bounded model pass; zero when unavailable. */
+            modeled_observations: number;
+            /** @description Returned measurements that also have a modeled trend point. */
+            returned_modeled_points: number;
+            /**
+             * @deprecated
+             * @description Legacy alias of returned_modeled_points.
+             */
             modeled_points: number;
             observation_span_days: number;
             /** Format: date */
@@ -491,7 +503,7 @@ export interface components {
             /** @enum {string} */
             evidence: "insufficient" | "provisional" | "sufficient";
             /** @enum {string} */
-            freshness: "current" | "stale" | "outdated";
+            freshness: "current" | "stale" | "outdated" | "unavailable";
             latest_trend: null | components["schemas"]["WeightTrendLatestEstimate"];
             weekly_rate: null | components["schemas"]["WeightTrendWeeklyRate"];
             short_term_variation: null | components["schemas"]["WeightTrendReadingVariation"];
@@ -502,12 +514,12 @@ export interface components {
             meta: {
                 /**
                  * @deprecated
-                 * @description Legacy compatibility estimate; use trend_summary.weekly_rate.
+                 * @description Legacy compatibility estimate from the latest uninterrupted segment. On unavailable refreshes, a safe last-known-good value is used or the established zero fallback.
                  */
                 weekly_rate: number;
                 /**
                  * @deprecated
-                 * @description Legacy compatibility label; use trend_summary.short_term_variation.
+                 * @description Legacy compatibility label. On unavailable refreshes, a safe last-known-good value is used or the established low fallback; use trend_summary.short_term_variation for availability.
                  * @enum {string}
                  */
                 volatility: "low" | "medium" | "high";

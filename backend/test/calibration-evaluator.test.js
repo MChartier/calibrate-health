@@ -1,7 +1,8 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
-const { evaluateCalibration } = require('../../shared/calibration');
+const { CALIBRATION_MODEL_VERSION, evaluateCalibration } = require('../../shared/calibration');
+const { computeWeightTrend } = require('../../shared/weightTrend.ts');
 const { getCalibrationScenario } = require('../../shared/calibrationScenarios');
 
 function evaluateScenario(id) {
@@ -162,6 +163,59 @@ test('a post-gap pair cannot establish pace or recommend a change', () => {
   assert.match(result.summary, /a single weigh-in cannot establish a reliable trend/);
 });
 
+test('calibration v4 isolates selected-window pace from a strong earlier reversal', () => {
+  const input = cloneScenarioInput('target-too-high');
+  const baseline = evaluateCalibration(input);
+  const firstWeightDate = input.weightPoints[0].date;
+  input.weightPoints.unshift(
+    { date: addDays(firstWeightDate, -30), weightKg: 70 },
+    { date: addDays(firstWeightDate, -16), weightKg: 100 }
+  );
+
+  const result = evaluateCalibration(input);
+
+  assert.equal(CALIBRATION_MODEL_VERSION, 4);
+  assert.equal(result.modelVersion, 4);
+  assert.equal(result.selectedWindowDays, baseline.selectedWindowDays);
+  assert.deepEqual(result.estimates.observedWeeklyWeightChangeKg, baseline.estimates.observedWeeklyWeightChangeKg);
+  assert.deepEqual(result.estimates.targetAdjustmentKcal, baseline.estimates.targetAdjustmentKcal);
+  assert.equal(result.recommendation.adjustmentStepKcal, baseline.recommendation.adjustmentStepKcal);
+  assert.ok(Math.abs(result.recommendation.adjustmentStepKcal) <= 150);
+});
+
+test('calibration v4 does not fall back to current velocity after a reset inside the selected window', () => {
+  const input = cloneScenarioInput('target-too-high');
+  const asOfDate = input.asOfDate;
+  input.weightPoints = [
+    { date: addDays(asOfDate, -28), weightKg: 90 },
+    { date: addDays(asOfDate, -27), weightKg: 90.2 },
+    { date: addDays(asOfDate, -11), weightKg: 89.8 },
+    { date: addDays(asOfDate, -7), weightKg: 89.5 },
+    { date: addDays(asOfDate, -3), weightKg: 89.2 },
+    { date: asOfDate, weightKg: 89 }
+  ];
+  const trend = computeWeightTrend(input.weightPoints.map((point) => ({
+    date: new Date(`${point.date}T00:00:00.000Z`),
+    weight: point.weightKg
+  })), {
+    calibrationWindow: {
+      startDate: new Date(`${addDays(asOfDate, -28)}T00:00:00.000Z`),
+      endDate: new Date(`${asOfDate}T00:00:00.000Z`)
+    }
+  });
+  const result = evaluateCalibration(input);
+
+  assert.equal(trend.segments.length, 2);
+  assert.notEqual(trend.currentRate.status, 'insufficient');
+  assert.equal(trend.windowAverageRate.status, 'insufficient');
+  assert.equal(Number.isFinite(trend.windowAverageRate.estimateKgPerWeek), false);
+  assert.equal(result.modelVersion, 4);
+  assert.equal(result.selectedWindowDays, 28);
+  assert.equal(result.status, 'learning');
+  assert.equal(result.estimates.observedWeeklyWeightChangeKg, null);
+  assert.equal(result.estimates.targetAdjustmentKcal, null);
+  assert.equal(result.recommendation, null);
+});
 test('explains the 14-day action threshold when directional evidence appears earlier', () => {
   const input = cloneScenarioInput('target-too-high');
   input.foodDays = input.foodDays.slice(-13);

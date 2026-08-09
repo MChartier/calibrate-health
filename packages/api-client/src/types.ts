@@ -909,11 +909,11 @@ export type TrendMetricEntry = MetricEntry & {
     trend_std: number;
 };
 
-export type WeightTrendSummaryStatus = 'insufficient' | 'provisional' | 'sufficient' | 'stale';
+export type WeightTrendSummaryStatus = 'insufficient' | 'provisional' | 'sufficient' | 'stale' | 'unavailable';
 
 export type WeightTrendRateEvidence = 'insufficient' | 'provisional' | 'sufficient';
 
-export type WeightTrendFreshness = 'current' | 'stale' | 'outdated';
+export type WeightTrendFreshness = 'current' | 'stale' | 'outdated' | 'unavailable';
 
 export type WeightTrendWeeklyRate = {
     estimate: number;
@@ -933,7 +933,7 @@ export type WeightTrendSummary = {
     status?: WeightTrendSummaryStatus;
     evidence?: WeightTrendRateEvidence;
     freshness?: WeightTrendFreshness;
-    model_version: number;
+    model_version: number | null;
     as_of_date: string;
     scope_start_date: string | null;
     scope_end_date: string | null;
@@ -943,6 +943,11 @@ export type WeightTrendSummary = {
     modeled_start_date?: string | null;
     /** Number of points returned for the requested scope, including measurement-only context. */
     returned_points?: number;
+    /** Source observations in the coherent bounded model pass; absent on older servers. */
+    modeled_observations?: number;
+    /** Modeled points present in the returned scope; absent on older servers. */
+    returned_modeled_points?: number;
+    /** Legacy alias of returned_modeled_points. */
     modeled_points: number;
     observation_span_days: number;
     segment_start_date: string | null;
