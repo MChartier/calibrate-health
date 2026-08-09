@@ -1,9 +1,19 @@
 import assert from 'node:assert/strict';
+import crypto from 'node:crypto';
 import fs from 'node:fs';
+import path from 'node:path';
 import test from 'node:test';
 
 import {
+  NATIVE_RELEASE_ARTIFACT_CONTRACTS,
+  NATIVE_RELEASE_CHECKPOINT_DEFINITIONS,
+  NATIVE_RELEASE_CHECKPOINT_GROUPS,
+  NATIVE_RELEASE_EVIDENCE_SCHEMA_VERSION,
+  NATIVE_RELEASE_PROTOCOL
+} from './native-release-evidence.mjs';
+import {
   loadRepositoryRiskEvidence,
+  parseRiskEvidenceArgs,
   validateRiskEvidence
 } from './verify-risk-evidence.mjs';
 
@@ -15,6 +25,143 @@ function repositoryFixture() {
     now: new Date('2026-07-13T12:00:00.000Z'),
     candidateCommit: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
   };
+}
+
+function attachPhysicalEvidence(fixture, options = {}) {
+  const sourceCommit = options.sourceCommit ?? 'a'.repeat(40);
+  const candidateCommit = options.candidateCommit ?? sourceCommit;
+  const evidenceCommit = options.evidenceCommit ?? 'b'.repeat(40);
+  const resultArtifact = 'quality/physical-results/test-fixture.json';
+  const manifestContent = fs.readFileSync(path.join(fixture.repoRoot, 'shared', 'release.json'));
+  const releaseManifest = JSON.parse(manifestContent.toString('utf8'));
+  const signerSha256 = 'c'.repeat(64);
+  const capabilities = Object.keys(NATIVE_RELEASE_CHECKPOINT_GROUPS).sort();
+  const checkpoints = Object.fromEntries(
+    Object.entries(NATIVE_RELEASE_CHECKPOINT_DEFINITIONS).map(
+      ([checkpoint, definition]) => [checkpoint, { ...definition, outcome: true }]
+    )
+  );
+  const artifacts = NATIVE_RELEASE_ARTIFACT_CONTRACTS.map((contract, index) => {
+    const client = contract.role === 'phone' ? 'mobile' : 'wear';
+    return {
+      ...contract,
+      sizeBytes: 1_000 + index,
+      sha256: `${index + 1}`.repeat(64),
+      applicationId: releaseManifest.android.application_id,
+      versionName: releaseManifest.android[client].version_name,
+      versionCode: releaseManifest.android[client].version_code,
+      signerSha256
+    };
+  });
+  const installState = (versionName, versionCode) => ({
+    versionName,
+    versionCode,
+    firstInstallTime: '2026-07-01 10:00:00',
+    signerSha256
+  });
+  const versionFor = (role) => artifacts.find(
+    (artifact) => artifact.role === role && artifact.format === 'apk'
+  );
+  const phoneVersion = versionFor('phone');
+  const watchVersion = versionFor('watch');
+  const releaseManifestRecord = {
+    path: 'shared/release.json',
+    sha256: crypto.createHash('sha256').update(manifestContent).digest('hex')
+  };
+  const buildProvenance = {
+    schemaVersion: 1,
+    sourceCommit,
+    releaseManifest: releaseManifestRecord,
+    artifacts: artifacts.map((artifact) => Object.fromEntries(
+      Object.entries(artifact).filter(([field]) => field !== 'signerSha256')
+    ))
+  };
+  const resultArtifactContents = {
+    schemaVersion: NATIVE_RELEASE_EVIDENCE_SCHEMA_VERSION,
+    status: 'passed',
+    owner: 'MChartier',
+    executedOn: '2026-07-13',
+    sourceCommit,
+    protocol: NATIVE_RELEASE_PROTOCOL,
+    syntheticAccount: true,
+    buildProvenance,
+    releaseManifest: releaseManifestRecord,
+    artifacts,
+    devices: [
+      {
+        role: 'phone',
+        deviceClass: 'handset',
+        manufacturer: 'Samsung',
+        model: 'Galaxy phone fixture',
+        osVersion: 'Android fixture',
+        apiLevel: 36,
+        isPhysical: true,
+        isEmulator: false
+      },
+      {
+        role: 'watch',
+        deviceClass: 'watch',
+        manufacturer: 'Samsung Electronics',
+        model: 'Galaxy Watch Ultra fixture',
+        osVersion: 'Wear OS fixture',
+        apiLevel: 35,
+        isPhysical: true,
+        isEmulator: false
+      }
+    ],
+    upgrades: {
+      phone: {
+        explicitAdbTarget: true,
+        installMode: 'adb-install-r',
+        uninstallPerformed: false,
+        dataCleared: false,
+        pre: installState('previous-phone', phoneVersion.versionCode - 1),
+        post: installState(phoneVersion.versionName, phoneVersion.versionCode)
+      },
+      watch: {
+        explicitAdbTarget: true,
+        installMode: 'adb-install-r',
+        uninstallPerformed: false,
+        dataCleared: false,
+        pre: installState('previous-watch', watchVersion.versionCode - 1),
+        post: installState(watchVersion.versionName, watchVersion.versionCode)
+      }
+    },
+    checkpoints,
+    capabilities
+  };
+  const physicalRecord = {
+    id: 'recorded-physical-validation',
+    riskArea: 'critical-client-workflows',
+    status: 'passed',
+    owner: resultArtifactContents.owner,
+    executedOn: resultArtifactContents.executedOn,
+    sourceCommit,
+    protocolPath: NATIVE_RELEASE_PROTOCOL,
+    resultArtifact,
+    capabilities
+  };
+  fixture.manifest.physicalDeviceEvidence.push(physicalRecord);
+  fixture.manifest.waivers = fixture.manifest.waivers.filter(
+    (waiver) => waiver.id !== 'physical-galaxy-phone-and-watch-validation'
+  );
+  fixture.releaseMode = true;
+  fixture.candidateCommit = candidateCommit;
+  fixture.evidenceCommit = evidenceCommit;
+  fixture.candidateManifestContent = manifestContent;
+  fixture.evidenceAttestation = {
+    parentCommits: [candidateCommit],
+    changedPaths: ['quality/risk-evidence.json', resultArtifact],
+    checkedOutCommit: evidenceCommit,
+    worktreeStatus: ''
+  };
+  fixture.statSync = (resolvedPath) => resolvedPath.endsWith('test-fixture.json')
+    ? { isFile: () => true, size: 100 }
+    : fs.statSync(resolvedPath);
+  fixture.readFileSync = (resolvedPath, encoding) => resolvedPath.endsWith('test-fixture.json')
+    ? JSON.stringify(resultArtifactContents)
+    : fs.readFileSync(resolvedPath, encoding);
+  return { physicalRecord, resultArtifactContents };
 }
 
 test('repository manifest covers every required capability and reports the physical release blocker', () => {
@@ -112,87 +259,57 @@ test('every waiver requires a scoped owner, reason, issue, and known capability'
   assert.ok(result.errors.some((error) => error.includes('trackingIssues must contain')));
 });
 
-test('physical evidence replaces the temporary waiver instead of requiring it forever', () => {
+test('physical evidence replaces the temporary waiver through an explicit evidence-only child', () => {
   const fixture = repositoryFixture();
-  fixture.releaseMode = true;
-  const physicalWaiver = fixture.manifest.waivers.find(
-    (waiver) => waiver.id === 'physical-galaxy-phone-and-watch-validation'
-  );
-  const physicalRecord = {
-    id: 'recorded-physical-validation',
-    riskArea: 'critical-client-workflows',
-    status: 'passed',
-    owner: 'MChartier',
-    executedOn: '2026-07-13',
-    releaseCommit: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
-    command: 'Follow the paired Galaxy release matrix in docs/play-console-health-release-checklist.md',
-    deviceModels: {
-      phone: 'Samsung Galaxy phone fixture',
-      watch: 'Samsung Galaxy Watch Ultra fixture'
-    },
-    protocolPath: 'docs/play-console-health-release-checklist.md',
-    resultArtifact: 'quality/physical-results/test-fixture.json',
-    capabilities: [...physicalWaiver.capabilities]
-  };
-  fixture.manifest.physicalDeviceEvidence.push(physicalRecord);
-  fixture.manifest.waivers = fixture.manifest.waivers.filter(
-    (waiver) => waiver.id !== physicalWaiver.id
-  );
-  const artifact = { schemaVersion: 1, ...physicalRecord };
-  delete artifact.id;
-  delete artifact.riskArea;
-  delete artifact.protocolPath;
-  delete artifact.resultArtifact;
-  fixture.statSync = (resolvedPath) => resolvedPath.endsWith('test-fixture.json')
-    ? { isFile: () => true, size: 100 }
-    : fs.statSync(resolvedPath);
-  fixture.readFileSync = (resolvedPath, encoding) => resolvedPath.endsWith('test-fixture.json')
-    ? JSON.stringify(artifact)
-    : fs.readFileSync(resolvedPath, encoding);
+  attachPhysicalEvidence(fixture);
 
   const result = validateRiskEvidence(fixture);
 
   assert.deepEqual(result.errors, []);
-  assert.equal(result.blockers.some((blocker) => blocker.id === physicalWaiver.id), false);
+  assert.equal(result.blockers.length, 0);
 });
 
-test('release mode rejects physical evidence recorded for a different candidate commit', () => {
+test('release mode rejects physical evidence recorded for a different frozen candidate', () => {
   const fixture = repositoryFixture();
-  fixture.releaseMode = true;
-  fixture.candidateCommit = 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
-  const physicalWaiver = fixture.manifest.waivers.find(
-    (waiver) => waiver.id === 'physical-galaxy-phone-and-watch-validation'
-  );
-  const physicalRecord = {
-    id: 'stale-physical-validation',
-    riskArea: 'critical-client-workflows',
-    status: 'passed',
-    owner: 'MChartier',
-    executedOn: '2026-07-13',
-    releaseCommit: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
-    command: 'Follow the paired Galaxy release matrix in docs/play-console-health-release-checklist.md',
-    deviceModels: { phone: 'Galaxy phone', watch: 'Galaxy Watch Ultra' },
-    protocolPath: 'docs/play-console-health-release-checklist.md',
-    resultArtifact: 'quality/physical-results/test-fixture.json',
-    capabilities: [...physicalWaiver.capabilities]
-  };
-  fixture.manifest.physicalDeviceEvidence.push(physicalRecord);
-  fixture.manifest.waivers = [];
-  const artifact = { schemaVersion: 1, ...physicalRecord };
-  delete artifact.id;
-  delete artifact.riskArea;
-  delete artifact.protocolPath;
-  delete artifact.resultArtifact;
-  fixture.statSync = (resolvedPath) => resolvedPath.endsWith('test-fixture.json')
-    ? { isFile: () => true, size: 100 }
-    : fs.statSync(resolvedPath);
-  fixture.readFileSync = (resolvedPath, encoding) => resolvedPath.endsWith('test-fixture.json')
-    ? JSON.stringify(artifact)
-    : fs.readFileSync(resolvedPath, encoding);
+  attachPhysicalEvidence(fixture, { candidateCommit: 'd'.repeat(40) });
 
   const result = validateRiskEvidence(fixture);
 
   assert.ok(result.errors.some((error) => error.includes('does not match release candidate')));
+});
+
+test('release mode rejects a non-evidence change in attestation child A', () => {
+  const fixture = repositoryFixture();
+  attachPhysicalEvidence(fixture);
+  fixture.evidenceAttestation.changedPaths.push('mobile/app.json');
+
+  const result = validateRiskEvidence(fixture);
+
+  assert.ok(result.errors.some((error) => error.includes('non-evidence paths: mobile/app.json')));
+});
+
+test('release mode rejects dirty or unrelated evidence checkouts', () => {
+  const fixture = repositoryFixture();
+  attachPhysicalEvidence(fixture);
+  fixture.evidenceAttestation.checkedOutCommit = 'e'.repeat(40);
+  fixture.evidenceAttestation.worktreeStatus = ' M package.json';
+
+  const result = validateRiskEvidence(fixture);
+
+  assert.ok(result.errors.some((error) => error.includes('checked-out HEAD')));
+  assert.ok(result.errors.some((error) => error.includes('clean worktree and index')));
+});
+
+test('risk evidence CLI keeps candidate C separate from evidence child A', () => {
+  assert.deepEqual(parseRiskEvidenceArgs([
+    '--release',
+    '--candidate', 'a'.repeat(40),
+    '--evidence', 'b'.repeat(40)
+  ], {}), {
+    releaseMode: true,
+    candidateCommit: 'a'.repeat(40),
+    evidenceCommit: 'b'.repeat(40)
+  });
 });
 
 test('ordinary unit evidence cannot clear a physical-device capability', () => {

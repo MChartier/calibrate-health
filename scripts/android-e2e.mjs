@@ -3,6 +3,7 @@ import { once } from 'node:events';
 import { readFileSync } from 'node:fs';
 import http from 'node:http';
 import path from 'node:path';
+import process from 'node:process';
 import { fileURLToPath } from 'node:url';
 
 const API_URL = process.env.CALIBRATE_E2E_API_URL ?? 'http://127.0.0.1:3000';
@@ -18,8 +19,25 @@ const HOP_BY_HOP_HEADERS = new Set([
   'connection', 'content-encoding', 'content-length', 'keep-alive', 'proxy-authenticate',
   'proxy-authorization', 'te', 'trailer', 'transfer-encoding', 'upgrade'
 ]);
-const ADB = process.env.ADB
-  ?? path.join(process.env.LOCALAPPDATA ?? '', 'Android', 'Sdk', 'platform-tools', 'adb.exe');
+export function resolveAndroidE2eAdb(environment = process.env, platform = process.platform) {
+  if (environment.ADB?.trim()) return environment.ADB.trim();
+  const pathApi = platform === 'win32' ? path.win32 : path.posix;
+  const sdkRoot = environment.ANDROID_HOME
+    ?? environment.ANDROID_SDK_ROOT
+    ?? (environment.LOCALAPPDATA ? pathApi.join(environment.LOCALAPPDATA, 'Android', 'Sdk') : null);
+  if (!sdkRoot) return platform === 'win32' ? 'adb.exe' : 'adb';
+  return pathApi.join(sdkRoot, 'platform-tools', platform === 'win32' ? 'adb.exe' : 'adb');
+}
+
+export function buildAndroidE2eAdbArgs(args, serial = process.env.ANDROID_ADB_SERIAL) {
+  const target = serial?.trim();
+  if (!target || !/^emulator-\d+$/.test(target)) {
+    throw new Error('ANDROID_ADB_SERIAL must explicitly name an emulator-<port> target.');
+  }
+  return ['-s', target, ...args];
+}
+
+const ADB = resolveAndroidE2eAdb();
 const release = JSON.parse(readFileSync(new URL('../shared/release.json', import.meta.url), 'utf8'));
 const NATIVE_CLIENT_HEADERS = {
   PLATFORM: 'x-calibrate-client-platform',
@@ -29,7 +47,7 @@ const NATIVE_CLIENT_HEADERS = {
 const sleep = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
 
 function adb(args, options = {}) {
-  return execFileSync(ADB, args, {
+  return execFileSync(ADB, buildAndroidE2eAdbArgs(args), {
     encoding: 'utf8',
     stdio: options.quiet ? ['ignore', 'pipe', 'pipe'] : ['ignore', 'pipe', 'inherit']
   }).trim();
@@ -299,6 +317,12 @@ async function logRecentFood(name) {
 
 async function main() {
   let apiProxy = null;
+  adb(['wait-for-device'], { quiet: true });
+  const qemu = adb(['shell', 'getprop', 'ro.kernel.qemu'], { quiet: true });
+  const characteristics = adb(['shell', 'getprop', 'ro.build.characteristics'], { quiet: true });
+  if (qemu !== '1' || characteristics.split(',').includes('watch')) {
+    throw new Error('ANDROID_ADB_SERIAL must resolve to an Android phone emulator.');
+  }
   const health = await requestJson('/api/v1/healthz');
   if (!health.ok) throw new Error('Calibrate E2E backend health check failed.');
   const metroStatus = await fetch('http://127.0.0.1:8081/status').then((response) => response.text());
@@ -311,7 +335,6 @@ async function main() {
   await seedRecentFood(session.access_token, date, ONLINE_FOOD);
   await seedRecentFood(session.access_token, date, OFFLINE_FOOD);
   apiProxy = await startApiProxy();
-  adb(['wait-for-device'], { quiet: true });
   adb(['shell', 'cmd', 'connectivity', 'airplane-mode', 'disable'], { quiet: true });
   reverseApiTo(apiProxy);
   // Scope the crash assertion to this run so stale emulator crashes do not cause a false failure.
@@ -326,7 +349,7 @@ async function main() {
     const onlineBefore = await countFood(session.access_token, date, onlineName);
     await logRecentFood(onlineName);
     await waitForFoodCount(session.access_token, date, onlineName, onlineBefore + 1);
-    console.log(`PASS online one-tap logging: ${onlineName} ${onlineBefore} -> ${onlineBefore + 1}`);
+    console.log(`PASS online one-tap logging count: ${onlineBefore} -> ${onlineBefore + 1}`);
 
     const offlineName = OFFLINE_FOOD.name;
     const offlineBefore = await countFood(session.access_token, date, offlineName);
@@ -348,7 +371,7 @@ async function main() {
     apiProxy.setAvailable(true);
     await launchAndWaitForLog();
     await waitForFoodCount(session.access_token, date, offlineName, offlineBefore + 1, 45_000);
-    console.log(`PASS process-death replay: ${offlineName} ${offlineBefore} -> ${offlineBefore + 1}`);
+    console.log(`PASS process-death replay count: ${offlineBefore} -> ${offlineBefore + 1}`);
 
     await launchAndWaitForLog();
     await sleep(3_000);
@@ -362,7 +385,7 @@ async function main() {
     if (crashBufferContainsCalibrateProcess(crashes)) {
       throw new Error(`Calibrate appears in the Android crash buffer:\n${crashes}`);
     }
-    console.log(`PASS exactly-once replay after second restart: ${offlineName} remained ${finalCount}`);
+    console.log(`PASS exactly-once replay after second restart: count remained ${finalCount}`);
   } finally {
     adb(['shell', 'cmd', 'connectivity', 'airplane-mode', 'disable'], { quiet: true });
     await apiProxy?.close().catch(() => undefined);

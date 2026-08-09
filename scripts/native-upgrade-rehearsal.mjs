@@ -183,6 +183,7 @@ export function resolveNativeUpgradeTooling(environment = process.env, options =
     java: commandPath(path.join(javaHome, 'bin'), 'java.exe', 'java'),
     keytool: commandPath(path.join(javaHome, 'bin'), 'keytool.exe', 'keytool'),
     npmCli: environment.NPM_CLI_JS
+      ?? environment.npm_execpath
       ?? path.join(path.dirname(process.execPath), 'node_modules', 'npm', 'bin', 'npm-cli.js')
   };
 }
@@ -480,7 +481,7 @@ export async function buildCheckout(label, checkout, tooling, environment, runne
   });
   await runner({
     command: process.execPath,
-    args: [tooling.npmCli, 'run', 'release:check'],
+    args: [path.join(checkout, 'scripts', 'release-config.mjs'), 'check'],
     cwd: checkout,
     env: environment,
     label: `verify ${label} release mirrors`

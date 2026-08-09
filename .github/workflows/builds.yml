@@ -196,6 +196,14 @@ jobs:
         working-directory: mobile/android
         run: ./gradlew assembleDebug -PreactNativeArchitectures=x86_64
 
+      - name: Share Android debug APK with emulator E2E
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-debug-apk-${{ github.run_id }}-${{ github.run_attempt }}
+          path: mobile/android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 1
+
   wear-build:
     name: Wear Build and JVM Tests
     runs-on: ubuntu-latest
@@ -232,3 +240,263 @@ jobs:
       - name: Validate Wear source, resources, and tests
         working-directory: wear
         run: ./gradlew assembleDebug testDebugUnitTest --no-daemon --console=plain
+
+  android-emulator-e2e:
+    name: Android Emulator End-to-End
+    needs: mobile-build
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    env:
+      ANDROID_ADB_SERIAL: emulator-5554
+      AUTO_LOGIN_TEST_USER: "true"
+      CALIBRATE_E2E_API_URL: http://127.0.0.1:3000
+      DATABASE_URL: postgresql://calibrate:calibrate@127.0.0.1:5432/calibrate?schema=public
+      EXPO_NO_METRO_WORKSPACE_ROOT: "1"
+      EXPO_PUBLIC_CALIBRATE_AUTO_LOGIN_TEST_USER: "true"
+      EXPO_PUBLIC_CALIBRATE_SERVER_URL: http://localhost:3000
+      FOOD_DATA_PROVIDER: usda
+      NATIVE_PUSH_MODE: disabled
+      NODE_ENV: development
+      PORT: "3000"
+      SESSION_SECRET: android-emulator-e2e-only-session-secret-000000000000000000000000
+      USDA_API_KEY: DEMO_KEY
+
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_DB: calibrate
+          POSTGRES_PASSWORD: calibrate
+          POSTGRES_USER: calibrate
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U calibrate -d calibrate"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.0
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            backend/package-lock.json
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Enable KVM
+        shell: bash
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Install host and backend dependencies
+        run: |
+          npm ci --no-audit --fund=false
+          npm --prefix backend ci --no-audit --fund=false
+
+      - name: Prepare deterministic backend fixture
+        shell: bash
+        run: |
+          npm --prefix backend run build
+          npm --prefix backend run db:migrate
+          npm --prefix backend run db:seed
+          mkdir -p "$RUNNER_TEMP/calibrate-native"
+          nohup npm --prefix backend start > "$RUNNER_TEMP/calibrate-native/backend.log" 2>&1 &
+          for attempt in {1..60}; do
+            if curl --fail --silent http://127.0.0.1:3000/api/v1/healthz > /dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "Backend fixture did not become ready." >&2
+          exit 1
+
+      - name: Start deterministic Metro bundle
+        shell: bash
+        run: |
+          nohup npm --prefix mobile run dev -- --host localhost --port 8081 > "$RUNNER_TEMP/calibrate-native/metro.log" 2>&1 &
+          for attempt in {1..90}; do
+            if curl --fail --silent http://127.0.0.1:8081/status | grep --quiet 'packager-status:running'; then
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "Metro did not become ready." >&2
+          exit 1
+
+      - name: Download reviewed Android debug APK
+        uses: actions/download-artifact@v4
+        with:
+          name: android-debug-apk-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .ci-artifacts/android-debug
+
+      - name: Run Android online, offline, process-death, and replay E2E
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          emulator-port: 5554
+          emulator-boot-timeout: 600
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -camera-back none
+          disable-animations: true
+          script: |
+            adb -s "$ANDROID_ADB_SERIAL" install -r .ci-artifacts/android-debug/app-debug.apk
+            npm run test:android:e2e
+
+  wear-release-emulator-smoke:
+    name: Wear Release Emulator Smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    env:
+      CALIBRATE_ANDROID_SIGNING_KEY_ALIAS: calibrate-hosted-emulator
+      CALIBRATE_ANDROID_SIGNING_KEY_PASSWORD: hosted-emulator-only-password
+      CALIBRATE_ANDROID_SIGNING_STORE_FILE: ${{ github.workspace }}/.ci-signing/native-emulator.p12
+      CALIBRATE_ANDROID_SIGNING_STORE_PASSWORD: hosted-emulator-only-password
+      WEAR_ADB_SERIAL: emulator-5554
+      WEAR_APK: wear/app/build/outputs/apk/release/app-release.apk
+      WEAR_BUILD_TYPE: release
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.0
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: gradle
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Enable KVM
+        shell: bash
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Create disposable hosted-emulator signing key
+        shell: bash
+        run: |
+          mkdir -p .ci-signing
+          keytool -genkeypair -noprompt \
+            -storetype PKCS12 \
+            -keystore "$CALIBRATE_ANDROID_SIGNING_STORE_FILE" \
+            -storepass "$CALIBRATE_ANDROID_SIGNING_STORE_PASSWORD" \
+            -keypass "$CALIBRATE_ANDROID_SIGNING_KEY_PASSWORD" \
+            -alias "$CALIBRATE_ANDROID_SIGNING_KEY_ALIAS" \
+            -keyalg RSA \
+            -keysize 3072 \
+            -validity 1 \
+            -dname "CN=Calibrate Hosted Emulator,OU=CI,O=Calibrate,C=US"
+
+      - name: Build non-debuggable Wear release APK
+        working-directory: wear
+        run: ./gradlew :app:assembleRelease -PcalibrateWearServerUrl=https://calibratehealth.app --no-daemon --console=plain
+
+      - name: Exercise Wear release shell, Tile, permissions, and crash state
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: android-wear
+          arch: x86_64
+          emulator-port: 5554
+          emulator-boot-timeout: 600
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim
+          disable-animations: true
+          script: npm run test:wear:emulator
+
+  native-package-upgrade:
+    name: Native Two-Emulator Package Upgrade
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+
+    steps:
+      - name: Checkout exact pull-request candidate with baseline history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.0
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+          cache: gradle
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Enable KVM
+        shell: bash
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Prepare fixed Wear API 35 AVD
+        run: node scripts/hosted-native-emulators.mjs prepare-wear
+
+      - name: Build disposable-signed baseline and candidate, then upgrade in place
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          emulator-port: 5554
+          emulator-boot-timeout: 600
+          cores: 2
+          ram-size: 1536M
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -camera-back none
+          disable-animations: true
+          script: |
+            node scripts/hosted-native-emulators.mjs start-wear
+            node scripts/hosted-native-emulators.mjs wait-wear
+            mkdir -p .codex-screenshots/native-emulator
+            npm run test:native:upgrade -- \
+              --baseline "${{ github.event.pull_request.base.sha }}" \
+              --candidate "${{ github.event.pull_request.head.sha }}" \
+              --baseline-version-code 1000000 \
+              --candidate-version-code 1000001 \
+              --phone-serial emulator-5554 \
+              --wear-serial emulator-5556 \
+              --server-url https://calibratehealth.app \
+              --output .codex-screenshots/native-emulator/native-upgrade.json \
+              --execute \
+              --package-only > "$RUNNER_TEMP/native-upgrade-console.log"
+            echo "Hosted package-only native upgrade passed."
+
+      - name: Stop secondary Wear emulator
+        if: always()
+        run: node scripts/hosted-native-emulators.mjs stop-wear

@@ -1,7 +1,13 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { spawnSync } from 'node:child_process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+
+import {
+  NATIVE_RELEASE_PROTOCOL,
+  readEvidenceGitContext,
+  validateEvidenceOnlyAttestation,
+  validateNativeReleaseEvidence
+} from './native-release-evidence.mjs';
 
 const EXPECTED_RISK_AREAS = Object.freeze({
   'authentication-and-authorization': [
@@ -61,7 +67,7 @@ const REQUIRED_PHYSICAL_WAIVER = Object.freeze({
   riskArea: 'critical-client-workflows',
   status: 'release-blocking',
   owner: 'MChartier',
-  trackingIssues: ['#219', '#222'],
+  trackingIssues: ['#219', '#222', '#303'],
   expiresOn: '2026-08-12',
   capabilities: [
     'android-physical-happy-path',
@@ -194,14 +200,45 @@ function validateWaiver(waiver, now, errors) {
   }
 }
 
-/** Physical release evidence must be retained as a device- and commit-specific result artifact. */
+/** Physical release evidence must be retained as a device- and candidate-specific result artifact. */
 function validatePhysicalDeviceEvidence(records, options) {
-  const { repoRoot, now, errors, statSync, readFileSync, releaseMode, candidateCommit } = options;
+  const {
+    repoRoot,
+    now,
+    errors,
+    statSync,
+    readFileSync,
+    releaseMode,
+    candidateCommit,
+    candidateManifestContent
+  } = options;
   const coveredByArea = new Map();
   const ids = new Set();
+  const recordFields = [
+    'id',
+    'riskArea',
+    'status',
+    'owner',
+    'executedOn',
+    'sourceCommit',
+    'protocolPath',
+    'resultArtifact',
+    'capabilities'
+  ];
 
-  if (releaseMode && records.length > 0 && !/^[0-9a-f]{40}$/i.test(candidateCommit ?? '')) {
-    errors.push('Release mode requires the current 40-character candidate commit.');
+  if (releaseMode && records.length > 0 && !/^[0-9a-f]{40}$/.test(candidateCommit ?? '')) {
+    errors.push('Release mode with physical evidence requires an explicit frozen 40-character candidate commit.');
+  }
+
+  let manifestContent = candidateManifestContent;
+  if (records.length > 0 && manifestContent === undefined) {
+    try {
+      manifestContent = readFileSync(path.resolve(repoRoot, 'shared/release.json'));
+    } catch (error) {
+      errors.push(
+        `Unable to read candidate shared/release.json: ${error instanceof Error ? error.message : error}.`
+      );
+    }
   }
 
   for (const record of records) {
@@ -212,37 +249,38 @@ function validatePhysicalDeviceEvidence(records, options) {
     }
     if (ids.has(record.id)) errors.push(`Duplicate physical device evidence id: ${record.id}.`);
     ids.add(record.id);
+
+    const actualFields = Object.keys(record).sort();
+    const missingFields = recordFields.filter((field) => !actualFields.includes(field));
+    const unexpectedFields = actualFields.filter((field) => !recordFields.includes(field));
+    if (missingFields.length) errors.push(`${label} is missing fields: ${missingFields.join(', ')}.`);
+    if (unexpectedFields.length) errors.push(`${label} has unexpected fields: ${unexpectedFields.join(', ')}.`);
+
     if (record.riskArea !== REQUIRED_PHYSICAL_WAIVER.riskArea) {
       errors.push(`${label} must belong to ${REQUIRED_PHYSICAL_WAIVER.riskArea}.`);
     }
     if (record.status !== 'passed') errors.push(`${label} status must be passed.`);
     if (typeof record.owner !== 'string' || !record.owner.trim()) errors.push(`${label} must name an owner.`);
-    if (typeof record.command !== 'string' || !record.command.trim()) {
-      errors.push(`${label} must record the exact command or manual protocol invocation.`);
-    }
-    if (!/^[0-9a-f]{40}$/.test(record.releaseCommit ?? '')) {
-      errors.push(`${label} must record the tested 40-character release commit.`);
+    if (!/^[0-9a-f]{40}$/.test(record.sourceCommit ?? '')) {
+      errors.push(`${label} must record the frozen 40-character source commit.`);
     } else if (
       releaseMode &&
-      /^[0-9a-f]{40}$/i.test(candidateCommit ?? '') &&
-      record.releaseCommit.toLowerCase() !== candidateCommit.toLowerCase()
+      /^[0-9a-f]{40}$/.test(candidateCommit ?? '') &&
+      record.sourceCommit !== candidateCommit
     ) {
       errors.push(
-        `${label} tested commit ${record.releaseCommit} does not match release candidate ${candidateCommit}.`
+        `${label} source commit ${record.sourceCommit} does not match release candidate ${candidateCommit}.`
       );
     }
 
-    const executedAt = Date.parse(`${record.executedOn}T23:59:59.999Z`);
+    const executedAt = Date.parse(`${record.executedOn}T00:00:00Z`);
     if (!/^\d{4}-\d{2}-\d{2}$/.test(record.executedOn ?? '') || Number.isNaN(executedAt)) {
       errors.push(`${label} must record a valid YYYY-MM-DD execution date.`);
-    } else if (executedAt > now.getTime() + 86_400_000) {
+    } else if (executedAt > now.getTime()) {
       errors.push(`${label} execution date cannot be in the future.`);
     }
-
-    for (const device of ['phone', 'watch']) {
-      if (typeof record.deviceModels?.[device] !== 'string' || !record.deviceModels[device].trim()) {
-        errors.push(`${label} must record the ${device} model.`);
-      }
+    if (record.protocolPath !== NATIVE_RELEASE_PROTOCOL) {
+      errors.push(`${label} protocolPath must be ${NATIVE_RELEASE_PROTOCOL}.`);
     }
 
     const capabilities = sortedUniqueStrings(record.capabilities);
@@ -266,15 +304,17 @@ function validatePhysicalDeviceEvidence(records, options) {
     validateRepositoryPath(record.resultArtifact, `${label} result artifact`, repoRoot, errors, statSync);
     try {
       const artifact = JSON.parse(readFileSync(path.resolve(repoRoot, record.resultArtifact), 'utf8'));
-      const mirroredFields = ['status', 'owner', 'executedOn', 'releaseCommit', 'command'];
-      if (artifact.schemaVersion !== 1) errors.push(`${label} result artifact schemaVersion must be 1.`);
-      for (const field of mirroredFields) {
+      const validation = validateNativeReleaseEvidence(artifact, {
+        candidateCommit: record.sourceCommit,
+        manifestContent,
+        now
+      });
+      for (const error of validation.errors) errors.push(`${label}: ${error}`);
+      for (const field of ['status', 'owner', 'executedOn', 'sourceCommit']) {
         if (artifact[field] !== record[field]) errors.push(`${label} result artifact does not match ${field}.`);
       }
-      for (const device of ['phone', 'watch']) {
-        if (artifact.deviceModels?.[device] !== record.deviceModels?.[device]) {
-          errors.push(`${label} result artifact does not match the ${device} model.`);
-        }
+      if (artifact.protocol !== record.protocolPath) {
+        errors.push(`${label} result artifact does not match protocolPath.`);
       }
       if (!sameStrings(artifact.capabilities, record.capabilities ?? [])) {
         errors.push(`${label} result artifact capabilities do not match the manifest.`);
@@ -299,7 +339,10 @@ export function validateRiskEvidence({
   statSync = fs.statSync,
   readFileSync = fs.readFileSync,
   releaseMode = false,
-  candidateCommit
+  candidateCommit,
+  evidenceCommit,
+  evidenceAttestation,
+  candidateManifestContent
 }) {
   const errors = [];
   const blockers = [];
@@ -351,10 +394,36 @@ export function validateRiskEvidence({
     blockers.push(waiver);
   }
 
-  const physicalEvidenceByArea = validatePhysicalDeviceEvidence(
-    Array.isArray(manifest?.physicalDeviceEvidence) ? manifest.physicalDeviceEvidence : [],
-    { repoRoot, now, errors, statSync, readFileSync, releaseMode, candidateCommit }
-  );
+  const physicalRecords = Array.isArray(manifest?.physicalDeviceEvidence)
+    ? manifest.physicalDeviceEvidence
+    : [];
+  if (releaseMode && physicalRecords.length > 0) {
+    if (!/^[0-9a-f]{40}$/.test(evidenceCommit ?? '')) {
+      errors.push('Release mode with physical evidence requires an explicit 40-character evidence commit.');
+    } else if (!evidenceAttestation) {
+      errors.push('Release mode requires Git parent/diff context for the evidence commit.');
+    } else {
+      errors.push(...validateEvidenceOnlyAttestation({
+        sourceCommit: candidateCommit,
+        evidenceCommit,
+        parentCommits: evidenceAttestation.parentCommits,
+        changedPaths: evidenceAttestation.changedPaths,
+        resultArtifacts: physicalRecords.map((record) => record.resultArtifact),
+        checkedOutCommit: evidenceAttestation.checkedOutCommit,
+        worktreeStatus: evidenceAttestation.worktreeStatus
+      }));
+    }
+  }
+  const physicalEvidenceByArea = validatePhysicalDeviceEvidence(physicalRecords, {
+    repoRoot,
+    now,
+    errors,
+    statSync,
+    readFileSync,
+    releaseMode,
+    candidateCommit,
+    candidateManifestContent
+  });
 
   for (const [areaId, expectedCapabilities] of Object.entries(EXPECTED_RISK_AREAS)) {
     const area = areasById.get(areaId);
@@ -505,19 +574,26 @@ export function loadRepositoryRiskEvidence(repoRoot = repositoryRoot) {
   return { manifest, packageScripts: packageJson.scripts ?? {}, repoRoot };
 }
 
-/** Resolve the exact checked-out commit so physical results cannot clear a different release. */
-export function resolveReleaseCandidateCommit(repoRoot = repositoryRoot) {
-  if (process.env.GITHUB_SHA?.trim()) return process.env.GITHUB_SHA.trim();
-  const result = spawnSync('git', ['rev-parse', 'HEAD'], {
-    cwd: repoRoot,
-    encoding: 'utf8',
-    windowsHide: true
-  });
-  if (result.error) throw result.error;
-  if (result.status !== 0) {
-    throw new Error(`Unable to resolve release candidate commit: ${(result.stderr || result.stdout).trim()}`);
+export function parseRiskEvidenceArgs(argv, environment = process.env) {
+  const values = {
+    releaseMode: false,
+    candidateCommit: environment.CALIBRATE_RELEASE_CANDIDATE?.trim() || null,
+    evidenceCommit: environment.CALIBRATE_RELEASE_EVIDENCE?.trim() || environment.GITHUB_SHA?.trim() || null
+  };
+  for (let index = 0; index < argv.length; index += 1) {
+    const option = argv[index];
+    if (option === '--release') values.releaseMode = true;
+    else if (option === '--candidate' || option === '--evidence') {
+      const value = argv[index + 1];
+      if (!value || value.startsWith('--')) throw new Error(`${option} requires a value.`);
+      if (option === '--candidate') values.candidateCommit = value;
+      else values.evidenceCommit = value;
+      index += 1;
+    } else {
+      throw new Error(`Unknown risk-evidence option: ${option}`);
+    }
   }
-  return result.stdout.trim();
+  return values;
 }
 
 function printResult(result) {
@@ -541,13 +617,56 @@ function printResult(result) {
 
 const invokedPath = process.argv[1] ? pathToFileURL(path.resolve(process.argv[1])).href : '';
 if (invokedPath === import.meta.url) {
-  const releaseMode = process.argv.includes('--release');
-  const input = loadRepositoryRiskEvidence();
-  if (releaseMode) input.candidateCommit = resolveReleaseCandidateCommit(input.repoRoot);
-  const result = validateRiskEvidence({ ...input, releaseMode });
-  printResult(result);
-  if (result.errors.length || (releaseMode && result.blockers.length)) {
-    if (!result.errors.length) console.error('Release gate is blocked until all release-blocking evidence is recorded.');
+  try {
+    const cli = parseRiskEvidenceArgs(process.argv.slice(2));
+    const input = loadRepositoryRiskEvidence();
+    const physicalRecords = Array.isArray(input.manifest?.physicalDeviceEvidence)
+      ? input.manifest.physicalDeviceEvidence
+      : [];
+    if (cli.releaseMode && physicalRecords.length > 0) {
+      input.candidateCommit = cli.candidateCommit;
+      input.evidenceCommit = cli.evidenceCommit;
+      if (
+        /^[0-9a-f]{40}$/.test(cli.candidateCommit ?? '') &&
+        /^[0-9a-f]{40}$/.test(cli.evidenceCommit ?? '')
+      ) {
+        const context = readEvidenceGitContext({
+          root: input.repoRoot,
+          sourceCommit: cli.candidateCommit,
+          evidenceCommit: cli.evidenceCommit,
+          resultArtifacts: physicalRecords.map((record) => record.resultArtifact)
+        });
+        input.manifest = JSON.parse(context.riskManifestContent);
+        input.candidateManifestContent = context.manifestContent;
+        input.evidenceAttestation = context;
+        const evidenceFiles = new Map(
+          Object.entries(context.resultContents).map(([relativePath, content]) => [
+            path.resolve(input.repoRoot, relativePath),
+            content
+          ])
+        );
+        input.readFileSync = (file, encoding) => {
+          const content = evidenceFiles.get(path.resolve(file));
+          if (content === undefined) return fs.readFileSync(file, encoding);
+          return encoding ? content : Buffer.from(content);
+        };
+        input.statSync = (file) => {
+          const content = evidenceFiles.get(path.resolve(file));
+          if (content === undefined) return fs.statSync(file);
+          return { isFile: () => true, size: Buffer.byteLength(content) };
+        };
+      }
+    }
+    const result = validateRiskEvidence({ ...input, releaseMode: cli.releaseMode });
+    printResult(result);
+    if (result.errors.length || (cli.releaseMode && result.blockers.length)) {
+      if (!result.errors.length) {
+        console.error('Release gate is blocked until all release-blocking evidence is recorded.');
+      }
+      process.exitCode = 1;
+    }
+  } catch (error) {
+    console.error(`[risk-evidence] ${error instanceof Error ? error.message : error}`);
     process.exitCode = 1;
   }
 }

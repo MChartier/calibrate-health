@@ -2,7 +2,12 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
-import { buildE2eRequestHeaders, crashBufferContainsCalibrateProcess } from './android-e2e.mjs';
+import {
+  buildAndroidE2eAdbArgs,
+  buildE2eRequestHeaders,
+  crashBufferContainsCalibrateProcess,
+  resolveAndroidE2eAdb
+} from './android-e2e.mjs';
 
 const release = JSON.parse(readFileSync(new URL('../shared/release.json', import.meta.url), 'utf8'));
 
@@ -29,4 +34,26 @@ E/AndroidRuntime( 8123): Process: app.calibratehealth.mobile, PID: 8123`;
 
   assert.equal(crashBufferContainsCalibrateProcess(uiautomatorCrash), false);
   assert.equal(crashBufferContainsCalibrateProcess(calibrateCrash), true);
+});
+
+test('hosted Android E2E scopes every adb request to its explicit emulator', () => {
+  assert.deepEqual(buildAndroidE2eAdbArgs(['shell', 'getprop', 'ro.kernel.qemu'], ' emulator-5554 '), [
+    '-s', 'emulator-5554', 'shell', 'getprop', 'ro.kernel.qemu'
+  ]);
+  assert.throws(
+    () => buildAndroidE2eAdbArgs(['devices'], ''),
+    /must explicitly name an emulator-<port>/
+  );
+  assert.throws(
+    () => buildAndroidE2eAdbArgs(['devices'], 'R5CRphysical'),
+    /must explicitly name an emulator-<port>/
+  );
+  assert.equal(
+    resolveAndroidE2eAdb({ ANDROID_HOME: '/opt/android-sdk' }, 'linux'),
+    '/opt/android-sdk/platform-tools/adb'
+  );
+  assert.equal(
+    resolveAndroidE2eAdb({ ANDROID_SDK_ROOT: 'C:\\Android' }, 'win32'),
+    'C:\\Android\\platform-tools\\adb.exe'
+  );
 });

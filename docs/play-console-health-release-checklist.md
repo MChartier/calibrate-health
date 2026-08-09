@@ -1,8 +1,8 @@
 # Google Play, Health Apps, and Data Safety release checklist
 
-This document is a release worksheet for the Android phone and Wear OS artifacts. It is based on the
-repository at July 12, 2026. It is not evidence that a Play Console declaration has been submitted or
-approved.
+This document is a release worksheet for the Android phone and Wear OS artifacts. Refresh every source fact from
+the frozen source candidate and its canonical `shared/release.json`; this worksheet is not evidence that a build,
+signature inspection, device run, OTA publish, Play Console submission, or approval occurred.
 
 Google requires declarations to describe the exact artifacts distributed through Play, including
 third-party SDK behavior. Treat the final signed bundles, Play Console answers, and device captures as
@@ -30,7 +30,7 @@ Current requirements used by this worksheet:
 
 | Area | Confirmed behavior | Source |
 | --- | --- | --- |
-| Android identity | Phone and watch use `app.calibratehealth.mobile`. Phone is version `0.1.0` (code `1`); Wear is version `0.2.0` (code `2`). | `mobile/app.json`, `wear/app/build.gradle.kts` |
+| Android identity | Phone and watch use `app.calibratehealth.mobile`. Their candidate version names and codes come from the frozen `shared/release.json` and must be confirmed from each final artifact rather than copied into this worksheet. | `shared/release.json`, `mobile/app.json`, `wear/app/build.gradle.kts` |
 | Phone platform | Expo config sets minimum SDK 26, disables backup, requests camera, vibration, and notifications, and blocks storage, microphone, and system-alert-window permissions. | `mobile/app.json` |
 | Camera | Camera access is requested only from the barcode screen after explanatory copy. Frames stay in `CameraView`; only the decoded UPC/EAN is sent for lookup. | `mobile/app/barcode.tsx` |
 | Profile image | A user-selected image is cropped, compressed, base64-encoded, and uploaded as the optional profile avatar. | `mobile/app/(tabs)/settings.tsx`, `backend/src/utils/profileImage.ts` |
@@ -110,7 +110,10 @@ internal-only listing does not display a Data Safety section.
 - [ ] Run `npm.cmd run release:check` and `npm.cmd run test:release` on a clean release commit.
 - [ ] Run mobile typecheck/tests and a clean Expo Android prebuild.
 - [ ] Build the exact phone production AAB and Wear release AAB intended for Play.
-- [ ] Record Git commit, versions, version codes, SHA-256 hashes, build URLs, and release metadata.
+- [ ] Record source commit C, canonical release-manifest hash, versions, version codes, artifact byte counts and
+  SHA-256 hashes, and independently inspected signer SHA-256 values for phone APK, phone AAB, Wear APK, and Wear AAB.
+- [ ] Keep build URLs, reviewer credentials, console exports, and other access-controlled references outside the
+  repository-safe result artifact.
 - [ ] Inspect both AABs in App Bundle Explorer; export the generated APKs for device inspection.
 - [ ] Save release merged manifests and `aapt2 dump permissions` output.
 - [ ] Review the complete phone permission inventory. Expected user-facing/runtime access is camera, notifications,
@@ -320,13 +323,20 @@ behavior does not support that purpose.
 
 ## Release evidence record
 
-Store this completed record with release metadata, outside the repository if it contains reviewer credentials:
+The repository-safe v3 result under `quality/physical-results/` records only allowlisted build-provenance, artifact, version, signer,
+device-class/model/OS, upgrade-state, fixed checkpoint command/capability IDs and outcomes, and derived capability fields. It must not contain ADB or hardware serials,
+absolute paths, account identifiers, health values, food names, tokens, request payloads, reviewer credentials, or
+private Console URLs. Keep access-controlled Play records separately:
 
 ```text
-Release commit:
-Phone version/version code/SHA-256:
-Wear version/version code/SHA-256:
-Play app-signing certificate SHA-256:
+Source candidate commit C:
+Evidence-only child commit A:
+Canonical release-manifest path/SHA-256:
+Phone APK version/version code/size/SHA-256/signer SHA-256:
+Phone AAB version/version code/size/SHA-256/signer SHA-256:
+Wear APK version/version code/size/SHA-256/signer SHA-256:
+Wear AAB version/version code/size/SHA-256/signer SHA-256:
+Play app-signing certificate SHA-256 (external Console record):
 Phone merged-manifest path/hash:
 Wear merged-manifest path/hash:
 Privacy policy URL and captured date:
@@ -334,8 +344,8 @@ Account deletion URL and captured date:
 Health Apps declaration submitted/approved date:
 Data Safety declaration submitted/approved date:
 Provider-role decision owner/date:
-Phone device/API/build tested:
-Watch device/Wear OS/build tested:
+Phone model/Android/API tested (no serial):
+Watch model/Wear OS/API tested (no serial):
 Pre-launch report URL/result:
 Known limitations:
 Reviewer account escrow location:

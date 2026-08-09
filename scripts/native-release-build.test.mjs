@@ -1,15 +1,24 @@
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 import test from 'node:test';
 import {
   assertNativeReleaseArtifacts,
+  createNativeReleaseBuildProvenance,
+  NATIVE_RELEASE_BUILD_PROVENANCE_PATH,
   nativeReleaseArtifactPaths,
   nativeReleaseGradleCommands,
   nativeReleaseInvocation,
   nativeReleasePrebuildCommand,
   prepareNativeReleaseArtifacts,
+  readNativeReleaseBuildProvenance,
+  readNativeReleaseBuildSource,
   RELEASE_GRADLE_JVM_ARGS,
-  resolveNativeReleaseEnvironment
+  resolveNativeReleaseEnvironment,
+  writeNativeReleaseBuildProvenance
 } from './native-release-build.mjs';
+import { NATIVE_RELEASE_ARTIFACT_CONTRACTS } from './native-release-evidence.mjs';
 
 const signingEnvironment = {
   CALIBRATE_ANDROID_SIGNING_STORE_FILE: 'signing/calibrate.p12',
@@ -128,4 +137,89 @@ test('Windows release builds bypass the command shell', () => {
   assert.match(invocation.args[1], /gradle[\\/]wrapper[\\/]gradle-wrapper\.jar$/);
   assert.equal(invocation.args[2], 'org.gradle.wrapper.GradleWrapperMain');
   assert.ok(invocation.args.includes(':app:bundleRelease'));
+});
+test('native release build provenance requires a clean commit-specific source', () => {
+  const sourceCommit = 'a'.repeat(40);
+  const cleanGit = (_command, args) => args[0] === 'rev-parse' ? `${sourceCommit}\n` : '';
+  assert.equal(readNativeReleaseBuildSource('C:/repo', cleanGit), sourceCommit);
+  assert.throws(
+    () => readNativeReleaseBuildSource('C:/repo', (_command, args) =>
+      args[0] === 'rev-parse' ? `${sourceCommit}\n` : ' M shared/release.json\n'
+    ),
+    /clean worktree and index/
+  );
+  assert.throws(
+    () => readNativeReleaseBuildSource('C:/repo', (_command, args) =>
+      args[0] === 'rev-parse' ? 'not-a-commit\n' : ''
+    ),
+    /lowercase 40-character Git SHA/
+  );
+});
+
+test('candidate-bound sidecar records and revalidates all four artifact bytes', (t) => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'calibrate-native-provenance-'));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const sourceCommit = 'a'.repeat(40);
+  const manifest = {
+    android: {
+      application_id: 'app.calibratehealth.mobile',
+      mobile: { version_name: '1.2.3', version_code: 12 },
+      wear: { version_name: '1.2.4', version_code: 13 }
+    }
+  };
+  fs.mkdirSync(path.join(root, 'shared'), { recursive: true });
+  const manifestContent = `${JSON.stringify(manifest)}\n`;
+  fs.writeFileSync(path.join(root, 'shared', 'release.json'), manifestContent);
+  for (const contract of NATIVE_RELEASE_ARTIFACT_CONTRACTS) {
+    const file = path.join(root, contract.path);
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    fs.writeFileSync(file, `candidate-bytes-${contract.id}`);
+  }
+
+  assert.throws(
+    () => readNativeReleaseBuildProvenance(root, { candidateCommit: sourceCommit }),
+    (error) => {
+      assert.match(error.message, /missing or invalid at build\/native-release-provenance\.json/);
+      assert.equal(error.message.includes(root), false);
+      return true;
+    }
+  );
+  const provenance = createNativeReleaseBuildProvenance(root, sourceCommit);
+  assert.equal(provenance.sourceCommit, sourceCommit);
+  assert.equal(provenance.artifacts.length, 4);
+  assert.ok(provenance.artifacts.every((artifact) => !path.isAbsolute(artifact.path)));
+  assert.equal(writeNativeReleaseBuildProvenance(root, provenance), NATIVE_RELEASE_BUILD_PROVENANCE_PATH);
+  assert.equal(fs.existsSync(path.join(root, NATIVE_RELEASE_BUILD_PROVENANCE_PATH)), true);
+
+  const inspected = provenance.artifacts.map((artifact) => ({
+    ...artifact,
+    signerSha256: 'f'.repeat(64)
+  }));
+  assert.deepEqual(
+    readNativeReleaseBuildProvenance(root, {
+      candidateCommit: sourceCommit,
+      manifestContent,
+      artifacts: inspected
+    }),
+    provenance
+  );
+  assert.throws(
+    () => readNativeReleaseBuildProvenance(root, {
+      candidateCommit: 'b'.repeat(40),
+      manifestContent,
+      artifacts: inspected
+    }),
+    /sourceCommit does not match candidate C/
+  );
+  const oldArtifacts = inspected.map((artifact) => artifact.id === 'phone-apk'
+    ? { ...artifact, sha256: '0'.repeat(64) }
+    : artifact);
+  assert.throws(
+    () => readNativeReleaseBuildProvenance(root, {
+      candidateCommit: sourceCommit,
+      manifestContent,
+      artifacts: oldArtifacts
+    }),
+    /phone-apk sha256 does not match the independently inspected artifact/
+  );
 });
