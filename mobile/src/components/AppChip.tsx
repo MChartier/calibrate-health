@@ -31,15 +31,18 @@ export const AppChip: React.FC<AppChipProps> = ({
     const [hovered, setHovered] = React.useState(false);
     const { focusVisible, handleFocus, handleBlur } = useFocusVisible(onFocus, onBlur);
     const inactive = Boolean(disabled || busy);
+    const isRadio = accessibilityRole === 'radio';
 
     return <Pressable
         {...props}
+        aria-checked={isRadio ? selected : undefined}
         disabled={inactive}
         accessibilityLabel={accessibilityLabel ?? label}
         accessibilityRole={accessibilityRole ?? 'button'}
         accessibilityState={{
             ...accessibilityState,
             busy,
+            checked: isRadio ? selected : accessibilityState?.checked,
             disabled: inactive,
             selected
         }}

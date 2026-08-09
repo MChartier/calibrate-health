@@ -20,6 +20,7 @@ function ConsentCheckbox({ label, checked, disabled = false, onChange, testID }:
     const { focusVisible, handleBlur, handleFocus } = useFocusVisible();
     return (
         <Pressable
+            aria-checked={checked}
             accessibilityRole="checkbox"
             accessibilityState={{ checked, disabled }}
             accessibilityLabel={label}

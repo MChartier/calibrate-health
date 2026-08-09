@@ -24,6 +24,7 @@ import { getLatestWeightTrendSnapshot } from '../../weightTrend/presentation';
 type WeightTrendPreviewCardProps = {
     onPress: () => void;
     onLogWeight: () => void;
+    suppressStaleNotice?: boolean;
 };
 
 type PreviewCanvasSize = {
@@ -51,7 +52,7 @@ function formatPreviewDate(value: string): string {
         .format(dateOnlyToLocalDate(value));
 }
 
-export const WeightTrendPreviewCard: React.FC<WeightTrendPreviewCardProps> = ({ onPress, onLogWeight }) => {
+export const WeightTrendPreviewCard: React.FC<WeightTrendPreviewCardProps> = ({ onPress, onLogWeight, suppressStaleNotice }) => {
     const { api, user } = useAuth();
     const theme = useAppTheme();
     const styles = useMemo(() => createStyles(theme), [theme]);
@@ -166,6 +167,7 @@ export const WeightTrendPreviewCard: React.FC<WeightTrendPreviewCardProps> = ({ 
                 )}
                 onRetry={isOnline ? () => trendQuery.refetch() : undefined}
                 retrying={trendQuery.isFetching}
+                suppressStaleNotice={suppressStaleNotice}
             >
                 <NavigableCard
                     accessibilityRole="button"

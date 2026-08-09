@@ -49,7 +49,10 @@ describe('ReminderSettingsPanel', () => {
         expect(screen.getByTestId('settings-food-reminder-time').props.editable).toBe(true);
         expect(screen.getByTestId('settings-weight-reminder-time').props.editable).toBe(false);
 
-        fireEvent.press(screen.getByRole('switch', { name: 'Food reminders' }));
+        expect(screen.getAllByRole('switch')).toHaveLength(2);
+        const foodReminderSwitch = screen.getByRole('switch', { name: 'Food reminders' });
+        expect(foodReminderSwitch.props.accessibilityState).toEqual(expect.objectContaining({ checked: true }));
+        fireEvent.press(foodReminderSwitch);
         fireEvent.press(screen.getByRole('button', { name: 'Enable push notifications' }));
 
         expect(callbacks.onLogFoodEnabledChange).toHaveBeenCalledWith(false);

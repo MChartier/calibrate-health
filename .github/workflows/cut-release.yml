@@ -14,7 +14,49 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  ux-regression:
+    name: Release UX Accessibility and Visual Regression
+    runs-on: windows-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup reviewed UX Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24.14.0
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Initialize sanitized UX evidence
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force '.codex-screenshots/expo-web-ux-results' | Out-Null
+          Set-Content -LiteralPath '.codex-screenshots/expo-web-ux-results/workflow-started.json' -Encoding utf8 -Value '{"schema_version":1,"scope":"release-ux-regression"}'
+
+      - name: Install dependencies
+        run: npm.cmd ci --no-audit --fund=false
+
+      - name: Install pinned Playwright Chromium
+        run: node node_modules/@playwright/test/cli.js install chromium
+
+      - name: Enforce accessibility and visual regression gates
+        run: npm.cmd run test:ux
+
+      - name: Upload sanitized UX evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-ux-regression-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .codex-screenshots/expo-web-ux-results
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 30
+
   publish:
+    needs: ux-regression
     name: Tag Validated Manifest Version
     runs-on: ubuntu-latest
     timeout-minutes: 30

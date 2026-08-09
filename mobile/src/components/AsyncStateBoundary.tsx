@@ -21,6 +21,7 @@ type AsyncStateBoundaryProps = {
     children: React.ReactNode;
     onRetry?: () => unknown | Promise<unknown>;
     retrying?: boolean;
+    suppressStaleNotice?: boolean;
 };
 
 type AsyncRetryLiveStatusProps = {
@@ -59,7 +60,8 @@ export function AsyncStateBoundary({
     empty,
     children,
     onRetry,
-    retrying = false
+    retrying = false,
+    suppressStaleNotice = false
 }: AsyncStateBoundaryProps) {
     const theme = useAppTheme();
     const styles = React.useMemo(() => createStyles(theme), [theme]);
@@ -127,7 +129,7 @@ export function AsyncStateBoundary({
         );
     }
 
-    const showStaleNotice = state.kind === ASYNC_RESOURCE_STATES.STALE;
+    const showStaleNotice = state.kind === ASYNC_RESOURCE_STATES.STALE && !suppressStaleNotice;
     const showDegradedNotice = state.kind === ASYNC_RESOURCE_STATES.DEGRADED;
     return (
         <View style={styles.content}>

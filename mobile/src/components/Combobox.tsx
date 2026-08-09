@@ -179,6 +179,7 @@ export function Listbox<T extends string>({
 
     return (
         <ScrollView
+            nativeID={testID}
             accessibilityLabel={label}
             accessibilityRole="menu"
             role={'listbox' as never}
@@ -328,6 +329,9 @@ export function Combobox<T extends string>({
                     <Pressable
                         ref={triggerRef as never}
                         {...controlProps}
+                        aria-controls={`${testID}-listbox`}
+                        aria-expanded={isOpen}
+                        aria-haspopup="listbox"
                         accessibilityRole="combobox"
                         accessibilityState={{ ...controlProps.accessibilityState, expanded: isOpen }}
                         accessibilityValue={{ text: selectedOption?.label ?? placeholder }}

@@ -10,7 +10,20 @@ const portText = process.env.CALIBRATE_EXPO_WEB_PORT?.trim() || '4174';
 if (!/^\d+$/.test(portText)) throw new Error(`Invalid Expo web test port: ${portText}`);
 const baseURL = `http://127.0.0.1:${portText}`;
 const playwrightCli = path.join(repoRoot, 'node_modules', '@playwright', 'test', 'cli.js');
-const playwrightArgs = ['test', '--config', 'playwright.expo-web.config.ts', ...process.argv.slice(2)];
+const supportedConfigs = new Set(['playwright.expo-web.config.ts', 'playwright.ux.config.ts']);
+const playwrightConfig = process.env.CALIBRATE_PLAYWRIGHT_CONFIG?.trim()
+  || 'playwright.expo-web.config.ts';
+if (!supportedConfigs.has(playwrightConfig)) {
+  throw new Error(`Unsupported Playwright config: ${playwrightConfig}`);
+}
+const requestedArguments = process.argv.slice(2);
+const requestsSnapshotUpdate = requestedArguments.some((argument) => (
+  argument === '--update-snapshots' || argument.startsWith('--update-snapshots=')
+));
+if (requestsSnapshotUpdate && process.env.CALIBRATE_APPROVE_UX_SNAPSHOTS !== '1') {
+  throw new Error('CALIBRATE_APPROVE_UX_SNAPSHOTS=1 is required to update snapshots.');
+}
+const playwrightArgs = ['test', '--config', playwrightConfig, ...requestedArguments];
 
 function runPlaywright(env) {
   return new Promise((resolve) => {

@@ -51,6 +51,15 @@ describe('mobile accessibility primitives', () => {
         expect(getByLabelText('Self-hosted server URL')).toBeTruthy();
     });
 
+    it('exposes selected filter chips as checked radios', () => {
+        const { getByRole } = render(
+            <AppChip label="All saved foods" accessibilityRole="radio" selected />
+        );
+
+        expect(getByRole('radio', { name: 'All saved foods' }).props.accessibilityState).toEqual(
+            expect.objectContaining({ checked: true, selected: true })
+        );
+    });
     it('uses Android-sized touch targets for shared buttons and chips', () => {
         const { getByRole } = render(
             <>

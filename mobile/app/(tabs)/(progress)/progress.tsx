@@ -356,6 +356,7 @@ export default function ProgressScreen() {
                         ? retryFailedProgressResources
                         : undefined}
                     retrying={failedProgressQueries.some((query) => query.isFetching)}
+                    suppressStaleNotice
                 >
                     <GoalProgressCard
                         latestMetric={latestMetric}
@@ -372,11 +373,12 @@ export default function ProgressScreen() {
                 </AsyncStateBoundary>
 
                 <WeightTrendPreviewCard
+                    suppressStaleNotice
                     onPress={() => router.push('/weight-trend')}
                     onLogWeight={() => router.push('/weight')}
                 />
 
-                {!hasPendingWeightChange && profileQuery.data?.calorieSummary.planStatus === 'available' && <CalibrationInsightCard />}
+                {!hasPendingWeightChange && profileQuery.data?.calorieSummary.planStatus === 'available' && <CalibrationInsightCard suppressStaleNotice />}
             </TabScreen>
 
             <BottomSheetModal

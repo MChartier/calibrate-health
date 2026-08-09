@@ -56,7 +56,52 @@ let activeWebBottomSheets = 0;
 let webAppRoot: HTMLElement | null = null;
 let webAppRootAriaHidden: string | null = null;
 let webAppRootWasInert = false;
+type WebBottomSheetContainer = Pick<HTMLElement, 'getAttribute' | 'querySelector' | 'removeAttribute'>;
+type WebBottomSheetDocument = {
+    body: Node;
+    querySelectorAll: (selector: string) => Iterable<WebBottomSheetContainer>;
+};
+type WebModalAccessibilityObserver = Pick<MutationObserver, 'disconnect' | 'observe'>;
+type WebModalAccessibilityObserverFactory = (callback: MutationCallback) => WebModalAccessibilityObserver;
+let webModalAccessibilityObserver: WebModalAccessibilityObserver | null = null;
 
+/**
+ * React Native Web leaves aria-modal on inactive stacked Modal containers after
+ * removing their dialog role. Keep the inactive wrapper out of the accessibility
+ * tree contract while the active BottomSheet panel remains the modal dialog.
+ */
+export function normalizeInactiveWebBottomSheetContainers(documentRoot: Pick<WebBottomSheetDocument, 'querySelectorAll'>) {
+    for (const element of documentRoot.querySelectorAll('[aria-modal="true"]')) {
+        const role = element.getAttribute('role');
+        if (role === 'dialog' || role === 'alertdialog') continue;
+        if (element.querySelector('[data-testid="adaptive-dialog-panel"]')) {
+            element.removeAttribute('aria-modal');
+        }
+    }
+}
+
+export function createWebBottomSheetContainerObserver(
+    documentRoot: WebBottomSheetDocument,
+    observerFactory: WebModalAccessibilityObserverFactory
+): WebModalAccessibilityObserver {
+    normalizeInactiveWebBottomSheetContainers(documentRoot);
+    const observer = observerFactory(() => normalizeInactiveWebBottomSheetContainers(documentRoot));
+    observer.observe(documentRoot.body, {
+        attributes: true,
+        attributeFilter: ['aria-modal', 'role'],
+        childList: true,
+        subtree: true
+    });
+    return observer;
+}
+
+function observeWebBottomSheetContainers() {
+    if (webModalAccessibilityObserver || typeof document === 'undefined' || typeof MutationObserver === 'undefined') return;
+    webModalAccessibilityObserver = createWebBottomSheetContainerObserver(
+        document,
+        (callback) => new MutationObserver(callback)
+    );
+}
 function hideWebAppFromModalAccessibility(): (() => void) | undefined {
     if (Platform.OS !== 'web' || typeof document === 'undefined') return;
     const appRoot = document.getElementById('root');
@@ -69,9 +114,13 @@ function hideWebAppFromModalAccessibility(): (() => void) | undefined {
         appRoot.inert = true;
     }
     activeWebBottomSheets += 1;
+    observeWebBottomSheetContainers();
     return () => {
         activeWebBottomSheets = Math.max(0, activeWebBottomSheets - 1);
-        if (activeWebBottomSheets > 0 || !webAppRoot) return;
+        if (activeWebBottomSheets > 0) return;
+        webModalAccessibilityObserver?.disconnect();
+        webModalAccessibilityObserver = null;
+        if (!webAppRoot) return;
         if (webAppRootAriaHidden === null) webAppRoot.removeAttribute('aria-hidden');
         else webAppRoot.setAttribute('aria-hidden', webAppRootAriaHidden);
         webAppRoot.inert = webAppRootWasInert;

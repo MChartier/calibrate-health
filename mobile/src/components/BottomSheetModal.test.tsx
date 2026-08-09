@@ -2,6 +2,7 @@ import { Modal, StyleSheet, Text } from 'react-native';
 import { act, fireEvent, render } from '@testing-library/react-native';
 import {
     BottomSheetModal,
+    createWebBottomSheetContainerObserver,
     resolveAdaptiveDialogWidth,
     resolveFixedSheetHeight
 } from './BottomSheetModal';
@@ -99,6 +100,66 @@ describe('BottomSheetModal', () => {
         });
     });
 
+    it('normalizes stacked web modal containers and lets a successor observer take over after cleanup', () => {
+        function createContainer(role: string | null) {
+            const attributes = new Map<string, string>([['aria-modal', 'true']]);
+            if (role) attributes.set('role', role);
+            const removeAttribute = jest.fn((name: string) => attributes.delete(name));
+            return {
+                attributes,
+                removeAttribute,
+                element: {
+                    getAttribute: (name: string) => attributes.get(name) ?? null,
+                    querySelector: (selector: string) => (
+                        selector === '[data-testid="adaptive-dialog-panel"]' ? {} : null
+                    ),
+                    removeAttribute
+                } as unknown as HTMLElement
+            };
+        }
+
+        const inactive = createContainer(null);
+        const active = createContainer('dialog');
+        let containers = [inactive.element, active.element];
+        const documentRoot = {
+            body: {} as Node,
+            querySelectorAll: jest.fn(() => containers)
+        };
+        const observers: Array<{
+            callback: MutationCallback;
+            disconnect: jest.Mock;
+            observe: jest.Mock;
+        }> = [];
+        const observerFactory = jest.fn((callback: MutationCallback) => {
+            const observer = {
+                callback,
+                disconnect: jest.fn(),
+                observe: jest.fn()
+            };
+            observers.push(observer);
+            return observer;
+        });
+
+        const firstObserver = createWebBottomSheetContainerObserver(documentRoot, observerFactory);
+        expect(inactive.attributes.has('aria-modal')).toBe(false);
+        expect(active.attributes.get('aria-modal')).toBe('true');
+        expect(active.attributes.get('role')).toBe('dialog');
+        expect(active.removeAttribute).not.toHaveBeenCalled();
+        expect(observers[0].observe).toHaveBeenCalledWith(documentRoot.body, expect.objectContaining({
+            attributeFilter: ['aria-modal', 'role'],
+            subtree: true
+        }));
+
+        firstObserver.disconnect();
+        expect(observers[0].disconnect).toHaveBeenCalledTimes(1);
+
+        const successor = createContainer(null);
+        containers = [successor.element];
+        const successorObserver = createWebBottomSheetContainerObserver(documentRoot, observerFactory);
+        expect(successor.attributes.has('aria-modal')).toBe(false);
+        expect(observers).toHaveLength(2);
+        expect(successorObserver).not.toBe(firstObserver);
+    });
     it('guards every platform close request while saving', async () => {
         const onRequestClose = jest.fn();
         const screen = render(

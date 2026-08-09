@@ -25,9 +25,12 @@ describe('Combobox', () => {
         const trigger = screen.getByRole('combobox', { name: 'Region' });
         expect(trigger).toHaveAccessibilityValue({ text: 'Europe' });
         expect(trigger.props.accessibilityState).toEqual(expect.objectContaining({ expanded: false }));
+
+
         fireEvent(trigger, 'keyDown', { key: 'ArrowDown', preventDefault: jest.fn() });
-        expect(screen.getByTestId('combobox-listbox')).toBeTruthy();
+        expect(screen.getByTestId('combobox-listbox').props.nativeID).toBe('combobox-listbox');
         expect(trigger.props.accessibilityState).toEqual(expect.objectContaining({ expanded: true }));
+
     });
 
     it('filters searchable options and selects without duplicating field text', () => {
