@@ -5,7 +5,6 @@ import process from 'node:process';
 import { spawn, spawnSync } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
 
-export const HOSTED_ANDROID_API_LEVEL = '35';
 export const HOSTED_ANDROID_CMDLINE_TOOLS_VERSION = '15859902';
 export const HOSTED_WEAR_API_LEVEL = '35-ext15';
 export const HOSTED_WEAR_SYSTEM_IMAGE = `system-images;android-${HOSTED_WEAR_API_LEVEL};android-wear;x86_64`;
