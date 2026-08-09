@@ -7,7 +7,8 @@ import { pathToFileURL } from 'node:url';
 
 export const HOSTED_ANDROID_API_LEVEL = '35';
 export const HOSTED_ANDROID_CMDLINE_TOOLS_VERSION = '15859902';
-export const HOSTED_WEAR_SYSTEM_IMAGE = `system-images;android-${HOSTED_ANDROID_API_LEVEL};android-wear;x86_64`;
+export const HOSTED_WEAR_API_LEVEL = '35-ext15';
+export const HOSTED_WEAR_SYSTEM_IMAGE = `system-images;android-${HOSTED_WEAR_API_LEVEL};android-wear;x86_64`;
 export const HOSTED_WEAR_AVD = 'calibrate-wear-upgrade';
 export const HOSTED_WEAR_SERIAL = 'emulator-5556';
 const HOSTED_WEAR_PORT = '5556';

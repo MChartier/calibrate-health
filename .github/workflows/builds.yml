@@ -467,7 +467,7 @@ jobs:
       - name: Exercise Wear release shell, Tile, permissions, and crash state
         uses: reactivecircus/android-emulator-runner@v2
         with:
-          api-level: 35
+          api-level: 35-ext15
           target: android-wear
           arch: x86_64
           emulator-port: 5554
