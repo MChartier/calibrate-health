@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Pressable, View } from 'react-native';
+import { Pressable, View, useWindowDimensions } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { AppText } from './AppText';
 import type { DateNavigationProps } from './DateNavigation.types';
@@ -17,11 +17,14 @@ import {
  */
 export const DateNavigation: React.FC<DateNavigationProps> = ({
     navigation,
+    compact = false,
     style,
     ...props
 }) => {
     const [pickerOpen, setPickerOpen] = useState(false);
     const { theme, styles } = useDateNavigationPresentation();
+    const { fontScale, width } = useWindowDimensions();
+    const hideCalendarIcon = compact && (width < 360 || fontScale >= 1.6);
 
     function openPicker() {
         setPickerOpen(true);
@@ -29,7 +32,7 @@ export const DateNavigation: React.FC<DateNavigationProps> = ({
 
     return (
         <View {...props} style={[styles.container, style]}>
-            <View style={styles.root}>
+            <View style={[styles.root, compact && styles.rootCompact]}>
                 <DateNavigationIconButton
                     label="Previous day"
                     icon="chevron-back"
@@ -40,12 +43,18 @@ export const DateNavigation: React.FC<DateNavigationProps> = ({
                     accessibilityRole="button"
                     accessibilityLabel="Choose date"
                     onPress={openPicker}
-                    style={({ pressed }) => [styles.datePill, pressed && styles.pressed]}
+                    style={({ pressed }) => [
+                        styles.datePill,
+                        compact && styles.datePillCompact,
+                        pressed && styles.pressed
+                    ]}
                 >
-                    <AppText variant="subtitle" numberOfLines={2} style={styles.dateText}>
+                    <AppText variant="subtitle" style={styles.dateText}>
                         {navigation.isToday ? 'Today' : navigation.selectedDateLabel}
                     </AppText>
-                    <Ionicons name="calendar-outline" size={20} color={theme.colors.primary} />
+                    {!hideCalendarIcon && (
+                        <Ionicons name="calendar-outline" size={20} color={theme.colors.primary} />
+                    )}
                 </Pressable>
                 <DateNavigationIconButton
                     label="Next day"

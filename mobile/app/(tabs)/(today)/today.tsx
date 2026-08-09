@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet } from 'react-native';
+import { StyleSheet, View, useWindowDimensions } from 'react-native';
 import { router, useLocalSearchParams, usePathname } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import type { MealPeriod } from '@calibrate/shared';
@@ -7,8 +7,9 @@ import { AddFoodSheet } from '../../../src/components/AddFoodSheet';
 import { AppButton } from '../../../src/components/AppButton';
 import { AppCard } from '../../../src/components/AppCard';
 import { AppText } from '../../../src/components/AppText';
-import { AsyncStateBoundary, useAsyncResourceState, useOnlineStatus } from '../../../src/components/AsyncStateBoundary';
+import { AsyncStateBoundary, useOnlineStatus } from '../../../src/components/AsyncStateBoundary';
 import { CalorieBalanceCard } from '../../../src/components/CalorieBalanceCard';
+import { CardHeader } from '../../../src/components/CardHeader';
 import { DateNavigation } from '../../../src/components/DateNavigation';
 import { FoodLogSummaryCard } from '../../../src/components/FoodLogSummaryCard';
 import { DayStatusCard, useFoodDayStatus } from '../../../src/components/FoodTrackingStatus';
@@ -27,7 +28,10 @@ import { MEAL_OPTIONS } from '../../../src/utils/meals';
 import { getTodayDate } from '../../../src/utils/dates';
 import { getMetricDate } from '../../../src/utils/metrics';
 import { usePendingWeightMutation } from '../../../src/offline/usePendingWeightMutation';
+import { hasTodayDashboardFailure, resolveTodayDashboardState } from '../../../src/today/dashboardState';
 import { spacing } from '../../../src/theme';
+
+const TODAY_SUMMARY_GRID_BREAKPOINT = 840; // Mirrors the app shell's wide layout without compressing scaled text.
 
 export default function TodayScreen() {
     const routeParams = useLocalSearchParams<{ openAddFood?: string; date?: string; meal?: string }>();
@@ -48,26 +52,13 @@ export default function TodayScreen() {
     const metricsQuery = useQuery({ queryKey: ['mobile-metrics'], queryFn: () => api.getMetrics() });
     const isOnline = useOnlineStatus();
     const hasPendingWeightChange = usePendingWeightMutation();
+    const { fontScale, width } = useWindowDimensions();
+    const useSummaryGrid = width >= TODAY_SUMMARY_GRID_BREAKPOINT && fontScale < 1.6;
 
     const dashboardQueries = [profileQuery, foodQuery, foodDayQuery, metricsQuery] as const;
     const failedDashboardQueries = dashboardQueries.filter((query) => query.isError);
-    const allDashboardDataResolved = dashboardQueries.every((query) => query.data !== undefined);
-    const failedResourcesHaveUsableCache = failedDashboardQueries.every((query) =>
-        query.data != null && (!Array.isArray(query.data) || query.data.length > 0)
-    );
-    const dashboardHasUsableData = allDashboardDataResolved && failedResourcesHaveUsableCache;
-    const dashboardState = useAsyncResourceState({
-        data: dashboardHasUsableData ? true : undefined,
-        status: failedDashboardQueries.length > 0
-            ? 'error'
-            : dashboardQueries.every((query) => query.status === 'success') ? 'success' : 'pending',
-        fetchStatus: dashboardQueries.some((query) => query.fetchStatus === 'paused')
-            ? 'paused'
-            : dashboardQueries.some((query) => query.fetchStatus === 'fetching') ? 'fetching' : 'idle',
-        error: failedDashboardQueries[0]?.error ?? null,
-        dataUpdatedAt: dashboardHasUsableData ? 1 : 0,
-        isPlaceholderData: dashboardQueries.some((query) => query.isPlaceholderData)
-    }, () => false);
+    const dashboardHasFailedResource = hasTodayDashboardFailure(dashboardQueries);
+    const dashboardState = resolveTodayDashboardState(dashboardQueries, isOnline);
     const retryFailedDashboardResources = React.useCallback(async () => {
         await Promise.all(failedDashboardQueries.map((query) => query.refetch()));
     }, [failedDashboardQueries]);
@@ -138,6 +129,7 @@ export default function TodayScreen() {
     if (dayStatus?.status === 'INCOMPLETE') unavailableLabel = 'Incomplete day';
     if (!planIsAvailable) unavailableLabel = planStatus === 'requires_review' ? 'Plan needs review' : 'Target unavailable';
     if (hasPendingWeightChange) unavailableLabel = 'Rechecking target';
+    if (isPaused) unavailableLabel = 'Tracking paused';
     const emphasizePausedStatus = shouldEmphasizePausedStatus({
         status: dayStatus?.status,
         isToday,
@@ -147,7 +139,7 @@ export default function TodayScreen() {
 
     return (
         <TabScreen style={styles.screenContent}>
-            <DateNavigation navigation={dateNavigation} />
+            <DateNavigation navigation={dateNavigation} compact />
             <AsyncStateBoundary
                 state={dashboardState}
                 resourceLabel="today's log"
@@ -159,32 +151,35 @@ export default function TodayScreen() {
                 retrying={failedDashboardQueries.some((query) => query.isFetching)}
             >
                 <>
+                    <CalorieBalanceCard
+                        totalCalories={calories}
+                        targetCalories={showCalorieComparison ? target : null}
+                        unavailableLabel={unavailableLabel}
+                        dayStatus={dayStatus?.status}
+                        dayStatusFailed={dashboardHasFailedResource}
+                        compact
+                    />
                     {isPaused && (
                         <DayStatusCard
                             date={selectedDate}
                             isToday={isToday}
+                            failed={dashboardHasFailedResource}
                             compact
                             expanded={emphasizePausedStatus}
                         />
                     )}
                     {!isPaused && (
                         <>
-                            <CalorieBalanceCard
-                                totalCalories={calories}
-                                targetCalories={showCalorieComparison ? target : null}
-                                unavailableLabel={unavailableLabel}
-                                compact
-                            />
                             {hasPendingWeightChange ? (
                                 <AppCard>
-                                    <AppText variant="subtitle">Weight change syncing</AppText>
+                                    <CardHeader title="Weight change syncing" density="compact" />
                                     <AppText variant="muted">
                                         Calorie target and projection will return after the server rechecks your plan.
                                     </AppText>
                                 </AppCard>
                             ) : !planIsAvailable && (
                                 <AppCard>
-                                    <AppText variant="subtitle">{planPresentation.title}</AppText>
+                                    <CardHeader title={planPresentation.title} density="compact" />
                                     <AppText variant="muted">{planPresentation.message}</AppText>
                                     <AppButton
                                         title={planPresentation.actionLabel}
@@ -196,27 +191,34 @@ export default function TodayScreen() {
                         </>
                     )}
 
-                    {(!isPaused || entries.length > 0) && (
-                        <FoodLogSummaryCard
-                            entries={entries}
-                            trackingUnavailable={dayStatus?.status !== 'OPEN' && dayStatus?.status !== 'COMPLETE'}
-                            onPress={() => router.push({ pathname: '/food-log', params: { date: selectedDate } })}
-                            onAddFood={dayStatus?.status === 'OPEN' ? () => setAddFoodMeal(null) : undefined}
-                            compact
-                        />
-                    )}
+                    <View style={[styles.summaryCards, useSummaryGrid && styles.summaryCardsWide]}>
+                        {(!isPaused || entries.length > 0) && (
+                            <View style={styles.summaryCard}>
+                                <FoodLogSummaryCard
+                                    entries={entries}
+                                    trackingUnavailable={dayStatus?.status !== 'OPEN' && dayStatus?.status !== 'COMPLETE'}
+                                    onPress={() => router.push({ pathname: '/food-log', params: { date: selectedDate } })}
+                                    onAddFood={dayStatus?.status === 'OPEN' ? () => setAddFoodMeal(null) : undefined}
+                                    compact
+                                />
+                            </View>
+                        )}
 
-                    <TodayWeightCard
-                        metric={selectedDateMetric}
-                        weightUnit={user?.weight_unit}
-                        isToday={isToday}
-                        onPress={() => setIsWeightSheetOpen(true)}
-                        compact
-                    />
+                        <View style={styles.summaryCard}>
+                            <TodayWeightCard
+                                metric={selectedDateMetric}
+                                weightUnit={user?.weight_unit}
+                                isToday={isToday}
+                                onPress={() => setIsWeightSheetOpen(true)}
+                                compact
+                            />
+                        </View>
+                    </View>
                     {!isPaused && (
                         <DayStatusCard
                             date={selectedDate}
                             isToday={isToday}
+                            failed={dashboardHasFailedResource}
                             compact
                         />
                     )}
@@ -243,5 +245,17 @@ const styles = StyleSheet.create({
         flexGrow: 1,
         gap: spacing.md,
         paddingTop: spacing.md
+    },
+    summaryCards: {
+        width: '100%',
+        gap: spacing.md
+    },
+    summaryCardsWide: {
+        flexDirection: 'row',
+        alignItems: 'stretch'
+    },
+    summaryCard: {
+        flex: 1,
+        minWidth: 0
     }
 });

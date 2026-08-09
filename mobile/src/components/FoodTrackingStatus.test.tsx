@@ -3,7 +3,7 @@ import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 import { AppState, StyleSheet } from 'react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { FoodLogDay, FoodTrackingPause } from '@calibrate/api-client';
-import { DayStatusCard, ResumeTrackingPrompt } from './FoodTrackingStatus';
+import { DayStatusCard, ResumeTrackingPrompt, foodDayQueryKey } from './FoodTrackingStatus';
 import { AppCard } from './AppCard';
 
 jest.mock('@expo/vector-icons/Ionicons', () => () => null);
@@ -103,13 +103,14 @@ const duePause: FoodTrackingPause = {
 let foregroundListener: ((state: string) => void) | undefined;
 let appStateSpy: jest.SpyInstance;
 
-function renderWithQuery(ui: React.ReactElement) {
+function renderWithQuery(ui: React.ReactElement, cachedDay?: FoodLogDay) {
     const queryClient = new QueryClient({
         defaultOptions: {
             queries: { retry: false, gcTime: 0 },
             mutations: { retry: false, gcTime: 0 }
         }
     });
+    if (cachedDay) queryClient.setQueryData(foodDayQueryKey(cachedDay.date), cachedDay);
     return render(
         <QueryClientProvider client={queryClient}>
             {ui}
@@ -133,7 +134,7 @@ describe('food tracking day resolution', () => {
         mockApi.getFoodDay.mockResolvedValue(resolvedDay('OPEN'));
         const screen = renderWithQuery(<DayStatusCard date="2026-07-23" isToday compact />);
 
-        await waitFor(() => expect(screen.getByText('Tracking options')).toBeTruthy());
+        await waitFor(() => expect(screen.getByText('Not fully logged')).toBeTruthy());
         expect(screen.getByText('Complete day')).toBeTruthy();
         expect(screen.getByText('Pause tracking')).toBeTruthy();
         expect(screen.queryByText('Mark incomplete')).toBeNull();
@@ -160,7 +161,7 @@ describe('food tracking day resolution', () => {
         mockApi.getFoodDay.mockResolvedValue(resolvedDay('OPEN'));
         const screen = renderWithQuery(<DayStatusCard date="2026-07-23" isToday={false} />);
 
-        await waitFor(() => expect(screen.getByText('Day unresolved')).toBeTruthy());
+        await waitFor(() => expect(screen.getByText('Not fully logged')).toBeTruthy());
         expect(screen.getByRole('button', { name: 'Complete day' })).toHaveStyle({
             elevation: 0,
             shadowOpacity: 0
@@ -169,10 +170,10 @@ describe('food tracking day resolution', () => {
 
     it('presents inferred blank, incomplete, complete, and paused days without food prompts', async () => {
         const cases: Array<[FoodLogDay, string]> = [
-            [resolvedDay('INCOMPLETE', 'INFERRED_EMPTY'), 'Tracking was not completed'],
-            [resolvedDay('INCOMPLETE'), 'Day incomplete'],
-            [resolvedDay('COMPLETE'), 'Day complete'],
-            [resolvedDay('PAUSED'), 'Calorie tracking paused']
+            [resolvedDay('INCOMPLETE', 'INFERRED_EMPTY'), 'Not fully logged'],
+            [resolvedDay('INCOMPLETE'), 'Not fully logged'],
+            [resolvedDay('COMPLETE'), 'Fully logged'],
+            [resolvedDay('PAUSED'), 'Paused']
         ];
 
         for (const [day, title] of cases) {
@@ -183,6 +184,36 @@ describe('food tracking day resolution', () => {
             expect(screen.queryByText('Mark incomplete')).toBeNull();
             screen.unmount();
         }
+    });
+
+    it('does not present failed cached day data as fully logged', async () => {
+        mockApi.getFoodDay.mockRejectedValue(new Error('Status unavailable'));
+        const screen = renderWithQuery(
+            <DayStatusCard date="2026-07-23" isToday />,
+            resolvedDay('COMPLETE')
+        );
+
+        await waitFor(() => expect(screen.getByText('Not fully logged')).toBeTruthy());
+        expect(screen.queryByText('Fully logged')).toBeNull();
+        expect(screen.getByText(
+            'Day status could not be refreshed, so this day is not treated as fully logged.'
+        )).toBeTruthy();
+        expect(screen.getByRole('button', { name: 'Backfill this day' })).toBeTruthy();
+    });
+
+    it('does not present cached completion when another required Today resource failed', async () => {
+        mockApi.getFoodDay.mockResolvedValue(resolvedDay('COMPLETE'));
+        const screen = renderWithQuery(
+            <DayStatusCard date="2026-07-23" isToday failed />
+        );
+
+        await waitFor(() => expect(screen.getByText('Not fully logged')).toBeTruthy());
+        expect(screen.queryByText('Fully logged')).toBeNull();
+        expect(screen.getByText(
+            'Today data could not be refreshed, so this day is not treated as fully logged.'
+        )).toBeTruthy();
+        expect(screen.queryByRole('button', { name: 'Edit or backfill' })).toBeNull();
+        expect(screen.getByRole('button', { name: 'Backfill this day' })).toBeTruthy();
     });
 
     it('fills only the remaining Today space with a centered status hero', async () => {
@@ -196,7 +227,7 @@ describe('food tracking day resolution', () => {
             />
         );
 
-        await waitFor(() => expect(screen.getByText('Calorie tracking paused')).toBeTruthy());
+        await waitFor(() => expect(screen.getByText('Paused')).toBeTruthy());
         expect(screen.getByText("Today's status")).toBeTruthy();
         expect(StyleSheet.flatten(screen.UNSAFE_getByType(AppCard).props.style)).toEqual(
             expect.objectContaining({

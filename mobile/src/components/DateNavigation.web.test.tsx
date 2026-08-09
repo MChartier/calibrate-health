@@ -1,4 +1,5 @@
 import React from 'react';
+import { StyleSheet } from 'react-native';
 import { DateNavigation } from './DateNavigation.web';
 import type { LogDateNavigation } from '../hooks/useLogDateNavigation';
 
@@ -104,5 +105,36 @@ describe('DateNavigation web', () => {
             (picker.props.onRequestClose as () => void)();
         });
         expect(tree!.root.findByType('historical-date-picker').props.visible).toBe(false);
+    });
+
+    it('uses compact spacing without clamping the selected date', () => {
+        const navigation: LogDateNavigation = {
+            selectedDate: '2026-07-17',
+            selectedDateLabel: 'Jul 17, 2026',
+            today: '2026-07-18',
+            minDate: '2026-01-01',
+            maxDate: '2026-07-18',
+            isToday: false,
+            canGoBack: true,
+            canGoForward: true,
+            goToPreviousDate: jest.fn(),
+            goToNextDate: jest.fn(),
+            goToToday: jest.fn(),
+            setDate: jest.fn()
+        };
+        let tree: { root: TestInstance };
+
+        testRenderer.act(() => {
+            tree = testRenderer.create(<DateNavigation navigation={navigation} compact />);
+        });
+
+        const toolbar = tree!.root.findByProps({ accessibilityRole: 'toolbar' });
+        const trigger = tree!.root.findByProps({ accessibilityLabel: 'Choose date' });
+        const dateText = trigger.findByProps({ children: 'Jul 17, 2026' });
+        const triggerStyle = trigger.props.style as (state: { pressed: boolean }) => unknown;
+
+        expect(StyleSheet.flatten(toolbar.props.style)).toMatchObject({ gap: 4 });
+        expect(StyleSheet.flatten(triggerStyle({ pressed: false }))).toMatchObject({ paddingHorizontal: 8 });
+        expect(dateText.props.numberOfLines).toBeUndefined();
     });
 });

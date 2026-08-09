@@ -54,6 +54,9 @@ function createDateNavigationStyles(theme: AppTheme) {
             alignItems: 'center',
             gap: theme.spacing.sm
         },
+        rootCompact: {
+            gap: theme.spacing.xs
+        },
         iconButton: {
             width: theme.interaction.minimumTouchTarget,
             height: theme.interaction.minimumTouchTarget,
@@ -80,6 +83,9 @@ function createDateNavigationStyles(theme: AppTheme) {
             paddingHorizontal: theme.spacing.md,
             paddingVertical: theme.spacing.xs,
             overflow: 'hidden'
+        },
+        datePillCompact: {
+            paddingHorizontal: theme.spacing.sm
         },
         dateText: {
             textAlign: 'center',
