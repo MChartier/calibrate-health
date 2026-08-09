@@ -10,6 +10,8 @@ type AuthRateLimiters = {
   registration: RateLimitRequestHandler;
   refresh: RateLimitRequestHandler;
   passwordChange: RateLimitRequestHandler;
+  accountEmailRequest: RateLimitRequestHandler;
+  accountTokenConfirm: RateLimitRequestHandler;
   pairingIssueIp: RateLimitRequestHandler;
   pairingIssue: RateLimitRequestHandler;
   pairingExchange: RateLimitRequestHandler;
@@ -31,6 +33,8 @@ export function createAuthRateLimiters(): AuthRateLimiters {
     registration: createLimiter(10, 'Too many registration attempts. Try again later.'),
     refresh: createLimiter(120, 'Too many token refresh attempts. Try again later.'),
     passwordChange: createLimiter(10, 'Too many password change attempts. Try again later.'),
+    accountEmailRequest: createLimiter(5, 'Too many email requests. Try again later.'),
+    accountTokenConfirm: createLimiter(20, 'Too many account link attempts. Try again later.'),
     pairingIssueIp: createLimiter(60, 'Too many Wear pairing requests from this network. Try again later.'),
     pairingIssue: rateLimit({
       windowMs: AUTH_RATE_LIMIT_WINDOW_MS,

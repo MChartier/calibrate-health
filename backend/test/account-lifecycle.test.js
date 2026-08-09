@@ -27,6 +27,12 @@ const exportRow = {
   id: 7,
   email: 'owner@example.com',
   created_at: at('2025-01-01T12:00:00.000Z'),
+  email_verified_at: at('2025-01-02T12:00:00.000Z'),
+  legal_acceptances: [{
+    terms_version: '2026-08-09',
+    privacy_version: '2026-07-24',
+    accepted_at: at('2026-08-09T08:00:00.000Z')
+  }],
   weight_unit: 'KG',
   height_unit: 'CM',
   timezone: 'America/Los_Angeles',
@@ -240,9 +246,15 @@ test('account export returns canonical versioned tracking data without credentia
   const result = await exportAccountData(7, at('2026-07-11T20:00:00.000Z'));
 
   assert.equal(result.format, 'calibrate-account-export');
-  assert.equal(result.version, 6);
+  assert.equal(result.version, 7);
   assert.equal(result.exported_at, '2026-07-11T20:00:00.000Z');
   assert.equal(result.account.date_of_birth, '1990-05-03');
+  assert.equal(result.account.email_verified_at, '2025-01-02T12:00:00.000Z');
+  assert.deepEqual(result.legal_acceptances, [{
+    terms_version: '2026-08-09',
+    privacy_version: '2026-07-24',
+    accepted_at: '2026-08-09T08:00:00.000Z'
+  }]);
   assert.deepEqual(result.account.profile_image, { mime_type: 'image/png', data_base64: 'AQID' });
   assert.equal(result.body_metrics[0].date, '2025-01-03');
   assert.equal(result.food_logs[0].serving_unit_label_snapshot, 'bowl');
@@ -269,6 +281,7 @@ test('account export returns canonical versioned tracking data without credentia
   assert.equal(findArgs.select.native_push_subscriptions, undefined);
   assert.equal(findArgs.select.client_operations, undefined);
   assert.equal(findArgs.select.sync_changes, undefined);
+  assert.equal(findArgs.select.account_action_tokens, undefined);
   assert.equal(findArgs.select.health_connect_sync_states, undefined);
   assert.equal(findArgs.select.health_connect_tombstones, undefined);
   assert.deepEqual(findArgs.select.goals.orderBy, [{ created_at: 'asc' }, { id: 'asc' }]);
@@ -287,7 +300,7 @@ test('account export returns canonical versioned tracking data without credentia
   ]);
 
   const serialized = JSON.stringify(result);
-  assert.doesNotMatch(serialized, /password_hash|access_token|refresh_token|p256dh|private-internal-dedupe|private-device-id|private-calibration-fingerprint/);
+  assert.doesNotMatch(serialized, /password_hash|token_hash|account_action_tokens|access_token|refresh_token|p256dh|private-internal-dedupe|private-device-id|private-calibration-fingerprint/);
 });
 
 test('account export returns null for a missing account', async () => {

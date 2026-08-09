@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { AppState } from 'react-native';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../auth/AuthContext';
+import { hasFullAccountAccess } from '../auth/accountAccess';
 import { flushWearSyncInvalidation, queueWearSyncInvalidation } from './syncInvalidation';
 
 function wasQueuedOffline(value: unknown): boolean {
@@ -14,7 +15,7 @@ export function useWearSyncInvalidation(): void {
     const { serverUrl, user } = useAuth();
 
     useEffect(() => {
-        if (!user) return;
+        if (!user || !hasFullAccountAccess(user)) return;
         let active = true;
         const notify = () => {
             if (!active) return;

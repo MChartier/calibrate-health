@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider, useQueryClient } from '@tanstack/reac
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { AuthProvider, useAuth } from '../src/auth/AuthContext';
+import { hasFullAccountAccess } from '../src/auth/accountAccess';
 import { NativePushRegistrationProvider } from '../src/hooks/useNativePushRegistration';
 import { useNotificationTapRouting } from '../src/notifications/useNotificationTapRouting';
 import { createQueuedMutationExecutor } from '../src/offline/operations';
@@ -22,9 +23,10 @@ const queryClient = new QueryClient();
 
 const NativeRuntimeHooks: React.FC = () => {
     const { user, serverUrl } = useAuth();
-    useNotificationTapRouting(Boolean(user));
+    const hasFullAccess = hasFullAccountAccess(user);
+    useNotificationTapRouting(Boolean(user && hasFullAccess));
     useWearHandoffRouting({
-        enabled: Boolean(user && serverUrl),
+        enabled: Boolean(user && hasFullAccess && serverUrl),
         serverOrigin: serverUrl,
         userId: user?.id ?? null
     });

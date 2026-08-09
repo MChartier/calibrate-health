@@ -1,6 +1,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { AppState } from 'react-native';
 import { useAuth } from '../auth/AuthContext';
+import { hasFullAccountAccess } from '../auth/accountAccess';
 import { openOutboxDatabase } from './database';
 import { SqliteOutbox } from './outbox';
 import { OutboxReconciler, type QueuedMutationExecutor, type ReconcileResult } from './reconciler';
@@ -29,7 +30,7 @@ const OfflineOutboxContext = createContext<OfflineOutboxContextValue | null>(nul
 /** Binds SQLite queue access to the currently authenticated server and user. */
 export function OfflineOutboxProvider({ children, executeMutation, onReplayCompleted }: OfflineOutboxProviderProps) {
     const { serverUrl, user } = useAuth();
-    const userId = user?.id;
+    const userId = hasFullAccountAccess(user) ? user?.id : undefined;
     const [outbox, setOutbox] = useState<SqliteOutbox | null>(null);
     const [mutations, setMutations] = useState<QueuedMutation[]>([]);
     const [initializationError, setInitializationError] = useState<string | null>(null);

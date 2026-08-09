@@ -1,6 +1,12 @@
 import type { ActivityLevel, HeightUnit, Prisma, Sex, WeightUnit } from '@prisma/client';
 import { isSupportedLanguage, SUPPORTED_LANGUAGES, type SupportedLanguage } from './language';
 import { buildBase64DataUrl } from './profileImage';
+import {
+  ACCOUNT_ACCESS_SELECT,
+  serializeAccountAccess,
+  type AccountAccess,
+  type AccountAccessSource
+} from './accountAccessSerialization';
 
 export type UserClientPayload = {
   id: number;
@@ -18,6 +24,7 @@ export type UserClientPayload = {
   height_mm: number | null;
   activity_level: ActivityLevel | null;
   profile_image_url: string | null;
+  account_access: AccountAccess;
 };
 
 /**
@@ -40,10 +47,11 @@ export const USER_CLIENT_SELECT = {
   height_mm: true,
   activity_level: true,
   profile_image: true,
-  profile_image_mime_type: true
+  profile_image_mime_type: true,
+  ...ACCOUNT_ACCESS_SELECT
 } satisfies Prisma.UserSelect;
 
-export type UserForClient = Omit<UserClientPayload, 'profile_image_url' | 'language' | 'date_of_birth'> & {
+export type UserForClient = Omit<UserClientPayload, 'profile_image_url' | 'language' | 'date_of_birth' | 'account_access'> & AccountAccessSource & {
   date_of_birth: Date | null;
   // `User.language` is stored as a string (not a Prisma enum), so validate it before returning to the client.
   language: string;
@@ -73,6 +81,7 @@ export const serializeUserForClient = (user: UserForClient): UserClientPayload =
     sex: user.sex,
     height_mm: user.height_mm,
     activity_level: user.activity_level,
-    profile_image_url: bytes && mimeType ? buildBase64DataUrl({ mimeType, bytes }) : null
+    profile_image_url: bytes && mimeType ? buildBase64DataUrl({ mimeType, bytes }) : null,
+    account_access: serializeAccountAccess(user)
   };
 };

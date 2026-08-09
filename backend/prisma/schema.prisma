@@ -107,8 +107,9 @@ enum CaloriePlanReviewStatus {
 model User {
   id            Int       @id @default(autoincrement())
   email         String    @unique
-  password_hash String
-  created_at    DateTime  @default(now())
+  password_hash     String
+  created_at        DateTime  @default(now())
+  email_verified_at DateTime?
 
   weight_unit   WeightUnit @default(KG)
   height_unit   HeightUnit @default(CM)
@@ -166,6 +167,40 @@ model User {
   calibration_recommendations CalibrationRecommendation[]
   /// Accepted target adjustments, dated so changes take effect on a user-local day boundary.
   calorie_plan_revisions CaloriePlanRevision[]
+  /// Purpose-bound, one-time verification and recovery credentials. Only hashes are stored.
+  account_action_tokens AccountActionToken[]
+  /// Versioned user consent history for Terms and Privacy.
+  legal_acceptances LegalAcceptance[]
+}
+
+enum AccountTokenPurpose {
+  EMAIL_VERIFICATION
+  PASSWORD_RESET
+}
+
+model AccountActionToken {
+  id          Int                 @id @default(autoincrement())
+  user_id     Int
+  user        User                @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  purpose     AccountTokenPurpose
+  token_hash  String              @unique
+  created_at  DateTime            @default(now())
+  expires_at  DateTime
+  consumed_at DateTime?
+
+  @@index([user_id, purpose, consumed_at, expires_at])
+}
+
+model LegalAcceptance {
+  id              Int      @id @default(autoincrement())
+  user_id         Int
+  user            User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  terms_version   String
+  privacy_version String
+  accepted_at     DateTime @default(now())
+
+  @@unique([user_id, terms_version, privacy_version])
+  @@index([user_id, accepted_at])
 }
 
 model ActivityRecord {

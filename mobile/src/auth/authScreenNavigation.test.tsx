@@ -46,7 +46,10 @@ function authContextStub() {
 }
 
 function expectAuthLink(pathname: string) {
-    const linkProps = mockLink.mock.calls[0][0];
+    const linkProps = mockLink.mock.calls
+        .map(([props]) => props)
+        .find((props) => props.href?.pathname === pathname);
+    expect(linkProps).toBeDefined();
     expect(linkProps.href).toEqual({
         pathname,
         params: { serverUrl: SELF_HOSTED_URL }
@@ -101,10 +104,15 @@ describe('auth screen server navigation', () => {
         fireEvent.changeText(screen.getByLabelText('Email'), 'new@example.com');
         fireEvent.changeText(screen.getByLabelText('Password'), 'secret12');
         fireEvent.changeText(screen.getByLabelText('Confirm password'), 'secret12');
+        fireEvent.press(screen.getByRole('checkbox', { name: 'I agree to the current Terms of service' }));
+        fireEvent.press(screen.getByRole('checkbox', { name: 'I accept the current Privacy policy' }));
         fireEvent.press(screen.getByLabelText('Create account'));
 
         await waitFor(() => {
-            expect(auth.register).toHaveBeenCalledWith('new@example.com', 'secret12', SELF_HOSTED_URL);
+            expect(auth.register).toHaveBeenCalledWith('new@example.com', 'secret12', SELF_HOSTED_URL, {
+                acceptTerms: true,
+                acceptPrivacy: true
+            });
         });
     });
 
@@ -137,6 +145,20 @@ describe('auth screen server navigation', () => {
         expect(auth.register).not.toHaveBeenCalled();
     });
 
+
+    it('does not record legal acceptance until both choices are explicit', () => {
+        const auth = authContextStub();
+        mockUseAuth.mockReturnValue(auth as unknown as ReturnType<typeof useAuth>);
+        const screen = render(<RegisterScreen />);
+
+        fireEvent.changeText(screen.getByLabelText('Email'), 'new@example.com');
+        fireEvent.changeText(screen.getByLabelText('Password'), 'password123');
+        fireEvent.changeText(screen.getByLabelText('Confirm password'), 'password123');
+        fireEvent.press(screen.getByLabelText('Create account'));
+
+        expect(screen.getByRole('alert')).toHaveTextContent('Review and accept both legal documents to create an account.');
+        expect(auth.register).not.toHaveBeenCalled();
+    });
     it('hides server selection and uses the serving server on web', async () => {
         jest.replaceProperty(Platform, 'OS', 'web');
         const auth = authContextStub();
@@ -157,7 +179,7 @@ describe('auth screen server navigation', () => {
                 auth.serverUrl
             );
         });
-        expect(mockLink.mock.calls[0][0].href).toBe('/(auth)/register');
+        expect(mockLink.mock.calls.some(([props]) => props.href === '/(auth)/register')).toBe(true);
     });
 
     it('restores the create-account action after registration fails', async () => {
@@ -169,6 +191,8 @@ describe('auth screen server navigation', () => {
         fireEvent.changeText(screen.getByLabelText('Email'), 'existing@example.com');
         fireEvent.changeText(screen.getByLabelText('Password'), 'secret12');
         fireEvent.changeText(screen.getByLabelText('Confirm password'), 'secret12');
+        fireEvent.press(screen.getByRole('checkbox', { name: 'I agree to the current Terms of service' }));
+        fireEvent.press(screen.getByRole('checkbox', { name: 'I accept the current Privacy policy' }));
         fireEvent.press(screen.getByLabelText('Create account'));
 
         await waitFor(() => {

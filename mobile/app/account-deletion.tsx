@@ -4,13 +4,17 @@ import {
     ACCOUNT_DELETION_SECTIONS,
     buildAccountDeletionRequestMailto
 } from '../src/legal/publicLegalContent';
+import { RestrictedAccountDataActions } from '../src/components/legal/RestrictedAccountDataActions';
+import { useAuth } from '../src/auth/AuthContext';
 
 export default function AccountDeletionRoute() {
+    const { user } = useAuth();
     return (
         <PublicLegalPage
             title="Delete your Calibrate account"
             intro={ACCOUNT_DELETION_INTRO}
             sections={ACCOUNT_DELETION_SECTIONS}
+            actions={user ? <RestrictedAccountDataActions /> : undefined}
             links={[
                 { href: '/(auth)/login', label: 'Sign in to delete now' },
                 { href: buildAccountDeletionRequestMailto(), label: 'Email a hosted deletion request' },

@@ -39,6 +39,24 @@ Helmet supplies baseline browser security headers. Content Security Policy is in
 deferred until allowed image and proxy origins can be configured without breaking self-hosted
 instances; do not treat the current header set as a substitute for a deployment-specific CSP.
 
+## Verification, recovery, and legal access
+
+Email verification and password-reset credentials are random, purpose-bound, single-use values
+stored only as hashes. Verification expires after 24 hours and password reset after 30 minutes.
+Public request endpoints use generic HTTP 202 responses and independent rate limits so callers
+cannot determine whether an account exists. Tokens, email addresses, request bodies, and SMTP
+provider details are excluded from logs and diagnostics.
+
+A successful password reset revokes every browser, Android, and Wear session. New registrations
+record explicit acceptance of the exact current Terms and Privacy versions. Existing users are
+marked email verified during migration but receive no synthetic legal acceptance. Sessions needing
+verification or current legal acceptance retain only the narrow account-access flows documented in
+`account-access-and-recovery.md`.
+
+The official hosted service fails registration closed when SMTP is unavailable or incomplete.
+Self-hosted production instances may keep delivery disabled; operators who enable it must provide
+their own SMTP service, public HTTPS origin, retention terms, and abuse monitoring.
+
 ## Account and device sessions
 
 Mobile access tokens are short lived and refresh tokens rotate through a database compare-and-swap,
@@ -63,7 +81,8 @@ session clears this optional receipt link rather than deleting food history.
 
 ## Account export and deletion
 
-Authenticated users can download a versioned `calibrate-account-export` JSON document. The export
+Authenticated users can download a versioned `calibrate-account-export` JSON document. Version 7
+includes the account's verification timestamp and explicit legal acceptance history. The export
 contains profile and preference data, the optional inline avatar as base64, goals, body metrics,
 food logs and completed-day state, My Foods and recipe snapshots, and in-app notification history.
 When enabled, it also contains user-visible Health Connect source records and daily activity

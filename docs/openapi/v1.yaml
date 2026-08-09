@@ -115,6 +115,145 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/ApiError' }
+  /auth/register:
+    post:
+      operationId: registerBrowser
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/BrowserRegistrationRequest' }
+      responses:
+        '200':
+          description: Registered browser session with email verification required.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/BrowserAuthResponse' }
+        '400':
+          description: Invalid credentials or missing/current legal acceptance.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiError' }
+        '503':
+          description: Hosted registration is unavailable because email delivery is not configured.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiError' }
+  /auth/email-verification/resend:
+    post:
+      operationId: resendEmailVerification
+      security: []
+      description: Always returns a generic response to avoid disclosing whether an account exists.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/EmailVerificationResendRequest' }
+      responses:
+        '202':
+          description: A verification message will be sent when an eligible account exists.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MessageResponse' }
+        '429':
+          description: Verification resend rate limit reached.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiError' }
+  /auth/email-verification/confirm:
+    post:
+      operationId: confirmEmailVerification
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/TokenConfirmRequest' }
+      responses:
+        '200':
+          description: The single-use verification token was accepted.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/EmailVerificationConfirmResponse' }
+        '400':
+          description: Token is invalid, expired, already used, or bound to another purpose.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiError' }
+  /auth/password-reset/request:
+    post:
+      operationId: requestPasswordReset
+      security: []
+      description: Always returns a generic response to avoid disclosing whether an account exists.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PasswordResetRequest' }
+      responses:
+        '202':
+          description: Reset instructions will be sent when an eligible account exists.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MessageResponse' }
+        '429':
+          description: Password reset request rate limit reached.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiError' }
+  /auth/password-reset/confirm:
+    post:
+      operationId: confirmPasswordReset
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PasswordResetConfirmRequest' }
+      responses:
+        '200':
+          description: Password changed and all browser, Android, and Wear sessions revoked.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MessageResponse' }
+        '400':
+          description: Token or replacement password is invalid.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiError' }
+  /api/v1/legal/status:
+    get:
+      operationId: getLegalStatus
+      responses:
+        '200':
+          description: Required and accepted legal versions plus the effective account-access state.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/LegalAcceptanceStatus' }
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /api/v1/legal/acceptance:
+    post:
+      operationId: acceptLegalDocuments
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/LegalAcceptanceRequest' }
+      responses:
+        '200':
+          description: Current legal documents were accepted and account access was recalculated.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/LegalAcceptanceStatus' }
+        '400':
+          description: Submitted versions do not match the currently required documents.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiError' }
+        '401':
+          $ref: '#/components/responses/Unauthorized'
   /auth/mobile/login:
     post:
       operationId: loginMobile
@@ -143,7 +282,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/MobileAuthRequest'
+              $ref: '#/components/schemas/MobileRegistrationRequest'
       responses:
         '200':
           description: Registered Android phone session.
@@ -153,6 +292,11 @@ paths:
                 $ref: '#/components/schemas/MobileAuthResponse'
         '400':
           description: Invalid registration or Android phone device metadata.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiError' }
+        '503':
+          description: Hosted registration is unavailable because email delivery is not configured.
           content:
             application/json:
               schema: { $ref: '#/components/schemas/ApiError' }
@@ -1283,19 +1427,23 @@ components:
     AccountExport:
       type: object
       additionalProperties: false
-      required: [format, version, exported_at, account, goals, body_metrics, food_logs, food_log_days, food_tracking_pauses, my_foods, in_app_notifications, activity_records, activity_day_summaries, calibration_recommendations, calorie_plan_revisions]
+      required: [format, version, exported_at, account, legal_acceptances, goals, body_metrics, food_logs, food_log_days, food_tracking_pauses, my_foods, in_app_notifications, activity_records, activity_day_summaries, calibration_recommendations, calorie_plan_revisions]
       properties:
         format:
           type: string
           const: calibrate-account-export
         version:
           type: integer
-          const: 6
+          const: 7
         exported_at:
           type: string
           format: date-time
         account:
           $ref: '#/components/schemas/AccountExportProfile'
+        legal_acceptances:
+          type: array
+          items:
+            $ref: '#/components/schemas/AccountExportLegalAcceptance'
         goals:
           type: array
           items:
@@ -1342,10 +1490,11 @@ components:
             $ref: '#/components/schemas/AccountExportCaloriePlanRevision'
     AccountExportProfile:
       type: object
-      required: [id, email, created_at, weight_unit, height_unit, timezone, language, reminder_log_weight_enabled, reminder_log_food_enabled, haptics_enabled, date_of_birth, sex, height_mm, activity_level, profile_image]
+      required: [id, email, email_verified_at, created_at, weight_unit, height_unit, timezone, language, reminder_log_weight_enabled, reminder_log_food_enabled, haptics_enabled, date_of_birth, sex, height_mm, activity_level, profile_image]
       properties:
         id: { type: integer }
         email: { type: string, format: email }
+        email_verified_at: { type: [string, 'null'], format: date-time }
         created_at: { type: string, format: date-time }
         weight_unit: { type: string, enum: [KG, LB] }
         height_unit: { type: string, enum: [CM, FT_IN] }
@@ -1364,6 +1513,14 @@ components:
           properties:
             mime_type: { type: string }
             data_base64: { type: string, contentEncoding: base64 }
+    AccountExportLegalAcceptance:
+      type: object
+      additionalProperties: false
+      required: [terms_version, privacy_version, accepted_at]
+      properties:
+        terms_version: { type: string }
+        privacy_version: { type: string }
+        accepted_at: { type: string, format: date-time }
     AccountExportGoal:
       type: object
       required: [id, start_weight_grams, target_weight_grams, target_date, daily_deficit, calorie_plan_review_status, calorie_plan_review_reason, created_at]
@@ -1999,6 +2156,80 @@ components:
               type: boolean
             wear_os_ready:
               type: boolean
+    AccountAccess:
+      type: object
+      additionalProperties: false
+      required: [state, email_verified, legal_current]
+      properties:
+        state:
+          type: string
+          enum: [full, email_verification_required, legal_acceptance_required]
+        email_verified: { type: boolean }
+        legal_current: { type: boolean }
+    LegalDocumentVersions:
+      type: object
+      additionalProperties: false
+      required: [terms_version, privacy_version]
+      properties:
+        terms_version: { type: string, minLength: 1, maxLength: 64 }
+        privacy_version: { type: string, minLength: 1, maxLength: 64 }
+    LegalAcceptanceStatus:
+      type: object
+      additionalProperties: false
+      required: [account_access, required, accepted]
+      properties:
+        account_access: { $ref: '#/components/schemas/AccountAccess' }
+        required: { $ref: '#/components/schemas/LegalDocumentVersions' }
+        accepted:
+          type: object
+          additionalProperties: false
+          required: [terms_version, privacy_version, accepted_at]
+          properties:
+            terms_version: { type: [string, 'null'] }
+            privacy_version: { type: [string, 'null'] }
+            accepted_at: { type: [string, 'null'], format: date-time }
+    LegalAcceptanceRequest:
+      type: object
+      additionalProperties: false
+      required: [terms_version, privacy_version, accept_terms, accept_privacy]
+      properties:
+        terms_version: { type: string, minLength: 1, maxLength: 64 }
+        privacy_version: { type: string, minLength: 1, maxLength: 64 }
+        accept_terms: { type: boolean, const: true }
+        accept_privacy: { type: boolean, const: true }
+    RegistrationLegalAcceptance:
+      type: object
+      additionalProperties: false
+      required: [terms_version, privacy_version, accept_terms, accept_privacy]
+      properties:
+        terms_version: { type: string, minLength: 1, maxLength: 64 }
+        privacy_version: { type: string, minLength: 1, maxLength: 64 }
+        accept_terms: { type: boolean, const: true }
+        accept_privacy: { type: boolean, const: true }
+    BrowserAuthRequest:
+      type: object
+      additionalProperties: false
+      required: [email, password]
+      properties:
+        email: { type: string, format: email }
+        password: { type: string, minLength: 8, maxLength: 72 }
+    BrowserRegistrationRequest:
+      type: object
+      additionalProperties: false
+      required: [email, password, terms_version, privacy_version, accept_terms, accept_privacy]
+      properties:
+        email: { type: string, format: email }
+        password: { type: string, minLength: 8, maxLength: 72 }
+        terms_version: { type: string, minLength: 1, maxLength: 64 }
+        privacy_version: { type: string, minLength: 1, maxLength: 64 }
+        accept_terms: { type: boolean, const: true }
+        accept_privacy: { type: boolean, const: true }
+    BrowserAuthResponse:
+      type: object
+      additionalProperties: false
+      required: [user]
+      properties:
+        user: { $ref: '#/components/schemas/UserClientPayload' }
     MobileAuthRequest:
       type: object
       required: [email, password, device_id]
@@ -2019,6 +2250,57 @@ components:
         device_name:
           type: string
           maxLength: 120
+    MobileRegistrationRequest:
+      type: object
+      additionalProperties: false
+      required: [email, password, device_id, terms_version, privacy_version, accept_terms, accept_privacy]
+      properties:
+        email: { type: string, format: email }
+        password: { type: string, minLength: 8, maxLength: 72 }
+        device_id: { type: string, maxLength: 128 }
+        device_platform: { type: string, enum: [android_phone] }
+        device_name: { type: string, maxLength: 120 }
+        terms_version: { type: string, minLength: 1, maxLength: 64 }
+        privacy_version: { type: string, minLength: 1, maxLength: 64 }
+        accept_terms: { type: boolean, const: true }
+        accept_privacy: { type: boolean, const: true }
+    EmailVerificationResendRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        email: { type: string, format: email }
+    TokenConfirmRequest:
+      type: object
+      additionalProperties: false
+      required: [token]
+      properties:
+        token: { type: string, minLength: 1, maxLength: 512 }
+    PasswordResetRequest:
+      type: object
+      additionalProperties: false
+      required: [email]
+      properties:
+        email: { type: string, format: email }
+    PasswordResetConfirmRequest:
+      type: object
+      additionalProperties: false
+      required: [token, new_password]
+      properties:
+        token: { type: string, minLength: 1, maxLength: 512 }
+        new_password: { type: string, minLength: 8, maxLength: 72 }
+    MessageResponse:
+      type: object
+      additionalProperties: false
+      required: [message]
+      properties:
+        message: { type: string }
+    EmailVerificationConfirmResponse:
+      type: object
+      additionalProperties: false
+      required: [message, account_access]
+      properties:
+        message: { type: string }
+        account_access: { $ref: '#/components/schemas/AccountAccess' }
     MobileAuthResponse:
       type: object
       required: [user, access_token, refresh_token, access_expires_at, refresh_expires_at]
@@ -2513,5 +2795,7 @@ components:
           enum: [SEDENTARY, LIGHT, MODERATE, ACTIVE, VERY_ACTIVE, null]
         profile_image_url:
           type: [string, 'null']
+        account_access:
+          $ref: '#/components/schemas/AccountAccess'
 security:
   - mobileBearer: []

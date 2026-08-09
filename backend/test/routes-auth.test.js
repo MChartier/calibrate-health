@@ -2,6 +2,13 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const Module = require('node:module');
 
+const CURRENT_LEGAL_ACCEPTANCE = {
+  terms_version: '2026-08-09',
+  privacy_version: '2026-07-24',
+  accept_terms: true,
+  accept_privacy: true
+};
+
 function stubModule(resolvedPath, exports) {
   const moduleInstance = new Module(resolvedPath);
   moduleInstance.exports = exports;
@@ -82,7 +89,7 @@ test('auth route: POST /register returns 400 when the email already exists', asy
   const router = loadAuthRouter({ prismaStub, passportStub, bcryptStub });
   const [handler] = getRouteHandlers(router, 'post', '/register');
 
-  const req = { body: { email: 'test@example.com', password: 'password123' } };
+  const req = { body: { email: 'test@example.com', password: 'password123', ...CURRENT_LEGAL_ACCEPTANCE } };
   const res = createRes();
 
   await handler(req, res);
@@ -165,7 +172,7 @@ test('auth route: POST /register creates a user and logs them in', async () => {
   const [handler] = getRouteHandlers(router, 'post', '/register');
 
   const req = {
-    body: { email: ' TEST@Example.COM ', password: 'password123' },
+    body: { email: ' TEST@Example.COM ', password: 'password123', ...CURRENT_LEGAL_ACCEPTANCE },
     login: (_user, cb) => cb(null)
   };
   const res = createRes();
@@ -174,6 +181,10 @@ test('auth route: POST /register creates a user and logs them in', async () => {
   assert.equal(res.statusCode, 200);
   assert.deepEqual(findFirstArgs.where, { email: { equals: createdUser.email, mode: 'insensitive' } });
   assert.equal(createArgs.data.email, createdUser.email);
+  assert.ok(createArgs.data.email_verified_at instanceof Date);
+  assert.deepEqual(createArgs.data.legal_acceptances, {
+    create: { terms_version: '2026-08-09', privacy_version: '2026-07-24' }
+  });
   assert.deepEqual(res.body, {
     user: {
       id: createdUser.id,
@@ -190,7 +201,8 @@ test('auth route: POST /register creates a user and logs them in', async () => {
       sex: createdUser.sex,
       height_mm: createdUser.height_mm,
       activity_level: createdUser.activity_level,
-      profile_image_url: null
+      profile_image_url: null,
+      account_access: { state: 'full', email_verified: true, legal_current: true }
     }
   });
 });
@@ -231,7 +243,7 @@ test('auth route: POST /login normalizes credentials, logs in, and returns the s
   const [handler] = getRouteHandlers(router, 'post', '/login');
 
   const req = {
-    body: { email: ' TEST@Example.COM ', password: 'password123' },
+    body: { email: ' TEST@Example.COM ', password: 'password123', ...CURRENT_LEGAL_ACCEPTANCE },
     login: (user, cb) => {
       loggedInUser = user;
       cb(null);
@@ -352,4 +364,96 @@ test('auth route: GET /me returns 401 when not authenticated', async () => {
   await handler(req, res);
   assert.equal(res.statusCode, 401);
   assert.deepEqual(res.body, { message: 'Not authenticated' });
+});
+
+
+test('auth route: registration requires explicit current legal versions', async () => {
+  const prismaStub = { user: { findFirst: async () => { throw new Error('should not be called'); } } };
+  const router = loadAuthRouter({
+    prismaStub,
+    passportStub: { authenticate: () => () => {} },
+    bcryptStub: { genSalt: async () => 'salt', hash: async () => 'hash' }
+  });
+  const [handler] = getRouteHandlers(router, 'post', '/register');
+
+  const missing = createRes();
+  await handler({ body: { email: 'test@example.com', password: 'password123' } }, missing);
+  assert.equal(missing.statusCode, 400);
+  assert.equal(missing.body.code, 'INVALID_LEGAL_ACCEPTANCE');
+
+  const outdated = createRes();
+  await handler({ body: {
+    email: 'test@example.com',
+    password: 'password123',
+    ...CURRENT_LEGAL_ACCEPTANCE,
+    terms_version: '2025-01-01'
+  } }, outdated);
+  assert.equal(outdated.statusCode, 400);
+  assert.equal(outdated.body.code, 'INVALID_LEGAL_VERSION');
+});
+
+test('auth route: hosted registration fails closed when account email is unavailable', async () => {
+  const previous = {
+    NODE_ENV: process.env.NODE_ENV,
+    CALIBRATE_HOSTED_SERVICE: process.env.CALIBRATE_HOSTED_SERVICE,
+    EMAIL_DELIVERY_MODE: process.env.EMAIL_DELIVERY_MODE
+  };
+  process.env.NODE_ENV = 'production';
+  process.env.CALIBRATE_HOSTED_SERVICE = 'true';
+  process.env.EMAIL_DELIVERY_MODE = 'disabled';
+  try {
+    const router = loadAuthRouter({
+      prismaStub: { user: { findFirst: async () => { throw new Error('should not be called'); } } },
+      passportStub: { authenticate: () => () => {} },
+      bcryptStub: { genSalt: async () => 'salt', hash: async () => 'hash' }
+    });
+    const [handler] = getRouteHandlers(router, 'post', '/register');
+    const res = createRes();
+    await handler({ body: {
+      email: 'test@example.com',
+      password: 'password123',
+      ...CURRENT_LEGAL_ACCEPTANCE
+    } }, res);
+    assert.equal(res.statusCode, 503);
+    assert.equal(res.body.code, 'EMAIL_DELIVERY_UNAVAILABLE');
+    assert.equal(res.body.retryable, true);
+  } finally {
+    for (const [key, value] of Object.entries(previous)) {
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
+  }
+});
+
+test('auth route: verification resend and reset request do not reveal account existence', async () => {
+  let known = false;
+  const router = loadAuthRouter({
+    prismaStub: {
+      user: {
+        findFirst: async () => known ? { id: 7, email: 'known@example.com' } : null
+      }
+    },
+    passportStub: { authenticate: () => () => {} },
+    bcryptStub: { genSalt: async () => 'salt', hash: async () => 'hash' }
+  });
+  const [resend] = getRouteHandlers(router, 'post', '/email-verification/resend');
+  const [requestReset] = getRouteHandlers(router, 'post', '/password-reset/request');
+
+  for (const handler of [resend, requestReset]) {
+    const unknownRes = createRes();
+    await handler({
+      body: { email: 'unknown@example.com' },
+      isAuthenticated: () => false
+    }, unknownRes);
+    known = true;
+    const knownRes = createRes();
+    await handler({
+      body: { email: 'known@example.com' },
+      isAuthenticated: () => false
+    }, knownRes);
+    known = false;
+    assert.equal(unknownRes.statusCode, 202);
+    assert.equal(knownRes.statusCode, 202);
+    assert.deepEqual(knownRes.body, unknownRes.body);
+  }
 });

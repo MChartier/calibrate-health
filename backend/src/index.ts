@@ -30,8 +30,10 @@ import userRoutes from './routes/user';
 import watchRoutes from './routes/watch';
 import calibrationRoutes from './routes/calibration';
 import caloriePlanRoutes from './routes/caloriePlan';
+import legalRoutes from './routes/legal';
 import { authenticateMobileBearerToken } from './middleware/mobileAuth';
 import { enforceNativeClientCompatibility } from './middleware/clientCompatibility';
+import { enforceAccountAccess } from './middleware/accountAccess';
 import { createCorsOptionsDelegate } from './middleware/cors';
 import {
   apiRouteNotFoundHandler,
@@ -149,6 +151,10 @@ const bootstrap = async (): Promise<void> => {
   app.use('/auth/login', authRateLimiters.login);
   app.use('/auth/mobile/login', authRateLimiters.login);
   app.use('/auth/mobile/refresh', authRateLimiters.refresh);
+  app.use('/auth/email-verification/resend', authRateLimiters.accountEmailRequest);
+  app.use('/auth/password-reset/request', authRateLimiters.accountEmailRequest);
+  app.use('/auth/email-verification/confirm', authRateLimiters.accountTokenConfirm);
+  app.use('/auth/password-reset/confirm', authRateLimiters.accountTokenConfirm);
   app.use('/auth/mobile/wear/pairing-credential', authRateLimiters.pairingIssueIp);
   app.use('/auth/mobile/wear/pair', authRateLimiters.pairingExchange);
   app.use(express.json({ limit: '2mb' }));
@@ -185,6 +191,7 @@ const bootstrap = async (): Promise<void> => {
   }));
   app.use('/auth/mobile/wear/pairing-credential', authRateLimiters.pairingIssue);
   app.use(autoLoginTestUser);
+  app.use(enforceAccountAccess);
 
   passport.use(
     new LocalStrategy({ usernameField: 'email' }, async (email, password, done) => {
@@ -271,6 +278,7 @@ const bootstrap = async (): Promise<void> => {
   apiRouter.use('/watch', watchRoutes);
   apiRouter.use('/calibration', calibrationRoutes);
   apiRouter.use('/calorie-plan', caloriePlanRoutes);
+  apiRouter.use('/legal', legalRoutes);
   apiRouter.use('/user/password', authRateLimiters.passwordChange);
   apiRouter.use('/user', userRoutes);
 

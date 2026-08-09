@@ -65,6 +65,12 @@
       "react-native": "./notificationRealtime.ts",
       "default": "./dist/cjs/notificationRealtime.js"
     },
+    "./legalVersions": {
+      "types": "./legalVersions.ts",
+      "browser": "./legalVersions.ts",
+      "react-native": "./legalVersions.ts",
+      "default": "./dist/cjs/legalVersions.js"
+    },
     "./designTokens": {
       "types": "./designTokens.ts",
       "browser": "./designTokens.ts",

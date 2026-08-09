@@ -70,6 +70,11 @@ export const ROUTE_MATRIX: readonly RouteExpectation[] = [
 const PUBLIC_HEADING_ROUTE_IDS = [
   'login',
   'register',
+  'forgot-password',
+  'reset-password',
+  'verify-email',
+  'terms',
+  'support',
   'privacy',
   'account-deletion',
   'health-connect-privacy',

@@ -79,7 +79,8 @@ test('userSerialization: serializeUserForClient builds a base64 data URL when im
       sex: user.sex,
       height_mm: user.height_mm,
       activity_level: user.activity_level,
-      profile_image_url: 'data:image/png;base64,AQID'
+      profile_image_url: 'data:image/png;base64,AQID',
+      account_access: { state: 'full', email_verified: true, legal_current: true }
     }
   );
 });

@@ -17,10 +17,11 @@ type PublicLegalPageProps = {
     intro: string[];
     sections: PublicLegalSection[];
     links: PublicLegalLink[];
+    actions?: React.ReactNode;
 };
 
 /** Accessible, static-renderable legal surface shared by web and native routes. */
-export function PublicLegalPage({ title, lastUpdated, intro, sections, links }: PublicLegalPageProps) {
+export function PublicLegalPage({ title, lastUpdated, intro, sections, links, actions }: PublicLegalPageProps) {
     const { colors } = useAppTheme();
 
     return (
@@ -34,6 +35,8 @@ export function PublicLegalPage({ title, lastUpdated, intro, sections, links }: 
                             <AppText key={paragraph}>{paragraph}</AppText>
                         ))}
                     </View>
+
+                    {actions}
 
                     {sections.map((section) => (
                         <View

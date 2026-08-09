@@ -3,6 +3,7 @@ import type {
     ActivityDaysResponse,
     BrowserAuthRequest,
     BrowserAuthResponse,
+    BrowserRegistrationRequest,
     BrowserPushSubscriptionPayload,
     CalibrationStatusResponse,
     CaloriePlanOptionsRequest,
@@ -27,7 +28,16 @@ import type {
     MetricSaveResponse,
     MobileAuthRequest,
     MobileAuthResponse,
+    MobileRegistrationRequest,
     MobileSessionSummary,
+    EmailVerificationConfirmRequest,
+    EmailVerificationConfirmResponse,
+    EmailVerificationResendRequest,
+    LegalAcceptanceStatus,
+    LegalAcceptanceRequest,
+    MessageResponse,
+    PasswordResetConfirmRequest,
+    PasswordResetRequest,
     WearPairingCredentialRequest,
     WearPairingCredentialResponse,
     WearPairingExchangeRequest,
@@ -414,8 +424,41 @@ export class CalibrateApiClient {
         });
     }
 
-    registerBrowser(payload: BrowserAuthRequest): Promise<BrowserAuthResponse> {
+    registerBrowser(payload: BrowserRegistrationRequest): Promise<BrowserAuthResponse> {
         return this.request<BrowserAuthResponse>('/auth/register', {
+            method: 'POST',
+            auth: false,
+            json: payload
+        });
+    }
+
+    resendEmailVerification(payload: EmailVerificationResendRequest = {}): Promise<MessageResponse> {
+        return this.request<MessageResponse>('/auth/email-verification/resend', {
+            method: 'POST',
+            json: payload
+        });
+    }
+
+    confirmEmailVerification(
+        payload: EmailVerificationConfirmRequest
+    ): Promise<EmailVerificationConfirmResponse> {
+        return this.request<EmailVerificationConfirmResponse>('/auth/email-verification/confirm', {
+            method: 'POST',
+            auth: false,
+            json: payload
+        });
+    }
+
+    requestPasswordReset(payload: PasswordResetRequest): Promise<MessageResponse> {
+        return this.request<MessageResponse>('/auth/password-reset/request', {
+            method: 'POST',
+            auth: false,
+            json: payload
+        });
+    }
+
+    confirmPasswordReset(payload: PasswordResetConfirmRequest): Promise<MessageResponse> {
+        return this.request<MessageResponse>('/auth/password-reset/confirm', {
             method: 'POST',
             auth: false,
             json: payload
@@ -436,7 +479,7 @@ export class CalibrateApiClient {
         });
     }
 
-    registerMobile(payload: MobileAuthRequest): Promise<MobileAuthResponse> {
+    registerMobile(payload: MobileRegistrationRequest): Promise<MobileAuthResponse> {
         return this.request<MobileAuthResponse>('/auth/mobile/register', {
             method: 'POST',
             auth: false,
@@ -513,6 +556,17 @@ export class CalibrateApiClient {
 
     getUserProfile(): Promise<UserProfileResponse> {
         return this.request<UserProfileResponse>('/api/user/profile');
+    }
+
+    getLegalStatus(): Promise<LegalAcceptanceStatus> {
+        return this.request<LegalAcceptanceStatus>('/api/legal/status');
+    }
+
+    acceptLegalDocuments(payload: LegalAcceptanceRequest): Promise<LegalAcceptanceStatus> {
+        return this.request<LegalAcceptanceStatus>('/api/legal/acceptance', {
+            method: 'POST',
+            json: payload
+        });
     }
 
     getCaloriePlanOptions(payload: CaloriePlanOptionsRequest): Promise<CaloriePlanOptionsResponse> {

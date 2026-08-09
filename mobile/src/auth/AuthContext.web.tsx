@@ -2,6 +2,7 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useR
 import { ApiError, CalibrateApiClient, type UserClientPayload } from '@calibrate/api-client';
 import { useQueryClient } from '@tanstack/react-query';
 import type { ClientUpgradeRequirement } from '@calibrate/shared';
+import { CURRENT_PRIVACY_VERSION, CURRENT_TERMS_VERSION } from '@calibrate/shared/legalVersions';
 import {
     getDefaultServerUrl,
     INITIAL_SERVER_CONNECTION_STATE,
@@ -14,6 +15,7 @@ import { getSessionRestoreErrorMessage } from './authErrors';
 import type { AccountDeletionCleanupNotice } from '../account/accountDeletionNotice';
 import { cleanupBrowserPushBeforeSessionChange } from '../notifications/browserPush.web';
 import { restoreBrowserDevelopmentSession } from './devAutoLogin';
+import { requireRegistrationLegalAcceptance, type RegistrationLegalAcceptance } from './accountAccess';
 
 type AuthContextValue = {
     api: CalibrateApiClient;
@@ -31,7 +33,7 @@ type AuthContextValue = {
     setServerUrl: (value: string) => Promise<boolean>;
     testServerUrl: (value: string) => Promise<boolean>;
     login: (email: string, password: string, serverCandidate: string) => Promise<boolean>;
-    register: (email: string, password: string, serverCandidate: string) => Promise<boolean>;
+    register: (email: string, password: string, serverCandidate: string, acceptance: RegistrationLegalAcceptance) => Promise<boolean>;
     logout: () => Promise<void>;
     clearLocalSession: () => Promise<void>;
     recheckClientCompatibility: () => Promise<boolean>;
@@ -122,14 +124,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return true;
     }, [confirmCurrentServer, serverUrl]);
 
-    const register = useCallback(async (email: string, password: string, _serverCandidate: string) => {
+    const register = useCallback(async (
+        email: string,
+        password: string,
+        _serverCandidate: string,
+        acceptance: RegistrationLegalAcceptance
+    ) => {
+        const confirmedAcceptance = requireRegistrationLegalAcceptance(acceptance);
         const payload = await authenticateAgainstConfirmedServer({
             candidate: serverUrl,
             confirmServer: confirmCurrentServer,
             authenticate: (baseUrl) => new CalibrateApiClient({
                 baseUrl,
                 requestCredentials: 'include'
-            }).registerBrowser({ email, password })
+            }).registerBrowser({
+                email,
+                password,
+                terms_version: CURRENT_TERMS_VERSION,
+                privacy_version: CURRENT_PRIVACY_VERSION,
+                accept_terms: confirmedAcceptance.acceptTerms,
+                accept_privacy: confirmedAcceptance.acceptPrivacy
+            })
         });
         if (!payload) return false;
         setUser(payload.user);

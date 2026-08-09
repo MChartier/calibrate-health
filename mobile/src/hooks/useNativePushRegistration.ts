@@ -3,6 +3,7 @@ import { Linking, Platform } from 'react-native';
 import Constants from 'expo-constants';
 import { NATIVE_PUSH_PLATFORMS, NATIVE_PUSH_PROVIDERS } from '@calibrate/shared';
 import { useAuth } from '../auth/AuthContext';
+import { hasFullAccountAccess } from '../auth/accountAccess';
 import {
     getNotificationPermissionState,
     isNativePushEnvironmentSupported,
@@ -47,7 +48,7 @@ export function NativePushRegistrationProvider({ children }: { children: React.R
 
     const synchronize = useCallback(async (requestPermission: boolean) => {
         const run = ++activeRun.current;
-        if (!user) {
+        if (!user || !hasFullAccountAccess(user)) {
             setState(NATIVE_PUSH_STATES.SIGNED_OUT);
             return;
         }

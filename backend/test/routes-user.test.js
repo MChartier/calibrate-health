@@ -221,7 +221,8 @@ test('user route: GET /me returns serialized user data', async () => {
       sex: dbUser.sex,
       height_mm: dbUser.height_mm,
       activity_level: dbUser.activity_level,
-      profile_image_url: 'data:image/png;base64,AQID'
+      profile_image_url: 'data:image/png;base64,AQID',
+      account_access: { state: 'full', email_verified: true, legal_current: true }
     }
   });
 });
@@ -384,7 +385,7 @@ test('user route: PATCH /password updates password when current password matches
 test('user route: GET /account/export returns a no-store attachment', async () => {
   const accountExport = {
     format: 'calibrate-account-export',
-    version: 6,
+    version: 7,
     exported_at: '2026-07-11T20:00:00.000Z'
   };
   const router = loadUserRouter({

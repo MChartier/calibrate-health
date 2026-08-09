@@ -2,7 +2,7 @@ import { Prisma } from '@prisma/client';
 import prisma from '../config/database';
 
 export const ACCOUNT_EXPORT_FORMAT = 'calibrate-account-export';
-export const ACCOUNT_EXPORT_VERSION = 6;
+export const ACCOUNT_EXPORT_VERSION = 7;
 
 // Auth sessions, password hashes, push endpoints/tokens, and internal replay metadata are
 // deliberately absent. User-visible account, tracking, and derived plan history is exported.
@@ -10,6 +10,7 @@ const ACCOUNT_EXPORT_SELECT = {
   id: true,
   email: true,
   created_at: true,
+  email_verified_at: true,
   weight_unit: true,
   height_unit: true,
   timezone: true,
@@ -60,6 +61,9 @@ const ACCOUNT_EXPORT_SELECT = {
   },
   calorie_plan_revisions: {
     orderBy: [{ effective_local_date: 'asc' as const }, { id: 'asc' as const }]
+  },
+  legal_acceptances: {
+    orderBy: [{ accepted_at: 'asc' as const }, { id: 'asc' as const }]
   }
 } satisfies Prisma.UserSelect;
 
@@ -73,6 +77,7 @@ export type AccountExport = {
     id: number;
     email: string;
     created_at: string;
+    email_verified_at: string | null;
     weight_unit: string;
     height_unit: string;
     timezone: string;
@@ -86,6 +91,11 @@ export type AccountExport = {
     activity_level: string | null;
     profile_image: { mime_type: string; data_base64: string } | null;
   };
+  legal_acceptances: Array<{
+    terms_version: string;
+    privacy_version: string;
+    accepted_at: string;
+  }>;
   goals: Array<{
     id: number;
     start_weight_grams: number;
@@ -287,6 +297,7 @@ export function serializeAccountExport(user: AccountExportRow, now = new Date())
       id: user.id,
       email: user.email,
       created_at: toIsoDateTime(user.created_at),
+      email_verified_at: user.email_verified_at ? toIsoDateTime(user.email_verified_at) : null,
       weight_unit: user.weight_unit,
       height_unit: user.height_unit,
       timezone: user.timezone,
@@ -300,6 +311,11 @@ export function serializeAccountExport(user: AccountExportRow, now = new Date())
       activity_level: user.activity_level,
       profile_image: profileImage
     },
+    legal_acceptances: user.legal_acceptances.map((acceptance) => ({
+      terms_version: acceptance.terms_version,
+      privacy_version: acceptance.privacy_version,
+      accepted_at: toIsoDateTime(acceptance.accepted_at)
+    })),
     goals: user.goals.map((goal) => ({
       id: goal.id,
       start_weight_grams: goal.start_weight_grams,

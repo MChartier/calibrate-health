@@ -9,6 +9,7 @@ import { Screen } from '../../src/components/Screen';
 import { ServerUrlControl } from '../../src/components/ServerUrlControl';
 import { SectionHeader } from '../../src/components/SectionHeader';
 import { TextField } from '../../src/components/TextField';
+import { LegalConsentFields } from '../../src/components/legal/LegalConsentFields';
 import { useAuth } from '../../src/auth/AuthContext';
 import { readAuthServerDraft } from '../../src/auth/authServerDraft';
 import { useAppTheme } from '../../src/theme';
@@ -30,6 +31,9 @@ export default function RegisterScreen() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
+    const [termsAccepted, setTermsAccepted] = useState(false);
+    const [privacyAccepted, setPrivacyAccepted] = useState(false);
+    const [consentError, setConsentError] = useState<string | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -55,11 +59,19 @@ export default function RegisterScreen() {
             setError('Passwords do not match.');
             return;
         }
+        if (!termsAccepted || !privacyAccepted) {
+            setConsentError('Review and accept both legal documents to create an account.');
+            return;
+        }
 
         setIsSubmitting(true);
         setError(null);
+        setConsentError(null);
         try {
-            await register(normalizedEmail, password, serverInput);
+            await register(normalizedEmail, password, serverInput, {
+                acceptTerms: termsAccepted,
+                acceptPrivacy: privacyAccepted
+            });
         } catch (err) {
             setError(getAuthActionErrorMessage(err, 'create account'));
         } finally {
@@ -105,6 +117,20 @@ export default function RegisterScreen() {
                     value={confirmPassword}
                     onChangeText={setConfirmPassword}
                     onSubmitEditing={() => void handleRegister()}
+                />
+                <LegalConsentFields
+                    termsAccepted={termsAccepted}
+                    privacyAccepted={privacyAccepted}
+                    onTermsAcceptedChange={(checked) => {
+                        setTermsAccepted(checked);
+                        if (consentError) setConsentError(null);
+                    }}
+                    onPrivacyAcceptedChange={(checked) => {
+                        setPrivacyAccepted(checked);
+                        if (consentError) setConsentError(null);
+                    }}
+                    disabled={isSubmitting}
+                    error={consentError}
                 />
                 {canSelectServer && (
                     <ServerUrlControl
