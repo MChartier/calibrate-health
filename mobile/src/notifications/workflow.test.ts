@@ -47,13 +47,13 @@ describe('native notification workflow', () => {
     it('maps food, weight, and goal actions to allowlisted native routes', () => {
         expect(getNotificationAction('/log?quickAdd=food', '2026-07-12')).toEqual({
             label: 'Log food',
-            href: { pathname: '/(tabs)/log', params: { date: '2026-07-12' } }
+            href: { pathname: '/log', params: { date: '2026-07-12' } }
         });
         expect(getNotificationAction('/log?quickAdd=weight', '2026-07-12')).toEqual({
             label: 'Log weight',
-            href: { pathname: '/(tabs)/weight', params: { date: '2026-07-12' } }
+            href: { pathname: '/weight', params: { date: '2026-07-12' } }
         });
-        expect(getNotificationAction('/goals')).toEqual({ label: 'Open goals', href: '/(tabs)/progress' });
+        expect(getNotificationAction('/goals')).toEqual({ label: 'Open goals', href: '/progress' });
     });
 
     it.each([
@@ -66,7 +66,7 @@ describe('native notification workflow', () => {
     ])('falls back safely for invalid or external action URL %p', (actionUrl) => {
         expect(getNotificationAction(actionUrl)).toEqual({
             label: 'Open Calibrate',
-            href: '/(tabs)/today'
+            href: '/today'
         });
     });
 
@@ -81,6 +81,6 @@ describe('native notification workflow', () => {
 
         expect(getNotificationResponseActionUrl(data, 'log_weight')).toBe('/log?quickAdd=weight');
         expect(getNotificationResponseActionUrl(data, 'unknown')).toBe('/log');
-        expect(getNotificationAction(getNotificationResponseActionUrl(data, 'external')).href).toBe('/(tabs)/today');
+        expect(getNotificationAction(getNotificationResponseActionUrl(data, 'external')).href).toBe('/today');
     });
 });

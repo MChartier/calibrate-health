@@ -33,6 +33,7 @@ function renderDrawer(overrides: Partial<React.ComponentProps<typeof Notificatio
         onClose: jest.fn(),
         onOpenNotification: jest.fn(),
         onDismissNotification: jest.fn(),
+        onViewAll: jest.fn(),
         onRetry: jest.fn(),
         ...overrides
     };
@@ -74,6 +75,14 @@ describe('NotificationsDrawer', () => {
         fireEvent.press(screen.getByLabelText('Close notifications'));
 
         expect(props.onClose).toHaveBeenCalledTimes(1);
+    });
+
+    it('provides a discoverable path to the full notification history', () => {
+        const { props, screen } = renderDrawer();
+
+        fireEvent.press(screen.getByRole('button', { name: 'View all notifications' }));
+
+        expect(props.onViewAll).toHaveBeenCalledTimes(1);
     });
 
     it('exposes one modal dialog and keeps the decorative backdrop out of the accessibility tree', () => {

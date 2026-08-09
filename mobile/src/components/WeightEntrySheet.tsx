@@ -312,12 +312,12 @@ export const WeightEntrySheet: React.FC<WeightEntrySheetProps> = ({ visible, dat
 
     function handleViewProgress() {
         onClose();
-        router.replace('/(tabs)/progress');
+        router.replace('/progress');
     }
 
     function handleSetNextGoal() {
         onClose();
-        router.replace({ pathname: '/(tabs)/progress', params: { openNextGoal: 'true' } });
+        router.replace({ pathname: '/progress', params: { openNextGoal: 'true' } });
     }
 
     const closeButton = !isBusy && (

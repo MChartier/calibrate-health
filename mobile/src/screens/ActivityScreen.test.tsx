@@ -1,7 +1,7 @@
 import React from 'react';
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
 import { onlineManager, QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import ActivityScreen from '../../app/(tabs)/activity';
+import ActivityScreen from '../../app/(tabs)/(settings)/activity';
 
 jest.mock('../offline/usePendingWeightMutation', () => ({
     usePendingWeightMutation: () => false

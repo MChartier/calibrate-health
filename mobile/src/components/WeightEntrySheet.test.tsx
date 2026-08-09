@@ -207,7 +207,7 @@ describe('WeightEntrySheet', () => {
         fireEvent.press(screen.getByRole('button', { name: 'Set next goal' }));
         expect(screen.onClose).toHaveBeenCalledTimes(1);
         expect(mockReplace).toHaveBeenCalledWith({
-            pathname: '/(tabs)/progress',
+            pathname: '/progress',
             params: { openNextGoal: 'true' }
         });
     });

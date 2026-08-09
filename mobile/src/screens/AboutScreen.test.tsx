@@ -1,6 +1,6 @@
 import { fireEvent, render } from '@testing-library/react-native';
 import { useAppUpdateController } from '../updates/useAppUpdateController';
-import AboutScreen from '../../app/(tabs)/about';
+import AboutScreen from '../../app/(tabs)/(settings)/about';
 
 const mockRouter = {
     back: jest.fn(),

@@ -9,20 +9,19 @@ import {
   UX_FIXTURE_STATES,
 } from './fixtures';
 import { PUBLIC_ROUTE_HEADINGS, ROUTE_MATRIX } from './route-matrix';
+import {
+  REGISTERED_ROUTE_PATHS,
+  ROUTE_IDS,
+  ROUTE_REGISTRY,
+  getRouteByPath,
+} from '../../mobile/src/navigation/routeRegistry';
 
 const repoRoot = process.cwd();
 const appRoot = path.join(repoRoot, 'mobile', 'app');
-const AUTHENTICATED_DESTINATION_HEADINGS = {
-  '/today': 'Today',
-  '/progress': 'Progress',
-  '/settings': 'Account',
-  '/food-log': 'Food log',
-  '/weight-trend': 'Trend',
-  '/activity': 'Activity',
-  '/my-foods': 'My Foods',
-  '/notifications': 'Notifications',
-  '/about': 'About Calibrate',
-} as const;
+const AUTHENTICATED_DESTINATION_HEADINGS = Object.fromEntries(
+  ROUTE_IDS.filter((routeId) => ROUTE_REGISTRY[routeId].shellPolicy === 'app')
+    .map((routeId) => [ROUTE_REGISTRY[routeId].path, ROUTE_REGISTRY[routeId].title]),
+);
 const AUTHENTICATED_ROUTE_GROUPS = [
   { name: 'public and primary routes', routes: ROUTE_MATRIX.slice(0, 10) },
   { name: 'secondary and alias routes', routes: ROUTE_MATRIX.slice(10) },
@@ -59,8 +58,10 @@ test('route matrix declares every current browser route exactly once', () => {
   const declaredRoutes = ROUTE_MATRIX.map(({ path: routePath }) => routePath).sort();
 
   expect(declaredRoutes).toEqual(sourceRoutes);
+  expect(declaredRoutes).toEqual([...REGISTERED_ROUTE_PATHS].sort());
   expect(new Set(declaredRoutes).size).toBe(ROUTE_MATRIX.length);
   for (const route of ROUTE_MATRIX) {
+    expect(getRouteByPath(route.path)).not.toBeNull();
     expect(route.authentication).toMatch(/^(public|signed-out-only|authenticated)$/);
     expect(route.deepLink).toMatch(/^(render|session-redirect|alias-redirect)$/);
     expect(route.signedOutPath).toMatch(/^\//);
@@ -149,23 +150,30 @@ test('browser Back restores the previous auth route', async ({ page, ux }) => {
   await expect(page.getByRole('button', { name: 'Sign in', exact: true })).toBeVisible();
 });
 
-test('authenticated history and registered parent fallbacks return to the declared route', async ({ page, ux }) => {
+test('authenticated history and registered parent fallbacks return to the declared route', async ({ page, context, ux }) => {
   await ux.install('populated');
 
-  await page.goto('/today');
-  await page.goto('/activity');
+  await page.goto('/settings');
+  await page.getByRole('button', { name: 'Activity', exact: true }).click();
+  await expect(page).toHaveURL((url) => url.pathname === '/activity');
   await page.getByRole('button', { name: 'Go back', exact: true }).click();
-  await expect(page).toHaveURL((url) => url.pathname === '/today');
+  await expect(page).toHaveURL((url) => url.pathname === '/settings');
 
-  await page.goto('/weight-trend');
-  await page.getByRole('button', { name: 'Back to Progress', exact: true }).click();
-  await expect(page).toHaveURL((url) => url.pathname === '/progress');
+  const trendPage = await context.newPage();
+  await ux.installOnPage(trendPage);
+  await trendPage.goto('/weight-trend');
+  await trendPage.getByRole('button', { name: 'Back to Progress', exact: true }).click();
+  await expect(trendPage).toHaveURL((url) => url.pathname === '/progress');
+  await trendPage.close();
 
-  await page.goto('/food-log');
-  await page.getByRole('button', { name: 'Back to Today', exact: true }).click();
-  await expect(page).toHaveURL((url) => url.pathname === '/today');
+  const foodLogPage = await context.newPage();
+  await ux.installOnPage(foodLogPage);
+  await foodLogPage.goto('/food-log');
+  await foodLogPage.getByRole('button', { name: 'Back to Today', exact: true }).click();
+  await expect(foodLogPage).toHaveURL((url) => url.pathname === '/today');
+  await foodLogPage.close();
 
-  expect(ROUTE_MATRIX.find(({ path: routePath }) => routePath === '/activity')?.historyFallback).toBe('/today');
+  expect(ROUTE_MATRIX.find(({ path: routePath }) => routePath === '/activity')?.historyFallback).toBe('/settings');
   expect(ROUTE_MATRIX.find(({ path: routePath }) => routePath === '/weight-trend')?.historyFallback).toBe('/progress');
   expect(ROUTE_MATRIX.find(({ path: routePath }) => routePath === '/food-log')?.historyFallback).toBe('/today');
 });

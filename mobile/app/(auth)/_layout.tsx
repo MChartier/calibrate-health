@@ -11,7 +11,7 @@ export default function AuthLayout() {
     }
 
     if (user) {
-        return <Redirect href="/(tabs)/today" />;
+        return <Redirect href="/today" />;
     }
 
     if (accountDeletionCleanupNotice && segments[0] !== 'login') {

@@ -34,7 +34,12 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
         ) : null}
         <View style={styles.copy}>
             {eyebrow ? <AppText variant="label">{eyebrow}</AppText> : null}
-            <AppText accessibilityRole="header" aria-level={1} variant="screenTitle">
+            <AppText
+                accessibilityRole="header"
+                aria-level={1}
+                nativeID="route-focus-title"
+                variant="screenTitle"
+            >
                 {title}
             </AppText>
             {description ? <AppText variant="caption">{description}</AppText> : null}

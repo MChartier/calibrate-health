@@ -3,17 +3,17 @@ import { StyleSheet, View } from 'react-native';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router, type Href } from 'expo-router';
 import type { InAppNotification } from '@calibrate/api-client';
-import { AppCard } from '../../src/components/AppCard';
-import { AppText } from '../../src/components/AppText';
-import { AsyncStateBoundary, useAsyncResourceState, useOnlineStatus } from '../../src/components/AsyncStateBoundary';
-import { NotificationCard } from '../../src/components/NotificationCard';
-import { SectionHeader } from '../../src/components/SectionHeader';
-import { SkeletonBlock } from '../../src/components/SkeletonBlock';
-import { TabScreen } from '../../src/components/TabScreen';
-import { useAuth } from '../../src/auth/AuthContext';
-import { getNotificationAction } from '../../src/notifications/workflow';
-import { spacing, useAppTheme, type AppTheme } from '../../src/theme';
-import { getSafeActionErrorMessage } from '../../src/errors/presentation';
+import { AppCard } from '../../../src/components/AppCard';
+import { AppText } from '../../../src/components/AppText';
+import { AsyncStateBoundary, useAsyncResourceState, useOnlineStatus } from '../../../src/components/AsyncStateBoundary';
+import { NotificationCard } from '../../../src/components/NotificationCard';
+import { SectionHeader } from '../../../src/components/SectionHeader';
+import { SkeletonBlock } from '../../../src/components/SkeletonBlock';
+import { TabScreen } from '../../../src/components/TabScreen';
+import { useAuth } from '../../../src/auth/AuthContext';
+import { getNotificationAction } from '../../../src/notifications/workflow';
+import { spacing, useAppTheme, type AppTheme } from '../../../src/theme';
+import { getSafeActionErrorMessage } from '../../../src/errors/presentation';
 
 export default function NotificationsScreen() {
     const theme = useAppTheme();

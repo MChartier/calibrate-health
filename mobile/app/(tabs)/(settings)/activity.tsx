@@ -5,21 +5,21 @@ import { useLocalSearchParams } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { ACTIVITY_RECORD_TYPES, WEIGHT_UNITS } from '@calibrate/shared';
 import type { ActivityRecordEntry } from '@calibrate/api-client';
-import { formatActivitySource } from '../../src/activity/presentation';
-import { ActivitySummaryCard } from '../../src/components/ActivitySummaryCard';
-import { AsyncStateBoundary, useAsyncResourceState, useOnlineStatus } from '../../src/components/AsyncStateBoundary';
-import { AppCard } from '../../src/components/AppCard';
-import { AppText } from '../../src/components/AppText';
-import { DateNavigation } from '../../src/components/DateNavigation';
-import { SectionHeader } from '../../src/components/SectionHeader';
-import { TabScreen } from '../../src/components/TabScreen';
-import { useAuth } from '../../src/auth/AuthContext';
-import { useLogDateNavigation } from '../../src/hooks/useLogDateNavigation';
-import { usePendingWeightMutation } from '../../src/offline/usePendingWeightMutation';
-import { radius, spacing, useAppTheme, type AppTheme } from '../../src/theme';
-import { addDaysToDateOnly, formatDateOnlyForDisplay } from '../../src/utils/dates';
-import { gramsToDisplayWeight } from '../../src/utils/bodyMeasurements';
-import { formatNumber, formatWeightUnit } from '../../src/utils/format';
+import { formatActivitySource } from '../../../src/activity/presentation';
+import { ActivitySummaryCard } from '../../../src/components/ActivitySummaryCard';
+import { AsyncStateBoundary, useAsyncResourceState, useOnlineStatus } from '../../../src/components/AsyncStateBoundary';
+import { AppCard } from '../../../src/components/AppCard';
+import { AppText } from '../../../src/components/AppText';
+import { DateNavigation } from '../../../src/components/DateNavigation';
+import { SectionHeader } from '../../../src/components/SectionHeader';
+import { TabScreen } from '../../../src/components/TabScreen';
+import { useAuth } from '../../../src/auth/AuthContext';
+import { useLogDateNavigation } from '../../../src/hooks/useLogDateNavigation';
+import { usePendingWeightMutation } from '../../../src/offline/usePendingWeightMutation';
+import { radius, spacing, useAppTheme, type AppTheme } from '../../../src/theme';
+import { addDaysToDateOnly, formatDateOnlyForDisplay } from '../../../src/utils/dates';
+import { gramsToDisplayWeight } from '../../../src/utils/bodyMeasurements';
+import { formatNumber, formatWeightUnit } from '../../../src/utils/format';
 
 const HISTORY_DAY_COUNT = 14; // Keep the history useful on a phone without downloading the user's full activity archive.
 

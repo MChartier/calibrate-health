@@ -272,7 +272,7 @@ export async function processWearHandoffInbox(options: {
 export function getWearHandoffHref(handoff: WearHandoff): Href | null {
     if (handoff.destination !== 'food_log' || handoff.localDate === null) return null;
     return {
-        pathname: '/(tabs)/log',
+        pathname: '/log',
         params: { date: handoff.localDate }
     };
 }

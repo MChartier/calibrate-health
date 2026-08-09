@@ -1,3 +1,11 @@
+import {
+  ROUTE_IDS,
+  ROUTE_REGISTRY,
+  canonicalPathForRoute,
+  type RouteAlias,
+  type RouteId,
+} from '../../mobile/src/navigation/routeRegistry';
+
 export type RouteAuthentication = 'public' | 'signed-out-only' | 'authenticated';
 export type DeepLinkBehavior = 'render' | 'session-redirect' | 'alias-redirect';
 
@@ -11,37 +19,65 @@ export type RouteExpectation = {
   historyFallback: string | null;
 };
 
-/**
- * Canonical browser paths exported from mobile/app. Route groups are omitted because
- * Expo Router does not expose them in URLs. Keep this list exhaustive when adding a route.
- */
-export const ROUTE_MATRIX = [
-  { path: '/', authentication: 'public', deepLink: 'session-redirect', signedOutPath: '/', authenticatedPath: '/today', reload: 'preserve-redirect', historyFallback: null },
-  { path: '/login', authentication: 'signed-out-only', deepLink: 'session-redirect', signedOutPath: '/login', authenticatedPath: '/today', reload: 'preserve-redirect', historyFallback: null },
-  { path: '/register', authentication: 'signed-out-only', deepLink: 'session-redirect', signedOutPath: '/register', authenticatedPath: '/today', reload: 'preserve-redirect', historyFallback: null },
-  { path: '/privacy', authentication: 'public', deepLink: 'render', signedOutPath: '/privacy', authenticatedPath: '/privacy', reload: 'preserve', historyFallback: null },
-  { path: '/account-deletion', authentication: 'public', deepLink: 'render', signedOutPath: '/account-deletion', authenticatedPath: '/account-deletion', reload: 'preserve', historyFallback: null },
-  { path: '/health-connect-privacy', authentication: 'public', deepLink: 'render', signedOutPath: '/health-connect-privacy', authenticatedPath: '/health-connect-privacy', reload: 'preserve', historyFallback: null },
-  { path: '/onboarding', authentication: 'authenticated', deepLink: 'session-redirect', signedOutPath: '/login', authenticatedPath: '/today', reload: 'preserve-redirect', historyFallback: null },
-  { path: '/today', authentication: 'authenticated', deepLink: 'render', signedOutPath: '/login', authenticatedPath: '/today', reload: 'preserve', historyFallback: null },
-  { path: '/progress', authentication: 'authenticated', deepLink: 'render', signedOutPath: '/login', authenticatedPath: '/progress', reload: 'preserve', historyFallback: null },
-  { path: '/settings', authentication: 'authenticated', deepLink: 'render', signedOutPath: '/login', authenticatedPath: '/settings', reload: 'preserve', historyFallback: null },
-  { path: '/food-log', authentication: 'authenticated', deepLink: 'render', signedOutPath: '/login', authenticatedPath: '/food-log', reload: 'preserve', historyFallback: '/today' },
-  { path: '/weight-trend', authentication: 'authenticated', deepLink: 'render', signedOutPath: '/login', authenticatedPath: '/weight-trend', reload: 'preserve', historyFallback: '/progress' },
-  { path: '/activity', authentication: 'authenticated', deepLink: 'render', signedOutPath: '/login', authenticatedPath: '/activity', reload: 'preserve', historyFallback: '/today' },
-  { path: '/my-foods', authentication: 'authenticated', deepLink: 'render', signedOutPath: '/login', authenticatedPath: '/my-foods', reload: 'preserve', historyFallback: '/settings' },
-  { path: '/notifications', authentication: 'authenticated', deepLink: 'render', signedOutPath: '/login', authenticatedPath: '/notifications', reload: 'preserve', historyFallback: '/today' },
-  { path: '/about', authentication: 'authenticated', deepLink: 'render', signedOutPath: '/login', authenticatedPath: '/about', reload: 'preserve', historyFallback: '/settings' },
-  { path: '/weight', authentication: 'authenticated', deepLink: 'render', signedOutPath: '/login', authenticatedPath: '/weight', reload: 'preserve', historyFallback: '/progress' },
-  { path: '/barcode', authentication: 'authenticated', deepLink: 'render', signedOutPath: '/login', authenticatedPath: '/barcode', reload: 'preserve', historyFallback: null },
-  { path: '/log', authentication: 'authenticated', deepLink: 'alias-redirect', signedOutPath: '/login', authenticatedPath: '/today', reload: 'preserve-redirect', historyFallback: null },
-  { path: '/goals', authentication: 'authenticated', deepLink: 'alias-redirect', signedOutPath: '/login', authenticatedPath: '/progress', reload: 'preserve-redirect', historyFallback: null },
-] as const satisfies readonly RouteExpectation[];
+const destinationPath = (routeId: RouteId): string => canonicalPathForRoute(routeId);
 
-export const PUBLIC_ROUTE_HEADINGS = {
-  '/login': 'Sign in',
-  '/register': 'Create account',
-  '/privacy': 'Privacy policy',
-  '/account-deletion': 'Delete your Calibrate account',
-  '/health-connect-privacy': 'How Calibrate uses health data',
-} as const;
+const expectationForCanonicalRoute = (routeId: RouteId): RouteExpectation => {
+  const definition = ROUTE_REGISTRY[routeId];
+  const signedOutPath = definition.authClass === 'authenticated'
+    ? canonicalPathForRoute('login')
+    : definition.path;
+  const authenticatedPath = definition.authenticatedRedirect
+    ? destinationPath(definition.authenticatedRedirect)
+    : definition.path;
+
+  return {
+    path: definition.path,
+    authentication: definition.authClass,
+    deepLink: definition.deepLink,
+    signedOutPath,
+    authenticatedPath,
+    reload: definition.deepLink === 'render' ? 'preserve' : 'preserve-redirect',
+    historyFallback: definition.fallback ? destinationPath(definition.fallback) : null,
+  };
+};
+
+const expectationForAlias = (
+  routeId: RouteId,
+  alias: RouteAlias,
+): RouteExpectation => {
+  const definition = ROUTE_REGISTRY[routeId];
+  return {
+    path: alias.path,
+    authentication: definition.authClass,
+    deepLink: 'alias-redirect',
+    signedOutPath: definition.authClass === 'authenticated'
+      ? canonicalPathForRoute('login')
+      : alias.path,
+    authenticatedPath: destinationPath(alias.authenticatedRedirect),
+    reload: 'preserve-redirect',
+    historyFallback: null,
+  };
+};
+
+/** Browser expectations generated from the same registry used by the app shell. */
+export const ROUTE_MATRIX: readonly RouteExpectation[] = [
+  ...ROUTE_IDS.map(expectationForCanonicalRoute),
+  ...ROUTE_IDS.flatMap((routeId) => (
+    ROUTE_REGISTRY[routeId].aliases.map((alias) => expectationForAlias(routeId, alias))
+  )),
+];
+
+const PUBLIC_HEADING_ROUTE_IDS = [
+  'login',
+  'register',
+  'privacy',
+  'account-deletion',
+  'health-connect-privacy',
+] as const satisfies readonly RouteId[];
+
+export const PUBLIC_ROUTE_HEADINGS: Readonly<Record<string, string>> = Object.fromEntries(
+  PUBLIC_HEADING_ROUTE_IDS.map((routeId) => [
+    canonicalPathForRoute(routeId),
+    ROUTE_REGISTRY[routeId].title,
+  ]),
+);

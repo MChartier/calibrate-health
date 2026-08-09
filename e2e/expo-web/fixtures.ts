@@ -75,6 +75,7 @@ export type UxStateController = {
 
 export type UxHarness = {
   install(state: UxFixtureState, options?: AuthenticatedApiOptions): Promise<UxStateController>;
+  installOnPage(page: Page): Promise<UxStateController>;
 };
 
 const AUTHENTICATED_USER = {
@@ -658,12 +659,17 @@ export const test = base.extend<{ ux: UxHarness; diagnostics: void }>({
     expect.soft(diagnostics.unexpectedApiRequests, `Unhandled API requests; ${failureContext}`).toEqual([]);
   }, { auto: true }],
   ux: async ({ page, context }, use) => {
-    let installed = false;
+    let installed: { state: UxFixtureState; options: AuthenticatedApiOptions } | null = null;
     await use({
       install: async (state, options = {}) => {
         if (installed) throw new Error('Only one deterministic UX state may be installed per test.');
-        installed = true;
+        installed = { state, options };
         return installState(page, context, state, options);
+      },
+      installOnPage: async (additionalPage) => {
+        if (!installed) throw new Error('Install a deterministic UX state before adding a page.');
+        await freezeBrowserInputs(additionalPage);
+        return installState(additionalPage, context, installed.state, installed.options);
       },
     });
   },

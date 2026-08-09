@@ -3,36 +3,36 @@ import { Alert, StyleSheet, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { MyFoodSummary } from '@calibrate/api-client';
-import { AppButton } from '../../src/components/AppButton';
-import { AsyncStateBoundary, useAsyncResourceState, useOnlineStatus } from '../../src/components/AsyncStateBoundary';
-import { AppCard } from '../../src/components/AppCard';
-import { AppChip } from '../../src/components/AppChip';
-import { AppIconButton } from '../../src/components/AppIconButton';
-import { AppText } from '../../src/components/AppText';
-import { BottomSheetModal } from '../../src/components/BottomSheetModal';
-import { NumberStepperField } from '../../src/components/NumberStepperField';
-import { SkeletonBlock } from '../../src/components/SkeletonBlock';
-import { TabScreen } from '../../src/components/TabScreen';
-import { TextField } from '../../src/components/TextField';
-import { useAuth } from '../../src/auth/AuthContext';
-import { formatCalories } from '../../src/utils/format';
-import { sortMyFoodsPinnedFirst } from '../../src/utils/myFoods';
+import { AppButton } from '../../../src/components/AppButton';
+import { AsyncStateBoundary, useAsyncResourceState, useOnlineStatus } from '../../../src/components/AsyncStateBoundary';
+import { AppCard } from '../../../src/components/AppCard';
+import { AppChip } from '../../../src/components/AppChip';
+import { AppIconButton } from '../../../src/components/AppIconButton';
+import { AppText } from '../../../src/components/AppText';
+import { BottomSheetModal } from '../../../src/components/BottomSheetModal';
+import { NumberStepperField } from '../../../src/components/NumberStepperField';
+import { SkeletonBlock } from '../../../src/components/SkeletonBlock';
+import { TabScreen } from '../../../src/components/TabScreen';
+import { TextField } from '../../../src/components/TextField';
+import { useAuth } from '../../../src/auth/AuthContext';
+import { formatCalories } from '../../../src/utils/format';
+import { sortMyFoodsPinnedFirst } from '../../../src/utils/myFoods';
 import {
     hydrateRecipeIngredientDrafts,
     serializeRecipeIngredientDrafts,
     type RecipeIngredientDraft
-} from '../../src/utils/myFoodEditing';
-import { radius, spacing, useAppTheme, type AppTheme } from '../../src/theme';
-import { SERVING_INPUT_INCREMENT } from '../../src/config/inputPrecision';
-import { getSafeActionErrorMessage } from '../../src/errors/presentation';
+} from '../../../src/utils/myFoodEditing';
+import { radius, spacing, useAppTheme, type AppTheme } from '../../../src/theme';
+import { SERVING_INPUT_INCREMENT } from '../../../src/config/inputPrecision';
+import { getSafeActionErrorMessage } from '../../../src/errors/presentation';
 import {
     getRecipeNameError,
     getSavedFoodNameError,
     RECIPE_NAME_REQUIRED_ERROR,
     SAVED_FOOD_NAME_REQUIRED_ERROR
-} from '../../src/utils/myFoodFormValidation';
-import { confirmDiscardChanges } from '../../src/components/confirmDiscardChanges';
-import { FormErrorSummary, type FormErrorSummaryHandle } from '../../src/components/FormErrorSummary';
+} from '../../../src/utils/myFoodFormValidation';
+import { confirmDiscardChanges } from '../../../src/components/confirmDiscardChanges';
+import { FormErrorSummary, type FormErrorSummaryHandle } from '../../../src/components/FormErrorSummary';
 
 type MyFoodSheet = 'food' | 'recipe' | null;
 

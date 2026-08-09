@@ -1,6 +1,6 @@
 import { render, waitFor } from '@testing-library/react-native';
 import { router, useLocalSearchParams } from 'expo-router';
-import LogScreen from '../../app/(tabs)/log';
+import LogScreen from '../../app/(tabs)/(today)/log';
 
 const mockRequestAddFood = jest.fn();
 
@@ -29,7 +29,7 @@ describe('legacy add-food route', () => {
         await waitFor(() => {
             expect(mockRequestAddFood).toHaveBeenCalledWith({ date: '2026-07-17', meal: 'DINNER' });
             expect(mockReplace).toHaveBeenCalledWith({
-                pathname: '/(tabs)/today',
+                pathname: '/today',
                 params: {
                     openAddFood: 'true',
                     date: '2026-07-17',
@@ -47,7 +47,7 @@ describe('legacy add-food route', () => {
         await waitFor(() => {
             expect(mockRequestAddFood).toHaveBeenCalledWith({ date: '2026-07-17', meal: undefined });
             expect(mockReplace).toHaveBeenCalledWith({
-                pathname: '/(tabs)/today',
+                pathname: '/today',
                 params: {
                     openAddFood: 'true',
                     date: '2026-07-17',

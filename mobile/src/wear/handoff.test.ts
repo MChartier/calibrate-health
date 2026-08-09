@@ -179,7 +179,7 @@ describe('Wear continue-on-phone handoff', () => {
         });
         const [handoff] = await getPendingWearHandoffs(ORIGIN, USER_ID);
         expect(getWearHandoffHref(handoff as WearHandoff)).toEqual({
-            pathname: '/(tabs)/log',
+            pathname: '/log',
             params: { date: '2026-07-12' }
         });
         await markWearHandoffsHandled(ORIGIN, USER_ID, ['handoff-1']);

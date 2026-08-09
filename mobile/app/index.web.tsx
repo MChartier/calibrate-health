@@ -13,7 +13,7 @@ export default function WebHomeRoute() {
     const { user, isLoading } = useAuth();
 
     if (!isLoading && user) {
-        return <Redirect href="/(tabs)/today" />;
+        return <Redirect href="/today" />;
     }
 
     return (
