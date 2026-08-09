@@ -31,7 +31,7 @@ describe('OnboardingProgress', () => {
         );
 
         expect(screen.getByText('Step 7 of 8')).toBeTruthy();
-        expect(screen.getByText('Optional connection')).toBeTruthy();
+        expect(screen.getByText('Optional next step')).toBeTruthy();
         expect(screen.getByRole('progressbar').props.accessibilityValue).toEqual(
             expect.objectContaining({ now: 7, text: 'Step 7 of 8' })
         );

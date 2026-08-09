@@ -1,21 +1,25 @@
 import {
     getNextButtonTitle,
     getOnboardingSteps,
-    isOptionalConnectionStep
+    isOptionalConnectionStep,
+    isPostCompletionStep
 } from './steps';
 
 describe('mobile onboarding steps', () => {
-    it('places optional Android connections after the required setup review', () => {
+    it('keeps the required setup ordered and places optional work after confirmation', () => {
         expect(getOnboardingSteps('android').map(({ key }) => key)).toEqual([
             'goal',
             'about',
             'burn',
             'pace',
-            'import',
             'review',
+            'import',
             'health',
             'watch'
         ]);
+        expect(isPostCompletionStep('import')).toBe(true);
+        expect(isPostCompletionStep('health')).toBe(true);
+        expect(isPostCompletionStep('review')).toBe(false);
         expect(isOptionalConnectionStep('health')).toBe(true);
         expect(isOptionalConnectionStep('watch')).toBe(true);
         expect(getNextButtonTitle('health')).toBe('Next: Health Connect');
@@ -28,6 +32,7 @@ describe('mobile onboarding steps', () => {
 
         expect(steps).not.toContain('health');
         expect(steps).not.toContain('watch');
-        expect(steps.at(-1)).toBe('review');
+        expect(steps.slice(0, 5)).toEqual(['goal', 'about', 'burn', 'pace', 'review']);
+        expect(steps.at(-1)).toBe('import');
     });
 });

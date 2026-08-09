@@ -36,17 +36,18 @@ const REQUIRED_STEPS: OnboardingStep[] = [
     },
     {
         key: 'pace',
-        label: 'Pace',
-        title: 'Set a sustainable pace',
+        label: 'Plan',
+        title: 'Choose a safe plan',
         description: 'Choose from the calorie targets verified for your profile.'
-    },
-    {
-        key: 'import',
-        label: 'Import',
-        title: 'Bring in history',
-        description: 'Optional. Import Lose It data now or do it later from Account.'
     }
 ];
+
+const OPTIONAL_IMPORT_STEP: OnboardingStep = {
+    key: 'import',
+    label: 'Import',
+    title: 'Bring in history',
+    description: 'Optional. Import Lose It data now or do it later from Account.'
+};
 
 const ANDROID_CONNECTION_STEPS: OnboardingStep[] = [
     {
@@ -67,18 +68,22 @@ const REVIEW_STEP: OnboardingStep = {
     key: 'review',
     label: 'Review',
     title: 'Review your setup',
-    description: 'Save the details used for your initial calorie target before optional connections.'
+    description: 'Confirm the details used for your initial calorie target.'
 };
 
-/** Native integrations belong only in Android onboarding; web keeps the core setup sequence. */
+/** Required setup completes atomically at review; imports and native connections happen afterward. */
 export function getOnboardingSteps(platform: string): OnboardingStep[] {
     return platform === 'android'
-        ? [...REQUIRED_STEPS, REVIEW_STEP, ...ANDROID_CONNECTION_STEPS]
-        : [...REQUIRED_STEPS, REVIEW_STEP];
+        ? [...REQUIRED_STEPS, REVIEW_STEP, OPTIONAL_IMPORT_STEP, ...ANDROID_CONNECTION_STEPS]
+        : [...REQUIRED_STEPS, REVIEW_STEP, OPTIONAL_IMPORT_STEP];
 }
 
 export function isOptionalConnectionStep(step: OnboardingStepKey): boolean {
     return step === 'health' || step === 'watch';
+}
+
+export function isPostCompletionStep(step: OnboardingStepKey): boolean {
+    return step === 'import' || isOptionalConnectionStep(step);
 }
 
 export function getNextButtonTitle(nextStep?: OnboardingStepKey): string {

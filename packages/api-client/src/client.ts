@@ -50,6 +50,11 @@ import type {
     MyFoodSummary,
     MobileRefreshResponse,
     NativePushSubscriptionPayload,
+    OnboardingCompleteRequest,
+    OnboardingCompleteResponse,
+    OnboardingDraftResponse,
+    OnboardingDraftUpsertRequest,
+    OnboardingDraftUpsertResponse,
     RecentFoodsResponse,
     SyncChangesResponse,
     ScheduledCalibrationChange,
@@ -565,6 +570,34 @@ export class CalibrateApiClient {
     acceptLegalDocuments(payload: LegalAcceptanceRequest): Promise<LegalAcceptanceStatus> {
         return this.request<LegalAcceptanceStatus>('/api/legal/acceptance', {
             method: 'POST',
+            json: payload
+        });
+    }
+
+    getOnboardingDraft(): Promise<OnboardingDraftResponse> {
+        return this.request<OnboardingDraftResponse>('/api/onboarding/draft');
+    }
+
+    saveOnboardingDraft(payload: OnboardingDraftUpsertRequest): Promise<OnboardingDraftUpsertResponse> {
+        return this.request<OnboardingDraftUpsertResponse>('/api/onboarding/draft', {
+            method: 'PUT',
+            json: payload
+        });
+    }
+
+    deleteOnboardingDraft(): Promise<void> {
+        return this.request<void>('/api/onboarding/draft', {
+            method: 'DELETE'
+        });
+    }
+
+    completeOnboarding(
+        payload: OnboardingCompleteRequest,
+        operationId: string
+    ): Promise<OnboardingCompleteResponse> {
+        return this.request<OnboardingCompleteResponse>('/api/onboarding/complete', {
+            method: 'POST',
+            headers: buildOperationHeaders(operationId),
             json: payload
         });
     }

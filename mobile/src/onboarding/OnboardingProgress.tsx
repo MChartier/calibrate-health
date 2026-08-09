@@ -2,7 +2,7 @@ import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import { AppText } from '../components/AppText';
 import { radius, spacing, useAppTheme } from '../theme';
-import { isOptionalConnectionStep, type OnboardingStep } from './steps';
+import { isPostCompletionStep, type OnboardingStep } from './steps';
 
 type OnboardingProgressProps = {
     steps: OnboardingStep[];
@@ -18,7 +18,7 @@ export const OnboardingProgress: React.FC<OnboardingProgressProps> = ({
 }) => {
     const { colors } = useAppTheme();
     const activeStep = steps[activeIndex];
-    const isOptional = activeStep ? isOptionalConnectionStep(activeStep.key) : false;
+    const isOptional = activeStep ? isPostCompletionStep(activeStep.key) : false;
     const totalSteps = Math.max(steps.length, 1);
     const currentStep = Math.min(Math.max(activeIndex + 1, 1), totalSteps);
     const progressPercent = (currentStep / totalSteps) * 100;
@@ -30,7 +30,7 @@ export const OnboardingProgress: React.FC<OnboardingProgressProps> = ({
                 <AppText variant="label">{progressText}</AppText>
                 {isOptional && (
                     <View style={[styles.optionalPill, { backgroundColor: colors.primaryContainer }]}>
-                        <AppText variant="caption" style={[styles.optionalText, { color: colors.onPrimaryContainer }]}>Optional connection</AppText>
+                        <AppText variant="caption" style={[styles.optionalText, { color: colors.onPrimaryContainer }]}>Optional next step</AppText>
                     </View>
                 )}
             </View>

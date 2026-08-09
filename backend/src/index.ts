@@ -31,6 +31,7 @@ import watchRoutes from './routes/watch';
 import calibrationRoutes from './routes/calibration';
 import caloriePlanRoutes from './routes/caloriePlan';
 import legalRoutes from './routes/legal';
+import onboardingRoutes from './routes/onboarding';
 import { authenticateMobileBearerToken } from './middleware/mobileAuth';
 import { enforceNativeClientCompatibility } from './middleware/clientCompatibility';
 import { enforceAccountAccess } from './middleware/accountAccess';
@@ -279,6 +280,7 @@ const bootstrap = async (): Promise<void> => {
   apiRouter.use('/calibration', calibrationRoutes);
   apiRouter.use('/calorie-plan', caloriePlanRoutes);
   apiRouter.use('/legal', legalRoutes);
+  apiRouter.use('/onboarding', onboardingRoutes);
   apiRouter.use('/user/password', authRateLimiters.passwordChange);
   apiRouter.use('/user', userRoutes);
 

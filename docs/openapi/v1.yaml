@@ -39,6 +39,81 @@ paths:
               schema: { $ref: '#/components/schemas/ApiError' }
         '401':
           $ref: '#/components/responses/Unauthorized'
+  /api/v1/onboarding/draft:
+    get:
+      operationId: getOnboardingDraft
+      description: Load the authoritative resumable onboarding draft, recovering legacy partial setup once when needed.
+      responses:
+        '200':
+          description: Current draft state and durable completion status.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/OnboardingDraftResponse' }
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    put:
+      operationId: saveOnboardingDraft
+      description: Save a validated onboarding step using optimistic revision control. Omitting revision is create-only.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/OnboardingDraftUpsertRequest' }
+      responses:
+        '200':
+          description: Authoritative draft after the save.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/OnboardingDraftUpsertResponse' }
+        '400':
+          description: Invalid draft data.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiError' }
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          description: Existing or newer draft revision, or an unsupported draft schema version. Reload the authoritative draft before retrying.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/OnboardingDraftError' }
+    delete:
+      operationId: deleteOnboardingDraft
+      description: Discard the authenticated user's incomplete onboarding draft.
+      responses:
+        '204':
+          description: Draft deleted or already absent.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /api/v1/onboarding/complete:
+    post:
+      operationId: completeOnboarding
+      description: Atomically persist onboarding data and replay the exact durable receipt for the same operation ID.
+      parameters:
+        - $ref: '#/components/parameters/RequiredClientOperationId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/OnboardingCompleteRequest' }
+      responses:
+        '200':
+          description: Durable completion receipt and current authenticated user.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/OnboardingCompleteResponse' }
+        '400':
+          description: Invalid or incomplete onboarding data.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiError' }
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          description: Stale or omitted expected revision when a draft exists, completed setup, operation reuse, or operation in progress.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/OnboardingDraftError' }
   /api/v1/user/profile:
     get:
       operationId: getUserProfile
@@ -1011,6 +1086,15 @@ components:
       in: header
       required: false
       description: Stable client-generated identifier used to safely replay a mutation.
+      schema:
+        type: string
+        minLength: 8
+        maxLength: 128
+    RequiredClientOperationId:
+      name: x-client-operation-id
+      in: header
+      required: true
+      description: Stable client-generated identifier required to replay an atomic mutation safely.
       schema:
         type: string
         minLength: 8
@@ -2083,6 +2167,121 @@ components:
         days:
           type: array
           items: { $ref: '#/components/schemas/ActivityDay' }
+    OnboardingStep:
+      type: string
+      enum: [goal, about, burn, pace, import, review]
+    OnboardingDraftData:
+      type: object
+      additionalProperties: false
+      properties:
+        weight_unit: { type: string, enum: [KG, LB] }
+        height_unit: { type: string, enum: [CM, FT_IN] }
+        timezone: { type: string, minLength: 1, maxLength: 100 }
+        date_of_birth: { type: string, format: date }
+        sex: { type: string, enum: [MALE, FEMALE] }
+        height_mm: { type: integer, minimum: 1000, maximum: 2500 }
+        activity_level: { type: string, enum: [SEDENTARY, LIGHT, MODERATE, ACTIVE, VERY_ACTIVE] }
+        current_weight_grams: { type: integer, minimum: 25000, maximum: 400000 }
+        target_weight_grams: { type: integer, minimum: 25000, maximum: 400000 }
+        daily_deficit: { type: integer, enum: [-1000, -750, -500, -250, 0, 250, 500, 750, 1000] }
+    OnboardingDraft:
+      type: object
+      additionalProperties: false
+      required: [schema_version, revision, current_step, data, created_at, updated_at]
+      properties:
+        schema_version: { type: integer, const: 1 }
+        revision: { type: integer, minimum: 1 }
+        current_step:
+          oneOf:
+            - { $ref: '#/components/schemas/OnboardingStep' }
+            - { type: 'null' }
+        data: { $ref: '#/components/schemas/OnboardingDraftData' }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+    OnboardingDraftResponse:
+      type: object
+      additionalProperties: false
+      required: [draft, recovered_from_legacy, onboarding_completed_at]
+      properties:
+        draft:
+          oneOf:
+            - { $ref: '#/components/schemas/OnboardingDraft' }
+            - { type: 'null' }
+        recovered_from_legacy: { type: boolean }
+        onboarding_completed_at: { type: [string, 'null'], format: date-time }
+    OnboardingDraftUpsertRequest:
+      type: object
+      additionalProperties: false
+      required: [schema_version, current_step, data]
+      properties:
+        schema_version: { type: integer, const: 1 }
+        revision:
+          type: integer
+          minimum: 1
+          description: Expected authoritative revision. Omission creates only when no draft exists.
+        current_step:
+          oneOf:
+            - { $ref: '#/components/schemas/OnboardingStep' }
+            - { type: 'null' }
+        data: { $ref: '#/components/schemas/OnboardingDraftData' }
+    OnboardingDraftUpsertResponse:
+      type: object
+      additionalProperties: false
+      required: [draft]
+      properties:
+        draft: { $ref: '#/components/schemas/OnboardingDraft' }
+    OnboardingCompleteData:
+      type: object
+      additionalProperties: false
+      required: [weight_unit, height_unit, timezone, date_of_birth, sex, height_mm, activity_level, current_weight_grams, target_weight_grams, daily_deficit]
+      properties:
+        weight_unit: { type: string, enum: [KG, LB] }
+        height_unit: { type: string, enum: [CM, FT_IN] }
+        timezone: { type: string, minLength: 1, maxLength: 100 }
+        date_of_birth: { type: string, format: date }
+        sex: { type: string, enum: [MALE, FEMALE] }
+        height_mm: { type: integer, minimum: 1000, maximum: 2500 }
+        activity_level: { type: string, enum: [SEDENTARY, LIGHT, MODERATE, ACTIVE, VERY_ACTIVE] }
+        current_weight_grams: { type: integer, minimum: 25000, maximum: 400000 }
+        target_weight_grams: { type: integer, minimum: 25000, maximum: 400000 }
+        daily_deficit: { type: integer, enum: [-1000, -750, -500, -250, 0, 250, 500, 750, 1000] }
+    OnboardingCompleteRequest:
+      type: object
+      additionalProperties: false
+      required: [schema_version, data]
+      properties:
+        schema_version: { type: integer, const: 1 }
+        expected_revision:
+          type: integer
+          minimum: 1
+          description: Required when an authoritative draft exists; omission is allowed only for legacy direct completion without a draft.
+        data: { $ref: '#/components/schemas/OnboardingCompleteData' }
+    OnboardingCompleteReceipt:
+      type: object
+      additionalProperties: false
+      required: [operation_id, completed_at, goal_id, metric_id, sync_cursor]
+      properties:
+        operation_id: { type: string }
+        completed_at: { type: string, format: date-time }
+        goal_id: { type: integer, minimum: 1 }
+        metric_id: { type: integer, minimum: 1 }
+        sync_cursor: { type: string }
+    OnboardingCompleteResponse:
+      type: object
+      additionalProperties: false
+      required: [receipt, user]
+      properties:
+        receipt: { $ref: '#/components/schemas/OnboardingCompleteReceipt' }
+        user: { $ref: '#/components/schemas/UserClientPayload' }
+    OnboardingDraftError:
+      allOf:
+        - { $ref: '#/components/schemas/ApiError' }
+        - type: object
+          properties:
+            draft:
+              oneOf:
+                - { $ref: '#/components/schemas/OnboardingDraft' }
+                - { type: 'null' }
     ApiError:
       type: object
       required: [message, code, retryable, request_id]
@@ -2795,6 +2994,9 @@ components:
           enum: [SEDENTARY, LIGHT, MODERATE, ACTIVE, VERY_ACTIVE, null]
         profile_image_url:
           type: [string, 'null']
+        onboarding_completed_at:
+          type: [string, 'null']
+          format: date-time
         account_access:
           $ref: '#/components/schemas/AccountAccess'
 security:

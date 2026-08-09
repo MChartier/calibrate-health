@@ -37,6 +37,42 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/onboarding/draft": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Load the authoritative resumable onboarding draft, recovering legacy partial setup once when needed. */
+        get: operations["getOnboardingDraft"];
+        /** @description Save a validated onboarding step using optimistic revision control. Omitting revision is create-only. */
+        put: operations["saveOnboardingDraft"];
+        post?: never;
+        /** @description Discard the authenticated user's incomplete onboarding draft. */
+        delete: operations["deleteOnboardingDraft"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/onboarding/complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Atomically persist onboarding data and replay the exact durable receipt for the same operation ID. */
+        post: operations["completeOnboarding"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/user/profile": {
         parameters: {
             query?: never;
@@ -1441,6 +1477,94 @@ export interface components {
             end_date: string;
             days: components["schemas"]["ActivityDay"][];
         };
+        /** @enum {string} */
+        OnboardingStep: "goal" | "about" | "burn" | "pace" | "import" | "review";
+        OnboardingDraftData: {
+            /** @enum {string} */
+            weight_unit?: "KG" | "LB";
+            /** @enum {string} */
+            height_unit?: "CM" | "FT_IN";
+            timezone?: string;
+            /** Format: date */
+            date_of_birth?: string;
+            /** @enum {string} */
+            sex?: "MALE" | "FEMALE";
+            height_mm?: number;
+            /** @enum {string} */
+            activity_level?: "SEDENTARY" | "LIGHT" | "MODERATE" | "ACTIVE" | "VERY_ACTIVE";
+            current_weight_grams?: number;
+            target_weight_grams?: number;
+            /** @enum {integer} */
+            daily_deficit?: -1000 | -750 | -500 | -250 | 0 | 250 | 500 | 750 | 1000;
+        };
+        OnboardingDraft: {
+            /** @constant */
+            schema_version: 1;
+            revision: number;
+            current_step: components["schemas"]["OnboardingStep"] | null;
+            data: components["schemas"]["OnboardingDraftData"];
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        OnboardingDraftResponse: {
+            draft: components["schemas"]["OnboardingDraft"] | null;
+            recovered_from_legacy: boolean;
+            /** Format: date-time */
+            onboarding_completed_at: string | null;
+        };
+        OnboardingDraftUpsertRequest: {
+            /** @constant */
+            schema_version: 1;
+            /** @description Expected authoritative revision. Omission creates only when no draft exists. */
+            revision?: number;
+            current_step: components["schemas"]["OnboardingStep"] | null;
+            data: components["schemas"]["OnboardingDraftData"];
+        };
+        OnboardingDraftUpsertResponse: {
+            draft: components["schemas"]["OnboardingDraft"];
+        };
+        OnboardingCompleteData: {
+            /** @enum {string} */
+            weight_unit: "KG" | "LB";
+            /** @enum {string} */
+            height_unit: "CM" | "FT_IN";
+            timezone: string;
+            /** Format: date */
+            date_of_birth: string;
+            /** @enum {string} */
+            sex: "MALE" | "FEMALE";
+            height_mm: number;
+            /** @enum {string} */
+            activity_level: "SEDENTARY" | "LIGHT" | "MODERATE" | "ACTIVE" | "VERY_ACTIVE";
+            current_weight_grams: number;
+            target_weight_grams: number;
+            /** @enum {integer} */
+            daily_deficit: -1000 | -750 | -500 | -250 | 0 | 250 | 500 | 750 | 1000;
+        };
+        OnboardingCompleteRequest: {
+            /** @constant */
+            schema_version: 1;
+            /** @description Required when an authoritative draft exists; omission is allowed only for legacy direct completion without a draft. */
+            expected_revision?: number;
+            data: components["schemas"]["OnboardingCompleteData"];
+        };
+        OnboardingCompleteReceipt: {
+            operation_id: string;
+            /** Format: date-time */
+            completed_at: string;
+            goal_id: number;
+            metric_id: number;
+            sync_cursor: string;
+        };
+        OnboardingCompleteResponse: {
+            receipt: components["schemas"]["OnboardingCompleteReceipt"];
+            user: components["schemas"]["UserClientPayload"];
+        };
+        OnboardingDraftError: components["schemas"]["ApiError"] & {
+            draft?: components["schemas"]["OnboardingDraft"] | null;
+        };
         ApiError: {
             message: string;
             code: string | null;
@@ -1897,6 +2021,8 @@ export interface components {
             /** @enum {string|null} */
             activity_level?: "SEDENTARY" | "LIGHT" | "MODERATE" | "ACTIVE" | "VERY_ACTIVE" | null;
             profile_image_url?: string | null;
+            /** Format: date-time */
+            onboarding_completed_at?: string | null;
             account_access?: components["schemas"]["AccountAccess"];
         };
     };
@@ -1916,6 +2042,8 @@ export interface components {
         MetricId: number;
         /** @description Stable client-generated identifier used to safely replay a mutation. */
         ClientOperationId: string;
+        /** @description Stable client-generated identifier required to replay an atomic mutation safely. */
+        RequiredClientOperationId: string;
     };
     requestBodies: never;
     headers: never;
@@ -1975,6 +2103,135 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+        };
+    };
+    getOnboardingDraft: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Current draft state and durable completion status. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OnboardingDraftResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    saveOnboardingDraft: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OnboardingDraftUpsertRequest"];
+            };
+        };
+        responses: {
+            /** @description Authoritative draft after the save. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OnboardingDraftUpsertResponse"];
+                };
+            };
+            /** @description Invalid draft data. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            /** @description Existing or newer draft revision, or an unsupported draft schema version. Reload the authoritative draft before retrying. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OnboardingDraftError"];
+                };
+            };
+        };
+    };
+    deleteOnboardingDraft: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Draft deleted or already absent. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    completeOnboarding: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Stable client-generated identifier required to replay an atomic mutation safely. */
+                "x-client-operation-id": components["parameters"]["RequiredClientOperationId"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OnboardingCompleteRequest"];
+            };
+        };
+        responses: {
+            /** @description Durable completion receipt and current authenticated user. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OnboardingCompleteResponse"];
+                };
+            };
+            /** @description Invalid or incomplete onboarding data. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            /** @description Stale or omitted expected revision when a draft exists, completed setup, operation reuse, or operation in progress. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OnboardingDraftError"];
+                };
+            };
         };
     };
     getUserProfile: {
