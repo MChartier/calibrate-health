@@ -181,6 +181,7 @@ describe('Progress goal completion flow', () => {
             expect(screen.getAllByRole('radio').map((radio) => radio.props.accessibilityState.checked))
                 .toEqual([false, true, false]);
         });
+        expect(screen.getByLabelText('Goal direction')).toHaveProp('accessibilityRole', 'radiogroup');
         expect(mockApi.createGoal).not.toHaveBeenCalled();
         expect(screen.queryByLabelText('Log weight')).toBeNull();
         screen.unmount();

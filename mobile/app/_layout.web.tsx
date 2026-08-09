@@ -20,6 +20,7 @@ import { useBrowserNotificationStream } from '../src/notifications/useBrowserNot
 import { useVisualViewportHeight } from '../src/hooks/useVisualViewportHeight';
 import { useQueryOnlineManager } from '../src/connectivity/queryOnlineManager.web';
 import { resolveRouteMetadata } from '../src/navigation/routeMetadata';
+import { useBrowserRouteFocus } from '../src/navigation/useBrowserRouteFocus';
 import { scrubBrowserOneTimeTokenFromUrl } from '../src/auth/oneTimeToken';
 
 const queryClient = new QueryClient();
@@ -29,35 +30,7 @@ const BrowserRoutePresentation: React.FC = () => {
     const { user } = useAuth();
     scrubBrowserOneTimeTokenFromUrl(pathname);
     const metadata = resolveRouteMetadata(pathname, { authenticated: Boolean(user) });
-
-    React.useEffect(() => {
-        document.title = metadata.title;
-        function focusRouteTitle(): boolean {
-            const title = document.getElementById('route-focus-title');
-            if (!title) return false;
-            title.tabIndex = -1;
-            title.focus({ preventScroll: true });
-            return true;
-        }
-
-        if (focusRouteTitle()) return undefined;
-
-        let fallbackTimer: number | null = null;
-        const observer = new MutationObserver(() => {
-            if (!focusRouteTitle()) return;
-            observer.disconnect();
-            if (fallbackTimer !== null) window.clearTimeout(fallbackTimer);
-        });
-        observer.observe(document.body, { childList: true, subtree: true });
-        fallbackTimer = window.setTimeout(() => {
-            observer.disconnect();
-            document.querySelector<HTMLElement>('[role="main"]')?.focus({ preventScroll: true });
-        }, 5_000);
-        return () => {
-            observer.disconnect();
-            if (fallbackTimer !== null) window.clearTimeout(fallbackTimer);
-        };
-    }, [metadata.title, pathname]);
+    useBrowserRouteFocus(pathname, metadata.title);
 
     return (
         <Head>

@@ -8,7 +8,8 @@ describe('AuthBrand', () => {
         expect(screen.getByText('Calibrate Health')).toBeTruthy();
         expect(screen.getByText('calibrate')).toBeTruthy();
         expect(screen.getByText('Your Calibrate history, on your server.')).toBeTruthy();
-        expect(screen.getByLabelText('calibrate')).toBeTruthy();
+        expect(screen.queryByLabelText('calibrate')).toBeNull();
         expect(screen.getByRole('header', { name: 'calibrate' }).props['aria-level']).toBe(1);
+        expect(screen.getByRole('header', { name: 'calibrate' })).toHaveProp('nativeID', 'route-focus-title');
     });
 });

@@ -399,7 +399,7 @@ export default function OnboardingScreen() {
             case 'goal':
                 return (
                     <>
-                        <SegmentedControl options={GOAL_MODE_OPTIONS} value={goalMode} onChange={handleGoalModeChange} />
+                        <SegmentedControl accessibilityLabel="Goal direction" options={GOAL_MODE_OPTIONS} value={goalMode} onChange={handleGoalModeChange} />
                         <AppText variant="muted">
                             Select the direction first. We will keep the target consistent with that choice.
                         </AppText>
@@ -427,7 +427,7 @@ export default function OnboardingScreen() {
                             />
                         </View>
                         <AppText variant="label">Weight unit</AppText>
-                        <SegmentedControl options={WEIGHT_UNIT_OPTIONS} value={weightUnit} onChange={setWeightUnit} />
+                        <SegmentedControl accessibilityLabel="Weight unit" options={WEIGHT_UNIT_OPTIONS} value={weightUnit} onChange={setWeightUnit} />
                     </>
                 );
             case 'pace':

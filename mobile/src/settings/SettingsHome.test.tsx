@@ -1,6 +1,7 @@
 import { fireEvent, render } from '@testing-library/react-native';
 import { HEIGHT_UNITS, WEIGHT_UNITS } from '@calibrate/shared';
-import { SettingsHome } from './SettingsHome';
+import { ASYNC_RESOURCE_STATES } from '../asyncState/resolveAsyncState';
+import { SettingsHome, shouldShowSettingsResourceStatus } from './SettingsHome';
 
 jest.mock('@expo/vector-icons/Ionicons', () => () => null);
 
@@ -9,6 +10,15 @@ jest.mock('../config/nativeClient', () => ({
 }));
 
 describe('SettingsHome', () => {
+    it('defers the web cached-offline announcement to the global PWA status', () => {
+        const stale = { kind: ASYNC_RESOURCE_STATES.STALE, error: null } as const;
+        const error = { kind: ASYNC_RESOURCE_STATES.ERROR, error: null } as const;
+
+        expect(shouldShowSettingsResourceStatus(stale, true)).toBe(false);
+        expect(shouldShowSettingsResourceStatus(stale, false)).toBe(true);
+        expect(shouldShowSettingsResourceStatus(error, true)).toBe(true);
+    });
+
     it('exposes the registered Settings child destinations', () => {
         const onOpenActivity = jest.fn();
         const onOpenSavedFoods = jest.fn();

@@ -390,7 +390,7 @@ export default function ProgressScreen() {
                 confirmDismiss={confirmDiscardChanges}
                 onRequestClose={() => setIsGoalEditorOpen(false)}
             >
-                <SegmentedControl options={GOAL_MODE_OPTIONS} value={goalMode} onChange={handleGoalModeChange} />
+                <SegmentedControl accessibilityLabel="Goal direction" options={GOAL_MODE_OPTIONS} value={goalMode} onChange={handleGoalModeChange} />
                 <View style={styles.goalEditorBody}>
                     <View style={styles.startingContext}>
                         <Ionicons name="scale-outline" size={18} color={themeColors.primary} />

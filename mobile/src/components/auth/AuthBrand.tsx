@@ -19,7 +19,13 @@ export const AuthBrand: React.FC<AuthBrandProps> = ({ description }) => {
             </View>
             <View style={styles.copy}>
                 <AppText variant="label" style={{ color: colors.primary }}>Calibrate Health</AppText>
-                <AppText accessibilityRole="header" aria-level={1} variant="title" style={styles.wordmark}>
+                <AppText
+                    nativeID="route-focus-title"
+                    accessibilityRole="header"
+                    aria-level={1}
+                    variant="title"
+                    style={styles.wordmark}
+                >
                     calibrate
                 </AppText>
                 <AppText variant="muted" style={styles.description}>{description}</AppText>
