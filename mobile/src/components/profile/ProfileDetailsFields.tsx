@@ -21,6 +21,7 @@ import { TimeZonePickerField } from '../TimeZonePickerField';
 
 type ProfileIdentityFieldsProps = {
     dateOfBirth: string;
+    minimumDate: string;
     maximumDate: string;
     onDateOfBirthChange: (value: string) => void;
     sex: Sex | null;
@@ -30,6 +31,7 @@ type ProfileIdentityFieldsProps = {
 /** Profile identity inputs shared by onboarding and the account editor. */
 export const ProfileIdentityFields: React.FC<ProfileIdentityFieldsProps> = ({
     dateOfBirth,
+    minimumDate,
     maximumDate,
     onDateOfBirthChange,
     sex,
@@ -40,6 +42,7 @@ export const ProfileIdentityFields: React.FC<ProfileIdentityFieldsProps> = ({
             label="Date of birth"
             value={dateOfBirth}
             onChangeDate={onDateOfBirthChange}
+            minimumDate={minimumDate}
             maximumDate={maximumDate}
             fallbackDate="1990-01-01"
         />
@@ -117,7 +120,8 @@ export const ProfileEnergyFields: React.FC<ProfileEnergyFieldsProps> = ({
                 value={heightCm}
                 onChangeText={onHeightCmChange}
                 step={1}
-                min={0}
+                min={100}
+                max={250}
                 suffix="cm"
             />
         ) : (
@@ -127,7 +131,8 @@ export const ProfileEnergyFields: React.FC<ProfileEnergyFieldsProps> = ({
                     value={heightFeet}
                     onChangeText={onHeightFeetChange}
                     step={1}
-                    min={0}
+                    min={3}
+                    max={8}
                     containerStyle={heightLayout === 'row' ? styles.heightRowField : undefined}
                 />
                 <NumberStepperField

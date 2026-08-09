@@ -145,7 +145,7 @@ function renderSheet(props: Partial<React.ComponentProps<typeof WeightEntrySheet
             />
         </QueryClientProvider>
     );
-    return { ...screen, onClose, onSaved };
+    return { ...screen, onClose, onSaved, queryClient };
 }
 
 describe('WeightEntrySheet', () => {
@@ -190,6 +190,7 @@ describe('WeightEntrySheet', () => {
 
     it('keeps the sheet open and celebrates a confirmed goal reach', async () => {
         const screen = renderSheet();
+        const invalidateQueries = jest.spyOn(screen.queryClient, 'invalidateQueries');
         await waitFor(() => expect(screen.getByLabelText('Weight in pounds')).toBeTruthy());
         fireEvent.changeText(screen.getByLabelText('Weight in pounds'), '169.5');
         fireEvent.press(screen.getByRole('button', { name: 'Log weight' }));
@@ -201,6 +202,7 @@ describe('WeightEntrySheet', () => {
         expect(screen.onClose).not.toHaveBeenCalled();
         expect(screen.onSaved).toHaveBeenCalledTimes(1);
         expect(mockTriggerWeightHaptic).toHaveBeenCalledWith(true, 'success');
+        await waitFor(() => expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: ['mobile-goal'] }));
 
         fireEvent.press(screen.getByRole('button', { name: 'Set next goal' }));
         expect(screen.onClose).toHaveBeenCalledTimes(1);

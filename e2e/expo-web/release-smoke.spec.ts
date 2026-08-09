@@ -52,7 +52,22 @@ const PROFILE_RESPONSE = {
   },
   latest_weight_grams: 88_200,
   goal_daily_deficit: 500,
-  calorieSummary: { dailyCalorieTarget: 2_100, tdee: 2_600, bmr: 2_000, deficit: 500, missing: [] },
+  calorieSummary: {
+    dailyCalorieTarget: 2_100,
+    tdee: 2_600,
+    bmr: 2_000,
+    deficit: 500,
+    missing: [],
+    eligibility: {
+      status: 'eligible',
+      reasonCode: null,
+      ageYears: 41,
+      localDate: '2026-07-21',
+    },
+    planStatus: 'available',
+    planReasonCode: null,
+    minimumDailyCalorieTarget: 2_000,
+  },
 };
 
 const TREND_METRICS = [
@@ -68,6 +83,30 @@ const DEFAULT_GOAL = {
   target_date: null,
   daily_deficit: 500,
   created_at: '2026-07-01T12:00:00.000Z',
+  plan_status: 'available',
+  plan_reason_code: null,
+  projection: {
+    status: 'projected',
+    projected_end_date: '2026-11-20',
+    reason_code: null,
+  },
+};
+
+const CALORIE_PLAN_OPTIONS_RESPONSE = {
+  eligibility: PROFILE_RESPONSE.calorieSummary.eligibility,
+  bmr: 2_000,
+  tdee: 2_600,
+  minimumDailyCalorieTarget: 2_000,
+  planOptions: [-1000, -750, -500, -250, 0, 250, 500, 750, 1000].map((dailyDeficit) => {
+    const dailyCalorieTarget = 2_600 - dailyDeficit;
+    const available = dailyCalorieTarget >= 2_000;
+    return {
+      dailyDeficit,
+      available,
+      dailyCalorieTarget: available ? dailyCalorieTarget : null,
+      reasonCode: available ? null : 'TARGET_BELOW_MINIMUM',
+    };
+  }),
 };
 
 const CALIBRATION_STATUS_RESPONSE = {
@@ -168,6 +207,9 @@ async function stubAuthenticatedApi(page: Page, options: AuthenticatedApiOptions
     if (pathname === '/api/v1/user/profile') {
       return fulfillJson(route, options.profileResponse ?? PROFILE_RESPONSE);
     }
+    if (pathname === '/api/v1/calorie-plan/options') {
+      return fulfillJson(route, CALORIE_PLAN_OPTIONS_RESPONSE);
+    }
     if (pathname === '/api/v1/notifications/in-app') {
       return fulfillJson(route, { notifications: [], unread_count: 0 });
     }
@@ -237,7 +279,11 @@ async function stubAuthenticatedApi(page: Page, options: AuthenticatedApiOptions
       return fulfillJson(route, { tracking_start_date: '2026-01-01' });
     }
     if (pathname === '/api/v1/calibration/status') {
-      return fulfillJson(route, CALIBRATION_STATUS_RESPONSE);
+      return fulfillJson(route, {
+        ...CALIBRATION_STATUS_RESPONSE,
+        planStatus: 'available',
+        planReasonCode: null,
+      });
     }
     if (pathname === '/api/v1/activity/days') {
       const localDate = url.searchParams.get('start') ?? '2026-07-18';

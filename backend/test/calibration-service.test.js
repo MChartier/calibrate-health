@@ -4,6 +4,7 @@ const crypto = require('node:crypto');
 const Module = require('node:module');
 
 const { CALIBRATION_MODEL_VERSION } = require('../../shared/calibration');
+const { CALORIE_POLICY_VERSION } = require('../../shared/caloriePolicy');
 const { getCalibrationScenario } = require('../../shared/calibrationScenarios');
 
 function stubModule(path, exports) {
@@ -13,10 +14,11 @@ function stubModule(path, exports) {
   require.cache[path] = stub;
 }
 
-function loadCalibrationService({ prisma, currentPlan = null, operations = {}, trendModelVersion = 2 }) {
+function loadCalibrationService({ prisma, planning, currentPlan = null, operations = {}, trendModelVersion = 2 }) {
   const paths = {
     database: require.resolve('../src/config/database'),
     caloriePlan: require.resolve('../src/services/caloriePlan'),
+    caloriePlanning: require.resolve('../src/services/caloriePlanning'),
     profile: require.resolve('../src/utils/profile'),
     operations: require.resolve('../src/services/clientOperations'),
     weightTrend: require.resolve('../src/services/weightTrend'),
@@ -26,6 +28,10 @@ function loadCalibrationService({ prisma, currentPlan = null, operations = {}, t
   delete require.cache[paths.service];
   stubModule(paths.database, prisma);
   stubModule(paths.caloriePlan, { getEffectiveCaloriePlan: async () => currentPlan });
+  stubModule(paths.caloriePlanning, {
+    getStoredCaloriePlanningSnapshot: async () => planning.current,
+    buildStoredCaloriePlanningSnapshot: async () => planning.transactional ?? planning.current
+  });
   stubModule(paths.profile, {
     calculateAge: () => 38,
     buildCalorieSummary: () => ({ bmr: 1650, tdee: 2400, missing: [] })
@@ -65,6 +71,11 @@ function fingerprint(value) {
 function createHarness({ scenarioId = 'target-too-high', scheduledRevision = null, currentPlan = null, pausedDates = [], todayStatus = null, trendModelVersion = 2 } = {}) {
   const scenario = getCalibrationScenario(scenarioId);
   assert.ok(scenario);
+  const safeScheduledRevision = scheduledRevision ? {
+    calorie_plan_review_status: 'CLEAR',
+    calorie_plan_review_reason: null,
+    ...scheduledRevision
+  } : null;
   const captured = {
     upserts: [],
     staleUpdates: [],
@@ -76,6 +87,8 @@ function createHarness({ scenarioId = 'target-too-high', scheduledRevision = nul
     weightQuery: null
   };
   let storedRecommendation = null;
+  let beforeMutation = null;
+  let scheduledRevisionState = safeScheduledRevision;
   const pausedDateSet = new Set(pausedDates);
   const logs = scenario.input.foodDays.flatMap((day) => [
     { local_date: new Date(`${day.date}T00:00:00.000Z`), calories: Math.floor(day.calories / 2), meal_period: 'BREAKFAST' },
@@ -142,7 +155,7 @@ function createHarness({ scenarioId = 'target-too-high', scheduledRevision = nul
     },
     activityDaySummary: { findMany: async () => [] },
     caloriePlanRevision: {
-      findFirst: async () => scheduledRevision,
+      findFirst: async () => scheduledRevisionState,
       create: async ({ data }) => {
         const revision = { id: 12, ...data };
         captured.revision = revision;
@@ -178,12 +191,55 @@ function createHarness({ scenarioId = 'target-too-high', scheduledRevision = nul
   const operations = {
     executeIdempotentMutation: async (options) => {
       captured.operation = options;
+      const interleave = beforeMutation;
+      beforeMutation = null;
+      if (interleave) await interleave();
       return options.mutate(prisma, options.operationId);
     },
     recordSyncChange: async (options) => { captured.sync = options; }
   };
-  const service = loadCalibrationService({ prisma, currentPlan, operations, trendModelVersion });
-  return { scenario, serviceInput, captured, prisma, service, getStoredRecommendation: () => storedRecommendation };
+  const planning = {
+    user: {
+      id: 7, timezone: 'UTC', weight_unit: scenario.input.weightUnit, height_unit: 'CM',
+      date_of_birth: new Date('1988-01-01T00:00:00.000Z'), sex: 'MALE', height_mm: 1800, activity_level: 'MODERATE'
+    },
+    goal: {
+      id: 41, user_id: 7, start_weight_grams: 82_000, target_weight_grams: 75_000,
+      daily_deficit: scenario.input.configuredDailyDeficitKcal, target_date: null,
+      created_at: new Date('2026-06-01T00:00:00.000Z'),
+      calorie_plan_review_status: 'CLEAR', calorie_plan_review_reason: null
+    },
+    latestWeightGrams: 82_000,
+    localToday: '2026-08-01',
+    effectiveRevision: currentPlan ? {
+      id: 3, recommendation_id: null, target_adjustment_kcal: currentPlan.targetAdjustmentKcal,
+      effective_local_date: currentPlan.effectiveLocalDate,
+      calorie_plan_review_status: 'CLEAR', calorie_plan_review_reason: null
+    } : null,
+    nextRevision: safeScheduledRevision,
+    futureRevisions: safeScheduledRevision ? [safeScheduledRevision] : [],
+    unsafeRevisionIds: [],
+    evaluation: {
+      eligibility: { status: 'eligible', reasonCode: null, ageYears: 38, localDate: '2026-08-01' },
+      status: 'available', reasonCode: null, bmr: 1650, tdee: 2400,
+      minimumDailyCalorieTarget: 1650, planOptions: [], dailyCalorieTarget: 1900,
+      baseDailyCalorieTarget: 1900, targetAdjustment: currentPlan?.targetAdjustmentKcal ?? 0,
+      sourceWeightKg: 82, deficit: scenario.input.configuredDailyDeficitKcal, missing: []
+    },
+    projection: null
+  };
+  const planningState = { current: planning, transactional: null };
+  const service = loadCalibrationService({ prisma, planning: planningState, currentPlan, operations, trendModelVersion });
+  return {
+    scenario, serviceInput, captured, prisma, service, planningState,
+    evidenceState: { logs, completionDays, weightRows },
+    setBeforeMutation(callback) { beforeMutation = callback; },
+    setScheduledRevision(revision) {
+      scheduledRevisionState = revision;
+      planningState.transactional = { ...planningState.current, nextRevision: revision, futureRevisions: [revision] };
+    },
+    getStoredRecommendation: () => storedRecommendation
+  };
 }
 
 test('calibration status materializes a deterministic model-scoped recommendation', async () => {
@@ -198,6 +254,7 @@ test('calibration status materializes a deterministic model-scoped recommendatio
   const { weightUnit: _displayWeightUnit, ...actionEvidence } = harness.serviceInput;
   assert.equal(status.inputFingerprint, fingerprint({
     modelVersion: CALIBRATION_MODEL_VERSION,
+    caloriePolicyVersion: CALORIE_POLICY_VERSION,
     goalId: 41,
     planStartDate: '2026-06-01',
     actionEvidence
@@ -376,4 +433,40 @@ test('a scheduled revision cannot be canceled after its effective local date', a
     /already started/
   );
   assert.equal(harness.captured.deletedRevisionId, null);
+});
+
+test('an APPLIED recommendation from an old goal cannot replay onto the current plan', async () => {
+  const harness = createHarness();
+  const now = new Date('2026-08-01T12:00:00.000Z');
+  const status = await harness.service.buildCalibrationStatus(7, now);
+  await harness.service.applyCalibrationRecommendation({
+    userId: 7, recommendationId: status.recommendation.id, operationId: 'calibration-old-goal-apply', now
+  });
+  harness.planningState.current = {
+    ...harness.planningState.current,
+    goal: { ...harness.planningState.current.goal, id: 42 }
+  };
+  await assert.rejects(
+    harness.service.applyCalibrationRecommendation({
+      userId: 7, recommendationId: status.recommendation.id, operationId: 'calibration-old-goal-replay', now
+    }),
+    /no longer matches the current calorie plan/
+  );
+});
+
+test('recommendation apply rejects a profile or weight race that changes the exact target inside the transaction', async () => {
+  const harness = createHarness();
+  const now = new Date('2026-08-01T12:00:00.000Z');
+  const status = await harness.service.buildCalibrationStatus(7, now);
+  harness.planningState.transactional = {
+    ...harness.planningState.current,
+    evaluation: { ...harness.planningState.current.evaluation, tdee: 2300, dailyCalorieTarget: 1800 }
+  };
+  await assert.rejects(
+    harness.service.applyCalibrationRecommendation({
+      userId: 7, recommendationId: status.recommendation.id, operationId: 'calibration-race-apply', now
+    }),
+    /requires review before a recommendation can be applied/
+  );
+  assert.equal(harness.captured.revision, null);
 });

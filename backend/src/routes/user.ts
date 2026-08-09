@@ -2,10 +2,12 @@ import express from 'express';
 import prisma from '../config/database';
 import bcrypt from 'bcryptjs';
 import { isHeightUnit, isWeightUnit } from '../utils/units';
-import { ActivityLevel, HeightUnit, Sex, WeightUnit } from '@prisma/client';
-import { buildCalorieSummary, isActivityLevel, isSex } from '../utils/profile';
-import { getSafeUtcTodayDateOnlyInTimeZone, isValidIanaTimeZone } from '../utils/date';
-import { getEffectiveCaloriePlan } from '../services/caloriePlan';
+import { ActivityLevel, HeightUnit, Prisma, Sex, WeightUnit } from '@prisma/client';
+import { isActivityLevel, isSex } from '../utils/profile';
+import { isValidIanaTimeZone } from '../utils/date';
+import { calorieSummaryWire, getStoredCaloriePlanningSnapshot } from '../services/caloriePlanning';
+import { markCurrentCaloriePlanForReviewIfUnsafe } from '../services/caloriePlanReview';
+import { evaluateAdultEligibility, isPolicyHeight, normalizeDateOfBirth } from '../../../shared/caloriePolicy';
 import { resolveHeightMmUpdate } from '../utils/height';
 import { isSupportedLanguage, type SupportedLanguage } from '../utils/language';
 import { MAX_PROFILE_IMAGE_BYTES, parseBase64DataUrl } from '../utils/profileImage';
@@ -380,58 +382,28 @@ router.patch('/preferences', async (req, res) => {
 router.get('/profile', async (req, res) => {
   const user = getAuthenticatedUser(req);
   try {
-    const dbUser = await prisma.user.findUnique({ where: { id: user.id } });
-    if (!dbUser) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-
-    const latestGoal = await prisma.goal.findFirst({
-      where: { user_id: user.id },
-      orderBy: [{ created_at: 'desc' }, { id: 'desc' }],
-      select: { id: true, daily_deficit: true }
+    const snapshot = await getStoredCaloriePlanningSnapshot(user.id);
+    if (!snapshot) return res.status(404).json({ message: 'User not found' });
+    const { evaluation } = snapshot;
+    return res.json({
+      profile: {
+        timezone: snapshot.user.timezone,
+        date_of_birth: snapshot.user.date_of_birth?.toISOString().slice(0, 10) ?? null,
+        sex: snapshot.user.sex,
+        height_mm: snapshot.user.height_mm,
+        activity_level: snapshot.user.activity_level,
+        weight_unit: snapshot.user.weight_unit,
+        height_unit: snapshot.user.height_unit
+      },
+      latest_weight_grams: snapshot.latestWeightGrams,
+      goal_daily_deficit: snapshot.goal?.daily_deficit ?? null,
+      calorie_target_adjustment: snapshot.effectiveRevision?.target_adjustment_kcal ?? 0,
+      calorieSummary: calorieSummaryWire(evaluation)
     });
-
-    const latestMetric = await prisma.bodyMetric.findFirst({
-      where: { user_id: user.id },
-      orderBy: [{ date: 'desc' }, { id: 'desc' }],
-      select: { weight_grams: true }
-    });
-    const localToday = getSafeUtcTodayDateOnlyInTimeZone(dbUser.timezone);
-    const effectivePlan = latestGoal
-      ? await getEffectiveCaloriePlan(user.id, latestGoal.id, localToday)
-      : null;
-
-    // Shape the profile subset used by the settings UI and calorie math.
-    const profile = {
-      timezone: dbUser.timezone,
-      date_of_birth: dbUser.date_of_birth,
-      sex: dbUser.sex,
-      height_mm: dbUser.height_mm,
-      activity_level: dbUser.activity_level,
-      weight_unit: dbUser.weight_unit,
-      height_unit: dbUser.height_unit
-    };
-
-    // Summarize calorie targets using the freshest weight and goal on record.
-    const calorieSummary = buildCalorieSummary({
-      weight_grams: latestMetric?.weight_grams ?? null,
-      profile,
-      daily_deficit: latestGoal?.daily_deficit ?? null,
-      target_adjustment_kcal: effectivePlan?.targetAdjustmentKcal ?? 0
-    });
-
-    res.json({
-      profile,
-      latest_weight_grams: latestMetric?.weight_grams ?? null,
-      goal_daily_deficit: latestGoal?.daily_deficit ?? null,
-      calorie_target_adjustment: effectivePlan?.targetAdjustmentKcal ?? 0,
-      calorieSummary
-    });
-  } catch (err) {
-    res.status(500).json({ message: 'Server error' });
+  } catch {
+    return res.status(500).json({ message: 'Server error' });
   }
 });
-
 router.patch('/profile', async (req, res) => {
   const user = getAuthenticatedUser(req);
   const { timezone, date_of_birth, sex, height_cm, height_mm, height_feet, height_inches, activity_level } = req.body;
@@ -460,11 +432,14 @@ router.patch('/profile', async (req, res) => {
     if (date_of_birth === null || date_of_birth === '') {
       updateData.date_of_birth = null;
     } else {
-      const parsedDate = new Date(date_of_birth);
-      if (Number.isNaN(parsedDate.getTime())) {
-        return res.status(400).json({ message: 'Invalid date_of_birth' });
+      const normalizedDate = normalizeDateOfBirth(date_of_birth);
+      if (!normalizedDate || typeof date_of_birth !== 'string') {
+        return res.status(400).json({
+          message: 'Date of birth must use YYYY-MM-DD.', code: 'INVALID_DATE_OF_BIRTH', retryable: false,
+          field_errors: { date_of_birth: ['Enter a valid date in YYYY-MM-DD format.'] }
+        });
       }
-      updateData.date_of_birth = parsedDate;
+      updateData.date_of_birth = new Date(`${normalizedDate}T00:00:00.000Z`);
     }
   }
 
@@ -480,8 +455,11 @@ router.patch('/profile', async (req, res) => {
 
   const resolvedHeight = resolveHeightMmUpdate({ height_mm, height_cm, height_feet, height_inches });
   if (resolvedHeight.provided) {
-    if (!resolvedHeight.valid) {
-      return res.status(400).json({ message: 'Invalid height' });
+    if (!resolvedHeight.valid || (resolvedHeight.value !== null && !isPolicyHeight(resolvedHeight.value))) {
+      return res.status(400).json({
+        message: 'Height is outside the supported range.', code: 'PROFILE_HEIGHT_OUT_OF_RANGE', retryable: false,
+        field_errors: { height: ['Enter a height within the supported range.'] }
+      });
     }
     updateData.height_mm = resolvedHeight.value;
   }
@@ -501,17 +479,51 @@ router.patch('/profile', async (req, res) => {
   }
 
   try {
-    const updatedUser = await prisma.user.update({
-      where: { id: user.id },
-      data: updateData,
-      select: USER_CLIENT_SELECT
-    });
+    const result = await prisma.$transaction(async (tx) => {
+      const current = await tx.user.findUnique({
+        where: { id: user.id },
+        select: { timezone: true, date_of_birth: true }
+      });
+      if (!current) return { status: 404, body: { message: 'User not found' } };
 
-    res.json({
-      user: serializeUserForClient(updatedUser)
-    });
-  } catch (err) {
-    res.status(500).json({ message: 'Server error' });
+      const candidateDateOfBirth = updateData.date_of_birth === undefined
+        ? current.date_of_birth
+        : updateData.date_of_birth;
+      const candidateTimezone = updateData.timezone ?? current.timezone;
+      if (candidateDateOfBirth) {
+        const eligibility = evaluateAdultEligibility({
+          dateOfBirth: candidateDateOfBirth,
+          timezone: candidateTimezone
+        });
+        if (eligibility.reasonCode === 'DATE_OF_BIRTH_IN_FUTURE') {
+          return {
+            status: 400,
+            body: {
+              message: 'Date of birth cannot be in the future.', code: 'DATE_OF_BIRTH_IN_FUTURE', retryable: false,
+              field_errors: { date_of_birth: ['Date of birth cannot be in the future.'] }
+            }
+          };
+        }
+        if (eligibility.reasonCode === 'AGE_OVER_120') {
+          return {
+            status: 400,
+            body: {
+              message: 'Age cannot be greater than 120.', code: 'AGE_OUT_OF_RANGE', retryable: false,
+              field_errors: { date_of_birth: ['Enter an age no greater than 120.'] }
+            }
+          };
+        }
+      }
+
+      const updatedUser = await tx.user.update({
+        where: { id: user.id }, data: updateData, select: USER_CLIENT_SELECT
+      });
+      await markCurrentCaloriePlanForReviewIfUnsafe(tx, user.id);
+      return { status: 200, body: { user: serializeUserForClient(updatedUser) } };
+    }, { isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead });
+    return res.status(result.status).json(result.body);
+  } catch {
+    return res.status(500).json({ message: 'Server error' });
   }
 });
 

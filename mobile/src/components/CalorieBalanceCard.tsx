@@ -47,8 +47,8 @@ export const CalorieBalanceCard: React.FC<CalorieBalanceCardProps> = ({
     const hasTarget = typeof targetCalories === 'number' && Number.isFinite(targetCalories) && targetCalories > 0;
     const remaining = hasTarget ? Math.round(targetCalories - totalCalories) : null;
     const isOver = remaining !== null && remaining < 0;
-    const progressValue = hasTarget ? Math.min(totalCalories / targetCalories, 1) : 0;
-    const tone = getBalanceTone(remaining, progressValue);
+    const progressValue = hasTarget ? Math.min(totalCalories / targetCalories, 1) : null;
+    const tone = getBalanceTone(remaining, progressValue ?? 0);
     const balanceValue = remaining === null ? '-' : formatNumber(Math.abs(remaining), 0);
     const balanceLabel = remaining === null ? unavailableLabel : isOver ? 'kcal over target' : 'kcal remaining';
     const balanceSummary = remaining === null ? balanceLabel : `${balanceValue} ${balanceLabel}`;
@@ -64,11 +64,16 @@ export const CalorieBalanceCard: React.FC<CalorieBalanceCardProps> = ({
             style={[compact && styles.cardCompact, style]}
         >
             <View style={[styles.hero, compact && styles.heroCompact, stackHero && styles.heroStacked]}>
-                <CalorieGauge value={progressValue} tone={tone} compact={compact} colors={colors} styles={styles} />
+                {progressValue !== null && (
+                    <CalorieGauge value={progressValue} tone={tone} compact={compact} colors={colors} styles={styles} />
+                )}
                 <View style={[styles.balanceCopy, stackHero && styles.balanceCopyStacked]}>
                     <CompactCardHeader title="Daily balance" />
                     {remaining === null ? (
-                        <AppText style={styles.unavailable}>{balanceLabel}</AppText>
+                        <>
+                            <AppText style={styles.unavailable}>{balanceLabel}</AppText>
+                            <AppText variant="muted">{formatNumber(totalCalories, 0)} kcal logged</AppText>
+                        </>
                     ) : (
                         <>
                             <AppText style={[

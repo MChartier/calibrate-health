@@ -7,6 +7,7 @@ const {
   isWeightUnit,
   parseWeightToGrams
 } = require('../src/utils/units');
+const { isPolicyWeight } = require('../../shared/caloriePolicy');
 
 test('isWeightUnit identifies supported weight units', () => {
   assert.equal(isWeightUnit('KG'), true);
@@ -44,6 +45,15 @@ test('parseWeightToGrams converts pounds to grams (rounded to 0.1 lb)', () => {
   assert.equal(parseWeightToGrams(150, 'LB'), 68039);
   // 150.05 rounds to 150.1 before converting.
   assert.equal(parseWeightToGrams(150.05, 'LB'), 68084);
+});
+
+test('API weight conversion enforces exact KG and one-decimal LB policy boundaries', () => {
+  for (const [value, unit, expected] of [
+    [24.9, 'KG', false], [25, 'KG', true], [400, 'KG', true], [400.1, 'KG', false],
+    [55.1, 'LB', false], [55.2, 'LB', true], [881.8, 'LB', true], [881.9, 'LB', false]
+  ]) {
+    assert.equal(isPolicyWeight(parseWeightToGrams(value, unit)), expected, `${value} ${unit}`);
+  }
 });
 
 test('parseWeightToGrams rejects invalid weights', () => {

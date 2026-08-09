@@ -75,7 +75,7 @@ test('userSerialization: serializeUserForClient builds a base64 data URL when im
       reminder_log_weight_enabled: user.reminder_log_weight_enabled,
       reminder_log_food_enabled: user.reminder_log_food_enabled,
       haptics_enabled: user.haptics_enabled,
-      date_of_birth: user.date_of_birth,
+      date_of_birth: '1990-01-15',
       sex: user.sex,
       height_mm: user.height_mm,
       activity_level: user.activity_level,

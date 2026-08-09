@@ -33,6 +33,7 @@ class SummaryFormatterTest {
         caloriesRemaining = caloriesRemaining,
         caloriesConsumed = 1_360,
         calorieTarget = 2_000,
+        planStatus = "available",
         foodDayComplete = false,
         foodDayRevision = "aaaaaaaaaaaaaaaaaaaaaaaa",
         todayWeightGrams = 72_400,

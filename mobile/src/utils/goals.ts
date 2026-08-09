@@ -14,9 +14,6 @@ export const GOAL_MODE_OPTIONS: Array<{ value: GoalMode; label: string }> = [
 
 export const DAILY_GOAL_CHANGE_OPTIONS = ALLOWED_DAILY_DEFICIT_ABS_VALUES.filter((value) => value !== 0);
 
-const CALORIES_PER_POUND = 3500;
-const CALORIES_PER_KILOGRAM = 7700;
-
 export function getGoalModeFromDailyDeficit(dailyDeficit: number | null | undefined): GoalMode {
     if (typeof dailyDeficit !== 'number' || dailyDeficit === 0) return 'maintain';
     return dailyDeficit > 0 ? 'lose' : 'gain';
@@ -113,23 +110,4 @@ export function getGoalReachedDate(args: {
         .sort((left, right) => getMetricDate(left).localeCompare(getMetricDate(right)))[0];
 
     return reachedMetric ? getMetricDate(reachedMetric) : null;
-}
-
-export function computeGoalProjection(args: {
-    targetWeight: number;
-    currentWeight: number | null;
-    startWeight: number;
-    dailyDeficit: number;
-    unitLabel: string;
-}): string {
-    const { dailyDeficit, targetWeight, currentWeight, startWeight, unitLabel } = args;
-    if (dailyDeficit === 0) return 'No projection for maintenance.';
-
-    const baseline = typeof currentWeight === 'number' && Number.isFinite(currentWeight) ? currentWeight : startWeight;
-    const remaining = dailyDeficit > 0 ? Math.max(0, baseline - targetWeight) : Math.max(0, targetWeight - baseline);
-    const caloriesPerUnit = unitLabel === 'lb' ? CALORIES_PER_POUND : CALORIES_PER_KILOGRAM;
-    const days = remaining === 0 ? 0 : Math.ceil((remaining * caloriesPerUnit) / Math.abs(dailyDeficit));
-    const projected = new Date();
-    projected.setDate(projected.getDate() + days);
-    return new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric', year: 'numeric' }).format(projected);
 }

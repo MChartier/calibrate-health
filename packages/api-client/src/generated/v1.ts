@@ -20,6 +20,55 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/calorie-plan/options": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Evaluate all calorie-plan choices for a display-unit draft without persisting it. */
+        post: operations["getCaloriePlanOptions"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/user/profile": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getUserProfile"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["updateUserProfile"];
+        trace?: never;
+    };
+    "/api/v1/goals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getGoal"];
+        put?: never;
+        post: operations["createGoal"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/auth/mobile/login": {
         parameters: {
             query?: never;
@@ -418,6 +467,138 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** @enum {string} */
+        EligibilityStatus: "unknown" | "eligible" | "ineligible" | "invalid";
+        /** @enum {string} */
+        CaloriePlanStatus: "unavailable" | "available" | "requires_review";
+        /** @enum {string} */
+        CaloriePlanReasonCode: "DATE_OF_BIRTH_REQUIRED" | "DATE_OF_BIRTH_INVALID" | "DATE_OF_BIRTH_IN_FUTURE" | "AGE_UNDER_18" | "AGE_OVER_120" | "TIMEZONE_INVALID" | "SEX_REQUIRED" | "ACTIVITY_LEVEL_REQUIRED" | "HEIGHT_REQUIRED" | "HEIGHT_OUT_OF_RANGE" | "LATEST_WEIGHT_REQUIRED" | "WEIGHT_OUT_OF_RANGE" | "GOAL_REQUIRED" | "GOAL_WEIGHTS_OUT_OF_RANGE" | "GOAL_DIRECTION_INVALID" | "DAILY_DEFICIT_INVALID" | "TARGET_BELOW_MINIMUM" | "PLAN_REVISION_UNSAFE" | "HISTORICAL_PLAN_REQUIRES_REVIEW" | "SERVER_POLICY_UNAVAILABLE";
+        CalorieEligibility: {
+            status: components["schemas"]["EligibilityStatus"];
+            reasonCode: components["schemas"]["CaloriePlanReasonCode"] | null;
+            ageYears: number | null;
+            /** Format: date */
+            localDate: string | null;
+        };
+        CaloriePlanOption: {
+            /** @enum {integer} */
+            dailyDeficit: -1000 | -750 | -500 | -250 | 0 | 250 | 500 | 750 | 1000;
+            available: boolean;
+            dailyCalorieTarget: number | null;
+            reasonCode: components["schemas"]["CaloriePlanReasonCode"] | null;
+        };
+        CaloriePlanOptionsRequest: {
+            timezone: string;
+            /** Format: date */
+            date_of_birth: string | null;
+            /** @enum {string|null} */
+            sex: "MALE" | "FEMALE" | null;
+            /** @enum {string|null} */
+            activity_level: "SEDENTARY" | "LIGHT" | "MODERATE" | "ACTIVE" | "VERY_ACTIVE" | null;
+            height: {
+                /** @constant */
+                unit: "CM";
+                centimeters: number;
+            } | {
+                /** @constant */
+                unit: "FT_IN";
+                feet: number;
+                inches: number;
+            };
+            weight: {
+                /** @enum {string} */
+                unit: "KG" | "LB";
+                value: number;
+            };
+        };
+        CaloriePlanOptionsResponse: {
+            eligibility: components["schemas"]["CalorieEligibility"];
+            bmr: number | null;
+            tdee: number | null;
+            minimumDailyCalorieTarget: number | null;
+            planOptions: components["schemas"]["CaloriePlanOption"][];
+        };
+        UserProfile: {
+            timezone: string;
+            /** Format: date */
+            date_of_birth: string | null;
+            /** @enum {string|null} */
+            sex: "MALE" | "FEMALE" | null;
+            height_mm: number | null;
+            /** @enum {string|null} */
+            activity_level: "SEDENTARY" | "LIGHT" | "MODERATE" | "ACTIVE" | "VERY_ACTIVE" | null;
+            /** @enum {string} */
+            weight_unit: "KG" | "LB";
+            /** @enum {string} */
+            height_unit: "CM" | "FT_IN";
+        };
+        CalorieSummary: {
+            baseDailyCalorieTarget?: number;
+            dailyCalorieTarget?: number;
+            tdee?: number;
+            bmr?: number;
+            deficit?: number | null;
+            targetAdjustment?: number;
+            sourceWeightKg?: number;
+            missing: string[];
+            eligibility: components["schemas"]["CalorieEligibility"];
+            planStatus: components["schemas"]["CaloriePlanStatus"];
+            planReasonCode: components["schemas"]["CaloriePlanReasonCode"] | null;
+            planOptions: components["schemas"]["CaloriePlanOption"][];
+            minimumDailyCalorieTarget: number | null;
+        };
+        UserProfileResponse: {
+            profile: components["schemas"]["UserProfile"];
+            latest_weight_grams: number | null;
+            goal_daily_deficit: number | null;
+            calorie_target_adjustment: number;
+            calorieSummary: components["schemas"]["CalorieSummary"];
+        };
+        UserProfileUpdateRequest: {
+            timezone?: string | null;
+            /** Format: date */
+            date_of_birth?: string | null;
+            /** @enum {string|null} */
+            sex?: "MALE" | "FEMALE" | null;
+            height_mm?: number | string | null;
+            height_cm?: number | string | null;
+            height_feet?: number | string | null;
+            height_inches?: number | string | null;
+            /** @enum {string|null} */
+            activity_level?: "SEDENTARY" | "LIGHT" | "MODERATE" | "ACTIVE" | "VERY_ACTIVE" | null;
+        };
+        GoalProjection: {
+            /** @enum {string} */
+            status: "projected" | "maintenance" | "reached" | "unavailable";
+            /** Format: date */
+            projected_end_date: string | null;
+            reason_code: components["schemas"]["CaloriePlanReasonCode"] | null;
+        };
+        GoalEntry: {
+            id: number;
+            user_id: number;
+            start_weight: number;
+            target_weight: number;
+            /** Format: date-time */
+            target_date: string | null;
+            daily_deficit: number;
+            /** @enum {string} */
+            calorie_plan_review_status: "CLEAR" | "REQUIRES_REVIEW";
+            calorie_plan_review_reason: string | null;
+            /** Format: date-time */
+            created_at: string;
+            plan_status: components["schemas"]["CaloriePlanStatus"];
+            plan_reason_code: components["schemas"]["CaloriePlanReasonCode"] | null;
+            projection: components["schemas"]["GoalProjection"];
+        };
+        GoalCreateRequest: {
+            start_weight: number;
+            target_weight: number;
+            /** Format: date-time */
+            target_date?: string | null;
+            /** @enum {integer} */
+            daily_deficit: -1000 | -750 | -500 | -250 | 0 | 250 | 500 | 750 | 1000;
+        };
         MetricEntry: {
             id: number;
             user_id?: number;
@@ -582,7 +763,7 @@ export interface components {
             /** @constant */
             format: "calibrate-account-export";
             /** @constant */
-            version: 5;
+            version: 6;
             /** Format: date-time */
             exported_at: string;
             account: components["schemas"]["AccountExportProfile"];
@@ -632,6 +813,9 @@ export interface components {
             /** Format: date-time */
             target_date: string | null;
             daily_deficit: number;
+            /** @enum {string} */
+            calorie_plan_review_status: "CLEAR" | "REQUIRES_REVIEW";
+            calorie_plan_review_reason: string | null;
             /** Format: date-time */
             created_at: string;
         };
@@ -873,6 +1057,9 @@ export interface components {
             target_adjustment_kcal: number;
             /** Format: date */
             effective_local_date: string;
+            /** @enum {string} */
+            calorie_plan_review_status: "CLEAR" | "REQUIRES_REVIEW";
+            calorie_plan_review_reason: string | null;
             /** Format: date-time */
             created_at: string;
         };
@@ -950,6 +1137,8 @@ export interface components {
             /** Format: date-time */
             generatedAt: string;
             inputFingerprint: string | null;
+            planStatus: components["schemas"]["CaloriePlanStatus"];
+            planReasonCode: components["schemas"]["CaloriePlanReasonCode"] | null;
             evaluation: components["schemas"]["CalibrationEvaluation"];
             recommendation: {
                 id: number;
@@ -1300,6 +1489,11 @@ export interface components {
             /** @enum {string} */
             weight_unit: "KG" | "LB";
             revision: string;
+            plan: {
+                status: components["schemas"]["CaloriePlanStatus"];
+                reason_code: components["schemas"]["CaloriePlanReasonCode"] | null;
+                minimum_daily_calorie_target: number | null;
+            };
             calories: {
                 consumed: number;
                 target: number | null;
@@ -1334,6 +1528,7 @@ export interface components {
                 progress_percent: number | null;
                 remaining_weight_grams: number;
                 is_complete: boolean;
+                projection: components["schemas"]["GoalProjection"];
             };
             quick_add: components["schemas"]["WatchQuickAddDraft"][];
             reminders: {
@@ -1528,6 +1723,164 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ClientConfigResponse"];
+                };
+            };
+        };
+    };
+    getCaloriePlanOptions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CaloriePlanOptionsRequest"];
+            };
+        };
+        responses: {
+            /** @description Eligibility, calorie estimates, safety floor, and all nine signed options. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CaloriePlanOptionsResponse"];
+                };
+            };
+            /** @description Invalid draft shape. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    getUserProfile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Current profile and fail-closed calorie-planning summary. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserProfileResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    updateUserProfile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UserProfileUpdateRequest"];
+            };
+        };
+        responses: {
+            /** @description Updated profile values. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        user: components["schemas"]["UserClientPayload"];
+                    };
+                };
+            };
+            /** @description Invalid profile field or unsafe date-of-birth value. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    getGoal: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Latest goal with additive calorie-plan and projection status, or null when absent. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GoalEntry"] | null;
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    createGoal: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Stable client-generated identifier used to safely replay a mutation. */
+                "x-client-operation-id"?: components["parameters"]["ClientOperationId"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GoalCreateRequest"];
+            };
+        };
+        responses: {
+            /** @description Newly appended safe goal. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GoalEntry"];
+                };
+            };
+            /** @description Adult eligibility, weights, direction, or selected calorie option is invalid. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            /** @description Operation-id conflict. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
                 };
             };
         };
@@ -1780,6 +2133,15 @@ export interface operations {
             };
             /** @description Account no longer exists. */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The stored account timezone is missing or invalid, so local-day data cannot be read safely. */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

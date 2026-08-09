@@ -60,11 +60,12 @@ export async function executeIdempotentMutation<T>(options: {
   operationId?: string;
   operationKind: string;
   requestPayload: unknown;
+  transactionOptions?: { isolationLevel?: Prisma.TransactionIsolationLevel };
   mutate: (tx: MutationDatabase, operationId?: string) => Promise<MutationResult<T>>;
 }): Promise<MutationResult<T>> {
   if (!options.operationId) {
     // Legacy/browser callers still need the domain write and sync-feed append to commit atomically.
-    return prisma.$transaction((tx) => options.mutate(tx));
+    return prisma.$transaction((tx) => options.mutate(tx), options.transactionOptions);
   }
 
   const requestHash = hashRequest(options.operationKind, options.requestPayload);
@@ -99,7 +100,7 @@ export async function executeIdempotentMutation<T>(options: {
       });
 
       return { status: result.status, body: normalizedBody as T };
-    });
+    }, options.transactionOptions);
   } catch (error) {
     if (!(error instanceof Prisma.PrismaClientKnownRequestError) || error.code !== 'P2002') {
       throw error;

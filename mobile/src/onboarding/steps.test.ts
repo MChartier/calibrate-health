@@ -8,9 +8,9 @@ describe('mobile onboarding steps', () => {
     it('places optional Android connections after the required setup review', () => {
         expect(getOnboardingSteps('android').map(({ key }) => key)).toEqual([
             'goal',
-            'pace',
             'about',
             'burn',
+            'pace',
             'import',
             'review',
             'health',

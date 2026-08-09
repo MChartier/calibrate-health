@@ -17,6 +17,104 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ClientConfigResponse'
+  /api/v1/calorie-plan/options:
+    post:
+      operationId: getCaloriePlanOptions
+      description: Evaluate all calorie-plan choices for a display-unit draft without persisting it.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CaloriePlanOptionsRequest' }
+      responses:
+        '200':
+          description: Eligibility, calorie estimates, safety floor, and all nine signed options.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CaloriePlanOptionsResponse' }
+        '400':
+          description: Invalid draft shape.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiError' }
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /api/v1/user/profile:
+    get:
+      operationId: getUserProfile
+      responses:
+        '200':
+          description: Current profile and fail-closed calorie-planning summary.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/UserProfileResponse' }
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    patch:
+      operationId: updateUserProfile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UserProfileUpdateRequest' }
+      responses:
+        '200':
+          description: Updated profile values.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [user]
+                properties:
+                  user: { $ref: '#/components/schemas/UserClientPayload' }
+        '400':
+          description: Invalid profile field or unsafe date-of-birth value.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiError' }
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /api/v1/goals:
+    get:
+      operationId: getGoal
+      responses:
+        '200':
+          description: Latest goal with additive calorie-plan and projection status, or null when absent.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - { $ref: '#/components/schemas/GoalEntry' }
+                  - type: 'null'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    post:
+      operationId: createGoal
+      parameters:
+        - $ref: '#/components/parameters/ClientOperationId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/GoalCreateRequest' }
+      responses:
+        '200':
+          description: Newly appended safe goal.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/GoalEntry' }
+        '400':
+          description: Adult eligibility, weights, direction, or selected calorie option is invalid.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiError' }
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          description: Operation-id conflict.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiError' }
   /auth/mobile/login:
     post:
       operationId: loginMobile
@@ -188,6 +286,11 @@ paths:
               schema: { $ref: '#/components/schemas/ApiError' }
         '404':
           description: Account no longer exists.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiError' }
+        '409':
+          description: The stored account timezone is missing or invalid, so local-day data cannot be read safely.
           content:
             application/json:
               schema: { $ref: '#/components/schemas/ApiError' }
@@ -776,6 +879,185 @@ components:
           schema:
             $ref: '#/components/schemas/ApiError'
   schemas:
+    EligibilityStatus:
+      type: string
+      enum: [unknown, eligible, ineligible, invalid]
+    CaloriePlanStatus:
+      type: string
+      enum: [unavailable, available, requires_review]
+    CaloriePlanReasonCode:
+      type: string
+      enum:
+        - DATE_OF_BIRTH_REQUIRED
+        - DATE_OF_BIRTH_INVALID
+        - DATE_OF_BIRTH_IN_FUTURE
+        - AGE_UNDER_18
+        - AGE_OVER_120
+        - TIMEZONE_INVALID
+        - SEX_REQUIRED
+        - ACTIVITY_LEVEL_REQUIRED
+        - HEIGHT_REQUIRED
+        - HEIGHT_OUT_OF_RANGE
+        - LATEST_WEIGHT_REQUIRED
+        - WEIGHT_OUT_OF_RANGE
+        - GOAL_REQUIRED
+        - GOAL_WEIGHTS_OUT_OF_RANGE
+        - GOAL_DIRECTION_INVALID
+        - DAILY_DEFICIT_INVALID
+        - TARGET_BELOW_MINIMUM
+        - PLAN_REVISION_UNSAFE
+        - HISTORICAL_PLAN_REQUIRES_REVIEW
+        - SERVER_POLICY_UNAVAILABLE
+    CalorieEligibility:
+      type: object
+      additionalProperties: false
+      required: [status, reasonCode, ageYears, localDate]
+      properties:
+        status: { $ref: '#/components/schemas/EligibilityStatus' }
+        reasonCode:
+          oneOf: [{ $ref: '#/components/schemas/CaloriePlanReasonCode' }, { type: 'null' }]
+        ageYears: { type: [integer, 'null'], minimum: 0 }
+        localDate: { type: [string, 'null'], format: date }
+    CaloriePlanOption:
+      type: object
+      additionalProperties: false
+      required: [dailyDeficit, available, dailyCalorieTarget, reasonCode]
+      properties:
+        dailyDeficit: { type: integer, enum: [-1000, -750, -500, -250, 0, 250, 500, 750, 1000] }
+        available: { type: boolean }
+        dailyCalorieTarget: { type: [integer, 'null'], minimum: 1000 }
+        reasonCode:
+          oneOf: [{ $ref: '#/components/schemas/CaloriePlanReasonCode' }, { type: 'null' }]
+    CaloriePlanOptionsRequest:
+      type: object
+      additionalProperties: false
+      required: [timezone, date_of_birth, sex, activity_level, height, weight]
+      properties:
+        timezone: { type: string }
+        date_of_birth: { type: [string, 'null'], format: date }
+        sex: { type: [string, 'null'], enum: [MALE, FEMALE, null] }
+        activity_level: { type: [string, 'null'], enum: [SEDENTARY, LIGHT, MODERATE, ACTIVE, VERY_ACTIVE, null] }
+        height:
+          oneOf:
+            - type: object
+              additionalProperties: false
+              required: [unit, centimeters]
+              properties:
+                unit: { type: string, const: CM }
+                centimeters: { type: number }
+            - type: object
+              additionalProperties: false
+              required: [unit, feet, inches]
+              properties:
+                unit: { type: string, const: FT_IN }
+                feet: { type: number }
+                inches: { type: number }
+        weight:
+          type: object
+          additionalProperties: false
+          required: [unit, value]
+          properties:
+            unit: { type: string, enum: [KG, LB] }
+            value: { type: number }
+    CaloriePlanOptionsResponse:
+      type: object
+      additionalProperties: false
+      required: [eligibility, bmr, tdee, minimumDailyCalorieTarget, planOptions]
+      properties:
+        eligibility: { $ref: '#/components/schemas/CalorieEligibility' }
+        bmr: { type: [number, 'null'] }
+        tdee: { type: [number, 'null'] }
+        minimumDailyCalorieTarget: { type: [integer, 'null'], minimum: 1000 }
+        planOptions:
+          type: array
+          minItems: 9
+          maxItems: 9
+          items: { $ref: '#/components/schemas/CaloriePlanOption' }
+    UserProfile:
+      type: object
+      required: [timezone, date_of_birth, sex, height_mm, activity_level, weight_unit, height_unit]
+      properties:
+        timezone: { type: string }
+        date_of_birth: { type: [string, 'null'], format: date }
+        sex: { type: [string, 'null'], enum: [MALE, FEMALE, null] }
+        height_mm: { type: [integer, 'null'] }
+        activity_level: { type: [string, 'null'], enum: [SEDENTARY, LIGHT, MODERATE, ACTIVE, VERY_ACTIVE, null] }
+        weight_unit: { type: string, enum: [KG, LB] }
+        height_unit: { type: string, enum: [CM, FT_IN] }
+    CalorieSummary:
+      type: object
+      required: [missing, eligibility, planStatus, planReasonCode, planOptions, minimumDailyCalorieTarget]
+      properties:
+        baseDailyCalorieTarget: { type: integer }
+        dailyCalorieTarget: { type: integer }
+        tdee: { type: number }
+        bmr: { type: number }
+        deficit: { type: [integer, 'null'] }
+        targetAdjustment: { type: integer }
+        sourceWeightKg: { type: number }
+        missing: { type: array, items: { type: string } }
+        eligibility: { $ref: '#/components/schemas/CalorieEligibility' }
+        planStatus: { $ref: '#/components/schemas/CaloriePlanStatus' }
+        planReasonCode:
+          oneOf: [{ $ref: '#/components/schemas/CaloriePlanReasonCode' }, { type: 'null' }]
+        planOptions: { type: array, items: { $ref: '#/components/schemas/CaloriePlanOption' } }
+        minimumDailyCalorieTarget: { type: [integer, 'null'], minimum: 1000 }
+    UserProfileResponse:
+      type: object
+      required: [profile, latest_weight_grams, goal_daily_deficit, calorie_target_adjustment, calorieSummary]
+      properties:
+        profile: { $ref: '#/components/schemas/UserProfile' }
+        latest_weight_grams: { type: [integer, 'null'] }
+        goal_daily_deficit: { type: [integer, 'null'] }
+        calorie_target_adjustment: { type: integer }
+        calorieSummary: { $ref: '#/components/schemas/CalorieSummary' }
+    UserProfileUpdateRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        timezone: { type: [string, 'null'] }
+        date_of_birth: { type: [string, 'null'], format: date }
+        sex: { type: [string, 'null'], enum: [MALE, FEMALE, null] }
+        height_mm: { type: [number, string, 'null'] }
+        height_cm: { type: [number, string, 'null'] }
+        height_feet: { type: [number, string, 'null'] }
+        height_inches: { type: [number, string, 'null'] }
+        activity_level: { type: [string, 'null'], enum: [SEDENTARY, LIGHT, MODERATE, ACTIVE, VERY_ACTIVE, null] }
+    GoalProjection:
+      type: object
+      additionalProperties: false
+      required: [status, projected_end_date, reason_code]
+      properties:
+        status: { type: string, enum: [projected, maintenance, reached, unavailable] }
+        projected_end_date: { type: [string, 'null'], format: date }
+        reason_code:
+          oneOf: [{ $ref: '#/components/schemas/CaloriePlanReasonCode' }, { type: 'null' }]
+    GoalEntry:
+      type: object
+      required: [id, user_id, start_weight, target_weight, target_date, daily_deficit, calorie_plan_review_status, calorie_plan_review_reason, created_at, plan_status, plan_reason_code, projection]
+      properties:
+        id: { type: integer }
+        user_id: { type: integer }
+        start_weight: { type: number }
+        target_weight: { type: number }
+        target_date: { type: [string, 'null'], format: date-time }
+        daily_deficit: { type: integer }
+        calorie_plan_review_status: { type: string, enum: [CLEAR, REQUIRES_REVIEW] }
+        calorie_plan_review_reason: { type: [string, 'null'] }
+        created_at: { type: string, format: date-time }
+        plan_status: { $ref: '#/components/schemas/CaloriePlanStatus' }
+        plan_reason_code:
+          oneOf: [{ $ref: '#/components/schemas/CaloriePlanReasonCode' }, { type: 'null' }]
+        projection: { $ref: '#/components/schemas/GoalProjection' }
+    GoalCreateRequest:
+      type: object
+      additionalProperties: false
+      required: [start_weight, target_weight, daily_deficit]
+      properties:
+        start_weight: { type: number }
+        target_weight: { type: number }
+        target_date: { type: [string, 'null'], format: date-time }
+        daily_deficit: { type: integer, enum: [-1000, -750, -500, -250, 0, 250, 500, 750, 1000] }
     MetricEntry:
       type: object
       required: [id, date, weight]
@@ -1009,7 +1291,7 @@ components:
           const: calibrate-account-export
         version:
           type: integer
-          const: 5
+          const: 6
         exported_at:
           type: string
           format: date-time
@@ -1085,13 +1367,15 @@ components:
             data_base64: { type: string, contentEncoding: base64 }
     AccountExportGoal:
       type: object
-      required: [id, start_weight_grams, target_weight_grams, target_date, daily_deficit, created_at]
+      required: [id, start_weight_grams, target_weight_grams, target_date, daily_deficit, calorie_plan_review_status, calorie_plan_review_reason, created_at]
       properties:
         id: { type: integer }
         start_weight_grams: { type: integer }
         target_weight_grams: { type: integer }
         target_date: { type: [string, 'null'], format: date-time }
         daily_deficit: { type: integer }
+        calorie_plan_review_status: { type: string, enum: [CLEAR, REQUIRES_REVIEW] }
+        calorie_plan_review_reason: { type: [string, 'null'] }
         created_at: { type: string, format: date-time }
     AccountExportBodyMetric:
       type: object
@@ -1296,13 +1580,15 @@ components:
         applied_at: { type: [string, 'null'], format: date-time }
     AccountExportCaloriePlanRevision:
       type: object
-      required: [id, source_goal_id, recommendation_id, target_adjustment_kcal, effective_local_date, created_at]
+      required: [id, source_goal_id, recommendation_id, target_adjustment_kcal, effective_local_date, calorie_plan_review_status, calorie_plan_review_reason, created_at]
       properties:
         id: { type: integer }
         source_goal_id: { type: integer }
         recommendation_id: { type: [integer, 'null'] }
         target_adjustment_kcal: { type: integer }
         effective_local_date: { type: string, format: date }
+        calorie_plan_review_status: { type: string, enum: [CLEAR, REQUIRES_REVIEW] }
+        calorie_plan_review_reason: { type: [string, 'null'] }
         created_at: { type: string, format: date-time }
     CalibrationInterval:
       type: object
@@ -1391,14 +1677,17 @@ components:
       properties:
         recommendationId: { type: [integer, 'null'] }
         targetAdjustmentKcal: { type: integer }
-        dailyCalorieBudgetKcal: { type: [integer, 'null'], minimum: 0 }
+        dailyCalorieBudgetKcal: { type: [integer, 'null'], minimum: 1000 }
         effectiveLocalDate: { type: string, format: date }
     CalibrationStatusResponse:
       type: object
-      required: [generatedAt, inputFingerprint, evaluation, recommendation, scheduledChange]
+      required: [generatedAt, inputFingerprint, evaluation, recommendation, scheduledChange, planStatus, planReasonCode]
       properties:
         generatedAt: { type: string, format: date-time }
         inputFingerprint: { type: [string, 'null'] }
+        planStatus: { $ref: '#/components/schemas/CaloriePlanStatus' }
+        planReasonCode:
+          oneOf: [{ $ref: '#/components/schemas/CaloriePlanReasonCode' }, { type: 'null' }]
         evaluation: { $ref: '#/components/schemas/CalibrationEvaluation' }
         recommendation:
           type: [object, 'null']
@@ -1452,7 +1741,7 @@ components:
         - type: object
           required: [weight_grams]
           properties:
-            weight_grams: { type: integer, minimum: 1 }
+            weight_grams: { type: integer, minimum: 25000, maximum: 400000 }
     HealthConnectExerciseUpsert:
       allOf:
         - { $ref: '#/components/schemas/HealthConnectRecordBase' }
@@ -1936,13 +2225,22 @@ components:
     WatchSnapshot:
       type: object
       additionalProperties: false
-      required: [server_time, timezone, local_date, weight_unit, revision, calories, food_day, weight, quick_add, reminders, undo_candidate]
+      required: [server_time, timezone, local_date, weight_unit, revision, plan, calories, food_day, weight, quick_add, reminders, undo_candidate]
       properties:
         server_time: { type: string, format: date-time }
         timezone: { type: string }
         local_date: { type: string, format: date }
         weight_unit: { type: string, enum: [KG, LB] }
         revision: { type: string }
+        plan:
+          type: object
+          additionalProperties: false
+          required: [status, reason_code, minimum_daily_calorie_target]
+          properties:
+            status: { $ref: '#/components/schemas/CaloriePlanStatus' }
+            reason_code:
+              oneOf: [{ $ref: '#/components/schemas/CaloriePlanReasonCode' }, { type: 'null' }]
+            minimum_daily_calorie_target: { type: [integer, 'null'], minimum: 1000 }
         calories:
           type: object
           required: [consumed, target, remaining, missing]
@@ -1965,9 +2263,9 @@ components:
           type: object
           required: [today_grams, today_revision, latest_grams, latest_revision, latest_date]
           properties:
-            today_grams: { type: [integer, 'null'] }
+            today_grams: { type: [integer, 'null'], minimum: 25000, maximum: 400000 }
             today_revision: { type: [string, 'null'] }
-            latest_grams: { type: [integer, 'null'] }
+            latest_grams: { type: [integer, 'null'], minimum: 25000, maximum: 400000 }
             latest_revision: { type: [string, 'null'] }
             latest_date: { type: [string, 'null'], format: date }
         goal:
@@ -1975,15 +2273,16 @@ components:
             - type: 'null'
             - type: object
               additionalProperties: false
-              required: [start_weight_grams, target_weight_grams, current_weight_grams, daily_deficit, progress_percent, remaining_weight_grams, is_complete]
+              required: [start_weight_grams, target_weight_grams, current_weight_grams, daily_deficit, progress_percent, remaining_weight_grams, is_complete, projection]
               properties:
-                start_weight_grams: { type: integer, minimum: 1 }
-                target_weight_grams: { type: integer, minimum: 1 }
-                current_weight_grams: { type: [integer, 'null'], minimum: 1 }
+                start_weight_grams: { type: integer, minimum: 25000, maximum: 400000 }
+                target_weight_grams: { type: integer, minimum: 25000, maximum: 400000 }
+                current_weight_grams: { type: [integer, 'null'], minimum: 25000, maximum: 400000 }
                 daily_deficit: { type: integer, enum: [-1000, -750, -500, -250, 0, 250, 500, 750, 1000] }
                 progress_percent: { type: [number, 'null'], minimum: 0, maximum: 100 }
                 remaining_weight_grams: { type: integer, minimum: 0 }
                 is_complete: { type: boolean }
+                projection: { $ref: '#/components/schemas/GoalProjection' }
         quick_add:
           type: array
           maxItems: 12
@@ -2039,7 +2338,7 @@ components:
               required: [local_date, weight_grams, expected_revision]
               properties:
                 local_date: { type: string, format: date }
-                weight_grams: { type: integer, minimum: 1, maximum: 1000000 }
+                weight_grams: { type: integer, minimum: 25000, maximum: 400000 }
                 expected_revision: { type: [string, 'null'] }
         - type: object
           additionalProperties: false

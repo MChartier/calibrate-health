@@ -23,6 +23,11 @@ export const UX_FIXTURE_STATES = [
 ] as const;
 
 export type UxFixtureState = (typeof UX_FIXTURE_STATES)[number];
+export type CaloriePlanFixtureState =
+  | 'available'
+  | 'requires-review'
+  | 'ineligible'
+  | 'selected-options-unavailable';
 
 type StubMetricEntry = { id: number; date: string; weight: number };
 
@@ -35,6 +40,7 @@ type StubTrendMetricEntry = StubMetricEntry & {
 };
 
 export type AuthenticatedApiOptions = {
+  caloriePlanFixture?: CaloriePlanFixtureState;
   foodDayStatus?: 'OPEN' | 'PAUSED';
   foodEntries?: Array<{
     id: number;
@@ -102,7 +108,22 @@ const PROFILE_RESPONSE = {
   },
   latest_weight_grams: 88_200,
   goal_daily_deficit: 500,
-  calorieSummary: { dailyCalorieTarget: 2_100, tdee: 2_600, bmr: 2_000, deficit: 500, missing: [] },
+  calorieSummary: {
+    dailyCalorieTarget: 2_100,
+    tdee: 2_600,
+    bmr: 2_000,
+    deficit: 500,
+    missing: [],
+    eligibility: {
+      status: 'eligible',
+      reasonCode: null,
+      ageYears: 41,
+      localDate: FROZEN_LOCAL_DATE,
+    },
+    planStatus: 'available',
+    planReasonCode: null,
+    minimumDailyCalorieTarget: 2_000,
+  },
 };
 
 const TREND_METRICS: StubTrendMetricEntry[] = [
@@ -126,7 +147,138 @@ const DEFAULT_GOAL = {
   target_date: null,
   daily_deficit: 500,
   created_at: '2026-07-01T12:00:00.000Z',
+  plan_status: 'available',
+  plan_reason_code: null,
+  projection: {
+    status: 'projected',
+    projected_end_date: '2026-11-20',
+    reason_code: null,
+  },
 };
+
+const AVAILABLE_PLAN_OPTIONS = [-1000, -750, -500, -250, 0, 250, 500, 750, 1000].map((dailyDeficit) => {
+  const dailyCalorieTarget = 2_600 - dailyDeficit;
+  const available = dailyCalorieTarget >= 2_000;
+  return {
+    dailyDeficit,
+    available,
+    dailyCalorieTarget: available ? dailyCalorieTarget : null,
+    reasonCode: available ? null : 'TARGET_BELOW_MINIMUM',
+  };
+});
+
+function getCaloriePlanFixture(state: CaloriePlanFixtureState) {
+  if (state === 'requires-review') {
+    const reasonCode = 'HISTORICAL_PLAN_REQUIRES_REVIEW';
+    return {
+      profile: {
+        ...PROFILE_RESPONSE,
+        calorieSummary: {
+          ...PROFILE_RESPONSE.calorieSummary,
+          dailyCalorieTarget: undefined,
+          missing: ['calorie_plan'],
+          planStatus: 'requires_review',
+          planReasonCode: reasonCode,
+        },
+      },
+      goal: {
+        ...DEFAULT_GOAL,
+        plan_status: 'requires_review',
+        plan_reason_code: reasonCode,
+        projection: { status: 'unavailable', projected_end_date: null, reason_code: reasonCode },
+      },
+      options: {
+        eligibility: PROFILE_RESPONSE.calorieSummary.eligibility,
+        bmr: 2_000,
+        tdee: 2_600,
+        minimumDailyCalorieTarget: 2_000,
+        planOptions: AVAILABLE_PLAN_OPTIONS,
+      },
+    };
+  }
+  if (state === 'ineligible') {
+    const reasonCode = 'AGE_UNDER_18';
+    return {
+      profile: {
+        ...PROFILE_RESPONSE,
+        goal_daily_deficit: null,
+        profile: { ...PROFILE_RESPONSE.profile, date_of_birth: '2010-05-12' },
+        calorieSummary: {
+          missing: ['eligibility'],
+          eligibility: {
+            status: 'ineligible',
+            reasonCode,
+            ageYears: 16,
+            localDate: FROZEN_LOCAL_DATE,
+          },
+          planStatus: 'unavailable',
+          planReasonCode: reasonCode,
+          minimumDailyCalorieTarget: null,
+        },
+      },
+      goal: null,
+      options: {
+        eligibility: {
+          status: 'ineligible',
+          reasonCode,
+          ageYears: 16,
+          localDate: FROZEN_LOCAL_DATE,
+        },
+        bmr: null,
+        tdee: null,
+        minimumDailyCalorieTarget: null,
+        planOptions: AVAILABLE_PLAN_OPTIONS.map((option) => ({
+          ...option,
+          available: false,
+          dailyCalorieTarget: null,
+          reasonCode,
+        })),
+      },
+    };
+  }
+  if (state === 'selected-options-unavailable') {
+    return {
+      profile: {
+        ...PROFILE_RESPONSE,
+        goal_daily_deficit: null,
+        calorieSummary: {
+          ...PROFILE_RESPONSE.calorieSummary,
+          dailyCalorieTarget: undefined,
+          deficit: null,
+          missing: ['goal'],
+          planStatus: 'unavailable',
+          planReasonCode: 'GOAL_REQUIRED',
+        },
+      },
+      goal: null,
+      options: {
+        eligibility: PROFILE_RESPONSE.calorieSummary.eligibility,
+        bmr: 2_000,
+        tdee: 2_600,
+        minimumDailyCalorieTarget: 2_000,
+        planOptions: AVAILABLE_PLAN_OPTIONS.map((option) => option.dailyDeficit === 500
+          ? {
+              ...option,
+              available: false,
+              dailyCalorieTarget: null,
+              reasonCode: 'TARGET_BELOW_MINIMUM',
+            }
+          : option),
+      },
+    };
+  }
+  return {
+    profile: PROFILE_RESPONSE,
+    goal: DEFAULT_GOAL,
+    options: {
+      eligibility: PROFILE_RESPONSE.calorieSummary.eligibility,
+      bmr: 2_000,
+      tdee: 2_600,
+      minimumDailyCalorieTarget: 2_000,
+      planOptions: AVAILABLE_PLAN_OPTIONS,
+    },
+  };
+}
 
 const CALIBRATION_STATUS_RESPONSE = {
   generatedAt: '2026-07-18T12:00:00.000Z',
@@ -290,6 +442,7 @@ async function installAuthenticatedApi(
   const trendMetrics = options.trendMetrics ?? (state === 'empty' ? [] : TREND_METRICS);
   const trendUnavailable = options.trendAvailability === 'unavailable';
   const foodDayStatus = options.foodDayStatus ?? (state === 'paused' ? 'PAUSED' : 'OPEN');
+  const caloriePlan = getCaloriePlanFixture(options.caloriePlanFixture ?? 'available');
   const foodRequestCounts = new Map<string, number>();
   if (state === 'failed-request' || state === 'stale') {
     expectApiFailure(page, { method: 'GET', pathname: '/api/v1/food', status: 503 });
@@ -313,7 +466,8 @@ async function installAuthenticatedApi(
       });
     }
     if (pathname === '/auth/mobile/sessions') return fulfillJson(route, { sessions: [] });
-    if (pathname === '/api/v1/user/profile') return fulfillJson(route, PROFILE_RESPONSE);
+    if (pathname === '/api/v1/user/profile') return fulfillJson(route, caloriePlan.profile);
+    if (pathname === '/api/v1/calorie-plan/options') return fulfillJson(route, caloriePlan.options);
     if (pathname === '/api/v1/notifications/in-app') {
       return fulfillJson(route, { notifications: [], unread_count: 0 });
     }
@@ -386,7 +540,13 @@ async function installAuthenticatedApi(
     if (pathname === '/api/v1/user/tracking-history') {
       return fulfillJson(route, { tracking_start_date: '2026-01-01' });
     }
-    if (pathname === '/api/v1/calibration/status') return fulfillJson(route, CALIBRATION_STATUS_RESPONSE);
+    if (pathname === '/api/v1/calibration/status') {
+      return fulfillJson(route, {
+        ...CALIBRATION_STATUS_RESPONSE,
+        planStatus: caloriePlan.profile.calorieSummary.planStatus,
+        planReasonCode: caloriePlan.profile.calorieSummary.planReasonCode,
+      });
+    }
     if (pathname === '/api/v1/activity/days') {
       const localDate = url.searchParams.get('start') ?? FROZEN_LOCAL_DATE;
       return fulfillJson(route, {
@@ -395,7 +555,7 @@ async function installAuthenticatedApi(
         days: [],
       });
     }
-    if (pathname === '/api/v1/goals') return fulfillJson(route, DEFAULT_GOAL);
+    if (pathname === '/api/v1/goals') return fulfillJson(route, caloriePlan.goal);
     if (pathname === '/api/v1/metrics' && url.searchParams.get('include_trend') === 'true') {
       if (trendUnavailable) {
         const rawTrendMetrics = trendMetrics.map((metric) => ({

@@ -257,7 +257,11 @@ router.post('/health-connect/sync', async (req, res) => {
     );
   } catch (error) {
     recordOutcome(400);
-    return res.status(400).json({ message: error instanceof Error ? error.message : 'Invalid sync request' });
+    const message = error instanceof Error ? error.message : 'Invalid sync request';
+    return res.status(400).json({
+      message,
+      ...(message.includes('weight_grams') ? { code: 'WEIGHT_OUT_OF_RANGE', retryable: false } : {})
+    });
   }
 
   const recordType = parsed.recordType as PrismaActivityRecordType;

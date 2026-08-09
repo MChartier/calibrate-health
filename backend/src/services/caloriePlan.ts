@@ -6,6 +6,8 @@ export type EffectiveCaloriePlan = {
     id: number;
     targetAdjustmentKcal: number;
     effectiveLocalDate: Date;
+    reviewStatus: 'CLEAR' | 'REQUIRES_REVIEW';
+    reviewReason: string | null;
 };
 
 /** Resolve the most recent accepted adjustment effective for a user-local date. */
@@ -22,12 +24,14 @@ export async function getEffectiveCaloriePlan(
             effective_local_date: { lte: localDate }
         },
         orderBy: [{ effective_local_date: 'desc' }, { id: 'desc' }],
-        select: { id: true, target_adjustment_kcal: true, effective_local_date: true }
+        select: { id: true, target_adjustment_kcal: true, effective_local_date: true, calorie_plan_review_status: true, calorie_plan_review_reason: true }
     });
     if (!revision) return null;
     return {
         id: revision.id,
         targetAdjustmentKcal: revision.target_adjustment_kcal,
-        effectiveLocalDate: revision.effective_local_date
+        effectiveLocalDate: revision.effective_local_date,
+        reviewStatus: revision.calorie_plan_review_status,
+        reviewReason: revision.calorie_plan_review_reason
     };
 }

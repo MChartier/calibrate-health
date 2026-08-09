@@ -13,7 +13,7 @@ export type UserClientPayload = {
   reminder_log_weight_enabled: boolean;
   reminder_log_food_enabled: boolean;
   haptics_enabled: boolean;
-  date_of_birth: Date | null;
+  date_of_birth: string | null;
   sex: Sex | null;
   height_mm: number | null;
   activity_level: ActivityLevel | null;
@@ -43,7 +43,8 @@ export const USER_CLIENT_SELECT = {
   profile_image_mime_type: true
 } satisfies Prisma.UserSelect;
 
-export type UserForClient = Omit<UserClientPayload, 'profile_image_url' | 'language'> & {
+export type UserForClient = Omit<UserClientPayload, 'profile_image_url' | 'language' | 'date_of_birth'> & {
+  date_of_birth: Date | null;
   // `User.language` is stored as a string (not a Prisma enum), so validate it before returning to the client.
   language: string;
   profile_image?: Uint8Array | null;
@@ -68,7 +69,7 @@ export const serializeUserForClient = (user: UserForClient): UserClientPayload =
     reminder_log_weight_enabled: user.reminder_log_weight_enabled,
     reminder_log_food_enabled: user.reminder_log_food_enabled,
     haptics_enabled: user.haptics_enabled,
-    date_of_birth: user.date_of_birth,
+    date_of_birth: user.date_of_birth ? user.date_of_birth.toISOString().slice(0, 10) : null,
     sex: user.sex,
     height_mm: user.height_mm,
     activity_level: user.activity_level,

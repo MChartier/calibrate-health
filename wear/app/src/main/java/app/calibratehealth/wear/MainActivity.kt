@@ -32,6 +32,7 @@ import app.calibratehealth.wear.sync.OutboxWorkPolicy
 import app.calibratehealth.wear.sync.OUTBOX_WORK_ERROR_KEY
 import app.calibratehealth.wear.sync.QueuedMutationFactory
 import app.calibratehealth.wear.sync.WorkManagerOutboxScheduler
+import app.calibratehealth.wear.tile.CalibrateTileUpdate
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
@@ -71,6 +72,7 @@ class MainActivity : ComponentActivity() {
             ),
             mutationFactory = QueuedMutationFactory(),
             continueOnPhone = continueOnPhoneMessenger,
+            refreshCalorieGlance = { CalibrateTileUpdate.request(this) },
             scope = controllerScope
         )
         observeOutboxWork()

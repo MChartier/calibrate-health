@@ -1,5 +1,7 @@
 import {
     formatWeightInput,
+    getWeightDisplayBounds,
+    isWeightWithinPolicy,
     isWeightOutlier,
     normalizeWeightInputText,
     parseWeightInput
@@ -24,5 +26,21 @@ describe('weight entry input helpers', () => {
         expect(isWeightOutlier({ value: 75, previousValue: 80, unit: 'KG' })).toBe(true);
         expect(isWeightOutlier({ value: 109, previousValue: 100, unit: 'LB' })).toBe(false);
         expect(isWeightOutlier({ value: 70, previousValue: null, unit: 'KG' })).toBe(false);
+    });
+
+    it('enforces exact kilogram display boundaries', () => {
+        expect(isWeightWithinPolicy(24.9, 'KG')).toBe(false);
+        expect(isWeightWithinPolicy(25, 'KG')).toBe(true);
+        expect(isWeightWithinPolicy(400, 'KG')).toBe(true);
+        expect(isWeightWithinPolicy(400.1, 'KG')).toBe(false);
+        expect(getWeightDisplayBounds('KG')).toEqual({ minimum: 25, maximum: 400 });
+    });
+
+    it('enforces canonical grams after pound tenth rounding', () => {
+        expect(isWeightWithinPolicy(55.1, 'LB')).toBe(false);
+        expect(isWeightWithinPolicy(55.2, 'LB')).toBe(true);
+        expect(isWeightWithinPolicy(881.8, 'LB')).toBe(true);
+        expect(isWeightWithinPolicy(881.9, 'LB')).toBe(false);
+        expect(getWeightDisplayBounds('LB')).toEqual({ minimum: 55.2, maximum: 881.8 });
     });
 });

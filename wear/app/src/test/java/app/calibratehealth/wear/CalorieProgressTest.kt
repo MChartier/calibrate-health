@@ -40,6 +40,22 @@ class CalorieProgressTest {
     }
 
     @Test
+    fun `pending weight mutation suppresses cached target and projection until snapshot refresh`() {
+        val cached = summary(caloriesRemaining = 640).copy(
+            goalProjectionStatus = "projected",
+            goalProjectedEndDate = "2026-10-10"
+        )
+        val pending = cached.suppressPlanForPendingWeight(setOf("metric.upsert"))
+
+        assertEquals(WEIGHT_SYNCING_PLAN_STATUS, pending.planStatus)
+        assertEquals(null, pending.calorieTarget)
+        assertEquals(null, pending.caloriesRemaining)
+        assertEquals("Projection unavailable", goalProjectionLabel(pending))
+        assertEquals("Rechecking calorie plan", goalProgressHeadline(pending))
+        assertEquals(cached, cached.suppressPlanForPendingWeight(setOf("food.create")))
+    }
+
+    @Test
     fun `goal copy prioritizes progress and handles completion`() {
         val goal = summary(caloriesRemaining = 640).copy(
             goalStartWeightGrams = 90_000,
@@ -48,27 +64,40 @@ class CalorieProgressTest {
             goalDailyDeficit = 500,
             goalProgressPercent = 42.0,
             goalRemainingWeightGrams = 5_800,
-            goalIsComplete = false
+            goalIsComplete = false,
+            goalProjectionStatus = "projected",
+            goalProjectedEndDate = "2026-10-10"
         )
 
         assertEquals("42% to goal", goalProgressHeadline(goal))
         assertEquals(0.42f, goalProgressFraction(goal))
         assertEquals("Current 85.8 kg | Goal 80.0 kg", goalProgressDetail(goal))
         assertEquals("Projected Oct 10, 2026", goalProjectionLabel(goal))
-        assertEquals("Projected Oct 10, 2026", goalProjectionLabel(goal.copy(goalDailyDeficit = -500)))
         assertEquals("Goal reached", goalProgressHeadline(goal.copy(goalIsComplete = true)))
         assertEquals(1f, goalProgressFraction(goal.copy(goalIsComplete = true)))
-        assertEquals("Goal reached", goalProjectionLabel(goal.copy(goalIsComplete = true)))
-        assertEquals("Maintenance goal", goalProgressHeadline(goal.copy(goalDailyDeficit = 0, goalIsComplete = true)))
-        assertEquals(null, goalProgressFraction(goal.copy(goalDailyDeficit = 0, goalIsComplete = true)))
-        assertEquals("No projected date", goalProjectionLabel(goal.copy(goalDailyDeficit = 0)))
+        assertEquals("Goal reached", goalProjectionLabel(goal.copy(goalProjectionStatus = "reached", goalProjectedEndDate = null)))
+        val maintenance = goal.copy(
+            goalDailyDeficit = 0,
+            goalIsComplete = true,
+            goalProjectionStatus = "maintenance",
+            goalProjectedEndDate = null
+        )
+        assertEquals("Maintenance goal", goalProgressHeadline(maintenance))
+        assertEquals(null, goalProgressFraction(maintenance))
+        assertEquals("No projected date", goalProjectionLabel(maintenance))
         assertEquals(
             "Maintenance goal. Current 85.8 kg. Goal 80.0 kg. 5.8 kg from target. No projected date.",
-            goalAccessibilityDescription(goal.copy(goalDailyDeficit = 0, goalIsComplete = true))
+            goalAccessibilityDescription(maintenance)
         )
         assertEquals(
             "Projection unavailable",
-            goalProjectionLabel(goal.copy(localDate = "not-a-date"))
+            goalProjectionLabel(goal.copy(goalProjectedEndDate = "not-a-date"))
+        )
+        assertEquals("Projection unavailable", goalProjectionLabel(goal.copy(planStatus = "requires_review")))
+        assertEquals("Review calorie plan", goalProgressHeadline(goal.copy(planStatus = "requires_review")))
+        assertEquals(
+            "Review calorie plan. Current 85.8 kg. Goal 80.0 kg. 5.8 kg remaining. Projection unavailable.",
+            goalAccessibilityDescription(goal.copy(planStatus = "requires_review"))
         )
     }
 
@@ -77,6 +106,7 @@ class CalorieProgressTest {
         caloriesRemaining = caloriesRemaining,
         caloriesConsumed = 1_360,
         calorieTarget = 2_000,
+        planStatus = "available",
         foodDayComplete = false,
         foodDayRevision = null,
         todayWeightGrams = 72_400,

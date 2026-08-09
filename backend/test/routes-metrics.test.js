@@ -30,13 +30,19 @@ function loadMetricsRouter(prismaStub) {
   const metricsPath = require.resolve('../src/routes/metrics');
   const materializedTrendPath = require.resolve('../src/services/materializedWeightTrend');
   const clientOperationsPath = require.resolve('../src/services/clientOperations');
+  const caloriePlanningPath = require.resolve('../src/services/caloriePlanning');
+  const caloriePlanReviewPath = require.resolve('../src/services/caloriePlanReview');
 
   const previousDbModule = require.cache[dbPath];
   const previousMaterializedTrendModule = require.cache[materializedTrendPath];
   const previousClientOperationsModule = require.cache[clientOperationsPath];
+  const previousCaloriePlanningModule = require.cache[caloriePlanningPath];
+  const previousCaloriePlanReviewModule = require.cache[caloriePlanReviewPath];
   delete require.cache[metricsPath];
   delete require.cache[materializedTrendPath];
   delete require.cache[clientOperationsPath];
+  delete require.cache[caloriePlanningPath];
+  delete require.cache[caloriePlanReviewPath];
 
   const normalizedPrismaStub = {
     ...prismaStub,
@@ -58,8 +64,21 @@ function loadMetricsRouter(prismaStub) {
       ...(prismaStub.bodyMetricTrend ?? {})
     },
     user: {
-      findUnique: async () => ({ timezone: 'UTC' }),
+      findUnique: async () => ({
+        id: 7, timezone: 'UTC', date_of_birth: new Date('1990-01-01T00:00:00.000Z'),
+        sex: 'MALE', height_mm: 1800, activity_level: 'MODERATE', weight_unit: 'KG', height_unit: 'CM'
+      }),
       ...(prismaStub.user ?? {})
+    },
+    caloriePlanRevision: {
+      findFirst: async () => null,
+      findMany: async () => [],
+      updateMany: async () => ({ count: 0 }),
+      ...(prismaStub.caloriePlanRevision ?? {})
+    },
+    calibrationRecommendation: {
+      updateMany: async () => ({ count: 0 }),
+      ...(prismaStub.calibrationRecommendation ?? {})
     },
     syncChange: {
       create: async () => ({ id: 1n }),
@@ -87,6 +106,10 @@ function loadMetricsRouter(prismaStub) {
   } else {
     delete require.cache[clientOperationsPath];
   }
+  if (previousCaloriePlanningModule) require.cache[caloriePlanningPath] = previousCaloriePlanningModule;
+  else delete require.cache[caloriePlanningPath];
+  if (previousCaloriePlanReviewModule) require.cache[caloriePlanReviewPath] = previousCaloriePlanReviewModule;
+  else delete require.cache[caloriePlanReviewPath];
 
   return loaded.default ?? loaded;
 }
@@ -1414,7 +1437,7 @@ test('metrics route: POST / evaluates goal recognition from pre-save history ins
   const prismaStub = {
     bodyMetric: {
       findUnique: async () => null,
-      findFirst: async () => ({ id: 8 }),
+      findFirst: async () => ({ id: 8, weight_grams: 79_000 }),
       findMany: async ({ where }) => {
         historyWhere = where;
         return [{ date: priorDate, weight_grams: 85000 }];
@@ -1428,7 +1451,10 @@ test('metrics route: POST / evaluates goal recognition from pre-save history ins
         start_weight_grams: 100000,
         target_weight_grams: 80000,
         daily_deficit: 500,
-        created_at: addUtcDays(today, -30)
+        created_at: addUtcDays(today, -30),
+        target_date: null,
+        calorie_plan_review_status: 'CLEAR',
+        calorie_plan_review_reason: null
       })
     }
   };
@@ -1505,4 +1531,75 @@ test('metrics route: DELETE /:id returns 204 when a row is deleted', async () =>
   await handler(req, res);
 
   assert.equal(res.statusCode, 204);
+});
+
+test('metrics route: POST / saves a bounded weight but suppresses an unsafe goal progress receipt and marks review', async () => {
+  const today = getUtcTodayDateOnly();
+  const todayKey = formatDateOnly(today);
+  let goalReview = null;
+  const goal = {
+    id: 4, user_id: 7, start_weight_grams: 80_000, target_weight_grams: 70_000, daily_deficit: 500,
+    created_at: addUtcDays(today, -30), target_date: null,
+    calorie_plan_review_status: 'CLEAR', calorie_plan_review_reason: null
+  };
+  const metric = { id: 15, user_id: 7, date: today, weight_grams: 25_000, body_fat_percent: null };
+  const prismaStub = {
+    user: { findUnique: async () => ({
+      id: 7, timezone: 'UTC', date_of_birth: new Date('1906-08-08T00:00:00.000Z'), sex: 'MALE',
+      height_mm: 1_000, activity_level: 'MODERATE', weight_unit: 'KG', height_unit: 'CM'
+    }) },
+    bodyMetric: {
+      findUnique: async () => null,
+      findFirst: async () => metric,
+      findMany: async () => [],
+      upsert: async () => metric
+    },
+    goal: {
+      findFirst: async () => goal,
+      update: async ({ data }) => { goalReview = data; return { ...goal, ...data }; }
+    }
+  };
+  const router = loadMetricsRouter(prismaStub);
+  const handler = getRouteHandler(router, 'post', '/');
+  const res = createRes();
+
+  await handler({ user: { id: 7, weight_unit: 'KG', timezone: 'UTC' }, body: { date: todayKey, weight: 25 } }, res);
+
+  assert.equal(res.statusCode, 200);
+  assert.equal(res.body.weight, 25);
+  assert.equal('progress_update' in res.body, false);
+  assert.deepEqual(goalReview, {
+    calorie_plan_review_status: 'REQUIRES_REVIEW',
+    calorie_plan_review_reason: 'TARGET_BELOW_MINIMUM'
+  });
+});
+
+test('metrics route: DELETE /:id marks the current plan when deleting the latest weight makes it unsafe', async () => {
+  let goalReview = null;
+  const goal = {
+    id: 4, user_id: 7, start_weight_grams: 80_000, target_weight_grams: 70_000, daily_deficit: 250,
+    created_at: new Date('2026-01-01T00:00:00.000Z'), target_date: null,
+    calorie_plan_review_status: 'CLEAR', calorie_plan_review_reason: null
+  };
+  const prismaStub = {
+    bodyMetric: {
+      deleteMany: async () => ({ count: 1 }),
+      findFirst: async () => null
+    },
+    goal: {
+      findFirst: async () => goal,
+      update: async ({ data }) => { goalReview = data; return { ...goal, ...data }; }
+    }
+  };
+  const router = loadMetricsRouter(prismaStub);
+  const handler = getRouteHandler(router, 'delete', '/:id');
+  const res = createRes();
+
+  await handler({ user: { id: 7 }, params: { id: '123' } }, res);
+
+  assert.equal(res.statusCode, 204);
+  assert.deepEqual(goalReview, {
+    calorie_plan_review_status: 'REQUIRES_REVIEW',
+    calorie_plan_review_reason: 'LATEST_WEIGHT_REQUIRED'
+  });
 });

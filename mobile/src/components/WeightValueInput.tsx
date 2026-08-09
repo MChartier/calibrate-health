@@ -26,6 +26,7 @@ type WeightValueInputProps = {
     unit: WeightUnit | undefined;
     step: number;
     min: number;
+    max?: number;
     editable: boolean;
     inputRef?: React.RefObject<TextInput | null>;
     onChangeText: (value: string) => void;
@@ -47,6 +48,7 @@ export const WeightValueInput: React.FC<WeightValueInputProps> = ({
     unit,
     step,
     min,
+    max,
     editable,
     inputRef,
     onChangeText,
@@ -61,7 +63,7 @@ export const WeightValueInput: React.FC<WeightValueInputProps> = ({
 
     function adjust(delta: number) {
         const baseline = parsedValue ?? 0;
-        const nextValue = Math.max(min, baseline + delta);
+        const nextValue = Math.min(max ?? Number.POSITIVE_INFINITY, Math.max(min, baseline + delta));
         onChangeText(formatWeightInput(nextValue));
         onStep?.();
     }

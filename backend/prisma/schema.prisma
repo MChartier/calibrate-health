@@ -99,6 +99,11 @@ enum CalibrationRecommendationStatus {
   STALE
 }
 
+enum CaloriePlanReviewStatus {
+  CLEAR
+  REQUIRES_REVIEW
+}
+
 model User {
   id            Int       @id @default(autoincrement())
   email         String    @unique
@@ -117,7 +122,7 @@ model User {
   reminder_log_food_enabled   Boolean @default(true)
   /// Account-level preference that enables/disables app haptic feedback patterns.
   haptics_enabled             Boolean @default(true)
-  date_of_birth DateTime?
+  date_of_birth DateTime? @db.Date
   sex           Sex?
   height_mm     Int?
   activity_level ActivityLevel?
@@ -255,6 +260,8 @@ model Goal {
   target_weight_grams Int
   target_date   DateTime?
   daily_deficit Int       @default(500)
+  calorie_plan_review_status CaloriePlanReviewStatus @default(CLEAR)
+  calorie_plan_review_reason String?
   created_at    DateTime  @default(now())
   calibration_recommendations CalibrationRecommendation[]
   calorie_plan_revisions CaloriePlanRevision[]
@@ -419,6 +426,8 @@ model CaloriePlanRevision {
   recommendation_id      Int?                       @unique
   recommendation         CalibrationRecommendation? @relation(fields: [recommendation_id], references: [id], onDelete: SetNull)
   target_adjustment_kcal Int
+  calorie_plan_review_status CaloriePlanReviewStatus @default(CLEAR)
+  calorie_plan_review_reason String?
   effective_local_date   DateTime                   @db.Date
   created_at             DateTime                   @default(now())
 

@@ -11,6 +11,7 @@ import {
     type HeightUnit,
     type WeightUnit
 } from '@calibrate/shared';
+import type { CaloriePlanOptionsRequest } from '@calibrate/api-client';
 import { AppButton } from '../src/components/AppButton';
 import { AppCard } from '../src/components/AppCard';
 import { AppText } from '../src/components/AppText';
@@ -55,6 +56,14 @@ import { radius, spacing, useAppTheme } from '../src/theme';
 import { WEIGHT_INPUT_INCREMENT } from '../src/config/inputPrecision';
 import { ASYNC_RESOURCE_STATES, isNeverEmpty } from '../src/asyncState/resolveAsyncState';
 import { getSafeActionErrorMessage } from '../src/errors/presentation';
+import { getCaloriePlanPresentation } from '../src/caloriePlanning/presentation';
+import { getMinimumDateOfBirth } from '../src/caloriePlanning/dateBounds';
+import { getHeightPolicyError, isHeightWithinPolicy } from '../src/caloriePlanning/heightInput';
+import {
+    getWeightDisplayBounds,
+    getWeightPolicyError,
+    isWeightWithinPolicy
+} from '../src/weightEntry/input';
 
 const ONBOARDING_CONTENT_MAX_WIDTH = 760; // Keeps the wizard and its error gate readable on desktop.
 
@@ -65,9 +74,17 @@ function getTargetWeightForGoal(goalMode: GoalMode, currentWeight: string, targe
     return targetWeight;
 }
 
-function validateGoal(goalMode: GoalMode, currentWeight: number, targetWeight: number): string | null {
+function validateGoal(
+    goalMode: GoalMode,
+    currentWeight: number,
+    targetWeight: number,
+    weightUnit: WeightUnit
+): string | null {
     if (!Number.isFinite(currentWeight) || currentWeight <= 0 || !Number.isFinite(targetWeight) || targetWeight <= 0) {
         return 'Enter a valid current and target weight.';
+    }
+    if (!isWeightWithinPolicy(currentWeight, weightUnit) || !isWeightWithinPolicy(targetWeight, weightUnit)) {
+        return getWeightPolicyError(weightUnit);
     }
     if (goalMode === 'lose' && targetWeight >= currentWeight) {
         return 'For a loss goal, target weight must be below current weight.';
@@ -113,18 +130,80 @@ export default function OnboardingScreen() {
     const [validationError, setValidationError] = useState<string | null>(null);
     const [setupSaved, setSetupSaved] = useState(false);
     const [isFinishing, setIsFinishing] = useState(false);
+    const weightBounds = getWeightDisplayBounds(weightUnit);
     const optionalStartIndex = onboardingSteps.findIndex(({ key }) => isOptionalConnectionStep(key));
     const minimumSelectableStepIndex = setupSaved && optionalStartIndex >= 0 ? optionalStartIndex : 0;
 
     const signedDailyDeficit = getSignedDailyDeficit(goalMode, dailyChangeAbs);
+    const hasExplicitDailyChange = goalMode === 'maintain'
+        || DAILY_GOAL_CHANGE_OPTIONS.some((value) => String(value) === dailyChangeAbs);
     const resolvedTargetWeight = getTargetWeightForGoal(goalMode, currentWeight, targetWeight);
+    const caloriePlanDraft = useMemo<CaloriePlanOptionsRequest | null>(() => {
+        const parsedWeight = Number(currentWeight);
+        const parsedHeightCm = Number(heightCm);
+        const parsedHeightFeet = Number(heightFeet);
+        const parsedHeightInches = Number(heightInches || '0');
+        if (
+            !timezone.trim() ||
+            !dateOfBirth.trim() ||
+            !sex ||
+            !activityLevel ||
+            !Number.isFinite(parsedWeight) ||
+            (heightUnit === HEIGHT_UNITS.CM
+                ? !Number.isFinite(parsedHeightCm)
+                : !Number.isFinite(parsedHeightFeet) || !Number.isFinite(parsedHeightInches))
+        ) {
+            return null;
+        }
+        return {
+            timezone: timezone.trim(),
+            date_of_birth: dateOfBirth,
+            sex,
+            activity_level: activityLevel,
+            height: heightUnit === HEIGHT_UNITS.CM
+                ? { unit: 'CM', centimeters: parsedHeightCm }
+                : { unit: 'FT_IN', feet: parsedHeightFeet, inches: parsedHeightInches },
+            weight: { unit: weightUnit, value: parsedWeight }
+        };
+    }, [
+        activityLevel,
+        currentWeight,
+        dateOfBirth,
+        heightCm,
+        heightFeet,
+        heightInches,
+        heightUnit,
+        sex,
+        timezone,
+        weightUnit
+    ]);
+    const planOptionsQuery = useQuery({
+        queryKey: ['calorie-plan-options', caloriePlanDraft],
+        queryFn: () => api.getCaloriePlanOptions(caloriePlanDraft!),
+        enabled: caloriePlanDraft !== null
+    });
+    const planPreviewState = useAsyncResourceState(planOptionsQuery, isNeverEmpty);
+    const selectedPlanOption = hasExplicitDailyChange
+        ? planOptionsQuery.data?.planOptions.find((option) => option.dailyDeficit === signedDailyDeficit)
+        : undefined;
     const canSubmit = currentWeight.trim().length > 0 &&
         resolvedTargetWeight.trim().length > 0 &&
         timezone.trim().length > 0 &&
         dateOfBirth.trim().length > 0 &&
         Boolean(sex) &&
         Boolean(activityLevel) &&
-        (heightUnit === HEIGHT_UNITS.CM ? heightCm.trim().length > 0 : heightFeet.trim().length > 0);
+        (heightUnit === HEIGHT_UNITS.CM ? heightCm.trim().length > 0 : heightFeet.trim().length > 0) &&
+        hasExplicitDailyChange &&
+        planOptionsQuery.data?.eligibility.status === 'eligible' &&
+        selectedPlanOption?.available === true;
+
+    useEffect(() => {
+        if (goalMode === 'maintain' || !dailyChangeAbs || !planOptionsQuery.data) return;
+        if (selectedPlanOption?.available !== true) {
+            setDailyChangeAbs('');
+            setIsDailyChangeSelectorOpen(false);
+        }
+    }, [dailyChangeAbs, goalMode, planOptionsQuery.data, selectedPlanOption?.available]);
 
     useEffect(() => {
         if (!profileQuery.data) return;
@@ -154,13 +233,21 @@ export default function OnboardingScreen() {
         mutationFn: async () => {
             const parsedCurrentWeight = Number(currentWeight);
             const parsedTargetWeight = Number(resolvedTargetWeight);
-            const goalError = validateGoal(goalMode, parsedCurrentWeight, parsedTargetWeight);
+            const goalError = validateGoal(goalMode, parsedCurrentWeight, parsedTargetWeight, weightUnit);
             if (goalError) {
                 throw new Error(goalError);
             }
 
             if (!sex || !activityLevel) {
                 throw new Error('Complete sex and activity level.');
+            }
+            if (!isHeightWithinPolicy({
+                unit: heightUnit,
+                centimeters: Number(heightCm),
+                feet: Number(heightFeet),
+                inches: Number(heightInches || '0')
+            })) {
+                throw new Error(getHeightPolicyError(heightUnit));
             }
 
             const resolvedTimezone = timezone.trim() || 'UTC';
@@ -220,12 +307,6 @@ export default function OnboardingScreen() {
         }
     });
 
-    const projectedTarget = useMemo(() => {
-        const current = Number(currentWeight);
-        if (!Number.isFinite(current) || signedDailyDeficit === 0) return null;
-        return formatDailyGoalChange(signedDailyDeficit);
-    }, [currentWeight, signedDailyDeficit]);
-
     if (!user) {
         return <Redirect href="/(auth)/login" />;
     }
@@ -265,10 +346,24 @@ export default function OnboardingScreen() {
     function validateStep(step: OnboardingStepKey): string | null {
         switch (step) {
             case 'goal':
-                return validateGoal(goalMode, Number(currentWeight), Number(resolvedTargetWeight));
+                return validateGoal(goalMode, Number(currentWeight), Number(resolvedTargetWeight), weightUnit);
             case 'pace':
+                if (planOptionsQuery.isError) {
+                    return 'Retry the calorie plan check before continuing.';
+                }
+                if (planOptionsQuery.isPending || !planOptionsQuery.data) {
+                    return 'Wait for Calibrate to check the available calorie plans.';
+                }
+                if (planOptionsQuery.data.eligibility.status !== 'eligible') {
+                    return getCaloriePlanPresentation(
+                        planOptionsQuery.data.eligibility.reasonCode
+                    ).message;
+                }
                 if (goalMode !== 'maintain' && !DAILY_GOAL_CHANGE_OPTIONS.some((value) => String(value) === dailyChangeAbs)) {
                     return 'Choose a daily calorie change.';
+                }
+                if (selectedPlanOption?.available !== true) {
+                    return getCaloriePlanPresentation(selectedPlanOption?.reasonCode).message;
                 }
                 return null;
             case 'about':
@@ -285,6 +380,14 @@ export default function OnboardingScreen() {
                 }
                 if (heightUnit === HEIGHT_UNITS.FT_IN && !heightFeet.trim()) {
                     return 'Enter your height.';
+                }
+                if (!isHeightWithinPolicy({
+                    unit: heightUnit,
+                    centimeters: Number(heightCm),
+                    feet: Number(heightFeet),
+                    inches: Number(heightInches || '0')
+                })) {
+                    return getHeightPolicyError(heightUnit);
                 }
                 if (!timezone.trim()) {
                     return 'Enter your timezone.';
@@ -367,7 +470,8 @@ export default function OnboardingScreen() {
                                     if (goalMode === 'maintain') setTargetWeight(value);
                                 }}
                                 step={WEIGHT_INPUT_INCREMENT}
-                                min={WEIGHT_INPUT_INCREMENT}
+                                min={weightBounds.minimum}
+                                max={weightBounds.maximum}
                                 suffix={formatWeightUnit(weightUnit)}
                             />
                             <NumberStepperField
@@ -375,7 +479,8 @@ export default function OnboardingScreen() {
                                 value={resolvedTargetWeight}
                                 onChangeText={setTargetWeight}
                                 step={WEIGHT_INPUT_INCREMENT}
-                                min={WEIGHT_INPUT_INCREMENT}
+                                min={weightBounds.minimum}
+                                max={weightBounds.maximum}
                                 suffix={formatWeightUnit(weightUnit)}
                             />
                         </View>
@@ -405,10 +510,37 @@ export default function OnboardingScreen() {
                                         setDailyChangeAbs(value);
                                         setIsDailyChangeSelectorOpen(false);
                                     }}
+                                    planOptions={planOptionsQuery.data?.planOptions}
                                 />
-                                {projectedTarget && <AppText variant="muted">Plan pace: {projectedTarget}.</AppText>}
                             </>
                         )}
+                        <AsyncStateBoundary
+                            state={planPreviewState}
+                            resourceLabel="calorie plan options"
+                            loading={<AppText variant="muted">Checking available calorie plans...</AppText>}
+                            empty={<AppText variant="muted">No calorie plan options are available.</AppText>}
+                            onRetry={isOnline ? () => planOptionsQuery.refetch() : undefined}
+                            retrying={planOptionsQuery.isFetching}
+                        >
+                            {planOptionsQuery.data && (
+                                planOptionsQuery.data.eligibility.status === 'eligible' ? (
+                                    <AppText variant="muted">
+                                        {selectedPlanOption?.dailyCalorieTarget
+                                            ? `Server target: ${selectedPlanOption.dailyCalorieTarget.toLocaleString()} kcal/day. Minimum: ${planOptionsQuery.data.minimumDailyCalorieTarget?.toLocaleString() ?? '-'} kcal/day.`
+                                            : 'Choose an available option to see the server-calculated target.'}
+                                    </AppText>
+                                ) : (
+                                    <View style={[styles.infoPanel, { backgroundColor: themeColors.warningContainer }]}>
+                                        <Ionicons name="information-circle-outline" size={18} color={themeColors.onWarningContainer} />
+                                        <AppText style={[styles.infoText, { color: themeColors.onWarningContainer }]}>
+                                            {getCaloriePlanPresentation(
+                                                planOptionsQuery.data.eligibility.reasonCode
+                                            ).message}
+                                        </AppText>
+                                    </View>
+                                )
+                            )}
+                        </AsyncStateBoundary>
                         <PlanSummary
                             currentWeight={currentWeight}
                             targetWeight={resolvedTargetWeight}
@@ -421,6 +553,7 @@ export default function OnboardingScreen() {
                 return (
                     <ProfileIdentityFields
                         dateOfBirth={dateOfBirth}
+                        minimumDate={getMinimumDateOfBirth(getTodayDate(timezone))}
                         maximumDate={getTodayDate(timezone)}
                         onDateOfBirthChange={setDateOfBirth}
                         sex={sex}
@@ -523,6 +656,13 @@ export default function OnboardingScreen() {
     }
 
     const navigationPending = setupMutation.isPending || isFinishing;
+    const paceBlocked = activeStep.key === 'pace' && (
+        planOptionsQuery.isPending ||
+        planOptionsQuery.isError ||
+        !hasExplicitDailyChange ||
+        planOptionsQuery.data?.eligibility.status !== 'eligible' ||
+        selectedPlanOption?.available !== true
+    );
     let primaryActionTitle = getNextButtonTitle(nextStep?.key);
     if (setupMutation.isPending) {
         primaryActionTitle = 'Saving...';
@@ -590,7 +730,7 @@ export default function OnboardingScreen() {
                         />
                         <AppButton
                             title={primaryActionTitle}
-                            disabled={(activeStep.key === 'review' && !canSubmit) || navigationPending}
+                            disabled={(activeStep.key === 'review' && !canSubmit) || paceBlocked || navigationPending}
                             leftIcon={<Ionicons name={!nextStep ? 'checkmark' : 'chevron-forward'} size={18} color={themeColors.onPrimary} />}
                             onPress={handleNext}
                             style={styles.actionButton}

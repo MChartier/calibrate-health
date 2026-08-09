@@ -17,6 +17,8 @@ function loadUserRouter({ prismaStub, bcryptStub, accountLifecycleStub }) {
   const accountLifecyclePath = require.resolve('../src/services/accountLifecycle');
   const clientOperationsPath = require.resolve('../src/services/clientOperations');
   const caloriePlanPath = require.resolve('../src/services/caloriePlan');
+  const caloriePlanningPath = require.resolve('../src/services/caloriePlanning');
+  const caloriePlanReviewPath = require.resolve('../src/services/caloriePlanReview');
   const userPath = require.resolve('../src/routes/user');
 
   const previousDbModule = require.cache[dbPath];
@@ -26,6 +28,8 @@ function loadUserRouter({ prismaStub, bcryptStub, accountLifecycleStub }) {
   const previousAccountLifecycleModule = require.cache[accountLifecyclePath];
   const previousClientOperationsModule = require.cache[clientOperationsPath];
   const previousCaloriePlanModule = require.cache[caloriePlanPath];
+  const previousCaloriePlanningModule = require.cache[caloriePlanningPath];
+  const previousCaloriePlanReviewModule = require.cache[caloriePlanReviewPath];
 
   delete require.cache[userPath];
   delete require.cache[mobileAuthPath];
@@ -33,11 +37,14 @@ function loadUserRouter({ prismaStub, bcryptStub, accountLifecycleStub }) {
   delete require.cache[accountLifecyclePath];
   delete require.cache[clientOperationsPath];
   delete require.cache[caloriePlanPath];
+  delete require.cache[caloriePlanningPath];
+  delete require.cache[caloriePlanReviewPath];
 
   const normalizedPrismaStub = {
     ...prismaStub,
     caloriePlanRevision: {
       findFirst: async () => null,
+      findMany: async () => [],
       ...(prismaStub.caloriePlanRevision ?? {})
     },
     syncChange: {
@@ -72,6 +79,10 @@ function loadUserRouter({ prismaStub, bcryptStub, accountLifecycleStub }) {
 
   if (previousCaloriePlanModule) require.cache[caloriePlanPath] = previousCaloriePlanModule;
   else delete require.cache[caloriePlanPath];
+  if (previousCaloriePlanningModule) require.cache[caloriePlanningPath] = previousCaloriePlanningModule;
+  else delete require.cache[caloriePlanningPath];
+  if (previousCaloriePlanReviewModule) require.cache[caloriePlanReviewPath] = previousCaloriePlanReviewModule;
+  else delete require.cache[caloriePlanReviewPath];
 
   return loaded.default ?? loaded;
 }
@@ -373,7 +384,7 @@ test('user route: PATCH /password updates password when current password matches
 test('user route: GET /account/export returns a no-store attachment', async () => {
   const accountExport = {
     format: 'calibrate-account-export',
-    version: 5,
+    version: 6,
     exported_at: '2026-07-11T20:00:00.000Z'
   };
   const router = loadUserRouter({
@@ -618,7 +629,11 @@ test('user route: GET /profile reads the latest goal with deterministic ordering
     goal: {
       findFirst: async (args) => {
         goalFindFirstArgs = args;
-        return { id: 41, daily_deficit: 500 };
+        return {
+          id: 41, user_id: 7, start_weight_grams: 75_000, target_weight_grams: 70_000,
+          target_date: null, daily_deficit: 500, created_at: new Date('2026-01-01T00:00:00.000Z'),
+          calorie_plan_review_status: 'CLEAR', calorie_plan_review_reason: null
+        };
       }
     },
     caloriePlanRevision: {
@@ -645,4 +660,80 @@ test('user route: GET /profile reads the latest goal with deterministic ordering
   assert.deepEqual(goalFindFirstArgs.orderBy, [{ created_at: 'desc' }, { id: 'desc' }]);
   assert.equal(revisionFindFirstArgs.where.source_goal_id, 41);
   assert.equal(res.body.goal_daily_deficit, 500);
+});
+
+test('user route: PATCH /profile persists a truthful valid under-18 date without enabling planning', async () => {
+  let updateData = null;
+  const storedUser = {
+    id: 7, email: 'minor@example.com', created_at: new Date('2026-01-01T00:00:00.000Z'),
+    timezone: 'UTC', date_of_birth: null, sex: 'FEMALE', height_mm: 1650, activity_level: 'LIGHT',
+    weight_unit: 'KG', height_unit: 'CM', language: 'en', reminder_log_weight_enabled: true,
+    reminder_log_food_enabled: true, haptics_enabled: true, profile_image: null, profile_image_mime_type: null
+  };
+  const prismaStub = {
+    user: {
+      findUnique: async () => storedUser,
+      update: async ({ data }) => { updateData = data; return { ...storedUser, ...data }; }
+    },
+    goal: { findFirst: async () => null },
+    bodyMetric: { findFirst: async () => ({ weight_grams: 60_000 }) },
+    caloriePlanRevision: { findFirst: async () => null }
+  };
+  const router = loadUserRouter({ prismaStub, bcryptStub: {} });
+  const handler = getRouteHandler(router, 'patch', '/profile');
+  const res = createRes();
+
+  await handler({ user: { id: 7 }, body: { date_of_birth: '2010-08-08' } }, res);
+
+  assert.equal(res.statusCode, 200);
+  assert.equal(updateData.date_of_birth.toISOString(), '2010-08-08T00:00:00.000Z');
+  assert.equal(res.body.user.date_of_birth, '2010-08-08');
+});
+
+test('user route: PATCH /profile fails invalid legacy timezones closed and marks the current goal in the same transaction', async () => {
+  let inTransaction = false;
+  let goalReview = null;
+  let revisionReview = null;
+  let staleRecommendations = null;
+  const storedUser = {
+    id: 7, email: 'owner@example.com', created_at: new Date('2025-01-01T00:00:00.000Z'),
+    timezone: 'Not/A_Zone', date_of_birth: new Date('1990-01-01T00:00:00.000Z'), sex: 'MALE',
+    height_mm: 1800, activity_level: 'MODERATE', weight_unit: 'KG', height_unit: 'CM', language: 'en',
+    reminder_log_weight_enabled: true, reminder_log_food_enabled: true, haptics_enabled: true,
+    profile_image: null, profile_image_mime_type: null
+  };
+  const goal = {
+    id: 41, user_id: 7, start_weight_grams: 80_000, target_weight_grams: 70_000, target_date: null,
+    daily_deficit: 500, created_at: new Date('2026-01-01T00:00:00.000Z'),
+    calorie_plan_review_status: 'CLEAR', calorie_plan_review_reason: null
+  };
+  const prismaStub = {
+    user: { findUnique: async () => storedUser, update: async ({ data }) => ({ ...storedUser, ...data }) },
+    goal: {
+      findFirst: async () => goal,
+      update: async ({ data }) => { assert.equal(inTransaction, true); goalReview = data; return { ...goal, ...data }; }
+    },
+    caloriePlanRevision: {
+      findFirst: async () => null,
+      updateMany: async ({ data }) => { assert.equal(inTransaction, true); revisionReview = data; return { count: 0 }; }
+    },
+    calibrationRecommendation: {
+      updateMany: async ({ data }) => { assert.equal(inTransaction, true); staleRecommendations = data; return { count: 0 }; }
+    },
+    $transaction: async (callback) => {
+      inTransaction = true;
+      try { return await callback(prismaStub); }
+      finally { inTransaction = false; }
+    }
+  };
+  const router = loadUserRouter({ prismaStub, bcryptStub: {} });
+  const handler = getRouteHandler(router, 'patch', '/profile');
+  const res = createRes();
+
+  await handler({ user: { id: 7 }, body: { height_mm: 1810 } }, res);
+
+  assert.equal(res.statusCode, 200);
+  assert.deepEqual(goalReview, { calorie_plan_review_status: 'REQUIRES_REVIEW', calorie_plan_review_reason: 'TIMEZONE_INVALID' });
+  assert.deepEqual(revisionReview, { calorie_plan_review_status: 'REQUIRES_REVIEW', calorie_plan_review_reason: 'PLAN_REVISION_UNSAFE' });
+  assert.deepEqual(staleRecommendations, { status: 'STALE' });
 });

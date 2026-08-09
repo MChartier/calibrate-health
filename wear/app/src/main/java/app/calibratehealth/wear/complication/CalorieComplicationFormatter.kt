@@ -1,6 +1,7 @@
 package app.calibratehealth.wear.complication
 
 import app.calibratehealth.wear.tile.CalibrateTileSnapshot
+import app.calibratehealth.wear.tile.WEIGHT_SYNCING_TILE_PLAN_STATUS
 import kotlin.math.abs
 
 data class CalorieComplicationContent(
@@ -31,6 +32,26 @@ object CalorieComplicationFormatter {
                 text = "Paused",
                 title = "tracking",
                 contentDescription = "Calorie tracking paused. Open Calibrate on your phone to review.",
+                rangeValue = 0f,
+                rangeMaximum = 1f
+            )
+        }
+
+        if (snapshot.planStatus == WEIGHT_SYNCING_TILE_PLAN_STATUS) {
+            return CalorieComplicationContent(
+                text = "--",
+                title = "syncing",
+                contentDescription = "Weight change syncing. Calorie balance will return after the server rechecks the plan.",
+                rangeValue = 0f,
+                rangeMaximum = 1f
+            )
+        }
+
+        if (snapshot.planStatus != "available") {
+            return CalorieComplicationContent(
+                text = "--",
+                title = "plan",
+                contentDescription = "Calorie plan unavailable. Open Calibrate to review.",
                 rangeValue = 0f,
                 rangeMaximum = 1f
             )

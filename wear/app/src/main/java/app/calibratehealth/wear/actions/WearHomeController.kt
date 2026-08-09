@@ -49,7 +49,7 @@ object WearActionPlanner {
     }
 
     fun saveWeight(summary: WearSummary, grams: Long): PlannedMutation {
-        require(grams in 20_000L..500_000L) { "Weight must be between 20 and 500 kg." }
+        require(grams in 25_000L..400_000L) { "Weight must be between 25 and 400 kg." }
         return PlannedMutation(
             "metric.upsert",
             jsonObject(
@@ -94,6 +94,7 @@ class WearHomeController(
     private val outbox: MutationOutboxRepository,
     private val mutationFactory: QueuedMutationFactory,
     private val continueOnPhone: ContinueOnPhoneMessenger,
+    private val refreshCalorieGlance: () -> Unit = {},
     private val scope: CoroutineScope
 ) {
     private val actionState = MutableStateFlow(ActionState())
@@ -194,6 +195,7 @@ class WearHomeController(
                 setActionError("Change was already queued.")
                 return@launch
             }
+            if (planned.type == "metric.upsert") refreshCalorieGlance()
             val pending = runCatching { outbox.activeInFifoOrder() }.getOrElse {
                 actionState.update { current ->
                     current.copy(
@@ -210,6 +212,8 @@ class WearHomeController(
             )
         }
     }
+
+
 
     private fun setActionError(message: String) {
         actionState.update { current ->
@@ -242,6 +246,9 @@ private fun DailySnapshotEntity.toWearSummary(lastSyncAtEpochMs: Long?): WearSum
     caloriesRemaining = caloriesRemaining,
     caloriesConsumed = caloriesConsumed,
     calorieTarget = calorieTarget,
+    planStatus = planStatus,
+    planReasonCode = planReasonCode,
+    minimumCalorieTarget = minimumCalorieTarget,
     foodDayComplete = foodDayComplete,
     foodDayStatus = foodDayStatus,
     foodDaySource = foodDaySource,
@@ -259,6 +266,8 @@ private fun DailySnapshotEntity.toWearSummary(lastSyncAtEpochMs: Long?): WearSum
     goalProgressPercent = goalProgressPercent,
     goalRemainingWeightGrams = goalRemainingWeightGrams,
     goalIsComplete = goalIsComplete,
+    goalProjectionStatus = goalProjectionStatus,
+    goalProjectedEndDate = goalProjectedEndDate,
     undoFoodLogId = undoFoodLogId,
     undoName = undoName,
     undoCalories = undoCalories,

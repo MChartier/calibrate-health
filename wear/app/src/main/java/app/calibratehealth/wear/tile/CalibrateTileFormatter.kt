@@ -7,7 +7,8 @@ data class CalibrateTileSnapshot(
     val calorieTarget: Int?,
     val caloriesRemaining: Int?,
     val cachedAtEpochMs: Long,
-    val foodDayStatus: String = "OPEN"
+    val foodDayStatus: String = "OPEN",
+    val planStatus: String = "unknown"
 )
 
 data class CalibrateTileContent(
@@ -15,6 +16,17 @@ data class CalibrateTileContent(
     val consumedLine: String,
     val statusLine: String,
     val isStale: Boolean
+)
+
+internal const val WEIGHT_SYNCING_TILE_PLAN_STATUS = "weight_syncing"
+
+internal fun suppressTilePlanForPendingWeight(
+    snapshot: CalibrateTileSnapshot,
+    pendingMutationTypes: Set<String>
+): CalibrateTileSnapshot = if ("metric.upsert" !in pendingMutationTypes) snapshot else snapshot.copy(
+    calorieTarget = null,
+    caloriesRemaining = null,
+    planStatus = WEIGHT_SYNCING_TILE_PLAN_STATUS
 )
 
 /** Formats the deliberately small, glanceable subset rendered by the cache-only Tile. */
@@ -38,6 +50,26 @@ object CalibrateTileFormatter {
             return CalibrateTileContent(
                 calorieLine = "Paused",
                 consumedLine = "Calorie tracking paused",
+                statusLine = "Open app to review",
+                isStale = false
+            )
+        }
+
+        if (snapshot.planStatus == WEIGHT_SYNCING_TILE_PLAN_STATUS) {
+            return CalibrateTileContent(
+                calorieLine = "Rechecking plan",
+                consumedLine = snapshot.caloriesConsumed?.let { "${formatCount(it.coerceAtLeast(0))} kcal logged" }
+                    ?: "Calories unavailable",
+                statusLine = "Weight syncing",
+                isStale = false
+            )
+        }
+
+        if (snapshot.planStatus != "available") {
+            return CalibrateTileContent(
+                calorieLine = "Plan unavailable",
+                consumedLine = snapshot.caloriesConsumed?.let { "${formatCount(it.coerceAtLeast(0))} kcal logged" }
+                    ?: "Calories unavailable",
                 statusLine = "Open app to review",
                 isStale = false
             )

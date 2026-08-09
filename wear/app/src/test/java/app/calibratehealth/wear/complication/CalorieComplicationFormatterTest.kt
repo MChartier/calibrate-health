@@ -57,6 +57,30 @@ class CalorieComplicationFormatterTest {
         assertEquals(1f, result.rangeMaximum)
     }
 
+    @Test
+    fun `suppresses cached target when the plan is not available`() {
+        val result = CalorieComplicationFormatter.format(
+            snapshot(remaining = 595).copy(planStatus = "requires_review"),
+            NOW
+        )
+
+        assertEquals("--", result.text)
+        assertEquals("plan", result.title)
+        assertEquals(1f, result.rangeMaximum)
+    }
+
+    @Test
+    fun `shows syncing instead of cached balance during a pending weight change`() {
+        val result = CalorieComplicationFormatter.format(
+            snapshot(remaining = 595).copy(planStatus = "weight_syncing"),
+            NOW
+        )
+
+        assertEquals("--", result.text)
+        assertEquals("syncing", result.title)
+        assertEquals(1f, result.rangeMaximum)
+    }
+
     private fun snapshot(
         remaining: Int,
         consumed: Int = 1_240,
@@ -65,7 +89,8 @@ class CalorieComplicationFormatterTest {
         caloriesConsumed = consumed,
         calorieTarget = 1_835,
         caloriesRemaining = remaining,
-        cachedAtEpochMs = cachedAtEpochMs
+        cachedAtEpochMs = cachedAtEpochMs,
+        planStatus = "available"
     )
 
     private companion object {

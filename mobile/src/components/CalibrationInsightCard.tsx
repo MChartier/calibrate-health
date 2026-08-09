@@ -26,6 +26,7 @@ import { addDaysToDateOnly, formatDateOnlyForDisplay, getTodayDate } from '../ut
 import { calibrationStatusQueryKey } from '../calibration/queryKeys';
 import { spacing, type AppTheme, useAppTheme } from '../theme';
 import { getErrorPresentation, getSafeActionErrorMessage } from '../errors/presentation';
+import { usePendingCalibrationEvidenceMutation } from '../offline/usePendingCalibrationEvidenceMutation';
 
 const RECOMMENDATION_STACK_BREAKPOINT = 560; // Keeps paired panels and action labels legible on compact screens.
 
@@ -49,7 +50,19 @@ export const CalibrationInsightCard: React.FC<ViewProps> = (props) => {
         queryFn: () => api.getCalibrationStatus()
     });
     const isOnline = useOnlineStatus();
+    const hasPendingEvidence = usePendingCalibrationEvidenceMutation();
     const statusState = useAsyncResourceState(statusQuery, () => false);
+
+    if (hasPendingEvidence) {
+        return (
+            <AppCard {...props}>
+                <CompactCardHeader title="Calibration" metadata="Evidence change syncing" />
+                <AppText variant="muted">
+                    Calibration will return after your pending food and weight changes are checked by the server.
+                </AppText>
+            </AppCard>
+        );
+    }
 
     async function applyRecommendation(recommendationId: number) {
         const change = await api.applyCalibrationRecommendation(recommendationId, Crypto.randomUUID());
@@ -124,6 +137,7 @@ export const CalibrationInsightCardView: React.FC<CalibrationInsightCardViewProp
 
     const recommendation = evaluation?.recommendation;
     const scheduledChange = status?.scheduledChange;
+    const scheduledChangeIsOnHold = scheduledChange?.dailyCalorieBudgetKcal === null;
     const closeReview = () => {
         setApplyError(null);
         setIsReviewOpen(false);
@@ -230,12 +244,18 @@ export const CalibrationInsightCardView: React.FC<CalibrationInsightCardViewProp
     const reviewApplyButtonTitle = actionableRecommendation
         ? `${applyButtonTitle} ${effectiveDateLabel}`
         : applyButtonTitle;
-    const cardDescription = scheduledChange && !actionableRecommendation
-        ? 'Your calorie budget update is scheduled'
-        : evaluation.headline;
-    const scheduledReviewMessage = recommendation
+    let cardDescription = evaluation.headline;
+    if (scheduledChange && !actionableRecommendation) {
+        cardDescription = scheduledChangeIsOnHold
+            ? 'Your saved calorie budget update is on hold'
+            : 'Your calorie budget update is scheduled';
+    }
+    let scheduledReviewMessage = recommendation
         ? `Your current ${recommendation.currentTargetKcal.toLocaleString()} kcal budget stays in place until then. Changed your mind? Undo this update before it starts to review the suggestion again.`
         : 'Changed your mind? Undo this update before it starts to keep your current budget and review the suggestion again.';
+    if (scheduledChangeIsOnHold) {
+        scheduledReviewMessage = 'The saved update is preserved. Undo it to review the suggestion again, or replace your calorie plan before targets resume.';
+    }
     const historyProgress = evaluation.historyProgress;
     let historyProgressTitle = '';
     let foodProgressLabel = '';
@@ -267,10 +287,14 @@ export const CalibrationInsightCardView: React.FC<CalibrationInsightCardViewProp
                             accessibilityLiveRegion="polite"
                             style={styles.scheduledRow}
                         >
-                            <Ionicons name="checkmark-circle" size={20} color={theme.colors.success} />
+                            <Ionicons
+                                name={scheduledChangeIsOnHold ? 'alert-circle' : 'checkmark-circle'}
+                                size={20}
+                                color={scheduledChangeIsOnHold ? theme.colors.danger : theme.colors.success}
+                            />
                             <AppText style={styles.scheduledText}>
                                 {scheduledChange.dailyCalorieBudgetKcal === null
-                                    ? `Your updated daily calorie budget starts ${formatDateOnlyForDisplay(scheduledChange.effectiveLocalDate)}.`
+                                    ? 'No updated calorie budget will start until you replace your calorie plan.'
                                     : `Your daily calorie budget will be ${scheduledChange.dailyCalorieBudgetKcal.toLocaleString()} kcal starting ${formatDateOnlyForDisplay(scheduledChange.effectiveLocalDate)}.`}
                             </AppText>
                         </View>

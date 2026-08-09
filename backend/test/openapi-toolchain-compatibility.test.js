@@ -1,4 +1,6 @@
 const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
 const { createRequire } = require('node:module');
 const test = require('node:test');
 
@@ -12,4 +14,14 @@ test('Redocly minimatch supports brace-bearing OpenAPI paths', () => {
     minimatch('docs/openapi/v1.yaml', 'docs/openapi/{v1,v2}.yaml'),
     true
   );
+});
+
+test('OpenAPI preserves unsafe historical goal deficits while constraining new goal writes', () => {
+  const yaml = fs.readFileSync(path.join(__dirname, '..', '..', 'docs', 'openapi', 'v1.yaml'), 'utf8');
+  const goalEntry = yaml.slice(yaml.indexOf('    GoalEntry:'), yaml.indexOf('    GoalCreateRequest:'));
+  const goalCreate = yaml.slice(yaml.indexOf('    GoalCreateRequest:'), yaml.indexOf('    MetricEntry:'));
+
+  assert.match(goalEntry, /daily_deficit: \{ type: integer \}/);
+  assert.doesNotMatch(goalEntry, /daily_deficit:.*enum:/);
+  assert.match(goalCreate, /daily_deficit:.*enum: \[-1000, -750, -500, -250, 0, 250, 500, 750, 1000\]/);
 });

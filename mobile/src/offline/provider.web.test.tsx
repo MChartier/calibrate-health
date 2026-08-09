@@ -4,6 +4,7 @@ import { IDBFactory } from 'fake-indexeddb';
 import { IndexedDbOutbox, openIndexedDbOutboxDatabase } from './indexedDbOutbox.web';
 import { OfflineOutboxProvider, useOfflineOutbox } from './provider.web';
 import { createOutboxNamespace } from './queuedMutation';
+import { hasPendingWeightMutation } from './pendingWeight';
 
 jest.mock('expo-crypto', () => ({ randomUUID: jest.fn(() => 'generated-operation-id') }));
 
@@ -151,6 +152,39 @@ describe('browser offline outbox provider', () => {
         act(() => connectivity.goOnline());
         await waitFor(() => expect(result.current.mutations).toEqual([]));
         expect(executeMutation).toHaveBeenCalledTimes(2);
+    });
+
+    it('keeps calorie outputs suppressed until a queued weight replay and refetch complete', async () => {
+        const connectivity = createConnectivity(false);
+        let finishRefetch: (() => void) | undefined;
+        const refetchComplete = new Promise<void>((resolve) => { finishRefetch = resolve; });
+        const executeMutation = jest.fn(async () => undefined);
+        const wrapper = ({ children }: { children: React.ReactNode }) => (
+            <OfflineOutboxProvider
+                executeMutation={executeMutation}
+                onReplayCompleted={() => refetchComplete}
+                openDatabase={openDatabase}
+                connectivity={connectivity.value}
+            >
+                {children}
+            </OfflineOutboxProvider>
+        );
+        const { result } = renderHook(() => ({
+            outbox: useOfflineOutbox(),
+            weightPending: hasPendingWeightMutation(useOfflineOutbox().mutations)
+        }), { wrapper });
+        await waitFor(() => expect(result.current.outbox.isReady).toBe(true));
+        await act(async () => {
+            await result.current.outbox.enqueue('metric.add', { date: '2026-07-18', weight: 88 });
+        });
+        expect(result.current.weightPending).toBe(true);
+
+        act(() => connectivity.goOnline());
+        await waitFor(() => expect(executeMutation).toHaveBeenCalled());
+        expect(result.current.weightPending).toBe(true);
+
+        finishRefetch?.();
+        await waitFor(() => expect(result.current.weightPending).toBe(false));
     });
 
     it('surfaces IndexedDB initialization failures and rejects writes honestly', async () => {

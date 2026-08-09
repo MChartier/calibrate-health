@@ -14,7 +14,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         QueuedMutationEntity::class,
         SyncMetadataEntity::class
     ],
-    version = 6,
+    version = 7,
     exportSchema = true
 )
 abstract class CalibrateWearDatabase : RoomDatabase() {
@@ -39,7 +39,14 @@ abstract class CalibrateWearDatabase : RoomDatabase() {
                 CalibrateWearDatabase::class.java,
                 name
             )
-                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
+                .addMigrations(
+                    MIGRATION_1_2,
+                    MIGRATION_2_3,
+                    MIGRATION_3_4,
+                    MIGRATION_4_5,
+                    MIGRATION_5_6,
+                    MIGRATION_6_7
+                )
                 .build()
 
         /** Preserves the old outbox order while moving FIFO authority to a database-assigned row ID. */
@@ -205,6 +212,22 @@ abstract class CalibrateWearDatabase : RoomDatabase() {
                     SET food_day_status = CASE WHEN food_day_complete = 1 THEN 'COMPLETE' ELSE 'OPEN' END,
                         food_day_representative = food_day_complete
                     """.trimIndent()
+                )
+            }
+        }
+
+        /** Makes server-owned calorie-plan availability authoritative for every cached surface. */
+        val MIGRATION_6_7 = object : Migration(6, 7) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL(
+                    "ALTER TABLE daily_snapshots ADD COLUMN plan_status TEXT NOT NULL DEFAULT 'unknown'"
+                )
+                database.execSQL("ALTER TABLE daily_snapshots ADD COLUMN plan_reason_code TEXT")
+                database.execSQL("ALTER TABLE daily_snapshots ADD COLUMN minimum_calorie_target INTEGER")
+                database.execSQL("ALTER TABLE daily_snapshots ADD COLUMN goal_projection_status TEXT")
+                database.execSQL("ALTER TABLE daily_snapshots ADD COLUMN goal_projected_end_date TEXT")
+                database.execSQL(
+                    "UPDATE daily_snapshots SET calorie_target = NULL, calories_remaining = NULL"
                 )
             }
         }

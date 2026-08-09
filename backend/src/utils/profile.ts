@@ -51,28 +51,14 @@ export const calculateAge = (dateOfBirth: Date, now: Date = new Date()): number 
     return age;
 };
 
-const MIFFLIN_ST_JEOR_VALID_AGE_YEARS = {
-    min: 19,
-    max: 79
-} as const;
-
-/**
- * Clamp an age (in years) to the validation range for the Mifflin-St Jeor equation.
- *
- * The equation is intended for adults; extrapolating outside 19-79 years quickly
- * yields unrealistic BMR/TDEE outputs, so we cap to the nearest bound.
- */
-const clampAgeForMifflinStJeor = (ageYears: number): number =>
-    Math.min(MIFFLIN_ST_JEOR_VALID_AGE_YEARS.max, Math.max(MIFFLIN_ST_JEOR_VALID_AGE_YEARS.min, ageYears));
 
 /**
  * Compute BMR (Basal Metabolic Rate) using the Mifflin-St Jeor equation.
  *
- * Input values are expected in kg/cm/years; age is clamped to the validated range.
+ * Input values are expected in kg/cm/years. Eligibility validation is performed before this helper.
  */
 export const calculateBmr = (sex: Sex, weightKg: number, heightCm: number, ageYears: number): number => {
-    const clampedAgeYears = clampAgeForMifflinStJeor(ageYears);
-    const base = 10 * weightKg + 6.25 * heightCm - 5 * clampedAgeYears;
+    const base = 10 * weightKg + 6.25 * heightCm - 5 * ageYears;
     return Math.round((sex === 'MALE' ? base + 5 : base - 161) * 10) / 10;
 };
 
@@ -140,9 +126,13 @@ export const buildCalorieSummary = (opts: {
     };
     if (hasTargetAdjustment) summary.targetAdjustment = targetAdjustment;
     if (typeof daily_deficit === 'number') {
-        const baseDailyCalorieTarget = Math.max(Math.round((tdee - daily_deficit) * 10) / 10, 0);
-        if (hasTargetAdjustment) summary.baseDailyCalorieTarget = baseDailyCalorieTarget;
-        summary.dailyCalorieTarget = Math.max(Math.round((tdee - daily_deficit + targetAdjustment) * 10) / 10, 0);
+        const minimumDailyCalorieTarget = Math.ceil(Math.max(bmr, 1000));
+        const baseDailyCalorieTarget = Math.round(tdee - daily_deficit);
+        const dailyCalorieTarget = Math.round(tdee - daily_deficit + targetAdjustment);
+        if (baseDailyCalorieTarget >= minimumDailyCalorieTarget && dailyCalorieTarget >= minimumDailyCalorieTarget) {
+            if (hasTargetAdjustment) summary.baseDailyCalorieTarget = baseDailyCalorieTarget;
+            summary.dailyCalorieTarget = dailyCalorieTarget;
+        }
     }
 
     return summary;
