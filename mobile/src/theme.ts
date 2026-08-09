@@ -68,19 +68,22 @@ export const radius = {
     pill: calibrateDesignTokens.shape.pill
 };
 
+export const typeScale = calibrateDesignTokens.typography;
+
 export const typography = {
-    title: 28,
-    screenTitle: 24,
-    subtitle: 18,
-    body: 16,
-    small: 14,
-    caption: 12,
-    metric: 32
+    // Numeric aliases preserve existing StyleSheet call sites while new shared
+    // components consume the complete, line-height-safe styles below.
+    title: typeScale.page.fontSize,
+    screenTitle: typeScale.page.fontSize,
+    subtitle: typeScale.section.fontSize,
+    body: typeScale.body.fontSize,
+    small: typeScale.label.fontSize,
+    caption: typeScale.caption.fontSize,
+    metric: typeScale.metric.fontSize,
+    styles: typeScale
 };
 
-export const interaction = {
-    minimumTouchTarget: calibrateDesignTokens.interaction.minimumTouchTarget
-};
+export const interaction = { ...calibrateDesignTokens.interaction };
 
 export const stroke = {
     control: 1 // Keeps rounded interactive outlines stable across Android display densities.

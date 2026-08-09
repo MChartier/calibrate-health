@@ -1,13 +1,16 @@
 import React from 'react';
-import { Pressable, StyleSheet, type PressableProps } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, type PressableProps } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { useAppTheme } from '../theme';
+import { type AppTheme, useAppTheme } from '../theme';
+import { useFocusVisible } from './useFocusVisible';
 
 type AppIconButtonProps = Omit<PressableProps, 'children'> & {
     icon: React.ComponentProps<typeof Ionicons>['name'];
     iconColor?: string;
     iconSize?: number;
     variant?: 'surface' | 'container' | 'ghost';
+    selected?: boolean;
+    busy?: boolean;
 };
 
 /** Consistent icon-only control with an accessible 48dp interaction target. */
@@ -16,38 +19,70 @@ export const AppIconButton: React.FC<AppIconButtonProps> = ({
     iconColor,
     iconSize = 20,
     variant = 'surface',
+    selected = false,
+    busy = false,
     disabled,
     accessibilityLabel,
     accessibilityRole,
     accessibilityState,
     style,
+    onBlur,
+    onFocus,
+    onHoverIn,
+    onHoverOut,
     ...props
 }) => {
     const theme = useAppTheme();
     const styles = React.useMemo(() => createStyles(theme), [theme]);
-    const defaultIconColor = variant === 'container' ? theme.colors.primary : theme.colors.onSurface;
+    const [hovered, setHovered] = React.useState(false);
+    const { focusVisible, handleFocus, handleBlur } = useFocusVisible(onFocus, onBlur);
+    const inactive = Boolean(disabled || busy);
+    let defaultIconColor: string = variant === 'container' ? theme.colors.primary : theme.colors.onSurface;
+    if (selected) defaultIconColor = theme.colors.onSelectionContainer;
+    if (disabled) defaultIconColor = theme.colors.onSurfaceVariant;
 
     return (
         <Pressable
             {...props}
             accessibilityLabel={accessibilityLabel}
             accessibilityRole={accessibilityRole ?? 'button'}
-            accessibilityState={{ ...accessibilityState, disabled: Boolean(disabled) }}
-            disabled={disabled}
+            accessibilityState={{
+                ...accessibilityState,
+                busy,
+                disabled: inactive,
+                selected
+            }}
+            disabled={inactive}
+            onBlur={handleBlur}
+            onFocus={handleFocus}
+            onHoverIn={(event) => {
+                setHovered(true);
+                onHoverIn?.(event);
+            }}
+            onHoverOut={(event) => {
+                setHovered(false);
+                onHoverOut?.(event);
+            }}
             style={({ pressed }) => [
                 styles.base,
                 styles[variant],
+                selected && styles.selected,
+                hovered && !inactive && (selected ? styles.hoveredSelected : styles.hovered),
+                pressed && !inactive && styles.pressed,
+                focusVisible && styles.focusVisible,
                 disabled && styles.disabled,
-                pressed && !disabled && styles.pressed,
+                busy && styles.busy,
                 typeof style === 'function' ? style({ pressed }) : style
             ]}
         >
-            <Ionicons name={icon} size={iconSize} color={iconColor ?? defaultIconColor} />
+            {busy
+                ? <ActivityIndicator color={defaultIconColor} />
+                : <Ionicons name={icon} size={iconSize} color={iconColor ?? defaultIconColor} />}
         </Pressable>
     );
 };
 
-function createStyles(theme: ReturnType<typeof useAppTheme>) {
+function createStyles(theme: AppTheme) {
     return StyleSheet.create({
         base: {
             width: theme.interaction.minimumTouchTarget,
@@ -59,23 +94,43 @@ function createStyles(theme: ReturnType<typeof useAppTheme>) {
         },
         surface: {
             backgroundColor: theme.colors.surfaceContainerLow,
-            borderColor: theme.colors.outlineVariant,
+            borderColor: theme.colors.outline,
             borderWidth: theme.stroke.control
         },
         container: {
             backgroundColor: theme.colors.primaryContainer,
-            borderColor: theme.colors.outlineVariant,
+            borderColor: theme.colors.outline,
             borderWidth: theme.stroke.control
         },
         ghost: {
             backgroundColor: 'transparent'
         },
-        disabled: {
-            opacity: 0.36
+        selected: {
+            backgroundColor: theme.colors.selectionContainer,
+            borderColor: theme.colors.selection,
+            borderWidth: theme.stroke.control
+        },
+        hovered: {
+            backgroundColor: theme.colors.surfaceHovered
+        },
+        hoveredSelected: {
+            opacity: theme.interaction.hoveredOpacity
         },
         pressed: {
             backgroundColor: theme.colors.surfacePressed,
+            opacity: theme.interaction.pressedOpacity,
             transform: [{ translateY: 1 }]
+        },
+        focusVisible: {
+            outlineColor: theme.colors.focusRing,
+            outlineStyle: 'solid',
+            outlineWidth: theme.interaction.focusRingWidth
+        },
+        disabled: {
+            opacity: theme.interaction.disabledOpacity
+        },
+        busy: {
+            opacity: theme.interaction.busyOpacity
         }
     });
 }

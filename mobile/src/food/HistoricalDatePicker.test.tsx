@@ -154,9 +154,7 @@ describe('HistoricalDatePicker', () => {
         expect(screen.queryByText(/provider details that must stay private/i)).toBeNull();
 
         fireEvent.press(screen.getByRole('button', { name: 'Retry' }));
-        await waitFor(() => {
-            expect(screen.getByRole('button', { name: 'Retrying...' }).props.accessibilityState.busy).toBe(true);
-        });
+        expect(await screen.findByText('Loading history...')).toBeTruthy();
         expect(screen.getByText('Retrying tracking history').props.accessibilityLiveRegion).toBe('polite');
 
         resolveRetry(RANGE_RESPONSE);

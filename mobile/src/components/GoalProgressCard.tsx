@@ -4,7 +4,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import type { GoalEntry, MetricEntry, UserClientPayload } from '@calibrate/api-client';
 import { AppCard } from './AppCard';
 import { AppText } from './AppText';
-import { CompactCardHeader } from './CompactCardHeader';
+import { CardHeader } from './CardHeader';
 import { ProgressBar } from './ProgressBar';
 import { radius, spacing, useAppTheme, type AppTheme } from '../theme';
 import { formatDateOnlyForDisplay } from '../utils/dates';
@@ -75,8 +75,9 @@ export const GoalProgressCard: React.FC<GoalProgressCardProps> = ({
     if (!goal) {
         return (
             <AppCard {...props} style={[styles.card, style]}>
-                <CompactCardHeader
+                <CardHeader
                     title={title}
+                    density="compact"
                     metadata={formatMetricDate(latestMetric?.date)}
                     headingTestID="snapshot-heading-line"
                     action={onEditGoal && <GoalActionButton label="Set goal" onPress={onEditGoal} theme={theme} />}
@@ -212,8 +213,9 @@ export const GoalProgressCard: React.FC<GoalProgressCardProps> = ({
 
     return (
         <AppCard {...props} style={[styles.card, style]}>
-            <CompactCardHeader
+            <CardHeader
                 title={title}
+                density="compact"
                 metadata={formatMetricDate(latestMetric?.date)}
                 headingTestID="snapshot-heading-line"
                 action={goalAction}

@@ -320,8 +320,8 @@ export const WeightTrendCard: React.FC<WeightTrendCardProps> = ({
                                     cx={selectedPoint.x}
                                     cy={selectedPoint.measurementY}
                                     r={6}
-                                    fill={theme.colors.warningContainer}
-                                    stroke={theme.colors.warning}
+                                    fill={theme.colors.selectionContainer}
+                                    stroke={theme.colors.selection}
                                     strokeWidth={2}
                                 />
                             )}

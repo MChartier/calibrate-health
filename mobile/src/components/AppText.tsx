@@ -2,7 +2,7 @@ import React from 'react';
 import { Text, type TextProps, StyleSheet } from 'react-native';
 import { type AppTheme, useAppTheme } from '../theme';
 
-export const AppText: React.FC<TextProps & { variant?: 'title' | 'screenTitle' | 'subtitle' | 'body' | 'muted' | 'label' | 'metric' | 'caption' }> = ({
+export const AppText: React.FC<TextProps & { variant?: 'page' | 'section' | 'card' | 'body' | 'label' | 'caption' | 'metric' | 'title' | 'screenTitle' | 'subtitle' | 'muted' }> = ({
     style,
     variant = 'body',
     ...props
@@ -18,51 +18,27 @@ function createStyles(theme: AppTheme) {
         color: theme.colors.onSurface,
         fontVariant: ['tabular-nums']
     },
-    title: {
-        fontSize: theme.typography.title,
-        lineHeight: 34,
-        fontWeight: '800',
-        letterSpacing: -0.3
-    },
-    screenTitle: {
-        fontSize: theme.typography.screenTitle,
-        lineHeight: 30,
-        fontWeight: '700',
-        letterSpacing: -0.2
-    },
-    subtitle: {
-        fontSize: theme.typography.subtitle,
-        lineHeight: 24,
-        fontWeight: '700',
-        letterSpacing: 0
-    },
-    body: {
-        fontSize: theme.typography.body,
-        lineHeight: 24,
-        fontWeight: '400'
-    },
-    muted: {
-        color: theme.colors.onSurfaceVariant,
-        fontSize: theme.typography.small,
-        lineHeight: 20
-    },
+    page: theme.typography.styles.page,
+    section: theme.typography.styles.section,
+    card: theme.typography.styles.card,
+    body: theme.typography.styles.body,
     label: {
         color: theme.colors.onSurfaceVariant,
-        fontSize: theme.typography.small,
-        lineHeight: 20,
-        fontWeight: '600',
-        letterSpacing: 0.1
-    },
-    metric: {
-        fontSize: theme.typography.metric,
-        lineHeight: 38,
-        fontWeight: '800',
-        letterSpacing: -0.4
+        ...theme.typography.styles.label
     },
     caption: {
         color: theme.colors.onSurfaceVariant,
-        fontSize: theme.typography.caption,
-        lineHeight: 17
+        ...theme.typography.styles.caption
+    },
+    metric: theme.typography.styles.metric,
+    // Compatibility variants now map to the production type scale.
+    title: theme.typography.styles.page,
+    screenTitle: theme.typography.styles.page,
+    subtitle: theme.typography.styles.section,
+    muted: {
+        color: theme.colors.onSurfaceVariant,
+        ...theme.typography.styles.label,
+        fontWeight: '400'
     }
     });
 }

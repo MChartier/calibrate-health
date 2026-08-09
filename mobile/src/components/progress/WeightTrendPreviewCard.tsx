@@ -1,12 +1,13 @@
 import React, { useMemo, useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import Svg, { Line, Path, Polygon, Text as SvgText } from 'react-native-svg';
 import { useQuery } from '@tanstack/react-query';
 import { AppCard } from '../AppCard';
 import { AppText } from '../AppText';
 import { AsyncStateBoundary, useAsyncResourceState, useOnlineStatus } from '../AsyncStateBoundary';
-import { CompactCardHeader } from '../CompactCardHeader';
+import { CardHeader } from '../CardHeader';
+import { NavigableCard } from '../NavigableCard';
 import { SkeletonBlock } from '../SkeletonBlock';
 import { useAuth } from '../../auth/AuthContext';
 import { radius, spacing, useAppTheme, type AppTheme } from '../../theme';
@@ -94,15 +95,16 @@ export const WeightTrendPreviewCard: React.FC<WeightTrendPreviewCardProps> = ({ 
                     </AppCard>
                 )}
                 empty={(
-                    <Pressable
+                    <NavigableCard
                         accessibilityRole="button"
                         accessibilityLabel="Open full weight trend"
                         accessibilityHint="Shows the interactive chart, confidence details, and time range controls"
                         onPress={onPress}
                         style={styles.pressable}
+                        contentStyle={styles.card}
                     >
-                        <AppCard style={styles.card}>
-                            <CompactCardHeader
+                            <CardHeader
+                                density="compact"
                                 title="Trend"
                                 metadata={null}
                                 headingTestID="trend-preview-heading-line"
@@ -120,22 +122,21 @@ export const WeightTrendPreviewCard: React.FC<WeightTrendPreviewCardProps> = ({ 
                                         : 'Log a weigh-in to start a trend.'}
                                 </AppText>
                             </View>
-                        </AppCard>
-                    </Pressable>
+                    </NavigableCard>
                 )}
                 onRetry={isOnline ? () => trendQuery.refetch() : undefined}
                 retrying={trendQuery.isFetching}
             >
-                <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="Open full weight trend"
-                accessibilityHint="Shows the interactive chart, confidence details, and time range controls"
-                onPress={onPress}
-                style={styles.pressable}
-            >
-                {({ pressed }) => (
-                    <AppCard style={[styles.card, pressed && styles.cardPressed]}>
-                        <CompactCardHeader
+                <NavigableCard
+                    accessibilityRole="button"
+                    accessibilityLabel="Open full weight trend"
+                    accessibilityHint="Shows the interactive chart, confidence details, and time range controls"
+                    onPress={onPress}
+                    style={styles.pressable}
+                    contentStyle={styles.card}
+                >
+                        <CardHeader
+                            density="compact"
                             title="Trend"
                             metadata={latestSnapshot
                                 ? `Current trend: ${formatWeight(latestSnapshot.weight, user?.weight_unit)}`
@@ -244,9 +245,7 @@ export const WeightTrendPreviewCard: React.FC<WeightTrendPreviewCardProps> = ({ 
                                 </Svg>
                             )}
                         </View>
-                    </AppCard>
-                )}
-                </Pressable>
+                </NavigableCard>
             </AsyncStateBoundary>
         </View>
     );
@@ -256,8 +255,7 @@ const createStyles = (theme: AppTheme) => StyleSheet.create({
     flexSlot: { width: '100%', minHeight: PREVIEW_CARD_MIN_HEIGHT },
     pressable: { width: '100%' },
     card: { gap: spacing.sm },
-    cardPressed: { backgroundColor: theme.colors.surfacePressed },
-    detailsAction: { minHeight: 40, flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
+    detailsAction: { minHeight: theme.interaction.minimumTouchTarget, flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
     detailsText: { color: theme.colors.primary },
     preview: {
         height: PREVIEW_HEIGHT,

@@ -1,4 +1,4 @@
-import { resolveAppTheme, themes } from './theme';
+import { resolveAppTheme, themes, typeScale } from './theme';
 
 function channelToLinear(channel: number): number {
     const value = channel / 255;
@@ -36,11 +36,43 @@ describe('mobile semantic theme', () => {
             expect(contrastRatio(theme.colors.danger, theme.colors.surface)).toBeGreaterThanOrEqual(4.5);
             expect(contrastRatio(theme.colors.onDanger, theme.colors.danger)).toBeGreaterThanOrEqual(4.5);
             expect(contrastRatio(theme.colors.onDangerContainer, theme.colors.dangerContainer)).toBeGreaterThanOrEqual(4.5);
+            expect(contrastRatio(theme.colors.onNeutralEmphasis, theme.colors.neutralEmphasis)).toBeGreaterThanOrEqual(4.5);
+            expect(contrastRatio(theme.colors.onNeutralEmphasisContainer, theme.colors.neutralEmphasisContainer)).toBeGreaterThanOrEqual(4.5);
+            expect(contrastRatio(theme.colors.onSelection, theme.colors.selection)).toBeGreaterThanOrEqual(4.5);
+            expect(contrastRatio(theme.colors.onSelectionContainer, theme.colors.selectionContainer)).toBeGreaterThanOrEqual(4.5);
+            expect(contrastRatio(theme.colors.onPositive, theme.colors.positive)).toBeGreaterThanOrEqual(4.5);
+            expect(contrastRatio(theme.colors.onPositiveContainer, theme.colors.positiveContainer)).toBeGreaterThanOrEqual(4.5);
+            expect(contrastRatio(theme.colors.onCaution, theme.colors.caution)).toBeGreaterThanOrEqual(4.5);
+            expect(contrastRatio(theme.colors.onCautionContainer, theme.colors.cautionContainer)).toBeGreaterThanOrEqual(4.5);
+            expect(contrastRatio(theme.colors.onCelebration, theme.colors.celebration)).toBeGreaterThanOrEqual(4.5);
+            expect(contrastRatio(theme.colors.onCelebrationContainer, theme.colors.celebrationContainer)).toBeGreaterThanOrEqual(4.5);
+            expect(contrastRatio(theme.colors.outline, theme.colors.surfaceContainer)).toBeGreaterThanOrEqual(3);
+            expect(contrastRatio(theme.colors.focusRing, theme.colors.surface)).toBeGreaterThanOrEqual(3);
+            expect(contrastRatio(theme.colors.selection, theme.colors.surface)).toBeGreaterThanOrEqual(3);
         }
     });
 
     it('uses a saturated red for dark-mode danger states', () => {
         expect(themes.dark.colors.danger).toBe('#FF5F56');
         expect(themes.dark.colors.danger).not.toBe(themes.light.colors.danger);
+    });
+
+    it('defines the locked page, section, card, body, label, caption, and metric scale', () => {
+        expect(typeScale.page).toEqual(expect.objectContaining({ fontSize: 24, lineHeight: 30 }));
+        expect(typeScale.section).toEqual(expect.objectContaining({ fontSize: 18, lineHeight: 24 }));
+        expect(typeScale.card).toEqual(expect.objectContaining({ fontSize: 16, lineHeight: 22 }));
+        expect(typeScale.body).toEqual(expect.objectContaining({ fontSize: 16, lineHeight: 24 }));
+        expect(typeScale.label).toEqual(expect.objectContaining({ fontSize: 14, lineHeight: 20 }));
+        expect(typeScale.caption).toEqual(expect.objectContaining({ fontSize: 12, lineHeight: 16 }));
+        expect(typeScale.metric).toEqual(expect.objectContaining({ fontSize: 32, lineHeight: 38 }));
+    });
+
+    it('keeps caution separate from neutral selection and informational emphasis', () => {
+        for (const theme of [themes.light, themes.dark]) {
+            expect(theme.colors.selectionContainer).not.toBe(theme.colors.cautionContainer);
+            expect(theme.colors.neutralEmphasisContainer).not.toBe(theme.colors.cautionContainer);
+            expect(theme.colors.positive).toBe(theme.colors.success);
+            expect(theme.colors.caution).toBe(theme.colors.warning);
+        }
     });
 });

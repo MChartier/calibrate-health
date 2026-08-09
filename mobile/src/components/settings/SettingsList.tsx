@@ -1,7 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Pressable, StyleSheet, View, type ViewStyle } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { AppText } from '../AppText';
+import { CardHeader } from '../CardHeader';
+import { useFocusVisible } from '../useFocusVisible';
 import { radius, spacing, useAppTheme } from '../../theme';
 
 type SettingsSectionProps = {
@@ -26,10 +28,13 @@ export const SettingsSection: React.FC<SettingsSectionProps> = ({ title, descrip
 
     return (
         <View style={[styles.section, style]}>
-            <View style={styles.sectionHeading}>
-                <AppText variant="label" style={{ color: colors.primary }}>{title}</AppText>
-                {description && <AppText variant="caption">{description}</AppText>}
-            </View>
+            <CardHeader
+                title={title}
+                metadata={description}
+                density="compact"
+                headingLevel={2}
+                style={styles.sectionHeading}
+            />
             <View style={[styles.sectionSurface, { backgroundColor: colors.surface, borderColor: colors.outlineVariant }]}>
                 {children}
             </View>
@@ -46,7 +51,10 @@ export const SettingsRow: React.FC<SettingsRowProps> = ({
     showDivider = true,
     onPress
 }) => {
-    const { colors } = useAppTheme();
+    const theme = useAppTheme();
+    const { colors } = theme;
+    const [hovered, setHovered] = useState(false);
+    const { focusVisible, handleFocus, handleBlur } = useFocusVisible();
     const iconColor = danger ? colors.danger : colors.primaryDark;
 
     return (
@@ -54,10 +62,20 @@ export const SettingsRow: React.FC<SettingsRowProps> = ({
             accessibilityRole="button"
             accessibilityLabel={value ? `${label}, ${value}` : label}
             onPress={onPress}
+            onFocus={handleFocus}
+            onBlur={handleBlur}
+            onHoverIn={() => setHovered(true)}
+            onHoverOut={() => setHovered(false)}
             style={({ pressed }) => [
                 styles.row,
                 showDivider && { borderBottomColor: colors.outlineVariant, borderBottomWidth: StyleSheet.hairlineWidth },
-                pressed && { backgroundColor: colors.surfacePressed }
+                hovered && { backgroundColor: colors.surfaceHovered },
+                pressed && { backgroundColor: colors.surfacePressed },
+                focusVisible && {
+                    outlineColor: colors.focusRing,
+                    outlineStyle: 'solid',
+                    outlineWidth: theme.interaction.focusRingWidth
+                }
             ]}
         >
             <View style={[
@@ -81,7 +99,6 @@ const styles = StyleSheet.create({
         gap: spacing.sm
     },
     sectionHeading: {
-        gap: spacing.xs,
         paddingHorizontal: spacing.xs
     },
     sectionSurface: {

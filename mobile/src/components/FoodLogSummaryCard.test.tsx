@@ -55,10 +55,12 @@ describe('FoodLogSummaryCard', () => {
         const target = screen.getByTestId('food-log-card-press-layer');
         const targetStyle = StyleSheet.flatten(target.props.style);
 
-        expect(within(target).queryByRole('header')).toBeNull();
-        expect(heading).toBeTruthy();
+        expect(within(target).getByRole('header', { name: 'Food log' })).toBe(heading);
         expect(screen.getByLabelText(/Food log.+View full log/)).toBe(target);
-        expect(targetStyle).toMatchObject({ top: 0, right: 0, bottom: 0, left: 0 });
+        expect(targetStyle).toMatchObject({
+            minHeight: themes.light.interaction.minimumTouchTarget,
+            flex: 1
+        });
 
         fireEvent(target, 'pressIn');
         expect(card).toHaveStyle({ backgroundColor: themes.light.colors.surfacePressed });

@@ -46,7 +46,16 @@ jest.mock('../theme', () => ({
             body: 16,
             small: 14,
             metric: 34,
-            caption: 12
+            caption: 12,
+            styles: {
+                page: { fontSize: 24, lineHeight: 30, fontWeight: '700' },
+                section: { fontSize: 18, lineHeight: 24, fontWeight: '700' },
+                card: { fontSize: 16, lineHeight: 22, fontWeight: '700' },
+                body: { fontSize: 16, lineHeight: 24, fontWeight: '400' },
+                label: { fontSize: 14, lineHeight: 20, fontWeight: '600' },
+                caption: { fontSize: 12, lineHeight: 16, fontWeight: '400' },
+                metric: { fontSize: 32, lineHeight: 38, fontWeight: '800' }
+            }
         }
     })
 }));

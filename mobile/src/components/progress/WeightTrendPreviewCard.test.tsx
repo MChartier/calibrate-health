@@ -77,7 +77,7 @@ describe('WeightTrendPreviewCard', () => {
         expect(screen.getByText('Trend')).toBeTruthy();
         expect(screen.getByTestId('trend-preview-heading-line')).toHaveStyle({
             flexDirection: 'row',
-            alignItems: 'center',
+            alignItems: 'baseline',
             flexWrap: 'wrap'
         });
         expect(screen.queryByText('Weight trend')).toBeNull();

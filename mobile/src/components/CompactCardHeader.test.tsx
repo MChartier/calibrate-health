@@ -1,32 +1,55 @@
 import { render } from '@testing-library/react-native';
-import { View } from 'react-native';
+import { AppButton } from './AppButton';
+import { CardHeader } from './CardHeader';
 import { CompactCardHeader } from './CompactCardHeader';
 import { themes } from '../theme';
 
-describe('CompactCardHeader', () => {
-    it('keeps the card title compact and metadata inline with an optional action', () => {
+describe('CardHeader', () => {
+    it('keeps card typography, metadata alignment, and actions consistent', () => {
         const screen = render(
-            <CompactCardHeader
+            <CardHeader
                 testID="card-header"
                 title="Trend"
                 metadata="Current trend: 79.2 kg"
                 headingTestID="heading-line"
-                action={<View testID="action" />}
+                action={<AppButton title="Details" variant="ghost" />}
             />
         );
 
-        expect(screen.getByRole('header', { name: 'Trend' })).toHaveStyle({
+        const heading = screen.getByRole('header', { name: 'Trend' });
+        expect(heading.props['aria-level']).toBe(2);
+        expect(heading).toHaveStyle({
             color: themes.light.colors.onSurface,
-            fontSize: themes.light.typography.small,
-            fontWeight: '800'
+            fontSize: 16,
+            lineHeight: 22,
+            fontWeight: '700'
         });
-        expect(screen.getByText('Current trend: 79.2 kg')).toBeTruthy();
+        expect(screen.getByText('Current trend: 79.2 kg')).toHaveStyle({
+            color: themes.light.colors.onSurfaceVariant,
+            fontSize: 12,
+            lineHeight: 16
+        });
         expect(screen.getByTestId('heading-line')).toHaveStyle({
             flexDirection: 'row',
-            alignItems: 'center',
+            alignItems: 'baseline',
             flexWrap: 'wrap'
         });
-        expect(screen.getByTestId('card-header')).toHaveStyle({ alignItems: 'flex-start' });
-        expect(screen.getByTestId('action')).toBeTruthy();
+        expect(screen.getByRole('button', { name: 'Details' })).toHaveStyle({ minHeight: 48 });
+    });
+
+    it('supports comfortable density and explicit heading levels', () => {
+        const screen = render(
+            <CardHeader density="comfortable" headingLevel={3} testID="card-header" title="Security" />
+        );
+
+        expect(screen.getByTestId('card-header')).toHaveStyle({ minHeight: 48 });
+        expect(screen.getByRole('header', { name: 'Security' }).props['aria-level']).toBe(3);
+    });
+
+    it('keeps CompactCardHeader as a compact compatibility wrapper', () => {
+        const screen = render(<CompactCardHeader testID="compact-header" title="Snapshot" />);
+
+        expect(screen.getByRole('header', { name: 'Snapshot' })).toBeTruthy();
+        expect(screen.getByTestId('compact-header')).toHaveStyle({ minHeight: 22 });
     });
 });

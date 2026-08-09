@@ -12,7 +12,7 @@ import { AsyncStateBoundary, useAsyncResourceState, useOnlineStatus } from './As
 import { BottomSheetModal } from './BottomSheetModal';
 import { ProgressBar } from './ProgressBar';
 import { SectionHeader } from './SectionHeader';
-import { CompactCardHeader } from './CompactCardHeader';
+import { CardHeader } from './CardHeader';
 import { useAuth } from '../auth/AuthContext';
 import {
     describeCalorieBudgetChange,
@@ -56,7 +56,7 @@ export const CalibrationInsightCard: React.FC<ViewProps> = (props) => {
     if (hasPendingEvidence) {
         return (
             <AppCard {...props}>
-                <CompactCardHeader title="Calibration" metadata="Evidence change syncing" />
+                <CardHeader title="Calibration" metadata="Evidence change syncing" density="compact" />
                 <AppText variant="muted">
                     Calibration will return after your pending food and weight changes are checked by the server.
                 </AppText>
@@ -186,7 +186,7 @@ export const CalibrationInsightCardView: React.FC<CalibrationInsightCardViewProp
         const presentation = getErrorPresentation(error, 'calibration insight');
         return (
             <AppCard {...props} style={style}>
-                <CompactCardHeader title="Calibration" metadata="Unable to evaluate your latest history." />
+                <CardHeader title="Calibration" metadata="Unable to evaluate your latest history." density="compact" />
                 <AppText accessibilityRole="alert" style={styles.error}>{presentation.message}</AppText>
                 {presentation.requestId && <AppText variant="caption">Reference: {presentation.requestId}</AppText>}
                 {onRetry && <AppButton title="Retry" variant="secondary" onPress={onRetry} />}
@@ -197,7 +197,7 @@ export const CalibrationInsightCardView: React.FC<CalibrationInsightCardViewProp
     if (isLoading || !evaluation) {
         return (
             <AppCard {...props} style={style} accessibilityLabel="Loading calibration insight">
-                <CompactCardHeader title="Calibration" metadata="Checking your latest completed history..." />
+                <CardHeader title="Calibration" metadata="Checking your latest completed history..." density="compact" />
             </AppCard>
         );
     }
@@ -279,7 +279,7 @@ export const CalibrationInsightCardView: React.FC<CalibrationInsightCardViewProp
     return (
         <>
             <AppCard {...props} style={style}>
-                <CompactCardHeader title="Calibration" metadata={cardDescription} />
+                <CardHeader title="Calibration" metadata={cardDescription} density="compact" />
                 {scheduledChange ? (
                     <View style={styles.scheduledPanel}>
                         <View
