@@ -1,13 +1,27 @@
-import React from 'react';
-import { ActivityIndicator, Platform, StyleSheet, View } from 'react-native';
+import React, { useState } from 'react';
+import { ActivityIndicator, Platform, Pressable, StyleSheet, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { Link, type Href } from 'expo-router';
+import { CALIBRATE_PRODUCT_LINKS } from '@calibrate/shared/product';
 import { AppButton } from '../../../src/components/AppButton';
 import { AppCard } from '../../../src/components/AppCard';
 import { AppText } from '../../../src/components/AppText';
 import { CalibrateLogo } from '../../../src/components/CalibrateLogo';
 import { TabScreen } from '../../../src/components/TabScreen';
+import { useAuth } from '../../../src/auth/AuthContext';
+import { HOSTED_SERVER_URL, normalizeServerUrl } from '../../../src/config/server';
 import { radius, spacing, useAppTheme } from '../../../src/theme';
 import { useAppUpdateController } from '../../../src/updates/useAppUpdateController';
+
+const PRODUCT_LINKS = [
+    { label: 'Calibrate website', href: CALIBRATE_PRODUCT_LINKS.product },
+    { label: 'Privacy policy', href: CALIBRATE_PRODUCT_LINKS.privacy },
+    { label: 'Terms of service', href: CALIBRATE_PRODUCT_LINKS.terms },
+    { label: 'Support', href: CALIBRATE_PRODUCT_LINKS.support },
+    { label: 'Feedback', href: CALIBRATE_PRODUCT_LINKS.feedback },
+    { label: 'Open-source licenses', href: CALIBRATE_PRODUCT_LINKS.licenses },
+    { label: 'Release notes', href: CALIBRATE_PRODUCT_LINKS.releases }
+] as const;
 
 function formatUpdateDate(value: Date | null): string {
     if (!value || Number.isNaN(value.getTime())) return 'Unknown';
@@ -31,7 +45,9 @@ function getUpdateActionIcon(
 
 export default function AboutScreen() {
     const theme = useAppTheme();
+    const { serverUrl } = useAuth();
     const updates = useAppUpdateController();
+    const [showAdvanced, setShowAdvanced] = useState(false);
     const { versionInfo } = updates;
     const nativeRelease = versionInfo.nativeBuild === 'Not applicable'
         ? versionInfo.nativeVersion
@@ -43,6 +59,10 @@ export default function AboutScreen() {
         ? `${updates.status} ${progressPercent}%`
         : updates.status;
     const actionIcon = getUpdateActionIcon(updates.isUpdatePending, updates.isUpdateAvailable);
+    const serviceLabel = normalizeServerUrl(serverUrl) === HOSTED_SERVER_URL
+        ? 'Calibrate hosted service'
+        : 'Self-hosted service';
+    const platformLabel = Platform.OS === 'web' ? 'Web/PWA' : 'Android';
 
     return (
         <TabScreen>
@@ -51,100 +71,162 @@ export default function AboutScreen() {
                     <CalibrateLogo size={52} />
                 </View>
                 <View style={styles.brandCopy}>
-                    <AppText variant="title">calibrate</AppText>
-                    <AppText variant="caption">Self-hosted food, weight, and goal tracking.</AppText>
+                    <AppText variant="title">About Calibrate</AppText>
+                    <AppText variant="caption">Food, weight, and goal tracking built around clear daily progress.</AppText>
                 </View>
             </AppCard>
 
             <AppCard>
-                <View style={styles.cardHeading}>
-                    <View style={[styles.headingIcon, { backgroundColor: theme.colors.primaryContainer }]}>
-                        <Ionicons name="information-circle-outline" size={22} color={theme.colors.primaryDark} />
-                    </View>
-                    <View style={styles.headingCopy}>
-                        <AppText variant="subtitle">Version details</AppText>
-                        <AppText variant="caption">Useful when checking build and OTA compatibility.</AppText>
-                    </View>
-                </View>
-                <View style={[styles.infoRows, { backgroundColor: theme.colors.surfaceContainer }]}>
-                    <InfoRow label="Native build tag" value={versionInfo.nativeReleaseTag} />
-                    <InfoRow label="Native release" value={nativeRelease} />
-                    <InfoRow label="OTA runtime" value={versionInfo.runtimeVersion} />
-                    <InfoRow label="Update channel" value={versionInfo.channel} />
-                    <InfoRow label="Current OTA" value={versionInfo.updateLabel} />
-                    <InfoRow label="Published" value={formatUpdateDate(versionInfo.updateCreatedAt)} showDivider={false} />
-                </View>
-                {versionInfo.updateId ? (
-                    <View style={styles.updateIdBlock}>
-                        <AppText variant="caption">Full update ID</AppText>
-                        <AppText selectable style={styles.updateId}>{versionInfo.updateId}</AppText>
-                    </View>
-                ) : null}
-            </AppCard>
-
-            {versionInfo.isEmergencyLaunch ? (
-                <View style={[
-                    styles.notice,
-                    { backgroundColor: theme.colors.warningContainer, borderColor: theme.colors.warning }
-                ]}>
-                    <Ionicons name="warning-outline" size={22} color={theme.colors.onWarningContainer} />
-                    <View style={styles.noticeCopy}>
-                        <AppText variant="label" style={{ color: theme.colors.onWarningContainer }}>
-                            Recovery launch
-                        </AppText>
-                        <AppText style={{ color: theme.colors.onWarningContainer }}>
-                            Calibrate returned to a safe embedded update because the latest OTA could not launch.
-                        </AppText>
-                        {versionInfo.emergencyLaunchReason ? (
-                            <AppText variant="caption" selectable>{versionInfo.emergencyLaunchReason}</AppText>
-                        ) : null}
-                    </View>
-                </View>
-            ) : null}
-
-            <AppCard>
-                <View style={styles.cardHeading}>
-                    <View style={[styles.headingIcon, { backgroundColor: theme.colors.primaryContainer }]}>
-                        <Ionicons name="cloud-download-outline" size={22} color={theme.colors.primaryDark} />
-                    </View>
-                    <View style={styles.headingCopy}>
-                        <AppText variant="subtitle">App updates</AppText>
-                        <AppText variant="caption">Check the channel built into this phone app.</AppText>
-                    </View>
-                </View>
-                <View
-                    accessibilityLiveRegion="polite"
-                    style={[styles.status, { backgroundColor: theme.colors.surfaceContainer }]}
-                >
-                    {updates.isBusy ? <ActivityIndicator color={theme.colors.primary} /> : (
-                        <Ionicons
-                            name={updates.manualPhase === 'error' ? 'alert-circle-outline' : 'checkmark-circle-outline'}
-                            size={22}
-                            color={updates.manualPhase === 'error' ? theme.colors.danger : theme.colors.primary}
-                        />
-                    )}
-                    <AppText style={styles.statusCopy}>{status}</AppText>
-                </View>
-                <AppButton
-                    title={updates.actionTitle}
-                    variant={updates.isUpdateAvailable || updates.isUpdatePending ? 'primary' : 'secondary'}
-                    disabled={!updates.isSupported || updates.isBusy}
-                    leftIcon={<Ionicons name={actionIcon} size={20} color={
-                        updates.isUpdateAvailable || updates.isUpdatePending
-                            ? theme.colors.onPrimary
-                            : theme.colors.onSurface
-                    } />}
-                    onPress={() => void updates.action()}
-                />
-                <AppText variant="caption">
-                    OTA updates can change the phone app's JavaScript and assets. Native Android or Watch changes still
-                    require a newly signed build.
+                <AppText accessibilityRole="header" aria-level={2} variant="subtitle">Understand your progress</AppText>
+                <AppText>
+                    Calibrate helps you log food and weight, compare calories with a personalized target, and follow
+                    your trend over time.
                 </AppText>
-                {Platform.OS !== 'web' ? (
-                    <AppText variant="caption">
-                        Installing an update restarts Calibrate immediately. Saved account and offline data remain on the device.
-                    </AppText>
-                ) : null}
+                <AppText variant="caption">
+                    Available in English on the web as an installable PWA and on Android, with a Wear OS companion.
+                </AppText>
+            </AppCard>
+
+            <AppCard>
+                <AppText accessibilityRole="header" aria-level={2} variant="subtitle">Your data, your choices</AppText>
+                <AppText>
+                    The service you sign in to stores the account data Calibrate needs to work. You can export a
+                    portable copy or permanently delete your account from Settings.
+                </AppText>
+                <View style={styles.productLinks}>
+                    {PRODUCT_LINKS.map((link) => (
+                        <Link key={link.label} href={link.href as Href} asChild>
+                            <Pressable
+                                accessibilityRole="link"
+                                style={({ pressed }) => [
+                                    styles.productLink,
+                                    { borderColor: theme.colors.outline },
+                                    pressed && { backgroundColor: theme.colors.surfacePressed }
+                                ]}
+                            >
+                                <AppText style={[styles.productLinkText, { color: theme.colors.primary }]}>
+                                    {link.label}
+                                </AppText>
+                            </Pressable>
+                        </Link>
+                    ))}
+                </View>
+            </AppCard>
+
+            <AppCard>
+                <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={showAdvanced ? 'Hide advanced details' : 'Show advanced details'}
+                    accessibilityState={{ expanded: showAdvanced }}
+                    aria-expanded={showAdvanced}
+                    onPress={() => setShowAdvanced((current) => !current)}
+                    style={({ pressed }) => [styles.advancedDisclosure, pressed && { opacity: theme.interaction.pressedOpacity }]}
+                >
+                    <View style={styles.headingCopy}>
+                        <AppText accessibilityRole="header" aria-level={2} variant="subtitle">Advanced details</AppText>
+                        <AppText variant="caption">Optional technical information</AppText>
+                    </View>
+                    <Ionicons
+                        name={showAdvanced ? 'chevron-up' : 'chevron-down'}
+                        size={20}
+                        color={theme.colors.primary}
+                    />
+                </Pressable>
+
+                {showAdvanced && (
+                    <View style={styles.advancedContent}>
+                        <View style={styles.operatorNotice}>
+                            <AppText accessibilityRole="header" aria-level={3} variant="label">Self-hosting</AppText>
+                            <AppText variant="caption">
+                                Calibrate can connect to compatible self-hosted services. That service's operator is
+                                responsible for privacy, security, availability, backups, and support.
+                            </AppText>
+                        </View>
+
+                        {versionInfo.isEmergencyLaunch ? (
+                            <View style={[
+                                styles.notice,
+                                { backgroundColor: theme.colors.warningContainer, borderColor: theme.colors.warning }
+                            ]}>
+                                <Ionicons name="warning-outline" size={22} color={theme.colors.onWarningContainer} />
+                                <View style={styles.noticeCopy}>
+                                    <AppText variant="label" style={{ color: theme.colors.onWarningContainer }}>
+                                        Recovery launch
+                                    </AppText>
+                                    <AppText style={{ color: theme.colors.onWarningContainer }}>
+                                        Calibrate returned to a safe embedded update because the latest OTA could not launch.
+                                    </AppText>
+                                    {versionInfo.emergencyLaunchReason ? (
+                                        <AppText variant="caption" selectable>{versionInfo.emergencyLaunchReason}</AppText>
+                                    ) : null}
+                                </View>
+                            </View>
+                        ) : null}
+
+                        <AppText accessibilityRole="header" aria-level={3} variant="label">Diagnostics</AppText>
+                        <View style={[styles.infoRows, { backgroundColor: theme.colors.surfaceContainer }]}>
+                            <InfoRow label="Service" value={serviceLabel} />
+                            <InfoRow label="Service address" value={serverUrl} />
+                            <InfoRow label="Platform" value={platformLabel} />
+                            <InfoRow label="Native build tag" value={versionInfo.nativeReleaseTag} />
+                            <InfoRow label="Native release" value={nativeRelease} />
+                            <InfoRow label="OTA runtime" value={versionInfo.runtimeVersion} />
+                            <InfoRow label="Update channel" value={versionInfo.channel} />
+                            <InfoRow label="Current OTA" value={versionInfo.updateLabel} />
+                            <InfoRow
+                                label="Published"
+                                value={formatUpdateDate(versionInfo.updateCreatedAt)}
+                                showDivider={false}
+                            />
+                        </View>
+                        {versionInfo.updateId ? (
+                            <View style={styles.updateIdBlock}>
+                                <AppText variant="caption">Full update ID</AppText>
+                                <AppText selectable style={styles.updateId}>{versionInfo.updateId}</AppText>
+                            </View>
+                        ) : null}
+
+                        <AppText accessibilityRole="header" aria-level={3} variant="label">Software updates</AppText>
+                        <View
+                            accessibilityLiveRegion="polite"
+                            style={[styles.status, { backgroundColor: theme.colors.surfaceContainer }]}
+                        >
+                            {updates.isBusy ? <ActivityIndicator color={theme.colors.primary} /> : (
+                                <Ionicons
+                                    name={updates.manualPhase === 'error'
+                                        ? 'alert-circle-outline'
+                                        : 'checkmark-circle-outline'}
+                                    size={22}
+                                    color={updates.manualPhase === 'error' ? theme.colors.danger : theme.colors.primary}
+                                />
+                            )}
+                            <AppText style={styles.statusCopy}>{status}</AppText>
+                        </View>
+                        {updates.isSupported && (
+                            <AppButton
+                                title={updates.actionTitle}
+                                variant={updates.isUpdateAvailable || updates.isUpdatePending ? 'primary' : 'secondary'}
+                                disabled={updates.isBusy}
+                                leftIcon={<Ionicons name={actionIcon} size={20} color={
+                                    updates.isUpdateAvailable || updates.isUpdatePending
+                                        ? theme.colors.onPrimary
+                                        : theme.colors.onSurface
+                                } />}
+                                onPress={() => void updates.action()}
+                            />
+                        )}
+                        {Platform.OS === 'web' ? (
+                            <AppText variant="caption">
+                                Web and PWA updates are delivered through the browser and installed-site lifecycle.
+                            </AppText>
+                        ) : (
+                            <AppText variant="caption">
+                                OTA updates can change the Android app's JavaScript and assets. Native Android or Watch
+                                changes require a newly signed build.
+                            </AppText>
+                        )}
+                    </View>
+                )}
             </AppCard>
         </TabScreen>
     );
@@ -162,7 +244,7 @@ const InfoRow: React.FC<{ label: string; value: string; showDivider?: boolean }>
             showDivider && { borderBottomColor: theme.colors.outlineVariant, borderBottomWidth: StyleSheet.hairlineWidth }
         ]}>
             <AppText variant="caption">{label}</AppText>
-            <AppText style={styles.infoValue}>{value}</AppText>
+            <AppText selectable style={styles.infoValue}>{value}</AppText>
         </View>
     );
 };
@@ -184,21 +266,37 @@ const styles = StyleSheet.create({
         minWidth: 0,
         gap: spacing.xs
     },
-    cardHeading: {
+    productLinks: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: spacing.sm
+    },
+    productLink: {
+        minHeight: 48,
+        justifyContent: 'center',
+        borderWidth: StyleSheet.hairlineWidth,
+        borderRadius: radius.md,
+        paddingHorizontal: spacing.md,
+        paddingVertical: spacing.sm
+    },
+    productLinkText: {
+        fontWeight: '800'
+    },
+    advancedDisclosure: {
+        minHeight: 48,
         flexDirection: 'row',
         alignItems: 'center',
         gap: spacing.md
     },
-    headingIcon: {
-        width: 42,
-        height: 42,
-        borderRadius: radius.md,
-        alignItems: 'center',
-        justifyContent: 'center'
-    },
     headingCopy: {
         flex: 1,
         minWidth: 0,
+        gap: spacing.xs
+    },
+    advancedContent: {
+        gap: spacing.lg
+    },
+    operatorNotice: {
         gap: spacing.xs
     },
     infoRows: {

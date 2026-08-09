@@ -1,3 +1,4 @@
+import { CALIBRATE_PRODUCT_LINKS } from '@calibrate/shared/product';
 import { PublicLegalPage } from '../src/components/legal/PublicLegalPage';
 import {
     SUPPORT_EMAIL,
@@ -13,8 +14,8 @@ export default function SupportRoute() {
             sections={SUPPORT_SECTIONS}
             links={[
                 { href: `mailto:${SUPPORT_EMAIL}`, label: 'Email support' },
-                { href: '/terms', label: 'Terms of service' },
-                { href: '/privacy', label: 'Privacy policy' },
+                { href: CALIBRATE_PRODUCT_LINKS.terms, label: 'Terms of service' },
+                { href: CALIBRATE_PRODUCT_LINKS.privacy, label: 'Privacy policy' },
                 { href: '/account-deletion', label: 'Account deletion' }
             ]}
         />

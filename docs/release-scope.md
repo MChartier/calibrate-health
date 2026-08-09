@@ -1,7 +1,8 @@
-# First native release scope
+# First hosted release scope
 
-This document records product-completeness decisions for the first high-quality self-hosted release.
-It prevents optional expansion from obscuring the food, weight, and activity workflows required for
+This document records product-completeness decisions for the first hosted consumer release.
+The official service is the routine default; Advanced self-hosting remains supported without
+expanding the launch beyond the food, weight, and observational activity workflows required for
 daily personal use.
 
 ## Nutrition
@@ -19,8 +20,9 @@ activity records, daily summaries, and calories-out context, but they do not aut
 lower the configured calorie target. The target continues to use profile TDEE and the signed goal
 deficit. This avoids double-counting exercise already represented by the profile activity multiplier.
 
-An activity-adjusted target may become an opt-in feature later, but it must explain the calculation,
-define how the baseline multiplier changes, and preserve the unadjusted target for auditability.
+Activity-driven calorie-target adjustment is outside this release. Any future proposal must
+explain the calculation, define how the baseline multiplier changes, and preserve the unadjusted
+target for auditability.
 
 ## Lose It import
 
@@ -30,10 +32,10 @@ Imported food logs follow the same immutable calorie snapshot and timezone-local
 entries. Account export is the portable application-data escape path; encrypted Postgres backups are
 the disaster-recovery mechanism.
 
-## Language support
+## Launch clients and language
 
-The web client supports the stored `en`, `es`, `fr`, and `ru` language preferences. The first private
-Android and Wear release is English-only until every native workflow, permission rationale, Tile, and
-notification string has equivalent translations. Release notes and store metadata must state this
-boundary; the project must not imply that the web language preference localizes the native clients.
+The first release is English-only across Web/PWA, Android phone, and Wear OS. Stored language
+preference data does not mean those clients are translated. Additional languages require every
+workflow, permission rationale, Tile, and notification string to have equivalent translations.
+Release notes and store metadata must state the English-only boundary.
 

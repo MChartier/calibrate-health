@@ -10,6 +10,7 @@ import { CURRENT_PRIVACY_VERSION, CURRENT_TERMS_VERSION } from '@calibrate/share
 import * as Application from 'expo-application';
 import { useQueryClient } from '@tanstack/react-query';
 import {
+    HOSTED_SERVER_URL,
     INITIAL_SERVER_CONNECTION_STATE,
     normalizeServerUrl,
     testCalibrateServerConnection,
@@ -118,7 +119,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (!currentRefreshToken) return false;
 
         const refreshClient = new CalibrateApiClient({
-            baseUrl: serverUrl || 'https://calibratehealth.app',
+            baseUrl: serverUrl || HOSTED_SERVER_URL,
             clientIdentity: MOBILE_CLIENT_IDENTITY,
             onClientUpgradeRequired: handleClientUpgradeRequired
         });
@@ -135,7 +136,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const api = useMemo(
         () =>
             new CalibrateApiClient({
-                baseUrl: serverUrl || 'https://calibratehealth.app',
+                baseUrl: serverUrl || HOSTED_SERVER_URL,
                 clientIdentity: MOBILE_CLIENT_IDENTITY,
                 onClientUpgradeRequired: handleClientUpgradeRequired,
                 getAccessToken: () => accessTokenRef.current,

@@ -25,8 +25,8 @@ builds are the primary native workflow; Expo Go is useful for lightweight checks
   `$env:EXPO_PUBLIC_CALIBRATE_SERVER_URL='http://<host-lan-ip>:3000'; npm --prefix mobile run start -- --go --lan`.
 - In Expo dev builds pointed at localhost, the emulator loopback, or a LAN backend, the app auto-mints a mobile
   session for `test@calibratehealth.app` when no stored session can be restored.
-- Production and internal builds default to `https://calibratehealth.app`.
-- Self-hosted users can set a custom server URL on the sign-in screen.
+- Official builds default to `https://calibratehealth.app`.
+- A stored self-hosted server remains selected across restarts; choosing a custom server is an Advanced sign-in option.
 
 ## Architecture
 

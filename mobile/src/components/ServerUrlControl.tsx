@@ -15,6 +15,7 @@ type ServerUrlControlProps = ViewProps & {
     onChangeText: (value: string) => void;
     connection: ServerConnectionState;
     onTestConnection: (value: string) => Promise<boolean>;
+    presentation?: 'advanced' | 'editor';
 };
 
 const resolveStatusPresentation = (status: ServerConnectionState['status'], colors: AppThemeColors): {
@@ -34,23 +35,25 @@ const resolveStatusPresentation = (status: ServerConnectionState['status'], colo
 };
 
 /**
- * Compact server selector for auth screens.
+ * Hosted-first server selector for auth and Settings screens.
  *
- * Most users should see the active backend without losing half the form to a
- * rarely changed URL; self-hosted and LAN testing flows can still expand it.
+ * Routine hosted flows expose only a generic Advanced disclosure. Self-hosted
+ * and LAN testing flows retain the full URL editor and compatibility probe.
  */
 export const ServerUrlControl: React.FC<ServerUrlControlProps> = ({
     value,
     onChangeText,
     connection,
     onTestConnection,
+    presentation = 'advanced',
     style,
     ...props
 }) => {
     const theme = useAppTheme();
     const styles = useMemo(() => createStyles(theme), [theme]);
-    const [isEditing, setIsEditing] = useState(false);
+    const [isEditing, setIsEditing] = useState(presentation === 'editor');
     const normalizedValue = normalizeServerUrl(value);
+    const isHosted = normalizedValue === HOSTED_SERVER_URL;
     const matchesTestedCandidate = normalizedValue
         ? normalizedValue === connection.testedUrl
         : value.trim() === connection.testedInput;
@@ -60,31 +63,44 @@ export const ServerUrlControl: React.FC<ServerUrlControlProps> = ({
               status: 'idle' as const,
               testedInput: null,
               testedUrl: null,
-              message: 'Test this address before signing in.'
+              message: 'Test this address before continuing.'
           };
     const statusPresentation = resolveStatusPresentation(visibleConnection.status, theme.colors);
     const isTesting = visibleConnection.status === 'testing';
 
     return (
         <View {...props} style={[styles.root, style]}>
-            <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={isEditing ? 'Hide server URL editor' : 'Change server URL'}
-                onPress={() => setIsEditing((current) => !current)}
-                style={({ pressed }) => [styles.summary, pressed && styles.pressed]}
-            >
-                <View style={styles.summaryText}>
-                    <AppText variant="label">Server</AppText>
-                    <AppText numberOfLines={1} style={styles.urlText}>{value}</AppText>
-                </View>
-                <View style={styles.changeButton}>
-                    <Ionicons name={isEditing ? 'chevron-up' : 'create-outline'} size={16} color={theme.colors.primary} />
-                    <AppText style={styles.changeText}>{isEditing ? 'Hide' : 'Change'}</AppText>
-                </View>
-            </Pressable>
+            {presentation === 'advanced' && (
+                <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={isEditing
+                        ? 'Hide advanced connection options'
+                        : 'Show advanced connection options'}
+                    accessibilityState={{ expanded: isEditing }}
+                    aria-expanded={isEditing}
+                    onPress={() => setIsEditing((current) => !current)}
+                    style={({ pressed }) => [styles.summary, pressed && styles.pressed]}
+                >
+                    <View style={styles.summaryText}>
+                        <AppText variant="label">Advanced</AppText>
+                        {!isHosted && <AppText variant="caption">Self-hosted service selected</AppText>}
+                    </View>
+                    <Ionicons
+                        name={isEditing ? 'chevron-up' : 'chevron-down'}
+                        size={18}
+                        color={theme.colors.primary}
+                    />
+                </Pressable>
+            )}
 
             {isEditing && (
                 <View style={styles.editor}>
+                    <View style={styles.operatorNotice}>
+                        <AppText variant="label">Self-hosted service</AppText>
+                        <AppText variant="caption">
+                            Its operator is responsible for privacy, security, availability, backups, and support.
+                        </AppText>
+                    </View>
                     <TextField
                         label="Server URL"
                         autoCapitalize="none"
@@ -97,11 +113,11 @@ export const ServerUrlControl: React.FC<ServerUrlControlProps> = ({
                     <View style={styles.editorActions}>
                         <Pressable
                             accessibilityRole="button"
-                            accessibilityLabel="Use hosted Calibrate server"
+                            accessibilityLabel="Use Calibrate hosted service"
                             onPress={() => onChangeText(HOSTED_SERVER_URL)}
                             style={({ pressed }) => [styles.secondaryAction, pressed && styles.pressed]}
                         >
-                            <AppText style={styles.secondaryActionText}>Use hosted</AppText>
+                            <AppText style={styles.secondaryActionText}>Use hosted service</AppText>
                         </Pressable>
                         <Pressable
                             accessibilityRole="button"
@@ -121,17 +137,19 @@ export const ServerUrlControl: React.FC<ServerUrlControlProps> = ({
                 </View>
             )}
 
-            <View
-                accessible
-                accessibilityLiveRegion="polite"
-                accessibilityLabel={visibleConnection.message}
-                style={styles.connectionStatus}
-            >
-                <Ionicons name={statusPresentation.icon} size={17} color={statusPresentation.color} />
-                <AppText style={[styles.connectionStatusText, { color: statusPresentation.color }]}>
-                    {visibleConnection.message}
-                </AppText>
-            </View>
+            {isEditing && (
+                <View
+                    accessible
+                    accessibilityLiveRegion="polite"
+                    accessibilityLabel={visibleConnection.message}
+                    style={styles.connectionStatus}
+                >
+                    <Ionicons name={statusPresentation.icon} size={17} color={statusPresentation.color} />
+                    <AppText style={[styles.connectionStatusText, { color: statusPresentation.color }]}>
+                        {visibleConnection.message}
+                    </AppText>
+                </View>
+            )}
         </View>
     );
 };
@@ -157,31 +175,18 @@ const createStyles = (theme: AppTheme) => StyleSheet.create({
         minWidth: 0,
         gap: 2
     },
-    urlText: {
-        color: theme.colors.onSurface,
-        fontWeight: '800'
-    },
-    changeButton: {
-        minHeight: 32,
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: spacing.xs
-    },
-    changeText: {
-        color: theme.colors.primary,
-        fontWeight: '900'
-    },
     editor: {
         gap: spacing.md
     },
+    operatorNotice: {
+        gap: spacing.xs
+    },
     editorActions: {
-        flexDirection: 'row',
-        justifyContent: 'flex-end',
-        alignItems: 'center',
-        gap: spacing.md
+        gap: spacing.sm
     },
     secondaryAction: {
         minHeight: 48,
+        alignItems: 'center',
         justifyContent: 'center',
         paddingHorizontal: spacing.lg,
         borderRadius: radius.md

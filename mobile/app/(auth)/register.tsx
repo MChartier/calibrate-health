@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Platform, Pressable, StyleSheet } from 'react-native';
-import { Link, useLocalSearchParams } from 'expo-router';
+import { Link, useLocalSearchParams, type Href } from 'expo-router';
+import { CALIBRATE_PRODUCT_LINKS } from '@calibrate/shared/product';
 import { AppButton } from '../../src/components/AppButton';
 import { AppCard } from '../../src/components/AppCard';
 import { AppText } from '../../src/components/AppText';
@@ -83,10 +84,10 @@ export default function RegisterScreen() {
 
     return (
         <Screen safeTop style={styles.screen}>
-            <AuthBrand description="A private, portable home for your food, weight, and goal history." />
+            <AuthBrand description="Track food, weight, and progress against a personalized calorie target." />
 
             <AppCard>
-                <SectionHeader title="Create account" description="Use email and password for this Calibrate server." />
+                <SectionHeader title="Create account" description="Create your Calibrate account with email and password." />
                 <TextField
                     label="Email"
                     autoCapitalize="none"
@@ -155,6 +156,11 @@ export default function RegisterScreen() {
             >
                 <Pressable accessibilityRole="link" style={styles.linkTarget}>
                     <AppText style={[styles.link, { color: colors.primary }]}>Back to sign in</AppText>
+                </Pressable>
+            </Link>
+            <Link href={CALIBRATE_PRODUCT_LINKS.support as Href} asChild>
+                <Pressable accessibilityRole="link" style={styles.linkTarget}>
+                    <AppText style={[styles.link, { color: colors.primary }]}>Support</AppText>
                 </Pressable>
             </Link>
         </Screen>

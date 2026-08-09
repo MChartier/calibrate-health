@@ -13,6 +13,7 @@ describe('SettingsHome', () => {
         const onOpenActivity = jest.fn();
         const onOpenSavedFoods = jest.fn();
         const onOpenAbout = jest.fn();
+        const onOpenProductLink = jest.fn();
         const screen = render(
             <SettingsHome
                 email="person@example.invalid"
@@ -23,12 +24,12 @@ describe('SettingsHome', () => {
                 failedMutationCount={0}
                 pendingMutationCount={0}
                 isWeb
-                serverUrl="https://calibratehealth.app"
                 onEditProfile={jest.fn()}
                 onOpenSheet={jest.fn()}
                 onOpenActivity={onOpenActivity}
                 onOpenSavedFoods={onOpenSavedFoods}
                 onOpenAbout={onOpenAbout}
+                onOpenProductLink={onOpenProductLink}
                 onLogout={jest.fn()}
             />
         );
@@ -36,9 +37,45 @@ describe('SettingsHome', () => {
         fireEvent.press(screen.getByRole('button', { name: 'Activity' }));
         fireEvent.press(screen.getByRole('button', { name: 'Saved foods' }));
         fireEvent.press(screen.getByRole('button', { name: 'About Calibrate' }));
+        fireEvent.press(screen.getByRole('button', { name: 'Support and feedback' }));
+        fireEvent.press(screen.getByRole('button', { name: 'Privacy policy' }));
+        fireEvent.press(screen.getByRole('button', { name: 'Terms of service' }));
 
         expect(onOpenActivity).toHaveBeenCalledTimes(1);
         expect(onOpenSavedFoods).toHaveBeenCalledTimes(1);
         expect(onOpenAbout).toHaveBeenCalledTimes(1);
+        expect(onOpenProductLink.mock.calls).toEqual([
+            ['support'],
+            ['privacy'],
+            ['terms']
+        ]);
+        expect(screen.queryByRole('button', { name: 'Advanced' })).toBeNull();
+    });
+
+    it('keeps native self-hosting controls behind a generic Advanced entry', () => {
+        const onOpenSheet = jest.fn();
+        const screen = render(
+            <SettingsHome
+                email="person@example.invalid"
+                goalSummary="Maintain weight"
+                weightUnit={WEIGHT_UNITS.KG}
+                heightUnit={HEIGHT_UNITS.CM}
+                isOutboxReady
+                failedMutationCount={0}
+                pendingMutationCount={0}
+                isWeb={false}
+                onEditProfile={jest.fn()}
+                onOpenSheet={onOpenSheet}
+                onOpenActivity={jest.fn()}
+                onOpenSavedFoods={jest.fn()}
+                onOpenAbout={jest.fn()}
+                onOpenProductLink={jest.fn()}
+                onLogout={jest.fn()}
+            />
+        );
+
+        expect(screen.queryByText('Calibrate server')).toBeNull();
+        fireEvent.press(screen.getByRole('button', { name: 'Advanced' }));
+        expect(onOpenSheet).toHaveBeenCalledWith('advanced');
     });
 });

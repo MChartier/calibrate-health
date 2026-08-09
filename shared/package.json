@@ -71,6 +71,12 @@
       "react-native": "./legalVersions.ts",
       "default": "./dist/cjs/legalVersions.js"
     },
+    "./product": {
+      "types": "./product.ts",
+      "browser": "./product.ts",
+      "react-native": "./product.ts",
+      "default": "./dist/cjs/product.js"
+    },
     "./designTokens": {
       "types": "./designTokens.ts",
       "browser": "./designTokens.ts",

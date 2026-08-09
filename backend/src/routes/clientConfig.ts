@@ -1,4 +1,5 @@
 import express from 'express';
+import { CALIBRATE_HOSTED_ORIGIN } from '../../../shared/product';
 import release from '../../../shared/release.json';
 import { NATIVE_PUSH_MODES, resolveNativePushMode } from '../config/nativePush';
 import { getWebPushPublicKey } from '../services/webPush';
@@ -6,7 +7,6 @@ import { getWebPushPublicKey } from '../services/webPush';
 const router = express.Router();
 
 const CLIENT_API_VERSION = 1;
-const HOSTED_ORIGIN = 'https://calibratehealth.app';
 const CURRENT_API_VERSION = release.server.api.current;
 
 /**
@@ -24,7 +24,7 @@ router.get('/', (_req, res) => {
       legacy_deprecation: 'Supported until released clients have migrated to /api/v1.'
     },
     server_version: process.env.npm_package_version || release.server.version,
-    hosted_origin: HOSTED_ORIGIN,
+    hosted_origin: CALIBRATE_HOSTED_ORIGIN,
     min_supported_mobile_version: release.android.mobile.minimum_supported_version,
     min_supported_wear_version: release.android.wear.minimum_supported_version,
     capabilities: {

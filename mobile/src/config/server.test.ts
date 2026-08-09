@@ -1,4 +1,5 @@
 import {
+    HOSTED_SERVER_URL,
     getConfiguredServerUrl,
     normalizeServerUrl,
     parseServerUrl,
@@ -29,6 +30,10 @@ const compatibleConfig = {
 };
 
 describe('server URL parsing', () => {
+    it('uses the canonical hosted origin while keeping self-hosting available', () => {
+        expect(HOSTED_SERVER_URL).toBe('https://calibratehealth.app');
+    });
+
     it('normalizes hosted origins and defaults scheme-less remote hosts to HTTPS', () => {
         expect(normalizeServerUrl('https://calibratehealth.app/settings')).toBe('https://calibratehealth.app');
         expect(normalizeServerUrl('self-hosted.example:3443/api')).toBe('https://self-hosted.example:3443');
@@ -73,6 +78,12 @@ describe('server URL parsing', () => {
             'https://calibratehealth.app',
             false
         )).toBe('https://previous.example');
+        expect(resolveInitialServerUrl(
+            null,
+            'https://build-default.example',
+            HOSTED_SERVER_URL,
+            false
+        )).toBe(HOSTED_SERVER_URL);
     });
 
     it('targets port 3000 from a loopback Expo dev server but preserves production origins', () => {
