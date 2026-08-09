@@ -6,6 +6,7 @@ import { spawn, spawnSync } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
 
 export const HOSTED_ANDROID_API_LEVEL = '35';
+export const HOSTED_ANDROID_CMDLINE_TOOLS_VERSION = '15859902';
 export const HOSTED_WEAR_SYSTEM_IMAGE = `system-images;android-${HOSTED_ANDROID_API_LEVEL};android-wear;x86_64`;
 export const HOSTED_WEAR_AVD = 'calibrate-wear-upgrade';
 export const HOSTED_WEAR_SERIAL = 'emulator-5556';
@@ -29,7 +30,7 @@ export function resolveHostedWearConfiguration(environment = process.env, platfo
   assertHostedNativeRunner(environment);
   const pathApi = platform === 'win32' ? path.win32 : path.posix;
   const sdkRoot = environment.ANDROID_HOME.trim();
-  const commandLineTools = pathApi.join(sdkRoot, 'cmdline-tools', 'latest', 'bin');
+  const commandLineTools = pathApi.join(sdkRoot, 'cmdline-tools', HOSTED_ANDROID_CMDLINE_TOOLS_VERSION, 'bin');
   return {
     avdName: HOSTED_WEAR_AVD,
     serial: HOSTED_WEAR_SERIAL,

@@ -181,6 +181,12 @@ jobs:
         with:
           cmdline-tools-version: 15859902
 
+      - name: Activate reviewed Android command-line tools
+        shell: bash
+        run: |
+          test -x "$ANDROID_HOME/cmdline-tools/15859902/bin/sdkmanager"
+          echo "$ANDROID_HOME/cmdline-tools/15859902/bin" >> "$GITHUB_PATH"
+
       - name: Install deps
         run: npm ci --no-audit --fund=false
 
@@ -226,6 +232,12 @@ jobs:
         uses: android-actions/setup-android@v3
         with:
           cmdline-tools-version: 15859902
+
+      - name: Activate reviewed Android command-line tools
+        shell: bash
+        run: |
+          test -x "$ANDROID_HOME/cmdline-tools/15859902/bin/sdkmanager"
+          echo "$ANDROID_HOME/cmdline-tools/15859902/bin" >> "$GITHUB_PATH"
 
       - name: Create shared phone and Wear debug keystore
         shell: bash
@@ -304,6 +316,12 @@ jobs:
         uses: android-actions/setup-android@v3
         with:
           cmdline-tools-version: 15859902
+
+      - name: Activate reviewed Android command-line tools
+        shell: bash
+        run: |
+          test -x "$ANDROID_HOME/cmdline-tools/15859902/bin/sdkmanager"
+          echo "$ANDROID_HOME/cmdline-tools/15859902/bin" >> "$GITHUB_PATH"
 
       - name: Enable KVM
         shell: bash
@@ -414,6 +432,12 @@ jobs:
         with:
           cmdline-tools-version: 15859902
 
+      - name: Activate reviewed Android command-line tools
+        shell: bash
+        run: |
+          test -x "$ANDROID_HOME/cmdline-tools/15859902/bin/sdkmanager"
+          echo "$ANDROID_HOME/cmdline-tools/15859902/bin" >> "$GITHUB_PATH"
+
       - name: Enable KVM
         shell: bash
         run: |
@@ -480,6 +504,12 @@ jobs:
         uses: android-actions/setup-android@v3
         with:
           cmdline-tools-version: 15859902
+
+      - name: Activate reviewed Android command-line tools
+        shell: bash
+        run: |
+          test -x "$ANDROID_HOME/cmdline-tools/15859902/bin/sdkmanager"
+          echo "$ANDROID_HOME/cmdline-tools/15859902/bin" >> "$GITHUB_PATH"
 
       - name: Enable KVM
         shell: bash
