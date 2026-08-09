@@ -253,6 +253,11 @@ test('Settings export exposes a stable busy and disabled submission state', asyn
 
     const busyButton = exportSheet.getByRole('button', { name: 'Preparing export...', exact: true });
     await expect(busyButton).toBeDisabled();
+    // The dialog is fixed-position; pin the inert page behind it so Windows font metrics
+    // cannot leave a one-pixel scroll offset in the reviewed full-viewport baseline.
+    await page.locator('main').evaluate((main) => {
+      main.scrollTop = 0;
+    });
     await expectViewportScreenshot(page, 'settings-export-busy-dark.png');
   } finally {
     releaseExport();
