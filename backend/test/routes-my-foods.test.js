@@ -111,6 +111,124 @@ test('myFoods route: GET / builds filters from q + type', async () => {
   ]);
 });
 
+test('myFoods route: GET /library returns a paged envelope without changing the legacy array route', async () => {
+  const rows = [
+    {
+      id: 1,
+      type: 'FOOD',
+      name: 'Apple',
+      serving_size_quantity: 1,
+      serving_unit_label: 'item',
+      calories_per_serving: 95,
+      is_pinned: true,
+      recipe_total_calories: null,
+      yield_servings: null,
+      normalized_name: 'apple',
+      snapshot_max_id: 2
+    },
+    {
+      id: 2,
+      type: 'RECIPE',
+      name: 'Bowl',
+      serving_size_quantity: 1,
+      serving_unit_label: 'bowl',
+      calories_per_serving: 400,
+      is_pinned: false,
+      recipe_total_calories: 800,
+      yield_servings: 2,
+      normalized_name: 'bowl',
+      snapshot_max_id: 2
+    }
+  ];
+  let receivedQuery = null;
+  const prismaStub = {
+    $queryRaw: async (query) => {
+      receivedQuery = query;
+      return rows;
+    }
+  };
+  const router = loadMyFoodsRouter(prismaStub);
+  const handler = getRouteHandler(router, 'get', '/library');
+  const res = createRes();
+
+  await handler({ user: { id: 7 }, query: { q: '  app  ', type: 'food', limit: '1' } }, res);
+
+  assert.equal(res.statusCode, 200);
+  assert.equal(res.body.items.length, 1);
+  assert.equal(res.body.items[0].name, 'Apple');
+  assert.equal('normalized_name' in res.body.items[0], false);
+  assert.equal('snapshot_max_id' in res.body.items[0], false);
+  assert.equal(typeof res.body.next_cursor, 'string');
+  assert.match(receivedQuery.sql, /WHERE "user_id" = \?/);
+  assert.match(receivedQuery.sql, /ORDER BY "is_pinned" DESC, LOWER\("name"\) ASC, "id" ASC/);
+  assert.deepEqual(receivedQuery.values, [7, 'app', 'FOOD', 2]);
+});
+
+test('myFoods route: GET /library rejects invalid filters, limits, and cursors', async () => {
+  const router = loadMyFoodsRouter({ $queryRaw: async () => [] });
+  const handler = getRouteHandler(router, 'get', '/library');
+  const cases = [
+    [{ type: 'meal' }, 'type must be FOOD or RECIPE'],
+    [{ limit: '0' }, 'limit must be an integer from 1 to 100'],
+    [{ limit: '101' }, 'limit must be an integer from 1 to 100'],
+    [{ q: 'x'.repeat(121) }, 'q must be at most 120 characters'],
+    [{ cursor: 'not.a.cursor' }, 'Invalid cursor']
+  ];
+
+  for (const [query, message] of cases) {
+    const res = createRes();
+    await handler({ user: { id: 7 }, query }, res);
+    assert.equal(res.statusCode, 400);
+    assert.deepEqual(res.body, { message });
+  }
+});
+
+test('myFoods route: GET /library cursors are opaque, filter-bound, and advance without overlap', async () => {
+  const allRows = [
+    { id: 4, name: 'apple', is_pinned: true },
+    { id: 8, name: 'Apple', is_pinned: true },
+    { id: 3, name: 'banana', is_pinned: true },
+    { id: 1, name: 'apple', is_pinned: false }
+  ].map((item) => ({
+    type: 'FOOD',
+    serving_size_quantity: 1,
+    serving_unit_label: 'item',
+    calories_per_serving: 10,
+    recipe_total_calories: null,
+    yield_servings: null,
+    normalized_name: item.name.toLowerCase(),
+    snapshot_max_id: 8,
+    ...item
+  }));
+  const receivedQueries = [];
+  const prismaStub = {
+    $queryRaw: async (query) => {
+      receivedQueries.push(query);
+      return receivedQueries.length === 1 ? allRows.slice(0, 3) : allRows.slice(2);
+    }
+  };
+  const handler = getRouteHandler(loadMyFoodsRouter(prismaStub), 'get', '/library');
+  const first = createRes();
+  await handler({ user: { id: 7 }, query: { limit: '2' } }, first);
+
+  assert.deepEqual(first.body.items.map((item) => item.id), [4, 8]);
+  assert.match(first.body.next_cursor, /^[A-Za-z0-9_-]+$/);
+
+  const second = createRes();
+  await handler({ user: { id: 7 }, query: { limit: '2', cursor: first.body.next_cursor } }, second);
+  assert.deepEqual(second.body.items.map((item) => item.id), [3, 1]);
+  assert.equal(second.body.next_cursor, null);
+  assert.match(receivedQueries[1].sql, /"id" <= \?/);
+  assert.match(receivedQueries[1].sql, /LOWER\("name"\) > \?/);
+  assert.match(receivedQueries[1].sql, /OR "is_pinned" = false/);
+  assert.deepEqual(receivedQueries[1].values, [7, 8, true, 'apple', 'apple', 8, 3]);
+
+  const mismatchedFilter = createRes();
+  await handler({ user: { id: 7 }, query: { limit: '2', type: 'RECIPE', cursor: first.body.next_cursor } }, mismatchedFilter);
+  assert.equal(mismatchedFilter.statusCode, 400);
+  assert.deepEqual(mismatchedFilter.body, { message: 'Invalid cursor' });
+});
+
 test('myFoods route: PATCH /:id/pin validates id and boolean state', async () => {
   const router = loadMyFoodsRouter({ myFood: {} });
   const handler = getRouteHandler(router, 'patch', '/:id/pin');

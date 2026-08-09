@@ -999,9 +999,11 @@ export type RecentFoodsResponse = {
     items: RecentFoodSummary[];
 };
 
+export type MyFoodType = 'FOOD' | 'RECIPE';
+
 export type MyFoodSummary = {
     id: number;
-    type: 'FOOD' | 'RECIPE';
+    type: MyFoodType;
     name: string;
     serving_size_quantity: number;
     serving_unit_label: string;
@@ -1009,6 +1011,18 @@ export type MyFoodSummary = {
     is_pinned: boolean;
     recipe_total_calories?: number | null;
     yield_servings?: number | null;
+};
+
+export type MyFoodsLibraryQuery = {
+    q?: string;
+    type?: MyFoodType;
+    cursor?: string;
+    limit?: number;
+};
+
+export type MyFoodsLibraryResponse = {
+    items: MyFoodSummary[];
+    next_cursor: string | null;
 };
 
 export type RecipeIngredientSource = 'MY_FOOD' | 'EXTERNAL';

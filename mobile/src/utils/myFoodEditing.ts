@@ -19,11 +19,21 @@ export function hydrateRecipeIngredientDrafts(
         const sourceFood = ingredient.source_my_food_id
             ? savedFoods.find(({ id }) => id === ingredient.source_my_food_id)
             : undefined;
-        if (ingredient.source === 'MY_FOOD' && sourceFood && ingredient.quantity_servings) {
+        if (ingredient.source === 'MY_FOOD' && ingredient.source_my_food_id && ingredient.quantity_servings) {
+            const snapshotFood: MyFoodSummary = sourceFood ?? {
+                id: ingredient.source_my_food_id,
+                type: 'FOOD',
+                name: ingredient.name_snapshot,
+                serving_size_quantity: ingredient.serving_size_quantity_snapshot ?? 1,
+                serving_unit_label: ingredient.serving_unit_label_snapshot ?? 'serving',
+                calories_per_serving: ingredient.calories_per_serving_snapshot
+                    ?? ingredient.calories_total_snapshot / ingredient.quantity_servings,
+                is_pinned: false
+            };
             return {
                 key: `existing-${ingredient.id}`,
                 source: 'MY_FOOD' as const,
-                myFood: sourceFood,
+                myFood: snapshotFood,
                 servings: ingredient.quantity_servings
             };
         }

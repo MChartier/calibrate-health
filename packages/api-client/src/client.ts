@@ -49,6 +49,8 @@ import type {
     WatchSnapshotFetchResult,
     CreateRecipePayload,
     MyFoodDetail,
+    MyFoodsLibraryQuery,
+    MyFoodsLibraryResponse,
     MyFoodSummary,
     MobileRefreshResponse,
     NativePushSubscriptionPayload,
@@ -724,6 +726,16 @@ export class CalibrateApiClient {
 
     getMyFoods(): Promise<MyFoodSummary[]> {
         return this.request<MyFoodSummary[]>('/api/my-foods');
+    }
+
+    getMyFoodsLibrary(options: MyFoodsLibraryQuery = {}): Promise<MyFoodsLibraryResponse> {
+        const query = new URLSearchParams();
+        if (options.q !== undefined) query.set('q', options.q);
+        if (options.type !== undefined) query.set('type', options.type);
+        if (options.cursor !== undefined) query.set('cursor', options.cursor);
+        if (options.limit !== undefined) query.set('limit', String(options.limit));
+        const suffix = query.toString() ? `?${query.toString()}` : '';
+        return this.request<MyFoodsLibraryResponse>(`/api/my-foods/library${suffix}`);
     }
 
     getMyFood(id: number): Promise<MyFoodDetail> {

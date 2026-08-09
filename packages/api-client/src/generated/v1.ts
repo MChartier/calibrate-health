@@ -445,6 +445,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/my-foods/library": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description List the authenticated user's saved foods and recipe snapshots using stable keyset pagination. */
+        get: operations["listMyFoodsLibrary"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/my-foods/{myFoodId}/pin": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** @description Set shortcut pin state on an authenticated user's saved food or recipe without changing snapshots. */
+        patch: operations["setMyFoodPinned"];
+        trace?: never;
+    };
     "/api/v1/metrics": {
         parameters: {
             query?: never;
@@ -1533,6 +1567,26 @@ export interface components {
             receipt: components["schemas"]["OnboardingCompleteReceipt"];
             user: components["schemas"]["UserClientPayload"];
         };
+        /** @enum {string} */
+        MyFoodType: "FOOD" | "RECIPE";
+        MyFoodSummary: {
+            id: number;
+            type: components["schemas"]["MyFoodType"];
+            name: string;
+            serving_size_quantity: number;
+            serving_unit_label: string;
+            calories_per_serving: number;
+            is_pinned: boolean;
+            recipe_total_calories: number | null;
+            yield_servings: number | null;
+        };
+        MyFoodsLibraryResponse: {
+            items: components["schemas"]["MyFoodSummary"][];
+            next_cursor: string | null;
+        };
+        SetMyFoodPinnedRequest: {
+            is_pinned: boolean;
+        };
         ApiError: {
             message: string;
             code: string | null;
@@ -2007,6 +2061,7 @@ export interface components {
     };
     parameters: {
         FoodLogId: number;
+        MyFoodId: number;
         MetricId: number;
         /** @description Stable client-generated identifier used to safely replay a mutation. */
         ClientOperationId: string;
@@ -3147,6 +3202,87 @@ export interface operations {
                 content?: never;
             };
             401: components["responses"]["Unauthorized"];
+        };
+    };
+    listMyFoodsLibrary: {
+        parameters: {
+            query?: {
+                q?: string;
+                type?: components["schemas"]["MyFoodType"];
+                /** @description Opaque continuation cursor returned by the preceding response for the same filters. */
+                cursor?: string;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Saved foods ordered by pinned state, normalized name, and stable ID. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MyFoodsLibraryResponse"];
+                };
+            };
+            /** @description Invalid query, filter, limit, or cursor. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    setMyFoodPinned: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                myFoodId: components["parameters"]["MyFoodId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetMyFoodPinnedRequest"];
+            };
+        };
+        responses: {
+            /** @description Updated saved food summary. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MyFoodSummary"];
+                };
+            };
+            /** @description Invalid saved-food ID or pin state. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            /** @description Saved food does not exist or belongs to another account. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
         };
     };
     listMetrics: {
