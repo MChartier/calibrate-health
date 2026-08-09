@@ -8,6 +8,7 @@ import { AuthProvider, useAuth } from '../src/auth/AuthContext';
 import { hasFullAccountAccess } from '../src/auth/accountAccess';
 import { NativePushRegistrationProvider } from '../src/hooks/useNativePushRegistration';
 import { useNotificationTapRouting } from '../src/notifications/useNotificationTapRouting';
+import { invalidateNotificationQueries } from '../src/notifications/query';
 import { createQueuedMutationExecutor } from '../src/offline/operations';
 import { OfflineOutboxProvider } from '../src/offline/provider';
 import { invalidateQueriesAfterOfflineReplay } from '../src/offline/replayInvalidation';
@@ -23,8 +24,12 @@ const queryClient = new QueryClient();
 
 const NativeRuntimeHooks: React.FC = () => {
     const { user, serverUrl } = useAuth();
+    const runtimeQueryClient = useQueryClient();
     const hasFullAccess = hasFullAccountAccess(user);
-    useNotificationTapRouting(Boolean(user && hasFullAccess));
+    const reconcileNotifications = React.useCallback(() => {
+        void invalidateNotificationQueries(runtimeQueryClient);
+    }, [runtimeQueryClient]);
+    useNotificationTapRouting(Boolean(user && hasFullAccess), reconcileNotifications);
     useWearHandoffRouting({
         enabled: Boolean(user && hasFullAccess && serverUrl),
         serverOrigin: serverUrl,

@@ -31,3 +31,23 @@ export function formatNotificationDate(value: string): string {
     if (Number.isNaN(date.getTime())) return value;
     return new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' }).format(date);
 }
+
+export function formatNotificationTimestamp(value: string): string {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return value;
+    return new Intl.DateTimeFormat(undefined, {
+        month: 'short',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit'
+    }).format(date);
+}
+
+export function getNotificationStateLabel(
+    notification: InAppNotification & { resolved_at?: string | null }
+): string {
+    if (notification.dismissed_at) return 'Dismissed';
+    if ('resolved_at' in notification && notification.resolved_at) return 'Resolved';
+    if (notification.read_at) return 'Read';
+    return 'Unread';
+}

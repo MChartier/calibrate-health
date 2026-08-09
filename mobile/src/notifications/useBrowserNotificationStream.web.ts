@@ -4,8 +4,9 @@ import {
     NOTIFICATION_REALTIME_EVENT_NAME,
     isNotificationRealtimePayload
 } from '../../../shared/notificationRealtime';
+import { MOBILE_NOTIFICATION_QUERY_KEY } from './query';
 
-export const MOBILE_NOTIFICATION_QUERY_KEY = ['mobile-in-app-notifications'] as const;
+export { MOBILE_NOTIFICATION_QUERY_KEY } from './query';
 
 // Reconnect after transient server or network failures without creating a tight request loop.
 export const NOTIFICATION_STREAM_RECONNECT_MS = 5_000;

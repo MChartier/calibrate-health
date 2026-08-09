@@ -4,8 +4,11 @@ import prisma from '../config/database';
 import { NATIVE_PUSH_MODES, resolveNativePushMode } from '../config/nativePush';
 import {
   listActiveInAppNotificationsForUser,
+  listInAppNotificationPageForUser,
+  markAllInAppNotificationsRead,
   markInAppNotificationDismissed,
   markInAppNotificationRead,
+  parseInAppNotificationPageQuery,
   resolveInactiveReminderNotificationsForUser
 } from '../services/inAppNotifications';
 import { getWebPushPublicKey } from '../services/webPush';
@@ -268,14 +271,36 @@ router.delete('/native-subscription', async (req, res) => {
 router.get('/in-app', async (req, res) => {
   const user = getAuthenticatedUser(req);
   const timeZone = user.timezone || 'UTC';
+  const isLegacyRequest = Object.keys(req.query).length === 0;
+  const parsedQuery = isLegacyRequest
+    ? null
+    : parseInAppNotificationPageQuery(req.query as Record<string, unknown>);
+
+  if (parsedQuery && !parsedQuery.ok) {
+    return res.status(400).json({ message: 'Invalid notification query.' });
+  }
 
   await resolveInactiveReminderNotificationsForUser({
     userId: user.id,
     timeZone
   });
 
-  const { notifications, unreadCount } = await listActiveInAppNotificationsForUser({ userId: user.id });
-  res.json({ notifications, unread_count: unreadCount });
+  if (isLegacyRequest) {
+    const { notifications, unreadCount } = await listActiveInAppNotificationsForUser({ userId: user.id });
+    return res.json({ notifications, unread_count: unreadCount });
+  }
+
+  const { notifications, unreadCount, nextCursor } = await listInAppNotificationPageForUser({
+    userId: user.id,
+    ...parsedQuery!.query
+  });
+  return res.json({ notifications, unread_count: unreadCount, next_cursor: nextCursor });
+});
+
+router.patch('/in-app/read-all', async (req, res) => {
+  const user = getAuthenticatedUser(req);
+  const updatedCount = await markAllInAppNotificationsRead({ userId: user.id });
+  res.json({ ok: true, updated_count: updatedCount });
 });
 
 router.patch('/in-app/:notificationId/read', async (req, res) => {

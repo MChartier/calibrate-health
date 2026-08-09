@@ -13,6 +13,7 @@ import type { AsyncResourceState } from '../asyncState/resolveAsyncState';
 import { getSafeActionErrorMessage } from '../errors/presentation';
 import { useReducedMotionPreference } from '../hooks/useReducedMotionPreference';
 import { useModalFocusManagement } from '../hooks/useModalFocusManagement';
+import { ACTIVE_NOTIFICATION_LIMIT } from '../notifications/query';
 import { spacing, useAppTheme, type AppTheme } from '../theme';
 
 const DRAWER_WIDTH_FRACTION = 0.9;
@@ -167,7 +168,11 @@ export const NotificationsDrawer: React.FC<NotificationsDrawerProps> = ({
                         />
                     </View>
 
-                    <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+                    <ScrollView
+                        testID="notifications-drawer-list"
+                        contentContainerStyle={styles.content}
+                        keyboardShouldPersistTaps="handled"
+                    >
                         <AsyncStateBoundary
                             state={state}
                             resourceLabel="notifications"
@@ -180,7 +185,7 @@ export const NotificationsDrawer: React.FC<NotificationsDrawerProps> = ({
                             )}
                             onRetry={onRetry}
                         >
-                            {notifications.map((notification) => (
+                            {notifications.slice(0, ACTIVE_NOTIFICATION_LIMIT).map((notification) => (
                                 <NotificationCard
                                     key={notification.id}
                                     notification={notification}
@@ -203,6 +208,7 @@ export const NotificationsDrawer: React.FC<NotificationsDrawerProps> = ({
                         )}
 
                         <AppButton
+                            testID="view-all-notifications"
                             title="View all notifications"
                             variant="secondary"
                             onPress={onViewAll}
