@@ -15,6 +15,7 @@ describe('SettingsHome', () => {
         const onOpenAbout = jest.fn();
         const onOpenProductLink = jest.fn();
         const onDeleteAccount = jest.fn();
+        const onOpenSheet = jest.fn();
         const screen = render(
             <SettingsHome
                 email="person@example.invalid"
@@ -27,7 +28,7 @@ describe('SettingsHome', () => {
                 pendingMutationCount={0}
                 isWeb
                 onEditProfile={jest.fn()}
-                onOpenSheet={jest.fn()}
+                onOpenSheet={onOpenSheet}
                 onOpenActivity={onOpenActivity}
                 onOpenSavedFoods={onOpenSavedFoods}
                 onOpenAbout={onOpenAbout}
@@ -45,6 +46,7 @@ describe('SettingsHome', () => {
         fireEvent.press(screen.getByRole('button', { name: 'Terms of service' }));
         fireEvent.press(screen.getByRole('button', { name: 'Open-source licenses' }));
         fireEvent.press(screen.getByRole('button', { name: 'Delete account' }));
+        fireEvent.press(screen.getByRole('button', { name: 'Advanced' }));
 
         expect(onOpenActivity).toHaveBeenCalledTimes(1);
         expect(onOpenSavedFoods).toHaveBeenCalledTimes(1);
@@ -64,10 +66,10 @@ describe('SettingsHome', () => {
         expect(screen.getByTestId('settings-section-data')).toBeTruthy();
         expect(screen.getByTestId('settings-section-help')).toBeTruthy();
         expect(screen.getByTestId('settings-section-app')).toBeTruthy();
-        expect(screen.queryByRole('button', { name: 'Advanced' })).toBeNull();
+        expect(onOpenSheet).toHaveBeenCalledWith('advanced');
     });
 
-    it('keeps native self-hosting controls behind a generic Advanced entry', () => {
+    it('keeps native self-hosting controls behind the same generic Advanced entry', () => {
         const onOpenSheet = jest.fn();
         const screen = render(
             <SettingsHome

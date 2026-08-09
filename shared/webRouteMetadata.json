@@ -1,0 +1,8 @@
+{
+  "landing": {
+    "title": "Calibrate - Private calorie tracking",
+    "description": "Track food, weight, activity, and goals with a private Calibrate account or your own compatible server.",
+    "canonicalPath": "/",
+    "robots": "index, follow"
+  }
+}

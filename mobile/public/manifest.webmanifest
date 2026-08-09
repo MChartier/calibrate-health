@@ -1,19 +1,66 @@
 {
-  "id": "/",
-  "name": "calibrate",
-  "short_name": "calibrate",
+  "id": "./",
+  "name": "Calibrate Health",
+  "short_name": "Calibrate",
   "description": "Private food, weight, activity, and goal tracking with your Calibrate server.",
-  "start_url": "/",
-  "scope": "/",
+  "lang": "en",
+  "dir": "ltr",
+  "start_url": "./",
+  "scope": "./",
   "display": "standalone",
+  "display_override": ["standalone"],
+  "orientation": "any",
   "background_color": "#F6F8F4",
   "theme_color": "#2E7D32",
+  "categories": ["health", "lifestyle"],
+  "prefer_related_applications": false,
   "icons": [
     {
-      "src": "/calibrate-icon.svg",
+      "src": "./calibrate-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./calibrate-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./calibrate-icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "./calibrate-icon.svg",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Today",
+      "short_name": "Today",
+      "description": "Open today's Calibrate summary.",
+      "url": "./today",
+      "icons": [{ "src": "./calibrate-icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Log food",
+      "short_name": "Log food",
+      "description": "Open the Calibrate food log.",
+      "url": "./food-log",
+      "icons": [{ "src": "./calibrate-icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Log weight",
+      "short_name": "Log weight",
+      "description": "Open the Calibrate weight entry.",
+      "url": "./weight",
+      "icons": [{ "src": "./calibrate-icon-192.png", "sizes": "192x192", "type": "image/png" }]
     }
   ]
 }

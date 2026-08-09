@@ -5,9 +5,13 @@ import process from 'node:process';
 import { fileURLToPath } from 'node:url';
 
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
+const WEB_ROUTE_METADATA = JSON.parse(fs.readFileSync(path.join(SCRIPT_DIR, '..', 'shared', 'webRouteMetadata.json'), 'utf8'));
+const LANDING_METADATA = WEB_ROUTE_METADATA.landing;
 export const DEFAULT_EXPO_WEB_DIST = path.join(SCRIPT_DIR, '..', 'mobile', 'dist');
 const ENTRY_BUNDLE_PATTERN = /^_expo\/static\/js\/web\/index-[a-f0-9]+\.js$/;
-const PWA_FILES = ['manifest.webmanifest', 'sw.js', 'calibrate-icon.svg'];
+const PWA_FILES = ['manifest.webmanifest', 'sw.js', 'calibrate-icon.svg', 'calibrate-icon-192.png', 'calibrate-icon-512.png', 'calibrate-icon-maskable-512.png'];
+const PRECACHE_SHELL_FILES = PWA_FILES.filter((fileName) => fileName !== 'sw.js');
+const VERSIONED_STATIC_ASSET_PATTERN = /^(?:_expo\/static\/(?:js|css)\/.+-[a-f0-9]{6,}\.(?:js|css)|assets\/.+-[a-f0-9]{6,}\.[a-z0-9]+)$/i;
 
 function readRequiredFile(filePath, label) {
   if (!fs.existsSync(filePath) || !fs.statSync(filePath).isFile()) {
@@ -69,9 +73,9 @@ function listFiles(rootDir, relativeDir = '') {
 
 function expectedPrecachePaths(distDir) {
   return [
-    '/',
+    '/index.html',
     ...listFiles(distDir)
-      .filter((filePath) => !['index.html', 'metadata.json', 'sw.js'].includes(filePath))
+      .filter((filePath) => PRECACHE_SHELL_FILES.includes(filePath) || VERSIONED_STATIC_ASSET_PATTERN.test(filePath))
       .map((filePath) => `/${filePath}`),
   ];
 }
@@ -94,23 +98,21 @@ export function enhanceExpoWebServiceWorker(distDir = DEFAULT_EXPO_WEB_DIST) {
   const swPath = path.join(resolvedDist, 'sw.js');
   const source = readRequiredFile(swPath, 'sw.js');
   const template = source
-    .replace(/const CACHE_NAME = [^;]+;/, 'const CACHE_NAME = `${CACHE_PREFIX}shell-v1`;')
+    .replace(/const CACHE_NAME = [^;]+;/, "const CACHE_NAME = SHELL_CACHE_PREFIX + 'v2';")
     .replace(/const APP_SHELL = \[[\s\S]*?\];/, 'const APP_SHELL = [];');
-  if (template === source && !source.includes('shell-v1')) {
+  if (template === source && !source.includes('SHELL_CACHE_PREFIX')) {
     throw new Error('Expo web service worker template is missing replaceable CACHE_NAME or APP_SHELL constants.');
   }
   const precachePaths = expectedPrecachePaths(resolvedDist);
   const digest = crypto.createHash('sha256');
   digest.update(template);
   for (const assetPath of precachePaths) {
-    const filePath = assetPath === '/'
-      ? path.join(resolvedDist, 'index.html')
-      : path.join(resolvedDist, assetPath.slice(1));
+    const filePath = path.join(resolvedDist, assetPath.slice(1));
     digest.update(assetPath);
     digest.update(fs.readFileSync(filePath));
   }
   const cacheVersion = digest.digest('hex').slice(0, 12);
-  const cacheDeclaration = `const CACHE_NAME = \`\${CACHE_PREFIX}shell-${cacheVersion}\`;`;
+  const cacheDeclaration = "const CACHE_NAME = SHELL_CACHE_PREFIX + '" + cacheVersion + "';";
   const shellDeclaration = `const APP_SHELL = ${JSON.stringify(precachePaths, null, 2)};`;
   const withCacheVersion = template.replace(/const CACHE_NAME = [^;]+;/, cacheDeclaration);
   const enhanced = withCacheVersion.replace(/const APP_SHELL = \[[\s\S]*?\];/, shellDeclaration);
@@ -128,8 +130,26 @@ export function inspectExpoWebExport(distDir = DEFAULT_EXPO_WEB_DIST) {
   const metadataPath = path.join(resolvedDist, 'metadata.json');
   const html = readRequiredFile(indexPath, 'index.html');
   const title = html.match(/<title(?:\s[^>]*)?>([^<]+)<\/title>/i)?.[1]?.trim();
-  if (title !== 'calibrate') {
-    throw new Error(`Expo web index must define the production document title "calibrate"; received ${title || 'empty'}.`);
+  if (title !== LANDING_METADATA.title) {
+    throw new Error(`Expo web index title must match the landing metadata contract "${LANDING_METADATA.title}"; received ${title || 'empty'}.`);
+  }
+  const descriptionValues = [...html.matchAll(/<meta\b[^>]*\bname="description"[^>]*\bcontent="([^"]+)"[^>]*>/gi)].map((match) => match[1].trim());
+  if (descriptionValues.length !== 1 || descriptionValues[0] !== LANDING_METADATA.description) {
+    throw new Error('Expo web index must contain exactly one description matching the landing metadata contract.');
+  }
+  const robotsValues = [...html.matchAll(/<meta\b[^>]*\bname="robots"[^>]*\bcontent="([^"]+)"[^>]*>/gi)].map((match) => match[1].trim());
+  if (robotsValues.length !== 1 || robotsValues[0] !== LANDING_METADATA.robots) {
+    throw new Error('Expo web index robots metadata must match the landing metadata contract.');
+  }
+  const canonicalValues = [...html.matchAll(/<link\b[^>]*\brel="canonical"[^>]*\bhref="([^"]+)"[^>]*>/gi)].map((match) => match[1].trim());
+  if (canonicalValues.length !== 1 || canonicalValues[0] !== LANDING_METADATA.canonicalPath) {
+    throw new Error('Expo web index canonical link must match the landing metadata contract.');
+  }
+  if (/<meta\b[^>]*\bname="apple-mobile-web-app-/i.test(html)) {
+    throw new Error('Expo web index must not claim Apple-specific installed-app support.');
+  }
+  if (!/<link\b[^>]*\brel="manifest"[^>]*\bhref="\/manifest\.webmanifest"/i.test(html) || !/<meta\b[^>]*\bname="theme-color"[^>]*\bcontent="#2E7D32"/i.test(html)) {
+    throw new Error('Expo web index must retain its standards manifest and theme-color metadata.');
   }
   const hasMetadata = fs.existsSync(metadataPath);
   if (hasMetadata) {
@@ -156,14 +176,14 @@ export function inspectExpoWebExport(distDir = DEFAULT_EXPO_WEB_DIST) {
   } catch {
     throw new Error(`Expo web manifest is not valid JSON: ${manifestPath}`);
   }
-  if (manifest.start_url !== '/' || manifest.scope !== '/' || manifest.display !== 'standalone') {
-    throw new Error('Expo web manifest must be an installable root-scoped standalone application.');
+  if (manifest.start_url !== './' || manifest.scope !== './' || manifest.display !== 'standalone') {
+    throw new Error('Expo web manifest must be an installable scope-relative standalone application.');
   }
   if (!Array.isArray(manifest.icons) || manifest.icons.length === 0) {
     throw new Error('Expo web manifest must define at least one install icon.');
   }
   for (const icon of manifest.icons) {
-    const iconPath = typeof icon?.src === 'string' ? icon.src.replace(/^\/+/, '') : '';
+    const iconPath = typeof icon?.src === 'string' ? icon.src.replace(/^(?:\.\/|\/)+/, '') : '';
     if (!iconPath || !fs.existsSync(path.join(resolvedDist, iconPath))) {
       throw new Error(`Expo web manifest references a missing icon: ${String(icon?.src)}.`);
     }
@@ -199,7 +219,7 @@ export function inspectExpoWebExport(distDir = DEFAULT_EXPO_WEB_DIST) {
 
   const swPath = path.join(resolvedDist, 'sw.js');
   const serviceWorker = fs.readFileSync(swPath, 'utf8');
-  if (!/const CACHE_NAME = `\$\{CACHE_PREFIX\}shell-[a-f0-9]{12}`;/.test(serviceWorker)) {
+  if (!/const CACHE_NAME = SHELL_CACHE_PREFIX \+ '[a-f0-9]{12}';/.test(serviceWorker)) {
     throw new Error('Expo web service worker cache name is not content-versioned.');
   }
   if (

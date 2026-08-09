@@ -27,13 +27,6 @@ export default function RootHtml({ children }: PropsWithChildren) {
                 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no, viewport-fit=cover" />
                 <meta name="theme-color" content="#2E7D32" />
                 <meta name="color-scheme" content="light dark" />
-                <meta
-                    name="description"
-                    content="Calibrate is a private food, weight, activity, and goal tracker that works with your Calibrate server."
-                />
-                <meta name="apple-mobile-web-app-capable" content="yes" />
-                <meta name="apple-mobile-web-app-title" content="calibrate" />
-                <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
                 <link rel="manifest" href="/manifest.webmanifest" />
                 <link rel="icon" href="/calibrate-icon.svg" type="image/svg+xml" />
                 <script dangerouslySetInnerHTML={{ __html: ONE_TIME_TOKEN_BOOTSTRAP }} />

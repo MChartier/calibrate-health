@@ -1,13 +1,48 @@
-const CACHE_PREFIX = 'calibrate-expo-web-';
-const CACHE_NAME = `${CACHE_PREFIX}shell-v1`;
-const APP_SHELL = ['/', '/manifest.webmanifest', '/calibrate-icon.svg'];
+const SHELL_CACHE_PREFIX = 'calibrate-expo-web-shell-';
+const USER_CACHE_PREFIX = 'calibrate-expo-web-user-';
+const CACHE_NAME = `${SHELL_CACHE_PREFIX}v2`;
+const APP_SHELL = [
+  '/index.html',
+  '/manifest.webmanifest',
+  '/calibrate-icon.svg',
+  '/calibrate-icon-192.png',
+  '/calibrate-icon-512.png',
+  '/calibrate-icon-maskable-512.png'
+];
 const DEFAULT_NOTIFICATION_TITLE = 'calibrate';
 const DEFAULT_NOTIFICATION_BODY = 'You have a new reminder.';
 const DEFAULT_NOTIFICATION_PATH = '/';
 const PUSH_SUBSCRIPTION_CHANGED_MESSAGE = 'CALIBRATE_PUSH_SUBSCRIPTION_CHANGED';
+const CLEAR_USER_CACHES_MESSAGE = 'CALIBRATE_CLEAR_USER_SCOPED_CACHES';
+const USER_CACHES_CLEARED_MESSAGE = 'CALIBRATE_USER_SCOPED_CACHES_CLEARED';
 
 function isBackendPath(pathname) {
   return /^\/(?:api|auth)(?:\/|$)/.test(pathname);
+}
+
+function isVersionedStaticAsset(pathname) {
+  return /^\/_expo\/static\/(?:js|css)\/.+-[0-9a-f]{8,}\.(?:js|css)$/.test(pathname)
+    || /^\/assets\/.+-[0-9a-f]{8,}\.[a-z0-9]+$/i.test(pathname);
+}
+
+function isExplicitShellAsset(pathname) {
+  return pathname !== '/index.html' && APP_SHELL.includes(pathname);
+}
+
+function isCacheableStaticAsset(url) {
+  return url.origin === self.location.origin
+    && (isVersionedStaticAsset(url.pathname) || isExplicitShellAsset(url.pathname));
+}
+
+function isCacheableResponse(response) {
+  return response.ok && (response.type === 'basic' || response.type === 'default');
+}
+
+async function clearUserScopedCaches() {
+  const keys = await caches.keys();
+  await Promise.all(keys
+    .filter((key) => key.startsWith(USER_CACHE_PREFIX))
+    .map((key) => caches.delete(key)));
 }
 
 function resolveSafeNotificationUrl(value) {
@@ -51,14 +86,22 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys()
       .then((keys) => Promise.all(keys
-        .filter((key) => key.startsWith(CACHE_PREFIX) && key !== CACHE_NAME)
+        .filter((key) => key.startsWith(SHELL_CACHE_PREFIX) && key !== CACHE_NAME)
         .map((key) => caches.delete(key))))
       .then(() => self.clients.claim())
   );
 });
 
 self.addEventListener('message', (event) => {
-  if (event.data?.type === 'SKIP_WAITING') event.waitUntil(self.skipWaiting());
+  if (event.data?.type === 'SKIP_WAITING') {
+    event.waitUntil(self.skipWaiting());
+    return;
+  }
+  if (event.data?.type === CLEAR_USER_CACHES_MESSAGE) {
+    event.waitUntil(clearUserScopedCaches().then(() => {
+      event.source?.postMessage?.({ type: USER_CACHES_CLEARED_MESSAGE });
+    }));
+  }
 });
 
 self.addEventListener('push', (event) => {
@@ -146,23 +189,17 @@ self.addEventListener('fetch', (event) => {
   if (request.mode === 'navigate') {
     event.respondWith(fetch(request).catch(async () => {
       const cache = await caches.open(CACHE_NAME);
-      return (await cache.match(request, { ignoreSearch: true }))
-        ?? (await cache.match('/', { ignoreSearch: true }))
-        ?? Response.error();
+      return (await cache.match('/index.html')) ?? Response.error();
     }));
     return;
   }
 
-  event.respondWith(caches.match(request, { ignoreSearch: true }).then(async (cached) => {
-    const networkRequest = fetch(request).then(async (response) => {
-      if (response.ok) {
-        const cache = await caches.open(CACHE_NAME);
-        await cache.put(request, response.clone());
-      }
-      return response;
-    });
-    if (!cached) return networkRequest;
-    event.waitUntil(networkRequest.catch(() => undefined));
-    return cached;
+  if (!isCacheableStaticAsset(url)) return;
+  event.respondWith(caches.open(CACHE_NAME).then(async (cache) => {
+    const cached = await cache.match(request);
+    if (cached) return cached;
+    const response = await fetch(request);
+    if (isCacheableResponse(response)) await cache.put(request, response.clone());
+    return response;
   }));
 });

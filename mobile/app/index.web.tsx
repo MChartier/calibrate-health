@@ -4,6 +4,7 @@ import { CALIBRATE_PRODUCT_LINKS } from '@calibrate/shared/product';
 import { AppCard } from '../src/components/AppCard';
 import { AppText } from '../src/components/AppText';
 import { AuthBrand } from '../src/components/auth/AuthBrand';
+import { LoadingState } from '../src/components/LoadingState';
 import { Screen } from '../src/components/Screen';
 import { useAuth } from '../src/auth/AuthContext';
 import { radius, spacing, useAppTheme } from '../src/theme';
@@ -13,19 +14,26 @@ export default function WebHomeRoute() {
     const { colors } = useAppTheme();
     const { user, isLoading } = useAuth();
 
-    if (!isLoading && user) {
+    if (isLoading) {
+        return <LoadingState label="Opening Calibrate..." />;
+    }
+
+    if (user) {
         return <Redirect href="/today" />;
     }
 
     return (
-        <Screen safeTop style={styles.screen}>
-            <AuthBrand description="Track food, weight, and progress against a personalized calorie target." />
-            <AppCard>
-                <AppText variant="subtitle">A clearer view of your progress.</AppText>
+        <Screen testID="hosted-landing" safeTop style={styles.screen}>
+            <AuthBrand description="Track food, weight, and progress against a personalized calorie target - without losing sight of the daily choices." />
+            <AppCard testID="hosted-landing-primary">
+                <AppText variant="subtitle">A clearer view of what is working.</AppText>
                 <AppText variant="muted">
-                    Create an account on Calibrate's hosted service, or sign in to one you already use.
+                    Log meals and weigh-ins, compare them with your personal calorie target, and follow progress over time.
                 </AppText>
-                <View style={styles.actions}>
+                <AppText testID="hosted-install-copy" variant="muted">
+                    Use Calibrate in your browser or install it from a supported browser for an app-like experience.
+                </AppText>
+                <View testID="hosted-landing-actions" style={styles.actions}>
                     <Link
                         href="/(auth)/login"
                         style={StyleSheet.flatten([
@@ -45,7 +53,13 @@ export default function WebHomeRoute() {
                         Create account
                     </Link>
                 </View>
-                <View style={styles.legalLinks}>
+            </AppCard>
+            <AppCard testID="hosted-landing-trust">
+                <AppText variant="subtitle">Your account stays under your control.</AppText>
+                <AppText variant="muted">
+                    Review signed-in devices, export your account data, or permanently delete your account from Settings.
+                </AppText>
+                <View testID="hosted-trust-links" style={styles.legalLinks}>
                     <Link
                         href={CALIBRATE_PRODUCT_LINKS.privacy as Href}
                         style={StyleSheet.flatten([styles.textLink, { color: colors.primary }])}
