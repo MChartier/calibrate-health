@@ -112,3 +112,8 @@ test('the Playwright wrapper accepts only reviewed repository configs', () => {
   assert.match(source, /CALIBRATE_APPROVE_UX_SNAPSHOTS/);
   assert.match(source, /requestsSnapshotUpdate/);
 });
+test('the Playwright wrapper preserves the mobile web prebuild lifecycle', () => {
+  const source = fs.readFileSync(path.join(repositoryRoot, 'scripts', 'expo-web-playwright.mjs'), 'utf8');
+  assert.match(source, /resolveNpmCli\(\), '--prefix', mobileDir, 'run', 'build:web'/);
+  assert.doesNotMatch(source, /scripts', 'expo-web-build\.mjs/);
+});

@@ -1,10 +1,12 @@
 import { spawn, spawnSync } from 'node:child_process';
+import fs from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
 import { fileURLToPath } from 'node:url';
 import { createExpoWebStaticServer } from './expo-web-static-server.mjs';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const mobileDir = path.join(repoRoot, 'mobile');
 const callerOwnedBaseURL = process.env.CALIBRATE_EXPO_WEB_BASE_URL?.trim();
 const portText = process.env.CALIBRATE_EXPO_WEB_PORT?.trim() || '4174';
 if (!/^\d+$/.test(portText)) throw new Error(`Invalid Expo web test port: ${portText}`);
@@ -36,10 +38,27 @@ function runPlaywright(env) {
   });
 }
 
+function resolveNpmCli() {
+  const inheritedNpmCli = process.env.npm_execpath;
+  const installedNpmCli = path.join(
+    path.dirname(process.execPath),
+    'node_modules',
+    'npm',
+    'bin',
+    'npm-cli.js',
+  );
+  const npmCli = inheritedNpmCli || (fs.existsSync(installedNpmCli) ? installedNpmCli : '');
+  if (!npmCli) {
+    throw new Error('Unable to locate npm. Run this command through a repository npm script.');
+  }
+  return npmCli;
+}
+
 if (callerOwnedBaseURL) {
   process.exitCode = await runPlaywright(process.env);
 } else {
-  const build = spawnSync(process.execPath, [path.join(repoRoot, 'scripts', 'expo-web-build.mjs')], {
+  // Use the package lifecycle so prebuild:web compiles @calibrate/shared in fresh checkouts.
+  const build = spawnSync(process.execPath, [resolveNpmCli(), '--prefix', mobileDir, 'run', 'build:web'], {
     cwd: repoRoot,
     env: process.env,
     stdio: 'inherit',
