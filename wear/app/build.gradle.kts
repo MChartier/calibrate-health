@@ -70,6 +70,20 @@ fun strictBooleanProperty(name: String, default: Boolean): Boolean {
     }
 }
 
+enum class WearTaskBuildType {
+    DEBUG,
+    INTERNAL,
+    RELEASE
+}
+
+fun wearTaskBuildType(taskName: String): WearTaskBuildType? = when {
+    // Release symbol-stripping tasks contain "DebugSymbols" but still target the release variant.
+    taskName.contains("Release") -> WearTaskBuildType.RELEASE
+    taskName.contains("Internal") -> WearTaskBuildType.INTERNAL
+    taskName.contains("Debug") -> WearTaskBuildType.DEBUG
+    else -> null
+}
+
 fun sharedSigningValue(name: String): String? =
     providers.gradleProperty(name).orElse(providers.environmentVariable(name)).orNull?.takeIf { it.isNotBlank() }
 
@@ -201,7 +215,11 @@ kapt {
 }
 
 tasks.configureEach {
-    if ((name.contains("Debug") || name.contains("Internal")) && !phoneDebugKeystore.isFile) {
+    val taskBuildType = wearTaskBuildType(name)
+    if (
+        (taskBuildType == WearTaskBuildType.DEBUG || taskBuildType == WearTaskBuildType.INTERNAL) &&
+        !phoneDebugKeystore.isFile
+    ) {
         doFirst {
             throw GradleException(
                 "Phone debug keystore not found at ${phoneDebugKeystore.absolutePath}. " +
@@ -209,12 +227,32 @@ tasks.configureEach {
             )
         }
     }
-    if (name.contains("Release") && !hasReleaseSigning) {
+    if (taskBuildType == WearTaskBuildType.RELEASE && !hasReleaseSigning) {
         doFirst {
             throw GradleException(
                 "Release tasks require all CALIBRATE_ANDROID_SIGNING_* values so the phone and watch use the same certificate."
             )
         }
+    }
+}
+
+tasks.register("testWearTaskBuildTypeClassification") {
+    group = "verification"
+    description = "Checks Wear task classification before signing guards run."
+    doLast {
+        mapOf(
+            "assembleDebug" to WearTaskBuildType.DEBUG,
+            "stripDebugDebugSymbols" to WearTaskBuildType.DEBUG,
+            "assembleInternal" to WearTaskBuildType.INTERNAL,
+            "stripInternalDebugSymbols" to WearTaskBuildType.INTERNAL,
+            "assembleRelease" to WearTaskBuildType.RELEASE,
+            "stripReleaseDebugSymbols" to WearTaskBuildType.RELEASE
+        ).forEach { (taskName, expectedBuildType) ->
+            check(wearTaskBuildType(taskName) == expectedBuildType) {
+                "Expected $taskName to target $expectedBuildType."
+            }
+        }
+        check(wearTaskBuildType("testWearServerOriginValidation") == null)
     }
 }
 

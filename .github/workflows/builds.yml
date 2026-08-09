@@ -178,6 +178,8 @@ jobs:
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
+        with:
+          cmdline-tools-version: 15859902
 
       - name: Install deps
         run: npm ci --no-audit --fund=false
@@ -222,6 +224,8 @@ jobs:
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
+        with:
+          cmdline-tools-version: 15859902
 
       - name: Create shared phone and Wear debug keystore
         shell: bash
@@ -296,6 +300,11 @@ jobs:
           distribution: temurin
           java-version: 17
 
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          cmdline-tools-version: 15859902
+
       - name: Enable KVM
         shell: bash
         run: |
@@ -325,18 +334,6 @@ jobs:
           echo "Backend fixture did not become ready." >&2
           exit 1
 
-      - name: Start deterministic Metro bundle
-        shell: bash
-        run: |
-          nohup npm --prefix mobile run dev -- --host localhost --port 8081 > "$RUNNER_TEMP/calibrate-native/metro.log" 2>&1 &
-          for attempt in {1..90}; do
-            if curl --fail --silent http://127.0.0.1:8081/status | grep --quiet 'packager-status:running'; then
-              exit 0
-            fi
-            sleep 1
-          done
-          echo "Metro did not become ready." >&2
-          exit 1
 
       - name: Download reviewed Android debug APK
         uses: actions/download-artifact@v4
@@ -356,6 +353,29 @@ jobs:
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -camera-back none
           disable-animations: true
           script: |
+            CI=1 npm --prefix mobile run dev -- --host localhost --port 8081 > "$RUNNER_TEMP/calibrate-native/metro.log" 2>&1 &
+            METRO_PID=$!
+            cleanup_metro() {
+              kill "$METRO_PID" 2>/dev/null || true
+              wait "$METRO_PID" 2>/dev/null || true
+            }
+            trap cleanup_metro EXIT
+            for attempt in {1..90}; do
+              if curl --fail --silent http://127.0.0.1:8081/status | grep --quiet 'packager-status:running'; then
+                break
+              fi
+              if ! kill -0 "$METRO_PID" 2>/dev/null; then
+                echo "Metro exited before becoming ready." >&2
+                tail -n 80 "$RUNNER_TEMP/calibrate-native/metro.log" >&2
+                exit 1
+              fi
+              if [[ "$attempt" == 90 ]]; then
+                echo "Metro did not become ready." >&2
+                tail -n 80 "$RUNNER_TEMP/calibrate-native/metro.log" >&2
+                exit 1
+              fi
+              sleep 1
+            done
             adb -s "$ANDROID_ADB_SERIAL" install -r .ci-artifacts/android-debug/app-debug.apk
             npm run test:android:e2e
 
@@ -391,6 +411,8 @@ jobs:
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
+        with:
+          cmdline-tools-version: 15859902
 
       - name: Enable KVM
         shell: bash
@@ -456,6 +478,8 @@ jobs:
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
+        with:
+          cmdline-tools-version: 15859902
 
       - name: Enable KVM
         shell: bash
