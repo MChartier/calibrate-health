@@ -7,6 +7,12 @@ import readline from 'node:readline/promises';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
+import {
+  createStartedHostedNativeEvidence,
+  validateHostedNativeEvidence,
+  writeHostedNativeEvidence
+} from './hosted-native-evidence.mjs';
+
 export const APPLICATION_ID = 'app.calibratehealth.mobile';
 export const REHEARSAL_STORE_PASSWORD_ENV = 'CALIBRATE_REHEARSAL_STORE_PASSWORD';
 export const REHEARSAL_KEY_PASSWORD_ENV = 'CALIBRATE_REHEARSAL_KEY_PASSWORD';
@@ -761,6 +767,91 @@ export async function executeUpgradeInstallSequence(options) {
   };
 }
 
+export function createHostedUpgradeEvidence(rawEvidence, sourceCommit) {
+  const hosted = createStartedHostedNativeEvidence('upgrade', sourceCommit);
+  const plan = rawEvidence?.plan;
+  const passed = ['package-check-passed', 'behavior-check-passed'].includes(rawEvidence?.status);
+  if (plan?.candidate?.commit && plan.candidate.commit !== sourceCommit) {
+    throw new Error('Hosted upgrade sourceCommit does not match the candidate plan.');
+  }
+  if (Array.isArray(plan?.targets)) {
+    hosted.emulators = plan.targets.map((target) => ({
+      role: target.role,
+      apiLevel: target.apiLevel,
+      model: target.model,
+      abi: target.primaryAbi,
+      physical: false
+    }));
+    hosted.checkpoints.emulatorsValidated = hosted.emulators.length === 2;
+    hosted.stage = 'emulators';
+  }
+  const artifactRows = [
+    ['baseline-phone', rawEvidence?.artifacts?.baseline?.phone],
+    ['baseline-wear', rawEvidence?.artifacts?.baseline?.wear],
+    ['candidate-phone', rawEvidence?.artifacts?.candidate?.phone],
+    ['candidate-wear', rawEvidence?.artifacts?.candidate?.wear]
+  ];
+  if (artifactRows.every(([, artifact]) => artifact)) {
+    hosted.artifacts = artifactRows.map(([id, artifact]) => ({
+      id,
+      packageName: artifact.applicationId,
+      versionName: artifact.versionName,
+      versionCode: artifact.versionCode,
+      sha256: artifact.sha256,
+      buildType: 'release',
+      disposableSigning: true
+    }));
+    hosted.stage = 'build';
+  }
+  const signers = new Set(artifactRows.map(([, artifact]) => artifact?.signerSha256).filter(Boolean));
+  const signerEqual = signers.size === 1;
+  const baselineStates = rawEvidence?.install?.baselineStates;
+  const candidateStates = rawEvidence?.install?.candidateStates;
+  const roles = ['phone', 'wear'];
+  const baselineInstalled = roles.every((role) => baselineStates?.[role]);
+  const candidateInstalled = roles.every((role) => candidateStates?.[role]);
+  const installTimePreserved = roles.every((role) =>
+    baselineStates?.[role]?.firstInstallTime &&
+    baselineStates[role].firstInstallTime === candidateStates?.[role]?.firstInstallTime
+  );
+  const processAlive = roles.every((role) => rawEvidence?.install?.crashEvidence?.[role]?.processAlive === true);
+  const crashClean = roles.every((role) => rawEvidence?.install?.crashEvidence?.[role]?.clean === true);
+  const versionAdvanced = Number.isSafeInteger(plan?.baseline?.versionCode) &&
+    Number.isSafeInteger(plan?.candidate?.versionCode) &&
+    plan.candidate.versionCode > plan.baseline.versionCode;
+  hosted.checkpoints.disposableSigning = rawEvidence?.signing?.source?.includes('disposable') === true;
+  hosted.checkpoints.baselineInstalled = baselineInstalled;
+  hosted.checkpoints.candidateInstalledWithReplace = candidateInstalled;
+  hosted.checkpoints.noUninstall = passed;
+  hosted.checkpoints.noDataClear = passed;
+  hosted.checkpoints.signerContinuous = signerEqual;
+  hosted.checkpoints.installTimePreserved = installTimePreserved;
+  hosted.checkpoints.versionAdvanced = versionAdvanced;
+  hosted.checkpoints.processAlive = processAlive;
+  hosted.checkpoints.crashClean = crashClean;
+  if (passed) {
+    hosted.upgrade = {
+      baselineCommit: plan.baseline.commit,
+      candidateCommit: plan.candidate.commit,
+      baselineVersionCode: plan.baseline.versionCode,
+      candidateVersionCode: plan.candidate.versionCode,
+      installMode: 'adb-install-r',
+      uninstallPerformed: false,
+      dataCleared: false,
+      signerEqual,
+      installTimePreserved
+    };
+    hosted.status = 'passed';
+    hosted.stage = 'completed';
+  } else {
+    hosted.status = 'failed';
+    hosted.stage = candidateInstalled ? 'verification' : (baselineInstalled ? 'candidate-upgrade' : hosted.stage);
+  }
+  const errors = validateHostedNativeEvidence(hosted);
+  if (errors.length) throw new Error(`Hosted native upgrade evidence is invalid:\n- ${errors.join('\n- ')}`);
+  return hosted;
+}
+
 function writeEvidence(outputFile, evidence) {
   fs.mkdirSync(path.dirname(outputFile), { recursive: true });
   fs.writeFileSync(outputFile, `${JSON.stringify(evidence, null, 2)}\n`, { flag: 'wx' });
@@ -770,6 +861,7 @@ function writeEvidence(outputFile, evidence) {
 export async function runNativeUpgradeRehearsal(config, dependencies = {}) {
   const runner = dependencies.runner ?? createCommandRunner();
   const environment = dependencies.environment ?? process.env;
+  const hostedEvidenceOutput = environment.CALIBRATE_HOSTED_EVIDENCE_OUTPUT?.trim() || null;
   const root = dependencies.repositoryRoot ?? repositoryRoot;
   const tooling = dependencies.tooling ?? resolveNativeUpgradeTooling(environment);
   assertToolingExists(tooling);
@@ -882,6 +974,10 @@ export async function runNativeUpgradeRehearsal(config, dependencies = {}) {
   } finally {
     try {
       writeEvidence(outputFile, evidence);
+      if (hostedEvidenceOutput) {
+        const hosted = createHostedUpgradeEvidence(evidence, environment.CALIBRATE_SOURCE_COMMIT?.trim());
+        writeHostedNativeEvidence(hostedEvidenceOutput, hosted);
+      }
     } finally {
       if (tempRoot) removeOwnedTempRoot(tempRoot, id);
     }

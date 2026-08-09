@@ -19,6 +19,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -46,6 +48,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -73,6 +77,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Setup reviewed benchmark Node
         uses: actions/setup-node@v4
@@ -95,6 +101,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Setup reviewed bundle Node
         uses: actions/setup-node@v4
@@ -113,6 +121,102 @@ jobs:
           npm.cmd run performance:bundle
           npm.cmd run test:performance:web
 
+  exported-web-e2e:
+    name: Full Exported Web and PWA End-to-End
+    runs-on: windows-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout candidate C
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Setup reviewed Web E2E Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24.14.0
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        run: npm.cmd ci --no-audit --fund=false
+
+      - name: Install bundled pinned Playwright Chromium
+        run: node node_modules/@playwright/test/cli.js install chromium
+
+      - name: Run full exported Web and PWA suite
+        id: exported_web_e2e
+        run: npm.cmd run test:expo-web
+
+      - name: Record sanitized candidate-bound Web result
+        if: always()
+        run: >-
+          node scripts/release-acceptance.mjs hosted-result
+          --workflow builds
+          --gate hosted-exported-web-e2e
+          --candidate "${{ github.event.pull_request.head.sha || github.sha }}"
+          --outcome "${{ steps.exported_web_e2e.outcome }}"
+          --output .codex-screenshots/release-acceptance/exported-web-e2e.json
+
+      - name: Upload sanitized exported Web evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: exported-web-e2e-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .codex-screenshots/release-acceptance/exported-web-e2e.json
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 90
+  data-state-acceptance:
+    name: Six-State Data-Backed Route Acceptance
+    runs-on: windows-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout candidate C
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Setup reviewed data-state Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24.14.0
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        run: npm.cmd ci --no-audit --fund=false
+
+      - name: Install bundled pinned Playwright Chromium
+        run: node node_modules/@playwright/test/cli.js install chromium
+
+      - name: Run six-state route acceptance matrix
+        id: data_state_matrix
+        env:
+          PLAYWRIGHT_JSON_OUTPUT_FILE: ${{ runner.temp }}/launch-24-data-state-acceptance.json
+        run: npm.cmd run test:data-states
+
+      - name: Record sanitized candidate-bound data-state result
+        if: always()
+        run: >-
+          node scripts/release-acceptance.mjs hosted-result
+          --workflow builds
+          --gate hosted-data-state-matrix
+          --candidate "${{ github.event.pull_request.head.sha || github.sha }}"
+          --outcome "${{ steps.data_state_matrix.outcome }}"
+          --output .codex-screenshots/release-acceptance/data-state.json
+
+      - name: Upload sanitized data-state acceptance evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: launch-24-data-state-acceptance-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .codex-screenshots/release-acceptance/data-state.json
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 90
   ux-regression:
     name: UX Accessibility and Visual Regression
     runs-on: windows-latest
@@ -121,6 +225,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Setup reviewed UX Node
         uses: actions/setup-node@v4
@@ -142,7 +248,18 @@ jobs:
         run: node node_modules/@playwright/test/cli.js install chromium
 
       - name: Enforce accessibility and visual regression gates
+        id: ux_gate
         run: npm.cmd run test:ux
+
+      - name: Record sanitized candidate-bound UX result
+        if: always()
+        run: >-
+          node scripts/release-acceptance.mjs hosted-result
+          --workflow builds
+          --gate hosted-ux-regression
+          --candidate "${{ github.event.pull_request.head.sha || github.sha }}"
+          --outcome "${{ steps.ux_gate.outcome }}"
+          --output .codex-screenshots/expo-web-ux-results/release-acceptance.json
 
       - name: Upload sanitized UX evidence
         if: always()
@@ -153,6 +270,15 @@ jobs:
           include-hidden-files: true
           if-no-files-found: error
           retention-days: 14
+      - name: Upload durable sanitized UX summary
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ux-regression-summary-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .codex-screenshots/expo-web-ux-results/release-acceptance.json
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 90
   mobile-build:
     name: Mobile Build
     runs-on: ubuntu-latest
@@ -161,6 +287,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -201,14 +329,23 @@ jobs:
         run: npx expo prebuild --platform android --no-install
 
       - name: Build Android debug
+        id: android_debug_build
         working-directory: mobile/android
         run: ./gradlew assembleDebug -PreactNativeArchitectures=x86_64
+
+      - name: Record candidate C beside the transient debug artifact
+        if: always()
+        run: >-
+          node scripts/hosted-native-evidence.mjs init
+          --lane android
+          --source-commit "${{ github.event.pull_request.head.sha }}"
+          --output mobile/android/app/build/outputs/apk/debug/release-acceptance.json
 
       - name: Share Android debug APK with emulator E2E
         uses: actions/upload-artifact@v4
         with:
           name: android-debug-apk-${{ github.run_id }}-${{ github.run_attempt }}
-          path: mobile/android/app/build/outputs/apk/debug/app-debug.apk
+          path: mobile/android/app/build/outputs/apk/debug
           if-no-files-found: error
           retention-days: 1
 
@@ -220,6 +357,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Setup Java
         uses: actions/setup-java@v4
@@ -265,6 +404,10 @@ jobs:
 
     env:
       ANDROID_ADB_SERIAL: emulator-5554
+      CALIBRATE_ANDROID_APK: .ci-artifacts/android-debug/app-debug.apk
+      CALIBRATE_DISPOSABLE_SIGNING: "true"
+      CALIBRATE_HOSTED_EVIDENCE_OUTPUT: .codex-screenshots/native-hosted/android.json
+      CALIBRATE_SOURCE_COMMIT: ${{ github.event.pull_request.head.sha }}
       AUTO_LOGIN_TEST_USER: "true"
       CALIBRATE_E2E_API_URL: http://127.0.0.1:3000
       DATABASE_URL: postgresql://calibrate:calibrate@127.0.0.1:5432/calibrate?schema=public
@@ -296,6 +439,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -305,6 +450,13 @@ jobs:
           cache-dependency-path: |
             package-lock.json
             backend/package-lock.json
+
+      - name: Initialize sanitized Android evidence for candidate C
+        run: >-
+          node scripts/hosted-native-evidence.mjs init
+          --lane android
+          --source-commit "$CALIBRATE_SOURCE_COMMIT"
+          --output "$CALIBRATE_HOSTED_EVIDENCE_OUTPUT"
 
       - name: Setup Java
         uses: actions/setup-java@v4
@@ -360,6 +512,7 @@ jobs:
           path: .ci-artifacts/android-debug
 
       - name: Run Android online, offline, process-death, and replay E2E
+        id: android_e2e
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 35
@@ -372,6 +525,17 @@ jobs:
           disable-animations: true
           script: node scripts/hosted-android-e2e.mjs
 
+
+      - name: Upload sanitized Android emulator evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-emulator-e2e-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .codex-screenshots/native-hosted/android.json
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 90
+
   wear-release-emulator-smoke:
     name: Wear Release Emulator Smoke
     runs-on: ubuntu-latest
@@ -382,6 +546,9 @@ jobs:
       CALIBRATE_ANDROID_SIGNING_KEY_PASSWORD: hosted-emulator-only-password
       CALIBRATE_ANDROID_SIGNING_STORE_FILE: ${{ github.workspace }}/.ci-signing/native-emulator.p12
       CALIBRATE_ANDROID_SIGNING_STORE_PASSWORD: hosted-emulator-only-password
+      CALIBRATE_DISPOSABLE_SIGNING: "true"
+      CALIBRATE_HOSTED_EVIDENCE_OUTPUT: .codex-screenshots/native-hosted/wear.json
+      CALIBRATE_SOURCE_COMMIT: ${{ github.event.pull_request.head.sha }}
       WEAR_ADB_SERIAL: emulator-5554
       WEAR_APK: wear/app/build/outputs/apk/release/app-release.apk
       WEAR_BUILD_TYPE: release
@@ -389,11 +556,20 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 22.13.0
+
+      - name: Initialize sanitized Wear evidence for candidate C
+        run: >-
+          node scripts/hosted-native-evidence.mjs init
+          --lane wear
+          --source-commit "$CALIBRATE_SOURCE_COMMIT"
+          --output "$CALIBRATE_HOSTED_EVIDENCE_OUTPUT"
 
       - name: Setup Java
         uses: actions/setup-java@v4
@@ -435,13 +611,22 @@ jobs:
             -validity 1 \
             -dname "CN=Calibrate Hosted Emulator,OU=CI,O=Calibrate,C=US"
           mkdir -p mobile/android/app
-          keytool -genkeypair -noprompt             -keystore mobile/android/app/debug.keystore             -storepass android             -keypass android             -alias androiddebugkey             -keyalg RSA             -keysize 2048             -validity 10000             -dname "CN=Android Debug,O=Android,C=US"
+          keytool -genkeypair -noprompt \
+            -keystore mobile/android/app/debug.keystore \
+            -storepass android \
+            -keypass android \
+            -alias androiddebugkey \
+            -keyalg RSA \
+            -keysize 2048 \
+            -validity 10000 \
+            -dname "CN=Android Debug,O=Android,C=US"
 
       - name: Build non-debuggable Wear release APK
         working-directory: wear
         run: ./gradlew :app:assembleRelease -PcalibrateWearServerUrl=https://calibratehealth.app --no-daemon --console=plain
 
-      - name: Exercise Wear release shell, Tile, permissions, and crash state
+      - name: Exercise Wear release shell, Tile, permissions, scaling, touch targets, and crash state
+        id: wear_smoke
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 35-ext15
@@ -458,22 +643,45 @@ jobs:
             adb -s "$WEAR_ADB_SERIAL" uninstall app.calibratehealth.mobile
             ./wear/gradlew -p wear :app:connectedDebugAndroidTest -PcalibrateWearServerUrl=https://calibratehealth.app -PcalibrateWearDebugServerUrl=http://10.0.2.2:3000 --no-daemon --console=plain
 
+
+      - name: Upload sanitized Wear release emulator evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: wear-release-emulator-smoke-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .codex-screenshots/native-hosted/wear.json
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 90
+
   native-package-upgrade:
     name: Native Two-Emulator Package Upgrade
     runs-on: ubuntu-latest
     timeout-minutes: 120
+
+    env:
+      CALIBRATE_DISPOSABLE_SIGNING: "true"
+      CALIBRATE_HOSTED_EVIDENCE_OUTPUT: .codex-screenshots/native-hosted/upgrade.json
+      CALIBRATE_SOURCE_COMMIT: ${{ github.event.pull_request.head.sha }}
 
     steps:
       - name: Checkout exact pull-request candidate with baseline history
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          ref: ${{ github.event.pull_request.head.sha }}
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 22.13.0
+
+      - name: Initialize sanitized upgrade evidence for candidate C
+        run: >-
+          node scripts/hosted-native-evidence.mjs init
+          --lane upgrade
+          --source-commit "$CALIBRATE_SOURCE_COMMIT"
+          --output "$CALIBRATE_HOSTED_EVIDENCE_OUTPUT"
 
       - name: Setup Java
         uses: actions/setup-java@v4
@@ -504,6 +712,7 @@ jobs:
         run: node scripts/hosted-native-emulators.mjs prepare-wear
 
       - name: Build disposable-signed baseline and candidate, then upgrade in place
+        id: native_upgrade
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 35
@@ -520,9 +729,20 @@ jobs:
             node scripts/hosted-native-emulators.mjs start-wear
             node scripts/hosted-native-emulators.mjs wait-wear
             mkdir -p .codex-screenshots/native-emulator
-            npm run test:native:upgrade -- --baseline "${{ github.event.pull_request.base.sha }}" --candidate "${{ github.event.pull_request.head.sha }}" --baseline-version-code 1000000 --candidate-version-code 1000001 --phone-serial emulator-5554 --wear-serial emulator-5556 --server-url https://calibratehealth.app --output .codex-screenshots/native-emulator/native-upgrade.json --execute --package-only > "$RUNNER_TEMP/native-upgrade-console.log"
+            npm run test:native:upgrade -- --baseline "${{ github.event.pull_request.base.sha }}" --candidate "${{ github.event.pull_request.head.sha || github.sha }}" --baseline-version-code 1000000 --candidate-version-code 1000001 --phone-serial emulator-5554 --wear-serial emulator-5556 --server-url https://calibratehealth.app --output .codex-screenshots/native-emulator/native-upgrade.json --execute --package-only > "$RUNNER_TEMP/native-upgrade-console.log"
             echo "Hosted package-only native upgrade passed."
 
       - name: Stop secondary Wear emulator
         if: always()
         run: node scripts/hosted-native-emulators.mjs stop-wear
+
+
+      - name: Upload sanitized two-emulator upgrade evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-package-upgrade-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .codex-screenshots/native-hosted/upgrade.json
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 90

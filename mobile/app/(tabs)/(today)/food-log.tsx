@@ -469,7 +469,7 @@ export default function FoodLogScreen() {
 }
 
 const FoodLogSkeleton: React.FC = () => (
-    <AppCard>
+    <AppCard testID="food-log-loading">
         <SkeletonBlock width="28%" height={30} />
         {[0, 1, 2, 3, 4, 5].map((row) => (
             <View key={row} style={skeletonStyles.row}>

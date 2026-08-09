@@ -345,7 +345,7 @@ export default function ProgressScreen() {
                     state={progressState}
                     resourceLabel="goal progress"
                     loading={(
-                        <AppCard>
+                        <AppCard testID="progress-loading">
                             <SkeletonBlock width="42%" height={30} />
                             <SkeletonBlock height={72} />
                             <SkeletonBlock height={16} />

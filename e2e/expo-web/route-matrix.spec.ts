@@ -117,7 +117,7 @@ for (const routeGroup of AUTHENTICATED_ROUTE_GROUPS) {
         route.authenticatedPath as keyof typeof AUTHENTICATED_DESTINATION_HEADINGS
       ];
       if (route.path === '/log') {
-        await expect(page.getByRole('dialog').filter({ hasText: 'Add food' })).toBeVisible();
+        await expect(page.getByRole('dialog', { name: 'Add food', exact: true })).toBeVisible();
       } else if (publicHeading) {
         await expect(page.getByRole('heading', { name: publicHeading, exact: true })).toBeVisible();
       } else if (shellHeading) {

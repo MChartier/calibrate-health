@@ -7,6 +7,12 @@ import path from 'node:path';
 import process from 'node:process';
 import { fileURLToPath } from 'node:url';
 
+import {
+  createStartedHostedNativeEvidence,
+  sha256File,
+  writeHostedNativeEvidence
+} from './hosted-native-evidence.mjs';
+
 const API_URL = process.env.CALIBRATE_E2E_API_URL ?? 'http://127.0.0.1:3000';
 const TEST_EMAIL = process.env.CALIBRATE_E2E_EMAIL ?? 'test@calibratehealth.app';
 const TEST_PASSWORD = process.env.CALIBRATE_E2E_PASSWORD ?? 'password123';
@@ -254,9 +260,23 @@ export function buildE2eRequestHeaders(initialHeaders = {}) {
   return headers;
 }
 
-/** Ignore shell/test-runner crashes while still failing on the Calibrate application process. */
+/** Ignore shell/test-runner crashes while still failing on Java, ANR, or native Calibrate crashes. */
 export function crashBufferContainsCalibrateProcess(crashBuffer) {
-  return /Process:\s+app\.calibratehealth\.mobile(?:[:,\s]|$)/i.test(crashBuffer);
+  return [
+    /Process:\s*app\.calibratehealth\.mobile(?:[:,\s]|$)/i,
+    /ANR in\s+app\.calibratehealth\.mobile(?:[:,\s]|$)/i,
+    /Cmdline:\s*app\.calibratehealth\.mobile(?:[:,\s]|$)/i,
+    />>>\s*app\.calibratehealth\.mobile\s*<<</i
+  ].some((pattern) => pattern.test(crashBuffer));
+}
+
+export function parseAndroidPackageVersion(output) {
+  const versionCode = Number(output.match(/\bversionCode=(\d+)/)?.[1]);
+  const versionName = output.match(/\bversionName=([^\r\n]+)/)?.[1]?.trim();
+  if (!Number.isSafeInteger(versionCode) || versionCode < 1 || !versionName) {
+    throw new Error('Unable to parse installed Android package version.');
+  }
+  return { versionName, versionCode };
 }
 
 async function requestJson(pathname, options = {}) {
@@ -408,7 +428,7 @@ async function logRecentFood(name, date, timeoutMs = 45_000) {
   await logOpenRecentFood(name, false);
 }
 
-async function main() {
+async function runAndroidE2e(onCheckpoint = () => undefined) {
   let apiProxy = null;
   adb(['wait-for-device'], { quiet: true });
   const qemu = adb(['shell', 'getprop', 'ro.kernel.qemu'], { quiet: true });
@@ -416,12 +436,22 @@ async function main() {
   if (qemu !== '1' || characteristics.split(',').includes('watch')) {
     throw new Error('ANDROID_ADB_SERIAL must resolve to an Android phone emulator.');
   }
+  const emulator = {
+    role: 'phone',
+    apiLevel: Number(adb(['shell', 'getprop', 'ro.build.version.sdk'], { quiet: true })),
+    model: adb(['shell', 'getprop', 'ro.product.model'], { quiet: true }),
+    abi: adb(['shell', 'getprop', 'ro.product.cpu.abi'], { quiet: true }),
+    physical: false
+  };
+  onCheckpoint('emulatorValidated', { emulator });
   const health = await requestJson('/api/v1/healthz');
   if (!health.ok) throw new Error('Calibrate E2E backend health check failed.');
+  onCheckpoint('backendReady');
   const metroStatus = await fetch(ANDROID_E2E_METRO_STATUS_URL).then((response) => response.text());
   if (!metroStatus.includes('packager-status:running')) {
     throw new Error('Metro is not running on port 8081. Start the mobile dev server first.');
   }
+  onCheckpoint('metroReady');
 
   const session = await loginApi();
   const date = localDateFor(session.user.timezone);
@@ -442,6 +472,7 @@ async function main() {
     // The canonical app link owns the first launch and triggers Metro's cold Android bundle.
     await logRecentFood(onlineName, date, ANDROID_E2E_INITIAL_LAUNCH_TIMEOUT_MS);
     await waitForFoodCount(session.access_token, date, onlineName, onlineBefore + 1);
+    onCheckpoint('onlineLog');
     console.log(`PASS online one-tap logging count: ${onlineBefore} -> ${onlineBefore + 1}`);
 
     const offlineName = OFFLINE_FOOD.name;
@@ -459,11 +490,13 @@ async function main() {
     if (await countFood(session.access_token, date, offlineName) !== offlineBefore) {
       throw new Error('Offline write reached the server before reconnect.');
     }
+    onCheckpoint('offlineQueue');
 
     adb(['shell', 'am', 'force-stop', APP_ID], { quiet: true });
     apiProxy.setAvailable(true);
     await openRecentAdd(offlineName, date);
     await waitForFoodCount(session.access_token, date, offlineName, offlineBefore + 1, 45_000);
+    onCheckpoint('processDeathReplay');
     console.log(`PASS process-death replay count: ${offlineBefore} -> ${offlineBefore + 1}`);
 
     await openRecentAdd(offlineName, date);
@@ -474,15 +507,70 @@ async function main() {
     }
     const finalPid = adb(['shell', 'pidof', '-s', APP_ID], { quiet: true });
     if (!finalPid) throw new Error('Calibrate process is not alive after the final replay check.');
+    onCheckpoint('processAlive');
     const crashes = adb(['logcat', '-b', 'crash', '-d', '-v', 'brief'], { quiet: true });
     if (crashBufferContainsCalibrateProcess(crashes)) {
       throw new Error(`Calibrate appears in the Android crash buffer:\n${crashes}`);
     }
+    onCheckpoint('crashClean');
+    onCheckpoint('exactlyOnceReplay');
     console.log(`PASS exactly-once replay after second restart: count remained ${finalCount}`);
   } finally {
     adb(['shell', 'cmd', 'connectivity', 'airplane-mode', 'disable'], { quiet: true });
     await apiProxy?.close().catch(() => undefined);
     removeApiReverse();
+  }
+  return { emulator };
+}
+
+const ANDROID_CHECKPOINT_STAGES = Object.freeze({
+  emulatorValidated: 'emulator',
+  backendReady: 'backend',
+  metroReady: 'metro',
+  onlineLog: 'online-log',
+  offlineQueue: 'offline-queue',
+  processDeathReplay: 'process-death-replay',
+  processAlive: 'exactly-once',
+  crashClean: 'exactly-once',
+  exactlyOnceReplay: 'exactly-once'
+});
+
+async function main() {
+  const evidenceFile = process.env.CALIBRATE_HOSTED_EVIDENCE_OUTPUT?.trim() || null;
+  let evidence = evidenceFile
+    ? createStartedHostedNativeEvidence('android', process.env.CALIBRATE_SOURCE_COMMIT?.trim())
+    : null;
+  if (evidenceFile) writeHostedNativeEvidence(evidenceFile, evidence);
+  const onCheckpoint = (checkpoint, details = {}) => {
+    if (!evidence) return;
+    evidence.checkpoints[checkpoint] = true;
+    evidence.stage = ANDROID_CHECKPOINT_STAGES[checkpoint];
+    if (details.emulator) evidence.emulators = [details.emulator];
+    writeHostedNativeEvidence(evidenceFile, evidence);
+  };
+  try {
+    await runAndroidE2e(onCheckpoint);
+    if (evidence) {
+      const apk = path.resolve(process.env.CALIBRATE_ANDROID_APK ?? '.ci-artifacts/android-debug/app-debug.apk');
+      const packageState = adb(['shell', 'dumpsys', 'package', APP_ID], { quiet: true });
+      evidence.artifacts = [{
+        id: 'android-debug',
+        packageName: APP_ID,
+        ...parseAndroidPackageVersion(packageState),
+        sha256: sha256File(apk),
+        buildType: 'debug',
+        disposableSigning: process.env.CALIBRATE_DISPOSABLE_SIGNING === 'true'
+      }];
+      evidence.status = 'passed';
+      evidence.stage = 'completed';
+      writeHostedNativeEvidence(evidenceFile, evidence);
+    }
+  } catch (error) {
+    if (evidence) {
+      evidence.status = 'failed';
+      writeHostedNativeEvidence(evidenceFile, evidence);
+    }
+    throw error;
   }
 }
 

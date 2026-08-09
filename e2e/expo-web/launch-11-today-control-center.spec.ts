@@ -372,10 +372,12 @@ test('offline cached Today data stays visible and explicitly identifies saved in
   await controller.activateOffline();
 
   await expect(page.getByText("You're offline", { exact: true })).toBeVisible();
-  await expect(page.getByRole('main').getByText(
+  const savedInformationNotice = page.getByText(
     'Offline - showing saved information',
     { exact: true },
-  )).toBeVisible();
+  );
+  await expect(savedInformationNotice).toHaveCount(1);
+  await expect(savedInformationNotice).toBeVisible();
   await expect(page.getByText('Fixture breakfast', { exact: true })).toBeVisible();
   await expectNoHorizontalOverflow(page);
 });

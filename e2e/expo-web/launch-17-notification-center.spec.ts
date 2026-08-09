@@ -348,6 +348,7 @@ test('notification drawer and history preserve state, pagination, delivery, and 
       pushManager: true,
       serviceWorker: true,
     });
+    await hideTransientPwaNotices(page);
     await page.getByTestId('notifications-button').click();
     const drawer = page.getByTestId('notifications-drawer-panel');
     await expect(drawer).toBeVisible();
@@ -388,6 +389,7 @@ test('notification drawer and history preserve state, pagination, delivery, and 
 
   await page.goto('/today');
   await expect(page.getByTestId('notifications-badge')).toContainText('20');
+  await hideTransientPwaNotices(page);
   await page.getByTestId('notifications-button').click();
   const drawer = page.getByTestId('notifications-drawer-panel');
   await expect(drawer).toBeVisible();
@@ -422,6 +424,7 @@ test('notification drawer and history preserve state, pagination, delivery, and 
   await expect(history.getByTestId('notification-card-119')).toContainText('Resolved');
   await expect(history.getByTestId('notification-mark-all-read')).toBeDisabled();
 
+  await hideTransientPwaNotices(page);
   await page.getByTestId('notifications-button').click();
   await expect(page.getByTestId('notifications-drawer-panel').getByText('All caught up', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Close notifications', exact: true }).click();

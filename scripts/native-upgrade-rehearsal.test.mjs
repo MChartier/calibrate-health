@@ -8,6 +8,7 @@ import {
   APPLICATION_ID,
   assertArtifactSet,
   buildCheckout,
+  createHostedUpgradeEvidence,
   executeUpgradeInstallSequence,
   parseApkBadging,
   parseNativeUpgradeArgs,
@@ -494,5 +495,61 @@ test('temp cleanup refuses any path that is not the exact run-owned root', () =>
   assert.throws(
     () => removeOwnedTempRoot(path.join(process.cwd(), 'not-owned'), 'example'),
     /Refusing to remove unexpected temp path/
+  );
+});
+
+test('hosted package upgrade evidence reconstructs only candidate-bound allowlisted facts', () => {
+  const baselineCommit = 'a'.repeat(40);
+  const candidateCommit = 'b'.repeat(40);
+  const signerSha256 = 'c'.repeat(64);
+  const apk = (versionCode) => ({
+    applicationId: APPLICATION_ID,
+    versionName: '0.2.5',
+    versionCode,
+    sha256: 'd'.repeat(64),
+    signerSha256
+  });
+  const state = (versionCode) => ({
+    versionCode,
+    versionName: '0.2.5',
+    firstInstallTime: '2026-08-09 12:00:00'
+  });
+  const raw = {
+    status: 'package-check-passed',
+    plan: {
+      baseline: { commit: baselineCommit, versionCode: 1_000_000 },
+      candidate: { commit: candidateCommit, versionCode: 1_000_001 },
+      targets: [
+        { role: 'phone', apiLevel: 35, model: 'Pixel 6 API 35', primaryAbi: 'x86_64' },
+        { role: 'wear', apiLevel: 35, model: 'Wear OS Small Round', primaryAbi: 'x86_64' }
+      ]
+    },
+    signing: { source: 'generated disposable key' },
+    artifacts: {
+      baseline: { phone: apk(1_000_000), wear: apk(1_000_000) },
+      candidate: { phone: apk(1_000_001), wear: apk(1_000_001) }
+    },
+    install: {
+      baselineStates: { phone: state(1_000_000), wear: state(1_000_000) },
+      candidateStates: { phone: state(1_000_001), wear: state(1_000_001) },
+      crashEvidence: {
+        phone: { clean: true, processAlive: true, processIds: [1234] },
+        wear: { clean: true, processAlive: true, processIds: [5678] }
+      }
+    }
+  };
+  const hosted = createHostedUpgradeEvidence(raw, candidateCommit);
+  assert.equal(hosted.status, 'passed');
+  assert.equal(hosted.sourceCommit, candidateCommit);
+  assert.equal(hosted.upgrade.baselineCommit, baselineCommit);
+  assert.equal(hosted.upgrade.installMode, 'adb-install-r');
+  assert.equal(hosted.upgrade.uninstallPerformed, false);
+  assert.equal(hosted.checkpoints.installTimePreserved, true);
+  assert.equal(JSON.stringify(hosted).includes('processIds'), false);
+  assert.equal(JSON.stringify(hosted).includes('firstInstallTime'), false);
+
+  assert.throws(
+    () => createHostedUpgradeEvidence(raw, 'e'.repeat(40)),
+    /sourceCommit does not match/
   );
 });

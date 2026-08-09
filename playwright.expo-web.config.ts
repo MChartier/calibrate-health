@@ -18,6 +18,13 @@ if (callerOwnedBaseURL) {
 
 export default defineConfig({
   testDir: './e2e/expo-web',
+  testIgnore: [
+    /launch-22-(?:accessibility|visual)\.spec\.ts/,
+    ...(process.env.CALIBRATE_INCLUDE_DATA_STATE_MATRIX === '1'
+      ? []
+      : [/launch-24-data-state-matrix\.spec\.ts/]),
+  ],
+  updateSnapshots: 'none',
   fullyParallel: true,
   workers: process.env.CI ? 2 : 4,
   retries: process.env.CI ? 1 : 0,

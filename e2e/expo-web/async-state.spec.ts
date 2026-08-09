@@ -83,7 +83,9 @@ test('offline cached Today content stays visible and is explicitly labeled stale
 
   await controller.activateOffline();
   await expect(page.getByText("You're offline", { exact: true })).toBeVisible();
-  await expect(page.getByRole('main').getByText('Offline - showing saved information', { exact: true })).toBeVisible();
+  const savedInformationNotice = page.getByText('Offline - showing saved information', { exact: true });
+  await expect(savedInformationNotice).toHaveCount(1);
+  await expect(savedInformationNotice).toBeVisible();
   await expect(page.getByText('Fixture breakfast', { exact: true })).toBeVisible();
   await expectNoHorizontalOverflow(page);
 });

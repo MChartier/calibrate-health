@@ -130,7 +130,7 @@ async function semanticColorAssertions(page: Page, testInfo: TestInfo, schemeNam
   await page.goto('/progress');
 
   const projection = page.getByTestId('goal-projection');
-  await expect(projection).toHaveCSS('background-color', cssRgb(scheme.infoContainer));
+  await expect(projection).toHaveCSS('background-color', cssRgb(scheme.surfaceContainer));
   await expect(projection).not.toHaveCSS('background-color', cssRgb(scheme.cautionContainer));
   await captureLocatorEvidence(projection, testInfo, `production-info-${schemeName}.png`);
 

@@ -5,6 +5,16 @@ import { expect, test } from './fixtures';
 
 const EVIDENCE_DIR = path.resolve('docs/screenshots/launch-06');
 
+async function captureEvidence(page: Page, filename: string) {
+  if (process.env.CALIBRATE_CAPTURE_EVIDENCE !== '1') return;
+
+  await mkdir(EVIDENCE_DIR, { recursive: true });
+  await page.screenshot({
+    path: path.join(EVIDENCE_DIR, filename),
+    fullPage: false,
+  });
+}
+
 async function openAddFood(page: Page) {
   await page.goto('/today');
   await page.getByRole('button', { name: 'Add food', exact: true }).click();
@@ -65,11 +75,7 @@ test('Add Food uses a centered wide dialog at the desktop breakpoint', async ({ 
   await expect(page.getByRole('dialog', { name: 'Add food', exact: true })).toHaveCount(1);
   await expect(mealTrigger).toBeFocused();
 
-  await mkdir(EVIDENCE_DIR, { recursive: true });
-  await page.screenshot({
-    path: path.join(EVIDENCE_DIR, 'add-food-desktop-1024x1000.png'),
-    fullPage: false,
-  });
+  await captureEvidence(page, 'add-food-desktop-1024x1000.png');
 });
 
 test('Add Food uses a phone sheet, reflows at 200% text, and guards dirty dismissal', async ({ page, ux }) => {
@@ -94,9 +100,5 @@ test('Add Food uses a phone sheet, reflows at 200% text, and guards dirty dismis
   await expectNoHorizontalOverflow(page);
   await expect(dialog.getByRole('button', { name: 'Add & close', exact: true })).toBeVisible();
 
-  await mkdir(EVIDENCE_DIR, { recursive: true });
-  await page.screenshot({
-    path: path.join(EVIDENCE_DIR, 'add-food-phone-320x568-200-percent-text.png'),
-    fullPage: false,
-  });
+  await captureEvidence(page, 'add-food-phone-320x568-200-percent-text.png');
 });

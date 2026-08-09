@@ -20,6 +20,12 @@ targeted Kotlin/JVM and device checks for the Wear client:
   encrypted production backup and guarded restore scripts, compares representative food, weight,
   and activity rows, rejects plaintext artifacts, and removes only resources owned by that run.
   `npm run test:db:backup-restore:unit` validates its safety guards without Docker.
+- `node scripts/postgres-rollback-smoke.mjs` starts only owned disposable local resources, seeds the
+  immutable `v0.14.0` schema through migration `0031`, creates a production age-encrypted backup,
+  upgrades through `0038`, restores the exact predecessor into a new empty target, and re-upgrades
+  the restored data. Its dependency-free contract suite is
+  `node --test scripts/postgres-rollback-smoke.test.mjs`; the full protocol and retained evidence
+  shape are documented in [`database-rollback-rehearsal.md`](database-rollback-rehearsal.md).
 - `npm run test:web:e2e` builds the Expo web release export, serves it from a loopback static
   server, and runs the critical browser path in the machine's installed Chrome. API routes are
   deterministically fulfilled by the suite. It does not download a Playwright browser or add the

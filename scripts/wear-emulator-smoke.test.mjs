@@ -1,17 +1,33 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+
 import {
-  buildWearScrollGesture,
+  assertWearRequestedPermissions,
+  auditWearActionTargets,
+  crashBufferContainsWearProcess,
   createRecoveringWearUiReader,
   findTextNode,
   listWearUiPackages,
   parseBounds,
+  parseBoundsRectangle,
+  parseWearPackageVersion,
+  parseWearFontScale,
+  parseWearRequestedPermissions,
+  parseWearUiNodes,
+  parseWmDensity,
   parseWmSize,
   prepareWearUi,
+  restoreWearFontScale,
   resolveWearAdb,
+  setAndVerifyWearFontScale,
+  summarizeWearScale,
   waitForScrollableWearUi,
   waitForWearUi
 } from './wear-emulator-smoke.mjs';
+
+function node(attributes) {
+  return `<node ${Object.entries(attributes).map(([key, value]) => `${key}="${value}"`).join(' ')} />`;
+}
 
 test('Wear UI preparation provisions, verifies, wakes, and unlocks the emulator before launch', () => {
   const commands = [];
@@ -62,22 +78,15 @@ test('Wear adb resolution uses Windows SDK and local-app-data paths', () => {
   );
   assert.equal(resolveWearAdb({}, 'win32'), 'adb.exe');
 });
+
 test('Wear smoke parser derives tap coordinates from the UI tree', () => {
   const xml = '<hierarchy><node text="Connection" bounds="[24,156][430,260]" /></hierarchy>';
 
-  const node = findTextNode(xml, 'Connection');
-  assert.deepEqual(node, { text: 'Connection', bounds: '[24,156][430,260]' });
-  assert.deepEqual(parseBounds(node.bounds), { x: 227, y: 208 });
+  const found = findTextNode(xml, 'Connection');
+  assert.deepEqual(found, { text: 'Connection', bounds: '[24,156][430,260]' });
+  assert.deepEqual(parseBounds(found.bounds), { x: 227, y: 208 });
+  assert.deepEqual(parseBoundsRectangle(found.bounds), { left: 24, top: 156, right: 430, bottom: 260 });
 });
-
-test('Wear scrolling stays within the discovered round display', () => {
-  const screen = parseWmSize('Physical size: 454x454');
-  assert.deepEqual(screen, { width: 454, height: 454 });
-  assert.deepEqual(buildWearScrollGesture(screen), ['227', '354', '227', '100', '300']);
-  assert.throws(() => parseWmSize('unknown'), /parse Wear screen size/);
-  assert.throws(() => buildWearScrollGesture({ width: 454, height: 0 }), /positive integer/);
-});
-
 test('Wear readiness waits for one complete exact UI tree', () => {
   const expected = ['calibrate', 'Connection'];
   const trees = [
@@ -141,6 +150,7 @@ test('Wear readiness fails closed after its bounded exact-selector attempts', ()
   assert.throws(() => waitForWearUi([], () => '', () => {}), /exact non-empty text selectors/);
   assert.throws(() => waitForWearUi(['calibrate'], () => '', () => {}, 0), /positive integer/);
 });
+
 test('Wear scrollable readiness verifies exact rows across one bounded surface', () => {
   const trees = [
     '<hierarchy><node text="Connection" bounds="[1,1][2,2]" /></hierarchy>',
@@ -158,14 +168,144 @@ test('Wear scrollable readiness verifies exact rows across one bounded surface',
   assert.equal(ready, trees[2]);
   assert.equal(reads, 3);
   assert.equal(scrolls, 2);
-
   assert.throws(
     () => waitForScrollableWearUi(['Connection', 'Pair on phone'], () => trees[0], () => {}, 2),
     /did not expose expected text: Pair on phone/
   );
 });
 
-test('Wear smoke parser rejects malformed bounds and missing text', () => {
-  assert.equal(findTextNode('<hierarchy />', 'Connection'), null);
+
+test('Wear display parsers prefer active overrides and reject malformed values', () => {
+  assert.deepEqual(parseWmSize('Physical size: 454x454\nOverride size: 400x400'), { width: 400, height: 400 });
+  assert.equal(parseWmDensity('Physical density: 320\nOverride density: 280'), 280);
+  assert.throws(() => parseWmSize('unknown'), /parse Wear screen size/);
+  assert.throws(() => parseWmDensity('0'), /parse Wear screen density/);
   assert.throws(() => parseBounds('24,156,430,260'), /Invalid Android bounds/);
+  assert.throws(() => parseBoundsRectangle('[1,1][1,5]'), /positive area/);
+});
+
+test('Wear action audit accepts named 48 dp targets and ignores disabled nodes', () => {
+  const xml = `<hierarchy>${node({
+    text: 'Connection',
+    'content-desc': '',
+    clickable: 'true',
+    enabled: 'true',
+    bounds: '[0,0][96,96]'
+  })}${node({
+    text: '',
+    'content-desc': '',
+    clickable: 'true',
+    enabled: 'false',
+    bounds: '[0,0][2,2]'
+  })}</hierarchy>`;
+  const parsed = parseWearUiNodes(xml);
+  assert.equal(parsed.length, 2);
+  const audit = auditWearActionTargets(xml, { width: 454, height: 454 }, 320);
+  assert.deepEqual(audit, { actionCount: 1, minimumWidthDp: 48, minimumHeightDp: 48 });
+});
+
+test('Wear action audit rejects 47 dp, clipping, and unnamed actions', () => {
+  const base = { clickable: 'true', enabled: 'true', text: 'Action', 'content-desc': '' };
+  assert.throws(
+    () => auditWearActionTargets(`<hierarchy>${node({ ...base, bounds: '[0,0][94,96]' })}</hierarchy>`,
+      { width: 454, height: 454 }, 320),
+    /smaller than 48 dp/
+  );
+  assert.throws(
+    () => auditWearActionTargets(`<hierarchy>${node({ ...base, bounds: '[400,0][500,100]' })}</hierarchy>`,
+      { width: 454, height: 454 }, 320),
+    /clipped outside/
+  );
+  assert.throws(
+    () => auditWearActionTargets(`<hierarchy>${node({ ...base, text: '', bounds: '[0,0][96,96]' })}</hierarchy>`,
+      { width: 454, height: 454 }, 320),
+    /no accessible name/
+  );
+});
+
+test('Wear scale summary combines surfaces without retaining UI XML', () => {
+  const summary = summarizeWearScale(1.3, { width: 454, height: 454 }, 320, [
+    { actionCount: 2, minimumWidthDp: 52, minimumHeightDp: 48 },
+    { actionCount: 0, minimumWidthDp: null, minimumHeightDp: null }
+  ]);
+  assert.deepEqual(summary, {
+    fontScale: 1.3,
+    screenWidthPx: 454,
+    screenHeightPx: 454,
+    densityDpi: 320,
+    actionCount: 2,
+    minimumWidthDp: 52,
+    minimumHeightDp: 48
+  });
+  assert.equal(JSON.stringify(summary).includes('hierarchy'), false);
+});
+
+test('Wear package and font-scale restoration helpers fail closed', () => {
+  assert.deepEqual(
+    parseWearPackageVersion('versionCode=7 minSdk=30 targetSdk=35\nversionName=0.2.5'),
+    { versionName: '0.2.5', versionCode: 7 }
+  );
+  assert.throws(() => parseWearPackageVersion('versionName=0.2.5'), /parse installed Wear package version/);
+  assert.equal(parseWearFontScale('1.0\r\n'), 1);
+  assert.equal(parseWearFontScale('1.3'), 1.3);
+  assert.throws(() => parseWearFontScale('null'), /parse the Wear font scale/);
+  assert.throws(() => parseWearFontScale('0'), /parse the Wear font scale/);
+
+  const restored = [];
+  assert.equal(restoreWearFontScale('1.15', (value) => restored.push(value), () => '1.150'), true);
+  assert.deepEqual(restored, ['1.15']);
+  assert.equal(
+    restoreWearFontScale(null, () => assert.fail('must not set'), () => assert.fail('must not read')),
+    false
+  );
+  assert.throws(
+    () => restoreWearFontScale('1.15', () => {}, () => '1.0'),
+    /readback 1 did not match requested 1.15/
+  );
+});
+
+test('Wear font-scale exercise rejects ignored and clamped settings writes', () => {
+  const writes = [];
+  assert.equal(setAndVerifyWearFontScale(1.3, (value) => writes.push(value), () => '1.30'), 1.3);
+  assert.deepEqual(writes, ['1.3']);
+  assert.throws(
+    () => setAndVerifyWearFontScale(1.3, () => {}, () => '1.0'),
+    /readback 1 did not match requested 1.3/
+  );
+  assert.throws(
+    () => setAndVerifyWearFontScale(1.3, () => {}, () => '1.2'),
+    /readback 1.2 did not match requested 1.3/
+  );
+});
+test('Wear package evidence requires the exact permission set and detects native crashes', () => {
+  const reviewed = [
+    'Package [app.calibratehealth.mobile]',
+    '    requested permissions:',
+    '      android.permission.INTERNET',
+    '      android.permission.ACCESS_NETWORK_STATE',
+    '      android.permission.POST_NOTIFICATIONS',
+    '    install permissions:',
+    '      android.permission.INTERNET: granted=true'
+  ].join('\n');
+  assert.deepEqual(parseWearRequestedPermissions(reviewed), [
+    'android.permission.ACCESS_NETWORK_STATE',
+    'android.permission.INTERNET',
+    'android.permission.POST_NOTIFICATIONS'
+  ]);
+  assert.deepEqual(assertWearRequestedPermissions(reviewed), parseWearRequestedPermissions(reviewed));
+  assert.throws(
+    () => assertWearRequestedPermissions(reviewed.replace(
+      '      android.permission.POST_NOTIFICATIONS',
+      '      android.permission.POST_NOTIFICATIONS\n      android.permission.BLUETOOTH_SCAN'
+    )),
+    /differ from the reviewed allowlist/
+  );
+  assert.throws(() => parseWearRequestedPermissions('Package without section'), /section is missing/);
+
+  const nativeCrash = 'Fatal signal 11\npid: 42 >>> app.calibratehealth.mobile <<<';
+  const javaCrash = 'FATAL EXCEPTION: main\nProcess: app.calibratehealth.mobile, PID: 42';
+  const unrelatedCrash = 'FATAL EXCEPTION: main\nProcess: com.android.systemui, PID: 50';
+  assert.equal(crashBufferContainsWearProcess(nativeCrash), true);
+  assert.equal(crashBufferContainsWearProcess(javaCrash), true);
+  assert.equal(crashBufferContainsWearProcess(unrelatedCrash), false);
 });

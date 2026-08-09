@@ -5,12 +5,13 @@ import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { MEAL_PERIODS, type MealPeriod } from '@calibrate/shared';
 import type { FoodSearchResponse } from '@calibrate/api-client';
+import { ASYNC_RESOURCE_STATES, isNeverEmpty } from '../asyncState/resolveAsyncState';
 import { useAuth } from '../auth/AuthContext';
 import { calibrationStatusQueryKey } from '../calibration/queryKeys';
 import { AppButton } from '../components/AppButton';
 import { AppCard } from '../components/AppCard';
 import { AppText } from '../components/AppText';
-import { useOnlineStatus } from '../components/AsyncStateBoundary';
+import { AsyncStateBoundary, useAsyncResourceState, useOnlineStatus } from '../components/AsyncStateBoundary';
 import {
     FoodSelectionEditor,
     type FoodSelectionSubmitRequest
@@ -147,6 +148,7 @@ export default function BarcodeScreen() {
     }, [manualFoodCalories, manualFoodName, meal, mode, routeContext.returnTo, selectedDate, user]);
 
     const foodDayQuery = useFoodDayStatus(selectedDate, Boolean(user));
+    const foodDayState = useAsyncResourceState(foodDayQuery, isNeverEmpty);
 
     useEffect(() => {
         if (!user) return;
@@ -395,10 +397,44 @@ export default function BarcodeScreen() {
             ...(barcode ? { barcode } : {})
         })} />;
     }
-    if (foodDayQuery.isLoading) return <LoadingState label="Checking tracking status..." />;
+    if (foodDayState.kind === ASYNC_RESOURCE_STATES.LOADING) {
+        return <LoadingState label="Checking tracking status..." />;
+    }
+    if (foodDayState.kind === ASYNC_RESOURCE_STATES.ERROR) {
+        return (
+            <Screen safeTop>
+                <AsyncStateBoundary
+                    state={foodDayState}
+                    resourceLabel="tracking status"
+                    loading={<LoadingState label="Checking tracking status..." />}
+                    empty={null}
+                    onRetry={isOnline ? () => foodDayQuery.refetch() : undefined}
+                    retrying={foodDayQuery.isFetching}
+                >
+                    {null}
+                </AsyncStateBoundary>
+            </Screen>
+        );
+    }
+    const trackingStatusNotice = (
+        foodDayState.kind === ASYNC_RESOURCE_STATES.STALE
+        || foodDayState.kind === ASYNC_RESOURCE_STATES.DEGRADED
+    ) ? (
+        <AsyncStateBoundary
+            state={foodDayState}
+            resourceLabel="tracking status"
+            loading={null}
+            empty={null}
+            onRetry={isOnline ? () => foodDayQuery.refetch() : undefined}
+            retrying={foodDayQuery.isFetching}
+        >
+            {null}
+        </AsyncStateBoundary>
+    ) : null;
     if (foodDayQuery.data?.status !== 'OPEN') {
         return (
             <Screen safeTop>
+                {trackingStatusNotice}
                 <AppCard>
                     <SectionHeader
                         headingLevel={1}
@@ -414,6 +450,7 @@ export default function BarcodeScreen() {
     if (mode === 'manual-food') {
         return (
             <Screen safeTop>
+                {trackingStatusNotice}
                 <AppCard>
                     <SectionHeader
                         headingLevel={1}
@@ -451,6 +488,7 @@ export default function BarcodeScreen() {
     if (mode === 'manual-barcode' && !barcode) {
         return (
             <Screen safeTop>
+                {trackingStatusNotice}
                 <AppCard>
                     <SectionHeader
                         headingLevel={1}
@@ -517,6 +555,7 @@ export default function BarcodeScreen() {
         }
         return (
             <Screen safeTop>
+                {trackingStatusNotice}
                 <AppCard>
                     <SectionHeader headingLevel={1} title={title} description={description} />
                     {cameraMessage && (
@@ -536,6 +575,7 @@ export default function BarcodeScreen() {
     if (!barcode) {
         return (
             <Screen scroll={false} safeTop style={styles.scannerRoot}>
+                {trackingStatusNotice}
                 <BarcodeCamera
                     active={isCameraActive}
                     onBarcodeScanned={handleBarcodeScanned}
@@ -594,6 +634,7 @@ export default function BarcodeScreen() {
 
     return (
         <Screen safeTop>
+            {trackingStatusNotice}
             <AppCard>
                 <SectionHeader
                     headingLevel={1}

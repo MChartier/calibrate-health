@@ -36,6 +36,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -58,3 +60,43 @@ jobs:
 
       - name: Serialize concurrent weight-trend materialization
         run: node scripts/postgres-weight-trend-concurrency-smoke.mjs
+  release-upgrade-rollback:
+    name: v0.14.0 Upgrade and Encrypted Rollback
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    env:
+      CALIBRATE_SOURCE_COMMIT: ${{ github.event.pull_request.head.sha }}
+
+    steps:
+      - name: Checkout candidate C with immutable base tag
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install backend dependencies
+        run: npm --prefix backend ci --no-audit --fund=false
+
+      - name: Validate rollback rehearsal helpers
+        run: npm run test:db:rollback:unit
+
+      - name: Upgrade from v0.14.0, restore, and re-upgrade
+        run: npm run test:db:rollback
+
+      - name: Upload sanitized rollback evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: postgres-rollback-smoke-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .codex-screenshots/postgres-rollback-smoke/result.json
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 30

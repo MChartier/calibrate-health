@@ -11,7 +11,7 @@ import { radius, spacing } from '../theme';
  */
 export const LogContentSkeleton: React.FC = () => (
     <>
-        <AppCard>
+        <AppCard testID="log-content-loading">
             <View style={styles.metricLine}>
                 <SkeletonBlock width="34%" height={64} />
                 <SkeletonBlock width="18%" height={30} />
