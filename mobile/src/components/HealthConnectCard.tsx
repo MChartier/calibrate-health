@@ -2,12 +2,15 @@ import { useMemo } from 'react';
 import { Alert, StyleSheet, Switch, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router } from 'expo-router';
-import { HEALTH_CONNECT_FEATURES, type HealthConnectFeature } from '../healthConnect/types';
+import { formatHealthConnectFreshness } from '../healthConnect/presentation';
 import { useHealthConnect } from '../healthConnect/provider';
+import { useHealthConnectPresentation } from '../healthConnect/useHealthConnectPresentation';
+import { HEALTH_CONNECT_FEATURES, type HealthConnectFeature } from '../healthConnect/types';
 import { spacing, useAppTheme, type AppTheme } from '../theme';
 import { AppButton } from './AppButton';
 import { AppCard } from './AppCard';
 import { AppText } from './AppText';
+import { HealthConnectConnectionAction } from './HealthConnectConnectionAction';
 import { SectionHeader } from './SectionHeader';
 
 const FEATURE_PRESENTATION: Array<{
@@ -17,12 +20,20 @@ const FEATURE_PRESENTATION: Array<{
 }> = [
     { feature: HEALTH_CONNECT_FEATURES.STEPS, label: 'Steps', description: 'Daily step totals.' },
     { feature: HEALTH_CONNECT_FEATURES.ACTIVE_CALORIES, label: 'Active calories', description: 'Energy burned through activity.' },
-    { feature: HEALTH_CONNECT_FEATURES.TOTAL_CALORIES, label: 'Total calories', description: 'Observed active and resting burn.' },
+    {
+        feature: HEALTH_CONNECT_FEATURES.TOTAL_CALORIES,
+        label: 'Device-estimated total burn',
+        description: 'Observed active and resting burn. This is not Calibrate TDEE.'
+    },
     { feature: HEALTH_CONNECT_FEATURES.EXERCISE, label: 'Exercise', description: 'Workout type, title, and duration.' },
-    { feature: HEALTH_CONNECT_FEATURES.WEIGHT, label: 'Weight', description: 'Optional scale and body-weight readings.' }
+    {
+        feature: HEALTH_CONNECT_FEATURES.WEIGHT,
+        label: 'Weight',
+        description: 'Optional scale readings, preserved with their source.'
+    }
 ];
 
-function formatLastRefresh(value: string | null): string {
+function formatPermissionCheck(value: string | null): string {
     if (!value) return 'Not checked yet';
     const parsed = new Date(value);
     if (Number.isNaN(parsed.getTime())) return 'Unknown';
@@ -34,31 +45,14 @@ export function HealthConnectCard() {
     const theme = useAppTheme();
     const styles = useMemo(() => createStyles(theme), [theme]);
     const healthConnect = useHealthConnect();
+    const presentation = useHealthConnectPresentation({
+        hasImportedActivity: healthConnect.lastSuccessfulSyncAt !== null
+    });
     const availability = healthConnect.connection?.availability;
     const granted = new Set(healthConnect.connection?.grantedFeatures ?? []);
     const enabledFeatures = FEATURE_PRESENTATION.filter(({ feature }) => healthConnect.selection[feature]);
-    const missingFeatures = enabledFeatures.filter(({ feature }) => !granted.has(feature));
+    const missingFeatures = presentation.missingFeatures;
     const isAvailable = availability === 'available';
-
-    let statusMessage = 'Checking whether Health Connect is available...';
-    if (!healthConnect.isLoading) {
-        switch (availability) {
-            case 'available':
-                if (!healthConnect.connected) statusMessage = 'Ready to connect.';
-                else if (healthConnect.paused) statusMessage = 'Connected, but activity sync is paused.';
-                else if (missingFeatures.length > 0) statusMessage = `${missingFeatures.length} selected data type${missingFeatures.length === 1 ? '' : 's'} still need access.`;
-                else statusMessage = 'Connected with access to all selected data types.';
-                break;
-            case 'provider_update_required':
-                statusMessage = 'Health Connect must be updated before Calibrate can connect.';
-                break;
-            case 'not_android':
-                statusMessage = 'Health Connect is available only on supported Android devices.';
-                break;
-            default:
-                statusMessage = 'Health Connect is not available on this device.';
-        }
-    }
 
     function confirmDisconnect() {
         Alert.alert(
@@ -85,27 +79,31 @@ export function HealthConnectCard() {
             </View>
             <AppText
                 accessibilityLiveRegion="polite"
-                accessibilityRole={healthConnect.error ? 'alert' : undefined}
-                style={healthConnect.error ? styles.error : undefined}
+                accessibilityRole={presentation.tone === 'danger' ? 'alert' : undefined}
+                style={[
+                    presentation.tone === 'danger' && styles.error,
+                    presentation.tone === 'caution' && styles.notice
+                ]}
             >
-                {healthConnect.error ?? statusMessage}
+                {presentation.message}
             </AppText>
+
             {healthConnect.connected && (
                 <View style={styles.syncStatus}>
-                    <AppText
-                        accessibilityLiveRegion="polite"
-                        accessibilityRole={healthConnect.syncError ? 'alert' : undefined}
-                        style={healthConnect.syncError ? styles.error : undefined}
-                    >
-                        {healthConnect.syncError
-                            ?? (healthConnect.isSyncing
-                                ? 'Syncing selected Health Connect data...'
-                                : `Last activity sync: ${formatLastRefresh(healthConnect.lastSuccessfulSyncAt)}`)}
+                    <AppText variant="caption">
+                        Activity freshness: {formatHealthConnectFreshness(healthConnect.lastSuccessfulSyncAt)}
                     </AppText>
                     <AppButton
-                        title={healthConnect.isSyncing ? 'Syncing...' : 'Sync activity now'}
+                        title="Sync activity now"
+                        busy={healthConnect.isSyncing}
+                        busyLabel="Syncing..."
                         variant="ghost"
-                        disabled={healthConnect.isBusy || healthConnect.isSyncing || healthConnect.paused || missingFeatures.length > 0}
+                        disabled={
+                            healthConnect.isBusy
+                            || healthConnect.isSyncing
+                            || healthConnect.paused
+                            || missingFeatures.length > 0
+                        }
                         onPress={() => void healthConnect.sync()}
                         style={styles.compactButton}
                     />
@@ -113,12 +111,7 @@ export function HealthConnectCard() {
             )}
 
             {availability === 'provider_update_required' && (
-                <AppButton
-                    title="Update Health Connect"
-                    variant="secondary"
-                    leftIcon={<Ionicons name="download-outline" size={18} color={theme.colors.onSurface} />}
-                    onPress={() => void healthConnect.updateProvider()}
-                />
+                <HealthConnectConnectionAction variant="secondary" />
             )}
 
             {isAvailable && (
@@ -141,11 +134,14 @@ export function HealthConnectCard() {
                                             )}
                                         </View>
                                         <AppText variant="caption">
-                                            {description}{isWeight ? ' Off by default and never overwrites a manual weigh-in.' : ''}
+                                            {description}
+                                            {isWeight
+                                                ? ' Off by default; imported readings never overwrite a manual weigh-in.'
+                                                : ''}
                                         </AppText>
                                     </View>
                                     <Switch
-                                        accessibilityLabel={`Read ${label.toLowerCase()} from Health Connect`}
+                                        accessibilityLabel={'Read ' + label.toLowerCase() + ' from Health Connect'}
                                         accessibilityHint={isWeight ? 'Weight import requires separate, explicit permission.' : undefined}
                                         value={enabled}
                                         disabled={healthConnect.isBusy}
@@ -162,21 +158,9 @@ export function HealthConnectCard() {
                     </AppText>
 
                     {!healthConnect.connected ? (
-                        <AppButton
-                            title={healthConnect.isBusy ? 'Connecting...' : 'Connect Health Connect'}
-                            disabled={healthConnect.isBusy || enabledFeatures.length === 0}
-                            leftIcon={<Ionicons name="fitness-outline" size={18} color={theme.colors.onPrimary} />}
-                            onPress={() => void healthConnect.connect()}
-                        />
+                        enabledFeatures.length > 0 && <HealthConnectConnectionAction />
                     ) : (
                         <>
-                            {missingFeatures.length > 0 && (
-                                <AppButton
-                                    title={healthConnect.isBusy ? 'Requesting...' : 'Review selected access'}
-                                    disabled={healthConnect.isBusy}
-                                    onPress={() => void healthConnect.connect()}
-                                />
-                            )}
                             <View style={styles.actionRow}>
                                 <AppButton
                                     title={healthConnect.paused ? 'Resume sync' : 'Pause sync'}
@@ -185,11 +169,8 @@ export function HealthConnectCard() {
                                     onPress={() => void healthConnect.setPaused(!healthConnect.paused)}
                                     style={styles.actionButton}
                                 />
-                                <AppButton
-                                    title="Manage access"
+                                <HealthConnectConnectionAction
                                     variant="secondary"
-                                    disabled={healthConnect.isBusy}
-                                    onPress={() => void healthConnect.manageAccess()}
                                     style={styles.actionButton}
                                 />
                             </View>
@@ -205,7 +186,9 @@ export function HealthConnectCard() {
             )}
 
             <View style={styles.footer}>
-                <AppText variant="caption">Last permission check: {formatLastRefresh(healthConnect.lastRefreshedAt)}</AppText>
+                <AppText variant="caption">
+                    Last permission check: {formatPermissionCheck(healthConnect.lastRefreshedAt)}
+                </AppText>
                 {isAvailable && (
                     <AppButton
                         title={healthConnect.isBusy ? 'Checking...' : 'Check again'}

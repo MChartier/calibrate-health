@@ -3,24 +3,38 @@ import { fireEvent, render, waitFor } from '@testing-library/react-native';
 import { onlineManager, QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import ActivityScreen from '../../app/(tabs)/(settings)/activity';
 
-jest.mock('../offline/usePendingWeightMutation', () => ({
-    usePendingWeightMutation: () => false
-}));
-
 jest.mock('@expo/vector-icons/Ionicons', () => () => null);
 jest.mock('expo-router', () => ({ useLocalSearchParams: () => ({}) }));
 
 const mockGetActivityDays = jest.fn();
-const mockGetUserProfile = jest.fn();
 jest.mock('../auth/AuthContext', () => ({
     useAuth: () => ({
         api: {
-            getActivityDays: mockGetActivityDays,
-            getUserProfile: mockGetUserProfile
+            getActivityDays: mockGetActivityDays
         },
         user: { id: 7, weight_unit: 'KG', timezone: 'UTC' }
     })
 }));
+
+const mockUseHealthConnectPresentation = jest.fn();
+let mockActionLabel = 'Manage Health Connect';
+jest.mock('../healthConnect/useHealthConnectPresentation', () => ({
+    useHealthConnectPresentation: (options: unknown) => mockUseHealthConnectPresentation(options)
+}));
+jest.mock('../components/HealthConnectConnectionAction', () => {
+    const ReactModule = require('react');
+    const { Pressable, Text } = require('react-native');
+    return {
+        HealthConnectConnectionAction: () => ReactModule.createElement(
+            Pressable,
+            {
+                accessibilityRole: 'button',
+                accessibilityLabel: mockActionLabel
+            },
+            ReactModule.createElement(Text, null, mockActionLabel)
+        )
+    };
+});
 
 const mockNavigation = {
     selectedDate: '2026-08-08',
@@ -49,6 +63,18 @@ jest.mock('../components/TabScreen', () => {
     };
 });
 
+function readyPresentation() {
+    return {
+        state: 'ready',
+        message: 'Health Connect is connected and activity is up to date.',
+        tone: 'positive',
+        action: 'manage',
+        actionLabel: 'Manage Health Connect',
+        shouldShowActivity: true,
+        missingFeatures: []
+    };
+}
+
 function renderScreen() {
     const queryClient = new QueryClient({
         defaultOptions: {
@@ -67,31 +93,43 @@ describe('ActivityScreen async resource states', () => {
     beforeEach(() => {
         jest.clearAllMocks();
         onlineManager.setOnline(true);
+        mockUseHealthConnectPresentation.mockReturnValue(readyPresentation());
+        mockActionLabel = 'Manage Health Connect';
         mockGetActivityDays.mockImplementation(({ start, end }: { start: string; end: string }) => {
             if (start === end) return Promise.reject(new TypeError('Network unavailable'));
             return Promise.resolve({ days: [] });
         });
-        mockGetUserProfile.mockResolvedValue({ calorieSummary: { tdee: 2100 } });
     });
 
     afterEach(() => {
         onlineManager.setOnline(true);
     });
 
-    it('keeps the full selected-day context when activity is verified empty', async () => {
+    it('keeps connected empty context concise and moves explanations behind Details', async () => {
+        mockUseHealthConnectPresentation.mockReturnValue({
+            ...readyPresentation(),
+            state: 'empty',
+            message: 'Health Connect is connected. No imported activity is available yet.'
+        });
         mockGetActivityDays.mockResolvedValue({ days: [] });
         const screen = renderScreen();
 
         await waitFor(() => expect(screen.getByText('No imported activity for this day')).toBeTruthy());
-        expect(screen.getByText('Exercise details')).toBeTruthy();
-        expect(screen.getByText('No exercise sessions were imported for this day.')).toBeTruthy();
+        expect(screen.getByText('Today')).toBeTruthy();
+        expect(screen.getByText('Recent Days')).toBeTruthy();
+        expect(screen.getByTestId('activity-details')).toBeTruthy();
+        expect(screen.queryByText('Imported weight')).toBeNull();
+        expect(screen.queryByText('Exercise details')).toBeNull();
+
+        fireEvent.press(screen.getByLabelText('Show activity details'));
+
+        expect(screen.getByTestId('activity-details-content')).toBeTruthy();
         expect(screen.getByText('Imported weight')).toBeTruthy();
+        expect(screen.getByText('No imported weight for this day.')).toBeTruthy();
         expect(screen.getByText(
-            'No Health Connect weight readings were imported for this day. Weight access is optional and off by default.'
+            'Imported activity never automatically changes your calorie target.'
         )).toBeTruthy();
-        expect(screen.getByText(
-            "Imported readings are preserved with their source for review and export. Log a manual weigh-in to update Calibrate's weight trend."
-        )).toBeTruthy();
+        expect(screen.getByText(/profile estimate for its calorie target/)).toBeTruthy();
     });
 
     it('shows one selected-day failure and retries only that resource', async () => {
@@ -116,6 +154,30 @@ describe('ActivityScreen async resource states', () => {
             ([request]) => request.start !== request.end
         );
         expect(historyRequests).toHaveLength(1);
-        expect(mockGetUserProfile).toHaveBeenCalledTimes(1);
+    });
+
+    it('shows one connection action and hides Today and Recent Days when disconnected without history', async () => {
+        mockActionLabel = 'Connect Health Connect';
+        mockUseHealthConnectPresentation.mockReturnValue({
+            state: 'disconnected',
+            message: 'Connect Health Connect to import read-only activity from apps on this phone.',
+            tone: 'neutral',
+            action: 'connect',
+            actionLabel: 'Connect Health Connect',
+            shouldShowActivity: false,
+            missingFeatures: []
+        });
+        mockGetActivityDays.mockResolvedValue({ days: [] });
+
+        const screen = renderScreen();
+
+        await waitFor(() => expect(screen.getByText('No activity imported yet')).toBeTruthy());
+        expect(screen.getAllByRole('button', { name: 'Connect Health Connect' })).toHaveLength(1);
+        expect(screen.queryByText('Today')).toBeNull();
+        expect(screen.queryByText('Recent Days')).toBeNull();
+        expect(screen.queryByTestId('activity-details')).toBeNull();
+        expect(screen.getByText(
+            'Imported activity never automatically changes your calorie target.'
+        )).toBeTruthy();
     });
 });
