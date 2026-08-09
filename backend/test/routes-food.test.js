@@ -777,6 +777,109 @@ test('food route: POST / can create a my_food-backed log with snapshots', async 
   assert.equal(receivedCreateData.calories_per_serving_snapshot, 100);
 });
 
+test('food route: POST /copy requires a valid operation ID and local-date payload', async () => {
+  const router = loadFoodRouter({
+    prismaStub: {},
+    foodDataStub: { getFoodDataProvider: () => ({}) }
+  });
+  const handler = getRouteHandler(router, 'post', '/copy');
+  const res = createRes();
+
+  await handler({
+    user: { id: 7, timezone: 'America/Los_Angeles' },
+    body: { source_date: '2026-08-08', target_date: '2026-08-09' }
+  }, res);
+
+  assert.equal(res.statusCode, 400);
+  assert.deepEqual(res.body, {
+    message: 'Invalid operation_id',
+    code: 'INVALID_FOOD_COPY',
+    retryable: false
+  });
+});
+
+test('food route: POST /copy executes the owned copy in one idempotent transaction', async () => {
+  let sourceWhere;
+  let createdData;
+  let operationReceipt;
+  const source = {
+    id: 41,
+    user_id: 7,
+    my_food_id: null,
+    date: new Date('2026-08-08T12:00:00.000Z'),
+    local_date: new Date('2026-08-08T00:00:00.000Z'),
+    meal_period: 'LUNCH',
+    name: 'Snapshot lunch',
+    calories: 410,
+    servings_consumed: 1,
+    serving_size_quantity_snapshot: 1,
+    serving_unit_label_snapshot: 'bowl',
+    calories_per_serving_snapshot: 410,
+    external_source: null,
+    external_id: null,
+    brand_snapshot: null,
+    locale_snapshot: null,
+    barcode_snapshot: null,
+    measure_label_snapshot: null,
+    grams_per_measure_snapshot: null,
+    measure_quantity_snapshot: null,
+    grams_total_snapshot: null,
+    created_at: new Date('2026-08-08T12:00:00.000Z')
+  };
+  const prismaStub = {
+    clientOperation: {
+      create: async ({ data }) => {
+        operationReceipt = { ...data, response_status: null, response_body: null, completed_at: null };
+        return operationReceipt;
+      },
+      update: async ({ data }) => {
+        operationReceipt = { ...operationReceipt, ...data };
+        return operationReceipt;
+      },
+      findUnique: async () => operationReceipt
+    },
+    foodLog: {
+      findMany: async ({ where }) => {
+        sourceWhere = where;
+        return [source];
+      },
+      create: async ({ data }) => {
+        createdData = data;
+        return { id: 42, created_at: new Date('2026-08-09T12:00:00.000Z'), ...data };
+      }
+    }
+  };
+  const router = loadFoodRouter({
+    prismaStub,
+    foodDataStub: { getFoodDataProvider: () => ({}) }
+  });
+  const handler = getRouteHandler(router, 'post', '/copy');
+  const res = createRes();
+
+  await handler({
+    user: { id: 7, timezone: 'America/Los_Angeles' },
+    body: {
+      operation_id: 'food-copy-route-001',
+      source_date: '2026-08-08',
+      target_date: '2026-08-09',
+      meal_mappings: [{ source_meal_period: 'LUNCH', target_meal_period: 'DINNER' }]
+    }
+  }, res);
+
+  assert.equal(res.statusCode, 200);
+  assert.equal(res.body.operation_id, 'food-copy-route-001');
+  assert.equal(res.body.copied_count, 1);
+  assert.equal(res.body.food_logs[0].meal_period, 'DINNER');
+  assert.deepEqual(sourceWhere, {
+    user_id: 7,
+    local_date: new Date('2026-08-08T00:00:00.000Z'),
+    meal_period: { in: ['LUNCH'] }
+  });
+  assert.equal(createdData.user_id, 7);
+  assert.equal(operationReceipt.operation_kind, 'food_log.copy');
+  assert.equal(operationReceipt.response_status, 200);
+});
+
 test('food route: PATCH /:id validates and computes updateData', async () => {
   const existingRow = {
     id: 1,

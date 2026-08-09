@@ -1,9 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import * as Crypto from 'expo-crypto';
 import { useLocalSearchParams, usePathname } from 'expo-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import type { FoodLogEntry, FoodLogUpdatePayload } from '@calibrate/api-client';
+import type { FoodLogCopyPayload, FoodLogEntry, FoodLogUpdatePayload } from '@calibrate/api-client';
 import type { MealPeriod } from '@calibrate/shared';
 import { AddFoodSheet } from '../../../src/components/AddFoodSheet';
 import { AsyncStateBoundary, useAsyncResourceState, useOnlineStatus } from '../../../src/components/AsyncStateBoundary';
@@ -11,6 +12,11 @@ import { AppButton } from '../../../src/components/AppButton';
 import { AppCard } from '../../../src/components/AppCard';
 import { AppText } from '../../../src/components/AppText';
 import { BottomSheetModal } from '../../../src/components/BottomSheetModal';
+import {
+    CopyFoodSheet,
+    type FoodCopySelection,
+    type FoodCopySource
+} from '../../../src/components/CopyFoodSheet';
 import { DateNavigation } from '../../../src/components/DateNavigation';
 import { FoodLogTimelineCard } from '../../../src/components/FoodLogTimelineCard';
 import { useFoodDayStatus } from '../../../src/components/FoodTrackingStatus';
@@ -28,10 +34,12 @@ import { calibrationStatusQueryKey } from '../../../src/calibration/queryKeys';
 import { usePrefetchPreviousFoodLog } from '../../../src/hooks/usePrefetchPreviousFoodLog';
 import { getSafeActionErrorMessage } from '../../../src/errors/presentation';
 import { getFoodLogEditableAmount } from '../../../src/food/foodLogAmount';
+import { useFoodDeleteRecovery } from '../../../src/food/useFoodDeleteRecovery';
 import { getActiveTabRoute } from '../../../src/navigation/contextualFab';
 import { executeOrQueueMutation, OFFLINE_MUTATION_OPERATIONS } from '../../../src/offline/operations';
 import { useOfflineOutbox } from '../../../src/offline/provider';
 import { triggerHapticFeedback } from '../../../src/utils/haptics';
+import { formatDateOnlyForDisplay } from '../../../src/utils/dates';
 import { MEAL_SELECT_OPTIONS } from '../../../src/utils/meals';
 import { type AppTheme, useAppTheme } from '../../../src/theme';
 import { SERVING_INPUT_INCREMENT } from '../../../src/config/inputPrecision';
@@ -40,7 +48,8 @@ export default function FoodLogScreen() {
     const routeParams = useLocalSearchParams<{ date?: string }>();
     const pathname = usePathname();
     const { api, user } = useAuth();
-    const { enqueue } = useOfflineOutbox();
+    const outbox = useOfflineOutbox();
+    const { enqueue } = outbox;
     const queryClient = useQueryClient();
     const dateNavigation = useSharedLogDateNavigation();
     const { request: addFoodRequest, consumeRequest: consumeAddFoodRequest } = useAddFoodRequest();
@@ -58,6 +67,9 @@ export default function FoodLogScreen() {
     const [recipeDraftMeal, setRecipeDraftMeal] = useState<MealPeriod | null>(null);
     const [recipeDraftEntries, setRecipeDraftEntries] = useState<FoodLogEntry[]>([]);
     const [recipeSavedMessage, setRecipeSavedMessage] = useState<string | null>(null);
+    const [copySource, setCopySource] = useState<FoodCopySource | null>(null);
+    const [copySuccessMessage, setCopySuccessMessage] = useState<string | null>(null);
+    const copyOperationRef = useRef<{ key: string; operationId: string } | null>(null);
     const theme = useAppTheme();
     const styles = React.useMemo(() => createStyles(theme), [theme]);
     usePrefetchPreviousFoodLog(selectedDate, dateNavigation.minDate);
@@ -86,29 +98,61 @@ export default function FoodLogScreen() {
         consumeAddFoodRequest(addFoodRequest.id);
     }, [addFoodRequest, canEditFood, consumeAddFoodRequest, dateNavigation.setDate, pathname, selectedDate]);
 
-    async function invalidateLogQueries() {
+    async function invalidateLogQueries(additionalDates: string[] = []) {
+        const dates = Array.from(new Set([selectedDate, ...additionalDates]));
         await Promise.all([
-            queryClient.invalidateQueries({ queryKey: ['mobile-food', selectedDate] }),
-            queryClient.invalidateQueries({ queryKey: ['mobile-food-day', selectedDate] }),
+            ...dates.flatMap((date) => [
+                queryClient.invalidateQueries({ queryKey: ['mobile-food', date] }),
+                queryClient.invalidateQueries({ queryKey: ['mobile-food-day', date] })
+            ]),
             queryClient.invalidateQueries({ queryKey: calibrationStatusQueryKey }),
             queryClient.invalidateQueries({ queryKey: ['mobile-profile'] }),
             queryClient.invalidateQueries({ queryKey: ['mobile-recent-foods'] })
         ]);
     }
 
-    const deleteFood = useMutation({
-        mutationFn: (id: number) => {
-            const payload = { id };
-            return executeOrQueueMutation({
-                operation: OFFLINE_MUTATION_OPERATIONS.DELETE_FOOD_LOG,
-                payload,
-                execute: (operationId) => api.deleteFoodLog(id, operationId),
-                enqueue
-            });
-        },
-        onSuccess: async () => {
+    const deleteRecovery = useFoodDeleteRecovery({
+        entries: foodQuery.data,
+        deleteFoodLog: (id, operationId) => api.deleteFoodLog(id, operationId),
+        outbox,
+        onCommitted: async () => {
             triggerHapticFeedback(user?.haptics_enabled, 'selection');
             await invalidateLogQueries();
+        }
+    });
+
+    const copyFood = useMutation({
+        mutationFn: (selection: FoodCopySelection) => {
+            if (!copySource || copySource.kind !== selection.kind) {
+                throw new Error('Choose a meal or day to copy.');
+            }
+            const operationKey = JSON.stringify({ sourceDate: selectedDate, source: copySource, selection });
+            if (copyOperationRef.current?.key !== operationKey) {
+                copyOperationRef.current = { key: operationKey, operationId: Crypto.randomUUID() };
+            }
+            const payload: FoodLogCopyPayload = {
+                operation_id: copyOperationRef.current.operationId,
+                source_date: selectedDate,
+                target_date: selection.targetDate
+            };
+            if (copySource.kind === 'meal') {
+                if (selection.kind !== 'meal') throw new Error('Choose a meal to copy.');
+                payload.meal_mappings = [{
+                    source_meal_period: copySource.meal,
+                    target_meal_period: selection.targetMeal
+                }];
+            }
+            return api.copyFoodLogs(payload);
+        },
+        onSuccess: async (response) => {
+            copyOperationRef.current = null;
+            setCopySource(null);
+            const noun = response.copied_count === 1 ? 'entry' : 'entries';
+            setCopySuccessMessage(
+                `${response.copied_count} ${noun} copied to ${formatDateOnlyForDisplay(response.target_date)}.`
+            );
+            triggerHapticFeedback(user?.haptics_enabled, 'success');
+            await invalidateLogQueries([response.target_date]);
         }
     });
 
@@ -147,6 +191,13 @@ export default function FoodLogScreen() {
             setEditError(getSafeActionErrorMessage(error, 'Unable to update food entry.'));
         }
     });
+
+    function openCopy(source: FoodCopySource) {
+        copyFood.reset();
+        copyOperationRef.current = null;
+        setCopySuccessMessage(null);
+        setCopySource(source);
+    }
 
     function openEditEntry(entry: FoodLogEntry) {
         const amountConfig = getFoodLogEditableAmount(entry);
@@ -219,10 +270,13 @@ export default function FoodLogScreen() {
                 empty={(
                     <FoodLogTimelineCard
                         title="Meals"
-                        entries={[]}
+                        entries={deleteRecovery.visibleEntries}
                         disabled={!canEditFood}
+                        copyDisabled={!isOnline}
                         onEditEntry={openEditEntry}
-                        onDeleteEntry={(entry) => deleteFood.mutate(entry.id)}
+                        onDeleteEntry={deleteRecovery.requestDelete}
+                        onCopyMeal={(meal) => openCopy({ kind: 'meal', meal })}
+                        onCopyDay={() => openCopy({ kind: 'day' })}
                     />
                 )}
                 onRetry={isOnline ? () => foodQuery.refetch() : undefined}
@@ -230,10 +284,13 @@ export default function FoodLogScreen() {
             >
                 <FoodLogTimelineCard
                     title="Meals"
-                    entries={foodQuery.data ?? []}
+                    entries={deleteRecovery.visibleEntries}
                     disabled={!canEditFood}
+                    copyDisabled={!isOnline}
                     onEditEntry={openEditEntry}
-                    onDeleteEntry={(entry) => deleteFood.mutate(entry.id)}
+                    onDeleteEntry={deleteRecovery.requestDelete}
+                    onCopyMeal={(meal) => openCopy({ kind: 'meal', meal })}
+                    onCopyDay={() => openCopy({ kind: 'day' })}
                     onSaveMealAsRecipe={(meal, entries) => {
                         setRecipeSavedMessage(null);
                         setRecipeDraftMeal(meal);
@@ -256,10 +313,29 @@ export default function FoodLogScreen() {
             {recipeSavedMessage && (
                 <AppText accessibilityLiveRegion="polite" variant="muted">{recipeSavedMessage}</AppText>
             )}
-            {deleteFood.error && (
-                <AppText accessibilityRole="alert" style={styles.error}>
-                    {getSafeActionErrorMessage(deleteFood.error, 'Unable to delete this food entry.')}
-                </AppText>
+            {copySuccessMessage && (
+                <AppText accessibilityLiveRegion="polite" variant="muted">{copySuccessMessage}</AppText>
+            )}
+            {deleteRecovery.pendingDelete && (
+                <View accessibilityLiveRegion="polite" style={styles.noticeRow}>
+                    <AppText style={styles.noticeText}>Deleted {deleteRecovery.pendingDelete.entry.name}.</AppText>
+                    <AppButton
+                        title="Undo"
+                        variant="secondary"
+                        leftIcon={<Ionicons name="arrow-undo-outline" size={18} color={theme.colors.onSurface} />}
+                        onPress={() => deleteRecovery.undo(deleteRecovery.pendingDelete?.operationId)}
+                    />
+                </View>
+            )}
+            {deleteRecovery.failure && (
+                <View accessibilityRole="alert" style={styles.noticeRow}>
+                    <AppText style={[styles.noticeText, styles.error]}>{deleteRecovery.failure.message}</AppText>
+                    <AppButton
+                        title="Retry delete"
+                        variant="secondary"
+                        onPress={() => void deleteRecovery.retry(deleteRecovery.failure?.operationId)}
+                    />
+                </View>
             )}
 
             <AddFoodSheet
@@ -268,6 +344,23 @@ export default function FoodLogScreen() {
                 initialMeal={addFoodMeal}
                 returnTo="food-log"
                 onClose={() => setAddFoodMeal(undefined)}
+            />
+
+            <CopyFoodSheet
+                visible={copySource !== null}
+                source={copySource}
+                sourceDate={selectedDate}
+                minDate={dateNavigation.minDate}
+                maxDate={dateNavigation.maxDate}
+                isSubmitting={copyFood.isPending}
+                error={copyFood.error
+                    ? getSafeActionErrorMessage(copyFood.error, 'Unable to copy food.')
+                    : null}
+                onRequestClose={() => {
+                    if (copyFood.isPending) return;
+                    setCopySource(null);
+                }}
+                onSubmit={(selection) => copyFood.mutate(selection)}
             />
 
             <SaveMealAsRecipeSheet
@@ -389,6 +482,16 @@ function createStyles(theme: AppTheme) {
         },
         error: {
             color: theme.colors.danger
+        },
+        noticeRow: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: theme.spacing.md
+        },
+        noticeText: {
+            flex: 1,
+            minWidth: 0
         }
     });
 }

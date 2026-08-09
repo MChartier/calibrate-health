@@ -14,9 +14,12 @@ type FoodLogTimelineCardProps = ViewProps & {
     title?: string;
     entries: FoodLogEntry[];
     disabled?: boolean;
+    copyDisabled?: boolean;
     onEditEntry: (entry: FoodLogEntry) => void;
     onDeleteEntry: (entry: FoodLogEntry) => void;
     onSaveMealAsRecipe?: (meal: MealPeriod, entries: FoodLogEntry[]) => void;
+    onCopyMeal?: (meal: MealPeriod) => void;
+    onCopyDay?: () => void;
 };
 
 type MealGroup = {
@@ -25,14 +28,16 @@ type MealGroup = {
     calories: number;
 };
 
-// Start collapsed so a populated food log remains scannable on phone screens.
+const EMPTY_MEAL_HEADER_HEIGHT = 44; // Keeps an empty six-meal day scannable without shrinking interactive rows.
+
+// Populated meals open at first render; empty rows remain compact and do not expose a disclosure control.
 const DEFAULT_EXPANDED_MEALS: Record<MealPeriod, boolean> = {
-    BREAKFAST: false,
-    MORNING_SNACK: false,
-    LUNCH: false,
-    AFTERNOON_SNACK: false,
-    DINNER: false,
-    EVENING_SNACK: false
+    BREAKFAST: true,
+    MORNING_SNACK: true,
+    LUNCH: true,
+    AFTERNOON_SNACK: true,
+    DINNER: true,
+    EVENING_SNACK: true
 };
 
 /**
@@ -42,9 +47,12 @@ export const FoodLogTimelineCard: React.FC<FoodLogTimelineCardProps> = ({
     title = 'Food log',
     entries,
     disabled,
+    copyDisabled,
     onEditEntry,
     onDeleteEntry,
     onSaveMealAsRecipe,
+    onCopyMeal,
+    onCopyDay,
     style,
     ...props
 }) => {
@@ -73,6 +81,23 @@ export const FoodLogTimelineCard: React.FC<FoodLogTimelineCardProps> = ({
                 <View style={styles.headerText}>
                     <AppText accessibilityRole="header" aria-level={2} variant="screenTitle">{title}</AppText>
                 </View>
+                {entries.length > 0 && onCopyDay && (
+                    <Pressable
+                        accessibilityRole="button"
+                        accessibilityLabel="Copy day"
+                        accessibilityState={{ disabled: Boolean(copyDisabled) }}
+                        disabled={copyDisabled}
+                        onPress={onCopyDay}
+                        style={({ pressed }) => [
+                            styles.headerAction,
+                            copyDisabled && styles.disabled,
+                            pressed && styles.pressed
+                        ]}
+                    >
+                        <Ionicons name="copy-outline" size={18} color={theme.colors.primary} />
+                        <AppText variant="label" style={styles.actionText}>Copy day</AppText>
+                    </Pressable>
+                )}
             </View>
 
             <View style={styles.mealList}>
@@ -83,9 +108,11 @@ export const FoodLogTimelineCard: React.FC<FoodLogTimelineCardProps> = ({
                         isFirst={index === 0}
                         isExpanded={expandedMeals[group.meal]}
                         disabled={disabled}
+                        copyDisabled={copyDisabled}
                         onEditEntry={onEditEntry}
                         onDeleteEntry={onDeleteEntry}
                         onSaveMealAsRecipe={onSaveMealAsRecipe}
+                        onCopyMeal={onCopyMeal}
                         onToggleMeal={toggleMeal}
                     />
                 ))}
@@ -99,9 +126,11 @@ type MealTimelineRowProps = {
     isFirst: boolean;
     isExpanded: boolean;
     disabled?: boolean;
+    copyDisabled?: boolean;
     onEditEntry: (entry: FoodLogEntry) => void;
     onDeleteEntry: (entry: FoodLogEntry) => void;
     onSaveMealAsRecipe?: (meal: MealPeriod, entries: FoodLogEntry[]) => void;
+    onCopyMeal?: (meal: MealPeriod) => void;
     onToggleMeal: (meal: MealPeriod) => void;
 };
 
@@ -110,9 +139,11 @@ const MealTimelineRow: React.FC<MealTimelineRowProps> = ({
     isFirst,
     isExpanded,
     disabled,
+    copyDisabled,
     onEditEntry,
     onDeleteEntry,
     onSaveMealAsRecipe,
+    onCopyMeal,
     onToggleMeal
 }) => {
     const hasEntries = group.entries.length > 0;
@@ -127,6 +158,7 @@ const MealTimelineRow: React.FC<MealTimelineRowProps> = ({
                 <View
                     style={[
                         styles.mealHeader,
+                        !hasEntries && styles.emptyMealHeader,
                         useStackedLayout && styles.mealHeaderStacked,
                         !isFirst && styles.mealDivider
                     ]}
@@ -161,16 +193,37 @@ const MealTimelineRow: React.FC<MealTimelineRowProps> = ({
                                 onDeleteEntry={onDeleteEntry}
                             />
                         ))}
-                        {onSaveMealAsRecipe && (
-                            <Pressable
-                                accessibilityRole="button"
-                                accessibilityLabel={`Save ${formatMealPeriod(group.meal)} as recipe`}
-                                onPress={() => onSaveMealAsRecipe(group.meal, group.entries)}
-                                style={({ pressed }) => [styles.saveRecipeAction, pressed && styles.pressed]}
-                            >
-                                <Ionicons name="bookmark-outline" size={20} color={theme.colors.primary} />
-                                <AppText variant="label" style={styles.saveRecipeText}>Save as recipe</AppText>
-                            </Pressable>
+                        {(onCopyMeal || onSaveMealAsRecipe) && (
+                            <View style={styles.mealActions}>
+                                {onCopyMeal && (
+                                    <Pressable
+                                        accessibilityRole="button"
+                                        accessibilityLabel={`Copy ${formatMealPeriod(group.meal)}`}
+                                        accessibilityState={{ disabled: Boolean(copyDisabled) }}
+                                        disabled={copyDisabled}
+                                        onPress={() => onCopyMeal(group.meal)}
+                                        style={({ pressed }) => [
+                                            styles.mealAction,
+                                            copyDisabled && styles.disabled,
+                                            pressed && styles.pressed
+                                        ]}
+                                    >
+                                        <Ionicons name="copy-outline" size={20} color={theme.colors.primary} />
+                                        <AppText variant="label" style={styles.actionText}>Copy meal</AppText>
+                                    </Pressable>
+                                )}
+                                {onSaveMealAsRecipe && (
+                                    <Pressable
+                                        accessibilityRole="button"
+                                        accessibilityLabel={`Save ${formatMealPeriod(group.meal)} as recipe`}
+                                        onPress={() => onSaveMealAsRecipe(group.meal, group.entries)}
+                                        style={({ pressed }) => [styles.mealAction, pressed && styles.pressed]}
+                                    >
+                                        <Ionicons name="bookmark-outline" size={20} color={theme.colors.primary} />
+                                        <AppText variant="label" style={styles.actionText}>Save as recipe</AppText>
+                                    </Pressable>
+                                )}
+                            </View>
                         )}
                     </View>
                 )}
@@ -237,12 +290,22 @@ function createStyles(theme: AppTheme) {
         minWidth: 0,
         gap: theme.spacing.xs
     },
+    headerAction: {
+        minHeight: theme.interaction.minimumTouchTarget,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: theme.spacing.xs,
+        borderRadius: theme.radius.md,
+        paddingHorizontal: theme.spacing.sm,
+        overflow: 'hidden'
+    },
     mealList: {
         marginTop: theme.spacing.xs
     },
     mealRow: {
         minHeight: 0
     },
+
     mealContent: {
         flex: 1,
         minWidth: 0
@@ -253,6 +316,9 @@ function createStyles(theme: AppTheme) {
         alignItems: 'center',
         justifyContent: 'space-between',
         gap: theme.spacing.xs
+    },
+    emptyMealHeader: {
+        minHeight: EMPTY_MEAL_HEADER_HEIGHT
     },
     mealHeaderStacked: {
         alignItems: 'stretch',
@@ -341,16 +407,24 @@ function createStyles(theme: AppTheme) {
         borderRadius: theme.radius.md,
         overflow: 'hidden'
     },
-    saveRecipeAction: {
+    mealActions: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        justifyContent: 'flex-end',
+        gap: theme.spacing.xs,
+        paddingVertical: theme.spacing.xs
+    },
+    mealAction: {
         minHeight: theme.interaction.minimumTouchTarget,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
         gap: theme.spacing.xs,
         borderRadius: theme.radius.md,
+        paddingHorizontal: theme.spacing.sm,
         overflow: 'hidden'
     },
-    saveRecipeText: {
+    actionText: {
         color: theme.colors.primary
     },
     disabled: {

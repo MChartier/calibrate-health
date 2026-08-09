@@ -30,6 +30,23 @@ export type CaloriePlanFixtureState =
 
 type StubMetricEntry = { id: number; date: string; weight: number };
 
+type StubMealPeriod =
+  | 'BREAKFAST'
+  | 'MORNING_SNACK'
+  | 'LUNCH'
+  | 'AFTERNOON_SNACK'
+  | 'DINNER'
+  | 'EVENING_SNACK';
+
+type StubFoodEntry = {
+  id: number;
+  meal_period: StubMealPeriod;
+  name: string;
+  calories: number;
+  servings_consumed?: number | null;
+  [key: string]: unknown;
+};
+
 type StubTrendMetricEntry = StubMetricEntry & {
   user_id: number;
   body_fat_percent: number | null;
@@ -41,13 +58,8 @@ type StubTrendMetricEntry = StubMetricEntry & {
 export type AuthenticatedApiOptions = {
   caloriePlanFixture?: CaloriePlanFixtureState;
   foodDayStatus?: 'OPEN' | 'COMPLETE' | 'INCOMPLETE' | 'PAUSED';
-  foodEntries?: Array<{
-    id: number;
-    meal_period: 'BREAKFAST';
-    name: string;
-    calories: number;
-    servings_consumed: number;
-  }>;
+  foodEntries?: StubFoodEntry[];
+  foodEntriesByDate?: Record<string, StubFoodEntry[]>;
   metrics?: StubMetricEntry[];
   trendMetrics?: StubTrendMetricEntry[];
   trendAvailability?: 'available' | 'unavailable';
@@ -403,6 +415,30 @@ async function installAuthenticatedApi(
   const defaultFoodDayStatus = state === 'paused' ? 'PAUSED' : 'OPEN';
   const caloriePlan = getCaloriePlanFixture(options.caloriePlanFixture ?? 'available');
   const foodRequestCounts = new Map<string, number>();
+  const mutableFoodEntriesByDate = new Map(
+    Object.entries(options.foodEntriesByDate ?? {}).map(([date, entries]) => [
+      date,
+      entries.map((entry) => ({ ...entry })),
+    ]),
+  );
+  let nextFoodEntryId = Math.max(
+    100,
+    ...Array.from(mutableFoodEntriesByDate.values()).flat().map(({ id }) => id),
+    ...(options.foodEntries ?? defaultFoodEntries).map(({ id }) => id),
+  ) + 1;
+
+  function getFoodEntries(date: string): StubFoodEntry[] {
+    return mutableFoodEntriesByDate.get(date)
+      ?? (options.foodEntries ?? defaultFoodEntries).map((entry) => ({ ...entry }));
+  }
+
+  function getMutableFoodEntries(date: string): StubFoodEntry[] {
+    const current = mutableFoodEntriesByDate.get(date);
+    if (current) return current;
+    const entries = getFoodEntries(date);
+    mutableFoodEntriesByDate.set(date, entries);
+    return entries;
+  }
   if (state === 'failed-request' || state === 'stale') {
     expectApiFailure(page, { method: 'GET', pathname: '/api/v1/food', status: 503 });
   }
@@ -435,8 +471,49 @@ async function installAuthenticatedApi(
     }
     if (pathname === '/api/v1/food/recent') return fulfillJson(route, { items: [] });
     if (pathname === '/api/v1/my-foods') return fulfillJson(route, []);
+    if (pathname === '/api/v1/food/copy' && route.request().method() === 'POST') {
+      const payload = route.request().postDataJSON() as {
+        operation_id: string;
+        source_date: string;
+        target_date: string;
+        meal_mappings?: Array<{
+          source_meal_period: StubMealPeriod;
+          target_meal_period: StubMealPeriod;
+        }>;
+      };
+      const mappings = payload.meal_mappings ?? [];
+      const copiedEntries = getFoodEntries(payload.source_date).flatMap((entry) => {
+        if (mappings.length === 0) return [{ ...entry, id: nextFoodEntryId++ }];
+        return mappings
+          .filter(({ source_meal_period }) => source_meal_period === entry.meal_period)
+          .map(({ target_meal_period }) => ({ ...entry, id: nextFoodEntryId++, meal_period: target_meal_period }));
+      });
+      getMutableFoodEntries(payload.target_date).push(...copiedEntries);
+      return fulfillJson(route, {
+        operation_id: payload.operation_id,
+        source_date: payload.source_date,
+        target_date: payload.target_date,
+        copied_count: copiedEntries.length,
+        food_logs: copiedEntries,
+      });
+    }
     if (pathname === '/api/v1/food') {
-      const foodEntries = options.foodEntries ?? defaultFoodEntries;
+      if (route.request().method() === 'POST') {
+        const payload = route.request().postDataJSON() as {
+          date: string;
+          meal_period: StubMealPeriod;
+          name?: string;
+          calories?: number;
+        };
+        const entry: StubFoodEntry = {
+          ...payload,
+          id: nextFoodEntryId++,
+          name: payload.name ?? 'Quick entry',
+          calories: payload.calories ?? 0,
+        };
+        getMutableFoodEntries(payload.date).push(entry);
+        return fulfillJson(route, entry, 201);
+      }
       const requestDate = url.searchParams.get('date') ?? FROZEN_LOCAL_DATE;
       const requestCount = (foodRequestCounts.get(requestDate) ?? 0) + 1;
       foodRequestCounts.set(requestDate, requestCount);
@@ -450,7 +527,26 @@ async function installAuthenticatedApi(
           'This fixture request failed with provider details that must stay private.',
         );
       }
-      return fulfillJson(route, foodEntries);
+      return fulfillJson(route, getFoodEntries(requestDate));
+    }
+    const foodEntryMatch = /^\/api\/v1\/food\/(\d+)$/.exec(pathname);
+    if (foodEntryMatch) {
+      const entryId = Number(foodEntryMatch[1]);
+      const entryCollection = Array.from(mutableFoodEntriesByDate.values())
+        .find((entries) => entries.some(({ id }) => id === entryId));
+      const entryIndex = entryCollection?.findIndex(({ id }) => id === entryId) ?? -1;
+      if (!entryCollection || entryIndex < 0) {
+        return fulfillApiError(route, 404, 'FOOD_LOG_NOT_FOUND', 'Food log not found.');
+      }
+      if (route.request().method() === 'PATCH') {
+        const update = route.request().postDataJSON() as Partial<StubFoodEntry>;
+        entryCollection[entryIndex] = { ...entryCollection[entryIndex], ...update, id: entryId };
+        return fulfillJson(route, entryCollection[entryIndex]);
+      }
+      if (route.request().method() === 'DELETE') {
+        entryCollection.splice(entryIndex, 1);
+        return route.fulfill({ status: 204 });
+      }
     }
     if (pathname === '/api/v1/food-days/pause') {
       const foodDayStatus = options.foodDayStatus ?? defaultFoodDayStatus;

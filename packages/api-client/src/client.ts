@@ -11,6 +11,8 @@ import type {
     ClientConfigResponse,
     CreateMyFoodPayload,
     CreateRecipeFromFoodLogsPayload,
+    FoodLogCopyPayload,
+    FoodLogCopyResponse,
     FoodLogCreatePayload,
     FoodLogDay,
     FoodLogDayRange,
@@ -679,6 +681,13 @@ export class CalibrateApiClient {
         return this.request<FoodLogEntry>('/api/food', {
             method: 'POST',
             headers: buildOperationHeaders(operationId),
+            json: payload
+        });
+    }
+
+    copyFoodLogs(payload: FoodLogCopyPayload): Promise<FoodLogCopyResponse> {
+        return this.request<FoodLogCopyResponse>('/api/food/copy', {
+            method: 'POST',
             json: payload
         });
     }
