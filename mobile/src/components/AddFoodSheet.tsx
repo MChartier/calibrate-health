@@ -12,7 +12,6 @@ import { BottomSheetModal } from './BottomSheetModal';
 import { FoodSelectionEditor, type FoodSelectionSubmitRequest } from './FoodSelectionEditor';
 import { KeyboardAwareScrollView } from './KeyboardAwareScrollView';
 import { OverlaySelect } from './OverlaySelect';
-import { SectionHeader } from './SectionHeader';
 import { SegmentedControl } from './SegmentedControl';
 import { TextField } from './TextField';
 import { useAuth } from '../auth/AuthContext';
@@ -43,6 +42,7 @@ import {
 } from '../food/serving';
 import { radius, spacing, useAppTheme, type AppTheme } from '../theme';
 import { getSafeActionErrorMessage } from '../errors/presentation';
+import { confirmDiscardChanges } from './confirmDiscardChanges';
 import { ASYNC_RESOURCE_STATES, type AsyncResourceState } from '../asyncState/resolveAsyncState';
 
 export type AddFoodReturnTo = 'today' | 'food-log';
@@ -336,6 +336,7 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
     const isSearchLoading = isWaitingForSearch
         || (requestedQuery === normalizedQuery && (providerSearchQuery.isFetching || recentFoodsQuery.isFetching));
     const mutationError = errorMessage(logFood.error, 'Food could not be added. Try again.');
+    const hasUnsavedDraft = Boolean(selection || quickCalories.trim() || quickName.trim());
     const canAddQuickEntry = quickCalories.trim().length > 0
         && Number.isFinite(Number(quickCalories))
         && Number(quickCalories) >= 0;
@@ -665,11 +666,18 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
     return (
         <BottomSheetModal
             visible={visible}
+            accessibilityLabel="Add food"
+            title="Add food"
+            description={`${formatDateOnlyForDisplay(date)} | ${formatMealPeriod(meal)}`}
             maxHeight={ADD_FOOD_SHEET_HEIGHT}
+            size="wide"
+            showCloseButton
             scrollable={false}
+            dismissDisabled={logFood.isPending}
+            isDirty={hasUnsavedDraft}
+            confirmDismiss={confirmDiscardChanges}
             onRequestClose={onClose}
         >
-            <SectionHeader title="Add food" description={`${formatDateOnlyForDisplay(date)} | ${formatMealPeriod(meal)}`} />
             <View style={styles.mealControl}>
                 <AppText variant="label">Meal</AppText>
                 <OverlaySelect

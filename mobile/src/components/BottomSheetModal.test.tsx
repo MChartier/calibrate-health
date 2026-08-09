@@ -1,6 +1,10 @@
-import { StyleSheet, Text } from 'react-native';
-import { fireEvent, render } from '@testing-library/react-native';
-import { BottomSheetModal, resolveFixedSheetHeight } from './BottomSheetModal';
+import { Modal, StyleSheet, Text } from 'react-native';
+import { act, fireEvent, render } from '@testing-library/react-native';
+import {
+    BottomSheetModal,
+    resolveAdaptiveDialogWidth,
+    resolveFixedSheetHeight
+} from './BottomSheetModal';
 
 jest.mock('@expo/vector-icons/Ionicons', () => () => null);
 
@@ -24,6 +28,13 @@ describe('BottomSheetModal', () => {
     it('preserves native percentages and explicit dimensions', () => {
         expect(resolveFixedSheetHeight('92%', undefined)).toBe('92%');
         expect(resolveFixedSheetHeight(640, 844)).toBe(640);
+    });
+
+    it('switches from edge-to-edge sheets to bounded standard and wide dialogs at 840px', () => {
+        expect(resolveAdaptiveDialogWidth(839, 'standard', 24)).toBeUndefined();
+        expect(resolveAdaptiveDialogWidth(840, 'standard', 24)).toBe(640);
+        expect(resolveAdaptiveDialogWidth(840, 'wide', 24)).toBe(792);
+        expect(resolveAdaptiveDialogWidth(1440, 'wide', 24)).toBe(800);
     });
 
     it('anchors the web viewport root while the underlying page is scrolled', () => {
@@ -64,6 +75,71 @@ describe('BottomSheetModal', () => {
         expect(screen.getByTestId('bottom-sheet-fixed-controls')).toBeTruthy();
         expect(screen.getByTestId('bottom-sheet-scroll')).toBeTruthy();
         fireEvent.press(screen.getByLabelText('Close calibration details'));
+        expect(onRequestClose).toHaveBeenCalledTimes(1);
+    });
+
+    it('associates an accessible title and description with the dialog surface', () => {
+        const screen = render(
+            <BottomSheetModal
+                visible
+                title="Edit calorie goal"
+                description="Choose a safe daily target."
+                onRequestClose={jest.fn()}
+            >
+                <Text>Goal fields</Text>
+            </BottomSheetModal>
+        );
+
+        const panel = screen.getByTestId('adaptive-dialog-panel');
+        expect(panel.props).toMatchObject({
+            role: 'dialog',
+            'aria-modal': true,
+            'aria-labelledby': screen.getByText('Edit calorie goal').props.nativeID,
+            'aria-describedby': screen.getByText('Choose a safe daily target.').props.nativeID
+        });
+    });
+
+    it('guards every platform close request while saving', async () => {
+        const onRequestClose = jest.fn();
+        const screen = render(
+            <BottomSheetModal visible dismissDisabled showCloseButton onRequestClose={onRequestClose}>
+                <Text>Saving goal</Text>
+            </BottomSheetModal>
+        );
+
+        fireEvent.press(screen.getByLabelText('Close details'));
+        fireEvent.press(screen.getByTestId('bottom-sheet-backdrop', { includeHiddenElements: true }));
+        await act(async () => {
+            screen.UNSAFE_getByType(Modal).props.onRequestClose();
+        });
+        expect(onRequestClose).not.toHaveBeenCalled();
+    });
+
+    it('confirms dirty dismissal before closing', async () => {
+        const onRequestClose = jest.fn();
+        const confirmDismiss = jest.fn().mockResolvedValueOnce(false).mockResolvedValueOnce(true);
+        const screen = render(
+            <BottomSheetModal
+                visible
+                isDirty
+                confirmDismiss={confirmDismiss}
+                onRequestClose={onRequestClose}
+            >
+                <Text>Changed goal</Text>
+            </BottomSheetModal>
+        );
+        const modal = screen.UNSAFE_getByType(Modal);
+
+        await act(async () => {
+            modal.props.onRequestClose();
+        });
+        expect(confirmDismiss).toHaveBeenCalledTimes(1);
+        expect(onRequestClose).not.toHaveBeenCalled();
+
+        await act(async () => {
+            modal.props.onRequestClose();
+        });
+        expect(confirmDismiss).toHaveBeenCalledTimes(2);
         expect(onRequestClose).toHaveBeenCalledTimes(1);
     });
 });

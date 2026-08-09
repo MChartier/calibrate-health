@@ -11,6 +11,7 @@ import { AsyncStateBoundary, useAsyncResourceState, useOnlineStatus } from '../.
 import { HealthConnectCard } from '../../src/components/HealthConnectCard';
 import { WearPairingCard } from '../../src/components/WearPairingCard';
 import { BottomSheetModal } from '../../src/components/BottomSheetModal';
+import { confirmDiscardChanges } from '../../src/components/confirmDiscardChanges';
 import { TabScreen } from '../../src/components/TabScreen';
 import { SectionHeader } from '../../src/components/SectionHeader';
 import { SegmentedControl } from '../../src/components/SegmentedControl';
@@ -122,6 +123,24 @@ export default function SettingsScreen() {
     const [deleteAccountConfirmation, setDeleteAccountConfirmation] = useState('');
     const [passwordError, setPasswordError] = useState<string | null>(null);
     const [passwordStatus, setPasswordStatus] = useState<string | null>(null);
+    const profileIsDirty = Boolean(user && (
+        timezone !== user.timezone
+        || dateOfBirth !== (user.date_of_birth?.slice(0, 10) ?? '')
+        || sex !== user.sex
+        || activityLevel !== (user.activity_level ?? ACTIVITY_LEVELS.LIGHT)
+        || heightCm !== millimetersToCentimeters(user.height_mm)
+        || heightFeet !== millimetersToFeetInches(user.height_mm).feet
+        || heightInches !== millimetersToFeetInches(user.height_mm).inches
+    ));
+    const preferencesAreDirty = Boolean(user && (
+        weightUnit !== user.weight_unit
+        || heightUnit !== user.height_unit
+        || logFoodReminders !== user.reminder_log_food_enabled
+        || logWeightReminders !== user.reminder_log_weight_enabled
+        || hapticsEnabled !== user.haptics_enabled
+    ));
+    const passwordIsDirty = Boolean(currentPassword || newPassword || confirmPassword);
+    const serverIsDirty = serverInput.trim() !== serverUrl;
     const profileQuery = useQuery({ queryKey: ['mobile-profile'], queryFn: () => api.getUserProfile() });
     const goalQuery = useQuery({ queryKey: ['mobile-goal'], queryFn: () => api.getGoals() });
     const sessionsQuery = useQuery({
@@ -191,6 +210,46 @@ export default function SettingsScreen() {
         setLogWeightReminders(user.reminder_log_weight_enabled);
         setHapticsEnabled(user.haptics_enabled);
     }, [user]);
+
+    function closeProfileEditor() {
+        if (user) {
+            setTimezone(user.timezone);
+            setDateOfBirth(user.date_of_birth?.slice(0, 10) ?? '');
+            setSex(user.sex);
+            setActivityLevel(user.activity_level ?? ACTIVITY_LEVELS.LIGHT);
+            setHeightCm(millimetersToCentimeters(user.height_mm));
+            const nextImperialHeight = millimetersToFeetInches(user.height_mm);
+            setHeightFeet(nextImperialHeight.feet);
+            setHeightInches(nextImperialHeight.inches);
+        }
+        setProfileValidationError(null);
+        setIsProfileEditorOpen(false);
+    }
+
+    function closePreferences() {
+        if (user) {
+            setWeightUnit(user.weight_unit);
+            setHeightUnit(user.height_unit);
+            setLogFoodReminders(user.reminder_log_food_enabled);
+            setLogWeightReminders(user.reminder_log_weight_enabled);
+            setHapticsEnabled(user.haptics_enabled);
+        }
+        setActiveSheet(null);
+    }
+
+    function closePasswordEditor() {
+        setCurrentPassword('');
+        setNewPassword('');
+        setConfirmPassword('');
+        setPasswordError(null);
+        setPasswordStatus(null);
+        setActiveSheet(null);
+    }
+
+    function closeServerEditor() {
+        setServerInput(serverUrl);
+        setActiveSheet(null);
+    }
 
     const saveProfile = useMutation({
         mutationFn: () =>
@@ -366,6 +425,13 @@ export default function SettingsScreen() {
         changePassword.mutate();
     }
 
+    function closeDeleteAccountEditor() {
+        setDeleteAccountPassword('');
+        setDeleteAccountConfirmation('');
+        deleteAccount.reset();
+        setIsDeleteAccountOpen(false);
+    }
+
     function confirmDeleteAccount() {
         if (!canSubmitAccountDeletion(deleteAccountPassword, deleteAccountConfirmation)) return;
         Alert.alert(
@@ -479,9 +545,13 @@ export default function SettingsScreen() {
             <SettingsDetailSheet
                 visible={activeSheet === 'preferences'}
                 maxHeight="92%"
-                onClose={() => setActiveSheet(null)}
+                title="Preferences"
+                description="Units, reminders, and interaction feedback."
+                dismissDisabled={savePreferences.isPending}
+                isDirty={preferencesAreDirty}
+                confirmDismiss={confirmDiscardChanges}
+                onClose={closePreferences}
             >
-                <SectionHeader title="Preferences" description="Units, reminders, and interaction feedback." />
                 <AppText variant="label">Weight unit</AppText>
                 <SegmentedControl options={WEIGHT_UNIT_OPTIONS} value={weightUnit} onChange={setWeightUnit} />
                 <AppText variant="label">Height unit</AppText>
@@ -674,12 +744,38 @@ export default function SettingsScreen() {
             <SettingsDetailSheet
                 visible={activeSheet === 'password'}
                 maxHeight="92%"
-                onClose={() => setActiveSheet(null)}
+                title="Password"
+                description="Update the password for this account."
+                dismissDisabled={changePassword.isPending}
+                isDirty={passwordIsDirty}
+                confirmDismiss={confirmDiscardChanges}
+                onClose={closePasswordEditor}
             >
-                <SectionHeader title="Password" description="Update the password for this account." />
-                <TextField label="Current password" secureTextEntry value={currentPassword} onChangeText={setCurrentPassword} />
-                <TextField label="New password" secureTextEntry value={newPassword} onChangeText={setNewPassword} helperText={`At least ${MIN_PASSWORD_LENGTH} characters.`} />
-                <TextField label="Confirm new password" secureTextEntry value={confirmPassword} onChangeText={setConfirmPassword} />
+                <TextField
+                    label="Current password"
+                    secureTextEntry
+                    value={currentPassword}
+                    onChangeText={setCurrentPassword}
+                    errorText={passwordError === 'Enter your current password.' ? passwordError : undefined}
+                    focusError={passwordError === 'Enter your current password.'}
+                />
+                <TextField
+                    label="New password"
+                    secureTextEntry
+                    value={newPassword}
+                    onChangeText={setNewPassword}
+                    helperText={`At least ${MIN_PASSWORD_LENGTH} characters.`}
+                    errorText={passwordError?.startsWith('New password must') ? passwordError : undefined}
+                    focusError={Boolean(passwordError?.startsWith('New password must'))}
+                />
+                <TextField
+                    label="Confirm new password"
+                    secureTextEntry
+                    value={confirmPassword}
+                    onChangeText={setConfirmPassword}
+                    errorText={passwordError === 'New passwords do not match.' ? passwordError : undefined}
+                    focusError={passwordError === 'New passwords do not match.'}
+                />
                 {passwordError && <AppText style={[styles.error, { color: themeColors.danger }]}>{passwordError}</AppText>}
                 {passwordStatus && <AppText style={[styles.success, { color: themeColors.success }]}>{passwordStatus}</AppText>}
                 <AppButton
@@ -836,9 +932,12 @@ export default function SettingsScreen() {
             {!isWeb && (
                 <SettingsDetailSheet
                     visible={activeSheet === 'server'}
-                    onClose={() => setActiveSheet(null)}
+                    title="Advanced"
+                    description="Hosted and self-hosted server connection."
+                    isDirty={serverIsDirty}
+                    confirmDismiss={confirmDiscardChanges}
+                    onClose={closeServerEditor}
                 >
-                    <SectionHeader title="Advanced" description="Hosted and self-hosted server connection." />
                     <TextField label="Server URL" value={serverInput} onChangeText={setServerInput} autoCapitalize="none" />
                     <AppButton
                         title="Save connection"
@@ -869,7 +968,8 @@ export default function SettingsScreen() {
                 validationError={profileValidationError}
                 saveError={saveProfile.error}
                 isSaving={saveProfile.isPending}
-                onClose={() => setIsProfileEditorOpen(false)}
+                isDirty={profileIsDirty}
+                onClose={closeProfileEditor}
                 onSave={handleSaveProfile}
             />
 
@@ -882,7 +982,7 @@ export default function SettingsScreen() {
                 onConfirmationChange={setDeleteAccountConfirmation}
                 error={deleteAccount.error}
                 isDeleting={deleteAccount.isPending}
-                onClose={() => setIsDeleteAccountOpen(false)}
+                onClose={closeDeleteAccountEditor}
                 onConfirm={confirmDeleteAccount}
             />
         </TabScreen>

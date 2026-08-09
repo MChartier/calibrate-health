@@ -44,6 +44,7 @@ import { getMetricDate } from '../utils/metrics';
 import { spacing, useAppTheme } from '../theme';
 import { WEIGHT_INPUT_INCREMENT } from '../config/inputPrecision';
 import { getErrorPresentation, getSafeActionErrorMessage } from '../errors/presentation';
+import { confirmDiscardChanges } from './confirmDiscardChanges';
 
 type WeightEntrySheetProps = {
     visible: boolean;
@@ -246,6 +247,8 @@ export const WeightEntrySheet: React.FC<WeightEntrySheetProps> = ({ visible, dat
     );
     const canSave = parsedWeight !== null && weightRangeError === null && !isUnchanged;
     const isBusy = phase === 'saving' || addWeight.isPending || deleteWeight.isPending;
+    const initialWeight = prefillMetric ? formatWeightInput(prefillMetric.weight) : '';
+    const hasUnsavedWeight = phase === 'editing' && weight !== initialWeight;
     const loadError = metricsQuery.error
         ? getErrorPresentation(metricsQuery.error, 'weigh-ins').message
         : !isOnline && metricsQuery.data ? 'Offline - using saved weigh-ins.' : null;
@@ -524,6 +527,8 @@ export const WeightEntrySheet: React.FC<WeightEntrySheetProps> = ({ visible, dat
             accessibilityLabel={phase === 'synced-result' || phase === 'queued-result' ? 'Weight progress update' : 'Weight entry'}
             contentKey={phase}
             dismissDisabled={isBusy}
+            isDirty={hasUnsavedWeight}
+            confirmDismiss={confirmDiscardChanges}
             footer={footer}
             onRequestClose={handleClose}
         >

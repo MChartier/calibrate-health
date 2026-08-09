@@ -80,10 +80,17 @@ jest.mock('../components/CalibrationInsightCard', () => ({
 }));
 jest.mock('../components/BottomSheetModal', () => {
     const ReactModule = require('react') as typeof React;
-    const { View } = require('react-native') as typeof import('react-native');
+    const { Text, View } = require('react-native') as typeof import('react-native');
     return {
-        BottomSheetModal: ({ visible, children }: { visible: boolean; children: React.ReactNode }) =>
-            visible ? ReactModule.createElement(View, { accessibilityLabel: 'Goal editor' }, children) : null
+        BottomSheetModal: ({ visible, children, title }: { visible: boolean; children: React.ReactNode; title?: string }) =>
+            visible
+                ? ReactModule.createElement(
+                    View,
+                    { accessibilityLabel: 'Goal editor' },
+                    title ? ReactModule.createElement(Text, null, title) : null,
+                    children
+                )
+                : null
     };
 });
 jest.mock('../offline/usePendingWeightMutation', () => ({

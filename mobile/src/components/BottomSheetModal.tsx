@@ -1,14 +1,30 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { Animated, Easing, KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, View, type ViewStyle } from 'react-native';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import {
+    Animated,
+    Easing,
+    KeyboardAvoidingView,
+    Modal,
+    Platform,
+    Pressable,
+    StyleSheet,
+    View,
+    useWindowDimensions,
+    type ViewStyle
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { type AppTheme, useAppTheme } from '../theme';
 import { useReducedMotionPreference } from '../hooks/useReducedMotionPreference';
 import { useVisualViewportHeight } from '../hooks/useVisualViewportHeight';
+import { useModalFocusManagement, type ModalFocusableTarget } from '../hooks/useModalFocusManagement';
 import { getKeyboardAvoidingBehavior } from '../utils/keyboard';
 import { AppIconButton } from './AppIconButton';
+import { AppText } from './AppText';
+import { confirmDiscardChanges } from './confirmDiscardChanges';
 import { KeyboardAwareScrollView } from './KeyboardAwareScrollView';
 
-type BottomSheetModalProps = {
+export type BottomSheetModalSize = 'standard' | 'wide';
+
+export type BottomSheetModalProps = {
     visible: boolean;
     onRequestClose: () => void;
     children: React.ReactNode;
@@ -21,8 +37,18 @@ type BottomSheetModalProps = {
     dismissDisabled?: boolean;
     contentKey?: React.Key;
     onShow?: () => void;
+    size?: BottomSheetModalSize;
+    title?: string;
+    description?: string;
+    initialFocusRef?: React.RefObject<ModalFocusableTarget | null>;
+    returnFocusRef?: React.RefObject<ModalFocusableTarget | null>;
+    isDirty?: boolean;
+    confirmDismiss?: () => boolean | Promise<boolean>;
 };
 
+export const ADAPTIVE_DIALOG_BREAKPOINT = 840;
+export const STANDARD_DIALOG_WIDTH = 640;
+export const WIDE_DIALOG_WIDTH = 800;
 const SHEET_TRANSLATE_Y = 32; // Subtle sheet-only movement; the backdrop fades independently.
 const WEB_FIXED_POSITION = 'fixed' as ViewStyle['position']; // Keeps portal sheets anchored while the underlying web page is scrolled.
 const SHEET_CLOSE_ROW_MAX_WIDTH = 800; // Aligns an optional close action with wide detail-sheet content.
@@ -66,8 +92,18 @@ export function resolveFixedSheetHeight(
     return visualViewportHeight * (Number(percentageMatch[1]) / 100);
 }
 
+export function resolveAdaptiveDialogWidth(
+    viewportWidth: number,
+    size: BottomSheetModalSize,
+    horizontalInset: number
+): number | undefined {
+    if (viewportWidth < ADAPTIVE_DIALOG_BREAKPOINT) return undefined;
+    const preferredWidth = size === 'wide' ? WIDE_DIALOG_WIDTH : STANDARD_DIALOG_WIDTH;
+    return Math.min(preferredWidth, Math.max(0, viewportWidth - (horizontalInset * 2)));
+}
+
 /**
- * Native-feeling bottom sheet with a non-sliding dimmed backdrop.
+ * Presents as a mobile bottom sheet or a bounded dialog on larger viewports.
  */
 export const BottomSheetModal: React.FC<BottomSheetModalProps> = ({
     visible,
@@ -81,21 +117,59 @@ export const BottomSheetModal: React.FC<BottomSheetModalProps> = ({
     footer,
     dismissDisabled = false,
     contentKey,
-    onShow
+    onShow,
+    size = 'standard',
+    title,
+    description,
+    initialFocusRef,
+    returnFocusRef,
+    isDirty = false,
+    confirmDismiss
 }) => {
     const insets = useSafeAreaInsets();
     const theme = useAppTheme();
     const styles = React.useMemo(() => createStyles(theme), [theme]);
     const reduceMotion = useReducedMotionPreference();
     const visualViewportHeight = useVisualViewportHeight();
+    const { width: viewportWidth, height: viewportHeight } = useWindowDimensions();
     const [shouldRender, setShouldRender] = useState(visible);
     const backdropOpacity = useRef(new Animated.Value(0)).current;
     const sheetProgress = useRef(new Animated.Value(1)).current;
+    const sheetRef = useRef<View>(null);
+    const dismissRequestPendingRef = useRef(false);
+    const titleId = React.useId();
+    const descriptionId = React.useId();
+    const isDialog = viewportWidth >= ADAPTIVE_DIALOG_BREAKPOINT;
+    const dialogWidth = resolveAdaptiveDialogWidth(viewportWidth, size, theme.spacing.lg);
+    const modalAccessibilityLabel = title ?? accessibilityLabel;
+
+    const requestDismiss = useCallback(async () => {
+        if (dismissDisabled || dismissRequestPendingRef.current) return;
+        dismissRequestPendingRef.current = true;
+        try {
+            if (isDirty) {
+                const shouldDismiss = await (confirmDismiss?.() ?? confirmDiscardChanges());
+                if (!shouldDismiss) return;
+            }
+            onRequestClose();
+        } finally {
+            dismissRequestPendingRef.current = false;
+        }
+    }, [confirmDismiss, dismissDisabled, isDirty, onRequestClose]);
 
     useEffect(() => {
         if (!visible) return;
         return hideWebAppFromModalAccessibility();
     }, [visible]);
+    const { focusInitial } = useModalFocusManagement({
+        visible,
+        containerRef: sheetRef,
+        initialFocusRef,
+        returnFocusRef,
+        onEscape: () => {
+            void requestDismiss();
+        }
+    });
 
     useEffect(() => {
         if (visible) {
@@ -153,35 +227,68 @@ export const BottomSheetModal: React.FC<BottomSheetModalProps> = ({
             <View style={styles.closeRow}>
                 <AppIconButton
                     icon="close"
-                    accessibilityLabel={`Close ${accessibilityLabel.toLowerCase()}`}
+                    accessibilityLabel={`Close ${modalAccessibilityLabel.toLowerCase()}`}
                     variant="ghost"
-                    onPress={onRequestClose}
+                    disabled={dismissDisabled}
+                    onPress={() => {
+                        void requestDismiss();
+                    }}
                 />
             </View>
         );
-    } else if (showHandle) {
+    } else if (showHandle && !isDialog) {
         sheetTopControl = <View accessible={false} aria-hidden style={styles.handle} />;
     }
     const fixedSheetHeight = resolveFixedSheetHeight(maxHeight, visualViewportHeight);
+    const dialogHeight = resolveFixedSheetHeight(maxHeight, visualViewportHeight ?? viewportHeight);
+    const boundedDialogHeight = typeof dialogHeight === 'number'
+        ? Math.min(dialogHeight, Math.max(0, (visualViewportHeight ?? viewportHeight) - (theme.spacing.lg * 2)))
+        : dialogHeight;
     const usesFixedSheetHeight = !scrollable || Boolean(footer);
+    let panelMaxHeight: ViewStyle['maxHeight'] = maxHeight;
+    let panelHeight: ViewStyle['height'];
+    if (isDialog) {
+        panelMaxHeight = boundedDialogHeight;
+        if (usesFixedSheetHeight) panelHeight = boundedDialogHeight;
+    } else if (usesFixedSheetHeight) {
+        panelMaxHeight = fixedSheetHeight;
+        panelHeight = fixedSheetHeight;
+    }
+    const modalHeader = title || description ? (
+        <View style={styles.modalHeader}>
+            {title && (
+                <AppText nativeID={titleId} variant="section" accessibilityRole="header">
+                    {title}
+                </AppText>
+            )}
+            {description && (
+                <AppText nativeID={descriptionId} variant="body" style={styles.modalDescription}>
+                    {description}
+                </AppText>
+            )}
+        </View>
+    ) : null;
 
     return (
         <Modal
             visible
             transparent
             animationType="none"
-            accessibilityLabel={accessibilityLabel}
-            aria-label={accessibilityLabel}
-            accessibilityViewIsModal
             presentationStyle="overFullScreen"
-            onRequestClose={dismissDisabled ? () => undefined : onRequestClose}
-            onShow={onShow}
+            onRequestClose={() => {
+                void requestDismiss();
+            }}
+            onShow={() => {
+                focusInitial();
+                onShow?.();
+            }}
         >
             <KeyboardAvoidingView
                 testID="bottom-sheet-root"
                 behavior={getKeyboardAvoidingBehavior(Platform.OS)}
                 style={[
                     styles.root,
+                    isDialog && styles.dialogRoot,
                     visualViewportHeight !== undefined && styles.webViewportRoot,
                     visualViewportHeight !== undefined && { height: visualViewportHeight }
                 ]}
@@ -194,17 +301,31 @@ export const BottomSheetModal: React.FC<BottomSheetModalProps> = ({
                     aria-hidden
                     disabled={dismissDisabled}
                     style={[StyleSheet.absoluteFill, styles.backdropPressable]}
-                    onPress={onRequestClose}
+                    onPress={() => {
+                        void requestDismiss();
+                    }}
                 >
                     <Animated.View style={[styles.backdrop, { opacity: backdropOpacity }]} />
                 </Pressable>
                 <Animated.View
+                    ref={sheetRef}
+                    testID="adaptive-dialog-panel"
+                    accessibilityLabel={Platform.OS === 'web' ? undefined : modalAccessibilityLabel}
+                    accessibilityViewIsModal
+                    role="dialog"
+                    aria-modal
+                    aria-labelledby={title ? titleId : undefined}
+                    aria-describedby={description ? descriptionId : undefined}
+                    aria-label={title ? undefined : modalAccessibilityLabel}
+                    tabIndex={Platform.OS === 'web' ? -1 : undefined}
                     style={[
                         styles.sheet,
+                        isDialog && styles.dialog,
                         usesFixedSheetHeight && styles.fixedHeightSheet,
                         {
-                            maxHeight: usesFixedSheetHeight ? fixedSheetHeight : maxHeight,
-                            height: usesFixedSheetHeight ? fixedSheetHeight : undefined,
+                            width: dialogWidth ?? '100%',
+                            maxHeight: panelMaxHeight,
+                            height: panelHeight,
                             transform: [{ translateY }]
                         }
                     ]}
@@ -229,6 +350,7 @@ export const BottomSheetModal: React.FC<BottomSheetModalProps> = ({
                                 }
                             ]}
                         >
+                            {modalHeader}
                             {children}
                         </KeyboardAwareScrollView>
                     ) : (
@@ -244,6 +366,7 @@ export const BottomSheetModal: React.FC<BottomSheetModalProps> = ({
                                 }
                             ]}
                         >
+                            {modalHeader}
                             {children}
                         </View>
                     )}
@@ -268,6 +391,11 @@ function createStyles(theme: AppTheme) {
     root: {
         flex: 1,
         justifyContent: 'flex-end'
+    },
+    dialogRoot: {
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingVertical: theme.spacing.lg
     },
     webViewportRoot: {
         flexGrow: 0,
@@ -298,6 +426,10 @@ function createStyles(theme: AppTheme) {
         borderColor: theme.colors.outlineVariant,
         borderTopWidth: StyleSheet.hairlineWidth
     },
+    dialog: {
+        borderWidth: theme.stroke.control,
+        borderRadius: theme.radius.sheet
+    },
     topControls: {
         width: '100%',
         paddingHorizontal: theme.spacing.lg,
@@ -313,6 +445,12 @@ function createStyles(theme: AppTheme) {
     content: {
         gap: theme.spacing.md,
         paddingHorizontal: theme.spacing.lg
+    },
+    modalHeader: {
+        gap: theme.spacing.xs
+    },
+    modalDescription: {
+        color: theme.colors.onSurfaceVariant
     },
     closeRow: {
         alignSelf: 'center',

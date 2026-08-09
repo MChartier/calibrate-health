@@ -3,7 +3,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { AppButton } from './AppButton';
 import { AppText } from './AppText';
-import { OverlaySelect } from './OverlaySelect';
+import { Combobox } from './Combobox';
 import { TextField } from './TextField';
 import { detectDeviceTimeZone, formatTimeZoneLabel, getTimeZoneOptions, isValidIanaTimeZone } from '../utils/timezones';
 import { type AppTheme, useAppTheme } from '../theme';
@@ -18,7 +18,6 @@ export const TimeZonePickerField: React.FC<TimeZonePickerFieldProps> = ({ value,
     const styles = useMemo(() => createStyles(theme), [theme]);
     const deviceTimeZone = useMemo(() => detectDeviceTimeZone(), []);
     const options = useMemo(() => getTimeZoneOptions(value, deviceTimeZone), [deviceTimeZone, value]);
-    const [isSelectorOpen, setIsSelectorOpen] = useState(false);
     const [isManualOpen, setIsManualOpen] = useState(false);
     const [manualDraft, setManualDraft] = useState(value);
     const normalizedDraft = manualDraft.trim();
@@ -30,7 +29,6 @@ export const TimeZonePickerField: React.FC<TimeZonePickerFieldProps> = ({ value,
     }, [isManualOpen, value]);
 
     function selectTimeZone(nextValue: string) {
-        setIsSelectorOpen(false);
         setIsManualOpen(false);
         onChange(nextValue);
     }
@@ -44,7 +42,6 @@ export const TimeZonePickerField: React.FC<TimeZonePickerFieldProps> = ({ value,
 
     return (
         <View style={styles.root}>
-            <AppText variant="label">Time zone</AppText>
             <View style={styles.devicePanel}>
                 <View style={styles.deviceStatus}>
                     <View style={styles.deviceIcon}>
@@ -72,13 +69,13 @@ export const TimeZonePickerField: React.FC<TimeZonePickerFieldProps> = ({ value,
                 )}
             </View>
 
-            <OverlaySelect
-                accessibilityLabel="Select time zone"
+            <Combobox
+                label="Time zone"
                 value={value}
                 options={options}
-                isOpen={isSelectorOpen}
-                onToggle={() => setIsSelectorOpen((current) => !current)}
                 onChange={selectTimeZone}
+                helperText="Search common time zones or enter an IANA identifier below."
+                searchable
             />
 
             <Pressable

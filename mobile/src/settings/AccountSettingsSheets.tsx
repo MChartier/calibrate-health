@@ -9,7 +9,6 @@ import {
     ProfileEnergyFields,
     ProfileIdentityFields
 } from '../components/profile/ProfileDetailsFields';
-import { SectionHeader } from '../components/SectionHeader';
 import { TextField } from '../components/TextField';
 import { TimeZonePickerField } from '../components/TimeZonePickerField';
 import { spacing, useAppTheme } from '../theme';
@@ -17,6 +16,7 @@ import { getTodayDate } from '../utils/dates';
 import { formatCalories } from '../utils/format';
 import { getSafeActionErrorMessage } from '../errors/presentation';
 import { getMinimumDateOfBirth } from '../caloriePlanning/dateBounds';
+import { confirmDiscardChanges } from '../components/confirmDiscardChanges';
 
 type ProfileEditorSheetProps = {
     visible: boolean;
@@ -39,6 +39,7 @@ type ProfileEditorSheetProps = {
     validationError?: string | null;
     saveError: Error | null;
     isSaving: boolean;
+    isDirty: boolean;
     onClose: () => void;
     onSave: () => void;
 };
@@ -64,14 +65,30 @@ export function ProfileEditorSheet({
     validationError,
     saveError,
     isSaving,
+    isDirty,
     onClose,
     onSave
 }: ProfileEditorSheetProps) {
     const { colors } = useAppTheme();
 
+    async function handleCancel() {
+        if (!isDirty || await confirmDiscardChanges()) onClose();
+    }
+
     return (
-        <BottomSheetModal visible={visible} maxHeight="92%" onRequestClose={onClose}>
-            <SectionHeader title="Profile details" description="Time zone and body details used for calorie targets." />
+        <BottomSheetModal
+            visible={visible}
+            accessibilityLabel="Profile details"
+            title="Profile details"
+            description="Time zone and body details used for calorie targets."
+            maxHeight="92%"
+            size="wide"
+            showCloseButton
+            dismissDisabled={isSaving}
+            isDirty={isDirty}
+            confirmDismiss={confirmDiscardChanges}
+            onRequestClose={onClose}
+        >
             <TimeZonePickerField value={timezone} onChange={onTimezoneChange} />
             <ProfileIdentityFields
                 dateOfBirth={dateOfBirth}
@@ -109,7 +126,8 @@ export function ProfileEditorSheet({
                     title="Cancel"
                     variant="secondary"
                     leftIcon={<Ionicons name="close" size={18} color={colors.onSurface} />}
-                    onPress={onClose}
+                    disabled={isSaving}
+                    onPress={() => { void handleCancel(); }}
                     style={styles.rowButton}
                 />
                 <AppButton
@@ -151,15 +169,26 @@ export function DeleteAccountSheet({
 }: DeleteAccountSheetProps) {
     const { colors } = useAppTheme();
     const canDelete = canSubmitAccountDeletion(password, confirmation);
+    const isDirty = Boolean(password || confirmation);
+
+    async function handleCancel() {
+        if (!isDirty || await confirmDiscardChanges()) onClose();
+    }
 
     return (
-        <BottomSheetModal visible={visible} onRequestClose={onClose}>
-            <SectionHeader
-                title="Delete account permanently"
-                description={isOutboxReady
-                    ? 'This cannot be undone. Pending offline changes on this device will also be discarded.'
-                    : 'This cannot be undone. Browser changes are sent directly and there is no local write queue to discard.'}
-            />
+        <BottomSheetModal
+            visible={visible}
+            accessibilityLabel="Delete account permanently"
+            title="Delete account permanently"
+            description={isOutboxReady
+                ? 'This cannot be undone. Pending offline changes on this device will also be discarded.'
+                : 'This cannot be undone. Browser changes are sent directly and there is no local write queue to discard.'}
+            showCloseButton
+            dismissDisabled={isDeleting}
+            isDirty={isDirty}
+            confirmDismiss={confirmDiscardChanges}
+            onRequestClose={onClose}
+        >
             <TextField
                 label="Current password"
                 secureTextEntry
@@ -184,7 +213,7 @@ export function DeleteAccountSheet({
                     title="Cancel"
                     variant="secondary"
                     disabled={isDeleting}
-                    onPress={onClose}
+                    onPress={() => { void handleCancel(); }}
                     style={styles.rowButton}
                 />
                 <AppButton

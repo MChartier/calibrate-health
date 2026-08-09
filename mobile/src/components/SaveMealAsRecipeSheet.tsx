@@ -14,9 +14,9 @@ import { AppButton } from './AppButton';
 import { AppText } from './AppText';
 import { BottomSheetModal } from './BottomSheetModal';
 import { NumberStepperField } from './NumberStepperField';
-import { SectionHeader } from './SectionHeader';
 import { TextField } from './TextField';
 import { getSafeActionErrorMessage } from '../errors/presentation';
+import { confirmDiscardChanges } from './confirmDiscardChanges';
 
 type SaveMealAsRecipeSheetProps = {
     visible: boolean;
@@ -74,6 +74,13 @@ export const SaveMealAsRecipeSheet: React.FC<SaveMealAsRecipeSheetProps> = ({
     const hasValidYield = Number.isFinite(parsedYield) && parsedYield > 0;
     const caloriesPerServing = hasValidYield ? totalCalories / parsedYield : null;
     const canSave = name.trim().length > 0 && selectedEntries.length > 0 && hasValidYield && !saveRecipe.isPending;
+    const selectionChanged = selectedIds.size !== entries.length
+        || entries.some((entry) => !selectedIds.has(entry.id));
+    const hasUnsavedDraft = Boolean(name.trim() || yieldServings !== '1' || selectionChanged);
+
+    async function handleCancel() {
+        if (!hasUnsavedDraft || await confirmDiscardChanges()) onClose();
+    }
 
     function toggleEntry(id: number) {
         setSelectedIds((current) => {
@@ -85,11 +92,18 @@ export const SaveMealAsRecipeSheet: React.FC<SaveMealAsRecipeSheetProps> = ({
     }
 
     return (
-        <BottomSheetModal visible={visible} maxHeight="92%" onRequestClose={onClose}>
-            <SectionHeader
-                title="Save as recipe"
-                description={meal ? `${formatMealPeriod(meal)} | ${formatDateOnlyForDisplay(date)}` : formatDateOnlyForDisplay(date)}
-            />
+        <BottomSheetModal
+            visible={visible}
+            accessibilityLabel="Save as recipe"
+            title="Save as recipe"
+            description={meal ? `${formatMealPeriod(meal)} | ${formatDateOnlyForDisplay(date)}` : formatDateOnlyForDisplay(date)}
+            maxHeight="92%"
+            showCloseButton
+            dismissDisabled={saveRecipe.isPending}
+            isDirty={hasUnsavedDraft}
+            confirmDismiss={confirmDiscardChanges}
+            onRequestClose={onClose}
+        >
             <TextField
                 label="Recipe name"
                 value={name}
@@ -166,7 +180,7 @@ export const SaveMealAsRecipeSheet: React.FC<SaveMealAsRecipeSheetProps> = ({
                     title="Cancel"
                     variant="secondary"
                     disabled={saveRecipe.isPending}
-                    onPress={onClose}
+                    onPress={() => { void handleCancel(); }}
                     style={styles.action}
                 />
                 <AppButton
