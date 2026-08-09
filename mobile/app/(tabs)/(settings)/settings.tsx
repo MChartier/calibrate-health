@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Alert, Image, Platform, StyleSheet, View } from 'react-native';
+import { Image, Platform, StyleSheet, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useRouter, type Href } from 'expo-router';
 import { CALIBRATE_PRODUCT_LINKS } from '@calibrate/shared/product';
@@ -42,6 +42,13 @@ import {
     ProfileEditorSheet
 } from '../../../src/settings/AccountSettingsSheets';
 import { SettingsHome, type SettingsSheetId } from '../../../src/settings/SettingsHome';
+import { AccountSessionsPanel } from '../../../src/settings/AccountSessionsPanel';
+import { ReminderSettingsPanel } from '../../../src/settings/ReminderSettingsPanel';
+import {
+    getReminderScheduleErrors,
+    hasReminderScheduleErrors,
+    toReminderSchedulePayload
+} from '../../../src/settings/reminderWallClock';
 import {
     PreferenceSwitch,
     SettingsDetailSheet,
@@ -60,12 +67,6 @@ import { getHeightPolicyError, isHeightWithinPolicy } from '../../../src/calorie
 const MIN_PASSWORD_LENGTH = 8;
 function getAvatarLabel(email?: string | null): string {
     return email?.trim().charAt(0).toUpperCase() || 'C';
-}
-
-function formatSessionActivity(value: string | null, fallback: string): string {
-    const timestamp = value ?? fallback;
-    const parsed = new Date(timestamp);
-    return Number.isNaN(parsed.getTime()) ? 'Unknown activity' : `Active ${parsed.toLocaleDateString()}`;
 }
 
 function shouldShowResourceStatus(state: AsyncResourceState): boolean {
@@ -114,6 +115,10 @@ export default function SettingsScreen() {
     const [heightUnit, setHeightUnit] = useState<HeightUnit>(user?.height_unit ?? HEIGHT_UNITS.CM);
     const [logFoodReminders, setLogFoodReminders] = useState(user?.reminder_log_food_enabled ?? true);
     const [logWeightReminders, setLogWeightReminders] = useState(user?.reminder_log_weight_enabled ?? true);
+    const [logFoodReminderTime, setLogFoodReminderTime] = useState(user?.reminder_log_food_time ?? '09:00');
+    const [logWeightReminderTime, setLogWeightReminderTime] = useState(user?.reminder_log_weight_time ?? '09:00');
+    const [quietHoursStart, setQuietHoursStart] = useState(user?.reminder_quiet_hours_start ?? '');
+    const [quietHoursEnd, setQuietHoursEnd] = useState(user?.reminder_quiet_hours_end ?? '');
     const [hapticsEnabled, setHapticsEnabled] = useState(user?.haptics_enabled ?? true);
     const [currentPassword, setCurrentPassword] = useState('');
     const [newPassword, setNewPassword] = useState('');
@@ -125,6 +130,14 @@ export default function SettingsScreen() {
     const [deleteAccountConfirmation, setDeleteAccountConfirmation] = useState('');
     const [passwordError, setPasswordError] = useState<string | null>(null);
     const [passwordStatus, setPasswordStatus] = useState<string | null>(null);
+    const reminderSchedule = {
+        foodTime: logFoodReminderTime,
+        weightTime: logWeightReminderTime,
+        quietStart: quietHoursStart,
+        quietEnd: quietHoursEnd
+    };
+    const reminderScheduleErrors = getReminderScheduleErrors(reminderSchedule);
+    const reminderScheduleIsInvalid = hasReminderScheduleErrors(reminderScheduleErrors);
     const profileIsDirty = Boolean(user && (
         timezone !== user.timezone
         || dateOfBirth !== (user.date_of_birth?.slice(0, 10) ?? '')
@@ -139,6 +152,10 @@ export default function SettingsScreen() {
         || heightUnit !== user.height_unit
         || logFoodReminders !== user.reminder_log_food_enabled
         || logWeightReminders !== user.reminder_log_weight_enabled
+        || logFoodReminderTime !== (user.reminder_log_food_time ?? '09:00')
+        || logWeightReminderTime !== (user.reminder_log_weight_time ?? '09:00')
+        || quietHoursStart !== (user.reminder_quiet_hours_start ?? '')
+        || quietHoursEnd !== (user.reminder_quiet_hours_end ?? '')
         || hapticsEnabled !== user.haptics_enabled
     ));
     const passwordIsDirty = Boolean(currentPassword || newPassword || confirmPassword);
@@ -146,8 +163,8 @@ export default function SettingsScreen() {
     const profileQuery = useQuery({ queryKey: ['mobile-profile'], queryFn: () => api.getUserProfile() });
     const goalQuery = useQuery({ queryKey: ['mobile-goal'], queryFn: () => api.getGoals() });
     const sessionsQuery = useQuery({
-        queryKey: ['mobile-sessions'],
-        queryFn: () => api.getMobileSessions()
+        queryKey: ['account-sessions'],
+        queryFn: () => api.getAccountSessions()
     });
     const profileState = useAsyncResourceState(profileQuery, isNeverEmpty);
     const goalState = useAsyncResourceState(goalQuery, isNullResource);
@@ -210,6 +227,10 @@ export default function SettingsScreen() {
         setHeightUnit(user.height_unit);
         setLogFoodReminders(user.reminder_log_food_enabled);
         setLogWeightReminders(user.reminder_log_weight_enabled);
+        setLogFoodReminderTime(user.reminder_log_food_time ?? '09:00');
+        setLogWeightReminderTime(user.reminder_log_weight_time ?? '09:00');
+        setQuietHoursStart(user.reminder_quiet_hours_start ?? '');
+        setQuietHoursEnd(user.reminder_quiet_hours_end ?? '');
         setHapticsEnabled(user.haptics_enabled);
     }, [user]);
 
@@ -234,6 +255,10 @@ export default function SettingsScreen() {
             setHeightUnit(user.height_unit);
             setLogFoodReminders(user.reminder_log_food_enabled);
             setLogWeightReminders(user.reminder_log_weight_enabled);
+            setLogFoodReminderTime(user.reminder_log_food_time ?? '09:00');
+            setLogWeightReminderTime(user.reminder_log_weight_time ?? '09:00');
+            setQuietHoursStart(user.reminder_quiet_hours_start ?? '');
+            setQuietHoursEnd(user.reminder_quiet_hours_end ?? '');
             setHapticsEnabled(user.haptics_enabled);
         }
         setActiveSheet(null);
@@ -278,6 +303,7 @@ export default function SettingsScreen() {
                 height_unit: heightUnit,
                 reminder_log_food_enabled: logFoodReminders,
                 reminder_log_weight_enabled: logWeightReminders,
+                ...toReminderSchedulePayload(reminderSchedule),
                 haptics_enabled: hapticsEnabled
             }),
         onSuccess: async (response) => {
@@ -286,6 +312,11 @@ export default function SettingsScreen() {
             setActiveSheet(null);
         }
     });
+
+    function handleSavePreferences() {
+        if (reminderScheduleIsInvalid) return;
+        savePreferences.mutate();
+    }
 
     function handleSaveProfile() {
         const heightIsValid = isHeightWithinPolicy({
@@ -359,23 +390,16 @@ export default function SettingsScreen() {
     });
 
     const revokeSession = useMutation({
-        mutationFn: (sessionId: number) => api.revokeMobileSession(sessionId),
-        onSuccess: async (_response, sessionId) => {
-            const revokedCurrentSession = sessionsQuery.data?.sessions.some(
-                (session) => session.id === sessionId && session.current
-            );
-            if (revokedCurrentSession) {
-                await logout();
-                return;
-            }
-            await queryClient.invalidateQueries({ queryKey: ['mobile-sessions'] });
+        mutationFn: (sessionId: string) => api.revokeAccountSession(sessionId),
+        onSuccess: async () => {
+            await queryClient.invalidateQueries({ queryKey: ['account-sessions'] });
         }
     });
 
     const revokeOtherSessions = useMutation({
-        mutationFn: () => api.revokeOtherMobileSessions(),
+        mutationFn: () => api.revokeOtherAccountSessions(),
         onSuccess: async () => {
-            await queryClient.invalidateQueries({ queryKey: ['mobile-sessions'] });
+            await queryClient.invalidateQueries({ queryKey: ['account-sessions'] });
         }
     });
 
@@ -436,18 +460,7 @@ export default function SettingsScreen() {
 
     function confirmDeleteAccount() {
         if (!canSubmitAccountDeletion(deleteAccountPassword, deleteAccountConfirmation)) return;
-        Alert.alert(
-            'Permanently delete account?',
-            'This permanently deletes your profile, food logs, weigh-ins, goals, saved foods, and device sessions.',
-            [
-                { text: 'Cancel', style: 'cancel' },
-                {
-                    text: 'Delete forever',
-                    style: 'destructive',
-                    onPress: () => deleteAccount.mutate()
-                }
-            ]
-        );
+        deleteAccount.mutate();
     }
 
     let goalSummary = 'Current goal unavailable';
@@ -528,6 +541,7 @@ export default function SettingsScreen() {
             )}
             <SettingsHome
                 email={user?.email}
+                emailVerified={user?.account_access?.email_verified}
                 profileImageUrl={user?.profile_image_url}
                 goalSummary={goalSummary}
                 weightUnit={weightUnit}
@@ -543,6 +557,7 @@ export default function SettingsScreen() {
                 onOpenSavedFoods={() => router.push('/my-foods')}
                 onOpenAbout={() => router.push('/about')}
                 onOpenProductLink={(link) => router.push(CALIBRATE_PRODUCT_LINKS[link] as Href)}
+                onDeleteAccount={() => setIsDeleteAccountOpen(true)}
                 onLogout={() => void logout()}
             />
 
@@ -550,106 +565,59 @@ export default function SettingsScreen() {
                 visible={activeSheet === 'preferences'}
                 maxHeight="92%"
                 title="Preferences"
-                description="Units, reminders, and interaction feedback."
+                description="Units, reminder intent, delivery permission, quiet hours, and interaction feedback."
                 dismissDisabled={savePreferences.isPending}
                 isDirty={preferencesAreDirty}
                 confirmDismiss={confirmDiscardChanges}
                 onClose={closePreferences}
             >
-                <AppText variant="label">Weight unit</AppText>
-                <SegmentedControl options={WEIGHT_UNIT_OPTIONS} value={weightUnit} onChange={setWeightUnit} />
-                <AppText variant="label">Height unit</AppText>
-                <SegmentedControl options={HEIGHT_UNIT_OPTIONS} value={heightUnit} onChange={setHeightUnit} />
-                <PreferenceSwitch
-                    label="Food reminders"
-                    value={logFoodReminders}
-                    onValueChange={setLogFoodReminders}
-                />
-                <PreferenceSwitch
-                    label="Weight reminders"
-                    value={logWeightReminders}
-                    onValueChange={setLogWeightReminders}
-                />
-                <View style={styles.notificationStatus}>
-                    <AppText variant="label">{isWeb ? 'Push in this browser' : 'Push on this device'}</AppText>
-                    <AppText
-                        accessibilityLiveRegion="polite"
-                        accessibilityRole={pushStatus.isError ? 'alert' : undefined}
-                        style={pushStatus.isError ? [styles.error, { color: themeColors.danger }] : undefined}
-                        variant={pushStatus.isError ? 'body' : 'muted'}
-                    >
-                        {pushStatus.message}
-                    </AppText>
-                    {pushStatus.action === 'request' && (
-                        <AppButton
-                            title="Enable push notifications"
-                            variant="secondary"
-                            accessibilityHint={isWeb
-                                ? 'Shows this browser notification permission prompt.'
-                                : 'Shows the Android notification permission prompt.'}
-                            leftIcon={<Ionicons name="notifications-outline" size={18} color={themeColors.onSurface} />}
-                            onPress={() => void nativePush.requestPermission()}
-                        />
+                <View testID="settings-preferences-sheet" style={styles.sheetContent}>
+                    <AppText variant="label">Weight unit</AppText>
+                    <SegmentedControl options={WEIGHT_UNIT_OPTIONS} value={weightUnit} onChange={setWeightUnit} />
+                    <AppText variant="label">Height unit</AppText>
+                    <SegmentedControl options={HEIGHT_UNIT_OPTIONS} value={heightUnit} onChange={setHeightUnit} />
+                    <ReminderSettingsPanel
+                        timezone={timezone}
+                        logFoodEnabled={logFoodReminders}
+                        logWeightEnabled={logWeightReminders}
+                        foodTime={logFoodReminderTime}
+                        weightTime={logWeightReminderTime}
+                        quietStart={quietHoursStart}
+                        quietEnd={quietHoursEnd}
+                        errors={reminderScheduleErrors}
+                        deliveryStatus={pushStatus}
+                        isWeb={isWeb}
+                        onLogFoodEnabledChange={setLogFoodReminders}
+                        onLogWeightEnabledChange={setLogWeightReminders}
+                        onFoodTimeChange={setLogFoodReminderTime}
+                        onWeightTimeChange={setLogWeightReminderTime}
+                        onQuietStartChange={setQuietHoursStart}
+                        onQuietEndChange={setQuietHoursEnd}
+                        onRequestPermission={() => void nativePush.requestPermission()}
+                        onOpenPermissionSettings={() => void nativePush.openSettings()}
+                        onRefreshPermission={() => void nativePush.refreshPermission()}
+                        onRetryRegistration={() => void nativePush.retryRegistration()}
+                        onDisableRegistration={nativePush.disableRegistration
+                            ? () => void nativePush.disableRegistration?.()
+                            : undefined}
+                    />
+                    <PreferenceSwitch
+                        label="Haptics"
+                        value={hapticsEnabled}
+                        onValueChange={setHapticsEnabled}
+                    />
+                    {savePreferences.error && (
+                        <AppText accessibilityRole="alert" style={[styles.error, { color: themeColors.danger }]}>
+                            {getSafeActionErrorMessage(savePreferences.error, 'Unable to save preferences.')}
+                        </AppText>
                     )}
-                    {pushStatus.action === 'settings' && (
-                        <View style={styles.row}>
-                            {!isWeb && (
-                                <AppButton
-                                    title="Open Android settings"
-                                    variant="secondary"
-                                    accessibilityHint="Opens notification permissions for Calibrate."
-                                    onPress={() => void nativePush.openSettings()}
-                                    style={styles.rowButton}
-                                />
-                            )}
-                            <AppButton
-                                title="Check again"
-                                variant="secondary"
-                                accessibilityHint={isWeb
-                                    ? 'Checks whether notifications are now allowed for this site.'
-                                    : 'Checks whether notification permission is now enabled.'}
-                                onPress={() => void nativePush.refreshPermission()}
-                                style={styles.rowButton}
-                            />
-                        </View>
-                    )}
-                    {pushStatus.action === 'retry' && (
-                        <AppButton
-                            title="Retry push registration"
-                            variant="secondary"
-                            accessibilityHint={isWeb
-                                ? 'Checks permission and registers this browser again.'
-                                : 'Checks permission and registers this device again.'}
-                            leftIcon={<Ionicons name="refresh-outline" size={18} color={themeColors.onSurface} />}
-                            onPress={() => void nativePush.retryRegistration()}
-                        />
-                    )}
-                    {pushStatus.action === 'disable' && isWeb && (
-                        <AppButton
-                            title="Disable push in this browser"
-                            variant="secondary"
-                            accessibilityHint="Removes this browser from reminder delivery for the current account service."
-                            leftIcon={<Ionicons name="notifications-off-outline" size={18} color={themeColors.onSurface} />}
-                            onPress={() => void nativePush.disableRegistration?.()}
-                        />
-                    )}
+                    <AppButton
+                        title={savePreferences.isPending ? 'Saving...' : 'Save preferences'}
+                        disabled={savePreferences.isPending || reminderScheduleIsInvalid}
+                        leftIcon={<Ionicons name="options-outline" size={18} color={themeColors.onPrimary} />}
+                        onPress={handleSavePreferences}
+                    />
                 </View>
-                <PreferenceSwitch
-                    label="Haptics"
-                    value={hapticsEnabled}
-                    onValueChange={setHapticsEnabled}
-                />
-                {savePreferences.error && (
-                    <AppText accessibilityRole="alert" style={[styles.error, { color: themeColors.danger }]}>
-                        {getSafeActionErrorMessage(savePreferences.error, 'Unable to save preferences.')}
-                    </AppText>
-                )}
-                <AppButton
-                    title={savePreferences.isPending ? 'Saving...' : 'Save preferences'}
-                    disabled={savePreferences.isPending}
-                    leftIcon={<Ionicons name="options-outline" size={18} color={themeColors.onPrimary} />}
-                    onPress={() => savePreferences.mutate()}
-                />
             </SettingsDetailSheet>
 
             <BottomSheetModal
@@ -793,61 +761,41 @@ export default function SettingsScreen() {
             <SettingsDetailSheet
                 visible={activeSheet === 'devices'}
                 maxHeight="92%"
+                title="Signed-in devices"
+                description="Review every browser, Android phone, and Wear OS session for this account."
                 onClose={() => setActiveSheet(null)}
             >
-                <SectionHeader title="Devices" description="Review and revoke active phone and watch sessions." />
-                <AsyncStateBoundary
-                    state={sessionsState}
-                    resourceLabel="active devices"
-                    loading={<DeviceListSkeleton />}
-                    empty={(
-                        <AppCard>
-                            <AppText variant="subtitle">No active devices</AppText>
-                            <AppText variant="muted">No phone or watch sessions are signed in.</AppText>
-                        </AppCard>
+                <View testID="settings-sessions" style={styles.sheetContent}>
+                    <AsyncStateBoundary
+                        state={sessionsState}
+                        resourceLabel="signed-in sessions"
+                        loading={<DeviceListSkeleton />}
+                        empty={(
+                            <AppCard>
+                                <AppText variant="subtitle">No signed-in sessions found</AppText>
+                                <AppText variant="muted">Refresh to check this account again.</AppText>
+                            </AppCard>
+                        )}
+                        onRetry={isOnline ? () => sessionsQuery.refetch() : undefined}
+                        retrying={sessionsQuery.isFetching}
+                    >
+                        <AccountSessionsPanel
+                            sessions={sessionsQuery.data?.sessions ?? []}
+                            pendingSessionId={revokeSession.isPending ? revokeSession.variables : undefined}
+                            revokingOthers={revokeOtherSessions.isPending}
+                            onRevoke={async (sessionId) => { await revokeSession.mutateAsync(sessionId); }}
+                            onRevokeOthers={async () => { await revokeOtherSessions.mutateAsync(); }}
+                        />
+                    </AsyncStateBoundary>
+                    {(revokeSession.error || revokeOtherSessions.error) && (
+                        <AppText accessibilityRole="alert" style={[styles.error, { color: themeColors.danger }]}>
+                            {getSafeActionErrorMessage(
+                                revokeSession.error ?? revokeOtherSessions.error,
+                                'Unable to revoke that signed-in session.'
+                            )}
+                        </AppText>
                     )}
-                    onRetry={isOnline ? () => sessionsQuery.refetch() : undefined}
-                    retrying={sessionsQuery.isFetching}
-                >
-                    <>
-                        {sessionsQuery.data?.sessions.map((session) => (
-                            <View key={session.id} style={[styles.deviceRow, { borderBottomColor: themeColors.outlineVariant }]}>
-                                <View style={styles.deviceText}>
-                                    <AppText variant="body" style={styles.deviceName}>
-                                        {session.device_name || (session.device_platform === 'wear_os' ? 'Wear OS device' : 'Android device')}
-                                    </AppText>
-                                    <AppText variant="caption">
-                                        {session.current ? 'This device | ' : ''}
-                                        {formatSessionActivity(session.last_used_at, session.created_at)}
-                                    </AppText>
-                                </View>
-                                <AppButton
-                                    title={revokeSession.isPending && revokeSession.variables === session.id ? 'Revoking...' : 'Revoke'}
-                                    variant={session.current ? 'danger' : 'ghost'}
-                                    disabled={revokeSession.isPending || revokeOtherSessions.isPending}
-                                    onPress={() => revokeSession.mutate(session.id)}
-                                />
-                            </View>
-                        ))}
-                        {(sessionsQuery.data?.sessions.length ?? 0) > 1 && (
-                            <AppButton
-                                title={revokeOtherSessions.isPending ? 'Revoking...' : 'Revoke other devices'}
-                                variant="secondary"
-                                disabled={revokeSession.isPending || revokeOtherSessions.isPending}
-                                leftIcon={<Ionicons name="phone-portrait-outline" size={18} color={themeColors.onSurface} />}
-                                onPress={() => revokeOtherSessions.mutate()}
-                            />
-                        )}
-                    </>
-                </AsyncStateBoundary>
-                {(revokeSession.error || revokeOtherSessions.error) && (
-                    <AppText accessibilityRole="alert" style={[styles.error, { color: themeColors.danger }]}>
-                        {getSafeActionErrorMessage(
-                            revokeSession.error ?? revokeOtherSessions.error,
-                            'Unable to revoke that device session.'
-                        )}
-                    </AppText>
-                )}
+                </View>
             </SettingsDetailSheet>
 
             <SettingsDetailSheet
@@ -906,31 +854,24 @@ export default function SettingsScreen() {
 
             <SettingsDetailSheet
                 visible={activeSheet === 'data'}
+                title="Export your data"
+                description="Download a portable JSON copy of your Calibrate account."
                 onClose={() => setActiveSheet(null)}
             >
-                <SectionHeader
-                    title="Your data"
-                    description="Export a portable JSON copy or permanently delete this account."
-                />
-                {exportAccount.error && (
-                    <AppText accessibilityRole="alert" style={[styles.error, { color: themeColors.danger }]}>
-                        {getSafeActionErrorMessage(exportAccount.error, 'Unable to export account data.')}
-                    </AppText>
-                )}
-                <AppButton
-                    title={exportAccount.isPending ? 'Preparing export...' : 'Export account data'}
-                    variant="secondary"
-                    disabled={exportAccount.isPending || deleteAccount.isPending}
-                    leftIcon={<Ionicons name="share-outline" size={18} color={themeColors.onSurface} />}
-                    onPress={() => exportAccount.mutate()}
-                />
-                <AppButton
-                    title="Delete account"
-                    variant="danger"
-                    disabled={exportAccount.isPending || deleteAccount.isPending}
-                    leftIcon={<Ionicons name="trash-outline" size={18} color={themeColors.onDanger} />}
-                    onPress={() => setIsDeleteAccountOpen(true)}
-                />
+                <View testID="settings-export-sheet" style={styles.sheetContent}>
+                    {exportAccount.error && (
+                        <AppText accessibilityRole="alert" style={[styles.error, { color: themeColors.danger }]}>
+                            {getSafeActionErrorMessage(exportAccount.error, 'Unable to export account data.')}
+                        </AppText>
+                    )}
+                    <AppButton
+                        title={exportAccount.isPending ? 'Preparing export...' : 'Export account data'}
+                        variant="secondary"
+                        disabled={exportAccount.isPending}
+                        leftIcon={<Ionicons name="share-outline" size={18} color={themeColors.onSurface} />}
+                        onPress={() => exportAccount.mutate()}
+                    />
+                </View>
             </SettingsDetailSheet>
 
             {!isWeb && (
@@ -1031,6 +972,9 @@ const styles = StyleSheet.create({
     rowButton: {
         flex: 1
     },
+    sheetContent: {
+        gap: spacing.md
+    },
     summaryRows: {
         borderRadius: radius.md,
         paddingHorizontal: spacing.md,
@@ -1059,20 +1003,7 @@ const styles = StyleSheet.create({
         flex: 1,
         gap: spacing.sm
     },
-    deviceRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: spacing.md,
-        paddingVertical: spacing.sm,
-        borderBottomWidth: StyleSheet.hairlineWidth
-    },
-    deviceText: {
-        flex: 1,
-        minWidth: 0
-    },
-    deviceName: {
-        fontWeight: '800'
-    },
+
     deviceSkeletonRow: {
         alignItems: 'center',
         flexDirection: 'row',
@@ -1088,9 +1019,7 @@ const styles = StyleSheet.create({
         flexWrap: 'wrap',
         gap: spacing.sm
     },
-    notificationStatus: {
-        gap: spacing.sm
-    },
+
     success: {},
     error: {}
 });

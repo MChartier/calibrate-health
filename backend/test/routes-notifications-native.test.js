@@ -104,7 +104,9 @@ test('notifications route: transfers a browser endpoint and updates the owning s
     p256dh: 'owner-8-refreshed-key',
     auth: 'owner-8-refreshed-auth',
     expiration_time: new Date(1_800_000_000_000),
-    last_sent_local_date: null
+    last_sent_local_date: null,
+    last_sent_weight_local_date: null,
+    last_sent_food_local_date: null
   });
 });
 

@@ -367,8 +367,8 @@ export default function TabsLayout() {
                             name="(settings)"
                             options={{
                                 ...HIDDEN_TAB_OPTIONS,
-                                title: 'Account',
-                                headerTitle: 'Account'
+                                title: 'Settings',
+                                headerTitle: 'Settings'
                             }}
                         />
                     </Tabs>
@@ -531,8 +531,8 @@ const HeaderActions: React.FC<{
         </NavigationPressable>
         <NavigationPressable
             accessibilityRole="button"
-            accessibilityLabel="Open account"
-            accessibilityHint="Opens profile and app settings"
+            accessibilityLabel="Account & settings"
+            accessibilityHint="Opens account details and app settings"
             focusStyle={styles.navigationFocus}
             hoverStyle={styles.navigationHover}
             onPress={() => router.push(canonicalPathForRoute('settings') as Href)}

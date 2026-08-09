@@ -123,6 +123,13 @@ model User {
   reminder_log_weight_enabled Boolean @default(true)
   /// Account-level preference for food reminder notifications across devices.
   reminder_log_food_enabled   Boolean @default(true)
+  /// Weight reminder local wall-clock minute (0-1439), interpreted in timezone.
+  reminder_log_weight_minute  Int     @default(540)
+  /// Food reminder local wall-clock minute (0-1439), interpreted in timezone.
+  reminder_log_food_minute    Int     @default(540)
+  /// Optional quiet-hours start/end local wall-clock minutes; both null disables quiet hours.
+  reminder_quiet_hours_start_minute Int?
+  reminder_quiet_hours_end_minute   Int?
   /// Account-level preference that enables/disables app haptic feedback patterns.
   haptics_enabled             Boolean @default(true)
   date_of_birth DateTime? @db.Date
@@ -552,6 +559,10 @@ model SessionStore {
   /// Null before authentication; populated from Passport state once a user logs in.
   user_id Int?
   user    User?    @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  /// Public revocation identifier; never expose the cookie session id.
+  public_id String @unique @default(uuid()) @db.Uuid
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+  last_used_at DateTime @default(now()) @db.Timestamptz(6)
   /// Browser push endpoints owned by this authenticated session.
   push_subscriptions PushSubscription[]
 
@@ -576,6 +587,8 @@ model PushSubscription {
   expiration_time DateTime?
   /// Local date (UTC-normalized) when the last reminder was sent for this subscription.
   last_sent_local_date DateTime? @db.Date
+  last_sent_weight_local_date DateTime? @db.Date
+  last_sent_food_local_date DateTime? @db.Date
   created_at      DateTime @default(now())
   updated_at      DateTime @updatedAt
 
@@ -586,6 +599,8 @@ model PushSubscription {
 
 model MobileAuthSession {
   id                  Int                  @id @default(autoincrement())
+  /// Public revocation identifier used by the unified account-session API.
+  public_id           String               @unique @default(uuid()) @db.Uuid
   user_id             Int
   user                User                 @relation(fields: [user_id], references: [id], onDelete: Cascade)
   /// Stable per-install identifier supplied by the native client.
@@ -662,6 +677,8 @@ model NativePushSubscription {
   token                 String
   /// Local date (UTC-normalized) when the last reminder was sent for this token.
   last_sent_local_date  DateTime?          @db.Date
+  last_sent_weight_local_date DateTime?    @db.Date
+  last_sent_food_local_date DateTime?      @db.Date
   revoked_at            DateTime?
   created_at            DateTime           @default(now())
   updated_at            DateTime           @updatedAt

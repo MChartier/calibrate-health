@@ -1,5 +1,6 @@
 import type {
     AccountExport,
+    AccountSessionSummary,
     ActivityDaysResponse,
     BrowserAuthRequest,
     BrowserAuthResponse,
@@ -509,6 +510,23 @@ export class CalibrateApiClient {
             method: 'POST',
             auth: false,
             json: refreshToken ? { refresh_token: refreshToken } : {}
+        });
+    }
+
+    getAccountSessions(): Promise<{ sessions: AccountSessionSummary[] }> {
+        return this.request<{ sessions: AccountSessionSummary[] }>('/auth/sessions');
+    }
+
+    revokeAccountSession(sessionId: string): Promise<{ ok: true; revoked: boolean }> {
+        return this.request<{ ok: true; revoked: boolean }>(
+            '/auth/sessions/' + encodeURIComponent(sessionId),
+            { method: 'DELETE' }
+        );
+    }
+
+    revokeOtherAccountSessions(): Promise<{ ok: true; revoked: number }> {
+        return this.request<{ ok: true; revoked: number }>('/auth/sessions/revoke-others', {
+            method: 'POST'
         });
     }
 

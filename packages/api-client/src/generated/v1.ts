@@ -70,6 +70,23 @@ export interface paths {
         patch: operations["updateUserProfile"];
         trace?: never;
     };
+    "/api/v1/user/preferences": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** @description Update account display preferences and reminder intent using local wall-clock times interpreted in the current account timezone. */
+        patch: operations["updateUserPreferences"];
+        trace?: never;
+    };
     "/api/v1/goals": {
         parameters: {
             query?: never;
@@ -242,6 +259,57 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["refreshMobile"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/sessions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description List privacy-safe active browser, Android phone, and Wear OS sessions owned by the authenticated account. */
+        get: operations["getAccountSessions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/sessions/{sessionId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** @description Revoke one non-current account session. Unknown and other-account ids are indistinguishable and return revoked false. */
+        delete: operations["revokeAccountSession"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/sessions/revoke-others": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Atomically revoke every other browser and native session while preserving the calling session. */
+        post: operations["revokeOtherAccountSessions"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1850,6 +1918,18 @@ export interface components {
             refresh_expires_at: string;
         };
         MobileRefreshResponse: components["schemas"]["MobileAuthResponse"] | components["schemas"]["WearMobileAuthResponse"];
+        /** @enum {string} */
+        AccountSessionKind: "browser" | "android_phone" | "wear_os";
+        AccountSessionSummary: {
+            id: string;
+            kind: components["schemas"]["AccountSessionKind"];
+            device_label: string | null;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            last_activity_at: string | null;
+            current: boolean;
+        };
         MobileSessionSummary: {
             id: number;
             device_id: string;
@@ -2120,6 +2200,21 @@ export interface components {
             next_cursor: string;
             has_more: boolean;
         };
+        /** @description Quiet-hours start and end must be supplied together. Two null values disable quiet hours; equal non-null times are invalid. */
+        UserPreferencesUpdateRequest: {
+            /** @enum {string} */
+            weight_unit?: "KG" | "LB";
+            /** @enum {string} */
+            height_unit?: "CM" | "FT_IN";
+            language?: string;
+            reminder_log_weight_enabled?: boolean;
+            reminder_log_food_enabled?: boolean;
+            reminder_log_weight_time?: string;
+            reminder_log_food_time?: string;
+            reminder_quiet_hours_start?: string | null;
+            reminder_quiet_hours_end?: string | null;
+            haptics_enabled?: boolean;
+        };
         UserClientPayload: {
             id: number;
             /** Format: email */
@@ -2134,6 +2229,10 @@ export interface components {
             language: string;
             reminder_log_weight_enabled: boolean;
             reminder_log_food_enabled: boolean;
+            reminder_log_weight_time: string;
+            reminder_log_food_time: string;
+            reminder_quiet_hours_start: string | null;
+            reminder_quiet_hours_end: string | null;
             haptics_enabled: boolean;
             /** Format: date */
             date_of_birth?: string | null;
@@ -2330,6 +2429,54 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+        };
+    };
+    updateUserPreferences: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Stable client-generated identifier used to safely replay a mutation. */
+                "x-client-operation-id"?: components["parameters"]["ClientOperationId"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UserPreferencesUpdateRequest"];
+            };
+        };
+        responses: {
+            /** @description Updated account preferences. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        user: components["schemas"]["UserClientPayload"];
+                    };
+                };
+            };
+            /** @description Invalid preference, wall-clock time, or incomplete quiet-hours pair. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            /** @description Client operation id is already in progress or was reused with a different payload. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
         };
     };
     getGoal: {
@@ -2717,6 +2864,90 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MobileRefreshResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    getAccountSessions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Active account sessions with the calling session identified. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        sessions: components["schemas"]["AccountSessionSummary"][];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    revokeAccountSession: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                sessionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Owner-scoped idempotent revocation result. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @constant */
+                        ok: true;
+                        revoked: boolean;
+                    };
+                };
+            };
+            /** @description Invalid id or an attempt to revoke the current session; sign out owns current-session revocation. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    revokeOtherAccountSessions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Number of sessions revoked across all device kinds. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @constant */
+                        ok: true;
+                        revoked: number;
+                    };
                 };
             };
             401: components["responses"]["Unauthorized"];

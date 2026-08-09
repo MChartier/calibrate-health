@@ -26,6 +26,7 @@ import {
 import { logSafeOperationalError } from '../observability';
 import { clearSessionCookie } from '../utils/sessionCookie';
 import { getAuthenticatedUser, requireAuthenticatedUser } from '../middleware/authenticatedUser';
+import { parseLocalWallClockTime } from '../services/reminderSchedule';
 
 /**
  * Authenticated user account routes (profile, preferences, password, avatar).
@@ -262,12 +263,27 @@ router.delete('/account', async (req, res) => {
 
 router.patch('/preferences', async (req, res) => {
   const user = getAuthenticatedUser(req);
-  const { weight_unit, height_unit, language, reminder_log_weight_enabled, reminder_log_food_enabled, haptics_enabled } = req.body as {
+  const {
+    weight_unit,
+    height_unit,
+    language,
+    reminder_log_weight_enabled,
+    reminder_log_food_enabled,
+    reminder_log_weight_time,
+    reminder_log_food_time,
+    reminder_quiet_hours_start,
+    reminder_quiet_hours_end,
+    haptics_enabled
+  } = req.body as {
     weight_unit?: unknown;
     height_unit?: unknown;
     language?: unknown;
     reminder_log_weight_enabled?: unknown;
     reminder_log_food_enabled?: unknown;
+    reminder_log_weight_time?: unknown;
+    reminder_log_food_time?: unknown;
+    reminder_quiet_hours_start?: unknown;
+    reminder_quiet_hours_end?: unknown;
     haptics_enabled?: unknown;
   };
 
@@ -277,6 +293,10 @@ router.patch('/preferences', async (req, res) => {
     language === undefined &&
     reminder_log_weight_enabled === undefined &&
     reminder_log_food_enabled === undefined &&
+    reminder_log_weight_time === undefined &&
+    reminder_log_food_time === undefined &&
+    reminder_quiet_hours_start === undefined &&
+    reminder_quiet_hours_end === undefined &&
     haptics_enabled === undefined
   ) {
     return res.status(400).json({ message: 'No fields to update' });
@@ -288,6 +308,10 @@ router.patch('/preferences', async (req, res) => {
     language: SupportedLanguage;
     reminder_log_weight_enabled: boolean;
     reminder_log_food_enabled: boolean;
+    reminder_log_weight_minute: number;
+    reminder_log_food_minute: number;
+    reminder_quiet_hours_start_minute: number | null;
+    reminder_quiet_hours_end_minute: number | null;
     haptics_enabled: boolean;
   }> = {};
 
@@ -324,6 +348,38 @@ router.patch('/preferences', async (req, res) => {
       return res.status(400).json({ message: 'Invalid reminder_log_food_enabled' });
     }
     updateData.reminder_log_food_enabled = reminder_log_food_enabled;
+  }
+
+  if (reminder_log_weight_time !== undefined) {
+    const minute = parseLocalWallClockTime(reminder_log_weight_time);
+    if (minute === null) return res.status(400).json({ message: 'Invalid reminder_log_weight_time' });
+    updateData.reminder_log_weight_minute = minute;
+  }
+
+  if (reminder_log_food_time !== undefined) {
+    const minute = parseLocalWallClockTime(reminder_log_food_time);
+    if (minute === null) return res.status(400).json({ message: 'Invalid reminder_log_food_time' });
+    updateData.reminder_log_food_minute = minute;
+  }
+
+  const quietStartProvided = reminder_quiet_hours_start !== undefined;
+  const quietEndProvided = reminder_quiet_hours_end !== undefined;
+  if (quietStartProvided !== quietEndProvided) {
+    return res.status(400).json({ message: 'Quiet hours start and end must be updated together' });
+  }
+  if (quietStartProvided && quietEndProvided) {
+    if (reminder_quiet_hours_start === null && reminder_quiet_hours_end === null) {
+      updateData.reminder_quiet_hours_start_minute = null;
+      updateData.reminder_quiet_hours_end_minute = null;
+    } else {
+      const startMinute = parseLocalWallClockTime(reminder_quiet_hours_start);
+      const endMinute = parseLocalWallClockTime(reminder_quiet_hours_end);
+      if (startMinute === null || endMinute === null || startMinute === endMinute) {
+        return res.status(400).json({ message: 'Invalid reminder quiet hours' });
+      }
+      updateData.reminder_quiet_hours_start_minute = startMinute;
+      updateData.reminder_quiet_hours_end_minute = endMinute;
+    }
   }
 
   if (haptics_enabled !== undefined) {

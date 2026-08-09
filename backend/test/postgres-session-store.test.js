@@ -56,7 +56,10 @@ test('PostgresSessionStore.initialize verifies the session schema exists', async
   await store.initialize();
 
   assert.equal(pool.calls.length, 1);
-  assert.match(pool.calls[0].text, /SELECT 1 FROM session_store/);
+  assert.equal(
+    pool.calls[0].text,
+    'SELECT public_id, created_at, last_used_at FROM session_store LIMIT 1'
+  );
 });
 
 test('PostgresSessionStore.initialize throws a helpful error for missing tables', async () => {

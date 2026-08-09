@@ -40,6 +40,12 @@ import {
     sendEmailVerification,
     sendPasswordReset
 } from '../services/accountTokens';
+import {
+    listAccountSessionsForUser,
+    parseAccountSessionId,
+    revokeAccountSessionForUser,
+    revokeOtherAccountSessionsForUser
+} from '../services/accountSessions';
 
 /**
  * Session-based auth endpoints (register/login/logout/me).
@@ -567,6 +573,58 @@ router.post('/mobile/logout', async (req, res) => {
         logSafeOperationalError('auth.mobile_logout', err, res.locals?.requestId);
         res.status(500).json({ message: 'Server error' });
     }
+});
+
+router.get('/sessions', async (req, res) => {
+    if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: 'Not authenticated' });
+    }
+
+    const user = getAuthenticatedUser(req);
+    const currentMobileSessionId = res.locals.mobileAuthSessionId as number | undefined;
+    const sessions = await listAccountSessionsForUser({
+        userId: user.id,
+        currentBrowserSessionId: currentMobileSessionId ? undefined : req.sessionID,
+        currentMobileSessionId
+    });
+    res.json({ sessions });
+});
+
+router.delete('/sessions/:sessionId', async (req, res) => {
+    if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: 'Not authenticated' });
+    }
+    if (!parseAccountSessionId(req.params.sessionId)) {
+        return res.status(400).json({ message: 'Invalid account session id' });
+    }
+
+    const user = getAuthenticatedUser(req);
+    const currentMobileSessionId = res.locals.mobileAuthSessionId as number | undefined;
+    const result = await revokeAccountSessionForUser({
+        userId: user.id,
+        sessionId: req.params.sessionId,
+        currentBrowserSessionId: currentMobileSessionId ? undefined : req.sessionID,
+        currentMobileSessionId
+    });
+    if (result.current) {
+        return res.status(400).json({ message: 'Sign out to end the current session.' });
+    }
+    res.json({ ok: true, revoked: result.revoked });
+});
+
+router.post('/sessions/revoke-others', async (req, res) => {
+    if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: 'Not authenticated' });
+    }
+
+    const user = getAuthenticatedUser(req);
+    const currentMobileSessionId = res.locals.mobileAuthSessionId as number | undefined;
+    const revoked = await revokeOtherAccountSessionsForUser({
+        userId: user.id,
+        currentBrowserSessionId: currentMobileSessionId ? undefined : req.sessionID,
+        currentMobileSessionId
+    });
+    res.json({ ok: true, revoked });
 });
 
 router.get('/mobile/sessions', async (req, res) => {
