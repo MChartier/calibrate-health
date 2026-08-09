@@ -1,8 +1,26 @@
 import { normalizeSearchedFoodItem, type SearchedFoodItem } from '../food/serving';
+import { getBarcodeLookupFailure } from './state';
 
 const BARCODE_DUPLICATE_WINDOW_MS = 1_200;
-const SUPPORTED_BARCODE_LENGTHS = new Set([6, 7, 8, 12, 13]);
 const FATSECRET_URL = 'https://www.fatsecret.com';
+const UPC_E_NUMBER_SYSTEMS = new Set(['0', '1']);
+
+export type BarcodeFormat = 'ean-8' | 'ean-13' | 'upc-a' | 'upc-e';
+export type BarcodeFormatHint = BarcodeFormat | 'ean8' | 'ean13' | 'upc_a' | 'upc_e';
+
+export type NormalizedBarcode = {
+    barcode: string;
+    canonicalKey: string;
+    format: BarcodeFormat;
+};
+
+export type BarcodeNormalizationResult =
+    | ({ ok: true } & NormalizedBarcode)
+    | {
+          ok: false;
+          reason: 'empty' | 'characters' | 'length' | 'checksum';
+          message: string;
+      };
 
 export type CameraPermissionState = 'checking' | 'granted' | 'request' | 'settings';
 
@@ -11,7 +29,21 @@ export type BarcodeScanDecision =
     | { kind: 'duplicate' }
     | { kind: 'invalid'; message: string };
 
-export type BarcodeLookupStatus = 'idle' | 'searching' | 'result' | 'no-result' | 'error';
+export type BarcodeRequestDecision =
+    | ({ kind: 'accepted' } & NormalizedBarcode)
+    | { kind: 'duplicate' }
+    | { kind: 'invalid'; message: string };
+
+export type BarcodeOperationDecision = 'accepted' | 'duplicate';
+
+export type BarcodeLookupStatus =
+    | 'idle'
+    | 'searching'
+    | 'result'
+    | 'no-result'
+    | 'offline'
+    | 'auth-required'
+    | 'error';
 
 export type ProviderAttribution = {
     text: string;
@@ -20,14 +52,24 @@ export type ProviderAttribution = {
 
 /**
  * Normalize every provider barcode match into the same selectable item used by text search.
- * Providers do not always echo the requested barcode, so retain the scanned value in the snapshot.
+ * The accepted barcode and missing response-level provider are retained in the immutable snapshot.
  */
-export function resolveBarcodeFoodCandidates(values: unknown, barcode: string): SearchedFoodItem[] {
+export function resolveBarcodeFoodCandidates(
+    values: unknown,
+    barcode: string,
+    provider?: string | null
+): SearchedFoodItem[] {
     if (!Array.isArray(values)) return [];
+    const snapshotBarcode = normalizeBarcode(barcode) ?? barcode.trim();
+    const providerSource = provider?.trim() || null;
     return values.flatMap((value) => {
         const item = normalizeSearchedFoodItem(value);
         if (!item) return [];
-        return [item.barcode ? item : { ...item, barcode }];
+        return [{
+            ...item,
+            source: item.source ?? providerSource,
+            barcode: snapshotBarcode
+        }];
     });
 }
 
@@ -40,12 +82,146 @@ export function getCameraPermissionState(
     return permission.canAskAgain ? 'request' : 'settings';
 }
 
-/** Normalize only the numeric lengths emitted by the configured EAN/UPC camera scanner. */
-export function normalizeBarcode(value: unknown): string | null {
-    if (typeof value !== 'string') return null;
-    const normalized = value.trim();
-    if (!/^\d+$/.test(normalized)) return null;
-    return SUPPORTED_BARCODE_LENGTHS.has(normalized.length) ? normalized : null;
+function normalizeFormatHint(value?: BarcodeFormatHint): BarcodeFormat | null {
+    if (!value) return null;
+    const normalized = value.toLowerCase().replace('_', '-');
+    if (normalized === 'ean8') return 'ean-8';
+    if (normalized === 'ean13') return 'ean-13';
+    if (
+        normalized === 'ean-8'
+        || normalized === 'ean-13'
+        || normalized === 'upc-a'
+        || normalized === 'upc-e'
+    ) {
+        return normalized;
+    }
+    return null;
+}
+
+function getCheckDigit(data: string): string {
+    let total = 0;
+    for (let index = data.length - 1, offset = 0; index >= 0; index -= 1, offset += 1) {
+        total += Number(data[index]) * (offset % 2 === 0 ? 3 : 1);
+    }
+    return String((10 - (total % 10)) % 10);
+}
+
+function hasValidCheckDigit(barcode: string): boolean {
+    return barcode.length > 1 && getCheckDigit(barcode.slice(0, -1)) === barcode[barcode.length - 1];
+}
+
+function expandUpcEData(upcEWithoutCheckDigit: string): string | null {
+    if (upcEWithoutCheckDigit.length !== 7) return null;
+    const [numberSystem, first, second, third, fourth, fifth, expansionDigit] = upcEWithoutCheckDigit;
+    if (!UPC_E_NUMBER_SYSTEMS.has(numberSystem)) return null;
+
+    if (expansionDigit === '0' || expansionDigit === '1' || expansionDigit === '2') {
+        return `${numberSystem}${first}${second}${expansionDigit}0000${third}${fourth}${fifth}`;
+    }
+    if (expansionDigit === '3') {
+        return `${numberSystem}${first}${second}${third}00000${fourth}${fifth}`;
+    }
+    if (expansionDigit === '4') {
+        return `${numberSystem}${first}${second}${third}${fourth}00000${fifth}`;
+    }
+    return `${numberSystem}${first}${second}${third}${fourth}${fifth}0000${expansionDigit}`;
+}
+
+function normalizeUpcE(digits: string): NormalizedBarcode | null {
+    let fullUpcE = digits;
+    if (digits.length === 6) {
+        const withoutCheck = `0${digits}`;
+        const expandedData = expandUpcEData(withoutCheck);
+        if (!expandedData) return null;
+        fullUpcE = `${withoutCheck}${getCheckDigit(expandedData)}`;
+    } else if (digits.length === 7) {
+        if (UPC_E_NUMBER_SYSTEMS.has(digits[0])) {
+            const expandedData = expandUpcEData(digits);
+            if (!expandedData) return null;
+            fullUpcE = `${digits}${getCheckDigit(expandedData)}`;
+        } else {
+            fullUpcE = `0${digits}`;
+        }
+    }
+    if (fullUpcE.length !== 8) return null;
+
+    const expandedData = expandUpcEData(fullUpcE.slice(0, -1));
+    if (!expandedData || getCheckDigit(expandedData) !== fullUpcE[fullUpcE.length - 1]) return null;
+    const expandedUpcA = `${expandedData}${fullUpcE[fullUpcE.length - 1]}`;
+    return {
+        barcode: fullUpcE,
+        canonicalKey: expandedUpcA.padStart(14, '0'),
+        format: 'upc-e'
+    };
+}
+
+function normalizedCheckedBarcode(
+    barcode: string,
+    format: Exclude<BarcodeFormat, 'upc-e'>
+): NormalizedBarcode | null {
+    if (!hasValidCheckDigit(barcode)) return null;
+    return {
+        barcode,
+        canonicalKey: barcode.padStart(14, '0'),
+        format
+    };
+}
+
+/** Normalize and checksum both manual and camera EAN/UPC input into one duplicate key. */
+export function normalizeBarcodeInput(
+    value: unknown,
+    formatHint?: BarcodeFormatHint
+): BarcodeNormalizationResult {
+    if (typeof value !== 'string' || value.trim().length === 0) {
+        return { ok: false, reason: 'empty', message: 'Enter an EAN or UPC barcode.' };
+    }
+    const digits = value.trim().replace(/[\s-]+/g, '');
+    if (!/^\d+$/.test(digits)) {
+        return { ok: false, reason: 'characters', message: 'Use digits only for an EAN or UPC barcode.' };
+    }
+    if (![6, 7, 8, 12, 13].includes(digits.length)) {
+        return {
+            ok: false,
+            reason: 'length',
+            message: 'EAN and UPC barcodes contain 6, 7, 8, 12, or 13 digits.'
+        };
+    }
+
+    const hint = normalizeFormatHint(formatHint);
+    let normalized: NormalizedBarcode | null = null;
+    if (digits.length === 6 || digits.length === 7 || hint === 'upc-e') {
+        normalized = normalizeUpcE(digits);
+    } else if (digits.length === 8) {
+        // UPC-E starts with its number system. Prefer it without a camera hint so manual entry
+        // and camera callbacks resolve the same canonical GTIN duplicate key.
+        normalized = UPC_E_NUMBER_SYSTEMS.has(digits[0]) ? normalizeUpcE(digits) : null;
+        normalized ??= normalizedCheckedBarcode(digits, 'ean-8');
+    } else if (digits.length === 12) {
+        normalized = normalizedCheckedBarcode(digits, 'upc-a');
+    } else if (digits.length === 13) {
+        normalized = normalizedCheckedBarcode(digits, 'ean-13');
+    }
+
+    if (!normalized) {
+        return {
+            ok: false,
+            reason: 'checksum',
+            message: 'That barcode check digit is not valid. Check the number and try again.'
+        };
+    }
+    return { ok: true, ...normalized };
+}
+
+/** Compatibility helper returning the normalized provider lookup value. */
+export function normalizeBarcode(value: unknown, formatHint?: BarcodeFormatHint): string | null {
+    const result = normalizeBarcodeInput(value, formatHint);
+    return result.ok ? result.barcode : null;
+}
+
+/** Canonical GTIN key makes UPC-A and its zero-prefixed EAN-13 representation equivalent. */
+export function getBarcodeCanonicalKey(value: unknown, formatHint?: BarcodeFormatHint): string | null {
+    const result = normalizeBarcodeInput(value, formatHint);
+    return result.ok ? result.canonicalKey : null;
 }
 
 /**
@@ -62,13 +238,18 @@ export class BarcodeScanGate {
         private readonly duplicateWindowMs = BARCODE_DUPLICATE_WINDOW_MS
     ) {}
 
-    accept(rawValue: unknown): BarcodeScanDecision {
-        const comparableValue = typeof rawValue === 'string' ? rawValue.trim() : '';
+    accept(rawValue: unknown, formatHint?: BarcodeFormatHint): BarcodeScanDecision {
+        const normalized = normalizeBarcodeInput(rawValue, formatHint);
+        const comparableValue = normalized.ok
+            ? normalized.canonicalKey
+            : typeof rawValue === 'string'
+                ? rawValue.trim().replace(/[\s-]+/g, '')
+                : '';
         const eventAt = this.now();
         if (
-            comparableValue.length > 0 &&
-            comparableValue === this.lastRawValue &&
-            eventAt - this.lastEventAt < this.duplicateWindowMs
+            comparableValue.length > 0
+            && comparableValue === this.lastRawValue
+            && eventAt - this.lastEventAt < this.duplicateWindowMs
         ) {
             return { kind: 'duplicate' };
         }
@@ -77,16 +258,12 @@ export class BarcodeScanGate {
         this.lastEventAt = eventAt;
         if (this.locked) return { kind: 'duplicate' };
 
-        const barcode = normalizeBarcode(rawValue);
-        if (!barcode) {
-            return {
-                kind: 'invalid',
-                message: 'That barcode could not be read. Use a clear EAN or UPC barcode and try again.'
-            };
+        if (!normalized.ok) {
+            return { kind: 'invalid', message: normalized.message };
         }
 
         this.locked = true;
-        return { kind: 'accepted', barcode };
+        return { kind: 'accepted', barcode: normalized.barcode };
     }
 
     reset(): void {
@@ -96,52 +273,112 @@ export class BarcodeScanGate {
     }
 }
 
+/** Prevent duplicate provider requests before mutation state has propagated through React. */
+export class BarcodeRequestGate {
+    private activeCanonicalKey: string | null = null;
+
+    start(rawValue: unknown, formatHint?: BarcodeFormatHint): BarcodeRequestDecision {
+        const normalized = normalizeBarcodeInput(rawValue, formatHint);
+        if (!normalized.ok) return { kind: 'invalid', message: normalized.message };
+        if (this.activeCanonicalKey !== null) return { kind: 'duplicate' };
+        this.activeCanonicalKey = normalized.canonicalKey;
+        return {
+            kind: 'accepted',
+            barcode: normalized.barcode,
+            canonicalKey: normalized.canonicalKey,
+            format: normalized.format
+        };
+    }
+
+    finish(): void {
+        this.activeCanonicalKey = null;
+    }
+
+    reset(): void {
+        this.activeCanonicalKey = null;
+    }
+}
+
+/** Keep a successful or in-flight submit locked until the editor intentionally resets. */
+export class BarcodeSubmissionGate {
+    private locked = false;
+
+    start(): BarcodeOperationDecision {
+        if (this.locked) return 'duplicate';
+        this.locked = true;
+        return 'accepted';
+    }
+
+    fail(): void {
+        this.locked = false;
+    }
+
+    complete(): void {
+        this.locked = true;
+    }
+
+    reset(): void {
+        this.locked = false;
+    }
+}
+
 export function getBarcodeLookupStatus(options: {
     hasBarcode: boolean;
     isPending: boolean;
     isSuccess: boolean;
     hasResult: boolean;
     hasError: boolean;
+    isOnline?: boolean;
+    error?: unknown;
 }): BarcodeLookupStatus {
     if (!options.hasBarcode) return 'idle';
-    if (options.isPending) return 'searching';
-    if (options.hasError) return 'error';
     if (options.hasResult) return 'result';
+    if (options.isOnline === false) return 'offline';
+    if (options.isPending) return 'searching';
+    if (options.hasError) {
+        const failure = getBarcodeLookupFailure(options.error);
+        if (failure.kind === 'offline') return 'offline';
+        if (failure.kind === 'authentication') return 'auth-required';
+        return 'error';
+    }
     if (options.isSuccess) return 'no-result';
     return 'idle';
 }
 
 /** Convert transport/provider failures into actionable copy without exposing raw gateway responses. */
 export function getBarcodeLookupErrorMessage(error: unknown): string {
-    const status = error && typeof error === 'object' && 'status' in error
-        ? (error as { status?: unknown }).status
-        : undefined;
-    if (typeof status === 'number' && status >= 500) {
-        return 'Food providers are unavailable right now. Try the lookup again in a moment.';
-    }
-
-    const message = error instanceof Error ? error.message : '';
-    if (/network|fetch|timed out|connect|offline/i.test(message)) {
+    const failure = getBarcodeLookupFailure(error);
+    if (failure.kind === 'offline') {
         return 'Could not reach your Calibrate server. Check your connection and try again.';
     }
-    return 'Barcode lookup failed. Try again or scan a different barcode.';
+    if (failure.kind === 'unknown') {
+        return 'Barcode lookup failed. Try again or scan a different barcode.';
+    }
+    return failure.message;
+}
+
+function boundedProviderText(value?: string | null): string | null {
+    const normalized = value?.trim().replace(/[\r\n\t]+/g, ' ').replace(/\s{2,}/g, ' ');
+    return normalized ? normalized.slice(0, 160) : null;
 }
 
 /** Preserve provider credit, including the required FatSecret attribution text and destination. */
-export function getProviderAttribution(provider?: string, attribution?: string): ProviderAttribution | null {
-    const normalizedProvider = provider?.trim().toLowerCase();
+export function getProviderAttribution(
+    provider?: string | null,
+    attribution?: string | null
+): ProviderAttribution | null {
+    const providerText = boundedProviderText(provider);
+    const normalizedProvider = providerText?.toLowerCase();
     if (normalizedProvider === 'fatsecret') {
         return { text: 'Powered by fatsecret', url: FATSECRET_URL };
     }
 
-    const explicitAttribution = attribution?.trim();
+    const explicitAttribution = boundedProviderText(attribution);
     if (explicitAttribution) return { text: explicitAttribution };
-    if (!normalizedProvider) return null;
+    if (!normalizedProvider || !providerText) return null;
 
-    const providerLabel = normalizedProvider === 'openfoodfacts'
-        ? 'Open Food Facts'
-        : normalizedProvider === 'usda'
-            ? 'USDA FoodData Central'
-            : provider!.trim();
+    let providerLabel = providerText;
+    if (normalizedProvider === 'openfoodfacts') providerLabel = 'Open Food Facts';
+    if (normalizedProvider === 'usda') providerLabel = 'USDA FoodData Central';
     return { text: `Data from ${providerLabel}` };
 }

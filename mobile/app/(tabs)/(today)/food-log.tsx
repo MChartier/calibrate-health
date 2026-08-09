@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import * as Crypto from 'expo-crypto';
-import { useLocalSearchParams, usePathname } from 'expo-router';
+import { router, useLocalSearchParams, usePathname } from 'expo-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { FoodLogCopyPayload, FoodLogEntry, FoodLogUpdatePayload } from '@calibrate/api-client';
 import type { MealPeriod } from '@calibrate/shared';
@@ -43,9 +43,10 @@ import { formatDateOnlyForDisplay } from '../../../src/utils/dates';
 import { MEAL_SELECT_OPTIONS } from '../../../src/utils/meals';
 import { type AppTheme, useAppTheme } from '../../../src/theme';
 import { SERVING_INPUT_INCREMENT } from '../../../src/config/inputPrecision';
+import { useBarcodeSearchHandoff } from '../../../src/barcode/useBarcodeSearchHandoff';
 
 export default function FoodLogScreen() {
-    const routeParams = useLocalSearchParams<{ date?: string }>();
+    const routeParams = useLocalSearchParams<{ date?: string; meal?: string; openAddFood?: string }>();
     const pathname = usePathname();
     const { api, user } = useAuth();
     const outbox = useOfflineOutbox();
@@ -85,6 +86,19 @@ export default function FoodLogScreen() {
     useEffect(() => {
         if (typeof routeParams.date === 'string') dateNavigation.setDate(routeParams.date);
     }, [dateNavigation.setDate, routeParams.date]);
+
+    useBarcodeSearchHandoff({
+        params: routeParams,
+        selectedDate,
+        enabled: canEditFood,
+        setDate: dateNavigation.setDate,
+        openSheet: setAddFoodMeal,
+        scrubParams: (requestDate) => router.setParams({
+            date: requestDate,
+            meal: undefined,
+            openAddFood: undefined
+        })
+    });
 
     useEffect(() => {
         if (!addFoodRequest || getActiveTabRoute(pathname) !== 'food-log') return;
