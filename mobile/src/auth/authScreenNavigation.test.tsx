@@ -143,7 +143,7 @@ describe('auth screen server navigation', () => {
         fireEvent.press(screen.getByLabelText('Create account'));
 
         await waitFor(() => {
-            expect(screen.getByRole('alert')).toHaveTextContent('Unable to create account');
+            expect(screen.getByRole('alert')).toHaveTextContent('Unable to create account. Try again.');
         });
         const createAccountButton = screen.getByRole('button', { name: 'Create account' });
         expect(within(createAccountButton).getByText('Create account')).toBeTruthy();

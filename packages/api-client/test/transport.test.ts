@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { ApiError, CalibrateApiClient } from '../src/client.ts';
+import { ApiError, CalibrateApiClient, parseApiError } from '../src/client.ts';
 import type { ClientUpgradeRequirement } from '@calibrate/shared/clientCompatibility';
 
 type InternalRequest = <T>(
@@ -143,6 +143,104 @@ for (const responseBody of ['upstream unavailable', '<html><body>Bad gateway</bo
         );
     });
 }
+
+test('standard API errors expose typed metadata and prefer the response request ID', async () => {
+    const body = {
+        message: 'The request could not be validated.',
+        code: 'VALIDATION_FAILED',
+        field_errors: {
+            email: ['Enter a valid email address.'],
+            ignored: [null, 42]
+        },
+        retryable: false,
+        request_id: 'body-request-id'
+    };
+    const client = new CalibrateApiClient({
+        baseUrl: 'https://calibrate.example',
+        fetchImpl: (async () => new Response(JSON.stringify(body), {
+            status: 422,
+            headers: { 'x-request-id': 'header-request-id' }
+        })) as typeof fetch
+    });
+
+    await assert.rejects(
+        () => client.getClientConfig(),
+        (error) => {
+            assert.ok(error instanceof ApiError);
+            assert.equal(error.message, body.message);
+            assert.equal(error.code, 'VALIDATION_FAILED');
+            assert.deepEqual(error.fieldErrors, { email: ['Enter a valid email address.'] });
+            assert.equal(error.retryable, false);
+            assert.equal(error.requestId, 'header-request-id');
+            assert.deepEqual(error.body, body);
+            return true;
+        }
+    );
+});
+
+test('legacy message-only API errors remain compatible without invented metadata', async () => {
+    const body = { message: 'Not found' };
+    const client = new CalibrateApiClient({
+        baseUrl: 'https://calibrate.example',
+        fetchImpl: (async () => new Response(JSON.stringify(body), { status: 404 })) as typeof fetch
+    });
+
+    await assert.rejects(
+        () => client.getClientConfig(),
+        (error) => {
+            assert.ok(error instanceof ApiError);
+            assert.equal(error.message, body.message);
+            assert.equal(error.code, null);
+            assert.equal(error.fieldErrors, undefined);
+            assert.equal(error.retryable, undefined);
+            assert.equal(error.requestId, null);
+            return true;
+        }
+    );
+});
+
+test('malformed API error metadata is ignored instead of entering typed client state', async () => {
+    const client = new CalibrateApiClient({
+        baseUrl: 'https://calibrate.example',
+        fetchImpl: (async () => new Response(JSON.stringify({
+            message: 'Request rejected',
+            code: { provider: 'secret' },
+            field_errors: { email: 'postgres failure', password: [false, null] },
+            retryable: 'yes',
+            request_id: 'x'.repeat(1_000)
+        }), { status: 400 })) as typeof fetch
+    });
+
+    await assert.rejects(
+        () => client.getClientConfig(),
+        (error) => {
+            assert.ok(error instanceof ApiError);
+            assert.equal(error.code, null);
+            assert.equal(error.fieldErrors, undefined);
+            assert.equal(error.retryable, undefined);
+            assert.equal(error.requestId, null);
+            return true;
+        }
+    );
+});
+
+test('API error metadata bounds field fanout and rejects display-hostile tokens', () => {
+    const fieldErrors = Object.fromEntries(Array.from({ length: 40 }, (_, index) => [
+        `field_${index}`,
+        Array.from({ length: 12 }, (__, messageIndex) => `message ${messageIndex}`)
+    ]));
+    const parsed = parseApiError({
+        code: 'SERVER_ERROR\nprivate detail',
+        field_errors: fieldErrors,
+        retryable: true,
+        request_id: 'request-id\nspoofed label'
+    });
+
+    assert.equal(parsed.code, null);
+    assert.equal(parsed.requestId, null);
+    assert.equal(Object.keys(parsed.fieldErrors ?? {}).length, 32);
+    assert.equal(parsed.fieldErrors?.field_0?.length, 8);
+});
 
 test('one successful refresh retries the original request with the replacement token', async () => {
     const authorizationHeaders: Array<string | null> = [];

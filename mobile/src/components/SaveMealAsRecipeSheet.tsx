@@ -16,6 +16,7 @@ import { BottomSheetModal } from './BottomSheetModal';
 import { NumberStepperField } from './NumberStepperField';
 import { SectionHeader } from './SectionHeader';
 import { TextField } from './TextField';
+import { getSafeActionErrorMessage } from '../errors/presentation';
 
 type SaveMealAsRecipeSheetProps = {
     visible: boolean;
@@ -156,7 +157,9 @@ export const SaveMealAsRecipeSheet: React.FC<SaveMealAsRecipeSheetProps> = ({
                 <AppText accessibilityRole="alert" style={styles.error}>Yield must be a positive number.</AppText>
             )}
             {saveRecipe.error && (
-                <AppText accessibilityRole="alert" style={styles.error}>{saveRecipe.error.message}</AppText>
+                <AppText accessibilityRole="alert" style={styles.error}>
+                    {getSafeActionErrorMessage(saveRecipe.error, 'Unable to save this recipe.')}
+                </AppText>
             )}
             <View style={styles.actions}>
                 <AppButton

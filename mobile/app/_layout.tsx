@@ -16,6 +16,7 @@ import { ClientUpgradeRequiredScreen } from '../src/components/ClientUpgradeRequ
 import { HealthConnectProvider } from '../src/healthConnect/provider';
 import { useWearHandoffRouting } from '../src/wear/useWearHandoffRouting';
 import { useWearSyncInvalidation } from '../src/wear/useWearSyncInvalidation';
+import { useQueryOnlineManager } from '../src/connectivity/queryOnlineManager.native';
 
 const queryClient = new QueryClient();
 
@@ -69,6 +70,7 @@ const AuthenticatedRuntime: React.FC<{ children: React.ReactNode }> = ({ childre
 
 export default function RootLayout() {
     const theme = useAppTheme();
+    useQueryOnlineManager();
 
     return (
         <AppErrorBoundary>

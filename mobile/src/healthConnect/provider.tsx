@@ -28,6 +28,7 @@ import {
 import { healthConnectAccountScope } from './storageScope';
 import { queueWearSyncInvalidation } from '../wear/syncInvalidation';
 import { clearHealthConnectAccountData } from './accountCleanup';
+import { getSafeActionErrorMessage } from '../errors/presentation';
 
 const HEALTH_CONNECT_PLAY_STORE_URL = 'https://play.google.com/store/apps/details?id=com.google.android.apps.healthdata';
 
@@ -55,7 +56,7 @@ type HealthConnectContextValue = StoredHealthConnectPreferences & {
 const HealthConnectContext = createContext<HealthConnectContextValue | null>(null);
 
 function errorMessage(error: unknown, fallback: string): string {
-    return error instanceof Error && error.message ? error.message : fallback;
+    return getSafeActionErrorMessage(error, fallback);
 }
 
 /** Own per-account Health Connect consent choices without coupling them to server sync. */

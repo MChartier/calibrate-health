@@ -12,6 +12,7 @@ import { TextField } from '../../src/components/TextField';
 import { useAuth } from '../../src/auth/AuthContext';
 import { readAuthServerDraft } from '../../src/auth/authServerDraft';
 import { useAppTheme } from '../../src/theme';
+import { getAuthActionErrorMessage } from '../../src/errors/presentation';
 
 export default function RegisterScreen() {
     const { colors } = useAppTheme();
@@ -49,7 +50,7 @@ export default function RegisterScreen() {
         try {
             await register(email, password, serverInput);
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'Unable to create account.');
+            setError(getAuthActionErrorMessage(err, 'create account'));
         } finally {
             setIsSubmitting(false);
         }

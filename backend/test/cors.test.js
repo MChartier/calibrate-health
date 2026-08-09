@@ -78,6 +78,7 @@ test('CORS middleware emits headers for Expo origins while rejecting non-local o
     assert.equal(response.status, 200, origin);
     assert.equal(response.headers.get('access-control-allow-origin'), origin, origin);
     assert.equal(response.headers.get('access-control-allow-credentials'), 'true', origin);
+    assert.equal(response.headers.get('access-control-expose-headers'), 'x-request-id', origin);
   }
 
   const rejected = await fetch(url, { headers: { origin: 'http://untrusted.example:8081' } });

@@ -1620,7 +1620,7 @@ components:
           items: { $ref: '#/components/schemas/ActivityDay' }
     ApiError:
       type: object
-      required: [message]
+      required: [message, code, retryable, request_id]
       properties:
         message:
           type: string
@@ -1634,6 +1634,9 @@ components:
               type: string
         retryable:
           type: boolean
+        request_id:
+          type: string
+          description: Correlation identifier also returned in the x-request-id response header.
     ClientConfigResponse:
       type: object
       required:

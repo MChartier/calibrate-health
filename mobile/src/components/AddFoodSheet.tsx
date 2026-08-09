@@ -6,6 +6,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { MEAL_PERIODS, type MealPeriod } from '@calibrate/shared';
 import type { FoodLogCreatePayload, MyFoodSummary, RecentFoodSummary } from '@calibrate/api-client';
 import { AppButton } from './AppButton';
+import { AsyncStateBoundary, useAsyncResourceState, useOnlineStatus } from './AsyncStateBoundary';
 import { AppText } from './AppText';
 import { BottomSheetModal } from './BottomSheetModal';
 import { FoodSelectionEditor, type FoodSelectionSubmitRequest } from './FoodSelectionEditor';
@@ -41,6 +42,8 @@ import {
     type SearchedFoodItem
 } from '../food/serving';
 import { radius, spacing, useAppTheme, type AppTheme } from '../theme';
+import { getSafeActionErrorMessage } from '../errors/presentation';
+import { ASYNC_RESOURCE_STATES, type AsyncResourceState } from '../asyncState/resolveAsyncState';
 
 export type AddFoodReturnTo = 'today' | 'food-log';
 
@@ -116,7 +119,7 @@ function getDefaultMealPeriodForTime(now: Date): MealPeriod {
 
 function errorMessage(error: unknown, fallback: string): string | null {
     if (!error) return null;
-    return error instanceof Error && error.message.trim() ? error.message : fallback;
+    return getSafeActionErrorMessage(error, fallback);
 }
 
 function appendSection(rows: FoodBrowseRow[], title: string, items: FoodBrowseRow[]): void {
@@ -134,6 +137,7 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
 }) => {
     const theme = useAppTheme();
     const styles = useMemo(() => createStyles(theme), [theme]);
+    const isOnline = useOnlineStatus();
     const { api, user } = useAuth();
     const { enqueue } = useOfflineOutbox();
     const queryClient = useQueryClient();
@@ -176,6 +180,9 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
         queryFn: () => api.getMyFoods(),
         enabled: visible && (mode === 'search' || mode === 'recipes')
     });
+    const recentFoodsState = useAsyncResourceState(recentFoodsQuery, (data) => data.items.length === 0);
+    const providerSearchState = useAsyncResourceState(providerSearchQuery, (data) => data.items.length === 0);
+    const myFoodsState = useAsyncResourceState(myFoodsQuery, (data) => data.length === 0);
 
     const createFoodLog = useCallback((payload: FoodLogCreatePayload) => {
         if (foodDayQuery.data?.status !== 'OPEN') {
@@ -418,34 +425,93 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
         );
     }
 
-    function renderSearchEmpty(): React.ReactElement {
+    function renderSearchEmpty(): React.ReactElement | null {
+        const providerSearchIsActive = requestedQuery === normalizedQuery
+            && requestedQuery.length >= MINIMUM_SEARCH_LENGTH;
+        const relevantStates = providerSearchIsActive
+            ? [recentFoodsState, myFoodsState, providerSearchState]
+            : [recentFoodsState, myFoodsState];
+        if (relevantStates.some((state) => state.kind === ASYNC_RESOURCE_STATES.ERROR)) return null;
+
         let message = 'Pinned and recent foods will appear here after you log them.';
         if (normalizedQuery.length === 1) message = 'Type at least 2 characters to search.';
-        if (isSearchLoading) message = 'Searching foods...';
+        if (
+            isSearchLoading
+            || relevantStates.some((state) => state.kind === ASYNC_RESOURCE_STATES.LOADING)
+        ) {
+            message = normalizedQuery.length >= MINIMUM_SEARCH_LENGTH
+                ? 'Searching foods...'
+                : 'Loading pinned and recent foods...';
+        }
         if (
             normalizedQuery.length >= MINIMUM_SEARCH_LENGTH
             && !isSearchLoading
+            && relevantStates.every((state) => state.kind !== ASYNC_RESOURCE_STATES.LOADING)
             && requestedQuery === normalizedQuery
-        ) message = 'No matching foods found.';
-        if (normalizedQuery.length === 0 && (myFoodsQuery.isLoading || recentFoodsQuery.isLoading)) {
-            message = 'Loading pinned and recent foods...';
+        ) {
+            message = 'No matching foods found.';
         }
         return <AppText style={styles.emptyMessage} variant="muted">{message}</AppText>;
     }
 
+    function renderResourceFeedback(
+        state: AsyncResourceState,
+        resourceLabel: string,
+        retrying: boolean,
+        onRetry: () => unknown
+    ) {
+        if (
+            state.kind !== ASYNC_RESOURCE_STATES.ERROR
+            && state.kind !== ASYNC_RESOURCE_STATES.STALE
+            && state.kind !== ASYNC_RESOURCE_STATES.DEGRADED
+        ) return null;
+
+        return (
+            <AsyncStateBoundary
+                state={state}
+                resourceLabel={resourceLabel}
+                loading={null}
+                empty={null}
+                onRetry={isOnline ? onRetry : undefined}
+                retrying={retrying}
+            >
+                {null}
+            </AsyncStateBoundary>
+        );
+    }
+
+    function renderSearchFeedback() {
+        const providerSearchIsActive = requestedQuery === normalizedQuery
+            && requestedQuery.length >= MINIMUM_SEARCH_LENGTH;
+        return (
+            <>
+                {renderResourceFeedback(
+                    recentFoodsState,
+                    'recent foods',
+                    recentFoodsQuery.isFetching,
+                    () => recentFoodsQuery.refetch()
+                )}
+                {renderResourceFeedback(
+                    myFoodsState,
+                    'saved foods',
+                    myFoodsQuery.isFetching,
+                    () => myFoodsQuery.refetch()
+                )}
+                {providerSearchIsActive && renderResourceFeedback(
+                    providerSearchState,
+                    'food search',
+                    providerSearchQuery.isFetching,
+                    () => providerSearchQuery.refetch()
+                )}
+            </>
+        );
+    }
+
     function renderSearchFooter() {
-        const providerError = requestedQuery === normalizedQuery
-            ? errorMessage(providerSearchQuery.error, 'Food search failed. Try again.')
-            : null;
-        const recentError = errorMessage(recentFoodsQuery.error, 'Recent foods could not be loaded.');
-        const savedError = errorMessage(myFoodsQuery.error, 'Saved foods could not be loaded.');
-        if (!activeAttribution && !providerError && !recentError && !savedError && !isSearchLoading) return null;
+        if (!activeAttribution && !isSearchLoading) return null;
         return (
             <View style={styles.listFooter}>
                 {isSearchLoading && searchRows.length > 0 && <AppText variant="muted">Updating results...</AppText>}
-                {providerError && <AppText accessibilityRole="alert" style={styles.error}>{providerError}</AppText>}
-                {recentError && <AppText accessibilityRole="alert" style={styles.error}>{recentError}</AppText>}
-                {savedError && <AppText accessibilityRole="alert" style={styles.error}>{savedError}</AppText>}
                 {activeAttribution && renderProviderAttribution(activeAttribution)}
             </View>
         );
@@ -535,6 +601,7 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
                             data={searchRows}
                             keyExtractor={(item) => item.key}
                             renderItem={renderBrowseRow}
+                            ListHeaderComponent={renderSearchFeedback}
                             ListEmptyComponent={renderSearchEmpty}
                             ListFooterComponent={renderSearchFooter}
                             contentContainerStyle={styles.resultsContent}
@@ -562,25 +629,34 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
                     editable={!logFood.isPending}
                 />
                 {selection ? renderSelectionEditor() : (
-                    <FlatList
-                        data={recipeRows}
-                        keyExtractor={(item) => item.key}
-                        renderItem={renderBrowseRow}
-                        ListEmptyComponent={(
+                    <AsyncStateBoundary
+                        state={myFoodsState}
+                        resourceLabel="saved recipes"
+                        loading={<AppText style={styles.emptyMessage} variant="muted">Loading recipes...</AppText>}
+                        empty={(
                             <AppText style={styles.emptyMessage} variant="muted">
-                                {myFoodsQuery.isLoading
-                                    ? 'Loading recipes...'
-                                    : recipes.length === 0
-                                        ? 'No saved recipes yet. Create one in My Foods to reuse it here.'
-                                        : 'No recipes match this search.'}
+                                No saved recipes yet. Create one in My Foods to reuse it here.
                             </AppText>
                         )}
-                        contentContainerStyle={styles.resultsContent}
-                        keyboardDismissMode="none"
-                        keyboardShouldPersistTaps="always"
-                        showsVerticalScrollIndicator
-                        style={styles.resultsList}
-                    />
+                        onRetry={isOnline ? () => myFoodsQuery.refetch() : undefined}
+                        retrying={myFoodsQuery.isFetching}
+                    >
+                        <FlatList
+                            data={recipeRows}
+                            keyExtractor={(item) => item.key}
+                            renderItem={renderBrowseRow}
+                            ListEmptyComponent={(
+                                <AppText style={styles.emptyMessage} variant="muted">
+                                    No recipes match this search.
+                                </AppText>
+                            )}
+                            contentContainerStyle={styles.resultsContent}
+                            keyboardDismissMode="none"
+                            keyboardShouldPersistTaps="always"
+                            showsVerticalScrollIndicator
+                            style={styles.resultsList}
+                        />
+                    </AsyncStateBoundary>
                 )}
             </View>
         );

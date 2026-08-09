@@ -3,9 +3,9 @@ import { StyleSheet, View } from 'react-native';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router, type Href } from 'expo-router';
 import type { InAppNotification } from '@calibrate/api-client';
-import { AppButton } from '../../src/components/AppButton';
 import { AppCard } from '../../src/components/AppCard';
 import { AppText } from '../../src/components/AppText';
+import { AsyncStateBoundary, useAsyncResourceState, useOnlineStatus } from '../../src/components/AsyncStateBoundary';
 import { NotificationCard } from '../../src/components/NotificationCard';
 import { SectionHeader } from '../../src/components/SectionHeader';
 import { SkeletonBlock } from '../../src/components/SkeletonBlock';
@@ -13,6 +13,7 @@ import { TabScreen } from '../../src/components/TabScreen';
 import { useAuth } from '../../src/auth/AuthContext';
 import { getNotificationAction } from '../../src/notifications/workflow';
 import { spacing, useAppTheme, type AppTheme } from '../../src/theme';
+import { getSafeActionErrorMessage } from '../../src/errors/presentation';
 
 export default function NotificationsScreen() {
     const theme = useAppTheme();
@@ -23,6 +24,11 @@ export default function NotificationsScreen() {
         queryKey: ['mobile-in-app-notifications'],
         queryFn: () => api.getInAppNotifications()
     });
+    const isOnline = useOnlineStatus();
+    const notificationsState = useAsyncResourceState(
+        notificationsQuery,
+        (data) => data.notifications.length === 0
+    );
 
     const dismissNotification = useMutation({
         mutationFn: (id: number) => api.dismissInAppNotification(id),
@@ -41,49 +47,50 @@ export default function NotificationsScreen() {
 
     return (
         <TabScreen>
-            {notificationsQuery.isLoading && (
-                <AppCard>
-                    {[0, 1, 2].map((row) => (
-                        <View key={row} style={styles.skeletonRow}>
-                            <SkeletonBlock width={42} height={42} radius={21} />
-                            <View style={styles.skeletonText}>
-                                <SkeletonBlock width="68%" height={22} />
-                                <SkeletonBlock width="88%" height={16} />
+            <AsyncStateBoundary
+                state={notificationsState}
+                resourceLabel="notifications"
+                loading={(
+                    <AppCard>
+                        {[0, 1, 2].map((row) => (
+                            <View key={row} style={styles.skeletonRow}>
+                                <SkeletonBlock width={42} height={42} radius={21} />
+                                <View style={styles.skeletonText}>
+                                    <SkeletonBlock width="68%" height={22} />
+                                    <SkeletonBlock width="88%" height={16} />
+                                </View>
                             </View>
-                        </View>
+                        ))}
+                    </AppCard>
+                )}
+                empty={(
+                    <AppCard>
+                        <SectionHeader title="No notifications" description="Reminder notifications will appear here." />
+                    </AppCard>
+                )}
+                onRetry={isOnline ? () => notificationsQuery.refetch() : undefined}
+                retrying={notificationsQuery.isFetching}
+            >
+                <>
+                    {notifications.map((notification) => (
+                        <NotificationCard
+                            key={notification.id}
+                            notification={notification}
+                            isBusy={markRead.isPending || dismissNotification.isPending}
+                            onOpen={(item) => markRead.mutate(item)}
+                            onDismiss={(item) => dismissNotification.mutate(item.id)}
+                        />
                     ))}
-                </AppCard>
-            )}
+                </>
+            </AsyncStateBoundary>
 
-            {notifications.map((notification) => (
-                <NotificationCard
-                    key={notification.id}
-                    notification={notification}
-                    isBusy={markRead.isPending || dismissNotification.isPending}
-                    onOpen={(item) => markRead.mutate(item)}
-                    onDismiss={(item) => dismissNotification.mutate(item.id)}
-                />
-            ))}
-
-            {!notificationsQuery.isLoading && notifications.length === 0 && (
-                <AppCard>
-                    <SectionHeader title="No notifications" description="Reminder notifications will appear here." />
-                </AppCard>
-            )}
-
-            {(notificationsQuery.error || markRead.error || dismissNotification.error) && (
+            {(markRead.error || dismissNotification.error) && (
                 <AppCard>
                     <AppText accessibilityLiveRegion="assertive" accessibilityRole="alert" style={styles.error}>
-                        {notificationsQuery.error?.message ?? markRead.error?.message ?? dismissNotification.error?.message}
+                        {markRead.error
+                            ? getSafeActionErrorMessage(markRead.error, 'Unable to open this notification.')
+                            : getSafeActionErrorMessage(dismissNotification.error, 'Unable to dismiss this notification.')}
                     </AppText>
-                    {notificationsQuery.error && (
-                        <AppButton
-                            title="Try notifications again"
-                            variant="secondary"
-                            accessibilityHint="Reloads the notification list from your Calibrate server."
-                            onPress={() => void notificationsQuery.refetch()}
-                        />
-                    )}
                 </AppCard>
             )}
         </TabScreen>

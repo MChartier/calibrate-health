@@ -4,7 +4,10 @@ import type { TrendMetricEntry, TrendMetricsResponse, WeightTrendSummary } from 
 import { WeightTrendCard } from './WeightTrendCard';
 
 jest.mock('@expo/vector-icons/Ionicons', () => () => null);
-jest.mock('@tanstack/react-query', () => ({ useQuery: jest.fn() }));
+jest.mock('@tanstack/react-query', () => ({
+    ...jest.requireActual('@tanstack/react-query'),
+    useQuery: jest.fn()
+}));
 jest.mock('../auth/AuthContext', () => ({
     useAuth: () => ({
         api: { getTrendMetrics: jest.fn() },
@@ -80,7 +83,7 @@ function response(metrics = METRICS, summary: WeightTrendSummary | null = create
 
 describe('WeightTrendCard', () => {
     beforeEach(() => {
-        (useQuery as jest.Mock).mockReturnValue({ data: response(), error: null, isLoading: false });
+        (useQuery as jest.Mock).mockReturnValue({ data: response(), error: null, isLoading: false, status: 'success' });
     });
 
     it('defaults the consolidated summary to the latest point and selects from web offset coordinates', () => {
@@ -128,7 +131,7 @@ describe('WeightTrendCard', () => {
         (useQuery as jest.Mock).mockReturnValue({
             data: response([METRICS[0]], null),
             error: null,
-            isLoading: false
+            isLoading: false, status: 'success'
         });
         const screen = render(<WeightTrendCard />);
         expect(screen.getByText('First weigh-in recorded')).toBeTruthy();
@@ -142,7 +145,7 @@ describe('WeightTrendCard', () => {
             { ...createMetric(2, '2026-07-01', 169.2), trend_weight: 169.1 },
             { ...createMetric(1, '2026-06-30', 169.8), trend_weight: 169.4 }
         ];
-        (useQuery as jest.Mock).mockReturnValue({ data: response(metrics, null), error: null, isLoading: false });
+        (useQuery as jest.Mock).mockReturnValue({ data: response(metrics, null), error: null, isLoading: false, status: 'success' });
 
         const screen = render(<WeightTrendCard />);
         expect(screen.queryByTestId('weight-trend-measurement-path')).toBeNull();
@@ -165,7 +168,7 @@ describe('WeightTrendCard', () => {
                 trend_std: 0
             }
         ];
-        (useQuery as jest.Mock).mockReturnValue({ data: response(metrics, null), error: null, isLoading: false });
+        (useQuery as jest.Mock).mockReturnValue({ data: response(metrics, null), error: null, isLoading: false, status: 'success' });
         const screen = render(<WeightTrendCard />);
 
         fireEvent.press(screen.getByText('All'));
@@ -205,7 +208,7 @@ describe('WeightTrendCard', () => {
     });
 
     it('preserves a useful snapshot for legacy payloads', () => {
-        (useQuery as jest.Mock).mockReturnValue({ data: response(METRICS, null), error: null, isLoading: false });
+        (useQuery as jest.Mock).mockReturnValue({ data: response(METRICS, null), error: null, isLoading: false, status: 'success' });
         const screen = render(<WeightTrendCard />);
         expect(screen.getAllByText('168.2 lb').length).toBeGreaterThan(0);
         expect(screen.queryByText('Scale reading variation')).toBeNull();
@@ -217,7 +220,7 @@ describe('WeightTrendCard', () => {
         const summary = createTrendSummary();
         summary.freshness = 'outdated';
         summary.days_since_latest = 18;
-        (useQuery as jest.Mock).mockReturnValue({ data: response(METRICS, summary), error: null, isLoading: false });
+        (useQuery as jest.Mock).mockReturnValue({ data: response(METRICS, summary), error: null, isLoading: false, status: 'success' });
 
         const screen = render(<WeightTrendCard />);
         expect(screen.getByText('Current weigh-in needed')).toBeTruthy();
@@ -231,7 +234,7 @@ describe('WeightTrendCard', () => {
                 meta: { weekly_rate: 0, volatility: 'low', total_points: 4, total_span_days: 120 }
             },
             error: null,
-            isLoading: false
+            isLoading: false, status: 'success'
         });
         const screen = render(<WeightTrendCard />);
         expect(screen.getByText('No weigh-ins in this range. Choose All to view your weight history.')).toBeTruthy();

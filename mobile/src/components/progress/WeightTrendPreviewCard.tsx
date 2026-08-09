@@ -5,7 +5,9 @@ import Svg, { Line, Path, Polygon, Text as SvgText } from 'react-native-svg';
 import { useQuery } from '@tanstack/react-query';
 import { AppCard } from '../AppCard';
 import { AppText } from '../AppText';
+import { AsyncStateBoundary, useAsyncResourceState, useOnlineStatus } from '../AsyncStateBoundary';
 import { CompactCardHeader } from '../CompactCardHeader';
+import { SkeletonBlock } from '../SkeletonBlock';
 import { useAuth } from '../../auth/AuthContext';
 import { radius, spacing, useAppTheme, type AppTheme } from '../../theme';
 import { dateOnlyToLocalDate } from '../../utils/dates';
@@ -77,10 +79,54 @@ export const WeightTrendPreviewCard: React.FC<WeightTrendPreviewCardProps> = ({ 
     );
     const points = chartLayout.points;
     const hasWeightHistory = (trendQuery.data?.meta.total_points ?? 0) > 0;
+    const isOnline = useOnlineStatus();
+    const trendState = useAsyncResourceState(trendQuery, (data) => data.metrics.length === 0);
 
     return (
         <View style={styles.flexSlot}>
-            <Pressable
+            <AsyncStateBoundary
+                state={trendState}
+                resourceLabel="weight trend"
+                loading={(
+                    <AppCard style={styles.card}>
+                        <SkeletonBlock width="34%" height={26} />
+                        <SkeletonBlock height={PREVIEW_HEIGHT} />
+                    </AppCard>
+                )}
+                empty={(
+                    <Pressable
+                        accessibilityRole="button"
+                        accessibilityLabel="Open full weight trend"
+                        accessibilityHint="Shows the interactive chart, confidence details, and time range controls"
+                        onPress={onPress}
+                        style={styles.pressable}
+                    >
+                        <AppCard style={styles.card}>
+                            <CompactCardHeader
+                                title="Trend"
+                                metadata={null}
+                                headingTestID="trend-preview-heading-line"
+                                action={(
+                                    <View style={styles.detailsAction}>
+                                        <AppText variant="label" style={styles.detailsText}>Details</AppText>
+                                        <Ionicons name="chevron-forward" size={18} color={theme.colors.primary} />
+                                    </View>
+                                )}
+                            />
+                            <View testID="weight-trend-preview-canvas" style={styles.preview}>
+                                <AppText variant="muted">
+                                    {hasWeightHistory
+                                        ? 'No weigh-ins in the last four weeks. Open Details to view your history.'
+                                        : 'Log a weigh-in to start a trend.'}
+                                </AppText>
+                            </View>
+                        </AppCard>
+                    </Pressable>
+                )}
+                onRetry={isOnline ? () => trendQuery.refetch() : undefined}
+                retrying={trendQuery.isFetching}
+            >
+                <Pressable
                 accessibilityRole="button"
                 accessibilityLabel="Open full weight trend"
                 accessibilityHint="Shows the interactive chart, confidence details, and time range controls"
@@ -115,15 +161,7 @@ export const WeightTrendPreviewCard: React.FC<WeightTrendPreviewCardProps> = ({ 
                                 ));
                             }}
                         >
-                            {trendQuery.isLoading && !trendQuery.data ? (
-                                <AppText variant="muted">Loading trend...</AppText>
-                            ) : points.length === 0 ? (
-                                <AppText variant="muted">
-                                    {hasWeightHistory
-                                        ? 'No weigh-ins in the last four weeks. Open Details to view your history.'
-                                        : 'Log a weigh-in to start a trend.'}
-                                </AppText>
-                            ) : points.length === 1 ? (
+                            {points.length === 1 ? (
                                 <View style={styles.firstWeighIn}>
                                     <Ionicons name="scale-outline" size={22} color={theme.colors.primary} />
                                     <AppText variant="body">First weigh-in recorded</AppText>
@@ -206,10 +244,10 @@ export const WeightTrendPreviewCard: React.FC<WeightTrendPreviewCardProps> = ({ 
                                 </Svg>
                             )}
                         </View>
-                        {trendQuery.error && <AppText style={styles.error}>{trendQuery.error.message}</AppText>}
                     </AppCard>
                 )}
-            </Pressable>
+                </Pressable>
+            </AsyncStateBoundary>
         </View>
     );
 };
@@ -232,6 +270,5 @@ const createStyles = (theme: AppTheme) => StyleSheet.create({
         borderColor: theme.colors.outlineVariant,
         borderWidth: StyleSheet.hairlineWidth
     },
-    firstWeighIn: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-    error: { color: theme.colors.danger }
+    firstWeighIn: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm }
 });

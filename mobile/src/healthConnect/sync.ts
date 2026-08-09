@@ -613,7 +613,7 @@ export function getActionableHealthConnectSyncError(error: unknown): string {
     if (/network|fetch|timed out|offline/i.test(message)) {
         return 'Health activity could not reach this Calibrate server. Check the connection and try again.';
     }
-    return message || 'Health activity could not sync. Try again from Health Connect settings.';
+    return 'Health activity could not sync. Try again from Health Connect settings.';
 }
 
 /** Remove device-local checkpoints after revocation so reconnect always performs a safe reset. */

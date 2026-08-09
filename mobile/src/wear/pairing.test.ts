@@ -112,7 +112,9 @@ describe('Wear phone pairing coordinator', () => {
         ))).toBe(
             'Unable to check for a Wear OS watch. Confirm Bluetooth and Google Play services are available, then try again.'
         );
-        expect(getWearPairingErrorMessage(new Error('Watch unavailable'))).toBe('Watch unavailable');
+        expect(getWearPairingErrorMessage(new Error('Watch unavailable'))).toBe(
+            'Unable to check for a Wear OS watch. Confirm Bluetooth and Google Play services are available, then try again.'
+        );
     });
 
     it('validates the server-bound, expiring watch hello contract', () => {
@@ -327,7 +329,7 @@ describe('Wear phone pairing coordinator', () => {
             now: NOW
         });
 
-        expect(result.errors).toEqual(['Server unavailable']);
+        expect(result.errors).toEqual(['Unable to create a watch pairing credential.']);
         expect(transport.acknowledgeMessages).toHaveBeenCalledWith([]);
     });
 
@@ -347,7 +349,7 @@ describe('Wear phone pairing coordinator', () => {
             now: NOW
         });
 
-        expect(result.errors).toEqual(['Storage unavailable']);
+        expect(result.errors).toEqual(['Unable to create a watch pairing credential.']);
         expect(transport.acknowledgeMessages).toHaveBeenCalledWith([]);
     });
 

@@ -7,6 +7,7 @@ import { ACTIVITY_RECORD_TYPES, WEIGHT_UNITS } from '@calibrate/shared';
 import type { ActivityRecordEntry } from '@calibrate/api-client';
 import { formatActivitySource } from '../../src/activity/presentation';
 import { ActivitySummaryCard } from '../../src/components/ActivitySummaryCard';
+import { AsyncStateBoundary, useAsyncResourceState, useOnlineStatus } from '../../src/components/AsyncStateBoundary';
 import { AppCard } from '../../src/components/AppCard';
 import { AppText } from '../../src/components/AppText';
 import { DateNavigation } from '../../src/components/DateNavigation';
@@ -58,6 +59,10 @@ export default function ActivityScreen() {
         queryKey: ['mobile-profile'],
         queryFn: () => api.getUserProfile()
     });
+    const isOnline = useOnlineStatus();
+    const selectedState = useAsyncResourceState(selectedQuery, (data) => data.days.length === 0);
+    const historyState = useAsyncResourceState(historyQuery, (data) => data.days.length === 0);
+    const profileState = useAsyncResourceState(profileQuery, () => false);
     const selectedDay = selectedQuery.data?.days[0];
     const exerciseRecords = (selectedDay?.records ?? []).filter(
         (record) => record.record_type === ACTIVITY_RECORD_TYPES.EXERCISE_SESSION
@@ -72,88 +77,142 @@ export default function ActivityScreen() {
     return (
         <TabScreen>
             <DateNavigation navigation={navigation} />
-            <ActivitySummaryCard
-                day={selectedDay}
-                isToday={navigation.isToday}
-                profileTdee={profileQuery.data?.calorieSummary.tdee}
-                isLoading={selectedQuery.isLoading}
-                error={selectedQuery.error}
-                onRetry={() => void selectedQuery.refetch()}
-            />
+            <AsyncStateBoundary
+                state={profileState}
+                resourceLabel="profile calorie estimate"
+                loading={null}
+                empty={null}
+                onRetry={isOnline ? () => profileQuery.refetch() : undefined}
+                retrying={profileQuery.isFetching}
+            >
+                {null}
+            </AsyncStateBoundary>
 
-            <AppCard>
-                <SectionHeader title="Exercise details" description="Sessions imported for the selected day." />
-                {selectedQuery.isLoading ? (
-                    <AppText variant="muted">Loading exercise sessions...</AppText>
-                ) : exerciseRecords.length === 0 ? (
-                    <AppText variant="muted">No exercise sessions were imported for this day.</AppText>
-                ) : exerciseRecords.map((record) => (
-                    <View key={record.id} style={styles.exerciseRow}>
-                        <View style={styles.exerciseIcon}>
-                            <Ionicons name="fitness-outline" size={20} color={theme.colors.primary} />
-                        </View>
-                        <View style={styles.exerciseText}>
-                            <AppText style={styles.exerciseTitle}>{record.title?.trim() || 'Exercise session'}</AppText>
-                            <AppText variant="caption">
-                                {formatExerciseTime(record)} | {formatDuration(record)}
-                            </AppText>
-                            <AppText variant="caption">{formatActivitySource(record.data_origin)}</AppText>
-                        </View>
-                    </View>
-                ))}
-                {sourceLabels.length > 0 && (
-                    <AppText variant="caption">Selected-day sources: {sourceLabels.join(', ')}</AppText>
+            <AsyncStateBoundary
+                state={selectedState}
+                resourceLabel="selected-day activity"
+                loading={(
+                    <>
+                        <ActivitySummaryCard day={undefined} isToday={navigation.isToday} isLoading />
+                        <AppCard>
+                            <SectionHeader title="Exercise details" description="Sessions imported for the selected day." />
+                            <AppText variant="muted">Loading selected-day activity...</AppText>
+                        </AppCard>
+                    </>
                 )}
-            </AppCard>
+                empty={(
+                    <>
+                        <ActivitySummaryCard day={undefined} isToday={navigation.isToday} />
+                        <AppCard>
+                            <SectionHeader title="Exercise details" description="Sessions imported for the selected day." />
+                            <AppText variant="muted">No exercise sessions were imported for this day.</AppText>
+                        </AppCard>
+                        <AppCard>
+                            <SectionHeader
+                                title="Imported weight"
+                                description="Read-only Health Connect readings for this day. They do not overwrite manual weigh-ins."
+                            />
+                            <AppText variant="muted">
+                                No Health Connect weight readings were imported for this day. Weight access is optional and off by default.
+                            </AppText>
+                            <AppText variant="muted">
+                                Imported readings are preserved with their source for review and export. Log a manual weigh-in to update Calibrate's weight trend.
+                            </AppText>
+                        </AppCard>
+                    </>
+                )}
+                onRetry={isOnline ? () => selectedQuery.refetch() : undefined}
+                retrying={selectedQuery.isFetching}
+            >
+                <>
+                    <ActivitySummaryCard
+                        day={selectedDay}
+                        isToday={navigation.isToday}
+                        profileTdee={profileQuery.data?.calorieSummary.tdee}
+                    />
 
-            <AppCard>
-                <SectionHeader
-                    title="Imported weight"
-                    description="Read-only Health Connect readings for this day. They do not overwrite manual weigh-ins."
-                />
-                {selectedQuery.isLoading ? (
-                    <AppText variant="muted">Loading imported weight...</AppText>
-                ) : weightRecords.length === 0 ? (
-                    <AppText variant="muted">
-                        No Health Connect weight readings were imported for this day. Weight access is optional and off by default.
-                    </AppText>
-                ) : weightRecords.map((record) => {
-                    const unit = user?.weight_unit ?? WEIGHT_UNITS.KG;
-                    const displayWeight = gramsToDisplayWeight(record.weight_grams, unit);
-                    const device = [record.device_manufacturer, record.device_model].filter(Boolean).join(' ');
-                    return (
-                        <View key={record.id} style={styles.exerciseRow}>
-                            <View style={styles.weightIcon}>
-                                <Ionicons name="scale-outline" size={20} color={theme.colors.info} />
+                    <AppCard>
+                        <SectionHeader title="Exercise details" description="Sessions imported for the selected day." />
+                        {exerciseRecords.length === 0 ? (
+                            <AppText variant="muted">No exercise sessions were imported for this day.</AppText>
+                        ) : exerciseRecords.map((record) => (
+                            <View key={record.id} style={styles.exerciseRow}>
+                                <View style={styles.exerciseIcon}>
+                                    <Ionicons name="fitness-outline" size={20} color={theme.colors.primary} />
+                                </View>
+                                <View style={styles.exerciseText}>
+                                    <AppText style={styles.exerciseTitle}>{record.title?.trim() || 'Exercise session'}</AppText>
+                                    <AppText variant="caption">
+                                        {formatExerciseTime(record)} | {formatDuration(record)}
+                                    </AppText>
+                                    <AppText variant="caption">{formatActivitySource(record.data_origin)}</AppText>
+                                </View>
                             </View>
-                            <View style={styles.exerciseText}>
-                                <AppText style={styles.weightValue}>
-                                    {displayWeight} {formatWeightUnit(unit)}
-                                </AppText>
-                                <AppText variant="caption">Recorded {formatExerciseTime(record)}</AppText>
-                                <AppText variant="caption">Source: {formatActivitySource(record.data_origin)}</AppText>
-                                {device && <AppText variant="caption">Device: {device}</AppText>}
-                            </View>
-                        </View>
-                    );
-                })}
-                <AppText variant="muted">
-                    Imported readings are preserved with their source for review and export. Log a manual weigh-in to update Calibrate's weight trend.
-                </AppText>
-            </AppCard>
+                        ))}
+                        {sourceLabels.length > 0 && (
+                            <AppText variant="caption">Selected-day sources: {sourceLabels.join(', ')}</AppText>
+                        )}
+                    </AppCard>
 
+                    <AppCard>
+                        <SectionHeader
+                            title="Imported weight"
+                            description="Read-only Health Connect readings for this day. They do not overwrite manual weigh-ins."
+                        />
+                        {weightRecords.length === 0 ? (
+                            <AppText variant="muted">
+                                No Health Connect weight readings were imported for this day. Weight access is optional and off by default.
+                            </AppText>
+                        ) : weightRecords.map((record) => {
+                            const unit = user?.weight_unit ?? WEIGHT_UNITS.KG;
+                            const displayWeight = gramsToDisplayWeight(record.weight_grams, unit);
+                            const device = [record.device_manufacturer, record.device_model].filter(Boolean).join(' ');
+                            return (
+                                <View key={record.id} style={styles.exerciseRow}>
+                                    <View style={styles.weightIcon}>
+                                        <Ionicons name="scale-outline" size={20} color={theme.colors.info} />
+                                    </View>
+                                    <View style={styles.exerciseText}>
+                                        <AppText style={styles.weightValue}>
+                                            {displayWeight} {formatWeightUnit(unit)}
+                                        </AppText>
+                                        <AppText variant="caption">Recorded {formatExerciseTime(record)}</AppText>
+                                        <AppText variant="caption">Source: {formatActivitySource(record.data_origin)}</AppText>
+                                        {device && <AppText variant="caption">Device: {device}</AppText>}
+                                    </View>
+                                </View>
+                            );
+                        })}
+                        <AppText variant="muted">
+                            Imported readings are preserved with their source for review and export. Log a manual weigh-in to update Calibrate's weight trend.
+                        </AppText>
+                    </AppCard>
+                </>
+            </AsyncStateBoundary>
+            <AsyncStateBoundary
+                state={historyState}
+                resourceLabel="recent activity"
+                loading={(
+                    <AppCard>
+                        <SectionHeader title="Recent days" description={`The latest ${HISTORY_DAY_COUNT} days. Select a row to inspect it.`} />
+                        <AppText variant="muted">Loading recent activity...</AppText>
+                    </AppCard>
+                )}
+                empty={(
+                    <AppCard>
+                        <SectionHeader title="Recent days" description={`The latest ${HISTORY_DAY_COUNT} days. Select a row to inspect it.`} />
+                        <AppText variant="muted">No imported activity was found in this range.</AppText>
+                    </AppCard>
+                )}
+                onRetry={isOnline ? () => historyQuery.refetch() : undefined}
+                retrying={historyQuery.isFetching}
+            >
             <AppCard>
                 <SectionHeader
                     title="Recent days"
                     description={`The latest ${HISTORY_DAY_COUNT} days. Select a row to inspect it.`}
                 />
-                {historyQuery.isLoading ? (
-                    <AppText variant="muted">Loading recent activity...</AppText>
-                ) : historyQuery.error ? (
-                    <AppText accessibilityRole="alert" style={styles.error}>
-                        {historyQuery.error.message}
-                    </AppText>
-                ) : historyDays.map((day) => (
+                {historyDays.map((day) => (
                     <Pressable
                         key={day.local_date}
                         accessibilityRole="button"
@@ -182,6 +241,7 @@ export default function ActivityScreen() {
                     Samsung Health can take time to publish Galaxy Watch activity to Health Connect, so recent totals may change.
                 </AppText>
             </AppCard>
+            </AsyncStateBoundary>
         </TabScreen>
     );
 }

@@ -32,6 +32,11 @@ import calibrationRoutes from './routes/calibration';
 import { authenticateMobileBearerToken } from './middleware/mobileAuth';
 import { enforceNativeClientCompatibility } from './middleware/clientCompatibility';
 import { createCorsOptionsDelegate } from './middleware/cors';
+import {
+  apiRouteNotFoundHandler,
+  apiRequestErrorHandler,
+  createApiErrorResponseMiddleware
+} from './middleware/apiErrorResponse';
 import { createAuthRateLimiters, createBrowserMutationOriginGuard } from './middleware/security';
 import { startReminderScheduler } from './services/reminderScheduler';
 import { checkDatabaseReadiness } from './services/readiness';
@@ -44,41 +49,10 @@ import {
   createRequestObservabilityMiddleware,
   emitDiagnosticEvent,
   logSafeOperationalError,
-  safeErrorType,
   resolveObservabilityConfig
 } from './observability';
 
 const SESSION_TTL_MS = DEFAULT_SESSION_TTL_MS;
-
-type HttpError = Error & { statusCode?: number; status?: number; expose?: boolean };
-
-/**
- * Final JSON error response mapper for middleware and async route failures.
- */
-const requestErrorHandler: express.ErrorRequestHandler = (err: HttpError, _req, res, next) => {
-  if (res.headersSent) {
-    next(err);
-    return;
-  }
-
-  const rawStatus = err.statusCode ?? err.status;
-  const statusCode = typeof rawStatus === 'number' && rawStatus >= 400 && rawStatus < 600 ? rawStatus : 500;
-  if (statusCode >= 500) {
-    console.error(`Unhandled request error (request_id=${res.locals.requestId ?? 'unavailable'}, error_type=${safeErrorType(err)}).`);
-  }
-
-  if (statusCode === 413) {
-    res.status(statusCode).json({ message: 'Request body is too large' });
-    return;
-  }
-
-  if (statusCode >= 400 && statusCode < 500) {
-    res.status(statusCode).json({ message: err.expose ? err.message : 'Invalid request' });
-    return;
-  }
-
-  res.status(500).json({ message: 'Server error' });
-};
 
 type SameSiteSetting = 'lax' | 'none' | 'strict';
 
@@ -129,6 +103,7 @@ const bootstrap = async (): Promise<void> => {
   // Reduce fingerprinting surface for minimal Express signature.
   app.disable('x-powered-by');
   app.use(createRequestObservabilityMiddleware({ config: observabilityConfig }));
+  app.use(createApiErrorResponseMiddleware());
   app.use(helmet({
     // A deployment-aware CSP needs to account for self-hosted proxy and food-image origins.
     contentSecurityPolicy: false,
@@ -303,8 +278,9 @@ const bootstrap = async (): Promise<void> => {
     app.use('/dev/test', devTestRoutes);
   }
 
+  app.use(['/api/v1', '/api', '/auth'], apiRouteNotFoundHandler);
   configureFrontendStaticAssets(app, isProductionOrStaging);
-  app.use(requestErrorHandler);
+  app.use(apiRequestErrorHandler);
 
   app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);

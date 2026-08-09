@@ -198,6 +198,21 @@ function fulfillJson(route: Route, body: unknown, status = 200): Promise<void> {
   });
 }
 
+function fulfillApiError(route: Route, status: number, code: string, message: string): Promise<void> {
+  const requestId = `fixture-${code.toLowerCase().replaceAll('_', '-')}`;
+  return route.fulfill({
+    status,
+    contentType: 'application/json',
+    headers: { 'x-request-id': requestId },
+    body: JSON.stringify({
+      message,
+      code,
+      retryable: status === 408 || status === 429 || status >= 500,
+      request_id: requestId,
+    }),
+  });
+}
+
 async function freezeBrowserInputs(page: Page): Promise<void> {
   await page.addInitScript(({ frozenNow, clockStepMs }) => {
     const NativeDate = Date;
@@ -258,7 +273,7 @@ function formatFailureContext(page: Page, testInfo: TestInfo, diagnostics: Fixtu
 
 async function installSignedOutApi(page: Page): Promise<void> {
   expectApiFailure(page, { method: 'GET', pathname: '/auth/me', status: 401 });
-  await page.route('**/auth/me', (route) => fulfillJson(route, { message: 'Not authenticated' }, 401));
+  await page.route('**/auth/me', (route) => fulfillApiError(route, 401, 'NOT_AUTHENTICATED', 'Not authenticated'));
 }
 
 async function installAuthenticatedApi(
@@ -273,7 +288,7 @@ async function installAuthenticatedApi(
     ?? (state === 'empty' ? [] : TREND_METRICS.map(({ id, date, weight }) => ({ id, date, weight })));
   const trendMetrics = options.trendMetrics ?? (state === 'empty' ? [] : TREND_METRICS);
   const foodDayStatus = options.foodDayStatus ?? (state === 'paused' ? 'PAUSED' : 'OPEN');
-  let foodRequestCount = 0;
+  const foodRequestCounts = new Map<string, number>();
   if (state === 'failed-request' || state === 'stale') {
     expectApiFailure(page, { method: 'GET', pathname: '/api/v1/food', status: 503 });
   }
@@ -306,10 +321,18 @@ async function installAuthenticatedApi(
     if (pathname === '/api/v1/food/recent') return fulfillJson(route, { items: [] });
     if (pathname === '/api/v1/my-foods') return fulfillJson(route, []);
     if (pathname === '/api/v1/food') {
-      foodRequestCount += 1;
+      const requestDate = url.searchParams.get('date') ?? FROZEN_LOCAL_DATE;
+      const requestCount = (foodRequestCounts.get(requestDate) ?? 0) + 1;
+      foodRequestCounts.set(requestDate, requestCount);
       if (state === 'loading') await releaseLoading;
-      if (state === 'failed-request' || (state === 'stale' && foodRequestCount > 1)) {
-        return fulfillJson(route, { message: 'This fixture request failed.' }, 503);
+      const isSelectedDate = requestDate === FROZEN_LOCAL_DATE;
+      if (isSelectedDate && (state === 'failed-request' || (state === 'stale' && requestCount > 1))) {
+        return fulfillApiError(
+          route,
+          503,
+          'SERVICE_UNAVAILABLE',
+          'This fixture request failed with provider details that must stay private.',
+        );
       }
       return fulfillJson(route, foodEntries);
     }
@@ -380,7 +403,7 @@ async function installAuthenticatedApi(
     if (pathname === '/api/v1/metrics') return fulfillJson(route, metrics);
     if (pathname.startsWith('/api/') || pathname.startsWith('/auth/')) {
       diagnosticsByPage.get(page)?.unexpectedApiRequests.push(`${route.request().method()} ${pathname}`);
-      return fulfillJson(route, { message: 'Unhandled deterministic fixture request' }, 501);
+      return fulfillApiError(route, 501, 'SERVER_ERROR', 'Unhandled deterministic fixture request');
     }
     return route.continue();
   });

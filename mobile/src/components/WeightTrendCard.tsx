@@ -6,6 +6,7 @@ import { useQuery } from '@tanstack/react-query';
 import { AppCard } from './AppCard';
 import { AppChip } from './AppChip';
 import { AppText } from './AppText';
+import { AsyncStateBoundary, useAsyncResourceState, useOnlineStatus } from './AsyncStateBoundary';
 import { LoadingState } from './LoadingState';
 import { SectionHeader } from './SectionHeader';
 import { useAuth } from '../auth/AuthContext';
@@ -92,6 +93,8 @@ export const WeightTrendCard: React.FC<WeightTrendCardProps> = ({
         queryKey: ['mobile-metrics-trend', range],
         queryFn: () => api.getTrendMetrics({ range })
     });
+    const isOnline = useOnlineStatus();
+    const trendState = useAsyncResourceState(trendQuery, (data) => data.metrics.length === 0);
     const metrics = trendQuery.data?.metrics ?? [];
     const trendSummary = trendQuery.data?.meta.trend_summary;
     const chartLayout = useMemo(
@@ -160,17 +163,23 @@ export const WeightTrendCard: React.FC<WeightTrendCardProps> = ({
                     />
                 ))}
             </View>
-            {trendQuery.isLoading && !trendQuery.data ? (
-                <LoadingState label="Loading trend..." />
-            ) : chartPoints.length === 0 ? (
-                <View style={styles.emptyChart}>
-                    <AppText variant="muted">
-                        {hasWeightHistory
-                            ? 'No weigh-ins in this range. Choose All to view your weight history.'
-                            : 'Log a weigh-in to start a trend.'}
-                    </AppText>
-                </View>
-            ) : chartPoints.length === 1 ? (
+            <AsyncStateBoundary
+                state={trendState}
+                resourceLabel="weight trend"
+                loading={<LoadingState label="Loading trend..." />}
+                empty={(
+                    <View style={styles.emptyChart}>
+                        <AppText variant="muted">
+                            {hasWeightHistory
+                                ? 'No weigh-ins in this range. Choose All to view your weight history.'
+                                : 'Log a weigh-in to start a trend.'}
+                        </AppText>
+                    </View>
+                )}
+                onRetry={isOnline ? () => trendQuery.refetch() : undefined}
+                retrying={trendQuery.isFetching}
+            >
+            {chartPoints.length === 1 ? (
                 <View
                     accessibilityLabel={`First weigh-in recorded at ${formatWeight(chartPoints[0].metric.weight, user?.weight_unit)}`}
                     style={styles.singlePointState}
@@ -372,7 +381,7 @@ export const WeightTrendCard: React.FC<WeightTrendCardProps> = ({
                     )}
                 </View>
             )}
-            {trendQuery.error && <AppText style={styles.error}>{trendQuery.error.message}</AppText>}
+            </AsyncStateBoundary>
             {footer}
         </AppCard>
     );

@@ -4,7 +4,9 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { AppButton } from '../../src/components/AppButton';
+import { AppCard } from '../../src/components/AppCard';
 import { AppText } from '../../src/components/AppText';
+import { AsyncStateBoundary, useAsyncResourceState, useOnlineStatus } from '../../src/components/AsyncStateBoundary';
 import { BottomSheetModal } from '../../src/components/BottomSheetModal';
 import { GoalProgressCard } from '../../src/components/GoalProgressCard';
 import { GoalDailyChangeSelect } from '../../src/components/GoalDailyChangeSelect';
@@ -12,6 +14,7 @@ import { WeightValueInput } from '../../src/components/WeightValueInput';
 import { TabScreen } from '../../src/components/TabScreen';
 import { SectionHeader } from '../../src/components/SectionHeader';
 import { SegmentedControl } from '../../src/components/SegmentedControl';
+import { SkeletonBlock } from '../../src/components/SkeletonBlock';
 import { WeightTrendPreviewCard } from '../../src/components/progress/WeightTrendPreviewCard';
 import { CalibrationInsightCard } from '../../src/components/CalibrationInsightCard';
 import { calibrationStatusQueryKey } from '../../src/calibration/queryKeys';
@@ -28,6 +31,7 @@ import {
 import { getLatestMetric } from '../../src/utils/metrics';
 import { radius, spacing, useAppTheme, type AppTheme } from '../../src/theme';
 import { WEIGHT_INPUT_INCREMENT } from '../../src/config/inputPrecision';
+import { getSafeActionErrorMessage } from '../../src/errors/presentation';
 
 function formatWeightInput(value: number): string {
     return value.toFixed(1).replace(/\.0$/, '');
@@ -63,6 +67,34 @@ export default function ProgressScreen() {
         queryKey: ['mobile-metrics-trend', 'summary'],
         queryFn: () => api.getTrendMetrics({ range: 'month' })
     });
+    const isOnline = useOnlineStatus();
+    const progressQueries = [goalQuery, profileQuery, metricsQuery, trendSummaryQuery] as const;
+    const failedProgressQueries = progressQueries.filter((query) => query.isError);
+    const allProgressDataResolved = progressQueries.every((query) => query.data !== undefined);
+    const failedResourcesHaveUsableCache = failedProgressQueries.every((query) =>
+        query.data != null && (!Array.isArray(query.data) || query.data.length > 0)
+    );
+    const offlineResourcesHaveUsableCache = isOnline || progressQueries.every((query) =>
+        query.data != null && (!Array.isArray(query.data) || query.data.length > 0)
+    );
+    const progressHasUsableData = allProgressDataResolved
+        && failedResourcesHaveUsableCache
+        && offlineResourcesHaveUsableCache;
+    const progressState = useAsyncResourceState({
+        data: progressHasUsableData ? true : undefined,
+        status: failedProgressQueries.length > 0
+            ? 'error'
+            : progressQueries.every((query) => query.status === 'success') ? 'success' : 'pending',
+        fetchStatus: progressQueries.some((query) => query.fetchStatus === 'paused')
+            ? 'paused'
+            : progressQueries.some((query) => query.fetchStatus === 'fetching') ? 'fetching' : 'idle',
+        error: failedProgressQueries[0]?.error ?? null,
+        dataUpdatedAt: progressHasUsableData ? 1 : 0,
+        isPlaceholderData: progressQueries.some((query) => query.isPlaceholderData)
+    }, () => false);
+    const retryFailedProgressResources = async () => {
+        await Promise.all(failedProgressQueries.map((query) => query.refetch()));
+    };
     const [isGoalEditorOpen, setIsGoalEditorOpen] = useState(false);
     const [startWeight, setStartWeight] = useState('');
     const [targetWeight, setTargetWeight] = useState('');
@@ -169,14 +201,31 @@ export default function ProgressScreen() {
     return (
         <>
             <TabScreen>
-                <GoalProgressCard
-                    latestMetric={latestMetric}
-                    metrics={metricsQuery.data}
-                    goal={goalQuery.data}
-                    user={user}
-                    onEditGoal={openGoalEditor}
-                    onSetNextGoal={openNextGoalEditor}
-                />
+                <AsyncStateBoundary
+                    state={progressState}
+                    resourceLabel="goal progress"
+                    loading={(
+                        <AppCard>
+                            <SkeletonBlock width="42%" height={30} />
+                            <SkeletonBlock height={72} />
+                            <SkeletonBlock height={16} />
+                        </AppCard>
+                    )}
+                    empty={null}
+                    onRetry={isOnline && failedProgressQueries.length > 0
+                        ? retryFailedProgressResources
+                        : undefined}
+                    retrying={failedProgressQueries.some((query) => query.isFetching)}
+                >
+                    <GoalProgressCard
+                        latestMetric={latestMetric}
+                        metrics={metricsQuery.data}
+                        goal={goalQuery.data}
+                        user={user}
+                        onEditGoal={openGoalEditor}
+                        onSetNextGoal={openNextGoalEditor}
+                    />
+                </AsyncStateBoundary>
 
                 <WeightTrendPreviewCard
                     onPress={() => router.push('/weight-trend')}
@@ -232,7 +281,9 @@ export default function ProgressScreen() {
                     </View>
                 </View>
                 {(validationError || saveGoal.error) && (
-                    <AppText style={styles.error}>{validationError ?? saveGoal.error?.message}</AppText>
+                    <AppText accessibilityRole="alert" style={styles.error}>
+                        {validationError ?? getSafeActionErrorMessage(saveGoal.error, 'Unable to save this goal.')}
+                    </AppText>
                 )}
                 <View style={styles.row}>
                     <AppButton

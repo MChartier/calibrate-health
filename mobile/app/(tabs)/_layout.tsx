@@ -16,6 +16,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { InAppNotification } from '@calibrate/api-client';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppText } from '../../src/components/AppText';
+import { AsyncStateBoundary, useAsyncResourceState, useOnlineStatus } from '../../src/components/AsyncStateBoundary';
 import { CalibrateLogo } from '../../src/components/CalibrateLogo';
 import { LoadingState } from '../../src/components/LoadingState';
 import { NotificationsDrawer } from '../../src/components/NotificationsDrawer';
@@ -38,6 +39,7 @@ import {
 } from '../../src/navigation/secondaryRoutes';
 import { getNotificationAction } from '../../src/notifications/workflow';
 import { isProfileSetupComplete } from '../../src/utils/profileCompletion';
+import { ASYNC_RESOURCE_STATES, isNeverEmpty } from '../../src/asyncState/resolveAsyncState';
 import { radius, spacing, useAppTheme, type AppTheme, type AppThemeColors } from '../../src/theme';
 
 const HIDDEN_TAB_OPTIONS = {
@@ -52,6 +54,7 @@ const LARGE_TEXT_HEIGHT_INCREMENT = 18; // Adds vertical room as Android font sc
 const DESKTOP_NAV_BREAKPOINT = 1024;
 const DESKTOP_NAV_RAIL_WIDTH = 104;
 const DESKTOP_CONTENT_MAX_WIDTH = 1040;
+const QUERY_GATE_MAX_WIDTH = 640; // Keeps terminal shell errors readable on wide screens.
 
 function navigateBackFromSecondaryRoute(config: SecondaryRouteHeader) {
     if (config.fixedDestination) {
@@ -63,6 +66,12 @@ function navigateBackFromSecondaryRoute(config: SecondaryRouteHeader) {
         return;
     }
     router.replace(config.fallbackHref);
+}
+
+function getNotificationsAccessibilityLabel(unreadCount: number | null): string {
+    if (unreadCount === null) return 'Open notifications, unread count unavailable';
+    if (unreadCount > 0) return `Open notifications, ${unreadCount} unread`;
+    return 'Open notifications';
 }
 
 type NavigationPressableProps = PressableProps & {
@@ -118,6 +127,7 @@ export default function TabsLayout() {
     const queryClient = useQueryClient();
     const theme = useAppTheme();
     const styles = React.useMemo(() => createStyles(theme.colors, theme.shadows), [theme]);
+    const isOnline = useOnlineStatus();
     const insets = useSafeAreaInsets();
     const { fontScale, width } = useWindowDimensions();
     const pathname = usePathname();
@@ -141,6 +151,11 @@ export default function TabsLayout() {
         queryFn: () => api.getInAppNotifications(),
         enabled: Boolean(user)
     });
+    const profileState = useAsyncResourceState(profileQuery, isNeverEmpty);
+    const notificationsState = useAsyncResourceState(
+        notificationsQuery,
+        ({ notifications }) => notifications.length === 0
+    );
     const dismissNotification = useMutation({
         mutationFn: (notification: InAppNotification) => api.dismissInAppNotification(notification.id),
         onSuccess: () => queryClient.invalidateQueries({ queryKey: ['mobile-in-app-notifications'] })
@@ -177,13 +192,36 @@ export default function TabsLayout() {
         return <Redirect href="/(auth)/login" />;
     }
 
-    if (profileQuery.isLoading) {
+    if (profileState.kind === ASYNC_RESOURCE_STATES.LOADING) {
         return <LoadingState label="Checking setup..." />;
     }
 
-    if (profileQuery.isSuccess && !isProfileSetupComplete(profileQuery.data)) {
+    if (profileState.kind === ASYNC_RESOURCE_STATES.ERROR) {
+        return (
+            <View style={styles.queryGate}>
+                <View style={styles.queryGateContent}>
+                    <AsyncStateBoundary
+                        state={profileState}
+                        resourceLabel="your profile"
+                        loading={<LoadingState label="Checking setup..." />}
+                        empty={null}
+                        onRetry={isOnline ? () => profileQuery.refetch() : undefined}
+                    >
+                        {null}
+                    </AsyncStateBoundary>
+                </View>
+            </View>
+        );
+    }
+
+    if (profileQuery.data && !isProfileSetupComplete(profileQuery.data)) {
         return <Redirect href="/onboarding" />;
     }
+
+    const notificationsAvailable = notificationsState.kind !== ASYNC_RESOURCE_STATES.LOADING
+        && notificationsState.kind !== ASYNC_RESOURCE_STATES.ERROR;
+    const notifications = notificationsAvailable ? notificationsQuery.data?.notifications ?? [] : [];
+    const unreadCount = notificationsAvailable ? notificationsQuery.data?.unread_count ?? null : null;
 
     const tabBarHeight = TAB_BAR_BASE_HEIGHT
         + Math.round(Math.max(0, Math.min(fontScale, 2) - 1) * LARGE_TEXT_HEIGHT_INCREMENT)
@@ -202,6 +240,20 @@ export default function TabsLayout() {
         <LogDateProvider value={logDateNavigation}>
             <AddFoodRequestProvider value={addFoodRequestContext}>
                 <View style={styles.shell}>
+                    {(profileState.kind === ASYNC_RESOURCE_STATES.STALE
+                        || profileState.kind === ASYNC_RESOURCE_STATES.DEGRADED) && (
+                        <View style={styles.shellNotice}>
+                            <AsyncStateBoundary
+                                state={profileState}
+                                resourceLabel="your profile"
+                                loading={null}
+                                empty={null}
+                                onRetry={isOnline ? () => profileQuery.refetch() : undefined}
+                            >
+                                {null}
+                            </AsyncStateBoundary>
+                        </View>
+                    )}
                     <Tabs
                         screenOptions={{
                             tabBarPosition: usesNavigationRail ? 'left' : 'bottom',
@@ -234,7 +286,7 @@ export default function TabsLayout() {
                                             label: secondaryRoute.backLabel,
                                             onPress: () => navigateBackFromSecondaryRoute(secondaryRoute)
                                         } : undefined}
-                                        unreadCount={notificationsQuery.data?.unread_count ?? 0}
+                                        unreadCount={unreadCount}
                                         offlineChangeCount={queuedMutations.length}
                                         hasFailedOfflineChanges={hasFailedOfflineChanges}
                                         profileImageUrl={user.profile_image_url}
@@ -325,21 +377,15 @@ export default function TabsLayout() {
                     </Tabs>
                     <NotificationsDrawer
                         visible={isNotificationDrawerOpen}
-                        notifications={notificationsQuery.data?.notifications ?? []}
-                        unreadCount={notificationsQuery.data?.unread_count ?? 0}
-                        isLoading={notificationsQuery.isLoading}
+                        notifications={notifications}
+                        unreadCount={unreadCount}
+                        state={notificationsState}
                         isBusy={dismissNotification.isPending || openNotification.isPending}
-                        errorMessage={notificationsQuery.error?.message
-                            ?? dismissNotification.error?.message
-                            ?? openNotification.error?.message}
+                        actionError={dismissNotification.error ?? openNotification.error}
                         onClose={() => setIsNotificationDrawerOpen(false)}
                         onOpenNotification={(notification) => openNotification.mutate(notification)}
                         onDismissNotification={(notification) => dismissNotification.mutate(notification)}
-                        onRetry={() => {
-                            dismissNotification.reset();
-                            openNotification.reset();
-                            void notificationsQuery.refetch();
-                        }}
+                        onRetry={isOnline ? () => notificationsQuery.refetch() : undefined}
                     />
                     <ResumeTrackingPrompt />
                     {fabKind && (
@@ -366,7 +412,7 @@ const TabHeader: React.FC<{
     fontScale: number;
     title: string;
     backAction?: { label: string; onPress: () => void };
-    unreadCount: number;
+    unreadCount: number | null;
     offlineChangeCount: number;
     hasFailedOfflineChanges: boolean;
     profileImageUrl: string | null;
@@ -428,7 +474,7 @@ const HeaderBrand: React.FC<{ styles: TabStyles }> = ({ styles }) => (
 );
 
 const HeaderActions: React.FC<{
-    unreadCount: number;
+    unreadCount: number | null;
     offlineChangeCount: number;
     hasFailedOfflineChanges: boolean;
     profileImageUrl: string | null;
@@ -455,14 +501,14 @@ const HeaderActions: React.FC<{
         )}
         <NavigationPressable
             accessibilityRole="button"
-            accessibilityLabel={unreadCount > 0 ? `Open notifications, ${unreadCount} unread` : 'Open notifications'}
+            accessibilityLabel={getNotificationsAccessibilityLabel(unreadCount)}
             focusStyle={styles.navigationFocus}
             hoverStyle={styles.navigationHover}
             onPress={onOpenNotifications}
             style={({ pressed }) => [styles.headerButton, pressed && styles.pressed]}
         >
             <Ionicons name="notifications-outline" size={21} color={colors.text} />
-            {unreadCount > 0 && (
+            {unreadCount !== null && unreadCount > 0 && (
                 <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={styles.badge}>
                     <AppText style={styles.badgeText}>{Math.min(unreadCount, 99)}</AppText>
                 </View>
@@ -514,6 +560,24 @@ function createStyles(colors: AppThemeColors, shadows: AppTheme['shadows']) {
     return StyleSheet.create({
     shell: {
         flex: 1
+    },
+    queryGate: {
+        alignItems: 'center',
+        backgroundColor: colors.background,
+        flex: 1,
+        justifyContent: 'center',
+        padding: spacing.lg
+    },
+    queryGateContent: {
+        maxWidth: QUERY_GATE_MAX_WIDTH,
+        width: '100%'
+    },
+    shellNotice: {
+        alignSelf: 'center',
+        maxWidth: DESKTOP_CONTENT_MAX_WIDTH,
+        paddingHorizontal: spacing.lg,
+        paddingTop: spacing.sm,
+        width: '100%'
     },
     tabBarItem: {
         minHeight: TAB_BAR_CONTENT_HEIGHT
