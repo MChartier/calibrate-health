@@ -21,6 +21,7 @@ const isRestrictedPathAllowed = (req: Request): boolean => {
   if (AUTH_ALLOWED_PATHS.has(req.path)) return true;
   if (/^\/api(?:\/v1)?\/legal\/(?:status|acceptance)$/.test(req.path)) return true;
   if (/^\/api(?:\/v1)?\/client-config\/?$/.test(req.path) && req.method === 'GET') return true;
+  if (/^\/api(?:\/v1)?\/client-diagnostics\/?$/.test(req.path) && req.method === 'POST') return true;
   if (/^\/api(?:\/v1)?\/user\/account\/export\/?$/.test(req.path) && req.method === 'GET') return true;
   if (/^\/api(?:\/v1)?\/user\/account\/?$/.test(req.path) && req.method === 'DELETE') return true;
   return false;

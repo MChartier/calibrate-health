@@ -5,6 +5,10 @@ const Module = require('node:module');
 const {
   NOTIFICATION_DELIVERY_CHANNELS,
 } = require('../../shared/notificationDelivery');
+const { diagnosticsRegistry } = require('../src/observability');
+
+const latencyBucketTotal = (counters) => Object.values(counters.latencyBuckets ?? {})
+  .reduce((total, count) => total + count, 0);
 
 function stubModule(resolvedPath, exports) {
   const moduleInstance = new Module(resolvedPath);
@@ -13,19 +17,24 @@ function stubModule(resolvedPath, exports) {
   require.cache[resolvedPath] = moduleInstance;
 }
 
-function loadNotificationDeliveryService({ prismaStub, webPushStub, notificationRealtimeStub }) {
+function loadNotificationDeliveryService({ prismaStub, webPushStub, notificationRealtimeStub, nativePushStub }) {
   const dbPath = require.resolve('../src/config/database');
   const webPushPath = require.resolve('../src/services/webPush');
+  const nativePushPath = require.resolve('../src/services/nativePush');
   const notificationRealtimePath = require.resolve('../src/services/notificationRealtime');
   const servicePath = require.resolve('../src/services/notificationDelivery');
 
   const previousDbModule = require.cache[dbPath];
   const previousWebPushModule = require.cache[webPushPath];
+  const previousNativePushModule = require.cache[nativePushPath];
   const previousNotificationRealtimeModule = require.cache[notificationRealtimePath];
   delete require.cache[servicePath];
 
   stubModule(dbPath, prismaStub);
   stubModule(webPushPath, webPushStub);
+  if (nativePushStub) {
+    stubModule(nativePushPath, nativePushStub);
+  }
   if (notificationRealtimeStub) {
     stubModule(notificationRealtimePath, notificationRealtimeStub);
   }
@@ -37,6 +46,9 @@ function loadNotificationDeliveryService({ prismaStub, webPushStub, notification
 
   if (previousWebPushModule) require.cache[webPushPath] = previousWebPushModule;
   else delete require.cache[webPushPath];
+
+  if (previousNativePushModule) require.cache[nativePushPath] = previousNativePushModule;
+  else delete require.cache[nativePushPath];
 
   if (previousNotificationRealtimeModule) require.cache[notificationRealtimePath] = previousNotificationRealtimeModule;
   else delete require.cache[notificationRealtimePath];
@@ -394,4 +406,123 @@ test('deliverUserNotification skips push when local-day send already happened', 
   assert.equal(result.push.skipped, true);
   assert.equal(result.push.deduped, true);
   assert.match(result.push.message, /already received this reminder/);
+});
+test('records one terminal failure when sent-date persistence fails after web push sends', async () => {
+  const before = diagnosticsRegistry.snapshot().operations.notification_delivery ?? {
+    attempts: 0,
+    successes: 0,
+    failures: 0
+  };
+  const prismaStub = {
+    inAppNotification: {
+      findUnique: async () => null,
+      create: async () => { throw new Error('should not be called'); }
+    },
+    pushSubscription: {
+      findUnique: async () => ({
+        id: 77,
+        endpoint: 'https://example.test/push-endpoint',
+        p256dh: 'p256dh-key',
+        auth: 'auth-key',
+        last_sent_local_date: null
+      }),
+      findMany: async () => [],
+      update: async () => { throw new Error('sent-date persistence failed'); },
+      delete: async () => { throw new Error('should not be called'); }
+    }
+  };
+  const { deliverUserNotification } = loadNotificationDeliveryService({
+    prismaStub,
+    webPushStub: {
+      ensureWebPushConfigured: () => ({ ok: true }),
+      sendWebPushNotification: async () => ({})
+    }
+  });
+  const previousWarn = console.warn;
+  console.warn = () => undefined;
+  let result;
+  try {
+    result = await deliverUserNotification({
+      userId: 2,
+      channels: [NOTIFICATION_DELIVERY_CHANNELS.PUSH],
+      push: {
+        endpoint: 'https://example.test/push-endpoint',
+        payload: { title: 'calibrate', body: 'Reminder', url: '/' },
+        markSentLocalDate: new Date('2026-02-08T00:00:00.000Z')
+      }
+    });
+  } finally {
+    console.warn = previousWarn;
+  }
+
+  const after = diagnosticsRegistry.snapshot().operations.notification_delivery;
+  assert.equal(result.push.sent, 0);
+  assert.equal(result.push.failed, 1);
+  assert.equal(after.attempts - before.attempts, 1);
+  assert.equal(after.successes - before.successes, 0);
+  assert.equal(after.failures - before.failures, 1);
+  assert.equal(after.durationSamples - (before.durationSamples ?? 0), 1);
+  assert.equal(latencyBucketTotal(after) - latencyBucketTotal(before), 1);
+});
+test('records one terminal failure when sent-date persistence fails after native push sends', async () => {
+  const previousMode = process.env.NATIVE_PUSH_MODE;
+  process.env.NATIVE_PUSH_MODE = 'expo';
+  const before = diagnosticsRegistry.snapshot().operations.notification_delivery ?? {
+    attempts: 0,
+    successes: 0,
+    failures: 0
+  };
+  try {
+    const { deliverUserNotification } = loadNotificationDeliveryService({
+      prismaStub: {
+        pushSubscription: { findMany: async () => [] },
+        nativePushSubscription: {
+          findMany: async () => [{
+            id: 88,
+            provider: 'EXPO',
+            token: 'ExponentPushToken[fixture]',
+            last_sent_local_date: null,
+            last_sent_weight_local_date: null,
+            last_sent_food_local_date: null
+          }],
+          update: async () => { throw new Error('sent-date persistence failed'); },
+          updateMany: async () => { throw new Error('should not be called'); }
+        }
+      },
+      webPushStub: {
+        ensureWebPushConfigured: () => ({ ok: false, error: 'not configured' }),
+        sendWebPushNotification: async () => { throw new Error('should not be called'); }
+      },
+      nativePushStub: {
+        sendNativePushNotification: async () => ({})
+      }
+    });
+    const previousWarn = console.warn;
+    console.warn = () => undefined;
+    let result;
+    try {
+      result = await deliverUserNotification({
+        userId: 2,
+        channels: [NOTIFICATION_DELIVERY_CHANNELS.PUSH],
+        push: {
+          payload: { title: 'calibrate', body: 'Reminder', url: '/' },
+          markSentLocalDate: new Date('2026-02-08T00:00:00.000Z')
+        }
+      });
+    } finally {
+      console.warn = previousWarn;
+    }
+
+    const after = diagnosticsRegistry.snapshot().operations.notification_delivery;
+    assert.equal(result.push.sent, 0);
+    assert.equal(result.push.failed, 1);
+    assert.equal(after.attempts - before.attempts, 1);
+    assert.equal(after.successes - before.successes, 0);
+    assert.equal(after.failures - before.failures, 1);
+  assert.equal(after.durationSamples - (before.durationSamples ?? 0), 1);
+  assert.equal(latencyBucketTotal(after) - latencyBucketTotal(before), 1);
+  } finally {
+    if (previousMode === undefined) delete process.env.NATIVE_PUSH_MODE;
+    else process.env.NATIVE_PUSH_MODE = previousMode;
+  }
 });

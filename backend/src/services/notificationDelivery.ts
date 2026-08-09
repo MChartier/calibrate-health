@@ -381,6 +381,7 @@ const sendPushNotifications = async (
     const payloadString = JSON.stringify(pushRequest.payload);
 
     for (const subscription of filteredWebSubscriptions) {
+        const deliveryStartedAt = Date.now();
         try {
             await sendWebPushNotification(
                 {
@@ -393,18 +394,18 @@ const sendPushNotifications = async (
                 payloadString
             );
 
-            sent += 1;
-            diagnosticsRegistry.recordOperation('notification_delivery', 'success');
-
             if (pushRequest.markSentLocalDate instanceof Date) {
                 await prisma.pushSubscription.update({
                     where: { id: subscription.id },
                     data: sentDateUpdateForRequest(pushRequest.reminderTypes, pushRequest.markSentLocalDate)
                 });
             }
+
+            sent += 1;
+            diagnosticsRegistry.recordOperation('notification_delivery', 'success', Date.now() - deliveryStartedAt);
         } catch (error) {
             failed += 1;
-            diagnosticsRegistry.recordOperation('notification_delivery', 'failure');
+            diagnosticsRegistry.recordOperation('notification_delivery', 'failure', Date.now() - deliveryStartedAt);
 
             if (shouldDeleteSubscription(error)) {
                 await prisma.pushSubscription.delete({ where: { id: subscription.id } });
@@ -424,10 +425,9 @@ const sendPushNotifications = async (
     }).nativePushSubscription;
 
     for (const subscription of filteredNativeSubscriptions) {
+        const deliveryStartedAt = Date.now();
         try {
             await sendNativePushNotification(subscription, pushRequest.payload);
-            sent += 1;
-            diagnosticsRegistry.recordOperation('notification_delivery', 'success');
 
             if (pushRequest.markSentLocalDate instanceof Date && nativePushSubscription) {
                 await nativePushSubscription.update({
@@ -435,9 +435,12 @@ const sendPushNotifications = async (
                     data: sentDateUpdateForRequest(pushRequest.reminderTypes, pushRequest.markSentLocalDate)
                 });
             }
+
+            sent += 1;
+            diagnosticsRegistry.recordOperation('notification_delivery', 'success', Date.now() - deliveryStartedAt);
         } catch (error) {
             failed += 1;
-            diagnosticsRegistry.recordOperation('notification_delivery', 'failure');
+            diagnosticsRegistry.recordOperation('notification_delivery', 'failure', Date.now() - deliveryStartedAt);
 
             if (shouldDeleteSubscription(error) && nativePushSubscription) {
                 await nativePushSubscription.updateMany({

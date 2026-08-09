@@ -52,8 +52,6 @@ let primaryProviderSelection: PrimaryProviderSelection | null = null;
 
 type PrimaryProviderSelection = {
     normalized: FoodDataSource;
-    requestedRaw?: string;
-    requestedValue: string;
 };
 
 const normalizeProviderName = (value: string): FoodDataSource | null => {
@@ -103,13 +101,13 @@ const resolvePrimaryProviderSelection = (): PrimaryProviderSelection => {
 
     if (!normalized) {
         console.warn(
-            `FOOD_DATA_PROVIDER=${requestedRaw ?? requestedValue} is not recognized. ` +
+            'FOOD_DATA_PROVIDER is not recognized. ' +
                 'Set FOOD_DATA_PROVIDER to fatsecret, usda, or openfoodfacts. Falling back to FatSecret.'
         );
         normalized = DEFAULT_PROVIDER;
     }
 
-    primaryProviderSelection = { normalized, requestedRaw, requestedValue };
+    primaryProviderSelection = { normalized };
     return primaryProviderSelection;
 };
 
@@ -258,7 +256,7 @@ export const getFoodDataProvider = (): FoodDataProvider => {
         return providerInstance;
     }
 
-    const { normalized, requestedRaw, requestedValue } = resolvePrimaryProviderSelection();
+    const { normalized } = resolvePrimaryProviderSelection();
 
     const resolution = getFoodDataProviderByName(normalized);
     if (resolution.provider) {
@@ -275,12 +273,12 @@ export const getFoodDataProvider = (): FoodDataProvider => {
             ? `Set ${missing[0]} to enable ${config.label}.`
             : `Set ${missing.join(', ')} to enable ${config.label}.`;
         console.warn(
-            `FOOD_DATA_PROVIDER=${requestedRaw ?? requestedValue}, but ${formatMissingEnvSentence(missing)}. ` +
+            `The configured food data provider cannot start because ${formatMissingEnvSentence(missing)}. ` +
                 `${action} Falling back to ${fallbackLabel}.`
         );
     } else {
         console.warn(
-            `FOOD_DATA_PROVIDER=${requestedRaw ?? requestedValue} failed to initialize. ` +
+            'The configured food data provider failed to initialize. ' +
                 `Check the provider configuration and credentials. Falling back to ${fallbackLabel}.`
         );
     }

@@ -19,6 +19,7 @@ import { HealthConnectProvider } from '../src/healthConnect/provider';
 import { useWearHandoffRouting } from '../src/wear/useWearHandoffRouting';
 import { useWearSyncInvalidation } from '../src/wear/useWearSyncInvalidation';
 import { useQueryOnlineManager } from '../src/connectivity/queryOnlineManager.native';
+import { ClientDiagnosticsRuntime } from '../src/diagnostics/ClientDiagnosticsRuntime';
 
 const queryClient = new QueryClient();
 
@@ -75,15 +76,15 @@ const AuthenticatedRuntime: React.FC<{ children: React.ReactNode }> = ({ childre
     );
 };
 
-export default function RootLayout() {
+const NativeRootRuntime: React.FC = () => {
     const theme = useAppTheme();
     useQueryOnlineManager();
 
     return (
-        <AppErrorBoundary>
-            <SafeAreaProvider>
+        <SafeAreaProvider>
                 <QueryClientProvider client={queryClient}>
                     <AuthProvider>
+                        <ClientDiagnosticsRuntime />
                         <ClientCompatibilityGate>
                             <NativePushRegistrationProvider>
                                 <AuthenticatedRuntime>
@@ -95,7 +96,14 @@ export default function RootLayout() {
                         </ClientCompatibilityGate>
                     </AuthProvider>
                 </QueryClientProvider>
-            </SafeAreaProvider>
+        </SafeAreaProvider>
+    );
+};
+
+export default function RootLayout() {
+    return (
+        <AppErrorBoundary>
+            <NativeRootRuntime />
         </AppErrorBoundary>
     );
 }

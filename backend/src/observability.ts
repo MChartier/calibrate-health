@@ -1,10 +1,34 @@
 import crypto from 'node:crypto';
 import type { RequestHandler } from 'express';
-
-// Accept only opaque trace-style IDs so caller-controlled prose or health values cannot enter logs.
-const REQUEST_ID_PATTERN = /^(?:[a-f0-9]{16,64}|[a-f0-9]{8}-[a-f0-9]{4}-[1-5][a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12})$/i;
-const FORBIDDEN_FIELD_PATTERN = /(authorization|cookie|token|secret|password|email|user_?id|payload|query|body|food|weight|calorie|barcode)/i;
-const ERROR_TYPE_PATTERN = /^[A-Za-z][A-Za-z0-9_.-]{0,63}$/;
+import {
+  isClientDiagnosticRequestId,
+  type ClientDiagnosticInput
+} from '../../shared/clientDiagnostics';
+const FORBIDDEN_FIELD_PATTERN = /(authorization|cookie|token|secret|password|email|user_?id|payload|query|body|food|weight|calorie|barcode|message|stack|url|path|route|exception)/i;
+const SAFE_ERROR_TYPES: ReadonlySet<string> = new Set([
+  'AbortError',
+  'AggregateError',
+  'CalibrationConflictError',
+  'ClientOperationConflictError',
+  'Error',
+  'EvalError',
+  'FetchError',
+  'MyFoodsLibraryRequestError',
+  'OnboardingDraftConflictError',
+  'OnboardingDraftStateError',
+  'PrismaClientInitializationError',
+  'PrismaClientKnownRequestError',
+  'PrismaClientRustPanicError',
+  'PrismaClientUnknownRequestError',
+  'PrismaClientValidationError',
+  'RangeError',
+  'ReferenceError',
+  'SyntaxError',
+  'TokenClaimFailed',
+  'TypeError',
+  'URIError',
+  'WatchTimezoneInvalidError'
+]);
 const ERROR_CONTEXT_PATTERN = /^[a-z][a-z0-9_.-]{0,63}$/;
 const LATENCY_BUCKETS_MS = [10, 50, 100, 500, 1_000, 5_000] as const;
 
@@ -55,6 +79,21 @@ type JobCounters = {
   durationMsMax: number;
   lastOutcome: DiagnosticJobOutcome | null;
   lastFinishedAt: string | null;
+  lastSuccessAt: string | null;
+};
+
+type ClientDiagnosticTupleCounter = Omit<ClientDiagnosticInput, 'request_id'> & { count: number };
+
+type ClientDiagnosticCounters = {
+  total: number;
+  byTuple: Map<string, ClientDiagnosticTupleCounter>;
+  byEvent: Map<string, number>;
+  byOperation: Map<string, number>;
+  byRoute: Map<string, number>;
+  byPlatform: Map<string, number>;
+  byVersion: Map<string, number>;
+  byOutcome: Map<string, number>;
+  byDurationBucket: Map<string, number>;
 };
 
 type OperationCounters = {
@@ -87,7 +126,20 @@ const emptyJobCounters = (): JobCounters => ({
   durationMsTotal: 0,
   durationMsMax: 0,
   lastOutcome: null,
-  lastFinishedAt: null
+  lastFinishedAt: null,
+  lastSuccessAt: null
+});
+
+const emptyClientDiagnosticCounters = (): ClientDiagnosticCounters => ({
+  total: 0,
+  byTuple: new Map(),
+  byEvent: new Map(),
+  byOperation: new Map(),
+  byRoute: new Map(),
+  byPlatform: new Map(),
+  byVersion: new Map(),
+  byOutcome: new Map(),
+  byDurationBucket: new Map()
 });
 
 const emptyOperationCounters = (): OperationCounters => ({
@@ -110,6 +162,7 @@ export class DiagnosticsRegistry {
   private readonly requestCategories = new Map<DiagnosticCategory, RequestCounters>();
   private readonly jobs = new Map<DiagnosticJobName, JobCounters>();
   private readonly operations = new Map<DiagnosticOperationName, OperationCounters>();
+  private readonly clientDiagnostics = emptyClientDiagnosticCounters();
 
   recordRequest(category: DiagnosticCategory, statusCode: number, durationMs: number): void {
     this.updateRequestCounters(this.requests, statusCode, durationMs);
@@ -126,8 +179,10 @@ export class DiagnosticsRegistry {
     counters.skipped += outcome === 'skipped' ? 1 : 0;
     counters.durationMsTotal += boundedDuration(durationMs);
     counters.durationMsMax = Math.max(counters.durationMsMax, boundedDuration(durationMs));
+    const finishedAt = new Date().toISOString();
     counters.lastOutcome = outcome;
-    counters.lastFinishedAt = new Date().toISOString();
+    counters.lastFinishedAt = finishedAt;
+    if (outcome === 'success') counters.lastSuccessAt = finishedAt;
     this.jobs.set(name, counters);
   }
 
@@ -150,6 +205,37 @@ export class DiagnosticsRegistry {
     this.operations.set(name, counters);
   }
 
+  recordClientDiagnostic(diagnostic: ClientDiagnosticInput): void {
+    this.clientDiagnostics.total += 1;
+    const tupleKey = [
+      diagnostic.event,
+      diagnostic.operation,
+      diagnostic.route,
+      diagnostic.platform,
+      diagnostic.version,
+      diagnostic.outcome,
+      diagnostic.duration_bucket
+    ].join('\u001f');
+    const currentTuple = this.clientDiagnostics.byTuple.get(tupleKey);
+    this.clientDiagnostics.byTuple.set(tupleKey, {
+      event: diagnostic.event,
+      operation: diagnostic.operation,
+      route: diagnostic.route,
+      platform: diagnostic.platform,
+      version: diagnostic.version,
+      outcome: diagnostic.outcome,
+      duration_bucket: diagnostic.duration_bucket,
+      count: (currentTuple?.count ?? 0) + 1
+    });
+    incrementMap(this.clientDiagnostics.byEvent, diagnostic.event);
+    incrementMap(this.clientDiagnostics.byOperation, diagnostic.operation);
+    incrementMap(this.clientDiagnostics.byRoute, diagnostic.route);
+    incrementMap(this.clientDiagnostics.byPlatform, diagnostic.platform);
+    incrementMap(this.clientDiagnostics.byVersion, diagnostic.version);
+    incrementMap(this.clientDiagnostics.byOutcome, diagnostic.outcome);
+    incrementMap(this.clientDiagnostics.byDurationBucket, diagnostic.duration_bucket);
+  }
+
   snapshot(): object {
     return {
       schema_version: 1,
@@ -169,7 +255,20 @@ export class DiagnosticsRegistry {
       operations: Object.fromEntries(
         [...this.operations.entries()].sort(([left], [right]) => left.localeCompare(right))
           .map(([name, counters]) => [name, { ...counters, latencyBuckets: { ...counters.latencyBuckets } }])
-      )
+      ),
+      client_diagnostics: {
+        total: this.clientDiagnostics.total,
+        by_tuple: [...this.clientDiagnostics.byTuple.entries()]
+          .sort(([left], [right]) => left.localeCompare(right))
+          .map(([, tuple]) => ({ ...tuple })),
+        by_event: sortedMapObject(this.clientDiagnostics.byEvent),
+        by_operation: sortedMapObject(this.clientDiagnostics.byOperation),
+        by_route: sortedMapObject(this.clientDiagnostics.byRoute),
+        by_platform: sortedMapObject(this.clientDiagnostics.byPlatform),
+        by_version: sortedMapObject(this.clientDiagnostics.byVersion),
+        by_outcome: sortedMapObject(this.clientDiagnostics.byOutcome),
+        by_duration_bucket: sortedMapObject(this.clientDiagnostics.byDurationBucket)
+      }
     };
   }
 
@@ -183,6 +282,14 @@ export class DiagnosticsRegistry {
     const bucket = LATENCY_BUCKETS_MS.find((limit) => bounded <= limit);
     counters.latencyBuckets[bucket === undefined ? 'overflow' : `up_to_${bucket}`] += 1;
   }
+}
+
+function incrementMap(counters: Map<string, number>, key: string): void {
+  counters.set(key, (counters.get(key) ?? 0) + 1);
+}
+
+function sortedMapObject(counters: Map<string, number>): Record<string, number> {
+  return Object.fromEntries([...counters.entries()].sort(([left], [right]) => left.localeCompare(right)));
 }
 
 function boundedDuration(value: number): number {
@@ -234,7 +341,7 @@ export function classifyDiagnosticCategory(originalUrl: string): DiagnosticCateg
 export function safeRequestId(value: unknown, fallback: () => string = crypto.randomUUID): string {
   if (typeof value === 'string') {
     const normalized = value.trim();
-    if (REQUEST_ID_PATTERN.test(normalized)) return normalized;
+    if (isClientDiagnosticRequestId(normalized)) return normalized;
   }
   return fallback();
 }
@@ -242,7 +349,7 @@ export function safeRequestId(value: unknown, fallback: () => string = crypto.ra
 /** Return only a bounded class name; exception messages and stacks may contain credentials or health data. */
 export function safeErrorType(error: unknown): string {
   const candidate = error instanceof Error ? error.name : '';
-  return ERROR_TYPE_PATTERN.test(candidate) ? candidate : 'UnknownError';
+  return SAFE_ERROR_TYPES.has(candidate) ? candidate : 'UnknownError';
 }
 
 /** Write a correlation-friendly operational error without serializing the exception itself. */
@@ -253,7 +360,7 @@ export function logSafeOperationalError(
   write: (line: string) => void = console.error
 ): void {
   const safeContext = ERROR_CONTEXT_PATTERN.test(context) ? context : 'operation';
-  const safeId = typeof requestId === 'string' && REQUEST_ID_PATTERN.test(requestId) ? requestId : 'unavailable';
+  const safeId = typeof requestId === 'string' && isClientDiagnosticRequestId(requestId) ? requestId : 'unavailable';
   write(`${safeContext} failed (request_id=${safeId}, error_type=${safeErrorType(error)}).`);
 }
 
@@ -266,7 +373,48 @@ function safeMethod(value: string): string {
 
 type DiagnosticValue = string | number | boolean | null | undefined;
 
-/** Defense-in-depth redaction for future structured fields; request/body/header objects are never accepted. */
+function safeDiagnosticFieldValue(
+  key: string,
+  value: DiagnosticValue
+): string | number | boolean | null | undefined {
+  if (key === 'request_id' || key === 'correlation_id') {
+    return typeof value === 'string' && isClientDiagnosticRequestId(value) ? value : '[REDACTED]';
+  }
+  if (key === 'method') return typeof value === 'string' ? safeMethod(value) : 'OTHER';
+  if (key === 'category') {
+    const allowed: ReadonlySet<DiagnosticCategory> = new Set([
+      'auth', 'provider', 'notification', 'sync', 'watch_reconciliation',
+      'activity_reconciliation', 'health', 'diagnostics', 'api_other', 'frontend'
+    ]);
+    return typeof value === 'string' && allowed.has(value as DiagnosticCategory) ? value : '[REDACTED]';
+  }
+  if (key === 'outcome') {
+    const allowed = new Set([
+      'success', 'failure', 'skipped', 'rejected', 'conflict', 'empty',
+      'client_failure', 'server_failure'
+    ]);
+    return typeof value === 'string' && allowed.has(value) ? value : '[REDACTED]';
+  }
+  if (key === 'environment') {
+    return typeof value === 'string' && ['development', 'test', 'staging', 'production'].includes(value)
+      ? value
+      : '[REDACTED]';
+  }
+  if (key === 'job') return value === 'reminder_scheduler' ? value : '[REDACTED]';
+  if (key === 'schedule_source') return value === 'account_local_wall_clock' ? value : '[REDACTED]';
+  if (key === 'error_type') {
+    return typeof value === 'string' && SAFE_ERROR_TYPES.has(value) ? value : 'UnknownError';
+  }
+  if (['status_code', 'duration_ms', 'port', 'cors_origin_count', 'interval_minutes'].includes(key)) {
+    return typeof value === 'number' && Number.isFinite(value) ? value : 0;
+  }
+  if (['secure_cookies', 'metrics_enabled', 'reminder_scheduler_enabled'].includes(key)) {
+    return typeof value === 'boolean' ? value : false;
+  }
+  return undefined;
+}
+
+/** Only established fixed fields survive; sensitive names are visibly redacted and unknown aliases are dropped. */
 export function sanitizeDiagnosticFields(fields: Record<string, DiagnosticValue>): Record<string, string | number | boolean | null> {
   const sanitized: Record<string, string | number | boolean | null> = {};
   for (const [key, value] of Object.entries(fields)) {
@@ -276,9 +424,8 @@ export function sanitizeDiagnosticFields(fields: Record<string, DiagnosticValue>
       continue;
     }
     if (value === undefined) continue;
-    if (typeof value === 'string') sanitized[key] = value.slice(0, 128);
-    else if (typeof value === 'number') sanitized[key] = Number.isFinite(value) ? value : 0;
-    else sanitized[key] = value;
+    const safeValue = safeDiagnosticFieldValue(key, value);
+    if (safeValue !== undefined) sanitized[key] = safeValue;
   }
   return sanitized;
 }
@@ -294,7 +441,7 @@ export function emitDiagnosticEvent(
     timestamp: new Date().toISOString(),
     level: 'info',
     service: 'calibrate-backend',
-    event: event.slice(0, 96),
+    event: ERROR_CONTEXT_PATTERN.test(event) ? event : 'diagnostic.event',
     ...sanitizeDiagnosticFields(fields)
   }));
 }

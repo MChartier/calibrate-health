@@ -9,6 +9,8 @@ import type {
     CalibrationStatusResponse,
     CaloriePlanOptionsRequest,
     CaloriePlanOptionsResponse,
+    ClientDiagnosticInput,
+    ClientDiagnosticResponse,
     ClientConfigResponse,
     CreateMyFoodPayload,
     CreateRecipeFromFoodLogsPayload,
@@ -424,6 +426,18 @@ export class CalibrateApiClient {
 
     getClientConfig(): Promise<ClientConfigResponse> {
         return this.request<ClientConfigResponse>('/api/client-config', { auth: false });
+    }
+
+    reportClientDiagnostic(input: ClientDiagnosticInput): Promise<ClientDiagnosticResponse> {
+        const isAnonymousRootFailure = input.event === 'client_failure'
+            && input.operation === 'root_render';
+        return this.request<ClientDiagnosticResponse>('/api/client-diagnostics', {
+            method: 'POST',
+            auth: !isAnonymousRootFailure,
+            ...(input.event === 'web_vital' ? { keepalive: true } : {}),
+            headers: input.request_id ? { 'x-correlation-id': input.request_id } : undefined,
+            json: input
+        });
     }
 
     loginBrowser(payload: BrowserAuthRequest): Promise<BrowserAuthResponse> {

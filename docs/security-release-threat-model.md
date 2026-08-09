@@ -37,9 +37,11 @@ authorize a read, update, delete, undo, or association.
 
 ## Dependency advisory resolution
 
-As of 2026-08-09, the backend production graph reports no high or critical findings. Coverage runs
-on `c8@12`, and compatible patched releases remain pinned for the production and Prisma dependency
-edges. API contract generation, backend coverage, and the full test suite exercise those overrides.
+As of 2026-08-09, the backend production graph reports no findings with Nodemailer locked at
+`9.0.5`. Version 9.0.1 was the first release to resolve every published Nodemailer advisory,
+including [`GHSA-p6gq-j5cr-w38f`](https://github.com/advisories/GHSA-p6gq-j5cr-w38f). Coverage runs on `c8@12`,
+and compatible patched releases remain pinned for the production and Prisma dependency edges. API
+contract generation, backend coverage, and the full test suite exercise those overrides.
 
 The root/mobile production audit currently reports 15 high package entries, all transitive effects
 of two `image-size@1.2.1` findings reached through Metro 0.84.4:

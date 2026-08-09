@@ -17,7 +17,7 @@ request/response body, cookies, authorization headers, email, user/device IDs, f
 provider results, or tokens. The category allowlist is `auth`, `provider`, `notification`, `sync`,
 `watch_reconciliation`, `activity_reconciliation`, `health`, `diagnostics`, `api_other`, and `frontend`.
 
-Unexpected request and reminder-job errors log an error type/request ID rather than serializing the thrown error,
+Unexpected request and reminder-job errors log a closed, allowlisted error category and opaque request ID rather than serializing the thrown error,
 because database/provider messages can contain request-derived values.
 
 ## Aggregate metrics
@@ -45,5 +45,7 @@ particular, provider attempts are aggregated across the configured provider chai
 include record types, counts, sources, or ingested values. Detailed vendor payload tracing remains out of scope.
 
 Operationally, search logs by `request_id`, alert on rising category/server failures, and alert if
-`background_jobs.reminder_scheduler.lastFinishedAt` stops advancing beyond the configured interval. Rotate the
+`background_jobs.reminder_scheduler.lastSuccessAt` stops advancing beyond the configured interval. Rotate the
 diagnostics token like any operational secret and restart the backend after changing it.
+The alert thresholds, dashboards, owners, response procedures, and reviewed performance-budget workflow are defined in
+[the performance and operations runbook](performance-operations-runbook.md).

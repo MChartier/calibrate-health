@@ -22,6 +22,7 @@
     "test:weight-trend-lab": "node -r ts-node/register --test test/weight-trend-benchmark.test.js test/weight-trend-governance.test.js",
     "weight-trend:tuning-report": "node -r ts-node/register scripts/weight-trend-tuning-report.js",
     "weight-trend:tuning-report:check": "node -r ts-node/register scripts/weight-trend-tuning-report.js --check",
+    "performance:regression": "node -r ts-node/register scripts/performance-regression.js",
     "pretest:coverage": "npm run prisma:generate",
     "test:coverage": "c8 node -r ts-node/register --test",
     "dev": "nodemon --watch src --watch ../shared --ext ts,json --exec ts-node src/index.ts"

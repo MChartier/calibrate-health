@@ -67,6 +67,81 @@ export const compareSemver = (left, right) => {
   return 0;
 };
 
+const CLIENT_DIAGNOSTIC_PLATFORMS = ['web', 'android_phone', 'wear_os'];
+const MAX_CLIENT_DIAGNOSTIC_VERSIONS_PER_PLATFORM = 16;
+
+/** Keep the reviewed rollout window synchronized with current releases and the generated API source. */
+export function validateClientDiagnosticVersionContract(manifest, diagnosticVersions, openApiSource) {
+  const errors = [];
+  const supported = diagnosticVersions?.supported_versions;
+  const previousWebRelease = diagnosticVersions?.previous_web_release;
+  if (diagnosticVersions?.schema_version !== 1) {
+    errors.push('client-diagnostic-versions.json schema_version must be 1.');
+  }
+  if (typeof previousWebRelease !== 'string' || !STABLE_SEMVER_PATTERN.test(previousWebRelease)) {
+    errors.push('client-diagnostic-versions.json previous_web_release must be a stable semantic version.');
+  }
+  if (!supported || typeof supported !== 'object' || Array.isArray(supported)) {
+    return [...errors, 'client-diagnostic-versions.json supported_versions must be an object.'];
+  }
+
+  const keys = Object.keys(supported).sort();
+  if (JSON.stringify(keys) !== JSON.stringify([...CLIENT_DIAGNOSTIC_PLATFORMS].sort())) {
+    errors.push('client-diagnostic-versions.json must define exactly web, android_phone, and wear_os.');
+  }
+  const currentVersions = {
+    web: manifest?.server?.version,
+    android_phone: manifest?.android?.mobile?.version_name,
+    wear_os: manifest?.android?.wear?.version_name
+  };
+  const minimumVersions = {
+    android_phone: manifest?.android?.mobile?.minimum_supported_version,
+    wear_os: manifest?.android?.wear?.minimum_supported_version
+  };
+
+  for (const platform of CLIENT_DIAGNOSTIC_PLATFORMS) {
+    const versions = supported[platform];
+    if (!Array.isArray(versions) || versions.length === 0 || versions.length > MAX_CLIENT_DIAGNOSTIC_VERSIONS_PER_PLATFORM) {
+      errors.push(`client diagnostic ${platform} versions must contain 1-${MAX_CLIENT_DIAGNOSTIC_VERSIONS_PER_PLATFORM} entries.`);
+      continue;
+    }
+    if (versions.some((version) => typeof version !== 'string' || !STABLE_SEMVER_PATTERN.test(version))) {
+      errors.push(`client diagnostic ${platform} versions must be stable semantic versions.`);
+      continue;
+    }
+    if (new Set(versions).size !== versions.length) {
+      errors.push(`client diagnostic ${platform} versions must be unique.`);
+    }
+    if (versions[0] !== currentVersions[platform]) {
+      errors.push(`client diagnostic ${platform} versions must start with the current release ${currentVersions[platform]}.`);
+    }
+    if (platform === 'web' && (versions.length !== 2 || versions[1] !== previousWebRelease)) {
+      errors.push('client diagnostic web versions must retain exactly the reviewed previous_web_release.');
+    }
+    const current = currentVersions[platform];
+    if (platform === 'web' && typeof previousWebRelease === 'string'
+      && STABLE_SEMVER_PATTERN.test(previousWebRelease)
+      && typeof current === 'string' && STABLE_SEMVER_PATTERN.test(current)
+      && compareSemver(previousWebRelease, current) >= 0) {
+      errors.push('client diagnostic previous_web_release must be older than the current server release.');
+    }
+    const minimum = platform === 'web' ? null : minimumVersions[platform];
+    if (typeof current === 'string' && STABLE_SEMVER_PATTERN.test(current)) {
+      for (const version of versions) {
+        if (compareSemver(version, current) > 0 || (minimum && compareSemver(version, minimum) < 0)) {
+          errors.push(`client diagnostic ${platform} version ${version} is outside the supported release range.`);
+        }
+      }
+    }
+    const openApiLine = `- properties: { platform: { const: ${platform} }, version: { enum: [${versions.join(', ')}] } }`;
+    if (typeof openApiSource !== 'string' || !openApiSource.includes(openApiLine)) {
+      errors.push(`OpenAPI client diagnostic ${platform} versions do not match client-diagnostic-versions.json.`);
+    }
+  }
+
+  return errors;
+}
+
 /** Return the production tag encoded by the canonical manifest and ensure it advances. */
 export function getReleaseTag(manifest, latestTag = null) {
   const version = manifest?.server?.version;
@@ -171,7 +246,18 @@ const capture = (source, pattern, label, errors) => {
 export async function checkRepository(root = REPOSITORY_ROOT) {
   const manifest = await readJson(path.join(root, 'shared', 'release.json'));
   const errors = validateManifest(manifest);
-  const [rootPackage, backendPackage, mobilePackage, expoConfig, easConfig, mobileGradle, wearGradle, pairingGradle] = await Promise.all([
+  const [
+    rootPackage,
+    backendPackage,
+    mobilePackage,
+    expoConfig,
+    easConfig,
+    mobileGradle,
+    wearGradle,
+    pairingGradle,
+    diagnosticVersions,
+    openApiSource
+  ] = await Promise.all([
     readJson(path.join(root, 'package.json')),
     readJson(path.join(root, 'backend', 'package.json')),
     readJson(path.join(root, 'mobile', 'package.json')),
@@ -179,8 +265,11 @@ export async function checkRepository(root = REPOSITORY_ROOT) {
     readJson(path.join(root, 'mobile', 'eas.json')),
     readOptionalFile(path.join(root, 'mobile', 'android', 'app', 'build.gradle')),
     readFile(path.join(root, 'wear', 'app', 'build.gradle.kts'), 'utf8'),
-    readFile(path.join(root, 'mobile', 'modules', 'wear-pairing', 'android', 'build.gradle'), 'utf8')
+    readFile(path.join(root, 'mobile', 'modules', 'wear-pairing', 'android', 'build.gradle'), 'utf8'),
+    readJson(path.join(root, 'shared', 'client-diagnostic-versions.json')),
+    readFile(path.join(root, 'docs', 'openapi', 'v1.yaml'), 'utf8')
   ]);
+  errors.push(...validateClientDiagnosticVersionContract(manifest, diagnosticVersions, openApiSource));
 
   assertMatch(errors, 'package.json version', rootPackage.version, manifest.server.version);
   assertMatch(errors, 'backend/package.json version', backendPackage.version, manifest.server.version);
