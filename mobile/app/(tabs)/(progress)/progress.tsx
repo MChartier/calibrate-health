@@ -373,6 +373,7 @@ export default function ProgressScreen() {
 
                 <WeightTrendPreviewCard
                     onPress={() => router.push('/weight-trend')}
+                    onLogWeight={() => router.push('/weight')}
                 />
 
                 {!hasPendingWeightChange && profileQuery.data?.calorieSummary.planStatus === 'available' && <CalibrationInsightCard />}

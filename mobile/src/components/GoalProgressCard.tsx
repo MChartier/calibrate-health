@@ -84,13 +84,13 @@ export const GoalProgressCard: React.FC<GoalProgressCardProps> = ({
                 />
                 <View style={styles.metricsRow}>
                     <View style={styles.metricBlock}>
-                        <AppText variant="muted">Current weight</AppText>
+                        <AppText variant="muted">Current scale weight</AppText>
                         <AppText variant="screenTitle" style={styles.currentWeight}>
                             {formatWeight(latestMetric?.weight, user?.weight_unit)}
                         </AppText>
                     </View>
                     <View testID="goal-projection" style={styles.projectionBlock}>
-                        <AppText variant="muted">Goal projection</AppText>
+                        <AppText variant="muted">Goal date at selected pace</AppText>
                         <AppText variant="screenTitle" style={styles.projectionValue}>Not configured</AppText>
                     </View>
                 </View>
@@ -154,7 +154,7 @@ export const GoalProgressCard: React.FC<GoalProgressCardProps> = ({
     } else {
         goalStatus = (
             <View testID="goal-projection" style={styles.projectionBlock}>
-                <AppText variant="muted">Goal projection</AppText>
+                <AppText variant="muted">Goal date at selected pace</AppText>
                 <AppText variant="screenTitle" style={styles.projectionValue}>{projection}</AppText>
             </View>
         );
@@ -222,7 +222,7 @@ export const GoalProgressCard: React.FC<GoalProgressCardProps> = ({
             />
             <View style={styles.metricsRow}>
                 <View style={styles.metricBlock}>
-                    <AppText variant="muted">Current weight</AppText>
+                    <AppText variant="muted">Current scale weight</AppText>
                     <AppText variant="screenTitle" style={styles.currentWeight}>
                         {formatWeight(currentWeight, user?.weight_unit)}
                     </AppText>
@@ -311,13 +311,13 @@ const createStyles = (theme: AppTheme) => StyleSheet.create({
         justifyContent: 'center',
         gap: spacing.xs,
         borderRadius: radius.md,
-        // A projection is informational; warning colors remain reserved for actionable caution states.
-        backgroundColor: theme.colors.infoContainer,
+        // A projection is informational, so it uses the neutral surface treatment.
+        backgroundColor: theme.colors.surfaceContainer,
         paddingHorizontal: spacing.md,
         paddingVertical: spacing.sm
     },
     projectionValue: {
-        color: theme.colors.onInfoContainer
+        color: theme.colors.onSurface
     },
     statusBlock: {
         flex: 1,

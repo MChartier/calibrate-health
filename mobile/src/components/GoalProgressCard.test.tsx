@@ -37,18 +37,19 @@ describe('GoalProgressCard', () => {
 
         expect(screen.getByText('Snapshot')).toBeTruthy();
         expect(screen.getByText('Updated Jul 20')).toBeTruthy();
+        expect(screen.getByText('Current scale weight')).toBeTruthy();
         expect(screen.getByTestId('snapshot-heading-line')).toHaveStyle({
             flexDirection: 'row',
             alignItems: 'baseline',
             flexWrap: 'wrap'
         });
-        expect(screen.getByText('Goal projection')).toBeTruthy();
+        expect(screen.getByText('Goal date at selected pace')).toBeTruthy();
         const projection = screen.getByTestId('goal-projection');
         expect(projection).toHaveStyle({
-            backgroundColor: themes.light.colors.infoContainer
+            backgroundColor: themes.light.colors.surfaceContainer
         });
         expect(within(projection).getByText(/, 2026$/)).toHaveStyle({
-            color: themes.light.colors.onInfoContainer
+            color: themes.light.colors.onSurface
         });
         expect(screen.getByText('172 kg')).toBeTruthy();
         expect(screen.getByText('59% complete')).toBeTruthy();
@@ -92,7 +93,7 @@ describe('GoalProgressCard', () => {
         expect(screen.getByText(
             'Your 500 kcal/day deficit plan remains active until you set another goal.'
         )).toBeTruthy();
-        expect(screen.queryByText('Goal projection')).toBeNull();
+        expect(screen.queryByText('Goal date at selected pace')).toBeNull();
 
         fireEvent.press(screen.getByLabelText('Set next goal'));
         expect(onSetNextGoal).toHaveBeenCalledTimes(1);
@@ -119,7 +120,7 @@ describe('GoalProgressCard', () => {
             'Maintenance is ongoing, with no completion percentage or projected end date.'
         )).toBeTruthy();
         expect(screen.queryByText(/% complete/)).toBeNull();
-        expect(screen.queryByText('Goal projection')).toBeNull();
+        expect(screen.queryByText('Goal date at selected pace')).toBeNull();
     });
 
     it('preserves progress but suppresses unsafe projection and target details', () => {

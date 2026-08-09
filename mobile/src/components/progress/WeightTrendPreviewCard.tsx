@@ -3,6 +3,7 @@ import { StyleSheet, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import Svg, { Line, Path, Polygon, Text as SvgText } from 'react-native-svg';
 import { useQuery } from '@tanstack/react-query';
+import { AppButton } from '../AppButton';
 import { AppCard } from '../AppCard';
 import { AppText } from '../AppText';
 import { AsyncStateBoundary, useAsyncResourceState, useOnlineStatus } from '../AsyncStateBoundary';
@@ -22,6 +23,7 @@ import { getLatestWeightTrendSnapshot } from '../../weightTrend/presentation';
 
 type WeightTrendPreviewCardProps = {
     onPress: () => void;
+    onLogWeight: () => void;
 };
 
 type PreviewCanvasSize = {
@@ -31,16 +33,17 @@ type PreviewCanvasSize = {
 
 const DEFAULT_PREVIEW_WIDTH = 340;
 const MIN_PREVIEW_WIDTH = 240;
-const PREVIEW_HEIGHT = 144; // Gives the compact chart enough vertical scale to show the trend and uncertainty clearly.
-const PREVIEW_CARD_MIN_HEIGHT = 252; // Preserves chart clearance beneath the compact title row.
+const PREVIEW_HEIGHT = 184; // Gives the compact chart enough vertical scale to separate the estimate and uncertainty band.
+const PREVIEW_CARD_MIN_HEIGHT = 292; // Preserves chart clearance beneath the wrapped trend metadata row.
 const PREVIEW_PADDING = {
     left: 48, // Reserves a compact gutter for weight labels without widening the card.
     right: 8,
     top: 10,
-    bottom: 24
+    bottom: 32 // Keeps the date labels clear of the chart edge at compact widths.
 };
 const PREVIEW_AXIS_FONT_SIZE = 10;
 const PREVIEW_AXIS_TICK_SIZE = 4;
+const PREVIEW_DATE_LABEL_BOTTOM_OFFSET = 10;
 const MIN_PREVIEW_WEIGHT_SPAN = 0.4;
 
 function formatPreviewDate(value: string): string {
@@ -48,7 +51,7 @@ function formatPreviewDate(value: string): string {
         .format(dateOnlyToLocalDate(value));
 }
 
-export const WeightTrendPreviewCard: React.FC<WeightTrendPreviewCardProps> = ({ onPress }) => {
+export const WeightTrendPreviewCard: React.FC<WeightTrendPreviewCardProps> = ({ onPress, onLogWeight }) => {
     const { api, user } = useAuth();
     const theme = useAppTheme();
     const styles = useMemo(() => createStyles(theme), [theme]);
@@ -61,10 +64,38 @@ export const WeightTrendPreviewCard: React.FC<WeightTrendPreviewCardProps> = ({ 
         queryFn: () => api.getTrendMetrics({ range: 'month' })
     });
     const metrics = trendQuery.data?.metrics ?? [];
-    const latestSnapshot = getLatestWeightTrendSnapshot(
-        metrics,
-        trendQuery.data?.meta.trend_summary
-    );
+    const trendSummary = trendQuery.data?.meta.trend_summary;
+    const latestSnapshot = getLatestWeightTrendSnapshot(metrics, trendSummary);
+    const freshness = trendSummary?.freshness ?? (trendSummary?.status === 'stale' ? 'stale' : 'current');
+    const estimateIsOutdated = freshness === 'outdated';
+    const estimateIsUnavailable = freshness === 'unavailable' || trendSummary?.status === 'unavailable';
+    const estimateIsSuppressed = estimateIsOutdated || estimateIsUnavailable;
+    const metricDates = metrics
+        .map((metric) => metric.date.split('T')[0])
+        .filter(Boolean)
+        .sort();
+    const latestMetricDate = metricDates[metricDates.length - 1];
+    const trendAsOfDate = trendSummary?.latest_observation_date ?? latestMetricDate;
+    const formattedTrendDate = trendAsOfDate ? formatPreviewDate(trendAsOfDate) : null;
+    let trendMetadata: string | null = null;
+    if (estimateIsOutdated) {
+        trendMetadata = formattedTrendDate
+            ? `Estimate out of date | Last scale weight ${formattedTrendDate}`
+            : 'Estimate out of date';
+    } else if (estimateIsUnavailable) {
+        trendMetadata = 'Trend estimate temporarily unavailable';
+    } else if (latestSnapshot) {
+        const estimate = formatWeight(latestSnapshot.weight, user?.weight_unit);
+        if (freshness === 'stale') {
+            trendMetadata = formattedTrendDate
+                ? `Underlying trend: ${estimate} | As of ${formattedTrendDate}`
+                : `Older underlying trend: ${estimate}`;
+        } else {
+            trendMetadata = formattedTrendDate
+                ? `Current underlying trend: ${estimate} | As of ${formattedTrendDate}`
+                : `Current underlying trend: ${estimate}`;
+        }
+    }
     const chartLayout = useMemo(
         () => buildWeightTrendChartGeometry(metrics, {
             width: canvasSize.width,
@@ -81,7 +112,16 @@ export const WeightTrendPreviewCard: React.FC<WeightTrendPreviewCardProps> = ({ 
     const points = chartLayout.points;
     const hasWeightHistory = (trendQuery.data?.meta.total_points ?? 0) > 0;
     const isOnline = useOnlineStatus();
-    const trendState = useAsyncResourceState(trendQuery, (data) => data.metrics.length === 0);
+    const trendState = useAsyncResourceState(
+        trendQuery,
+        (data) => data.metrics.length === 0 && data.meta.trend_summary?.freshness !== 'outdated'
+    );
+    let suppressedEstimateMessage: string | null = null;
+    if (estimateIsOutdated) {
+        suppressedEstimateMessage = 'Log a current scale weight to refresh the underlying trend estimate.';
+    } else if (estimateIsUnavailable) {
+        suppressedEstimateMessage = 'Your scale weights are saved, but the underlying trend estimate is temporarily unavailable.';
+    }
 
     return (
         <View style={styles.flexSlot}>
@@ -134,13 +174,20 @@ export const WeightTrendPreviewCard: React.FC<WeightTrendPreviewCardProps> = ({ 
                     onPress={onPress}
                     style={styles.pressable}
                     contentStyle={styles.card}
+                    secondaryAction={estimateIsOutdated ? (
+                        <AppButton
+                            title="Log weight"
+                            variant="secondary"
+                            leftIcon={<Ionicons name="scale-outline" size={18} color={theme.colors.primary} />}
+                            onPress={onLogWeight}
+                        />
+                    ) : undefined}
+                    secondaryActionPlacement="footer"
                 >
                         <CardHeader
                             density="compact"
                             title="Trend"
-                            metadata={latestSnapshot
-                                ? `Current trend: ${formatWeight(latestSnapshot.weight, user?.weight_unit)}`
-                                : null}
+                            metadata={trendMetadata}
                             headingTestID="trend-preview-heading-line"
                             action={(
                                 <View style={styles.detailsAction}>
@@ -162,14 +209,23 @@ export const WeightTrendPreviewCard: React.FC<WeightTrendPreviewCardProps> = ({ 
                                 ));
                             }}
                         >
-                            {points.length === 1 ? (
+                            {suppressedEstimateMessage && (
+                                <View style={styles.suppressedEstimate}>
+                                    <Ionicons name="time-outline" size={22} color={theme.colors.onSurfaceVariant} />
+                                    <AppText variant="muted" style={styles.suppressedEstimateText}>
+                                        {suppressedEstimateMessage}
+                                    </AppText>
+                                </View>
+                            )}
+                            {!estimateIsSuppressed && points.length === 1 && (
                                 <View style={styles.firstWeighIn}>
                                     <Ionicons name="scale-outline" size={22} color={theme.colors.primary} />
                                     <AppText variant="body">First weigh-in recorded</AppText>
                                 </View>
-                            ) : (
+                            )}
+                            {!estimateIsSuppressed && points.length !== 1 && (
                                 <Svg
-                                    accessibilityLabel="Four-week smoothed weight trend with 95% estimated range"
+                                    accessibilityLabel="Four-week underlying weight trend with 95% estimated range"
                                     width="100%"
                                     height="100%"
                                     viewBox={`0 0 ${chartLayout.width} ${chartLayout.height}`}
@@ -210,7 +266,7 @@ export const WeightTrendPreviewCard: React.FC<WeightTrendPreviewCardProps> = ({ 
                                             <SvgText
                                                 accessibilityLabel={`${formatPreviewDate(tick.dateKey)} date axis label`}
                                                 x={tick.x}
-                                                y={chartLayout.height - 5}
+                                                y={chartLayout.height - PREVIEW_DATE_LABEL_BOTTOM_OFFSET}
                                                 fill={theme.colors.onSurfaceVariant}
                                                 fontSize={PREVIEW_AXIS_FONT_SIZE}
                                                 textAnchor={tick.textAnchor}
@@ -259,7 +315,7 @@ const createStyles = (theme: AppTheme) => StyleSheet.create({
     detailsText: { color: theme.colors.primary },
     preview: {
         height: PREVIEW_HEIGHT,
-        marginBottom: spacing.sm,
+        marginBottom: spacing.md,
         alignItems: 'center',
         justifyContent: 'center',
         overflow: 'hidden',
@@ -268,5 +324,13 @@ const createStyles = (theme: AppTheme) => StyleSheet.create({
         borderColor: theme.colors.outlineVariant,
         borderWidth: StyleSheet.hairlineWidth
     },
-    firstWeighIn: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm }
+    firstWeighIn: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+    suppressedEstimate: {
+        width: '100%',
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.sm,
+        paddingHorizontal: spacing.md
+    },
+    suppressedEstimateText: { flex: 1 }
 });
