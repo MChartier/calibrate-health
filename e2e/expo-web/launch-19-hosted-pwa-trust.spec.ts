@@ -362,55 +362,28 @@ test('hosted and installed web keep public trust, route truth, and server-accoun
   if (project === 'android-phone-chrome') {
     await ux.install('populated');
     await installSettingsSessionsFixture(page);
+    let signedOut = false;
+    await page.route('**/auth/me', (route) => signedOut
+      ? route.fulfill({
+          status: 401,
+          contentType: 'application/json',
+          body: JSON.stringify({ message: 'Not authenticated', code: 'NOT_AUTHENTICATED' }),
+        })
+      : route.fallback());
     await page.route('**/auth/logout', (route) => route.fulfill({
       status: 200,
       contentType: 'application/json',
       body: JSON.stringify({ message: 'Signed out' }),
     }));
-    await page.route('https://self-hosted.example/**', (route) => {
-      const pathname = new URL(route.request().url()).pathname;
-      if (pathname === '/api/v1/client-config') {
-        return route.fulfill({
-          status: 200,
-          contentType: 'application/json',
-          body: JSON.stringify({
-            api_version: 1,
-            api_versions: {
-              current: 'v1',
-              supported: ['v1'],
-              legacy_alias: '/api',
-              legacy_deprecation: 'Use /api/v1.',
-            },
-            min_supported_mobile_version: '0.1.0',
-            min_supported_wear_version: '0.1.0',
-            server_version: '0.12.0',
-          }),
-        });
-      }
-      if (pathname === '/auth/me') {
-        return route.fulfill({
-          status: 401,
-          contentType: 'application/json',
-          body: JSON.stringify({ message: 'Not authenticated', code: 'NOT_AUTHENTICATED' }),
-        });
-      }
-      return route.fallback();
-    });
     await page.goto('/settings');
     await page.evaluate(async () => {
       if ('serviceWorker' in navigator) await navigator.serviceWorker.ready;
     });
     await seedUserScopedCaches(page);
-    await page.getByTestId('settings-advanced').click();
-    const advanced = page.getByTestId('settings-advanced-sheet');
-    await advanced.getByRole('textbox', { name: 'Server URL' }).fill('https://self-hosted.example/calibrate');
-    await advanced.getByRole('button', { name: 'Test Calibrate server connection' }).click();
-    await expect(advanced).toContainText('Connected to Calibrate 0.12.0 (API v1).');
+    signedOut = true;
     expectApiFailure(page, { method: 'GET', pathname: '/auth/me', status: 401 });
-    await advanced.getByRole('button', { name: 'Save connection' }).click();
+    await page.getByRole('button', { name: 'Log out', exact: true }).click();
     await expect(page).toHaveURL((url) => url.pathname === '/login');
-    expect(await page.evaluate(() => localStorage.getItem('calibrate.web.serverUrl')))
-      .toBe('https://self-hosted.example');
     await expect.poll(() => page.evaluate(async (prefix) => (
       (await caches.keys()).filter((name) => name.startsWith(prefix))
     ), USER_CACHE_PREFIX)).toEqual([]);

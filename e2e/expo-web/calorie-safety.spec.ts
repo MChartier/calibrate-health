@@ -44,80 +44,24 @@ async function captureEvidence(
   await page.screenshot({ path: screenshotPath, fullPage: false });
 }
 
-async function installSafetyOnboardingDraft(page: Page, dateOfBirth: string) {
-  let revision = 1;
-  let currentStep = 'goal';
-  let data: Record<string, unknown> = {
-    weight_unit: 'KG',
-    height_unit: 'CM',
-    timezone: 'America/Los_Angeles',
-    date_of_birth: dateOfBirth,
-    sex: 'MALE',
-    height_mm: 1_800,
-    activity_level: 'LIGHT',
-    current_weight_grams: 88_200,
-    target_weight_grams: 82_000,
-    daily_deficit: 500,
-  };
-  const draftResponse = () => ({
-    schema_version: 1,
-    revision,
-    current_step: currentStep,
-    data,
-    created_at: '2026-07-21T18:00:00.000Z',
-    updated_at: '2026-07-21T18:00:00.000Z',
-  });
-
-  await page.route('**/api/v1/onboarding/draft', async (route) => {
-    const method = route.request().method();
-    if (method === 'GET') {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          draft: draftResponse(),
-          recovered_from_legacy: false,
-          onboarding_completed_at: null,
-        }),
-      });
-      return;
-    }
-    if (method === 'PUT') {
-      const payload = route.request().postDataJSON() as {
-        current_step: string;
-        data: Record<string, unknown>;
-      };
-      revision += 1;
-      currentStep = payload.current_step;
-      data = { ...data, ...payload.data };
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ draft: draftResponse() }),
-      });
-      return;
-    }
-    await route.fallback();
-  });
-}
-
-async function advanceCompletedDraftToPace(page: Page) {
+async function advanceAtomicOnboardingToPace(page: Page) {
   await expect(page.getByText('Choose your weight goal', { exact: true })).toBeVisible();
-  await expect(page.getByRole('textbox', { name: 'Current', exact: true })).toHaveValue('88.2');
+  await page.getByRole('textbox', { name: 'Current', exact: true }).fill('88.2');
   await page.getByRole('textbox', { name: 'Target', exact: true }).fill('82');
   await page.getByRole('button', { name: 'Next: About you', exact: true }).click();
   await expect(page.getByText('Tell us the basics', { exact: true })).toBeVisible();
+  await page.getByLabel('Date of birth', { exact: true }).fill('1985-05-12');
+  await page.getByRole('button', { name: 'Male', exact: true }).click();
   await page.getByRole('button', { name: 'Next: Calorie burn', exact: true }).click();
   await expect(page.getByText('Estimate calorie burn', { exact: true })).toBeVisible();
+  await page.getByRole('textbox', { name: 'Height', exact: true }).fill('180');
   await page.getByRole('button', { name: 'Next: Pace', exact: true }).click();
   await expect(page.getByText('Choose a safe plan', { exact: true })).toBeVisible();
 }
-
 test('server-unavailable options expose disabled semantics and safe reason copy', async ({ page, ux }, testInfo) => {
   await ux.install('populated', { caloriePlanFixture: 'selected-options-unavailable' });
-  await installSafetyOnboardingDraft(page, '1985-05-12');
   await page.goto('/onboarding');
-  await advanceCompletedDraftToPace(page);
+  await advanceAtomicOnboardingToPace(page);
 
   const selector = page.getByRole('combobox', { name: 'Select daily calorie change', exact: true });
   await expect(selector).toContainText('Choose an available pace');
@@ -151,9 +95,10 @@ test('reviewed plans keep history while suppressing target, projection, and cali
   await expect(page.getByText('Review calorie plan', { exact: true }).first()).toBeVisible();
   await expect(page.getByText('Plan needs review', { exact: true })).toBeVisible();
   await expect(page.getByText('Fixture breakfast', { exact: true })).toBeVisible();
-  await expect(page.getByTestId('calorie-consumed-value')).toHaveText('360');
-  await expect(page.getByTestId('calorie-target-value')).toHaveText('-');
-  await expect(page.getByTestId('calorie-balance-value')).toHaveText('-');
+  await expect(page.getByLabel(/^Daily balance\./)).toHaveAccessibleName(
+    'Daily balance. Plan needs review. 360 calories logged.',
+  );
+  await expect(page.getByTestId('calorie-balance-value')).toHaveCount(0);
   await expect(page.getByTestId('calorie-gauge-progress')).toHaveCount(0);
   await expect(page.getByText('0%', { exact: true })).toHaveCount(0);
   await expectNoHorizontalOverflow(page);

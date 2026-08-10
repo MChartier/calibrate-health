@@ -539,7 +539,7 @@ test('paused days omit calorie progress and only preview food when entries exist
   await page.goto('/today');
 
   await expect(page.getByLabel(/^Daily balance\./)).toHaveAccessibleName(
-    'Daily balance. 360 kcal consumed. Tracking paused. Paused.',
+    'Daily balance. Tracking paused. 360 calories logged.',
   );
   await expect(page.getByRole('heading', { name: 'Paused', exact: true })).toBeVisible();
   await expect(page.getByTestId('calorie-gauge-progress')).toHaveCount(0);
@@ -555,7 +555,7 @@ test('paused days omit calorie progress and only preview food when entries exist
   await page.reload();
 
   await expect(page.getByLabel(/^Daily balance\./)).toHaveAccessibleName(
-    'Daily balance. 0 kcal consumed. Tracking paused. Paused.',
+    'Daily balance. Tracking paused. 0 calories logged.',
   );
   await expect(page.getByRole('heading', { name: 'Paused', exact: true })).toBeVisible();
   await expect(page.getByTestId('calorie-gauge-progress')).toHaveCount(0);

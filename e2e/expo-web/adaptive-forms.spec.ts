@@ -50,7 +50,8 @@ async function enlargeLeafText(page: Page) {
   });
 }
 
-test('Add Food uses a centered wide dialog at the desktop breakpoint', async ({ page, ux }) => {
+test('Add Food uses a centered wide dialog at the desktop breakpoint', async ({ page, ux }, testInfo) => {
+  test.skip(testInfo.project.name !== 'desktop-chrome', 'The centered wide-dialog contract applies only at the desktop breakpoint.');
   await page.setViewportSize({ width: 1_024, height: 1_000 });
   await ux.install('populated');
   const dialog = await openAddFood(page);

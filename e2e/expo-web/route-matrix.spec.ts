@@ -104,7 +104,15 @@ for (const routeGroup of AUTHENTICATED_ROUTE_GROUPS) {
     await ux.install('populated');
 
     for (const route of routeGroup.routes) {
+      const authRestored = route.authenticatedPath === '/barcode'
+        ? page.waitForResponse((response) => (
+            new URL(response.url()).pathname === '/auth/me'
+            && response.request().method() === 'GET'
+            && response.ok()
+          ))
+        : null;
       const directResponse = await page.goto(route.path);
+      await authRestored;
       expect(directResponse?.status(), `authenticated direct entry for ${route.path}`).toBe(200);
       await expect(page, `authenticated destination for ${route.path}`).toHaveURL((url) => (
         url.pathname === route.authenticatedPath
@@ -193,7 +201,13 @@ test('barcode preserves its direct route while authentication restoration is pen
   await expect(page).toHaveURL((url) => url.pathname === '/barcode');
   await expect(page.getByText('Restoring session...', { exact: true })).toBeVisible();
 
+  const restoredResponse = page.waitForResponse((response) => (
+    new URL(response.url()).pathname === '/auth/me'
+    && response.request().method() === 'GET'
+    && response.ok()
+  ));
   restoreSession();
+  await restoredResponse;
   await expect(page).toHaveURL((url) => url.pathname === '/barcode');
   await expect(page.getByRole('heading', {
     name: /Camera permission|Scan barcode|Food logging is unavailable/,

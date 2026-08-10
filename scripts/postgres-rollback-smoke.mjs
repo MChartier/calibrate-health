@@ -983,10 +983,10 @@ async function verifyCandidateSchema(client, schemaName, candidateNames) {
   const newTables = await queryRows(client, `SELECT "table_name" FROM information_schema.tables
     WHERE "table_schema" = $1 AND "table_name" = ANY($2::text[]) ORDER BY "table_name"`, [
     schemaName,
-    ['AccountActionToken', 'LegalAcceptance', 'OnboardingDraft'],
+    ['AccountActionToken', 'LegalAcceptance'],
   ]);
   assert.deepEqual(newTables.map((row) => row.table_name), [
-    'AccountActionToken', 'LegalAcceptance', 'OnboardingDraft',
+    'AccountActionToken', 'LegalAcceptance',
   ]);
   const indexRows = await queryRows(client, `SELECT "indexname" FROM pg_catalog.pg_indexes
     WHERE "schemaname" = $1 AND "indexname" = 'MyFood_user_id_is_pinned_normalized_name_id_idx'`,

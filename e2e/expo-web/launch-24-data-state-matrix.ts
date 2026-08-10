@@ -121,36 +121,6 @@ const EMPTY_LEGAL_STATUS = {
   },
 };
 
-const ONBOARDING_DRAFT = {
-  draft: {
-    schema_version: 1,
-    revision: 3,
-    current_step: 'pace',
-    data: {
-      weight_unit: 'KG',
-      height_unit: 'CM',
-      timezone: 'America/Los_Angeles',
-      date_of_birth: '1985-05-12',
-      sex: 'MALE',
-      height_mm: 1800,
-      activity_level: 'LIGHT',
-      current_weight_grams: 88_200,
-      target_weight_grams: 82_000,
-      daily_deficit: 500,
-    },
-    created_at: '2026-07-20T19:00:00.000Z',
-    updated_at: '2026-07-21T18:00:00.000Z',
-  },
-  recovered_from_legacy: false,
-  onboarding_completed_at: null,
-};
-
-const EMPTY_ONBOARDING_DRAFT = {
-  draft: null,
-  recovered_from_legacy: false,
-  onboarding_completed_at: null,
-};
-
 const SAVED_FOOD = {
   id: 81,
   type: 'FOOD',
@@ -235,19 +205,6 @@ export const LAUNCH_24_DATA_ROUTE_CASES = [
     empty: { kind: 'text', value: 'Review the current Terms and Privacy policy. Your existing data remains available for export or deletion if you choose not to accept.' },
     errorText: 'Unable to update your legal acceptance. Try again.',
     staleText: 'Unable to update your legal acceptance. Try again.',
-  }),
-  routeCase('onboarding', {
-    resource: {
-      pathname: '/api/v1/onboarding/draft',
-      content: ONBOARDING_DRAFT,
-      empty: EMPTY_ONBOARDING_DRAFT,
-    },
-    loading: { kind: 'text', value: 'Loading saved setup...' },
-    content: { kind: 'text', value: 'Saved setup loaded.' },
-    empty: { kind: 'text', value: 'Choose your weight goal' },
-    errorText: "Can't load your saved setup",
-    staleText: "Couldn't refresh your saved setup",
-    terminalEmptyText: 'Choose your weight goal',
   }),
   routeCase('today', {
     resource: {
@@ -393,6 +350,7 @@ export const LAUNCH_24_DATA_ROUTE_CASES = [
 
 export const LAUNCH_24_STATIC_ROUTE_IDS = [
   'root',
+  'onboarding',
   'login',
   'register',
   'forgot-password',
