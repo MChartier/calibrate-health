@@ -377,7 +377,7 @@ async function fetchCollectorInputs({
     observedServerVersion: configuredVersion(config?.server_version, 'Observed server version'),
   };
 }
-async function dispatchPendingWindow({ pending, baseline, statePath, sink }) {
+async function dispatchPendingWindow({ pending, baseline, statePath, sink, initialized = false }) {
   if (configuredEnvironment(sink?.environment) !== pending.environment) {
     throw new Error('Pending alert window environment does not match the configured sink.');
   }
@@ -397,7 +397,7 @@ async function dispatchPendingWindow({ pending, baseline, statePath, sink }) {
     snapshot: pending.current_snapshot,
   };
   await atomicWriteCollectorState(statePath, collectorState(pending.environment, advancedBaseline));
-  return { alerts, receipts, initialized: false, rebaselined: false, retried: baseline !== null };
+  return { alerts, receipts, initialized, rebaselined: false, retried: baseline !== null };
 }
 
 export async function collectOperationalAlertsOnce(input) {
@@ -423,9 +423,34 @@ export async function collectOperationalAlertsOnce(input) {
     const expectedServerVersion = configuredVersion(input.expectedServerVersion, 'CALIBRATE_EXPECTED_SERVER_VERSION');
     const reminderIntervalMs = configuredInterval(input.reminderIntervalMs);
     const { snapshot: current, observedServerVersion } = await fetchCollectorInputs(input);
-    if (!state) {
+    if (!state && observedServerVersion === expectedServerVersion) {
       await atomicWriteCollectorState(statePath, collectorState(sinkEnvironment, baselineState(current, now)));
       return { alerts: [], receipts: [], initialized: true, rebaselined: false, retried: false };
+    }
+
+    if (!state) {
+      const initialBaseline = baselineState(current, now);
+      const pending = {
+        sampled_at: now.toISOString(),
+        environment: sinkEnvironment,
+        correlation_id: stableId([current.process_started_at, now.toISOString(), expectedServerVersion]),
+        reminder_interval_ms: reminderIntervalMs,
+        release: {
+          compatible: false,
+          expected_server_version: expectedServerVersion,
+          observed_server_version: observedServerVersion,
+        },
+        previous_snapshot: current,
+        current_snapshot: current,
+      };
+      await atomicWriteCollectorState(statePath, collectorState(sinkEnvironment, initialBaseline, pending));
+      return await dispatchPendingWindow({
+        pending,
+        baseline: null,
+        statePath,
+        sink: input.sink,
+        initialized: true,
+      });
     }
 
     const sampleGapMs = now.getTime() - Date.parse(state.baseline.sampled_at);

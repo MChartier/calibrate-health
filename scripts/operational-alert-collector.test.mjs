@@ -204,6 +204,36 @@ test('collector persists a 10-minute same-process sample and dispatches the next
   assert.doesNotMatch(state, /token|email|url|path|payload/i);
 });
 
+test('collector dispatches a release mismatch from its first observation', async (t) => {
+  const statePath = path.join(os.tmpdir(), `calibrate-alert-first-release-${process.pid}-${Date.now()}.json`);
+  t.after(() => rm(statePath, { force: true }));
+  t.after(() => rm(`${statePath}.lock`, { force: true }));
+  const delivered = [];
+  const sink = {
+    environment: 'staging',
+    send: async (alert) => {
+      delivered.push(alert);
+      return 'bbbbbbbbbbbbbbbb';
+    },
+  };
+
+  const result = await collectOperationalAlertsOnce(collectorInput(
+    statePath,
+    sink,
+    fixtureFetch([metricsSnapshot()], '0.13.3'),
+    new Date('2026-08-09T11:50:00.000Z'),
+  ));
+
+  assert.equal(result.initialized, true);
+  assert.equal(result.retried, false);
+  assert.deepEqual(result.alerts.map((alert) => alert.code), ['release_version_mismatch']);
+  assert.deepEqual(result.receipts, ['bbbbbbbbbbbbbbbb']);
+  assert.equal(delivered.length, 1);
+  const state = JSON.parse(await readFile(statePath, 'utf8'));
+  assert.equal(state.pending, undefined);
+  assert.equal(state.baseline.sampled_at, '2026-08-09T11:50:00.000Z');
+});
+
 test('collector rebaselines off-cadence, supplies release and scheduler inputs, and rejects concurrent runs', async (t) => {
   const statePath = path.join(os.tmpdir(), `calibrate-alert-cadence-${process.pid}-${Date.now()}.json`);
   t.after(() => rm(statePath, { force: true }));
@@ -220,7 +250,7 @@ test('collector rebaselines off-cadence, supplies release and scheduler inputs, 
   await collectOperationalAlertsOnce(base);
   const offCadence = await collectOperationalAlertsOnce({ ...base, now: new Date('2026-08-09T12:00:00.000Z') });
   assert.equal(offCadence.rebaselined, true);
-  assert.equal(delivered.length, 0);
+  assert.deepEqual(delivered.map((alert) => alert.code), ['release_version_mismatch']);
 
   const evaluated = await collectOperationalAlertsOnce({
     ...base,
