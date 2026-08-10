@@ -24,6 +24,32 @@ export function parseBounds(value) {
   return { x: Math.round((left + right) / 2), y: Math.round((top + bottom) / 2) };
 }
 
+export function parseWmSize(output) {
+  const matches = [...output.matchAll(/(?:Physical|Override)?\s*size:\s*(\d+)x(\d+)/gi)];
+  const match = matches.at(-1) ?? output.match(/^(\d+)x(\d+)$/m);
+  const width = Number(match?.[1]);
+  const height = Number(match?.[2]);
+  if (!Number.isSafeInteger(width) || width < 1 || !Number.isSafeInteger(height) || height < 1) {
+    throw new Error('Unable to parse Wear screen size.');
+  }
+  return { width, height };
+}
+
+export function buildWearScrollGesture(screen) {
+  if (!Number.isSafeInteger(screen?.width) || screen.width < 1
+      || !Number.isSafeInteger(screen?.height) || screen.height < 1) {
+    throw new Error('Wear scrolling requires positive integer screen dimensions.');
+  }
+  const centerX = String(Math.round(screen.width / 2));
+  return [
+    centerX,
+    String(Math.round(screen.height * 0.78)),
+    centerX,
+    String(Math.round(screen.height * 0.22)),
+    '300'
+  ];
+}
+
 function decodeXml(value) {
   return value
     .replaceAll('&quot;', '"')
@@ -173,6 +199,7 @@ export function runWearEmulatorSmoke(environment = process.env) {
   if (!characteristics.split(',').includes('watch')) {
     throw new Error(`${serial} is not a Wear OS target: ${characteristics}`);
   }
+  const screen = parseWmSize(runAdb(adb, serial, ['shell', 'wm', 'size'], { quiet: true }));
 
   runAdb(adb, serial, ['install', '-r', apk]);
   prepareWearUi((args) => runAdb(adb, serial, args, { quiet: true }));
@@ -199,13 +226,14 @@ export function runWearEmulatorSmoke(environment = process.env) {
   const connection = requireText(home, 'Connection');
   const point = parseBounds(connection.bounds);
   runAdb(adb, serial, ['shell', 'input', 'tap', String(point.x), String(point.y)], { quiet: true });
+  waitForExpectedUi(['Connection', 'Server']);
 
   waitForScrollableWearUi([
     'Connection',
     `${expectedBuildType} build`,
     'Open Calibrate settings on your phone and choose the nearby watch to begin.'
   ], () => dumpUi(adb, serial), () => {
-    runAdb(adb, serial, ['shell', 'input', 'swipe', '160', '500', '160', '140', '300'], { quiet: true });
+    runAdb(adb, serial, ['shell', 'input', 'swipe', ...buildWearScrollGesture(screen)], { quiet: true });
     runAdb(adb, serial, ['shell', 'sleep', WEAR_UI_POLL_SECONDS], { quiet: true });
   });
 

@@ -1,10 +1,12 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
+  buildWearScrollGesture,
   createRecoveringWearUiReader,
   findTextNode,
   listWearUiPackages,
   parseBounds,
+  parseWmSize,
   prepareWearUi,
   resolveWearAdb,
   waitForScrollableWearUi,
@@ -66,6 +68,14 @@ test('Wear smoke parser derives tap coordinates from the UI tree', () => {
   const node = findTextNode(xml, 'Connection');
   assert.deepEqual(node, { text: 'Connection', bounds: '[24,156][430,260]' });
   assert.deepEqual(parseBounds(node.bounds), { x: 227, y: 208 });
+});
+
+test('Wear scrolling stays within the discovered round display', () => {
+  const screen = parseWmSize('Physical size: 454x454');
+  assert.deepEqual(screen, { width: 454, height: 454 });
+  assert.deepEqual(buildWearScrollGesture(screen), ['227', '354', '227', '100', '300']);
+  assert.throws(() => parseWmSize('unknown'), /parse Wear screen size/);
+  assert.throws(() => buildWearScrollGesture({ width: 454, height: 0 }), /positive integer/);
 });
 
 test('Wear readiness waits for one complete exact UI tree', () => {
