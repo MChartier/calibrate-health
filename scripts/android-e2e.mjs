@@ -18,6 +18,11 @@ export const ANDROID_E2E_UI_ACTION_RETRY_MS = 7_500;
 const ONLINE_FOOD = { name: 'Android E2E latte', calories: 190 };
 const OFFLINE_FOOD = { name: 'Android E2E protein shake', calories: 240 };
 const UI_DUMP_PATH = '/sdcard/calibrate-e2e-window.xml';
+
+export function buildAddFoodDeepLink(date) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) throw new Error('Android E2E Add food date must be YYYY-MM-DD.');
+  return `calibrate:///log?date=${encodeURIComponent(date)}`;
+}
 const METRO_REVERSE_HOST = 'localhost:8081';
 const API_REVERSE_PORT = 'tcp:3000';
 const HOP_BY_HOP_HEADERS = new Set([
@@ -352,13 +357,14 @@ async function launchAndWaitForLog(timeoutMs = 45_000) {
   await waitForNode('authenticated Log screen', (node) => node.clickable && node.label === 'Add food', timeoutMs);
 }
 
-async function openQuickAdd(name) {
-  await tapNodeUntilVisible(
-    'Add food button',
-    (node) => node.clickable && node.label === 'Add food',
-    'Quick add mode',
-    (node) => node.clickable && node.label === 'Quick',
-  );
+async function openQuickAdd(name, date) {
+  adb([
+    'shell', 'am', 'start', '-W',
+    '-a', 'android.intent.action.VIEW',
+    '-d', buildAddFoodDeepLink(date),
+    APP_ID,
+  ], { quiet: true });
+  await waitForNode('Quick add mode', (node) => node.clickable && node.label === 'Quick', 45_000);
   await tapNodeUntilVisible(
     'Quick add mode',
     (node) => node.clickable && node.label === 'Quick',
@@ -372,8 +378,8 @@ async function logOpenRecentFood(name) {
   await waitForNode('Add food sheet to close', (node) => node.clickable && node.label === 'Add food', 45_000);
 }
 
-async function logRecentFood(name) {
-  await openQuickAdd(name);
+async function logRecentFood(name, date) {
+  await openQuickAdd(name, date);
   await logOpenRecentFood(name);
 }
 
@@ -411,14 +417,14 @@ async function main() {
 
     const onlineName = ONLINE_FOOD.name;
     const onlineBefore = await countFood(session.access_token, date, onlineName);
-    await logRecentFood(onlineName);
+    await logRecentFood(onlineName, date);
     await waitForFoodCount(session.access_token, date, onlineName, onlineBefore + 1);
     console.log(`PASS online one-tap logging count: ${onlineBefore} -> ${onlineBefore + 1}`);
 
     const offlineName = OFFLINE_FOOD.name;
     const offlineBefore = await countFood(session.access_token, date, offlineName);
     // Load the cached Quick list before isolating the API while Metro remains reachable through adb reverse.
-    await openQuickAdd(offlineName);
+    await openQuickAdd(offlineName, date);
     apiProxy.setAvailable(false);
     await logOpenRecentFood(offlineName);
     const pendingBadge = await waitForNode(

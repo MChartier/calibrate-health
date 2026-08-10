@@ -6,6 +6,7 @@ import {
   ANDROID_E2E_INITIAL_LAUNCH_TIMEOUT_MS,
   ANDROID_E2E_METRO_STATUS_URL,
   ANDROID_E2E_UI_ACTION_RETRY_MS,
+  buildAddFoodDeepLink,
   buildAndroidE2eAdbArgs,
   buildE2eRequestHeaders,
   buildOpenFoodDayRequest,
@@ -19,6 +20,11 @@ test('Android E2E uses the same localhost Metro origin as the hosted readiness p
   assert.equal(ANDROID_E2E_METRO_STATUS_URL, 'http://localhost:8081/status');
   assert.equal(ANDROID_E2E_INITIAL_LAUNCH_TIMEOUT_MS, 90_000);
   assert.equal(ANDROID_E2E_UI_ACTION_RETRY_MS, 7_500);
+});
+
+test('Android E2E opens Add food through the canonical native route', () => {
+  assert.equal(buildAddFoodDeepLink('2026-08-10'), 'calibrate:///log?date=2026-08-10');
+  assert.throws(() => buildAddFoodDeepLink('08/10/2026'), /must be YYYY-MM-DD/);
 });
 
 test('Android E2E API probes identify the current phone release', () => {
