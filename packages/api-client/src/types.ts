@@ -104,52 +104,20 @@ export type UserClientPayload = {
     account_access?: AccountAccess;
 };
 
-export type OnboardingStep = 'goal' | 'about' | 'burn' | 'pace' | 'import' | 'review';
-
-export type OnboardingDraftData = {
-    weight_unit?: WeightUnit;
-    height_unit?: HeightUnit;
-    timezone?: string;
-    date_of_birth?: string;
-    sex?: Sex;
-    height_mm?: number;
-    activity_level?: ActivityLevel;
-    current_weight_grams?: number;
-    target_weight_grams?: number;
-    daily_deficit?: number;
+export type OnboardingCompleteData = {
+    weight_unit: WeightUnit;
+    height_unit: HeightUnit;
+    timezone: string;
+    date_of_birth: string;
+    sex: Sex;
+    height_mm: number;
+    activity_level: ActivityLevel;
+    current_weight_grams: number;
+    target_weight_grams: number;
+    daily_deficit: number;
 };
-
-export type OnboardingDraft = {
-    schema_version: 1;
-    revision: number;
-    current_step: OnboardingStep | null;
-    data: OnboardingDraftData;
-    created_at: string;
-    updated_at: string;
-};
-
-export type OnboardingDraftResponse = {
-    draft: OnboardingDraft | null;
-    recovered_from_legacy: boolean;
-    onboarding_completed_at: string | null;
-};
-
-export type OnboardingDraftUpsertRequest = {
-    schema_version: 1;
-    revision?: number;
-    current_step: OnboardingStep | null;
-    data: OnboardingDraftData;
-};
-
-export type OnboardingDraftUpsertResponse = {
-    draft: OnboardingDraft;
-};
-
-export type OnboardingCompleteData = Required<OnboardingDraftData>;
 
 export type OnboardingCompleteRequest = {
-    schema_version: 1;
-    expected_revision?: number;
     data: OnboardingCompleteData;
 };
 

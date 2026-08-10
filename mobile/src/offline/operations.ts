@@ -2,14 +2,12 @@ import {
     ApiError,
     type CalibrateApiClient,
     type FoodLogCreatePayload,
-    type FoodLogUpdatePayload,
-    type OnboardingCompleteRequest
+    type FoodLogUpdatePayload
 } from '@calibrate/api-client';
 import * as Crypto from 'expo-crypto';
 import type { QueuedMutationExecutor } from './reconciler';
 
 export const OFFLINE_MUTATION_OPERATIONS = {
-    COMPLETE_ONBOARDING: 'onboarding.complete',
     CREATE_FOOD_LOG: 'food.create',
     UPDATE_FOOD_LOG: 'food.update',
     DELETE_FOOD_LOG: 'food.delete',
@@ -86,9 +84,6 @@ export function createQueuedMutationExecutor(api: CalibrateApiClient): QueuedMut
     return async (mutation) => {
         const payload = requireRecordPayload(mutation.payload, mutation.operation);
         switch (mutation.operation) {
-            case OFFLINE_MUTATION_OPERATIONS.COMPLETE_ONBOARDING:
-                await api.completeOnboarding(payload as OnboardingCompleteRequest, mutation.id);
-                return;
             case OFFLINE_MUTATION_OPERATIONS.CREATE_FOOD_LOG:
                 await api.createFoodLog(payload as FoodLogCreatePayload, mutation.id);
                 return;

@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import * as Crypto from 'expo-crypto';
 import { KeyboardAvoidingView, Platform, StyleSheet, useWindowDimensions, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Redirect, router } from 'expo-router';
@@ -11,12 +12,7 @@ import {
     type HeightUnit,
     type WeightUnit
 } from '@calibrate/shared';
-import {
-    ApiError,
-    type CaloriePlanOptionsRequest,
-    type OnboardingDraftResponse,
-    type OnboardingStep
-} from '@calibrate/api-client';
+import type { CaloriePlanOptionsRequest } from '@calibrate/api-client';
 import { AppButton } from '../src/components/AppButton';
 import { AppCard } from '../src/components/AppCard';
 import { AppText } from '../src/components/AppText';
@@ -57,19 +53,13 @@ import {
 } from '../src/onboarding/steps';
 import {
     buildOnboardingCompleteData,
-    buildOnboardingDraftData,
-    hydrateOnboardingDraft,
-    ONBOARDING_DRAFT_SCHEMA_VERSION,
     type OnboardingFormState
-} from '../src/onboarding/draftState';
+} from '../src/onboarding/completionState';
 import { OnboardingProgress } from '../src/onboarding/OnboardingProgress';
-import { OnboardingCompletionRecovery } from '../src/onboarding/OnboardingCompletionRecovery';
 import { radius, spacing, useAppTheme } from '../src/theme';
 import { WEIGHT_INPUT_INCREMENT } from '../src/config/inputPrecision';
-import { ASYNC_RESOURCE_STATES, isNeverEmpty } from '../src/asyncState/resolveAsyncState';
+import { isNeverEmpty } from '../src/asyncState/resolveAsyncState';
 import { getSafeActionErrorMessage } from '../src/errors/presentation';
-import { useOfflineOutbox } from '../src/offline/provider';
-import { executeOrQueueMutation, OFFLINE_MUTATION_OPERATIONS } from '../src/offline/operations';
 import { getCaloriePlanPresentation } from '../src/caloriePlanning/presentation';
 import { getMinimumDateOfBirth } from '../src/caloriePlanning/dateBounds';
 import { getHeightPolicyError, isHeightWithinPolicy } from '../src/caloriePlanning/heightInput';
@@ -80,7 +70,6 @@ import {
 } from '../src/weightEntry/input';
 
 const ONBOARDING_CONTENT_MAX_WIDTH = 760; // Keeps the wizard and its error gate readable on desktop.
-const ONBOARDING_DRAFT_QUERY_KEY = ['mobile-onboarding-draft'] as const;
 
 function getTargetWeightForGoal(goalMode: GoalMode, currentWeight: string, targetWeight: string): string {
     if (goalMode === 'maintain' && targetWeight.trim().length === 0) {
@@ -116,19 +105,7 @@ export default function OnboardingScreen() {
     const { api, user, isLoading: isAuthLoading, updateCurrentUser } = useAuth();
     const queryClient = useQueryClient();
     const accountAccessRoute = restrictedAccountRoute(user);
-    const draftQuery = useQuery({
-        queryKey: ONBOARDING_DRAFT_QUERY_KEY,
-        queryFn: () => api.getOnboardingDraft(),
-        enabled: Boolean(user && !accountAccessRoute && !user.onboarding_completed_at)
-    });
-    const draftResourceState = useAsyncResourceState(draftQuery, isNeverEmpty);
-    const refetchOnboardingDraft = draftQuery.refetch;
     const isOnline = useOnlineStatus();
-    const {
-        enqueue,
-        mutations: offlineMutations,
-        retryFailed: retryFailedMutation
-    } = useOfflineOutbox();
     const onboardingSteps = useMemo(() => getOnboardingSteps(Platform.OS), []);
     const [activeStepIndex, setActiveStepIndex] = useState(0);
     const activeStep = onboardingSteps[activeStepIndex];
@@ -150,20 +127,11 @@ export default function OnboardingScreen() {
     const [heightFeet, setHeightFeet] = useState('');
     const [heightInches, setHeightInches] = useState('');
     const [validationError, setValidationError] = useState<string | null>(null);
-    const [draftRevision, setDraftRevision] = useState<number | null>(null);
-    const [draftSaveFailed, setDraftSaveFailed] = useState(false);
-    const [draftStatus, setDraftStatus] = useState<string | null>(null);
     const [setupSaved, setSetupSaved] = useState(false);
-    const [queuedCompletionOperationId, setQueuedCompletionOperationId] = useState<string | null>(null);
-    const [isRetryingCompletion, setIsRetryingCompletion] = useState(false);
     const [isFinishing, setIsFinishing] = useState(false);
     const weightBounds = getWeightDisplayBounds(weightUnit);
     const optionalStartIndex = onboardingSteps.findIndex(({ key }) => isPostCompletionStep(key));
     const minimumSelectableStepIndex = setupSaved && optionalStartIndex >= 0 ? optionalStartIndex : 0;
-    const queuedCompletionMutation = offlineMutations.find(
-        ({ operation }) => operation === OFFLINE_MUTATION_OPERATIONS.COMPLETE_ONBOARDING
-    );
-    const hasQueuedCompletion = queuedCompletionOperationId !== null || queuedCompletionMutation !== undefined;
 
     const signedDailyDeficit = getSignedDailyDeficit(goalMode, dailyChangeAbs);
     const hasExplicitDailyChange = goalMode === 'maintain'
@@ -236,86 +204,6 @@ export default function OnboardingScreen() {
         }
     }, [dailyChangeAbs, goalMode, planOptionsQuery.data, selectedPlanOption?.available]);
 
-    useEffect(() => {
-        const response = draftQuery.data;
-        if (!response) return;
-        if (!response.draft) {
-            setDraftRevision(null);
-            return;
-        }
-
-        const hydrated = hydrateOnboardingDraft(response.draft, {
-            weightUnit: user?.weight_unit ?? WEIGHT_UNITS.KG,
-            heightUnit: user?.height_unit ?? HEIGHT_UNITS.CM,
-            timezone: resolveOnboardingTimeZone(user?.timezone, deviceTimeZone, false)
-        });
-        setWeightUnit(hydrated.weightUnit);
-        setHeightUnit(hydrated.heightUnit);
-        setTimezone(hydrated.timezone);
-        setDateOfBirth(hydrated.dateOfBirth);
-        setSex(hydrated.sex);
-        setActivityLevel(hydrated.activityLevel);
-        setCurrentWeight(hydrated.currentWeight);
-        setTargetWeight(hydrated.targetWeight);
-        setGoalMode(hydrated.goalMode);
-        setDailyChangeAbs(hydrated.dailyChangeAbs);
-        setHeightCm(hydrated.heightCm);
-        setHeightFeet(hydrated.heightFeet);
-        setHeightInches(hydrated.heightInches);
-        setDraftRevision(response.draft.revision);
-        const resumeIndex = onboardingSteps.findIndex(({ key }) => key === hydrated.resumeStep);
-        setActiveStepIndex(resumeIndex >= 0 ? resumeIndex : 0);
-        setDraftStatus(response.recovered_from_legacy ? 'Recovered your previous setup.' : 'Saved setup loaded.');
-    }, [
-        deviceTimeZone,
-        draftQuery.data,
-        onboardingSteps,
-        user?.height_unit,
-        user?.timezone,
-        user?.weight_unit
-    ]);
-
-    useEffect(() => {
-        if (!queuedCompletionOperationId) {
-            if (queuedCompletionMutation) {
-                setQueuedCompletionOperationId(queuedCompletionMutation.id);
-                setDraftStatus('Setup completion is waiting for a connection and will retry automatically.');
-            }
-            return;
-        }
-        if (queuedCompletionMutation) return;
-
-        let active = true;
-        void refetchOnboardingDraft().then(({ data }) => {
-            if (!active) return;
-            setQueuedCompletionOperationId(null);
-            if (!data?.onboarding_completed_at) {
-                setDraftStatus(null);
-                setValidationError('Unable to confirm setup completion. Select Complete setup to retry safely.');
-                return;
-            }
-
-            if (user) {
-                updateCurrentUser({ ...user, onboarding_completed_at: data.onboarding_completed_at });
-            }
-            setSetupSaved(true);
-            setDraftRevision(null);
-            setValidationError(null);
-            setDraftStatus('Setup complete. Optional steps will not change your calorie plan.');
-            if (optionalStartIndex >= 0) setActiveStepIndex(optionalStartIndex);
-        });
-        return () => {
-            active = false;
-        };
-    }, [
-        offlineMutations,
-        optionalStartIndex,
-        queuedCompletionOperationId,
-        refetchOnboardingDraft,
-        updateCurrentUser,
-        user
-    ]);
-
     function getFormState(): OnboardingFormState {
         return {
             weightUnit,
@@ -334,76 +222,25 @@ export default function OnboardingScreen() {
         };
     }
 
-    const saveDraftMutation = useMutation({
-        mutationFn: ({
-            completedThrough,
-            currentStep
-        }: {
-            completedThrough: OnboardingStepKey;
-            currentStep: OnboardingStep;
-        }) => api.saveOnboardingDraft({
-            schema_version: ONBOARDING_DRAFT_SCHEMA_VERSION,
-            ...(draftRevision === null ? {} : { revision: draftRevision }),
-            current_step: currentStep,
-            data: buildOnboardingDraftData(getFormState(), completedThrough)
-        }),
-        onMutate: () => {
-            setDraftSaveFailed(false);
-            setDraftStatus('Saving progress...');
-        },
-        onSuccess: ({ draft }) => {
-            setDraftRevision(draft.revision);
-            setDraftStatus('Progress saved.');
-        },
-        onError: () => {
-            setDraftSaveFailed(true);
-            setDraftStatus(null);
-        }
-    });
-
     const completionMutation = useMutation({
-        mutationFn: () => {
-            const payload = {
-                schema_version: ONBOARDING_DRAFT_SCHEMA_VERSION,
-                ...(draftRevision === null ? {} : { expected_revision: draftRevision }),
-                data: buildOnboardingCompleteData(getFormState())
-            };
-            return executeOrQueueMutation({
-                operation: OFFLINE_MUTATION_OPERATIONS.COMPLETE_ONBOARDING,
-                payload,
-                execute: (operationId) => api.completeOnboarding(payload, operationId),
-                enqueue
-            });
-        },
+        mutationFn: () => api.completeOnboarding({
+            data: buildOnboardingCompleteData(getFormState())
+        }, Crypto.randomUUID()),
         onSuccess: async (result) => {
             setValidationError(null);
-            if (result.disposition === 'queued') {
-                setQueuedCompletionOperationId(result.operationId);
-                setDraftStatus('Setup completion is waiting for a connection and will retry automatically.');
-                return;
-            }
-
-            updateCurrentUser(result.value.user);
+            updateCurrentUser(result.user);
             setSetupSaved(true);
-            queryClient.setQueryData<OnboardingDraftResponse>(ONBOARDING_DRAFT_QUERY_KEY, {
-                draft: null,
-                recovered_from_legacy: false,
-                onboarding_completed_at: result.value.receipt.completed_at
-            });
             if (optionalStartIndex >= 0) {
                 setActiveStepIndex(optionalStartIndex);
-                setDraftStatus('Setup complete. Optional steps will not change your calorie plan.');
                 return;
             }
             await finishOnboarding();
         },
-        onError: async (error) => {
-            if (error instanceof ApiError && error.code === 'ONBOARDING_DRAFT_CONFLICT') {
-                await refetchOnboardingDraft();
-                setValidationError('Setup changed on another device. We loaded the latest saved version for you to review.');
-                return;
-            }
-            setValidationError(getSafeActionErrorMessage(error, 'Unable to complete setup. Try again.'));
+        onError: (error) => {
+            setValidationError(getSafeActionErrorMessage(
+                error,
+                'Unable to complete setup. Check your connection and try again.'
+            ));
         }
     });
 
@@ -437,30 +274,6 @@ export default function OnboardingScreen() {
         return <Redirect href={accountAccessRoute} />;
     }
     if (user.onboarding_completed_at && !setupSaved) {
-        return <Redirect href="/today" />;
-    }
-
-    if (draftResourceState.kind === ASYNC_RESOURCE_STATES.LOADING) {
-        return <LoadingState label="Loading saved setup..." />;
-    }
-
-    if (draftResourceState.kind === ASYNC_RESOURCE_STATES.ERROR) {
-        return (
-            <Screen safeTop style={[styles.profileGate, { backgroundColor: themeColors.background }]}>
-                <AsyncStateBoundary
-                    state={draftResourceState}
-                    resourceLabel="your saved setup"
-                    loading={<LoadingState label="Loading saved setup..." />}
-                    empty={null}
-                    onRetry={isOnline ? refetchOnboardingDraft : undefined}
-                >
-                    {null}
-                </AsyncStateBoundary>
-            </Screen>
-        );
-    }
-
-    if (!setupSaved && draftQuery.data?.onboarding_completed_at) {
         return <Redirect href="/today" />;
     }
 
@@ -530,7 +343,7 @@ export default function OnboardingScreen() {
         }
     }
 
-    async function handleNext() {
+    function handleNext() {
         setValidationError(null);
         const stepError = validateStep(activeStep.key);
         if (stepError) {
@@ -552,26 +365,6 @@ export default function OnboardingScreen() {
             return;
         }
 
-        if (!setupSaved && !isPostCompletionStep(activeStep.key)) {
-            try {
-                await saveDraftMutation.mutateAsync({
-                    completedThrough: activeStep.key,
-                    currentStep: nextStep.key as OnboardingStep
-                });
-            } catch (error) {
-                if (error instanceof ApiError && error.code === 'ONBOARDING_DRAFT_CONFLICT') {
-                    await refetchOnboardingDraft();
-                    setValidationError('Setup changed on another device. We loaded the latest saved version for you to review.');
-                } else {
-                    setValidationError(getSafeActionErrorMessage(
-                        error,
-                        'Unable to save progress. Select Retry save to try again.'
-                    ));
-                }
-                return;
-            }
-        }
-
         setIsDailyChangeSelectorOpen(false);
         setActiveStepIndex((current) => Math.min(current + 1, onboardingSteps.length - 1));
     }
@@ -582,34 +375,12 @@ export default function OnboardingScreen() {
         setActiveStepIndex((current) => Math.max(current - 1, minimumSelectableStepIndex));
     }
 
-    async function handleRetryCompletion() {
-        if (!queuedCompletionMutation || isRetryingCompletion) return;
-        setIsRetryingCompletion(true);
-        setValidationError(null);
-        try {
-            const result = await retryFailedMutation(queuedCompletionMutation.id);
-            if (result.failedMutation) {
-                setValidationError('Setup completion could not be confirmed. Check your connection and try again.');
-                return;
-            }
-            setDraftStatus('Confirming setup completion...');
-        } catch (error) {
-            setValidationError(getSafeActionErrorMessage(
-                error,
-                'Unable to retry setup completion. Try again.'
-            ));
-        } finally {
-            setIsRetryingCompletion(false);
-        }
-    }
-
     async function finishOnboarding() {
         if (isFinishing) return;
         setIsFinishing(true);
         setValidationError(null);
         try {
             await Promise.all([
-                queryClient.invalidateQueries({ queryKey: ONBOARDING_DRAFT_QUERY_KEY }),
                 queryClient.invalidateQueries({ queryKey: ['mobile-profile'] }),
                 queryClient.invalidateQueries({ queryKey: ['mobile-goal'] }),
                 queryClient.invalidateQueries({ queryKey: ['mobile-metrics'] }),
@@ -826,10 +597,6 @@ export default function OnboardingScreen() {
         }
     }
 
-    const navigationPending = saveDraftMutation.isPending
-        || completionMutation.isPending
-        || hasQueuedCompletion
-        || isFinishing;
     const paceBlocked = activeStep.key === 'pace' && (
         planOptionsQuery.isPending ||
         planOptionsQuery.isError ||
@@ -837,19 +604,14 @@ export default function OnboardingScreen() {
         planOptionsQuery.data?.eligibility.status !== 'eligible' ||
         selectedPlanOption?.available !== true
     );
+    const navigationPending = completionMutation.isPending || isFinishing;
     let primaryActionTitle = activeStep.key === 'review' && !setupSaved
         ? 'Complete setup'
         : getNextButtonTitle(nextStep?.key);
-    if (saveDraftMutation.isPending) {
-        primaryActionTitle = 'Saving progress...';
-    } else if (completionMutation.isPending) {
+    if (completionMutation.isPending) {
         primaryActionTitle = 'Completing setup...';
-    } else if (hasQueuedCompletion) {
-        primaryActionTitle = 'Waiting for connection...';
     } else if (isFinishing) {
         primaryActionTitle = 'Finishing...';
-    } else if (draftSaveFailed) {
-        primaryActionTitle = 'Retry save';
     }
 
     return (
@@ -859,18 +621,6 @@ export default function OnboardingScreen() {
             safeTop
             style={[styles.screen, { backgroundColor: themeColors.background }]}
         >
-            {(draftResourceState.kind === ASYNC_RESOURCE_STATES.STALE
-                || draftResourceState.kind === ASYNC_RESOURCE_STATES.DEGRADED) && (
-                <AsyncStateBoundary
-                    state={draftResourceState}
-                    resourceLabel="your saved setup"
-                    loading={null}
-                    empty={null}
-                    onRetry={isOnline ? refetchOnboardingDraft : undefined}
-                >
-                    {null}
-                </AsyncStateBoundary>
-            )}
             <View style={styles.setupHeader}>
                 <CalibrateLogo size={30} />
                 <View style={styles.setupHeaderCopy}>
@@ -901,12 +651,6 @@ export default function OnboardingScreen() {
                 </KeyboardAwareScrollView>
 
                 <View style={[styles.actionBar, { borderTopColor: themeColors.outlineVariant, backgroundColor: themeColors.background }]}>
-                    <OnboardingCompletionRecovery
-                        mutation={queuedCompletionMutation}
-                        status={draftStatus}
-                        retrying={isRetryingCompletion}
-                        onRetry={handleRetryCompletion}
-                    />
                     {validationError && (
                         <AppText accessibilityRole="alert" style={{ color: themeColors.danger }}>
                             {validationError}

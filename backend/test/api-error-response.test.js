@@ -103,25 +103,6 @@ async function startTestServer(t) {
       private: 'dropped'
     }
   }));
-  app.get('/onboarding-conflict', (_req, res) => res.status(409).json({
-    message: 'The onboarding draft changed on another device.',
-    code: 'ONBOARDING_DRAFT_CONFLICT',
-    retryable: true,
-    draft: {
-      schema_version: 1,
-      revision: 4,
-      current_step: 'about',
-      data: {
-        weight_unit: 'KG',
-        height_unit: 'CM',
-        timezone: 'America/Los_Angeles',
-        current_weight_grams: 82000
-      },
-      created_at: '2026-08-08T18:00:00.000Z',
-      updated_at: '2026-08-08T19:00:00.000Z',
-      private: 'dropped'
-    }
-  }));
   app.get('/primitive', (_req, res) => res.status(500).json('private upstream response'));
   app.get('/thrown', () => {
     throw Object.assign(new Error('private middleware failure'), { statusCode: 400, expose: false });
@@ -221,27 +202,6 @@ test('explicit error fields and domain extensions are preserved without mutating
     message: 'Weight changed since the watch snapshot',
     code: 'ENTITY_CONFLICT',
     retryable: false,
-    request_id: REQUEST_ID
-  });
-
-  const onboardingConflict = await request(origin, '/onboarding-conflict');
-  assert.deepEqual(await onboardingConflict.json(), {
-    draft: {
-      schema_version: 1,
-      revision: 4,
-      current_step: 'about',
-      data: {
-        weight_unit: 'KG',
-        height_unit: 'CM',
-        timezone: 'America/Los_Angeles',
-        current_weight_grams: 82000
-      },
-      created_at: '2026-08-08T18:00:00.000Z',
-      updated_at: '2026-08-08T19:00:00.000Z'
-    },
-    message: 'The onboarding draft changed on another device.',
-    code: 'ONBOARDING_DRAFT_CONFLICT',
-    retryable: true,
     request_id: REQUEST_ID
   });
 });

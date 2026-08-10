@@ -90,7 +90,6 @@ describe('executeOrQueueMutation', () => {
 describe('createQueuedMutationExecutor', () => {
     it('replays all supported operations with the persisted operation ID', async () => {
         const api = {
-            completeOnboarding: jest.fn(async () => undefined),
             createFoodLog: jest.fn(async () => undefined),
             updateFoodLog: jest.fn(async () => undefined),
             deleteFoodLog: jest.fn(async () => undefined),
@@ -104,22 +103,6 @@ describe('createQueuedMutationExecutor', () => {
         } as unknown as CalibrateApiClient;
         const execute = createQueuedMutationExecutor(api);
 
-        await execute(queuedMutation(OFFLINE_MUTATION_OPERATIONS.COMPLETE_ONBOARDING, {
-            schema_version: 1,
-            expected_revision: 4,
-            data: {
-                weight_unit: 'KG',
-                height_unit: 'CM',
-                timezone: 'America/Los_Angeles',
-                date_of_birth: '1985-05-12',
-                sex: 'MALE',
-                height_mm: 1800,
-                activity_level: 'LIGHT',
-                current_weight_grams: 82000,
-                target_weight_grams: 75000,
-                daily_deficit: 500
-            }
-        }));
         await execute(queuedMutation(OFFLINE_MUTATION_OPERATIONS.CREATE_FOOD_LOG, {
             date: '2026-07-11', meal_period: 'DINNER', name: 'Dinner', calories: 600
         }));
@@ -147,10 +130,6 @@ describe('createQueuedMutationExecutor', () => {
             resumed_on: '2026-07-13'
         }));
 
-        expect(api.completeOnboarding).toHaveBeenCalledWith(
-            expect.objectContaining({ expected_revision: 4 }),
-            'stable-operation-id'
-        );
         expect(api.createFoodLog).toHaveBeenCalledWith(expect.objectContaining({ name: 'Dinner' }), 'stable-operation-id');
         expect(api.addMetric).toHaveBeenCalledWith({ date: '2026-07-11', weight: 82.5 }, 'stable-operation-id');
         expect(api.updateFoodLog).toHaveBeenCalledWith(

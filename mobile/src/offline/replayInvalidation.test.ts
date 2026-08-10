@@ -36,27 +36,6 @@ describe('offline replay query invalidation', () => {
         ]);
     });
 
-    it('refreshes onboarding and its derived state after queued completion', async () => {
-        const receivedQueryKeys: unknown[] = [];
-        const invalidateQueries = jest.fn(async (filters: { queryKey?: readonly unknown[] }) => {
-            receivedQueryKeys.push(filters.queryKey);
-        });
-
-        await invalidateQueriesAfterOfflineReplay(
-            { invalidateQueries } as never,
-            replayResult([OFFLINE_MUTATION_OPERATIONS.COMPLETE_ONBOARDING])
-        );
-
-        expect(receivedQueryKeys).toEqual([
-            ['mobile-onboarding-draft'],
-            ['mobile-profile'],
-            ['mobile-goal'],
-            ['mobile-metrics'],
-            ['mobile-metrics-trend'],
-            ['mobile-calibration-status']
-        ]);
-    });
-
     it('refreshes calibration after a replayed food or day-evidence mutation', async () => {
         const invalidateQueries = jest.fn(async () => undefined);
 

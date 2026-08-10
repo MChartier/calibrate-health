@@ -52,9 +52,6 @@ import type {
     NativePushSubscriptionPayload,
     OnboardingCompleteRequest,
     OnboardingCompleteResponse,
-    OnboardingDraftResponse,
-    OnboardingDraftUpsertRequest,
-    OnboardingDraftUpsertResponse,
     RecentFoodsResponse,
     SyncChangesResponse,
     ScheduledCalibrationChange,
@@ -574,22 +571,6 @@ export class CalibrateApiClient {
         });
     }
 
-    getOnboardingDraft(): Promise<OnboardingDraftResponse> {
-        return this.request<OnboardingDraftResponse>('/api/onboarding/draft');
-    }
-
-    saveOnboardingDraft(payload: OnboardingDraftUpsertRequest): Promise<OnboardingDraftUpsertResponse> {
-        return this.request<OnboardingDraftUpsertResponse>('/api/onboarding/draft', {
-            method: 'PUT',
-            json: payload
-        });
-    }
-
-    deleteOnboardingDraft(): Promise<void> {
-        return this.request<void>('/api/onboarding/draft', {
-            method: 'DELETE'
-        });
-    }
 
     completeOnboarding(
         payload: OnboardingCompleteRequest,

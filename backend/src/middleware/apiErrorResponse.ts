@@ -25,24 +25,6 @@ const FOOD_DAY_SOURCES = new Set([
 ]);
 const CURRENT_FOOD_DAY_STATUSES = new Set(['OPEN', 'COMPLETE', 'INCOMPLETE', 'PAUSED']);
 const CURRENT_FOOD_DAY_SOURCES = new Set(['USER', 'PAUSE', 'IMPORT']);
-const ONBOARDING_STEPS = new Set(['goal', 'about', 'burn', 'pace', 'import', 'review']);
-const ONBOARDING_WEIGHT_UNITS = new Set(['KG', 'LB']);
-const ONBOARDING_HEIGHT_UNITS = new Set(['CM', 'FT_IN']);
-const ONBOARDING_SEX_VALUES = new Set(['MALE', 'FEMALE']);
-const ONBOARDING_ACTIVITY_LEVELS = new Set(['SEDENTARY', 'LIGHT', 'MODERATE', 'ACTIVE', 'VERY_ACTIVE']);
-const ONBOARDING_DAILY_DEFICITS = new Set([-1_000, -750, -500, -250, 0, 250, 500, 750, 1_000]);
-const ONBOARDING_DATA_FIELDS = new Set([
-  'weight_unit',
-  'height_unit',
-  'timezone',
-  'date_of_birth',
-  'sex',
-  'height_mm',
-  'activity_level',
-  'current_weight_grams',
-  'target_weight_grams',
-  'daily_deficit'
-]);
 
 const SAFE_SERVER_ERRORS: Readonly<Record<string, {
   status: number;
@@ -201,93 +183,6 @@ function normalizedCurrent(value: unknown): Record<string, unknown> | null | und
   return undefined;
 }
 
-function normalizedOnboardingDraft(value: unknown): Record<string, unknown> | undefined {
-  if (
-    !isRecord(value) ||
-    value.schema_version !== 1 ||
-    typeof value.revision !== 'number' ||
-    !Number.isSafeInteger(value.revision) ||
-    value.revision < 1 ||
-    value.revision > 2_147_483_647 ||
-    !(value.current_step === null || (
-      typeof value.current_step === 'string' &&
-      ONBOARDING_STEPS.has(value.current_step)
-    )) ||
-    !isRecord(value.data) ||
-    Object.keys(value.data).length > ONBOARDING_DATA_FIELDS.size ||
-    !Object.keys(value.data).every((field) => ONBOARDING_DATA_FIELDS.has(field)) ||
-    !isDateTimeValue(value.created_at) ||
-    value.created_at === null ||
-    !isDateTimeValue(value.updated_at) ||
-    value.updated_at === null
-  ) {
-    return undefined;
-  }
-
-  const data = value.data;
-  if (
-    !(data.weight_unit === undefined || (
-      typeof data.weight_unit === 'string' &&
-      ONBOARDING_WEIGHT_UNITS.has(data.weight_unit)
-    )) ||
-    !(data.height_unit === undefined || (
-      typeof data.height_unit === 'string' &&
-      ONBOARDING_HEIGHT_UNITS.has(data.height_unit)
-    )) ||
-    !(data.timezone === undefined || (
-      typeof data.timezone === 'string' &&
-      normalizedMessage(data.timezone, 255) === data.timezone
-    )) ||
-    !(data.date_of_birth === undefined || (
-      typeof data.date_of_birth === 'string' &&
-      LOCAL_DATE_PATTERN.test(data.date_of_birth)
-    )) ||
-    !(data.sex === undefined || (
-      typeof data.sex === 'string' &&
-      ONBOARDING_SEX_VALUES.has(data.sex)
-    )) ||
-    !(data.height_mm === undefined || (
-      typeof data.height_mm === 'number' &&
-      Number.isSafeInteger(data.height_mm) &&
-      data.height_mm >= 1_000 &&
-      data.height_mm <= 2_500
-    )) ||
-    !(data.activity_level === undefined || (
-      typeof data.activity_level === 'string' &&
-      ONBOARDING_ACTIVITY_LEVELS.has(data.activity_level)
-    )) ||
-    !(data.current_weight_grams === undefined || (
-      typeof data.current_weight_grams === 'number' &&
-      Number.isSafeInteger(data.current_weight_grams) &&
-      data.current_weight_grams >= 25_000 &&
-      data.current_weight_grams <= 400_000
-    )) ||
-    !(data.target_weight_grams === undefined || (
-      typeof data.target_weight_grams === 'number' &&
-      Number.isSafeInteger(data.target_weight_grams) &&
-      data.target_weight_grams >= 25_000 &&
-      data.target_weight_grams <= 400_000
-    )) ||
-    !(data.daily_deficit === undefined || (
-      typeof data.daily_deficit === 'number' &&
-      ONBOARDING_DAILY_DEFICITS.has(data.daily_deficit)
-    ))
-  ) {
-    return undefined;
-  }
-
-  return {
-    schema_version: 1,
-    revision: value.revision,
-    current_step: value.current_step,
-    data: Object.fromEntries(
-      Object.entries(data).filter(([field]) => ONBOARDING_DATA_FIELDS.has(field))
-    ),
-    created_at: value.created_at instanceof Date ? value.created_at.toISOString() : value.created_at,
-    updated_at: value.updated_at instanceof Date ? value.updated_at.toISOString() : value.updated_at
-  };
-}
-
 function normalizedExtensions(
   statusCode: number,
   code: string,
@@ -318,11 +213,6 @@ function normalizedExtensions(
   if (code === 'ENTITY_CONFLICT') {
     const current = normalizedCurrent(body.current);
     if (current !== undefined) extensions.current = current;
-  }
-
-  if (code === 'ONBOARDING_DRAFT_CONFLICT') {
-    const draft = normalizedOnboardingDraft(body.draft);
-    if (draft !== undefined) extensions.draft = draft;
   }
 
   return extensions;

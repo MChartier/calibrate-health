@@ -182,7 +182,6 @@ const resetDevTestAccountHistory = async (userId: number): Promise<void> => {
     await tx.foodLogDay.deleteMany({ where: { user_id: userId } });
     await tx.foodTrackingPause.deleteMany({ where: { user_id: userId } });
     await tx.bodyMetric.deleteMany({ where: { user_id: userId } });
-    await tx.onboardingDraft.deleteMany({ where: { user_id: userId } });
     await tx.user.update({
       where: { id: userId },
       data: { onboarding_completed_at: null }
@@ -206,7 +205,6 @@ const createBodyMetrics = async (userId: number, days: Date[]): Promise<void> =>
 /** Mark the seeded baseline complete only after its required goal and metric writes exist. */
 const markTestUserOnboardingComplete = async (userId: number, completedAt: Date): Promise<void> => {
   await prisma.$transaction(async (tx) => {
-    await tx.onboardingDraft.deleteMany({ where: { user_id: userId } });
     await tx.user.update({
       where: { id: userId },
       data: { onboarding_completed_at: completedAt }
@@ -276,7 +274,6 @@ export const resetDevTestUserToPreOnboardingState = async (): Promise<number> =>
     await tx.bodyMetric.deleteMany({ where: { user_id: user.id } });
     await tx.foodLog.deleteMany({ where: { user_id: user.id } });
     await tx.foodLogDay.deleteMany({ where: { user_id: user.id } });
-    await tx.onboardingDraft.deleteMany({ where: { user_id: user.id } });
 
     await tx.user.update({
       where: { id: user.id },

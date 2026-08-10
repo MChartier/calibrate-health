@@ -58,9 +58,6 @@ function createPrismaStub(events) {
     bodyMetric: {
       deleteMany: async ({ where }) => record('bodyMetric.deleteMany', where)
     },
-    onboardingDraft: {
-      deleteMany: async ({ where }) => record('onboardingDraft.deleteMany', where)
-    },
     user: {
       update: async ({ data }) => {
         record('user.update', data);
@@ -118,10 +115,9 @@ test('dev seed marks onboarding complete only after baseline goal and metric wri
     ),
     true
   );
-  assert.equal(events[completionIndex - 1].kind, 'onboardingDraft.deleteMany');
 });
 
-test('pre-onboarding reset clears the persisted draft and completion marker', async () => {
+test('pre-onboarding reset clears the completion marker', async () => {
   const events = [];
   const prismaStub = createPrismaStub(events);
   const { resetDevTestUserToPreOnboardingState } = loadDevTestDataService(prismaStub);
@@ -129,10 +125,6 @@ test('pre-onboarding reset clears the persisted draft and completion marker', as
   const userId = await resetDevTestUserToPreOnboardingState();
 
   assert.equal(userId, 7);
-  assert.equal(
-    events.some(({ kind }) => kind === 'onboardingDraft.deleteMany'),
-    true
-  );
   const reset = events.find(({ kind }) => kind === 'user.update');
   assert.equal(reset.data.onboarding_completed_at, null);
   assert.equal(reset.data.date_of_birth, null);

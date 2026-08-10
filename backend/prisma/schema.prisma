@@ -173,20 +173,6 @@ model User {
   account_action_tokens AccountActionToken[]
   /// Versioned user consent history for Terms and Privacy.
   legal_acceptances LegalAcceptance[]
-  /// Cross-device, versioned progress for the required onboarding flow.
-  onboarding_draft OnboardingDraft?
-}
-
-model OnboardingDraft {
-  /// One active draft per account; the user id is also the draft identity.
-  user_id        Int      @id
-  user           User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  schema_version Int      @default(1)
-  revision       Int      @default(1)
-  current_step   String?
-  data           Json
-  created_at     DateTime @default(now())
-  updated_at     DateTime @updatedAt
 }
 
 enum AccountTokenPurpose {
