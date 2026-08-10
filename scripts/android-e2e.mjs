@@ -306,6 +306,10 @@ export function summarizeAndroidE2eUi(xml) {
   return markers.length > 0 ? markers.join(', ') : 'none';
 }
 
+export function isAndroidE2eQuickNode(node) {
+  return node?.label === 'Quick' || node?.text === 'Quick';
+}
+
 async function loginApi() {
   return requestJson('/auth/mobile/login', {
     method: 'POST',
@@ -389,7 +393,7 @@ async function openQuickAdd(name, date) {
   const launchOutput = adb(buildAddFoodLaunchArgs(date), { quiet: true });
   assertAndroidAppLinkLaunch(launchOutput);
   try {
-    await waitForNode('Quick add mode', (node) => node.clickable && node.label === 'Quick', 45_000);
+    await waitForNode('Quick add mode', isAndroidE2eQuickNode, 45_000);
   } catch (error) {
     let markers = 'unavailable';
     try {
@@ -401,7 +405,7 @@ async function openQuickAdd(name, date) {
   }
   await tapNodeUntilVisible(
     'Quick add mode',
-    (node) => node.clickable && node.label === 'Quick',
+    isAndroidE2eQuickNode,
     `${name} recent row`,
     (node) => node.clickable && node.label.startsWith(`${name},`),
   );

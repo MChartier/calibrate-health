@@ -13,6 +13,7 @@ import {
   buildE2eRequestHeaders,
   buildOpenFoodDayRequest,
   crashBufferContainsCalibrateProcess,
+  isAndroidE2eQuickNode,
   resolveAndroidE2eAdb,
   summarizeAndroidE2eUi
 } from './android-e2e.mjs';
@@ -51,6 +52,12 @@ test('Android E2E failure diagnostics expose only fixed UI markers', () => {
     + '</hierarchy>';
   assert.equal(summarizeAndroidE2eUi(xml), 'Add food, Today');
   assert.equal(summarizeAndroidE2eUi('<hierarchy />'), 'none');
+});
+
+test('Android E2E activates the exact Quick radio through its label or text node', () => {
+  assert.equal(isAndroidE2eQuickNode({ label: 'Quick', text: '', clickable: false }), true);
+  assert.equal(isAndroidE2eQuickNode({ label: '', text: 'Quick', clickable: false }), true);
+  assert.equal(isAndroidE2eQuickNode({ label: 'Search', text: 'Search', clickable: true }), false);
 });
 
 test('Android E2E API probes identify the current phone release', () => {
