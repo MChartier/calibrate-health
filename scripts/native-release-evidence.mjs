@@ -476,6 +476,12 @@ function parseReleaseManifest(content, errors) {
   }
 }
 
+function isExactCalendarDate(value) {
+  if (!DATE_PATTERN.test(value ?? '')) return false;
+  const parsed = new Date(`${value}T00:00:00.000Z`);
+  return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value;
+}
+
 /** Validate a retained result without consulting devices or artifact files. */
 export function validateNativeReleaseEvidence(result, options = {}) {
   const errors = [];
@@ -488,7 +494,7 @@ export function validateNativeReleaseEvidence(result, options = {}) {
   if (!isNonEmptyString(result?.owner)) errors.push('Native release evidence must name an owner.');
   const executedAt = Date.parse(`${result?.executedOn}T00:00:00Z`);
   const now = options.now ?? new Date();
-  if (!DATE_PATTERN.test(result?.executedOn ?? '') || Number.isNaN(executedAt)) {
+  if (!isExactCalendarDate(result?.executedOn) || Number.isNaN(executedAt)) {
     errors.push('Native release evidence executedOn must be a valid YYYY-MM-DD date.');
   } else if (executedAt > now.getTime()) {
     errors.push('Native release evidence executedOn cannot be in the future.');

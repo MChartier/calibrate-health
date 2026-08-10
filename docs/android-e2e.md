@@ -40,12 +40,15 @@ npm.cmd --prefix mobile start -- --localhost
 Install the current debug APK on a booted emulator, then run from the repository root:
 
 ```powershell
+$env:ANDROID_ADB_SERIAL='emulator-5554'
 npm.cmd run test:android:e2e
 ```
 
-The script defaults to `http://127.0.0.1:3000`, the seeded `test@calibratehealth.app` account, and the standard
-Android SDK path under `%LOCALAPPDATA%`. Override `CALIBRATE_E2E_API_URL`, `CALIBRATE_E2E_EMAIL`,
-`CALIBRATE_E2E_PASSWORD`, or `ADB` when needed. Use only disposable test data: the script deliberately clears the
+`ANDROID_ADB_SERIAL` is mandatory and must name the explicit phone emulator target (`emulator-<port>`); change
+`emulator-5554` when the disposable AVD uses a different port. The script defaults to
+`http://127.0.0.1:3000`, the seeded `test@calibratehealth.app` account, and the standard Android SDK path under
+`%LOCALAPPDATA%`. Override `CALIBRATE_E2E_API_URL`, `CALIBRATE_E2E_EMAIL`, `CALIBRATE_E2E_PASSWORD`, or `ADB` when
+needed. Use only disposable test data: the script deliberately clears the
 emulator app sandbox and adds food logs.
 
 Stop the disposable database when finished:

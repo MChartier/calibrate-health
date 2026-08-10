@@ -250,6 +250,18 @@ test('rejects future execution dates and non-allowlisted protocol text', () => {
   assert.ok(result.errors.some((error) => error.includes('protocol must be docs/physical-galaxy-validation.md')));
 });
 
+test('rejects calendar dates that JavaScript would otherwise normalize', () => {
+  const fixture = evidenceFixture();
+  fixture.executedOn = '2026-02-31';
+
+  const result = validateNativeReleaseEvidence(fixture, {
+    manifestContent: MANIFEST,
+    now: new Date('2026-08-09T23:59:59Z')
+  });
+
+  assert.ok(result.errors.includes('Native release evidence executedOn must be a valid YYYY-MM-DD date.'));
+});
+
 test('evidence-only attestation is a sole-parent child and changes only the manifest plus result', () => {
   assert.deepEqual(validateEvidenceOnlyAttestation({
     sourceCommit: SOURCE_COMMIT,
