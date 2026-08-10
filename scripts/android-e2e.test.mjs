@@ -19,6 +19,7 @@ import {
 } from './android-e2e.mjs';
 
 const release = JSON.parse(readFileSync(new URL('../shared/release.json', import.meta.url), 'utf8'));
+const androidE2eSource = readFileSync(new URL('./android-e2e.mjs', import.meta.url), 'utf8');
 
 test('Android E2E uses the same localhost Metro origin as the hosted readiness probe', () => {
   assert.equal(ANDROID_E2E_METRO_STATUS_URL, 'http://localhost:8081/status');
@@ -78,6 +79,11 @@ test('Android E2E opens Add food through a fresh canonical native route', () => 
     /did not launch the Calibrate activity/,
   );
   assert.throws(() => buildAddFoodDeepLink('08/10/2026'), /must be YYYY-MM-DD/);
+  assert.doesNotMatch(androidE2eSource, /'monkey'/);
+  assert.match(
+    androidE2eSource,
+    /logRecentFood\(onlineName, date, ANDROID_E2E_INITIAL_LAUNCH_TIMEOUT_MS\)/,
+  );
 });
 
 test('Android E2E failure diagnostics expose only fixed UI markers', () => {

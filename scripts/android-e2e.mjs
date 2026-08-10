@@ -371,20 +371,14 @@ async function waitForFoodCount(accessToken, date, name, expected, timeoutMs = 3
   }, timeoutMs, 750);
 }
 
-async function launchAndWaitForLog(timeoutMs = 45_000) {
-  adb(['shell', 'am', 'force-stop', APP_ID], { quiet: true });
-  adb(['shell', 'monkey', '-p', APP_ID, '-c', 'android.intent.category.LAUNCHER', '1'], { quiet: true });
-  await waitForNode('authenticated Log screen', (node) => node.clickable && node.label === 'Add food', timeoutMs);
-}
-
-async function openRecentAdd(name, date) {
+async function openRecentAdd(name, date, timeoutMs = 45_000) {
   const launchOutput = adb(buildAddFoodLaunchArgs(date), { quiet: true });
   assertAndroidAppLinkLaunch(launchOutput);
   try {
     await waitForNode(
       `${name} recent row`,
       (node) => isAndroidE2eRecentFoodNode(node, name),
-      45_000,
+      timeoutMs,
     );
   } catch (error) {
     let markers = 'unavailable';
@@ -404,8 +398,8 @@ async function logOpenRecentFood(name, waitForSheetClose = true) {
   }
 }
 
-async function logRecentFood(name, date) {
-  await openRecentAdd(name, date);
+async function logRecentFood(name, date, timeoutMs = 45_000) {
+  await openRecentAdd(name, date, timeoutMs);
   await logOpenRecentFood(name, false);
 }
 
@@ -438,12 +432,10 @@ async function main() {
   configureMetroReverseHost();
 
   try {
-    // The first native launch also triggers Metro's cold Android bundle compilation.
-    await launchAndWaitForLog(ANDROID_E2E_INITIAL_LAUNCH_TIMEOUT_MS);
-
     const onlineName = ONLINE_FOOD.name;
     const onlineBefore = await countFood(session.access_token, date, onlineName);
-    await logRecentFood(onlineName, date);
+    // The canonical app link owns the first launch and triggers Metro's cold Android bundle.
+    await logRecentFood(onlineName, date, ANDROID_E2E_INITIAL_LAUNCH_TIMEOUT_MS);
     await waitForFoodCount(session.access_token, date, onlineName, onlineBefore + 1);
     console.log(`PASS online one-tap logging count: ${onlineBefore} -> ${onlineBefore + 1}`);
 
@@ -465,11 +457,11 @@ async function main() {
 
     adb(['shell', 'am', 'force-stop', APP_ID], { quiet: true });
     apiProxy.setAvailable(true);
-    await launchAndWaitForLog();
+    await openRecentAdd(offlineName, date);
     await waitForFoodCount(session.access_token, date, offlineName, offlineBefore + 1, 45_000);
     console.log(`PASS process-death replay count: ${offlineBefore} -> ${offlineBefore + 1}`);
 
-    await launchAndWaitForLog();
+    await openRecentAdd(offlineName, date);
     await sleep(3_000);
     const finalCount = await countFood(session.access_token, date, offlineName);
     if (finalCount !== offlineBefore + 1) {
