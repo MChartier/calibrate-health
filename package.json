@@ -1,9 +1,8 @@
 {
   "name": "cal-io",
-  "version": "0.33.3",
+  "version": "0.33.4",
   "private": true,
   "description": "",
-  "main": "index.js",
   "workspaces": [
     "mobile",
     "shared",
@@ -101,7 +100,10 @@
     "deploy:config:check": "node deploy/scripts/validate-compose.mjs",
     "test:coverage": "npm run test:coverage:backend && npm run test:coverage:mobile",
     "test:coverage:backend": "npm --prefix backend run test:coverage",
-    "test:coverage:mobile": "npm --prefix mobile test -- --coverage --runInBand"
+    "test:coverage:mobile": "npm --prefix mobile test -- --coverage --runInBand",
+    "knip": "knip",
+    "knip:production": "knip --production",
+    "test:dead-code": "node --test scripts/knip-config.test.mjs && npm run knip && npm run knip:production"
   },
   "keywords": [],
   "author": "",
@@ -119,6 +121,7 @@
     "@playwright/test": "^1.61.1",
     "@types/node": "^20.0.0",
     "esbuild-wasm": "^0.28.1",
+    "knip": "6.29.0",
     "typescript": "~6.0.3"
   }
 }

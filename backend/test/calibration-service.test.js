@@ -14,10 +14,9 @@ function stubModule(path, exports) {
   require.cache[path] = stub;
 }
 
-function loadCalibrationService({ prisma, planning, currentPlan = null, operations = {}, trendModelVersion = 2 }) {
+function loadCalibrationService({ prisma, planning, operations = {}, trendModelVersion = 2 }) {
   const paths = {
     database: require.resolve('../src/config/database'),
-    caloriePlan: require.resolve('../src/services/caloriePlan'),
     caloriePlanning: require.resolve('../src/services/caloriePlanning'),
     profile: require.resolve('../src/utils/profile'),
     operations: require.resolve('../src/services/clientOperations'),
@@ -27,7 +26,6 @@ function loadCalibrationService({ prisma, planning, currentPlan = null, operatio
   const previous = new Map(Object.values(paths).map((path) => [path, require.cache[path]]));
   delete require.cache[paths.service];
   stubModule(paths.database, prisma);
-  stubModule(paths.caloriePlan, { getEffectiveCaloriePlan: async () => currentPlan });
   stubModule(paths.caloriePlanning, {
     getStoredCaloriePlanningSnapshot: async () => planning.current,
     buildStoredCaloriePlanningSnapshot: async () => planning.transactional ?? planning.current
@@ -233,7 +231,7 @@ function createHarness({ scenarioId = 'target-too-high', scheduledRevision = nul
     projection: null
   };
   const planningState = { current: planning, transactional: null };
-  const service = loadCalibrationService({ prisma, planning: planningState, currentPlan, operations, trendModelVersion });
+  const service = loadCalibrationService({ prisma, planning: planningState, operations, trendModelVersion });
   return {
     scenario, serviceInput, captured, prisma, service, planningState,
     evidenceState: { logs, completionDays, weightRows },

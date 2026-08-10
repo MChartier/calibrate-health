@@ -42,13 +42,3 @@ export function formatWeight(value: number | null | undefined, unit: WeightUnit 
 export function formatWeightUnit(unit: WeightUnit | undefined): string {
     return unit === 'LB' ? 'lb' : 'kg';
 }
-
-export function formatSignedCalories(value: number | null | undefined): string {
-    if (typeof value !== 'number' || !Number.isFinite(value)) {
-        return '-';
-    }
-
-    const rounded = Math.round(value);
-    const sign = rounded > 0 ? '+' : '';
-    return `${sign}${rounded.toLocaleString()} kcal`;
-}

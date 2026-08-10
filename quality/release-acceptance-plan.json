@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "protocolPath": "docs/release-acceptance.md",
   "releaseManifestPath": "shared/release.json",
-  "releaseNotesPath": "docs/releases/0.33.3-native-0.2.5-wear-0.2.5.md",
+  "releaseNotesPath": "docs/releases/0.33.4-native-0.2.5-wear-0.2.5.md",
   "candidateContract": {
     "source": "pull-request-head",
     "shaFormat": "lowercase-40-hex",

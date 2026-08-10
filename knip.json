@@ -1,0 +1,53 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "treatConfigHintsAsErrors": true,
+  "rules": {
+    "exports": "warn",
+    "types": "warn"
+  },
+  "workspaces": {
+    ".": {
+      "entry": [".codex/local-environment.setup.mjs", "scripts/reset-test-user-onboarding.mjs"],
+      "project": [
+        ".codex/**/*.mjs",
+        "deploy/**/*.{js,mjs,ts}",
+        "e2e/**/*.{ts,tsx}",
+        "scripts/**/*.{js,cjs,mjs,ts}",
+        "tools/**/*.{js,cjs,mjs,ts}",
+        "*.{js,cjs,mjs,ts}"
+      ],
+      "ignoreDependencies": ["@expo/config-plugins", "react", "react-dom", "react-native-safe-area-context"],
+      "github-actions": true,
+      "playwright": {
+        "config": ["playwright.expo-web.config.ts", "playwright.ux.config.ts"]
+      }
+    },
+    "backend": {
+      "entry": ["src/index.ts!", "prisma.config.ts", "prisma/seed.ts", "scripts/*.js", "test/**/*.test.js"],
+      "project": ["src/**/*.ts!", "prisma/**/*.prisma", "prisma/**/*.ts", "scripts/**/*.js", "test/**/*.js"],
+      "ignoreDependencies": ["@redocly/openapi-core", "openapi-typescript"],
+      "prisma": { "config": [] }
+    },
+    "mobile": {
+      "project": [
+        "app/**/*.{ts,tsx}!",
+        "src/**/*.{ts,tsx}!",
+        "!src/**/*.test.{ts,tsx}!",
+        "plugins/**/*.{js,ts}",
+        "test/**/*.js",
+        "*.{js,cjs}"
+      ],
+      "ignoreDependencies": ["@babel/runtime!", "abort-controller", "regenerator-runtime", "uuid", "whatwg-fetch"]
+    },
+    "shared": {
+      "project": ["*.ts!", "!calibrationScenarios.ts!", "calibrationScenarios.ts"]
+    },
+    "packages/api-client": {
+      "project": ["src/**/*.ts!", "test/**/*.test.ts"],
+      "ignoreFiles": ["src/generated/v1.ts"]
+    },
+    "mobile/modules/wear-pairing": {
+      "project": ["**/*.ts!"]
+    }
+  }
+}

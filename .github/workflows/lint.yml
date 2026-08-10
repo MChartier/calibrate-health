@@ -39,3 +39,6 @@ jobs:
 
       - name: Type-check all TypeScript surfaces
         run: npm run lint
+
+      - name: Check for dead code
+        run: npm run test:dead-code

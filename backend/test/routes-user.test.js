@@ -16,7 +16,6 @@ function loadUserRouter({ prismaStub, bcryptStub, accountLifecycleStub }) {
   const browserSessionsPath = require.resolve('../src/services/browserSessions');
   const accountLifecyclePath = require.resolve('../src/services/accountLifecycle');
   const clientOperationsPath = require.resolve('../src/services/clientOperations');
-  const caloriePlanPath = require.resolve('../src/services/caloriePlan');
   const caloriePlanningPath = require.resolve('../src/services/caloriePlanning');
   const caloriePlanReviewPath = require.resolve('../src/services/caloriePlanReview');
   const userPath = require.resolve('../src/routes/user');
@@ -27,7 +26,6 @@ function loadUserRouter({ prismaStub, bcryptStub, accountLifecycleStub }) {
   const previousBrowserSessionsModule = require.cache[browserSessionsPath];
   const previousAccountLifecycleModule = require.cache[accountLifecyclePath];
   const previousClientOperationsModule = require.cache[clientOperationsPath];
-  const previousCaloriePlanModule = require.cache[caloriePlanPath];
   const previousCaloriePlanningModule = require.cache[caloriePlanningPath];
   const previousCaloriePlanReviewModule = require.cache[caloriePlanReviewPath];
 
@@ -36,7 +34,6 @@ function loadUserRouter({ prismaStub, bcryptStub, accountLifecycleStub }) {
   delete require.cache[browserSessionsPath];
   delete require.cache[accountLifecyclePath];
   delete require.cache[clientOperationsPath];
-  delete require.cache[caloriePlanPath];
   delete require.cache[caloriePlanningPath];
   delete require.cache[caloriePlanReviewPath];
 
@@ -77,8 +74,6 @@ function loadUserRouter({ prismaStub, bcryptStub, accountLifecycleStub }) {
   if (previousClientOperationsModule) require.cache[clientOperationsPath] = previousClientOperationsModule;
   else delete require.cache[clientOperationsPath];
 
-  if (previousCaloriePlanModule) require.cache[caloriePlanPath] = previousCaloriePlanModule;
-  else delete require.cache[caloriePlanPath];
   if (previousCaloriePlanningModule) require.cache[caloriePlanningPath] = previousCaloriePlanningModule;
   else delete require.cache[caloriePlanningPath];
   if (previousCaloriePlanReviewModule) require.cache[caloriePlanReviewPath] = previousCaloriePlanReviewModule;

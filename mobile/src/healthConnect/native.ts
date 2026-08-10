@@ -136,8 +136,3 @@ export function normalizeRevocationResponse(
     }
     return response;
 }
-
-/** Test hook for resetting a failed or mocked dynamic import between cases. */
-export function resetHealthConnectNativeForTests(): void {
-    nativeModulePromise = null;
-}

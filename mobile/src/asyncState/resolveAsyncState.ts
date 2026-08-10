@@ -79,5 +79,4 @@ export function resolveAsyncResourceState<T>(
 }
 
 export const isNullResource = <T>(value: T | null): boolean => value === null;
-export const isEmptyCollection = (value: readonly unknown[]): boolean => value.length === 0;
 export const isNeverEmpty = (): false => false;
