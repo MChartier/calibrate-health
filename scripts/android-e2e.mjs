@@ -13,6 +13,8 @@ const TEST_PASSWORD = process.env.CALIBRATE_E2E_PASSWORD ?? 'password123';
 const APP_ID = 'app.calibratehealth.mobile';
 export const ANDROID_E2E_METRO_STATUS_URL = 'http://localhost:8081/status';
 export const ANDROID_E2E_INITIAL_LAUNCH_TIMEOUT_MS = 90_000;
+// Give a newly triggered native sheet time to mount before retrying the same tap.
+export const ANDROID_E2E_UI_ACTION_RETRY_MS = 7_500;
 const ONLINE_FOOD = { name: 'Android E2E latte', calories: 190 };
 const OFFLINE_FOOD = { name: 'Android E2E protein shake', calories: 240 };
 const UI_DUMP_PATH = '/sdcard/calibrate-e2e-window.xml';
@@ -221,7 +223,7 @@ async function tapNodeUntilVisible(
       const ready = findNode(xml, readyPredicate);
       if (ready) return ready;
       const action = findNode(xml, actionPredicate);
-      if (action && Date.now() - lastTapAt >= 2_000) {
+      if (action && Date.now() - lastTapAt >= ANDROID_E2E_UI_ACTION_RETRY_MS) {
         tapFoundNode(action);
         lastTapAt = Date.now();
       }

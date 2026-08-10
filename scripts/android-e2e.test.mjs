@@ -5,6 +5,7 @@ import test from 'node:test';
 import {
   ANDROID_E2E_INITIAL_LAUNCH_TIMEOUT_MS,
   ANDROID_E2E_METRO_STATUS_URL,
+  ANDROID_E2E_UI_ACTION_RETRY_MS,
   buildAndroidE2eAdbArgs,
   buildE2eRequestHeaders,
   buildOpenFoodDayRequest,
@@ -17,6 +18,7 @@ const release = JSON.parse(readFileSync(new URL('../shared/release.json', import
 test('Android E2E uses the same localhost Metro origin as the hosted readiness probe', () => {
   assert.equal(ANDROID_E2E_METRO_STATUS_URL, 'http://localhost:8081/status');
   assert.equal(ANDROID_E2E_INITIAL_LAUNCH_TIMEOUT_MS, 90_000);
+  assert.equal(ANDROID_E2E_UI_ACTION_RETRY_MS, 7_500);
 });
 
 test('Android E2E API probes identify the current phone release', () => {
