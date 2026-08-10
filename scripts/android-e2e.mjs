@@ -12,6 +12,7 @@ const TEST_EMAIL = process.env.CALIBRATE_E2E_EMAIL ?? 'test@calibratehealth.app'
 const TEST_PASSWORD = process.env.CALIBRATE_E2E_PASSWORD ?? 'password123';
 const APP_ID = 'app.calibratehealth.mobile';
 export const ANDROID_E2E_METRO_STATUS_URL = 'http://localhost:8081/status';
+export const ANDROID_E2E_INITIAL_LAUNCH_TIMEOUT_MS = 90_000;
 const ONLINE_FOOD = { name: 'Android E2E latte', calories: 190 };
 const OFFLINE_FOOD = { name: 'Android E2E protein shake', calories: 240 };
 const UI_DUMP_PATH = '/sdcard/calibrate-e2e-window.xml';
@@ -313,10 +314,10 @@ async function waitForFoodCount(accessToken, date, name, expected, timeoutMs = 3
   }, timeoutMs, 750);
 }
 
-async function launchAndWaitForLog() {
+async function launchAndWaitForLog(timeoutMs = 45_000) {
   adb(['shell', 'am', 'force-stop', APP_ID], { quiet: true });
   adb(['shell', 'monkey', '-p', APP_ID, '-c', 'android.intent.category.LAUNCHER', '1'], { quiet: true });
-  await waitForNode('authenticated Log screen', (node) => node.clickable && node.label === 'Add food', 45_000);
+  await waitForNode('authenticated Log screen', (node) => node.clickable && node.label === 'Add food', timeoutMs);
 }
 
 async function openQuickAdd() {
@@ -363,7 +364,8 @@ async function main() {
   configureMetroReverseHost();
 
   try {
-    await launchAndWaitForLog();
+    // The first native launch also triggers Metro's cold Android bundle compilation.
+    await launchAndWaitForLog(ANDROID_E2E_INITIAL_LAUNCH_TIMEOUT_MS);
 
     const onlineName = ONLINE_FOOD.name;
     const onlineBefore = await countFood(session.access_token, date, onlineName);
