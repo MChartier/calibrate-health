@@ -35,6 +35,11 @@ import { BarcodeRecoveryActions } from './BarcodeRecoveryActions';
 import { BarcodeResultList } from './BarcodeResultList';
 import { createBarcodeLoginDestination } from './authReturn';
 import {
+    clearBarcodeManualFoodDraft,
+    readBarcodeManualFoodDraft,
+    saveBarcodeManualFoodDraft
+} from './manualDraft';
+import {
     cameraPermissionCopy,
     isBarcodeCameraAvailable,
     openBarcodeCameraSettings
@@ -67,7 +72,9 @@ import {
 type BarcodeMode = 'scan' | 'manual-barcode' | 'manual-food';
 
 function getInitialMode(resume: BarcodeResumeContext): BarcodeMode {
-    return resume.resumeStep === BARCODE_RESUME_STEPS.MANUAL ? 'manual-barcode' : 'scan';
+    if (resume.resumeStep === BARCODE_RESUME_STEPS.MANUAL) return 'manual-barcode';
+    if (resume.resumeStep === BARCODE_RESUME_STEPS.MANUAL_FOOD) return 'manual-food';
+    return 'scan';
 }
 
 export default function BarcodeScreen() {
@@ -97,6 +104,8 @@ export default function BarcodeScreen() {
     const [mode, setMode] = useState<BarcodeMode>(() => getInitialMode(initialResume));
     const [barcode, setBarcode] = useState<string | null>(initialBarcode);
     const [manualBarcode, setManualBarcode] = useState(initialBarcode ?? '');
+    const [manualFoodName, setManualFoodName] = useState('');
+    const [manualFoodCalories, setManualFoodCalories] = useState('');
     const [manualBarcodeError, setManualBarcodeError] = useState<string | null>(null);
     const [cameraMessage, setCameraMessage] = useState<string | null>(null);
     const [scanError, setScanError] = useState<string | null>(null);
@@ -110,7 +119,33 @@ export default function BarcodeScreen() {
     const submissionGate = useRef(new BarcodeSubmissionGate());
     const activeBarcodeRef = useRef<string | null>(null);
     const resumedLookupRef = useRef(false);
+    const manualDraftRestoredRef = useRef(false);
     const selectedDate = routeContext.date;
+
+    useEffect(() => {
+        if (mode !== 'manual-food' || !user) return;
+        const context = {
+            ownerId: user.id,
+            date: selectedDate,
+            meal,
+            returnTo: routeContext.returnTo
+        };
+        if (!manualDraftRestoredRef.current) {
+            manualDraftRestoredRef.current = true;
+            const draft = readBarcodeManualFoodDraft(context);
+            if (draft) {
+                setManualFoodName(draft.name);
+                setManualFoodCalories(draft.calories);
+                return;
+            }
+        }
+        saveBarcodeManualFoodDraft({
+            ...context,
+            name: manualFoodName,
+            calories: manualFoodCalories
+        });
+    }, [manualFoodCalories, manualFoodName, meal, mode, routeContext.returnTo, selectedDate, user]);
+
     const foodDayQuery = useFoodDayStatus(selectedDate, Boolean(user));
 
     useEffect(() => {
@@ -158,6 +193,7 @@ export default function BarcodeScreen() {
         onError: () => submissionGate.current.fail(),
         onSuccess: async (_result, request) => {
             submissionGate.current.complete();
+            clearBarcodeManualFoodDraft();
             triggerHapticFeedback(user?.haptics_enabled, 'success');
             await Promise.all([
                 queryClient.invalidateQueries({ queryKey: ['mobile-food', selectedDate] }),
@@ -234,6 +270,9 @@ export default function BarcodeScreen() {
         activeBarcodeRef.current = null;
         setBarcode(null);
         setManualBarcode('');
+        setManualFoodName('');
+        setManualFoodCalories('');
+        clearBarcodeManualFoodDraft();
         setManualBarcodeError(null);
         setScanError(null);
         setSelection(null);
@@ -279,6 +318,10 @@ export default function BarcodeScreen() {
     function openManualFood() {
         submissionGate.current.reset();
         logFood.reset();
+        clearBarcodeManualFoodDraft();
+        manualDraftRestoredRef.current = false;
+        setManualFoodName('');
+        setManualFoodCalories('');
         setIsMealSelectorOpen(false);
         setMode('manual-food');
     }
@@ -343,7 +386,8 @@ export default function BarcodeScreen() {
     if (!user) {
         let resumeStep: BarcodeResumeStep = BARCODE_RESUME_STEPS.SCAN;
         if (barcode) resumeStep = BARCODE_RESUME_STEPS.LOOKUP;
-        else if (mode !== 'scan') resumeStep = BARCODE_RESUME_STEPS.MANUAL;
+        else if (mode === 'manual-food') resumeStep = BARCODE_RESUME_STEPS.MANUAL_FOOD;
+        else if (mode === 'manual-barcode') resumeStep = BARCODE_RESUME_STEPS.MANUAL;
         return <Redirect href={createBarcodeLoginDestination({
             ...routeContext,
             meal,
@@ -378,7 +422,6 @@ export default function BarcodeScreen() {
                     />
                     {renderMealField()}
                     <BarcodeManualFoodForm
-                        key={`${selectedDate}:${meal}`}
                         date={selectedDate}
                         meal={meal}
                         barcode={barcode}
@@ -386,9 +429,16 @@ export default function BarcodeScreen() {
                         error={logFood.error
                             ? getSafeActionErrorMessage(logFood.error, 'Food could not be added. Try again.')
                             : null}
+                        name={manualFoodName}
+                        calories={manualFoodCalories}
+                        onNameChange={setManualFoodName}
+                        onCaloriesChange={setManualFoodCalories}
                         onCancel={() => {
                             submissionGate.current.reset();
                             logFood.reset();
+                            clearBarcodeManualFoodDraft();
+                            setManualFoodName('');
+                            setManualFoodCalories('');
                             setMode(barcode ? 'manual-barcode' : 'scan');
                         }}
                         onSubmit={submitFood}

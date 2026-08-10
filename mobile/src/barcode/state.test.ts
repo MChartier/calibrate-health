@@ -22,6 +22,10 @@ describe('barcode recovery state', () => {
         })).toBe(BARCODE_PERMISSION_STATES.DENIED);
         expect(resolveBarcodePermissionState({
             permission: { granted: false, canAskAgain: false },
+            hasRequestedPermission: false
+        })).toBe(BARCODE_PERMISSION_STATES.PERMANENTLY_DENIED);
+        expect(resolveBarcodePermissionState({
+            permission: { granted: false, canAskAgain: false },
             hasRequestedPermission: true
         })).toBe(BARCODE_PERMISSION_STATES.PERMANENTLY_DENIED);
         expect(resolveBarcodePermissionState({

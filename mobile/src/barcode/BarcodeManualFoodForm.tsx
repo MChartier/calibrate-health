@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { View } from 'react-native';
 import type { FoodLogCreatePayload } from '@calibrate/api-client';
 import type { MealPeriod } from '@calibrate/shared';
@@ -11,6 +10,10 @@ type BarcodeManualFoodFormProps = {
     barcode: string | null;
     isSubmitting: boolean;
     error: string | null;
+    name: string;
+    calories: string;
+    onNameChange: (value: string) => void;
+    onCaloriesChange: (value: string) => void;
     onCancel: () => void;
     onSubmit: (request: { payload: FoodLogCreatePayload; closeAfterLogging: boolean }) => void;
 };
@@ -21,11 +24,13 @@ export function BarcodeManualFoodForm({
     barcode,
     isSubmitting,
     error,
+    name,
+    calories,
+    onNameChange,
+    onCaloriesChange,
     onCancel,
     onSubmit
 }: BarcodeManualFoodFormProps) {
-    const [name, setName] = useState('');
-    const [calories, setCalories] = useState('');
     const calorieValue = Number(calories);
     const canSubmit = calories.trim().length > 0
         && Number.isFinite(calorieValue)
@@ -53,7 +58,7 @@ export function BarcodeManualFoodForm({
                 editable={!isSubmitting}
                 placeholder="Optional"
                 returnKeyType="next"
-                onChangeText={setName}
+                onChangeText={onNameChange}
             />
             <TextField
                 label="Calories"
@@ -65,7 +70,7 @@ export function BarcodeManualFoodForm({
                 errorText={error ?? (calories.trim().length > 0 && !canSubmit
                     ? 'Enter zero or more calories.'
                     : undefined)}
-                onChangeText={setCalories}
+                onChangeText={onCaloriesChange}
                 onSubmitEditing={() => submit(true)}
             />
             <AppButton

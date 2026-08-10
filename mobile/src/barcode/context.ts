@@ -15,6 +15,7 @@ export const BARCODE_RESUME_STEPS = {
     LOOKUP: 'lookup',
     SEARCH: 'search',
     MANUAL: 'manual',
+    MANUAL_FOOD: 'manual-food',
     RESULT: 'result'
 } as const;
 

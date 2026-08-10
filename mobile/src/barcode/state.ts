@@ -23,10 +23,9 @@ export function resolveBarcodePermissionState(
     if (snapshot.isCameraAvailable === false) return BARCODE_PERMISSION_STATES.UNAVAILABLE;
     if (!snapshot.permission) return BARCODE_PERMISSION_STATES.CHECKING;
     if (snapshot.permission.granted) return BARCODE_PERMISSION_STATES.GRANTED;
+    if (!snapshot.permission.canAskAgain) return BARCODE_PERMISSION_STATES.PERMANENTLY_DENIED;
     if (!snapshot.hasRequestedPermission) return BARCODE_PERMISSION_STATES.FIRST_REQUEST;
-    return snapshot.permission.canAskAgain
-        ? BARCODE_PERMISSION_STATES.DENIED
-        : BARCODE_PERMISSION_STATES.PERMANENTLY_DENIED;
+    return BARCODE_PERMISSION_STATES.DENIED;
 }
 
 export const BARCODE_LOOKUP_STATES = {

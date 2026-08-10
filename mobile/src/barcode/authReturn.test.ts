@@ -34,6 +34,26 @@ describe('barcode auth return', () => {
         });
     });
 
+    it('returns manual food entry without putting its draft fields in the URL', () => {
+        const login = createBarcodeLoginDestination({
+            date: '2026-08-09',
+            meal: MEAL_PERIODS.DINNER,
+            returnTo: BARCODE_RETURN_DESTINATIONS.FOOD_LOG,
+            resumeStep: BARCODE_RESUME_STEPS.MANUAL_FOOD
+        });
+
+        expect(resolveBarcodeAuthDestination(login.params)).toEqual({
+            pathname: '/barcode',
+            params: {
+                date: '2026-08-09',
+                meal: MEAL_PERIODS.DINNER,
+                returnTo: BARCODE_RETURN_DESTINATIONS.FOOD_LOG,
+                barcodeResume: BARCODE_RESUME_STEPS.MANUAL_FOOD
+            }
+        });
+        expect(JSON.stringify(login.params)).not.toContain('Market snack');
+    });
+
     it.each([
         { ...validParams, barcodeAuthReturn: '/settings' },
         { ...validParams, returnTo: 'https://malicious.example' },

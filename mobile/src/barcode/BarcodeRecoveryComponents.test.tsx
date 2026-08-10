@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { fireEvent, render } from '@testing-library/react-native';
 import { TextInput } from 'react-native';
 import { MEAL_PERIODS } from '@calibrate/shared';
@@ -39,27 +40,37 @@ describe('barcode recovery components', () => {
 
     it('builds a context-preserving manual food snapshot and ignores duplicate disabled presses', () => {
         const onSubmit = jest.fn();
-        const screen = render(
-            <BarcodeManualFoodForm
-                date="2026-08-09"
-                meal={MEAL_PERIODS.DINNER}
-                barcode="012345678905"
-                isSubmitting={false}
-                error={null}
-                onCancel={jest.fn()}
-                onSubmit={onSubmit}
-            />
-        );
+        function ManualFoodHarness({ meal }: { meal: typeof MEAL_PERIODS.DINNER | typeof MEAL_PERIODS.LUNCH }) {
+            const [name, setName] = useState('');
+            const [calories, setCalories] = useState('');
+            return (
+                <BarcodeManualFoodForm
+                    date="2026-08-09"
+                    meal={meal}
+                    barcode="012345678905"
+                    isSubmitting={false}
+                    error={null}
+                    name={name}
+                    calories={calories}
+                    onNameChange={setName}
+                    onCaloriesChange={setCalories}
+                    onCancel={jest.fn()}
+                    onSubmit={onSubmit}
+                />
+            );
+        }
+        const screen = render(<ManualFoodHarness meal={MEAL_PERIODS.DINNER} />);
         const [nameInput, calorieInput] = screen.UNSAFE_getAllByType(TextInput);
         fireEvent.changeText(nameInput, 'Market snack');
         fireEvent.changeText(calorieInput, '245');
+        screen.rerender(<ManualFoodHarness meal={MEAL_PERIODS.LUNCH} />);
         fireEvent.press(screen.getByRole('button', { name: 'Add and scan another' }));
 
         expect(onSubmit).toHaveBeenCalledWith({
             closeAfterLogging: false,
             payload: {
                 date: '2026-08-09',
-                meal_period: MEAL_PERIODS.DINNER,
+                meal_period: MEAL_PERIODS.LUNCH,
                 name: 'Market snack',
                 calories: 245,
                 barcode: '012345678905'
