@@ -73,6 +73,14 @@ export function resolveWearAdb(environment = process.env, platform = process.pla
   return pathApi.join(sdkRoot, 'platform-tools', platform === 'win32' ? 'adb.exe' : 'adb');
 }
 
+export function prepareWearUi(run) {
+  for (const args of [
+    ['shell', 'input', 'keyevent', 'KEYCODE_WAKEUP'],
+    ['shell', 'wm', 'dismiss-keyguard'],
+    ['shell', 'input', 'keyevent', '82']
+  ]) run(args);
+}
+
 function runAdb(adb, serial, args, options = {}) {
   return execFileSync(adb, ['-s', serial, ...args], {
     encoding: 'utf8',
@@ -109,6 +117,7 @@ export function runWearEmulatorSmoke(environment = process.env) {
     throw new Error(`${serial} is not a Wear OS target: ${characteristics}`);
   }
 
+  prepareWearUi((args) => runAdb(adb, serial, args, { quiet: true }));
   runAdb(adb, serial, ['install', '-r', apk]);
   runAdb(adb, serial, ['logcat', '-c'], { quiet: true });
   runAdb(adb, serial, ['shell', 'am', 'force-stop', APP_ID], { quiet: true });

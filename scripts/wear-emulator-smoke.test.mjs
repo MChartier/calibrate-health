@@ -3,9 +3,20 @@ import test from 'node:test';
 import {
   findTextNode,
   parseBounds,
+  prepareWearUi,
   resolveWearAdb,
   waitForWearUi
 } from './wear-emulator-smoke.mjs';
+
+test('Wear UI preparation wakes and unlocks the exact emulator before launch', () => {
+  const commands = [];
+  prepareWearUi((args) => commands.push(args));
+  assert.deepEqual(commands, [
+    ['shell', 'input', 'keyevent', 'KEYCODE_WAKEUP'],
+    ['shell', 'wm', 'dismiss-keyguard'],
+    ['shell', 'input', 'keyevent', '82']
+  ]);
+});
 
 test('Wear adb resolution trims an explicit executable override', () => {
   assert.equal(

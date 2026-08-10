@@ -137,6 +137,27 @@ test('build sequence runs release mirror validation after prebuild and before Gr
   assert.match(artifacts.phone, /app-release\.apk$/);
 });
 
+test('package-only builds omit memory-heavy release lint while preserving the release APK task', async () => {
+  const requests = [];
+  await buildCheckout(
+    'candidate',
+    path.join('C:', 'owned-temp', 'candidate'),
+    { npmCli: 'npm-cli.js', java: 'java' },
+    {},
+    async (request) => {
+      requests.push(request);
+      return { status: 0, stdout: '', stderr: '' };
+    },
+    'x86_64',
+    { packageOnly: true }
+  );
+  const phone = requests.find((request) => request.label === 'build candidate phone APK');
+  assert.ok(phone.args.includes(':app:assembleRelease'));
+  assert.deepEqual(phone.args.slice(phone.args.indexOf(':app:assembleRelease') + 1, -2), [
+    '-x', 'lintVitalAnalyzeRelease'
+  ]);
+});
+
 test('historical builds receive an allowlisted environment without unrelated credentials', () => {
   const environment = signingEnvironment({
     Path: 'C:\\tools',

@@ -368,7 +368,7 @@ jobs:
           profile: pixel_6
           emulator-port: 5554
           emulator-boot-timeout: 600
-          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -camera-back none
+          emulator-options: -no-window -gpu software -no-snapshot -noaudio -no-boot-anim -camera-back none
           disable-animations: true
           script: node scripts/hosted-android-e2e.mjs
 
@@ -449,7 +449,7 @@ jobs:
           arch: x86_64
           emulator-port: 5554
           emulator-boot-timeout: 600
-          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim
+          emulator-options: -no-window -gpu software -no-snapshot -noaudio -no-boot-anim
           disable-animations: true
           script: |
             npm run test:wear:emulator
@@ -512,7 +512,7 @@ jobs:
           emulator-boot-timeout: 600
           cores: 2
           ram-size: 1536M
-          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -camera-back none
+          emulator-options: -no-window -gpu software -no-snapshot -noaudio -no-boot-anim -camera-back none
           disable-animations: true
           script: |
             node scripts/hosted-native-emulators.mjs start-wear

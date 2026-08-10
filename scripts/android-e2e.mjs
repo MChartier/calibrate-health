@@ -10,6 +10,7 @@ const API_URL = process.env.CALIBRATE_E2E_API_URL ?? 'http://127.0.0.1:3000';
 const TEST_EMAIL = process.env.CALIBRATE_E2E_EMAIL ?? 'test@calibratehealth.app';
 const TEST_PASSWORD = process.env.CALIBRATE_E2E_PASSWORD ?? 'password123';
 const APP_ID = 'app.calibratehealth.mobile';
+export const ANDROID_E2E_METRO_STATUS_URL = 'http://localhost:8081/status';
 const ONLINE_FOOD = { name: 'Android E2E latte', calories: 190 };
 const OFFLINE_FOOD = { name: 'Android E2E protein shake', calories: 240 };
 const UI_DUMP_PATH = '/sdcard/calibrate-e2e-window.xml';
@@ -325,7 +326,7 @@ async function main() {
   }
   const health = await requestJson('/api/v1/healthz');
   if (!health.ok) throw new Error('Calibrate E2E backend health check failed.');
-  const metroStatus = await fetch('http://127.0.0.1:8081/status').then((response) => response.text());
+  const metroStatus = await fetch(ANDROID_E2E_METRO_STATUS_URL).then((response) => response.text());
   if (!metroStatus.includes('packager-status:running')) {
     throw new Error('Metro is not running on port 8081. Start the mobile dev server first.');
   }

@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
 import {
+  ANDROID_E2E_METRO_STATUS_URL,
   buildAndroidE2eAdbArgs,
   buildE2eRequestHeaders,
   crashBufferContainsCalibrateProcess,
@@ -10,6 +11,10 @@ import {
 } from './android-e2e.mjs';
 
 const release = JSON.parse(readFileSync(new URL('../shared/release.json', import.meta.url), 'utf8'));
+
+test('Android E2E uses the same localhost Metro origin as the hosted readiness probe', () => {
+  assert.equal(ANDROID_E2E_METRO_STATUS_URL, 'http://localhost:8081/status');
+});
 
 test('Android E2E API probes identify the current phone release', () => {
   const headers = buildE2eRequestHeaders({

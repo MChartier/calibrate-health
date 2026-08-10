@@ -89,6 +89,8 @@ test('pull requests run hosted Android, Wear release, and two-emulator package u
 
   assert.match(wear, /Create disposable hosted-emulator signing key/);
   assert.match(wear, /:app:assembleRelease/);
+  assert.doesNotMatch(workflow, /swiftshader_indirect/);
+  assert.equal((workflow.match(/-gpu software/g) ?? []).length, 3);
   assert.match(wear, /target: android-wear/);
   assert.match(wear, /npm run test:wear:emulator/);
   assert.match(wear, /WEAR_BUILD_TYPE: release/);

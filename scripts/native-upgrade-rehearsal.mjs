@@ -460,7 +460,7 @@ function gradleRequest(checkout, project, args, tooling, environment, label) {
   };
 }
 
-export async function buildCheckout(label, checkout, tooling, environment, runner, phoneAbi) {
+export async function buildCheckout(label, checkout, tooling, environment, runner, phoneAbi, options = {}) {
   if (!SUPPORTED_EMULATOR_ABIS.includes(phoneAbi)) throw new Error(`Unsupported phone build ABI: ${phoneAbi}.`);
   await runner({
     command: process.execPath,
@@ -489,7 +489,11 @@ export async function buildCheckout(label, checkout, tooling, environment, runne
   await runner(gradleRequest(
     checkout,
     path.join('mobile', 'android'),
-    [`-PreactNativeArchitectures=${phoneAbi}`, ':app:assembleRelease'],
+    [
+      `-PreactNativeArchitectures=${phoneAbi}`,
+      ':app:assembleRelease',
+      ...(options.packageOnly ? ['-x', 'lintVitalAnalyzeRelease'] : [])
+    ],
     tooling,
     environment,
     `build ${label} phone APK`
@@ -814,10 +818,12 @@ export async function runNativeUpgradeRehearsal(config, dependencies = {}) {
     );
     const phoneAbi = targets.find((target) => target.role === 'phone').primaryAbi;
     const baselineFiles = await buildCheckout(
-      'baseline', baselineCheckout, tooling, buildEnvironment, runner, phoneAbi
+      'baseline', baselineCheckout, tooling, buildEnvironment, runner, phoneAbi,
+      { packageOnly: config.packageOnly }
     );
     const candidateFiles = await buildCheckout(
-      'candidate', candidateCheckout, tooling, buildEnvironment, runner, phoneAbi
+      'candidate', candidateCheckout, tooling, buildEnvironment, runner, phoneAbi,
+      { packageOnly: config.packageOnly }
     );
     const inspected = {
       baseline: {
