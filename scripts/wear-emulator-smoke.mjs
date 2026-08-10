@@ -83,12 +83,19 @@ export function parseWearUiNodes(xml) {
     contentDescription: attribute(node, 'content-desc'),
     clickable: attribute(node, 'clickable') === 'true',
     enabled: attribute(node, 'enabled') !== 'false',
+    packageName: attribute(node, 'package'),
     bounds: attribute(node, 'bounds')
   }));
 }
 
 export function auditWearActionTargets(xml, screen, densityDpi, options = {}) {
-  const actions = parseWearUiNodes(xml).filter((node) => node.clickable && node.enabled);
+  const packageName = options.packageName ?? null;
+  if (packageName !== null && (typeof packageName !== 'string' || !/^[a-zA-Z0-9._-]+$/.test(packageName))) {
+    throw new Error('Wear action audit requires an exact package name.');
+  }
+  const actions = parseWearUiNodes(xml).filter((node) => (
+    node.clickable && node.enabled && (packageName === null || node.packageName === packageName)
+  ));
   if (actions.length === 0 && options.requireAction !== false) {
     throw new Error('Wear UI must expose at least one enabled action.');
   }
@@ -353,7 +360,7 @@ function exerciseWearScale({ adb, serial, expectedBuildType, screen, densityDpi,
   );
   const home = waitForExpectedUi(HOME_EXPECTED_TEXT);
   const connection = requireText(home, 'Connection');
-  const homeAudit = auditWearActionTargets(home, screen, densityDpi);
+  const homeAudit = auditWearActionTargets(home, screen, densityDpi, { packageName: APP_ID });
   const point = parseBounds(connection.bounds);
   runAdb(adb, serial, ['shell', 'input', 'tap', String(point.x), String(point.y)], { quiet: true });
   waitForExpectedUi(['Connection', 'Server']);
@@ -371,7 +378,10 @@ function exerciseWearScale({ adb, serial, expectedBuildType, screen, densityDpi,
     ], { quiet: true });
     runAdb(adb, serial, ['shell', 'sleep', WEAR_UI_POLL_SECONDS], { quiet: true });
   });
-  const detailAudit = auditWearActionTargets(detail, screen, densityDpi, { requireAction: false });
+  const detailAudit = auditWearActionTargets(detail, screen, densityDpi, {
+    packageName: APP_ID,
+    requireAction: false
+  });
   return {
     launch,
     summary: summarizeWearScale(fontScale, screen, densityDpi, [homeAudit, detailAudit])

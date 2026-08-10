@@ -217,6 +217,34 @@ test('Wear action audit accepts named 48 dp targets and ignores disabled nodes',
   assert.deepEqual(audit, { actionCount: 1, minimumWidthDp: 48, minimumHeightDp: 48 });
 });
 
+test('Wear action audit excludes unrelated System UI actions', () => {
+  const appPackage = 'app.calibratehealth.mobile';
+  const xml = `<hierarchy>${node({
+    package: appPackage,
+    text: 'Connection',
+    'content-desc': '',
+    clickable: 'true',
+    enabled: 'true',
+    bounds: '[0,0][96,96]'
+  })}${node({
+    package: 'com.google.android.wearable.sysui',
+    text: '',
+    'content-desc': '',
+    clickable: 'true',
+    enabled: 'true',
+    bounds: '[0,0][2,2]'
+  })}</hierarchy>`;
+  assert.equal(parseWearUiNodes(xml)[0].packageName, appPackage);
+  assert.deepEqual(
+    auditWearActionTargets(xml, { width: 454, height: 454 }, 320, { packageName: appPackage }),
+    { actionCount: 1, minimumWidthDp: 48, minimumHeightDp: 48 },
+  );
+  assert.throws(
+    () => auditWearActionTargets(xml, { width: 454, height: 454 }, 320, { packageName: 'bad package' }),
+    /exact package name/
+  );
+});
+
 test('Wear action audit rejects 47 dp, clipping, and unnamed actions', () => {
   const base = { clickable: 'true', enabled: 'true', text: 'Action', 'content-desc': '' };
   assert.throws(
