@@ -36,7 +36,9 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.progressBarRangeInfo
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -204,7 +206,13 @@ private fun SummaryScreen(
                     secondaryLabel = { Text(connectionLabel(appState, homeState.syncStatus)) },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .semantics(mergeDescendants = true) { contentDescription = "Connection" }
+                        .clearAndSetSemantics {
+                            contentDescription = "Connection"
+                            onClick(label = "Connection") {
+                                onOpenConnection()
+                                true
+                            }
+                        }
                 )
             }
         }
@@ -320,7 +328,13 @@ private fun ReadySummaryDashboard(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = SUMMARY_ITEM_HORIZONTAL_PADDING)
-                            .semantics(mergeDescendants = true) { contentDescription = "Connection" }
+                            .clearAndSetSemantics {
+                                contentDescription = "Connection"
+                                onClick(label = "Connection") {
+                                    onOpenConnection()
+                                    true
+                                }
+                            }
                     )
                 }
                 item(key = "bottom-space") {

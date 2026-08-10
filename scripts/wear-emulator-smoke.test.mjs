@@ -26,16 +26,20 @@ import {
   waitForWearUi
 } from './wear-emulator-smoke.mjs';
 
-test('Wear connection actions merge their accessible name onto the clickable node', () => {
+test('Wear connection actions expose one explicitly named semantic click target', () => {
   const source = readFileSync(new URL(
     '../wear/app/src/main/java/app/calibratehealth/wear/CalibrateWearApp.kt',
     import.meta.url,
   ), 'utf8');
   assert.equal(
-    source.split(`.semantics(mergeDescendants = true) { contentDescription = "Connection" }`).length - 1,
+    source.split(`.clearAndSetSemantics {`).length - 1,
     2,
   );
-  assert.equal(source.includes(`.semantics { contentDescription = "Connection" }`), false);
+  assert.equal(source.split(`onClick(label = "Connection") {`).length - 1, 2);
+  assert.equal(
+    source.includes(`.semantics(mergeDescendants = true) { contentDescription = "Connection" }`),
+    false,
+  );
 });
 
 function node(attributes) {
