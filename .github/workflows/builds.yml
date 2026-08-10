@@ -450,7 +450,8 @@ jobs:
           profile: wearos_large_round
           emulator-port: 5554
           emulator-boot-timeout: 600
-          emulator-options: -no-window -gpu software -no-snapshot -noaudio -no-boot-anim
+          # Hosted Wear 5.1 renders Compose blank with Lavapipe; its reviewed passing renderer is SwiftShader.
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim
           disable-animations: true
           script: |
             npm run test:wear:emulator
