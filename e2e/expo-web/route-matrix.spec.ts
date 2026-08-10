@@ -221,6 +221,11 @@ test('deterministic fixtures freeze dates and generated IDs', async ({ page, ux 
   expect(deterministicInputs.constructedNow - deterministicInputs.secondNow).toBe(DETERMINISTIC_CLOCK_STEP_MS);
   expect(deterministicInputs.firstId).toBe('00000000-0000-4000-8000-000000000001');
   expect(deterministicInputs.secondId).toBe('00000000-0000-4000-8000-000000000002');
+
+  const reloadResponse = await page.reload();
+  expect(reloadResponse?.status()).toBe(200);
+  const thirdId = await page.evaluate(() => crypto.randomUUID());
+  expect(thirdId).toBe('00000000-0000-4000-8000-000000000003');
 });
 
 test('empty, paused, loading, failed, stale, and offline states are named fixture contracts', () => {

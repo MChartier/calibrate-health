@@ -223,11 +223,17 @@ async function freezeBrowserInputs(page: Page): Promise<void> {
     });
     globalThis.Date = DeterministicDate;
 
-    let generatedId = 0;
+    const generatedIdStorageKey = '__calibrateE2eGeneratedId';
+    const storedGeneratedId = Number.parseInt(
+      globalThis.sessionStorage.getItem(generatedIdStorageKey) ?? '0',
+      10,
+    );
+    let generatedId = Number.isSafeInteger(storedGeneratedId) && storedGeneratedId >= 0 ? storedGeneratedId : 0;
     Object.defineProperty(globalThis.crypto, 'randomUUID', {
       configurable: true,
       value: () => {
         generatedId += 1;
+        globalThis.sessionStorage.setItem(generatedIdStorageKey, generatedId.toString());
         return `00000000-0000-4000-8000-${generatedId.toString(16).padStart(12, '0')}`;
       },
     });
