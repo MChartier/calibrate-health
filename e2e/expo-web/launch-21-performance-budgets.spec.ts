@@ -104,6 +104,9 @@ async function expectRouteBudgets(page: Page, route: string) {
 }
 
 test.describe('Launch 21 route and Core Web Vitals budgets', () => {
+  // Measuring two cold navigations concurrently turns runner CPU contention into synthetic LCP.
+  test.describe.configure({ mode: 'serial' });
+
   test.beforeEach(async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== 'desktop-chrome', 'One deterministic desktop Chromium profile owns the CWV gate.');
     await installVitalObservers(page);
