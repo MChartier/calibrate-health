@@ -36,6 +36,13 @@ async function expectRouteFocus(page: Page, title: string) {
   await expect(page.locator('[role="main"]:visible')).toHaveCount(1);
 }
 
+async function expectDirectEntryKeepsSkipLinkFirst(page: Page) {
+  await page.keyboard.press('Tab');
+  const skipLink = page.getByRole('button', { name: 'Skip to main content', exact: true });
+  await expect(skipLink).toBeVisible();
+  await expect(skipLink).toBeFocused();
+}
+
 async function expectNoDuplicateIds(page: Page) {
   const duplicates = await page.evaluate(() => {
     const counts = new Map<string, number>();
@@ -177,7 +184,7 @@ test('critical web flows remain keyboard-operable across forced colors, reflow, 
 
   if (project === 'tablet-chrome') {
     await page.goto('/today');
-    await expectRouteFocus(page, 'Today');
+    await expectDirectEntryKeepsSkipLinkFirst(page);
 
     const addFood = page.getByRole('button', { name: 'Add food', exact: true });
     await activateWithKeyboard(page, addFood);
@@ -204,7 +211,7 @@ test('critical web flows remain keyboard-operable across forced colors, reflow, 
   if (project === 'android-phone-chrome') {
     await page.setViewportSize({ width: 844, height: 390 });
     await page.goto('/progress');
-    await expectRouteFocus(page, 'Progress');
+    await expectDirectEntryKeepsSkipLinkFirst(page);
     await expect(page.getByRole('progressbar', { name: 'Goal progress', exact: true })).toHaveAttribute('aria-valuenow');
 
     const openTrend = page.getByRole('button', { name: 'Open full weight trend', exact: true });
@@ -242,7 +249,7 @@ test('critical web flows remain keyboard-operable across forced colors, reflow, 
   expect(project).toBe('compact-phone-chrome');
   await page.setViewportSize({ width: 320, height: 568 });
   await page.goto('/weight-trend');
-  await expectRouteFocus(page, 'Trend');
+  await expectDirectEntryKeepsSkipLinkFirst(page);
   const compactTableToggle = page.getByRole('button', { name: 'View data table', exact: true });
   await activateWithKeyboard(page, compactTableToggle);
   const compactTable = page.getByRole('table', { name: 'Weight trend data table', exact: true });
@@ -259,7 +266,7 @@ test('critical web flows remain keyboard-operable across forced colors, reflow, 
     body: JSON.stringify({ sessions: [] }),
   }));
   await page.goto('/settings');
-  await expectRouteFocus(page, 'Settings');
+  await expectDirectEntryKeepsSkipLinkFirst(page);
   const preferences = page.getByTestId('settings-open-preferences');
   await activateWithKeyboard(page, preferences);
   const preferencesDialog = page.getByRole('dialog', { name: 'Preferences', exact: true });
