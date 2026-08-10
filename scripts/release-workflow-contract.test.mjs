@@ -69,6 +69,7 @@ test('pull requests run hosted Android, Wear release, and two-emulator package u
   const upgrade = workflowJobBlock(workflow, 'native-package-upgrade');
 
   assert.match(packageConfig.scripts['test:native-release'], /hosted-native-emulators\.test\.mjs/);
+  assert.match(packageConfig.scripts['test:native-release'], /hosted-android-e2e\.test\.mjs/);
   assert.match(packageConfig.scripts['test:native-release'], /native-upgrade-rehearsal\.test\.mjs/);
 
   assert.match(workflow, /Share Android debug APK with emulator E2E/);
@@ -77,8 +78,14 @@ test('pull requests run hosted Android, Wear release, and two-emulator package u
   assert.match(android, /image: postgres:15-alpine/);
   assert.match(android, /reactivecircus\/android-emulator-runner@v2/);
   assert.match(android, /target: google_apis/);
-  assert.match(android, /adb -s "\$ANDROID_ADB_SERIAL" install -r/);
-  assert.match(android, /npm run test:android:e2e/);
+  assert.match(android, /cmdline-tools-version: 15859902/);
+  assert.match(android, /script: node scripts\/hosted-android-e2e\.mjs/);
+  assert.doesNotMatch(android, /script: \|/);
+  assert.doesNotMatch(android, /cleanup_metro|METRO_PID|trap cleanup_metro/);
+  assert.doesNotMatch(android, /tail -n 80/);
+  assert.doesNotMatch(android, /Start deterministic Metro bundle/);
+  assert.doesNotMatch(android, /adb -s "\$ANDROID_ADB_SERIAL" install -r/);
+  assert.doesNotMatch(android, /npm run test:android:e2e/);
 
   assert.match(wear, /Create disposable hosted-emulator signing key/);
   assert.match(wear, /:app:assembleRelease/);
@@ -98,6 +105,15 @@ test('pull requests run hosted Android, Wear release, and two-emulator package u
   assert.match(upgrade, /--wear-serial emulator-5556/);
   assert.match(upgrade, /--execute/);
   assert.match(upgrade, /--package-only/);
+  const nativeUpgradeStep = upgrade
+    .split(/\n(?=\s+- name:)/)
+    .find((step) => step.includes('npm run test:native:upgrade'));
+  assert.ok(nativeUpgradeStep, 'native package upgrade job must invoke its rehearsal');
+  assert.doesNotMatch(
+    nativeUpgradeStep,
+    /(^|\s)\\(?=\s|$)/,
+    'native upgrade arguments must not contain a standalone shell-continuation backslash',
+  );
   assert.doesNotMatch(upgrade, /upload-artifact/);
 
   const hostedJobs = `${android}\n${wear}\n${upgrade}`;
@@ -106,6 +122,36 @@ test('pull requests run hosted Android, Wear release, and two-emulator package u
   assert.throws(() => workflowJobBlock(workflow, 'android.*'), /literal safe identifier/);
 });
 
+test('hosted Wear emulator runs persistence instrumentation after release evidence', () => {
+  const wear = workflowJobBlock(readWorkflow('builds.yml'), 'wear-release-emulator-smoke');
+  const emulatorStep = wear
+    .split(/\n(?=\s+- name:)/)
+    .find((step) => step.includes('uses: reactivecircus/android-emulator-runner@v2'));
+  assert.ok(emulatorStep, 'Wear job must run on its disposable emulator');
+
+  assert.match(wear, /-keystore mobile\/android\/app\/debug\.keystore/);
+  assert.match(wear, /-alias androiddebugkey/);
+  assert.match(emulatorStep, /script: \|/);
+  assert.match(emulatorStep, /npm run test:wear:emulator/);
+  assert.match(emulatorStep, /adb -s "\$WEAR_ADB_SERIAL" uninstall app\.calibratehealth\.mobile/);
+  assert.match(emulatorStep, /:app:connectedDebugAndroidTest/);
+  assert.match(emulatorStep, /-PcalibrateWearServerUrl=https:\/\/calibratehealth\.app/);
+  assert.match(emulatorStep, /-PcalibrateWearDebugServerUrl=http:\/\/10\.0\.2\.2:3000/);
+  assert.doesNotMatch(
+    emulatorStep,
+    /(^|\s)\\(?=\s|$)/,
+    'Wear emulator commands must not pass standalone shell-continuation arguments',
+  );
+
+  const releaseSmokeIndex = emulatorStep.indexOf('npm run test:wear:emulator');
+  const uninstallIndex = emulatorStep.indexOf('uninstall app.calibratehealth.mobile');
+  const instrumentationIndex = emulatorStep.indexOf(':app:connectedDebugAndroidTest');
+  assert.ok(releaseSmokeIndex >= 0, 'Wear release evidence must run');
+  assert.ok(
+    releaseSmokeIndex < uninstallIndex && uninstallIndex < instrumentationIndex,
+    'the differently signed release package must be removed before debug instrumentation',
+  );
+});
 test('release images publish immutable identity and guard the moving latest tag', () => {
   const workflow = readWorkflow('container.yml');
   const deployEnvironment = readFileSync(path.join(repositoryRoot, 'deploy', '.env.example'), 'utf8');

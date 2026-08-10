@@ -370,32 +370,7 @@ jobs:
           emulator-boot-timeout: 600
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -camera-back none
           disable-animations: true
-          script: |
-            CI=1 npm --prefix mobile run dev -- --host localhost --port 8081 > "$RUNNER_TEMP/calibrate-native/metro.log" 2>&1 &
-            METRO_PID=$!
-            cleanup_metro() {
-              kill "$METRO_PID" 2>/dev/null || true
-              wait "$METRO_PID" 2>/dev/null || true
-            }
-            trap cleanup_metro EXIT
-            for attempt in {1..90}; do
-              if curl --fail --silent http://127.0.0.1:8081/status | grep --quiet 'packager-status:running'; then
-                break
-              fi
-              if ! kill -0 "$METRO_PID" 2>/dev/null; then
-                echo "Metro exited before becoming ready." >&2
-                tail -n 80 "$RUNNER_TEMP/calibrate-native/metro.log" >&2
-                exit 1
-              fi
-              if [[ "$attempt" == 90 ]]; then
-                echo "Metro did not become ready." >&2
-                tail -n 80 "$RUNNER_TEMP/calibrate-native/metro.log" >&2
-                exit 1
-              fi
-              sleep 1
-            done
-            adb -s "$ANDROID_ADB_SERIAL" install -r .ci-artifacts/android-debug/app-debug.apk
-            npm run test:android:e2e
+          script: node scripts/hosted-android-e2e.mjs
 
   wear-release-emulator-smoke:
     name: Wear Release Emulator Smoke
@@ -445,7 +420,7 @@ jobs:
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
 
-      - name: Create disposable hosted-emulator signing key
+      - name: Create disposable hosted-emulator signing keys
         shell: bash
         run: |
           mkdir -p .ci-signing
@@ -459,6 +434,8 @@ jobs:
             -keysize 3072 \
             -validity 1 \
             -dname "CN=Calibrate Hosted Emulator,OU=CI,O=Calibrate,C=US"
+          mkdir -p mobile/android/app
+          keytool -genkeypair -noprompt             -keystore mobile/android/app/debug.keystore             -storepass android             -keypass android             -alias androiddebugkey             -keyalg RSA             -keysize 2048             -validity 10000             -dname "CN=Android Debug,O=Android,C=US"
 
       - name: Build non-debuggable Wear release APK
         working-directory: wear
@@ -474,7 +451,10 @@ jobs:
           emulator-boot-timeout: 600
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim
           disable-animations: true
-          script: npm run test:wear:emulator
+          script: |
+            npm run test:wear:emulator
+            adb -s "$WEAR_ADB_SERIAL" uninstall app.calibratehealth.mobile
+            ./wear/gradlew -p wear :app:connectedDebugAndroidTest -PcalibrateWearServerUrl=https://calibratehealth.app -PcalibrateWearDebugServerUrl=http://10.0.2.2:3000 --no-daemon --console=plain
 
   native-package-upgrade:
     name: Native Two-Emulator Package Upgrade

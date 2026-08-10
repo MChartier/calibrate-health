@@ -9,8 +9,10 @@ targeted Kotlin/JVM and device checks for the Wear client:
 - Package-specific commands include `test:backend`, `test:api-client`, `test:mobile`,
   `test:coverage:backend`, and `test:coverage:mobile`. Wear JVM tests run from the Gradle project
   with `wear/gradlew testDebugUnitTest`; a non-debuggable APK smoke runs against an adb watch target
-  with `npm run test:wear:emulator`. PR builds compile and run the Wear JVM suite independently of
-  the longer phone build.
+  with `npm run test:wear:emulator`. The hosted PR Wear lane then removes the differently signed
+  release package and runs `:app:connectedDebugAndroidTest` on the same disposable emulator for
+  Room migrations, encrypted token persistence, and account-scoped cleanup. PR builds compile and
+  run the Wear JVM suite independently of the longer phone build.
 - `npm run test:db:upgrade` applies migrations through `0020` to an isolated schema, inserts
   representative account/goal/weight/food data, upgrades through current, verifies retention, and
   removes only that generated schema. Its helper tests run without Postgres.

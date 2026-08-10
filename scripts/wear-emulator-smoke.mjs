@@ -36,9 +36,14 @@ export function findTextNode(xml, text) {
   return node ? { text, bounds: attribute(node, 'bounds') } : null;
 }
 
-function adbExecutable(environment = process.env) {
-  return environment.ADB
-    ?? path.join(environment.LOCALAPPDATA ?? '', 'Android', 'Sdk', 'platform-tools', 'adb.exe');
+export function resolveWearAdb(environment = process.env, platform = process.platform) {
+  if (environment.ADB?.trim()) return environment.ADB.trim();
+  const pathApi = platform === 'win32' ? path.win32 : path.posix;
+  const sdkRoot = environment.ANDROID_HOME
+    ?? environment.ANDROID_SDK_ROOT
+    ?? (environment.LOCALAPPDATA ? pathApi.join(environment.LOCALAPPDATA, 'Android', 'Sdk') : null);
+  if (!sdkRoot) return platform === 'win32' ? 'adb.exe' : 'adb';
+  return pathApi.join(sdkRoot, 'platform-tools', platform === 'win32' ? 'adb.exe' : 'adb');
 }
 
 function runAdb(adb, serial, args, options = {}) {
@@ -61,7 +66,7 @@ function requireText(xml, text) {
 
 /** Exercise a non-debuggable watch shell and privacy-sensitive package state on an adb Wear target. */
 export function runWearEmulatorSmoke(environment = process.env) {
-  const adb = adbExecutable(environment);
+  const adb = resolveWearAdb(environment);
   const serial = environment.WEAR_ADB_SERIAL ?? 'emulator-5556';
   const expectedBuildType = environment.WEAR_BUILD_TYPE ?? 'release';
   const apk = path.resolve(
