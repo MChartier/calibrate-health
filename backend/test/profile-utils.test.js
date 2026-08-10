@@ -46,7 +46,7 @@ test('profile utils: calculateBmr matches Mifflin-St Jeor and rounds to 0.1', ()
   assert.equal(calculateBmr('FEMALE', 82, 175, 35), 1577.8);
 });
 
-test('profile utils: calculateBmr uses the actual validated adult age', () => {
+test('profile utils: calculateBmr uses the actual validated age', () => {
   assert.notEqual(calculateBmr('MALE', 82, 175, 18), calculateBmr('MALE', 82, 175, 19));
   assert.notEqual(calculateBmr('FEMALE', 82, 175, 80), calculateBmr('FEMALE', 82, 175, 79));
   assert.equal(calculateBmr('FEMALE', 82, 175, 120), 1152.8);

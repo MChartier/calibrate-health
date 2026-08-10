@@ -5,40 +5,42 @@ const {
   ABSOLUTE_MIN_TARGET_KCAL,
   SIGNED_DAILY_DEFICIT_OPTIONS,
   calculatePolicyBmr,
-  evaluateAdultEligibility,
+  evaluateCalorieProfileEligibility,
   evaluateCaloriePlan,
   projectGoalEndDate
 } = require('../../shared/caloriePolicy');
 
 const noonUtc = (date) => new Date(`${date}T12:00:00.000Z`);
 
-test('calorie policy uses exact date-only adult boundaries and rejects invalid inputs', () => {
-  assert.deepEqual(evaluateAdultEligibility({ dateOfBirth: '2008-08-08', timezone: 'UTC', now: noonUtc('2026-08-08') }), {
+test('calorie policy uses exact date-only ages and rejects invalid inputs', () => {
+  assert.deepEqual(evaluateCalorieProfileEligibility({ dateOfBirth: '2008-08-08', timezone: 'UTC', now: noonUtc('2026-08-08') }), {
     status: 'eligible', reasonCode: null, ageYears: 18, localDate: '2026-08-08'
   });
-  assert.equal(evaluateAdultEligibility({ dateOfBirth: '2008-08-09', timezone: 'UTC', now: noonUtc('2026-08-08') }).reasonCode, 'AGE_UNDER_18');
-  assert.equal(evaluateAdultEligibility({ dateOfBirth: '1905-08-09', timezone: 'UTC', now: noonUtc('2026-08-08') }).ageYears, 120);
-  assert.equal(evaluateAdultEligibility({ dateOfBirth: '1905-08-08', timezone: 'UTC', now: noonUtc('2026-08-08') }).reasonCode, 'AGE_OVER_120');
-  assert.equal(evaluateAdultEligibility({ dateOfBirth: '2026-08-09', timezone: 'UTC', now: noonUtc('2026-08-08') }).reasonCode, 'DATE_OF_BIRTH_IN_FUTURE');
-  assert.equal(evaluateAdultEligibility({ dateOfBirth: '2024-02-30', timezone: 'UTC', now: noonUtc('2026-08-08') }).reasonCode, 'DATE_OF_BIRTH_INVALID');
-  assert.equal(evaluateAdultEligibility({ dateOfBirth: '1990-01-01', timezone: 'Not/A_Zone', now: noonUtc('2026-08-08') }).reasonCode, 'TIMEZONE_INVALID');
+  assert.deepEqual(evaluateCalorieProfileEligibility({ dateOfBirth: '1988-08-09', timezone: 'UTC', now: noonUtc('2026-08-08') }), {
+    status: 'eligible', reasonCode: null, ageYears: 37, localDate: '2026-08-08'
+  });
+  assert.equal(evaluateCalorieProfileEligibility({ dateOfBirth: '1905-08-09', timezone: 'UTC', now: noonUtc('2026-08-08') }).ageYears, 120);
+  assert.equal(evaluateCalorieProfileEligibility({ dateOfBirth: '1905-08-08', timezone: 'UTC', now: noonUtc('2026-08-08') }).reasonCode, 'AGE_OVER_120');
+  assert.equal(evaluateCalorieProfileEligibility({ dateOfBirth: '2026-08-09', timezone: 'UTC', now: noonUtc('2026-08-08') }).reasonCode, 'DATE_OF_BIRTH_IN_FUTURE');
+  assert.equal(evaluateCalorieProfileEligibility({ dateOfBirth: '2024-02-30', timezone: 'UTC', now: noonUtc('2026-08-08') }).reasonCode, 'DATE_OF_BIRTH_INVALID');
+  assert.equal(evaluateCalorieProfileEligibility({ dateOfBirth: '1990-01-01', timezone: 'Not/A_Zone', now: noonUtc('2026-08-08') }).reasonCode, 'TIMEZONE_INVALID');
 });
 
 test('calorie policy evaluates the birthday against the account-local calendar day', () => {
   const instant = new Date('2026-08-08T06:30:00.000Z');
-  assert.equal(evaluateAdultEligibility({
-    dateOfBirth: '2008-08-08', timezone: 'America/Los_Angeles', now: instant
-  }).reasonCode, 'AGE_UNDER_18');
-  assert.equal(evaluateAdultEligibility({
-    dateOfBirth: '2008-08-08', timezone: 'Asia/Tokyo', now: instant
-  }).status, 'eligible');
+  assert.equal(evaluateCalorieProfileEligibility({
+    dateOfBirth: '1988-08-08', timezone: 'America/Los_Angeles', now: instant
+  }).ageYears, 37);
+  assert.equal(evaluateCalorieProfileEligibility({
+    dateOfBirth: '1988-08-08', timezone: 'Asia/Tokyo', now: instant
+  }).ageYears, 38);
 });
 test('calorie policy advances Feb 29 birthdays on March 1 in non-leap years', () => {
-  assert.equal(evaluateAdultEligibility({ dateOfBirth: '2008-02-29', timezone: 'UTC', now: noonUtc('2026-02-28') }).ageYears, 17);
-  assert.equal(evaluateAdultEligibility({ dateOfBirth: '2008-02-29', timezone: 'UTC', now: noonUtc('2026-03-01') }).ageYears, 18);
+  assert.equal(evaluateCalorieProfileEligibility({ dateOfBirth: '1988-02-29', timezone: 'UTC', now: noonUtc('2026-02-28') }).ageYears, 37);
+  assert.equal(evaluateCalorieProfileEligibility({ dateOfBirth: '1988-02-29', timezone: 'UTC', now: noonUtc('2026-03-01') }).ageYears, 38);
 });
 
-test('calorie policy uses actual eligible ages and emits all signed options without clamping', () => {
+test('calorie policy uses actual validated ages and emits all signed options without clamping', () => {
   assert.equal(calculatePolicyBmr('FEMALE', 25_000, 1_000, 120), 114);
   const evaluation = evaluateCaloriePlan({
     profile: { timezone: 'UTC', dateOfBirth: '1906-08-08', sex: 'FEMALE', heightMm: 1_000, activityLevel: 'SEDENTARY' },

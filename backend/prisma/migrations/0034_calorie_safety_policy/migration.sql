@@ -62,7 +62,6 @@ WITH plan_inputs AS (
         WHEN date_of_birth IS NULL THEN 'DATE_OF_BIRTH_REQUIRED'
         WHEN local_today IS NULL THEN 'TIMEZONE_INVALID'
         WHEN date_of_birth > local_today THEN 'DATE_OF_BIRTH_IN_FUTURE'
-        WHEN age_years < 18 THEN 'AGE_UNDER_18'
         WHEN age_years > 120 THEN 'AGE_OVER_120'
         WHEN sex IS NULL THEN 'SEX_REQUIRED'
         WHEN activity_level IS NULL THEN 'ACTIVITY_LEVEL_REQUIRED'

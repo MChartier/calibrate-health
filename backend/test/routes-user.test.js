@@ -662,33 +662,6 @@ test('user route: GET /profile reads the latest goal with deterministic ordering
   assert.equal(res.body.goal_daily_deficit, 500);
 });
 
-test('user route: PATCH /profile persists a truthful valid under-18 date without enabling planning', async () => {
-  let updateData = null;
-  const storedUser = {
-    id: 7, email: 'minor@example.com', created_at: new Date('2026-01-01T00:00:00.000Z'),
-    timezone: 'UTC', date_of_birth: null, sex: 'FEMALE', height_mm: 1650, activity_level: 'LIGHT',
-    weight_unit: 'KG', height_unit: 'CM', language: 'en', reminder_log_weight_enabled: true,
-    reminder_log_food_enabled: true, haptics_enabled: true, profile_image: null, profile_image_mime_type: null
-  };
-  const prismaStub = {
-    user: {
-      findUnique: async () => storedUser,
-      update: async ({ data }) => { updateData = data; return { ...storedUser, ...data }; }
-    },
-    goal: { findFirst: async () => null },
-    bodyMetric: { findFirst: async () => ({ weight_grams: 60_000 }) },
-    caloriePlanRevision: { findFirst: async () => null }
-  };
-  const router = loadUserRouter({ prismaStub, bcryptStub: {} });
-  const handler = getRouteHandler(router, 'patch', '/profile');
-  const res = createRes();
-
-  await handler({ user: { id: 7 }, body: { date_of_birth: '2010-08-08' } }, res);
-
-  assert.equal(res.statusCode, 200);
-  assert.equal(updateData.date_of_birth.toISOString(), '2010-08-08T00:00:00.000Z');
-  assert.equal(res.body.user.date_of_birth, '2010-08-08');
-});
 
 test('user route: PATCH /profile fails invalid legacy timezones closed and marks the current goal in the same transaction', async () => {
   let inTransaction = false;

@@ -40,7 +40,7 @@ describe('profile setup completion redirect policy', () => {
         })).toBe(true);
     });
 
-    it('keeps unavailable drafts, ineligible users, and old-server responses in onboarding', () => {
+    it('keeps unavailable drafts and old-server responses in onboarding', () => {
         expect(isProfileSetupComplete({
             ...PROFILE,
             goal_daily_deficit: null,
@@ -49,21 +49,6 @@ describe('profile setup completion redirect policy', () => {
                 missing: ['goal'],
                 planStatus: 'unavailable',
                 planReasonCode: 'GOAL_REQUIRED'
-            }
-        })).toBe(false);
-        expect(isProfileSetupComplete({
-            ...PROFILE,
-            calorieSummary: {
-                ...PROFILE.calorieSummary,
-                missing: ['eligibility'],
-                eligibility: {
-                    status: 'ineligible',
-                    reasonCode: 'AGE_UNDER_18',
-                    ageYears: 16,
-                    localDate: '2026-08-08'
-                },
-                planStatus: 'requires_review',
-                planReasonCode: 'AGE_UNDER_18'
             }
         })).toBe(false);
         expect(isProfileSetupComplete({

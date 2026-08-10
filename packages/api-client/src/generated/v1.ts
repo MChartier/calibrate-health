@@ -468,11 +468,11 @@ export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
         /** @enum {string} */
-        EligibilityStatus: "unknown" | "eligible" | "ineligible" | "invalid";
+        EligibilityStatus: "unknown" | "eligible" | "invalid";
         /** @enum {string} */
         CaloriePlanStatus: "unavailable" | "available" | "requires_review";
         /** @enum {string} */
-        CaloriePlanReasonCode: "DATE_OF_BIRTH_REQUIRED" | "DATE_OF_BIRTH_INVALID" | "DATE_OF_BIRTH_IN_FUTURE" | "AGE_UNDER_18" | "AGE_OVER_120" | "TIMEZONE_INVALID" | "SEX_REQUIRED" | "ACTIVITY_LEVEL_REQUIRED" | "HEIGHT_REQUIRED" | "HEIGHT_OUT_OF_RANGE" | "LATEST_WEIGHT_REQUIRED" | "WEIGHT_OUT_OF_RANGE" | "GOAL_REQUIRED" | "GOAL_WEIGHTS_OUT_OF_RANGE" | "GOAL_DIRECTION_INVALID" | "DAILY_DEFICIT_INVALID" | "TARGET_BELOW_MINIMUM" | "PLAN_REVISION_UNSAFE" | "HISTORICAL_PLAN_REQUIRES_REVIEW" | "SERVER_POLICY_UNAVAILABLE";
+        CaloriePlanReasonCode: "DATE_OF_BIRTH_REQUIRED" | "DATE_OF_BIRTH_INVALID" | "DATE_OF_BIRTH_IN_FUTURE" | "AGE_OVER_120" | "TIMEZONE_INVALID" | "SEX_REQUIRED" | "ACTIVITY_LEVEL_REQUIRED" | "HEIGHT_REQUIRED" | "HEIGHT_OUT_OF_RANGE" | "LATEST_WEIGHT_REQUIRED" | "WEIGHT_OUT_OF_RANGE" | "GOAL_REQUIRED" | "GOAL_WEIGHTS_OUT_OF_RANGE" | "GOAL_DIRECTION_INVALID" | "DAILY_DEFICIT_INVALID" | "TARGET_BELOW_MINIMUM" | "PLAN_REVISION_UNSAFE" | "HISTORICAL_PLAN_REQUIRES_REVIEW" | "SERVER_POLICY_UNAVAILABLE";
         CalorieEligibility: {
             status: components["schemas"]["EligibilityStatus"];
             reasonCode: components["schemas"]["CaloriePlanReasonCode"] | null;
@@ -1864,7 +1864,7 @@ export interface operations {
                     "application/json": components["schemas"]["GoalEntry"];
                 };
             };
-            /** @description Adult eligibility, weights, direction, or selected calorie option is invalid. */
+            /** @description Profile data, weights, direction, or selected calorie option is invalid. */
             400: {
                 headers: {
                     [name: string]: unknown;

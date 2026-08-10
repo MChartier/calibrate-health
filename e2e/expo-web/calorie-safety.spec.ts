@@ -56,22 +56,6 @@ async function advanceCompletedDraftToPace(page: Page) {
   await expect(page.getByText('Set a sustainable pace', { exact: true })).toBeVisible();
 }
 
-test('under-18 onboarding cannot advance through pace or finish', async ({ page, ux }, testInfo) => {
-  await ux.install('populated', { caloriePlanFixture: 'ineligible' });
-  await page.goto('/onboarding');
-  await advanceCompletedDraftToPace(page);
-
-  await expect(page.getByText(
-    'Calibrate calorie planning is available only to adults age 18 or older.',
-    { exact: true },
-  )).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Next: Import', exact: true })).toBeDisabled();
-  await expect(page.getByText('Review your setup', { exact: true })).toHaveCount(0);
-  await expectNoHorizontalOverflow(page);
-  await captureEvidence(page, testInfo, {
-    'compact-phone-chrome': 'adult-eligibility-compact-phone.png',
-  });
-});
 
 test('server-unavailable options expose disabled semantics and safe reason copy', async ({ page, ux }, testInfo) => {
   await ux.install('populated', { caloriePlanFixture: 'selected-options-unavailable' });

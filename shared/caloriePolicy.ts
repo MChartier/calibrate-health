@@ -1,6 +1,5 @@
 import type { ActivityLevel, Sex } from './domain';
 
-export const MIN_ELIGIBLE_AGE_YEARS = 18;
 export const MAX_ELIGIBLE_AGE_YEARS = 120;
 export const MIN_HEIGHT_MM = 1_000;
 export const MAX_HEIGHT_MM = 2_500;
@@ -10,11 +9,11 @@ export const ABSOLUTE_MIN_TARGET_KCAL = 1_000;
 export const CALORIE_POLICY_VERSION = 1;
 export const SIGNED_DAILY_DEFICIT_OPTIONS = [-1_000, -750, -500, -250, 0, 250, 500, 750, 1_000] as const;
 
-export type EligibilityStatus = 'unknown' | 'eligible' | 'ineligible' | 'invalid';
+export type EligibilityStatus = 'unknown' | 'eligible' | 'invalid';
 export type CaloriePlanStatus = 'unavailable' | 'available' | 'requires_review';
 export type CaloriePlanReasonCode =
     | 'DATE_OF_BIRTH_REQUIRED' | 'DATE_OF_BIRTH_INVALID' | 'DATE_OF_BIRTH_IN_FUTURE'
-    | 'AGE_UNDER_18' | 'AGE_OVER_120' | 'TIMEZONE_INVALID'
+    | 'AGE_OVER_120' | 'TIMEZONE_INVALID'
     | 'SEX_REQUIRED' | 'ACTIVITY_LEVEL_REQUIRED' | 'HEIGHT_REQUIRED' | 'HEIGHT_OUT_OF_RANGE'
     | 'LATEST_WEIGHT_REQUIRED' | 'WEIGHT_OUT_OF_RANGE' | 'GOAL_REQUIRED'
     | 'GOAL_WEIGHTS_OUT_OF_RANGE' | 'GOAL_DIRECTION_INVALID' | 'DAILY_DEFICIT_INVALID'
@@ -112,7 +111,7 @@ export function calculateCalendarAge(dateOfBirth: string, localDate: string): nu
     return age;
 }
 
-export function evaluateAdultEligibility(options: { dateOfBirth?: unknown; timezone?: unknown; now?: Date }): CalorieEligibility {
+export function evaluateCalorieProfileEligibility(options: { dateOfBirth?: unknown; timezone?: unknown; now?: Date }): CalorieEligibility {
     if (options.dateOfBirth === undefined || options.dateOfBirth === null || options.dateOfBirth === '') {
         return { status: 'unknown', reasonCode: 'DATE_OF_BIRTH_REQUIRED', ageYears: null, localDate: null };
     }
@@ -122,10 +121,10 @@ export function evaluateAdultEligibility(options: { dateOfBirth?: unknown; timez
     if (!localDate) return { status: 'invalid', reasonCode: 'TIMEZONE_INVALID', ageYears: null, localDate: null };
     if (dateOfBirth > localDate) return { status: 'invalid', reasonCode: 'DATE_OF_BIRTH_IN_FUTURE', ageYears: null, localDate };
     const ageYears = calculateCalendarAge(dateOfBirth, localDate);
-    if (ageYears < MIN_ELIGIBLE_AGE_YEARS) return { status: 'ineligible', reasonCode: 'AGE_UNDER_18', ageYears, localDate };
     if (ageYears > MAX_ELIGIBLE_AGE_YEARS) return { status: 'invalid', reasonCode: 'AGE_OVER_120', ageYears, localDate };
     return { status: 'eligible', reasonCode: null, ageYears, localDate };
 }
+
 
 export function calculatePolicyBmr(sex: Sex, weightGrams: number, heightMm: number, ageYears: number): number {
     const base = 10 * (weightGrams / 1_000) + 6.25 * (heightMm / 10) - 5 * ageYears;
@@ -160,7 +159,7 @@ function prerequisitesReason(eligibility: CalorieEligibility, profile: CaloriePo
 }
 
 const prerequisiteReviewReasons = new Set<CaloriePlanReasonCode>([
-    'DATE_OF_BIRTH_REQUIRED', 'DATE_OF_BIRTH_INVALID', 'DATE_OF_BIRTH_IN_FUTURE', 'AGE_UNDER_18',
+    'DATE_OF_BIRTH_REQUIRED', 'DATE_OF_BIRTH_INVALID', 'DATE_OF_BIRTH_IN_FUTURE',
     'AGE_OVER_120', 'TIMEZONE_INVALID', 'SEX_REQUIRED', 'ACTIVITY_LEVEL_REQUIRED', 'HEIGHT_REQUIRED',
     'HEIGHT_OUT_OF_RANGE', 'LATEST_WEIGHT_REQUIRED', 'WEIGHT_OUT_OF_RANGE'
 ]);
@@ -189,7 +188,7 @@ export function evaluateCaloriePlan(options: {
     revisionReviewReason?: string | null;
     now?: Date;
 }): CaloriePlanEvaluation {
-    const eligibility = evaluateAdultEligibility({ dateOfBirth: options.profile.dateOfBirth, timezone: options.profile.timezone, now: options.now });
+    const eligibility = evaluateCalorieProfileEligibility({ dateOfBirth: options.profile.dateOfBirth, timezone: options.profile.timezone, now: options.now });
     const prerequisiteReason = prerequisitesReason(eligibility, options.profile, options.latestWeightGrams);
     let bmr: number | null = null;
     let tdee: number | null = null;

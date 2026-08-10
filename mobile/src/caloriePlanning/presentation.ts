@@ -17,7 +17,7 @@ const DEFAULT_PRESENTATION: CaloriePlanPresentation = {
 const PRESENTATIONS: Record<CaloriePlanReasonCode, CaloriePlanPresentation> = {
     DATE_OF_BIRTH_REQUIRED: {
         title: 'Date of birth required',
-        message: 'Add your exact date of birth so Calibrate can verify adult eligibility.',
+        message: 'Add your exact date of birth for your calorie estimate.',
         actionLabel: 'Review profile',
         actionKind: 'profile'
     },
@@ -33,15 +33,9 @@ const PRESENTATIONS: Record<CaloriePlanReasonCode, CaloriePlanPresentation> = {
         actionLabel: 'Review profile',
         actionKind: 'profile'
     },
-    AGE_UNDER_18: {
-        title: 'Adult eligibility required',
-        message: 'Calibrate calorie planning is available only to adults age 18 or older.',
-        actionLabel: 'Review profile',
-        actionKind: 'profile'
-    },
     AGE_OVER_120: {
         title: 'Review your date of birth',
-        message: 'Calorie planning requires an age between 18 and 120.',
+        message: 'Enter a valid date of birth with an age no greater than 120.',
         actionLabel: 'Review profile',
         actionKind: 'profile'
     },

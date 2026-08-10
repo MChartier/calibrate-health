@@ -7,7 +7,7 @@ import { isActivityLevel, isSex } from '../utils/profile';
 import { isValidIanaTimeZone } from '../utils/date';
 import { calorieSummaryWire, getStoredCaloriePlanningSnapshot } from '../services/caloriePlanning';
 import { markCurrentCaloriePlanForReviewIfUnsafe } from '../services/caloriePlanReview';
-import { evaluateAdultEligibility, isPolicyHeight, normalizeDateOfBirth } from '../../../shared/caloriePolicy';
+import { evaluateCalorieProfileEligibility, isPolicyHeight, normalizeDateOfBirth } from '../../../shared/caloriePolicy';
 import { resolveHeightMmUpdate } from '../utils/height';
 import { isSupportedLanguage, type SupportedLanguage } from '../utils/language';
 import { MAX_PROFILE_IMAGE_BYTES, parseBase64DataUrl } from '../utils/profileImage';
@@ -491,7 +491,7 @@ router.patch('/profile', async (req, res) => {
         : updateData.date_of_birth;
       const candidateTimezone = updateData.timezone ?? current.timezone;
       if (candidateDateOfBirth) {
-        const eligibility = evaluateAdultEligibility({
+        const eligibility = evaluateCalorieProfileEligibility({
           dateOfBirth: candidateDateOfBirth,
           timezone: candidateTimezone
         });

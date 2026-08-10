@@ -118,10 +118,10 @@ router.post('/', async (req, res) => {
                     return {
                         status: 400,
                         body: {
-                            message: 'Adult eligibility is required for calorie planning.',
-                            code: 'ADULT_ELIGIBILITY_REQUIRED',
+                            message: 'Complete a valid profile before creating a calorie plan.',
+                            code: 'CALORIE_PLAN_PROFILE_REQUIRED',
                             retryable: false,
-                            field_errors: { date_of_birth: ['Confirm an eligible adult date of birth before creating a goal.'] }
+                            field_errors: { date_of_birth: ['Complete the required profile fields before creating a goal.'] }
                         }
                     };
                 }

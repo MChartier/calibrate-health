@@ -104,7 +104,7 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/GoalEntry' }
         '400':
-          description: Adult eligibility, weights, direction, or selected calorie option is invalid.
+          description: Profile data, weights, direction, or selected calorie option is invalid.
           content:
             application/json:
               schema: { $ref: '#/components/schemas/ApiError' }
@@ -881,7 +881,7 @@ components:
   schemas:
     EligibilityStatus:
       type: string
-      enum: [unknown, eligible, ineligible, invalid]
+      enum: [unknown, eligible, invalid]
     CaloriePlanStatus:
       type: string
       enum: [unavailable, available, requires_review]
@@ -891,7 +891,6 @@ components:
         - DATE_OF_BIRTH_REQUIRED
         - DATE_OF_BIRTH_INVALID
         - DATE_OF_BIRTH_IN_FUTURE
-        - AGE_UNDER_18
         - AGE_OVER_120
         - TIMEZONE_INVALID
         - SEX_REQUIRED

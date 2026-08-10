@@ -26,7 +26,6 @@ export type UxFixtureState = (typeof UX_FIXTURE_STATES)[number];
 export type CaloriePlanFixtureState =
   | 'available'
   | 'requires-review'
-  | 'ineligible'
   | 'selected-options-unavailable';
 
 type StubMetricEntry = { id: number; date: string; weight: number };
@@ -193,46 +192,6 @@ function getCaloriePlanFixture(state: CaloriePlanFixtureState) {
         tdee: 2_600,
         minimumDailyCalorieTarget: 2_000,
         planOptions: AVAILABLE_PLAN_OPTIONS,
-      },
-    };
-  }
-  if (state === 'ineligible') {
-    const reasonCode = 'AGE_UNDER_18';
-    return {
-      profile: {
-        ...PROFILE_RESPONSE,
-        goal_daily_deficit: null,
-        profile: { ...PROFILE_RESPONSE.profile, date_of_birth: '2010-05-12' },
-        calorieSummary: {
-          missing: ['eligibility'],
-          eligibility: {
-            status: 'ineligible',
-            reasonCode,
-            ageYears: 16,
-            localDate: FROZEN_LOCAL_DATE,
-          },
-          planStatus: 'unavailable',
-          planReasonCode: reasonCode,
-          minimumDailyCalorieTarget: null,
-        },
-      },
-      goal: null,
-      options: {
-        eligibility: {
-          status: 'ineligible',
-          reasonCode,
-          ageYears: 16,
-          localDate: FROZEN_LOCAL_DATE,
-        },
-        bmr: null,
-        tdee: null,
-        minimumDailyCalorieTarget: null,
-        planOptions: AVAILABLE_PLAN_OPTIONS.map((option) => ({
-          ...option,
-          available: false,
-          dailyCalorieTarget: null,
-          reasonCode,
-        })),
       },
     };
   }

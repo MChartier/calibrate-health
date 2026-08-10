@@ -28,6 +28,7 @@ import { WEIGHT_TREND_MODEL_VERSION } from './weightTrend';
 const CALIBRATION_HISTORY_DAYS = 90; // Includes the bounded personal intake reference horizon.
 // One boundary day lets the largest food window support a full 42 elapsed days of pace evidence.
 const CALIBRATION_WEIGHT_LOOKBACK_DAYS = CALIBRATION_MAX_OBSERVATION_DAYS + 1;
+const CALIBRATION_APPLY_MAX_ATTEMPTS = 3;
 
 type MaterializedRecommendation = {
     id: number;
@@ -59,6 +60,24 @@ export class CalibrationConflictError extends Error {
         this.name = 'CalibrationConflictError';
     }
 }
+function isRetryableCalibrationApplyConflict(error: unknown): boolean {
+    return typeof error === 'object' && error !== null && 'code' in error
+        && String(error.code) === 'P2034';
+}
+
+async function retryCalibrationApply<T>(operation: () => Promise<T>): Promise<T> {
+    for (let attempt = 1; attempt <= CALIBRATION_APPLY_MAX_ATTEMPTS; attempt += 1) {
+        try {
+            return await operation();
+        } catch (error) {
+            if (!isRetryableCalibrationApplyConflict(error) || attempt === CALIBRATION_APPLY_MAX_ATTEMPTS) {
+                throw error;
+            }
+        }
+    }
+    throw new Error('Calibration recommendation apply exhausted its bounded retry loop.');
+}
+
 
 function toDateKey(date: Date): string {
     return date.toISOString().slice(0, 10);
@@ -473,7 +492,7 @@ export async function applyCalibrationRecommendation(options: {
     now?: Date;
 }): Promise<ScheduledCalibrationChange> {
     try {
-        const result = await executeIdempotentMutation<ScheduledCalibrationChange>({
+        const result = await retryCalibrationApply(() => executeIdempotentMutation<ScheduledCalibrationChange>({
             userId: options.userId,
             operationId: options.operationId,
             operationKind: 'calibration_recommendation.apply',
@@ -578,7 +597,7 @@ export async function applyCalibrationRecommendation(options: {
                 });
                 return { status: 200, body };
             }
-        });
+        }));
         return result.body;
     } catch (error) {
         if (error instanceof ClientOperationConflictError) throw error;

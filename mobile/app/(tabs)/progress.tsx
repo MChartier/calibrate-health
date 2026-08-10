@@ -399,7 +399,7 @@ export default function ProgressScreen() {
                         )}
                     </View>
                     {caloriePlanDraft === null ? (
-                        <AppText variant="muted">Complete your adult profile and log a current weight to check safe calorie plans.</AppText>
+                        <AppText variant="muted">Complete your profile and log a current weight to check safe calorie plans.</AppText>
                     ) : (
                         <AsyncStateBoundary
                             state={planPreviewState}

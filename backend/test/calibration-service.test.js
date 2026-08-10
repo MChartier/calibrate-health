@@ -80,6 +80,7 @@ function createHarness({ scenarioId = 'target-too-high', scheduledRevision = nul
     upserts: [],
     staleUpdates: [],
     operation: null,
+    operationAttempts: 0,
     revision: null,
     deletedRevisionId: null,
     appliedAt: null,
@@ -88,6 +89,7 @@ function createHarness({ scenarioId = 'target-too-high', scheduledRevision = nul
   };
   let storedRecommendation = null;
   let beforeMutation = null;
+  let persistentMutationError = null;
   let scheduledRevisionState = safeScheduledRevision;
   const pausedDateSet = new Set(pausedDates);
   const logs = scenario.input.foodDays.flatMap((day) => [
@@ -191,9 +193,11 @@ function createHarness({ scenarioId = 'target-too-high', scheduledRevision = nul
   const operations = {
     executeIdempotentMutation: async (options) => {
       captured.operation = options;
+      captured.operationAttempts += 1;
       const interleave = beforeMutation;
       beforeMutation = null;
       if (interleave) await interleave();
+      if (persistentMutationError) throw persistentMutationError;
       return options.mutate(prisma, options.operationId);
     },
     recordSyncChange: async (options) => { captured.sync = options; }
@@ -234,6 +238,7 @@ function createHarness({ scenarioId = 'target-too-high', scheduledRevision = nul
     scenario, serviceInput, captured, prisma, service, planningState,
     evidenceState: { logs, completionDays, weightRows },
     setBeforeMutation(callback) { beforeMutation = callback; },
+    setPersistentMutationError(error) { persistentMutationError = error; },
     setScheduledRevision(revision) {
       scheduledRevisionState = revision;
       planningState.transactional = { ...planningState.current, nextRevision: revision, futureRevisions: [revision] };
@@ -383,6 +388,51 @@ test('applying a recommendation revalidates, schedules one revision, and replays
     now
   });
   assert.deepEqual(replay, result);
+});
+
+test('recommendation apply retries the complete serializable mutation after a P2034 conflict', async () => {
+  const harness = createHarness();
+  const now = new Date('2026-08-01T12:00:00.000Z');
+  const status = await harness.service.buildCalibrationStatus(7, now);
+  harness.setBeforeMutation(() => {
+    throw Object.assign(new Error('serialization conflict'), { code: 'P2034' });
+  });
+
+  const result = await harness.service.applyCalibrationRecommendation({
+    userId: 7,
+    recommendationId: status.recommendation.id,
+    operationId: 'calibration-retry-0001',
+    now
+  });
+
+  assert.equal(harness.captured.operationAttempts, 2);
+  assert.deepEqual(result, {
+    recommendationId: 9,
+    targetAdjustmentKcal: -150,
+    dailyCalorieBudgetKcal: 1750,
+    effectiveLocalDate: '2026-08-02'
+  });
+});
+
+test('recommendation apply stops after three persistent P2034 conflicts', async () => {
+  const harness = createHarness();
+  const now = new Date('2026-08-01T12:00:00.000Z');
+  const status = await harness.service.buildCalibrationStatus(7, now);
+  harness.setPersistentMutationError(
+    Object.assign(new Error('persistent serialization conflict'), { code: 'P2034' })
+  );
+
+  await assert.rejects(
+    harness.service.applyCalibrationRecommendation({
+      userId: 7,
+      recommendationId: status.recommendation.id,
+      operationId: 'calibration-retry-0002',
+      now
+    }),
+    /persistent serialization conflict/
+  );
+  assert.equal(harness.captured.operationAttempts, 3);
+  assert.equal(harness.captured.revision, null);
 });
 
 test('canceling a future revision restores the recommendation for review', async () => {
