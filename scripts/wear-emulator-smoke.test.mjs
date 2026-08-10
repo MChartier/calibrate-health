@@ -36,6 +36,9 @@ test('Wear connection actions expose one explicitly named semantic click target'
     2,
   );
   assert.equal(source.split(`onClick(label = "Connection") {`).length - 1, 2);
+  assert.equal(source.split('contentDescription = "Connection. ${').length - 1, 2);
+  assert.match(source, /connectionLabel\(appState, homeState\.syncStatus\)/);
+  assert.match(source, /connectionLabel\(WearAppState\.Ready\(summary\), homeState\.syncStatus\)/);
   assert.equal(
     source.includes(`.semantics(mergeDescendants = true) { contentDescription = "Connection" }`),
     false,
@@ -104,6 +107,17 @@ test('Wear smoke parser derives tap coordinates from the UI tree', () => {
   assert.deepEqual(parseBounds(found.bounds), { x: 227, y: 208 });
   assert.deepEqual(parseBoundsRectangle(found.bounds), { left: 24, top: 156, right: 430, bottom: 260 });
 });
+
+test('Wear smoke parser finds exact accessibility descriptions', () => {
+  const xml = '<hierarchy><node text="" content-desc="Connection. Phone setup required" bounds="[24,156][430,260]" /></hierarchy>';
+
+  assert.deepEqual(findTextNode(xml, 'Connection. Phone setup required'), {
+    text: 'Connection. Phone setup required',
+    bounds: '[24,156][430,260]'
+  });
+  assert.equal(findTextNode(xml, 'Connection'), null);
+});
+
 test('Wear readiness waits for one complete exact UI tree', () => {
   const expected = ['calibrate', 'Connection'];
   const trees = [

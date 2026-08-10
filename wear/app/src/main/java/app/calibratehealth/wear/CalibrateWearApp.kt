@@ -207,7 +207,7 @@ private fun SummaryScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clearAndSetSemantics {
-                            contentDescription = "Connection"
+                            contentDescription = "Connection. ${connectionLabel(appState, homeState.syncStatus)}"
                             onClick(label = "Connection") {
                                 onOpenConnection()
                                 true
@@ -329,7 +329,7 @@ private fun ReadySummaryDashboard(
                             .fillMaxWidth()
                             .padding(horizontal = SUMMARY_ITEM_HORIZONTAL_PADDING)
                             .clearAndSetSemantics {
-                                contentDescription = "Connection"
+                                contentDescription = "Connection. ${connectionLabel(WearAppState.Ready(summary), homeState.syncStatus)}"
                                 onClick(label = "Connection") {
                                     onOpenConnection()
                                     true

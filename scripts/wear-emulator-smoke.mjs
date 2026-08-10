@@ -17,11 +17,11 @@ const UI_DUMP_PATH = '/sdcard/calibrate-wear-smoke.xml';
 const REVIEWED_FONT_SCALES = Object.freeze([1, 1.3]);
 const WEAR_UI_READY_ATTEMPTS = 15;
 const WEAR_UI_POLL_SECONDS = '1';
+const UNPAIRED_CONNECTION_ACCESSIBILITY_LABEL = 'Connection. Phone setup required';
 const HOME_EXPECTED_TEXT = Object.freeze([
   'calibrate',
   "Pair with Calibrate on your phone to see today's summary.",
-  'Connection',
-  'Phone setup required'
+  UNPAIRED_CONNECTION_ACCESSIBILITY_LABEL
 ]);
 const REVIEWED_WEAR_PERMISSIONS = Object.freeze([
   'android.permission.ACCESS_NETWORK_STATE',
@@ -144,7 +144,10 @@ export function summarizeWearScale(fontScale, screen, densityDpi, audits) {
 
 export function findTextNode(xml, text) {
   const node = (xml.match(/<node\b[^>]*>/g) ?? [])
-    .find((candidate) => attribute(candidate, 'text') === text);
+    .find((candidate) => (
+      attribute(candidate, 'text') === text
+      || attribute(candidate, 'content-desc') === text
+    ));
   return node ? { text, bounds: attribute(node, 'bounds') } : null;
 }
 export function listWearUiPackages(xml) {
@@ -359,7 +362,7 @@ function exerciseWearScale({ adb, serial, expectedBuildType, screen, densityDpi,
     () => runAdb(adb, serial, ['shell', 'sleep', WEAR_UI_POLL_SECONDS], { quiet: true })
   );
   const home = waitForExpectedUi(HOME_EXPECTED_TEXT);
-  const connection = requireText(home, 'Connection');
+  const connection = requireText(home, UNPAIRED_CONNECTION_ACCESSIBILITY_LABEL);
   const homeAudit = auditWearActionTargets(home, screen, densityDpi, { packageName: APP_ID });
   const point = parseBounds(connection.bounds);
   runAdb(adb, serial, ['shell', 'input', 'tap', String(point.x), String(point.y)], { quiet: true });
