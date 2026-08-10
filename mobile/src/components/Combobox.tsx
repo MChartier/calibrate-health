@@ -33,6 +33,7 @@ export type ListboxProps<T extends string> = {
     onSelect: (value: T) => void;
     onDismiss: () => void;
     initialTypeahead?: string;
+    focusInitialOption?: boolean;
     testID?: string;
 };
 
@@ -96,6 +97,7 @@ export function Listbox<T extends string>({
     onSelect,
     onDismiss,
     initialTypeahead = '',
+    focusInitialOption = true,
     testID = 'listbox'
 }: ListboxProps<T>) {
     const theme = useAppTheme();
@@ -118,9 +120,10 @@ export function Listbox<T extends string>({
     const [activeIndex, setActiveIndex] = useState(initialIndex);
 
     useEffect(() => {
+        if (!focusInitialOption) return undefined;
         const focusTimer = setTimeout(() => optionRefs.current[initialIndex]?.focus?.(), 0);
         return () => clearTimeout(focusTimer);
-    }, [initialIndex]);
+    }, [focusInitialOption, initialIndex]);
 
     useEffect(() => () => {
         if (typeaheadTimer.current) clearTimeout(typeaheadTimer.current);
@@ -389,6 +392,7 @@ export function Combobox<T extends string>({
                                         onSelect={select}
                                         onDismiss={() => setOpen(false)}
                                         initialTypeahead={initialTypeahead}
+                                        focusInitialOption={!searchable}
                                         testID={`${testID}-listbox`}
                                     />
                                 ) : (

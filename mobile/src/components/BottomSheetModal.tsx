@@ -165,10 +165,7 @@ export const BottomSheetModal: React.FC<BottomSheetModalProps> = ({
         visible,
         containerRef: sheetRef,
         initialFocusRef,
-        returnFocusRef,
-        onEscape: () => {
-            void requestDismiss();
-        }
+        returnFocusRef
     });
 
     useEffect(() => {

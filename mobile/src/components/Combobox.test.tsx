@@ -37,6 +37,7 @@ describe('Combobox', () => {
         );
 
         fireEvent.press(screen.getByRole('combobox', { name: 'Region' }));
+        expect(screen.UNSAFE_getByType(Listbox).props.focusInitialOption).toBe(false);
         fireEvent.changeText(screen.getByLabelText('Search Region'), 'pac');
         expect(screen.getByText('Pacific')).toBeTruthy();
         expect(screen.queryByText('Europe')).toBeNull();
