@@ -64,4 +64,21 @@ describe('food delete recovery state', () => {
         ]);
         expect(JSON.stringify(getFailedQueuedFoodDeletes(mutations))).not.toContain('private upstream error');
     });
+
+    it('restores a completed tombstone when its durable replay has failed', () => {
+        const entry = { id: 6, name: 'Failed delete' };
+        const state = {
+            ...createEmptyFoodDeleteRecoveryState<typeof entry>(),
+            completed: [{
+                entry,
+                operationId: 'failed',
+                requestedAt: 1,
+                expiresAt: 2
+            }]
+        };
+
+        const hiddenIds = getFoodDeleteHiddenIds(state, [], [entry.id]);
+        expect(hiddenIds).toEqual([]);
+        expect(filterVisibleFoodLogEntries([entry], hiddenIds)).toEqual([entry]);
+    });
 });

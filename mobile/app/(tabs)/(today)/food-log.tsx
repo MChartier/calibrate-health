@@ -122,7 +122,7 @@ export default function FoodLogScreen() {
     });
 
     const copyFood = useMutation({
-        mutationFn: (selection: FoodCopySelection) => {
+        mutationFn: async (selection: FoodCopySelection) => {
             if (!copySource || copySource.kind !== selection.kind) {
                 throw new Error('Choose a meal or day to copy.');
             }
@@ -142,6 +142,7 @@ export default function FoodLogScreen() {
                     target_meal_period: selection.targetMeal
                 }];
             }
+            await deleteRecovery.flush();
             return api.copyFoodLogs(payload);
         },
         onSuccess: async (response) => {
@@ -194,7 +195,6 @@ export default function FoodLogScreen() {
 
     function openCopy(source: FoodCopySource) {
         copyFood.reset();
-        copyOperationRef.current = null;
         setCopySuccessMessage(null);
         setCopySource(source);
     }

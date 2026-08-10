@@ -87,9 +87,17 @@ export function useFoodDeleteRecovery(options: UseFoodDeleteRecoveryOptions) {
         () => getQueuedFoodDeleteIds(options.outbox.mutations),
         [options.outbox.mutations]
     );
+    const failedQueuedDeletes = useMemo(
+        () => getFailedQueuedFoodDeletes(options.outbox.mutations),
+        [options.outbox.mutations]
+    );
+    const failedQueuedDeleteIds = useMemo(
+        () => failedQueuedDeletes.map(({ entryId }) => entryId),
+        [failedQueuedDeletes]
+    );
     const hiddenEntryIds = useMemo(
-        () => getFoodDeleteHiddenIds(state, queuedDeleteIds),
-        [queuedDeleteIds, state]
+        () => getFoodDeleteHiddenIds(state, queuedDeleteIds, failedQueuedDeleteIds),
+        [failedQueuedDeleteIds, queuedDeleteIds, state]
     );
     const visibleEntries = useMemo(
         () => filterVisibleFoodLogEntries(options.entries ?? [], hiddenEntryIds),
@@ -108,9 +116,8 @@ export function useFoodDeleteRecovery(options: UseFoodDeleteRecoveryOptions) {
         }
 
         const entriesById = new Map((options.entries ?? []).map((entry) => [entry.id, entry]));
-        const queuedFailures = getFailedQueuedFoodDeletes(options.outbox.mutations);
-        for (let index = queuedFailures.length - 1; index >= 0; index -= 1) {
-            const queuedFailure = queuedFailures[index];
+        for (let index = failedQueuedDeletes.length - 1; index >= 0; index -= 1) {
+            const queuedFailure = failedQueuedDeletes[index];
             const entry = entriesById.get(queuedFailure.entryId);
             if (entry) {
                 return {
@@ -122,7 +129,7 @@ export function useFoodDeleteRecovery(options: UseFoodDeleteRecoveryOptions) {
             }
         }
         return null;
-    }, [options.entries, options.outbox.mutations, state.failures]);
+    }, [failedQueuedDeletes, options.entries, state.failures]);
 
     const retry = useCallback(async (operationId = failure?.operationId) => {
         if (!operationId) return;

@@ -38,13 +38,15 @@ export function createEmptyFoodDeleteRecoveryState<
 
 export function getFoodDeleteHiddenIds<TEntry extends FoodDeleteEntry>(
     state: FoodDeleteRecoveryState<TEntry>,
-    queuedDeleteIds: readonly number[] = []
+    queuedDeleteIds: readonly number[] = [],
+    failedDeleteIds: readonly number[] = []
 ): number[] {
+    const failedIds = new Set(failedDeleteIds);
     return Array.from(new Set([
         ...queuedDeleteIds,
         ...(state.pending ? [state.pending.entry.id] : []),
         ...state.committing.map(({ entry }) => entry.id),
-        ...state.completed.map(({ entry }) => entry.id)
+        ...state.completed.map(({ entry }) => entry.id).filter((id) => !failedIds.has(id))
     ]));
 }
 
