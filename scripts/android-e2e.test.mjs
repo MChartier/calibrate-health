@@ -13,6 +13,7 @@ import {
   buildOpenFoodDayRequest,
   crashBufferContainsCalibrateProcess,
   fetchAndroidE2eProxyUpstream,
+  isAndroidE2eAddAndCloseNode,
   isAndroidE2eRecentFoodNode,
   resolveAndroidE2eAdb,
   summarizeAndroidE2eUi
@@ -100,6 +101,12 @@ test('Android E2E matches only enabled recent-food action rows', () => {
   assert.equal(isAndroidE2eRecentFoodNode({ label: 'Choose amount for Android E2E latte', clickable: true }, 'Android E2E latte'), true);
   assert.equal(isAndroidE2eRecentFoodNode({ label: 'Choose amount for Android E2E latte', clickable: false }, 'Android E2E latte'), false);
   assert.equal(isAndroidE2eRecentFoodNode({ label: 'Choose amount for Another food', clickable: true }, 'Android E2E latte'), false);
+});
+
+test('Android E2E submits the selected recent-food amount through Add & close', () => {
+  assert.equal(isAndroidE2eAddAndCloseNode({ label: 'Add & close', clickable: true }), true);
+  assert.equal(isAndroidE2eAddAndCloseNode({ label: 'Add & close', clickable: false }), false);
+  assert.equal(isAndroidE2eAddAndCloseNode({ label: 'Add another', clickable: true }), false);
 });
 
 test('Android E2E API probes identify the current phone release', () => {

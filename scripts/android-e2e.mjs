@@ -282,7 +282,7 @@ async function requestJson(pathname, options = {}) {
 }
 
 const SAFE_ANDROID_UI_MARKERS = Object.freeze([
-  'Opening add food...', 'Add food', 'Quick', 'Today', 'Restoring session...',
+  'Opening add food...', 'Add food', 'Add & close', 'Quick', 'Today', 'Restoring session...',
   'Food logging is unavailable', 'Sign in',
 ]);
 
@@ -296,6 +296,10 @@ export function summarizeAndroidE2eUi(xml) {
 
 export function isAndroidE2eRecentFoodNode(node, name) {
   return node?.clickable === true && node?.label === `Choose amount for ${name}`;
+}
+
+export function isAndroidE2eAddAndCloseNode(node) {
+  return node?.clickable === true && node?.label === 'Add & close';
 }
 
 async function loginApi() {
@@ -393,6 +397,7 @@ async function openRecentAdd(name, date, timeoutMs = 45_000) {
 
 async function logOpenRecentFood(name, waitForSheetClose = true) {
   await tapNode(`${name} recent row`, (node) => isAndroidE2eRecentFoodNode(node, name));
+  await tapNode('Add & close', isAndroidE2eAddAndCloseNode);
   if (waitForSheetClose) {
     await waitForNode('Add food sheet to close', (node) => node.clickable && node.label === 'Add food', 45_000);
   }
