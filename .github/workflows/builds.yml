@@ -538,17 +538,7 @@ jobs:
             node scripts/hosted-native-emulators.mjs start-wear
             node scripts/hosted-native-emulators.mjs wait-wear
             mkdir -p .codex-screenshots/native-emulator
-            npm run test:native:upgrade -- \
-              --baseline "${{ github.event.pull_request.base.sha }}" \
-              --candidate "${{ github.event.pull_request.head.sha }}" \
-              --baseline-version-code 1000000 \
-              --candidate-version-code 1000001 \
-              --phone-serial emulator-5554 \
-              --wear-serial emulator-5556 \
-              --server-url https://calibratehealth.app \
-              --output .codex-screenshots/native-emulator/native-upgrade.json \
-              --execute \
-              --package-only > "$RUNNER_TEMP/native-upgrade-console.log"
+            npm run test:native:upgrade -- --baseline "${{ github.event.pull_request.base.sha }}" --candidate "${{ github.event.pull_request.head.sha }}" --baseline-version-code 1000000 --candidate-version-code 1000001 --phone-serial emulator-5554 --wear-serial emulator-5556 --server-url https://calibratehealth.app --output .codex-screenshots/native-emulator/native-upgrade.json --execute --package-only > "$RUNNER_TEMP/native-upgrade-console.log"
             echo "Hosted package-only native upgrade passed."
 
       - name: Stop secondary Wear emulator
