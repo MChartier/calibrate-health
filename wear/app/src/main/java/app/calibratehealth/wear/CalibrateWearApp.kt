@@ -202,7 +202,9 @@ private fun SummaryScreen(
                     onClick = onOpenConnection,
                     label = { Text("Connection") },
                     secondaryLabel = { Text(connectionLabel(appState, homeState.syncStatus)) },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .semantics { contentDescription = "Connection" }
                 )
             }
         }
@@ -318,6 +320,7 @@ private fun ReadySummaryDashboard(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = SUMMARY_ITEM_HORIZONTAL_PADDING)
+                            .semantics { contentDescription = "Connection" }
                     )
                 }
                 item(key = "bottom-space") {

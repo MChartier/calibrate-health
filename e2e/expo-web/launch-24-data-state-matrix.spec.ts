@@ -157,9 +157,12 @@ test.describe('Launch 24 exported-web data-state coverage', () => {
         }
 
         if (state === 'error') {
-          await expect(page.getByText(routeCase.errorText, { exact: true }).first()).toBeVisible();
+          // The terminal surface appears only after the product's bounded React Query retry cycle.
+          await expect(page.getByText(routeCase.errorText, { exact: true }).first()).toBeVisible({ timeout: 20_000 });
           if (routeCase.errorActionText) {
-            await expect(page.getByText(routeCase.errorActionText, { exact: true }).first()).toBeVisible();
+            await expect(page.getByText(routeCase.errorActionText, { exact: true }).first()).toBeVisible({
+              timeout: 20_000,
+            });
           }
           if (routeCase.terminalEmptyText) {
             await expect(page.getByText(routeCase.terminalEmptyText, { exact: true })).toHaveCount(0);
