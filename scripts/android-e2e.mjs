@@ -21,7 +21,7 @@ const UI_DUMP_PATH = '/sdcard/calibrate-e2e-window.xml';
 
 export function buildAddFoodDeepLink(date) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) throw new Error('Android E2E Add food date must be YYYY-MM-DD.');
-  return `calibrate:///log?date=${encodeURIComponent(date)}`;
+  return `https://calibratehealth.app/log?date=${encodeURIComponent(date)}`;
 }
 const METRO_REVERSE_HOST = 'localhost:8081';
 const API_REVERSE_PORT = 'tcp:3000';

@@ -23,7 +23,7 @@ test('Android E2E uses the same localhost Metro origin as the hosted readiness p
 });
 
 test('Android E2E opens Add food through the canonical native route', () => {
-  assert.equal(buildAddFoodDeepLink('2026-08-10'), 'calibrate:///log?date=2026-08-10');
+  assert.equal(buildAddFoodDeepLink('2026-08-10'), 'https://calibratehealth.app/log?date=2026-08-10');
   assert.throws(() => buildAddFoodDeepLink('08/10/2026'), /must be YYYY-MM-DD/);
 });
 
