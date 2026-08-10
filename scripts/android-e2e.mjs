@@ -13,8 +13,6 @@ const TEST_PASSWORD = process.env.CALIBRATE_E2E_PASSWORD ?? 'password123';
 const APP_ID = 'app.calibratehealth.mobile';
 export const ANDROID_E2E_METRO_STATUS_URL = 'http://localhost:8081/status';
 export const ANDROID_E2E_INITIAL_LAUNCH_TIMEOUT_MS = 90_000;
-// Give a newly triggered native sheet time to mount before retrying the same tap.
-export const ANDROID_E2E_UI_ACTION_RETRY_MS = 7_500;
 const ONLINE_FOOD = { name: 'Android E2E latte', calories: 190 };
 const OFFLINE_FOOD = { name: 'Android E2E protein shake', calories: 240 };
 const UI_DUMP_PATH = '/sdcard/calibrate-e2e-window.xml';
@@ -231,32 +229,6 @@ async function tapNode(label, predicate, timeoutMs = 30_000) {
   tapFoundNode(await waitForNode(label, predicate, timeoutMs));
 }
 
-async function tapNodeUntilVisible(
-  actionLabel, actionPredicate, readyLabel, readyPredicate, timeoutMs = 45_000
-) {
-  const deadline = Date.now() + timeoutMs;
-  let lastTapAt = 0;
-  let lastError;
-  while (Date.now() < deadline) {
-    try {
-      const xml = dumpUi();
-      const ready = findNode(xml, readyPredicate);
-      if (ready) return ready;
-      const action = findNode(xml, actionPredicate);
-      if (action && Date.now() - lastTapAt >= ANDROID_E2E_UI_ACTION_RETRY_MS) {
-        tapFoundNode(action);
-        lastTapAt = Date.now();
-      }
-    } catch (error) {
-      lastError = error;
-    }
-    await sleep(750);
-  }
-  throw new Error(
-    `Timed out waiting for ${readyLabel} after ${actionLabel}.` +
-    (lastError ? ` Last error: ${lastError.message}` : '')
-  );
-}
 
 /** Attach the release-candidate phone identity to direct API assertions made outside the app. */
 export function buildE2eRequestHeaders(initialHeaders = {}) {
@@ -306,8 +278,8 @@ export function summarizeAndroidE2eUi(xml) {
   return markers.length > 0 ? markers.join(', ') : 'none';
 }
 
-export function isAndroidE2eQuickNode(node) {
-  return node?.label === 'Quick' || node?.text === 'Quick';
+export function isAndroidE2eRecentFoodNode(node, name) {
+  return node?.clickable === true && node?.label?.startsWith(`${name},`);
 }
 
 async function loginApi() {
@@ -359,7 +331,7 @@ async function ensureFoodDayOpen(accessToken, date) {
   await requestJson('/api/v1/food-days', buildOpenFoodDayRequest(accessToken, date));
 }
 
-/** Put known rows at the front of Quick recents without relying on mutable seed history. */
+/** Put known rows at the front of Add Food recents without relying on mutable seed history. */
 async function seedRecentFood(accessToken, date, food) {
   await requestJson('/api/v1/food', {
     method: 'POST',
@@ -389,11 +361,15 @@ async function launchAndWaitForLog(timeoutMs = 45_000) {
   await waitForNode('authenticated Log screen', (node) => node.clickable && node.label === 'Add food', timeoutMs);
 }
 
-async function openQuickAdd(name, date) {
+async function openRecentAdd(name, date) {
   const launchOutput = adb(buildAddFoodLaunchArgs(date), { quiet: true });
   assertAndroidAppLinkLaunch(launchOutput);
   try {
-    await waitForNode('Quick add mode', isAndroidE2eQuickNode, 45_000);
+    await waitForNode(
+      `${name} recent row`,
+      (node) => isAndroidE2eRecentFoodNode(node, name),
+      45_000,
+    );
   } catch (error) {
     let markers = 'unavailable';
     try {
@@ -403,21 +379,15 @@ async function openQuickAdd(name, date) {
     }
     throw new Error(`${error.message} Safe UI markers: ${markers}.`);
   }
-  await tapNodeUntilVisible(
-    'Quick add mode',
-    isAndroidE2eQuickNode,
-    `${name} recent row`,
-    (node) => node.clickable && node.label.startsWith(`${name},`),
-  );
 }
 
 async function logOpenRecentFood(name) {
-  await tapNode(`${name} recent row`, (node) => node.clickable && node.label.startsWith(`${name},`));
+  await tapNode(`${name} recent row`, (node) => isAndroidE2eRecentFoodNode(node, name));
   await waitForNode('Add food sheet to close', (node) => node.clickable && node.label === 'Add food', 45_000);
 }
 
 async function logRecentFood(name, date) {
-  await openQuickAdd(name, date);
+  await openRecentAdd(name, date);
   await logOpenRecentFood(name);
 }
 
@@ -461,8 +431,8 @@ async function main() {
 
     const offlineName = OFFLINE_FOOD.name;
     const offlineBefore = await countFood(session.access_token, date, offlineName);
-    // Load the cached Quick list before isolating the API while Metro remains reachable through adb reverse.
-    await openQuickAdd(offlineName, date);
+    // Load the cached recent list before isolating the API while Metro remains reachable through adb reverse.
+    await openRecentAdd(offlineName, date);
     apiProxy.setAvailable(false);
     await logOpenRecentFood(offlineName);
     const pendingBadge = await waitForNode(

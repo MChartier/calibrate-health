@@ -5,7 +5,6 @@ import test from 'node:test';
 import {
   ANDROID_E2E_INITIAL_LAUNCH_TIMEOUT_MS,
   ANDROID_E2E_METRO_STATUS_URL,
-  ANDROID_E2E_UI_ACTION_RETRY_MS,
   assertAndroidAppLinkLaunch,
   buildAddFoodDeepLink,
   buildAddFoodLaunchArgs,
@@ -13,7 +12,7 @@ import {
   buildE2eRequestHeaders,
   buildOpenFoodDayRequest,
   crashBufferContainsCalibrateProcess,
-  isAndroidE2eQuickNode,
+  isAndroidE2eRecentFoodNode,
   resolveAndroidE2eAdb,
   summarizeAndroidE2eUi
 } from './android-e2e.mjs';
@@ -23,7 +22,6 @@ const release = JSON.parse(readFileSync(new URL('../shared/release.json', import
 test('Android E2E uses the same localhost Metro origin as the hosted readiness probe', () => {
   assert.equal(ANDROID_E2E_METRO_STATUS_URL, 'http://localhost:8081/status');
   assert.equal(ANDROID_E2E_INITIAL_LAUNCH_TIMEOUT_MS, 90_000);
-  assert.equal(ANDROID_E2E_UI_ACTION_RETRY_MS, 7_500);
 });
 
 test('Android E2E opens Add food through a fresh canonical native route', () => {
@@ -54,10 +52,10 @@ test('Android E2E failure diagnostics expose only fixed UI markers', () => {
   assert.equal(summarizeAndroidE2eUi('<hierarchy />'), 'none');
 });
 
-test('Android E2E activates the exact Quick radio through its label or text node', () => {
-  assert.equal(isAndroidE2eQuickNode({ label: 'Quick', text: '', clickable: false }), true);
-  assert.equal(isAndroidE2eQuickNode({ label: '', text: 'Quick', clickable: false }), true);
-  assert.equal(isAndroidE2eQuickNode({ label: 'Search', text: 'Search', clickable: true }), false);
+test('Android E2E matches only enabled recent-food action rows', () => {
+  assert.equal(isAndroidE2eRecentFoodNode({ label: 'Android E2E latte, 190 kcal', clickable: true }, 'Android E2E latte'), true);
+  assert.equal(isAndroidE2eRecentFoodNode({ label: 'Android E2E latte, 190 kcal', clickable: false }, 'Android E2E latte'), false);
+  assert.equal(isAndroidE2eRecentFoodNode({ label: 'Another food, 190 kcal', clickable: true }, 'Android E2E latte'), false);
 });
 
 test('Android E2E API probes identify the current phone release', () => {
