@@ -448,7 +448,7 @@ async function ci() {
   });
   await timed("Build backend", () => run("npm", ["--prefix", "backend", "run", "build"]));
   await timed("Build Expo web", () => {
-    run("npm", ["run", "test:ux"]);
+    run("npm", ["run", process.platform === "win32" ? "test:ux" : "test:ux:a11y"]);
     run("npm", ["run", "test:expo-web:release"]);
   });
   await timed("Type-check mobile", () =>

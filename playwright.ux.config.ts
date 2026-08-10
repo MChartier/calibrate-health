@@ -16,7 +16,7 @@ if (callerOwnedBaseURL) {
 }
 
 const visualOnly = /launch-22-visual\.spec\.ts/;
-const desktopUx = /launch-22-(?:accessibility|visual)\.spec\.ts/;
+const semanticAndVisual = /launch-22-(?:accessibility|visual)\.spec\.ts/;
 
 export default defineConfig({
   testDir: './e2e/expo-web',
@@ -53,7 +53,7 @@ export default defineConfig({
   projects: [
     {
       name: 'ux-phone-320',
-      testMatch: visualOnly,
+      testMatch: semanticAndVisual,
       use: { viewport: { width: 320, height: 568 }, hasTouch: true, isMobile: true },
     },
     {
@@ -68,7 +68,7 @@ export default defineConfig({
     },
     {
       name: 'ux-desktop-1024',
-      testMatch: desktopUx,
+      testMatch: semanticAndVisual,
       use: { viewport: { width: 1024, height: 1000 } },
     },
     {

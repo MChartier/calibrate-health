@@ -12,7 +12,7 @@ import {
   type UxLocatorContract,
 } from './ux-matrix';
 
-const SEMANTIC_PROJECTS = new Set(['desktop-chrome', 'ux-desktop-1024']);
+const SEMANTIC_PROJECTS = new Set(['desktop-chrome', 'ux-phone-320', 'ux-desktop-1024']);
 
 const CALIBRATION_RECOMMENDATION_STATUS = {
   generatedAt: '2026-07-31T20:00:00.000Z',
@@ -167,7 +167,7 @@ async function installAccessibilityApiExtensions(
 function runOnlyInSemanticProject(testInfo: TestInfo): void {
   test.skip(
     !SEMANTIC_PROJECTS.has(testInfo.project.name),
-    'The semantic matrix runs once at the reviewed 1024px desktop viewport.',
+    'The semantic matrix runs only at the reviewed compact-phone and desktop viewports.',
   );
 }
 
@@ -196,10 +196,12 @@ test.describe('Launch 22 accessibility coverage contracts', () => {
       'weight-entry',
       'historical-calendar',
       'goal-editor',
+      'goal-daily-calorie-options',
       'calibration-suggestion-details',
       'notifications-drawer',
       'preferences',
       'profile-details',
+      'profile-time-zone-options',
       'profile-photo',
       'health-connect',
       'galaxy-watch',

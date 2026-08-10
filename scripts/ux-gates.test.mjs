@@ -4,7 +4,7 @@ import path from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import {
-  UX_ACCESSIBILITY_PROJECT,
+  UX_ACCESSIBILITY_PROJECTS,
   UX_ACCESSIBILITY_SPEC,
   UX_PLAYWRIGHT_CONFIG,
   UX_SNAPSHOT_APPROVAL_ENV,
@@ -19,7 +19,10 @@ test('selects the UX config and the bounded accessibility project', () => {
   const invocation = createUxGateInvocation('a11y', {});
   assert.equal(invocation.environment.CALIBRATE_PLAYWRIGHT_CONFIG, UX_PLAYWRIGHT_CONFIG);
   assert.ok(invocation.args.includes(UX_ACCESSIBILITY_SPEC));
-  assert.ok(invocation.args.includes(`--project=${UX_ACCESSIBILITY_PROJECT}`));
+  assert.deepEqual(
+    invocation.args.filter((argument) => argument.startsWith('--project=')),
+    UX_ACCESSIBILITY_PROJECTS.map((project) => `--project=${project}`),
+  );
   assert.ok(!invocation.args.includes(UX_VISUAL_SPEC));
   assert.equal(invocation.updateSnapshots, false);
 });
@@ -79,7 +82,10 @@ test('root scripts expose only one guarded snapshot-update command', () => {
 test('local CI replaces the standalone web build with the blocking UX build and gate', () => {
   const source = fs.readFileSync(path.join(repositoryRoot, 'scripts', 'dev-env.mjs'), 'utf8');
   const expoBlock = source.match(/await timed\("Build Expo web"[\s\S]*?\n  \}\);/)?.[0] ?? '';
-  assert.match(expoBlock, /run\("npm", \["run", "test:ux"\]\)/);
+  assert.match(
+    expoBlock,
+    /process\.platform === "win32" \? "test:ux" : "test:ux:a11y"/,
+  );
   assert.match(expoBlock, /test:expo-web:release/);
   assert.doesNotMatch(expoBlock, /build:expo-web/);
 });

@@ -16,11 +16,14 @@ npm.cmd run test:ux:visual
 npm.cmd run test:ux
 ```
 
-- `test:ux:a11y` runs `launch-22-accessibility.spec.ts` once in the 1024 desktop project.
+- `test:ux:a11y` runs `launch-22-accessibility.spec.ts` at the reviewed 320x568 compact-phone and
+  1024x1000 desktop viewports.
 - `test:ux:visual` runs `launch-22-visual.spec.ts` at 320x568, 390x844, 820x1180,
   1024x1000, and 1440x1000.
 - `test:ux` runs both files in one Playwright invocation, so it does not rebuild or restart the
   static export between semantic and visual checks.
+- `ci:local` runs the combined semantic and visual gate on Windows. On macOS and Linux it runs the
+  semantic gate only, because reviewed Windows pixel baselines are intentionally OS-specific.
 
 The UX config freezes locale, timezone, clock, generated values, animation, viewport, and browser.
 Accessibility results reject critical and serious axe findings. Visual comparison uses reviewed

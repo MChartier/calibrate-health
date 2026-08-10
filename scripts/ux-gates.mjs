@@ -7,7 +7,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 export const UX_PLAYWRIGHT_CONFIG = 'playwright.ux.config.ts';
 export const UX_ACCESSIBILITY_SPEC = 'e2e/expo-web/launch-22-accessibility.spec.ts';
 export const UX_VISUAL_SPEC = 'e2e/expo-web/launch-22-visual.spec.ts';
-export const UX_ACCESSIBILITY_PROJECT = 'ux-desktop-1024';
+export const UX_ACCESSIBILITY_PROJECTS = Object.freeze(['ux-phone-320', 'ux-desktop-1024']);
 export const UX_SNAPSHOT_APPROVAL_ENV = 'CALIBRATE_APPROVE_UX_SNAPSHOTS';
 export const UX_RESULTS_DIRECTORY = '.codex-screenshots/expo-web-ux-results';
 
@@ -35,7 +35,10 @@ export function createUxGateInvocation(mode, environment = process.env) {
 
   const playwrightArguments = [];
   if (mode === 'a11y') {
-    playwrightArguments.push(UX_ACCESSIBILITY_SPEC, `--project=${UX_ACCESSIBILITY_PROJECT}`);
+    playwrightArguments.push(
+      UX_ACCESSIBILITY_SPEC,
+      ...UX_ACCESSIBILITY_PROJECTS.map((project) => `--project=${project}`),
+    );
   } else if (mode === 'visual') {
     playwrightArguments.push(UX_VISUAL_SPEC);
   } else {

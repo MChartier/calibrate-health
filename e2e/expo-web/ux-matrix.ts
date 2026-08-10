@@ -113,6 +113,22 @@ export const UX_ACCESSIBILITY_OVERLAY_CASES: readonly UxAccessibilityOverlayCase
     ready: { kind: 'role', role: 'dialog', name: 'Set a new goal', exact: true },
   },
   {
+    id: 'goal-daily-calorie-options',
+    routeId: 'progress',
+    path: ROUTE_REGISTRY.progress.path,
+    fixtureState: 'populated',
+    open: [
+      { kind: 'role', role: 'button', name: /Edit goal|Review calorie plan|Set goal/ },
+      { kind: 'role', role: 'combobox', name: 'Select daily calorie change', exact: true },
+    ],
+    ready: {
+      kind: 'role',
+      role: 'dialog',
+      name: 'Select daily calorie change',
+      exact: true,
+    },
+  },
+  {
     id: 'calibration-suggestion-details',
     routeId: 'progress',
     path: ROUTE_REGISTRY.progress.path,
@@ -153,6 +169,17 @@ export const UX_ACCESSIBILITY_OVERLAY_CASES: readonly UxAccessibilityOverlayCase
     fixtureState: 'populated',
     open: [{ kind: 'role', role: 'button', name: 'Profile details', exact: true }],
     ready: { kind: 'role', role: 'dialog', name: 'Profile details', exact: true },
+  },
+  {
+    id: 'profile-time-zone-options',
+    routeId: 'settings',
+    path: ROUTE_REGISTRY.settings.path,
+    fixtureState: 'populated',
+    open: [
+      { kind: 'role', role: 'button', name: 'Profile details', exact: true },
+      { kind: 'role', role: 'combobox', name: 'Time zone', exact: true },
+    ],
+    ready: { kind: 'role', role: 'dialog', name: 'Time zone', exact: true },
   },
   {
     id: 'profile-photo',
