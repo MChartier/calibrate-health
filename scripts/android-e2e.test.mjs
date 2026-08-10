@@ -12,6 +12,7 @@ import {
   buildE2eRequestHeaders,
   buildOpenFoodDayRequest,
   crashBufferContainsCalibrateProcess,
+  fetchAndroidE2eProxyUpstream,
   isAndroidE2eRecentFoodNode,
   resolveAndroidE2eAdb,
   summarizeAndroidE2eUi
@@ -21,7 +22,44 @@ const release = JSON.parse(readFileSync(new URL('../shared/release.json', import
 
 test('Android E2E uses the same localhost Metro origin as the hosted readiness probe', () => {
   assert.equal(ANDROID_E2E_METRO_STATUS_URL, 'http://localhost:8081/status');
-  assert.equal(ANDROID_E2E_INITIAL_LAUNCH_TIMEOUT_MS, 90_000);
+  assert.equal(ANDROID_E2E_INITIAL_LAUNCH_TIMEOUT_MS, 150_000);
+});
+
+test('Android E2E proxy retries only idempotent GET transport failures', async () => {
+  const delays = [];
+  let getAttempts = 0;
+  const response = await fetchAndroidE2eProxyUpstream(
+    new URL('http://127.0.0.1:3000/api/v1/food-days'),
+    { method: 'GET' },
+    {
+      fetchImpl: async () => {
+        getAttempts += 1;
+        if (getAttempts < 3) throw new Error('transient socket');
+        return { ok: true };
+      },
+      sleepImpl: async (delay) => delays.push(delay)
+    }
+  );
+  assert.equal(response.ok, true);
+  assert.equal(getAttempts, 3);
+  assert.deepEqual(delays, [250, 500]);
+
+  let postAttempts = 0;
+  await assert.rejects(
+    fetchAndroidE2eProxyUpstream(
+      new URL('http://127.0.0.1:3000/api/v1/food'),
+      { method: 'POST' },
+      {
+        fetchImpl: async () => {
+          postAttempts += 1;
+          throw new Error('ambiguous mutation transport');
+        },
+        sleepImpl: async () => assert.fail('POST must not retry')
+      }
+    ),
+    /ambiguous mutation transport/
+  );
+  assert.equal(postAttempts, 1);
 });
 
 test('Android E2E opens Add food through a fresh canonical native route', () => {

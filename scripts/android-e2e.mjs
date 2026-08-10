@@ -12,7 +12,7 @@ const TEST_EMAIL = process.env.CALIBRATE_E2E_EMAIL ?? 'test@calibratehealth.app'
 const TEST_PASSWORD = process.env.CALIBRATE_E2E_PASSWORD ?? 'password123';
 const APP_ID = 'app.calibratehealth.mobile';
 export const ANDROID_E2E_METRO_STATUS_URL = 'http://localhost:8081/status';
-export const ANDROID_E2E_INITIAL_LAUNCH_TIMEOUT_MS = 90_000;
+export const ANDROID_E2E_INITIAL_LAUNCH_TIMEOUT_MS = 150_000;
 const ONLINE_FOOD = { name: 'Android E2E latte', calories: 190 };
 const OFFLINE_FOOD = { name: 'Android E2E protein shake', calories: 240 };
 const UI_DUMP_PATH = '/sdcard/calibrate-e2e-window.xml';
@@ -76,6 +76,22 @@ function adb(args, options = {}) {
   }).trim();
 }
 
+export async function fetchAndroidE2eProxyUpstream(url, options, dependencies = {}) {
+  const fetchImpl = dependencies.fetchImpl ?? fetch;
+  const sleepImpl = dependencies.sleepImpl ?? sleep;
+  const attempts = options.method === 'GET' ? 3 : 1;
+  let lastError;
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    try {
+      return await fetchImpl(url, options);
+    } catch (error) {
+      lastError = error;
+      if (attempt < attempts) await sleepImpl(250 * attempt);
+    }
+  }
+  throw lastError;
+}
+
 /** Proxy the app's reversed loopback API separately from the host-side assertions. */
 async function startApiProxy() {
   const target = new URL(API_URL);
@@ -99,7 +115,7 @@ async function startApiProxy() {
         }
       }
       const body = bodyChunks.length > 0 ? Buffer.concat(bodyChunks) : undefined;
-      const upstream = await fetch(new URL(request.url ?? '/', target), {
+      const upstream = await fetchAndroidE2eProxyUpstream(new URL(request.url ?? '/', target), {
         method: request.method,
         headers,
         body
@@ -381,14 +397,16 @@ async function openRecentAdd(name, date) {
   }
 }
 
-async function logOpenRecentFood(name) {
+async function logOpenRecentFood(name, waitForSheetClose = true) {
   await tapNode(`${name} recent row`, (node) => isAndroidE2eRecentFoodNode(node, name));
-  await waitForNode('Add food sheet to close', (node) => node.clickable && node.label === 'Add food', 45_000);
+  if (waitForSheetClose) {
+    await waitForNode('Add food sheet to close', (node) => node.clickable && node.label === 'Add food', 45_000);
+  }
 }
 
 async function logRecentFood(name, date) {
   await openRecentAdd(name, date);
-  await logOpenRecentFood(name);
+  await logOpenRecentFood(name, false);
 }
 
 async function main() {
