@@ -70,19 +70,11 @@ const resolveInactiveInAppReminders = async (now: Date): Promise<void> => {
 
 export const groupDueReminderTypes = ({
     dueWeight,
-    dueFood,
-    weightMinute,
-    foodMinute
+    dueFood
 }: {
     dueWeight: boolean;
     dueFood: boolean;
-    weightMinute: number;
-    foodMinute: number;
 }): InAppNotificationType[][] => {
-    if (dueWeight && dueFood && weightMinute === foodMinute) {
-        return [[InAppNotificationType.LOG_WEIGHT_REMINDER, InAppNotificationType.LOG_FOOD_REMINDER]];
-    }
-
     return [
         ...(dueWeight ? [[InAppNotificationType.LOG_WEIGHT_REMINDER]] : []),
         ...(dueFood ? [[InAppNotificationType.LOG_FOOD_REMINDER]] : [])
@@ -139,9 +131,7 @@ export const createAndSendScheduledReminders = async (now: Date): Promise<void> 
 
         const reminderGroups = groupDueReminderTypes({
             dueWeight,
-            dueFood,
-            weightMinute: user.reminder_log_weight_minute,
-            foodMinute: user.reminder_log_food_minute
+            dueFood
         });
 
         for (const reminderTypes of reminderGroups) {

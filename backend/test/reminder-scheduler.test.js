@@ -82,17 +82,18 @@ test('staggered reminder times remain separate so an earlier type can be receipt
   assert.deepEqual(deliveryCalls[1].push.payload, { missingFood: true, missingWeight: false });
 });
 
-test('equal reminder times may share one delivery and receipt update', () => {
+test('equal reminder times remain separate so each type keeps an independent receipt', () => {
   const deliveryCalls = [];
   const { groupDueReminderTypes } = loadReminderScheduler({ users: [], deliveryCalls });
 
   assert.deepEqual(
     groupDueReminderTypes({
       dueWeight: true,
-      dueFood: true,
-      weightMinute: 9 * 60,
-      foodMinute: 9 * 60
+      dueFood: true
     }),
-    [[InAppNotificationType.LOG_WEIGHT_REMINDER, InAppNotificationType.LOG_FOOD_REMINDER]]
+    [
+      [InAppNotificationType.LOG_WEIGHT_REMINDER],
+      [InAppNotificationType.LOG_FOOD_REMINDER]
+    ]
   );
 });
