@@ -5,6 +5,13 @@ The official service is the routine default; Advanced self-hosting remains suppo
 expanding the launch beyond the food, weight, and observational activity workflows required for
 daily personal use.
 
+## Deployment and server selection
+
+A production Web/PWA deployment is bound to the origin that served it. The official web client uses
+the official backend, and a self-hosted web client always uses that deployment's corresponding
+same-origin backend; web users are never offered a hosted/custom server switch. Android releases
+default to the official service and expose a custom self-hosted origin only under Advanced settings.
+
 ## Nutrition
 
 The first release remains calorie-first. Manual foods, provider foods, recipes, and food-log entries

@@ -227,8 +227,9 @@ This standard path brings up the local API, Postgres, and Expo web client. Host-
 the commands in `mobile/README.md` when Android build tools are available.
 
 For Android emulator development, the app defaults to `http://10.0.2.2:3000` in dev builds so it can reach the local
-backend. Official production builds default to `https://calibratehealth.app`. A previously selected self-hosted origin
-continues to win after restart; custom server setup is an Advanced sign-in option.
+backend. Official Android builds default to `https://calibratehealth.app`. A previously selected self-hosted origin
+continues to win after restart; custom server setup is an Advanced Android sign-in option. Production Web/PWA deployments
+always use the corresponding same-origin backend and do not expose a server selector.
 
 Native auth is bearer-token based and additive to the existing browser cookie session flow. Mobile tokens are opaque to
 the client, hashed at rest on the server, and stored on-device through Expo SecureStore.
