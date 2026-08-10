@@ -466,13 +466,24 @@ function assertDockerResourceOwned(dockerRunner, kind, name, plan) {
   }
 }
 
-function createOwnedNetwork(dockerRunner, plan, created) {
-  created.network = true;
-  dockerRunner([
-    'network', 'create', '--internal',
+/**
+ * Build a host-reachable bridge without allowing an omitted publish address to escape loopback.
+ * Docker does not allocate published host ports for internal bridge networks, while Prisma and
+ * the verification client intentionally run on the host for this cross-platform rehearsal.
+ */
+export function buildRollbackNetworkCreateArgs(plan) {
+  assertSafeRollbackResourcePlan(plan);
+  return [
+    'network', 'create', '--driver', 'bridge',
+    '--opt', 'com.docker.network.bridge.host_binding_ipv4=127.0.0.1',
     '--label', `${OWNERSHIP_LABEL}=${plan.id}`,
     plan.network,
-  ]);
+  ];
+}
+
+function createOwnedNetwork(dockerRunner, plan, created) {
+  created.network = true;
+  dockerRunner(buildRollbackNetworkCreateArgs(plan));
   assertDockerResourceOwned(dockerRunner, 'network', plan.network, plan);
 }
 

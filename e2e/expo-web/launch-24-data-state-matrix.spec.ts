@@ -4,6 +4,7 @@ import {
   expect,
   test,
   type ApiResourceFixtureState,
+  type UxStateController,
 } from './fixtures';
 import {
   LAUNCH_24_DATA_ROUTE_CASES,
@@ -86,12 +87,16 @@ function matchesResourceResponse(routeCase: Launch24DataRouteCase, responseUrl: 
     && (routeCase.resource.matches?.(url) ?? true);
 }
 
-async function triggerRefreshFailure(page: Page, routeCase: Launch24DataRouteCase): Promise<void> {
+async function triggerRefreshFailure(
+  page: Page,
+  routeCase: Launch24DataRouteCase,
+  controller: Pick<UxStateController, 'activateOffline'>,
+): Promise<void> {
   const failedRefresh = page.waitForResponse((response) => (
     response.status() === 503
     && matchesResourceResponse(routeCase, response.url())
   ));
-  await page.context().setOffline(true);
+  await controller.activateOffline();
   await page.context().setOffline(false);
   await failedRefresh;
 }
@@ -165,7 +170,7 @@ test.describe('Launch 24 exported-web data-state coverage', () => {
 
         await expectSurface(page, routeCase.content);
         if (state === 'stale') {
-          await triggerRefreshFailure(page, routeCase);
+          await triggerRefreshFailure(page, routeCase, controller);
           await expect(page.getByText(routeCase.staleText, { exact: true }).first()).toBeVisible();
           await expectSurface(page, routeCase.content);
           await expect(page.getByText(/private upstream detail/i)).toHaveCount(0);

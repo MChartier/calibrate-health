@@ -788,6 +788,10 @@ function attachFixtureDiagnostics(page: Page, diagnostics: FixtureDiagnostics): 
   page.on('pageerror', (error) => diagnostics.browserErrors.push(`pageerror: ${error.message}`));
   page.on('console', (message) => {
     if (message.type() !== 'error') return;
+    if (
+      diagnostics.intentionalOffline
+      && message.text() === 'Failed to load resource: net::ERR_INTERNET_DISCONNECTED'
+    ) return;
     const resourceStatus = Number(RESOURCE_ERROR_STATUS_PATTERN.exec(message.text())?.[1]);
     if (Number.isInteger(resourceStatus)) {
       diagnostics.resourceErrors.set(resourceStatus, (diagnostics.resourceErrors.get(resourceStatus) ?? 0) + 1);

@@ -1,5 +1,10 @@
 import type { Page, Route } from '@playwright/test';
-import { expect, expectApiFailure, test } from './fixtures';
+import {
+  activateFixtureOffline,
+  expect,
+  expectApiFailure,
+  test,
+} from './fixtures';
 
 const unexpectedApiRequests = new WeakMap<Page, string[]>();
 
@@ -391,7 +396,7 @@ test('installed shell reports connection loss and recovery', async ({ page }) =>
     if ('serviceWorker' in navigator) await navigator.serviceWorker.ready;
   });
 
-  await page.context().setOffline(true);
+  await activateFixtureOffline(page);
   await expect(page.getByText("You're offline", { exact: true })).toBeVisible();
   await expect(page.getByText(
     'Some information may be out of date. Reconnect before making changes.',

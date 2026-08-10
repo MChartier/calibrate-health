@@ -13,6 +13,7 @@ import {
   assertRollbackSourceCommit,
   assertSafeRollbackResourcePlan,
   assertSafeRollbackSchema,
+  buildRollbackNetworkCreateArgs,
   buildRollbackPostgresRunArgs,
   createFailedRollbackEvidence,
   createRollbackEvidence,
@@ -88,7 +89,15 @@ test('database URLs cannot escape the generated loopback target', () => {
 
 test('Postgres launch is private, disposable, labeled, and loopback-published', () => {
   const plan = createRollbackResourcePlan(RUN_ID);
+  const networkArgs = buildRollbackNetworkCreateArgs(plan);
   const args = buildRollbackPostgresRunArgs({ plan, target: 'source', password: PASSWORD });
+  assert.deepEqual(networkArgs, [
+    'network', 'create', '--driver', 'bridge',
+    '--opt', 'com.docker.network.bridge.host_binding_ipv4=127.0.0.1',
+    '--label', 'com.calibrate.backup-restore-smoke=012345abcdef',
+    plan.network,
+  ]);
+  assert(!networkArgs.includes('--internal'));
   assert.deepEqual(args.slice(0, 4), ['run', '--detach', '--name', plan.containers.source]);
   assert(args.includes('--tmpfs'));
   assert(args.includes('/var/lib/postgresql/data:rw,nosuid,size=512m'));

@@ -19,8 +19,9 @@ and a clean candidate checkout before contacting Docker. `v0.13.3` is not the ro
 
 `node scripts/postgres-rollback-smoke.mjs`:
 
-1. Generates collision-resistant names for one internal Docker network, two tmpfs-backed Postgres containers, two
-   volumes, the production backup image, and short-lived helper containers.
+1. Generates collision-resistant names for one owned bridge network, two tmpfs-backed Postgres containers, two
+   volumes, the production backup image, and short-lived helper containers. The bridge defaults published ports to
+   loopback because Docker does not allocate host ports for internal networks and the Prisma checks run on the host.
 2. Refuses remote Docker endpoints, non-loopback published database ports, existing generated-name collisions, and
    resources without this run's ownership label.
 3. Applies the exact `v0.14.0` migration tree to the source database through Prisma's production `migrate deploy`
