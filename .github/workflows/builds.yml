@@ -447,6 +447,7 @@ jobs:
           api-level: 35-ext15
           target: android-wear
           arch: x86_64
+          profile: wearos_large_round
           emulator-port: 5554
           emulator-boot-timeout: 600
           emulator-options: -no-window -gpu software -no-snapshot -noaudio -no-boot-anim

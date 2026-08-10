@@ -138,8 +138,8 @@ export function runWearEmulatorSmoke(environment = process.env) {
     throw new Error(`${serial} is not a Wear OS target: ${characteristics}`);
   }
 
-  prepareWearUi((args) => runAdb(adb, serial, args, { quiet: true }));
   runAdb(adb, serial, ['install', '-r', apk]);
+  prepareWearUi((args) => runAdb(adb, serial, args, { quiet: true }));
   runAdb(adb, serial, ['logcat', '-c'], { quiet: true });
   runAdb(adb, serial, ['shell', 'am', 'force-stop', APP_ID], { quiet: true });
   const launch = runAdb(adb, serial, ['shell', 'am', 'start', '-W', '-n', ACTIVITY], { quiet: true });
