@@ -663,18 +663,33 @@ export const markInAppNotificationDismissed = async ({
     now = new Date(),
     db = prisma
 }: MarkInAppNotificationArgs): Promise<number> => {
-    const result = await db.inAppNotification.updateMany({
+    let result = await db.inAppNotification.updateMany({
         where: {
             id: notificationId,
             user_id: userId,
             dismissed_at: null,
-            resolved_at: null
+            resolved_at: null,
+            read_at: null
         },
         data: {
             dismissed_at: now,
             read_at: now
         }
     });
+
+    if (result.count === 0) {
+        result = await db.inAppNotification.updateMany({
+            where: {
+                id: notificationId,
+                user_id: userId,
+                dismissed_at: null,
+                resolved_at: null
+            },
+            data: {
+                dismissed_at: now
+            }
+        });
+    }
 
     if (result.count > 0) {
         publishNotificationRealtimeUpdate({

@@ -210,7 +210,8 @@ test('in-app notification mutations publish realtime updates when rows change', 
     id: 10,
     user_id: 7,
     dismissed_at: null,
-    resolved_at: null
+    resolved_at: null,
+    read_at: null
   });
   assert.equal(publishCalls.length, 2);
   assert.deepEqual(
@@ -218,6 +219,35 @@ test('in-app notification mutations publish realtime updates when rows change', 
     [NOTIFICATION_REALTIME_REASONS.READ, NOTIFICATION_REALTIME_REASONS.DISMISSED]
   );
   assert.equal(publishCalls[0].userId, 7);
+});
+
+test('dismissing a previously read notification preserves its original read timestamp', async () => {
+  const updateCalls = [];
+  const publishCalls = [];
+  const { markInAppNotificationDismissed } = loadInAppNotificationService({
+    publishNotificationRealtimeUpdateStub: (args) => publishCalls.push(args)
+  });
+  const now = new Date('2026-04-24T12:00:00.000Z');
+
+  const count = await markInAppNotificationDismissed({
+    userId: 7,
+    notificationId: 10,
+    now,
+    db: {
+      inAppNotification: {
+        updateMany: async (args) => {
+          updateCalls.push(args);
+          return { count: args.where.read_at === null ? 0 : 1 };
+        }
+      }
+    }
+  });
+
+  assert.equal(count, 1);
+  assert.equal(updateCalls.length, 2);
+  assert.deepEqual(updateCalls[1].data, { dismissed_at: now });
+  assert.equal(Object.hasOwn(updateCalls[1].data, 'read_at'), false);
+  assert.equal(publishCalls.length, 1);
 });
 
 test('in-app notification mutations skip realtime publishing when nothing changed', async () => {
