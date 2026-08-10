@@ -156,7 +156,7 @@ describe('ActivityScreen async resource states', () => {
         expect(historyRequests).toHaveLength(1);
     });
 
-    it('shows one connection action and hides Today and Recent Days when disconnected without history', async () => {
+    it('keeps historical date navigation reachable when disconnected without recent history', async () => {
         mockActionLabel = 'Connect Health Connect';
         mockUseHealthConnectPresentation.mockReturnValue({
             state: 'disconnected',
@@ -171,11 +171,11 @@ describe('ActivityScreen async resource states', () => {
 
         const screen = renderScreen();
 
-        await waitFor(() => expect(screen.getByText('No activity imported yet')).toBeTruthy());
+        await waitFor(() => expect(screen.getByTestId('activity-details')).toBeTruthy());
+        expect(screen.getByText('No activity imported yet')).toBeTruthy();
         expect(screen.getAllByRole('button', { name: 'Connect Health Connect' })).toHaveLength(1);
-        expect(screen.queryByText('Today')).toBeNull();
-        expect(screen.queryByText('Recent Days')).toBeNull();
-        expect(screen.queryByTestId('activity-details')).toBeNull();
+        expect(screen.getByText('Today')).toBeTruthy();
+        expect(screen.getByText('Recent Days')).toBeTruthy();
         expect(screen.getByText(
             'Imported activity never automatically changes your calorie target.'
         )).toBeTruthy();

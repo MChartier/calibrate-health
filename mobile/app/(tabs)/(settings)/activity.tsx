@@ -10,7 +10,6 @@ import {
     getActivitySourceLabels,
     hasImportedActivity
 } from '../../../src/activity/presentation';
-import { ASYNC_RESOURCE_STATES } from '../../../src/asyncState/resolveAsyncState';
 import {
     ActivitySummaryCard,
     type ActivityDay
@@ -259,55 +258,6 @@ export default function ActivityScreen() {
     const showConnectionNotice = healthConnectPresentation.state !== 'ready'
         && healthConnectPresentation.state !== 'empty';
 
-    if (!healthConnectPresentation.shouldShowActivity) {
-        const loading = selectedState.kind === ASYNC_RESOURCE_STATES.LOADING
-            || historyState.kind === ASYNC_RESOURCE_STATES.LOADING;
-        if (loading) {
-            return (
-                <TabScreen>
-                    <ActivitySummaryCard day={undefined} isToday={navigation.isToday} isLoading />
-                </TabScreen>
-            );
-        }
-        if (selectedState.kind === ASYNC_RESOURCE_STATES.ERROR) {
-            return (
-                <TabScreen>
-                    <AsyncStateBoundary
-                        state={selectedState}
-                        resourceLabel="activity"
-                        loading={null}
-                        empty={<ActivityConnectionState presentation={healthConnectPresentation} standalone />}
-                        onRetry={isOnline ? () => selectedQuery.refetch() : undefined}
-                        retrying={selectedQuery.isFetching}
-                    >
-                        <ActivityConnectionState presentation={healthConnectPresentation} standalone />
-                    </AsyncStateBoundary>
-                </TabScreen>
-            );
-        }
-        if (historyState.kind === ASYNC_RESOURCE_STATES.ERROR) {
-            return (
-                <TabScreen>
-                    <AsyncStateBoundary
-                        state={historyState}
-                        resourceLabel="recent activity"
-                        loading={null}
-                        empty={<ActivityConnectionState presentation={healthConnectPresentation} standalone />}
-                        onRetry={isOnline ? () => historyQuery.refetch() : undefined}
-                        retrying={historyQuery.isFetching}
-                    >
-                        <ActivityConnectionState presentation={healthConnectPresentation} standalone />
-                    </AsyncStateBoundary>
-                </TabScreen>
-            );
-        }
-        return (
-            <TabScreen>
-                <ActivityConnectionState presentation={healthConnectPresentation} standalone />
-            </TabScreen>
-        );
-    }
-
     const recentDaysLoading = (
         <AppCard testID="activity-recent-days">
             <SectionHeader title="Recent Days" />
@@ -324,7 +274,10 @@ export default function ActivityScreen() {
     return (
         <TabScreen>
             {showConnectionNotice && (
-                <ActivityConnectionState presentation={healthConnectPresentation} standalone={false} />
+                <ActivityConnectionState
+                    presentation={healthConnectPresentation}
+                    standalone={!healthConnectPresentation.shouldShowActivity}
+                />
             )}
             <DateNavigation navigation={navigation} />
             <SectionHeader
