@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
+  createRecoveringWearUiReader,
   findTextNode,
   listWearUiPackages,
   parseBounds,
@@ -81,6 +82,29 @@ test('Wear readiness waits for one complete exact UI tree', () => {
   assert.equal(ready, trees[2]);
   assert.equal(reads, 3);
   assert.equal(waits, 2);
+});
+
+test('Wear readiness reasserts the app after first-boot System UI takes foreground', () => {
+  const trees = [
+    '<hierarchy><node package="com.google.android.wearable.sysui" /></hierarchy>',
+    '<hierarchy><node package="app.calibratehealth.mobile" text="calibrate" /></hierarchy>'
+  ];
+  let reads = 0;
+  let relaunches = 0;
+  const readUi = createRecoveringWearUiReader(
+    'app.calibratehealth.mobile',
+    () => trees[reads++],
+    () => { relaunches += 1; }
+  );
+
+  assert.equal(readUi(), trees[0]);
+  assert.equal(relaunches, 1);
+  assert.equal(readUi(), trees[1]);
+  assert.equal(relaunches, 1);
+  assert.throws(
+    () => createRecoveringWearUiReader('bad package', () => '', () => {}),
+    /exact package name/
+  );
 });
 
 test('Wear readiness fails closed after its bounded exact-selector attempts', () => {

@@ -51,6 +51,18 @@ export function listWearUiPackages(xml) {
   )].sort();
 }
 
+/** Reassert the reviewed activity when Wear System UI takes foreground during first-boot settling. */
+export function createRecoveringWearUiReader(expectedPackage, readUi, relaunch) {
+  if (typeof expectedPackage !== 'string' || !/^[a-zA-Z0-9._-]+$/.test(expectedPackage)) {
+    throw new Error('Wear UI recovery requires an exact package name.');
+  }
+  return () => {
+    const xml = readUi();
+    if (!listWearUiPackages(xml).includes(expectedPackage)) relaunch();
+    return xml;
+  };
+}
+
 /** Wait for one complete reviewed surface; transient splash/partial trees never count as evidence. */
 export function waitForWearUi(expectedText, readUi, waitBetweenAttempts, maxAttempts = WEAR_UI_READY_ATTEMPTS) {
   if (!Array.isArray(expectedText) || expectedText.length === 0
@@ -165,13 +177,22 @@ export function runWearEmulatorSmoke(environment = process.env) {
   runAdb(adb, serial, ['install', '-r', apk]);
   prepareWearUi((args) => runAdb(adb, serial, args, { quiet: true }));
   runAdb(adb, serial, ['logcat', '-c'], { quiet: true });
-  runAdb(adb, serial, ['shell', 'am', 'force-stop', APP_ID], { quiet: true });
-  const launch = runAdb(adb, serial, ['shell', 'am', 'start', '-W', '-n', ACTIVITY], { quiet: true });
-  if (!launch.includes('Status: ok')) throw new Error(`Wear activity failed to launch:\n${launch}`);
+  const launchWear = () => {
+    runAdb(adb, serial, ['shell', 'am', 'force-stop', APP_ID], { quiet: true });
+    const output = runAdb(adb, serial, ['shell', 'am', 'start', '-W', '-n', ACTIVITY], { quiet: true });
+    if (!output.includes('Status: ok')) throw new Error(`Wear activity failed to launch:\n${output}`);
+    return output;
+  };
+  let launch = launchWear();
+  const readHomeUi = createRecoveringWearUiReader(
+    APP_ID,
+    () => dumpUi(adb, serial),
+    () => { launch = launchWear(); }
+  );
 
   const waitForExpectedUi = (expectedText) => waitForWearUi(
     expectedText,
-    () => dumpUi(adb, serial),
+    readHomeUi,
     () => runAdb(adb, serial, ['shell', 'sleep', WEAR_UI_POLL_SECONDS], { quiet: true })
   );
   const home = waitForExpectedUi(HOME_EXPECTED_TEXT);
