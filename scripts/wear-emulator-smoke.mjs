@@ -63,6 +63,27 @@ export function waitForWearUi(expectedText, readUi, waitBetweenAttempts, maxAtte
   throw new Error(`Wear UI did not become ready with expected text: ${missing.join(' | ')}`);
 }
 
+/** Verify one scrollable Wear surface without requiring off-screen rows in one UI dump. */
+export function waitForScrollableWearUi(expectedText, readUi, scrollForward, maxAttempts = WEAR_UI_READY_ATTEMPTS) {
+  if (!Array.isArray(expectedText) || expectedText.length === 0
+      || expectedText.some((text) => typeof text !== 'string' || !text)) {
+    throw new Error('Scrollable Wear UI readiness requires exact non-empty text selectors.');
+  }
+  if (!Number.isSafeInteger(maxAttempts) || maxAttempts < 1) {
+    throw new Error('Scrollable Wear UI readiness attempts must be a positive integer.');
+  }
+  const missing = new Set(expectedText);
+  let xml = '';
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    xml = readUi();
+    for (const text of missing) {
+      if (findTextNode(xml, text)) missing.delete(text);
+    }
+    if (missing.size === 0) return xml;
+    if (attempt < maxAttempts) scrollForward();
+  }
+  throw new Error(`Scrollable Wear UI did not expose expected text: ${[...missing].join(' | ')}`);
+}
 export function resolveWearAdb(environment = process.env, platform = process.platform) {
   if (environment.ADB?.trim()) return environment.ADB.trim();
   const pathApi = platform === 'win32' ? path.win32 : path.posix;
@@ -134,11 +155,14 @@ export function runWearEmulatorSmoke(environment = process.env) {
   const point = parseBounds(connection.bounds);
   runAdb(adb, serial, ['shell', 'input', 'tap', String(point.x), String(point.y)], { quiet: true });
 
-  waitForExpectedUi([
+  waitForScrollableWearUi([
     'Connection',
     `${expectedBuildType} build`,
     'Open Calibrate settings on your phone and choose the nearby watch to begin.'
-  ]);
+  ], () => dumpUi(adb, serial), () => {
+    runAdb(adb, serial, ['shell', 'input', 'swipe', '160', '500', '160', '140', '300'], { quiet: true });
+    runAdb(adb, serial, ['shell', 'sleep', WEAR_UI_POLL_SECONDS], { quiet: true });
+  });
 
   const packageState = runAdb(adb, serial, ['shell', 'dumpsys', 'package', APP_ID], { quiet: true });
   if (packageState.includes('DEBUGGABLE')) throw new Error('Installed Wear release package is debuggable.');

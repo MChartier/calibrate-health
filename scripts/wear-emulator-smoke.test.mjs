@@ -5,6 +5,7 @@ import {
   parseBounds,
   prepareWearUi,
   resolveWearAdb,
+  waitForScrollableWearUi,
   waitForWearUi
 } from './wear-emulator-smoke.mjs';
 
@@ -86,6 +87,30 @@ test('Wear readiness fails closed after its bounded exact-selector attempts', ()
   assert.throws(() => waitForWearUi([], () => '', () => {}), /exact non-empty text selectors/);
   assert.throws(() => waitForWearUi(['calibrate'], () => '', () => {}, 0), /positive integer/);
 });
+test('Wear scrollable readiness verifies exact rows across one bounded surface', () => {
+  const trees = [
+    '<hierarchy><node text="Connection" bounds="[1,1][2,2]" /></hierarchy>',
+    '<hierarchy><node text="release build" bounds="[1,1][2,2]" /></hierarchy>',
+    '<hierarchy><node text="Pair on phone" bounds="[1,1][2,2]" /></hierarchy>'
+  ];
+  let reads = 0;
+  let scrolls = 0;
+  const ready = waitForScrollableWearUi(
+    ['Connection', 'release build', 'Pair on phone'],
+    () => trees[reads++],
+    () => { scrolls += 1; },
+    3
+  );
+  assert.equal(ready, trees[2]);
+  assert.equal(reads, 3);
+  assert.equal(scrolls, 2);
+
+  assert.throws(
+    () => waitForScrollableWearUi(['Connection', 'Pair on phone'], () => trees[0], () => {}, 2),
+    /did not expose expected text: Pair on phone/
+  );
+});
+
 test('Wear smoke parser rejects malformed bounds and missing text', () => {
   assert.equal(findTextNode('<hierarchy />', 'Connection'), null);
   assert.throws(() => parseBounds('24,156,430,260'), /Invalid Android bounds/);

@@ -6,6 +6,7 @@ import {
   ANDROID_E2E_METRO_STATUS_URL,
   buildAndroidE2eAdbArgs,
   buildE2eRequestHeaders,
+  buildOpenFoodDayRequest,
   crashBufferContainsCalibrateProcess,
   resolveAndroidE2eAdb
 } from './android-e2e.mjs';
@@ -26,6 +27,15 @@ test('Android E2E API probes identify the current phone release', () => {
   assert.equal(headers.get('authorization'), 'Bearer test-token');
   assert.equal(headers.get('x-calibrate-client-platform'), 'android_phone');
   assert.equal(headers.get('x-calibrate-client-version'), release.android.mobile.version_name);
+});
+
+test('Android E2E explicitly reopens the seeded current day before adding recent foods', () => {
+  const request = buildOpenFoodDayRequest('test-token', '2026-08-10', 'android-open-day-operation');
+  assert.equal(request.method, 'PATCH');
+  assert.equal(request.headers.authorization, 'Bearer test-token');
+  assert.equal(request.headers['content-type'], 'application/json');
+  assert.equal(request.headers['x-client-operation-id'], 'android-open-day-operation');
+  assert.deepEqual(JSON.parse(request.body), { date: '2026-08-10', status: 'OPEN' });
 });
 
 test('Android E2E crash checks ignore uiautomator but catch the Calibrate process', () => {

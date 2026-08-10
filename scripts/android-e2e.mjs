@@ -1,4 +1,5 @@
 import { execFileSync } from 'node:child_process';
+import { randomUUID } from 'node:crypto';
 import { once } from 'node:events';
 import { readFileSync } from 'node:fs';
 import http from 'node:http';
@@ -271,6 +272,23 @@ async function countFood(accessToken, date, name) {
   return logs.filter((entry) => entry.name === name).length;
 }
 
+export function buildOpenFoodDayRequest(accessToken, date, operationId = randomUUID()) {
+  return {
+    method: 'PATCH',
+    headers: {
+      authorization: `Bearer ${accessToken}`,
+      'content-type': 'application/json',
+      'x-client-operation-id': operationId
+    },
+    body: JSON.stringify({ date, status: 'OPEN' })
+  };
+}
+
+/** Reopen the deterministic seed's current day before adding E2E-only recent foods. */
+async function ensureFoodDayOpen(accessToken, date) {
+  await requestJson('/api/v1/food-days', buildOpenFoodDayRequest(accessToken, date));
+}
+
 /** Put known rows at the front of Quick recents without relying on mutable seed history. */
 async function seedRecentFood(accessToken, date, food) {
   await requestJson('/api/v1/food', {
@@ -333,6 +351,7 @@ async function main() {
 
   const session = await loginApi();
   const date = localDateFor(session.user.timezone);
+  await ensureFoodDayOpen(session.access_token, date);
   await seedRecentFood(session.access_token, date, ONLINE_FOOD);
   await seedRecentFood(session.access_token, date, OFFLINE_FOOD);
   apiProxy = await startApiProxy();
