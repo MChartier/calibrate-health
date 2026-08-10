@@ -342,14 +342,20 @@ test('Wear package evidence requires the exact permission set and detects native
     '    requested permissions:',
     '      android.permission.INTERNET',
     '      android.permission.ACCESS_NETWORK_STATE',
+    '      android.permission.FOREGROUND_SERVICE',
     '      android.permission.POST_NOTIFICATIONS',
+    '      android.permission.RECEIVE_BOOT_COMPLETED',
+    '      android.permission.WAKE_LOCK',
     '    install permissions:',
     '      android.permission.INTERNET: granted=true'
   ].join('\n');
   assert.deepEqual(parseWearRequestedPermissions(reviewed), [
     'android.permission.ACCESS_NETWORK_STATE',
+    'android.permission.FOREGROUND_SERVICE',
     'android.permission.INTERNET',
-    'android.permission.POST_NOTIFICATIONS'
+    'android.permission.POST_NOTIFICATIONS',
+    'android.permission.RECEIVE_BOOT_COMPLETED',
+    'android.permission.WAKE_LOCK'
   ]);
   assert.deepEqual(assertWearRequestedPermissions(reviewed), parseWearRequestedPermissions(reviewed));
   assert.throws(

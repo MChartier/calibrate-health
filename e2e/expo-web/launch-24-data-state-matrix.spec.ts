@@ -174,7 +174,8 @@ test.describe('Launch 24 exported-web data-state coverage', () => {
         await expectSurface(page, routeCase.content);
         if (state === 'stale') {
           await triggerRefreshFailure(page, routeCase, controller);
-          await expect(page.getByText(routeCase.staleText, { exact: true }).first()).toBeVisible();
+          // The stale surface appears only after the same bounded React Query retry cycle as terminal errors.
+          await expect(page.getByText(routeCase.staleText, { exact: true }).first()).toBeVisible({ timeout: 20_000 });
           await expectSurface(page, routeCase.content);
           await expect(page.getByText(/private upstream detail/i)).toHaveCount(0);
           return;

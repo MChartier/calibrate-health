@@ -23,10 +23,14 @@ const HOME_EXPECTED_TEXT = Object.freeze([
   "Pair with Calibrate on your phone to see today's summary.",
   UNPAIRED_CONNECTION_ACCESSIBILITY_LABEL
 ]);
+// WorkManager contributes its foreground, boot, and wake permissions to the merged release manifest.
 const REVIEWED_WEAR_PERMISSIONS = Object.freeze([
   'android.permission.ACCESS_NETWORK_STATE',
+  'android.permission.FOREGROUND_SERVICE',
   'android.permission.INTERNET',
-  'android.permission.POST_NOTIFICATIONS'
+  'android.permission.POST_NOTIFICATIONS',
+  'android.permission.RECEIVE_BOOT_COMPLETED',
+  'android.permission.WAKE_LOCK'
 ]);
 
 export function parseBoundsRectangle(value) {
@@ -202,7 +206,9 @@ export function assertWearRequestedPermissions(output) {
   const actual = parseWearRequestedPermissions(output);
   if (actual.length !== REVIEWED_WEAR_PERMISSIONS.length
       || actual.some((permission, index) => permission !== REVIEWED_WEAR_PERMISSIONS[index])) {
-    throw new Error('Installed Wear requested permissions differ from the reviewed allowlist.');
+    throw new Error(
+      `Installed Wear requested permissions differ from the reviewed allowlist: ${actual.join(', ')}.`
+    );
   }
   return actual;
 }
