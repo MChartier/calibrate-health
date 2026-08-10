@@ -94,6 +94,7 @@ test('pull requests run hosted Android, Wear release, and two-emulator package u
   assert.match(wear, /-gpu swiftshader_indirect/);
   assert.match(wear, /target: android-wear/);
   assert.match(wear, /profile: wearos_large_round/);
+  assert.match(wear, /androidboot.setupwizard_mode=DISABLED/);
   assert.match(wear, /npm run test:wear:emulator/);
   assert.match(wear, /WEAR_BUILD_TYPE: release/);
 

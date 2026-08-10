@@ -451,7 +451,7 @@ jobs:
           emulator-port: 5554
           emulator-boot-timeout: 600
           # Hosted Wear 5.1 renders Compose blank with Lavapipe; its reviewed passing renderer is SwiftShader.
-          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -append-userspace-opt androidboot.setupwizard_mode=DISABLED
           disable-animations: true
           script: |
             npm run test:wear:emulator

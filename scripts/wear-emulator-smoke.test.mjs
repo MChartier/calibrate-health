@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
   findTextNode,
+  listWearUiPackages,
   parseBounds,
   prepareWearUi,
   resolveWearAdb,
@@ -9,14 +10,29 @@ import {
   waitForWearUi
 } from './wear-emulator-smoke.mjs';
 
-test('Wear UI preparation wakes and unlocks the exact emulator before launch', () => {
+test('Wear UI preparation provisions, verifies, wakes, and unlocks the emulator before launch', () => {
   const commands = [];
-  prepareWearUi((args) => commands.push(args));
+  prepareWearUi((args) => {
+    commands.push(args);
+    if (args[2] === 'get') return '1';
+    return '';
+  });
   assert.deepEqual(commands, [
+    ['shell', 'settings', 'put', 'global', 'device_provisioned', '1'],
+    ['shell', 'settings', 'put', 'secure', 'user_setup_complete', '1'],
+    ['shell', 'settings', 'get', 'global', 'device_provisioned'],
+    ['shell', 'settings', 'get', 'secure', 'user_setup_complete'],
     ['shell', 'input', 'keyevent', 'KEYCODE_WAKEUP'],
     ['shell', 'wm', 'dismiss-keyguard'],
     ['shell', 'input', 'keyevent', '82']
   ]);
+
+  assert.throws(
+    () => prepareWearUi((args) => (
+      args[2] === 'get' && args[4] === 'device_provisioned' ? '0' : '1'
+    )),
+    /did not persist global device_provisioned=1/
+  );
 });
 
 test('Wear adb resolution trims an explicit executable override', () => {
@@ -68,6 +84,10 @@ test('Wear readiness waits for one complete exact UI tree', () => {
 });
 
 test('Wear readiness fails closed after its bounded exact-selector attempts', () => {
+  const blockedTree = '<hierarchy><node text="calibrate" package="com.google.android.wearable.setupwizard" ' +
+    'bounds="[1,1][2,2]" /></hierarchy>';
+  assert.deepEqual(listWearUiPackages(blockedTree), ['com.google.android.wearable.setupwizard']);
+
   let reads = 0;
   let waits = 0;
   assert.throws(
@@ -75,12 +95,12 @@ test('Wear readiness fails closed after its bounded exact-selector attempts', ()
       ['calibrate', 'Connection'],
       () => {
         reads += 1;
-        return '<hierarchy><node text="calibrate" bounds="[1,1][2,2]" /></hierarchy>';
+        return blockedTree;
       },
       () => { waits += 1; },
       3
     ),
-    /did not become ready with expected text: Connection/
+    /did not become ready with expected text: Connection; visible packages: com.google.android.wearable.setupwizard/
   );
   assert.equal(reads, 3);
   assert.equal(waits, 2);

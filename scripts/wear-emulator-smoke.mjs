@@ -43,6 +43,13 @@ export function findTextNode(xml, text) {
     .find((candidate) => attribute(candidate, 'text') === text);
   return node ? { text, bounds: attribute(node, 'bounds') } : null;
 }
+export function listWearUiPackages(xml) {
+  return [...new Set(
+    (xml.match(/<node\b[^>]*>/g) ?? [])
+      .map((node) => attribute(node, 'package'))
+      .filter((packageName) => /^[a-zA-Z0-9._-]+$/.test(packageName))
+  )].sort();
+}
 
 /** Wait for one complete reviewed surface; transient splash/partial trees never count as evidence. */
 export function waitForWearUi(expectedText, readUi, waitBetweenAttempts, maxAttempts = WEAR_UI_READY_ATTEMPTS) {
@@ -54,13 +61,17 @@ export function waitForWearUi(expectedText, readUi, waitBetweenAttempts, maxAtte
     throw new Error('Wear UI readiness attempts must be a positive integer.');
   }
   let missing = [...expectedText];
+  let lastXml = '';
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
-    const xml = readUi();
-    missing = expectedText.filter((text) => !findTextNode(xml, text));
-    if (missing.length === 0) return xml;
+    lastXml = readUi();
+    missing = expectedText.filter((text) => !findTextNode(lastXml, text));
+    if (missing.length === 0) return lastXml;
     if (attempt < maxAttempts) waitBetweenAttempts();
   }
-  throw new Error(`Wear UI did not become ready with expected text: ${missing.join(' | ')}`);
+  const packages = listWearUiPackages(lastXml);
+  throw new Error(
+    `Wear UI did not become ready with expected text: ${missing.join(' | ')}; visible packages: ${packages.join(', ') || 'none'}`
+  );
 }
 
 /** Verify one scrollable Wear surface without requiring off-screen rows in one UI dump. */
@@ -95,6 +106,19 @@ export function resolveWearAdb(environment = process.env, platform = process.pla
 }
 
 export function prepareWearUi(run) {
+  for (const args of [
+    ['shell', 'settings', 'put', 'global', 'device_provisioned', '1'],
+    ['shell', 'settings', 'put', 'secure', 'user_setup_complete', '1']
+  ]) run(args);
+  for (const [namespace, key] of [
+    ['global', 'device_provisioned'],
+    ['secure', 'user_setup_complete']
+  ]) {
+    const value = String(run(['shell', 'settings', 'get', namespace, key])).trim();
+    if (value !== '1') {
+      throw new Error(`Wear emulator setup did not persist ${namespace} ${key}=1.`);
+    }
+  }
   for (const args of [
     ['shell', 'input', 'keyevent', 'KEYCODE_WAKEUP'],
     ['shell', 'wm', 'dismiss-keyguard'],
