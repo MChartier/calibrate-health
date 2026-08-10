@@ -6,12 +6,15 @@ import {
   ANDROID_E2E_INITIAL_LAUNCH_TIMEOUT_MS,
   ANDROID_E2E_METRO_STATUS_URL,
   ANDROID_E2E_UI_ACTION_RETRY_MS,
+  assertAndroidAppLinkLaunch,
   buildAddFoodDeepLink,
+  buildAddFoodLaunchArgs,
   buildAndroidE2eAdbArgs,
   buildE2eRequestHeaders,
   buildOpenFoodDayRequest,
   crashBufferContainsCalibrateProcess,
-  resolveAndroidE2eAdb
+  resolveAndroidE2eAdb,
+  summarizeAndroidE2eUi
 } from './android-e2e.mjs';
 
 const release = JSON.parse(readFileSync(new URL('../shared/release.json', import.meta.url), 'utf8'));
@@ -22,9 +25,32 @@ test('Android E2E uses the same localhost Metro origin as the hosted readiness p
   assert.equal(ANDROID_E2E_UI_ACTION_RETRY_MS, 7_500);
 });
 
-test('Android E2E opens Add food through the canonical native route', () => {
+test('Android E2E opens Add food through a fresh canonical native route', () => {
   assert.equal(buildAddFoodDeepLink('2026-08-10'), 'https://calibratehealth.app/log?date=2026-08-10');
+  assert.deepEqual(buildAddFoodLaunchArgs('2026-08-10'), [
+    'shell', 'am', 'start', '-W', '-S',
+    '-a', 'android.intent.action.VIEW',
+    '-d', 'https://calibratehealth.app/log?date=2026-08-10',
+    'app.calibratehealth.mobile',
+  ]);
+  assert.doesNotThrow(() => assertAndroidAppLinkLaunch(
+    'Status: ok\nActivity: app.calibratehealth.mobile/.MainActivity\nTotalTime: 842',
+  ));
+  assert.throws(
+    () => assertAndroidAppLinkLaunch('Status: ok\nActivity: com.android.chrome/.Main'),
+    /did not launch the Calibrate activity/,
+  );
   assert.throws(() => buildAddFoodDeepLink('08/10/2026'), /must be YYYY-MM-DD/);
+});
+
+test('Android E2E failure diagnostics expose only fixed UI markers', () => {
+  const xml = '<hierarchy>'
+    + '<node text="Today" content-desc="" />'
+    + '<node text="Private seeded value" content-desc="" />'
+    + '<node text="" content-desc="Add food" />'
+    + '</hierarchy>';
+  assert.equal(summarizeAndroidE2eUi(xml), 'Add food, Today');
+  assert.equal(summarizeAndroidE2eUi('<hierarchy />'), 'none');
 });
 
 test('Android E2E API probes identify the current phone release', () => {

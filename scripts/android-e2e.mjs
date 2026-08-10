@@ -23,6 +23,21 @@ export function buildAddFoodDeepLink(date) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) throw new Error('Android E2E Add food date must be YYYY-MM-DD.');
   return `https://calibratehealth.app/log?date=${encodeURIComponent(date)}`;
 }
+export function buildAddFoodLaunchArgs(date) {
+  return [
+    'shell', 'am', 'start', '-W', '-S',
+    '-a', 'android.intent.action.VIEW',
+    '-d', buildAddFoodDeepLink(date),
+    APP_ID,
+  ];
+}
+
+export function assertAndroidAppLinkLaunch(output) {
+  if (!/\bStatus:\s*ok\b/i.test(output) || !/\bActivity:\s*app\.calibratehealth\.mobile\//i.test(output)) {
+    throw new Error('Android E2E app link did not launch the Calibrate activity.');
+  }
+}
+
 const METRO_REVERSE_HOST = 'localhost:8081';
 const API_REVERSE_PORT = 'tcp:3000';
 const HOP_BY_HOP_HEADERS = new Set([
@@ -278,6 +293,19 @@ async function requestJson(pathname, options = {}) {
   throw lastError;
 }
 
+const SAFE_ANDROID_UI_MARKERS = Object.freeze([
+  'Opening add food...', 'Add food', 'Quick', 'Today', 'Restoring session...',
+  'Food logging is unavailable', 'Sign in',
+]);
+
+export function summarizeAndroidE2eUi(xml) {
+  const nodes = xml.match(/<node\b[^>]*>/g) ?? [];
+  const markers = SAFE_ANDROID_UI_MARKERS.filter((marker) => nodes.some((node) => (
+    readAttribute(node, 'text') === marker || readAttribute(node, 'content-desc') === marker
+  )));
+  return markers.length > 0 ? markers.join(', ') : 'none';
+}
+
 async function loginApi() {
   return requestJson('/auth/mobile/login', {
     method: 'POST',
@@ -358,13 +386,19 @@ async function launchAndWaitForLog(timeoutMs = 45_000) {
 }
 
 async function openQuickAdd(name, date) {
-  adb([
-    'shell', 'am', 'start', '-W',
-    '-a', 'android.intent.action.VIEW',
-    '-d', buildAddFoodDeepLink(date),
-    APP_ID,
-  ], { quiet: true });
-  await waitForNode('Quick add mode', (node) => node.clickable && node.label === 'Quick', 45_000);
+  const launchOutput = adb(buildAddFoodLaunchArgs(date), { quiet: true });
+  assertAndroidAppLinkLaunch(launchOutput);
+  try {
+    await waitForNode('Quick add mode', (node) => node.clickable && node.label === 'Quick', 45_000);
+  } catch (error) {
+    let markers = 'unavailable';
+    try {
+      markers = summarizeAndroidE2eUi(dumpUi());
+    } catch {
+      // Keep failure diagnostics bounded if UI automation itself is unavailable.
+    }
+    throw new Error(`${error.message} Safe UI markers: ${markers}.`);
+  }
   await tapNodeUntilVisible(
     'Quick add mode',
     (node) => node.clickable && node.label === 'Quick',
