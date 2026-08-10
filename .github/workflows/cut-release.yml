@@ -50,6 +50,7 @@ jobs:
         if: always()
         run: >-
           node scripts/release-acceptance.mjs hosted-result
+          --workflow cut-release
           --gate hosted-ux-regression
           --candidate "${{ github.sha }}"
           --outcome "${{ steps.release_ux_gate.outcome }}"

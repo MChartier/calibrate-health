@@ -92,7 +92,7 @@
       "blocksExternalLaunch": true,
       "workflowPath": ".github/workflows/builds.yml",
       "jobId": "android-emulator-e2e",
-      "command": "npm run test:android:e2e",
+      "command": "node scripts/hosted-android-e2e.mjs",
       "retainedArtifact": {
         "namePrefix": "android-emulator-e2e-",
         "retentionDays": 90

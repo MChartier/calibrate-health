@@ -291,10 +291,14 @@ export function parseRollbackArguments(argumentsList) {
   return {};
 }
 
+export function resolveCommandEncoding(options = {}) {
+  return Object.hasOwn(options, 'encoding') ? options.encoding : 'utf8';
+}
+
 function defaultCommandRunner(command, args, options = {}) {
   return spawnSync(command, args, {
     cwd: options.cwd ?? repositoryRoot,
-    encoding: options.encoding ?? 'utf8',
+    encoding: resolveCommandEncoding(options),
     env: options.env ?? process.env,
     input: options.input,
     timeout: options.timeoutMs ?? 120_000,

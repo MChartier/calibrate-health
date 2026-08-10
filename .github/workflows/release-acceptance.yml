@@ -41,6 +41,7 @@ jobs:
         if: always()
         run: >-
           node scripts/release-acceptance.mjs hosted-result
+          --workflow release-acceptance
           --gate hosted-release-contracts
           --candidate "${{ github.event.pull_request.head.sha || github.sha }}"
           --outcome "${{ steps.acceptance_contract.outcome }}"

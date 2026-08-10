@@ -23,6 +23,7 @@ import {
   ledgerFingerprint,
   parseLoopbackPublishedPort,
   parseRollbackArguments,
+  resolveCommandEncoding,
   resolveRollbackSourceCommit,
   sanitizeRollbackDiagnostic,
   validateBaseRepresentativeSnapshot,
@@ -228,6 +229,12 @@ test('schema names, arguments, and evidence path are fixed and guarded', () => {
     path.resolve(ROLLBACK_RESULT_PATH),
     path.join(repositoryRoot, '.codex-screenshots', 'postgres-rollback-smoke', 'result.json'),
   );
+});
+
+test('command encoding defaults to text while preserving explicit spawn encodings', () => {
+  assert.equal(resolveCommandEncoding(), 'utf8');
+  assert.equal(resolveCommandEncoding({ encoding: 'utf16le' }), 'utf16le');
+  assert.equal(resolveCommandEncoding({ encoding: null }), null);
 });
 
 test('script contract uses production backup/restore and cleanup without external DATABASE_URL', () => {
