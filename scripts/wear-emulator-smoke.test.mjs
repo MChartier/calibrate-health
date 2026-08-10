@@ -346,6 +346,7 @@ test('Wear package evidence requires the exact permission set and detects native
     '      android.permission.POST_NOTIFICATIONS',
     '      android.permission.RECEIVE_BOOT_COMPLETED',
     '      android.permission.WAKE_LOCK',
+    '      app.calibratehealth.mobile.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION',
     '    install permissions:',
     '      android.permission.INTERNET: granted=true'
   ].join('\n');
@@ -355,7 +356,8 @@ test('Wear package evidence requires the exact permission set and detects native
     'android.permission.INTERNET',
     'android.permission.POST_NOTIFICATIONS',
     'android.permission.RECEIVE_BOOT_COMPLETED',
-    'android.permission.WAKE_LOCK'
+    'android.permission.WAKE_LOCK',
+    'app.calibratehealth.mobile.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION'
   ]);
   assert.deepEqual(assertWearRequestedPermissions(reviewed), parseWearRequestedPermissions(reviewed));
   assert.throws(
