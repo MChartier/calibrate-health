@@ -499,6 +499,8 @@ function stabilizeCovariance(covariance: Covariance): Covariance {
 function estimateCausalMeasurementVariability(points: InternalFilterPoint[]): number[] {
     const residuals: number[] = [];
     return points.map((point) => {
+        if (point.isSegmentStart) residuals.length = 0;
+
         if (!point.isSegmentStart && point.innovationStdKg > 0) {
             const residual = point.innovationKg * DEFAULT_MEASUREMENT_STD_KG / point.innovationStdKg;
             if (Number.isFinite(residual)) residuals.push(residual);

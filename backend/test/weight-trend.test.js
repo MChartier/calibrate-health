@@ -313,6 +313,23 @@ test('computeWeightTrend: estimates bounded two-pass measurement variability wit
   assert.ok(noisyResult.measurementVariabilityKg <= 3.5);
 });
 
+test('computeWeightTrend: resets measurement variability at a new segment', () => {
+  const start = new Date('2026-01-01T00:00:00Z');
+  const noisyHistory = Array.from({ length: 30 }, (_unused, index) => ({
+    date: addDays(start, index),
+    weight: 80 - index * 0.02 + (index % 2 === 0 ? -2 : 2)
+  }));
+  const afterGap = [
+    ...noisyHistory,
+    { date: addDays(start, 45), weight: 79 }
+  ];
+
+  const result = computeWeightTrend(afterGap);
+
+  assert.equal(result.points[result.points.length - 1].isSegmentStart, true);
+  assert.equal(result.measurementVariabilityKg, 0.9);
+});
+
 test('computeWeightTrend: limits as-of results and derives evidence from the latest segment', () => {
   const start = new Date('2026-01-01T00:00:00Z');
   const observations = Array.from({ length: 20 }, (_unused, index) => ({
