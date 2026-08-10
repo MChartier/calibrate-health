@@ -95,12 +95,14 @@ export const ServerUrlControl: React.FC<ServerUrlControlProps> = ({
 
             {isEditing && (
                 <View style={styles.editor}>
-                    <View style={styles.operatorNotice}>
-                        <AppText variant="label">Self-hosted service</AppText>
-                        <AppText variant="caption">
-                            Its operator is responsible for privacy, security, availability, backups, and support.
-                        </AppText>
-                    </View>
+                    {!isHosted && (
+                        <View style={styles.operatorNotice}>
+                            <AppText variant="label">Self-hosted service</AppText>
+                            <AppText variant="caption">
+                                Its operator is responsible for privacy, security, availability, backups, and support.
+                            </AppText>
+                        </View>
+                    )}
                     <TextField
                         label="Server URL"
                         autoCapitalize="none"

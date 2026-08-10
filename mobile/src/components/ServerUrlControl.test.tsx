@@ -30,6 +30,9 @@ describe('ServerUrlControl', () => {
             'accessibilityState',
             { expanded: false }
         );
+        fireEvent.press(view.getByLabelText('Show advanced connection options'));
+        expect(view.queryByText('Self-hosted service')).toBeNull();
+        expect(view.queryByText(/operator is responsible/)).toBeNull();
     });
 
     it('expands self-hosted controls and invokes an explicit connection test', () => {
