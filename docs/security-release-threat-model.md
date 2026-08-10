@@ -37,13 +37,23 @@ authorize a read, update, delete, undo, or association.
 
 ## Dependency advisory resolution
 
-As of 2026-07-27, `npm audit --omit=dev` reports no production findings in either
-the root/mobile or backend lock graph. Coverage runs on `c8@12`, and compatible patched releases
-remain pinned for the production and Prisma dependency edges. API contract generation, backend
-coverage, and the full test suite exercise those overrides.
+As of 2026-08-09, the backend production graph reports no high or critical findings. Coverage runs
+on `c8@12`, and compatible patched releases remain pinned for the production and Prisma dependency
+edges. API contract generation, backend coverage, and the full test suite exercise those overrides.
 
-The root/mobile full audit still reports 23 high package entries, but every entry is the same
-development-only path to
+The root/mobile production audit currently reports 15 high package entries, all transitive effects
+of two `image-size@1.2.1` findings reached through Metro 0.84.4:
+[`GHSA-w3rx-r6r6-pgpr`](https://github.com/advisories/GHSA-w3rx-r6r6-pgpr) and
+[`GHSA-5p2g-fcmc-qvqq`](https://github.com/advisories/GHSA-5p2g-fcmc-qvqq). Both advisories affect
+every published `image-size` release through 2.0.2, and neither has a patched release. Metro uses
+this parser only while bundling repository-owned assets; deployed web, Android, Wear, and backend
+artifacts do not execute it. The production audit therefore permits only those two advisory IDs at
+the exact `node_modules/image-size@1.2.1` path through 2026-08-16. The checker fails closed for any
+other high/critical advisory, version, or path, and strict release validation rejects the exception
+even before expiry.
+
+Beyond the production finding above, the root/mobile full audit reports 23 additional high package
+entries, all from the same development-only path to
 [`GHSA-mh99-v99m-4gvg`](https://github.com/advisories/GHSA-mh99-v99m-4gvg):
 React Native 0.86's Jest preset pins Babel/Jest 29, which reaches `brace-expansion@1.1.16` through
 `test-exclude@6` and `minimatch@3`. These packages only discover and instrument repository-owned

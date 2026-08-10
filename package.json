@@ -53,6 +53,7 @@
     "test:mobile-build-tools": "node --test scripts/xcode-uuid-compatibility.test.mjs",
     "test:native:upgrade": "node scripts/native-upgrade-rehearsal.mjs",
     "test:native:upgrade:unit": "node --test scripts/native-upgrade-rehearsal.test.mjs",
+    "audit:production": "node scripts/dependency-advisory-exceptions.mjs --audit-production",
     "audit:exceptions:check": "node scripts/dependency-advisory-exceptions.mjs",
     "lint": "npm run lint:backend && npm run lint:shared && npm run lint:api-client && npm run lint:mobile",
     "lint:backend": "npm --prefix backend run typecheck",
