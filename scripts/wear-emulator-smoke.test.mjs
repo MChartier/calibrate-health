@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
 import {
@@ -24,6 +25,18 @@ import {
   waitForScrollableWearUi,
   waitForWearUi
 } from './wear-emulator-smoke.mjs';
+
+test('Wear connection actions merge their accessible name onto the clickable node', () => {
+  const source = readFileSync(new URL(
+    '../wear/app/src/main/java/app/calibratehealth/wear/CalibrateWearApp.kt',
+    import.meta.url,
+  ), 'utf8');
+  assert.equal(
+    source.split(`.semantics(mergeDescendants = true) { contentDescription = "Connection" }`).length - 1,
+    2,
+  );
+  assert.equal(source.includes(`.semantics { contentDescription = "Connection" }`), false);
+});
 
 function node(attributes) {
   return `<node ${Object.entries(attributes).map(([key, value]) => `${key}="${value}"`).join(' ')} />`;
