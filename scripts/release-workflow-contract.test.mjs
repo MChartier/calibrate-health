@@ -264,6 +264,15 @@ test('dependency audit isolates the exact root exception while backend remains u
   assert.match(workflow, /if: matrix\.directory == '\.'/);
   assert.match(workflow, /npm run audit:production/);
   assert.match(workflow, /npm run audit:exceptions:check/);
+  assert.match(workflow, /name: dependency-audit-\$\{\{ matrix\.evidence \}\}-\$\{\{ github\.run_id \}\}-\$\{\{ github\.run_attempt \}\}/);
+  assert.match(workflow, /--job "production-audit-\$\{\{ matrix\.evidence \}\}"/);
+});
+
+test('container scan retains a candidate-bound acceptance summary', () => {
+  const workflow = readWorkflow('container-scan.yml');
+  assert.match(workflow, /--gate hosted-container-scan/);
+  assert.match(workflow, /name: container-scan-\$\{\{ github\.run_id \}\}-\$\{\{ github\.run_attempt \}\}/);
+  assert.match(workflow, /retention-days: 90/);
 });
 test('all pull-request workflow checkouts freeze exact candidate C', () => {
   const checkoutExpression = 'ref: ${{ github.event.pull_request.head.sha || github.sha }}';
@@ -303,15 +312,15 @@ test('pull requests block on full exported Web and synthetic six-state acceptanc
   assert.doesNotMatch(states, /path: .*expo-web-playwright-results/);
 });
 
-test('native hosted artifacts retain exactly one privacy-safe source-bound summary', () => {
+test('native hosted jobs retain strict lane evidence plus candidate-bound acceptance summaries', () => {
   const workflow = readWorkflow('builds.yml');
   const packageConfig = JSON.parse(readFileSync(path.join(repositoryRoot, 'package.json'), 'utf8'));
   assert.match(packageConfig.scripts['test:native-release'], /hosted-native-evidence\.test\.mjs/);
 
-  for (const [jobId, lane, output, artifact] of [
-    ['android-emulator-e2e', 'android', 'android.json', 'android-emulator-e2e-'],
-    ['wear-release-emulator-smoke', 'wear', 'wear.json', 'wear-release-emulator-smoke-'],
-    ['native-package-upgrade', 'upgrade', 'upgrade.json', 'native-package-upgrade-']
+  for (const [jobId, lane, output, artifact, gate, summary] of [
+    ['android-emulator-e2e', 'android', 'android.json', 'android-emulator-e2e-', 'hosted-android-emulator-e2e', 'android-emulator-e2e-summary-'],
+    ['wear-release-emulator-smoke', 'wear', 'wear.json', 'wear-release-emulator-smoke-', 'hosted-wear-release-emulator-smoke', 'wear-release-emulator-smoke-summary-'],
+    ['native-package-upgrade', 'upgrade', 'upgrade.json', 'native-package-upgrade-', 'hosted-native-package-upgrade', 'native-package-upgrade-summary-']
   ]) {
     const job = workflowJobBlock(workflow, jobId);
     assert.match(job, new RegExp(`CALIBRATE_HOSTED_EVIDENCE_OUTPUT: \\.codex-screenshots/native-hosted/${output}`));
@@ -320,6 +329,8 @@ test('native hosted artifacts retain exactly one privacy-safe source-bound summa
     assert.match(job, new RegExp(`hosted-native-evidence\\.mjs init[\\s\\S]*--lane ${lane}[\\s\\S]*--source-commit "\\$CALIBRATE_SOURCE_COMMIT"`));
     assert.match(job, new RegExp(`name: ${artifact}\\$\\{\\{ github\\.run_id \\}\\}-\\$\\{\\{ github\\.run_attempt \\}\\}`));
     assert.match(job, new RegExp(`path: \\.codex-screenshots/native-hosted/${output}`));
+    assert.match(job, new RegExp(`--gate ${gate}`));
+    assert.match(job, new RegExp(`name: ${summary}\\$\\{\\{ github\\.run_id \\}\\}-\\$\\{\\{ github\\.run_attempt \\}\\}`));
     assert.match(job, /if: always\(\)[\s\S]*actions\/upload-artifact@v4/);
     assert.match(job, /retention-days: 90/);
   }
@@ -332,6 +343,8 @@ test('PR and release workflows rehearse v0.14.0 upgrade and encrypted rollback b
 
   assert.match(pullRequest, /fetch-depth: 0/);
   assert.match(pullRequest, /CALIBRATE_SOURCE_COMMIT: \$\{\{ github\.event\.pull_request\.head\.sha \}\}/);
+  assert.match(pullRequest, /name: postgres-rollback-smoke-summary-\$\{\{ github\.run_id \}\}-\$\{\{ github\.run_attempt \}\}/);
+  assert.match(pullRequest, /--gate hosted-database-upgrade-rollback/);
   assert.match(releaseRollback, /CALIBRATE_SOURCE_COMMIT: \$\{\{ github\.sha \}\}/);
   for (const job of [pullRequest, releaseRollback]) {
     assert.match(job, /npm run test:db:rollback:unit/);
@@ -353,7 +366,9 @@ test('release acceptance workflow separates implementation from external evidenc
   assert.match(implementation, /retention-days: 90/);
   assert.match(external, /ref: \$\{\{ inputs\.evidence_commit \|\| github\.sha \}\}/);
   assert.match(external, /CALIBRATE_RELEASE_CANDIDATE: \$\{\{ inputs\.candidate_commit \}\}/);
+  assert.match(workflow, /actions: read/);
   assert.match(external, /CALIBRATE_RELEASE_EVIDENCE: \$\{\{ inputs\.evidence_commit \}\}/);
+  assert.match(external, /GH_TOKEN: \$\{\{ github\.token \}\}/);
   assert.match(external, /run: npm\.cmd run release:acceptance:external/);
   assert.match(external, /run: npm\.cmd run test:risk-evidence:release/);
   for (const runStep of external.split(/\n(?=\s+- name:)/).filter((step) => /\n\s+run:/.test(step))) {

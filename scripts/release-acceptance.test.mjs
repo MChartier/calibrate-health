@@ -10,6 +10,7 @@ import {
   RELEASE_ACCEPTANCE_PLAN_PATH,
   createHostedReleaseResult,
   parseReleaseAcceptanceArgs,
+  resolveReleaseAcceptanceEvidence,
   validateEvidenceChildContext,
   validateHostedReleaseResult,
   validateReleaseAcceptancePlan,
@@ -89,28 +90,71 @@ function validPlan() {
   return structuredClone(repositoryPlan);
 }
 
-function validExternalResult(plan = validPlan()) {
+function validExternalFixture(plan = validPlan()) {
+  const evidenceContentByReference = new Map();
+  const requirements = plan.requirements.map((requirement) => {
+    const requiredResults = requirement.execution === 'hosted'
+      ? requirement.retainedArtifact.requiredResults
+      : 1;
+    const evidence = Array.from({ length: requiredResults }, (_, index) => {
+      const isHosted = requirement.execution === 'hosted';
+      const matrixName = requiredResults > 1 ? (index === 0 ? 'root-' : 'backend-') : '';
+      const artifactSeparator = requirement.retainedArtifact?.namePrefix.endsWith('-') ? '' : '-';
+      const reference = isHosted
+        ? `run:123/artifact:${requirement.retainedArtifact.namePrefix}${artifactSeparator}${matrixName}123-1`
+        : `path:quality/physical-results/${requirement.id}.json`;
+      const payload = isHosted
+        ? createHostedReleaseResult({
+            gateId: requirement.id,
+            sourceCommit: 'a'.repeat(40),
+            outcome: 'success',
+            workflow: path.basename(requirement.workflowPath, path.extname(requirement.workflowPath)),
+            runId: '123',
+            runAttempt: '1',
+            job: requiredResults > 1 ? `${requirement.jobId}-${matrixName.slice(0, -1)}` : requirement.jobId
+          }, plan)
+        : {
+            requirementId: requirement.id,
+            sourceCommit: 'a'.repeat(40),
+            status: 'passed'
+          };
+      const content = `${JSON.stringify(payload)}\n`;
+      evidenceContentByReference.set(reference, content);
+      return {
+        provider: isHosted ? 'github-actions' : 'operator-receipt',
+        reference,
+        sha256: digest(content)
+      };
+    });
+    return { id: requirement.id, outcome: 'passed', evidence };
+  });
   return {
-    schemaVersion: 1,
-    sourceCommit: 'a'.repeat(40),
-    completedOn: '2026-08-09',
-    plan: {
-      path: RELEASE_ACCEPTANCE_PLAN_PATH,
-      sha256: digest(repositoryPlanContent)
+    result: {
+      schemaVersion: 1,
+      sourceCommit: 'a'.repeat(40),
+      completedOn: '2026-08-09',
+      plan: {
+        path: RELEASE_ACCEPTANCE_PLAN_PATH,
+        sha256: digest(repositoryPlanContent)
+      },
+      releaseManifest: {
+        path: plan.releaseManifestPath,
+        sha256: digest(manifestContent)
+      },
+      requirements
     },
-    releaseManifest: {
-      path: plan.releaseManifestPath,
-      sha256: digest(manifestContent)
-    },
-    requirements: plan.requirements.map((requirement) => ({
-      id: requirement.id,
-      outcome: 'passed',
-      evidence: [{
-        provider: requirement.execution === 'hosted' ? 'github-actions' : 'operator-receipt',
-        reference: requirement.execution === 'hosted' ? `run:123/job:${requirement.jobId}` : `receipt:${requirement.id}`,
-        sha256: 'b'.repeat(64)
-      }]
-    }))
+    evidenceContentByReference
+  };
+}
+
+function externalValidationOptions(plan, evidenceContentByReference, now = '2026-08-10T00:00:00.000Z') {
+  return {
+    plan,
+    candidateCommit: 'a'.repeat(40),
+    planContent: repositoryPlanContent,
+    releaseManifestContent: manifestContent,
+    evidenceContentByReference,
+    now: new Date(now)
   };
 }
 
@@ -189,72 +233,153 @@ test('hosted summaries bind a reviewed gate to exact candidate C without raw out
   assert.ok(validateHostedReleaseResult(result, plan).some((error) => error.includes('candidate C')));
 });
 
-test('external launch requires one passed, content-addressed result per frozen requirement', () => {
+test('external launch requires resolved, content-addressed results for every frozen requirement', () => {
   const plan = validPlan();
-  const result = validExternalResult(plan);
+  const { result, evidenceContentByReference } = validExternalFixture(plan);
 
-  assert.deepEqual(validateReleaseAcceptanceResult(result, {
-    plan,
-    candidateCommit: 'a'.repeat(40),
-    planContent: repositoryPlanContent,
-    releaseManifestContent: manifestContent,
-    now: new Date('2026-08-10T00:00:00.000Z')
-  }), []);
+  assert.deepEqual(validateReleaseAcceptanceResult(
+    result,
+    externalValidationOptions(plan, evidenceContentByReference)
+  ), []);
 
   result.requirements.pop();
-  assert.ok(validateReleaseAcceptanceResult(result, {
-    plan,
-    candidateCommit: 'a'.repeat(40),
-    planContent: repositoryPlanContent,
-    releaseManifestContent: manifestContent,
-    now: new Date('2026-08-10T00:00:00.000Z')
-  }).some((error) => error.includes('missing requirements')));
+  assert.ok(validateReleaseAcceptanceResult(
+    result,
+    externalValidationOptions(plan, evidenceContentByReference)
+  ).some((error) => error.includes('missing requirements')));
 });
 
 test('external launch accepts evidence completed on the verifier UTC date', () => {
   const plan = validPlan();
-  const result = validExternalResult(plan);
+  const { result, evidenceContentByReference } = validExternalFixture(plan);
 
-  assert.deepEqual(validateReleaseAcceptanceResult(result, {
-    plan,
-    candidateCommit: 'a'.repeat(40),
-    planContent: repositoryPlanContent,
-    releaseManifestContent: manifestContent,
-    now: new Date('2026-08-09T00:00:01.000Z')
-  }), []);
+  assert.deepEqual(validateReleaseAcceptanceResult(
+    result,
+    externalValidationOptions(plan, evidenceContentByReference, '2026-08-09T00:00:01.000Z')
+  ), []);
 });
+
 test('external launch rejects normalized impossible completion dates', () => {
   const plan = validPlan();
-  const result = validExternalResult(plan);
+  const { result, evidenceContentByReference } = validExternalFixture(plan);
   result.completedOn = '2026-02-31';
 
-  const errors = validateReleaseAcceptanceResult(result, {
-    plan,
-    candidateCommit: 'a'.repeat(40),
-    planContent: repositoryPlanContent,
-    releaseManifestContent: manifestContent,
-    now: new Date('2026-08-10T00:00:00.000Z')
-  });
+  const errors = validateReleaseAcceptanceResult(
+    result,
+    externalValidationOptions(plan, evidenceContentByReference)
+  );
 
   assert.ok(errors.some((error) => error.includes('exact calendar date')));
 });
+
 test('operator results cannot be substituted with hosted evidence', () => {
   const plan = validPlan();
-  const result = validExternalResult(plan);
+  const { result, evidenceContentByReference } = validExternalFixture(plan);
   const operator = result.requirements.find((record) => (
     plan.requirements.find((requirement) => requirement.id === record.id)?.execution === 'operator'
   ));
   operator.evidence[0].provider = 'github-actions';
 
-  const errors = validateReleaseAcceptanceResult(result, {
-    plan,
-    candidateCommit: 'a'.repeat(40),
-    planContent: repositoryPlanContent,
-    releaseManifestContent: manifestContent,
-    now: new Date('2026-08-10T00:00:00.000Z')
-  });
+  const errors = validateReleaseAcceptanceResult(
+    result,
+    externalValidationOptions(plan, evidenceContentByReference)
+  );
 
   assert.ok(errors.some((error) => error.includes('operator receipt')));
+});
+
+test('external launch rejects missing, tampered, and candidate-mismatched evidence bytes', () => {
+  const plan = validPlan();
+  const missing = validExternalFixture(plan);
+  const hosted = missing.result.requirements.find((record) => record.id === 'hosted-exported-web-e2e');
+  missing.evidenceContentByReference.delete(hosted.evidence[0].reference);
+  assert.ok(validateReleaseAcceptanceResult(
+    missing.result,
+    externalValidationOptions(plan, missing.evidenceContentByReference)
+  ).some((error) => error.includes('could not be resolved')));
+
+  const tampered = validExternalFixture(plan);
+  const tamperedHosted = tampered.result.requirements.find((record) => record.id === 'hosted-exported-web-e2e');
+  tampered.evidenceContentByReference.set(tamperedHosted.evidence[0].reference, '{}\n');
+  assert.ok(validateReleaseAcceptanceResult(
+    tampered.result,
+    externalValidationOptions(plan, tampered.evidenceContentByReference)
+  ).some((error) => error.includes('SHA-256 does not match')));
+
+  const mismatched = validExternalFixture(plan);
+  const mismatchedHosted = mismatched.result.requirements.find((record) => record.id === 'hosted-exported-web-e2e');
+  const reference = mismatchedHosted.evidence[0].reference;
+  const payload = JSON.parse(mismatched.evidenceContentByReference.get(reference));
+  payload.sourceCommit = 'c'.repeat(40);
+  const content = `${JSON.stringify(payload)}\n`;
+  mismatched.evidenceContentByReference.set(reference, content);
+  mismatchedHosted.evidence[0].sha256 = digest(content);
+  assert.ok(validateReleaseAcceptanceResult(
+    mismatched.result,
+    externalValidationOptions(plan, mismatched.evidenceContentByReference)
+  ).some((error) => error.includes('sourceCommit must equal candidate C')));
+
+  const wrongRun = validExternalFixture(plan);
+  const wrongRunHosted = wrongRun.result.requirements.find((record) => record.id === 'hosted-exported-web-e2e');
+  const wrongRunReference = wrongRunHosted.evidence[0].reference;
+  const wrongRunPayload = JSON.parse(wrongRun.evidenceContentByReference.get(wrongRunReference));
+  wrongRunPayload.runId = '456';
+  const wrongRunContent = `${JSON.stringify(wrongRunPayload)}\n`;
+  wrongRun.evidenceContentByReference.set(wrongRunReference, wrongRunContent);
+  wrongRunHosted.evidence[0].sha256 = digest(wrongRunContent);
+  assert.ok(validateReleaseAcceptanceResult(
+    wrongRun.result,
+    externalValidationOptions(plan, wrongRun.evidenceContentByReference)
+  ).some((error) => error.includes('runId must match its reference')));
+});
+
+test('matrix-hosted requirements retain every reviewed result exactly once', () => {
+  const plan = validPlan();
+  const { result, evidenceContentByReference } = validExternalFixture(plan);
+  const dependency = result.requirements.find((record) => record.id === 'hosted-dependency-audit');
+  dependency.evidence.pop();
+
+  const errors = validateReleaseAcceptanceResult(
+    result,
+    externalValidationOptions(plan, evidenceContentByReference)
+  );
+  assert.ok(errors.some((error) => error.includes('exactly 2 evidence result')));
+
+  const duplicateJob = validExternalFixture(plan);
+  const duplicateDependency = duplicateJob.result.requirements.find((record) => record.id === 'hosted-dependency-audit');
+  const [rootEvidence, backendEvidence] = duplicateDependency.evidence;
+  const rootPayload = duplicateJob.evidenceContentByReference.get(rootEvidence.reference);
+  duplicateJob.evidenceContentByReference.set(backendEvidence.reference, rootPayload);
+  backendEvidence.sha256 = digest(rootPayload);
+  assert.ok(validateReleaseAcceptanceResult(
+    duplicateJob.result,
+    externalValidationOptions(plan, duplicateJob.evidenceContentByReference)
+  ).some((error) => error.includes('hosted evidence jobs must be unique')));
+});
+
+test('evidence resolver retrieves exact hosted artifacts and evidence-child JSON paths', () => {
+  const plan = validPlan();
+  const { result, evidenceContentByReference } = validExternalFixture(plan);
+  const hostedReferences = [];
+  const operatorPaths = [];
+  const resolved = resolveReleaseAcceptanceEvidence(result, {
+    evidenceCommit: 'b'.repeat(40),
+    temporaryRoot: repositoryRoot,
+    readHostedArtifact: ({ reference }) => {
+      hostedReferences.push(reference);
+      return evidenceContentByReference.get(reference);
+    },
+    readOperatorEvidence: ({ reference, path: evidencePath }) => {
+      operatorPaths.push(evidencePath);
+      return evidenceContentByReference.get(reference);
+    }
+  });
+
+  assert.deepEqual(resolved.errors, []);
+  assert.equal(resolved.contents.size, evidenceContentByReference.size);
+  assert.equal(hostedReferences.length, plan.requirements.filter((item) => item.execution === 'hosted')
+    .reduce((count, item) => count + item.retainedArtifact.requiredResults, 0));
+  assert.ok(operatorPaths.every((evidencePath) => evidencePath.startsWith('quality/physical-results/')));
 });
 
 test('evidence A must be a clean evidence-only child whose sole parent is C', () => {

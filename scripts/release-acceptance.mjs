@@ -1,5 +1,6 @@
 import crypto from 'node:crypto';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import process from 'node:process';
 import { spawnSync } from 'node:child_process';
@@ -20,6 +21,8 @@ const COMMIT_PATTERN = /^[0-9a-f]{40}$/;
 const SHA256_PATTERN = /^[0-9a-f]{64}$/;
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const SAFE_REFERENCE_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:/#@-]{0,255}$/;
+const HOSTED_EVIDENCE_REFERENCE_PATTERN = /^run:([1-9]\d*)\/artifact:([a-z0-9][a-z0-9._-]{0,127})$/;
+const OPERATOR_EVIDENCE_REFERENCE_PATTERN = /^path:(quality\/physical-results\/[a-z0-9][a-z0-9._-]*\.json)$/;
 const HOSTED_OUTCOMES = new Set(['success', 'failure', 'cancelled', 'skipped']);
 const RESULT_OUTCOMES = new Set(['passed']);
 const EVIDENCE_PROVIDERS = new Set(['github-actions', 'operator-receipt']);
@@ -61,7 +64,7 @@ const OPERATOR_REQUIREMENT_FIELDS = Object.freeze([
   'blocksExternalLaunch',
   'protocolPath'
 ]);
-const ARTIFACT_CONTRACT_FIELDS = Object.freeze(['namePrefix', 'retentionDays']);
+const ARTIFACT_CONTRACT_FIELDS = Object.freeze(['namePrefix', 'retentionDays', 'requiredResults']);
 const RESULT_FIELDS = Object.freeze([
   'schemaVersion',
   'sourceCommit',
@@ -257,7 +260,9 @@ export function validateReleaseAcceptancePlan(plan, options = {}) {
       if (!isNonEmptyString(requirement.command) || (job && !job.includes(requirement.command))) {
         errors.push(`${label} job must contain command ${requirement.command}.`);
       }
-      if (requirement.retainedArtifact !== null) {
+      if (requirement.retainedArtifact === null) {
+        errors.push(`${label} must retain a candidate-bound acceptance summary.`);
+      } else {
         hasExactFields(requirement.retainedArtifact, ARTIFACT_CONTRACT_FIELDS, `${label} retained artifact`, errors);
         if (!/^[a-z0-9][a-z0-9-]*$/.test(requirement.retainedArtifact?.namePrefix ?? '')) {
           errors.push(`${label} retained artifact namePrefix must be a lowercase artifact name or prefix.`);
@@ -266,6 +271,11 @@ export function validateReleaseAcceptancePlan(plan, options = {}) {
           || requirement.retainedArtifact.retentionDays < 1
           || requirement.retainedArtifact.retentionDays > 90) {
           errors.push(`${label} retained artifact retentionDays must be 1-90.`);
+        }
+        if (!Number.isSafeInteger(requirement.retainedArtifact?.requiredResults)
+          || requirement.retainedArtifact.requiredResults < 1
+          || requirement.retainedArtifact.requiredResults > 10) {
+          errors.push(`${label} retained artifact requiredResults must be 1-10.`);
         }
         if (job && !job.includes(`name: ${requirement.retainedArtifact.namePrefix}`)) {
           errors.push(`${label} job must retain its named artifact.`);
@@ -346,6 +356,83 @@ function validateHashedPath(record, expectedPath, label, expectedContent, errors
   }
 }
 
+function resolvedEvidenceContent(contents, reference) {
+  if (contents instanceof Map) return contents.get(reference);
+  return contents?.[reference];
+}
+
+function evidenceContentText(value) {
+  if (typeof value === 'string') return value;
+  if (Buffer.isBuffer(value)) return value.toString('utf8');
+  return null;
+}
+
+function validateResolvedEvidence(record, requirement, evidence, options, label, errors, hostedEvidenceJobs) {
+  const isHosted = requirement?.execution === 'hosted';
+  const match = isHosted
+    ? HOSTED_EVIDENCE_REFERENCE_PATTERN.exec(evidence?.reference ?? '')
+    : OPERATOR_EVIDENCE_REFERENCE_PATTERN.exec(evidence?.reference ?? '');
+  if (!match) {
+    errors.push(`${label} evidence reference must use the reviewed ${isHosted ? 'run/artifact' : 'evidence-child path'} format.`);
+    return;
+  }
+  if (isHosted && !match[2].startsWith(requirement?.retainedArtifact?.namePrefix ?? '')) {
+    errors.push(`${label} evidence artifact must use its frozen plan prefix.`);
+  }
+  const rawContent = resolvedEvidenceContent(options.evidenceContentByReference, evidence.reference);
+  const content = evidenceContentText(rawContent);
+  if (content === null) {
+    errors.push(`${label} evidence could not be resolved.`);
+    return;
+  }
+  if (evidence.sha256 !== sha256(rawContent)) {
+    errors.push(`${label} evidence SHA-256 does not match the resolved bytes.`);
+  }
+  let parsed;
+  try {
+    parsed = JSON.parse(content);
+  } catch {
+    errors.push(`${label} evidence must contain valid JSON.`);
+    return;
+  }
+  if (isHosted) {
+    for (const error of validateHostedReleaseResult(parsed, options.plan)) {
+      errors.push(`${label} hosted evidence: ${error}`);
+    }
+    if (parsed?.gateId !== record.id) errors.push(`${label} hosted evidence gateId must match the requirement.`);
+    const expectedWorkflow = path.basename(requirement.workflowPath, path.extname(requirement.workflowPath));
+    if (parsed?.workflow !== expectedWorkflow) {
+      errors.push(`${label} hosted evidence workflow must match the frozen requirement.`);
+    }
+    if (parsed?.job !== requirement.jobId && !parsed?.job?.startsWith(`${requirement.jobId}-`)) {
+      errors.push(`${label} hosted evidence job must match the frozen requirement.`);
+    }
+    if (hostedEvidenceJobs.has(parsed?.job)) {
+      errors.push(`${label} hosted evidence jobs must be unique.`);
+    }
+    hostedEvidenceJobs.add(parsed?.job);
+    if (parsed?.runId !== match[1]) errors.push(`${label} hosted evidence runId must match its reference.`);
+    if (!match[2].endsWith(`-${parsed?.runId}-${parsed?.runAttempt}`)) {
+      errors.push(`${label} hosted evidence artifact name must match its run ID and attempt.`);
+    }
+    if (parsed?.sourceCommit !== options.candidateCommit) {
+      errors.push(`${label} hosted evidence sourceCommit must equal candidate C.`);
+    }
+    if (parsed?.outcome !== 'success') errors.push(`${label} hosted evidence outcome must be success.`);
+    return;
+  }
+  if (parsed?.sourceCommit !== options.candidateCommit) {
+    errors.push(`${label} operator evidence sourceCommit must equal candidate C.`);
+  }
+  const operatorOutcome = parsed?.outcome ?? parsed?.status;
+  if (operatorOutcome !== 'success' && operatorOutcome !== 'passed') {
+    errors.push(`${label} operator evidence outcome must be success or passed.`);
+  }
+  if (parsed?.requirementId !== undefined && parsed.requirementId !== record.id) {
+    errors.push(`${label} operator evidence requirementId must match the requirement.`);
+  }
+}
+
 export function validateReleaseAcceptanceResult(result, options) {
   const errors = [];
   const { plan, candidateCommit, planContent, releaseManifestContent, now = new Date() } = options;
@@ -388,22 +475,101 @@ export function validateReleaseAcceptanceResult(result, options) {
       errors.push(`${label} must retain at least one evidence reference.`);
       continue;
     }
+    if (requirement?.execution === 'hosted'
+      && record.evidence.length !== requirement.retainedArtifact?.requiredResults) {
+      errors.push(`${label} must retain exactly ${requirement.retainedArtifact?.requiredResults} evidence result(s).`);
+    }
+    const evidenceReferences = new Set();
+    const hostedEvidenceJobs = new Set();
     for (const evidence of record.evidence) {
       hasExactFields(evidence, RESULT_EVIDENCE_FIELDS, `${label} evidence`, errors);
       if (!EVIDENCE_PROVIDERS.has(evidence?.provider)) errors.push(`${label} evidence provider is invalid.`);
       if (!SAFE_REFERENCE_PATTERN.test(evidence?.reference ?? '')) errors.push(`${label} evidence reference is invalid.`);
+      if (evidenceReferences.has(evidence?.reference)) errors.push(`${label} evidence references must be unique.`);
+      evidenceReferences.add(evidence?.reference);
       if (!SHA256_PATTERN.test(evidence?.sha256 ?? '')) errors.push(`${label} evidence SHA-256 is invalid.`);
       if (requirement?.execution === 'hosted' && evidence?.provider !== 'github-actions') {
         errors.push(`${label} must reference GitHub Actions evidence.`);
-      }
-      if (requirement?.execution === 'operator' && evidence?.provider !== 'operator-receipt') {
+      } else if (requirement?.execution === 'operator' && evidence?.provider !== 'operator-receipt') {
         errors.push(`${label} must reference an operator receipt.`);
+      } else if (requirement) {
+        validateResolvedEvidence(record, requirement, evidence, options, label, errors, hostedEvidenceJobs);
       }
     }
   }
   const missing = [...expectedById.keys()].filter((id) => !actualIds.has(id));
   if (missing.length) errors.push(`Release acceptance result is missing requirements: ${missing.join(', ')}.`);
   return errors;
+}
+
+function listRegularFiles(root) {
+  const files = [];
+  for (const entry of fs.readdirSync(root, { withFileTypes: true })) {
+    const absolute = path.join(root, entry.name);
+    if (entry.isDirectory()) files.push(...listRegularFiles(absolute));
+    else if (entry.isFile()) files.push(absolute);
+  }
+  return files;
+}
+
+function downloadHostedEvidence(reference, match, options, temporaryRoot) {
+  if (options.readHostedArtifact) {
+    return options.readHostedArtifact({ reference, runId: match[1], artifactName: match[2] });
+  }
+  const repository = options.environment?.GITHUB_REPOSITORY?.trim();
+  if (!/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(repository ?? '')) {
+    throw new Error('GITHUB_REPOSITORY must identify the source repository before hosted evidence can be downloaded.');
+  }
+  const target = path.join(temporaryRoot, sha256(reference).slice(0, 24));
+  fs.mkdirSync(target, { recursive: true });
+  const result = (options.spawnSync ?? spawnSync)('gh', [
+    'run', 'download', match[1], '--repo', repository, '--name', match[2], '--dir', target
+  ], {
+    cwd: options.repositoryRoot ?? repositoryRoot,
+    encoding: 'utf8',
+    env: options.environment,
+    windowsHide: true
+  });
+  if (result.error || result.status !== 0) throw new Error(`Unable to download hosted evidence ${reference}.`);
+  const files = listRegularFiles(target);
+  if (files.length !== 1 || path.extname(files[0]).toLowerCase() !== '.json') {
+    throw new Error(`Hosted evidence ${reference} must contain exactly one JSON file.`);
+  }
+  return fs.readFileSync(files[0]);
+}
+
+export function resolveReleaseAcceptanceEvidence(result, options = {}) {
+  const contents = new Map();
+  const errors = [];
+  const temporaryRoot = options.temporaryRoot ?? fs.mkdtempSync(path.join(os.tmpdir(), 'calibrate-release-evidence-'));
+  const ownsTemporaryRoot = options.temporaryRoot === undefined;
+  try {
+    for (const record of result?.requirements ?? []) {
+      for (const evidence of record?.evidence ?? []) {
+        const reference = evidence?.reference;
+        if (contents.has(reference)) continue;
+        try {
+          if (evidence?.provider === 'github-actions') {
+            const match = HOSTED_EVIDENCE_REFERENCE_PATTERN.exec(reference ?? '');
+            if (!match) throw new Error('Hosted evidence reference must use run:<id>/artifact:<name>.');
+            contents.set(reference, downloadHostedEvidence(reference, match, options, temporaryRoot));
+          } else if (evidence?.provider === 'operator-receipt') {
+            const match = OPERATOR_EVIDENCE_REFERENCE_PATTERN.exec(reference ?? '');
+            if (!match) throw new Error('Operator evidence reference must use path:quality/physical-results/<file>.json.');
+            const content = options.readOperatorEvidence
+              ? options.readOperatorEvidence({ reference, path: match[1] })
+              : runGit(options.repositoryRoot ?? repositoryRoot, ['show', `${options.evidenceCommit}:${match[1]}`]);
+            contents.set(reference, content);
+          }
+        } catch (error) {
+          errors.push(`Acceptance result requirement ${record?.id ?? 'unknown'} evidence could not be resolved: ${error instanceof Error ? error.message : error}`);
+        }
+      }
+    }
+  } finally {
+    if (ownsTemporaryRoot) fs.rmSync(temporaryRoot, { recursive: true, force: true });
+  }
+  return { contents, errors };
 }
 
 function runGit(root, args) {
@@ -588,14 +754,29 @@ export function runReleaseAcceptanceCli(argv = process.argv.slice(2), options = 
   });
   const riskManifest = JSON.parse(context.riskManifestContent);
   const result = riskManifest?.[RELEASE_ACCEPTANCE_RESULT_PROPERTY];
+  const resolvedEvidence = resolveReleaseAcceptanceEvidence(result, {
+    repositoryRoot: root,
+    evidenceCommit: args.evidence,
+    environment: options.environment ?? process.env,
+    spawnSync: options.spawnSync,
+    readHostedArtifact: options.readHostedArtifact,
+    readOperatorEvidence: options.readOperatorEvidence,
+    temporaryRoot: options.temporaryRoot
+  });
   const resultErrors = validateReleaseAcceptanceResult(result, {
     plan: frozenPlan,
     candidateCommit: args.candidate,
     planContent: context.planContent,
     releaseManifestContent: context.releaseManifestContent,
+    evidenceContentByReference: resolvedEvidence.contents,
     now: options.now ?? new Date()
   });
-  const errors = [...context.errors, ...frozenPlanValidation.errors, ...resultErrors];
+  const errors = [
+    ...context.errors,
+    ...frozenPlanValidation.errors,
+    ...resolvedEvidence.errors,
+    ...resultErrors
+  ];
   if (errors.length) throw new Error(`External launch acceptance is invalid:\n- ${errors.join('\n- ')}`);
   process.stdout.write(`External launch evidence is valid for candidate ${args.candidate} via evidence child ${args.evidence}.\n`);
   return { candidate: args.candidate, evidence: args.evidence, result };

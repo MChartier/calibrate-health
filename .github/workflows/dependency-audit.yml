@@ -24,10 +24,12 @@ jobs:
         include:
           - workspace: Root and Mobile
             directory: .
+            evidence: root
             lockfile: package-lock.json
             node: 22.13.0
           - workspace: Backend
             directory: backend
+            evidence: backend
             lockfile: backend/package-lock.json
             node: 20
 
@@ -60,3 +62,24 @@ jobs:
       - name: Validate time-bounded dependency exceptions
         if: matrix.directory == '.'
         run: npm run audit:exceptions:check
+
+      - name: Record candidate-bound dependency-audit summary
+        if: always()
+        run: >-
+          node scripts/release-acceptance.mjs hosted-result
+          --workflow dependency-audit
+          --gate hosted-dependency-audit
+          --candidate "${{ github.event.pull_request.head.sha || github.sha }}"
+          --outcome "${{ job.status }}"
+          --job "production-audit-${{ matrix.evidence }}"
+          --output .codex-screenshots/release-acceptance/dependency-audit-${{ matrix.evidence }}.json
+
+      - name: Upload candidate-bound dependency-audit summary
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-audit-${{ matrix.evidence }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .codex-screenshots/release-acceptance/dependency-audit-${{ matrix.evidence }}.json
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 90

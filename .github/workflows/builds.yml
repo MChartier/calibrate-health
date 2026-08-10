@@ -526,6 +526,26 @@ jobs:
           script: node scripts/hosted-android-e2e.mjs
 
 
+      - name: Record candidate-bound Android acceptance summary
+        if: always()
+        run: >-
+          node scripts/release-acceptance.mjs hosted-result
+          --workflow builds
+          --gate hosted-android-emulator-e2e
+          --candidate "${{ github.event.pull_request.head.sha || github.sha }}"
+          --outcome "${{ steps.android_e2e.outcome }}"
+          --output .codex-screenshots/release-acceptance/android-emulator-e2e.json
+
+      - name: Upload candidate-bound Android acceptance summary
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-emulator-e2e-summary-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .codex-screenshots/release-acceptance/android-emulator-e2e.json
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 90
+
       - name: Upload sanitized Android emulator evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -644,6 +664,26 @@ jobs:
             ./wear/gradlew -p wear :app:connectedDebugAndroidTest -PcalibrateWearServerUrl=https://calibratehealth.app -PcalibrateWearDebugServerUrl=http://10.0.2.2:3000 --no-daemon --console=plain
 
 
+      - name: Record candidate-bound Wear acceptance summary
+        if: always()
+        run: >-
+          node scripts/release-acceptance.mjs hosted-result
+          --workflow builds
+          --gate hosted-wear-release-emulator-smoke
+          --candidate "${{ github.event.pull_request.head.sha || github.sha }}"
+          --outcome "${{ steps.wear_smoke.outcome }}"
+          --output .codex-screenshots/release-acceptance/wear-release-emulator-smoke.json
+
+      - name: Upload candidate-bound Wear acceptance summary
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: wear-release-emulator-smoke-summary-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .codex-screenshots/release-acceptance/wear-release-emulator-smoke.json
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 90
+
       - name: Upload sanitized Wear release emulator evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -736,6 +776,26 @@ jobs:
         if: always()
         run: node scripts/hosted-native-emulators.mjs stop-wear
 
+
+      - name: Record candidate-bound native-upgrade acceptance summary
+        if: always()
+        run: >-
+          node scripts/release-acceptance.mjs hosted-result
+          --workflow builds
+          --gate hosted-native-package-upgrade
+          --candidate "${{ github.event.pull_request.head.sha || github.sha }}"
+          --outcome "${{ steps.native_upgrade.outcome }}"
+          --output .codex-screenshots/release-acceptance/native-package-upgrade.json
+
+      - name: Upload candidate-bound native-upgrade acceptance summary
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-package-upgrade-summary-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .codex-screenshots/release-acceptance/native-package-upgrade.json
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 90
 
       - name: Upload sanitized two-emulator upgrade evidence
         if: always()

@@ -48,8 +48,13 @@ After the implementation stack is frozen, collect these external-launch receipts
 - prove an in-place upgrade from a genuinely distributed predecessor; and
 - complete the required private dogfood soak and final owner signoff.
 
-Receipts must be privacy-safe and content-addressed. Store only a bounded reference and SHA-256 in the result; never
-store credentials, device serials, account data, raw logs, screenshots with personal data, or signing material.
+Receipts must be privacy-safe and content-addressed. Hosted evidence uses
+`run:<run-id>/artifact:<artifact-name>` references; the verifier downloads the exact GitHub Actions artifact, requires
+one JSON file, recomputes its SHA-256, and checks the reviewed gate ID, candidate C, and successful outcome. The
+production dependency audit requires distinct root/mobile and backend results. Operator evidence uses
+`path:quality/physical-results/<file>.json`; the verifier reads those exact bytes from A, recomputes their SHA-256, and
+checks candidate C plus a passed outcome. Store only these bounded references and hashes in the result. Never store
+credentials, device serials, account data, raw logs, screenshots with personal data, or signing material.
 
 ## Evidence-only child
 
@@ -61,7 +66,7 @@ its sole parent. Its diff may contain only `quality/risk-evidence.json` and allo
 - `sourceCommit` equal to C;
 - the completion date;
 - SHA-256 records for the plan and `shared/release.json` as they existed in C; and
-- exactly one passed result for every plan requirement, each with content-addressed GitHub Actions or operator evidence.
+- the exact reviewed number of passed results for every plan requirement, each with resolved, content-addressed GitHub Actions or operator evidence.
 
 Do not record A inside A. Verify from a clean checkout whose HEAD is A:
 

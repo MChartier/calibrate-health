@@ -89,7 +89,28 @@ jobs:
         run: npm run test:db:rollback:unit
 
       - name: Upgrade from v0.14.0, restore, and re-upgrade
+        id: rollback_rehearsal
         run: npm run test:db:rollback
+
+      - name: Record candidate-bound rollback acceptance summary
+        if: always()
+        run: >-
+          node scripts/release-acceptance.mjs hosted-result
+          --workflow database-upgrade
+          --gate hosted-database-upgrade-rollback
+          --candidate "${{ github.event.pull_request.head.sha || github.sha }}"
+          --outcome "${{ steps.rollback_rehearsal.outcome }}"
+          --output .codex-screenshots/release-acceptance/postgres-rollback-smoke.json
+
+      - name: Upload candidate-bound rollback acceptance summary
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: postgres-rollback-smoke-summary-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .codex-screenshots/release-acceptance/postgres-rollback-smoke.json
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 30
 
       - name: Upload sanitized rollback evidence
         if: always()

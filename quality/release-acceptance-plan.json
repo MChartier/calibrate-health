@@ -39,7 +39,8 @@
       "command": "npm.cmd run release:acceptance",
       "retainedArtifact": {
         "namePrefix": "release-acceptance-contract-",
-        "retentionDays": 90
+        "retentionDays": 90,
+        "requiredResults": 1
       }
     },
     {
@@ -53,7 +54,8 @@
       "command": "npm.cmd run test:expo-web",
       "retainedArtifact": {
         "namePrefix": "exported-web-e2e-",
-        "retentionDays": 90
+        "retentionDays": 90,
+        "requiredResults": 1
       }
     },
     {
@@ -67,7 +69,8 @@
       "command": "npm.cmd run test:ux",
       "retainedArtifact": {
         "namePrefix": "ux-regression-summary-",
-        "retentionDays": 90
+        "retentionDays": 90,
+        "requiredResults": 1
       }
     },
     {
@@ -81,7 +84,8 @@
       "command": "npm.cmd run test:data-states",
       "retainedArtifact": {
         "namePrefix": "launch-24-data-state-acceptance",
-        "retentionDays": 90
+        "retentionDays": 90,
+        "requiredResults": 1
       }
     },
     {
@@ -94,8 +98,9 @@
       "jobId": "android-emulator-e2e",
       "command": "node scripts/hosted-android-e2e.mjs",
       "retainedArtifact": {
-        "namePrefix": "android-emulator-e2e-",
-        "retentionDays": 90
+        "namePrefix": "android-emulator-e2e-summary-",
+        "retentionDays": 90,
+        "requiredResults": 1
       }
     },
     {
@@ -108,8 +113,9 @@
       "jobId": "wear-release-emulator-smoke",
       "command": "npm run test:wear:emulator",
       "retainedArtifact": {
-        "namePrefix": "wear-release-emulator-smoke-",
-        "retentionDays": 90
+        "namePrefix": "wear-release-emulator-smoke-summary-",
+        "retentionDays": 90,
+        "requiredResults": 1
       }
     },
     {
@@ -122,8 +128,9 @@
       "jobId": "native-package-upgrade",
       "command": "npm run test:native:upgrade",
       "retainedArtifact": {
-        "namePrefix": "native-package-upgrade-",
-        "retentionDays": 90
+        "namePrefix": "native-package-upgrade-summary-",
+        "retentionDays": 90,
+        "requiredResults": 1
       }
     },
     {
@@ -136,8 +143,9 @@
       "jobId": "release-upgrade-rollback",
       "command": "npm run test:db:rollback",
       "retainedArtifact": {
-        "namePrefix": "postgres-rollback-smoke-",
-        "retentionDays": 30
+        "namePrefix": "postgres-rollback-smoke-summary-",
+        "retentionDays": 30,
+        "requiredResults": 1
       }
     },
     {
@@ -149,7 +157,11 @@
       "workflowPath": ".github/workflows/dependency-audit.yml",
       "jobId": "production-audit",
       "command": "npm run audit:production",
-      "retainedArtifact": null
+      "retainedArtifact": {
+        "namePrefix": "dependency-audit-",
+        "retentionDays": 90,
+        "requiredResults": 2
+      }
     },
     {
       "id": "hosted-container-scan",
@@ -160,7 +172,11 @@
       "workflowPath": ".github/workflows/container-scan.yml",
       "jobId": "scan",
       "command": "aquasecurity/trivy-action",
-      "retainedArtifact": null
+      "retainedArtifact": {
+        "namePrefix": "container-scan-",
+        "retentionDays": 90,
+        "requiredResults": 1
+      }
     },
     {
       "id": "operator-staging-alert-delivery",
