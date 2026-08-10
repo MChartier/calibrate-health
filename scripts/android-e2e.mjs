@@ -279,7 +279,7 @@ export function summarizeAndroidE2eUi(xml) {
 }
 
 export function isAndroidE2eRecentFoodNode(node, name) {
-  return node?.clickable === true && node?.label?.startsWith(`${name},`);
+  return node?.clickable === true && node?.label === `Choose amount for ${name}`;
 }
 
 async function loginApi() {

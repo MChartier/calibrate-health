@@ -53,9 +53,9 @@ test('Android E2E failure diagnostics expose only fixed UI markers', () => {
 });
 
 test('Android E2E matches only enabled recent-food action rows', () => {
-  assert.equal(isAndroidE2eRecentFoodNode({ label: 'Android E2E latte, 190 kcal', clickable: true }, 'Android E2E latte'), true);
-  assert.equal(isAndroidE2eRecentFoodNode({ label: 'Android E2E latte, 190 kcal', clickable: false }, 'Android E2E latte'), false);
-  assert.equal(isAndroidE2eRecentFoodNode({ label: 'Another food, 190 kcal', clickable: true }, 'Android E2E latte'), false);
+  assert.equal(isAndroidE2eRecentFoodNode({ label: 'Choose amount for Android E2E latte', clickable: true }, 'Android E2E latte'), true);
+  assert.equal(isAndroidE2eRecentFoodNode({ label: 'Choose amount for Android E2E latte', clickable: false }, 'Android E2E latte'), false);
+  assert.equal(isAndroidE2eRecentFoodNode({ label: 'Choose amount for Another food', clickable: true }, 'Android E2E latte'), false);
 });
 
 test('Android E2E API probes identify the current phone release', () => {
