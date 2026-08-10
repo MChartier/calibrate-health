@@ -99,13 +99,42 @@ describe('auth screen server navigation', () => {
         const screen = render(<RegisterScreen />);
 
         fireEvent.changeText(screen.getByLabelText('Email'), 'new@example.com');
-        fireEvent.changeText(screen.getByLabelText('Password'), 'secret');
-        fireEvent.changeText(screen.getByLabelText('Confirm password'), 'secret');
+        fireEvent.changeText(screen.getByLabelText('Password'), 'secret12');
+        fireEvent.changeText(screen.getByLabelText('Confirm password'), 'secret12');
         fireEvent.press(screen.getByLabelText('Create account'));
 
         await waitFor(() => {
-            expect(auth.register).toHaveBeenCalledWith('new@example.com', 'secret', SELF_HOSTED_URL);
+            expect(auth.register).toHaveBeenCalledWith('new@example.com', 'secret12', SELF_HOSTED_URL);
         });
+    });
+
+    it('shows actionable registration credential validation', () => {
+        const auth = authContextStub();
+        mockUseAuth.mockReturnValue(auth as unknown as ReturnType<typeof useAuth>);
+        const screen = render(<RegisterScreen />);
+
+        fireEvent.changeText(screen.getByLabelText('Email'), 'not-an-email');
+        fireEvent.changeText(screen.getByLabelText('Password'), 'secret12');
+        fireEvent.changeText(screen.getByLabelText('Confirm password'), 'secret12');
+        fireEvent.press(screen.getByLabelText('Create account'));
+
+        expect(screen.getByRole('alert')).toHaveTextContent('Enter a valid email address.');
+        expect(auth.register).not.toHaveBeenCalled();
+
+        fireEvent.changeText(screen.getByLabelText('Email'), 'new@example.com');
+        fireEvent.changeText(screen.getByLabelText('Password'), 'short');
+        fireEvent.changeText(screen.getByLabelText('Confirm password'), 'short');
+        fireEvent.press(screen.getByLabelText('Create account'));
+
+        expect(screen.getByRole('alert')).toHaveTextContent('Password must be at least 8 characters.');
+
+        const oversizedPassword = String.fromCodePoint(0x1f600).repeat(19);
+        fireEvent.changeText(screen.getByLabelText('Password'), oversizedPassword);
+        fireEvent.changeText(screen.getByLabelText('Confirm password'), oversizedPassword);
+        fireEvent.press(screen.getByLabelText('Create account'));
+
+        expect(screen.getByRole('alert')).toHaveTextContent('Password must be at most 72 bytes.');
+        expect(auth.register).not.toHaveBeenCalled();
     });
 
     it('hides server selection and uses the serving server on web', async () => {
@@ -138,8 +167,8 @@ describe('auth screen server navigation', () => {
         const screen = render(<RegisterScreen />);
 
         fireEvent.changeText(screen.getByLabelText('Email'), 'existing@example.com');
-        fireEvent.changeText(screen.getByLabelText('Password'), 'secret');
-        fireEvent.changeText(screen.getByLabelText('Confirm password'), 'secret');
+        fireEvent.changeText(screen.getByLabelText('Password'), 'secret12');
+        fireEvent.changeText(screen.getByLabelText('Confirm password'), 'secret12');
         fireEvent.press(screen.getByLabelText('Create account'));
 
         await waitFor(() => {
@@ -155,8 +184,8 @@ describe('auth screen server navigation', () => {
         const screen = render(<RegisterScreen />);
 
         fireEvent.changeText(screen.getByLabelText('Email'), 'new@example.com');
-        fireEvent.changeText(screen.getByLabelText('Password'), 'secret');
-        fireEvent.changeText(screen.getByLabelText('Confirm password'), 'different');
+        fireEvent.changeText(screen.getByLabelText('Password'), 'secret12');
+        fireEvent.changeText(screen.getByLabelText('Confirm password'), 'different12');
         fireEvent.press(screen.getByLabelText('Create account'));
 
         expect(screen.getByRole('alert')).toHaveTextContent('Passwords do not match.');
