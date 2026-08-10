@@ -356,6 +356,7 @@ function exerciseWearScale({ adb, serial, expectedBuildType, screen, densityDpi,
   const homeAudit = auditWearActionTargets(home, screen, densityDpi);
   const point = parseBounds(connection.bounds);
   runAdb(adb, serial, ['shell', 'input', 'tap', String(point.x), String(point.y)], { quiet: true });
+  waitForExpectedUi(['Connection', 'Server']);
 
   const detail = waitForScrollableWearUi([
     'Connection',
