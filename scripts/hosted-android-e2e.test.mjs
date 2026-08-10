@@ -66,7 +66,7 @@ test('hosted Metro environment forces CI without mutating caller environment', (
 test('hosted Android Metro wait accepts readiness and detects early exit and timeout', async () => {
   await waitForHostedAndroidMetro(fakeMetro(), {
     fetchImpl: async (url) => ({
-      ok: url === 'http://127.0.0.1:8081/status',
+      ok: url === 'http://localhost:8081/status',
       text: async () => 'packager-status:running'
     }),
     timeoutMs: 10

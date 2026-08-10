@@ -11,7 +11,7 @@ import { buildAndroidE2eAdbArgs, resolveAndroidE2eAdb } from './android-e2e.mjs'
 export const HOSTED_ANDROID_METRO_TIMEOUT_MS = 90_000;
 export const HOSTED_ANDROID_LOG_MAX_BYTES = 256 * 1024;
 export const HOSTED_ANDROID_DIAGNOSTIC_LINES = 80;
-const METRO_STATUS_URL = 'http://127.0.0.1:8081/status';
+const METRO_STATUS_URL = 'http://localhost:8081/status';
 const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 const sleep = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
