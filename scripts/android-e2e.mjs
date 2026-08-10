@@ -200,10 +200,40 @@ async function waitForNode(label, predicate, timeoutMs = 30_000) {
   return waitFor(label, async () => findNode(dumpUi(), predicate), timeoutMs, 750);
 }
 
-async function tapNode(label, predicate, timeoutMs = 30_000) {
-  const node = await waitForNode(label, predicate, timeoutMs);
+function tapFoundNode(node) {
   const point = parseBounds(node.bounds);
   adb(['shell', 'input', 'tap', String(point.x), String(point.y)], { quiet: true });
+}
+
+async function tapNode(label, predicate, timeoutMs = 30_000) {
+  tapFoundNode(await waitForNode(label, predicate, timeoutMs));
+}
+
+async function tapNodeUntilVisible(
+  actionLabel, actionPredicate, readyLabel, readyPredicate, timeoutMs = 45_000
+) {
+  const deadline = Date.now() + timeoutMs;
+  let lastTapAt = 0;
+  let lastError;
+  while (Date.now() < deadline) {
+    try {
+      const xml = dumpUi();
+      const ready = findNode(xml, readyPredicate);
+      if (ready) return ready;
+      const action = findNode(xml, actionPredicate);
+      if (action && Date.now() - lastTapAt >= 2_000) {
+        tapFoundNode(action);
+        lastTapAt = Date.now();
+      }
+    } catch (error) {
+      lastError = error;
+    }
+    await sleep(750);
+  }
+  throw new Error(
+    `Timed out waiting for ${readyLabel} after ${actionLabel}.` +
+    (lastError ? ` Last error: ${lastError.message}` : '')
+  );
 }
 
 /** Attach the release-candidate phone identity to direct API assertions made outside the app. */
@@ -320,9 +350,19 @@ async function launchAndWaitForLog(timeoutMs = 45_000) {
   await waitForNode('authenticated Log screen', (node) => node.clickable && node.label === 'Add food', timeoutMs);
 }
 
-async function openQuickAdd() {
-  await tapNode('Add food button', (node) => node.clickable && node.label === 'Add food');
-  await tapNode('Quick add mode', (node) => node.clickable && node.label === 'Quick');
+async function openQuickAdd(name) {
+  await tapNodeUntilVisible(
+    'Add food button',
+    (node) => node.clickable && node.label === 'Add food',
+    'Quick add mode',
+    (node) => node.clickable && node.label === 'Quick',
+  );
+  await tapNodeUntilVisible(
+    'Quick add mode',
+    (node) => node.clickable && node.label === 'Quick',
+    `${name} recent row`,
+    (node) => node.clickable && node.label.startsWith(`${name},`),
+  );
 }
 
 async function logOpenRecentFood(name) {
@@ -331,7 +371,7 @@ async function logOpenRecentFood(name) {
 }
 
 async function logRecentFood(name) {
-  await openQuickAdd();
+  await openQuickAdd(name);
   await logOpenRecentFood(name);
 }
 
@@ -376,7 +416,7 @@ async function main() {
     const offlineName = OFFLINE_FOOD.name;
     const offlineBefore = await countFood(session.access_token, date, offlineName);
     // Load the cached Quick list before isolating the API while Metro remains reachable through adb reverse.
-    await openQuickAdd();
+    await openQuickAdd(offlineName);
     apiProxy.setAvailable(false);
     await logOpenRecentFood(offlineName);
     const pendingBadge = await waitForNode(
