@@ -8,6 +8,14 @@ const repositoryRoot = path.resolve(scriptDirectory, '..');
 const APP_ID = 'app.calibratehealth.mobile';
 const ACTIVITY = `${APP_ID}/app.calibratehealth.wear.MainActivity`;
 const UI_DUMP_PATH = '/sdcard/calibrate-wear-smoke.xml';
+const WEAR_UI_READY_ATTEMPTS = 15;
+const WEAR_UI_POLL_SECONDS = '1';
+const HOME_EXPECTED_TEXT = Object.freeze([
+  'calibrate',
+  "Pair with Calibrate on your phone to see today's summary.",
+  'Connection',
+  'Phone setup required'
+]);
 
 export function parseBounds(value) {
   const match = value.match(/^\[(\d+),(\d+)]\[(\d+),(\d+)]$/);
@@ -34,6 +42,25 @@ export function findTextNode(xml, text) {
   const node = (xml.match(/<node\b[^>]*>/g) ?? [])
     .find((candidate) => attribute(candidate, 'text') === text);
   return node ? { text, bounds: attribute(node, 'bounds') } : null;
+}
+
+/** Wait for one complete reviewed surface; transient splash/partial trees never count as evidence. */
+export function waitForWearUi(expectedText, readUi, waitBetweenAttempts, maxAttempts = WEAR_UI_READY_ATTEMPTS) {
+  if (!Array.isArray(expectedText) || expectedText.length === 0
+      || expectedText.some((text) => typeof text !== 'string' || !text)) {
+    throw new Error('Wear UI readiness requires exact non-empty text selectors.');
+  }
+  if (!Number.isSafeInteger(maxAttempts) || maxAttempts < 1) {
+    throw new Error('Wear UI readiness attempts must be a positive integer.');
+  }
+  let missing = [...expectedText];
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    const xml = readUi();
+    missing = expectedText.filter((text) => !findTextNode(xml, text));
+    if (missing.length === 0) return xml;
+    if (attempt < maxAttempts) waitBetweenAttempts();
+  }
+  throw new Error(`Wear UI did not become ready with expected text: ${missing.join(' | ')}`);
 }
 
 export function resolveWearAdb(environment = process.env, platform = process.platform) {
@@ -88,19 +115,21 @@ export function runWearEmulatorSmoke(environment = process.env) {
   const launch = runAdb(adb, serial, ['shell', 'am', 'start', '-W', '-n', ACTIVITY], { quiet: true });
   if (!launch.includes('Status: ok')) throw new Error(`Wear activity failed to launch:\n${launch}`);
 
-  const home = dumpUi(adb, serial);
-  requireText(home, 'calibrate');
-  requireText(home, "Pair with Calibrate on your phone to see today's summary.");
+  const waitForExpectedUi = (expectedText) => waitForWearUi(
+    expectedText,
+    () => dumpUi(adb, serial),
+    () => runAdb(adb, serial, ['shell', 'sleep', WEAR_UI_POLL_SECONDS], { quiet: true })
+  );
+  const home = waitForExpectedUi(HOME_EXPECTED_TEXT);
   const connection = requireText(home, 'Connection');
-  requireText(home, 'Phone setup required');
   const point = parseBounds(connection.bounds);
   runAdb(adb, serial, ['shell', 'input', 'tap', String(point.x), String(point.y)], { quiet: true });
-  runAdb(adb, serial, ['shell', 'sleep', '1'], { quiet: true });
 
-  const detail = dumpUi(adb, serial);
-  requireText(detail, 'Connection');
-  requireText(detail, `${expectedBuildType} build`);
-  requireText(detail, 'Open Calibrate settings on your phone and choose the nearby watch to begin.');
+  waitForExpectedUi([
+    'Connection',
+    `${expectedBuildType} build`,
+    'Open Calibrate settings on your phone and choose the nearby watch to begin.'
+  ]);
 
   const packageState = runAdb(adb, serial, ['shell', 'dumpsys', 'package', APP_ID], { quiet: true });
   if (packageState.includes('DEBUGGABLE')) throw new Error('Installed Wear release package is debuggable.');
