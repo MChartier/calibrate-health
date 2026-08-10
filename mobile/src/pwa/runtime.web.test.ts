@@ -143,7 +143,7 @@ describe('browser PWA runtime', () => {
         const productionRuntime = createPwaRuntime(production);
         productionRuntime.subscribe(jest.fn());
         await flushRegistration();
-        expect(production.register).toHaveBeenCalledWith('./sw.js', { scope: './' });
+        expect(production.register).toHaveBeenCalledWith('/sw.js', { scope: '/' });
 
         developmentRuntime.dispose();
         productionRuntime.dispose();

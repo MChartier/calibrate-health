@@ -69,8 +69,8 @@ export type PwaRuntime = {
 export const BACK_ONLINE_NOTICE_MS = 5_000;
 // Surface a recoverable failure if an installed worker never takes control after refresh is requested.
 export const UPDATE_APPLY_TIMEOUT_MS = 12_000;
-export const PWA_SERVICE_WORKER_URL = './sw.js';
-export const PWA_SERVICE_WORKER_SCOPE = './';
+export const PWA_SERVICE_WORKER_URL = '/sw.js';
+export const PWA_SERVICE_WORKER_SCOPE = '/';
 
 const SERVER_SNAPSHOT: PwaSnapshot = Object.freeze({
     network: PWA_NETWORK_STATES.ONLINE,
