@@ -155,8 +155,6 @@ export default function TodayScreen() {
                         totalCalories={calories}
                         targetCalories={showCalorieComparison ? target : null}
                         unavailableLabel={unavailableLabel}
-                        dayStatus={dayStatus?.status}
-                        dayStatusFailed={dashboardHasFailedResource}
                         compact
                     />
                     {isPaused && (

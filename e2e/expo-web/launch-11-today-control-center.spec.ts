@@ -159,12 +159,11 @@ async function captureEvidence(page: Page, testInfo: TestInfo) {
 async function expectUnderTargetDashboard(page: Page) {
   const balanceCard = page.getByLabel(/^Daily balance\./);
   await expect(balanceCard).toHaveAccessibleName(
-    'Daily balance. 17% of target. 360 kcal consumed. 2,100 kcal target. 1,740 kcal remaining. Not fully logged.',
+    'Daily balance. 1,740 kcal remaining. 360 eaten out of 2,100 calorie target.',
   );
-  await expect(page.getByTestId('calorie-consumed-value')).toHaveText('360');
-  await expect(page.getByTestId('calorie-target-value')).toHaveText('2,100');
+  await expect(page.getByText('17%', { exact: true })).toBeVisible();
   await expect(page.getByTestId('calorie-balance-value')).toHaveText('1,740');
-  await expect(page.getByText('Remaining (kcal)', { exact: true })).toBeVisible();
+  await expect(page.getByText('kcal remaining', { exact: true })).toBeVisible();
   await expect(page.getByTestId('calorie-gauge-progress')).toHaveAttribute(
     'stroke',
     calibrateDesignTokens.schemes.light.primary,
@@ -204,7 +203,7 @@ test('Today is legible, keyboard-operable, and unclipped at every configured vie
 
   if (testInfo.project.name === 'desktop-chrome') {
     const balanceSurface = page.getByLabel(/^Daily balance\./);
-    await expectContrast(page.getByTestId('calorie-consumed-value'), balanceSurface, 3);
+    await expectContrast(page.getByTestId('calorie-balance-value'), balanceSurface, 3);
 
     await page.keyboard.press('Tab');
     await foodPrimary.focus();
@@ -214,6 +213,8 @@ test('Today is legible, keyboard-operable, and unclipped at every configured vie
     await foodPrimary.press('Enter');
     await expect(page).toHaveURL((url) => url.pathname === '/food-log');
     await page.goto('/today');
+    await expectUnderTargetDashboard(page);
+    await expect(page).toHaveURL((url) => url.pathname === '/today');
 
     const todayPath = new URL(page.url()).pathname;
     await page.getByRole('button', { name: 'Add food', exact: true }).click();
@@ -242,7 +243,7 @@ test('Today is legible, keyboard-operable, and unclipped at every configured vie
 
     await enlargeLeafText(page);
     await expectNoHorizontalOverflow(page);
-    await expect(page.getByTestId('calorie-consumed-value')).toBeVisible();
+    await expect(page.getByTestId('calorie-balance-value')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Add food', exact: true })).toBeVisible();
     await expectWithinViewportWidth(page, page.getByTestId('food-log-summary-card'));
     await expectWithinViewportWidth(page, page.getByTestId('today-weight-card'));
@@ -264,7 +265,7 @@ test('under, at, over, empty, and paused days use the three exact truthful statu
 
   let balanceCard = page.getByLabel(/^Daily balance\./);
   await expect(balanceCard).toHaveAccessibleName(
-    'Daily balance. 80% of target. 1,680 kcal consumed. 2,100 kcal target. 420 kcal remaining. Not fully logged.',
+    'Daily balance. 420 kcal remaining. 1,680 eaten out of 2,100 calorie target.',
   );
   await expect(page.getByTestId('calorie-gauge-progress')).toHaveAttribute(
     'stroke',
@@ -278,7 +279,7 @@ test('under, at, over, empty, and paused days use the three exact truthful statu
 
   balanceCard = page.getByLabel(/^Daily balance\./);
   await expect(balanceCard).toHaveAccessibleName(
-    'Daily balance. 100% of target. 2,100 kcal consumed. 2,100 kcal target. 0 kcal remaining. Fully logged.',
+    'Daily balance. 0 kcal remaining. 2,100 eaten out of 2,100 calorie target.',
   );
   await expect(page.getByTestId('calorie-gauge-progress')).toHaveAttribute(
     'stroke',
@@ -292,9 +293,9 @@ test('under, at, over, empty, and paused days use the three exact truthful statu
 
   balanceCard = page.getByLabel(/^Daily balance\./);
   await expect(balanceCard).toHaveAccessibleName(
-    'Daily balance. 110% of target. 2,310 kcal consumed. 2,100 kcal target. 210 kcal over. Not fully logged.',
+    'Daily balance. 210 kcal over target. 2,310 eaten out of 2,100 calorie target.',
   );
-  await expect(page.getByText('Over (kcal)', { exact: true })).toBeVisible();
+  await expect(page.getByText('kcal over target', { exact: true })).toBeVisible();
   await expect(page.getByTestId('calorie-gauge-progress')).toHaveAttribute(
     'stroke',
     calibrateDesignTokens.schemes.light.danger,
@@ -307,7 +308,7 @@ test('under, at, over, empty, and paused days use the three exact truthful statu
   await page.reload();
 
   await expect(page.getByLabel(/^Daily balance\./)).toHaveAccessibleName(
-    'Daily balance. 0% of target. 0 kcal consumed. 2,100 kcal target. 2,100 kcal remaining. Not fully logged.',
+    'Daily balance. 2,100 kcal remaining. 0 eaten out of 2,100 calorie target.',
   );
   await expect(page.getByText('Nothing logged yet', { exact: true })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Not fully logged', exact: true })).toBeVisible();
@@ -316,7 +317,7 @@ test('under, at, over, empty, and paused days use the three exact truthful statu
   await page.reload();
 
   await expect(page.getByLabel(/^Daily balance\./)).toHaveAccessibleName(
-    'Daily balance. 0 kcal consumed. Tracking paused. Paused.',
+    'Daily balance. Tracking paused. 0 calories logged.',
   );
   await expect(page.getByRole('heading', { name: 'Paused', exact: true })).toBeVisible();
   await expect(page.getByText('Fully logged', { exact: true })).toHaveCount(0);
