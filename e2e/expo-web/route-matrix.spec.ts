@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
+import type { Page } from '@playwright/test';
 import {
   DETERMINISTIC_CLOCK_STEP_MS,
   FROZEN_NOW,
@@ -26,6 +27,14 @@ const AUTHENTICATED_ROUTE_GROUPS = [
   { name: 'public and primary routes', routes: ROUTE_MATRIX.slice(0, 10) },
   { name: 'secondary and alias routes', routes: ROUTE_MATRIX.slice(10) },
 ];
+
+function waitForBarcodeFoodDay(page: Page) {
+  return page.waitForResponse((response) => (
+    new URL(response.url()).pathname === '/api/v1/food-days'
+    && response.request().method() === 'GET'
+    && response.ok()
+  ));
+}
 
 function collectRouteFiles(directory: string): string[] {
   return fs.readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
@@ -111,8 +120,12 @@ for (const routeGroup of AUTHENTICATED_ROUTE_GROUPS) {
             && response.ok()
           ))
         : null;
+      const barcodeFoodDayReady = route.authenticatedPath === '/barcode'
+        ? waitForBarcodeFoodDay(page)
+        : null;
       const directResponse = await page.goto(route.path);
       await authRestored;
+      await barcodeFoodDayReady;
       expect(directResponse?.status(), `authenticated direct entry for ${route.path}`).toBe(200);
       await expect(page, `authenticated destination for ${route.path}`).toHaveURL((url) => (
         url.pathname === route.authenticatedPath
@@ -206,8 +219,10 @@ test('barcode preserves its direct route while authentication restoration is pen
     && response.request().method() === 'GET'
     && response.ok()
   ));
+  const restoredFoodDay = waitForBarcodeFoodDay(page);
   restoreSession();
-  await restoredResponse;
+  await Promise.all([restoredResponse, restoredFoodDay]);
+  await expect(page.getByText('Restoring session...', { exact: true })).toBeHidden();
   await expect(page).toHaveURL((url) => url.pathname === '/barcode');
   await expect(page.getByRole('heading', {
     name: /Camera permission|Scan barcode|Food logging is unavailable/,
