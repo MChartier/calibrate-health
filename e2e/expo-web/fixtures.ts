@@ -11,6 +11,33 @@ export const FROZEN_NOW = '2026-07-21T19:00:00.000Z';
 export const FROZEN_LOCAL_DATE = '2026-07-21';
 export const DETERMINISTIC_CLOCK_STEP_MS = 16;
 
+const TRANSIENT_PWA_TITLES = [
+  'Back online',
+  'Update ready',
+  'Update failed',
+  'Updating Calibrate',
+] as const;
+
+/** Keep unrelated late PWA lifecycle notices from intercepting feature-test actions. */
+export async function hideTransientPwaNotices(page: Page) {
+  await page.evaluate((titles) => {
+    const testWindow = window as typeof window & {
+      __calibrateTransientPwaObserver?: MutationObserver;
+    };
+    const hideKnownNotices = () => {
+      for (const notice of document.querySelectorAll<HTMLElement>('[role="status"], [role="alert"]')) {
+        const text = notice.textContent ?? '';
+        if (titles.some((title) => text.includes(title))) notice.style.display = 'none';
+      }
+    };
+    testWindow.__calibrateTransientPwaObserver?.disconnect();
+    hideKnownNotices();
+    const observer = new MutationObserver(hideKnownNotices);
+    observer.observe(document.documentElement, { childList: true, subtree: true, characterData: true });
+    testWindow.__calibrateTransientPwaObserver = observer;
+  }, [...TRANSIENT_PWA_TITLES]);
+}
+
 export const UX_FIXTURE_STATES = [
   'signed-out',
   'populated',

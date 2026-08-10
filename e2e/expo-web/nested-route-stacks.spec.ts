@@ -1,7 +1,7 @@
 import { mkdir } from 'node:fs/promises';
 import path from 'node:path';
 import type { Page } from '@playwright/test';
-import { expect, expectApiFailure, test } from './fixtures';
+import { expect, expectApiFailure, hideTransientPwaNotices, test } from './fixtures';
 
 const EVIDENCE_DIR = path.resolve('docs/screenshots/launch-07');
 
@@ -111,6 +111,7 @@ test('signed-in not-found recovery returns to Today', async ({ page, ux }) => {
   await page.goto('/missing-signed-in-page');
 
   await expectDirectEntryTitle(page, 'Page not found', 'Page not found - Calibrate');
+  await hideTransientPwaNotices(page);
   await page.getByRole('button', { name: 'Go to Today', exact: true }).click();
   await expect(page).toHaveURL((url) => url.pathname === '/today');
 });
