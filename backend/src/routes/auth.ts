@@ -105,12 +105,13 @@ router.post('/register', async (req, res) => {
     if (passwordError) {
         return res.status(400).json({ message: passwordError });
     }
-    const legal = validateRegistrationLegalAcceptance(req.body);
-    if (!legal.ok) {
-        return res.status(400).json(invalidLegalResponse(legal.code));
-    }
-
     const emailConfig = resolveEmailDeliveryConfig();
+    if (emailConfig.hostedRequired) {
+        const legal = validateRegistrationLegalAcceptance(req.body);
+        if (!legal.ok) {
+            return res.status(400).json(invalidLegalResponse(legal.code));
+        }
+    }
     if (emailConfig.hostedRequired && emailConfig.mode === EMAIL_DELIVERY_MODES.DISABLED) {
         return res.status(503).json({
             message: 'Account email delivery is temporarily unavailable.',
@@ -136,12 +137,12 @@ router.post('/register', async (req, res) => {
                 email,
                 password_hash,
                 email_verified_at: verificationRequired ? null : new Date(),
-                legal_acceptances: {
+                legal_acceptances: emailConfig.hostedRequired ? {
                     create: {
                         terms_version: CURRENT_TERMS_VERSION,
                         privacy_version: CURRENT_PRIVACY_VERSION
                     }
-                }
+                } : undefined
             },
             select: USER_CLIENT_SELECT
         });
@@ -186,11 +187,6 @@ router.post('/mobile/register', async (req, res) => {
     if (passwordError) {
         return res.status(400).json({ message: passwordError });
     }
-    const legal = validateRegistrationLegalAcceptance(req.body);
-    if (!legal.ok) {
-        return res.status(400).json(invalidLegalResponse(legal.code));
-    }
-
     const device = parseMobileDevicePayload(req.body);
     if (!device.ok) {
         return res.status(400).json({ message: device.message });
@@ -200,6 +196,12 @@ router.post('/mobile/register', async (req, res) => {
     }
 
     const emailConfig = resolveEmailDeliveryConfig();
+    if (emailConfig.hostedRequired) {
+        const legal = validateRegistrationLegalAcceptance(req.body);
+        if (!legal.ok) {
+            return res.status(400).json(invalidLegalResponse(legal.code));
+        }
+    }
     if (emailConfig.hostedRequired && emailConfig.mode === EMAIL_DELIVERY_MODES.DISABLED) {
         return res.status(503).json({
             message: 'Account email delivery is temporarily unavailable.',
@@ -225,12 +227,12 @@ router.post('/mobile/register', async (req, res) => {
                 email,
                 password_hash,
                 email_verified_at: verificationRequired ? null : new Date(),
-                legal_acceptances: {
+                legal_acceptances: emailConfig.hostedRequired ? {
                     create: {
                         terms_version: CURRENT_TERMS_VERSION,
                         privacy_version: CURRENT_PRIVACY_VERSION
                     }
-                }
+                } : undefined
             },
             select: USER_CLIENT_SELECT
         });

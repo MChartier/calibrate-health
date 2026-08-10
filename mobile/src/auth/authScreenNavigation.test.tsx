@@ -25,6 +25,7 @@ const mockUseAuth = useAuth as jest.MockedFunction<typeof useAuth>;
 const mockUseLocalSearchParams = useLocalSearchParams as jest.MockedFunction<typeof useLocalSearchParams>;
 const mockLink = Link as unknown as jest.Mock;
 const SELF_HOSTED_URL = 'http://127.0.0.1:3300';
+const HOSTED_URL = 'https://calibratehealth.app';
 
 function authContextStub() {
     return {
@@ -104,14 +105,13 @@ describe('auth screen server navigation', () => {
         fireEvent.changeText(screen.getByLabelText('Email'), 'new@example.com');
         fireEvent.changeText(screen.getByLabelText('Password'), 'secret12');
         fireEvent.changeText(screen.getByLabelText('Confirm password'), 'secret12');
-        fireEvent.press(screen.getByRole('checkbox', { name: 'I agree to the current Terms of service' }));
-        fireEvent.press(screen.getByRole('checkbox', { name: 'I accept the current Privacy policy' }));
+        expect(screen.queryByRole('checkbox')).toBeNull();
         fireEvent.press(screen.getByLabelText('Create account'));
 
         await waitFor(() => {
             expect(auth.register).toHaveBeenCalledWith('new@example.com', 'secret12', SELF_HOSTED_URL, {
-                acceptTerms: true,
-                acceptPrivacy: true
+                acceptTerms: false,
+                acceptPrivacy: false
             });
         });
     });
@@ -146,8 +146,10 @@ describe('auth screen server navigation', () => {
     });
 
 
-    it('does not record legal acceptance until both choices are explicit', () => {
+    it('requires both legal choices for hosted account creation', () => {
         const auth = authContextStub();
+        auth.serverUrl = HOSTED_URL;
+        mockUseLocalSearchParams.mockReturnValue({ serverUrl: HOSTED_URL });
         mockUseAuth.mockReturnValue(auth as unknown as ReturnType<typeof useAuth>);
         const screen = render(<RegisterScreen />);
 
@@ -191,8 +193,6 @@ describe('auth screen server navigation', () => {
         fireEvent.changeText(screen.getByLabelText('Email'), 'existing@example.com');
         fireEvent.changeText(screen.getByLabelText('Password'), 'secret12');
         fireEvent.changeText(screen.getByLabelText('Confirm password'), 'secret12');
-        fireEvent.press(screen.getByRole('checkbox', { name: 'I agree to the current Terms of service' }));
-        fireEvent.press(screen.getByRole('checkbox', { name: 'I accept the current Privacy policy' }));
         fireEvent.press(screen.getByLabelText('Create account'));
 
         await waitFor(() => {

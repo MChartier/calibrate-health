@@ -1520,12 +1520,12 @@ export interface components {
             /** Format: email */
             email: string;
             password: string;
-            terms_version: string;
-            privacy_version: string;
+            terms_version?: string;
+            privacy_version?: string;
             /** @constant */
-            accept_terms: true;
+            accept_terms?: true;
             /** @constant */
-            accept_privacy: true;
+            accept_privacy?: true;
         };
         BrowserAuthResponse: {
             user: components["schemas"]["UserClientPayload"];
@@ -1547,12 +1547,12 @@ export interface components {
             /** @enum {string} */
             device_platform?: "android_phone";
             device_name?: string;
-            terms_version: string;
-            privacy_version: string;
+            terms_version?: string;
+            privacy_version?: string;
             /** @constant */
-            accept_terms: true;
+            accept_terms?: true;
             /** @constant */
-            accept_privacy: true;
+            accept_privacy?: true;
         };
         EmailVerificationResendRequest: {
             /** Format: email */

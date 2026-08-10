@@ -19,10 +19,27 @@ test('account access prioritizes email verification before legal acceptance', ()
   );
 });
 
-test('account access requires current legal versions after verification', () => {
+test('hosted account access requires current legal versions after verification', () => {
+  const previous = { NODE_ENV: process.env.NODE_ENV, CALIBRATE_HOSTED_SERVICE: process.env.CALIBRATE_HOSTED_SERVICE };
+  process.env.NODE_ENV = 'production';
+  process.env.CALIBRATE_HOSTED_SERVICE = 'true';
+  try {
+    assert.deepEqual(
+      serializeAccountAccess({ email_verified_at: new Date(), legal_acceptances: [] }),
+      { state: 'legal_acceptance_required', email_verified: true, legal_current: false }
+    );
+  } finally {
+    for (const [key, value] of Object.entries(previous)) {
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
+  }
+});
+
+test('self-hosted account access does not require Calibrate hosted-service consent', () => {
   assert.deepEqual(
     serializeAccountAccess({ email_verified_at: new Date(), legal_acceptances: [] }),
-    { state: 'legal_acceptance_required', email_verified: true, legal_current: false }
+    { state: 'full', email_verified: true, legal_current: true }
   );
 });
 
@@ -37,14 +54,8 @@ test('account access is full only when verification and current consent are pres
     legal_current: true
   });
 });
-test('background jobs use the current verification and legal acceptance boundary', () => {
+test('self-hosted background jobs require verification without hosted legal consent', () => {
   assert.deepEqual(CURRENT_ACCOUNT_ACCESS_WHERE, {
-    email_verified_at: { not: null },
-    legal_acceptances: {
-      some: {
-        terms_version: '2026-08-09',
-        privacy_version: '2026-07-24'
-      }
-    }
+    email_verified_at: { not: null }
   });
 });

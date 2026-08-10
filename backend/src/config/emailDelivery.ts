@@ -41,11 +41,14 @@ const parsePort = (value: string | undefined): number | null => {
   return Number.isSafeInteger(parsed) && parsed > 0 && parsed <= 65535 ? parsed : null;
 };
 
+/** The official hosted service owns email delivery and legal-consent policy. */
+export const isHostedServiceDeployment = (env: NodeJS.ProcessEnv = process.env): boolean =>
+  env.CALIBRATE_HOSTED_SERVICE?.trim().toLowerCase() === 'true' &&
+  isProductionOrStagingEnv(env.NODE_ENV);
+
 /** Resolve provider-neutral SMTP configuration without exposing any credentials. */
 export function resolveEmailDeliveryConfig(env: NodeJS.ProcessEnv = process.env): EmailDeliveryConfig {
-  const hostedRequired =
-    env.CALIBRATE_HOSTED_SERVICE?.trim().toLowerCase() === 'true' &&
-    isProductionOrStagingEnv(env.NODE_ENV);
+  const hostedRequired = isHostedServiceDeployment(env);
   const publicAppOrigin = normalizeOrigin(env.PUBLIC_APP_ORIGIN) ??
     (hostedRequired ? 'https://calibratehealth.app' : null);
   const mode = env.EMAIL_DELIVERY_MODE?.trim().toLowerCase() ?? EMAIL_DELIVERY_MODES.DISABLED;
@@ -60,7 +63,8 @@ export function resolveEmailDeliveryConfig(env: NodeJS.ProcessEnv = process.env)
   const username = env.SMTP_USERNAME?.trim() || null;
   const password = env.SMTP_PASSWORD?.trim() || null;
   const credentialsComplete = Boolean(username) === Boolean(password);
-  if (!host || !from || !port || !publicAppOrigin || !credentialsComplete) {
+  const hostedOriginIsSecure = !hostedRequired || publicAppOrigin?.startsWith('https://') === true;
+  if (!host || !from || !port || !publicAppOrigin || !credentialsComplete || !hostedOriginIsSecure) {
     return { mode: EMAIL_DELIVERY_MODES.DISABLED, hostedRequired, publicAppOrigin };
   }
 

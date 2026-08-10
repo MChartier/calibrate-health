@@ -15,7 +15,7 @@ import { getSessionRestoreErrorMessage } from './authErrors';
 import type { AccountDeletionCleanupNotice } from '../account/accountDeletionNotice';
 import { cleanupBrowserPushBeforeSessionChange } from '../notifications/browserPush.web';
 import { restoreBrowserDevelopmentSession } from './devAutoLogin';
-import { requireRegistrationLegalAcceptance, type RegistrationLegalAcceptance } from './accountAccess';
+import { requireRegistrationLegalAcceptance, requiresHostedLegalAcceptance, type RegistrationLegalAcceptance } from './accountAccess';
 
 type AuthContextValue = {
     api: CalibrateApiClient;
@@ -130,21 +130,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         _serverCandidate: string,
         acceptance: RegistrationLegalAcceptance
     ) => {
-        const confirmedAcceptance = requireRegistrationLegalAcceptance(acceptance);
         const payload = await authenticateAgainstConfirmedServer({
             candidate: serverUrl,
             confirmServer: confirmCurrentServer,
-            authenticate: (baseUrl) => new CalibrateApiClient({
-                baseUrl,
-                requestCredentials: 'include'
-            }).registerBrowser({
-                email,
-                password,
-                terms_version: CURRENT_TERMS_VERSION,
-                privacy_version: CURRENT_PRIVACY_VERSION,
-                accept_terms: confirmedAcceptance.acceptTerms,
-                accept_privacy: confirmedAcceptance.acceptPrivacy
-            })
+            authenticate: (baseUrl) => {
+                const legalAcceptance = requiresHostedLegalAcceptance(baseUrl)
+                    ? requireRegistrationLegalAcceptance(acceptance)
+                    : null;
+                return new CalibrateApiClient({
+                    baseUrl,
+                    requestCredentials: 'include'
+                }).registerBrowser({
+                    email,
+                    password,
+                    ...(legalAcceptance ? {
+                        terms_version: CURRENT_TERMS_VERSION,
+                        privacy_version: CURRENT_PRIVACY_VERSION,
+                        accept_terms: legalAcceptance.acceptTerms,
+                        accept_privacy: legalAcceptance.acceptPrivacy
+                    } : {})
+                });
+            }
         });
         if (!payload) return false;
         setUser(payload.user);

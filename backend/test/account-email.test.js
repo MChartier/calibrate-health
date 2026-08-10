@@ -44,6 +44,19 @@ test('SMTP configuration requires a complete provider-neutral transport', () => 
   assert.equal(config.secure, true);
 });
 
+test('hosted account links reject a plaintext public origin', () => {
+  const config = resolveEmailDeliveryConfig({
+    NODE_ENV: 'production',
+    CALIBRATE_HOSTED_SERVICE: 'true',
+    EMAIL_DELIVERY_MODE: 'smtp',
+    SMTP_HOST: 'smtp.example.test',
+    SMTP_FROM: 'no-reply@example.test',
+    PUBLIC_APP_ORIGIN: 'http://calibratehealth.app'
+  });
+  assert.equal(config.mode, EMAIL_DELIVERY_MODES.DISABLED);
+  assert.equal(config.hostedRequired, true);
+});
+
 test('account links keep credentials out of query strings and referrers', () => {
   const config = {
     mode: 'smtp',

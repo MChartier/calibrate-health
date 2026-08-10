@@ -35,7 +35,7 @@ import {
     type AccountDeletionCleanupNotice
 } from '../account/accountDeletionNotice';
 import { DEV_TEST_EMAIL, DEV_TEST_PASSWORD, shouldDevAutoLogin } from './devAutoLogin';
-import { requireRegistrationLegalAcceptance, type RegistrationLegalAcceptance } from './accountAccess';
+import { requireRegistrationLegalAcceptance, requiresHostedLegalAcceptance, type RegistrationLegalAcceptance } from './accountAccess';
 
 type AuthContextValue = {
     api: CalibrateApiClient;
@@ -362,7 +362,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             serverCandidate: string,
             acceptance: RegistrationLegalAcceptance
         ): Promise<boolean> => {
-            const confirmedAcceptance = requireRegistrationLegalAcceptance(acceptance);
             assertAccountDeletionCleanupAcknowledged(accountDeletionCleanupNotice);
             const nextDeviceId = deviceId ?? (await getOrCreateDeviceId());
             setDeviceId(nextDeviceId);
@@ -370,6 +369,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 candidate: serverCandidate,
                 confirmServer: confirmSelectedServerUrl,
                 authenticate: (confirmedServerUrl) => {
+                    const legalAcceptance = requiresHostedLegalAcceptance(confirmedServerUrl)
+                        ? requireRegistrationLegalAcceptance(acceptance)
+                        : null;
                     const authClient = new CalibrateApiClient({
                         baseUrl: confirmedServerUrl,
                         clientIdentity: MOBILE_CLIENT_IDENTITY,
@@ -378,10 +380,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                     return authClient.registerMobile({
                         email,
                         password,
-                        terms_version: CURRENT_TERMS_VERSION,
-                        privacy_version: CURRENT_PRIVACY_VERSION,
-                        accept_terms: confirmedAcceptance.acceptTerms,
-                        accept_privacy: confirmedAcceptance.acceptPrivacy,
+                        ...(legalAcceptance ? {
+                            terms_version: CURRENT_TERMS_VERSION,
+                            privacy_version: CURRENT_PRIVACY_VERSION,
+                            accept_terms: legalAcceptance.acceptTerms,
+                            accept_privacy: legalAcceptance.acceptPrivacy
+                        } : {}),
                         device_id: nextDeviceId,
                         device_platform: MOBILE_DEVICE_PLATFORMS.ANDROID_PHONE,
                         device_name: Application.applicationName ?? 'Android device'

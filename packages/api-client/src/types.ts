@@ -312,14 +312,14 @@ export type MobileAuthRequest = {
     device_name?: string;
 };
 
-export type MobileRegistrationRequest = MobileAuthRequest & RegistrationLegalAcceptance;
+export type MobileRegistrationRequest = MobileAuthRequest & Partial<RegistrationLegalAcceptance>;
 
 export type BrowserAuthRequest = {
     email: string;
     password: string;
 };
 
-export type BrowserRegistrationRequest = BrowserAuthRequest & RegistrationLegalAcceptance;
+export type BrowserRegistrationRequest = BrowserAuthRequest & Partial<RegistrationLegalAcceptance>;
 
 export type EmailVerificationResendRequest = {
     email?: string;

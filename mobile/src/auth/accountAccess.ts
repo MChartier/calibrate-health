@@ -1,4 +1,5 @@
 import type { UserClientPayload } from '@calibrate/api-client';
+import { HOSTED_SERVER_URL, normalizeServerUrl } from '../config/server';
 
 export const ACCOUNT_ACCESS_STATES = {
     FULL: 'full',
@@ -12,6 +13,11 @@ export type RegistrationLegalAcceptance = {
     acceptTerms: boolean;
     acceptPrivacy: boolean;
 };
+
+/** Only accounts created on the official hosted service accept Calibrate's legal documents. */
+export function requiresHostedLegalAcceptance(serverUrl: string): boolean {
+    return normalizeServerUrl(serverUrl) === HOSTED_SERVER_URL;
+}
 
 export function requireRegistrationLegalAcceptance(
     acceptance: RegistrationLegalAcceptance

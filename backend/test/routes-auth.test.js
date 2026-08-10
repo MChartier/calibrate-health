@@ -172,7 +172,7 @@ test('auth route: POST /register creates a user and logs them in', async () => {
   const [handler] = getRouteHandlers(router, 'post', '/register');
 
   const req = {
-    body: { email: ' TEST@Example.COM ', password: 'password123', ...CURRENT_LEGAL_ACCEPTANCE },
+    body: { email: ' TEST@Example.COM ', password: 'password123' },
     login: (_user, cb) => cb(null)
   };
   const res = createRes();
@@ -182,9 +182,7 @@ test('auth route: POST /register creates a user and logs them in', async () => {
   assert.deepEqual(findFirstArgs.where, { email: { equals: createdUser.email, mode: 'insensitive' } });
   assert.equal(createArgs.data.email, createdUser.email);
   assert.ok(createArgs.data.email_verified_at instanceof Date);
-  assert.deepEqual(createArgs.data.legal_acceptances, {
-    create: { terms_version: '2026-08-09', privacy_version: '2026-07-24' }
-  });
+  assert.equal(createArgs.data.legal_acceptances, undefined);
   assert.deepEqual(res.body, {
     user: {
       id: createdUser.id,
@@ -367,29 +365,39 @@ test('auth route: GET /me returns 401 when not authenticated', async () => {
 });
 
 
-test('auth route: registration requires explicit current legal versions', async () => {
-  const prismaStub = { user: { findFirst: async () => { throw new Error('should not be called'); } } };
-  const router = loadAuthRouter({
-    prismaStub,
-    passportStub: { authenticate: () => () => {} },
-    bcryptStub: { genSalt: async () => 'salt', hash: async () => 'hash' }
-  });
-  const [handler] = getRouteHandlers(router, 'post', '/register');
+test('hosted registration requires explicit current legal versions', async () => {
+  const previous = { NODE_ENV: process.env.NODE_ENV, CALIBRATE_HOSTED_SERVICE: process.env.CALIBRATE_HOSTED_SERVICE };
+  process.env.NODE_ENV = 'production';
+  process.env.CALIBRATE_HOSTED_SERVICE = 'true';
+  try {
+    const prismaStub = { user: { findFirst: async () => { throw new Error('should not be called'); } } };
+    const router = loadAuthRouter({
+      prismaStub,
+      passportStub: { authenticate: () => () => {} },
+      bcryptStub: { genSalt: async () => 'salt', hash: async () => 'hash' }
+    });
+    const [handler] = getRouteHandlers(router, 'post', '/register');
 
-  const missing = createRes();
-  await handler({ body: { email: 'test@example.com', password: 'password123' } }, missing);
-  assert.equal(missing.statusCode, 400);
-  assert.equal(missing.body.code, 'INVALID_LEGAL_ACCEPTANCE');
+    const missing = createRes();
+    await handler({ body: { email: 'test@example.com', password: 'password123' } }, missing);
+    assert.equal(missing.statusCode, 400);
+    assert.equal(missing.body.code, 'INVALID_LEGAL_ACCEPTANCE');
 
-  const outdated = createRes();
-  await handler({ body: {
-    email: 'test@example.com',
-    password: 'password123',
-    ...CURRENT_LEGAL_ACCEPTANCE,
-    terms_version: '2025-01-01'
-  } }, outdated);
-  assert.equal(outdated.statusCode, 400);
-  assert.equal(outdated.body.code, 'INVALID_LEGAL_VERSION');
+    const outdated = createRes();
+    await handler({ body: {
+      email: 'test@example.com',
+      password: 'password123',
+      ...CURRENT_LEGAL_ACCEPTANCE,
+      terms_version: '2025-01-01'
+    } }, outdated);
+    assert.equal(outdated.statusCode, 400);
+    assert.equal(outdated.body.code, 'INVALID_LEGAL_VERSION');
+  } finally {
+    for (const [key, value] of Object.entries(previous)) {
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
+  }
 });
 
 test('auth route: hosted registration fails closed when account email is unavailable', async () => {

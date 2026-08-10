@@ -42,6 +42,21 @@ const fullStatus = {
   required: { terms_version: '2026-08-09', privacy_version: '2026-07-24' },
   accepted: { terms_version: '2026-08-09', privacy_version: '2026-07-24', accepted_at: '2026-08-09T00:00:00.000Z' }
 };
+test('self-hosted deployments do not expose Calibrate hosted legal-consent routes', () => {
+  const router = loadRouter({
+    acceptCurrentLegalDocuments: async () => fullStatus,
+    getLegalStatus: async () => fullStatus
+  });
+  const hostedBoundary = router.stack.find((candidate) => !candidate.route).handle;
+  const res = response();
+  let nextCalled = false;
+
+  hostedBoundary({}, res, () => { nextCalled = true; });
+
+  assert.equal(nextCalled, false);
+  assert.equal(res.statusCode, 404);
+  assert.equal(res.body.code, 'LEGAL_CONSENT_NOT_REQUIRED');
+});
 
 test('legal acceptance rejects outdated versions with a stable code', async () => {
   let accepted = false;

@@ -9,8 +9,17 @@ import {
   getLegalStatus
 } from '../services/accountAccess';
 import { logSafeOperationalError } from '../observability';
+import { isHostedServiceDeployment } from '../config/emailDelivery';
 
 const router = express.Router();
+router.use((_req, res, next) => {
+  if (isHostedServiceDeployment()) return next();
+  return res.status(404).json({
+    message: 'Hosted legal consent is not required by this server.',
+    code: 'LEGAL_CONSENT_NOT_REQUIRED',
+    retryable: false
+  });
+});
 router.use(requireAuthenticatedUser);
 
 router.get('/status', async (req, res) => {

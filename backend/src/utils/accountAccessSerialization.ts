@@ -3,6 +3,7 @@ import {
   CURRENT_PRIVACY_VERSION,
   CURRENT_TERMS_VERSION
 } from '../../../shared/legalVersions';
+import { isHostedServiceDeployment } from '../config/emailDelivery';
 
 export type AccountAccessState =
   | 'full'
@@ -32,12 +33,14 @@ export type AccountAccessSource = Prisma.UserGetPayload<{ select: typeof ACCOUNT
 /** Reuse the same durable trust boundary for background jobs that bypass request middleware. */
 export const CURRENT_ACCOUNT_ACCESS_WHERE = {
   email_verified_at: { not: null },
-  legal_acceptances: {
-    some: {
-      terms_version: CURRENT_TERMS_VERSION,
-      privacy_version: CURRENT_PRIVACY_VERSION
+  ...(isHostedServiceDeployment() ? {
+    legal_acceptances: {
+      some: {
+        terms_version: CURRENT_TERMS_VERSION,
+        privacy_version: CURRENT_PRIVACY_VERSION
+      }
     }
-  }
+  } : {})
 } satisfies Prisma.UserWhereInput;
 
 /** Derive authorization state from durable verification and versioned consent records. */
@@ -45,7 +48,7 @@ export function serializeAccountAccess(
   source: AccountAccessSource | { email_verified_at?: Date | null; legal_acceptances?: AccountAccessSource['legal_acceptances'] }
 ): AccountAccess {
   const emailVerified = source.email_verified_at === undefined || source.email_verified_at !== null;
-  const legalCurrent = source.legal_acceptances === undefined || source.legal_acceptances.some((acceptance) =>
+  const legalCurrent = !isHostedServiceDeployment() || source.legal_acceptances === undefined || source.legal_acceptances.some((acceptance) =>
     acceptance.terms_version === CURRENT_TERMS_VERSION &&
     acceptance.privacy_version === CURRENT_PRIVACY_VERSION
   );

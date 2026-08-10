@@ -1,6 +1,7 @@
 import React from 'react';
-import { fireEvent, render } from '@testing-library/react-native';
+import { fireEvent, render, waitFor } from '@testing-library/react-native';
 import VerifyEmailRoute from '../../app/verify-email';
+import { useLocalSearchParams } from 'expo-router';
 import { useAuth } from './AuthContext';
 
 jest.mock('./AuthContext', () => ({ useAuth: jest.fn() }));
@@ -11,7 +12,7 @@ jest.mock('react-native-safe-area-context', () => ({
 jest.mock('expo-router', () => {
     const ReactActual = jest.requireActual<typeof React>('react');
     return {
-        useLocalSearchParams: () => ({}),
+        useLocalSearchParams: jest.fn(),
         router: { replace: jest.fn() },
         Link: ({ children }: { children: React.ReactElement }) =>
             ReactActual.createElement(ReactActual.Fragment, null, children)
@@ -19,8 +20,12 @@ jest.mock('expo-router', () => {
 });
 
 const mockUseAuth = useAuth as jest.MockedFunction<typeof useAuth>;
+const mockUseLocalSearchParams = useLocalSearchParams as jest.MockedFunction<typeof useLocalSearchParams>;
 
 describe('account trust routes', () => {
+    beforeEach(() => {
+        mockUseLocalSearchParams.mockReturnValue({});
+    });
     it('keeps logout, support, export, and deletion discoverable for an unverified session', () => {
         const logout = jest.fn(async () => undefined);
         mockUseAuth.mockReturnValue({
@@ -48,5 +53,45 @@ describe('account trust routes', () => {
         expect(screen.getByRole('button', { name: 'Sign out' })).toBeTruthy();
         fireEvent.press(screen.getByRole('button', { name: 'Sign out' }));
         expect(logout).toHaveBeenCalledTimes(1);
+    });
+
+    it('refreshes the signed-in account after consuming a verification token', async () => {
+        const signedInUser = {
+            id: 7,
+            email: 'signed-in@example.com',
+            account_access: {
+                state: 'full',
+                email_verified: true,
+                legal_current: true
+            }
+        };
+        const tokenUser = {
+            ...signedInUser,
+            id: 8,
+            email: 'token-owner@example.com'
+        };
+        const confirmEmailVerification = jest.fn(async () => ({ user: tokenUser }));
+        const getMe = jest.fn(async () => ({ user: signedInUser }));
+        const updateCurrentUser = jest.fn();
+        mockUseLocalSearchParams.mockReturnValue({ token: 'verification-token' });
+        mockUseAuth.mockReturnValue({
+            api: {
+                confirmEmailVerification,
+                getMe,
+                resendEmailVerification: jest.fn()
+            },
+            user: signedInUser,
+            updateCurrentUser,
+            logout: jest.fn(async () => undefined)
+        } as unknown as ReturnType<typeof useAuth>);
+
+        render(<VerifyEmailRoute />);
+
+        await waitFor(() => {
+            expect(confirmEmailVerification).toHaveBeenCalledWith({ token: 'verification-token' });
+            expect(getMe).toHaveBeenCalledTimes(1);
+            expect(updateCurrentUser).toHaveBeenCalledWith(signedInUser);
+        });
+        expect(updateCurrentUser).not.toHaveBeenCalledWith(tokenUser);
     });
 });

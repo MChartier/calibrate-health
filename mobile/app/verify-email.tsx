@@ -40,11 +40,14 @@ export default function VerifyEmailRoute() {
         if (!token || confirmationStarted.current) return;
         confirmationStarted.current = true;
         let active = true;
-        void api.confirmEmailVerification({ token }).then((result) => {
+        void api.confirmEmailVerification({ token }).then(async () => {
             if (!active) return;
             setToken(null);
             setMessage('Email verified.');
-            if (user) updateCurrentUser({ ...user, account_access: result.account_access });
+            if (user) {
+                const refreshed = await api.getMe();
+                if (active) updateCurrentUser(refreshed.user);
+            }
         }).catch((requestError: unknown) => {
             if (active) setError(getAccountTrustErrorMessage(requestError, 'Unable to verify this email. Try again.'));
         }).finally(() => {

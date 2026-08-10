@@ -14,6 +14,7 @@ import { useAuth } from '../../src/auth/AuthContext';
 import { readAuthServerDraft } from '../../src/auth/authServerDraft';
 import { useAppTheme } from '../../src/theme';
 import { getAuthActionErrorMessage } from '../../src/errors/presentation';
+import { requiresHostedLegalAcceptance } from '../../src/auth/accountAccess';
 import {
     MAX_AUTH_PASSWORD_BYTES,
     MIN_AUTH_PASSWORD_LENGTH,
@@ -36,6 +37,7 @@ export default function RegisterScreen() {
     const [consentError, setConsentError] = useState<string | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const legalConsentRequired = requiresHostedLegalAcceptance(serverInput);
 
     useEffect(() => {
         setServerInput(routedServerDraft ?? serverUrl);
@@ -59,7 +61,7 @@ export default function RegisterScreen() {
             setError('Passwords do not match.');
             return;
         }
-        if (!termsAccepted || !privacyAccepted) {
+        if (legalConsentRequired && (!termsAccepted || !privacyAccepted)) {
             setConsentError('Review and accept both legal documents to create an account.');
             return;
         }
@@ -118,7 +120,7 @@ export default function RegisterScreen() {
                     onChangeText={setConfirmPassword}
                     onSubmitEditing={() => void handleRegister()}
                 />
-                <LegalConsentFields
+                {legalConsentRequired && <LegalConsentFields
                     termsAccepted={termsAccepted}
                     privacyAccepted={privacyAccepted}
                     onTermsAcceptedChange={(checked) => {
@@ -131,7 +133,7 @@ export default function RegisterScreen() {
                     }}
                     disabled={isSubmitting}
                     error={consentError}
-                />
+                />}
                 {canSelectServer && (
                     <ServerUrlControl
                         value={serverInput}

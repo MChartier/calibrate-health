@@ -2216,7 +2216,7 @@ components:
     BrowserRegistrationRequest:
       type: object
       additionalProperties: false
-      required: [email, password, terms_version, privacy_version, accept_terms, accept_privacy]
+      required: [email, password]
       properties:
         email: { type: string, format: email }
         password: { type: string, minLength: 8, maxLength: 72 }
@@ -2253,7 +2253,7 @@ components:
     MobileRegistrationRequest:
       type: object
       additionalProperties: false
-      required: [email, password, device_id, terms_version, privacy_version, accept_terms, accept_privacy]
+      required: [email, password, device_id]
       properties:
         email: { type: string, format: email }
         password: { type: string, minLength: 8, maxLength: 72 }

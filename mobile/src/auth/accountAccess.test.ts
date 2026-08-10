@@ -3,6 +3,7 @@ import {
     getAccountAccessState,
     hasFullAccountAccess,
     requireRegistrationLegalAcceptance,
+    requiresHostedLegalAcceptance,
     restrictedAccountRoute
 } from './accountAccess';
 
@@ -21,6 +22,12 @@ describe('account access policy', () => {
         const user = { account_access: { state } } as never;
         expect(hasFullAccountAccess(user)).toBe(false);
         expect(restrictedAccountRoute(user)).toBe(route);
+    });
+
+    it('requires legal consent only for the official hosted service', () => {
+        expect(requiresHostedLegalAcceptance('https://calibratehealth.app')).toBe(true);
+        expect(requiresHostedLegalAcceptance('https://health.example.com')).toBe(false);
+        expect(requiresHostedLegalAcceptance('http://10.0.2.2:3000')).toBe(false);
     });
 
     it('requires both explicit legal choices before registration can record acceptance', () => {
