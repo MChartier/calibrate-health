@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { FlatList, Linking, Pressable, StyleSheet, View } from 'react-native';
+import { FlatList, Linking, Platform, Pressable, StyleSheet, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router } from 'expo-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -604,6 +604,8 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
                     </View>
                     {selection ? renderSelectionEditor() : (
                         <FlatList
+                            testID="food-search-results"
+                            tabIndex={Platform.OS === 'web' ? 0 : undefined}
                             data={searchRows}
                             keyExtractor={(item) => item.key}
                             renderItem={renderBrowseRow}

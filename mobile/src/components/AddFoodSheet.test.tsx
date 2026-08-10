@@ -1,4 +1,5 @@
 import React from 'react';
+import { Platform } from 'react-native';
 import { cleanup, fireEvent, render, waitFor } from '@testing-library/react-native';
 import { onlineManager, QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MEAL_PERIODS } from '@calibrate/shared';
@@ -82,6 +83,16 @@ describe('AddFoodSheet async resource states', () => {
         expect(screen.queryByText('No matching foods found.')).toBeNull();
         expect(screen.queryByRole('button', { name: 'Retry' })).toBeNull();
         expect(mockApi.searchFood).not.toHaveBeenCalled();
+    });
+
+    it('keeps the empty web search result region keyboard reachable', () => {
+        const replacedPlatform = jest.replaceProperty(Platform, 'OS', 'web');
+        try {
+            const screen = renderSheet();
+            expect(screen.getByTestId('food-search-results').props.tabIndex).toBe(0);
+        } finally {
+            replacedPlatform.restore();
+        }
     });
 
     it('keeps cached recipes usable while labeling them stale offline', async () => {
