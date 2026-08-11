@@ -164,15 +164,18 @@ export function SettingsHome({
                     icon="fitness-outline"
                     label="Health Connect"
                     supportingText="Read activity and weight from Android"
+                    showDivider={!isWeb}
                     onPress={() => onOpenSheet('health-connect')}
                 />
-                <SettingsRow
-                    icon="watch-outline"
-                    label="Galaxy Watch"
-                    supportingText="Pair, sync, and manage the Wear OS companion"
-                    showDivider={false}
-                    onPress={() => onOpenSheet('watch')}
-                />
+                {!isWeb ? (
+                    <SettingsRow
+                        icon="watch-outline"
+                        label="Galaxy Watch"
+                        supportingText="Pair, sync, and manage the Wear OS companion"
+                        showDivider={false}
+                        onPress={() => onOpenSheet('watch')}
+                    />
+                ) : null}
             </SettingsSection>
 
             <SettingsSection

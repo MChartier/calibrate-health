@@ -202,14 +202,6 @@ export const UX_ACCESSIBILITY_OVERLAY_CASES: readonly UxAccessibilityOverlayCase
     ready: { kind: 'role', role: 'dialog', name: 'Details', exact: true },
   },
   {
-    id: 'galaxy-watch',
-    routeId: 'settings',
-    path: ROUTE_REGISTRY.settings.path,
-    fixtureState: 'populated',
-    open: [{ kind: 'role', role: 'button', name: 'Galaxy Watch', exact: true }],
-    ready: { kind: 'role', role: 'dialog', name: 'Details', exact: true },
-  },
-  {
     id: 'password',
     routeId: 'settings',
     path: ROUTE_REGISTRY.settings.path,

@@ -73,6 +73,8 @@ describe('SettingsHome', () => {
         ]);
         expect(onDeleteAccount).toHaveBeenCalledTimes(1);
         expect(screen.queryByText('Email verification')).toBeNull();
+        expect(screen.getByRole('button', { name: 'Health Connect' })).toBeTruthy();
+        expect(screen.queryByRole('button', { name: 'Galaxy Watch' })).toBeNull();
         expect(screen.getAllByText('person@example.invalid')).toHaveLength(1);
         expect(screen.getByTestId('settings-section-account')).toBeTruthy();
         expect(screen.getByTestId('settings-section-personal')).toBeTruthy();
@@ -86,6 +88,7 @@ describe('SettingsHome', () => {
 
     it('routes native self-hosting controls through the Advanced settings page', () => {
         const onOpenAdvanced = jest.fn();
+        const onOpenSheet = jest.fn();
         const screen = render(
             <SettingsHome
                 email="person@example.invalid"
@@ -97,7 +100,7 @@ describe('SettingsHome', () => {
                 pendingMutationCount={0}
                 isWeb={false}
                 onEditProfile={jest.fn()}
-                onOpenSheet={jest.fn()}
+                onOpenSheet={onOpenSheet}
                 onOpenActivity={jest.fn()}
                 onOpenSavedFoods={jest.fn()}
                 onOpenAbout={jest.fn()}
@@ -109,7 +112,9 @@ describe('SettingsHome', () => {
         );
 
         expect(screen.queryByText('Calibrate server')).toBeNull();
+        fireEvent.press(screen.getByRole('button', { name: 'Galaxy Watch' }));
         fireEvent.press(screen.getByRole('button', { name: 'Advanced settings' }));
+        expect(onOpenSheet).toHaveBeenCalledWith('watch');
         expect(onOpenAdvanced).toHaveBeenCalledTimes(1);
     });
 });

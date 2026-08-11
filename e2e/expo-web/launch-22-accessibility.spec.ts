@@ -212,7 +212,6 @@ test.describe('Launch 22 accessibility coverage contracts', () => {
       'profile-time-zone-options',
       'profile-photo',
       'health-connect',
-      'galaxy-watch',
       'password',
       'import',
       'offline',
