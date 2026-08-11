@@ -1,5 +1,7 @@
 import React from 'react';
+import { Platform } from 'react-native';
 import Svg, { Circle, Defs, LinearGradient, Path, Stop } from 'react-native-svg';
+import type { SvgProps } from 'react-native-svg';
 import { useAppTheme } from '../theme';
 
 type CalibrateLogoProps = {
@@ -19,16 +21,23 @@ const LOGO_NEEDLE_STROKE_WIDTH = 7; // Controls the visual weight of the green g
 export const CalibrateLogo: React.FC<CalibrateLogoProps> = ({ accessibilityLabel, size = 32, testID }) => {
     const theme = useAppTheme();
     const decorative = !accessibilityLabel;
+    const accessibilityProps: SvgProps = Platform.OS === 'web'
+        ? decorative
+            ? { 'aria-hidden': true }
+            : { 'aria-label': accessibilityLabel, role: 'img' }
+        : {
+            accessible: !decorative,
+            accessibilityElementsHidden: decorative,
+            importantForAccessibility: decorative ? 'no-hide-descendants' : 'auto',
+            accessibilityRole: decorative ? undefined : 'image',
+            accessibilityLabel
+        };
+
     return <Svg
         width={size}
         height={size}
         viewBox={LOGO_VIEW_BOX}
-        accessible={!decorative}
-        accessibilityElementsHidden={decorative}
-        importantForAccessibility={decorative ? 'no-hide-descendants' : 'auto'}
-        aria-hidden={decorative}
-        accessibilityRole={decorative ? undefined : 'image'}
-        accessibilityLabel={accessibilityLabel}
+        {...accessibilityProps}
         testID={testID}
     >
         <Defs>

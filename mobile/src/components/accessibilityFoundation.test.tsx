@@ -2,24 +2,50 @@
  * Exercises accessibility foundation behavior and regression boundaries.
  */
 import { render } from '@testing-library/react-native';
+import { Platform } from 'react-native';
 import Svg from 'react-native-svg';
 import { CalibrateLogo } from './CalibrateLogo';
 import { ProgressBar } from './ProgressBar';
 import { WEB_ACCESSIBILITY_STYLES } from '../accessibility/webAccessibilityStyles';
 
 describe('shared accessibility foundation', () => {
-    it('keeps the brand mark decorative by default with an accessible opt-in', () => {
-        const decorative = render(<CalibrateLogo />);
-        const decorativeSvg = decorative.UNSAFE_getByType(Svg);
-        expect(decorativeSvg.props).toEqual(expect.objectContaining({
-            accessible: false,
-            accessibilityElementsHidden: true,
-            importantForAccessibility: 'no-hide-descendants',
-            'aria-hidden': true
-        }));
+    it('keeps the native brand mark decorative by default with an accessible opt-in', () => {
+        const platform = jest.replaceProperty(Platform, 'OS', 'ios');
+        try {
+            const decorative = render(<CalibrateLogo />);
+            const decorativeProps = decorative.UNSAFE_getByType(Svg).props;
+            expect(decorativeProps.accessible).toBe(false);
+            expect(decorativeProps.accessibilityElementsHidden).toBe(true);
+            expect(decorativeProps.importantForAccessibility).toBe('no-hide-descendants');
 
-        const named = render(<CalibrateLogo accessibilityLabel="Calibrate" />);
-        expect(named.getByRole('image', { name: 'Calibrate' })).toBeTruthy();
+            const named = render(<CalibrateLogo accessibilityLabel="Calibrate" />);
+            expect(named.getByRole('image', { name: 'Calibrate' })).toBeTruthy();
+        } finally {
+            platform.restore();
+        }
+    });
+
+    it('uses DOM-safe accessibility props for the web brand mark', () => {
+        const platform = jest.replaceProperty(Platform, 'OS', 'web');
+        try {
+            const decorative = render(<CalibrateLogo />);
+            const decorativeProps = decorative.UNSAFE_getByType(Svg).props;
+            expect(decorativeProps).toEqual(expect.objectContaining({ 'aria-hidden': true }));
+            expect(decorativeProps).not.toHaveProperty('accessible');
+            expect(decorativeProps).not.toHaveProperty('accessibilityElementsHidden');
+            expect(decorativeProps).not.toHaveProperty('importantForAccessibility');
+
+            const named = render(<CalibrateLogo accessibilityLabel="Calibrate" />);
+            const namedProps = named.UNSAFE_getByType(Svg).props;
+            expect(namedProps).toEqual(expect.objectContaining({
+                'aria-label': 'Calibrate',
+                role: 'img'
+            }));
+            expect(namedProps).not.toHaveProperty('accessibilityLabel');
+            expect(namedProps).not.toHaveProperty('accessibilityRole');
+        } finally {
+            platform.restore();
+        }
     });
 
     it('exposes one named progressbar and hides its visual fill', () => {
