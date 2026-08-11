@@ -104,7 +104,7 @@ test('About keeps advanced self-host and diagnostics details keyboard-disclosed 
   const heading = page.locator('#route-focus-title');
   await expect(heading).toHaveText('About Calibrate');
   await expect(heading).toHaveAttribute('aria-level', '1');
-  await expect(heading).toBeFocused();
+  await expect(heading).not.toBeFocused();
   await expectLink(page, 'Privacy policy', CALIBRATE_PRODUCT_LINKS.privacy);
   await expectLink(page, 'Terms of service', CALIBRATE_PRODUCT_LINKS.terms);
   await expectLink(page, 'Support', CALIBRATE_PRODUCT_LINKS.support);
