@@ -15,8 +15,7 @@ export type SettingsSheetId =
     | 'password'
     | 'devices'
     | 'offline'
-    | 'data'
-    | 'advanced';
+    | 'data';
 
 type ProductLink = 'support' | 'privacy' | 'terms' | 'licenses';
 
@@ -37,6 +36,7 @@ type SettingsHomeProps = {
     onOpenActivity: () => void;
     onOpenSavedFoods: () => void;
     onOpenAbout: () => void;
+    onOpenAdvanced: () => void;
     onOpenProductLink: (link: ProductLink) => void;
     onDeleteAccount: () => void;
     onLogout: () => void;
@@ -69,6 +69,7 @@ export function SettingsHome({
     onOpenActivity,
     onOpenSavedFoods,
     onOpenAbout,
+    onOpenAdvanced,
     onOpenProductLink,
     onDeleteAccount,
     onLogout
@@ -303,10 +304,10 @@ export function SettingsHome({
                 <SettingsRow
                     testID="settings-advanced"
                     icon="options-outline"
-                    label="Advanced"
-                    supportingText="Alternate server and technical connection options"
+                    label="Advanced settings"
+                    supportingText="Connection, diagnostics, and software updates"
                     showDivider={false}
-                    onPress={() => onOpenSheet('advanced')}
+                    onPress={onOpenAdvanced}
                 />
             </SettingsSection>
         </View>

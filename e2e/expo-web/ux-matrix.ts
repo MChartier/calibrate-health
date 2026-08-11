@@ -344,12 +344,4 @@ export const UX_ACCESSIBILITY_OVERLAY_CASES: readonly UxAccessibilityOverlayCase
     open: [{ kind: 'test-id', value: 'settings-delete-account' }],
     ready: { kind: 'role', role: 'dialog', name: 'Delete account permanently', exact: true },
   },
-  {
-    id: 'advanced-connection',
-    routeId: 'settings',
-    path: ROUTE_REGISTRY.settings.path,
-    fixtureState: 'populated',
-    open: [{ kind: 'test-id', value: 'settings-advanced' }],
-    ready: { kind: 'role', role: 'dialog', name: 'Advanced', exact: true },
-  },
 ];

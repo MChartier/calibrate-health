@@ -26,6 +26,7 @@ describe('SettingsHome', () => {
         const onOpenActivity = jest.fn();
         const onOpenSavedFoods = jest.fn();
         const onOpenAbout = jest.fn();
+        const onOpenAdvanced = jest.fn();
         const onOpenProductLink = jest.fn();
         const onDeleteAccount = jest.fn();
         const onOpenSheet = jest.fn();
@@ -45,6 +46,7 @@ describe('SettingsHome', () => {
                 onOpenActivity={onOpenActivity}
                 onOpenSavedFoods={onOpenSavedFoods}
                 onOpenAbout={onOpenAbout}
+                onOpenAdvanced={onOpenAdvanced}
                 onOpenProductLink={onOpenProductLink}
                 onDeleteAccount={onDeleteAccount}
                 onLogout={jest.fn()}
@@ -59,7 +61,7 @@ describe('SettingsHome', () => {
         fireEvent.press(screen.getByRole('button', { name: 'Terms of service' }));
         fireEvent.press(screen.getByRole('button', { name: 'Open-source licenses' }));
         fireEvent.press(screen.getByRole('button', { name: 'Delete account' }));
-        fireEvent.press(screen.getByRole('button', { name: 'Advanced' }));
+        fireEvent.press(screen.getByRole('button', { name: 'Advanced settings' }));
 
         expect(onOpenActivity).toHaveBeenCalledTimes(1);
         expect(onOpenSavedFoods).toHaveBeenCalledTimes(1);
@@ -79,11 +81,11 @@ describe('SettingsHome', () => {
         expect(screen.getByTestId('settings-section-data')).toBeTruthy();
         expect(screen.getByTestId('settings-section-help')).toBeTruthy();
         expect(screen.getByTestId('settings-section-app')).toBeTruthy();
-        expect(onOpenSheet).toHaveBeenCalledWith('advanced');
+        expect(onOpenAdvanced).toHaveBeenCalledTimes(1);
     });
 
-    it('keeps native self-hosting controls behind the same generic Advanced entry', () => {
-        const onOpenSheet = jest.fn();
+    it('routes native self-hosting controls through the Advanced settings page', () => {
+        const onOpenAdvanced = jest.fn();
         const screen = render(
             <SettingsHome
                 email="person@example.invalid"
@@ -95,10 +97,11 @@ describe('SettingsHome', () => {
                 pendingMutationCount={0}
                 isWeb={false}
                 onEditProfile={jest.fn()}
-                onOpenSheet={onOpenSheet}
+                onOpenSheet={jest.fn()}
                 onOpenActivity={jest.fn()}
                 onOpenSavedFoods={jest.fn()}
                 onOpenAbout={jest.fn()}
+                onOpenAdvanced={onOpenAdvanced}
                 onOpenProductLink={jest.fn()}
                 onDeleteAccount={jest.fn()}
                 onLogout={jest.fn()}
@@ -106,7 +109,7 @@ describe('SettingsHome', () => {
         );
 
         expect(screen.queryByText('Calibrate server')).toBeNull();
-        fireEvent.press(screen.getByRole('button', { name: 'Advanced' }));
-        expect(onOpenSheet).toHaveBeenCalledWith('advanced');
+        fireEvent.press(screen.getByRole('button', { name: 'Advanced settings' }));
+        expect(onOpenAdvanced).toHaveBeenCalledTimes(1);
     });
 });

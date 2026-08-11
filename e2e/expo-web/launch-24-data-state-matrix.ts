@@ -366,4 +366,5 @@ export const LAUNCH_24_STATIC_ROUTE_IDS = [
   'account-deletion',
   'health-connect-privacy',
   'about',
+  'advanced',
 ] as const satisfies readonly RouteId[];

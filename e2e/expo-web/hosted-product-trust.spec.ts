@@ -8,7 +8,6 @@ import { CALIBRATE_PRODUCT_LINKS } from '../../shared/product';
 import { expect, expectApiFailure, test } from './fixtures';
 
 const EVIDENCE_DIR = path.resolve('docs/screenshots/launch-10');
-const ADVANCED_DISCLOSURE_TOP = 80; // Places the Advanced card directly below the fixed compact header.
 const TRANSIENT_PWA_TITLES = new Set([
   'Back online',
   'Update ready',
@@ -101,7 +100,7 @@ test('hosted web entry and sign-in share canonical public trust destinations', a
   await expectNoHorizontalOverflow(page);
 });
 
-test('About keeps advanced self-host and diagnostics details keyboard-disclosed on compact web', async ({ page, ux }, testInfo) => {
+test('About keeps product and trust links distinct on compact web', async ({ page, ux }, testInfo) => {
   test.skip(testInfo.project.name !== 'compact-phone-chrome', 'Phone evidence uses the exact acceptance viewport.');
   await page.setViewportSize({ width: 320, height: 568 });
   await ux.install('populated');
@@ -118,35 +117,8 @@ test('About keeps advanced self-host and diagnostics details keyboard-disclosed 
   await expectLink(page, 'Open-source licenses', CALIBRATE_PRODUCT_LINKS.licenses);
   await expectLink(page, 'Release notes', CALIBRATE_PRODUCT_LINKS.releases);
 
-  const showAdvanced = page.getByRole('button', { name: 'Show advanced details', exact: true });
-  await expect(showAdvanced).toHaveAttribute('aria-expanded', 'false');
-  await expect(page.getByText(/self-hosted/i)).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Show advanced details', exact: true })).toHaveCount(0);
   await expect(page.getByText('Diagnostics', { exact: true })).toHaveCount(0);
-  await showAdvanced.focus();
-  await expect(showAdvanced).toBeFocused();
-  await page.keyboard.press('Enter');
-
-  const hideAdvanced = page.getByRole('button', { name: 'Hide advanced details', exact: true });
-  await expect(hideAdvanced).toHaveAttribute('aria-expanded', 'true');
-  await expect(page.getByText(/self-hosted/i).first()).toBeVisible();
-  await expect(page.getByText('Diagnostics', { exact: true })).toBeVisible();
-  await expect(page.getByRole('button', { name: /(?:Check for updates|Browser-managed updates|Release builds only)/i }))
-    .toHaveCount(0);
   await expectNoHorizontalOverflow(page);
-
-  await hideAdvanced.evaluate((element, disclosureTop) => {
-    let scrollContainer = element.parentElement;
-    while (scrollContainer) {
-      const style = getComputedStyle(scrollContainer);
-      const scrollsVertically = /(auto|scroll)/.test(style.overflowY)
-        && scrollContainer.scrollHeight > scrollContainer.clientHeight;
-      if (scrollsVertically) {
-        scrollContainer.scrollTop += element.getBoundingClientRect().top - disclosureTop;
-        return;
-      }
-      scrollContainer = scrollContainer.parentElement;
-    }
-    window.scrollTo({ top: window.scrollY + element.getBoundingClientRect().top - disclosureTop });
-  }, ADVANCED_DISCLOSURE_TOP);
-  await captureEvidence(page, 'about-advanced-phone-320x568.png');
+  await captureEvidence(page, 'about-phone-320x568.png');
 });

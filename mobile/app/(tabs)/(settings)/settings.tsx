@@ -18,7 +18,6 @@ import { BottomSheetModal } from '../../../src/components/BottomSheetModal';
 import { confirmDiscardChanges } from '../../../src/components/confirmDiscardChanges';
 import { TabScreen } from '../../../src/components/TabScreen';
 import { SectionHeader } from '../../../src/components/SectionHeader';
-import { ServerUrlControl } from '../../../src/components/ServerUrlControl';
 import { SegmentedControl } from '../../../src/components/SegmentedControl';
 import { TextField } from '../../../src/components/TextField';
 import { SkeletonBlock } from '../../../src/components/SkeletonBlock';
@@ -90,7 +89,7 @@ export default function SettingsScreen() {
     const router = useRouter();
     const {
         api, user, clearLocalSession, logout, persistAccountDeletionCleanupNotice,
-        serverUrl, serverConnection, setServerUrl, testServerUrl, updateCurrentUser
+        serverUrl, updateCurrentUser
     } = useAuth();
     const {
         isReady: isOutboxReady,
@@ -107,7 +106,6 @@ export default function SettingsScreen() {
     const nativePush = useNativePushRegistration();
     const isWeb = Platform.OS === 'web';
     const pushStatus = getPushStatusPresentation(nativePush.state, isWeb ? 'web' : 'android');
-    const [serverInput, setServerInput] = useState(serverUrl);
     const [timezone, setTimezone] = useState(user?.timezone ?? 'UTC');
     const [dateOfBirth, setDateOfBirth] = useState(user?.date_of_birth?.slice(0, 10) ?? '');
     const [sex, setSex] = useState<Sex | null>(user?.sex ?? null);
@@ -165,7 +163,6 @@ export default function SettingsScreen() {
         || hapticsEnabled !== user.haptics_enabled
     ));
     const passwordIsDirty = Boolean(currentPassword || newPassword || confirmPassword);
-    const serverIsDirty = serverInput.trim() !== serverUrl;
     const profileQuery = useQuery({ queryKey: ['mobile-profile'], queryFn: () => api.getUserProfile() });
     const goalQuery = useQuery({ queryKey: ['mobile-goal'], queryFn: () => api.getGoals() });
     const sessionsQuery = useQuery({
@@ -276,11 +273,6 @@ export default function SettingsScreen() {
         setConfirmPassword('');
         setPasswordError(null);
         setPasswordStatus(null);
-        setActiveSheet(null);
-    }
-
-    function closeServerEditor() {
-        setServerInput(serverUrl);
         setActiveSheet(null);
     }
 
@@ -429,11 +421,6 @@ export default function SettingsScreen() {
         }
     });
 
-    async function handleSaveServer() {
-        const saved = await setServerUrl(serverInput);
-        if (saved) setActiveSheet(null);
-    }
-
     function handleChangePassword() {
         setPasswordStatus(null);
         if (!currentPassword) {
@@ -562,6 +549,7 @@ export default function SettingsScreen() {
                 onOpenActivity={() => router.push('/activity')}
                 onOpenSavedFoods={() => router.push('/my-foods')}
                 onOpenAbout={() => router.push('/about')}
+                onOpenAdvanced={() => router.push('/advanced')}
                 onOpenProductLink={(link) => router.push(CALIBRATE_PRODUCT_LINKS[link] as Href)}
                 onDeleteAccount={() => setIsDeleteAccountOpen(true)}
                 onLogout={() => void logout()}
@@ -876,33 +864,6 @@ export default function SettingsScreen() {
                         disabled={exportAccount.isPending}
                         leftIcon={<Ionicons name="share-outline" size={18} color={themeColors.onSurface} />}
                         onPress={() => exportAccount.mutate()}
-                    />
-                </View>
-            </SettingsDetailSheet>
-
-            <SettingsDetailSheet
-                visible={activeSheet === 'advanced'}
-                title="Advanced"
-                description="Optional connection settings for self-hosted services."
-                isDirty={serverIsDirty}
-                confirmDismiss={confirmDiscardChanges}
-                onClose={closeServerEditor}
-            >
-                <View testID="settings-advanced-sheet" style={styles.sheetContent}>
-                    <ServerUrlControl
-                        presentation="editor"
-                        value={serverInput}
-                        onChangeText={setServerInput}
-                        connection={serverConnection}
-                        onTestConnection={testServerUrl}
-                    />
-                    <AppText variant="caption">
-                        Calibrate tests a new service before signing out of the current one.
-                    </AppText>
-                    <AppButton
-                        title="Save connection"
-                        leftIcon={<Ionicons name="server-outline" size={18} color={themeColors.onPrimary} />}
-                        onPress={() => void handleSaveServer()}
                     />
                 </View>
             </SettingsDetailSheet>

@@ -24,6 +24,7 @@ export const ROUTE_IDS = [
   'my-foods',
   'notifications',
   'about',
+  'advanced',
   'weight',
   'barcode',
 ] as const;
@@ -306,6 +307,17 @@ export const ROUTE_REGISTRY = {
   about: route({
     path: '/about',
     title: 'About Calibrate',
+    parent: 'settings',
+    fallback: 'settings',
+    backLabel: 'Back to Settings',
+    authClass: 'authenticated',
+    shellPolicy: 'app',
+    deepLink: 'render',
+    authenticatedRedirect: null,
+  }),
+  advanced: route({
+    path: '/advanced',
+    title: 'Advanced settings',
     parent: 'settings',
     fallback: 'settings',
     backLabel: 'Back to Settings',
