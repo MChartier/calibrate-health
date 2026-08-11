@@ -1,7 +1,11 @@
+/**
+ * Exercises dev test data behavior and regression boundaries.
+ */
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const Module = require('node:module');
 
+/** Build deterministic stub module for regression coverage. */
 function stubModule(resolvedPath, exports) {
   const moduleInstance = new Module(resolvedPath);
   moduleInstance.exports = exports;
@@ -9,6 +13,7 @@ function stubModule(resolvedPath, exports) {
   require.cache[resolvedPath] = moduleInstance;
 }
 
+/** Load dev test data service. */
 function loadDevTestDataService(prismaStub) {
   const databasePath = require.resolve('../src/config/database');
   const trendPath = require.resolve('../src/services/materializedWeightTrend');
@@ -31,6 +36,7 @@ function loadDevTestDataService(prismaStub) {
   return loaded;
 }
 
+/** Build prisma stub from validated configuration and dependencies. */
 function createPrismaStub(events) {
   const record = (kind, data) => {
     events.push({ kind, data });

@@ -1,3 +1,6 @@
+/**
+ * Exercises workflow recovery behavior and regression boundaries.
+ */
 import { buildSearchedFoodLogPayload } from '../food/serving';
 import {
     BarcodeRequestGate,

@@ -1,3 +1,6 @@
+/**
+ * Exercises performance budgets behavior and regression boundaries.
+ */
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
@@ -14,6 +17,7 @@ import {
   validatePerformanceBudgetManifest,
 } from './performance-budgets.mjs';
 
+/** Build deterministic manifest for for regression coverage. */
 function manifestFor(gzipBytes, overrides = {}) {
   return {
     schema_version: 1,
@@ -41,6 +45,7 @@ function manifestFor(gzipBytes, overrides = {}) {
   };
 }
 
+/** Build dist fixture from validated configuration and dependencies. */
 function createDistFixture() {
   const distDir = fs.mkdtempSync(path.join(os.tmpdir(), 'calibrate-performance-budget-'));
   const bundleDir = path.join(distDir, '_expo', 'static', 'js', 'web');

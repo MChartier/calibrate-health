@@ -32,6 +32,7 @@ export function formatNotificationDate(value: string): string {
     return new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' }).format(date);
 }
 
+/** Format notification timestamp for stable display or serialization. */
 export function formatNotificationTimestamp(value: string): string {
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) return value;
@@ -43,6 +44,7 @@ export function formatNotificationTimestamp(value: string): string {
     }).format(date);
 }
 
+/** Resolve the notification state label from the current validated state. */
 export function getNotificationStateLabel(
     notification: InAppNotification & { resolved_at?: string | null }
 ): string {

@@ -1,3 +1,6 @@
+/**
+ * Exercises onboarding auth hydration behavior and regression boundaries.
+ */
 import React from 'react';
 import { render } from '@testing-library/react-native';
 import OnboardingScreen from '../../app/onboarding';

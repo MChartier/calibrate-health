@@ -1,3 +1,6 @@
+/**
+ * Provides Expo client behavior for barcode recovery actions.
+ */
 import { View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { AppButton } from '../components/AppButton';

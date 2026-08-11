@@ -33,6 +33,7 @@ export function isActivitySummaryEmpty(summary: ActivityDaySummary | null | unde
         .every((value) => value === null);
 }
 
+/** Check whether the current state has imported activity. */
 export function hasImportedActivity(days: ActivityDaysResponse['days'] | null | undefined): boolean {
     return (days ?? []).some((day) => !isActivitySummaryEmpty(day.summary) || day.records.length > 0);
 }

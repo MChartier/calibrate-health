@@ -1,3 +1,6 @@
+/**
+ * Provides Expo client behavior for client diagnostics runtime.
+ */
 import { useEffect } from 'react';
 import { useAuth } from '../auth/AuthContext';
 import { registerClientDiagnosticReporter } from './clientDiagnostics';

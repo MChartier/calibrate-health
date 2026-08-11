@@ -1,3 +1,6 @@
+/**
+ * Provides backend domain operations for weight trend v1.
+ */
 import { MS_PER_DAY } from '../utils/date';
 
 const TREND_CONFIDENCE_Z_SCORE = 1.96; // 95% confidence interval for latent true-weight estimate.
@@ -122,6 +125,7 @@ type KalmanParams = {
   measurementVariance: number;
 };
 
+/** Estimate latent weight states with the configured Kalman model. */
 function runKalmanFilter(observations: WeightTrendObservation[], params: KalmanParams): WeightTrendPoint[] {
   const points: WeightTrendPoint[] = [];
 
@@ -161,6 +165,7 @@ function runKalmanFilter(observations: WeightTrendObservation[], params: KalmanP
   return points;
 }
 
+/** Estimate variances from the available evidence. */
 function estimateVariances(
   observations: WeightTrendObservation[],
   driftPerDay: number
@@ -227,6 +232,7 @@ function estimateLinearDriftPerDay(observations: WeightTrendObservation[]): numb
   return computeLeastSquaresSlope(xValues, yValues) ?? 0;
 }
 
+/** Fit a weighted least-squares slope after validating input dimensions. */
 function computeLeastSquaresSlope(xValues: number[], yValues: number[], weights?: number[]): number | null {
   if (xValues.length !== yValues.length || xValues.length === 0) return null;
   if (weights && weights.length !== xValues.length) return null;
@@ -266,6 +272,7 @@ function computeLeastSquaresSlope(xValues: number[], yValues: number[], weights?
   return slope;
 }
 
+/** Smooth observations with the reviewed exponentially weighted moving average. */
 function computeEwmaWeights(observations: WeightTrendObservation[]): number[] {
   const smoothed = [observations[0].weight];
 
@@ -280,6 +287,7 @@ function computeEwmaWeights(observations: WeightTrendObservation[]): number[] {
   return smoothed;
 }
 
+/** Convert the recent daily slope into a weekly weight-change rate. */
 function computeRecentWeeklyRate(points: WeightTrendPoint[]): number {
   if (points.length < 2) return 0;
 
@@ -293,6 +301,7 @@ function computeRecentWeeklyRate(points: WeightTrendPoint[]): number {
   return perDayRate * 7;
 }
 
+/** Classify volatility into its reviewed states. */
 function classifyVolatility(points: WeightTrendPoint[]): VolatilityLevel {
   if (points.length === 0) return 'low';
 
@@ -305,12 +314,14 @@ function classifyVolatility(points: WeightTrendPoint[]): VolatilityLevel {
   return 'high';
 }
 
+/** Measure a positive elapsed-day interval between adjacent observations. */
 function getDeltaDays(previousDate: Date, nextDate: Date): number {
   const diffDays = (nextDate.getTime() - previousDate.getTime()) / MS_PER_DAY;
   if (!Number.isFinite(diffDays) || diffDays <= 0) return 1;
   return diffDays;
 }
 
+/** Estimate robust standard deviation from finite observations using median absolute deviation. */
 function robustStd(values: number[]): number | null {
   const finite = values.filter((value) => Number.isFinite(value));
   if (finite.length < 2) return null;
@@ -325,6 +336,7 @@ function robustStd(values: number[]): number | null {
   return 1.4826 * mad;
 }
 
+/** Return the median of the finite input values. */
 function median(values: number[]): number | null {
   const finite = values.filter((value) => Number.isFinite(value)).slice().sort((a, b) => a - b);
   if (finite.length === 0) return null;
@@ -334,6 +346,7 @@ function median(values: number[]): number | null {
   return (finite[middle - 1] + finite[middle]) / 2;
 }
 
+/** Clamp a value to the supplied inclusive bounds. */
 function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value));
 }

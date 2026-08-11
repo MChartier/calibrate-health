@@ -1,3 +1,6 @@
+/**
+ * Exercises launch 16 activity truth behavior and regression boundaries.
+ */
 import { mkdir } from 'node:fs/promises';
 import path from 'node:path';
 import type { Page, Route, TestInfo } from '@playwright/test';
@@ -35,6 +38,7 @@ type ActivityFixture = {
 const ACTIVITY_GUARDRAIL = 'Imported activity never automatically changes your calorie target.';
 const FAILED_SYNC_MESSAGE = 'Health activity could not sync. Try again from Health Connect settings.';
 
+/** Build deterministic activity record for regression coverage. */
 function activityRecord(
   id: number,
   recordType: 'STEPS' | 'ACTIVE_CALORIES' | 'TOTAL_CALORIES' | 'EXERCISE_SESSION' | 'WEIGHT',
@@ -69,6 +73,7 @@ function activityRecord(
   };
 }
 
+/** Build deterministic populated day for regression coverage. */
 function populatedDay(localDate = FROZEN_LOCAL_DATE) {
   const datePrefix = `${localDate}T`;
   return {
@@ -98,10 +103,12 @@ function populatedDay(localDate = FROZEN_LOCAL_DATE) {
   };
 }
 
+/** Fulfill json with deterministic fixture data. */
 function fulfillJson(route: Route, body: unknown) {
   return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(body) });
 }
 
+/** Install activity fixture for deterministic browser coverage. */
 async function installActivityFixture(page: Page): Promise<ActivityFixture> {
   const fixture: ActivityFixture = { hasData: true };
   await page.route('**/api/v1/activity/days**', (route) => {
@@ -119,6 +126,7 @@ async function installActivityFixture(page: Page): Promise<ActivityFixture> {
   return fixture;
 }
 
+/** Install initial health connect state for deterministic browser coverage. */
 async function installInitialHealthConnectState(page: Page, fixture: HealthConnectFixture) {
   await page.addInitScript(({ globalName, value }) => {
     Object.defineProperty(window, globalName, {
@@ -129,6 +137,7 @@ async function installInitialHealthConnectState(page: Page, fixture: HealthConne
   }, { globalName: HEALTH_CONNECT_FIXTURE_GLOBAL, value: fixture });
 }
 
+/** Build deterministic set health connect state for regression coverage. */
 async function setHealthConnectState(page: Page, fixture: HealthConnectFixture) {
   await page.evaluate(({ eventName, globalName, value }) => {
     Object.assign(window, { [globalName]: value });
@@ -140,6 +149,7 @@ async function setHealthConnectState(page: Page, fixture: HealthConnectFixture) 
   });
 }
 
+/** Assert that no horizontal overflow. */
 async function expectNoHorizontalOverflow(page: Page) {
   const widths = await page.evaluate(() => ({
     bodyWidth: document.body.scrollWidth,
@@ -150,6 +160,7 @@ async function expectNoHorizontalOverflow(page: Page) {
   expect(widths.scrollWidth).toBeLessThanOrEqual(widths.clientWidth);
 }
 
+/** Assert that minimum touch target. */
 async function expectMinimumTouchTarget(page: Page, name: string) {
   const box = await page.getByRole('button', { name, exact: true }).boundingBox();
   expect(box, `${name} should have a measurable touch target`).not.toBeNull();
@@ -157,6 +168,7 @@ async function expectMinimumTouchTarget(page: Page, name: string) {
   expect(box!.width, `${name} touch target width`).toBeGreaterThanOrEqual(44);
 }
 
+/** Build deterministic hide transient pwa notices for regression coverage. */
 async function hideTransientPwaNotices(page: Page) {
   await page.locator('[role="status"], [role="alert"]').evaluateAll((notices, titles) => {
     for (const notice of notices) {
@@ -168,6 +180,7 @@ async function hideTransientPwaNotices(page: Page) {
   }, [...TRANSIENT_PWA_TITLES]);
 }
 
+/** Capture evidence only when explicit evidence collection is enabled. */
 async function captureEvidence(page: Page, testInfo: TestInfo) {
   if (process.env.CALIBRATE_CAPTURE_EVIDENCE !== '1') return;
   const filename = testInfo.project.name === 'desktop-chrome'
@@ -184,6 +197,7 @@ async function captureEvidence(page: Page, testInfo: TestInfo) {
   await page.screenshot({ path: path.join(EVIDENCE_DIR, filename), fullPage: false });
 }
 
+/** Assert that shared activity truth. */
 async function expectSharedActivityTruth(page: Page) {
   await expect(page.locator('#route-focus-title')).toHaveText('Activity');
   await expect(page.getByRole('heading', { name: 'Today', exact: true })).toBeVisible();

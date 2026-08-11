@@ -1,3 +1,6 @@
+/**
+ * Runs the repository-owned operational alerts workflow.
+ */
 import crypto from 'node:crypto';
 
 const ALERT_OWNER = Object.freeze({
@@ -31,24 +34,29 @@ const DIMENSION_VALUES = Object.freeze({
   signal: new Set(['auth_requests', 'auth_mobile_refresh']),
 });
 
+/** Build counter from the supplied domain inputs. */
 function counter(value) {
   return typeof value === 'number' && Number.isFinite(value) && value >= 0 ? value : 0;
 }
 
+/** Build delta from the supplied domain inputs. */
 function delta(previous, current) {
   return Math.max(0, counter(current) - counter(previous));
 }
 
+/** Build operation delta from the supplied domain inputs. */
 function operationDelta(previous, current, name) {
   const before = previous.operations?.[name] ?? {};
   const after = current.operations?.[name] ?? {};
   return { attempts: delta(before.attempts, after.attempts), failures: delta(before.failures, after.failures) };
 }
 
+/** Build tuple key from the supplied domain inputs. */
 function tupleKey(tuple) {
   return [tuple.event, tuple.operation, tuple.route, tuple.platform, tuple.version, tuple.outcome, tuple.duration_bucket].join('\u001f');
 }
 
+/** Build client tuple deltas from the supplied domain inputs. */
 function clientTupleDeltas(previous, current) {
   const before = new Map((previous.client_diagnostics?.by_tuple ?? []).map((tuple) => [tupleKey(tuple), counter(tuple.count)]));
   return (current.client_diagnostics?.by_tuple ?? []).map((tuple) => ({
@@ -57,6 +65,7 @@ function clientTupleDeltas(previous, current) {
   })).filter((tuple) => tuple.count > 0);
 }
 
+/** Build safe dimensions from the supplied domain inputs. */
 function safeDimensions(dimensions) {
   const safe = {};
   for (const [key, value] of Object.entries(dimensions)) {
@@ -67,14 +76,17 @@ function safeDimensions(dimensions) {
   return safe;
 }
 
+/** Determine whether the input conforms to the opaque operational id contract. */
 export function isOpaqueOperationalId(value) {
   return typeof value === 'string' && OPAQUE_ID_PATTERN.test(value);
 }
 
+/** Build opaque correlation id from the supplied domain inputs. */
 function opaqueCorrelationId(value) {
   return isOpaqueOperationalId(value) ? value : crypto.randomUUID();
 }
 
+/** Add alert using validated domain inputs. */
 function addAlert(alerts, code, severity, correlationId, numerator, denominator, dimensions = {}) {
   alerts.push({
     code,
@@ -88,6 +100,7 @@ function addAlert(alerts, code, severity, correlationId, numerator, denominator,
   });
 }
 
+/** Add operation rate alert using validated domain inputs. */
 function addOperationRateAlert(alerts, previous, current, operation, code, threshold, minimum, severity, correlationId) {
   const measured = operationDelta(previous, current, operation);
   if (measured.attempts >= minimum && measured.failures / measured.attempts >= threshold) {
@@ -198,6 +211,7 @@ export function evaluateOperationalAlerts({
   return alerts;
 }
 
+/** Build dispatch operational alerts from the supplied domain inputs. */
 export async function dispatchOperationalAlerts(input, sink) {
   const alerts = evaluateOperationalAlerts(input);
   for (const alert of alerts) await sink.send(alert);

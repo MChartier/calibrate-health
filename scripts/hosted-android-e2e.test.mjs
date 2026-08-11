@@ -1,3 +1,6 @@
+/**
+ * Exercises hosted android e2e behavior and regression boundaries.
+ */
 import assert from 'node:assert/strict';
 import { EventEmitter } from 'node:events';
 import path from 'node:path';
@@ -22,6 +25,7 @@ const HOSTED_ENVIRONMENT = Object.freeze({
   RUNNER_TEMP: '/runner-temp'
 });
 
+/** Build deterministic fake metro for regression coverage. */
 function fakeMetro(overrides = {}) {
   return Object.assign(new EventEmitter(), {
     exitCode: null,

@@ -1,3 +1,4 @@
+# Runs the release acceptance GitHub Actions workflow.
 name: Release Acceptance
 
 on:

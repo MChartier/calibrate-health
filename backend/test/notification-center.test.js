@@ -1,7 +1,11 @@
+/**
+ * Exercises notification center behavior and regression boundaries.
+ */
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const Module = require('node:module');
 
+/** Build deterministic stub module for regression coverage. */
 function stubModule(resolvedPath, exports) {
   const moduleInstance = new Module(resolvedPath);
   moduleInstance.exports = exports;
@@ -9,6 +13,7 @@ function stubModule(resolvedPath, exports) {
   require.cache[resolvedPath] = moduleInstance;
 }
 
+/** Load in app notification service. */
 function loadInAppNotificationService(publish = () => undefined) {
   const dbPath = require.resolve('../src/config/database');
   const realtimePath = require.resolve('../src/services/notificationRealtime');
@@ -28,6 +33,7 @@ function loadInAppNotificationService(publish = () => undefined) {
   return service;
 }
 
+/** Load notifications router. */
 function loadNotificationsRouter(service) {
   const dbPath = require.resolve('../src/config/database');
   const webPushPath = require.resolve('../src/services/webPush');
@@ -58,6 +64,7 @@ function loadNotificationsRouter(service) {
   return loaded.default ?? loaded;
 }
 
+/** Build deterministic route handler for regression coverage. */
 function routeHandler(router, method, path) {
   const layer = router.stack.find(
     (candidate) => candidate.route?.path === path && candidate.route.methods?.[method]
@@ -66,6 +73,7 @@ function routeHandler(router, method, path) {
   return layer.route.stack.at(-1).handle;
 }
 
+/** Build response from validated configuration and dependencies. */
 function createResponse() {
   return {
     statusCode: 200,
@@ -75,6 +83,7 @@ function createResponse() {
   };
 }
 
+/** Build deterministic row for regression coverage. */
 function row(id, createdAt, overrides = {}) {
   return {
     id,

@@ -1,3 +1,6 @@
+/**
+ * Provides Expo client behavior for use food delete recovery.
+ */
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { AppState } from 'react-native';
 import { useFocusEffect } from 'expo-router';

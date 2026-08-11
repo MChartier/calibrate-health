@@ -1,3 +1,6 @@
+/**
+ * Exercises page header behavior and regression boundaries.
+ */
 import { render } from '@testing-library/react-native';
 import { PageHeader } from './PageHeader';
 

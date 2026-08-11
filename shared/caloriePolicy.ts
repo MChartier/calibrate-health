@@ -1,3 +1,6 @@
+/**
+ * Defines the shared calorie policy domain contract.
+ */
 import type { ActivityLevel, Sex } from './domain';
 
 export const MAX_ELIGIBLE_AGE_YEARS = 120;
@@ -71,6 +74,7 @@ const allowedDeficits = new Set<number>(SIGNED_DAILY_DEFICIT_OPTIONS);
 const activityMultipliers: Record<ActivityLevel, number> = {
     SEDENTARY: 1.2, LIGHT: 1.375, MODERATE: 1.55, ACTIVE: 1.725, VERY_ACTIVE: 1.9
 };
+/** Round one decimal into the canonical representation used at this boundary. */
 const roundOneDecimal = (value: number): number => Math.round(value * 10) / 10;
 
 /** Parse a date-only value without allowing JavaScript calendar rollover. */
@@ -111,6 +115,7 @@ export function calculateCalendarAge(dateOfBirth: string, localDate: string): nu
     return age;
 }
 
+/** Evaluate calorie profile eligibility against the module's reviewed constraints. */
 export function evaluateCalorieProfileEligibility(options: { dateOfBirth?: unknown; timezone?: unknown; now?: Date }): CalorieEligibility {
     if (options.dateOfBirth === undefined || options.dateOfBirth === null || options.dateOfBirth === '') {
         return { status: 'unknown', reasonCode: 'DATE_OF_BIRTH_REQUIRED', ageYears: null, localDate: null };
@@ -126,20 +131,27 @@ export function evaluateCalorieProfileEligibility(options: { dateOfBirth?: unkno
 }
 
 
+/** Calculate policy bmr. */
 export function calculatePolicyBmr(sex: Sex, weightGrams: number, heightMm: number, ageYears: number): number {
     const base = 10 * (weightGrams / 1_000) + 6.25 * (heightMm / 10) - 5 * ageYears;
     return roundOneDecimal(sex === 'MALE' ? base + 5 : base - 161);
 }
 
+/** Calculate policy tdee. */
 export function calculatePolicyTdee(bmr: number, activityLevel: ActivityLevel): number {
     return roundOneDecimal(bmr * activityMultipliers[activityLevel]);
 }
 
+/** Build minimum target for bmr from the supplied domain inputs. */
 export const minimumTargetForBmr = (bmr: number): number => Math.ceil(Math.max(bmr, ABSOLUTE_MIN_TARGET_KCAL));
+/** Determine whether the input conforms to the policy weight contract. */
 export const isPolicyWeight = (value: unknown): value is number => typeof value === 'number' && Number.isInteger(value) && value >= MIN_WEIGHT_GRAMS && value <= MAX_WEIGHT_GRAMS;
+/** Determine whether the input conforms to the policy height contract. */
 export const isPolicyHeight = (value: unknown): value is number => typeof value === 'number' && Number.isInteger(value) && value >= MIN_HEIGHT_MM && value <= MAX_HEIGHT_MM;
+/** Determine whether the input conforms to the policy daily deficit contract. */
 export const isPolicyDailyDeficit = (value: unknown): value is number => typeof value === 'number' && Number.isInteger(value) && allowedDeficits.has(value);
 
+/** Validate goal policy. */
 export function validateGoalPolicy(goal: CaloriePolicyGoal): CaloriePlanReasonCode | null {
     if (!isPolicyWeight(goal.startWeightGrams) || !isPolicyWeight(goal.targetWeightGrams)) return 'GOAL_WEIGHTS_OUT_OF_RANGE';
     if (!isPolicyDailyDeficit(goal.dailyDeficit)) return 'DAILY_DEFICIT_INVALID';
@@ -147,6 +159,7 @@ export function validateGoalPolicy(goal: CaloriePolicyGoal): CaloriePlanReasonCo
     return null;
 }
 
+/** Build prerequisites reason from the supplied domain inputs. */
 function prerequisitesReason(eligibility: CalorieEligibility, profile: CaloriePolicyProfile, weight: number | null | undefined): CaloriePlanReasonCode | null {
     if (eligibility.status !== 'eligible') return eligibility.reasonCode ?? 'SERVER_POLICY_UNAVAILABLE';
     if (!profile.sex) return 'SEX_REQUIRED';
@@ -164,10 +177,12 @@ const prerequisiteReviewReasons = new Set<CaloriePlanReasonCode>([
     'HEIGHT_OUT_OF_RANGE', 'LATEST_WEIGHT_REQUIRED', 'WEIGHT_OUT_OF_RANGE'
 ]);
 
+/** Build persisted goal review reason from the supplied domain inputs. */
 function persistedGoalReviewReason(reason: string | null | undefined): CaloriePlanReasonCode {
     if (!reason || prerequisiteReviewReasons.has(reason as CaloriePlanReasonCode)) return 'HISTORICAL_PLAN_REQUIRES_REVIEW';
     return reason as CaloriePlanReasonCode;
 }
+/** Build legacy missing from the supplied domain inputs. */
 function legacyMissing(reason: CaloriePlanReasonCode | null): string[] {
     if (!reason) return [];
     if (reason.startsWith('DATE_OF_BIRTH_') || reason.startsWith('AGE_') || reason === 'TIMEZONE_INVALID') return ['eligibility'];

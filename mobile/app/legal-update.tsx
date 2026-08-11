@@ -1,3 +1,6 @@
+/**
+ * Defines the legal update Expo Router screen.
+ */
 import { useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { Link, Redirect, router } from 'expo-router';
@@ -11,6 +14,7 @@ import { useAuth } from '../src/auth/AuthContext';
 import { getAccountTrustErrorMessage } from '../src/errors/presentation';
 import { useAppTheme } from '../src/theme';
 
+/** Render the legal update route interface. */
 export default function LegalUpdateRoute() {
     const { api, user, isLoading, logout, updateCurrentUser } = useAuth();
     const { colors } = useAppTheme();

@@ -1,3 +1,6 @@
+/**
+ * Provides Expo client behavior for route metadata.
+ */
 import { ROUTE_IDS, getRouteByPath, getRouteDefinition, type RouteId } from './routeRegistry';
 import webRouteMetadata from '../../../shared/webRouteMetadata.json';
 
@@ -32,6 +35,7 @@ const PUBLIC_DESCRIPTIONS: Partial<Record<RouteId, string>> = {
     'health-connect-privacy': 'Learn how Calibrate reads, uses, stores, and deletes Health Connect activity data.'
 };
 
+/** Build description for route from the supplied domain inputs. */
 function descriptionForRoute(routeId: RouteId): string {
     const publicDescription = PUBLIC_DESCRIPTIONS[routeId];
     if (publicDescription) return publicDescription;
@@ -39,6 +43,7 @@ function descriptionForRoute(routeId: RouteId): string {
     return `${definition.title} in Calibrate, your private food, weight, activity, and goal tracker.`;
 }
 
+/** Resolve route metadata. */
 export function resolveRouteMetadata(
     pathname: string,
     options: { authenticated: boolean }
@@ -75,6 +80,7 @@ export function resolveRouteMetadata(
     };
 }
 
+/** Resolve the canonical route metadata from the current validated state. */
 export function getCanonicalRouteMetadata(): RouteMetadata[] {
     return ROUTE_IDS.map((routeId) => resolveRouteMetadata(
         getRouteDefinition(routeId).path,

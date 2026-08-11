@@ -1,3 +1,6 @@
+/**
+ * Provides Expo client behavior for use pending weight mutation.
+ */
 import { useOfflineOutbox } from './provider';
 import { hasPendingWeightMutation } from './pendingWeight';
 

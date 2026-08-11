@@ -162,6 +162,7 @@ function buildActiveTrendRows(
     });
 }
 
+/** Determine whether the input conforms to the retryable materialization conflict contract. */
 function isRetryableMaterializationConflict(error: unknown): boolean {
     if (typeof error !== 'object' || error === null || !('code' in error)) return false;
     const code = String(error.code);

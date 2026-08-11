@@ -1,3 +1,6 @@
+/**
+ * Exercises hosted root behavior and regression boundaries.
+ */
 import { render } from '@testing-library/react-native';
 import WebHomeRoute from '../../app/index.web';
 

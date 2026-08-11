@@ -1,3 +1,6 @@
+/**
+ * Exercises activity summary card behavior and regression boundaries.
+ */
 import { render } from '@testing-library/react-native';
 import type { ActivityDaySummary } from '@calibrate/api-client';
 import { ActivitySummaryCard, type ActivityDay } from './ActivitySummaryCard';

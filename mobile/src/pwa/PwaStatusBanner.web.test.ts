@@ -1,3 +1,6 @@
+/**
+ * Exercises pwa status banner web behavior and regression boundaries.
+ */
 import {
     BROWSER_OFFLINE_MESSAGE,
     isDocumentModalOpen,

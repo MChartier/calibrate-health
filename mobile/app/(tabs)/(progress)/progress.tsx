@@ -1,3 +1,6 @@
+/**
+ * Defines the progress Expo Router screen.
+ */
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { AccessibilityInfo, StyleSheet, TextInput, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
@@ -43,10 +46,12 @@ import {
     isWeightWithinPolicy
 } from '../../../src/weightEntry/input';
 
+/** Format weight input for stable display or serialization. */
 function formatWeightInput(value: number): string {
     return value.toFixed(1).replace(/\.0$/, '');
 }
 
+/** Resolve the goal validation error from the current validated state. */
 function getGoalValidationError(
     goalMode: GoalMode,
     startWeight: number,
@@ -71,10 +76,12 @@ function getGoalValidationError(
     return null;
 }
 
+/** Resolve the goal draft key from the current validated state. */
 function getGoalDraftKey(startWeight: string, targetWeight: string, goalMode: GoalMode, dailyChangeAbs: string) {
     return JSON.stringify([startWeight, targetWeight, goalMode, dailyChangeAbs]);
 }
 
+/** Render the progress screen interface. */
 export default function ProgressScreen() {
     const routeParams = useLocalSearchParams<{ openNextGoal?: string; openPlanReview?: string }>();
     const { api, user } = useAuth();
@@ -492,6 +499,7 @@ export default function ProgressScreen() {
     );
 }
 
+/** Build the styles for the active theme from validated configuration and dependencies. */
 const createStyles = (theme: AppTheme) => StyleSheet.create({
     row: {
         flexDirection: 'row',

@@ -1,3 +1,6 @@
+/**
+ * Provides the shared confirm discard changes component and interaction contract.
+ */
 import { confirmAction } from './confirmAction';
 
 const DISCARD_TITLE = 'Discard changes?';

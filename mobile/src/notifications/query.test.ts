@@ -1,3 +1,6 @@
+/**
+ * Exercises query behavior and regression boundaries.
+ */
 import { QueryClient, type InfiniteData } from '@tanstack/react-query';
 import type { InAppNotification } from '@calibrate/api-client';
 import { IN_APP_NOTIFICATION_TYPES } from '@calibrate/shared/inAppNotifications';
@@ -11,6 +14,7 @@ import {
     type NotificationListPage
 } from './query';
 
+/** Build deterministic notification for regression coverage. */
 function notification(id: number, overrides: Partial<InAppNotification> = {}): InAppNotification {
     return {
         id,
@@ -26,6 +30,7 @@ function notification(id: number, overrides: Partial<InAppNotification> = {}): I
     };
 }
 
+/** Build deterministic history data for regression coverage. */
 function historyData(pages: NotificationListPage[]): InfiniteData<NotificationListPage> {
     return { pages, pageParams: pages.map((_, index) => index || undefined) };
 }

@@ -1,3 +1,6 @@
+/**
+ * Provides Expo client behavior for food delete recovery controller.
+ */
 import * as Crypto from 'expo-crypto';
 import { getSafeActionErrorMessage } from '../errors/presentation';
 import {
@@ -110,12 +113,14 @@ export class FoodDeleteRecoveryController<TEntry extends FoodDeleteEntry, TOutco
         }
     };
 
+    /** Find active ticket from the supplied validated inputs. */
     private findActiveTicket(entryId: number): FoodDeleteTicket<TEntry> | null {
         if (this.state.pending?.entry.id === entryId) return this.state.pending;
         return [...this.state.committing, ...this.state.completed]
             .find(({ entry }) => entry.id === entryId) ?? null;
     }
 
+    /** Build queue commit from the supplied domain inputs. */
     private queueCommit(ticket: FoodDeleteTicket<TEntry>): Promise<FoodDeleteCommitResult<TEntry, TOutcome>> {
         const existing = this.commitPromises.get(ticket.operationId);
         if (existing) return existing;
@@ -126,6 +131,7 @@ export class FoodDeleteRecoveryController<TEntry extends FoodDeleteEntry, TOutco
         return promise;
     }
 
+    /** Run commit and surface failures to the caller. */
     private async runCommit(ticket: FoodDeleteTicket<TEntry>): Promise<FoodDeleteCommitResult<TEntry, TOutcome>> {
         try {
             const outcome = await this.options.commit(ticket);
@@ -159,18 +165,21 @@ export class FoodDeleteRecoveryController<TEntry extends FoodDeleteEntry, TOutco
         }
     }
 
+    /** Check whether the current state permits cel timer. */
     private cancelTimer(): void {
         if (this.timer === null) return;
         (this.options.cancelScheduled ?? clearTimeout)(this.timer);
         this.timer = null;
     }
 
+    /** Build set state from the supplied domain inputs. */
     private setState(state: FoodDeleteRecoveryState<TEntry>): void {
         this.state = state;
         this.listeners.forEach((listener) => listener());
     }
 }
 
+/** Describe food delete error using validated domain inputs. */
 function describeFoodDeleteError(error: unknown): string {
     return getSafeActionErrorMessage(error, 'Unable to delete this food entry.');
 }

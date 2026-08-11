@@ -1,3 +1,6 @@
+/**
+ * Provides the shared confirm action component and interaction contract.
+ */
 import { Alert, Platform } from 'react-native';
 
 type ConfirmActionOptions = {

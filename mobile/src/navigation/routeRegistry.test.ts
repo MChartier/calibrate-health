@@ -1,3 +1,6 @@
+/**
+ * Exercises route registry behavior and regression boundaries.
+ */
 import {
   REGISTERED_ROUTE_PATHS,
   ROUTE_IDS,

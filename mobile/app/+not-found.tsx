@@ -1,3 +1,6 @@
+/**
+ * Defines the +not found Expo Router screen.
+ */
 import { router, type Href } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
 import { useAuth } from '../src/auth/AuthContext';
@@ -10,6 +13,7 @@ import { Screen } from '../src/components/Screen';
 import { canonicalPathForRoute } from '../src/navigation/routeRegistry';
 import { spacing } from '../src/theme';
 
+/** Render the not found screen interface. */
 export default function NotFoundScreen() {
     const { user, isLoading } = useAuth();
 

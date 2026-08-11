@@ -25,6 +25,7 @@ self.addEventListener('fetch', (event) => {
 });
 `;
 
+/** Build deterministic landing head for regression coverage. */
 function landingHead(overrides = '') {
   return [
     `<title>${LANDING_METADATA.title}</title>`,

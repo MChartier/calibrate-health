@@ -1,3 +1,6 @@
+/**
+ * Provides Expo client behavior for client diagnostics.
+ */
 import { Platform } from 'react-native';
 import { ApiError } from '@calibrate/api-client';
 import {
@@ -57,6 +60,7 @@ export function registerClientDiagnosticReporter(reporter: ClientDiagnosticRepor
     };
 }
 
+/** Resolve the client diagnostic identity from the current validated state. */
 function getClientDiagnosticIdentity(): {
     platform: SupportedClientDiagnosticPlatform;
     version: string;
@@ -70,10 +74,12 @@ function getClientDiagnosticIdentity(): {
     return null;
 }
 
+/** Determine whether the input conforms to the record contract. */
 function isRecord(value: unknown): value is Record<string, unknown> {
     return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 }
 
+/** Determine whether the input conforms to the fixed client diagnostic signal contract. */
 function isFixedClientDiagnosticSignal(value: unknown): value is ClientDiagnosticSignal {
     if (!isRecord(value)) return false;
     return typeof value.event === 'string'
@@ -88,6 +94,7 @@ function isFixedClientDiagnosticSignal(value: unknown): value is ClientDiagnosti
         && DURATION_BUCKET_SET.has(value.duration_bucket);
 }
 
+/** Build to deferred root diagnostic from the supplied domain inputs. */
 function toDeferredRootDiagnostic(value: ClientDiagnosticSignal): DeferredRootDiagnostic | null {
     if (
         value.event !== 'client_failure'

@@ -1,3 +1,6 @@
+/**
+ * Exercises client diagnostics behavior and regression boundaries.
+ */
 const assert = require('node:assert/strict');
 const test = require('node:test');
 const express = require('express');
@@ -24,6 +27,7 @@ const basePayload = {
   duration_bucket: '200_to_500_ms'
 };
 
+/** Build deterministic mock response for regression coverage. */
 function mockResponse(locals = {}) {
   return {
     locals,
@@ -35,6 +39,7 @@ function mockResponse(locals = {}) {
   };
 }
 
+/** Build deterministic mock request for regression coverage. */
 function mockRequest(body, headers = {}, user) {
   const normalized = Object.fromEntries(
     Object.entries(headers).map(([name, value]) => [name.toLowerCase(), value])

@@ -1,3 +1,6 @@
+/**
+ * Exercises account sessions behavior and regression boundaries.
+ */
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const Module = require('node:module');
@@ -6,6 +9,7 @@ const { MobileDevicePlatform, Prisma } = require('@prisma/client');
 const BROWSER_PUBLIC_ID = '11111111-1111-4111-8111-111111111111';
 const MOBILE_PUBLIC_ID = '22222222-2222-4222-8222-222222222222';
 
+/** Load account sessions service. */
 function loadAccountSessionsService() {
   const dbPath = require.resolve('../src/config/database');
   const servicePath = require.resolve('../src/services/accountSessions');

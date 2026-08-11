@@ -1,3 +1,6 @@
+/**
+ * Defines the reset password Expo Router screen.
+ */
 import { useEffect, useRef, useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { Link, useLocalSearchParams } from 'expo-router';
@@ -12,6 +15,7 @@ import { useAppTheme } from '../src/theme';
 
 const MIN_PASSWORD_LENGTH = 8;
 
+/** Render the reset password route interface. */
 export default function ResetPasswordRoute() {
     const params = useLocalSearchParams<{ token?: string | string[]; '#'?: string | string[] }>();
     const { api } = useAuth();

@@ -1,3 +1,6 @@
+/**
+ * Exercises route metadata behavior and regression boundaries.
+ */
 import { ROUTE_IDS, getRouteDefinition } from './routeRegistry';
 import {
     ROUTE_ROBOTS_POLICIES,

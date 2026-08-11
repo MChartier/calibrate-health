@@ -1,3 +1,6 @@
+/**
+ * Provides Expo client behavior for use pending calibration evidence mutation.
+ */
 import { useOfflineOutbox } from './provider';
 import { hasPendingCalibrationEvidenceMutation } from './pendingCalibrationEvidence';
 

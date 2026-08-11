@@ -1,3 +1,6 @@
+/**
+ * Provides Expo client behavior for presentation.
+ */
 import { ApiError } from '@calibrate/api-client';
 
 export type ErrorPresentation = {
@@ -6,6 +9,7 @@ export type ErrorPresentation = {
     requestId: string | null;
 };
 
+/** Looks like connectivity failure using validated domain inputs. */
 const looksLikeConnectivityFailure = (error: unknown): boolean =>
     error instanceof TypeError
     || (error instanceof Error && /network|fetch|timed out|connect|offline/i.test(error.message));
@@ -66,6 +70,7 @@ export function getErrorPresentation(error: unknown, resourceLabel: string): Err
     };
 }
 
+/** Resolve the safe action error message from the current validated state. */
 export function getSafeActionErrorMessage(error: unknown, fallback: string): string {
     if (looksLikeConnectivityFailure(error)) return 'Check your connection and try again.';
     if (error instanceof ApiError) {
@@ -78,6 +83,7 @@ export function getSafeActionErrorMessage(error: unknown, fallback: string): str
     return fallback;
 }
 
+/** Resolve the auth action error message from the current validated state. */
 export function getAuthActionErrorMessage(error: unknown, action: 'sign in' | 'create account'): string {
     if (looksLikeConnectivityFailure(error)) return 'Check your connection and try again.';
     if (error instanceof ApiError) {

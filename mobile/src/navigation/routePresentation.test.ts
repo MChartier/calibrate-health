@@ -1,3 +1,6 @@
+/**
+ * Exercises route presentation behavior and regression boundaries.
+ */
 import {
     getRouteBackLabel,
     getRouteDocumentTitle,

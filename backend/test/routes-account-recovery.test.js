@@ -1,7 +1,11 @@
+/**
+ * Exercises routes account recovery behavior and regression boundaries.
+ */
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const Module = require('node:module');
 
+/** Build deterministic stub module for regression coverage. */
 function stubModule(resolvedPath, exports) {
   const instance = new Module(resolvedPath);
   instance.exports = exports;
@@ -9,6 +13,7 @@ function stubModule(resolvedPath, exports) {
   require.cache[resolvedPath] = instance;
 }
 
+/** Load router. */
 function loadRouter({ prismaStub, accountTokensStub }) {
   const paths = {
     database: require.resolve('../src/config/database'),
@@ -32,12 +37,14 @@ function loadRouter({ prismaStub, accountTokensStub }) {
   return loaded.default ?? loaded;
 }
 
+/** Resolve the handler from the current validated state. */
 function getHandler(router, path) {
   const layer = router.stack.find((candidate) => candidate.route?.path === path && candidate.route.methods?.post);
   assert.ok(layer);
   return layer.route.stack[0].handle;
 }
 
+/** Build deterministic response for regression coverage. */
 function response() {
   return {
     statusCode: 200,
@@ -48,7 +55,9 @@ function response() {
   };
 }
 
+/** Build deterministic never for regression coverage. */
 const never = () => new Promise(() => {});
+/** Build deterministic after immediate for regression coverage. */
 const afterImmediate = () => new Promise((resolve) => setImmediate(resolve));
 
 test('known-account SMTP work cannot delay the generic password reset response', async () => {

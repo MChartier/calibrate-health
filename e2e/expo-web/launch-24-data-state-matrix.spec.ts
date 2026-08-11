@@ -1,3 +1,6 @@
+/**
+ * Exercises launch 24 data state matrix behavior and regression boundaries.
+ */
 import type { Locator, Page, TestInfo } from '@playwright/test';
 import {
   API_RESOURCE_FIXTURE_STATES,
@@ -42,6 +45,7 @@ const RESTRICTED_LEGAL_USER = {
   },
 };
 
+/** Restrict the six-state matrix to the reviewed desktop Chromium project. */
 function runOnlyInDesktopProject(testInfo: TestInfo): void {
   test.skip(
     testInfo.project.name !== 'desktop-chrome',
@@ -49,15 +53,18 @@ function runOnlyInDesktopProject(testInfo: TestInfo): void {
   );
 }
 
+/** Build deterministic surface locator for regression coverage. */
 function surfaceLocator(page: Page, surface: SurfaceExpectation): Locator {
   if (surface.kind === 'testId') return page.getByTestId(surface.value).first();
   return page.getByText(surface.value, { exact: true }).first();
 }
 
+/** Assert that surface. */
 async function expectSurface(page: Page, surface: SurfaceExpectation): Promise<void> {
   await expect(surfaceLocator(page, surface)).toBeVisible();
 }
 
+/** Install route setup for deterministic browser coverage. */
 async function installRouteSetup(page: Page, setup: Launch24DataRouteCase['setup']): Promise<void> {
   if (setup === 'restricted-legal') {
     await page.route('**/auth/me', (route) => route.fulfill({
@@ -81,12 +88,14 @@ async function installRouteSetup(page: Page, setup: Launch24DataRouteCase['setup
   }
 }
 
+/** Build deterministic matches resource response for regression coverage. */
 function matchesResourceResponse(routeCase: Launch24DataRouteCase, responseUrl: string): boolean {
   const url = new URL(responseUrl);
   return url.pathname === routeCase.resource.pathname
     && (routeCase.resource.matches?.(url) ?? true);
 }
 
+/** Build deterministic trigger refresh failure for regression coverage. */
 async function triggerRefreshFailure(
   page: Page,
   routeCase: Launch24DataRouteCase,

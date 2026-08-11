@@ -14,6 +14,7 @@ import {
   readLockedUuidVersions
 } from './dependency-advisory-exceptions.mjs';
 
+/** Build deterministic image size audit report for regression coverage. */
 const imageSizeAuditReport = (additionalVulnerabilities = {}) => ({
   auditReportVersion: 2,
   vulnerabilities: {
@@ -41,6 +42,7 @@ const imageSizeAuditReport = (additionalVulnerabilities = {}) => ({
   }
 });
 
+/** Build deterministic image size lockfile for regression coverage. */
 const imageSizeLockfile = (packagePath = 'node_modules/image-size', version = '1.2.1') => ({
   packages: {
     [packagePath]: { version }

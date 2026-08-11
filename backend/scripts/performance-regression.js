@@ -1,3 +1,6 @@
+/**
+ * Runs the backend performance regression maintenance workflow.
+ */
 const fs = require('node:fs');
 const path = require('node:path');
 
@@ -13,6 +16,7 @@ const REQUIRED_BENCHMARKS = ['diagnostics_snapshot_serialization', 'weight_trend
 const ALLOWED_OWNER_ROLES = new Set(['release_engineer', 'service_operator', 'backend_maintainer', 'client_maintainer']);
 let benchmarkSink;
 
+/** Build the weight fixture with stable fields for the backend domain boundary. */
 function buildWeightFixture() {
   const firstDay = Date.parse('2026-01-01T00:00:00.000Z');
   return Array.from({ length: 150 }, (_unused, index) => ({
@@ -21,6 +25,7 @@ function buildWeightFixture() {
   }));
 }
 
+/** Build the diagnostics fixture with stable fields for the backend domain boundary. */
 function buildDiagnosticsFixture() {
   const registry = new DiagnosticsRegistry();
   const categories = ['auth', 'provider', 'notification', 'sync', 'frontend'];
@@ -44,17 +49,20 @@ function buildDiagnosticsFixture() {
   return registry;
 }
 
+/** Measure one benchmark batch and return its elapsed nanoseconds. */
 function runBatch(action, iterations) {
   const started = process.hrtime.bigint();
   for (let iteration = 0; iteration < iterations; iteration += 1) benchmarkSink = action();
   return Number(process.hrtime.bigint() - started);
 }
 
+/** Return the median of the finite input values. */
 function median(values) {
   const sorted = [...values].sort((left, right) => left - right);
   return sorted[Math.floor(sorted.length / 2)];
 }
 
+/** Determine the reference iteration count needed to balance benchmark durations. */
 function balancedReferenceIterations(targetIterations, baselineRatioPpm) {
   if (!Number.isSafeInteger(targetIterations) || targetIterations <= 0) {
     throw new Error('Target benchmark iterations must be a positive safe integer.');
@@ -70,6 +78,7 @@ function balancedReferenceIterations(targetIterations, baselineRatioPpm) {
   return referenceIterations;
 }
 
+/** Normalize ratio ppm into the canonical representation used at this boundary. */
 function normalizeRatioPpm(targetNs, referenceNs, targetIterations, referenceIterations) {
   if (
     !Number.isFinite(targetNs) || targetNs <= 0 ||
@@ -86,6 +95,7 @@ function normalizeRatioPpm(targetNs, referenceNs, targetIterations, referenceIte
   );
 }
 
+/** Evaluate benchmark ratio against the module's reviewed constraints. */
 function evaluateBenchmarkRatio(current, baseline, regressionPercent) {
   if (
     !Number.isSafeInteger(current) || current <= 0 ||
@@ -98,11 +108,13 @@ function evaluateBenchmarkRatio(current, baseline, regressionPercent) {
   return { allowed, exceeds: current > allowed };
 }
 
+/** Determine whether the input conforms to the confirmed benchmark regression contract. */
 function isConfirmedBenchmarkRegression(current, confirmation, baseline, regressionPercent) {
   return evaluateBenchmarkRatio(current, baseline, regressionPercent).exceeds &&
     evaluateBenchmarkRatio(confirmation, baseline, regressionPercent).exceeds;
 }
 
+/** Measure median ratio ppm for deterministic evaluation. */
 function measureMedianRatioPpm(target, reference, targetIterations, baselineRatioPpm) {
   // Match batch duration to the reviewed ratio so both sides see comparable host scheduling and CPU scaling.
   const referenceIterations = balancedReferenceIterations(targetIterations, baselineRatioPpm);
@@ -126,6 +138,7 @@ function measureMedianRatioPpm(target, reference, targetIterations, baselineRati
   return median(ratios);
 }
 
+/** Measure benchmarks for deterministic evaluation. */
 function measureBenchmarks(manifest) {
   const observations = buildWeightFixture();
   const trendOptions = {
@@ -156,6 +169,7 @@ function measureBenchmarks(manifest) {
   };
 }
 
+/** Parse and validate options. */
 function parseOptions(args) {
   const value = (name) => args.find((argument) => argument.startsWith(`${name}=`))?.slice(name.length + 1);
   return {
@@ -167,6 +181,7 @@ function parseOptions(args) {
   };
 }
 
+/** Reject execution unless the review contract is satisfied. */
 function assertReview(options) {
   if (
     typeof options.reference !== 'string' || !/^[a-z0-9#._-]{3,64}$/i.test(options.reference) ||
@@ -178,6 +193,7 @@ function assertReview(options) {
   }
 }
 
+/** Run this module's command-line and surface failures to the caller. */
 async function main() {
   const options = parseOptions(process.argv.slice(2));
   const manifest = JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf8'));

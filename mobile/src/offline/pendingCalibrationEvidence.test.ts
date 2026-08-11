@@ -1,3 +1,6 @@
+/**
+ * Exercises pending calibration evidence behavior and regression boundaries.
+ */
 import { OFFLINE_MUTATION_OPERATIONS } from './operations';
 import {
     hasPendingCalibrationEvidenceMutation,

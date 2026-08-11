@@ -1,3 +1,6 @@
+/**
+ * Exercises calendar modal web behavior and regression boundaries.
+ */
 import React from 'react';
 import { CalendarModal } from './CalendarModal.web';
 

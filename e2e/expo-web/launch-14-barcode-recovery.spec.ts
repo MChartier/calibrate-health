@@ -1,3 +1,6 @@
+/**
+ * Exercises launch 14 barcode recovery behavior and regression boundaries.
+ */
 import { mkdir } from 'node:fs/promises';
 import path from 'node:path';
 import type { Page, Route, TestInfo } from '@playwright/test';
@@ -23,10 +26,12 @@ type BarcodeFixture = {
   lookups: string[];
 };
 
+/** Fulfill json with deterministic fixture data. */
 function fulfillJson(route: Route, body: unknown, status = 200) {
   return route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(body) });
 }
 
+/** Install barcode fixture for deterministic browser coverage. */
 async function installBarcodeFixture(page: Page): Promise<BarcodeFixture> {
   const fixture: BarcodeFixture = { lookups: [] };
   await page.route('**/api/v1/food/search**', async (route) => {
@@ -74,6 +79,7 @@ async function installBarcodeFixture(page: Page): Promise<BarcodeFixture> {
   return fixture;
 }
 
+/** Assert that no horizontal overflow. */
 async function expectNoHorizontalOverflow(page: Page) {
   const widths = await page.evaluate(() => ({
     clientWidth: document.documentElement.clientWidth,
@@ -82,6 +88,7 @@ async function expectNoHorizontalOverflow(page: Page) {
   expect(widths.scrollWidth).toBeLessThanOrEqual(widths.clientWidth);
 }
 
+/** Assert that minimum touch target. */
 async function expectMinimumTouchTarget(page: Page, name: string) {
   const box = await page.getByRole('button', { name, exact: true }).boundingBox();
   expect(box, `${name} should have a measurable touch target`).not.toBeNull();
@@ -89,6 +96,7 @@ async function expectMinimumTouchTarget(page: Page, name: string) {
   expect(box!.width, `${name} touch target width`).toBeGreaterThanOrEqual(44);
 }
 
+/** Capture evidence only when explicit evidence collection is enabled. */
 async function captureEvidence(page: Page, testInfo: TestInfo) {
   if (process.env.CALIBRATE_CAPTURE_EVIDENCE !== '1') return;
   const filename = testInfo.project.name === 'desktop-chrome'
@@ -105,6 +113,7 @@ async function captureEvidence(page: Page, testInfo: TestInfo) {
   await page.screenshot({ path: path.join(EVIDENCE_DIR, filename), fullPage: false });
 }
 
+/** Open barcode route while preserving the module's lifecycle and failure guarantees. */
 async function openBarcodeRoute(page: Page) {
   const params = new URLSearchParams({
     date: SELECTED_DATE,
@@ -119,11 +128,13 @@ async function openBarcodeRoute(page: Page) {
   await expect(input).toBeVisible();
 }
 
+/** Build deterministic reset to manual barcode for regression coverage. */
 async function resetToManualBarcode(page: Page) {
   await page.getByRole('button', { name: 'Scan again', exact: true }).click();
   await page.getByRole('button', { name: 'Enter barcode', exact: true }).click();
 }
 
+/** Build deterministic submit barcode for regression coverage. */
 async function submitBarcode(page: Page, barcode: string) {
   await page.getByLabel('EAN or UPC barcode').fill(barcode);
   await page.getByRole('button', { name: 'Look up barcode', exact: true }).click();

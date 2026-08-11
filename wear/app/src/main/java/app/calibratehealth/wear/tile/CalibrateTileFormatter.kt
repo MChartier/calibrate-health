@@ -20,6 +20,7 @@ data class CalibrateTileContent(
 
 internal const val WEIGHT_SYNCING_TILE_PLAN_STATUS = "weight_syncing"
 
+/** Suppresses cached tile target math while a durable weight mutation awaits server reconciliation. */
 internal fun suppressTilePlanForPendingWeight(
     snapshot: CalibrateTileSnapshot,
     pendingMutationTypes: Set<String>

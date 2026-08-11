@@ -1,3 +1,6 @@
+/**
+ * Exercises context behavior and regression boundaries.
+ */
 import { MEAL_PERIODS } from '@calibrate/shared';
 import {
     BARCODE_RESUME_STEPS,

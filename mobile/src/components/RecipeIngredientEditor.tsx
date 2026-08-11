@@ -1,3 +1,6 @@
+/**
+ * Provides the shared recipe ingredient editor component and interaction contract.
+ */
 import React, { useCallback, useMemo, useRef } from 'react';
 import { StyleSheet, View } from 'react-native';
 import type { MyFoodSummary } from '@calibrate/api-client';
@@ -116,6 +119,7 @@ export const RecipeIngredientEditor: React.FC<RecipeIngredientEditorProps> = ({
     );
 };
 
+/** Build the styles for the active theme from validated configuration and dependencies. */
 function createStyles(theme: AppTheme) {
     return StyleSheet.create({
         root: {

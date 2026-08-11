@@ -320,10 +320,12 @@ function getMetricsSpanDays(rows: { date: Date }[]): number {
     return Math.max(1, rawDays + 1);
 }
 
+/** Format date only for stable display or serialization. */
 function formatDateOnly(date: Date): string {
     return date.toISOString().slice(0, 10);
 }
 
+/** Map evidence status into the canonical representation used at this boundary. */
 function mapEvidenceStatus(status: WeightTrendEvidenceStatus | WeightTrendRateStatus): TrendSummaryEvidence {
     if (status === 'insufficient') return 'insufficient';
     if (status === 'limited') return 'provisional';
@@ -442,6 +444,7 @@ function serializeMetrics(
 
 const LEGACY_TREND_FALLBACK = { weeklyRate: 0, volatility: 'low' as const };
 
+/** Build the legacy trend summary with stable fields for the backend domain boundary. */
 function buildLegacyTrendSummary(
     metricsAsc: MetricRecordWithTrend[],
     trendResult: WeightTrendResult | null,

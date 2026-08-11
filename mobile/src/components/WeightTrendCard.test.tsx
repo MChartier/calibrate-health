@@ -40,6 +40,7 @@ function createMetric(id: number, date: string, weight: number): TrendMetricEntr
     };
 }
 
+/** Build trend summary from validated configuration and dependencies. */
 function createTrendSummary(): WeightTrendSummary {
     return {
         status: 'sufficient',
@@ -72,6 +73,7 @@ function createTrendSummary(): WeightTrendSummary {
     };
 }
 
+/** Build deterministic response for regression coverage. */
 function response(metrics = METRICS, summary: WeightTrendSummary | null = createTrendSummary()): TrendMetricsResponse {
     return {
         metrics,

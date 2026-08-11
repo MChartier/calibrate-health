@@ -1,3 +1,6 @@
+/**
+ * Exercises copy food sheet behavior and regression boundaries.
+ */
 import React from 'react';
 import { fireEvent, render } from '@testing-library/react-native';
 import { CopyFoodSheet, getDefaultCopyTargetDate } from './CopyFoodSheet';

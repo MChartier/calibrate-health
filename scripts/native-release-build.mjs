@@ -33,20 +33,24 @@ const PROVENANCE_ARTIFACT_FIELDS = Object.freeze([
   'id', 'role', 'format', 'path', 'sizeBytes', 'sha256', 'applicationId', 'versionName', 'versionCode'
 ]);
 
+/** Sha256 using validated domain inputs. */
 function sha256(value) {
   return crypto.createHash('sha256').update(value).digest('hex');
 }
 
+/** Build exact fields from the supplied domain inputs. */
 function exactFields(value, expected) {
   return value && typeof value === 'object' && !Array.isArray(value) &&
     Object.keys(value).sort().join('\n') === [...expected].sort().join('\n');
 }
 
+/** Release version using validated domain inputs. */
 function releaseVersion(manifest, role) {
   const value = manifest?.android?.[role === 'phone' ? 'mobile' : 'wear'];
   return { versionName: value?.version_name, versionCode: value?.version_code };
 }
 
+/** Read native release build source. */
 export function readNativeReleaseBuildSource(root = repositoryRoot, execute = execFileSync) {
   const git = (args) => execute('git', args, {
     cwd: root,
@@ -63,6 +67,7 @@ export function readNativeReleaseBuildSource(root = repositoryRoot, execute = ex
   return sourceCommit;
 }
 
+/** Build native release build provenance from validated configuration and dependencies. */
 export function createNativeReleaseBuildProvenance(root, sourceCommit) {
   if (!COMMIT_PATTERN.test(sourceCommit ?? '')) {
     throw new Error('Native release build provenance requires a lowercase 40-character sourceCommit.');
@@ -101,6 +106,7 @@ export function createNativeReleaseBuildProvenance(root, sourceCommit) {
   };
 }
 
+/** Validate native release build provenance. */
 export function validateNativeReleaseBuildProvenance(provenance, options = {}) {
   const errors = [];
   if (!exactFields(provenance, PROVENANCE_FIELDS)) errors.push('Build provenance fields are invalid.');
@@ -158,6 +164,7 @@ export function validateNativeReleaseBuildProvenance(provenance, options = {}) {
   return errors;
 }
 
+/** Read native release build provenance. */
 export function readNativeReleaseBuildProvenance(root, options = {}) {
   const relativePath = NATIVE_RELEASE_BUILD_PROVENANCE_PATH;
   const file = path.resolve(root, relativePath);
@@ -175,6 +182,7 @@ export function readNativeReleaseBuildProvenance(root, options = {}) {
   return provenance;
 }
 
+/** Write native release build provenance. */
 export function writeNativeReleaseBuildProvenance(root, provenance) {
   const errors = validateNativeReleaseBuildProvenance(provenance);
   if (errors.length) throw new Error(`Native release build provenance is invalid:\n- ${errors.join('\n- ')}`);

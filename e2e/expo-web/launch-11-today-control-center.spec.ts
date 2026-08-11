@@ -1,3 +1,6 @@
+/**
+ * Exercises launch 11 today control center behavior and regression boundaries.
+ */
 import { mkdir } from 'node:fs/promises';
 import path from 'node:path';
 import type { Locator, Page, TestInfo } from '@playwright/test';
@@ -18,6 +21,7 @@ const CONFIGURED_VIEWPORT_WIDTHS: Record<string, number> = {
   'compact-phone-chrome': 320,
 };
 
+/** Build deterministic food entry for regression coverage. */
 function foodEntry(calories: number, name = 'Fixture breakfast') {
   return [{
     id: 31,
@@ -28,6 +32,7 @@ function foodEntry(calories: number, name = 'Fixture breakfast') {
   }];
 }
 
+/** Assert that no horizontal overflow. */
 async function expectNoHorizontalOverflow(page: Page) {
   const widths = await page.evaluate(() => ({
     clientWidth: document.documentElement.clientWidth,
@@ -36,6 +41,7 @@ async function expectNoHorizontalOverflow(page: Page) {
   expect(widths.scrollWidth).toBeLessThanOrEqual(widths.clientWidth);
 }
 
+/** Assert that inside. */
 async function expectInside(outer: Locator, inner: Locator) {
   const [outerBox, innerBox] = await Promise.all([outer.boundingBox(), inner.boundingBox()]);
   expect(outerBox).not.toBeNull();
@@ -46,6 +52,7 @@ async function expectInside(outer: Locator, inner: Locator) {
   expect(innerBox!.y + innerBox!.height).toBeLessThanOrEqual(outerBox!.y + outerBox!.height + 1);
 }
 
+/** Assert that full width primary. */
 async function expectFullWidthPrimary(surface: Locator, primary: Locator) {
   const [surfaceBox, primaryBox] = await Promise.all([surface.boundingBox(), primary.boundingBox()]);
   expect(surfaceBox).not.toBeNull();
@@ -54,6 +61,7 @@ async function expectFullWidthPrimary(surface: Locator, primary: Locator) {
   expect(Math.abs(surfaceBox!.width - primaryBox!.width)).toBeLessThanOrEqual(2);
 }
 
+/** Assert that no overlap. */
 async function expectNoOverlap(first: Locator, second: Locator) {
   const [firstBox, secondBox] = await Promise.all([first.boundingBox(), second.boundingBox()]);
   expect(firstBox).not.toBeNull();
@@ -71,6 +79,7 @@ async function expectNoOverlap(first: Locator, second: Locator) {
   expect(overlapWidth * overlapHeight).toBeLessThanOrEqual(1);
 }
 
+/** Assert that within viewport width. */
 async function expectWithinViewportWidth(page: Page, locator: Locator) {
   const [viewport, box] = await Promise.all([page.viewportSize(), locator.boundingBox()]);
   expect(viewport).not.toBeNull();
@@ -79,6 +88,7 @@ async function expectWithinViewportWidth(page: Page, locator: Locator) {
   expect(box!.x + box!.width).toBeLessThanOrEqual(viewport!.width + 1);
 }
 
+/** Assert that horizontally centered. */
 async function expectHorizontallyCentered(outer: Locator, inner: Locator) {
   const [outerBox, innerBox] = await Promise.all([outer.boundingBox(), inner.boundingBox()]);
   expect(outerBox).not.toBeNull();
@@ -88,6 +98,7 @@ async function expectHorizontallyCentered(outer: Locator, inner: Locator) {
   expect(Math.abs(outerCenter - innerCenter)).toBeLessThanOrEqual(2);
 }
 
+/** Parse and validate css rgb. */
 function parseCssRgb(value: string): [number, number, number] {
   const channels = value.match(/[\d.]+/g)?.slice(0, 3).map(Number);
   if (!channels || channels.length !== 3 || channels.some((channel) => !Number.isFinite(channel))) {
@@ -96,6 +107,7 @@ function parseCssRgb(value: string): [number, number, number] {
   return channels as [number, number, number];
 }
 
+/** Build deterministic relative luminance for regression coverage. */
 function relativeLuminance([red, green, blue]: [number, number, number]) {
   const linear = [red, green, blue].map((channel) => {
     const normalized = channel / 255;
@@ -106,6 +118,7 @@ function relativeLuminance([red, green, blue]: [number, number, number]) {
   return (0.2126 * linear[0]) + (0.7152 * linear[1]) + (0.0722 * linear[2]);
 }
 
+/** Assert that contrast. */
 async function expectContrast(text: Locator, surface: Locator, minimumRatio: number) {
   const [foreground, background] = await Promise.all([
     text.evaluate((element) => getComputedStyle(element).color),
@@ -118,6 +131,7 @@ async function expectContrast(text: Locator, surface: Locator, minimumRatio: num
   expect(ratio).toBeGreaterThanOrEqual(minimumRatio);
 }
 
+/** Enlarge leaf text to exercise responsive text reflow. */
 async function enlargeLeafText(page: Page) {
   await page.evaluate(() => {
     for (const element of document.querySelectorAll<HTMLElement>('body *')) {
@@ -134,6 +148,7 @@ async function enlargeLeafText(page: Page) {
   });
 }
 
+/** Capture evidence only when explicit evidence collection is enabled. */
 async function captureEvidence(page: Page, testInfo: TestInfo) {
   if (process.env.CALIBRATE_CAPTURE_EVIDENCE !== '1') return;
 
@@ -156,6 +171,7 @@ async function captureEvidence(page: Page, testInfo: TestInfo) {
   await page.screenshot({ path: path.join(EVIDENCE_DIR, filename), fullPage: false });
 }
 
+/** Assert that under target dashboard. */
 async function expectUnderTargetDashboard(page: Page) {
   const balanceCard = page.getByLabel(/^Daily balance\./);
   await expect(balanceCard).toHaveAccessibleName(

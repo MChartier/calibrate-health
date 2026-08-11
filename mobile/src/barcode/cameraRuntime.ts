@@ -1,3 +1,6 @@
+/**
+ * Provides Expo client behavior for camera runtime.
+ */
 import { Linking } from 'react-native';
 import { CameraView } from 'expo-camera';
 
@@ -11,6 +14,7 @@ export const cameraPermissionCopy = {
     openSettingsError: 'Unable to open device settings. Open the Calibrate app permissions manually.'
 } as const;
 
+/** Determine whether the input conforms to the barcode camera available contract. */
 export async function isBarcodeCameraAvailable(): Promise<boolean> {
     try {
         return await CameraView.isAvailableAsync();
@@ -19,6 +23,7 @@ export async function isBarcodeCameraAvailable(): Promise<boolean> {
     }
 }
 
+/** Open barcode camera settings while preserving the module's lifecycle and failure guarantees. */
 export async function openBarcodeCameraSettings(): Promise<boolean> {
     try {
         await Linking.openSettings();

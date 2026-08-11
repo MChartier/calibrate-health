@@ -1,3 +1,6 @@
+/**
+ * Exercises provider web behavior and regression boundaries.
+ */
 import {
     getHealthConnectWebFixtureForHost,
     isHealthConnectWebFixtureHost,

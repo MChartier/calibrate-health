@@ -8,12 +8,14 @@ const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url))
 const workflowsDirectory = path.join(repositoryRoot, '.github', 'workflows');
 const readWorkflow = (name) => readFileSync(path.join(workflowsDirectory, name), 'utf8');
 
+/** Build deterministic ux job block for regression coverage. */
 function uxJobBlock(workflow) {
   const match = workflow.match(/\n  ux-regression:\n[\s\S]*?(?=\n  [a-z0-9_-]+:)/);
   assert.ok(match, 'workflow must define one ux-regression job');
   return match[0];
 }
 
+/** Build deterministic workflow job block for regression coverage. */
 function workflowJobBlock(workflow, jobName) {
   assert.match(jobName, /^[a-z0-9_-]+$/, 'workflow job selector must be a literal safe identifier');
   const match = workflow.match(new RegExp(`\\n  ${jobName}:\\n[\\s\\S]*?(?=\\n  [a-z0-9_-]+:|$)`));
@@ -21,6 +23,7 @@ function workflowJobBlock(workflow, jobName) {
   return match[0];
 }
 
+/** Reject execution unless the windows ux job contract is satisfied. */
 function assertWindowsUxJob(workflow) {
   const job = uxJobBlock(workflow);
   assert.match(job, /runs-on: windows-latest/);

@@ -1,3 +1,6 @@
+/**
+ * Provides Expo client behavior for pending calibration evidence.
+ */
 import { OFFLINE_MUTATION_OPERATIONS } from './operations';
 import type { QueuedMutation } from './queuedMutation';
 
@@ -19,6 +22,7 @@ export function isCalibrationEvidenceMutationOperation(operation: string): boole
     return CALIBRATION_EVIDENCE_MUTATION_OPERATIONS.has(operation);
 }
 
+/** Check whether the current state has pending calibration evidence mutation. */
 export function hasPendingCalibrationEvidenceMutation(
     mutations: ReadonlyArray<Pick<QueuedMutation, 'operation'>>
 ): boolean {

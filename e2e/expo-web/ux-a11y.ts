@@ -1,3 +1,6 @@
+/**
+ * Provides shared browser acceptance support for ux a11y.
+ */
 import AxeBuilder from '@axe-core/playwright';
 import { writeFile } from 'node:fs/promises';
 import { expect, type Page, type TestInfo } from '@playwright/test';
@@ -17,10 +20,12 @@ export type AccessibilityScanContext = {
   surfaceId: string;
 };
 
+/** Determine whether the input conforms to the blocking impact contract. */
 function isBlockingImpact(impact: string | null): impact is SanitizedAccessibilityViolation['impact'] {
   return impact !== null && BLOCKING_IMPACTS.has(impact);
 }
 
+/** Count rendered positive tab indexes using validated domain inputs. */
 async function countRenderedPositiveTabIndexes(page: Page): Promise<number> {
   return page.locator('[tabindex]').evaluateAll((elements) => elements.filter((element) => {
     const tabindex = Number.parseInt(element.getAttribute('tabindex') ?? '', 10);
@@ -61,6 +66,7 @@ export async function collectBlockingAccessibilityViolations(
   return violations.sort((first, second) => first.rule.localeCompare(second.rule));
 }
 
+/** Attach accessibility summary without retaining private page content. */
 export async function attachAccessibilitySummary(
   page: Page,
   testInfo: TestInfo,
@@ -84,6 +90,7 @@ export async function attachAccessibilitySummary(
   });
 }
 
+/** Assert that no blocking accessibility violations. */
 export async function expectNoBlockingAccessibilityViolations(
   page: Page,
   testInfo: TestInfo,

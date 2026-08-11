@@ -1,8 +1,12 @@
+/**
+ * Exercises reminder settings panel behavior and regression boundaries.
+ */
 import { fireEvent, render } from '@testing-library/react-native';
 import { ReminderSettingsPanel } from './ReminderSettingsPanel';
 
 jest.mock('@expo/vector-icons/Ionicons', () => () => null);
 
+/** Render panel. */
 function renderPanel() {
     const callbacks = {
         onLogFoodEnabledChange: jest.fn(),

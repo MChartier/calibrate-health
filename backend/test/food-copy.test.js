@@ -1,7 +1,11 @@
+/**
+ * Exercises food copy behavior and regression boundaries.
+ */
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const Module = require('node:module');
 
+/** Build deterministic stub module for regression coverage. */
 function stubModule(resolvedPath, exports) {
   const moduleInstance = new Module(resolvedPath);
   moduleInstance.exports = exports;
@@ -9,6 +13,7 @@ function stubModule(resolvedPath, exports) {
   require.cache[resolvedPath] = moduleInstance;
 }
 
+/** Load food copy service. */
 function loadFoodCopyService() {
   const dbPath = require.resolve('../src/config/database');
   const servicePath = require.resolve('../src/services/foodCopy');
@@ -35,6 +40,7 @@ const validBody = {
   target_date: '2026-08-09'
 };
 
+/** Build deterministic require parsed for regression coverage. */
 function requireParsed(body = validBody, userTimeZone = 'America/Los_Angeles') {
   const parsed = parseFoodCopyRequest({ body, userTimeZone });
   assert.equal(parsed.ok, true);

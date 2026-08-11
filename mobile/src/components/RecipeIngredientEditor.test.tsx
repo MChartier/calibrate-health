@@ -1,3 +1,6 @@
+/**
+ * Exercises recipe ingredient editor behavior and regression boundaries.
+ */
 import React, { useState } from 'react';
 import { cleanup, fireEvent, render, waitFor } from '@testing-library/react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -19,6 +22,7 @@ jest.mock('../auth/AuthContext', () => ({
     useAuth: () => ({ api: mockApi })
 }));
 
+/** Build deterministic saved food for regression coverage. */
 function savedFood(id: number, name = `Saved food ${id}`, calories = 100): MyFoodSummary {
     return {
         id,
@@ -31,6 +35,7 @@ function savedFood(id: number, name = `Saved food ${id}`, calories = 100): MyFoo
     };
 }
 
+/** Render with query client. */
 function renderWithQueryClient(node: React.ReactElement) {
     const queryClient = new QueryClient({
         defaultOptions: {

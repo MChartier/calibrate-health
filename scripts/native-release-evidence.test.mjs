@@ -1,3 +1,6 @@
+/**
+ * Exercises native release evidence behavior and regression boundaries.
+ */
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
 import test from 'node:test';
@@ -30,10 +33,12 @@ const MANIFEST = `${JSON.stringify({
   }
 }, null, 2)}\n`;
 
+/** Build deterministic digest for regression coverage. */
 function digest(value) {
   return crypto.createHash('sha256').update(value).digest('hex');
 }
 
+/** Build deterministic evidence fixture for regression coverage. */
 function evidenceFixture() {
   const checkpoints = Object.fromEntries(Object.entries(NATIVE_RELEASE_CHECKPOINT_DEFINITIONS).map(
     ([checkpoint, definition]) => [checkpoint, { ...definition, outcome: true }]

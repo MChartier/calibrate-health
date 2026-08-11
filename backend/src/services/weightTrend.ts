@@ -21,15 +21,18 @@ export const WEIGHT_TREND_MODEL_VERSION: 1 | 2 = USE_WEIGHT_TREND_V1
     ? 1
     : WEIGHT_TREND_MODEL_VERSION_V2;
 
+/** Check that a value is a finite Date instance. */
 function isValidDate(value: Date | undefined): value is Date {
     return value instanceof Date && Number.isFinite(value.getTime());
 }
 
+/** Measure a non-negative elapsed interval in days. */
 function elapsedDays(startDate: Date, endDate: Date): number {
     const value = (endDate.getTime() - startDate.getTime()) / MS_PER_DAY;
     return Number.isFinite(value) && value > 0 ? value : 0;
 }
 
+/** Build the legacy evidence with stable fields for the backend domain boundary. */
 function buildLegacyEvidence(points: WeightTrendPoint[]): WeightTrendEvidence {
     if (points.length === 0) {
         return {
@@ -55,6 +58,7 @@ function buildLegacyEvidence(points: WeightTrendPoint[]): WeightTrendEvidence {
     };
 }
 
+/** Build the legacy segments with stable fields for the backend domain boundary. */
 function buildLegacySegments(points: WeightTrendPoint[]): WeightTrendSegment[] {
     if (points.length === 0) return [];
 
@@ -71,6 +75,7 @@ function buildLegacySegments(points: WeightTrendPoint[]): WeightTrendSegment[] {
     }];
 }
 
+/** Adapt weight trend v1 result to the current contract. */
 function adaptWeightTrendV1Result(
     legacy: WeightTrendResultV1,
     explicitAsOfDate: Date | undefined

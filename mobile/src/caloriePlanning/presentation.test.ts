@@ -1,3 +1,6 @@
+/**
+ * Exercises presentation behavior and regression boundaries.
+ */
 import { getCaloriePlanPresentation } from './presentation';
 
 describe('calorie plan presentation', () => {

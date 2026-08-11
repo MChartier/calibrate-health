@@ -1,3 +1,6 @@
+/**
+ * Provides backend domain operations for calorie planning.
+ */
 import { Prisma } from '@prisma/client';
 import {
   evaluateCaloriePlan,
@@ -185,6 +188,7 @@ export function getStoredCaloriePlanningSnapshot(userId: number, now: Date = new
   );
 }
 
+/** Build calorie summary wire from the supplied domain inputs. */
 export const calorieSummaryWire = (evaluation: CaloriePlanEvaluation) => ({
   ...(evaluation.bmr === null ? {} : { bmr: evaluation.bmr }),
   ...(evaluation.tdee === null ? {} : { tdee: evaluation.tdee }),
@@ -201,6 +205,7 @@ export const calorieSummaryWire = (evaluation: CaloriePlanEvaluation) => ({
   minimumDailyCalorieTarget: evaluation.minimumDailyCalorieTarget
 });
 
+/** Build projection wire from the supplied domain inputs. */
 export const projectionWire = (projection: GoalProjection) => ({
   status: projection.status,
   projected_end_date: projection.projectedEndDate,

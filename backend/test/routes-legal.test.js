@@ -1,7 +1,11 @@
+/**
+ * Exercises routes legal behavior and regression boundaries.
+ */
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const Module = require('node:module');
 
+/** Build deterministic stub module for regression coverage. */
 function stubModule(resolvedPath, exports) {
   const moduleInstance = new Module(resolvedPath);
   moduleInstance.exports = exports;
@@ -9,6 +13,7 @@ function stubModule(resolvedPath, exports) {
   require.cache[resolvedPath] = moduleInstance;
 }
 
+/** Load router. */
 function loadRouter(serviceStub) {
   const servicePath = require.resolve('../src/services/accountAccess');
   const routePath = require.resolve('../src/routes/legal');
@@ -21,12 +26,14 @@ function loadRouter(serviceStub) {
   return loaded.default ?? loaded;
 }
 
+/** Handle r. */
 function handler(router, method, path) {
   const layer = router.stack.find((candidate) => candidate.route?.path === path && candidate.route.methods?.[method]);
   assert.ok(layer);
   return layer.route.stack.at(-1).handle;
 }
 
+/** Build deterministic response for regression coverage. */
 function response() {
   return {
     statusCode: 200,

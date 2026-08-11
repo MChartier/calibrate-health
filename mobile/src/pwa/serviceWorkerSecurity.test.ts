@@ -1,9 +1,13 @@
+/**
+ * Exercises service worker security behavior and regression boundaries.
+ */
 import fs from 'node:fs';
 import path from 'node:path';
 import vm from 'node:vm';
 
 type ServiceWorkerHandler = (event: any) => void;
 
+/** Load worker. */
 function loadWorker(options: { cacheKeys?: string[] } = {}) {
     const source = fs.readFileSync(path.join(process.cwd(), 'public', 'sw.js'), 'utf8');
     const handlers = new Map<string, ServiceWorkerHandler>();

@@ -1,3 +1,6 @@
+/**
+ * Exercises launch 22 accessibility behavior and regression boundaries.
+ */
 import type { Locator, Page, Route, TestInfo } from '@playwright/test';
 import { ROUTE_IDS, ROUTE_REGISTRY } from '../../mobile/src/navigation/routeRegistry';
 import { expect, test } from './fixtures';
@@ -80,6 +83,7 @@ const RESUME_CONFIRMATION_DUE_PAUSE_RESPONSE = {
 test.describe.configure({ mode: 'serial' });
 test.use({ serviceWorkers: 'block' });
 
+/** Build deterministic locator for contract for regression coverage. */
 function locatorForContract(page: Page, contract: UxLocatorContract): Locator {
   if (contract.kind === 'test-id') return page.getByTestId(contract.value);
   return page.getByRole(contract.role, {
@@ -88,11 +92,13 @@ function locatorForContract(page: Page, contract: UxLocatorContract): Locator {
   });
 }
 
+/** Wait for ready surface while preserving the module's lifecycle and failure guarantees. */
 async function waitForReadySurface(page: Page, contract: UxLocatorContract): Promise<void> {
   await expect(locatorForContract(page, contract).first()).toBeVisible();
   await page.evaluate(() => document.fonts.ready);
 }
 
+/** Fulfill json with deterministic fixture data. */
 async function fulfillJson(route: Route, body: unknown): Promise<void> {
   await route.fulfill({
     status: 200,
@@ -101,6 +107,7 @@ async function fulfillJson(route: Route, body: unknown): Promise<void> {
   });
 }
 
+/** Install accessibility api extensions for deterministic browser coverage. */
 async function installAccessibilityApiExtensions(
   page: Page,
   routeId: (typeof ROUTE_IDS)[number],
@@ -164,6 +171,7 @@ async function installAccessibilityApiExtensions(
   }
 }
 
+/** Restrict semantic scans to the reviewed accessibility Playwright projects. */
 function runOnlyInSemanticProject(testInfo: TestInfo): void {
   test.skip(
     !SEMANTIC_PROJECTS.has(testInfo.project.name),

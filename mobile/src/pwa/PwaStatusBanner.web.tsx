@@ -15,6 +15,7 @@ const NOTICE_EDGE_OFFSET = 16;
 // Clears the largest compact nav, contextual action, and spacing at 200% text.
 const COMPACT_SHELL_CLEARANCE = 174;
 
+/** Resolve pwa notice placement. */
 export function resolvePwaNoticePlacement(
     viewportWidth: number,
     hasCompactNavigation: boolean
@@ -51,11 +52,13 @@ export function resolvePwaNoticePlacement(
     };
 }
 
+/** Determine whether the input conforms to the document modal open contract. */
 export function isDocumentModalOpen(): boolean {
     if (typeof document === 'undefined') return false;
     return document.querySelector('[role="dialog"]') !== null;
 }
 
+/** Subscribe to document modals using validated domain inputs. */
 function subscribeToDocumentModals(onStoreChange: () => void): () => void {
     if (typeof document === 'undefined' || typeof MutationObserver === 'undefined') return () => undefined;
     const observer = new MutationObserver(onStoreChange);
@@ -68,6 +71,7 @@ function subscribeToDocumentModals(onStoreChange: () => void): () => void {
     return () => observer.disconnect();
 }
 
+/** Provide the document modal open React hook. */
 function useDocumentModalOpen(): boolean {
     return React.useSyncExternalStore(subscribeToDocumentModals, isDocumentModalOpen, () => false);
 }

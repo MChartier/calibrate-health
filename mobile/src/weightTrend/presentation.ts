@@ -42,6 +42,7 @@ export function isVisibleWeightTrendPoint(metric: TrendMetricEntry): boolean {
     return hasPositiveStd || hasPositiveInterval;
 }
 
+/** Determine whether the input conforms to the finite trend snapshot contract. */
 function isFiniteTrendSnapshot(snapshot: WeightTrendSnapshot | null | undefined): snapshot is WeightTrendSnapshot {
     return Boolean(
         snapshot &&
@@ -51,6 +52,7 @@ function isFiniteTrendSnapshot(snapshot: WeightTrendSnapshot | null | undefined)
     );
 }
 
+/** Resolve the latest weight trend snapshot from the current validated state. */
 export function getLatestWeightTrendSnapshot(
     metrics: TrendMetricEntry[],
     summary?: WeightTrendSummary
@@ -74,10 +76,12 @@ export function getLatestWeightTrendSnapshot(
     };
 }
 
+/** Format estimated trend range for stable display or serialization. */
 export function formatEstimatedTrendRange(snapshot: WeightTrendSnapshot, unit: WeightUnit | undefined): string {
     return `${formatWeight(snapshot.lower, unit)} - ${formatWeight(snapshot.upper, unit)}`;
 }
 
+/** Resolve the short term variation presentation from the current validated state. */
 export function getShortTermVariationPresentation(
     response: TrendMetricsResponse | undefined,
     unit: WeightUnit | undefined
@@ -98,11 +102,13 @@ export function getShortTermVariationPresentation(
     };
 }
 
+/** Format signed weekly rate for stable display or serialization. */
 function formatSignedWeeklyRate(value: number, unit: WeightUnit | undefined): string {
     const sign = value > 0 ? '+' : value < 0 ? '-' : '';
     return `${sign}${formatWeight(Math.abs(value), unit)}/week`;
 }
 
+/** Resolve the weekly pace presentation from the current validated state. */
 export function getWeeklyPacePresentation(
     summary: WeightTrendSummary | undefined,
     unit: WeightUnit | undefined

@@ -1,3 +1,6 @@
+/**
+ * Defines deterministic saved foods fixture browser data and controls.
+ */
 import type { Page, Route } from '@playwright/test';
 
 export const DEEP_SAVED_FOOD_NAME = 'Saved pantry 25';
@@ -52,10 +55,12 @@ type RecipePayload = {
   ingredients: RecipeIngredientPayload[];
 };
 
+/** Fulfill json with deterministic fixture data. */
 function fulfillJson(route: Route, body: unknown, status = 200) {
   return route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(body) });
 }
 
+/** Build stable library sort from the supplied domain inputs. */
 function stableLibrarySort(left: StubMyFood, right: StubMyFood) {
   if (left.is_pinned !== right.is_pinned) return left.is_pinned ? -1 : 1;
   const byName = left.name.toLocaleLowerCase().localeCompare(right.name.toLocaleLowerCase());

@@ -1,3 +1,6 @@
+/**
+ * Exercises use modal focus management behavior and regression boundaries.
+ */
 import { act, renderHook } from '@testing-library/react-native';
 import { Platform } from 'react-native';
 import { useModalFocusManagement } from './useModalFocusManagement';
@@ -15,16 +18,19 @@ class FakeDocument {
     activeElement: FakeElement | null = null;
     private readonly listeners = new Map<string, Set<FakeListener>>();
 
+    /** Build deterministic add event listener for regression coverage. */
     addEventListener(type: string, listener: FakeListener) {
         const listeners = this.listeners.get(type) ?? new Set<FakeListener>();
         listeners.add(listener);
         this.listeners.set(type, listeners);
     }
 
+    /** Remove event listener while preserving the module's lifecycle and failure guarantees. */
     removeEventListener(type: string, listener: FakeListener) {
         this.listeners.get(type)?.delete(listener);
     }
 
+    /** Build deterministic dispatch for regression coverage. */
     dispatch(type: string, event: FakeEvent) {
         [...(this.listeners.get(type) ?? [])].forEach((listener) => listener(event));
     }
@@ -41,11 +47,13 @@ class FakeElement {
         parent?.children.push(this);
     }
 
+    /** Build deterministic contains for regression coverage. */
     contains(target: unknown): boolean {
         if (target === this) return true;
         return this.children.some((child) => child.contains(target));
     }
 
+    /** Build deterministic focus for regression coverage. */
     focus() {
         this.ownerDocument.activeElement = this;
         this.ownerDocument.dispatch('focusin', {
@@ -54,10 +62,12 @@ class FakeElement {
         });
     }
 
+    /** Resolve the attribute from the current validated state. */
     getAttribute() {
         return null;
     }
 
+    /** Build deterministic query selector all for regression coverage. */
     querySelectorAll() {
         const descendants: FakeElement[] = [];
         function visit(element: FakeElement) {

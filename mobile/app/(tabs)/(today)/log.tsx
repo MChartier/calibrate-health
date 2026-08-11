@@ -5,6 +5,7 @@ import { LoadingState } from '../../../src/components/LoadingState';
 import { useAddFoodRequest } from '../../../src/context/AddFoodRequestContext';
 import { MEAL_OPTIONS } from '../../../src/utils/meals';
 
+/** Render the log screen interface. */
 export default function LogScreen() {
     const { date, meal } = useLocalSearchParams<{ date?: string; meal?: MealPeriod }>();
     const { requestAddFood } = useAddFoodRequest();

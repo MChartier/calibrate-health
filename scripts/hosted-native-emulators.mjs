@@ -1,4 +1,7 @@
 #!/usr/bin/env node
+/**
+ * Runs the repository-owned hosted native emulators workflow.
+ */
 import fs from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
@@ -14,10 +17,12 @@ const HOSTED_WEAR_PORT = '5556';
 const BOOT_TIMEOUT_MS = 10 * 60 * 1000;
 const POLL_INTERVAL_MS = 1_000;
 
+/** Build executable name from the supplied domain inputs. */
 function executableName(name, platform) {
   return platform === 'win32' ? `${name}.exe` : name;
 }
 
+/** Reject execution unless the hosted native runner contract is satisfied. */
 export function assertHostedNativeRunner(environment = process.env) {
   if (environment.GITHUB_ACTIONS !== 'true' || environment.RUNNER_OS !== 'Linux') {
     throw new Error('Hosted native emulator lifecycle is restricted to GitHub Actions Linux runners.');
@@ -26,6 +31,7 @@ export function assertHostedNativeRunner(environment = process.env) {
   if (!environment.RUNNER_TEMP?.trim()) throw new Error('RUNNER_TEMP is required.');
 }
 
+/** Resolve hosted wear configuration. */
 export function resolveHostedWearConfiguration(environment = process.env, platform = process.platform) {
   assertHostedNativeRunner(environment);
   const pathApi = platform === 'win32' ? path.win32 : path.posix;
@@ -43,6 +49,7 @@ export function resolveHostedWearConfiguration(environment = process.env, platfo
   };
 }
 
+/** Build hosted wear command plan from validated configuration and dependencies. */
 export function createHostedWearCommandPlan(environment = process.env, platform = process.platform) {
   const config = resolveHostedWearConfiguration(environment, platform);
   return {
@@ -87,6 +94,7 @@ export function createHostedWearCommandPlan(environment = process.env, platform 
   };
 }
 
+/** Run command and surface failures to the caller. */
 function runCommand(request, options = {}) {
   const result = spawnSync(request.command, request.args, {
     encoding: 'utf8',
@@ -102,6 +110,7 @@ function runCommand(request, options = {}) {
   return result;
 }
 
+/** Build adb output from the supplied domain inputs. */
 function adbOutput(config, args, options = {}) {
   const result = spawnSync(config.adb, ['-s', config.serial, ...args], {
     encoding: 'utf8',
@@ -116,11 +125,13 @@ function adbOutput(config, args, options = {}) {
   return result.stdout?.trim() ?? '';
 }
 
+/** Prepare hosted wear avd using validated domain inputs. */
 export function prepareHostedWearAvd(environment = process.env) {
   const plan = createHostedWearCommandPlan(environment);
   for (const request of plan.prepare) runCommand(request);
 }
 
+/** Start hosted wear avd while preserving the module's lifecycle and failure guarantees. */
 export function startHostedWearAvd(environment = process.env) {
   const { config, start } = createHostedWearCommandPlan(environment);
   if (adbOutput(config, ['get-state'], { allowFailure: true }) === 'device') {
@@ -142,6 +153,7 @@ export function startHostedWearAvd(environment = process.env) {
   }
 }
 
+/** Wait for hosted wear avd while preserving the module's lifecycle and failure guarantees. */
 export function waitForHostedWearAvd(environment = process.env) {
   const { config, wait } = createHostedWearCommandPlan(environment);
   runCommand(wait, { timeout: BOOT_TIMEOUT_MS });
@@ -160,11 +172,13 @@ export function waitForHostedWearAvd(environment = process.env) {
   throw new Error('Timed out waiting for the hosted Wear emulator to finish booting.');
 }
 
+/** Stop hosted wear avd using validated domain inputs. */
 export function stopHostedWearAvd(environment = process.env) {
   const { stop } = createHostedWearCommandPlan(environment);
   runCommand(stop, { allowFailure: true, timeout: 30_000 });
 }
 
+/** Parse and validate hosted native emulator command. */
 export function parseHostedNativeEmulatorCommand(argv) {
   if (argv.length !== 1 || !['prepare-wear', 'start-wear', 'wait-wear', 'stop-wear'].includes(argv[0])) {
     throw new Error('Usage: node scripts/hosted-native-emulators.mjs <prepare-wear|start-wear|wait-wear|stop-wear>');
@@ -172,6 +186,7 @@ export function parseHostedNativeEmulatorCommand(argv) {
   return argv[0];
 }
 
+/** Run this module's command-line and surface failures to the caller. */
 function main() {
   const command = parseHostedNativeEmulatorCommand(process.argv.slice(2));
   if (command === 'prepare-wear') prepareHostedWearAvd();

@@ -1,8 +1,12 @@
+/**
+ * Exercises account tokens behavior and regression boundaries.
+ */
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const Module = require('node:module');
 const { AccountTokenPurpose } = require('@prisma/client');
 
+/** Build deterministic stub module for regression coverage. */
 function stubModule(resolvedPath, exports) {
   const moduleInstance = new Module(resolvedPath);
   moduleInstance.exports = exports;
@@ -10,6 +14,7 @@ function stubModule(resolvedPath, exports) {
   require.cache[resolvedPath] = moduleInstance;
 }
 
+/** Load account tokens. */
 function loadAccountTokens({ prismaStub, bcryptStub = { hash: async () => 'hashed-password' } }) {
   const dbPath = require.resolve('../src/config/database');
   const bcryptPath = require.resolve('bcryptjs');

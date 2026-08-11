@@ -1,3 +1,6 @@
+/**
+ * Exercises onboarding behavior and regression boundaries.
+ */
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -22,6 +25,7 @@ const COMPLETE_DATA = {
   daily_deficit: 500
 };
 
+/** Build deterministic initial state for regression coverage. */
 function initialState({ goal = null } = {}) {
   return {
     user: {
@@ -51,6 +55,7 @@ function initialState({ goal = null } = {}) {
   };
 }
 
+/** Build counters from validated configuration and dependencies. */
 function createCounters() {
   return {
     userWrites: 0,
@@ -61,6 +66,7 @@ function createCounters() {
   };
 }
 
+/** Build transaction stub from validated configuration and dependencies. */
 function createTransactionStub(state, counters) {
   return {
     $queryRawUnsafe: async () => [{ id: state.user.id }],
@@ -113,6 +119,7 @@ function createTransactionStub(state, counters) {
   };
 }
 
+/** Run a deterministic onboarding transaction against the in-memory test state. */
 async function runTransaction(state, operationId, input, options = {}) {
   const working = structuredClone(state);
   const writeCounters = createCounters();

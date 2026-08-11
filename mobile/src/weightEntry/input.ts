@@ -22,23 +22,27 @@ export function formatWeightInput(value: number): string {
     return value.toFixed(MAX_WEIGHT_DECIMAL_PLACES).replace(/\.0$/, '');
 }
 
+/** Build weight input to canonical grams from the supplied domain inputs. */
 export function weightInputToCanonicalGrams(value: number, unit: WeightUnit | undefined): number {
     const grams = unit === 'LB' ? value * 453.59237 : value * 1_000;
     return Math.round(grams);
 }
 
+/** Determine whether the input conforms to the weight within policy contract. */
 export function isWeightWithinPolicy(value: number, unit: WeightUnit | undefined): boolean {
     if (!Number.isFinite(value)) return false;
     const grams = weightInputToCanonicalGrams(value, unit);
     return grams >= MIN_WEIGHT_GRAMS && grams <= MAX_WEIGHT_GRAMS;
 }
 
+/** Resolve the weight display bounds from the current validated state. */
 export function getWeightDisplayBounds(unit: WeightUnit | undefined): { minimum: number; maximum: number } {
     return unit === 'LB'
         ? { minimum: 55.2, maximum: 881.8 }
         : { minimum: 25, maximum: 400 };
 }
 
+/** Resolve the weight policy error from the current validated state. */
 export function getWeightPolicyError(unit: WeightUnit | undefined): string {
     const bounds = getWeightDisplayBounds(unit);
     const unitLabel = unit === 'LB' ? 'lb' : 'kg';

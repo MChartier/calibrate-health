@@ -1,3 +1,6 @@
+/**
+ * Provides the shared restricted account data actions component and interaction contract.
+ */
 import { useState } from 'react';
 import { Alert, StyleSheet, View } from 'react-native';
 import { useMutation } from '@tanstack/react-query';

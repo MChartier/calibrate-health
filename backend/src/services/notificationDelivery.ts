@@ -86,6 +86,7 @@ const isSameUtcDate = (left: Date | null | undefined, right: Date): boolean => {
     return left.getTime() === right.getTime();
 };
 
+/** Check whether the current state has sent for request. */
 const hasSentForRequest = (
     subscription: Pick<
         NormalizedPushSubscription,
@@ -105,6 +106,7 @@ const hasSentForRequest = (
     });
 };
 
+/** Build sent date update for request from the supplied domain inputs. */
 const sentDateUpdateForRequest = (
     reminderTypes: PushNotificationDeliveryRequest['reminderTypes'],
     localDate: Date

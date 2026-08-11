@@ -108,6 +108,7 @@ export const SettingsRow: React.FC<SettingsRowProps> = ({
     );
 };
 
+/** Render the settings status row interface. */
 export const SettingsStatusRow: React.FC<SettingsStatusRowProps> = ({
     icon,
     label,

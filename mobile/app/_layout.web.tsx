@@ -27,6 +27,7 @@ import { ClientWebVitalsRuntime } from '../src/diagnostics/ClientWebVitalsRuntim
 
 const queryClient = new QueryClient();
 
+/** Render the browser route presentation interface. */
 const BrowserRoutePresentation: React.FC = () => {
     const pathname = usePathname();
     const { user } = useAuth();
@@ -109,6 +110,7 @@ const BrowserPwaStatus: React.FC = () => {
     return <PwaStatusBanner showUpdateNotices={Boolean(user)} hasCompactNavigation={Boolean(user)} />;
 };
 
+/** Render the web root runtime interface. */
 const WebRootRuntime: React.FC = () => {
     const theme = useAppTheme();
     useQueryOnlineManager();

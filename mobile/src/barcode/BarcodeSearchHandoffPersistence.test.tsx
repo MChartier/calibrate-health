@@ -1,3 +1,6 @@
+/**
+ * Exercises barcode search handoff persistence behavior and regression boundaries.
+ */
 import { useState } from 'react';
 import { Text } from 'react-native';
 import { render, waitFor } from '@testing-library/react-native';
@@ -7,6 +10,7 @@ import {
     type BarcodeSearchHandoffParams
 } from './useBarcodeSearchHandoff';
 
+/** Render the handoff harness interface. */
 function HandoffHarness() {
     const [params, setParams] = useState<BarcodeSearchHandoffParams>({
         openAddFood: 'true',

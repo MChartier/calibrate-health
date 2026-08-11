@@ -1,3 +1,6 @@
+/**
+ * Exercises hosted native emulators behavior and regression boundaries.
+ */
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import test from 'node:test';

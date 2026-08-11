@@ -1,3 +1,6 @@
+/**
+ * Exercises food delete recovery controller behavior and regression boundaries.
+ */
 import { FoodDeleteRecoveryController } from './FoodDeleteRecoveryController';
 import { getFoodDeleteHiddenIds, type FoodDeleteTicket } from './foodDeleteRecovery';
 
@@ -5,8 +8,10 @@ jest.mock('expo-crypto', () => ({ randomUUID: jest.fn(() => 'generated-operation
 
 type Entry = { id: number; name: string };
 
+/** Build deterministic entry for regression coverage. */
 const entry = (id: number): Entry => ({ id, name: `Food ${id}` });
 
+/** Build deterministic drain promises for regression coverage. */
 async function drainPromises(): Promise<void> {
     for (let index = 0; index < 10; index += 1) await Promise.resolve();
 }

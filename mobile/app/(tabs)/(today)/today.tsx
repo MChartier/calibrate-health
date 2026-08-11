@@ -1,3 +1,6 @@
+/**
+ * Defines the today Expo Router screen.
+ */
 import React, { useEffect, useState } from 'react';
 import { StyleSheet, View, useWindowDimensions } from 'react-native';
 import { router, useLocalSearchParams, usePathname } from 'expo-router';
@@ -33,6 +36,7 @@ import { spacing } from '../../../src/theme';
 
 const TODAY_SUMMARY_GRID_BREAKPOINT = 840; // Mirrors the app shell's wide layout without compressing scaled text.
 
+/** Render the today screen interface. */
 export default function TodayScreen() {
     const routeParams = useLocalSearchParams<{ openAddFood?: string; date?: string; meal?: string }>();
     const pathname = usePathname();

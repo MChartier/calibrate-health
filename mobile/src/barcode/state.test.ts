@@ -1,3 +1,6 @@
+/**
+ * Exercises state behavior and regression boundaries.
+ */
 import {
     BARCODE_LOOKUP_STATES,
     BARCODE_PERMISSION_STATES,

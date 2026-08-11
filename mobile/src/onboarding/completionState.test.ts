@@ -1,3 +1,6 @@
+/**
+ * Exercises completion state behavior and regression boundaries.
+ */
 import { ACTIVITY_LEVELS, HEIGHT_UNITS, WEIGHT_UNITS } from '@calibrate/shared';
 import { buildOnboardingCompleteData, type OnboardingFormState } from './completionState';
 

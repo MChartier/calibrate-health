@@ -1,3 +1,6 @@
+/**
+ * Exercises adaptive forms behavior and regression boundaries.
+ */
 import { mkdir } from 'node:fs/promises';
 import path from 'node:path';
 import type { Page } from '@playwright/test';
@@ -5,6 +8,7 @@ import { expect, test } from './fixtures';
 
 const EVIDENCE_DIR = path.resolve('docs/screenshots/launch-06');
 
+/** Capture evidence only when explicit evidence collection is enabled. */
 async function captureEvidence(page: Page, filename: string) {
   if (process.env.CALIBRATE_CAPTURE_EVIDENCE !== '1') return;
 
@@ -15,6 +19,7 @@ async function captureEvidence(page: Page, filename: string) {
   });
 }
 
+/** Open add food while preserving the module's lifecycle and failure guarantees. */
 async function openAddFood(page: Page) {
   await page.goto('/today');
   await page.getByRole('button', { name: 'Add food', exact: true }).click();
@@ -26,6 +31,7 @@ async function openAddFood(page: Page) {
   return dialog;
 }
 
+/** Assert that no horizontal overflow. */
 async function expectNoHorizontalOverflow(page: Page) {
   const widths = await page.evaluate(() => ({
     clientWidth: document.documentElement.clientWidth,
@@ -34,6 +40,7 @@ async function expectNoHorizontalOverflow(page: Page) {
   expect(widths.scrollWidth).toBeLessThanOrEqual(widths.clientWidth);
 }
 
+/** Enlarge leaf text to exercise responsive text reflow. */
 async function enlargeLeafText(page: Page) {
   await page.evaluate(() => {
     for (const element of document.querySelectorAll<HTMLElement>('body *')) {

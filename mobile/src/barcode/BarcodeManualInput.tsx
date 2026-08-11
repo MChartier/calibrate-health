@@ -1,3 +1,6 @@
+/**
+ * Provides Expo client behavior for barcode manual input.
+ */
 import { View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { AppButton } from '../components/AppButton';
@@ -13,6 +16,7 @@ type BarcodeManualInputProps = {
     onCancel?: () => void;
 };
 
+/** Render the barcode manual input interface. */
 export function BarcodeManualInput({
     value,
     error,

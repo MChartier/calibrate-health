@@ -1,3 +1,6 @@
+/**
+ * Exercises profile completion behavior and regression boundaries.
+ */
 import type { UserProfileResponse } from '@calibrate/api-client';
 import { isProfileSetupComplete } from './profileCompletion';
 

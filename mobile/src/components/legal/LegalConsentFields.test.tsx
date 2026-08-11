@@ -1,3 +1,6 @@
+/**
+ * Exercises legal consent fields behavior and regression boundaries.
+ */
 import { fireEvent, render } from '@testing-library/react-native';
 import { LegalConsentFields } from './LegalConsentFields';
 

@@ -1,3 +1,6 @@
+/**
+ * Exercises web vitals take records web behavior and regression boundaries.
+ */
 import { reportClientDiagnostic } from './clientDiagnostics';
 import { observeClientWebVitals } from './webVitals.web';
 

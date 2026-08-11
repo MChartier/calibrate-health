@@ -1,3 +1,6 @@
+/**
+ * Provides backend domain operations for account tokens.
+ */
 import crypto from 'node:crypto';
 import bcrypt from 'bcryptjs';
 import { AccountTokenPurpose, type Prisma } from '@prisma/client';
@@ -10,17 +13,20 @@ const TOKEN_BYTES = 32;
 export const EMAIL_VERIFICATION_TTL_MS = MS_PER_DAY;
 export const PASSWORD_RESET_TTL_MS = 30 * MS_PER_MINUTE;
 
+/** Build random account token from the supplied domain inputs. */
 const randomAccountToken = (): string => crypto.randomBytes(TOKEN_BYTES).toString('base64url');
 
 /** Bind hashes to purpose so a token can never cross verification/recovery contexts. */
 export const hashAccountToken = (purpose: AccountTokenPurpose, token: string): string =>
   crypto.createHash('sha256').update(`${purpose}:${token}`, 'utf8').digest('hex');
 
+/** Build token ttl from the supplied domain inputs. */
 const tokenTtl = (purpose: AccountTokenPurpose): number =>
   purpose === AccountTokenPurpose.EMAIL_VERIFICATION
     ? EMAIL_VERIFICATION_TTL_MS
     : PASSWORD_RESET_TTL_MS;
 
+/** Determine whether the input conforms to the sue account action token contract. */
 export async function issueAccountActionToken(
   userId: number,
   purpose: AccountTokenPurpose,
@@ -43,6 +49,7 @@ export async function issueAccountActionToken(
   return token;
 }
 
+/** Invalidate issued token using the supplied validated inputs. */
 async function invalidateIssuedToken(
   purpose: AccountTokenPurpose,
   token: string,
@@ -86,6 +93,7 @@ export async function sendPasswordReset(userId: number, email: string): Promise<
 
 class TokenClaimFailed extends Error {}
 
+/** Confirm email verification using the supplied validated inputs. */
 export async function confirmEmailVerification(
   token: string,
   now = new Date()
@@ -128,6 +136,7 @@ export async function confirmEmailVerification(
   }
 }
 
+/** Reset password with token using the supplied validated inputs. */
 export async function resetPasswordWithToken(
   token: string,
   newPassword: string,

@@ -295,6 +295,7 @@ async function generatePrismaClient() {
   await timed("Generate Prisma client", () => run("npm", ["run", "prisma:generate"]));
 }
 
+/** Ensure playwright chromium using validated domain inputs. */
 async function ensurePlaywrightChromium() {
   await timed("Install Playwright Chromium", () =>
     run(process.execPath, [playwrightCli, "install", "chromium"])

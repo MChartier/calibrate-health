@@ -1,3 +1,6 @@
+/**
+ * Defines the shared auth credentials domain contract.
+ */
 export const MIN_AUTH_PASSWORD_LENGTH = 8;
 // bcrypt only uses the first 72 UTF-8 bytes of a password; cap input so users do not create misleading secrets.
 export const MAX_AUTH_PASSWORD_BYTES = 72;
@@ -5,6 +8,7 @@ export const MAX_AUTH_EMAIL_LENGTH = 254;
 
 const BASIC_AUTH_EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+/** Normalize auth email credential into the canonical representation used at this boundary. */
 export function normalizeAuthEmailCredential(value: unknown): string | null {
   if (typeof value !== 'string') return null;
 
@@ -15,6 +19,7 @@ export function normalizeAuthEmailCredential(value: unknown): string | null {
   return normalized;
 }
 
+/** Build utf8 byte length from the supplied domain inputs. */
 export function utf8ByteLength(value: string): number {
   let length = 0;
   for (const character of value) {

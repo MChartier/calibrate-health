@@ -1,3 +1,6 @@
+/**
+ * Provides the shared trust page shell component and interaction contract.
+ */
 import { StyleSheet, View } from 'react-native';
 import { AppCard } from '../AppCard';
 import { AppText } from '../AppText';

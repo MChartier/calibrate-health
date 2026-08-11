@@ -1,3 +1,6 @@
+/**
+ * Defines the onboarding HTTP routes and request handling.
+ */
 import express from 'express';
 import { getAuthenticatedUser, requireAuthenticatedUser } from '../middleware/authenticatedUser';
 import {

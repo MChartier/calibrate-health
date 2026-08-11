@@ -218,6 +218,7 @@ const serializeNotification = (row: NotificationRow): InAppNotificationWire => {
     };
 };
 
+/** Serialize notification page item. */
 const serializeNotificationPageItem = (row: NotificationPageRow): InAppNotificationPageWire => ({
     ...serializeNotification(row),
     dismissed_at: row.dismissed_at ? row.dismissed_at.toISOString() : null,
@@ -225,12 +226,15 @@ const serializeNotificationPageItem = (row: NotificationPageRow): InAppNotificat
     updated_at: row.updated_at.toISOString()
 });
 
+/** Determine whether the input conforms to the in app notification view contract. */
 const isInAppNotificationView = (value: string): value is InAppNotificationView =>
     Object.values(IN_APP_NOTIFICATION_VIEWS).includes(value as InAppNotificationView);
 
+/** Encode in app notification cursor into the canonical representation used at this boundary. */
 const encodeInAppNotificationCursor = (cursor: InAppNotificationCursor): string =>
     Buffer.from(JSON.stringify(cursor), 'utf8').toString('base64url');
 
+/** Decode in app notification cursor into the canonical representation used at this boundary. */
 const decodeInAppNotificationCursor = (
     value: string,
     view: InAppNotificationView

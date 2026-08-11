@@ -1,3 +1,6 @@
+/**
+ * Implements the account access HTTP middleware contract.
+ */
 import type { NextFunction, Request, Response } from 'express';
 import { isAuthenticatedUser } from './authenticatedUser';
 import { getAccountAccess, type AccountAccess } from '../services/accountAccess';
@@ -16,6 +19,7 @@ const AUTH_ALLOWED_PATHS = new Set([
   '/auth/password-reset/confirm'
 ]);
 
+/** Determine whether the input conforms to the restricted path allowed contract. */
 const isRestrictedPathAllowed = (req: Request): boolean => {
   if (req.method === 'OPTIONS') return true;
   if (AUTH_ALLOWED_PATHS.has(req.path)) return true;
@@ -27,6 +31,7 @@ const isRestrictedPathAllowed = (req: Request): boolean => {
   return false;
 };
 
+/** Build restricted response from the supplied domain inputs. */
 const restrictedResponse = (access: AccountAccess) => {
   const verificationRequired = access.state === 'email_verification_required';
   return {
@@ -43,6 +48,7 @@ const restrictedResponse = (access: AccountAccess) => {
 const isBackendAccountPath = (path: string): boolean =>
   path === '/auth' || path.startsWith('/auth/') || path === '/api' || path.startsWith('/api/');
 
+/** Enforce account access while preserving the module's lifecycle and failure guarantees. */
 export async function enforceAccountAccess(
   req: Request,
   res: Response,

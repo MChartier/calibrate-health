@@ -1,3 +1,6 @@
+/**
+ * Defines the reviewed ux matrix browser coverage contract.
+ */
 import {
   ROUTE_IDS,
   ROUTE_REGISTRY,
@@ -36,6 +39,7 @@ export type UxAccessibilityOverlayCase = {
   ready: UxLocatorContract;
 };
 
+/** Build route ready contract from the supplied domain inputs. */
 function routeReadyContract(routeId: RouteId): UxLocatorContract {
   if (routeId === 'root') return { kind: 'test-id', value: 'hosted-landing' };
   if (routeId === 'weight') {

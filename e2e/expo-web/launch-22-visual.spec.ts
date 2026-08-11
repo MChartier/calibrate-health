@@ -1,3 +1,6 @@
+/**
+ * Exercises launch 22 visual behavior and regression boundaries.
+ */
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 import type { Page, TestInfo } from '@playwright/test';
@@ -19,6 +22,7 @@ const TRANSIENT_PWA_TITLES = new Set([
   'Updating Calibrate',
 ]);
 
+/** Restrict a visual case to its explicitly assigned Playwright projects. */
 function runOn(testInfo: TestInfo, projects: readonly string[]) {
   test.skip(
     !projects.includes(testInfo.project.name),
@@ -26,6 +30,7 @@ function runOn(testInfo: TestInfo, projects: readonly string[]) {
   );
 }
 
+/** Build deterministic settle visual page for regression coverage. */
 async function settleVisualPage(page: Page) {
   await page.evaluate(async (transientTitles) => {
     await document.fonts.ready;
@@ -47,6 +52,7 @@ async function settleVisualPage(page: Page) {
   }, [...TRANSIENT_PWA_TITLES]);
 }
 
+/** Assert that no horizontal overflow. */
 async function expectNoHorizontalOverflow(page: Page) {
   const widths = await page.evaluate(() => ({
     clientWidth: document.documentElement.clientWidth,
@@ -55,12 +61,14 @@ async function expectNoHorizontalOverflow(page: Page) {
   expect(widths.scrollWidth).toBeLessThanOrEqual(widths.clientWidth);
 }
 
+/** Assert that viewport screenshot. */
 async function expectViewportScreenshot(page: Page, filename: string) {
   await settleVisualPage(page);
   await expectNoHorizontalOverflow(page);
   await expect(page).toHaveScreenshot(filename, SCREENSHOT_OPTIONS);
 }
 
+/** Apply two hundred percent text. */
 async function applyTwoHundredPercentText(page: Page) {
   await page.evaluate(() => {
     for (const element of document.querySelectorAll<HTMLElement>('body *')) {

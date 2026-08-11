@@ -46,6 +46,7 @@ function getAvatarLabel(email?: string | null): string {
     return email?.trim().charAt(0).toUpperCase() || 'C';
 }
 
+/** Decide whether to apply show settings resource status. */
 export function shouldShowSettingsResourceStatus(state: AsyncResourceState, isWeb: boolean): boolean {
     if (isWeb && state.kind === ASYNC_RESOURCE_STATES.STALE) return false;
     return state.kind !== ASYNC_RESOURCE_STATES.CONTENT && state.kind !== ASYNC_RESOURCE_STATES.EMPTY;

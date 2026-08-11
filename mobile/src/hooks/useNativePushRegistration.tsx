@@ -147,6 +147,7 @@ export function NativePushRegistrationProvider({ children }: { children: React.R
     return React.createElement(NativePushRegistrationContext.Provider, { value }, children);
 }
 
+/** Provide the native push registration React hook. */
 export function useNativePushRegistration(): NativePushRegistrationContextValue {
     const context = useContext(NativePushRegistrationContext);
     if (!context) {

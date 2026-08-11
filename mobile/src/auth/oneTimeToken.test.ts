@@ -1,3 +1,6 @@
+/**
+ * Exercises one time token behavior and regression boundaries.
+ */
 import { consumeOneTimeToken } from './oneTimeToken';
 
 describe('consumeOneTimeToken', () => {

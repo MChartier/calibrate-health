@@ -1,6 +1,10 @@
+/**
+ * Exercises geometry behavior and regression boundaries.
+ */
 import type { TrendMetricEntry } from '@calibrate/api-client';
 import { buildWeightTrendChartGeometry, normalizeWeightTrendMetrics } from './geometry';
 
+/** Build deterministic metric for regression coverage. */
 function metric(
     id: number,
     date: string,

@@ -1,3 +1,6 @@
+/**
+ * Provides Expo client behavior for geometry.
+ */
 import type { TrendMetricEntry } from '@calibrate/api-client';
 import { isVisibleWeightTrendPoint } from './presentation';
 
@@ -49,12 +52,14 @@ export type WeightTrendChartGeometry = {
     }>;
 };
 
+/** Build the weight trend line path with stable fields for the Expo client boundary. */
 export function buildWeightTrendLinePath(points: WeightTrendChartPoint[]): string {
     return points
         .map((point, index) => `${index === 0 ? 'M' : 'L'} ${point.x.toFixed(2)} ${point.trendY.toFixed(2)}`)
         .join(' ');
 }
 
+/** Build the weight trend band points with stable fields for the Expo client boundary. */
 export function buildWeightTrendBandPoints(points: WeightTrendChartPoint[]): string {
     const upper = points.map((point) => `${point.x.toFixed(2)},${point.upperY.toFixed(2)}`);
     const lower = points.slice().reverse().map((point) => `${point.x.toFixed(2)},${point.lowerY.toFixed(2)}`);
@@ -119,10 +124,12 @@ export function downsampleWeightTrendMeasurements(
         .map(([, point]) => point);
 }
 
+/** Resolve the weight trend date key from the current validated state. */
 export function getWeightTrendDateKey(value: string): string {
     return value.split('T')[0] ?? value;
 }
 
+/** Parse and validate date key. */
 function parseDateKey(value: string): number | null {
     const [year, month, day] = getWeightTrendDateKey(value).split('-').map(Number);
     if (!Number.isInteger(year) || !Number.isInteger(month) || !Number.isInteger(day)) return null;
@@ -138,10 +145,12 @@ function parseDateKey(value: string): number | null {
     return dateMs;
 }
 
+/** Build date key from ms from the supplied domain inputs. */
 function dateKeyFromMs(value: number): string {
     return new Date(value).toISOString().slice(0, 10);
 }
 
+/** Normalize weight trend metrics into the canonical representation used at this boundary. */
 export function normalizeWeightTrendMetrics(metrics: TrendMetricEntry[]): Array<{
     metric: TrendMetricEntry;
     dateKey: string;
@@ -163,6 +172,7 @@ export function normalizeWeightTrendMetrics(metrics: TrendMetricEntry[]): Array<
         .sort((left, right) => left.dateMs - right.dateMs || left.metric.id - right.metric.id);
 }
 
+/** Resolve the nice tick step from the current validated state. */
 function getNiceTickStep(range: number): number {
     const roughStep = range / TARGET_Y_AXIS_INTERVALS;
     const magnitude = 10 ** Math.floor(Math.log10(roughStep));
@@ -175,14 +185,17 @@ function getNiceTickStep(range: number): number {
     return magnitude * 10;
 }
 
+/** Round a chart tick without introducing floating-point display noise. */
 function roundTickValue(value: number): number {
     return Number(value.toPrecision(12));
 }
 
+/** Resolve the xaxis tick fractions from the current validated state. */
 function getXAxisTickFractions(count: 2 | 3): number[] {
     return count === 2 ? [0, 1] : [0, 0.5, 1];
 }
 
+/** Build the weight trend chart geometry with stable fields for the Expo client boundary. */
 export function buildWeightTrendChartGeometry(
     metrics: TrendMetricEntry[],
     options: WeightTrendChartGeometryOptions

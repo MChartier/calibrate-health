@@ -218,6 +218,7 @@ abstract class CalibrateWearDatabase : RoomDatabase() {
 
         /** Makes server-owned calorie-plan availability authoritative for every cached surface. */
         val MIGRATION_6_7 = object : Migration(6, 7) {
+            /** Adds authoritative calorie-plan ownership fields while clearing stale cached target math. */
             override fun migrate(database: SupportSQLiteDatabase) {
                 database.execSQL(
                     "ALTER TABLE daily_snapshots ADD COLUMN plan_status TEXT NOT NULL DEFAULT 'unknown'"

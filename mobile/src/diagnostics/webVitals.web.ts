@@ -1,3 +1,6 @@
+/**
+ * Provides Expo client behavior for web vitals.
+ */
 import type {
     ClientDiagnosticDurationBucket,
     ClientDiagnosticOperation,
@@ -58,6 +61,7 @@ const INTERACTION_ID_STEP = 7;
 const MAX_INP_CANDIDATES = 10; // Match the bounded longest-interaction list used for INP selection.
 const SYNTHETIC_FIRST_INPUT_ID = -1;
 
+/** Resolve the duration bucket from the current validated state. */
 function getDurationBucket(milliseconds: number): ClientDiagnosticDurationBucket {
     if (milliseconds < 100) return 'under_100_ms';
     if (milliseconds <= 200) return '100_to_200_ms';
@@ -68,6 +72,7 @@ function getDurationBucket(milliseconds: number): ClientDiagnosticDurationBucket
     return '4_s_or_more';
 }
 
+/** Resolve the web vital outcome from the current validated state. */
 function getWebVitalOutcome(operation: WebVitalOperation, value: number): ClientDiagnosticOutcome {
     if (operation === 'largest_contentful_paint') {
         if (value <= 2_500) return 'good';
@@ -84,6 +89,7 @@ function getWebVitalOutcome(operation: WebVitalOperation, value: number): Client
     return 'poor';
 }
 
+/** Add layout shift entries using validated domain inputs. */
 function addLayoutShiftEntries(accumulator: ClsAccumulator, entries: readonly LayoutShiftSample[]): void {
     for (const entry of entries) {
         const value = entry.value;
@@ -110,6 +116,7 @@ function addLayoutShiftEntries(accumulator: ClsAccumulator, entries: readonly La
     }
 }
 
+/** Calculate maximum cls session value. */
 export function calculateMaximumClsSessionValue(entries: readonly LayoutShiftSample[]): number {
     const accumulator: ClsAccumulator = {
         lastEntryTime: null,
@@ -121,6 +128,7 @@ export function calculateMaximumClsSessionValue(entries: readonly LayoutShiftSam
     return accumulator.maximumValue;
 }
 
+/** Build interaction accumulator from validated configuration and dependencies. */
 function createInteractionAccumulator(): InteractionAccumulator {
     return {
         candidateDurations: new Map<number, number>(),
@@ -130,6 +138,7 @@ function createInteractionAccumulator(): InteractionAccumulator {
     };
 }
 
+/** Add interaction count using validated domain inputs. */
 function addInteractionCount(accumulator: InteractionAccumulator, interactionId: number): boolean {
     if (!Number.isFinite(interactionId) || interactionId <= 0) return false;
     accumulator.minimumInteractionId = accumulator.minimumInteractionId === null
@@ -141,6 +150,7 @@ function addInteractionCount(accumulator: InteractionAccumulator, interactionId:
     return true;
 }
 
+/** Add interaction count entries using validated domain inputs. */
 function addInteractionCountEntries(
     accumulator: InteractionAccumulator,
     entries: readonly InteractionTimingSample[]
@@ -152,6 +162,7 @@ function addInteractionCountEntries(
     }
 }
 
+/** Add interaction candidate using validated domain inputs. */
 function addInteractionCandidate(
     accumulator: InteractionAccumulator,
     interactionId: number,
@@ -183,6 +194,7 @@ function addInteractionCandidate(
     }
 }
 
+/** Add interaction sample using validated domain inputs. */
 function addInteractionSample(
     accumulator: InteractionAccumulator,
     interactionId: number,
@@ -198,6 +210,7 @@ function addInteractionSample(
     addInteractionCandidate(accumulator, interactionId, duration);
 }
 
+/** Add interaction entries using validated domain inputs. */
 function addInteractionEntries(
     accumulator: InteractionAccumulator,
     entries: readonly InteractionTimingSample[]
@@ -208,6 +221,7 @@ function addInteractionEntries(
     }
 }
 
+/** Add first input entries using validated domain inputs. */
 function addFirstInputEntries(
     accumulator: InteractionAccumulator,
     entries: readonly InteractionTimingSample[]
@@ -222,6 +236,7 @@ function addFirstInputEntries(
     addInteractionSample(accumulator, SYNTHETIC_FIRST_INPUT_ID, firstInput.duration, true);
 }
 
+/** Estimate the number of interactions represented by aggregated event timing. */
 function estimatedInteractionCount(accumulator: InteractionAccumulator): number {
     let count = accumulator.syntheticFirstInputSeen ? 1 : 0;
     if (
@@ -235,6 +250,7 @@ function estimatedInteractionCount(accumulator: InteractionAccumulator): number 
     return count;
 }
 
+/** Select the reviewed interaction-to-next-paint value for the current lifecycle. */
 function selectInteractionToNextPaint(
     accumulator: InteractionAccumulator,
     nativeInteractionCount: number | null = null
@@ -259,6 +275,7 @@ export function calculateInteractionToNextPaint(entries: readonly InteractionTim
     return selectInteractionToNextPaint(accumulator);
 }
 
+/** Build web vital signal from validated configuration and dependencies. */
 export function createWebVitalSignal(
     operation: WebVitalOperation,
     value: number,
@@ -292,6 +309,7 @@ export function getClientDiagnosticRoute(pathname: string): ClientDiagnosticRout
     return 'app_shell';
 }
 
+/** Build default observer environment from the supplied domain inputs. */
 function defaultObserverEnvironment(): WebVitalsObserverEnvironment | null {
     if (
         typeof PerformanceObserver === 'undefined'

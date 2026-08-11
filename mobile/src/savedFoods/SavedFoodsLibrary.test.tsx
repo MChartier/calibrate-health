@@ -1,3 +1,6 @@
+/**
+ * Exercises saved foods library behavior and regression boundaries.
+ */
 import { cleanup, fireEvent, render, waitFor } from '@testing-library/react-native';
 import { onlineManager, QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { MyFoodSummary } from '@calibrate/api-client';
@@ -17,6 +20,7 @@ jest.mock('../auth/AuthContext', () => ({
     useAuth: () => ({ api: mockApi })
 }));
 
+/** Build deterministic saved food for regression coverage. */
 function savedFood(id: number, overrides: Partial<MyFoodSummary> = {}): MyFoodSummary {
     return {
         id,
@@ -30,6 +34,7 @@ function savedFood(id: number, overrides: Partial<MyFoodSummary> = {}): MyFoodSu
     };
 }
 
+/** Render library. */
 function renderLibrary(seed?: (queryClient: QueryClient) => void) {
     const queryClient = new QueryClient({
         defaultOptions: {

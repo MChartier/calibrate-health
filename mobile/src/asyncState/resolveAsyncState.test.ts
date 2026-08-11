@@ -1,5 +1,9 @@
+/**
+ * Exercises resolve async state behavior and regression boundaries.
+ */
 import { ASYNC_RESOURCE_STATES, resolveAsyncResourceState } from './resolveAsyncState';
 
+/** Collect ion query from the supplied records. */
 const collectionQuery = (
     overrides: Partial<Parameters<typeof resolveAsyncResourceState<string[]>>[0]> = {}
 ) => ({
@@ -11,6 +15,7 @@ const collectionQuery = (
     ...overrides
 });
 
+/** Resolve a deterministic async-resource state for the test scenario. */
 const resolve = (
     overrides: Partial<Parameters<typeof resolveAsyncResourceState<string[]>>[0]>,
     isOnline = true

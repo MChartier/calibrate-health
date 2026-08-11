@@ -1,3 +1,6 @@
+/**
+ * Provides backend domain operations for account sessions.
+ */
 import { MobileDevicePlatform, Prisma } from '@prisma/client';
 import prisma from '../config/database';
 
@@ -41,34 +44,41 @@ const PUBLIC_SESSION_ID_PATTERN =
 const MAX_DEVICE_LABEL_LENGTH = 100;
 const SERIALIZABLE_TRANSACTION_MAX_ATTEMPTS = 2;
 
+/** Format account session id for stable display or serialization. */
 const formatAccountSessionId = (kind: 'browser' | 'mobile', publicId: string): string =>
   `${kind}_${publicId}`;
 
+/** Parse and validate account session id. */
 export const parseAccountSessionId = (value: string): ParsedAccountSessionId | null => {
   const match = value.match(/^(browser|mobile)_([0-9a-f-]+)$/i);
   if (!match || !PUBLIC_SESSION_ID_PATTERN.test(match[2])) return null;
   return { kind: match[1].toLowerCase() as 'browser' | 'mobile', publicId: match[2].toLowerCase() };
 };
 
+/** Normalize device label into the canonical representation used at this boundary. */
 const normalizeDeviceLabel = (value: string | null): string | null => {
   const normalized = value?.trim();
   return normalized ? normalized.slice(0, MAX_DEVICE_LABEL_LENGTH) : null;
 };
 
+/** Build mobile kind from the supplied domain inputs. */
 const mobileKind = (platform: MobileDevicePlatform): AccountSessionKind =>
   platform === MobileDevicePlatform.WEAR_OS
     ? ACCOUNT_SESSION_KINDS.WEAR_OS
     : ACCOUNT_SESSION_KINDS.ANDROID_PHONE;
 
+/** Build activity timestamp from the supplied domain inputs. */
 const activityTimestamp = (session: AccountSessionSummary): number =>
   Date.parse(session.last_activity_at ?? session.created_at);
 
+/** Determine whether the input conforms to the retryable transaction conflict contract. */
 const isRetryableTransactionConflict = (error: unknown): boolean => {
   if (!error || typeof error !== 'object' || !('code' in error)) return false;
   const code = String(error.code);
   return code === 'P2034' || code === '40001' || code === '40P01';
 };
 
+/** Run work in a serializable transaction with bounded conflict retries. */
 const runSerializable = async <T>(db: typeof prisma, work: (tx: Prisma.TransactionClient) => Promise<T>): Promise<T> => {
   for (let attempt = 1; attempt <= SERIALIZABLE_TRANSACTION_MAX_ATTEMPTS; attempt += 1) {
     try {

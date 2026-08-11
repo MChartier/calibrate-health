@@ -1,3 +1,6 @@
+/**
+ * Exercises date bounds behavior and regression boundaries.
+ */
 import { getMinimumDateOfBirth } from './dateBounds';
 
 describe('date-of-birth picker bounds', () => {

@@ -1,7 +1,11 @@
+/**
+ * Exercises account access middleware behavior and regression boundaries.
+ */
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const Module = require('node:module');
 
+/** Build deterministic stub module for regression coverage. */
 function stubModule(resolvedPath, exports) {
   const moduleInstance = new Module(resolvedPath);
   moduleInstance.exports = exports;
@@ -9,6 +13,7 @@ function stubModule(resolvedPath, exports) {
   require.cache[resolvedPath] = moduleInstance;
 }
 
+/** Load middleware. */
 function loadMiddleware(getAccountAccess) {
   const servicePath = require.resolve('../src/services/accountAccess');
   const middlewarePath = require.resolve('../src/middleware/accountAccess');
@@ -21,6 +26,7 @@ function loadMiddleware(getAccountAccess) {
   return loaded;
 }
 
+/** Build deterministic response for regression coverage. */
 function response() {
   return {
     statusCode: 200,
@@ -31,6 +37,7 @@ function response() {
   };
 }
 
+/** Build deterministic authenticated request for regression coverage. */
 const authenticatedRequest = (path, method = 'GET') => ({
   path,
   method,

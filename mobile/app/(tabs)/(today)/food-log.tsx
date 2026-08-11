@@ -45,6 +45,7 @@ import { SERVING_INPUT_INCREMENT } from '../../../src/config/inputPrecision';
 import { useBarcodeSearchHandoff } from '../../../src/barcode/useBarcodeSearchHandoff';
 import { reportClientOperationFailure } from '../../../src/diagnostics/operationDiagnostics';
 
+/** Render the food log screen interface. */
 export default function FoodLogScreen() {
     const routeParams = useLocalSearchParams<{ date?: string; meal?: string; openAddFood?: string }>();
     const pathname = usePathname();
@@ -468,6 +469,7 @@ export default function FoodLogScreen() {
     );
 }
 
+/** Render the food log skeleton interface. */
 const FoodLogSkeleton: React.FC = () => (
     <AppCard testID="food-log-loading">
         <SkeletonBlock width="28%" height={30} />
@@ -489,6 +491,7 @@ const skeletonStyles = StyleSheet.create({
     }
 });
 
+/** Build the styles for the active theme from validated configuration and dependencies. */
 function createStyles(theme: AppTheme) {
     return StyleSheet.create({
         row: {

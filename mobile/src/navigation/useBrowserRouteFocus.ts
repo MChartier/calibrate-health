@@ -1,8 +1,12 @@
+/**
+ * Provides Expo client behavior for use browser route focus.
+ */
 import { useEffect, useRef } from 'react';
 
 const ROUTE_FOCUS_TITLE_ID = 'route-focus-title';
 const ROUTE_FOCUS_FALLBACK_MS = 5_000;
 
+/** Focus route title using validated domain inputs. */
 function focusRouteTitle(): boolean {
     const title = document.getElementById(ROUTE_FOCUS_TITLE_ID);
     if (!title) return false;

@@ -1,3 +1,6 @@
+/**
+ * Defines the shared weight trend domain contract.
+ */
 import { WEIGHT_TREND_PARAMETER_MANIFEST } from './weightTrendParameters';
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
@@ -283,6 +286,7 @@ export function summarizeWeightTrendEvidence(points: WeightTrendPoint[]): Weight
     };
 }
 
+/** Classify weight trend evidence into its reviewed states. */
 export function classifyWeightTrendEvidence(
     pointCount: number,
     spanDays: number,
@@ -295,10 +299,12 @@ export function classifyWeightTrendEvidence(
     return 'sufficient';
 }
 
+/** Check whether the current state has sufficient weight trend evidence. */
 export function hasSufficientWeightTrendEvidence(evidence: WeightTrendEvidence): boolean {
     return evidence.status === 'sufficient';
 }
 
+/** Classify weight trend rate into its reviewed states. */
 export function classifyWeightTrendRate(
     lower95KgPerWeek: number,
     upper95KgPerWeek: number,
@@ -317,6 +323,7 @@ export function classifyWeightTrendRate(
     return { direction: 'uncertain', status: 'uncertain' };
 }
 
+/** Build empty result from the supplied domain inputs. */
 function emptyResult(asOfDate: Date | null): WeightTrendResult {
     const evidence = summarizeWeightTrendEvidence([]);
     const unavailableRate = buildUnavailableRate();
@@ -340,6 +347,7 @@ function emptyResult(asOfDate: Date | null): WeightTrendResult {
     };
 }
 
+/** Normalize observations into the canonical representation used at this boundary. */
 function normalizeObservations(observations: WeightTrendObservation[], asOfDate: Date | undefined): WeightTrendObservation[] {
     const cutoffMs = validDate(asOfDate) ? asOfDate.getTime() : Number.POSITIVE_INFINITY;
     return observations
@@ -352,6 +360,7 @@ function normalizeObservations(observations: WeightTrendObservation[], asOfDate:
         .sort((left, right) => left.date.getTime() - right.date.getTime());
 }
 
+/** Run one forward filter pass across the ordered weight observations. */
 function runFilterPass(observations: WeightTrendObservation[], measurementVariance: number | number[]): FilterPass {
     const points: InternalFilterPoint[] = [];
     let state: FilterState | null = null;
@@ -417,6 +426,7 @@ function runFilterPass(observations: WeightTrendObservation[], measurementVarian
     return { points, segments: buildSegments(points) };
 }
 
+/** Initialize state from the first observation. */
 function initializeState(weight: number, measurementVariance: number): FilterState {
     return {
         level: weight,
@@ -429,6 +439,7 @@ function initializeState(weight: number, measurementVariance: number): FilterSta
     };
 }
 
+/** Predict state across the next interval. */
 function predictState(state: FilterState, deltaDays: number): FilterState {
     const dt = Math.max(0, deltaDays);
     const { level: p00, levelRate: p01, rate: p11 } = state.covariance;
@@ -448,6 +459,7 @@ function predictState(state: FilterState, deltaDays: number): FilterState {
     };
 }
 
+/** Update state. */
 function updateState(
     predicted: FilterState,
     measurement: number,
@@ -483,6 +495,7 @@ function updateState(
     };
 }
 
+/** Stabilize covariance against invalid numeric bounds. */
 function stabilizeCovariance(covariance: Covariance): Covariance {
     const level = Math.max(MIN_VARIANCE, covariance.level);
     const rate = Math.max(MIN_VARIANCE, covariance.rate);
@@ -541,6 +554,7 @@ function summarizeCurrentRate(points: WeightTrendPoint[], evidence: WeightTrendE
     };
 }
 
+/** Summarize window average rate for the module response. */
 function summarizeWindowAverageRate(
     points: WeightTrendPoint[],
     window: WeightTrendOptions['calibrationWindow']
@@ -600,6 +614,7 @@ function summarizeWindowAverageRate(
     };
 }
 
+/** Build the unavailable rate with stable fields for the surrounding domain boundary. */
 function buildUnavailableRate(pointCount = 0, spanDays = 0): WeightTrendRate {
     return {
         estimateKgPerWeek: Number.NaN,
@@ -674,6 +689,7 @@ function estimateRobustSegmentRate(
     };
 }
 
+/** Fit weighted line from the supplied observations. */
 function fitWeightedLine(xValues: number[], yValues: number[], weights: number[]): WeightedLineFit | null {
     if (xValues.length !== yValues.length || xValues.length !== weights.length || xValues.length < 2) return null;
     let weightSum = 0;
@@ -708,6 +724,7 @@ function fitWeightedLine(xValues: number[], yValues: number[], weights: number[]
     };
 }
 
+/** Build the segments with stable fields for the surrounding domain boundary. */
 function buildSegments(points: InternalFilterPoint[]): WeightTrendSegment[] {
     const segments: WeightTrendSegment[] = [];
     for (const point of points) {
@@ -735,11 +752,13 @@ function buildSegments(points: InternalFilterPoint[]): WeightTrendSegment[] {
     return segments;
 }
 
+/** Remove internal fields from internal point. */
 function stripInternalPoint(point: InternalFilterPoint): WeightTrendPoint {
     const { innovationKg: _innovationKg, innovationStdKg: _innovationStdKg, ...publicPoint } = point;
     return publicPoint;
 }
 
+/** Convert the recent daily slope into a weekly weight-change rate. */
 function computeRecentWeeklyRate(points: Array<Pick<WeightTrendPoint, 'date' | 'trendWeight'>>): number {
     if (points.length < 2) return 0;
     const start = points[Math.max(0, points.length - RECENT_WINDOW_POINTS)];
@@ -749,6 +768,7 @@ function computeRecentWeeklyRate(points: Array<Pick<WeightTrendPoint, 'date' | '
     return Number.isFinite(rate) ? rate : 0;
 }
 
+/** Classify volatility into its reviewed states. */
 function classifyVolatility(points: Array<Pick<WeightTrendPoint, 'trendStd'>>): VolatilityLevel {
     const recentStd = points.slice(-RECENT_WINDOW_POINTS).map((point) => point.trendStd);
     const medianStd = median(recentStd) ?? 0;
@@ -757,11 +777,13 @@ function classifyVolatility(points: Array<Pick<WeightTrendPoint, 'trendStd'>>): 
     return 'high';
 }
 
+/** Measure a non-negative elapsed interval in days. */
 function elapsedDays(start: Date, end: Date): number {
     const value = (end.getTime() - start.getTime()) / MS_PER_DAY;
     return Number.isFinite(value) ? Math.max(0, value) : 0;
 }
 
+/** Estimate robust standard deviation from finite observations using median absolute deviation. */
 function robustStd(values: number[]): number | null {
     const finite = values.filter(Number.isFinite);
     if (finite.length < 2) return null;
@@ -771,6 +793,7 @@ function robustStd(values: number[]): number | null {
     return mad === null ? null : 1.4826 * mad;
 }
 
+/** Return the median of the finite input values. */
 function median(values: number[]): number | null {
     const finite = values.filter(Number.isFinite).slice().sort((left, right) => left - right);
     if (finite.length === 0) return null;
@@ -778,10 +801,12 @@ function median(values: number[]): number | null {
     return finite.length % 2 === 1 ? finite[middle] : (finite[middle - 1] + finite[middle]) / 2;
 }
 
+/** Check that a value is a finite Date instance. */
 function validDate(value: Date | undefined): value is Date {
     return value instanceof Date && Number.isFinite(value.getTime());
 }
 
+/** Clamp a value to the supplied inclusive bounds. */
 function clamp(value: number, minimum: number, maximum: number): number {
     return Math.max(minimum, Math.min(maximum, value));
 }

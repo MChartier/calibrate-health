@@ -325,11 +325,13 @@ class WearPersistenceInstrumentedTest {
         helper.close()
     }
 
+    /** Proves migration 6 fails closed instead of preserving stale calorie-target ownership. */
     @Test
     fun versionSixMigrationFailsClosedForCachedCalorieTargets() {
         val configuration = SupportSQLiteOpenHelper.Configuration.builder(context)
             .name(migrationDatabaseName)
             .callback(object : SupportSQLiteOpenHelper.Callback(6) {
+                /** Creates the version-six cache fixture containing deliberately stale target math. */
                 override fun onCreate(database: SupportSQLiteDatabase) {
                     database.execSQL(
                         """
@@ -348,6 +350,7 @@ class WearPersistenceInstrumentedTest {
                     )
                 }
 
+                /** Leaves upgrade execution to the migration invoked explicitly by this test. */
                 override fun onUpgrade(database: SupportSQLiteDatabase, oldVersion: Int, newVersion: Int) = Unit
             })
             .build()

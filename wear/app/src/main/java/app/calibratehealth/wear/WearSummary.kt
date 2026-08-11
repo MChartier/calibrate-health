@@ -191,12 +191,14 @@ class WeightPickerValues private constructor(
                 (grams / METRIC_TENTH_GRAMS.toDouble()).roundToInt()
             }
 
+        /** Returns the minimum selectable weight in tenths for the requested display unit. */
         private fun minimumDisplayTenths(unit: String): Int = if (unit == IMPERIAL_UNIT) {
             kotlin.math.ceil(MIN_WEIGHT_GRAMS * DECIMAL_OPTION_COUNT / GRAMS_PER_POUND).toInt()
         } else {
             (MIN_WEIGHT_GRAMS / METRIC_TENTH_GRAMS).toInt()
         }
 
+        /** Returns the maximum selectable weight in tenths for the requested display unit. */
         private fun maximumDisplayTenths(unit: String): Int = if (unit == IMPERIAL_UNIT) {
             kotlin.math.floor(MAX_WEIGHT_GRAMS * DECIMAL_OPTION_COUNT / GRAMS_PER_POUND).toInt()
         } else {

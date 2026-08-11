@@ -1,3 +1,6 @@
+/**
+ * Provides Expo client behavior for context.
+ */
 import { isDateOnly, MEAL_PERIODS, type MealPeriod } from '@calibrate/shared';
 
 export const BARCODE_RETURN_DESTINATIONS = {
@@ -52,22 +55,26 @@ const MEAL_VALUES = new Set<MealPeriod>(Object.values(MEAL_PERIODS));
 const RETURN_DESTINATIONS = new Set<BarcodeReturnDestination>(Object.values(BARCODE_RETURN_DESTINATIONS));
 const RESUME_STEPS = new Set<BarcodeResumeStep>(Object.values(BARCODE_RESUME_STEPS));
 
+/** Build first string from the supplied domain inputs. */
 function firstString(value: unknown): string | null {
     const candidate = Array.isArray(value) ? value[0] : value;
     return typeof candidate === 'string' ? candidate : null;
 }
 
+/** Determine whether the input conforms to the calendar date only contract. */
 function isCalendarDateOnly(value: unknown): value is string {
     if (!isDateOnly(value)) return false;
     const parsed = new Date(`${value}T00:00:00.000Z`);
     return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value;
 }
 
+/** Parse and validate meal. */
 function parseMeal(value: unknown, fallback: MealPeriod): MealPeriod {
     const candidate = firstString(value);
     return candidate && MEAL_VALUES.has(candidate as MealPeriod) ? candidate as MealPeriod : fallback;
 }
 
+/** Parse and validate return destination. */
 function parseReturnDestination(
     value: unknown,
     fallback: BarcodeReturnDestination

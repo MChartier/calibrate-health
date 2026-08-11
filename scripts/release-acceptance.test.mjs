@@ -1,3 +1,6 @@
+/**
+ * Exercises release acceptance behavior and regression boundaries.
+ */
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
 import fs from 'node:fs';
@@ -22,10 +25,12 @@ const repositoryPlanContent = fs.readFileSync(path.join(repositoryRoot, RELEASE_
 const repositoryPlan = JSON.parse(repositoryPlanContent);
 const manifestContent = fs.readFileSync(path.join(repositoryRoot, 'shared/release.json'), 'utf8');
 
+/** Build deterministic digest for regression coverage. */
 function digest(value) {
   return crypto.createHash('sha256').update(value).digest('hex');
 }
 
+/** Build deterministic workflow fixture for regression coverage. */
 function workflowFixture(plan, workflowPath, pinned = true) {
   const jobs = plan.requirements.filter((requirement) => requirement.workflowPath === workflowPath);
   return `name: fixture
@@ -51,6 +56,7 @@ ${requirement.retainedArtifact ? `      - name: Record candidate
 ` : ''}`).join('')}`;
 }
 
+/** Build deterministic plan read fixture for regression coverage. */
 function planReadFixture(plan, options = {}) {
   const protocolPaths = new Set([
     plan.protocolPath,
@@ -86,10 +92,12 @@ jobs:
   };
 }
 
+/** Build deterministic valid plan for regression coverage. */
 function validPlan() {
   return structuredClone(repositoryPlan);
 }
 
+/** Build deterministic valid external fixture for regression coverage. */
 function validExternalFixture(plan = validPlan()) {
   const evidenceContentByReference = new Map();
   const requirements = plan.requirements.map((requirement) => {
@@ -147,6 +155,7 @@ function validExternalFixture(plan = validPlan()) {
   };
 }
 
+/** Build deterministic external validation options for regression coverage. */
 function externalValidationOptions(plan, evidenceContentByReference, now = '2026-08-10T00:00:00.000Z') {
   return {
     plan,

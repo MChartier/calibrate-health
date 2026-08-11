@@ -1,3 +1,6 @@
+/**
+ * Defines the reviewed route matrix browser coverage contract.
+ */
 import {
   ROUTE_IDS,
   ROUTE_REGISTRY,
@@ -19,8 +22,10 @@ export type RouteExpectation = {
   historyFallback: string | null;
 };
 
+/** Build destination path from the supplied domain inputs. */
 const destinationPath = (routeId: RouteId): string => canonicalPathForRoute(routeId);
 
+/** Build expectation for canonical route from the supplied domain inputs. */
 const expectationForCanonicalRoute = (routeId: RouteId): RouteExpectation => {
   const definition = ROUTE_REGISTRY[routeId];
   const signedOutPath = definition.authClass === 'authenticated'
@@ -41,6 +46,7 @@ const expectationForCanonicalRoute = (routeId: RouteId): RouteExpectation => {
   };
 };
 
+/** Build expectation for alias from the supplied domain inputs. */
 const expectationForAlias = (
   routeId: RouteId,
   alias: RouteAlias,

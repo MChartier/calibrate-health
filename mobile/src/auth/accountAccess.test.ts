@@ -1,3 +1,6 @@
+/**
+ * Exercises account access behavior and regression boundaries.
+ */
 import {
     ACCOUNT_ACCESS_STATES,
     getAccountAccessState,

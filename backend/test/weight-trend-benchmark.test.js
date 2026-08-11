@@ -1,3 +1,6 @@
+/**
+ * Exercises weight trend benchmark behavior and regression boundaries.
+ */
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const { performance } = require('node:perf_hooks');
@@ -7,6 +10,7 @@ const { computeWeightTrendV1 } = require('../src/services/weightTrendV1');
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
+/** Generate the next deterministic pseudorandom sample from the seeded state. */
 function seededRandom(seed) {
   let state = seed >>> 0;
   return () => {
@@ -15,12 +19,14 @@ function seededRandom(seed) {
   };
 }
 
+/** Generate a normally distributed sample from the seeded random source. */
 function gaussian(random) {
   const first = Math.max(Number.EPSILON, random());
   const second = random();
   return Math.sqrt(-2 * Math.log(first)) * Math.cos(2 * Math.PI * second);
 }
 
+/** Build the scenario with stable fields for deterministic regression assertions. */
 function buildScenario({ days, weeklyRateKg, noiseStdKg, seed, outlierEvery = 0 }) {
   const startMs = Date.parse('2026-01-01T00:00:00.000Z');
   const random = seededRandom(seed);
@@ -31,6 +37,7 @@ function buildScenario({ days, weeklyRateKg, noiseStdKg, seed, outlierEvery = 0 
   }));
 }
 
+/** Compute trend. */
 function computeTrend(observations, options = {}) {
   const cutoffMs = options.asOfDate instanceof Date
     ? options.asOfDate.getTime()

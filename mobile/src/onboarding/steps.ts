@@ -82,6 +82,7 @@ export function isOptionalConnectionStep(step: OnboardingStepKey): boolean {
     return step === 'health' || step === 'watch';
 }
 
+/** Determine whether the input conforms to the post completion step contract. */
 export function isPostCompletionStep(step: OnboardingStepKey): boolean {
     return step === 'import' || isOptionalConnectionStep(step);
 }

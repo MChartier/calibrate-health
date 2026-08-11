@@ -1,3 +1,6 @@
+/**
+ * Defines deterministic fixtures browser data and controls.
+ */
 import {
   expect,
   test as base,
@@ -228,6 +231,7 @@ const AVAILABLE_PLAN_OPTIONS = [-1000, -750, -500, -250, 0, 250, 500, 750, 1000]
   };
 });
 
+/** Resolve the calorie plan fixture from the current validated state. */
 function getCaloriePlanFixture(state: CaloriePlanFixtureState) {
   if (state === 'requires-review') {
     const reasonCode = 'HISTORICAL_PLAN_REQUIRES_REVIEW';
@@ -353,6 +357,7 @@ const CALIBRATION_STATUS_RESPONSE = {
 const diagnosticsByPage = new WeakMap<Page, FixtureDiagnostics>();
 const RESOURCE_ERROR_STATUS_PATTERN = /status of (\d{3}) \(/;
 
+/** Build api failure key from the supplied domain inputs. */
 function apiFailureKey({ method, pathname, status }: ExpectedApiFailure): string {
   return `${method.toUpperCase()} ${pathname} ${status}`;
 }
@@ -372,6 +377,7 @@ export async function activateFixtureOffline(page: Page): Promise<void> {
   await page.context().setOffline(true);
 }
 
+/** Fulfill json with deterministic fixture data. */
 function fulfillJson(route: Route, body: unknown, status = 200): Promise<void> {
   return route.fulfill({
     status,
@@ -380,6 +386,7 @@ function fulfillJson(route: Route, body: unknown, status = 200): Promise<void> {
   });
 }
 
+/** Fulfill api error with deterministic fixture data. */
 function fulfillApiError(route: Route, status: number, code: string, message: string): Promise<void> {
   const requestId = `fixture-${code.toLowerCase().replaceAll('_', '-')}`;
   return route.fulfill({
@@ -395,10 +402,12 @@ function fulfillApiError(route: Route, status: number, code: string, message: st
   });
 }
 
+/** Resolve resource fixture body. */
 function resolveResourceFixtureBody(body: ApiResourceFixture['content'], url: URL): unknown {
   return typeof body === 'function' ? body(url) : body;
 }
 
+/** Freeze browser inputs for deterministic browser execution. */
 async function freezeBrowserInputs(page: Page): Promise<void> {
   await page.addInitScript(({ frozenNow, clockStepMs }) => {
     const NativeDate = Date;
@@ -441,6 +450,7 @@ async function freezeBrowserInputs(page: Page): Promise<void> {
   }, { frozenNow: FROZEN_NOW, clockStepMs: DETERMINISTIC_CLOCK_STEP_MS });
 }
 
+/** Format failure context for stable display or serialization. */
 function formatFailureContext(page: Page, testInfo: TestInfo, diagnostics: FixtureDiagnostics): string {
   const viewport = page.viewportSize();
   let route = 'unavailable';
@@ -457,11 +467,13 @@ function formatFailureContext(page: Page, testInfo: TestInfo, diagnostics: Fixtu
   ].join(' ');
 }
 
+/** Install signed out api for deterministic browser coverage. */
 async function installSignedOutApi(page: Page): Promise<void> {
   expectApiFailure(page, { method: 'GET', pathname: '/auth/me', status: 401 });
   await page.route('**/auth/me', (route) => fulfillApiError(route, 401, 'NOT_AUTHENTICATED', 'Not authenticated'));
 }
 
+/** Install authenticated api for deterministic browser coverage. */
 async function installAuthenticatedApi(
   page: Page,
   state: Exclude<UxFixtureState, 'signed-out' | 'offline'>,
@@ -796,6 +808,7 @@ async function installAuthenticatedApi(
   });
 }
 
+/** Install state for deterministic browser coverage. */
 async function installState(
   page: Page,
   context: BrowserContext,
@@ -817,6 +830,7 @@ async function installState(
   };
 }
 
+/** Attach fixture diagnostics without retaining private page content. */
 function attachFixtureDiagnostics(page: Page, diagnostics: FixtureDiagnostics): void {
   if (diagnosticsByPage.has(page)) return;
   diagnosticsByPage.set(page, diagnostics);

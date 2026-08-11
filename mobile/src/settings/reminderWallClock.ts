@@ -1,3 +1,6 @@
+/**
+ * Provides Expo client behavior for reminder wall clock.
+ */
 export type ReminderScheduleValues = {
     foodTime: string;
     weightTime: string;
@@ -9,10 +12,12 @@ export type ReminderScheduleErrors = Partial<Record<keyof ReminderScheduleValues
 
 const WALL_CLOCK_PATTERN = /^(?:[01]\d|2[0-3]):[0-5]\d$/;
 
+/** Determine whether the input conforms to the wall clock time contract. */
 export function isWallClockTime(value: string): boolean {
     return WALL_CLOCK_PATTERN.test(value.trim());
 }
 
+/** Resolve the reminder schedule errors from the current validated state. */
 export function getReminderScheduleErrors(values: ReminderScheduleValues): ReminderScheduleErrors {
     const errors: ReminderScheduleErrors = {};
     if (!isWallClockTime(values.foodTime)) errors.foodTime = 'Enter a food reminder time as HH:mm.';
@@ -34,10 +39,12 @@ export function getReminderScheduleErrors(values: ReminderScheduleValues): Remin
     return errors;
 }
 
+/** Check whether the current state has reminder schedule errors. */
 export function hasReminderScheduleErrors(errors: ReminderScheduleErrors): boolean {
     return Object.values(errors).some(Boolean);
 }
 
+/** Build to reminder schedule payload from the supplied domain inputs. */
 export function toReminderSchedulePayload(values: ReminderScheduleValues) {
     const quietStart = values.quietStart.trim();
     const quietEnd = values.quietEnd.trim();

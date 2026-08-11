@@ -1,3 +1,6 @@
+/**
+ * Provides Expo client behavior for query online manager.
+ */
 import React from 'react';
 import { onlineManager } from '@tanstack/react-query';
 
@@ -45,6 +48,7 @@ export function configureQueryOnlineManager(
     };
 }
 
+/** Provide the query online manager React hook. */
 export function useQueryOnlineManager(): void {
     React.useEffect(() => configureQueryOnlineManager(), []);
 }

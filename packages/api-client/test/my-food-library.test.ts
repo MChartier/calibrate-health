@@ -1,3 +1,6 @@
+/**
+ * Exercises my food library behavior and regression boundaries.
+ */
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { CalibrateApiClient } from '../src/client.ts';

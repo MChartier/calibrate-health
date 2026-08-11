@@ -1,3 +1,6 @@
+/**
+ * Defines the support Expo Router screen.
+ */
 import { CALIBRATE_PRODUCT_LINKS } from '@calibrate/shared/product';
 import { PublicLegalPage } from '../src/components/legal/PublicLegalPage';
 import {
@@ -6,6 +9,7 @@ import {
     SUPPORT_SECTIONS
 } from '../src/legal/publicLegalContent';
 
+/** Render the support route interface. */
 export default function SupportRoute() {
     return (
         <PublicLegalPage

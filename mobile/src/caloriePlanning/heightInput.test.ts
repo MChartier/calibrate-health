@@ -1,3 +1,6 @@
+/**
+ * Exercises height input behavior and regression boundaries.
+ */
 import { HEIGHT_UNITS } from '@calibrate/shared';
 import { heightInputToCanonicalMillimeters, isHeightWithinPolicy } from './heightInput';
 

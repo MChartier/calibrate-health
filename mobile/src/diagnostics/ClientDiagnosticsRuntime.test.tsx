@@ -1,3 +1,6 @@
+/**
+ * Exercises client diagnostics runtime behavior and regression boundaries.
+ */
 import { render } from '@testing-library/react-native';
 import { useAuth } from '../auth/AuthContext';
 import { registerClientDiagnosticReporter } from './clientDiagnostics';
@@ -11,6 +14,7 @@ const mockRegisterClientDiagnosticReporter = registerClientDiagnosticReporter as
     typeof registerClientDiagnosticReporter
 >;
 
+/** Build deterministic auth state for regression coverage. */
 function authState(isLoading: boolean, reportClientDiagnostic = jest.fn()): ReturnType<typeof useAuth> {
     return { api: { reportClientDiagnostic }, isLoading } as unknown as ReturnType<typeof useAuth>;
 }

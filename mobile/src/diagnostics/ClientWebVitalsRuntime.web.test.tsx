@@ -1,3 +1,6 @@
+/**
+ * Exercises client web vitals runtime web behavior and regression boundaries.
+ */
 import { render } from '@testing-library/react-native';
 import { usePathname } from 'expo-router';
 import { useAuth } from '../auth/AuthContext';
@@ -21,6 +24,7 @@ const mockGetClientDiagnosticRoute = getClientDiagnosticRoute as jest.MockedFunc
 >;
 const mockObserveClientWebVitals = observeClientWebVitals as jest.MockedFunction<typeof observeClientWebVitals>;
 
+/** Build deterministic auth state for regression coverage. */
 function authState(isLoading: boolean, hasUser: boolean): ReturnType<typeof useAuth> {
     return {
         isLoading,

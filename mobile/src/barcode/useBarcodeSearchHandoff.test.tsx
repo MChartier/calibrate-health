@@ -1,3 +1,6 @@
+/**
+ * Exercises use barcode search handoff behavior and regression boundaries.
+ */
 import { renderHook, waitFor } from '@testing-library/react-native';
 import { MEAL_PERIODS } from '@calibrate/shared';
 import { useBarcodeSearchHandoff, type BarcodeSearchHandoffParams } from './useBarcodeSearchHandoff';

@@ -1,3 +1,6 @@
+/**
+ * Defines the about Expo Router screen.
+ */
 import React, { useState } from 'react';
 import { ActivityIndicator, Platform, Pressable, StyleSheet, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
@@ -23,6 +26,7 @@ const PRODUCT_LINKS = [
     { label: 'Release notes', href: CALIBRATE_PRODUCT_LINKS.releases }
 ] as const;
 
+/** Format update date for stable display or serialization. */
 function formatUpdateDate(value: Date | null): string {
     if (!value || Number.isNaN(value.getTime())) return 'Unknown';
     return value.toLocaleString(undefined, {
@@ -34,6 +38,7 @@ function formatUpdateDate(value: Date | null): string {
     });
 }
 
+/** Resolve the update action icon from the current validated state. */
 function getUpdateActionIcon(
     isUpdatePending: boolean,
     isUpdateAvailable: boolean
@@ -43,6 +48,7 @@ function getUpdateActionIcon(
     return 'cloud-done-outline';
 }
 
+/** Render the about screen interface. */
 export default function AboutScreen() {
     const theme = useAppTheme();
     const { serverUrl } = useAuth();
@@ -232,6 +238,7 @@ export default function AboutScreen() {
     );
 }
 
+/** Render the info row interface. */
 const InfoRow: React.FC<{ label: string; value: string; showDivider?: boolean }> = ({
     label,
     value,

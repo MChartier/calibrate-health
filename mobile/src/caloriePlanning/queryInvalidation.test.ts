@@ -1,3 +1,6 @@
+/**
+ * Exercises query invalidation behavior and regression boundaries.
+ */
 import { invalidateProfilePlanningQueries } from './queryInvalidation';
 
 describe('profile planning query invalidation', () => {

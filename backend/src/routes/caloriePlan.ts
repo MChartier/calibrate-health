@@ -1,3 +1,6 @@
+/**
+ * Defines the calorie plan HTTP routes and request handling.
+ */
 import express from 'express';
 import { evaluateCaloriePlan } from '../../../shared/caloriePolicy';
 import { getAuthenticatedUser, requireAuthenticatedUser } from '../middleware/authenticatedUser';
@@ -19,11 +22,13 @@ type DraftParseResult = {
   };
 } | { ok: false; field: string; message: string };
 
+/** Accept only finite numeric inputs at this boundary. */
 const finiteNumber = (value: unknown): number | null => {
   const parsed = typeof value === 'number' ? value : typeof value === 'string' ? Number(value) : Number.NaN;
   return Number.isFinite(parsed) ? parsed : null;
 };
 
+/** Parse and validate draft. */
 function parseDraft(body: unknown): DraftParseResult {
   if (!body || typeof body !== 'object' || Array.isArray(body)) return { ok: false, field: 'body', message: 'A calorie plan draft is required.' };
   const record = body as Record<string, unknown>;

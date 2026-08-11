@@ -1,3 +1,6 @@
+/**
+ * Exercises form error summary behavior and regression boundaries.
+ */
 import { createRef } from 'react';
 import { AccessibilityInfo } from 'react-native';
 import { act, render } from '@testing-library/react-native';

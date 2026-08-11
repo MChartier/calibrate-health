@@ -1,3 +1,6 @@
+/**
+ * Provides Expo client behavior for camera runtime.
+ */
 import { CameraView } from 'expo-camera';
 
 export const cameraPermissionCopy = {
@@ -10,6 +13,7 @@ export const cameraPermissionCopy = {
     openSettingsError: ''
 } as const;
 
+/** Determine whether the input conforms to the barcode camera available contract. */
 export async function isBarcodeCameraAvailable(): Promise<boolean> {
     try {
         return await CameraView.isAvailableAsync();

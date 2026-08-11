@@ -1,3 +1,6 @@
+/**
+ * Provides Expo client behavior for barcode camera.
+ */
 import { StyleSheet, View } from 'react-native';
 import { CameraView, type BarcodeScanningResult } from 'expo-camera';
 import { radius, useAppTheme } from '../theme';

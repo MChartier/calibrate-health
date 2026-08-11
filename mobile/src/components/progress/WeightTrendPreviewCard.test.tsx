@@ -17,6 +17,7 @@ jest.mock('../../auth/AuthContext', () => ({
     })
 }));
 
+/** Build deterministic metric for regression coverage. */
 function metric(id: number, date: string, weight: number, trendWeight: number, materialized = true): TrendMetricEntry {
     return {
         id,
@@ -37,6 +38,7 @@ const METRICS = [
     metric(1, '2026-07-19', 169, 168.8)
 ];
 
+/** Build deterministic trend summary for regression coverage. */
 function trendSummary(overrides: Partial<WeightTrendSummary> = {}): WeightTrendSummary {
     return {
         status: 'provisional',

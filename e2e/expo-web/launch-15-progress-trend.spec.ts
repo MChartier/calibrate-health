@@ -1,3 +1,6 @@
+/**
+ * Exercises launch 15 progress trend behavior and regression boundaries.
+ */
 import { mkdir } from 'node:fs/promises';
 import path from 'node:path';
 import type { Page, Route, TestInfo } from '@playwright/test';
@@ -51,6 +54,7 @@ const OUTDATED_MONTH_METRICS: TrendMetric[] = [
 
 const RAW_ONLY_HISTORY = metric(1, '2025-01-02', 94.2, 94.2, { materialized: false });
 
+/** Build deterministic metric for regression coverage. */
 function metric(
   id: number,
   date: string,
@@ -74,6 +78,7 @@ function metric(
   };
 }
 
+/** Build deterministic trend summary for regression coverage. */
 function trendSummary(
   freshness: MonthFreshness,
   metrics: TrendMetric[],
@@ -122,6 +127,7 @@ function trendSummary(
   };
 }
 
+/** Build deterministic trend response for regression coverage. */
 function trendResponse(range: TrendRange, monthFreshness: MonthFreshness) {
   let metrics = MODELED_MONTH_METRICS;
   let freshness = monthFreshness;
@@ -152,6 +158,7 @@ function trendResponse(range: TrendRange, monthFreshness: MonthFreshness) {
   };
 }
 
+/** Install trend fixture for deterministic browser coverage. */
 async function installTrendFixture(page: Page): Promise<TrendFixture> {
   const fixture: TrendFixture = { monthFreshness: 'current' };
   await page.route('**/api/v1/metrics**', (route: Route) => {
@@ -172,6 +179,7 @@ async function installTrendFixture(page: Page): Promise<TrendFixture> {
   return fixture;
 }
 
+/** Assert that no horizontal overflow. */
 async function expectNoHorizontalOverflow(page: Page) {
   const widths = await page.evaluate(() => ({
     clientWidth: document.documentElement.clientWidth,
@@ -180,6 +188,7 @@ async function expectNoHorizontalOverflow(page: Page) {
   expect(widths.scrollWidth).toBeLessThanOrEqual(widths.clientWidth);
 }
 
+/** Build deterministic hide transient pwa notices for regression coverage. */
 async function hideTransientPwaNotices(page: Page) {
   await page.locator('[role="status"], [role="alert"]').evaluateAll((notices, titles) => {
     for (const notice of notices) {
@@ -191,6 +200,7 @@ async function hideTransientPwaNotices(page: Page) {
   }, [...TRANSIENT_PWA_TITLES]);
 }
 
+/** Capture evidence only when explicit evidence collection is enabled. */
 async function captureEvidence(page: Page, testInfo: TestInfo) {
   if (process.env.CALIBRATE_CAPTURE_EVIDENCE !== '1') return;
   const filename = testInfo.project.name === 'desktop-chrome'

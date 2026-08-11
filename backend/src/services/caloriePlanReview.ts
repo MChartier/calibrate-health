@@ -1,3 +1,6 @@
+/**
+ * Provides backend domain operations for calorie plan review.
+ */
 import type { MutationDatabase } from './clientOperations';
 import { buildStoredCaloriePlanningSnapshot, type StoredCaloriePlanningSnapshot } from './caloriePlanning';
 

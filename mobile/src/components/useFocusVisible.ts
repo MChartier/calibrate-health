@@ -1,3 +1,6 @@
+/**
+ * Provides the shared use focus visible component and interaction contract.
+ */
 import React from 'react';
 import { Platform, type PressableProps } from 'react-native';
 
@@ -5,15 +8,18 @@ let lastWebInputWasKeyboard = true;
 let webConsumerCount = 0;
 const webFocusResetters = new Set<() => void>();
 
+/** Mark keyboard input using validated domain inputs. */
 function markKeyboardInput(event: KeyboardEvent) {
     if (!event.metaKey && !event.altKey && !event.ctrlKey) lastWebInputWasKeyboard = true;
 }
 
+/** Mark pointer input using validated domain inputs. */
 function markPointerInput() {
     lastWebInputWasKeyboard = false;
     webFocusResetters.forEach((resetFocus) => resetFocus());
 }
 
+/** Retain web input listeners using validated domain inputs. */
 function retainWebInputListeners() {
     webConsumerCount += 1;
     if (webConsumerCount !== 1) return;
@@ -23,6 +29,7 @@ function retainWebInputListeners() {
     document.addEventListener('touchstart', markPointerInput, true);
 }
 
+/** Release web input listeners using validated domain inputs. */
 function releaseWebInputListeners() {
     webConsumerCount -= 1;
     if (webConsumerCount !== 0) return;

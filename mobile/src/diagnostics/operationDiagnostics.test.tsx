@@ -1,3 +1,6 @@
+/**
+ * Exercises operation diagnostics behavior and regression boundaries.
+ */
 import { renderHook, waitFor } from '@testing-library/react-native';
 import {
     reportClientDiagnostic,

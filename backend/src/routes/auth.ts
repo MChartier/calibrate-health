@@ -58,6 +58,7 @@ const INVALID_LOGIN_MESSAGE = 'Invalid email or password';
 const REGISTRATION_FAILED_MESSAGE = 'Unable to create account';
 const GENERIC_EMAIL_RESPONSE = 'If the account is eligible, email instructions will be sent.';
 
+/** Build the response returned when legal consent is invalid. */
 const invalidLegalResponse = (code: 'INVALID_LEGAL_ACCEPTANCE' | 'INVALID_LEGAL_VERSION') => ({
     message: code === 'INVALID_LEGAL_VERSION'
         ? 'Accept the current Terms and Privacy Policy versions.'
@@ -66,6 +67,7 @@ const invalidLegalResponse = (code: 'INVALID_LEGAL_ACCEPTANCE' | 'INVALID_LEGAL_
     retryable: false
 });
 
+/** Validate registration legal acceptance. */
 const validateRegistrationLegalAcceptance = (body: unknown):
     | { ok: true }
     | { ok: false; code: 'INVALID_LEGAL_ACCEPTANCE' | 'INVALID_LEGAL_VERSION' } => {
@@ -85,6 +87,7 @@ const validateRegistrationLegalAcceptance = (body: unknown):
 const isUniqueConstraintError = (err: unknown): boolean =>
     Boolean(err && typeof err === 'object' && (err as { code?: unknown }).code === 'P2002');
 
+/** Destroy the current request session and await store completion. */
 const destroyRequestSession = async (req: express.Request): Promise<void> => {
     if (!req.session) return;
     await new Promise<void>((resolve, reject) => {
@@ -92,6 +95,7 @@ const destroyRequestSession = async (req: express.Request): Promise<void> => {
     });
 };
 
+/** Queue an account email after the surrounding transaction succeeds. */
 const scheduleAccountEmail = (task: () => Promise<unknown>): void => {
     setImmediate(() => {
         void task().catch(() => {

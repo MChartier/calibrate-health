@@ -45,6 +45,7 @@ function runPlaywright(env) {
   });
 }
 
+/** Resolve npm cli. */
 function resolveNpmCli() {
   const inheritedNpmCli = process.env.npm_execpath;
   const installedNpmCli = path.join(

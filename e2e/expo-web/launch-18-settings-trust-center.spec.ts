@@ -1,3 +1,6 @@
+/**
+ * Exercises launch 18 settings trust center behavior and regression boundaries.
+ */
 import { mkdir } from 'node:fs/promises';
 import path from 'node:path';
 import type { Page, Route, TestInfo } from '@playwright/test';
@@ -51,6 +54,7 @@ const settingsUser = {
   profile_image_url: null,
 };
 
+/** Fulfill json with deterministic fixture data. */
 function fulfillJson(route: Route, body: unknown, status = 200) {
   return route.fulfill({
     status,
@@ -60,6 +64,7 @@ function fulfillJson(route: Route, body: unknown, status = 200) {
   });
 }
 
+/** Build deterministic initial sessions for regression coverage. */
 function initialSessions(): AccountSession[] {
   return [
     {
@@ -81,6 +86,7 @@ function initialSessions(): AccountSession[] {
   ];
 }
 
+/** Install settings api for deterministic browser coverage. */
 async function installSettingsApi(page: Page): Promise<SettingsApiFixture> {
   const fixture: SettingsApiFixture = {
     sessions: initialSessions(),
@@ -155,6 +161,7 @@ async function installSettingsApi(page: Page): Promise<SettingsApiFixture> {
   return fixture;
 }
 
+/** Install denied browser permission for deterministic browser coverage. */
 async function installDeniedBrowserPermission(page: Page) {
   await page.addInitScript(() => {
     let permission: NotificationPermission = 'default';
@@ -190,6 +197,7 @@ async function installDeniedBrowserPermission(page: Page) {
   });
 }
 
+/** Build deterministic confirm session action for regression coverage. */
 async function confirmSessionAction(page: Page, action: () => Promise<void>, title: string) {
   await action();
   const confirmation = page.getByRole('dialog', { name: title });
@@ -198,6 +206,7 @@ async function confirmSessionAction(page: Page, action: () => Promise<void>, tit
   await expect(confirmation).toHaveCount(0);
 }
 
+/** Build deterministic simulate two hundred percent text for regression coverage. */
 async function simulateTwoHundredPercentText(page: Page) {
   return page.evaluate(() => {
     let scaled = 0;
@@ -221,6 +230,7 @@ async function simulateTwoHundredPercentText(page: Page) {
   });
 }
 
+/** Build deterministic hide transient pwa notices for regression coverage. */
 async function hideTransientPwaNotices(page: Page) {
   await page.locator('[role="status"], [role="alert"]').evaluateAll((notices, titles) => {
     for (const notice of notices) {
@@ -232,6 +242,7 @@ async function hideTransientPwaNotices(page: Page) {
   }, [...TRANSIENT_PWA_TITLES]);
 }
 
+/** Assert that no horizontal overflow. */
 async function expectNoHorizontalOverflow(page: Page) {
   const widths = await page.evaluate(() => ({
     bodyWidth: document.body.scrollWidth,
@@ -242,6 +253,7 @@ async function expectNoHorizontalOverflow(page: Page) {
   expect(widths.scrollWidth).toBeLessThanOrEqual(widths.clientWidth);
 }
 
+/** Capture evidence only when explicit evidence collection is enabled. */
 async function captureEvidence(
   page: Page,
   testInfo: TestInfo,

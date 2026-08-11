@@ -1,3 +1,6 @@
+/**
+ * Provides Expo client behavior for barcode manual food form.
+ */
 import { View } from 'react-native';
 import type { FoodLogCreatePayload } from '@calibrate/api-client';
 import type { MealPeriod } from '@calibrate/shared';
@@ -18,6 +21,7 @@ type BarcodeManualFoodFormProps = {
     onSubmit: (request: { payload: FoodLogCreatePayload; closeAfterLogging: boolean }) => void;
 };
 
+/** Render the barcode manual food form interface. */
 export function BarcodeManualFoodForm({
     date,
     meal,

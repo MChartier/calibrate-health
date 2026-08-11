@@ -1,3 +1,6 @@
+/**
+ * Provides shared browser acceptance support for launch 22 visual screenshot.
+ */
 [data-testid="pwa-back-online"],
 [data-testid="pwa-update-ready"],
 [data-testid="pwa-update-error"] {

@@ -1,3 +1,6 @@
+/**
+ * Exercises public legal page behavior and regression boundaries.
+ */
 import { render } from '@testing-library/react-native';
 import { PublicLegalPage } from './PublicLegalPage';
 

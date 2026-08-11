@@ -1,8 +1,12 @@
+/**
+ * Exercises weight trend v1 behavior and regression boundaries.
+ */
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
 const { computeWeightTrendV1 } = require('../src/services/weightTrendV1');
 
+/** Round a numeric result for deterministic comparison. */
 function round(value) {
   return Number(value.toFixed(6));
 }
