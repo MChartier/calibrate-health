@@ -1,7 +1,7 @@
 import { Image, StyleSheet, View } from 'react-native';
 import { HEIGHT_UNITS, WEIGHT_UNITS, type HeightUnit, type WeightUnit } from '@calibrate/shared';
 import { AppText } from '../components/AppText';
-import { SettingsRow, SettingsSection, SettingsStatusRow } from '../components/settings/SettingsList';
+import { SettingsRow, SettingsSection } from '../components/settings/SettingsList';
 import { MOBILE_CLIENT_IDENTITY } from '../config/nativeClient';
 import { spacing, useAppTheme } from '../theme';
 import { ASYNC_RESOURCE_STATES, type AsyncResourceState } from '../asyncState/resolveAsyncState';
@@ -21,7 +21,6 @@ type ProductLink = 'support' | 'privacy' | 'terms' | 'licenses';
 
 type SettingsHomeProps = {
     email?: string | null;
-    emailVerified?: boolean;
     profileImageUrl?: string | null;
     goalSummary: string;
     weightUnit: WeightUnit;
@@ -54,7 +53,6 @@ export function shouldShowSettingsResourceStatus(state: AsyncResourceState, isWe
 
 export function SettingsHome({
     email,
-    emailVerified,
     profileImageUrl,
     goalSummary,
     weightUnit,
@@ -82,14 +80,6 @@ export function SettingsHome({
         ? `${failedMutationCount} failed`
         : `${pendingMutationCount} pending`;
 
-    let verificationValue = 'Not reported';
-    let verificationText = email ?? 'Verification status for this account email.';
-    if (emailVerified === true) {
-        verificationValue = 'Verified';
-    } else if (emailVerified === false) {
-        verificationValue = 'Action required';
-        verificationText = 'Verify this email before using all account features.';
-    }
     return (
         <View testID="settings-home" style={styles.home}>
             <SettingsSection
@@ -123,14 +113,6 @@ export function SettingsHome({
                         <AppText variant="caption" numberOfLines={2}>{goalSummary}</AppText>
                     </View>
                 </View>
-                <SettingsStatusRow
-                    testID="settings-email-verification"
-                    icon="checkmark-circle-outline"
-                    label="Email verification"
-                    supportingText={verificationText}
-                    value={verificationValue}
-                    tone={emailVerified === true ? 'success' : 'warning'}
-                />
                 <SettingsRow
                     icon="image-outline"
                     label="Profile photo"

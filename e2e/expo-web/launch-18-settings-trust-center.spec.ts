@@ -309,7 +309,6 @@ test('settings trust center preserves hierarchy, session control, reminder truth
       'settings-section-app',
     ]);
     for (const label of [
-      'Email verification',
       'Profile details',
       'Preferences',
       'Activity',
@@ -326,6 +325,7 @@ test('settings trust center preserves hierarchy, session control, reminder truth
     ]) {
       await expect(page.getByText(label, { exact: true }).first()).toBeAttached();
     }
+    await expect(page.getByText('Email verification', { exact: true })).toHaveCount(0);
 
     await page.getByTestId('settings-section-security').scrollIntoViewIfNeeded();
     await page.getByTestId('settings-open-sessions').click();

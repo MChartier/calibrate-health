@@ -33,7 +33,6 @@ describe('SettingsHome', () => {
         const screen = render(
             <SettingsHome
                 email="person@example.invalid"
-                emailVerified={false}
                 goalSummary="Maintain weight"
                 weightUnit={WEIGHT_UNITS.KG}
                 heightUnit={HEIGHT_UNITS.CM}
@@ -73,7 +72,8 @@ describe('SettingsHome', () => {
             ['licenses']
         ]);
         expect(onDeleteAccount).toHaveBeenCalledTimes(1);
-        expect(screen.getByText('Action required')).toBeTruthy();
+        expect(screen.queryByText('Email verification')).toBeNull();
+        expect(screen.getAllByText('person@example.invalid')).toHaveLength(1);
         expect(screen.getByTestId('settings-section-account')).toBeTruthy();
         expect(screen.getByTestId('settings-section-personal')).toBeTruthy();
         expect(screen.getByTestId('settings-section-connections')).toBeTruthy();

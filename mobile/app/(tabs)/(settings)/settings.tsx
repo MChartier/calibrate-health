@@ -534,7 +534,6 @@ export default function SettingsScreen() {
             )}
             <SettingsHome
                 email={user?.email}
-                emailVerified={user?.account_access?.email_verified}
                 profileImageUrl={user?.profile_image_url}
                 goalSummary={goalSummary}
                 weightUnit={weightUnit}
