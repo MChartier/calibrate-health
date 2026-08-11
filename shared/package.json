@@ -70,6 +70,12 @@
       "browser": "./calibration.ts",
       "react-native": "./calibration.ts",
       "default": "./dist/cjs/calibration.js"
+    },
+    "./weightTrend": {
+      "types": "./weightTrend.ts",
+      "browser": "./weightTrend.ts",
+      "react-native": "./weightTrend.ts",
+      "default": "./dist/cjs/weightTrend.js"
     }
   },
   "scripts": {

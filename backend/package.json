@@ -1,6 +1,6 @@
 {
   "name": "backend",
-  "version": "0.14.0",
+  "version": "0.15.0",
   "main": "index.js",
   "scripts": {
     "prebuild": "npm run prisma:generate",
@@ -19,6 +19,7 @@
     "start:prod": "bash scripts/start-prod.sh",
     "pretest": "npm run prisma:generate",
     "test": "node -r ts-node/register --test",
+    "test:weight-trend-lab": "node -r ts-node/register --test test/weight-trend-benchmark.test.js",
     "pretest:coverage": "npm run prisma:generate",
     "test:coverage": "c8 node -r ts-node/register --test",
     "dev": "nodemon --watch src --watch ../shared --ext ts,json --exec ts-node src/index.ts"

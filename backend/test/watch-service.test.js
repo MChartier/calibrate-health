@@ -69,12 +69,19 @@ test('watch mutation parser accepts canonical grams and rejects unknown fields',
   const { parseWatchMutation } = loadWatchService({ prismaStub: {} });
   const parsed = parseWatchMutation({
     type: 'metric.upsert', payload: { local_date: '2026-07-11', weight_grams: 81234, expected_revision: null }
-  }, { timezone: 'UTC' });
+  }, { timezone: 'UTC', now: new Date('2026-07-11T12:00:00.000Z') });
   assert.equal(parsed.ok, true);
   assert.equal(parsed.payload.weight_grams, 81234);
   assert.equal(parseWatchMutation({
     type: 'metric.upsert', payload: { local_date: '2026-07-11', weight_grams: 81234, expected_revision: null, user_id: 99 }
-  }, { timezone: 'UTC' }).ok, false);
+  }, { timezone: 'UTC', now: new Date('2026-07-11T12:00:00.000Z') }).ok, false);
+  assert.deepEqual(parseWatchMutation({
+    type: 'metric.upsert', payload: { local_date: '2026-07-12', weight_grams: 81234, expected_revision: null }
+  }, { timezone: 'America/Los_Angeles', now: new Date('2026-07-12T06:59:59.000Z') }), {
+    ok: false,
+    status: 400,
+    message: 'Weight date cannot be in the future'
+  });
 });
 
 test('watch snapshot is bounded, timezone-local, and derives current-session undo', async () => {

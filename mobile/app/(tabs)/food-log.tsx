@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { router, useLocalSearchParams, usePathname } from 'expo-router';
+import { useLocalSearchParams, usePathname } from 'expo-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { FoodLogEntry, FoodLogUpdatePayload } from '@calibrate/api-client';
 import type { MealPeriod } from '@calibrate/shared';
@@ -15,7 +15,6 @@ import { FoodLogTimelineCard } from '../../src/components/FoodLogTimelineCard';
 import { useFoodDayStatus } from '../../src/components/FoodTrackingStatus';
 import { NumberStepperField } from '../../src/components/NumberStepperField';
 import { OverlaySelect } from '../../src/components/OverlaySelect';
-import { PageHeader } from '../../src/components/PageHeader';
 import { TabScreen } from '../../src/components/TabScreen';
 import { SectionHeader } from '../../src/components/SectionHeader';
 import { SaveMealAsRecipeSheet } from '../../src/components/SaveMealAsRecipeSheet';
@@ -205,14 +204,7 @@ export default function FoodLogScreen() {
     }
 
     return (
-        <TabScreen safeTop reserveFab={canEditFood}>
-            <PageHeader
-                title="Food log"
-                description="Review and edit every meal entry."
-                backLabel="Back to Today"
-                onBack={() => router.navigate('/(tabs)/today')}
-            />
-
+        <TabScreen reserveFab={canEditFood}>
             <DateNavigation navigation={dateNavigation} />
 
             {foodQuery.isLoading ? (

@@ -63,6 +63,22 @@ export type LoseItExportParseResult = {
   foodDayCompletionStatus: 'unavailable';
 };
 
+/** Separate future-local-date weights so import callers never persist them as trend evidence. */
+export function partitionLoseItWeightImportsByAsOfDate(
+  weights: LoseItWeightImport[],
+  asOfDate: Date
+): { eligible: LoseItWeightImport[]; future: LoseItWeightImport[] } {
+  const cutoffMs = asOfDate.getTime();
+  return weights.reduce<{ eligible: LoseItWeightImport[]; future: LoseItWeightImport[] }>(
+    (result, weight) => {
+      if (weight.localDateValue.getTime() <= cutoffMs) result.eligible.push(weight);
+      else result.future.push(weight);
+      return result;
+    },
+    { eligible: [], future: [] }
+  );
+}
+
 /**
  * Parse a Lose It export zip buffer into structured rows for import.
  *

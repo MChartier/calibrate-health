@@ -37,9 +37,7 @@ test('devTestDataUtils: seeded history produces a meaningful calibration result'
     const weightKg = getSeedWeightGramsForDayIndex(dayIndex, 82000) / 1000;
     return {
       date: day.toISOString().slice(0, 10),
-      trendWeightKg: weightKg,
-      lowerKg: weightKg - 0.1,
-      upperKg: weightKg + 0.1
+      weightKg
     };
   });
 
@@ -61,7 +59,7 @@ test('devTestDataUtils: seeded history produces a meaningful calibration result'
   assert.ok(result.selectedWindowDays >= 14);
   assert.equal(result.dataQuality.observationDays, result.selectedWindowDays);
   assert.equal(result.dataQuality.confidentDays, result.selectedWindowDays);
-  assert.equal(result.dataQuality.weightSpanDays, result.selectedWindowDays);
+  assert.equal(result.dataQuality.weightSpanDays, result.selectedWindowDays - 1);
   assert.ok(result.estimates.averageIntakeKcal.midpoint >= 2050);
   assert.ok(result.estimates.averageIntakeKcal.midpoint <= 2200);
   assert.ok(Math.abs(result.estimates.observedWeeklyWeightChangeKg.midpoint) < Math.abs(result.estimates.configuredWeeklyWeightChangeKg));

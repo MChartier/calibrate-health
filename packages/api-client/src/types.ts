@@ -902,10 +902,62 @@ export type TrendMetricEntry = MetricEntry & {
     user_id: number;
     body_fat_percent: number | null;
     trend_is_materialized?: boolean;
+    trend_segment_start?: boolean;
     trend_weight: number;
     trend_ci_lower: number;
     trend_ci_upper: number;
     trend_std: number;
+};
+
+export type WeightTrendSummaryStatus = 'insufficient' | 'provisional' | 'sufficient' | 'stale';
+
+export type WeightTrendRateEvidence = 'insufficient' | 'provisional' | 'sufficient';
+
+export type WeightTrendFreshness = 'current' | 'stale' | 'outdated';
+
+export type WeightTrendWeeklyRate = {
+    estimate: number;
+    /** Posterior standard deviation of the local velocity state, scaled to the display unit per week. */
+    std?: number;
+    lower: number;
+    upper: number;
+    point_count: number;
+    span_days: number;
+    evidence: WeightTrendRateEvidence;
+    /** Additive interval semantics; older v2 servers omit it. */
+    interval_kind?: 'local_velocity_state_model_uncertainty';
+};
+
+export type WeightTrendSummary = {
+    /** Legacy v2 field retained while evidence and freshness roll out independently. */
+    status?: WeightTrendSummaryStatus;
+    evidence?: WeightTrendRateEvidence;
+    freshness?: WeightTrendFreshness;
+    model_version: number;
+    as_of_date: string;
+    scope_start_date: string | null;
+    scope_end_date: string | null;
+    latest_observation_date: string | null;
+    days_since_latest: number | null;
+    /** Start of the active modeled window; older returned points are measurement-only context. */
+    modeled_start_date?: string | null;
+    /** Number of points returned for the requested scope, including measurement-only context. */
+    returned_points?: number;
+    modeled_points: number;
+    observation_span_days: number;
+    segment_start_date: string | null;
+    interval_kind?: 'latent_weight_model_uncertainty';
+    confidence_level?: 0.95;
+    latest_trend: {
+        weight: number;
+        lower: number;
+        upper: number;
+    } | null;
+    weekly_rate: WeightTrendWeeklyRate | null;
+    short_term_variation: {
+        standard_deviation: number;
+        central_80_half_width: number;
+    } | null;
 };
 
 export type TrendMetricsResponse = {
@@ -915,6 +967,8 @@ export type TrendMetricsResponse = {
         volatility: 'low' | 'medium' | 'high';
         total_points: number;
         total_span_days: number;
+        /** Additive v2 summary. Older servers omit it. */
+        trend_summary?: WeightTrendSummary;
     };
 };
 

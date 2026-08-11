@@ -80,3 +80,13 @@ test('Expo OTA updates publish internal automatically and gate production approv
   assert.match(workflow, /--non-interactive/);
   assert.doesNotMatch(workflow, /workflow_dispatch:|native_build_ref|native-ota-ci-preflight/);
 });
+
+test('dependency audit isolates the exact root exception while backend remains unfiltered', () => {
+  const workflow = readWorkflow('dependency-audit.yml');
+
+  assert.match(workflow, /if: matrix\.directory != '\.'/);
+  assert.match(workflow, /npm audit --omit=dev --audit-level=high/);
+  assert.match(workflow, /if: matrix\.directory == '\.'/);
+  assert.match(workflow, /npm run audit:production/);
+  assert.match(workflow, /npm run audit:exceptions:check/);
+});

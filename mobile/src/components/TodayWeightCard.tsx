@@ -5,6 +5,7 @@ import type { MetricEntry } from '@calibrate/api-client';
 import type { WeightUnit } from '@calibrate/shared';
 import { AppPressableCard } from './AppPressableCard';
 import { AppText } from './AppText';
+import { CompactCardHeader } from './CompactCardHeader';
 import { formatWeight } from '../utils/format';
 import { type AppTheme, useAppTheme } from '../theme';
 
@@ -45,15 +46,13 @@ export const TodayWeightCard: React.FC<TodayWeightCardProps> = ({
             onPress={onPress}
             style={[styles.card, compact && styles.cardCompact, style]}
         >
-            <View style={styles.headerRow}>
-                <AppText accessibilityRole="header" aria-level={2} variant={compact ? 'label' : 'screenTitle'}>
-                    {title}
-                </AppText>
-                <View style={styles.viewAction}>
+            <CompactCardHeader
+                title={title}
+                action={<View style={styles.viewAction}>
                     <AppText style={[styles.viewActionText, compact && styles.viewActionTextCompact]}>{action}</AppText>
                     <Ionicons name="chevron-forward" size={compact ? 17 : 19} color={theme.colors.primary} />
-                </View>
-            </View>
+                </View>}
+            />
 
             <View style={[styles.summaryRow, compact && styles.summaryRowCompact]}>
                 <View style={[styles.weightIcon, compact && styles.weightIconCompact]}>
@@ -77,13 +76,8 @@ function createStyles(theme: AppTheme) {
         },
         cardCompact: {
             padding: theme.spacing.md,
+            paddingTop: theme.spacing.lg,
             gap: theme.spacing.xs
-        },
-        headerRow: {
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: theme.spacing.md
         },
         viewAction: {
             flexDirection: 'row',

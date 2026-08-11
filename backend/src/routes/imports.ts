@@ -3,11 +3,12 @@ import multer from 'multer';
 import type { Prisma } from '@prisma/client';
 import prisma from '../config/database';
 import { parseWeightToGrams, isWeightUnit, type WeightUnit } from '../utils/units';
-import { parseLocalDateOnly } from '../utils/date';
+import { getSafeUtcTodayDateOnlyInTimeZone, parseLocalDateOnly } from '../utils/date';
 import { refreshMaterializedWeightTrendsBestEffort } from '../services/materializedWeightTrend';
 import {
   buildImportTimestamp,
   inferLoseItWeightUnit,
+  partitionLoseItWeightImportsByAsOfDate,
   parseLoseItExport,
   type LoseItFoodLogImport,
   type LoseItWeightImport,
@@ -39,6 +40,11 @@ type LoseItImportOptions = {
   includeBodyFat: boolean;
 };
 
+function buildFutureWeightWarning(count: number): string | null {
+  if (count <= 0) return null;
+  return `${count} future-dated weight ${count === 1 ? 'entry was' : 'entries were'} excluded.`;
+}
+
 router.use(requireAuthenticatedUser);
 
 router.post('/loseit/preview', upload.single('file'), async (req, res) => {
@@ -56,9 +62,12 @@ router.post('/loseit/preview', upload.single('file'), async (req, res) => {
 
   const fallbackUnit = isWeightUnit(user?.weight_unit) ? user.weight_unit : 'KG';
   const unitGuess = inferLoseItWeightUnit(parsed.profile, fallbackUnit);
+  const currentLocalDate = getSafeUtcTodayDateOnlyInTimeZone(user.timezone);
+  const partitionedWeights = partitionLoseItWeightImportsByAsOfDate(parsed.weights, currentLocalDate);
+  const futureWeightWarning = buildFutureWeightWarning(partitionedWeights.future.length);
 
   const foodDates = new Set(parsed.foodLogs.map((log) => log.localDate));
-  const weightDates = new Set(parsed.weights.map((weight) => weight.localDate));
+  const weightDates = new Set(partitionedWeights.eligible.map((weight) => weight.localDate));
   const { startDate, endDate } = computeDateRange([...foodDates, ...weightDates]);
 
   const existingFoodDays = foodDates.size > 0 ? await countExistingFoodDays(user.id, foodDates) : 0;
@@ -77,7 +86,7 @@ router.post('/loseit/preview', upload.single('file'), async (req, res) => {
       foodLogDays: existingFoodDays,
       weightDays: existingWeightDays,
     },
-    warnings: parsed.warnings,
+    warnings: futureWeightWarning ? [...parsed.warnings, futureWeightWarning] : parsed.warnings,
     weightUnitGuess: unitGuess.unit,
     weightUnitGuessSource: unitGuess.source,
     foodDayCompletionStatus: parsed.foodDayCompletionStatus,
@@ -105,6 +114,9 @@ router.post('/loseit/execute', upload.single('file'), async (req, res) => {
   }
 
   const bodyFatByDate = new Map(parsed.bodyFat.map((entry) => [entry.localDate, entry.value]));
+  const currentLocalDate = getSafeUtcTodayDateOnlyInTimeZone(user.timezone);
+  const partitionedWeights = partitionLoseItWeightImportsByAsOfDate(parsed.weights, currentLocalDate);
+  const futureWeightWarning = buildFutureWeightWarning(partitionedWeights.future.length);
 
   let importedFoodLogs = 0;
   let skippedFoodLogs = 0;
@@ -129,7 +141,7 @@ router.post('/loseit/execute', upload.single('file'), async (req, res) => {
 
   const weightResult = await applyWeightImports({
     userId: user.id,
-    imports: parsed.weights,
+    imports: partitionedWeights.eligible,
     bodyFatByDate,
     weightUnit: options.value.weightUnit,
     conflictMode: options.value.weightConflictMode,
@@ -138,7 +150,7 @@ router.post('/loseit/execute', upload.single('file'), async (req, res) => {
 
   importedWeights = weightResult.imported;
   updatedWeights = weightResult.updated;
-  skippedWeights = weightResult.skipped;
+  skippedWeights = weightResult.skipped + partitionedWeights.future.length;
   updatedBodyFat = weightResult.bodyFatUpdated;
   if (importedWeights > 0 || updatedWeights > 0) {
     await refreshMaterializedWeightTrendsBestEffort(user.id);
@@ -161,7 +173,7 @@ router.post('/loseit/execute', upload.single('file'), async (req, res) => {
     updatedWeights,
     skippedWeights,
     updatedBodyFat,
-    warnings: parsed.warnings,
+    warnings: futureWeightWarning ? [...parsed.warnings, futureWeightWarning] : parsed.warnings,
     foodDayCompletionStatus: parsed.foodDayCompletionStatus,
     foodDayCompletionMessage:
       'Completion history was unavailable, so imported food days remain unresolved.',

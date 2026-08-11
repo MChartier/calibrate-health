@@ -38,25 +38,21 @@ function buildFoodDays(options: {
     return result;
 }
 
-function buildWeights(days: number, startWeightKg: number, weeklyChangeKg: number, uncertaintyKg = 0.04): CalibrationWeightPoint[] {
+function buildWeights(days: number, startWeightKg: number, weeklyChangeKg: number, measurementNoiseKg = 0.06): CalibrationWeightPoint[] {
     const points: CalibrationWeightPoint[] = [];
     for (let offset = -(days - 1); offset <= 0; offset += 2) {
         const elapsed = offset + days - 1;
         const trendWeightKg = startWeightKg + (weeklyChangeKg * elapsed) / 7;
         points.push({
             date: addDays(AS_OF_DATE, offset),
-            trendWeightKg,
-            lowerKg: trendWeightKg - uncertaintyKg,
-            upperKg: trendWeightKg + uncertaintyKg
+            weightKg: trendWeightKg + measurementNoiseKg * Math.sin((elapsed / Math.max(1, days - 1)) * Math.PI * 4)
         });
     }
     if (points[points.length - 1]?.date !== AS_OF_DATE) {
         const trendWeightKg = startWeightKg + (weeklyChangeKg * (days - 1)) / 7;
         points.push({
             date: AS_OF_DATE,
-            trendWeightKg,
-            lowerKg: trendWeightKg - uncertaintyKg,
-            upperKg: trendWeightKg + uncertaintyKg
+            weightKg: trendWeightKg
         });
     }
     return points;
@@ -114,7 +110,8 @@ export const CALIBRATION_SCENARIOS: CalibrationScenario[] = [
         input: {
             ...baseInput,
             foodDays: buildFoodDays({ days: 7, calories: 1900 }),
-            weightPoints: buildWeights(7, 90, -0.45)
+            // Seven elapsed days require an eight-date window; seven food days are still sufficient.
+            weightPoints: buildWeights(8, 90, -0.45)
         }
     },
     {
@@ -196,7 +193,7 @@ export const CALIBRATION_SCENARIOS: CalibrationScenario[] = [
         input: {
             ...baseInput,
             foodDays: buildFoodDays({ days: 28, calories: 1900 }),
-            weightPoints: buildWeights(28, 90, -0.23, 0.5)
+            weightPoints: buildWeights(28, 90, -0.23, 0.9)
         }
     },
     {

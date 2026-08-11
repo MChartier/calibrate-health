@@ -25,9 +25,7 @@ const validInput = {
   }],
   weightPoints: [{
     date: '2026-07-31',
-    trendWeightKg: 90,
-    lowerKg: 89.9,
-    upperKg: 90.1
+    weightKg: 90
   }]
 };
 
@@ -52,8 +50,8 @@ test('calibration lab rejects malformed nested history before evaluation', () =>
     /foodDays\[0\]\.calories must be a finite number/
   );
   assert.throws(
-    () => parseCalibrationInput({ ...validInput, weightPoints: [{ ...validInput.weightPoints[0], lowerKg: 91 }] }),
-    /lowerKg cannot exceed upperKg/
+    () => parseCalibrationInput({ ...validInput, weightPoints: [{ ...validInput.weightPoints[0], weightKg: 0 }] }),
+    /weightKg must be greater than zero/
   );
   assert.throws(
     () => parseCalibrationInput({ ...validInput, foodDays: [validInput.foodDays[0], validInput.foodDays[0]] }),

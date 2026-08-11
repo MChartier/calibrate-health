@@ -5,6 +5,7 @@ const AdmZip = require('adm-zip');
 const {
   parseLoseItExport,
   inferLoseItWeightUnit,
+  partitionLoseItWeightImportsByAsOfDate,
   buildImportTimestamp
 } = require('../src/services/loseItImport');
 
@@ -130,6 +131,23 @@ test('inferLoseItWeightUnit uses profile hints, then height heuristics, then fal
     unit: 'KG',
     source: 'fallback'
   });
+});
+
+test('partitionLoseItWeightImportsByAsOfDate excludes future local dates', () => {
+  const weights = ['2026-07-10', '2026-07-11', '2026-07-12'].map((localDate, index) => ({
+    localDate,
+    localDateValue: new Date(`${localDate}T00:00:00.000Z`),
+    weightValue: 80 - index,
+    lastUpdated: null
+  }));
+
+  const result = partitionLoseItWeightImportsByAsOfDate(
+    weights,
+    new Date('2026-07-11T00:00:00.000Z')
+  );
+
+  assert.deepEqual(result.eligible.map((entry) => entry.localDate), ['2026-07-10', '2026-07-11']);
+  assert.deepEqual(result.future.map((entry) => entry.localDate), ['2026-07-12']);
 });
 
 test('buildImportTimestamp uses midday UTC without mutating inputs', () => {

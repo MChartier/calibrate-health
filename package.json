@@ -1,6 +1,6 @@
 {
   "name": "cal-io",
-  "version": "0.14.0",
+  "version": "0.15.0",
   "private": true,
   "description": "",
   "main": "index.js",
@@ -53,6 +53,7 @@
     "test:mobile-build-tools": "node --test scripts/xcode-uuid-compatibility.test.mjs",
     "test:native:upgrade": "node scripts/native-upgrade-rehearsal.mjs",
     "test:native:upgrade:unit": "node --test scripts/native-upgrade-rehearsal.test.mjs",
+    "audit:production": "node scripts/dependency-advisory-exceptions.mjs --audit-production",
     "audit:exceptions:check": "node scripts/dependency-advisory-exceptions.mjs",
     "lint": "npm run lint:backend && npm run lint:shared && npm run lint:api-client && npm run lint:mobile",
     "lint:backend": "npm --prefix backend run typecheck",
@@ -61,6 +62,7 @@
     "lint:mobile": "npm --prefix mobile run typecheck",
     "test": "npm run test:backend && npm run test:api-client && npm run test:mobile",
     "test:backend": "npm --prefix backend test",
+    "test:weight-trend-lab": "npm --prefix backend run test:weight-trend-lab",
     "test:api-client": "npm --prefix packages/api-client test",
     "test:mobile": "npm --prefix mobile test",
     "test:web:e2e": "node scripts/expo-web-playwright.mjs",

@@ -27,6 +27,7 @@ export type DiagnosticOperationName =
   | 'auth_mobile_refresh'
   | 'food_provider_request'
   | 'health_connect_ingestion'
+  | 'weight_trend_recompute'
   | 'watch_mutation_reconciliation';
 export type DiagnosticOperationOutcome = 'success' | 'failure' | 'rejected' | 'conflict' | 'empty';
 

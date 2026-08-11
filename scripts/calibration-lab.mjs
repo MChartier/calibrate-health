@@ -133,13 +133,8 @@ export function parseCalibrationInput(value) {
   parsed.weightPoints.forEach((value, index) => {
     const point = requireRecord(value, `weightPoints[${index}]`);
     requireDateOnly(point.date, `weightPoints[${index}].date`);
-    const trend = requireNonNegativeNumber(point.trendWeightKg, `weightPoints[${index}].trendWeightKg`);
-    const lower = requireNonNegativeNumber(point.lowerKg, `weightPoints[${index}].lowerKg`);
-    const upper = requireNonNegativeNumber(point.upperKg, `weightPoints[${index}].upperKg`);
-    if (lower > upper) throw new Error(`weightPoints[${index}] lowerKg cannot exceed upperKg.`);
-    if (trend < lower || trend > upper) {
-      throw new Error(`weightPoints[${index}].trendWeightKg must fall between lowerKg and upperKg.`);
-    }
+    const weightKg = requireNonNegativeNumber(point.weightKg, `weightPoints[${index}].weightKg`);
+    if (weightKg === 0) throw new Error(`weightPoints[${index}].weightKg must be greater than zero.`);
   });
   requireUniqueDates(parsed.weightPoints, 'weightPoints');
 

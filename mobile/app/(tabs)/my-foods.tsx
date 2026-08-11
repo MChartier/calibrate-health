@@ -1,30 +1,28 @@
 import { useMemo, useState } from 'react';
 import { Alert, StyleSheet, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { router } from 'expo-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { MyFoodSummary } from '@calibrate/api-client';
-import { AppButton } from '../src/components/AppButton';
-import { AppCard } from '../src/components/AppCard';
-import { AppChip } from '../src/components/AppChip';
-import { AppIconButton } from '../src/components/AppIconButton';
-import { AppText } from '../src/components/AppText';
-import { BottomSheetModal } from '../src/components/BottomSheetModal';
-import { NumberStepperField } from '../src/components/NumberStepperField';
-import { PageHeader } from '../src/components/PageHeader';
-import { Screen } from '../src/components/Screen';
-import { SectionHeader } from '../src/components/SectionHeader';
-import { TextField } from '../src/components/TextField';
-import { useAuth } from '../src/auth/AuthContext';
-import { formatCalories } from '../src/utils/format';
-import { sortMyFoodsPinnedFirst } from '../src/utils/myFoods';
+import { AppButton } from '../../src/components/AppButton';
+import { AppCard } from '../../src/components/AppCard';
+import { AppChip } from '../../src/components/AppChip';
+import { AppIconButton } from '../../src/components/AppIconButton';
+import { AppText } from '../../src/components/AppText';
+import { BottomSheetModal } from '../../src/components/BottomSheetModal';
+import { NumberStepperField } from '../../src/components/NumberStepperField';
+import { SectionHeader } from '../../src/components/SectionHeader';
+import { TabScreen } from '../../src/components/TabScreen';
+import { TextField } from '../../src/components/TextField';
+import { useAuth } from '../../src/auth/AuthContext';
+import { formatCalories } from '../../src/utils/format';
+import { sortMyFoodsPinnedFirst } from '../../src/utils/myFoods';
 import {
     hydrateRecipeIngredientDrafts,
     serializeRecipeIngredientDrafts,
     type RecipeIngredientDraft
-} from '../src/utils/myFoodEditing';
-import { radius, spacing, useAppTheme, type AppTheme } from '../src/theme';
-import { SERVING_INPUT_INCREMENT } from '../src/config/inputPrecision';
+} from '../../src/utils/myFoodEditing';
+import { radius, spacing, useAppTheme, type AppTheme } from '../../src/theme';
+import { SERVING_INPUT_INCREMENT } from '../../src/config/inputPrecision';
 
 type MyFoodSheet = 'food' | 'recipe' | null;
 
@@ -210,13 +208,7 @@ export default function MyFoodsScreen() {
     }
 
     return (
-        <Screen safeTop>
-            <PageHeader
-                title="My Foods"
-                description="Saved foods and recipes for fast logging."
-                onBack={() => router.back()}
-            />
-
+        <TabScreen>
             <AppCard>
                 <View style={styles.cardHeader}>
                     <View style={styles.headerText}>
@@ -423,7 +415,7 @@ export default function MyFoodsScreen() {
                     />
                 </View>
             </BottomSheetModal>
-        </Screen>
+        </TabScreen>
     );
 }
 

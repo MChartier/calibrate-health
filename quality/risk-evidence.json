@@ -205,6 +205,12 @@
             "backend/test/routes-food.test.js",
             "backend/test/routes-goals.test.js",
             "backend/test/routes-metrics.test.js",
+            "backend/test/weight-trend.test.js",
+            "backend/test/weight-trend-benchmark.test.js",
+            "backend/test/materialized-weight-trend.test.js",
+            "backend/test/calibration-evaluator.test.js",
+            "backend/test/calibration-service.test.js",
+            "backend/test/weight-trend-migration.test.js",
             "backend/test/activity-utils.test.js"
           ],
           "capabilities": [
@@ -224,6 +230,9 @@
             "mobile/src/food/serving.test.ts",
             "mobile/src/utils/goals.test.ts",
             "mobile/src/components/GoalProgressCard.test.tsx",
+            "mobile/src/components/WeightTrendCard.test.tsx",
+            "mobile/src/weightTrend/geometry.test.ts",
+            "mobile/src/weightTrend/presentation.test.ts",
             "mobile/src/activity/presentation.test.ts"
           ],
           "capabilities": [

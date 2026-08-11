@@ -6,3 +6,4 @@ export * from './goalProgress';
 export * from './inAppNotifications';
 export * from './notificationDelivery';
 export * from './designTokens';
+export * from './weightTrend';

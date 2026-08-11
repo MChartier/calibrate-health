@@ -255,7 +255,8 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /** @description List account-local body metrics. With include_trend=true, returns the forward-only weight-trend model and an as-of-scoped v2 summary. The 95% bounds describe uncertainty in underlying weight, not the expected range of the next scale reading. */
+        get: operations["listMetrics"];
         put?: never;
         /** @description Upsert one account-local body metric and optionally return a transactional weight-progress receipt. */
         post: operations["addMetric"];
@@ -417,6 +418,104 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        MetricEntry: {
+            id: number;
+            user_id?: number;
+            /** Format: date-time */
+            date: string;
+            weight: number;
+            body_fat_percent?: number | null;
+        };
+        TrendMetricEntry: components["schemas"]["MetricEntry"] & {
+            /** @description False for raw context outside the recent modeled window. */
+            trend_is_materialized?: boolean;
+            /** @description True where a new independent trend segment begins. */
+            trend_segment_start?: boolean;
+            trend_weight: number;
+            trend_ci_lower: number;
+            trend_ci_upper: number;
+            trend_std: number;
+        };
+        WeightTrendLatestEstimate: {
+            weight: number;
+            lower: number;
+            upper: number;
+        };
+        /** @description Latest local-velocity state estimate and its model uncertainty, scaled to the user's display unit per week. */
+        WeightTrendWeeklyRate: {
+            estimate: number;
+            std: number;
+            lower: number;
+            upper: number;
+            point_count: number;
+            span_days: number;
+            /** @enum {string} */
+            evidence: "insufficient" | "provisional" | "sufficient";
+            /** @constant */
+            interval_kind: "local_velocity_state_model_uncertainty";
+        };
+        /** @description Robust short-term scale-reading variation, separate from the graphed trend interval. */
+        WeightTrendReadingVariation: {
+            standard_deviation: number;
+            central_80_half_width: number;
+        };
+        WeightTrendSummary: {
+            /** @enum {integer} */
+            model_version: 1 | 2;
+            /**
+             * @deprecated
+             * @description Compatibility field; use evidence and freshness independently.
+             * @enum {string}
+             */
+            status: "insufficient" | "provisional" | "sufficient" | "stale";
+            /** Format: date */
+            as_of_date: string;
+            /** Format: date */
+            scope_start_date: string | null;
+            /** Format: date */
+            scope_end_date: string | null;
+            /** Format: date */
+            latest_observation_date: string | null;
+            days_since_latest: number | null;
+            /** Format: date */
+            modeled_start_date: string | null;
+            returned_points: number;
+            modeled_points: number;
+            observation_span_days: number;
+            /** Format: date */
+            segment_start_date: string | null;
+            /** @constant */
+            interval_kind: "latent_weight_model_uncertainty";
+            /** @constant */
+            confidence_level: 0.95;
+            /** @enum {string} */
+            evidence: "insufficient" | "provisional" | "sufficient";
+            /** @enum {string} */
+            freshness: "current" | "stale" | "outdated";
+            latest_trend: null | components["schemas"]["WeightTrendLatestEstimate"];
+            weekly_rate: null | components["schemas"]["WeightTrendWeeklyRate"];
+            short_term_variation: null | components["schemas"]["WeightTrendReadingVariation"];
+        };
+        TrendMetricsResponse: {
+            /** @description Newest-first measurements; entries outside the modeled window are raw context. */
+            metrics: components["schemas"]["TrendMetricEntry"][];
+            meta: {
+                /**
+                 * @deprecated
+                 * @description Legacy compatibility estimate; use trend_summary.weekly_rate.
+                 */
+                weekly_rate: number;
+                /**
+                 * @deprecated
+                 * @description Legacy compatibility label; use trend_summary.short_term_variation.
+                 * @enum {string}
+                 */
+                volatility: "low" | "medium" | "high";
+                total_points: number;
+                total_span_days: number;
+                trend_summary: components["schemas"]["WeightTrendSummary"];
+            };
+        };
         MetricSaveResponse: {
             id: number;
             user_id?: number;
@@ -2022,6 +2121,44 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    listMetrics: {
+        parameters: {
+            query?: {
+                start?: string;
+                /** @description An explicit historical end date also scopes trend fitting and freshness. */
+                end?: string;
+                range?: "week" | "month" | "year" | "all";
+                include_trend?: boolean;
+                /** @description Legacy rolling-average window used only when include_trend is false. */
+                smoothing?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Newest-first measurements or a trend-augmented response in the account weight unit. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MetricEntry"][] | components["schemas"]["TrendMetricsResponse"];
+                };
+            };
+            /** @description Invalid range, date, smoothing, or trend option. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
             };
             401: components["responses"]["Unauthorized"];
         };

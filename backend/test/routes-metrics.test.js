@@ -9,6 +9,7 @@ const {
   addUtcYearsClamped,
   getUtcTodayDateOnly
 } = require('../src/utils/date');
+const { computeWeightTrend } = require('../../shared/weightTrend.ts');
 
 function formatDateOnly(date) {
   return date.toISOString().slice(0, 10);
@@ -49,7 +50,12 @@ function loadMetricsRouter(prismaStub) {
     },
     bodyMetricTrend: {
       deleteMany: async () => ({ count: 0 }),
+      createMany: async ({ data }) => ({ count: data.length }),
       ...(prismaStub.bodyMetricTrend ?? {})
+    },
+    user: {
+      findUnique: async () => ({ timezone: 'UTC' }),
+      ...(prismaStub.user ?? {})
     },
     syncChange: {
       create: async () => ({ id: 1n }),
@@ -442,6 +448,249 @@ test('metrics route: GET / returns trend-augmented payload when include_trend=tr
   assert.equal(typeof newest.trend_std, 'number');
 });
 
+test('metrics route: GET / adds scoped v2 evidence and freshness metadata', async () => {
+  const today = getUtcTodayDateOnly();
+  const rows = Array.from({ length: 10 }, (_unused, index) => {
+    const date = addUtcDays(today, index - 9);
+    const weightGrams = 81000 - index * 80;
+    return {
+      id: index + 1,
+      user_id: 7,
+      date,
+      weight_grams: weightGrams,
+      body_fat_percent: null,
+      trend: {
+        trend_weight_grams: weightGrams,
+        trend_ci_lower_grams: weightGrams - 250,
+        trend_ci_upper_grams: weightGrams + 250,
+        trend_std_grams: 125,
+        trend_rate_grams_per_day: -80,
+        trend_rate_std_grams_per_day: 15,
+        model_version: 2
+      }
+    };
+  });
+  const router = loadMetricsRouter({ bodyMetric: { findMany: async () => rows } });
+  const handler = getRouteHandler(router, 'get', '/');
+  const res = createRes();
+
+  await handler({
+    user: { id: 7, weight_unit: 'KG', timezone: 'UTC' },
+    query: { include_trend: 'true', range: 'month' }
+  }, res);
+
+  assert.equal(res.statusCode, 200);
+  const summary = res.body.meta.trend_summary;
+  assert.equal(summary.model_version, 2);
+  assert.equal(summary.as_of_date, formatDateOnly(today));
+  assert.equal(summary.scope_start_date, formatDateOnly(rows[0].date));
+  assert.equal(summary.scope_end_date, formatDateOnly(today));
+  assert.equal(summary.latest_observation_date, formatDateOnly(today));
+  assert.equal(summary.days_since_latest, 0);
+  assert.equal(summary.modeled_start_date, formatDateOnly(addUtcDays(today, -119)));
+  assert.equal(summary.returned_points, 10);
+  assert.equal(summary.evidence, 'sufficient');
+  assert.equal(summary.freshness, 'current');
+  assert.equal(summary.status, 'sufficient');
+  assert.equal(summary.modeled_points, 10);
+  assert.equal(summary.observation_span_days, 9);
+  assert.equal(summary.segment_start_date, formatDateOnly(rows[0].date));
+  assert.equal(summary.interval_kind, 'latent_weight_model_uncertainty');
+  assert.equal(summary.confidence_level, 0.95);
+  assert.ok(summary.latest_trend);
+  assert.ok(summary.weekly_rate);
+  const expectedCurrentRate = computeWeightTrend(rows.map((row) => ({
+    date: row.date,
+    weight: row.weight_grams / 1000
+  }))).currentRate;
+  assertNearlyEqual(summary.weekly_rate.estimate, expectedCurrentRate.estimateKgPerWeek);
+  assertNearlyEqual(summary.weekly_rate.std, expectedCurrentRate.stdKgPerWeek);
+  assertNearlyEqual(summary.weekly_rate.lower, expectedCurrentRate.lower95KgPerWeek);
+  assertNearlyEqual(summary.weekly_rate.upper, expectedCurrentRate.upper95KgPerWeek);
+  assert.equal(summary.weekly_rate.point_count, 10);
+  assert.equal(summary.weekly_rate.span_days, 9);
+  assert.equal(summary.weekly_rate.evidence, 'sufficient');
+  assert.equal(summary.weekly_rate.interval_kind, 'local_velocity_state_model_uncertainty');
+  assert.ok(summary.short_term_variation.standard_deviation > 0);
+  assert.equal(res.body.metrics[res.body.metrics.length - 1].trend_segment_start, true);
+});
+
+test('metrics route: GET / excludes future rows and suppresses outdated pace', async () => {
+  const today = getUtcTodayDateOnly();
+  const oldEnd = addUtcDays(today, -20);
+  const rows = [
+    ...Array.from({ length: 5 }, (_unused, index) => ({
+      id: index + 1,
+      user_id: 7,
+      date: addUtcDays(oldEnd, index - 4),
+      weight_grams: 80000 - index * 50,
+      body_fat_percent: null,
+      trend: {
+        trend_weight_grams: 80000 - index * 50,
+        trend_ci_lower_grams: 79750 - index * 50,
+        trend_ci_upper_grams: 80250 - index * 50,
+        trend_std_grams: 125,
+        trend_rate_grams_per_day: -50,
+        trend_rate_std_grams_per_day: 20,
+        model_version: 2
+      }
+    })),
+    {
+      id: 99,
+      user_id: 7,
+      date: addUtcDays(today, 1),
+      weight_grams: 120000,
+      body_fat_percent: null,
+      trend: null
+    }
+  ];
+  const router = loadMetricsRouter({ bodyMetric: { findMany: async () => rows } });
+  const handler = getRouteHandler(router, 'get', '/');
+  const res = createRes();
+
+  await handler({
+    user: { id: 7, weight_unit: 'KG', timezone: 'UTC' },
+    query: { include_trend: 'true', range: 'all' }
+  }, res);
+
+  assert.equal(res.statusCode, 200);
+  assert.equal(res.body.metrics.some((metric) => metric.id === 99), false);
+  assert.equal(res.body.meta.total_points, 5);
+  assert.equal(res.body.meta.trend_summary.freshness, 'outdated');
+  assert.equal(res.body.meta.trend_summary.status, 'stale');
+  assert.equal(res.body.meta.trend_summary.weekly_rate, null);
+});
+
+test('metrics route: GET / applies current, stale, and outdated freshness boundaries', async () => {
+  const today = getUtcTodayDateOnly();
+  const cases = [
+    { ageDays: 7, freshness: 'current', hasRate: true },
+    { ageDays: 8, freshness: 'stale', hasRate: true },
+    { ageDays: 14, freshness: 'stale', hasRate: true },
+    { ageDays: 15, freshness: 'outdated', hasRate: false }
+  ];
+
+  for (const freshnessCase of cases) {
+    const latestDate = addUtcDays(today, -freshnessCase.ageDays);
+    const rows = Array.from({ length: 8 }, (_unused, index) => {
+      const weightGrams = 80000 - index * 60;
+      return {
+        id: index + 1,
+        user_id: 7,
+        date: addUtcDays(latestDate, index - 7),
+        weight_grams: weightGrams,
+        body_fat_percent: null,
+        trend: {
+          trend_weight_grams: weightGrams,
+          trend_ci_lower_grams: weightGrams - 250,
+          trend_ci_upper_grams: weightGrams + 250,
+          trend_std_grams: 125,
+          trend_rate_grams_per_day: -60,
+          trend_rate_std_grams_per_day: 15,
+          model_version: 2
+        }
+      };
+    });
+    const router = loadMetricsRouter({ bodyMetric: { findMany: async () => rows } });
+    const handler = getRouteHandler(router, 'get', '/');
+    const res = createRes();
+
+    await handler({
+      user: { id: 7, weight_unit: 'KG', timezone: 'UTC' },
+      query: { include_trend: 'true', range: 'all' }
+    }, res);
+
+    assert.equal(res.statusCode, 200);
+    assert.equal(res.body.meta.trend_summary.days_since_latest, freshnessCase.ageDays);
+    assert.equal(res.body.meta.trend_summary.freshness, freshnessCase.freshness);
+    assert.equal(Boolean(res.body.meta.trend_summary.weekly_rate), freshnessCase.hasRate);
+  }
+});
+
+test('metrics route: GET / keeps stale as-of metadata when a narrow range has no returned weigh-ins', async () => {
+  const today = getUtcTodayDateOnly();
+  const latestDate = addUtcDays(today, -8);
+  const rows = Array.from({ length: 8 }, (_unused, index) => {
+    const weightGrams = 80000 - index * 60;
+    return {
+      id: index + 1,
+      user_id: 7,
+      date: addUtcDays(latestDate, index - 7),
+      weight_grams: weightGrams,
+      body_fat_percent: null,
+      trend: {
+        trend_weight_grams: weightGrams,
+        trend_ci_lower_grams: weightGrams - 250,
+        trend_ci_upper_grams: weightGrams + 250,
+        trend_std_grams: 125,
+        trend_rate_grams_per_day: -60,
+        trend_rate_std_grams_per_day: 15,
+        model_version: 2
+      }
+    };
+  });
+  const router = loadMetricsRouter({ bodyMetric: { findMany: async () => rows } });
+  const handler = getRouteHandler(router, 'get', '/');
+  const res = createRes();
+
+  await handler({
+    user: { id: 7, weight_unit: 'KG', timezone: 'UTC' },
+    query: { include_trend: 'true', range: 'week' }
+  }, res);
+
+  assert.equal(res.statusCode, 200);
+  assert.equal(res.body.metrics.length, 0);
+  assert.equal(res.body.meta.trend_summary.returned_points, 0);
+  assert.equal(res.body.meta.trend_summary.modeled_points, 0);
+  assert.equal(res.body.meta.trend_summary.latest_observation_date, formatDateOnly(latestDate));
+  assert.equal(res.body.meta.trend_summary.days_since_latest, 8);
+  assert.equal(res.body.meta.trend_summary.freshness, 'stale');
+  assert.ok(res.body.meta.trend_summary.latest_trend);
+  assert.ok(res.body.meta.trend_summary.weekly_rate);
+});
+
+test('metrics route: GET / recomputes a bounded historical trend as of the requested end date', async () => {
+  const start = new Date('2025-02-01T00:00:00Z');
+  const historicalEnd = addUtcDays(start, 9);
+  const rows = Array.from({ length: 20 }, (_unused, index) => ({
+    id: index + 1,
+    user_id: 7,
+    date: addUtcDays(start, index),
+    weight_grams: 90000 - index * 100,
+    body_fat_percent: null,
+    // Deliberately invalid current materialization: historical reads must not reuse it.
+    trend: {
+      trend_weight_grams: 200000,
+      trend_ci_lower_grams: 199000,
+      trend_ci_upper_grams: 201000,
+      trend_std_grams: 500,
+      trend_rate_grams_per_day: null,
+      trend_rate_std_grams_per_day: null,
+      model_version: 2
+    }
+  }));
+  const router = loadMetricsRouter({ bodyMetric: { findMany: async () => rows } });
+  const handler = getRouteHandler(router, 'get', '/');
+  const res = createRes();
+
+  await handler({
+    user: { id: 7, weight_unit: 'KG', timezone: 'UTC' },
+    query: { include_trend: 'true', range: 'all', end: formatDateOnly(historicalEnd) }
+  }, res);
+
+  assert.equal(res.statusCode, 200);
+  assert.equal(res.body.metrics.length, 10);
+  assert.equal(formatDateOnly(res.body.metrics[0].date), formatDateOnly(historicalEnd));
+  assert.ok(res.body.metrics[0].trend_weight < 100, 'historical trend should be recomputed from bounded raw history');
+  assert.equal(res.body.meta.total_points, 10);
+  assert.equal(res.body.meta.trend_summary.as_of_date, formatDateOnly(historicalEnd));
+  assert.equal(res.body.meta.trend_summary.latest_observation_date, formatDateOnly(historicalEnd));
+  assert.equal(res.body.meta.trend_summary.freshness, 'current');
+  assert.equal(res.body.meta.trend_summary.modeled_points, 10);
+  assert.equal(res.body.meta.trend_summary.returned_points, 10);
+  assert.equal(res.body.meta.trend_summary.observation_span_days, 9);
+});
+
 test('metrics route: GET / trend payload stays unit-invariant across KG and LB preferences', async () => {
   const rows = [
     {
@@ -509,7 +758,7 @@ test('metrics route: GET / trend payload stays unit-invariant across KG and LB p
 
   const kgReq = {
     user: { id: 7, weight_unit: 'KG' },
-    query: { include_trend: 'true', range: 'all' }
+    query: { include_trend: 'true', range: 'all', end: '2025-01-10' }
   };
   const kgRes = createRes();
   await handler(kgReq, kgRes);
@@ -517,7 +766,7 @@ test('metrics route: GET / trend payload stays unit-invariant across KG and LB p
 
   const lbReq = {
     user: { id: 7, weight_unit: 'LB' },
-    query: { include_trend: 'true', range: 'all' }
+    query: { include_trend: 'true', range: 'all', end: '2025-01-10' }
   };
   const lbRes = createRes();
   await handler(lbReq, lbRes);
@@ -528,6 +777,14 @@ test('metrics route: GET / trend payload stays unit-invariant across KG and LB p
   assert.equal(lbRes.body.meta.total_span_days, kgRes.body.meta.total_span_days);
   assert.equal(lbRes.body.meta.volatility, kgRes.body.meta.volatility);
   assertNearlyEqual(lbRes.body.meta.weekly_rate, kgRes.body.meta.weekly_rate * POUNDS_PER_KILOGRAM);
+  assertNearlyEqual(
+    lbRes.body.meta.trend_summary.weekly_rate.estimate,
+    kgRes.body.meta.trend_summary.weekly_rate.estimate * POUNDS_PER_KILOGRAM
+  );
+  assertNearlyEqual(
+    lbRes.body.meta.trend_summary.weekly_rate.std,
+    kgRes.body.meta.trend_summary.weekly_rate.std * POUNDS_PER_KILOGRAM
+  );
 
   for (let i = 0; i < kgRes.body.metrics.length; i += 1) {
     const kgMetric = kgRes.body.metrics[i];
@@ -631,6 +888,25 @@ test('metrics route: POST / rejects invalid date values', async () => {
   );
   assert.equal(impossibleDateRes.statusCode, 400);
   assert.deepEqual(impossibleDateRes.body, { message: 'Invalid date' });
+});
+
+test('metrics route: POST / rejects future account-local weight dates', async () => {
+  const prismaStub = { bodyMetric: {} };
+  const router = loadMetricsRouter(prismaStub);
+  const handler = getRouteHandler(router, 'post', '/');
+  const futureDate = formatDateOnly(addUtcDays(getUtcTodayDateOnly(), 1));
+  const res = createRes();
+
+  await handler(
+    {
+      user: { id: 7, weight_unit: 'KG', timezone: 'UTC' },
+      body: { date: futureDate, weight: 70 }
+    },
+    res
+  );
+
+  assert.equal(res.statusCode, 400);
+  assert.deepEqual(res.body, { message: 'Weight date cannot be in the future' });
 });
 
 test('metrics route: POST / rejects malformed or out-of-range body fat percentages', async () => {

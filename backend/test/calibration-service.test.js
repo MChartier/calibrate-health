@@ -13,19 +13,18 @@ function stubModule(path, exports) {
   require.cache[path] = stub;
 }
 
-function loadCalibrationService({ prisma, currentPlan = null, operations = {} }) {
+function loadCalibrationService({ prisma, currentPlan = null, operations = {}, trendModelVersion = 2 }) {
   const paths = {
     database: require.resolve('../src/config/database'),
-    trend: require.resolve('../src/services/materializedWeightTrend'),
     caloriePlan: require.resolve('../src/services/caloriePlan'),
     profile: require.resolve('../src/utils/profile'),
     operations: require.resolve('../src/services/clientOperations'),
+    weightTrend: require.resolve('../src/services/weightTrend'),
     service: require.resolve('../src/services/calibration')
   };
   const previous = new Map(Object.values(paths).map((path) => [path, require.cache[path]]));
   delete require.cache[paths.service];
   stubModule(paths.database, prisma);
-  stubModule(paths.trend, { ensureMaterializedWeightTrends: async () => undefined });
   stubModule(paths.caloriePlan, { getEffectiveCaloriePlan: async () => currentPlan });
   stubModule(paths.profile, {
     calculateAge: () => 38,
@@ -38,6 +37,7 @@ function loadCalibrationService({ prisma, currentPlan = null, operations = {} })
     }),
     recordSyncChange: operations.recordSyncChange ?? (async () => undefined)
   });
+  stubModule(paths.weightTrend, { WEIGHT_TREND_MODEL_VERSION: trendModelVersion });
   const loaded = require('../src/services/calibration');
   for (const [path, cached] of previous) {
     if (cached) require.cache[path] = cached;
@@ -62,7 +62,7 @@ function fingerprint(value) {
   return crypto.createHash('sha256').update(JSON.stringify(canonicalize(value)), 'utf8').digest('hex');
 }
 
-function createHarness({ scenarioId = 'target-too-high', scheduledRevision = null, currentPlan = null, pausedDates = [], todayStatus = null } = {}) {
+function createHarness({ scenarioId = 'target-too-high', scheduledRevision = null, currentPlan = null, pausedDates = [], todayStatus = null, trendModelVersion = 2 } = {}) {
   const scenario = getCalibrationScenario(scenarioId);
   assert.ok(scenario);
   const captured = {
@@ -72,7 +72,8 @@ function createHarness({ scenarioId = 'target-too-high', scheduledRevision = nul
     revision: null,
     deletedRevisionId: null,
     appliedAt: null,
-    sync: null
+    sync: null,
+    weightQuery: null
   };
   let storedRecommendation = null;
   const pausedDateSet = new Set(pausedDates);
@@ -87,12 +88,7 @@ function createHarness({ scenarioId = 'target-too-high', scheduledRevision = nul
   const weightRows = scenario.input.weightPoints.map((point, index) => ({
     id: index + 1,
     date: new Date(`${point.date}T00:00:00.000Z`),
-    weight_grams: Math.round(point.trendWeightKg * 1000),
-    trend: {
-      trend_weight_grams: Math.round(point.trendWeightKg * 1000),
-      trend_ci_lower_grams: Math.round(point.lowerKg * 1000),
-      trend_ci_upper_grams: Math.round(point.upperKg * 1000)
-    }
+    weight_grams: Math.round(point.weightKg * 1000)
   }));
   const serviceInput = {
     asOfDate: scenario.input.asOfDate,
@@ -113,9 +109,7 @@ function createHarness({ scenarioId = 'target-too-high', scheduledRevision = nul
     trackingPaused: todayStatus === 'PAUSED',
     weightPoints: weightRows.map((row) => ({
       date: row.date.toISOString().slice(0, 10),
-      trendWeightKg: row.trend.trend_weight_grams / 1000,
-      lowerKg: row.trend.trend_ci_lower_grams / 1000,
-      upperKg: row.trend.trend_ci_upper_grams / 1000
+      weightKg: row.weight_grams / 1000
     }))
   };
   const prisma = {
@@ -141,7 +135,10 @@ function createHarness({ scenarioId = 'target-too-high', scheduledRevision = nul
     foodLog: { findMany: async () => logs },
     bodyMetric: {
       findFirst: async () => ({ weight_grams: 82000 }),
-      findMany: async () => weightRows
+      findMany: async (args) => {
+        captured.weightQuery = args;
+        return weightRows;
+      }
     },
     activityDaySummary: { findMany: async () => [] },
     caloriePlanRevision: {
@@ -185,7 +182,7 @@ function createHarness({ scenarioId = 'target-too-high', scheduledRevision = nul
     },
     recordSyncChange: async (options) => { captured.sync = options; }
   };
-  const service = loadCalibrationService({ prisma, currentPlan, operations });
+  const service = loadCalibrationService({ prisma, currentPlan, operations, trendModelVersion });
   return { scenario, serviceInput, captured, prisma, service, getStoredRecommendation: () => storedRecommendation };
 }
 
@@ -216,6 +213,10 @@ test('calibration status materializes a deterministic model-scoped recommendatio
     planStartDate: '2026-06-01',
     input: harness.serviceInput
   }));
+  assert.equal(
+    harness.captured.weightQuery.where.date.gte.toISOString().slice(0, 10),
+    '2026-06-19'
+  );
 });
 
 test('calibration status maps paused food days into a post-break evidence restart', async () => {
@@ -258,6 +259,32 @@ test('scheduled revisions suppress new materialization and report the resulting 
   });
   const status = await harness.service.buildCalibrationStatus(7, new Date('2026-08-01T12:00:00.000Z'));
 
+  assert.equal(status.recommendation, null);
+  assert.deepEqual(status.scheduledChange, {
+    recommendationId: 8,
+    targetAdjustmentKcal: 0,
+    dailyCalorieBudgetKcal: 1900,
+    effectiveLocalDate: '2026-08-02'
+  });
+  assert.equal(harness.captured.upserts.length, 0);
+  assert.ok(harness.captured.staleUpdates.some((update) => update.where.status === 'PENDING'));
+});
+
+test('v1 trend rollback suppresses v2 calibration recommendations without changing accepted revisions', async () => {
+  const harness = createHarness({
+    trendModelVersion: 1,
+    scheduledRevision: {
+      recommendation_id: 8,
+      target_adjustment_kcal: 0,
+      effective_local_date: new Date('2026-08-02T00:00:00.000Z')
+    }
+  });
+
+  const status = await harness.service.buildCalibrationStatus(7, new Date('2026-08-01T12:00:00.000Z'));
+
+  assert.equal(status.evaluation.status, 'not_ready');
+  assert.equal(status.evaluation.headline, 'Calibration is temporarily unavailable');
+  assert.equal(status.inputFingerprint, null);
   assert.equal(status.recommendation, null);
   assert.deepEqual(status.scheduledChange, {
     recommendationId: 8,

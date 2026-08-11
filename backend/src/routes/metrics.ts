@@ -17,11 +17,19 @@ import {
     parseLocalDateOnly
 } from '../utils/date';
 import { parseNonNegativeNumber, parsePositiveInteger } from '../utils/requestParsing';
-import { summarizeWeightTrend, type VolatilityLevel } from '../services/weightTrend';
+import {
+    computeWeightTrend,
+    summarizeWeightTrend,
+    type VolatilityLevel,
+    type WeightTrendEvidenceStatus,
+    type WeightTrendRateStatus,
+    type WeightTrendResult
+} from '../services/weightTrend';
 import {
     ensureMaterializedWeightTrends,
     getMaterializedTrendWindowFromLatestDate,
-    refreshMaterializedWeightTrendsBestEffort
+    refreshMaterializedWeightTrendsBestEffort,
+    WEIGHT_TREND_MODEL_VERSION
 } from '../services/materializedWeightTrend';
 import {
     ClientOperationConflictError,
@@ -49,6 +57,9 @@ const WEEK_COMPARISON_DAYS = 7; // Includes both endpoints so the chart can comp
 const FOUR_WEEK_COMPARISON_DAYS = 28; // Includes both endpoints for a four-weeks-ago comparison.
 const GRAMS_PER_KILOGRAM = 1000; // Canonical conversion used for trend serialization.
 const POUNDS_PER_KILOGRAM = 2.2046226218487757; // High-precision factor so trend math stays unit-invariant.
+const CENTRAL_80_Z_SCORE = 1.2815515655446004; // Half-width multiplier for the central 80% normal interval.
+const TREND_CURRENT_MAX_AGE_DAYS = 7; // A reading from the last week is current evidence.
+const TREND_STALE_MAX_AGE_DAYS = 14; // Older evidence is stale through two weeks, then outdated.
 const METRICS_RANGE_OPTIONS = {
     WEEK: 'week',
     MONTH: 'month',
@@ -61,7 +72,13 @@ type MetricsRange = (typeof METRICS_RANGE_OPTIONS)[keyof typeof METRICS_RANGE_OP
 type MetricRecord = Pick<BodyMetric, 'id' | 'user_id' | 'date' | 'weight_grams' | 'body_fat_percent'>;
 type MetricTrendRecord = Pick<
     BodyMetricTrend,
-    'trend_weight_grams' | 'trend_ci_lower_grams' | 'trend_ci_upper_grams' | 'trend_std_grams'
+    | 'trend_weight_grams'
+    | 'trend_ci_lower_grams'
+    | 'trend_ci_upper_grams'
+    | 'trend_std_grams'
+    | 'trend_rate_grams_per_day'
+    | 'trend_rate_std_grams_per_day'
+    | 'model_version'
 >;
 type MetricRecordWithTrend = MetricRecord & { trend: MetricTrendRecord | null };
 type MetricAverage = { metric: MetricRecord; averageWeightGrams: number };
@@ -74,6 +91,7 @@ type SerializedMetric = {
 };
 type SerializedTrendMetric = SerializedMetric & {
     trend_is_materialized: boolean;
+    trend_segment_start?: boolean;
     trend_weight: number;
     trend_ci_lower: number;
     trend_ci_upper: number;
@@ -86,7 +104,49 @@ type TrendMetricsResponse = {
         volatility: VolatilityLevel;
         total_points: number;
         total_span_days: number;
+        trend_summary: TrendSummary;
     };
+};
+
+type TrendSummaryStatus = 'insufficient' | 'provisional' | 'sufficient' | 'stale';
+type TrendSummaryEvidence = Exclude<TrendSummaryStatus, 'stale'>;
+type TrendSummaryFreshness = 'current' | 'stale' | 'outdated';
+type TrendSummary = {
+    status: TrendSummaryStatus;
+    evidence: TrendSummaryEvidence;
+    freshness: TrendSummaryFreshness;
+    model_version: number;
+    as_of_date: string;
+    scope_start_date: string | null;
+    scope_end_date: string | null;
+    latest_observation_date: string | null;
+    days_since_latest: number | null;
+    modeled_start_date: string | null;
+    returned_points: number;
+    modeled_points: number;
+    observation_span_days: number;
+    segment_start_date: string | null;
+    interval_kind: 'latent_weight_model_uncertainty';
+    confidence_level: 0.95;
+    latest_trend: {
+        weight: number;
+        lower: number;
+        upper: number;
+    } | null;
+    weekly_rate: {
+        estimate: number;
+        std: number;
+        lower: number;
+        upper: number;
+        point_count: number;
+        span_days: number;
+        evidence: TrendSummaryEvidence;
+        interval_kind: 'local_velocity_state_model_uncertainty';
+    } | null;
+    short_term_variation: {
+        standard_deviation: number;
+        central_80_half_width: number;
+    } | null;
 };
 
 function formatLocalDateForTimeZone(date: Date, timeZone: string): string {
@@ -249,6 +309,71 @@ function getMetricsSpanDays(rows: { date: Date }[]): number {
     return Math.max(1, rawDays + 1);
 }
 
+function formatDateOnly(date: Date): string {
+    return date.toISOString().slice(0, 10);
+}
+
+function mapEvidenceStatus(status: WeightTrendEvidenceStatus | WeightTrendRateStatus): TrendSummaryEvidence {
+    if (status === 'insufficient') return 'insufficient';
+    if (status === 'limited') return 'provisional';
+    return 'sufficient';
+}
+
+/** Compute one bounded v2 model pass ending on the requested account-local as-of day. */
+function computeBoundedWeightTrend(
+    metricsAsc: MetricRecordWithTrend[],
+    asOfDate: Date
+): { result: WeightTrendResult; activeTrendStartDate: Date | null } {
+    const eligible = metricsAsc.filter((metric) => metric.date <= asOfDate);
+    const latestMetric = eligible[eligible.length - 1];
+    if (!latestMetric) {
+        return {
+            result: computeWeightTrend([], { asOfDate }),
+            activeTrendStartDate: null
+        };
+    }
+
+    const { activeStartDate, modelStartDate } = getMaterializedTrendWindowFromLatestDate(latestMetric.date);
+    const modelMetrics = eligible.filter((metric) => metric.date >= modelStartDate);
+    return {
+        result: computeWeightTrend(
+            modelMetrics.map((metric) => ({
+                date: metric.date,
+                weight: metric.weight_grams / GRAMS_PER_KILOGRAM
+            })),
+            { asOfDate }
+        ),
+        activeTrendStartDate: activeStartDate
+    };
+}
+
+/** Overlay an as-of model result for historical requests without mutating current materialized rows. */
+function applyComputedTrend(
+    metricsAsc: MetricRecordWithTrend[],
+    trendResult: WeightTrendResult,
+    activeTrendStartDate: Date | null
+): MetricRecordWithTrend[] {
+    if (!activeTrendStartDate) return metricsAsc.map((metric) => ({ ...metric, trend: null }));
+
+    const pointsByDate = new Map(trendResult.points.map((point) => [point.date.getTime(), point]));
+    return metricsAsc.map((metric) => {
+        const point = pointsByDate.get(metric.date.getTime());
+        if (!point || metric.date < activeTrendStartDate) return { ...metric, trend: null };
+        return {
+            ...metric,
+            trend: {
+                trend_weight_grams: Math.round(point.trendWeight * GRAMS_PER_KILOGRAM),
+                trend_ci_lower_grams: Math.round(point.lower95 * GRAMS_PER_KILOGRAM),
+                trend_ci_upper_grams: Math.round(point.upper95 * GRAMS_PER_KILOGRAM),
+                trend_std_grams: Math.round(point.trendStd * GRAMS_PER_KILOGRAM),
+                trend_rate_grams_per_day: point.trendRatePerDay * GRAMS_PER_KILOGRAM,
+                trend_rate_std_grams_per_day: point.trendRateStdPerDay * GRAMS_PER_KILOGRAM,
+                model_version: WEIGHT_TREND_MODEL_VERSION
+            }
+        };
+    });
+}
+
 /**
  * Convert internal kilogram trend values into the user's display unit without chart-destabilizing rounding.
  */
@@ -290,13 +415,18 @@ function buildTrendMetricsResponse(
     metricsAsc: MetricRecordWithTrend[],
     filteredAsc: MetricRecordWithTrend[],
     weightUnit: WeightUnit,
-    activeTrendStartDate: Date | null
+    activeTrendStartDate: Date | null,
+    trendResult: WeightTrendResult,
+    asOfDate: Date
 ): TrendMetricsResponse {
     const activeTrendStartMs = activeTrendStartDate ? activeTrendStartDate.getTime() : Number.POSITIVE_INFINITY;
     const hasActiveTrend = (metric: MetricRecordWithTrend): metric is MetricRecord & { trend: MetricTrendRecord } =>
-        metric.trend !== null && metric.trend !== undefined && metric.date.getTime() >= activeTrendStartMs;
+        metric.trend !== null &&
+        metric.trend !== undefined &&
+        metric.date.getTime() >= activeTrendStartMs &&
+        (metric.trend.model_version === undefined || metric.trend.model_version === WEIGHT_TREND_MODEL_VERSION);
 
-    const trendSummary = summarizeWeightTrend(
+    const legacyTrendSummary = summarizeWeightTrend(
         metricsAsc
             .filter(hasActiveTrend)
             .map((metric) => ({
@@ -304,6 +434,9 @@ function buildTrendMetricsResponse(
                 trendWeight: metric.trend.trend_weight_grams / GRAMS_PER_KILOGRAM,
                 trendStd: metric.trend.trend_std_grams / GRAMS_PER_KILOGRAM
             }))
+    );
+    const segmentStartDates = new Set(
+        trendResult.points.filter((point) => point.isSegmentStart).map((point) => point.date.getTime())
     );
 
     const metrics: SerializedTrendMetric[] = filteredAsc
@@ -319,6 +452,7 @@ function buildTrendMetricsResponse(
                 body_fat_percent: metric.body_fat_percent,
                 weight,
                 trend_is_materialized: trend !== null,
+                ...(trend ? { trend_segment_start: segmentStartDates.has(metric.date.getTime()) } : {}),
                 trend_weight: trend ? trendGramsToWeightUnit(trend.trend_weight_grams, weightUnit) : weight,
                 trend_ci_lower: trend ? trendGramsToWeightUnit(trend.trend_ci_lower_grams, weightUnit) : weight,
                 trend_ci_upper: trend ? trendGramsToWeightUnit(trend.trend_ci_upper_grams, weightUnit) : weight,
@@ -326,13 +460,98 @@ function buildTrendMetricsResponse(
             };
         });
 
+    const modeledScope = filteredAsc.filter(hasActiveTrend);
+    const scopeFirst = filteredAsc[0] ?? null;
+    const scopeLast = filteredAsc[filteredAsc.length - 1] ?? null;
+    // Freshness and latest estimates belong to the requested as-of model even when a narrow
+    // display range contains no readings (for example, an eight-day-old latest weigh-in).
+    const latestPoint = trendResult.points[trendResult.points.length - 1] ?? null;
+    const latestSegment = latestPoint
+        ? trendResult.segments.find((segment) => segment.id === latestPoint.segmentId) ?? null
+        : null;
+    const daysSinceLatest = latestPoint
+        ? Math.max(0, Math.round((asOfDate.getTime() - latestPoint.date.getTime()) / MS_PER_DAY))
+        : null;
+    const baseStatus = mapEvidenceStatus(trendResult.evidence.status);
+    const freshness: TrendSummaryFreshness =
+        daysSinceLatest === null
+            ? 'outdated'
+            : daysSinceLatest <= TREND_CURRENT_MAX_AGE_DAYS
+            ? 'current'
+            : daysSinceLatest <= TREND_STALE_MAX_AGE_DAYS
+              ? 'stale'
+              : 'outdated';
+    const summaryStatus: TrendSummaryStatus =
+        latestPoint === null
+            ? 'insufficient'
+            : freshness !== 'current'
+              ? 'stale'
+              : baseStatus;
+    const rateEvidence = mapEvidenceStatus(trendResult.currentRate.status);
+    const hasRate =
+        latestPoint !== null &&
+        freshness !== 'outdated' &&
+        trendResult.currentRate.status !== 'insufficient' &&
+        Number.isFinite(trendResult.currentRate.estimateKgPerWeek) &&
+        Number.isFinite(trendResult.currentRate.stdKgPerWeek) &&
+        Number.isFinite(trendResult.currentRate.lower95KgPerWeek) &&
+        Number.isFinite(trendResult.currentRate.upper95KgPerWeek);
+    const hasVariation = latestPoint !== null && Number.isFinite(trendResult.measurementVariabilityKg);
+    const trendSummary: TrendSummary = {
+        status: summaryStatus,
+        evidence: baseStatus,
+        freshness,
+        model_version: WEIGHT_TREND_MODEL_VERSION,
+        as_of_date: formatDateOnly(asOfDate),
+        scope_start_date: scopeFirst ? formatDateOnly(scopeFirst.date) : null,
+        scope_end_date: scopeLast ? formatDateOnly(scopeLast.date) : null,
+        latest_observation_date: latestPoint ? formatDateOnly(latestPoint.date) : null,
+        days_since_latest: daysSinceLatest,
+        modeled_start_date: activeTrendStartDate ? formatDateOnly(activeTrendStartDate) : null,
+        returned_points: metrics.length,
+        modeled_points: modeledScope.length,
+        observation_span_days: latestPoint ? trendResult.evidence.latestSegmentSpanDays : 0,
+        segment_start_date: latestSegment ? formatDateOnly(latestSegment.startDate) : null,
+        interval_kind: 'latent_weight_model_uncertainty',
+        confidence_level: 0.95,
+        latest_trend: latestPoint
+            ? {
+                  weight: kilogramsToWeightUnit(latestPoint.trendWeight, weightUnit),
+                  lower: kilogramsToWeightUnit(latestPoint.lower95, weightUnit),
+                  upper: kilogramsToWeightUnit(latestPoint.upper95, weightUnit)
+              }
+            : null,
+        weekly_rate: hasRate
+            ? {
+                  estimate: kilogramsToWeightUnit(trendResult.currentRate.estimateKgPerWeek, weightUnit),
+                  std: kilogramsToWeightUnit(trendResult.currentRate.stdKgPerWeek, weightUnit),
+                  lower: kilogramsToWeightUnit(trendResult.currentRate.lower95KgPerWeek, weightUnit),
+                  upper: kilogramsToWeightUnit(trendResult.currentRate.upper95KgPerWeek, weightUnit),
+                  point_count: trendResult.currentRate.pointCount,
+                  span_days: trendResult.currentRate.spanDays,
+                  evidence: rateEvidence,
+                  interval_kind: 'local_velocity_state_model_uncertainty'
+              }
+            : null,
+        short_term_variation: hasVariation
+            ? {
+                  standard_deviation: kilogramsToWeightUnit(trendResult.measurementVariabilityKg, weightUnit),
+                  central_80_half_width: kilogramsToWeightUnit(
+                      trendResult.measurementVariabilityKg * CENTRAL_80_Z_SCORE,
+                      weightUnit
+                  )
+              }
+            : null
+    };
+
     return {
         metrics,
         meta: {
-            weekly_rate: kilogramsToWeightUnit(trendSummary.weeklyRate, weightUnit),
-            volatility: trendSummary.volatility,
+            weekly_rate: kilogramsToWeightUnit(legacyTrendSummary.weeklyRate, weightUnit),
+            volatility: legacyTrendSummary.volatility,
             total_points: metricsAsc.length,
-            total_span_days: getMetricsSpanDays(metricsAsc)
+            total_span_days: getMetricsSpanDays(metricsAsc),
+            trend_summary: trendSummary
         }
     };
 }
@@ -368,12 +587,18 @@ router.get('/', async (req, res) => {
                 return res.status(400).json({ message: 'Invalid date range' });
             }
         }
-        const relativeRangeEndDate = requestedEnd ?? getSafeUtcTodayDateOnlyInTimeZone(user.timezone);
+        const currentLocalDate = getSafeUtcTodayDateOnlyInTimeZone(user.timezone);
+        // Future dates are never evidence. Historical end dates become reproducible as-of boundaries.
+        const effectiveEndDate = requestedEnd && requestedEnd < currentLocalDate ? requestedEnd : currentLocalDate;
+        const relativeRangeEndDate = effectiveEndDate;
 
         if (includeTrend) {
-            await ensureMaterializedWeightTrends(user.id);
-            const metricsAsc = await prisma.bodyMetric.findMany({
-                where: { user_id: user.id },
+            const isHistoricalAsOf = requestedEnd !== undefined && requestedEnd < currentLocalDate;
+            if (!isHistoricalAsOf) {
+                await ensureMaterializedWeightTrends(user.id, effectiveEndDate);
+            }
+            const queriedMetricsAsc = await prisma.bodyMetric.findMany({
+                where: { user_id: user.id, date: { lte: effectiveEndDate } },
                 orderBy: { date: 'asc' },
                 include: {
                     trend: {
@@ -381,11 +606,25 @@ router.get('/', async (req, res) => {
                             trend_weight_grams: true,
                             trend_ci_lower_grams: true,
                             trend_ci_upper_grams: true,
-                            trend_std_grams: true
+                            trend_std_grams: true,
+                            trend_rate_grams_per_day: true,
+                            trend_rate_std_grams_per_day: true,
+                            model_version: true
                         }
                     }
                 }
             });
+            // Keep the application boundary defensive for test doubles and legacy rows as well as the DB predicate.
+            const storedMetricsAsc = queriedMetricsAsc.filter((metric) => metric.date <= effectiveEndDate);
+
+            const boundedTrend = computeBoundedWeightTrend(storedMetricsAsc, effectiveEndDate);
+            const metricsAsc = isHistoricalAsOf
+                ? applyComputedTrend(
+                      storedMetricsAsc,
+                      boundedTrend.result,
+                      boundedTrend.activeTrendStartDate
+                  )
+                : storedMetricsAsc;
 
             const absoluteFiltered = applyAbsoluteDateFilter(metricsAsc, requestedStart, requestedEnd);
             const relativeFiltered = applyRelativeRangeFilter(
@@ -394,11 +633,16 @@ router.get('/', async (req, res) => {
                 relativeRangeEndDate,
                 (row) => row.date
             );
-            const activeTrendStartDate =
-                metricsAsc.length > 0
-                    ? getMaterializedTrendWindowFromLatestDate(metricsAsc[metricsAsc.length - 1].date).activeStartDate
-                    : null;
-            return res.json(buildTrendMetricsResponse(metricsAsc, relativeFiltered, weightUnit, activeTrendStartDate));
+            return res.json(
+                buildTrendMetricsResponse(
+                    metricsAsc,
+                    relativeFiltered,
+                    weightUnit,
+                    boundedTrend.activeTrendStartDate,
+                    boundedTrend.result,
+                    effectiveEndDate
+                )
+            );
         }
 
         const smoothingWindowDays = typeof smoothingDays === 'number' ? smoothingDays : null;
@@ -406,10 +650,10 @@ router.get('/', async (req, res) => {
             smoothingWindowDays && requestedStart ? addUtcDays(requestedStart, -(smoothingWindowDays - 1)) : requestedStart;
 
         const whereClause: Prisma.BodyMetricWhereInput = { user_id: user.id };
-        if (queryStart || requestedEnd) {
+        if (queryStart || effectiveEndDate) {
             whereClause.date = {};
             if (queryStart) whereClause.date.gte = queryStart;
-            if (requestedEnd) whereClause.date.lte = requestedEnd;
+            whereClause.date.lte = effectiveEndDate;
         }
 
         const metrics = await prisma.bodyMetric.findMany({
@@ -467,6 +711,10 @@ router.post('/', async (req, res) => {
         } catch {
             return res.status(400).json({ message: 'Invalid date' });
         }
+        const currentLocalDateValue = getSafeUtcTodayDateOnlyInTimeZone(timeZone);
+        if (metricDate > currentLocalDateValue) {
+            return res.status(400).json({ message: 'Weight date cannot be in the future' });
+        }
 
         const updateData: { weight_grams?: number; body_fat_percent?: number | null } = {};
 
@@ -495,7 +743,6 @@ router.post('/', async (req, res) => {
         }
 
         const whereUnique = { user_id_date: { user_id: user.id, date: metricDate } } as const;
-        const currentLocalDateValue = getSafeUtcTodayDateOnlyInTimeZone(timeZone);
         const currentLocalDate = currentLocalDateValue.toISOString().slice(0, 10);
         const savedLocalDate = metricDate.toISOString().slice(0, 10);
 
@@ -612,7 +859,7 @@ router.post('/', async (req, res) => {
         });
 
         if (result.status === 200 && updateData.weight_grams !== undefined) {
-            await refreshMaterializedWeightTrendsBestEffort(user.id);
+            await refreshMaterializedWeightTrendsBestEffort(user.id, currentLocalDateValue);
         }
 
         return res.status(result.status).json(result.body);
