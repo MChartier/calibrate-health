@@ -58,6 +58,24 @@ describe('useBrowserRouteFocus', () => {
         expect(fakeDocument.activeElement).toBe(fakeDocument.routeTitle);
     });
 
+    it('falls back to the router pathname when rendered without a browser window', () => {
+        const originalWindow = globalThis.window;
+        const fakeDocument = new FakeDocument();
+        const skipLink = new FakeElement(fakeDocument);
+        fakeDocument.activeElement = skipLink;
+        Object.assign(globalThis, { document: fakeDocument, window: undefined });
+
+        try {
+            renderHook(() => useBrowserRouteFocus('/today', 'Today - Calibrate'));
+
+            expect(fakeDocument.title).toBe('Today - Calibrate');
+            expect(fakeDocument.activeElement).toBe(skipLink);
+            expect(fakeDocument.routeTitle.focus).not.toHaveBeenCalled();
+        } finally {
+            Object.assign(globalThis, { window: originalWindow });
+        }
+    });
+
     it('preserves focus when Expo resolves its placeholder route to the original deep link', () => {
         Object.assign(window, { location: { pathname: '/today' } });
         const fakeDocument = new FakeDocument();

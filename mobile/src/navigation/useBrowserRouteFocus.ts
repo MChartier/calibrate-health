@@ -16,7 +16,9 @@ function focusRouteTitle(): boolean {
  * target. Client-side route changes move focus to the new route heading.
  */
 export function useBrowserRouteFocus(pathname: string, title: string) {
-    const initialBrowserPathnameRef = useRef(window.location?.pathname ?? pathname);
+    const initialBrowserPathnameRef = useRef(
+        typeof window === 'undefined' ? pathname : (window.location?.pathname ?? pathname)
+    );
     const hasResolvedInitialPathnameRef = useRef(pathname === initialBrowserPathnameRef.current);
     const previousPathnameRef = useRef(pathname);
 
