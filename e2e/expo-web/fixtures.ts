@@ -364,6 +364,14 @@ export function expectApiFailure(page: Page, failure: ExpectedApiFailure): void 
   diagnostics.expectedApiFailures.add(apiFailureKey(failure));
 }
 
+/** Activate browser offline mode while allowing only its exact expected resource-console diagnostic. */
+export async function activateFixtureOffline(page: Page): Promise<void> {
+  const diagnostics = diagnosticsByPage.get(page);
+  if (!diagnostics) throw new Error('Fixture diagnostics must be installed before activating offline mode.');
+  diagnostics.intentionalOffline = true;
+  await page.context().setOffline(true);
+}
+
 function fulfillJson(route: Route, body: unknown, status = 200): Promise<void> {
   return route.fulfill({
     status,
@@ -804,7 +812,7 @@ async function installState(
     await installAuthenticatedApi(page, state === 'offline' ? 'populated' : state, options, loadingReleased);
   }
   return {
-    activateOffline: () => context.setOffline(true),
+    activateOffline: () => activateFixtureOffline(page),
     releaseLoading: resolveLoading,
   };
 }
