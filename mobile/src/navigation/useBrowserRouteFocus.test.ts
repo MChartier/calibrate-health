@@ -89,12 +89,24 @@ describe('useBrowserRouteFocus', () => {
             { initialProps: { pathname: '/', title: 'Calibrate' } }
         );
 
+        hook.rerender({ pathname: '/(tabs)/(today)/today', title: 'Today - Calibrate' });
+
+        expect(fakeDocument.activeElement).toBe(skipLink);
+        expect(fakeDocument.routeTitle.focus).not.toHaveBeenCalled();
+
         hook.rerender({ pathname: '/today', title: 'Today - Calibrate' });
 
         expect(fakeDocument.title).toBe('Today - Calibrate');
         expect(fakeDocument.activeElement).toBe(skipLink);
         expect(fakeDocument.routeTitle.focus).not.toHaveBeenCalled();
 
+        hook.rerender({ pathname: '/login', title: 'Log in - Calibrate' });
+        hook.rerender({ pathname: '/today', title: 'Today - Calibrate' });
+
+        expect(fakeDocument.activeElement).toBe(skipLink);
+        expect(fakeDocument.routeTitle.focus).not.toHaveBeenCalled();
+
+        Object.assign(window, { location: { pathname: '/progress' } });
         hook.rerender({ pathname: '/progress', title: 'Progress - Calibrate' });
 
         expect(fakeDocument.routeTitle.focus).toHaveBeenCalledWith({ preventScroll: true });

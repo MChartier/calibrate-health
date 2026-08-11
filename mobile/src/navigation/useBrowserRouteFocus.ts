@@ -24,34 +24,60 @@ export function useBrowserRouteFocus(pathname: string, title: string) {
 
     useEffect(() => {
         document.title = title;
-        if (previousPathnameRef.current === pathname) {
-            if (pathname === initialBrowserPathnameRef.current) hasResolvedInitialPathnameRef.current = true;
-            return undefined;
-        }
-        previousPathnameRef.current = pathname;
-
-        if (!hasResolvedInitialPathnameRef.current && pathname === initialBrowserPathnameRef.current) {
-            hasResolvedInitialPathnameRef.current = true;
-            return undefined;
-        }
-        hasResolvedInitialPathnameRef.current = true;
-
-        if (focusRouteTitle()) return undefined;
-
+        let disposed = false;
+        let locationTimer: number | null = null;
         let fallbackTimer: number | null = null;
-        const observer = new MutationObserver(() => {
-            if (!focusRouteTitle()) return;
-            observer.disconnect();
-            if (fallbackTimer !== null) window.clearTimeout(fallbackTimer);
-        });
-        observer.observe(document.body, { childList: true, subtree: true });
-        fallbackTimer = window.setTimeout(() => {
-            observer.disconnect();
-            document.querySelector<HTMLElement>('[role="main"]')?.focus({ preventScroll: true });
-        }, ROUTE_FOCUS_FALLBACK_MS);
-        return () => {
-            observer.disconnect();
+        let observer: MutationObserver | null = null;
+
+        const cleanup = () => {
+            disposed = true;
+            observer?.disconnect();
+            if (locationTimer !== null) window.clearTimeout(locationTimer);
             if (fallbackTimer !== null) window.clearTimeout(fallbackTimer);
         };
+
+        const focusCommittedRoute = () => {
+            if (previousPathnameRef.current === pathname) {
+                if (pathname === initialBrowserPathnameRef.current) hasResolvedInitialPathnameRef.current = true;
+                return;
+            }
+            previousPathnameRef.current = pathname;
+
+            if (!hasResolvedInitialPathnameRef.current) {
+                hasResolvedInitialPathnameRef.current = true;
+                return;
+            }
+
+            if (focusRouteTitle()) return;
+
+            observer = new MutationObserver(() => {
+                if (!focusRouteTitle()) return;
+                observer?.disconnect();
+                if (fallbackTimer !== null) window.clearTimeout(fallbackTimer);
+            });
+            observer.observe(document.body, { childList: true, subtree: true });
+            fallbackTimer = window.setTimeout(() => {
+                observer?.disconnect();
+                document.querySelector<HTMLElement>('[role="main"]')?.focus({ preventScroll: true });
+            }, ROUTE_FOCUS_FALLBACK_MS);
+        };
+
+        const browserPathname = typeof window === 'undefined' ? pathname : (window.location?.pathname ?? pathname);
+        if (pathname === browserPathname) {
+            focusCommittedRoute();
+            return cleanup;
+        }
+
+        const deadline = Date.now() + 1_000;
+        const waitForCommittedLocation = () => {
+            if (disposed) return;
+            if ((window.location?.pathname ?? pathname) === pathname) {
+                focusCommittedRoute();
+                return;
+            }
+            if (Date.now() < deadline) locationTimer = window.setTimeout(waitForCommittedLocation, 16);
+        };
+        locationTimer = window.setTimeout(waitForCommittedLocation, 0);
+        return cleanup;
     }, [pathname, title]);
 }
