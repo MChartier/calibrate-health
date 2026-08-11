@@ -246,6 +246,15 @@ test('Today is legible, keyboard-operable, and unclipped at every configured vie
     const searchLabelCenter = searchLabelBox!.y + (searchLabelBox!.height / 2);
     const savedFoodsCenter = savedFoodsBox!.y + (savedFoodsBox!.height / 2);
     expect(Math.abs(searchLabelCenter - savedFoodsCenter)).toBeLessThanOrEqual(2);
+    const [panelBox, resultsBox] = await Promise.all([
+      addFoodDialog.boundingBox(),
+      addFoodDialog.getByTestId('food-search-results').boundingBox(),
+    ]);
+    expect(panelBox).not.toBeNull();
+    expect(resultsBox).not.toBeNull();
+    expect(Math.abs(
+      (panelBox!.y + panelBox!.height) - (resultsBox!.y + resultsBox!.height),
+    )).toBeLessThanOrEqual(2);
     expect(new URL(page.url()).pathname).toBe(todayPath);
     await page.keyboard.press('Escape');
 

@@ -707,6 +707,7 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
             isDirty={hasUnsavedDraft}
             confirmDismiss={confirmDiscardChanges}
             onRequestClose={onClose}
+            contentStyle={Platform.OS === 'web' ? styles.webSheetContent : undefined}
         >
             <View style={styles.mealControl}>
                 <AppText variant="label">Meal</AppText>
@@ -777,6 +778,9 @@ const createStyles = (theme: AppTheme) => StyleSheet.create({
     modeContent: {
         flex: 1,
         minHeight: 0
+    },
+    webSheetContent: {
+        paddingBottom: 0
     },
     savedFoodsLink: {
         flexShrink: 0,

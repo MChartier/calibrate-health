@@ -9,6 +9,7 @@ import {
     StyleSheet,
     View,
     useWindowDimensions,
+    type StyleProp,
     type ViewStyle
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -44,6 +45,7 @@ export type BottomSheetModalProps = {
     returnFocusRef?: React.RefObject<ModalFocusableTarget | null>;
     isDirty?: boolean;
     confirmDismiss?: () => boolean | Promise<boolean>;
+    contentStyle?: StyleProp<ViewStyle>;
 };
 
 export const ADAPTIVE_DIALOG_BREAKPOINT = 840;
@@ -176,7 +178,8 @@ export const BottomSheetModal: React.FC<BottomSheetModalProps> = ({
     initialFocusRef,
     returnFocusRef,
     isDirty = false,
-    confirmDismiss
+    confirmDismiss,
+    contentStyle
 }) => {
     const insets = useSafeAreaInsets();
     const theme = useAppTheme();
@@ -396,7 +399,8 @@ export const BottomSheetModal: React.FC<BottomSheetModalProps> = ({
                                     paddingBottom: footer
                                         ? 0
                                         : Math.max(theme.spacing.lg, insets.bottom + theme.spacing.sm)
-                                }
+                                },
+                                contentStyle
                             ]}
                         >
                             {modalHeader}
@@ -404,6 +408,7 @@ export const BottomSheetModal: React.FC<BottomSheetModalProps> = ({
                         </KeyboardAwareScrollView>
                     ) : (
                         <View
+                            testID="bottom-sheet-content"
                             style={[
                                 styles.content,
                                 styles.fixedContent,
@@ -412,7 +417,8 @@ export const BottomSheetModal: React.FC<BottomSheetModalProps> = ({
                                     paddingBottom: footer
                                         ? 0
                                         : Math.max(theme.spacing.lg, insets.bottom + theme.spacing.sm)
-                                }
+                                },
+                                contentStyle
                             ]}
                         >
                             {modalHeader}
