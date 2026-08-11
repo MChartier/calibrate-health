@@ -91,8 +91,8 @@ describe('AboutScreen', () => {
         );
     });
 
-    it('uses the canonical product, legal, support, feedback, license, and release destinations', () => {
-        render(<AboutScreen />);
+    it('presents distinct links for every canonical product and trust destination', () => {
+        const view = render(<AboutScreen />);
 
         const destinations = mockLink.mock.calls.map(([props]) => props.href);
         expect(destinations).toEqual(expect.arrayContaining([
@@ -104,6 +104,17 @@ describe('AboutScreen', () => {
             CALIBRATE_PRODUCT_LINKS.licenses,
             CALIBRATE_PRODUCT_LINKS.releases
         ]));
+        for (const label of [
+            'Calibrate website',
+            'Privacy policy',
+            'Terms of service',
+            'Support',
+            'Feedback',
+            'Open-source licenses',
+            'Release notes'
+        ]) {
+            expect(view.getByRole('link', { name: label })).toBeTruthy();
+        }
     });
 
     it('reveals native diagnostics and a supported update action only after expanding Advanced details', () => {

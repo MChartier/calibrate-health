@@ -13,7 +13,7 @@ import { CalibrateLogo } from '../../../src/components/CalibrateLogo';
 import { TabScreen } from '../../../src/components/TabScreen';
 import { useAuth } from '../../../src/auth/AuthContext';
 import { HOSTED_SERVER_URL, normalizeServerUrl } from '../../../src/config/server';
-import { radius, spacing, useAppTheme } from '../../../src/theme';
+import { interaction, radius, spacing, useAppTheme } from '../../../src/theme';
 import { useAppUpdateController } from '../../../src/updates/useAppUpdateController';
 
 const PRODUCT_LINKS = [
@@ -25,6 +25,9 @@ const PRODUCT_LINKS = [
     { label: 'Open-source licenses', href: CALIBRATE_PRODUCT_LINKS.licenses },
     { label: 'Release notes', href: CALIBRATE_PRODUCT_LINKS.releases }
 ] as const;
+
+const PRODUCT_LINK_MIN_WIDTH = 200; // Keeps every wrapped destination readable as a distinct control.
+const PRODUCT_LINK_PREFERRED_WIDTH = 220; // Forms a responsive multi-column link grid on wider screens.
 
 /** Format update date for stable display or serialization. */
 function formatUpdateDate(value: Date | null): string {
@@ -106,13 +109,19 @@ export default function AboutScreen() {
                                 accessibilityRole="link"
                                 style={({ pressed }) => [
                                     styles.productLink,
-                                    { borderColor: theme.colors.outline },
-                                    pressed && { backgroundColor: theme.colors.surfacePressed }
+                                    {
+                                        backgroundColor: pressed
+                                            ? theme.colors.surfacePressed
+                                            : theme.colors.surfaceContainerLow,
+                                        borderColor: theme.colors.outline,
+                                        borderWidth: theme.stroke.control
+                                    }
                                 ]}
                             >
                                 <AppText style={[styles.productLinkText, { color: theme.colors.primary }]}>
                                     {link.label}
                                 </AppText>
+                                <Ionicons name="open-outline" size={18} color={theme.colors.primary} />
                             </Pressable>
                         </Link>
                     ))}
@@ -276,12 +285,18 @@ const styles = StyleSheet.create({
     productLinks: {
         flexDirection: 'row',
         flexWrap: 'wrap',
-        gap: spacing.sm
+        gap: spacing.md
     },
     productLink: {
-        minHeight: 48,
-        justifyContent: 'center',
-        borderWidth: StyleSheet.hairlineWidth,
+        width: 'auto',
+        minWidth: PRODUCT_LINK_MIN_WIDTH,
+        minHeight: interaction.minimumTouchTarget,
+        flexBasis: PRODUCT_LINK_PREFERRED_WIDTH,
+        flexGrow: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: spacing.sm,
         borderRadius: radius.md,
         paddingHorizontal: spacing.md,
         paddingVertical: spacing.sm
