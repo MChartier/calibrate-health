@@ -235,7 +235,17 @@ test('Today is legible, keyboard-operable, and unclipped at every configured vie
 
     const todayPath = new URL(page.url()).pathname;
     await page.getByRole('button', { name: 'Add food', exact: true }).click();
-    await expect(page.getByRole('dialog', { name: 'Add food', exact: true })).toBeVisible();
+    const addFoodDialog = page.getByRole('dialog', { name: 'Add food', exact: true });
+    await expect(addFoodDialog).toBeVisible();
+    const [searchLabelBox, savedFoodsBox] = await Promise.all([
+      addFoodDialog.getByText('Search foods', { exact: true }).boundingBox(),
+      addFoodDialog.getByRole('button', { name: 'Saved foods', exact: true }).boundingBox(),
+    ]);
+    expect(searchLabelBox).not.toBeNull();
+    expect(savedFoodsBox).not.toBeNull();
+    const searchLabelCenter = searchLabelBox!.y + (searchLabelBox!.height / 2);
+    const savedFoodsCenter = savedFoodsBox!.y + (savedFoodsBox!.height / 2);
+    expect(Math.abs(searchLabelCenter - savedFoodsCenter)).toBeLessThanOrEqual(2);
     expect(new URL(page.url()).pathname).toBe(todayPath);
     await page.keyboard.press('Escape');
 

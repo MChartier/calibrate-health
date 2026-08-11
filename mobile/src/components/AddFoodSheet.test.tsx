@@ -134,5 +134,11 @@ describe('AddFoodSheet async resource states', () => {
 
         const { router } = jest.requireMock('expo-router') as { router: { push: jest.Mock } };
         expect(router.push).toHaveBeenCalledWith('/my-foods');
+
+        fireEvent.press(screen.getByRole('radio', { name: 'Quick' }));
+        expect(screen.queryByRole('button', { name: 'Saved foods' })).toBeNull();
+
+        fireEvent.press(screen.getByRole('radio', { name: 'Recipes' }));
+        expect(screen.getByRole('button', { name: 'Saved foods' })).toBeTruthy();
     });
 });
