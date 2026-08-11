@@ -216,6 +216,7 @@ test('Today is legible, keyboard-operable, and unclipped at every configured vie
   await expectFullWidthPrimary(foodSurface, foodPrimary);
   await expectInside(weightSurface, weightPrimary);
   await expectFullWidthPrimary(weightSurface, weightPrimary);
+  await expectNoOverlap(foodSurface, weightSurface);
 
   if (testInfo.project.name === 'desktop-chrome') {
     const balanceSurface = page.getByLabel(/^Daily balance\./);
@@ -263,6 +264,10 @@ test('Today is legible, keyboard-operable, and unclipped at every configured vie
     await expect(page.getByRole('button', { name: 'Add food', exact: true })).toBeVisible();
     await expectWithinViewportWidth(page, page.getByTestId('food-log-summary-card'));
     await expectWithinViewportWidth(page, page.getByTestId('today-weight-card'));
+    await expectNoOverlap(
+      page.getByTestId('food-log-summary-card'),
+      page.getByTestId('today-weight-card'),
+    );
   }
 });
 
