@@ -226,6 +226,9 @@ const styles = StyleSheet.create({
     },
     homeLink: {
         minHeight: 48,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
         paddingHorizontal: spacing.sm,
         paddingVertical: spacing.sm,
         textAlign: 'center',
@@ -257,6 +260,9 @@ const styles = StyleSheet.create({
     },
     link: {
         minHeight: 48,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
         borderWidth: StyleSheet.hairlineWidth,
         borderRadius: radius.md,
         paddingHorizontal: spacing.md,

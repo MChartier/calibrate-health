@@ -103,6 +103,9 @@ const styles = StyleSheet.create({
     },
     primaryLink: {
         minHeight: 48,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
         borderRadius: radius.md,
         paddingHorizontal: spacing.md,
         paddingVertical: spacing.sm,
@@ -111,6 +114,9 @@ const styles = StyleSheet.create({
     },
     secondaryLink: {
         minHeight: 48,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
         borderRadius: radius.md,
         borderWidth: StyleSheet.hairlineWidth,
         paddingHorizontal: spacing.md,
@@ -126,6 +132,9 @@ const styles = StyleSheet.create({
     },
     textLink: {
         minHeight: 48,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
         paddingHorizontal: spacing.sm,
         paddingVertical: spacing.sm,
         textAlign: 'center',

@@ -31,7 +31,8 @@ jest.mock('expo-router', () => {
     const ReactModule = require('react');
     const { Text } = require('react-native');
     return {
-        Link: ({ children }: { children: React.ReactNode }) => ReactModule.createElement(Text, null, children),
+        Link: ({ children, style }: { children: React.ReactNode; style?: unknown }) =>
+            ReactModule.createElement(Text, { style }, children),
         router: {
             push: (...args: unknown[]) => mockPush(...args),
             replace: (...args: unknown[]) => mockReplace(...args)
@@ -60,6 +61,16 @@ describe('PublicLegalPage', () => {
         expect(screen.getByTestId('legal-page')).toBeTruthy();
         expect(screen.getByRole('header', { name: 'Privacy policy' })).toBeTruthy();
         expect(screen.getByText('Calibrate home')).toBeTruthy();
+        expect(screen.getByText('Calibrate home')).toHaveStyle({
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+        });
+        expect(screen.getByText('Terms of service')).toHaveStyle({
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+        });
         expect(screen.queryByTestId('legal-app-header')).toBeNull();
 
         mockUser = { id: 7 };

@@ -20,7 +20,8 @@ jest.mock('expo-router', () => {
     const ReactModule = require('react');
     const { Text } = require('react-native');
     return {
-        Link: ({ children }: { children: React.ReactNode }) => ReactModule.createElement(Text, null, children),
+        Link: ({ children, style }: { children: React.ReactNode; style?: unknown }) =>
+            ReactModule.createElement(Text, { style }, children),
         Redirect: ({ href }: { href: string }) => ReactModule.createElement(
             Text,
             { testID: 'hosted-root-redirect' },
@@ -41,6 +42,16 @@ describe('hosted web root', () => {
         expect(screen.getByTestId('hosted-landing-actions')).toBeTruthy();
         expect(screen.getByText('Sign in')).toBeTruthy();
         expect(screen.getByText('Create account')).toBeTruthy();
+        expect(screen.getByText('Sign in')).toHaveStyle({
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+        });
+        expect(screen.getByText('Create account')).toHaveStyle({
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+        });
 
         mockAuthState = { user: { id: 7 }, isLoading: false };
         screen.rerender(<WebHomeRoute />);
