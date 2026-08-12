@@ -36,6 +36,8 @@ export function OfflineOutboxProvider({ children, executeMutation, onReplayCompl
     const [mutations, setMutations] = useState<QueuedMutation[]>([]);
     const [initializationError, setInitializationError] = useState<string | null>(null);
     const retrySchedulerRef = useRef<(result: ReconcileResult) => void>(() => undefined);
+    const currentBindingRef = useRef({ serverUrl, userId, outbox });
+    currentBindingRef.current = { serverUrl, userId, outbox };
 
     useEffect(() => {
         let active = true;
@@ -73,8 +75,16 @@ export function OfflineOutboxProvider({ children, executeMutation, onReplayCompl
     }, [outbox]);
 
     const refresh = useCallback(async () => {
-        setMutations(await requireOutbox().list());
-    }, [requireOutbox]);
+        const sourceOutbox = requireOutbox();
+        /** Match a delayed queue read to the account and server binding that started it. */
+        const isCurrentBinding = () => {
+            const current = currentBindingRef.current;
+            return current.serverUrl === serverUrl && current.userId === userId && current.outbox === sourceOutbox;
+        };
+        if (!isCurrentBinding()) return;
+        const nextMutations = await sourceOutbox.list();
+        if (isCurrentBinding()) setMutations(nextMutations);
+    }, [requireOutbox, serverUrl, userId]);
 
     const notifyWearAfterReplay = useCallback((result: ReconcileResult) => {
         if (result.replayed > 0 && userId !== undefined) {

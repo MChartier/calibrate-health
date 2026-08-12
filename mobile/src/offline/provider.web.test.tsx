@@ -136,6 +136,56 @@ describe('browser offline outbox provider', () => {
         await expect(userNine.list()).resolves.toEqual([expect.objectContaining({ id: 'user-9-operation' })]);
     });
 
+    it('does not let a late account replay replace the current account queue', async () => {
+        const accountA = createOutboxNamespace('https://health.example', 7);
+        const accountB = createOutboxNamespace('https://health.example', 9);
+        await new IndexedDbOutbox(database, accountA).enqueue({
+            id: 'old-account-operation',
+            operation: 'food.create',
+            payload: { calories: 100 }
+        });
+        await new IndexedDbOutbox(database, accountB).enqueue({
+            id: 'current-account-operation',
+            operation: 'metric.add',
+            payload: { date: '2026-07-18', weight: 88 }
+        });
+        let releaseOldNotification!: () => void;
+        const oldNotification = new Promise<void>((resolve) => { releaseOldNotification = resolve; });
+        const onReplayCompleted = jest.fn(() => oldNotification);
+        const connectivity = createConnectivity(false);
+        const wrapper = ({ children }: { children: React.ReactNode }) => (
+            <OfflineOutboxProvider
+                executeMutation={jest.fn(async () => undefined)}
+                onReplayCompleted={onReplayCompleted}
+                openDatabase={openDatabase}
+                connectivity={connectivity.value}
+            >
+                {children}
+            </OfflineOutboxProvider>
+        );
+        const { result, rerender } = renderHook(() => useOfflineOutbox(), { wrapper });
+        await waitFor(() => expect(result.current.mutations).toEqual([
+            expect.objectContaining({ id: 'old-account-operation' })
+        ]));
+
+        let oldReconciliation!: Promise<unknown>;
+        act(() => { oldReconciliation = result.current.reconcile(); });
+        await waitFor(() => expect(onReplayCompleted).toHaveBeenCalledTimes(1));
+
+        mockAuthState = { serverUrl: 'https://health.example', user: { id: 9 } };
+        rerender({});
+        expect(result.current.isReady).toBe(false);
+        await waitFor(() => expect(result.current.mutations).toEqual([
+            expect.objectContaining({ id: 'current-account-operation' })
+        ]));
+
+        releaseOldNotification();
+        await act(async () => { await oldReconciliation; });
+        expect(result.current.mutations).toEqual([
+            expect.objectContaining({ id: 'current-account-operation' })
+        ]);
+    });
+
     it('replays pending writes on startup when the browser is online', async () => {
         const namespace = createOutboxNamespace(mockAuthState.serverUrl, mockAuthState.user!.id);
         await new IndexedDbOutbox(database, namespace).enqueue({

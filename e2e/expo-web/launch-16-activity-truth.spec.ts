@@ -220,9 +220,9 @@ test('Activity keeps connection, sync, source, and calorie-target truth across r
     );
     await expect(page.getByRole('button', { name: 'Connect Health Connect', exact: true })).toHaveCount(1);
     await expect(page.getByText(ACTIVITY_GUARDRAIL, { exact: true })).toBeVisible();
-    await expect(page.getByRole('heading', { name: 'Today', exact: true })).toBeVisible();
-    await expect(page.getByRole('heading', { name: 'Recent Days', exact: true })).toBeVisible();
-    await expect(page.getByTestId('activity-recent-days')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Today', exact: true })).toHaveCount(0);
+    await expect(page.getByRole('heading', { name: 'Recent Days', exact: true })).toHaveCount(0);
+    await expect(page.getByTestId('activity-recent-days')).toHaveCount(0);
     await expectMinimumTouchTarget(page, 'Connect Health Connect');
     await expectNoHorizontalOverflow(page);
     await captureEvidence(page, testInfo);

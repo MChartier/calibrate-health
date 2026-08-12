@@ -88,6 +88,8 @@ export function OfflineOutboxProvider({
     const [initializationError, setInitializationError] = useState<string | null>(null);
     const retrySchedulerRef = useRef<(result: ReconcileResult) => void>(() => undefined);
     const outbox = binding?.namespace === namespace.value ? binding.outbox : null;
+    const currentBindingRef = useRef({ namespace: namespace.value, outbox });
+    currentBindingRef.current = { namespace: namespace.value, outbox };
 
     useEffect(() => {
         let active = true;
@@ -127,8 +129,17 @@ export function OfflineOutboxProvider({
     }, [initializationError, outbox]);
 
     const refresh = useCallback(async () => {
-        setMutations(await requireOutbox().list());
-    }, [requireOutbox]);
+        const sourceOutbox = requireOutbox();
+        const sourceNamespace = namespace.value;
+        /** Match a delayed queue read to the browser namespace binding that started it. */
+        const isCurrentBinding = () => {
+            const current = currentBindingRef.current;
+            return current.namespace === sourceNamespace && current.outbox === sourceOutbox;
+        };
+        if (!isCurrentBinding()) return;
+        const nextMutations = await sourceOutbox.list();
+        if (isCurrentBinding()) setMutations(nextMutations);
+    }, [namespace.value, requireOutbox]);
 
     const notifyAfterReplay = useCallback(async (result: ReconcileResult) => {
         if (result.replayed === 0 || !onReplayCompleted) return;

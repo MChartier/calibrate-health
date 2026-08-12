@@ -5,12 +5,14 @@ import { AppState } from 'react-native';
 import { OfflineOutboxProvider, useOfflineOutbox } from './provider';
 import { openOutboxDatabase } from './database';
 import type { ReconcileResult } from './reconciler';
+import type { QueuedMutation } from './queuedMutation';
 
 const mockOutbox = {
     recoverInterrupted: jest.fn(async () => undefined),
-    list: jest.fn(async () => []),
+    list: jest.fn(async (): Promise<QueuedMutation[]> => []),
     clear: jest.fn(async () => undefined)
 };
+const mockOutboxesByNamespace = new Map<string, typeof mockOutbox>();
 const successfulEmptyReplay: ReconcileResult = {
     replayed: 0,
     replayedOperations: [],
@@ -34,7 +36,9 @@ jest.mock('../auth/AuthContext', () => ({
     useAuth: () => mockAuthState
 }));
 jest.mock('./database', () => ({ openOutboxDatabase: jest.fn(async () => ({})) }));
-jest.mock('./outbox', () => ({ SqliteOutbox: jest.fn(() => mockOutbox) }));
+jest.mock('./outbox', () => ({
+    SqliteOutbox: jest.fn((_database, namespace: string) => mockOutboxesByNamespace.get(namespace) ?? mockOutbox)
+}));
 jest.mock('./reconciler', () => ({
     OutboxReconciler: jest.fn(() => ({
         reconcile: mockReconcile,
@@ -46,6 +50,8 @@ jest.mock('../wear/syncInvalidation', () => ({ queueWearSyncInvalidation: jest.f
 describe('native offline outbox provider recovery', () => {
     beforeEach(() => {
         jest.clearAllMocks();
+        mockOutboxesByNamespace.clear();
+        mockOutbox.list.mockReset().mockResolvedValue([]);
         mockAuthState = { serverUrl: 'https://health.example', user: { id: 7 } };
         onlineManager.setOnline(true);
         mockReconcile.mockReset().mockResolvedValue(successfulEmptyReplay);
@@ -203,7 +209,7 @@ describe('native offline outbox provider recovery', () => {
             jest.useRealTimers();
         }
     });
-    it('does not let an old account completion cancel the current account retry', async () => {
+    it('does not let an old account completion cancel its retry or replace the current account queue', async () => {
         jest.useFakeTimers();
         try {
             jest.spyOn(AppState, 'addEventListener').mockReturnValue({
@@ -227,7 +233,7 @@ describe('native offline outbox provider recovery', () => {
 
             const currentDeferred = {
                 id: 'current-account-operation',
-                namespace: 'test::user:9',
+                namespace: 'https://health.example::user:9',
                 sequence: 1,
                 operation: 'food.create',
                 payload: {},
@@ -237,6 +243,12 @@ describe('native offline outbox provider recovery', () => {
                 createdAt: 1,
                 updatedAt: 1
             };
+            const currentOutbox = {
+                recoverInterrupted: jest.fn(async () => undefined),
+                list: jest.fn(async () => [currentDeferred]),
+                clear: jest.fn(async () => undefined)
+            };
+            mockOutboxesByNamespace.set('https://health.example::user:9', currentOutbox);
             mockReconcile
                 .mockResolvedValueOnce({
                     replayed: 0,
@@ -249,9 +261,17 @@ describe('native offline outbox provider recovery', () => {
             mockAuthState = { serverUrl: 'https://health.example', user: { id: 9 } };
             rerender({});
             await waitFor(() => expect(mockReconcile).toHaveBeenCalledTimes(3));
+            await waitFor(() => expect(result.current.mutations).toEqual([
+                expect.objectContaining({ id: 'current-account-operation' })
+            ]));
+            const oldAccountListCalls = mockOutbox.list.mock.calls.length;
 
             releaseOldNotification();
             await act(async () => { await oldReconciliation; });
+            expect(mockOutbox.list).toHaveBeenCalledTimes(oldAccountListCalls);
+            expect(result.current.mutations).toEqual([
+                expect.objectContaining({ id: 'current-account-operation' })
+            ]);
             await act(async () => {
                 jest.advanceTimersByTime(150_000);
                 await Promise.resolve();
