@@ -165,7 +165,7 @@ describe('OutboxReconciler', () => {
                 state: OUTBOX_MUTATION_STATES.PENDING,
                 attemptCount: 1
             }),
-            retryAfterMs: OUTBOX_RETRY_BASE_DELAY_MS
+            retryAfterMs: getOutboxRetryDelayMs(1, deferred.id)
         });
         expect(outbox.mutations).toEqual([
             expect.objectContaining({
@@ -180,15 +180,24 @@ describe('OutboxReconciler', () => {
             replayedOperations: [],
             failedMutation: null,
             deferredMutation: expect.objectContaining({ attemptCount: 2 }),
-            retryAfterMs: OUTBOX_RETRY_BASE_DELAY_MS * 2
+            retryAfterMs: getOutboxRetryDelayMs(2, deferred.id)
         });
     });
 
-    it('caps retry backoff to avoid unbounded timers', () => {
-        expect(getOutboxRetryDelayMs(0)).toBe(OUTBOX_RETRY_BASE_DELAY_MS);
-        expect(getOutboxRetryDelayMs(1)).toBe(OUTBOX_RETRY_BASE_DELAY_MS);
-        expect(getOutboxRetryDelayMs(2)).toBe(OUTBOX_RETRY_BASE_DELAY_MS * 2);
-        expect(getOutboxRetryDelayMs(100)).toBe(OUTBOX_RETRY_MAX_DELAY_MS);
+    it('slows persistent retry traffic with deterministic jitter and a fifteen-minute ceiling', () => {
+        const mutationId = 'persistent-operation';
+        const delays = [1, 2, 3, 4, 5, 6, 7, 8, 9].map((attempt) =>
+            getOutboxRetryDelayMs(attempt, mutationId)
+        );
+        expect(getOutboxRetryDelayMs(0, mutationId)).toBe(delays[0]);
+        expect(getOutboxRetryDelayMs(6, mutationId)).toBeGreaterThan(2 * 60_000);
+        expect(delays.every((delay, index) => index === 0 || delay > delays[index - 1])).toBe(true);
+        const cappedDelay = getOutboxRetryDelayMs(100, mutationId);
+        expect(cappedDelay).toBeGreaterThanOrEqual(OUTBOX_RETRY_MAX_DELAY_MS * 0.75);
+        expect(cappedDelay).toBeLessThanOrEqual(OUTBOX_RETRY_MAX_DELAY_MS);
+        expect(getOutboxRetryDelayMs(100, mutationId)).toBe(cappedDelay);
+        expect(getOutboxRetryDelayMs(100, 'different-operation')).not.toBe(cappedDelay);
+        expect(OUTBOX_RETRY_BASE_DELAY_MS).toBe(5_000);
     });
 
     it('coalesces concurrent reconciliation requests into one replay loop', async () => {

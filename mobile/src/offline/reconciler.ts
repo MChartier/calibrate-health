@@ -4,8 +4,10 @@ import { isRetryableMutationError } from './retryability';
 
 export type QueuedMutationExecutor = (mutation: QueuedMutation) => Promise<void>;
 
-export const OUTBOX_RETRY_BASE_DELAY_MS = 1_000;
-export const OUTBOX_RETRY_MAX_DELAY_MS = 30_000;
+export const OUTBOX_RETRY_BASE_DELAY_MS = 5_000;
+export const OUTBOX_RETRY_MAX_DELAY_MS = 15 * 60_000;
+const OUTBOX_RETRY_MIN_JITTER_BASIS_POINTS = 7_500;
+const OUTBOX_RETRY_JITTER_RANGE_BASIS_POINTS = 2_501;
 
 export type ReconcileResult = {
     replayed: number;
@@ -15,11 +17,19 @@ export type ReconcileResult = {
     retryAfterMs: number | null;
 };
 
-/** Calculate a capped exponential delay for a retryable replay attempt. */
-export function getOutboxRetryDelayMs(attemptCount: number): number {
+/** Calculate a deterministic jittered exponential delay capped at fifteen minutes. */
+export function getOutboxRetryDelayMs(attemptCount: number, mutationId = ''): number {
     const normalizedAttemptCount = Number.isSafeInteger(attemptCount) && attemptCount > 0 ? attemptCount : 1;
-    const exponent = Math.min(normalizedAttemptCount - 1, 10);
-    return Math.min(OUTBOX_RETRY_MAX_DELAY_MS, OUTBOX_RETRY_BASE_DELAY_MS * (2 ** exponent));
+    const exponent = Math.min(normalizedAttemptCount - 1, 20);
+    const cappedDelay = Math.min(OUTBOX_RETRY_MAX_DELAY_MS, OUTBOX_RETRY_BASE_DELAY_MS * (2 ** exponent));
+    let hash = 2_166_136_261;
+    for (let index = 0; index < mutationId.length; index += 1) {
+        hash ^= mutationId.charCodeAt(index);
+        hash = Math.imul(hash, 16_777_619) >>> 0;
+    }
+    const jitterBasisPoints = OUTBOX_RETRY_MIN_JITTER_BASIS_POINTS
+        + (hash % OUTBOX_RETRY_JITTER_RANGE_BASIS_POINTS);
+    return Math.floor((cappedDelay * jitterBasisPoints) / 10_000);
 }
 
 function describeReplayError(error: unknown): string {
@@ -83,7 +93,7 @@ export class OutboxReconciler {
                         replayedOperations,
                         failedMutation: null,
                         deferredMutation,
-                        retryAfterMs: getOutboxRetryDelayMs(deferredMutation.attemptCount)
+                        retryAfterMs: getOutboxRetryDelayMs(deferredMutation.attemptCount, deferredMutation.id)
                     };
                 }
                 const failedMutation = await this.outbox.fail(mutation.id, describeReplayError(error));

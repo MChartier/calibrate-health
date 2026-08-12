@@ -4,7 +4,7 @@ import { act, renderHook, waitFor } from '@testing-library/react-native';
 import { IDBFactory } from 'fake-indexeddb';
 import { IndexedDbOutbox, openIndexedDbOutboxDatabase } from './indexedDbOutbox.web';
 import { OfflineOutboxProvider, useOfflineOutbox } from './provider.web';
-import { OUTBOX_RETRY_MAX_DELAY_MS } from './reconciler';
+import { getOutboxRetryDelayMs } from './reconciler';
 import { createOutboxNamespace } from './queuedMutation';
 import { hasPendingWeightMutation } from './pendingWeight';
 
@@ -19,6 +19,28 @@ jest.mock('../auth/AuthContext', () => ({
     useAuth: () => mockAuthState
 }));
 
+/** Provide deterministic page visibility transitions to the browser provider. */
+function createVisibility(initialVisible: boolean) {
+    let visible = initialVisible;
+    const listeners = new Set<() => void>();
+    return {
+        value: {
+            isVisible: () => visible,
+            subscribe: (listener: () => void) => {
+                listeners.add(listener);
+                return () => listeners.delete(listener);
+            }
+        },
+        show: () => {
+            visible = true;
+            listeners.forEach((listener) => listener());
+        },
+        hide: () => {
+            visible = false;
+            listeners.forEach((listener) => listener());
+        }
+    };
+}
 function createConnectivity(initialOnline: boolean) {
     let online = initialOnline;
     const listeners = new Set<() => void>();
@@ -181,7 +203,7 @@ describe('browser offline outbox provider', () => {
         expect(executeMutation).toHaveBeenCalledTimes(2);
     });
 
-    it('retries a deferred write after backoff while the browser remains online', async () => {
+    it('uses increasing delays for repeated retryable failures while online and visible', async () => {
         const namespace = createOutboxNamespace(mockAuthState.serverUrl, mockAuthState.user!.id);
         const seededOutbox = new IndexedDbOutbox(database, namespace);
         const mutation = await seededOutbox.enqueue({
@@ -193,22 +215,28 @@ describe('browser offline outbox provider', () => {
             await seededOutbox.claimNext();
             await seededOutbox.defer(mutation.id, 'operation is still settling');
         }
+        const firstDelay = getOutboxRetryDelayMs(6, mutation.id);
+        const secondDelay = getOutboxRetryDelayMs(7, mutation.id);
+        expect(firstDelay).toBeGreaterThan(2 * 60_000);
+        expect(secondDelay).toBeGreaterThan(firstDelay);
 
         jest.useFakeTimers({ doNotFake: ['setImmediate'] });
         try {
-            let shouldDefer = true;
+            let failuresRemaining = 2;
             const executeMutation = jest.fn(async () => {
-                if (shouldDefer) {
-                    shouldDefer = false;
+                if (failuresRemaining > 0) {
+                    failuresRemaining -= 1;
                     throw new ApiError('operation is still settling', 409, { retryable: true });
                 }
             });
             const connectivity = createConnectivity(true);
+            const visibility = createVisibility(true);
             const wrapper = ({ children }: { children: React.ReactNode }) => (
                 <OfflineOutboxProvider
                     executeMutation={executeMutation}
                     openDatabase={openDatabase}
                     connectivity={connectivity.value}
+                    visibility={visibility.value}
                 >
                     {children}
                 </OfflineOutboxProvider>
@@ -220,23 +248,57 @@ describe('browser offline outbox provider', () => {
                 expect.objectContaining({ id: mutation.id, state: 'pending', attemptCount: 6 })
             ]));
             await act(async () => {
-                jest.advanceTimersByTime(OUTBOX_RETRY_MAX_DELAY_MS - 1);
-                await Promise.resolve();
-            });
-            expect(executeMutation).toHaveBeenCalledTimes(1);
-            await act(async () => {
-                jest.advanceTimersByTime(1);
+                jest.advanceTimersByTime(firstDelay);
                 await Promise.resolve();
             });
             await waitFor(() => expect(executeMutation).toHaveBeenCalledTimes(2));
+            await waitFor(() => expect(result.current.mutations).toEqual([
+                expect.objectContaining({ id: mutation.id, state: 'pending', attemptCount: 7 })
+            ]));
+            await act(async () => {
+                jest.advanceTimersByTime(30_000);
+                await Promise.resolve();
+            });
+            expect(executeMutation).toHaveBeenCalledTimes(2);
+            await act(async () => {
+                jest.advanceTimersByTime(secondDelay - 30_000);
+                await Promise.resolve();
+            });
+            await waitFor(() => expect(executeMutation).toHaveBeenCalledTimes(3));
             await waitFor(() => expect(result.current.mutations).toEqual([]));
 
             unmount();
-            jest.runOnlyPendingTimers();
-            expect(executeMutation).toHaveBeenCalledTimes(2);
         } finally {
             jest.useRealTimers();
         }
+    });
+
+    it('pauses automatic replay while the page is hidden and resumes when visible', async () => {
+        const namespace = createOutboxNamespace(mockAuthState.serverUrl, mockAuthState.user!.id);
+        await new IndexedDbOutbox(database, namespace).enqueue({
+            id: 'hidden-operation',
+            operation: 'food.create',
+            payload: { calories: 100 }
+        });
+        const executeMutation = jest.fn(async () => undefined);
+        const connectivity = createConnectivity(true);
+        const visibility = createVisibility(false);
+        const wrapper = ({ children }: { children: React.ReactNode }) => (
+            <OfflineOutboxProvider
+                executeMutation={executeMutation}
+                openDatabase={openDatabase}
+                connectivity={connectivity.value}
+                visibility={visibility.value}
+            >
+                {children}
+            </OfflineOutboxProvider>
+        );
+        renderHook(() => useOfflineOutbox(), { wrapper });
+        await waitFor(() => expect(openDatabase).toHaveBeenCalled());
+        expect(executeMutation).not.toHaveBeenCalled();
+
+        act(() => visibility.show());
+        await waitFor(() => expect(executeMutation).toHaveBeenCalledTimes(1));
     });
     it('keeps calorie outputs suppressed until a queued weight replay and refetch complete', async () => {
         const connectivity = createConnectivity(false);

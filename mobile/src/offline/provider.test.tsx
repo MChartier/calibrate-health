@@ -1,4 +1,5 @@
 import React from 'react';
+import { onlineManager } from '@tanstack/react-query';
 import { act, renderHook, waitFor } from '@testing-library/react-native';
 import { AppState } from 'react-native';
 import { OfflineOutboxProvider, useOfflineOutbox } from './provider';
@@ -27,8 +28,10 @@ const successfulMetricReplay: ReconcileResult = {
 const mockReconcile = jest.fn(async () => successfulEmptyReplay);
 const mockRetryFailed = jest.fn(async () => successfulMetricReplay);
 
+let mockAuthState = { serverUrl: 'https://health.example', user: { id: 7 } };
+
 jest.mock('../auth/AuthContext', () => ({
-    useAuth: () => ({ serverUrl: 'https://health.example', user: { id: 7 } })
+    useAuth: () => mockAuthState
 }));
 jest.mock('./database', () => ({ openOutboxDatabase: jest.fn(async () => ({})) }));
 jest.mock('./outbox', () => ({ SqliteOutbox: jest.fn(() => mockOutbox) }));
@@ -43,11 +46,14 @@ jest.mock('../wear/syncInvalidation', () => ({ queueWearSyncInvalidation: jest.f
 describe('native offline outbox provider recovery', () => {
     beforeEach(() => {
         jest.clearAllMocks();
+        mockAuthState = { serverUrl: 'https://health.example', user: { id: 7 } };
+        onlineManager.setOnline(true);
         mockReconcile.mockReset().mockResolvedValue(successfulEmptyReplay);
         mockRetryFailed.mockReset().mockResolvedValue(successfulMetricReplay);
     });
 
     afterEach(() => {
+        onlineManager.setOnline(true);
         jest.restoreAllMocks();
     });
 
@@ -89,7 +95,7 @@ describe('native offline outbox provider recovery', () => {
         expect(remove).toHaveBeenCalledTimes(1);
     });
 
-    it('retries a deferred write after backoff while the app remains foregrounded', async () => {
+    it('uses increasing delays for repeated retryable failures while foregrounded and online', async () => {
         jest.useFakeTimers();
         try {
             const remove = jest.fn();
@@ -112,15 +118,16 @@ describe('native offline outbox provider recovery', () => {
                     replayedOperations: [],
                     failedMutation: null,
                     deferredMutation,
-                    retryAfterMs: 30_000
+                    retryAfterMs: 150_000
                 })
                 .mockResolvedValueOnce({
                     replayed: 0,
                     replayedOperations: [],
                     failedMutation: null,
                     deferredMutation: { ...deferredMutation, attemptCount: 7 },
-                    retryAfterMs: 30_000
-                });
+                    retryAfterMs: 300_000
+                })
+                .mockResolvedValueOnce(successfulEmptyReplay);
             const wrapper = ({ children }: { children: React.ReactNode }) => (
                 <OfflineOutboxProvider executeMutation={jest.fn()}>{children}</OfflineOutboxProvider>
             );
@@ -128,20 +135,129 @@ describe('native offline outbox provider recovery', () => {
 
             await waitFor(() => expect(mockReconcile).toHaveBeenCalledTimes(1));
             await act(async () => {
-                jest.advanceTimersByTime(29_999);
-                await Promise.resolve();
-            });
-            expect(mockReconcile).toHaveBeenCalledTimes(1);
-            await act(async () => {
-                jest.advanceTimersByTime(1);
+                jest.advanceTimersByTime(150_000);
                 await Promise.resolve();
             });
             await waitFor(() => expect(mockReconcile).toHaveBeenCalledTimes(2));
+            await act(async () => {
+                jest.advanceTimersByTime(30_000);
+                await Promise.resolve();
+            });
+            expect(mockReconcile).toHaveBeenCalledTimes(2);
+            await act(async () => {
+                jest.advanceTimersByTime(270_000);
+                await Promise.resolve();
+            });
+            await waitFor(() => expect(mockReconcile).toHaveBeenCalledTimes(3));
 
             unmount();
             jest.runOnlyPendingTimers();
-            expect(mockReconcile).toHaveBeenCalledTimes(2);
+            expect(mockReconcile).toHaveBeenCalledTimes(3);
             expect(remove).toHaveBeenCalledTimes(1);
+        } finally {
+            jest.useRealTimers();
+        }
+    });
+
+    it('pauses a deferred timer while native connectivity is offline and resumes on recovery', async () => {
+        jest.useFakeTimers();
+        try {
+            jest.spyOn(AppState, 'addEventListener').mockReturnValue({
+                remove: jest.fn()
+            } as ReturnType<typeof AppState.addEventListener>);
+            mockReconcile.mockResolvedValueOnce({
+                replayed: 0,
+                replayedOperations: [],
+                failedMutation: null,
+                deferredMutation: {
+                    id: 'offline-operation',
+                    namespace: 'test::user:7',
+                    sequence: 1,
+                    operation: 'food.create',
+                    payload: {},
+                    state: 'pending',
+                    attemptCount: 6,
+                    lastError: 'operation is still settling',
+                    createdAt: 1,
+                    updatedAt: 1
+                },
+                retryAfterMs: 150_000
+            });
+            const wrapper = ({ children }: { children: React.ReactNode }) => (
+                <OfflineOutboxProvider executeMutation={jest.fn()}>{children}</OfflineOutboxProvider>
+            );
+            renderHook(() => useOfflineOutbox(), { wrapper });
+            await waitFor(() => expect(mockReconcile).toHaveBeenCalledTimes(1));
+
+            act(() => onlineManager.setOnline(false));
+            await act(async () => {
+                jest.advanceTimersByTime(150_000);
+                await Promise.resolve();
+            });
+            expect(mockReconcile).toHaveBeenCalledTimes(1);
+            expect(mockRetryFailed).not.toHaveBeenCalled();
+
+            act(() => onlineManager.setOnline(true));
+            await waitFor(() => expect(mockRetryFailed).toHaveBeenCalledTimes(1));
+        } finally {
+            jest.useRealTimers();
+        }
+    });
+    it('does not let an old account completion cancel the current account retry', async () => {
+        jest.useFakeTimers();
+        try {
+            jest.spyOn(AppState, 'addEventListener').mockReturnValue({
+                remove: jest.fn()
+            } as ReturnType<typeof AppState.addEventListener>);
+            let releaseOldNotification!: () => void;
+            const oldNotification = new Promise<void>((resolve) => { releaseOldNotification = resolve; });
+            const onReplayCompleted = jest.fn(() => oldNotification);
+            const wrapper = ({ children }: { children: React.ReactNode }) => (
+                <OfflineOutboxProvider executeMutation={jest.fn()} onReplayCompleted={onReplayCompleted}>
+                    {children}
+                </OfflineOutboxProvider>
+            );
+            const { result, rerender, unmount } = renderHook(() => useOfflineOutbox(), { wrapper });
+            await waitFor(() => expect(mockReconcile).toHaveBeenCalledTimes(1));
+
+            mockReconcile.mockResolvedValueOnce(successfulMetricReplay);
+            let oldReconciliation!: Promise<ReconcileResult>;
+            act(() => { oldReconciliation = result.current.reconcile(); });
+            await waitFor(() => expect(onReplayCompleted).toHaveBeenCalledTimes(1));
+
+            const currentDeferred = {
+                id: 'current-account-operation',
+                namespace: 'test::user:9',
+                sequence: 1,
+                operation: 'food.create',
+                payload: {},
+                state: 'pending' as const,
+                attemptCount: 6,
+                lastError: 'operation is still settling',
+                createdAt: 1,
+                updatedAt: 1
+            };
+            mockReconcile
+                .mockResolvedValueOnce({
+                    replayed: 0,
+                    replayedOperations: [],
+                    failedMutation: null,
+                    deferredMutation: currentDeferred,
+                    retryAfterMs: 150_000
+                })
+                .mockResolvedValueOnce(successfulEmptyReplay);
+            mockAuthState = { serverUrl: 'https://health.example', user: { id: 9 } };
+            rerender({});
+            await waitFor(() => expect(mockReconcile).toHaveBeenCalledTimes(3));
+
+            releaseOldNotification();
+            await act(async () => { await oldReconciliation; });
+            await act(async () => {
+                jest.advanceTimersByTime(150_000);
+                await Promise.resolve();
+            });
+            await waitFor(() => expect(mockReconcile).toHaveBeenCalledTimes(4));
+            unmount();
         } finally {
             jest.useRealTimers();
         }
