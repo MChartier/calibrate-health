@@ -964,10 +964,12 @@ async function verifyCandidateSchema(client, schemaName, candidateNames) {
     s."created_at" IS NOT NULL AS "browser_created_at",
     s."last_used_at" IS NOT NULL AS "browser_last_used_at",
     m."public_id" IS NOT NULL AS "mobile_public_id",
-    p."last_sent_weight_local_date" IS NULL AS "web_weight_receipt_null",
-    p."last_sent_food_local_date" IS NULL AS "web_food_receipt_null",
-    n."last_sent_weight_local_date" IS NULL AS "native_weight_receipt_null",
-    n."last_sent_food_local_date" IS NULL AS "native_food_receipt_null"
+    p."last_sent_local_date" = $1::date AS "web_legacy_receipt_preserved",
+    p."last_sent_weight_local_date" = p."last_sent_local_date" AS "web_weight_receipt_backfilled",
+    p."last_sent_food_local_date" = p."last_sent_local_date" AS "web_food_receipt_backfilled",
+    n."last_sent_local_date" = $1::date AS "native_legacy_receipt_preserved",
+    n."last_sent_weight_local_date" = n."last_sent_local_date" AS "native_weight_receipt_backfilled",
+    n."last_sent_food_local_date" = n."last_sent_local_date" AS "native_food_receipt_backfilled"
     FROM ${schema}."User" u
     JOIN ${schema}."Goal" g ON g."user_id" = u."id"
     JOIN ${schema}."BodyMetricTrend" t ON t."user_id" = u."id"
@@ -975,7 +977,9 @@ async function verifyCandidateSchema(client, schemaName, candidateNames) {
     JOIN ${schema}."MobileAuthSession" m ON m."user_id" = u."id"
     JOIN ${schema}."PushSubscription" p ON p."user_id" = u."id"
     JOIN ${schema}."NativePushSubscription" n ON n."user_id" = u."id"
-    JOIN ${schema}."CaloriePlanRevision" r ON r."user_id" = u."id"`);
+    JOIN ${schema}."CaloriePlanRevision" r ON r."user_id" = u."id"`, [
+    ROLLBACK_SEED_EXPECTATIONS.localDate,
+  ]);
   assert.equal(rows.length, 1);
   for (const [check, passed] of Object.entries(rows[0])) {
     assert.equal(passed, true, `Candidate schema check failed: ${check}`);
