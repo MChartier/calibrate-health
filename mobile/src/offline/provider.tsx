@@ -1,4 +1,4 @@
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { AppState } from 'react-native';
 import { useAuth } from '../auth/AuthContext';
 import { hasFullAccountAccess } from '../auth/accountAccess';
@@ -34,6 +34,7 @@ export function OfflineOutboxProvider({ children, executeMutation, onReplayCompl
     const [outbox, setOutbox] = useState<SqliteOutbox | null>(null);
     const [mutations, setMutations] = useState<QueuedMutation[]>([]);
     const [initializationError, setInitializationError] = useState<string | null>(null);
+    const retrySchedulerRef = useRef<(result: ReconcileResult) => void>(() => undefined);
 
     useEffect(() => {
         let active = true;
@@ -97,6 +98,7 @@ export function OfflineOutboxProvider({ children, executeMutation, onReplayCompl
         const result = await reconciler.reconcile();
         await notifyAfterReplay(result);
         await refresh();
+        retrySchedulerRef.current(result);
         return result;
     }, [notifyAfterReplay, reconciler, refresh]);
 
@@ -105,6 +107,7 @@ export function OfflineOutboxProvider({ children, executeMutation, onReplayCompl
         const result = await reconciler.retryFailed(id);
         await notifyAfterReplay(result);
         await refresh();
+        retrySchedulerRef.current(result);
         return result;
     }, [notifyAfterReplay, reconciler, refresh]);
 
@@ -121,6 +124,7 @@ export function OfflineOutboxProvider({ children, executeMutation, onReplayCompl
                 : await reconciler.reconcile();
             await notifyAfterReplay(result);
             await refresh();
+            retrySchedulerRef.current(result);
         } catch {
             await refresh().catch(() => undefined);
         }
@@ -128,12 +132,43 @@ export function OfflineOutboxProvider({ children, executeMutation, onReplayCompl
 
     useEffect(() => {
         if (!reconciler) return;
-        // Replay on startup and whenever the app returns to the foreground after a connection change.
+        let active = true;
+        let isForegrounded = AppState.currentState !== 'background' && AppState.currentState !== 'inactive';
+        let retryTimer: ReturnType<typeof setTimeout> | null = null;
+        /** Cancel the single provider-owned deferred replay timer. */
+        const clearRetry = () => {
+            if (retryTimer !== null) clearTimeout(retryTimer);
+            retryTimer = null;
+        };
+        /** Schedule one eligible retry using the reconciler's bounded backoff. */
+        const scheduleRetry = (result: ReconcileResult) => {
+            clearRetry();
+            if (!active || !isForegrounded || result.retryAfterMs === null) return;
+            retryTimer = setTimeout(() => {
+                retryTimer = null;
+                if (active && isForegrounded) void replayPending(false);
+            }, result.retryAfterMs);
+        };
+        retrySchedulerRef.current = scheduleRetry;
+
+        // Replay on startup, after a bounded retry delay, and when the app returns to the foreground.
         void replayPending(false);
         const subscription = AppState.addEventListener('change', (state) => {
-            if (state === 'active') void replayPending(true);
+            isForegrounded = state === 'active';
+            if (!isForegrounded) {
+                clearRetry();
+                return;
+            }
+            void replayPending(true);
         });
-        return () => subscription.remove();
+        return () => {
+            active = false;
+            clearRetry();
+            if (retrySchedulerRef.current === scheduleRetry) {
+                retrySchedulerRef.current = () => undefined;
+            }
+            subscription.remove();
+        };
     }, [reconciler, replayPending]);
 
     const value = useMemo<OfflineOutboxContextValue>(() => ({

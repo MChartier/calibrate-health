@@ -1,8 +1,10 @@
 import React from 'react';
+import { ApiError } from '@calibrate/api-client';
 import { act, renderHook, waitFor } from '@testing-library/react-native';
 import { IDBFactory } from 'fake-indexeddb';
 import { IndexedDbOutbox, openIndexedDbOutboxDatabase } from './indexedDbOutbox.web';
 import { OfflineOutboxProvider, useOfflineOutbox } from './provider.web';
+import { OUTBOX_RETRY_MAX_DELAY_MS } from './reconciler';
 import { createOutboxNamespace } from './queuedMutation';
 import { hasPendingWeightMutation } from './pendingWeight';
 
@@ -141,7 +143,9 @@ describe('browser offline outbox provider', () => {
         expect(onReplayCompleted).toHaveBeenCalledWith({
             replayed: 1,
             replayedOperations: ['food-day.update'],
-            failedMutation: null
+            failedMutation: null,
+            deferredMutation: null,
+            retryAfterMs: null
         });
     });
 
@@ -177,6 +181,63 @@ describe('browser offline outbox provider', () => {
         expect(executeMutation).toHaveBeenCalledTimes(2);
     });
 
+    it('retries a deferred write after backoff while the browser remains online', async () => {
+        const namespace = createOutboxNamespace(mockAuthState.serverUrl, mockAuthState.user!.id);
+        const seededOutbox = new IndexedDbOutbox(database, namespace);
+        const mutation = await seededOutbox.enqueue({
+            id: 'deferred-online-operation',
+            operation: 'food.create',
+            payload: { calories: 100 }
+        });
+        for (let attempt = 0; attempt < 5; attempt += 1) {
+            await seededOutbox.claimNext();
+            await seededOutbox.defer(mutation.id, 'operation is still settling');
+        }
+
+        jest.useFakeTimers({ doNotFake: ['setImmediate'] });
+        try {
+            let shouldDefer = true;
+            const executeMutation = jest.fn(async () => {
+                if (shouldDefer) {
+                    shouldDefer = false;
+                    throw new ApiError('operation is still settling', 409, { retryable: true });
+                }
+            });
+            const connectivity = createConnectivity(true);
+            const wrapper = ({ children }: { children: React.ReactNode }) => (
+                <OfflineOutboxProvider
+                    executeMutation={executeMutation}
+                    openDatabase={openDatabase}
+                    connectivity={connectivity.value}
+                >
+                    {children}
+                </OfflineOutboxProvider>
+            );
+            const { result, unmount } = renderHook(() => useOfflineOutbox(), { wrapper });
+
+            await waitFor(() => expect(executeMutation).toHaveBeenCalledTimes(1));
+            await waitFor(() => expect(result.current.mutations).toEqual([
+                expect.objectContaining({ id: mutation.id, state: 'pending', attemptCount: 6 })
+            ]));
+            await act(async () => {
+                jest.advanceTimersByTime(OUTBOX_RETRY_MAX_DELAY_MS - 1);
+                await Promise.resolve();
+            });
+            expect(executeMutation).toHaveBeenCalledTimes(1);
+            await act(async () => {
+                jest.advanceTimersByTime(1);
+                await Promise.resolve();
+            });
+            await waitFor(() => expect(executeMutation).toHaveBeenCalledTimes(2));
+            await waitFor(() => expect(result.current.mutations).toEqual([]));
+
+            unmount();
+            jest.runOnlyPendingTimers();
+            expect(executeMutation).toHaveBeenCalledTimes(2);
+        } finally {
+            jest.useRealTimers();
+        }
+    });
     it('keeps calorie outputs suppressed until a queued weight replay and refetch complete', async () => {
         const connectivity = createConnectivity(false);
         let finishRefetch: (() => void) | undefined;

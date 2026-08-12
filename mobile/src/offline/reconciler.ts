@@ -4,11 +4,23 @@ import { isRetryableMutationError } from './retryability';
 
 export type QueuedMutationExecutor = (mutation: QueuedMutation) => Promise<void>;
 
+export const OUTBOX_RETRY_BASE_DELAY_MS = 1_000;
+export const OUTBOX_RETRY_MAX_DELAY_MS = 30_000;
+
 export type ReconcileResult = {
     replayed: number;
     replayedOperations: string[];
     failedMutation: QueuedMutation | null;
+    deferredMutation: QueuedMutation | null;
+    retryAfterMs: number | null;
 };
+
+/** Calculate a capped exponential delay for a retryable replay attempt. */
+export function getOutboxRetryDelayMs(attemptCount: number): number {
+    const normalizedAttemptCount = Number.isSafeInteger(attemptCount) && attemptCount > 0 ? attemptCount : 1;
+    const exponent = Math.min(normalizedAttemptCount - 1, 10);
+    return Math.min(OUTBOX_RETRY_MAX_DELAY_MS, OUTBOX_RETRY_BASE_DELAY_MS * (2 ** exponent));
+}
 
 function describeReplayError(error: unknown): string {
     if (error instanceof Error && error.message.trim()) return error.message;
@@ -48,7 +60,15 @@ export class OutboxReconciler {
 
         while (true) {
             const mutation = await this.outbox.claimNext();
-            if (!mutation) return { replayed, replayedOperations, failedMutation: null };
+            if (!mutation) {
+                return {
+                    replayed,
+                    replayedOperations,
+                    failedMutation: null,
+                    deferredMutation: null,
+                    retryAfterMs: null
+                };
+            }
 
             try {
                 await this.executeMutation(mutation);
@@ -57,11 +77,23 @@ export class OutboxReconciler {
                 replayedOperations.push(mutation.operation);
             } catch (error) {
                 if (isRetryableMutationError(error)) {
-                    await this.outbox.defer(mutation.id, describeReplayError(error));
-                    return { replayed, replayedOperations, failedMutation: null };
+                    const deferredMutation = await this.outbox.defer(mutation.id, describeReplayError(error));
+                    return {
+                        replayed,
+                        replayedOperations,
+                        failedMutation: null,
+                        deferredMutation,
+                        retryAfterMs: getOutboxRetryDelayMs(deferredMutation.attemptCount)
+                    };
                 }
                 const failedMutation = await this.outbox.fail(mutation.id, describeReplayError(error));
-                return { replayed, replayedOperations, failedMutation };
+                return {
+                    replayed,
+                    replayedOperations,
+                    failedMutation,
+                    deferredMutation: null,
+                    retryAfterMs: null
+                };
             }
         }
     }

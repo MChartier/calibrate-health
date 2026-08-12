@@ -1,4 +1,4 @@
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useAuth } from '../auth/AuthContext';
 import { hasFullAccountAccess } from '../auth/accountAccess';
 import { IndexedDbOutbox, openBrowserOutboxDatabase } from './indexedDbOutbox.web';
@@ -66,6 +66,7 @@ export function OfflineOutboxProvider({
     const [binding, setBinding] = useState<{ namespace: string; outbox: IndexedDbOutbox } | null>(null);
     const [mutations, setMutations] = useState<QueuedMutation[]>([]);
     const [initializationError, setInitializationError] = useState<string | null>(null);
+    const retrySchedulerRef = useRef<(result: ReconcileResult) => void>(() => undefined);
     const outbox = binding?.namespace === namespace.value ? binding.outbox : null;
 
     useEffect(() => {
@@ -125,6 +126,7 @@ export function OfflineOutboxProvider({
         const result = await reconciler.reconcile();
         await notifyAfterReplay(result);
         await refresh();
+        retrySchedulerRef.current(result);
         return result;
     }, [initializationError, notifyAfterReplay, reconciler, refresh]);
 
@@ -133,6 +135,7 @@ export function OfflineOutboxProvider({
         const result = await reconciler.retryFailed(id);
         await notifyAfterReplay(result);
         await refresh();
+        retrySchedulerRef.current(result);
         return result;
     }, [initializationError, notifyAfterReplay, reconciler, refresh]);
 
@@ -144,6 +147,12 @@ export function OfflineOutboxProvider({
     useEffect(() => {
         if (!reconciler) return;
         let active = true;
+        let retryTimer: ReturnType<typeof setTimeout> | null = null;
+        /** Cancel the single provider-owned deferred replay timer. */
+        const clearRetry = () => {
+            if (retryTimer !== null) clearTimeout(retryTimer);
+            retryTimer = null;
+        };
         const replay = async (includeFailures: boolean) => {
             try {
                 const result = includeFailures
@@ -151,17 +160,38 @@ export function OfflineOutboxProvider({
                     : await reconciler.reconcile();
                 await notifyAfterReplay(result);
                 if (active) setMutations(await requireOutbox().list());
+                retrySchedulerRef.current(result);
                 return result;
             } catch {
                 if (active) await refresh().catch(() => undefined);
                 return null;
             }
         };
+        /** Schedule one eligible retry using the reconciler's bounded backoff. */
+        const scheduleRetry = (result: ReconcileResult) => {
+            clearRetry();
+            if (!active || !connectivity.isOnline() || result.retryAfterMs === null) return;
+            retryTimer = setTimeout(() => {
+                retryTimer = null;
+                if (active && connectivity.isOnline()) void replay(false);
+            }, result.retryAfterMs);
+        };
+        retrySchedulerRef.current = scheduleRetry;
 
         if (connectivity.isOnline()) void replay(false);
-        const unsubscribe = connectivity.subscribe(() => { void replay(true); });
+        const unsubscribe = connectivity.subscribe(() => {
+            if (!connectivity.isOnline()) {
+                clearRetry();
+                return;
+            }
+            void replay(true);
+        });
         return () => {
             active = false;
+            clearRetry();
+            if (retrySchedulerRef.current === scheduleRetry) {
+                retrySchedulerRef.current = () => undefined;
+            }
             unsubscribe();
         };
     }, [connectivity, notifyAfterReplay, reconciler, refresh, requireOutbox]);
