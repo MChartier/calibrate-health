@@ -67,12 +67,10 @@ export class AppErrorBoundary extends React.Component<AppErrorBoundaryProps, App
         resetVersion: 0
     };
 
-    /** Resolve the derived state from error from the current validated state. */
     static getDerivedStateFromError(_error: unknown): Partial<AppErrorBoundaryState> {
         return { hasError: true, requestId: Crypto.randomUUID() };
     }
 
-    /** Build component did catch from the supplied domain inputs. */
     componentDidCatch(_error: Error, _info: React.ErrorInfo): void {
         void this.reportRootFailure(this.state.resetVersion);
     }
@@ -100,7 +98,6 @@ export class AppErrorBoundary extends React.Component<AppErrorBoundaryProps, App
         (this.props.restartApp ?? defaultRestartApp)();
     };
 
-    /** Render using the supplied validated inputs. */
     render(): React.ReactNode {
         if (this.state.hasError) {
             const theme = themes.light;

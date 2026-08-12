@@ -1,6 +1,3 @@
-/**
- * Provides Expo client behavior for one time token.
- */
 import { Platform } from 'react-native';
 
 type BrowserLocation = Pick<Location, 'hash' | 'pathname' | 'search'>;
@@ -12,20 +9,17 @@ type TokenWindow = Window & {
     __calibrateOneTimeToken?: { pathname: string; token: string };
 };
 
-/** Build first param from the supplied domain inputs. */
 function firstParam(value: string | string[] | undefined): string | null {
     if (Array.isArray(value)) return value[0]?.trim() || null;
     return value?.trim() || null;
 }
 
-/** Build token from routed fragment from the supplied domain inputs. */
 function tokenFromRoutedFragment(value: string | string[] | undefined): string | null {
     const fragment = firstParam(value)?.replace(/^#/, '');
     if (!fragment) return null;
     return new URLSearchParams(fragment).get('token')?.trim() || null;
 }
 
-/** Read browser token. */
 function readBrowserToken(browser: { location: BrowserLocation; history: BrowserHistory }): string | null {
     const hashParams = new URLSearchParams(browser.location.hash.replace(/^#/, ''));
     const queryParams = new URLSearchParams(browser.location.search);

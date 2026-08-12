@@ -1,6 +1,3 @@
-/**
- * Exercises route matrix behavior and regression boundaries.
- */
 import fs from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
@@ -32,7 +29,6 @@ const AUTHENTICATED_ROUTE_GROUPS = [
 ];
 const BARCODE_ROUTE_HEADING = /Checking camera|Camera permission|Camera access denied|Camera access blocked|Camera unavailable|Scan barcode|Food logging is unavailable/;
 
-/** Wait for barcode food day while preserving the module's lifecycle and failure guarantees. */
 function waitForBarcodeFoodDay(page: Page) {
   return page.waitForResponse((response) => (
     new URL(response.url()).pathname === '/api/v1/food-days'
@@ -41,7 +37,6 @@ function waitForBarcodeFoodDay(page: Page) {
   ));
 }
 
-/** Collect route files from the supplied records. */
 function collectRouteFiles(directory: string): string[] {
   return fs.readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
     const absolutePath = path.join(directory, entry.name);
@@ -50,7 +45,6 @@ function collectRouteFiles(directory: string): string[] {
   });
 }
 
-/** Build deterministic route path from file for regression coverage. */
 function routePathFromFile(filePath: string): string | null {
   const relativePath = path.relative(appRoot, filePath).replaceAll('\\', '/');
   if (!relativePath.endsWith('.tsx')) return null;

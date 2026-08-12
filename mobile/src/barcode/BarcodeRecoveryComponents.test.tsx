@@ -1,6 +1,3 @@
-/**
- * Exercises barcode recovery components behavior and regression boundaries.
- */
 import { useState } from 'react';
 import { fireEvent, render } from '@testing-library/react-native';
 import { TextInput } from 'react-native';

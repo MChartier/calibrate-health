@@ -39,7 +39,6 @@ class CalorieProgressTest {
         )
     }
 
-    /** Proves pending weight writes remove target and projection math until a server refresh. */
     @Test
     fun `pending weight mutation suppresses cached target and projection until snapshot refresh`() {
         val cached = summary(caloriesRemaining = 640).copy(

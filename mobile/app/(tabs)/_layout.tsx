@@ -66,7 +66,6 @@ const DESKTOP_NAV_RAIL_WIDTH = 104;
 const DESKTOP_CONTENT_MAX_WIDTH = 1040;
 const QUERY_GATE_MAX_WIDTH = 640; // Keeps terminal shell errors readable on wide screens.
 
-/** Navigate back from route using validated domain inputs. */
 function navigateBackFromRoute(
     routeId: RouteId,
     history: { router: boolean; browser: boolean }
@@ -84,7 +83,6 @@ function navigateBackFromRoute(
     router.replace((fallback?.path ?? canonicalPathForRoute('today')) as Href);
 }
 
-/** Resolve the notifications accessibility label from the current validated state. */
 function getNotificationsAccessibilityLabel(unreadCount: number | null): string {
     if (unreadCount === null) return 'Open notifications, unread count unavailable';
     if (unreadCount > 0) return `Open notifications, ${unreadCount} unread`;

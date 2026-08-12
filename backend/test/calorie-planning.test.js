@@ -1,11 +1,7 @@
-/**
- * Exercises calorie planning behavior and regression boundaries.
- */
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const Module = require('node:module');
 
-/** Build deterministic stub module for regression coverage. */
 function stubModule(resolvedPath, exports) {
   const moduleInstance = new Module(resolvedPath);
   moduleInstance.exports = exports;
@@ -13,7 +9,6 @@ function stubModule(resolvedPath, exports) {
   require.cache[resolvedPath] = moduleInstance;
 }
 
-/** Load planning services. */
 function loadPlanningServices() {
   const databasePath = require.resolve('../src/config/database');
   const planningPath = require.resolve('../src/services/caloriePlanning');

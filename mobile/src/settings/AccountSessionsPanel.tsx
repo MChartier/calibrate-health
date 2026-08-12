@@ -1,6 +1,3 @@
-/**
- * Provides Expo client behavior for account sessions panel.
- */
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import type { AccountSessionSummary } from '@calibrate/api-client';
@@ -30,7 +27,6 @@ type SessionConfirmation =
     | { kind: 'one'; session: AccountSessionSummary }
     | { kind: 'others' };
 
-/** Format account session timestamp for stable display or serialization. */
 export function formatAccountSessionTimestamp(value: string | null): string {
     if (!value) return 'Not recorded';
     const parsed = new Date(value);
@@ -38,7 +34,6 @@ export function formatAccountSessionTimestamp(value: string | null): string {
     return parsed.toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' });
 }
 
-/** Render the account sessions panel interface. */
 export function AccountSessionsPanel({
     sessions,
     pendingSessionId,

@@ -1,6 +1,3 @@
-/**
- * Exercises account sessions panel behavior and regression boundaries.
- */
 import React from 'react';
 import { act, fireEvent, render } from '@testing-library/react-native';
 import type { AccountSessionSummary } from '@calibrate/api-client';

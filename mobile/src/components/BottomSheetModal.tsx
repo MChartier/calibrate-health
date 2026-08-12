@@ -82,7 +82,6 @@ export function normalizeInactiveWebBottomSheetContainers(documentRoot: Pick<Web
     }
 }
 
-/** Build web bottom sheet container observer from validated configuration and dependencies. */
 export function createWebBottomSheetContainerObserver(
     documentRoot: WebBottomSheetDocument,
     observerFactory: WebModalAccessibilityObserverFactory
@@ -98,7 +97,6 @@ export function createWebBottomSheetContainerObserver(
     return observer;
 }
 
-/** Observe web bottom sheet containers using validated domain inputs. */
 function observeWebBottomSheetContainers() {
     if (webModalAccessibilityObserver || typeof document === 'undefined' || typeof MutationObserver === 'undefined') return;
     webModalAccessibilityObserver = createWebBottomSheetContainerObserver(
@@ -145,7 +143,6 @@ export function resolveFixedSheetHeight(
     return visualViewportHeight * (Number(percentageMatch[1]) / 100);
 }
 
-/** Resolve adaptive dialog width. */
 export function resolveAdaptiveDialogWidth(
     viewportWidth: number,
     size: BottomSheetModalSize,

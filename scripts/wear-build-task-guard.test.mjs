@@ -1,6 +1,3 @@
-/**
- * Exercises wear build task guard behavior and regression boundaries.
- */
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';

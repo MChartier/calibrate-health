@@ -574,7 +574,6 @@ export function loadRepositoryRiskEvidence(repoRoot = repositoryRoot) {
   return { manifest, packageScripts: packageJson.scripts ?? {}, repoRoot };
 }
 
-/** Parse and validate risk evidence args. */
 export function parseRiskEvidenceArgs(argv, environment = process.env) {
   const values = {
     releaseMode: false,

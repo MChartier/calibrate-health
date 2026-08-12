@@ -1,6 +1,3 @@
-/**
- * Runs the repository-owned performance budgets workflow.
- */
 import fs from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
@@ -46,7 +43,6 @@ const REQUIRED_MANIFEST_KEYS = [
   'schema_version',
 ];
 
-/** Reject execution unless the exact keys contract is satisfied. */
 function assertExactKeys(value, expected, label) {
   const actual = value && typeof value === 'object' && !Array.isArray(value) ? Object.keys(value).sort() : [];
   const required = [...expected].sort();
@@ -55,7 +51,6 @@ function assertExactKeys(value, expected, label) {
   }
 }
 
-/** Read json. */
 function readJson(filePath) {
   try {
     return JSON.parse(fs.readFileSync(filePath, 'utf8'));
@@ -64,13 +59,11 @@ function readJson(filePath) {
   }
 }
 
-/** Build route html path from the supplied domain inputs. */
 function routeHtmlPath(distDir, route) {
   if (route === '/') return path.join(distDir, 'index.html');
   return path.join(distDir, `${route.replace(/^\//, '')}.html`);
 }
 
-/** Collect html entry bundles from the supplied records. */
 function collectHtmlEntryBundles(html) {
   const bundles = [];
   for (const match of html.matchAll(/\bsrc=["']([^"']+)["']/g)) {
@@ -80,7 +73,6 @@ function collectHtmlEntryBundles(html) {
   return [...new Set(bundles)];
 }
 
-/** Collect reachable bundles from the supplied records. */
 function collectReachableBundles(distDir, entryBundles) {
   const reachable = new Set();
   const pending = [...entryBundles];
@@ -117,7 +109,6 @@ export function measureRouteBundleGraphs(distDir = DEFAULT_EXPO_WEB_DIST, routes
   }));
 }
 
-/** Validate performance budget manifest. */
 export function validatePerformanceBudgetManifest(manifest) {
   assertExactKeys(manifest, REQUIRED_MANIFEST_KEYS, 'Performance budget manifest');
   if (manifest?.schema_version !== 1) throw new Error('Performance budget manifest schema_version must be 1.');
@@ -168,7 +159,6 @@ export function validatePerformanceBudgetManifest(manifest) {
   return manifest;
 }
 
-/** Reject execution unless the benchmark runtime contract is satisfied. */
 export function assertBenchmarkRuntime(manifest, runtime = {
   node: process.versions.node,
   v8: process.versions.v8,
@@ -185,7 +175,6 @@ export function assertBenchmarkRuntime(manifest, runtime = {
   }
 }
 
-/** Reject execution unless the bundle runtime contract is satisfied. */
 export function assertBundleRuntime(manifest, runtime = {
   node: process.versions.node,
   v8: process.versions.v8,
@@ -203,7 +192,6 @@ export function assertBundleRuntime(manifest, runtime = {
   }
 }
 
-/** Evaluate route bundle growth against the module's reviewed constraints. */
 export function evaluateRouteBundleGrowth(measured, manifest) {
   validatePerformanceBudgetManifest(manifest);
   const allowedGrowth = manifest.limits.route_bundle_growth_percent;
@@ -222,7 +210,6 @@ export function evaluateRouteBundleGrowth(measured, manifest) {
   if (failures.length > 0) throw new Error(`Expo route bundle budget failed:\n${failures.join('\n')}`);
 }
 
-/** Parse and validate update options. */
 function parseUpdateOptions(args) {
   const value = (name) => args.find((argument) => argument.startsWith(`${name}=`))?.slice(name.length + 1);
   return {
@@ -234,7 +221,6 @@ function parseUpdateOptions(args) {
   };
 }
 
-/** Update route baselines. */
 function updateRouteBaselines(manifestPath, manifest, measured, options) {
   const next = {
     ...manifest,

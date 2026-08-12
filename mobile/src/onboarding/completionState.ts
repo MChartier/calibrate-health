@@ -1,6 +1,3 @@
-/**
- * Provides Expo client behavior for completion state.
- */
 import {
     HEIGHT_UNITS,
     WEIGHT_UNITS,
@@ -33,13 +30,11 @@ export type OnboardingFormState = {
     heightInches: string;
 };
 
-/** Display weight to grams using validated domain inputs. */
 function displayWeightToGrams(value: string, unit: WeightUnit): number {
     const parsed = Number(value);
     return Math.round(parsed * (unit === WEIGHT_UNITS.LB ? GRAMS_PER_POUND : GRAMS_PER_KILOGRAM));
 }
 
-/** Build height to millimeters from the supplied domain inputs. */
 function heightToMillimeters(form: OnboardingFormState): number {
     if (form.heightUnit === HEIGHT_UNITS.CM) {
         return Math.round(Number(form.heightCm) * MILLIMETERS_PER_CENTIMETER);
@@ -48,7 +43,6 @@ function heightToMillimeters(form: OnboardingFormState): number {
     return Math.round(inches * MILLIMETERS_PER_INCH);
 }
 
-/** Build the onboarding complete data with stable fields for the Expo client boundary. */
 export function buildOnboardingCompleteData(form: OnboardingFormState): OnboardingCompleteData {
     return {
         weight_unit: form.weightUnit,

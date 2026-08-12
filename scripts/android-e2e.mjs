@@ -23,12 +23,10 @@ const ONLINE_FOOD = { name: 'Android E2E latte', calories: 190 };
 const OFFLINE_FOOD = { name: 'Android E2E protein shake', calories: 240 };
 const UI_DUMP_PATH = '/sdcard/calibrate-e2e-window.xml';
 
-/** Build the add food deep link with stable fields for the repository-owned workflow. */
 export function buildAddFoodDeepLink(date) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) throw new Error('Android E2E Add food date must be YYYY-MM-DD.');
   return `https://calibratehealth.app/log?date=${encodeURIComponent(date)}`;
 }
-/** Build the add food launch args with stable fields for the repository-owned workflow. */
 export function buildAddFoodLaunchArgs(date) {
   return [
     'shell', 'am', 'start', '-W', '-S',
@@ -38,7 +36,6 @@ export function buildAddFoodLaunchArgs(date) {
   ];
 }
 
-/** Reject execution unless the android app link launch contract is satisfied. */
 export function assertAndroidAppLinkLaunch(output) {
   if (!/\bStatus:\s*ok\b/i.test(output) || !/\bActivity:\s*app\.calibratehealth\.mobile\//i.test(output)) {
     throw new Error('Android E2E app link did not launch the Calibrate activity.');
@@ -51,7 +48,6 @@ const HOP_BY_HOP_HEADERS = new Set([
   'connection', 'content-encoding', 'content-length', 'keep-alive', 'proxy-authenticate',
   'proxy-authorization', 'te', 'trailer', 'transfer-encoding', 'upgrade'
 ]);
-/** Resolve android e2e adb. */
 export function resolveAndroidE2eAdb(environment = process.env, platform = process.platform) {
   if (environment.ADB?.trim()) return environment.ADB.trim();
   const pathApi = platform === 'win32' ? path.win32 : path.posix;
@@ -62,7 +58,6 @@ export function resolveAndroidE2eAdb(environment = process.env, platform = proce
   return pathApi.join(sdkRoot, 'platform-tools', platform === 'win32' ? 'adb.exe' : 'adb');
 }
 
-/** Build the android e2e adb args with stable fields for the repository-owned workflow. */
 export function buildAndroidE2eAdbArgs(args, serial = process.env.ANDROID_ADB_SERIAL) {
   const target = serial?.trim();
   if (!target || !/^emulator-\d+$/.test(target)) {
@@ -87,7 +82,6 @@ function adb(args, options = {}) {
   }).trim();
 }
 
-/** Proxy Android E2E traffic to the configured upstream without exposing credentials. */
 export async function fetchAndroidE2eProxyUpstream(url, options, dependencies = {}) {
   const fetchImpl = dependencies.fetchImpl ?? fetch;
   const sleepImpl = dependencies.sleepImpl ?? sleep;
@@ -248,7 +242,6 @@ async function waitForNode(label, predicate, timeoutMs = 30_000) {
   return waitFor(label, async () => findNode(dumpUi(), predicate), timeoutMs, 750);
 }
 
-/** Tap found node using validated domain inputs. */
 function tapFoundNode(node) {
   const point = parseBounds(node.bounds);
   adb(['shell', 'input', 'tap', String(point.x), String(point.y)], { quiet: true });
@@ -277,7 +270,6 @@ export function crashBufferContainsCalibrateProcess(crashBuffer) {
   ].some((pattern) => pattern.test(crashBuffer));
 }
 
-/** Parse and validate android package version. */
 export function parseAndroidPackageVersion(output) {
   const versionCode = Number(output.match(/\bversionCode=(\d+)/)?.[1]);
   const versionName = output.match(/\bversionName=([^\r\n]+)/)?.[1]?.trim();
@@ -314,7 +306,6 @@ const SAFE_ANDROID_UI_MARKERS = Object.freeze([
   'Food logging is unavailable', 'Sign in',
 ]);
 
-/** Summarize android e2e ui for the module response. */
 export function summarizeAndroidE2eUi(xml) {
   const nodes = xml.match(/<node\b[^>]*>/g) ?? [];
   const markers = SAFE_ANDROID_UI_MARKERS.filter((marker) => nodes.some((node) => (
@@ -323,12 +314,10 @@ export function summarizeAndroidE2eUi(xml) {
   return markers.length > 0 ? markers.join(', ') : 'none';
 }
 
-/** Determine whether the input conforms to the android e2e recent food node contract. */
 export function isAndroidE2eRecentFoodNode(node, name) {
   return node?.clickable === true && node?.label === `Choose amount for ${name}`;
 }
 
-/** Determine whether the input conforms to the android e2e add and close node contract. */
 export function isAndroidE2eAddAndCloseNode(node) {
   return node?.clickable === true && node?.label === 'Add & close';
 }
@@ -365,7 +354,6 @@ async function countFood(accessToken, date, name) {
   return logs.filter((entry) => entry.name === name).length;
 }
 
-/** Build the open food day request with stable fields for the repository-owned workflow. */
 export function buildOpenFoodDayRequest(accessToken, date, operationId = randomUUID()) {
   return {
     method: 'PATCH',
@@ -407,7 +395,6 @@ async function waitForFoodCount(accessToken, date, name, expected, timeoutMs = 3
   }, timeoutMs, 750);
 }
 
-/** Open recent add while preserving the module's lifecycle and failure guarantees. */
 async function openRecentAdd(name, date, timeoutMs = 45_000) {
   const launchOutput = adb(buildAddFoodLaunchArgs(date), { quiet: true });
   assertAndroidAppLinkLaunch(launchOutput);
@@ -441,7 +428,6 @@ async function logRecentFood(name, date, timeoutMs = 45_000) {
   await logOpenRecentFood(name, false);
 }
 
-/** Run android e2e and surface failures to the caller. */
 async function runAndroidE2e(onCheckpoint = () => undefined) {
   let apiProxy = null;
   adb(['wait-for-device'], { quiet: true });

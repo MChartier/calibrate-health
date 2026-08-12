@@ -220,7 +220,6 @@ export const NotificationsDrawer: React.FC<NotificationsDrawerProps> = ({
     );
 };
 
-/** Render the notifications skeleton interface. */
 const NotificationsSkeleton: React.FC<{ styles: ReturnType<typeof createStyles> }> = ({ styles }) => (
     <AppCard>
         {[0, 1, 2].map((row) => (

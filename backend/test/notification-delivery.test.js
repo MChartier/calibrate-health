@@ -7,7 +7,6 @@ const {
 } = require('../../shared/notificationDelivery');
 const { diagnosticsRegistry } = require('../src/observability');
 
-/** Build deterministic latency bucket total for regression coverage. */
 const latencyBucketTotal = (counters) => Object.values(counters.latencyBuckets ?? {})
   .reduce((total, count) => total + count, 0);
 

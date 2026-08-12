@@ -1,12 +1,8 @@
-/**
- * Exercises calorie safety behavior and regression boundaries.
- */
 import { mkdir } from 'node:fs/promises';
 import path from 'node:path';
 import type { Locator, Page, TestInfo } from '@playwright/test';
 import { expect, test } from './fixtures';
 
-/** Assert that no horizontal overflow. */
 async function expectNoHorizontalOverflow(page: Page) {
   const widths = await page.evaluate(() => ({
     clientWidth: document.documentElement.clientWidth,
@@ -15,7 +11,6 @@ async function expectNoHorizontalOverflow(page: Page) {
   expect(widths.scrollWidth).toBeLessThanOrEqual(widths.clientWidth);
 }
 
-/** Assert that fully within viewport. */
 async function expectFullyWithinViewport(page: Page, locator: Locator) {
   const viewport = page.viewportSize();
   const box = await locator.boundingBox();
@@ -25,7 +20,6 @@ async function expectFullyWithinViewport(page: Page, locator: Locator) {
   expect(box!.x + box!.width).toBeLessThanOrEqual(viewport!.width);
 }
 
-/** Capture evidence only when explicit evidence collection is enabled. */
 async function captureEvidence(
   page: Page,
   testInfo: TestInfo,
@@ -50,7 +44,6 @@ async function captureEvidence(
   await page.screenshot({ path: screenshotPath, fullPage: false });
 }
 
-/** Advance atomic onboarding to pace through the reviewed UI steps. */
 async function advanceAtomicOnboardingToPace(page: Page) {
   await expect(page.getByText('Choose your weight goal', { exact: true })).toBeVisible();
   await page.getByRole('textbox', { name: 'Current', exact: true }).fill('88.2');

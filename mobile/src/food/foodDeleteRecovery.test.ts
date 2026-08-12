@@ -1,6 +1,3 @@
-/**
- * Exercises food delete recovery behavior and regression boundaries.
- */
 import {
     createEmptyFoodDeleteRecoveryState,
     filterVisibleFoodLogEntries,
@@ -12,7 +9,6 @@ import { OUTBOX_MUTATION_STATES, type QueuedMutation } from '../offline/queuedMu
 
 jest.mock('expo-crypto', () => ({ randomUUID: jest.fn(() => 'generated-operation-id') }));
 
-/** Build deterministic mutation for regression coverage. */
 function mutation(overrides: Partial<QueuedMutation>): QueuedMutation {
     return {
         sequence: 1,

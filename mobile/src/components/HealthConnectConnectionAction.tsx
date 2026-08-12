@@ -1,6 +1,3 @@
-/**
- * Provides the shared health connect connection action component and interaction contract.
- */
 import { type ComponentProps } from 'react';
 import type { StyleProp, ViewStyle } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';

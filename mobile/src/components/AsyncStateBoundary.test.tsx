@@ -1,6 +1,3 @@
-/**
- * Exercises async state boundary behavior and regression boundaries.
- */
 import { Text } from 'react-native';
 import type { ReactTestInstance } from 'react-test-renderer';
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
@@ -8,14 +5,12 @@ import { ApiError } from '@calibrate/api-client';
 import { ASYNC_RESOURCE_STATES } from '../asyncState/resolveAsyncState';
 import { AsyncStateBoundary } from './AsyncStateBoundary';
 
-/** Build deterministic deferred for regression coverage. */
 const deferred = () => {
     let resolve!: () => void;
     const promise = new Promise<void>((done) => { resolve = done; });
     return { promise, resolve };
 };
 
-/** Determine whether the input conforms to the descendant of contract. */
 function isDescendantOf(node: ReactTestInstance, ancestor: ReactTestInstance): boolean {
     let parent = node.parent;
     while (parent) {

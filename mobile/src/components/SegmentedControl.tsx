@@ -26,12 +26,10 @@ type FocusableOption = {
     focus?: () => void;
 };
 
-/** Resolve the key from the current validated state. */
 function getKey(event: KeyboardLikeEvent) {
     return event.key ?? event.nativeEvent?.key ?? '';
 }
 
-/** Render the segmented option button interface. */
 function SegmentedOptionButton<T extends string>({
     option,
     selected,

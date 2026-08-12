@@ -130,7 +130,6 @@ const emptyJobCounters = (): JobCounters => ({
   lastSuccessAt: null
 });
 
-/** Initialize zeroed counters for a client-diagnostic aggregation window. */
 const emptyClientDiagnosticCounters = (): ClientDiagnosticCounters => ({
   total: 0,
   byTuple: new Map(),
@@ -206,7 +205,6 @@ export class DiagnosticsRegistry {
     this.operations.set(name, counters);
   }
 
-  /** Record client diagnostic while preserving the module's lifecycle and failure guarantees. */
   recordClientDiagnostic(diagnostic: ClientDiagnosticInput): void {
     this.clientDiagnostics.total += 1;
     const tupleKey = [
@@ -286,12 +284,10 @@ export class DiagnosticsRegistry {
   }
 }
 
-/** Increment a keyed counter while initializing previously unseen keys. */
 function incrementMap(counters: Map<string, number>, key: string): void {
   counters.set(key, (counters.get(key) ?? 0) + 1);
 }
 
-/** Convert a counter map into a deterministically sorted object. */
 function sortedMapObject(counters: Map<string, number>): Record<string, number> {
   return Object.fromEntries([...counters.entries()].sort(([left], [right]) => left.localeCompare(right)));
 }
@@ -377,7 +373,6 @@ function safeMethod(value: string): string {
 
 type DiagnosticValue = string | number | boolean | null | undefined;
 
-/** Sanitize a diagnostic field before it is retained or transported. */
 function safeDiagnosticFieldValue(
   key: string,
   value: DiagnosticValue

@@ -1,7 +1,4 @@
 #!/usr/bin/env node
-/**
- * Runs the repository-owned hosted android e2e workflow.
- */
 import { spawn } from 'node:child_process';
 import { once } from 'node:events';
 import fs from 'node:fs';
@@ -17,10 +14,8 @@ export const HOSTED_ANDROID_DIAGNOSTIC_LINES = 80;
 const METRO_STATUS_URL = 'http://localhost:8081/status';
 const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
-/** Wait for the requested interval between bounded readiness attempts. */
 const sleep = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
 
-/** Reject execution unless the hosted android runner contract is satisfied. */
 export function assertHostedAndroidRunner(environment = process.env, platform = process.platform) {
   if (environment.GITHUB_ACTIONS !== 'true' || environment.RUNNER_OS !== 'Linux' || platform !== 'linux') {
     throw new Error('Hosted Android E2E is restricted to GitHub Actions Linux runners.');
@@ -32,7 +27,6 @@ export function assertHostedAndroidRunner(environment = process.env, platform = 
   buildAndroidE2eAdbArgs([], environment.ANDROID_ADB_SERIAL);
 }
 
-/** Build hosted android command plan from validated configuration and dependencies. */
 export function createHostedAndroidCommandPlan(
   environment = process.env,
   platform = process.platform,
@@ -64,7 +58,6 @@ export function createHostedAndroidCommandPlan(
   };
 }
 
-/** Build hosted android metro environment from validated configuration and dependencies. */
 export function createHostedAndroidMetroEnvironment(environment = process.env) {
   return { ...environment, CI: '1' };
 }
@@ -78,7 +71,6 @@ export function redactHostedAndroidDiagnostics(value) {
     .replaceAll(/\b([A-Z0-9_]*(?:TOKEN|SECRET|PASSWORD|API_KEY))=([^\s]+)/gi, '$1=[redacted]');
 }
 
-/** Bound sanitized Android diagnostics without splitting UTF-8 code points. */
 export function boundHostedAndroidLog(value, maxBytes = HOSTED_ANDROID_LOG_MAX_BYTES) {
   const sanitized = Buffer.from(redactHostedAndroidDiagnostics(value), 'utf8');
   if (sanitized.byteLength <= maxBytes) return sanitized.toString('utf8');
@@ -87,7 +79,6 @@ export function boundHostedAndroidLog(value, maxBytes = HOSTED_ANDROID_LOG_MAX_B
   return sanitized.subarray(start).toString('utf8');
 }
 
-/** Build hosted android log from validated configuration and dependencies. */
 export function createHostedAndroidLog(logFile) {
   fs.mkdirSync(path.dirname(logFile), { recursive: true });
   fs.writeFileSync(logFile, '', { encoding: 'utf8', mode: 0o600 });
@@ -103,7 +94,6 @@ export function createHostedAndroidLog(logFile) {
   };
 }
 
-/** Start Metro with bounded diagnostics and no interactive terminal dependency. */
 function startMetro(request, environment, log) {
   const child = spawn(request.command, request.args, {
     cwd: request.cwd,
@@ -117,12 +107,10 @@ function startMetro(request, environment, log) {
   return child;
 }
 
-/** Determine whether the Metro child has already exited or received a signal. */
 function metroExited(child) {
   return child.exitCode !== null || child.signalCode !== null;
 }
 
-/** Poll Metro readiness until success, early exit, or the reviewed deadline. */
 export async function waitForHostedAndroidMetro(child, options = {}) {
   const fetchImpl = options.fetchImpl ?? fetch;
   const now = options.now ?? Date.now;
@@ -157,7 +145,6 @@ export async function waitForHostedAndroidMetro(child, options = {}) {
   throw new Error('Metro did not become ready within 90 seconds.');
 }
 
-/** Run command and surface failures to the caller. */
 async function runCommand(request, environment = process.env) {
   const child = spawn(request.command, request.args, {
     cwd: request.cwd,
@@ -172,7 +159,6 @@ async function runCommand(request, environment = process.env) {
   }
 }
 
-/** Stop the exact Metro child and wait for bounded cleanup. */
 export async function terminateHostedAndroidMetro(child, options = {}) {
   if (!child?.pid || metroExited(child)) return;
   const kill = options.kill ?? process.kill.bind(process);
@@ -194,7 +180,6 @@ export async function terminateHostedAndroidMetro(child, options = {}) {
   }
 }
 
-/** Run hosted android e2e and surface failures to the caller. */
 export async function runHostedAndroidE2e(environment = process.env, dependencies = {}) {
   const plan = createHostedAndroidCommandPlan(environment, dependencies.platform ?? process.platform);
   const log = (dependencies.createLog ?? createHostedAndroidLog)(plan.config.logFile);

@@ -1,6 +1,3 @@
-/**
- * Exercises launch 21 performance budgets behavior and regression boundaries.
- */
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import type { Page } from '@playwright/test';
@@ -16,7 +13,6 @@ const manifest = JSON.parse(readFileSync(path.resolve('quality/performance-budge
 
 type BrowserVitals = { cls: number; inp: number; lcp: number };
 
-/** Install vital observers for deterministic browser coverage. */
 async function installVitalObservers(page: Page) {
   await page.addInitScript(() => {
     const vitals = { cls: 0, inp: 0, lcp: 0 };
@@ -61,7 +57,6 @@ async function installVitalObservers(page: Page) {
   });
 }
 
-/** Build deterministic settle route for regression coverage. */
 async function settleRoute(page: Page) {
   await page.waitForLoadState('domcontentloaded');
   await page.locator('[role="main"]:visible').waitFor();
@@ -72,14 +67,12 @@ async function settleRoute(page: Page) {
   await page.waitForTimeout(150);
 }
 
-/** Read vitals. */
 async function readVitals(page: Page): Promise<BrowserVitals> {
   return page.evaluate(() => (
     window as typeof window & { __calibrateLaunch21Vitals: BrowserVitals }
   ).__calibrateLaunch21Vitals);
 }
 
-/** Install authenticated performance apis for deterministic browser coverage. */
 async function installAuthenticatedPerformanceApis(page: Page) {
   await page.route('**/api/v1/client-diagnostics', (route) => route.fulfill({
     status: 202,
@@ -102,7 +95,6 @@ async function installAuthenticatedPerformanceApis(page: Page) {
   }));
 }
 
-/** Assert that route budgets. */
 async function expectRouteBudgets(page: Page, route: string) {
   await settleRoute(page);
   const vitals = await readVitals(page);

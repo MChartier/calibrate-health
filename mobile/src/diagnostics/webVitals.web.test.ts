@@ -1,6 +1,3 @@
-/**
- * Exercises web vitals web behavior and regression boundaries.
- */
 import type { ClientDiagnosticSignal } from './clientDiagnostics';
 import { reportClientDiagnostic } from './clientDiagnostics';
 import {

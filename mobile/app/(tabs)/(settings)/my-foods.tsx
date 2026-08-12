@@ -1,6 +1,3 @@
-/**
- * Defines the my foods Expo Router screen.
- */
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
@@ -38,7 +35,6 @@ import { FormErrorSummary, type FormErrorSummaryHandle } from '../../../src/comp
 
 type MyFoodSheet = 'food' | 'recipe' | null;
 
-/** Render the my foods screen interface. */
 export default function MyFoodsScreen() {
     const theme = useAppTheme();
     const styles = useMemo(() => createStyles(theme), [theme]);
@@ -439,7 +435,6 @@ export default function MyFoodsScreen() {
     );
 }
 
-/** Build the styles for the active theme from validated configuration and dependencies. */
 const createStyles = (theme: AppTheme) => StyleSheet.create({
     row: {
         flexDirection: 'row',

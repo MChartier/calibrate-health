@@ -1,6 +1,3 @@
-/**
- * Exercises launch 17 notification center behavior and regression boundaries.
- */
 import { mkdir } from 'node:fs/promises';
 import path from 'node:path';
 import type { Page, Route, TestInfo } from '@playwright/test';
@@ -30,7 +27,6 @@ type NotificationFixture = {
   addIncoming(): NotificationItem;
 };
 
-/** Build deterministic notification for regression coverage. */
 function notification(id: number, overrides: Partial<NotificationItem> = {}): NotificationItem {
   const minute = String(id % 60).padStart(2, '0');
   const isWeight = id % 2 === 1;
@@ -50,7 +46,6 @@ function notification(id: number, overrides: Partial<NotificationItem> = {}): No
   };
 }
 
-/** Build deterministic populated history for regression coverage. */
 function populatedHistory(): NotificationItem[] {
   const history = Array.from({ length: 23 }, (_, index) => notification(123 - index));
   history[2] = notification(121, { read_at: '2026-07-21T18:45:00.000Z' });
@@ -62,7 +57,6 @@ function populatedHistory(): NotificationItem[] {
   return history;
 }
 
-/** Fulfill json with deterministic fixture data. */
 function fulfillJson(route: Route, body: unknown, status = 200) {
   return route.fulfill({
     status,
@@ -72,12 +66,10 @@ function fulfillJson(route: Route, body: unknown, status = 200) {
   });
 }
 
-/** Build deterministic active notifications for regression coverage. */
 function activeNotifications(history: NotificationItem[]) {
   return history.filter((item) => !item.read_at && !item.dismissed_at && !item.resolved_at);
 }
 
-/** Install notification api for deterministic browser coverage. */
 async function installNotificationApi(page: Page, empty = false): Promise<NotificationFixture> {
   const fixture: NotificationFixture = {
     failHistoryRequests: 0,
@@ -168,7 +160,6 @@ async function installNotificationApi(page: Page, empty = false): Promise<Notifi
   return fixture;
 }
 
-/** Install realtime harness for deterministic browser coverage. */
 async function installRealtimeHarness(page: Page) {
   await page.addInitScript((eventName) => {
     type Listener = (event: { data: string }) => void;
@@ -210,7 +201,6 @@ async function installRealtimeHarness(page: Page) {
   }, REALTIME_EVENT_NAME);
 }
 
-/** Emit notification update while preserving the module's lifecycle and failure guarantees. */
 async function emitNotificationUpdate(page: Page) {
   await page.evaluate(() => {
     const harness = (window as unknown as {
@@ -220,7 +210,6 @@ async function emitNotificationUpdate(page: Page) {
   });
 }
 
-/** Install denied browser permission for deterministic browser coverage. */
 async function installDeniedBrowserPermission(page: Page) {
   await page.addInitScript(() => {
     let permission: NotificationPermission = 'default';
@@ -269,7 +258,6 @@ async function installDeniedBrowserPermission(page: Page) {
 }
 
 
-/** Assert that no horizontal overflow. */
 async function expectNoHorizontalOverflow(page: Page) {
   const widths = await page.evaluate(() => ({
     bodyWidth: document.body.scrollWidth,
@@ -280,7 +268,6 @@ async function expectNoHorizontalOverflow(page: Page) {
   expect(widths.scrollWidth).toBeLessThanOrEqual(widths.clientWidth);
 }
 
-/** Capture evidence only when explicit evidence collection is enabled. */
 async function captureEvidence(page: Page, testInfo: TestInfo, state: 'history' | 'drawer') {
   if (process.env.CALIBRATE_CAPTURE_EVIDENCE !== '1') return;
   const filename = state === 'history'

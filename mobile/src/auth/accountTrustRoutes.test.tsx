@@ -1,6 +1,3 @@
-/**
- * Exercises account trust routes behavior and regression boundaries.
- */
 import React from 'react';
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
 import VerifyEmailRoute from '../../app/verify-email';

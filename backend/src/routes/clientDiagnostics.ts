@@ -1,6 +1,3 @@
-/**
- * Defines the client diagnostics HTTP routes and request handling.
- */
 import express, { type RequestHandler } from 'express';
 import { NATIVE_CLIENT_HEADERS, isMobileDevicePlatform } from '../../../shared/clientCompatibility';
 import type { ClientDiagnosticResponse } from '../../../shared/clientDiagnostics';
@@ -20,7 +17,6 @@ type ClientDiagnosticsHandlerOptions = {
   write?: (line: string) => void;
 };
 
-/** Build client diagnostics handler from validated configuration and dependencies. */
 export function createClientDiagnosticsHandler(options: ClientDiagnosticsHandlerOptions = {}): RequestHandler {
   const config = options.config ?? resolveObservabilityConfig();
   const registry = options.registry ?? diagnosticsRegistry;

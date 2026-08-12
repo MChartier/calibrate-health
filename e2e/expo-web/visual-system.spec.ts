@@ -1,20 +1,15 @@
-/**
- * Exercises visual system behavior and regression boundaries.
- */
 import { mkdir } from 'node:fs/promises';
 import path from 'node:path';
 import type { Locator, Page, TestInfo } from '@playwright/test';
 import { calibrateDesignTokens, type CalibrateColorScheme } from '../../shared/designTokens';
 import { expect, test } from './fixtures';
 
-/** Build deterministic css rgb for regression coverage. */
 function cssRgb(hex: string): string {
   const channels = hex.match(/[A-Fa-f0-9]{2}/g);
   if (!channels || channels.length !== 3) throw new Error(`Expected an RGB hex color, received ${hex}`);
   return `rgb(${channels.map((channel) => Number.parseInt(channel, 16)).join(', ')})`;
 }
 
-/** Assert that no horizontal overflow. */
 async function expectNoHorizontalOverflow(page: Page) {
   const widths = await page.evaluate(() => ({
     clientWidth: document.documentElement.clientWidth,
@@ -23,7 +18,6 @@ async function expectNoHorizontalOverflow(page: Page) {
   expect(widths.scrollWidth).toBeLessThanOrEqual(widths.clientWidth);
 }
 
-/** Assert that inside. */
 async function expectInside(outer: Locator, inner: Locator) {
   const [outerBox, innerBox] = await Promise.all([outer.boundingBox(), inner.boundingBox()]);
   expect(outerBox).not.toBeNull();
@@ -34,7 +28,6 @@ async function expectInside(outer: Locator, inner: Locator) {
   expect(innerBox!.y + innerBox!.height).toBeLessThanOrEqual(outerBox!.y + outerBox!.height + 1);
 }
 
-/** Assert that no overlap. */
 async function expectNoOverlap(first: Locator, second: Locator) {
   const [firstBox, secondBox] = await Promise.all([first.boundingBox(), second.boundingBox()]);
   expect(firstBox).not.toBeNull();
@@ -52,7 +45,6 @@ async function expectNoOverlap(first: Locator, second: Locator) {
   expect(overlapWidth * overlapHeight).toBeLessThanOrEqual(1);
 }
 
-/** Enlarge leaf text to exercise responsive text reflow. */
 async function enlargeLeafText(page: Page) {
   await page.evaluate(() => {
     for (const element of document.querySelectorAll<HTMLElement>('body *')) {
@@ -71,27 +63,23 @@ async function enlargeLeafText(page: Page) {
 
 const EVIDENCE_DIR = path.resolve('docs/screenshots/launch-05');
 
-/** Decide whether to apply capture evidence. */
 function shouldCaptureEvidence(testInfo: TestInfo): boolean {
   return process.env.CALIBRATE_CAPTURE_EVIDENCE === '1'
     && (testInfo.project.name === 'desktop-chrome' || testInfo.project.name === 'compact-phone-chrome');
 }
 
-/** Capture page evidence only when explicit evidence collection is enabled. */
 async function capturePageEvidence(page: Page, testInfo: TestInfo, filename: string) {
   if (!shouldCaptureEvidence(testInfo)) return;
   await mkdir(EVIDENCE_DIR, { recursive: true });
   await page.screenshot({ path: path.join(EVIDENCE_DIR, filename), fullPage: false });
 }
 
-/** Capture locator evidence only when explicit evidence collection is enabled. */
 async function captureLocatorEvidence(locator: Locator, testInfo: TestInfo, filename: string) {
   if (process.env.CALIBRATE_CAPTURE_EVIDENCE !== '1' || testInfo.project.name !== 'desktop-chrome') return;
   await mkdir(EVIDENCE_DIR, { recursive: true });
   await locator.screenshot({ path: path.join(EVIDENCE_DIR, filename) });
 }
 
-/** Capture dashboard evidence only when explicit evidence collection is enabled. */
 async function captureDashboardEvidence(page: Page, testInfo: TestInfo) {
   const filename = testInfo.project.name === 'desktop-chrome'
     ? 'production-cards-focus-light-desktop.png'
@@ -101,7 +89,6 @@ async function captureDashboardEvidence(page: Page, testInfo: TestInfo) {
   if (filename) await capturePageEvidence(page, testInfo, filename);
 }
 
-/** Capture token reference only when explicit evidence collection is enabled. */
 async function captureTokenReference(page: Page, testInfo: TestInfo, schemeName: CalibrateColorScheme) {
   if (process.env.CALIBRATE_CAPTURE_EVIDENCE !== '1' || testInfo.project.name !== 'desktop-chrome') return;
   const scheme = calibrateDesignTokens.schemes[schemeName];
@@ -137,7 +124,6 @@ async function captureTokenReference(page: Page, testInfo: TestInfo, schemeName:
   await capturePageEvidence(page, testInfo, `semantic-tokens-type-${schemeName}.png`);
 }
 
-/** Build deterministic semantic color assertions for regression coverage. */
 async function semanticColorAssertions(page: Page, testInfo: TestInfo, schemeName: CalibrateColorScheme) {
   const scheme = calibrateDesignTokens.schemes[schemeName];
   await page.emulateMedia({ colorScheme: schemeName });

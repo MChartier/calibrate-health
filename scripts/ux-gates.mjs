@@ -1,6 +1,3 @@
-/**
- * Runs the repository-owned ux gates workflow.
- */
 import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -18,7 +15,6 @@ const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url))
 const playwrightWrapper = path.join(repositoryRoot, 'scripts', 'expo-web-playwright.mjs');
 const MODES = new Set(['a11y', 'visual', 'all', 'update-snapshots']);
 
-/** Parse and validate ux gate mode. */
 export function parseUxGateMode(argumentsList) {
   if (argumentsList.length !== 1 || !MODES.has(argumentsList[0])) {
     throw new Error('Usage: node scripts/ux-gates.mjs <a11y|visual|all|update-snapshots>.');
@@ -62,7 +58,6 @@ export function createUxGateInvocation(mode, environment = process.env) {
   };
 }
 
-/** Write sanitized summary. */
 function writeSanitizedSummary(mode, status, updateSnapshots) {
   const resultsDirectory = path.join(repositoryRoot, UX_RESULTS_DIRECTORY);
   fs.mkdirSync(resultsDirectory, { recursive: true });
@@ -78,7 +73,6 @@ function writeSanitizedSummary(mode, status, updateSnapshots) {
   );
 }
 
-/** Run ux gate and surface failures to the caller. */
 export function runUxGate(mode, environment = process.env) {
   const invocation = createUxGateInvocation(mode, environment);
   const result = spawnSync(invocation.command, invocation.args, {

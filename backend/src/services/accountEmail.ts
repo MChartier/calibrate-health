@@ -1,6 +1,3 @@
-/**
- * Provides backend domain operations for account email.
- */
 import {
   EMAIL_DELIVERY_MODES,
   resolveEmailDeliveryConfig,
@@ -30,7 +27,6 @@ type AccountEmail = {
 let cachedConfig: EmailDeliveryConfig | null = null;
 let cachedTransport: Transporter | null = null;
 
-/** Select the configured email transport for the requested delivery mode. */
 const transportFor = (config: Extract<EmailDeliveryConfig, { mode: 'smtp' }>): Transporter => {
   if (cachedConfig === config && cachedTransport) return cachedTransport;
   cachedConfig = config;
@@ -45,7 +41,6 @@ const transportFor = (config: Extract<EmailDeliveryConfig, { mode: 'smtp' }>): T
   return cachedTransport;
 };
 
-/** Build the account email message with stable fields for the backend domain boundary. */
 export const buildAccountEmailMessage = (
   email: AccountEmail,
   config: Extract<EmailDeliveryConfig, { mode: 'smtp' }>

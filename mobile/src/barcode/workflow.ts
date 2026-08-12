@@ -82,7 +82,6 @@ export function getCameraPermissionState(
     return permission.canAskAgain ? 'request' : 'settings';
 }
 
-/** Normalize format hint into the canonical representation used at this boundary. */
 function normalizeFormatHint(value?: BarcodeFormatHint): BarcodeFormat | null {
     if (!value) return null;
     const normalized = value.toLowerCase().replace('_', '-');
@@ -99,7 +98,6 @@ function normalizeFormatHint(value?: BarcodeFormatHint): BarcodeFormat | null {
     return null;
 }
 
-/** Resolve the check digit from the current validated state. */
 function getCheckDigit(data: string): string {
     let total = 0;
     for (let index = data.length - 1, offset = 0; index >= 0; index -= 1, offset += 1) {
@@ -108,12 +106,10 @@ function getCheckDigit(data: string): string {
     return String((10 - (total % 10)) % 10);
 }
 
-/** Check whether the current state has valid check digit. */
 function hasValidCheckDigit(barcode: string): boolean {
     return barcode.length > 1 && getCheckDigit(barcode.slice(0, -1)) === barcode[barcode.length - 1];
 }
 
-/** Expand upc edata using validated domain inputs. */
 function expandUpcEData(upcEWithoutCheckDigit: string): string | null {
     if (upcEWithoutCheckDigit.length !== 7) return null;
     const [numberSystem, first, second, third, fourth, fifth, expansionDigit] = upcEWithoutCheckDigit;
@@ -131,7 +127,6 @@ function expandUpcEData(upcEWithoutCheckDigit: string): string | null {
     return `${numberSystem}${first}${second}${third}${fourth}${fifth}0000${expansionDigit}`;
 }
 
-/** Normalize upc e into the canonical representation used at this boundary. */
 function normalizeUpcE(digits: string): NormalizedBarcode | null {
     let fullUpcE = digits;
     if (digits.length === 6) {
@@ -160,7 +155,6 @@ function normalizeUpcE(digits: string): NormalizedBarcode | null {
     };
 }
 
-/** Normalize the checked barcode into the canonical representation used at this boundary. */
 function normalizedCheckedBarcode(
     barcode: string,
     format: Exclude<BarcodeFormat, 'upc-e'>
@@ -283,7 +277,6 @@ export class BarcodeScanGate {
 export class BarcodeRequestGate {
     private activeCanonicalKey: string | null = null;
 
-    /** Start while preserving the module's lifecycle and failure guarantees. */
     start(rawValue: unknown, formatHint?: BarcodeFormatHint): BarcodeRequestDecision {
         const normalized = normalizeBarcodeInput(rawValue, formatHint);
         if (!normalized.ok) return { kind: 'invalid', message: normalized.message };
@@ -297,12 +290,10 @@ export class BarcodeRequestGate {
         };
     }
 
-    /** Build finish from the supplied domain inputs. */
     finish(): void {
         this.activeCanonicalKey = null;
     }
 
-    /** Reset using the supplied validated inputs. */
     reset(): void {
         this.activeCanonicalKey = null;
     }
@@ -312,24 +303,20 @@ export class BarcodeRequestGate {
 export class BarcodeSubmissionGate {
     private locked = false;
 
-    /** Start while preserving the module's lifecycle and failure guarantees. */
     start(): BarcodeOperationDecision {
         if (this.locked) return 'duplicate';
         this.locked = true;
         return 'accepted';
     }
 
-    /** Build fail from the supplied domain inputs. */
     fail(): void {
         this.locked = false;
     }
 
-    /** Complete using the supplied validated inputs. */
     complete(): void {
         this.locked = true;
     }
 
-    /** Reset using the supplied validated inputs. */
     reset(): void {
         this.locked = false;
     }
@@ -370,7 +357,6 @@ export function getBarcodeLookupErrorMessage(error: unknown): string {
     return failure.message;
 }
 
-/** Build bounded provider text from the supplied domain inputs. */
 function boundedProviderText(value?: string | null): string | null {
     const normalized = value?.trim().replace(/[\r\n\t]+/g, ' ').replace(/\s{2,}/g, ' ');
     return normalized ? normalized.slice(0, 160) : null;

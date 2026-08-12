@@ -1,6 +1,3 @@
-/**
- * Provides Expo client behavior for use modal focus management.
- */
 import { useCallback, useEffect, useRef, type RefObject } from 'react';
 import { Platform } from 'react-native';
 
@@ -25,19 +22,16 @@ type WebModalRegistration = {
 let nextWebModalOrder = 0;
 const webModalStack: WebModalRegistration[] = [];
 
-/** Register web modal while preserving the module's lifecycle and failure guarantees. */
 function registerWebModal(registration: WebModalRegistration) {
     webModalStack.push(registration);
     webModalStack.sort((left, right) => left.order - right.order);
 }
 
-/** Unregister web modal using validated domain inputs. */
 function unregisterWebModal(registration: WebModalRegistration) {
     const index = webModalStack.indexOf(registration);
     if (index >= 0) webModalStack.splice(index, 1);
 }
 
-/** Determine whether the input conforms to the topmost web modal contract. */
 function isTopmostWebModal(registration: WebModalRegistration) {
     for (let index = webModalStack.length - 1; index >= 0; index -= 1) {
         const candidate = webModalStack[index];
@@ -55,7 +49,6 @@ const FOCUSABLE_ELEMENT_SELECTOR = [
     '[tabindex]:not([tabindex="-1"])'
 ].join(','); // Covers browser controls plus focusable elements emitted by React Native Web.
 
-/** Resolve the focusable elements from the current validated state. */
 function getFocusableElements(container: HTMLElement): HTMLElement[] {
     return Array.from(container.querySelectorAll<HTMLElement>(FOCUSABLE_ELEMENT_SELECTOR))
         .filter((element) => element.getAttribute('aria-hidden') !== 'true');

@@ -57,7 +57,6 @@ class CalorieComplicationFormatterTest {
         assertEquals(1f, result.rangeMaximum)
     }
 
-    /** Ensures unavailable server plan ownership suppresses cached complication target math. */
     @Test
     fun `suppresses cached target when the plan is not available`() {
         val result = CalorieComplicationFormatter.format(
@@ -70,7 +69,6 @@ class CalorieComplicationFormatterTest {
         assertEquals(1f, result.rangeMaximum)
     }
 
-    /** Ensures pending weight writes show syncing instead of a stale complication balance. */
     @Test
     fun `shows syncing instead of cached balance during a pending weight change`() {
         val result = CalorieComplicationFormatter.format(

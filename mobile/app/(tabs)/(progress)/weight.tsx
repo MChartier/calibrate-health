@@ -5,7 +5,6 @@ import { TabScreen } from '../../../src/components/TabScreen';
 import { WeightEntrySheet } from '../../../src/components/WeightEntrySheet';
 import { useLogDateNavigation } from '../../../src/hooks/useLogDateNavigation';
 
-/** Render the weight screen interface. */
 export default function WeightScreen() {
     const { date } = useLocalSearchParams<{ date?: string }>();
     const dateNavigation = useLogDateNavigation(typeof date === 'string' ? date : null);

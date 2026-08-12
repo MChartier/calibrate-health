@@ -1,6 +1,3 @@
-/**
- * Provides Expo client behavior for query invalidation.
- */
 import type { QueryClient } from '@tanstack/react-query';
 import { calibrationStatusQueryKey } from '../calibration/queryKeys';
 

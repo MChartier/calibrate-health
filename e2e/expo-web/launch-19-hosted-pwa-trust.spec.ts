@@ -1,6 +1,3 @@
-/**
- * Exercises launch 19 hosted pwa trust behavior and regression boundaries.
- */
 import { mkdir } from 'node:fs/promises';
 import path from 'node:path';
 import type { Page, TestInfo } from '@playwright/test';
@@ -20,7 +17,6 @@ type MetadataExpectation = {
   robots: 'index, follow' | 'noindex, nofollow';
 };
 
-/** Assert that route metadata. */
 async function expectRouteMetadata(page: Page, expected: MetadataExpectation) {
   await expect(page).toHaveTitle(expected.title);
   const descriptions = page.locator('meta[name="description"]');
@@ -43,7 +39,6 @@ async function expectRouteMetadata(page: Page, expected: MetadataExpectation) {
   }
 }
 
-/** Assert that no horizontal overflow. */
 async function expectNoHorizontalOverflow(page: Page) {
   const widths = await page.evaluate(() => ({
     bodyWidth: document.body.scrollWidth,
@@ -54,7 +49,6 @@ async function expectNoHorizontalOverflow(page: Page) {
   expect(widths.scrollWidth).toBeLessThanOrEqual(widths.clientWidth);
 }
 
-/** Assert that axe style accessibility baseline. */
 async function expectAxeStyleAccessibilityBaseline(page: Page) {
   const audit = await page.evaluate(() => {
     const visible = (element: Element) => {
@@ -101,7 +95,6 @@ async function expectAxeStyleAccessibilityBaseline(page: Page) {
   expect(audit.visibleHeadingLevels[0]).toBe(1);
 }
 
-/** Assert that manifest contract. */
 async function expectManifestContract(page: Page) {
   const manifest = await page.evaluate(async () => {
     const response = await fetch('/manifest.webmanifest');
@@ -140,7 +133,6 @@ async function expectManifestContract(page: Page) {
   }
 }
 
-/** Install settings sessions fixture for deterministic browser coverage. */
 async function installSettingsSessionsFixture(page: Page) {
   await page.route('**/auth/sessions', (route) => route.fulfill({
     status: 200,
@@ -149,7 +141,6 @@ async function installSettingsSessionsFixture(page: Page) {
   }));
 }
 
-/** Install installed update fixture for deterministic browser coverage. */
 async function installInstalledUpdateFixture(page: Page) {
   await page.addInitScript(() => {
     const updateFoundListeners = new Set<() => void>();
@@ -218,7 +209,6 @@ async function installInstalledUpdateFixture(page: Page) {
   });
 }
 
-/** Build deterministic show fixture update for regression coverage. */
 async function showFixtureUpdate(page: Page) {
   await page.evaluate(() => {
     const fixture = (window as unknown as {
@@ -228,7 +218,6 @@ async function showFixtureUpdate(page: Page) {
   });
 }
 
-/** Assert that compact notice placement. */
 async function expectCompactNoticePlacement(page: Page, noticeTestId: string) {
   const box = await page.getByTestId(noticeTestId).boundingBox();
   expect(box).not.toBeNull();
@@ -238,7 +227,6 @@ async function expectCompactNoticePlacement(page: Page, noticeTestId: string) {
   expect(box!.y + box!.height).toBeLessThanOrEqual(480);
 }
 
-/** Build deterministic seed user scoped caches for regression coverage. */
 async function seedUserScopedCaches(page: Page) {
   await page.evaluate(async ({ prefix }) => {
     const entries = [
@@ -253,7 +241,6 @@ async function seedUserScopedCaches(page: Page) {
   }, { prefix: USER_CACHE_PREFIX });
 }
 
-/** Assert that service worker cache contract. */
 async function expectServiceWorkerCacheContract(page: Page) {
   const cacheState = await page.evaluate(async ({ userPrefix }) => {
     const cacheNames = await caches.keys();
@@ -276,7 +263,6 @@ async function expectServiceWorkerCacheContract(page: Page) {
   expect(unexpectedPaths).toEqual([]);
 }
 
-/** Capture evidence only when explicit evidence collection is enabled. */
 async function captureEvidence(
   page: Page,
   testInfo: TestInfo,

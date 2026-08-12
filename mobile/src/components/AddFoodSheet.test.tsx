@@ -1,6 +1,3 @@
-/**
- * Exercises add food sheet behavior and regression boundaries.
- */
 import React from 'react';
 import { Platform } from 'react-native';
 import { cleanup, fireEvent, render, waitFor } from '@testing-library/react-native';
@@ -41,7 +38,6 @@ jest.mock('./BottomSheetModal', () => {
     };
 });
 
-/** Render sheet. */
 function renderSheet(seed?: (queryClient: QueryClient) => void) {
     const queryClient = new QueryClient({
         defaultOptions: {

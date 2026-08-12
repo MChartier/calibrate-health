@@ -1,6 +1,3 @@
-/**
- * Exercises presentation behavior and regression boundaries.
- */
 import { DEFAULT_HEALTH_CONNECT_SELECTION } from './types';
 import {
     formatHealthConnectFreshness,
@@ -10,7 +7,6 @@ import {
 
 const NOW = new Date('2026-08-09T18:00:00.000Z');
 
-/** Build deterministic input for regression coverage. */
 function input(overrides: Partial<HealthConnectPresentationInput> = {}): HealthConnectPresentationInput {
     return {
         availability: 'available',

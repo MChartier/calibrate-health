@@ -1,6 +1,3 @@
-/**
- * Provides the shared async state boundary component and interaction contract.
- */
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import { onlineManager } from '@tanstack/react-query';
@@ -32,7 +29,6 @@ type AsyncRetryLiveStatusProps = {
     resourceLabel: string;
 };
 
-/** Render the async retry live status interface. */
 export function AsyncRetryLiveStatus({ retrying, resourceLabel }: AsyncRetryLiveStatusProps) {
     return (
         <AppText accessibilityLiveRegion="polite" style={hiddenStyles.liveStatus}>
@@ -41,7 +37,6 @@ export function AsyncRetryLiveStatus({ retrying, resourceLabel }: AsyncRetryLive
     );
 }
 
-/** Provide the online status React hook. */
 export function useOnlineStatus(): boolean {
     return React.useSyncExternalStore(
         (listener) => onlineManager?.subscribe?.(listener) ?? (() => undefined),
@@ -50,7 +45,6 @@ export function useOnlineStatus(): boolean {
     );
 }
 
-/** Provide the async resource state React hook. */
 export function useAsyncResourceState<T>(
     query: AsyncQuerySnapshot<T>,
     isEmpty: (data: T) => boolean
@@ -59,7 +53,6 @@ export function useAsyncResourceState<T>(
     return resolveAsyncResourceState(query, { isEmpty, isOnline });
 }
 
-/** Render the async state boundary interface. */
 export function AsyncStateBoundary({
     state,
     resourceLabel,
@@ -174,7 +167,6 @@ export function AsyncStateBoundary({
     );
 }
 
-/** Build the styles for the active theme from validated configuration and dependencies. */
 function createStyles(theme: AppTheme) {
     return StyleSheet.create({
         content: {

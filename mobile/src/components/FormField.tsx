@@ -1,6 +1,3 @@
-/**
- * Provides the shared form field component and interaction contract.
- */
 import React, { useEffect, useId, useMemo, useRef } from 'react';
 import {
     AccessibilityInfo,
@@ -43,7 +40,6 @@ export type FormFieldProps = {
     testID?: string;
 };
 
-/** Build to native id from the supplied domain inputs. */
 function toNativeId(value: string) {
     return `form-field-${value.replace(/[^a-zA-Z0-9_-]/g, '')}`;
 }
@@ -128,7 +124,6 @@ export function FormField({
     );
 }
 
-/** Build the styles for the active theme from validated configuration and dependencies. */
 function createStyles(theme: AppTheme) {
     return StyleSheet.create({
         root: {

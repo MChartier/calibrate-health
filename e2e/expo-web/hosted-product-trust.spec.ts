@@ -1,6 +1,3 @@
-/**
- * Exercises hosted product trust behavior and regression boundaries.
- */
 import { mkdir } from 'node:fs/promises';
 import path from 'node:path';
 import type { Locator, Page } from '@playwright/test';
@@ -15,7 +12,6 @@ const TRANSIENT_PWA_TITLES = new Set([
   'Updating Calibrate',
 ]);
 
-/** Assert that no horizontal overflow. */
 async function expectNoHorizontalOverflow(page: Page) {
   const widths = await page.evaluate(() => ({
     clientWidth: document.documentElement.clientWidth,
@@ -24,7 +20,6 @@ async function expectNoHorizontalOverflow(page: Page) {
   expect(widths.scrollWidth).toBeLessThanOrEqual(widths.clientWidth);
 }
 
-/** Assert that horizontally centered. */
 async function expectHorizontallyCentered(page: Page, locator: Locator) {
   const [viewport, box] = await Promise.all([page.viewportSize(), locator.boundingBox()]);
   expect(viewport).not.toBeNull();
@@ -33,12 +28,10 @@ async function expectHorizontallyCentered(page: Page, locator: Locator) {
   expect(Math.abs(elementCenter - (viewport!.width / 2))).toBeLessThanOrEqual(2);
 }
 
-/** Assert that link. */
 async function expectLink(page: Page, label: string, href: string) {
   await expect(page.getByRole('link', { name: label, exact: true })).toHaveAttribute('href', href);
 }
 
-/** Capture evidence only when explicit evidence collection is enabled. */
 async function captureEvidence(page: Page, filename: string) {
   if (process.env.CALIBRATE_CAPTURE_EVIDENCE !== '1') return;
   await page.evaluate(() => document.fonts.ready);

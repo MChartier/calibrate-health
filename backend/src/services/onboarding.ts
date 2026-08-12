@@ -1,6 +1,3 @@
-/**
- * Provides backend domain operations for onboarding.
- */
 import type {
   ActivityLevel,
   HeightUnit,
@@ -73,12 +70,10 @@ export type OnboardingParseFailure = {
 
 export type OnboardingParseResult<T> = { ok: true; value: T } | OnboardingParseFailure;
 
-/** Determine whether the input conforms to the record contract. */
 function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 }
 
-/** Build invalid field from the supplied domain inputs. */
 function invalidField(field: string, message: string): OnboardingParseFailure {
   return {
     ok: false,
@@ -88,7 +83,6 @@ function invalidField(field: string, message: string): OnboardingParseFailure {
   };
 }
 
-/** Parse and validate complete data. */
 function parseCompleteData(value: unknown): OnboardingParseResult<CompleteOnboardingData> {
   if (!isRecord(value)) return invalidField('data', 'Onboarding details are required.');
 
@@ -186,7 +180,6 @@ function parseCompleteData(value: unknown): OnboardingParseResult<CompleteOnboar
   return { ok: true, value: data };
 }
 
-/** Parse and validate complete onboarding body. */
 export function parseCompleteOnboardingBody(
   body: unknown
 ): OnboardingParseResult<CompleteOnboardingInput> {
@@ -195,12 +188,10 @@ export function parseCompleteOnboardingBody(
   return parsedData.ok ? { ok: true, value: { data: parsedData.value } } : parsedData;
 }
 
-/** Build to input json from the supplied domain inputs. */
 function toInputJson(value: unknown): Prisma.InputJsonValue {
   return JSON.parse(JSON.stringify(value)) as Prisma.InputJsonValue;
 }
 
-/** Lock user using the supplied validated inputs. */
 async function lockUser(tx: MutationDatabase, userId: number): Promise<void> {
   await tx.$queryRawUnsafe(
     'SELECT "id" FROM "User" WHERE "id" = $1 FOR UPDATE',
@@ -208,7 +199,6 @@ async function lockUser(tx: MutationDatabase, userId: number): Promise<void> {
   );
 }
 
-/** Build existing completion response from the supplied domain inputs. */
 async function existingCompletionResponse(
   tx: MutationDatabase,
   userId: number
@@ -228,7 +218,6 @@ async function existingCompletionResponse(
     : null;
 }
 
-/** Complete onboarding in transaction using the supplied validated inputs. */
 export async function completeOnboardingInTransaction(
   tx: MutationDatabase,
   userId: number,

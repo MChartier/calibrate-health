@@ -1,6 +1,3 @@
-/**
- * Runs the repository-owned release acceptance workflow.
- */
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import os from 'node:os';
@@ -101,7 +98,6 @@ const FORBIDDEN_PLAN_KEYS = new Set([
   'sha256'
 ]);
 
-/** Check whether the current state has exact fields. */
 function hasExactFields(value, expected, label, errors) {
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
     errors.push(`${label} must be an object.`);
@@ -116,12 +112,10 @@ function hasExactFields(value, expected, label, errors) {
   return missing.length === 0 && unexpected.length === 0;
 }
 
-/** Determine whether the input conforms to the non empty string contract. */
 function isNonEmptyString(value) {
   return typeof value === 'string' && value.trim().length > 0;
 }
 
-/** Normalize the repository path into the canonical representation used at this boundary. */
 function normalizedRepositoryPath(value) {
   if (!isNonEmptyString(value) || path.isAbsolute(value)) return null;
   const normalized = value.replaceAll('\\', '/');
@@ -129,19 +123,16 @@ function normalizedRepositoryPath(value) {
   return normalized;
 }
 
-/** Sha256 using validated domain inputs. */
 function sha256(value) {
   return crypto.createHash('sha256').update(value).digest('hex');
 }
 
-/** Determine whether the input conforms to the exact calendar date contract. */
 function isExactCalendarDate(value) {
   if (!DATE_PATTERN.test(value ?? '')) return false;
   const parsed = new Date(`${value}T00:00:00.000Z`);
   return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value;
 }
 
-/** Validate repository file. */
 function validateRepositoryFile(relativePath, label, root, errors, readFileSync) {
   const normalized = normalizedRepositoryPath(relativePath);
   if (!normalized) {
@@ -158,7 +149,6 @@ function validateRepositoryFile(relativePath, label, root, errors, readFileSync)
   }
 }
 
-/** Validate plan has no results. */
 function validatePlanHasNoResults(value, label, errors) {
   if (!value || typeof value !== 'object') return;
   for (const [key, nested] of Object.entries(value)) {
@@ -172,20 +162,17 @@ function validatePlanHasNoResults(value, label, errors) {
   }
 }
 
-/** Build workflow job block from the supplied domain inputs. */
 function workflowJobBlock(workflow, jobId) {
   if (!/^[a-z0-9][a-z0-9_-]*$/.test(jobId ?? '')) return null;
   const match = workflow.match(new RegExp(`\\n  ${jobId}:\\n[\\s\\S]*?(?=\\n  [a-z0-9][a-z0-9_-]*:|$)`));
   return match?.[0] ?? null;
 }
 
-/** Build checkout blocks from the supplied domain inputs. */
 function checkoutBlocks(workflow) {
   return [...workflow.matchAll(/(^|\n)([ \t]+)- name: [^\n]*\n\2  uses: actions\/checkout@v4[\s\S]*?(?=\n\2- name: |$)/g)]
     .map((match) => match[0]);
 }
 
-/** Validate release acceptance plan. */
 export function validateReleaseAcceptancePlan(plan, options = {}) {
   const root = options.repositoryRoot ?? repositoryRoot;
   const readFileSync = options.readFileSync ?? fs.readFileSync;
@@ -323,7 +310,6 @@ export function validateReleaseAcceptancePlan(plan, options = {}) {
   return { errors, hosted, operator };
 }
 
-/** Validate hosted release result. */
 export function validateHostedReleaseResult(result, plan) {
   const errors = [];
   hasExactFields(result, HOSTED_RESULT_FIELDS, 'Hosted release result', errors);
@@ -345,7 +331,6 @@ export function validateHostedReleaseResult(result, plan) {
   return errors;
 }
 
-/** Build hosted release result from validated configuration and dependencies. */
 export function createHostedReleaseResult(details, plan) {
   const result = {
     schemaVersion: HOSTED_RELEASE_RESULT_SCHEMA_VERSION,
@@ -362,7 +347,6 @@ export function createHostedReleaseResult(details, plan) {
   return result;
 }
 
-/** Validate hashed path. */
 function validateHashedPath(record, expectedPath, label, expectedContent, errors) {
   hasExactFields(record, HASHED_PATH_FIELDS, label, errors);
   if (record?.path !== expectedPath) errors.push(`${label} path must be ${expectedPath}.`);
@@ -372,20 +356,17 @@ function validateHashedPath(record, expectedPath, label, expectedContent, errors
   }
 }
 
-/** Resolve and validate the retained acceptance evidence content. */
 function resolvedEvidenceContent(contents, reference) {
   if (contents instanceof Map) return contents.get(reference);
   return contents?.[reference];
 }
 
-/** Build evidence content text from the supplied domain inputs. */
 function evidenceContentText(value) {
   if (typeof value === 'string') return value;
   if (Buffer.isBuffer(value)) return value.toString('utf8');
   return null;
 }
 
-/** Validate resolved evidence. */
 function validateResolvedEvidence(record, requirement, evidence, options, label, errors, hostedEvidenceJobs) {
   const isHosted = requirement?.execution === 'hosted';
   const match = isHosted
@@ -452,7 +433,6 @@ function validateResolvedEvidence(record, requirement, evidence, options, label,
   }
 }
 
-/** Validate release acceptance result. */
 export function validateReleaseAcceptanceResult(result, options) {
   const errors = [];
   const { plan, candidateCommit, planContent, releaseManifestContent, now = new Date() } = options;
@@ -522,7 +502,6 @@ export function validateReleaseAcceptanceResult(result, options) {
   return errors;
 }
 
-/** List regular files in deterministic repository-relative order. */
 function listRegularFiles(root) {
   const files = [];
   for (const entry of fs.readdirSync(root, { withFileTypes: true })) {
@@ -533,7 +512,6 @@ function listRegularFiles(root) {
   return files;
 }
 
-/** Build download hosted evidence from the supplied domain inputs. */
 function downloadHostedEvidence(reference, match, options, temporaryRoot) {
   if (options.readHostedArtifact) {
     return options.readHostedArtifact({ reference, runId: match[1], artifactName: match[2] });
@@ -560,7 +538,6 @@ function downloadHostedEvidence(reference, match, options, temporaryRoot) {
   return fs.readFileSync(files[0]);
 }
 
-/** Resolve release acceptance evidence. */
 export function resolveReleaseAcceptanceEvidence(result, options = {}) {
   const contents = new Map();
   const errors = [];
@@ -595,7 +572,6 @@ export function resolveReleaseAcceptanceEvidence(result, options = {}) {
   return { contents, errors };
 }
 
-/** Run git and surface failures to the caller. */
 function runGit(root, args) {
   const result = spawnSync('git', args, { cwd: root, encoding: 'utf8', windowsHide: true });
   if (result.error) throw result.error;
@@ -603,13 +579,11 @@ function runGit(root, args) {
   return result.stdout;
 }
 
-/** Build evidence path allowed from the supplied domain inputs. */
 function evidencePathAllowed(relativePath) {
   return relativePath === RELEASE_ACCEPTANCE_RISK_PATH
     || /^quality\/physical-results\/[a-z0-9][a-z0-9._-]*\.json$/.test(relativePath);
 }
 
-/** Validate evidence child context. */
 export function validateEvidenceChildContext(context) {
   const errors = [];
   if (!COMMIT_PATTERN.test(context?.candidateCommit ?? '')) errors.push('Candidate C must be a lowercase 40-character Git SHA.');
@@ -636,7 +610,6 @@ export function validateEvidenceChildContext(context) {
   return errors;
 }
 
-/** Read release acceptance git context. */
 export function readReleaseAcceptanceGitContext({
   root = repositoryRoot,
   candidateCommit,
@@ -662,7 +635,6 @@ export function readReleaseAcceptanceGitContext({
   return { ...context, errors: validateEvidenceChildContext(context) };
 }
 
-/** Parse and validate release acceptance args. */
 export function parseReleaseAcceptanceArgs(argv, environment = process.env) {
   const values = {
     command: argv[0] && !argv[0].startsWith('--') ? argv[0] : 'verify',
@@ -704,13 +676,11 @@ export function parseReleaseAcceptanceArgs(argv, environment = process.env) {
   return values;
 }
 
-/** Load plan. */
 function loadPlan(root = repositoryRoot) {
   const content = fs.readFileSync(path.join(root, RELEASE_ACCEPTANCE_PLAN_PATH), 'utf8');
   return { content, plan: JSON.parse(content) };
 }
 
-/** Build print help from the supplied domain inputs. */
 function printHelp() {
   process.stdout.write(`Usage:
   node scripts/release-acceptance.mjs verify
@@ -721,7 +691,6 @@ Candidate C is the exact pull-request head. Evidence A is supplied externally an
 `);
 }
 
-/** Run release acceptance cli and surface failures to the caller. */
 export function runReleaseAcceptanceCli(argv = process.argv.slice(2), options = {}) {
   const root = options.repositoryRoot ?? repositoryRoot;
   const args = parseReleaseAcceptanceArgs(argv, options.environment ?? process.env);

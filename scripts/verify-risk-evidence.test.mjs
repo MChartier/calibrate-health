@@ -27,7 +27,6 @@ function repositoryFixture() {
   };
 }
 
-/** Attach physical evidence without retaining private page content. */
 function attachPhysicalEvidence(fixture, options = {}) {
   const sourceCommit = options.sourceCommit ?? 'a'.repeat(40);
   const candidateCommit = options.candidateCommit ?? sourceCommit;

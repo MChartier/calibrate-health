@@ -1,6 +1,3 @@
-/**
- * Provides Expo client behavior for account cleanup.
- */
 import { openOutboxDatabase } from './database';
 import { SqliteOutbox } from './outbox';
 import { createOutboxNamespace } from './queuedMutation';

@@ -1,6 +1,3 @@
-/**
- * Exercises calorie policy behavior and regression boundaries.
- */
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
@@ -13,7 +10,6 @@ const {
   projectGoalEndDate
 } = require('../../shared/caloriePolicy');
 
-/** Build deterministic noon utc for regression coverage. */
 const noonUtc = (date) => new Date(`${date}T12:00:00.000Z`);
 
 test('calorie policy uses exact date-only ages and rejects invalid inputs', () => {

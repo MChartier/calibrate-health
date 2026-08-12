@@ -322,7 +322,6 @@ object WatchSnapshotMapper {
         require(value in MIN_WEIGHT_GRAMS..MAX_WEIGHT_GRAMS) { "Weight is outside its allowed range." }
     }
 
-    /** Rejects reason codes outside the bounded uppercase server wire contract. */
     private fun requireReasonCode(value: String) {
         require(value.length in 1..80 && value.all { it == '_' || it in 'A'..'Z' }) {
             "Invalid calorie plan reason code."

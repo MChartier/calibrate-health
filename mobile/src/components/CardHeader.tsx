@@ -1,6 +1,3 @@
-/**
- * Provides the shared card header component and interaction contract.
- */
 import React, { type ReactNode } from 'react';
 import { StyleSheet, View, type ViewProps } from 'react-native';
 import { type AppTheme, useAppTheme } from '../theme';
@@ -46,7 +43,6 @@ export const CardHeader: React.FC<CardHeaderProps> = ({
     );
 };
 
-/** Build the styles for the active theme from validated configuration and dependencies. */
 function createStyles(theme: AppTheme) {
     return StyleSheet.create({
         root: {

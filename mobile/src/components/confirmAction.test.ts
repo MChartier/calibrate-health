@@ -1,6 +1,3 @@
-/**
- * Exercises confirm action behavior and regression boundaries.
- */
 import { Alert, Platform } from 'react-native';
 import { confirmAction } from './confirmAction';
 

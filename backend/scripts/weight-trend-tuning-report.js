@@ -1,6 +1,3 @@
-/**
- * Runs the backend weight trend tuning report maintenance workflow.
- */
 const assert = require('node:assert/strict');
 const crypto = require('node:crypto');
 const fs = require('node:fs');
@@ -16,7 +13,6 @@ const { computeWeightTrendV1 } = require('../src/services/weightTrendV1');
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 const REPORT_PATH = path.resolve(__dirname, '../../docs/weight-trend-v2-tuning-report.json');
 
-/** Generate the next deterministic pseudorandom sample from the seeded state. */
 function seededRandom(seed) {
   let state = seed >>> 0;
   return () => {
@@ -25,13 +21,11 @@ function seededRandom(seed) {
   };
 }
 
-/** Generate a normally distributed sample from the seeded random source. */
 function gaussian(random) {
   const first = Math.max(Number.EPSILON, random());
   return Math.sqrt(-2 * Math.log(first)) * Math.cos(2 * Math.PI * random());
 }
 
-/** Build the linear scenario with stable fields for the backend domain boundary. */
 function buildLinearScenario({ days, weeklyRateKg, noiseStdKg, seed }) {
   const random = seededRandom(seed);
   const startMs = Date.parse('2026-01-01T00:00:00.000Z');
@@ -41,7 +35,6 @@ function buildLinearScenario({ days, weeklyRateKg, noiseStdKg, seed }) {
   }));
 }
 
-/** Compute calibration trend. */
 function computeCalibrationTrend(observations, windowDays = 28) {
   const latestDate = observations.at(-1)?.date;
   const calibrationWindow = latestDate
@@ -53,12 +46,10 @@ function computeCalibrationTrend(observations, windowDays = 28) {
   return computeWeightTrend(observations, { calibrationWindow });
 }
 
-/** Round a numeric result for deterministic comparison. */
 function round(value, digits = 6) {
   return Number(value.toFixed(digits));
 }
 
-/** Collect numeric parameter entries from the supplied records. */
 function collectNumericParameterEntries(value, pathPrefix = '', entries = []) {
   if (typeof value === 'number') {
     if (!Number.isFinite(value)) throw new Error(`Non-finite numeric model parameter at ${pathPrefix}.`);
@@ -76,14 +67,12 @@ function collectNumericParameterEntries(value, pathPrefix = '', entries = []) {
   return entries;
 }
 
-/** Fingerprint numeric parameters without retaining or exposing unreviewed data. */
 function fingerprintNumericParameters(parameterManifest) {
   const entries = collectNumericParameterEntries(parameterManifest)
     .sort(([left], [right]) => left.localeCompare(right));
   return crypto.createHash('sha256').update(JSON.stringify(entries)).digest('hex');
 }
 
-/** Assess parameter governance against the module's reviewed constraints. */
 function assessParameterGovernance(parameterManifest) {
   const currentFingerprint = fingerprintNumericParameters(parameterManifest);
   const constantsChanged = currentFingerprint !== WEIGHT_TREND_APPROVED_NUMERIC_PARAMETER_BASELINE.sha256;
@@ -101,7 +90,6 @@ function assessParameterGovernance(parameterManifest) {
   };
 }
 
-/** Build the coverage results with stable fields for the backend domain boundary. */
 function buildCoverageResults() {
   let levelCovered = 0;
   let levelEvaluated = 0;
@@ -155,7 +143,6 @@ function buildCoverageResults() {
   };
 }
 
-/** Build the rmse results with stable fields for the backend domain boundary. */
 function buildRmseResults() {
   return [0, -0.5].map((weeklyRateKg) => {
     let v2SquaredError = 0;
@@ -187,7 +174,6 @@ function buildRmseResults() {
   });
 }
 
-/** Build the reversal results with stable fields for the backend domain boundary. */
 function buildReversalResults() {
   const startMs = Date.parse('2026-01-01T00:00:00.000Z');
   const observations = Array.from({ length: 60 }, (_unused, day) => ({
@@ -214,7 +200,6 @@ function buildReversalResults() {
   return { v2DirectionLagDays, v2ConfidenceLagDays, v1DirectionLagDays };
 }
 
-/** Build the stability results with stable fields for the backend domain boundary. */
 function buildStabilityResults() {
   const startMs = Date.parse('2026-01-01T00:00:00.000Z');
   const baseline = Array.from({ length: 70 }, (_unused, day) => ({
@@ -260,7 +245,6 @@ function buildStabilityResults() {
   };
 }
 
-/** Build the tuning report with stable fields for the backend domain boundary. */
 function buildTuningReport(parameterManifest = WEIGHT_TREND_PARAMETER_MANIFEST) {
   const coverage = buildCoverageResults();
   const rmse = buildRmseResults();

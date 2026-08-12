@@ -1,6 +1,3 @@
-/**
- * Provides Expo client behavior for reminder settings panel.
- */
 import { StyleSheet, View } from 'react-native';
 import type { PushStatusPresentation } from '../notifications/workflow';
 import { AppButton } from '../components/AppButton';
@@ -37,7 +34,6 @@ type ReminderSettingsPanelProps = {
 // Keeps paired time inputs readable before they wrap on compact or enlarged-text layouts.
 const TIME_FIELD_MIN_WIDTH = 180;
 
-/** Render the reminder settings panel interface. */
 export function ReminderSettingsPanel({
     timezone,
     logFoodEnabled,

@@ -1,6 +1,3 @@
-/**
- * Exercises auth legal trust behavior and regression boundaries.
- */
 import { mkdir } from 'node:fs/promises';
 import path from 'node:path';
 import type { Page, Route } from '@playwright/test';
@@ -30,7 +27,6 @@ const RESTRICTED_USER = {
   },
 };
 
-/** Fulfill json with deterministic fixture data. */
 async function fulfillJson(route: Route, body: unknown, status = 200) {
   await route.fulfill({
     status,
@@ -39,7 +35,6 @@ async function fulfillJson(route: Route, body: unknown, status = 200) {
   });
 }
 
-/** Assert that no horizontal overflow. */
 async function expectNoHorizontalOverflow(page: Page) {
   const widths = await page.evaluate(() => ({
     clientWidth: document.documentElement.clientWidth,
@@ -48,7 +43,6 @@ async function expectNoHorizontalOverflow(page: Page) {
   expect(widths.scrollWidth).toBeLessThanOrEqual(widths.clientWidth);
 }
 
-/** Enlarge leaf text to exercise responsive text reflow. */
 async function enlargeLeafText(page: Page) {
   await page.evaluate(() => {
     for (const element of document.querySelectorAll<HTMLElement>('body *')) {

@@ -76,7 +76,6 @@ enum class WearTaskBuildType {
     RELEASE
 }
 
-/** Classifies a Gradle task by effective Wear variant, checking Release before incidental DebugSymbols text. */
 fun wearTaskBuildType(taskName: String): WearTaskBuildType? = when {
     // Release symbol-stripping tasks contain "DebugSymbols" but still target the release variant.
     taskName.contains("Release") -> WearTaskBuildType.RELEASE

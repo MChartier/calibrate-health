@@ -1,12 +1,8 @@
-/**
- * Exercises weight trend degraded behavior and regression boundaries.
- */
 import { mkdir } from 'node:fs/promises';
 import path from 'node:path';
 import type { Page, TestInfo } from '@playwright/test';
 import { expect, test } from './fixtures';
 
-/** Assert that no horizontal overflow. */
 async function expectNoHorizontalOverflow(page: Page) {
   const widths = await page.evaluate(() => ({
     clientWidth: document.documentElement.clientWidth,
@@ -15,7 +11,6 @@ async function expectNoHorizontalOverflow(page: Page) {
   expect(widths.scrollWidth).toBeLessThanOrEqual(widths.clientWidth);
 }
 
-/** Capture launch evidence only when explicit evidence collection is enabled. */
 async function captureLaunchEvidence(page: Page, testInfo: TestInfo) {
   if (process.env.CALIBRATE_CAPTURE_EVIDENCE !== '1') return;
 

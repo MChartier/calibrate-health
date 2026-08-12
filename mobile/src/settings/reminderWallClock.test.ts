@@ -1,6 +1,3 @@
-/**
- * Exercises reminder wall clock behavior and regression boundaries.
- */
 import {
     getReminderScheduleErrors,
     hasReminderScheduleErrors,

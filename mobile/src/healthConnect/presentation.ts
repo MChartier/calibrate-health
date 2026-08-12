@@ -1,6 +1,3 @@
-/**
- * Provides Expo client behavior for presentation.
- */
 import {
     DEFAULT_HEALTH_CONNECT_SELECTION,
     type HealthConnectAvailability,
@@ -54,7 +51,6 @@ export type HealthConnectPresentationInput = {
     now?: Date;
 };
 
-/** Build connection action from the supplied domain inputs. */
 function connectionAction(
     availability: HealthConnectAvailability | null | undefined,
     connected: boolean
@@ -67,7 +63,6 @@ function connectionAction(
     return { action: 'connect', actionLabel: 'Connect Health Connect' };
 }
 
-/** Determine whether the input conforms to the stale contract. */
 function isStale(value: string | null | undefined, now: Date): boolean {
     if (!value) return false;
     const parsed = new Date(value);
@@ -155,7 +150,6 @@ export function getHealthConnectPresentation(
     return result('ready', 'Health Connect is connected and activity is up to date.', 'positive');
 }
 
-/** Format health connect freshness for stable display or serialization. */
 export function formatHealthConnectFreshness(value: string | null, now = new Date()): string {
     if (!value) return 'Not synced yet';
     const parsed = new Date(value);

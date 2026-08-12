@@ -1,12 +1,8 @@
-/**
- * Exercises reminder scheduler behavior and regression boundaries.
- */
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const Module = require('node:module');
 const { InAppNotificationType } = require('@prisma/client');
 
-/** Build deterministic stub module for regression coverage. */
 function stubModule(resolvedPath, exports) {
   const moduleInstance = new Module(resolvedPath);
   moduleInstance.exports = exports;
@@ -14,7 +10,6 @@ function stubModule(resolvedPath, exports) {
   require.cache[resolvedPath] = moduleInstance;
 }
 
-/** Load reminder scheduler. */
 function loadReminderScheduler({ users, deliveryCalls }) {
   const dbPath = require.resolve('../src/config/database');
   const inAppPath = require.resolve('../src/services/inAppNotifications');

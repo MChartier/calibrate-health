@@ -109,23 +109,19 @@ const WEB_UNAVAILABLE_SNAPSHOT: HealthConnectWebSnapshot = {
     restartMessage: null
 };
 
-/** Build deterministic fixture target for regression coverage. */
 function fixtureTarget(): FixtureTarget {
     return globalThis as unknown as FixtureTarget;
 }
 
-/** Determine whether the input conforms to the health connect web fixture host contract. */
 export function isHealthConnectWebFixtureHost(hostname: string | null | undefined): boolean {
     return LOCAL_FIXTURE_HOSTS.has((hostname ?? '').toLowerCase());
 }
 
-/** Determine whether the input conforms to the fixture contract. */
 function isFixture(value: unknown): value is HealthConnectWebFixture {
     if (!value || typeof value !== 'object') return false;
     return FIXTURE_STATES.includes((value as { state?: HealthConnectWebFixtureState }).state as HealthConnectWebFixtureState);
 }
 
-/** Resolve the health connect web fixture for host from the current validated state. */
 export function getHealthConnectWebFixtureForHost(
     hostname: string | null | undefined,
     value: unknown
@@ -133,7 +129,6 @@ export function getHealthConnectWebFixtureForHost(
     return isHealthConnectWebFixtureHost(hostname) && isFixture(value) ? value : null;
 }
 
-/** Read fixture. */
 function readFixture(): HealthConnectWebFixture | null {
     const target = fixtureTarget();
     return getHealthConnectWebFixtureForHost(
@@ -142,7 +137,6 @@ function readFixture(): HealthConnectWebFixture | null {
     );
 }
 
-/** Subscribe to fixture using validated domain inputs. */
 function subscribeToFixture(onStoreChange: () => void): () => void {
     const target = fixtureTarget();
     if (!isHealthConnectWebFixtureHost(target.location?.hostname) || !target.addEventListener) {
@@ -152,7 +146,6 @@ function subscribeToFixture(onStoreChange: () => void): () => void {
     return () => target.removeEventListener?.(HEALTH_CONNECT_WEB_FIXTURE_EVENT, onStoreChange);
 }
 
-/** Write fixture. */
 function writeFixture(next: HealthConnectWebFixture): void {
     const target = fixtureTarget();
     if (!isHealthConnectWebFixtureHost(target.location?.hostname)) return;
@@ -162,7 +155,6 @@ function writeFixture(next: HealthConnectWebFixture): void {
     }
 }
 
-/** Resolve health connect web fixture. */
 export function resolveHealthConnectWebFixture(
     fixture: HealthConnectWebFixture | null,
     now = new Date()

@@ -1,6 +1,3 @@
-/**
- * Exercises async state behavior and regression boundaries.
- */
 import { mkdir } from 'node:fs/promises';
 import path from 'node:path';
 import type { Page, TestInfo } from '@playwright/test';
@@ -13,7 +10,6 @@ const CORE_RESOURCE_PATHS = [
   '/api/v1/user/profile',
 ] as const;
 
-/** Assert that no horizontal overflow. */
 async function expectNoHorizontalOverflow(page: Page) {
   const widths = await page.evaluate(() => ({
     clientWidth: document.documentElement.clientWidth,
@@ -22,7 +18,6 @@ async function expectNoHorizontalOverflow(page: Page) {
   expect(widths.scrollWidth).toBeLessThanOrEqual(widths.clientWidth);
 }
 
-/** Capture launch evidence only when explicit evidence collection is enabled. */
 async function captureLaunchEvidence(page: Page, testInfo: TestInfo, state: string) {
   if (process.env.CALIBRATE_CAPTURE_EVIDENCE !== '1') return;
 

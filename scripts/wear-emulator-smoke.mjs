@@ -34,7 +34,6 @@ const REVIEWED_WEAR_PERMISSIONS = Object.freeze([
   'app.calibratehealth.mobile.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION'
 ]);
 
-/** Parse and validate bounds rectangle. */
 export function parseBoundsRectangle(value) {
   const match = value.match(/^\[(\d+),(\d+)]\[(\d+),(\d+)]$/);
   if (!match) throw new Error(`Invalid Android bounds: ${value}`);
@@ -62,7 +61,6 @@ function attribute(node, name) {
   return match ? decodeXml(match[1]) : '';
 }
 
-/** Parse and validate wm size. */
 export function parseWmSize(output) {
   const matches = [...output.matchAll(/(?:Physical|Override)?\s*size:\s*(\d+)x(\d+)/gi)];
   const match = matches.at(-1) ?? output.match(/^(\d+)x(\d+)$/m);
@@ -74,7 +72,6 @@ export function parseWmSize(output) {
   return { width, height };
 }
 
-/** Parse and validate wm density. */
 export function parseWmDensity(output) {
   const matches = [...output.matchAll(/(?:Physical|Override)?\s*density:\s*(\d+)/gi)];
   const match = matches.at(-1) ?? output.match(/^(\d+)$/m);
@@ -85,7 +82,6 @@ export function parseWmDensity(output) {
   return densityDpi;
 }
 
-/** Parse and validate wear ui nodes. */
 export function parseWearUiNodes(xml) {
   return (xml.match(/<node\b[^>]*>/g) ?? []).map((node) => ({
     text: attribute(node, 'text'),
@@ -97,7 +93,6 @@ export function parseWearUiNodes(xml) {
   }));
 }
 
-/** Build audit wear action targets from the supplied domain inputs. */
 export function auditWearActionTargets(xml, screen, densityDpi, options = {}) {
   const packageName = options.packageName ?? null;
   if (packageName !== null && (typeof packageName !== 'string' || !/^[a-zA-Z0-9._-]+$/.test(packageName))) {
@@ -134,7 +129,6 @@ export function auditWearActionTargets(xml, screen, densityDpi, options = {}) {
   };
 }
 
-/** Summarize wear scale for the module response. */
 export function summarizeWearScale(fontScale, screen, densityDpi, audits) {
   const actionCount = audits.reduce((total, audit) => total + audit.actionCount, 0);
   const widths = audits.map((audit) => audit.minimumWidthDp).filter(Number.isFinite);
@@ -161,7 +155,6 @@ export function findTextNode(xml, text) {
     ));
   return node ? { text, bounds: attribute(node, 'bounds') } : null;
 }
-/** List installed Wear UI packages for exact allowlist validation. */
 export function listWearUiPackages(xml) {
   return [...new Set(
     (xml.match(/<node\b[^>]*>/g) ?? [])
@@ -182,7 +175,6 @@ export function createRecoveringWearUiReader(expectedPackage, readUi, relaunch) 
   };
 }
 
-/** Parse and validate wear package version. */
 export function parseWearPackageVersion(output) {
   const versionCode = Number(output.match(/\bversionCode=(\d+)/)?.[1]);
   const versionName = output.match(/\bversionName=([^\r\n]+)/)?.[1]?.trim();
@@ -192,7 +184,6 @@ export function parseWearPackageVersion(output) {
   return { versionName, versionCode };
 }
 
-/** Parse and validate wear requested permissions. */
 export function parseWearRequestedPermissions(output) {
   const lines = String(output).split(/\r?\n/);
   const headerIndex = lines.findIndex((line) => line.trim() === 'requested permissions:');
@@ -212,7 +203,6 @@ export function parseWearRequestedPermissions(output) {
   return [...new Set(permissions)].sort();
 }
 
-/** Reject execution unless the wear requested permissions contract is satisfied. */
 export function assertWearRequestedPermissions(output) {
   const actual = parseWearRequestedPermissions(output);
   if (actual.length !== REVIEWED_WEAR_PERMISSIONS.length
@@ -224,7 +214,6 @@ export function assertWearRequestedPermissions(output) {
   return actual;
 }
 
-/** Build crash buffer contains wear process from the supplied domain inputs. */
 export function crashBufferContainsWearProcess(crashBuffer) {
   return [
     /Process:\s*app\.calibratehealth\.mobile(?:[:,\s]|$)/i,
@@ -233,7 +222,6 @@ export function crashBufferContainsWearProcess(crashBuffer) {
     />>>\s*app\.calibratehealth\.mobile\s*<<</i
   ].some((pattern) => pattern.test(crashBuffer));
 }
-/** Parse and validate wear font scale. */
 export function parseWearFontScale(output) {
   const normalized = String(output).trim();
   if (!/^(?:\d+(?:\.\d+)?|\.\d+)$/.test(normalized)) {
@@ -246,7 +234,6 @@ export function parseWearFontScale(output) {
   return fontScale;
 }
 
-/** Build set and verify wear font scale from the supplied domain inputs. */
 export function setAndVerifyWearFontScale(fontScale, setFontScale, readFontScale) {
   const expected = parseWearFontScale(fontScale);
   setFontScale(String(fontScale));
@@ -257,7 +244,6 @@ export function setAndVerifyWearFontScale(fontScale, setFontScale, readFontScale
   return actual;
 }
 
-/** Restore wear font scale while preserving the module's lifecycle and failure guarantees. */
 export function restoreWearFontScale(originalFontScale, setFontScale, readFontScale) {
   if (originalFontScale === null) return false;
   setAndVerifyWearFontScale(originalFontScale, setFontScale, readFontScale);
@@ -309,7 +295,6 @@ export function waitForScrollableWearUi(expectedText, readUi, scrollForward, max
   throw new Error(`Scrollable Wear UI did not expose expected text: ${[...missing].join(' | ')}`);
 }
 
-/** Resolve wear adb. */
 export function resolveWearAdb(environment = process.env, platform = process.platform) {
   if (environment.ADB?.trim()) return environment.ADB.trim();
   const pathApi = platform === 'win32' ? path.win32 : path.posix;
@@ -320,7 +305,6 @@ export function resolveWearAdb(environment = process.env, platform = process.pla
   return pathApi.join(sdkRoot, 'platform-tools', platform === 'win32' ? 'adb.exe' : 'adb');
 }
 
-/** Prepare wear ui using validated domain inputs. */
 export function prepareWearUi(run) {
   for (const args of [
     ['shell', 'settings', 'put', 'global', 'device_provisioned', '1'],
@@ -360,7 +344,6 @@ function requireText(xml, text) {
   return node;
 }
 
-/** Build launch wear from the supplied domain inputs. */
 function launchWear(adb, serial) {
   runAdb(adb, serial, ['shell', 'am', 'force-stop', APP_ID], { quiet: true });
   const launch = runAdb(adb, serial, ['shell', 'am', 'start', '-W', '-n', ACTIVITY], { quiet: true });
@@ -368,7 +351,6 @@ function launchWear(adb, serial) {
   return launch;
 }
 
-/** Build exercise wear scale from the supplied domain inputs. */
 function exerciseWearScale({ adb, serial, expectedBuildType, screen, densityDpi, fontScale }) {
   setAndVerifyWearFontScale(
     fontScale,
@@ -416,7 +398,6 @@ function exerciseWearScale({ adb, serial, expectedBuildType, screen, densityDpi,
   };
 }
 
-/** Build stage evidence from the supplied domain inputs. */
 function stageEvidence(evidenceFile, evidence, stage) {
   if (!evidenceFile) return evidence;
   const next = { ...evidence, stage };

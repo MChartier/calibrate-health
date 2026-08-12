@@ -1,6 +1,3 @@
-/**
- * Runs the repository-owned hosted native evidence workflow.
- */
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -96,13 +93,11 @@ const VERSION_PATTERN = /^[0-9A-Za-z][0-9A-Za-z.+-]{0,31}$/;
 const PROHIBITED_KEY_PATTERN = /(serial|absolute|path|process.?id|pid|token|password|secret|account|email|health|food|xml|raw)/i;
 const ABSOLUTE_PATH_PATTERN = /^(?:[A-Za-z]:[\\/]|\\\\|\/)/;
 
-/** Build exact fields from the supplied domain inputs. */
 function exactFields(value, fields) {
   return value && typeof value === 'object' && !Array.isArray(value) &&
     Object.keys(value).sort().join('\n') === [...fields].sort().join('\n');
 }
 
-/** Collect privacy errors from the supplied records. */
 function collectPrivacyErrors(value, errors, location = 'evidence') {
   if (typeof value === 'string' && ABSOLUTE_PATH_PATTERN.test(value)) {
     errors.push(`${location} must not contain an absolute path.`);
@@ -115,7 +110,6 @@ function collectPrivacyErrors(value, errors, location = 'evidence') {
   }
 }
 
-/** Validate emulators. */
 function validateEmulators(lane, emulators, status, errors) {
   if (!Array.isArray(emulators)) {
     errors.push('Hosted native emulators must be an array.');
@@ -146,7 +140,6 @@ function validateEmulators(lane, emulators, status, errors) {
   }
 }
 
-/** Validate artifacts. */
 function validateArtifacts(lane, artifacts, status, errors) {
   if (!Array.isArray(artifacts)) {
     errors.push('Hosted native artifacts must be an array.');
@@ -184,7 +177,6 @@ function validateArtifacts(lane, artifacts, status, errors) {
   }
 }
 
-/** Validate checkpoints. */
 function validateCheckpoints(lane, checkpoints, status, errors) {
   const expected = HOSTED_NATIVE_CHECKPOINTS[lane];
   if (!exactFields(checkpoints, expected)) {
@@ -201,7 +193,6 @@ function validateCheckpoints(lane, checkpoints, status, errors) {
   }
 }
 
-/** Validate wear accessibility. */
 function validateWearAccessibility(lane, value, status, errors) {
   if (lane !== 'wear') {
     if (value !== null) errors.push('wearAccessibility is available only for the Wear lane.');
@@ -233,7 +224,6 @@ function validateWearAccessibility(lane, value, status, errors) {
   if (scales.join(',') !== '1,1.3') errors.push('Wear accessibility must cover font scales 1 and 1.3 in order.');
 }
 
-/** Validate upgrade summary. */
 function validateUpgradeSummary(lane, value, sourceCommit, status, errors) {
   if (lane !== 'upgrade') {
     if (value !== null) errors.push('upgrade summary is available only for the upgrade lane.');
@@ -260,7 +250,6 @@ function validateUpgradeSummary(lane, value, sourceCommit, status, errors) {
   }
 }
 
-/** Validate hosted native evidence. */
 export function validateHostedNativeEvidence(evidence) {
   const errors = [];
   if (!exactFields(evidence, TOP_LEVEL_FIELDS)) errors.push('Hosted native evidence fields are invalid.');
@@ -286,7 +275,6 @@ export function validateHostedNativeEvidence(evidence) {
   return errors;
 }
 
-/** Build started hosted native evidence from validated configuration and dependencies. */
 export function createStartedHostedNativeEvidence(lane, sourceCommit) {
   const checkpoints = Object.fromEntries(HOSTED_NATIVE_CHECKPOINTS[lane]?.map((key) => [key, false]) ?? []);
   const evidence = {
@@ -306,7 +294,6 @@ export function createStartedHostedNativeEvidence(lane, sourceCommit) {
   return evidence;
 }
 
-/** Write hosted native evidence. */
 export function writeHostedNativeEvidence(file, evidence) {
   const errors = validateHostedNativeEvidence(evidence);
   if (errors.length) throw new Error(`Hosted native evidence is invalid:\n- ${errors.join('\n- ')}`);
@@ -322,19 +309,16 @@ export function writeHostedNativeEvidence(file, evidence) {
   return destination;
 }
 
-/** Sha256 file using validated domain inputs. */
 export function sha256File(file) {
   return crypto.createHash('sha256').update(fs.readFileSync(file)).digest('hex');
 }
 
-/** Build required option from the supplied domain inputs. */
 function requiredOption(argv, index, option) {
   const value = argv[index + 1];
   if (!value || value.startsWith('--')) throw new Error(`${option} requires a value.`);
   return value;
 }
 
-/** Parse and validate hosted native evidence args. */
 export function parseHostedNativeEvidenceArgs(argv) {
   const [command, ...options] = argv;
   if (command !== 'init') throw new Error('Hosted native evidence command must be init.');

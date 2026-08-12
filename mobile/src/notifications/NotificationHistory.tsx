@@ -1,6 +1,3 @@
-/**
- * Provides Expo client behavior for notification history.
- */
 import { useMemo } from 'react';
 import { Platform, StyleSheet, View } from 'react-native';
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -40,7 +37,6 @@ type DeliveryAction = {
     run: () => Promise<void>;
 };
 
-/** Render the notification history interface. */
 export function NotificationHistory() {
     const theme = useAppTheme();
     const styles = useMemo(() => createStyles(theme), [theme]);
@@ -216,7 +212,6 @@ export function NotificationHistory() {
     );
 }
 
-/** Render the notification history skeleton interface. */
 function NotificationHistorySkeleton({ styles }: { styles: ReturnType<typeof createStyles> }) {
     return (
         <AppCard testID="notification-history-loading">
@@ -233,7 +228,6 @@ function NotificationHistorySkeleton({ styles }: { styles: ReturnType<typeof cre
     );
 }
 
-/** Build the styles for the active theme from validated configuration and dependencies. */
 function createStyles(theme: AppTheme) {
     return StyleSheet.create({
         headerCard: {

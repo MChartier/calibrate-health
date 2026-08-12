@@ -1,6 +1,3 @@
-/**
- * Provides Expo client behavior for client web vitals runtime.
- */
 import { useEffect, useRef } from 'react';
 import { usePathname } from 'expo-router';
 import type { ClientDiagnosticRoute } from '@calibrate/shared';

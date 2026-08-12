@@ -1,6 +1,3 @@
-/**
- * Provides Expo client behavior for auth return.
- */
 import { MEAL_PERIODS } from '@calibrate/shared';
 import {
     BARCODE_RESUME_STEPS,
@@ -24,7 +21,6 @@ export type BarcodeAuthDestination = {
     params: BarcodeWorkflowRouteParams;
 };
 
-/** Determine whether the input conforms to the single string contract. */
 function isSingleString(value: unknown): value is string {
     return typeof value === 'string';
 }

@@ -2,7 +2,6 @@ import type { FoodLogDayStatus } from '@calibrate/api-client';
 
 export type FoodDayStatusLabel = 'Fully logged' | 'Not fully logged' | 'Paused';
 
-/** Resolve the food day status label from the current validated state. */
 export function getFoodDayStatusLabel({
     status,
     failed = false

@@ -1,12 +1,8 @@
-/**
- * Exercises replay calibration evidence behavior and regression boundaries.
- */
 import { OFFLINE_MUTATION_OPERATIONS } from './operations';
 import { invalidateQueriesAfterOfflineReplay } from './replayInvalidation';
 
 jest.mock('expo-crypto', () => ({ randomUUID: jest.fn(() => 'generated-operation-id') }));
 
-/** Build deterministic replay result for regression coverage. */
 function replayResult(replayedOperations: string[]) {
     return {
         replayed: replayedOperations.length,

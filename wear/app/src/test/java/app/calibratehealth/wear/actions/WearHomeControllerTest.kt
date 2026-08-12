@@ -1,6 +1,3 @@
-/**
- * Exercises wear home controller behavior and regression boundaries.
- */
 package app.calibratehealth.wear.actions
 
 import app.calibratehealth.wear.WearSummary
@@ -19,7 +16,6 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class WearHomeControllerTest {
-    /** Proves durable metric enqueue invalidates calorie glances immediately after persistence. */
     @Test
     fun `durable weight enqueue refreshes calorie glance surfaces immediately`() {
         val storage = FakeWearStorage()
@@ -38,7 +34,6 @@ class WearHomeControllerTest {
         scopeJob.cancel()
     }
 
-    /** Protects unrelated outbox writes from unnecessary calorie-glance refreshes. */
     @Test
     fun `non-weight enqueue does not refresh calorie glance surfaces`() {
         val storage = FakeWearStorage()
@@ -54,7 +49,6 @@ class WearHomeControllerTest {
         scopeJob.cancel()
     }
 
-    /** Builds a controller with deterministic repositories and an injected glance refresher. */
     private fun controller(
         storage: FakeWearStorage,
         scope: CoroutineScope,
@@ -73,7 +67,6 @@ class WearHomeControllerTest {
         scope = scope
     )
 
-    /** Builds the canonical available-plan summary used by controller invalidation tests. */
     private fun summary() = WearSummary(
         localDate = "2026-07-12",
         caloriesRemaining = 640,

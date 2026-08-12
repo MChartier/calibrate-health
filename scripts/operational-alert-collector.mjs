@@ -1,6 +1,3 @@
-/**
- * Runs the repository-owned operational alert collector workflow.
- */
 import crypto from 'node:crypto';
 import { readFile, rename, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
@@ -48,22 +45,18 @@ const LOCK_STALE_MS = 20 * 60 * 1000;
 const REQUEST_TIMEOUT_MS = 15_000;
 const ALERT_ENVIRONMENTS = new Set(['staging', 'production']);
 
-/** Build counter from the supplied domain inputs. */
 function counter(value) {
   return typeof value === 'number' && Number.isFinite(value) && value >= 0 ? value : 0;
 }
 
-/** Determine whether the input conforms to the o timestamp contract. */
 function isoTimestamp(value) {
   return typeof value === 'string' && Number.isFinite(Date.parse(value)) ? value : null;
 }
 
-/** Build safe operation counters from the supplied domain inputs. */
 function safeOperationCounters(value) {
   return { attempts: counter(value?.attempts), failures: counter(value?.failures) };
 }
 
-/** Build safe tuple from the supplied domain inputs. */
 function safeTuple(value) {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
   for (const [key, allowed] of Object.entries(TUPLE_VALUES)) {
@@ -118,7 +111,6 @@ export function sanitizeMetricsSnapshot(value) {
   };
 }
 
-/** Build configured https url from the supplied domain inputs. */
 function configuredHttpsUrl(value, label) {
   let parsed;
   try {
@@ -132,7 +124,6 @@ function configuredHttpsUrl(value, label) {
   return parsed.toString();
 }
 
-/** Build required secret from the supplied domain inputs. */
 function requiredSecret(value, label) {
   if (typeof value !== 'string' || value.trim().length < 16) {
     throw new Error(`${label} must be configured with a secret of at least 16 characters.`);
@@ -140,7 +131,6 @@ function requiredSecret(value, label) {
   return value.trim();
 }
 
-/** Build required metrics token from the supplied domain inputs. */
 function requiredMetricsToken(value) {
   if (typeof value !== 'string' || value.trim().length < 32) {
     throw new Error('CALIBRATE_DIAGNOSTICS_METRICS_TOKEN must be at least 32 characters.');
@@ -148,7 +138,6 @@ function requiredMetricsToken(value) {
   return value.trim();
 }
 
-/** Build configured environment from the supplied domain inputs. */
 function configuredEnvironment(value) {
   if (typeof value !== 'string' || !ALERT_ENVIRONMENTS.has(value)) {
     throw new Error('CALIBRATE_ALERT_ENVIRONMENT must be staging or production.');
@@ -156,7 +145,6 @@ function configuredEnvironment(value) {
   return value;
 }
 
-/** Build configured version from the supplied domain inputs. */
 function configuredVersion(value, label) {
   if (typeof value !== 'string' || !VERSION_PATTERN.test(value)) {
     throw new Error(`${label} must be a stable semantic version.`);
@@ -164,7 +152,6 @@ function configuredVersion(value, label) {
   return value;
 }
 
-/** Build configured interval from the supplied domain inputs. */
 function configuredInterval(value) {
   const interval = typeof value === 'number' ? value : Number(value);
   if (!Number.isSafeInteger(interval) || interval < 60_000 || interval > 86_400_000) {
@@ -173,12 +160,10 @@ function configuredInterval(value) {
   return interval;
 }
 
-/** Build stable id from the supplied domain inputs. */
 function stableId(parts) {
   return crypto.createHash('sha256').update(parts.join('\u001f')).digest('hex');
 }
 
-/** Build configured request timeout from the supplied domain inputs. */
 function configuredRequestTimeout(value = REQUEST_TIMEOUT_MS) {
   if (!Number.isSafeInteger(value) || value < 1 || value > REQUEST_TIMEOUT_MS) {
     throw new Error(`Collector request timeout must be an integer from 1 through ${REQUEST_TIMEOUT_MS}.`);
@@ -186,7 +171,6 @@ function configuredRequestTimeout(value = REQUEST_TIMEOUT_MS) {
   return value;
 }
 
-/** Build bounded json request from the supplied domain inputs. */
 async function boundedJsonRequest({ url, init, fetchImpl, label, timeoutMs = REQUEST_TIMEOUT_MS }) {
   const controller = new AbortController();
   const boundedTimeoutMs = configuredRequestTimeout(timeoutMs);
@@ -208,7 +192,6 @@ async function boundedJsonRequest({ url, init, fetchImpl, label, timeoutMs = REQ
   }
 }
 
-/** Build http alert sink from validated configuration and dependencies. */
 export function createHttpAlertSink({
   sinkUrl,
   sinkToken,
@@ -254,12 +237,10 @@ export function createHttpAlertSink({
   };
 }
 
-/** Build baseline state from the supplied domain inputs. */
 function baselineState(snapshot, sampledAt) {
   return { sampled_at: sampledAt.toISOString(), snapshot };
 }
 
-/** Collect or state from the supplied records. */
 function collectorState(environment, baseline, pending = null) {
   return {
     schema_version: 2,
@@ -269,14 +250,12 @@ function collectorState(environment, baseline, pending = null) {
   };
 }
 
-/** Sanitize baseline without retaining or exposing unreviewed data. */
 function sanitizeBaseline(value) {
   const sampledAt = isoTimestamp(value?.sampled_at);
   if (!sampledAt) throw new Error('Collector state baseline is invalid.');
   return { sampled_at: sampledAt, snapshot: sanitizeMetricsSnapshot(value.snapshot) };
 }
 
-/** Sanitize pending without retaining or exposing unreviewed data. */
 function sanitizePending(value) {
   const sampledAt = isoTimestamp(value?.sampled_at);
   if (!sampledAt || !isOpaqueOperationalId(value?.correlation_id)) {
@@ -305,7 +284,6 @@ function sanitizePending(value) {
   };
 }
 
-/** Read collector state. */
 async function readCollectorState(statePath) {
   try {
     const parsed = JSON.parse(await readFile(statePath, 'utf8'));
@@ -321,7 +299,6 @@ async function readCollectorState(statePath) {
   }
 }
 
-/** Build atomic write collector state from the supplied domain inputs. */
 export async function atomicWriteCollectorState(
   statePath,
   value,
@@ -336,7 +313,6 @@ export async function atomicWriteCollectorState(
   }
 }
 
-/** Build acquire collector lock from the supplied domain inputs. */
 export async function acquireCollectorLock(lockPath, now) {
   const owner = crypto.randomBytes(16).toString('hex');
   const payload = `${JSON.stringify({ acquired_at: now.toISOString(), owner })}\n`;
@@ -360,7 +336,6 @@ export async function acquireCollectorLock(lockPath, now) {
   return owner;
 }
 
-/** Release collector lock using validated domain inputs. */
 export async function releaseCollectorLock(lockPath, owner) {
   try {
     const persisted = JSON.parse(await readFile(lockPath, 'utf8'));
@@ -370,7 +345,6 @@ export async function releaseCollectorLock(lockPath, owner) {
   }
 }
 
-/** Fetch alert-collector inputs within the configured timeout and size bounds. */
 async function fetchCollectorInputs({
   metricsUrl,
   metricsToken,
@@ -403,7 +377,6 @@ async function fetchCollectorInputs({
     observedServerVersion: configuredVersion(config?.server_version, 'Observed server version'),
   };
 }
-/** Build dispatch pending window from the supplied domain inputs. */
 async function dispatchPendingWindow({ pending, baseline, statePath, sink, initialized = false }) {
   if (configuredEnvironment(sink?.environment) !== pending.environment) {
     throw new Error('Pending alert window environment does not match the configured sink.');
@@ -427,7 +400,6 @@ async function dispatchPendingWindow({ pending, baseline, statePath, sink, initi
   return { alerts, receipts, initialized, rebaselined: false, retried: baseline !== null };
 }
 
-/** Collect operational alerts once from the supplied records. */
 export async function collectOperationalAlertsOnce(input) {
   const now = input.now ?? new Date();
   const statePath = path.resolve(input.statePath);
@@ -508,7 +480,6 @@ export async function collectOperationalAlertsOnce(input) {
     await releaseCollectorLock(lockPath, lockOwner);
   }
 }
-/** Run synthetic staging smoke and surface failures to the caller. */
 export async function runSyntheticStagingSmoke({ sink }) {
   if (sink?.environment !== 'staging') {
     throw new Error('Synthetic staging smoke requires CALIBRATE_ALERT_ENVIRONMENT=staging.');
@@ -540,12 +511,10 @@ export async function runSyntheticStagingSmoke({ sink }) {
   return { alerts, receipts };
 }
 
-/** Collect or failure line from the supplied records. */
 export function collectorFailureLine() {
   return '[operational-alert-collector] FAILED stage=collector category=operation_failed';
 }
 
-/** Run this module's command-line and surface failures to the caller. */
 async function main() {
   const environment = process.env.CALIBRATE_ALERT_ENVIRONMENT;
   const sink = createHttpAlertSink({

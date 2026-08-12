@@ -1,6 +1,3 @@
-/**
- * Provides Expo client behavior for cache isolation.
- */
 export const PWA_CACHE_NAMES = {
     USER_PREFIX: 'calibrate-expo-web-user-'
 } as const;
@@ -17,7 +14,6 @@ export type BrowserCacheIsolationEnvironment = {
     serviceWorker: ServiceWorkerMessenger | null;
 };
 
-/** Build browser cache isolation environment from the supplied domain inputs. */
 function browserCacheIsolationEnvironment(): BrowserCacheIsolationEnvironment {
     return {
         cacheStorage: typeof caches === 'undefined' ? null : caches,

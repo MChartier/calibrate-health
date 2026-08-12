@@ -185,14 +185,12 @@ export async function readLockedUuidVersions(lockfilePath = PACKAGE_LOCK_PATH) {
 
 const AUDIT_FAILURE_SEVERITIES = new Set(['high', 'critical']);
 
-/** Extract advisory id from the validated input. */
 function extractAdvisoryId(via) {
   if (!via || typeof via !== 'object') return null;
   const match = typeof via.url === 'string' ? via.url.match(/GHSA-[a-z0-9-]+/i) : null;
   return match?.[0] ?? null;
 }
 
-/** Collect audit advisories from the supplied records. */
 function collectAuditAdvisories(packageName, vulnerabilities, visited = new Set()) {
   if (visited.has(packageName)) return [];
   const vulnerability = vulnerabilities[packageName];
@@ -300,7 +298,6 @@ export function evaluateProductionAuditReport(auditReport, lockfile, options = {
   };
 }
 
-/** Read production lockfile. */
 async function readProductionLockfile(lockfilePath = PACKAGE_LOCK_PATH) {
   return JSON.parse(await readFile(lockfilePath, 'utf8'));
 }
@@ -318,7 +315,6 @@ export async function checkDependencyAdvisoryExceptions(options = {}) {
   return results.map((result) => result.message).join('\n');
 }
 
-/** Run production dependency audit and surface failures to the caller. */
 export async function runProductionDependencyAudit(options = {}) {
   const lockfile = options.lockfile ?? await readProductionLockfile(options.lockfilePath);
   let auditReport = options.auditReport;

@@ -1,6 +1,3 @@
-/**
- * Exercises notification card behavior and regression boundaries.
- */
 import { fireEvent, render } from '@testing-library/react-native';
 import type { InAppNotificationPageItem } from '@calibrate/api-client';
 import { IN_APP_NOTIFICATION_TYPES } from '@calibrate/shared/inAppNotifications';
@@ -8,7 +5,6 @@ import { NotificationCard } from './NotificationCard';
 
 jest.mock('@expo/vector-icons/Ionicons', () => () => null);
 
-/** Build deterministic notification for regression coverage. */
 function notification(overrides: Partial<InAppNotificationPageItem> = {}): InAppNotificationPageItem {
     return {
         id: 7,

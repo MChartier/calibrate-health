@@ -76,7 +76,6 @@ const AuthenticatedRuntime: React.FC<{ children: React.ReactNode }> = ({ childre
     );
 };
 
-/** Render the native root runtime interface. */
 const NativeRootRuntime: React.FC = () => {
     const theme = useAppTheme();
     useQueryOnlineManager();

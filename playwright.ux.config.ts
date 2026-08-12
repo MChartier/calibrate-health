@@ -1,6 +1,3 @@
-/**
- * Configures the playwright ux config Playwright projects and evidence policy.
- */
 import { defineConfig } from '@playwright/test';
 import process from 'node:process';
 

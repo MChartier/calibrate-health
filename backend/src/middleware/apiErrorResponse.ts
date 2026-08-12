@@ -1,6 +1,3 @@
-/**
- * Implements the api error response HTTP middleware contract.
- */
 import type { ErrorRequestHandler, RequestHandler, Response } from 'express';
 import { safeErrorType, safeRequestId } from '../observability';
 
@@ -41,12 +38,10 @@ const SAFE_SERVER_ERRORS: Readonly<Record<string, {
   }
 };
 
-/** Determine whether the input conforms to the record contract. */
 function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === 'object' && !Array.isArray(value);
 }
 
-/** Normalize the message into the canonical representation used at this boundary. */
 function normalizedMessage(value: unknown, maximumLength = MAX_MESSAGE_LENGTH): string | undefined {
   if (typeof value !== 'string') return undefined;
   const normalized = value.trim();
@@ -61,7 +56,6 @@ function normalizedMessage(value: unknown, maximumLength = MAX_MESSAGE_LENGTH): 
   return normalized;
 }
 
-/** Normalize the code into the canonical representation used at this boundary. */
 function normalizedCode(value: unknown): string | undefined {
   if (typeof value !== 'string') return undefined;
   const normalized = value.trim();
@@ -70,7 +64,6 @@ function normalizedCode(value: unknown): string | undefined {
     : undefined;
 }
 
-/** Normalize the field errors into the canonical representation used at this boundary. */
 function normalizedFieldErrors(value: unknown): Record<string, string[]> | undefined {
   if (!isRecord(value)) return undefined;
 
@@ -94,7 +87,6 @@ function normalizedFieldErrors(value: unknown): Record<string, string[]> | undef
   ]));
 }
 
-/** Determine whether the input conforms to the date time value contract. */
 function isDateTimeValue(value: unknown): value is string | Date | null {
   return value === null || (
     value instanceof Date
@@ -103,7 +95,6 @@ function isDateTimeValue(value: unknown): value is string | Date | null {
   );
 }
 
-/** Normalize the version into the canonical representation used at this boundary. */
 function normalizedVersion(value: unknown, nullable: boolean): string | null | undefined {
   if (nullable && value === null) return null;
   if (typeof value !== 'string') return undefined;
@@ -111,7 +102,6 @@ function normalizedVersion(value: unknown, nullable: boolean): string | null | u
   return normalized.length <= 64 && VERSION_PATTERN.test(normalized) ? normalized : undefined;
 }
 
-/** Normalize the food day into the canonical representation used at this boundary. */
 function normalizedFoodDay(value: unknown): Record<string, unknown> | null | undefined {
   if (value === null) return null;
   if (
@@ -143,12 +133,10 @@ function normalizedFoodDay(value: unknown): Record<string, unknown> | null | und
   };
 }
 
-/** Normalize the revision into the canonical representation used at this boundary. */
 function normalizedRevision(value: unknown): string | undefined {
   return typeof value === 'string' && /^[a-f0-9]{16,128}$/i.test(value) ? value : undefined;
 }
 
-/** Normalize the current into the canonical representation used at this boundary. */
 function normalizedCurrent(value: unknown): Record<string, unknown> | null | undefined {
   if (value === null) return null;
   if (!isRecord(value)) return undefined;
@@ -195,7 +183,6 @@ function normalizedCurrent(value: unknown): Record<string, unknown> | null | und
   return undefined;
 }
 
-/** Normalize the extensions into the canonical representation used at this boundary. */
 function normalizedExtensions(
   statusCode: number,
   code: string,
@@ -231,7 +218,6 @@ function normalizedExtensions(
   return extensions;
 }
 
-/** Map an HTTP status to its stable public error code. */
 function defaultCodeForStatus(statusCode: number): string {
   if (statusCode === 401) return 'NOT_AUTHENTICATED';
   if (statusCode === 403) return 'FORBIDDEN';
@@ -244,7 +230,6 @@ function defaultCodeForStatus(statusCode: number): string {
   return 'INVALID_REQUEST';
 }
 
-/** Map an HTTP status to its privacy-safe fallback message. */
 function defaultMessageForStatus(statusCode: number): string {
   if (statusCode === 401) return 'Not authenticated';
   if (statusCode === 403) return 'Forbidden';
@@ -257,7 +242,6 @@ function defaultMessageForStatus(statusCode: number): string {
   return 'Invalid request';
 }
 
-/** Determine whether an HTTP status is retryable by default. */
 function defaultRetryableForStatus(statusCode: number): boolean {
   return statusCode === 408 || statusCode === 425 || statusCode === 429 || statusCode >= 500;
 }

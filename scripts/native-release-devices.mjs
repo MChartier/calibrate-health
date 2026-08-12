@@ -374,7 +374,6 @@ export function parseSignerFingerprint(output) {
   return unique[0];
 }
 
-/** Parse and validate aab manifest metadata. */
 export function parseAabManifestMetadata(output) {
   const manifestTag = output.match(/<manifest\b[^>]*>/i)?.[0];
   if (!manifestTag) throw new Error('Unable to parse AAB manifest metadata.');
@@ -395,7 +394,6 @@ function formatFingerprint(value) {
   return value.toUpperCase().match(/.{1,2}/g)?.join(':') ?? value;
 }
 
-/** Inspect native release artifact set using the supplied validated inputs. */
 export async function inspectNativeReleaseArtifactSet(root, tooling, runner) {
   const manifestContent = fs.readFileSync(path.join(root, 'shared', 'release.json'));
   const manifest = JSON.parse(manifestContent.toString('utf8'));
@@ -545,7 +543,6 @@ export function assertNativeReleaseArtifactVersions(artifacts, expected) {
   }
 }
 
-/** Display native release target using validated domain inputs. */
 export function displayNativeReleaseTarget(device, evidenceMode = false) {
   if (evidenceMode) return `${device.model} (physical ${device.role})`;
   const kind = device.isEmulator ? 'emulator' : 'physical';
@@ -619,7 +616,6 @@ function packagePathFromPm(output) {
   return output.match(/^package:(.+)$/m)?.[1]?.trim() ?? null;
 }
 
-/** Parse and validate installed package state. */
 export function parseInstalledPackageState(output) {
   const versionCode = Number(output.match(/\bversionCode=(\d+)/)?.[1]);
   const versionName = output.match(/\bversionName=([^\r\n\s]+)/)?.[1]?.trim() ?? null;
@@ -631,7 +627,6 @@ export function parseInstalledPackageState(output) {
   };
 }
 
-/** Reject execution unless the native release evidence mode contract is satisfied. */
 export function assertNativeReleaseEvidenceMode(config, checkout) {
   if (!config.evidenceObservation) return false;
   if (!config.skipBuild) throw new Error('Evidence observation requires --skip-build against frozen candidate outputs.');
@@ -654,7 +649,6 @@ export function assertNativeReleaseEvidenceMode(config, checkout) {
   return true;
 }
 
-/** Reject execution unless the native release evidence targets contract is satisfied. */
 export function assertNativeReleaseEvidenceTargets(targets) {
   for (const role of ['phone', 'watch']) {
     const target = targets?.[role];
@@ -672,7 +666,6 @@ export function assertNativeReleaseEvidenceTargets(targets) {
   }
 }
 
-/** Build retained native release devices from the supplied domain inputs. */
 export function retainedNativeReleaseDevices(targets) {
   return ['phone', 'watch'].map((role) => {
     const target = targets[role];
@@ -689,7 +682,6 @@ export function retainedNativeReleaseDevices(targets) {
   });
 }
 
-/** Reject execution unless the native release evidence upgrade plans contract is satisfied. */
 export function assertNativeReleaseEvidenceUpgradePlans(plans) {
   for (const plan of plans) {
     if (plan.state !== 'upgrade') {
@@ -707,7 +699,6 @@ export function assertNativeReleaseEvidenceUpgradePlans(plans) {
   }
 }
 
-/** Build native release upgrade evidence from validated configuration and dependencies. */
 export function createNativeReleaseUpgradeEvidence(prePlans, postPlans) {
   const result = {};
   for (const role of ['phone', 'watch']) {
@@ -744,7 +735,6 @@ export function createNativeReleaseUpgradeEvidence(prePlans, postPlans) {
   return result;
 }
 
-/** Read native release candidate checkout. */
 function readNativeReleaseCandidateCheckout(root) {
   const run = (args) => {
     const result = spawnSync('git', args, { cwd: root, encoding: 'utf8', windowsHide: true });

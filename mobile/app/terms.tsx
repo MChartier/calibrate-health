@@ -1,6 +1,3 @@
-/**
- * Defines the terms Expo Router screen.
- */
 import { CALIBRATE_PRODUCT_LINKS } from '@calibrate/shared/product';
 import { PublicLegalPage } from '../src/components/legal/PublicLegalPage';
 import {
@@ -9,7 +6,6 @@ import {
     TERMS_SECTIONS
 } from '../src/legal/publicLegalContent';
 
-/** Render the terms route interface. */
 export default function TermsRoute() {
     return (
         <PublicLegalPage

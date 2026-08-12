@@ -107,7 +107,6 @@ class CalibrateTileFormatterTest {
         assertEquals("Open app to review", result.statusLine)
     }
 
-    /** Ensures review-required plans show consumed calories without tile target math. */
     @Test
     fun `shows logged calories without target math when plan needs review`() {
         val result = CalibrateTileFormatter.format(
@@ -126,7 +125,6 @@ class CalibrateTileFormatterTest {
         assertEquals("Open app to review", result.statusLine)
     }
 
-    /** Ensures pending weight mutations replace cached tile target math with syncing state. */
     @Test
     fun `pending weight mutation shows syncing without cached target math`() {
         val cached = CalibrateTileSnapshot(500, 2_000, 1_500, NOW, planStatus = "available")

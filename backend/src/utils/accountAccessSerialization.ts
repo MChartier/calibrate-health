@@ -1,6 +1,3 @@
-/**
- * Provides backend account access serialization behavior.
- */
 import type { Prisma } from '@prisma/client';
 import {
   CURRENT_PRIVACY_VERSION,

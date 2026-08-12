@@ -1,6 +1,3 @@
-/**
- * Exercises weight trend resolver behavior and regression boundaries.
- */
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
@@ -10,7 +7,6 @@ const { computeWeightTrendV1 } = require('../src/services/weightTrendV1');
 const SERVICE_PATH = require.resolve('../src/services/weightTrend');
 const MODEL_ENV_NAME = 'WEIGHT_TREND_MODEL';
 
-/** Load weight trend service. */
 function loadWeightTrendService(model) {
   const previousModel = process.env[MODEL_ENV_NAME];
   try {
@@ -31,7 +27,6 @@ function loadWeightTrendService(model) {
   }
 }
 
-/** Build deterministic fixture observations for regression coverage. */
 function fixtureObservations() {
   const dates = ['2025-01-01', '2025-01-02', '2025-01-04', '2025-01-07', '2025-01-08', '2025-01-12'];
   const weights = [80, 79.8, 80.1, 79.6, 79.7, 79.3];
@@ -41,7 +36,6 @@ function fixtureObservations() {
   }));
 }
 
-/** Build deterministic legacy point fields for regression coverage. */
 function legacyPointFields(point) {
   return {
     date: point.date,

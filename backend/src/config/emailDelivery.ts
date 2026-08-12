@@ -1,6 +1,3 @@
-/**
- * Resolves and validates email delivery configuration.
- */
 import { CALIBRATE_HOSTED_ORIGIN } from '../../../shared/product';
 import { isProductionOrStagingEnv } from './environment';
 
@@ -27,7 +24,6 @@ export type EmailDeliveryConfig =
       from: string;
     };
 
-/** Normalize origin into the canonical representation used at this boundary. */
 const normalizeOrigin = (value: string | undefined): string | null => {
   const trimmed = value?.trim();
   if (!trimmed) return null;
@@ -40,7 +36,6 @@ const normalizeOrigin = (value: string | undefined): string | null => {
   }
 };
 
-/** Parse and validate port. */
 const parsePort = (value: string | undefined): number | null => {
   if (!value?.trim()) return 587;
   const parsed = Number(value);
@@ -87,6 +82,5 @@ export function resolveEmailDeliveryConfig(env: NodeJS.ProcessEnv = process.env)
   };
 }
 
-/** Determine whether the input conforms to the email verification required contract. */
 export const isEmailVerificationRequired = (config: EmailDeliveryConfig): boolean =>
   config.hostedRequired || config.mode === EMAIL_DELIVERY_MODES.SMTP;

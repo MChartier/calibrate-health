@@ -60,13 +60,11 @@ export class CalibrationConflictError extends Error {
         this.name = 'CalibrationConflictError';
     }
 }
-/** Determine whether the input conforms to the retryable calibration apply conflict contract. */
 function isRetryableCalibrationApplyConflict(error: unknown): boolean {
     return typeof error === 'object' && error !== null && 'code' in error
         && String(error.code) === 'P2034';
 }
 
-/** Retry calibration apply using the supplied validated inputs. */
 async function retryCalibrationApply<T>(operation: () => Promise<T>): Promise<T> {
     for (let attempt = 1; attempt <= CALIBRATION_APPLY_MAX_ATTEMPTS; attempt += 1) {
         try {

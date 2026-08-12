@@ -1,6 +1,3 @@
-/**
- * Provides Expo client behavior for use barcode camera lifecycle.
- */
 import { useCallback, useEffect, useState } from 'react';
 import { AppState, type AppStateStatus } from 'react-native';
 import { useFocusEffect } from 'expo-router';

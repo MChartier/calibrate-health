@@ -1,6 +1,3 @@
-/**
- * Defines the legal HTTP routes and request handling.
- */
 import express from 'express';
 import {
   CURRENT_PRIVACY_VERSION,

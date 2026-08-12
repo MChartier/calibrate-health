@@ -1,6 +1,3 @@
-/**
- * Defines the activity Expo Router screen.
- */
 import React, { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
@@ -39,7 +36,6 @@ import { formatCalories, formatNumber, formatWeightUnit } from '../../../src/uti
 
 const HISTORY_DAY_COUNT = 14; // Keep recent context useful on a phone without loading the full activity archive.
 
-/** Format duration for stable display or serialization. */
 function formatDuration(record: ActivityRecordEntry): string {
     if (!record.end_time) return 'Duration unavailable';
     const start = new Date(record.start_time);
@@ -49,14 +45,12 @@ function formatDuration(record: ActivityRecordEntry): string {
     return minutes.toLocaleString() + ' min';
 }
 
-/** Format exercise time for stable display or serialization. */
 function formatExerciseTime(record: ActivityRecordEntry): string {
     const start = new Date(record.start_time);
     if (Number.isNaN(start.getTime())) return record.start_time;
     return start.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
 }
 
-/** Format imported at for stable display or serialization. */
 function formatImportedAt(day: ActivityDay | null | undefined): string {
     const timestamps = [
         day?.summary?.observed_at,
@@ -68,7 +62,6 @@ function formatImportedAt(day: ActivityDay | null | undefined): string {
     return Number.isNaN(parsed.getTime()) ? 'Sync time unavailable' : parsed.toLocaleString();
 }
 
-/** Render the activity connection state interface. */
 function ActivityConnectionState({
     presentation,
     standalone
@@ -119,7 +112,6 @@ function ActivityConnectionState({
     );
 }
 
-/** Render the exercise sessions interface. */
 function ExerciseSessions({ records }: { records: ActivityRecordEntry[] }) {
     const theme = useAppTheme();
     const styles = useMemo(() => createStyles(theme), [theme]);
@@ -147,7 +139,6 @@ function ExerciseSessions({ records }: { records: ActivityRecordEntry[] }) {
     );
 }
 
-/** Render the activity details disclosure interface. */
 function ActivityDetailsDisclosure({
     day,
     weightUnit
@@ -230,7 +221,6 @@ function ActivityDetailsDisclosure({
     );
 }
 
-/** Render the activity screen interface. */
 export default function ActivityScreen() {
     const theme = useAppTheme();
     const styles = useMemo(() => createStyles(theme), [theme]);
@@ -368,7 +358,6 @@ export default function ActivityScreen() {
     );
 }
 
-/** Build the styles for the active theme from validated configuration and dependencies. */
 const createStyles = (theme: AppTheme) => StyleSheet.create({
     connectionRow: {
         flexDirection: 'row',

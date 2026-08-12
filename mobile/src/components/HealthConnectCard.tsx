@@ -33,7 +33,6 @@ const FEATURE_PRESENTATION: Array<{
     }
 ];
 
-/** Format permission check for stable display or serialization. */
 function formatPermissionCheck(value: string | null): string {
     if (!value) return 'Not checked yet';
     const parsed = new Date(value);

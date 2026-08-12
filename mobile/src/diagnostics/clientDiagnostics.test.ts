@@ -1,6 +1,3 @@
-/**
- * Exercises client diagnostics behavior and regression boundaries.
- */
 import { Platform } from 'react-native';
 import { ApiError } from '@calibrate/api-client';
 import release from '../../../shared/release.json';
@@ -47,7 +44,6 @@ const SENSITIVE_ALIASES = [
     'requestId'
 ] as const;
 
-/** Build sensitive property cases from validated configuration and dependencies. */
 function createSensitivePropertyCases(seed: number, count: number): Array<{
     alias: (typeof SENSITIVE_ALIASES)[number];
     value: string;

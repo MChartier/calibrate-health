@@ -1,6 +1,3 @@
-/**
- * Exercises use browser route focus behavior and regression boundaries.
- */
 import { renderHook } from '@testing-library/react-native';
 import { useBrowserRouteFocus } from './useBrowserRouteFocus';
 
@@ -19,12 +16,10 @@ class FakeDocument {
     readonly body = {};
     readonly routeTitle = new FakeElement(this);
 
-    /** Resolve the element by id from the current validated state. */
     getElementById(id: string) {
         return id === 'route-focus-title' ? this.routeTitle : null;
     }
 
-    /** Build deterministic query selector for regression coverage. */
     querySelector() {
         return null;
     }

@@ -1,6 +1,3 @@
-/**
- * Provides the shared navigable card component and interaction contract.
- */
 import React from 'react';
 import {
     ActivityIndicator,
@@ -133,7 +130,6 @@ export const NavigableCard: React.FC<NavigableCardProps> = ({
     );
 };
 
-/** Build the styles for the active theme from validated configuration and dependencies. */
 function createStyles(theme: AppTheme) {
     return StyleSheet.create({
         surface: {

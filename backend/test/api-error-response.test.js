@@ -1,6 +1,3 @@
-/**
- * Exercises api error response behavior and regression boundaries.
- */
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const express = require('express');
@@ -17,7 +14,6 @@ const {
 
 const REQUEST_ID = '123e4567-e89b-42d3-a456-426614174000';
 
-/** Start test server while preserving the module's lifecycle and failure guarantees. */
 async function startTestServer(t) {
   const app = express();
   const replayBody = {
@@ -134,7 +130,6 @@ async function startTestServer(t) {
   };
 }
 
-/** Build deterministic request for regression coverage. */
 async function request(origin, path, init = {}) {
   return fetch(`${origin}${path}`, {
     ...init,

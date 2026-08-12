@@ -1,6 +1,3 @@
-/**
- * Provides Expo client behavior for resolve async state.
- */
 export const ASYNC_RESOURCE_STATES = {
     LOADING: 'loading',
     CONTENT: 'content',
@@ -81,7 +78,5 @@ export function resolveAsyncResourceState<T>(
     return { kind: ASYNC_RESOURCE_STATES.LOADING, error: null };
 }
 
-/** Determine whether a resource resolved explicitly to null. */
 export const isNullResource = <T>(value: T | null): boolean => value === null;
-/** Declare that a resource has no domain-specific empty state. */
 export const isNeverEmpty = (): false => false;

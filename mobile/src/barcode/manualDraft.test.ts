@@ -1,6 +1,3 @@
-/**
- * Exercises manual draft behavior and regression boundaries.
- */
 import { MEAL_PERIODS } from '@calibrate/shared';
 import { BARCODE_RETURN_DESTINATIONS } from './context';
 import {

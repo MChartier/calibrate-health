@@ -1,6 +1,3 @@
-/**
- * Provides the shared legal consent fields component and interaction contract.
- */
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Link, type Href } from 'expo-router';
 import { CALIBRATE_PRODUCT_LINKS } from '@calibrate/shared/product';
@@ -17,7 +14,6 @@ type ConsentCheckboxProps = {
     testID?: string;
 };
 
-/** Render the consent checkbox interface. */
 function ConsentCheckbox({ label, checked, disabled = false, onChange, testID }: ConsentCheckboxProps) {
     const theme = useAppTheme();
     const styles = createStyles(theme);
@@ -98,7 +94,6 @@ export function LegalConsentFields({
     );
 }
 
-/** Build the styles for the active theme from validated configuration and dependencies. */
 function createStyles(theme: AppTheme) {
     return StyleSheet.create({
         root: {

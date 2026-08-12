@@ -1,6 +1,3 @@
-/**
- * Exercises pending weight behavior and regression boundaries.
- */
 import { hasPendingWeightMutation } from './pendingWeight';
 
 jest.mock('expo-crypto', () => ({ randomUUID: jest.fn(() => 'pending-weight-operation') }));

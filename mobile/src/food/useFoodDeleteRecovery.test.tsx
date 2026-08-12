@@ -1,6 +1,3 @@
-/**
- * Exercises use food delete recovery behavior and regression boundaries.
- */
 import { act, renderHook } from '@testing-library/react-native';
 import { AppState } from 'react-native';
 import type { FoodLogEntry } from '@calibrate/api-client';
@@ -24,7 +21,6 @@ jest.mock('expo-router', () => {
     };
 });
 
-/** Build deterministic entry for regression coverage. */
 const entry = (id: number): FoodLogEntry => ({
     id,
     meal_period: 'BREAKFAST',
@@ -32,7 +28,6 @@ const entry = (id: number): FoodLogEntry => ({
     calories: 100
 });
 
-/** Build deterministic drain promises for regression coverage. */
 async function drainPromises(): Promise<void> {
     for (let index = 0; index < 20; index += 1) await Promise.resolve();
 }

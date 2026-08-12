@@ -1,6 +1,3 @@
-/**
- * Exercises activity screen behavior and regression boundaries.
- */
 import React from 'react';
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
 import { onlineManager, QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -66,7 +63,6 @@ jest.mock('../components/TabScreen', () => {
     };
 });
 
-/** Read y presentation. */
 function readyPresentation() {
     return {
         state: 'ready',
@@ -79,7 +75,6 @@ function readyPresentation() {
     };
 }
 
-/** Render screen. */
 function renderScreen() {
     const queryClient = new QueryClient({
         defaultOptions: {

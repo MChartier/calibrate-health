@@ -1,6 +1,3 @@
-/**
- * Provides Expo client behavior for use health connect presentation.
- */
 import { useMemo } from 'react';
 import { getHealthConnectPresentation } from './presentation';
 import { useHealthConnect } from './provider';

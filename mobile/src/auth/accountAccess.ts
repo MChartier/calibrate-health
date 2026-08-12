@@ -1,6 +1,3 @@
-/**
- * Provides Expo client behavior for account access.
- */
 import type { UserClientPayload } from '@calibrate/api-client';
 import { HOSTED_SERVER_URL, normalizeServerUrl } from '../config/server';
 
@@ -22,7 +19,6 @@ export function requiresHostedLegalAcceptance(serverUrl: string): boolean {
     return normalizeServerUrl(serverUrl) === HOSTED_SERVER_URL;
 }
 
-/** Require registration legal acceptance using validated domain inputs. */
 export function requireRegistrationLegalAcceptance(
     acceptance: RegistrationLegalAcceptance
 ): { acceptTerms: true; acceptPrivacy: true } {
@@ -37,12 +33,10 @@ export function getAccountAccessState(user: UserClientPayload | null | undefined
     return user?.account_access?.state ?? ACCOUNT_ACCESS_STATES.FULL;
 }
 
-/** Check whether the current state has full account access. */
 export function hasFullAccountAccess(user: UserClientPayload | null | undefined): boolean {
     return getAccountAccessState(user) === ACCOUNT_ACCESS_STATES.FULL;
 }
 
-/** Build restricted account route from the supplied domain inputs. */
 export function restrictedAccountRoute(user: UserClientPayload | null | undefined): '/verify-email' | '/legal-update' | null {
     const state = getAccountAccessState(user);
     if (state === ACCOUNT_ACCESS_STATES.EMAIL_VERIFICATION_REQUIRED) return '/verify-email';

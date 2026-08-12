@@ -1,6 +1,3 @@
-/**
- * Exercises my food form validation behavior and regression boundaries.
- */
 import {
     getRecipeNameError,
     getSavedFoodNameError,

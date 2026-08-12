@@ -1,6 +1,3 @@
-/**
- * Provides the shared form error summary component and interaction contract.
- */
 import { forwardRef, useImperativeHandle, useRef } from 'react';
 import { AccessibilityInfo, findNodeHandle, View, type TextStyle } from 'react-native';
 import { AppText } from './AppText';

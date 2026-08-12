@@ -1,6 +1,3 @@
-/**
- * Provides backend domain operations for client diagnostics.
- */
 import type {
   ClientDiagnosticDurationBucket,
   ClientDiagnosticEvent,
@@ -87,17 +84,14 @@ export type ClientDiagnosticParseResult =
   | { ok: false };
 
 
-/** Determine whether the input conforms to the plain record contract. */
 function isPlainRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 }
 
-/** Build enum value from the supplied domain inputs. */
 function enumValue<T extends string>(value: unknown, allowed: ReadonlySet<string>): T | null {
   return typeof value === 'string' && allowed.has(value) ? value as T : null;
 }
 
-/** Determine whether the input conforms to the registered tuple contract. */
 function isRegisteredTuple(value: ClientDiagnosticInput): boolean {
   if (!VERSION_SETS[value.platform].has(value.version)) return false;
 

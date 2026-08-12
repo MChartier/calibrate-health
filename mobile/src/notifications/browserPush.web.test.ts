@@ -1,6 +1,3 @@
-/**
- * Exercises browser push web behavior and regression boundaries.
- */
 import {
     cleanupBrowserPushBeforeSessionChange,
     registerBrowserPushSessionCleanup

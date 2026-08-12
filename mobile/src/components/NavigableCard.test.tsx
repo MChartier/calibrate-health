@@ -1,6 +1,3 @@
-/**
- * Exercises navigable card behavior and regression boundaries.
- */
 import { fireEvent, render } from '@testing-library/react-native';
 import { StyleSheet } from 'react-native';
 import { themes } from '../theme';

@@ -1,7 +1,4 @@
 #!/usr/bin/env node
-/**
- * Runs the repository-owned postgres rollback smoke workflow.
- */
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
 import fs from 'node:fs';
@@ -61,7 +58,6 @@ const BACKUP_READY_TIMEOUT_MS = 60_000;
 const POSTGRES_READY_TIMEOUT_MS = 45_000;
 const RETENTION_SENTINEL = 'calibrate-20000101T000000Z.dump.age';
 
-/** Build expected resource plan from the supplied domain inputs. */
 function expectedResourcePlan(id) {
   const prefix = `calibrate-rb-smoke-${id}`;
   return {
@@ -180,7 +176,6 @@ export function assertOwnedRollbackDatabaseUrl(rawUrl, plan, target) {
   return parsed;
 }
 
-/** Build ledger fingerprint from the supplied domain inputs. */
 export function ledgerFingerprint(migrationNames) {
   return crypto.createHash('sha256').update(`${migrationNames.join('\n')}\n`).digest('hex');
 }
@@ -224,7 +219,6 @@ export function resolveRollbackSourceCommit(
   return assertRollbackSourceCommit(candidateCommit, environment.CALIBRATE_SOURCE_COMMIT);
 }
 
-/** Reject execution unless the safe rollback schema contract is satisfied. */
 export function assertSafeRollbackSchema(schemaName) {
   if (!GENERATED_SCHEMA_PATTERN.test(schemaName)) {
     throw new Error(`Refusing unsafe rollback schema: ${schemaName}`);
@@ -246,7 +240,6 @@ export function sanitizeRollbackDiagnostic(value, redactions = []) {
     .slice(-4_000);
 }
 
-/** Build rollback evidence from validated configuration and dependencies. */
 export function createRollbackEvidence({ candidateCommit, durationSeconds, encryptedFile, reupgraded }) {
   if (!/^[a-f0-9]{40}$/.test(candidateCommit)) {
     throw new Error('Candidate commit must be a full Git SHA.');
@@ -291,7 +284,6 @@ export function createRollbackEvidence({ candidateCommit, durationSeconds, encry
   };
 }
 
-/** Parse and validate rollback arguments. */
 export function parseRollbackArguments(argumentsList) {
   if (argumentsList.length !== 0) {
     throw new Error('postgres-rollback-smoke accepts no arguments or external database target.');
@@ -299,12 +291,10 @@ export function parseRollbackArguments(argumentsList) {
   return {};
 }
 
-/** Resolve command encoding. */
 export function resolveCommandEncoding(options = {}) {
   return Object.hasOwn(options, 'encoding') ? options.encoding : 'utf8';
 }
 
-/** Build default command runner from the supplied domain inputs. */
 function defaultCommandRunner(command, args, options = {}) {
   return spawnSync(command, args, {
     cwd: options.cwd ?? repositoryRoot,
@@ -316,7 +306,6 @@ function defaultCommandRunner(command, args, options = {}) {
   });
 }
 
-/** Build command result from the supplied domain inputs. */
 function commandResult(commandRunner, command, args, options = {}) {
   const result = commandRunner(command, args, options);
   if (result.error) throw result.error;
@@ -328,7 +317,6 @@ function commandResult(commandRunner, command, args, options = {}) {
   return result;
 }
 
-/** Build docker runner from validated configuration and dependencies. */
 function createDockerRunner(commandRunner) {
   return (args, options = {}) => commandResult(commandRunner, 'docker', args, {
     ...options,
@@ -336,7 +324,6 @@ function createDockerRunner(commandRunner) {
   });
 }
 
-/** Build git text from the supplied domain inputs. */
 function gitText(commandRunner, args, options = {}) {
   return String(commandResult(commandRunner, 'git', args, {
     ...options,
@@ -344,7 +331,6 @@ function gitText(commandRunner, args, options = {}) {
   }).stdout).trim();
 }
 
-/** Build git buffer from the supplied domain inputs. */
 function gitBuffer(commandRunner, args) {
   return commandResult(commandRunner, 'git', args, {
     encoding: null,
@@ -352,7 +338,6 @@ function gitBuffer(commandRunner, args) {
   }).stdout;
 }
 
-/** Build discover candidate migration names from the supplied domain inputs. */
 export function discoverCandidateMigrationNames(directory = migrationsDirectory) {
   return fs.readdirSync(directory, { withFileTypes: true })
     .filter((entry) => entry.isDirectory())
@@ -360,7 +345,6 @@ export function discoverCandidateMigrationNames(directory = migrationsDirectory)
     .sort((left, right) => left.localeCompare(right));
 }
 
-/** Inspect immutable migration contract using the supplied validated inputs. */
 function inspectImmutableMigrationContract(commandRunner) {
   const tagReference = `refs/tags/${ROLLBACK_BASE.tag}`;
   const tagType = gitText(commandRunner, ['cat-file', '-t', tagReference]);
@@ -395,7 +379,6 @@ function inspectImmutableMigrationContract(commandRunner) {
   return { baseNames, candidateNames, candidateCommit, tagReference };
 }
 
-/** Reject execution unless the owned temporary base root contract is satisfied. */
 function assertOwnedTemporaryBaseRoot(temporaryRoot) {
   const resolvedRoot = path.resolve(temporaryRoot);
   const temporaryDirectory = path.resolve(os.tmpdir());
@@ -407,7 +390,6 @@ function assertOwnedTemporaryBaseRoot(temporaryRoot) {
   return resolvedRoot;
 }
 
-/** Build immutable base migration tree from validated configuration and dependencies. */
 function createImmutableBaseMigrationTree(contract, commandRunner) {
   const temporaryRoot = assertOwnedTemporaryBaseRoot(
     fs.mkdtempSync(path.join(os.tmpdir(), 'calibrate-rollback-base-')),
@@ -449,12 +431,10 @@ function createImmutableBaseMigrationTree(contract, commandRunner) {
   };
 }
 
-/** Remove immutable base migration tree while preserving the module's lifecycle and failure guarantees. */
 function removeImmutableBaseMigrationTree(temporaryRoot) {
   if (!temporaryRoot) return;
   fs.rmSync(assertOwnedTemporaryBaseRoot(temporaryRoot), { recursive: true, force: true });
 }
-/** Inspect local docker endpoint using the supplied validated inputs. */
 function inspectLocalDockerEndpoint(dockerRunner) {
   if (process.env.DOCKER_HOST) assertLocalDockerEndpoint(process.env.DOCKER_HOST);
   const result = dockerRunner(['context', 'inspect']);
@@ -462,7 +442,6 @@ function inspectLocalDockerEndpoint(dockerRunner) {
   return assertLocalDockerEndpoint(contexts?.[0]?.Endpoints?.docker?.Host);
 }
 
-/** Reject execution unless the no rollback resource collisions contract is satisfied. */
 function assertNoRollbackResourceCollisions(dockerRunner, plan) {
   const resources = [
     ...Object.values(plan.containers).map((name) => ['container', name]),
@@ -480,7 +459,6 @@ function assertNoRollbackResourceCollisions(dockerRunner, plan) {
   }
 }
 
-/** Reject execution unless the docker resource owned contract is satisfied. */
 function assertDockerResourceOwned(dockerRunner, kind, name, plan) {
   const inspection = inspectDockerResourceOwnership(dockerRunner, kind, name, plan.id);
   if (inspection.state !== 'owned') {
@@ -503,14 +481,12 @@ export function buildRollbackNetworkCreateArgs(plan) {
   ];
 }
 
-/** Build owned network from validated configuration and dependencies. */
 function createOwnedNetwork(dockerRunner, plan, created) {
   created.network = true;
   dockerRunner(buildRollbackNetworkCreateArgs(plan));
   assertDockerResourceOwned(dockerRunner, 'network', plan.network, plan);
 }
 
-/** Build owned volume from validated configuration and dependencies. */
 function createOwnedVolume(dockerRunner, plan, volume, created) {
   created.volumes.add(volume);
   dockerRunner([
@@ -540,7 +516,6 @@ export function buildRollbackPostgresRunArgs({ plan, target, password }) {
   ];
 }
 
-/** Start rollback postgres while preserving the module's lifecycle and failure guarantees. */
 function startRollbackPostgres(dockerRunner, plan, target, password, created) {
   const container = plan.containers[target];
   created.containers.add(container);
@@ -552,12 +527,10 @@ function startRollbackPostgres(dockerRunner, plan, target, password, created) {
   return parseLoopbackPublishedPort(portResult.stdout);
 }
 
-/** Build delay from the supplied domain inputs. */
 function delay(milliseconds) {
   return new Promise((resolve) => setTimeout(resolve, milliseconds));
 }
 
-/** Wait for rollback postgres while preserving the module's lifecycle and failure guarantees. */
 async function waitForRollbackPostgres(dockerRunner, plan, target) {
   const container = plan.containers[target];
   const database = plan.database[target];
@@ -577,7 +550,6 @@ async function waitForRollbackPostgres(dockerRunner, plan, target) {
   throw new Error(`Disposable ${target} Postgres did not become ready.`);
 }
 
-/** Build the owned backup image with stable fields for the repository-owned workflow. */
 function buildOwnedBackupImage(dockerRunner, plan, created) {
   created.image = true;
   dockerRunner([
@@ -588,7 +560,6 @@ function buildOwnedBackupImage(dockerRunner, plan, created) {
   assertDockerResourceOwned(dockerRunner, 'image', plan.image, plan);
 }
 
-/** Run owned ephemeral container and surface failures to the caller. */
 function runOwnedEphemeralContainer(dockerRunner, plan, created, container, args, options = {}) {
   created.containers.add(container);
   try {
@@ -603,7 +574,6 @@ function runOwnedEphemeralContainer(dockerRunner, plan, created, container, args
   }
 }
 
-/** Build age identity from validated configuration and dependencies. */
 function createAgeIdentity(dockerRunner, plan, created) {
   runOwnedEphemeralContainer(dockerRunner, plan, created, plan.containers.identity, [
     '--mount', `type=volume,source=${plan.volumes.identity},target=/identity`,
@@ -626,7 +596,6 @@ function createAgeIdentity(dockerRunner, plan, created) {
   }
   return recipient;
 }
-/** Build retention sentinel from validated configuration and dependencies. */
 function createRetentionSentinel(dockerRunner, plan, created) {
   runOwnedEphemeralContainer(dockerRunner, plan, created, plan.containers.retention, [
     '--mount', `type=volume,source=${plan.volumes.backups},target=/backups`,
@@ -635,7 +604,6 @@ function createRetentionSentinel(dockerRunner, plan, created) {
   ]);
 }
 
-/** Start production backup while preserving the module's lifecycle and failure guarantees. */
 function startProductionBackup(dockerRunner, plan, password, recipient, created) {
   const container = plan.containers.backup;
   created.containers.add(container);
@@ -660,7 +628,6 @@ function startProductionBackup(dockerRunner, plan, password, recipient, created)
   assertDockerResourceOwned(dockerRunner, 'container', container, plan);
 }
 
-/** Wait for production backup while preserving the module's lifecycle and failure guarantees. */
 async function waitForProductionBackup(dockerRunner, plan) {
   const container = plan.containers.backup;
   const deadline = Date.now() + BACKUP_READY_TIMEOUT_MS;
@@ -680,7 +647,6 @@ async function waitForProductionBackup(dockerRunner, plan) {
   throw new Error('Production encrypted backup did not complete within 60 seconds.');
 }
 
-/** Verify encrypted backup against the module's reviewed constraints. */
 function verifyEncryptedBackup(dockerRunner, plan) {
   const container = plan.containers.backup;
   const manifest = dockerRunner([
@@ -704,7 +670,6 @@ function verifyEncryptedBackup(dockerRunner, plan) {
   return encryptedFile;
 }
 
-/** Stop production backup using validated domain inputs. */
 function stopProductionBackup(dockerRunner, plan, created) {
   assertDockerResourceOwned(dockerRunner, 'container', plan.containers.backup, plan);
   dockerRunner(['rm', '--force', plan.containers.backup]);
@@ -720,7 +685,6 @@ function stopProductionBackup(dockerRunner, plan, created) {
   created.containers.delete(plan.containers.backup);
 }
 
-/** Restore production backup while preserving the module's lifecycle and failure guarantees. */
 function restoreProductionBackup(dockerRunner, plan, password, encryptedFile, created) {
   runOwnedEphemeralContainer(dockerRunner, plan, created, plan.containers.restoreJob, [
     '--network', plan.network,
@@ -740,7 +704,6 @@ function restoreProductionBackup(dockerRunner, plan, password, encryptedFile, cr
   ], { timeoutMs: 120_000, redactions: [password] });
 }
 
-/** Build migrate deploy from the supplied domain inputs. */
 function migrateDeploy(databaseUrl, schemaPath, commandRunner, redactions) {
   const prismaCli = path.join(backendDirectory, 'node_modules', 'prisma', 'build', 'index.js');
   if (!fs.existsSync(prismaCli)) {
@@ -767,7 +730,6 @@ export const ROLLBACK_SEED_EXPECTATIONS = Object.freeze({
   mobileDeviceId: 'rollback-smoke-phone',
 });
 
-/** Build seed representative base data from the supplied domain inputs. */
 async function seedRepresentativeBaseData(client, schemaName) {
   const schema = assertSafeRollbackSchema(schemaName);
   const userResult = await client.query(
@@ -904,12 +866,10 @@ async function seedRepresentativeBaseData(client, schemaName) {
   );
 }
 
-/** Build query rows from the supplied domain inputs. */
 async function queryRows(client, sql, params = []) {
   return (await client.query(sql, params)).rows;
 }
 
-/** Read representative snapshot. */
 async function readRepresentativeSnapshot(client, schemaName) {
   const schema = assertSafeRollbackSchema(schemaName);
   return {
@@ -949,7 +909,6 @@ async function readRepresentativeSnapshot(client, schemaName) {
   };
 }
 
-/** Validate base representative snapshot. */
 export function validateBaseRepresentativeSnapshot(snapshot) {
   assert.equal(snapshot.users.length, 1);
   assert.equal(snapshot.users[0].email, ROLLBACK_SEED_EXPECTATIONS.email);
@@ -968,7 +927,6 @@ export function validateBaseRepresentativeSnapshot(snapshot) {
   return snapshot;
 }
 
-/** Build expected candidate representative snapshot from the supplied domain inputs. */
 export function expectedCandidateRepresentativeSnapshot(baseSnapshot) {
   return {
     ...baseSnapshot,
@@ -978,7 +936,6 @@ export function expectedCandidateRepresentativeSnapshot(baseSnapshot) {
     })),
   };
 }
-/** Read migration ledger. */
 async function readMigrationLedger(client, schemaName) {
   const schema = assertSafeRollbackSchema(schemaName);
   const rows = await queryRows(client, `SELECT "migration_name" FROM ${schema}."_prisma_migrations"
@@ -986,7 +943,6 @@ async function readMigrationLedger(client, schemaName) {
   return rows.map((row) => row.migration_name);
 }
 
-/** Verify candidate schema against the module's reviewed constraints. */
 async function verifyCandidateSchema(client, schemaName, candidateNames) {
   const schema = assertSafeRollbackSchema(schemaName);
   assert.deepEqual(await readMigrationLedger(client, schemaName), candidateNames);
@@ -1038,14 +994,12 @@ async function verifyCandidateSchema(client, schemaName, candidateNames) {
   assert.equal(indexRows.length, 1);
 }
 
-/** Reject execution unless the database has no user tables contract is satisfied. */
 async function assertDatabaseHasNoUserTables(client) {
   const rows = await queryRows(client, `SELECT count(*)::integer AS "table_count"
     FROM pg_catalog.pg_tables WHERE schemaname NOT IN ('pg_catalog', 'information_schema')`);
   assert.equal(rows[0].table_count, 0, 'Restore target must be empty before production restore.');
 }
 
-/** Build with pg client from the supplied domain inputs. */
 async function withPgClient(databaseUrl, callback) {
   const { Client } = backendRequire('pg');
   const client = new Client({ connectionString: databaseUrl });
@@ -1057,7 +1011,6 @@ async function withPgClient(databaseUrl, callback) {
   }
 }
 
-/** Write rollback result. */
 function writeRollbackResult(result) {
   const resultDirectory = path.dirname(ROLLBACK_RESULT_PATH);
   const resolvedDirectory = path.resolve(resultDirectory);
@@ -1183,7 +1136,6 @@ export async function runPostgresRollbackSmoke({ commandRunner = defaultCommandR
   return result;
 }
 
-/** Build failed rollback evidence from validated configuration and dependencies. */
 export function createFailedRollbackEvidence(error, candidateCommit) {
   return {
     schema_version: 1,

@@ -1,6 +1,3 @@
-/**
- * Defines the verify email Expo Router screen.
- */
 import { useEffect, useRef, useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { Link, router, useLocalSearchParams } from 'expo-router';
@@ -16,7 +13,6 @@ import { useAppTheme } from '../src/theme';
 
 const GENERIC_VERIFICATION_MESSAGE = 'If verification is available for that address, a new email will arrive shortly.';
 
-/** Render the verify email route interface. */
 export default function VerifyEmailRoute() {
     const params = useLocalSearchParams<{ token?: string | string[]; '#'?: string | string[] }>();
     const { api, user, updateCurrentUser, logout } = useAuth();

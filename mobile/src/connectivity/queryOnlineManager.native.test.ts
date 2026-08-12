@@ -1,6 +1,3 @@
-/**
- * Exercises query online manager native behavior and regression boundaries.
- */
 jest.mock('@react-native-community/netinfo', () => ({
     __esModule: true,
     default: { addEventListener: jest.fn(() => jest.fn()) }

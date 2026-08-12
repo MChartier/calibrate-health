@@ -94,20 +94,17 @@ const MAX_FIELD_COUNT = 32;
 const MAX_MESSAGES_PER_FIELD = 8;
 const SAFE_TOKEN_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]*$/;
 
-/** Build non empty bounded string from the supplied domain inputs. */
 const nonEmptyBoundedString = (value: unknown, maxLength: number): string | null => {
     if (typeof value !== 'string') return null;
     const normalized = value.trim();
     return normalized.length > 0 && normalized.length <= maxLength ? normalized : null;
 };
 
-/** Build bounded token from the supplied domain inputs. */
 const boundedToken = (value: unknown, maxLength: number): string | null => {
     const parsed = nonEmptyBoundedString(value, maxLength);
     return parsed && SAFE_TOKEN_PATTERN.test(parsed) ? parsed : null;
 };
 
-/** Parse and validate field errors. */
 const parseFieldErrors = (value: unknown): ApiFieldErrors | undefined => {
     if (!value || typeof value !== 'object' || Array.isArray(value)) return undefined;
 
@@ -431,7 +428,6 @@ export class CalibrateApiClient {
         return this.request<ClientConfigResponse>('/api/client-config', { auth: false });
     }
 
-    /** Build report client diagnostic from the supplied domain inputs. */
     reportClientDiagnostic(input: ClientDiagnosticInput): Promise<ClientDiagnosticResponse> {
         const isAnonymousRootFailure = input.event === 'client_failure'
             && input.operation === 'root_render';
@@ -460,7 +456,6 @@ export class CalibrateApiClient {
         });
     }
 
-    /** Build resend email verification from the supplied domain inputs. */
     resendEmailVerification(payload: EmailVerificationResendRequest = {}): Promise<MessageResponse> {
         return this.request<MessageResponse>('/auth/email-verification/resend', {
             method: 'POST',
@@ -468,7 +463,6 @@ export class CalibrateApiClient {
         });
     }
 
-    /** Confirm email verification using the supplied validated inputs. */
     confirmEmailVerification(
         payload: EmailVerificationConfirmRequest
     ): Promise<EmailVerificationConfirmResponse> {
@@ -479,7 +473,6 @@ export class CalibrateApiClient {
         });
     }
 
-    /** Build request password reset from the supplied domain inputs. */
     requestPasswordReset(payload: PasswordResetRequest): Promise<MessageResponse> {
         return this.request<MessageResponse>('/auth/password-reset/request', {
             method: 'POST',
@@ -488,7 +481,6 @@ export class CalibrateApiClient {
         });
     }
 
-    /** Confirm password reset using the supplied validated inputs. */
     confirmPasswordReset(payload: PasswordResetConfirmRequest): Promise<MessageResponse> {
         return this.request<MessageResponse>('/auth/password-reset/confirm', {
             method: 'POST',
@@ -535,12 +527,10 @@ export class CalibrateApiClient {
         });
     }
 
-    /** Resolve the account sessions from the current validated state. */
     getAccountSessions(): Promise<{ sessions: AccountSessionSummary[] }> {
         return this.request<{ sessions: AccountSessionSummary[] }>('/auth/sessions');
     }
 
-    /** Build revoke account session from the supplied domain inputs. */
     revokeAccountSession(sessionId: string): Promise<{ ok: true; revoked: boolean }> {
         return this.request<{ ok: true; revoked: boolean }>(
             '/auth/sessions/' + encodeURIComponent(sessionId),
@@ -548,7 +538,6 @@ export class CalibrateApiClient {
         );
     }
 
-    /** Build revoke other account sessions from the supplied domain inputs. */
     revokeOtherAccountSessions(): Promise<{ ok: true; revoked: number }> {
         return this.request<{ ok: true; revoked: number }>('/auth/sessions/revoke-others', {
             method: 'POST'
@@ -610,12 +599,10 @@ export class CalibrateApiClient {
         return this.request<UserProfileResponse>('/api/user/profile');
     }
 
-    /** Resolve the legal status from the current validated state. */
     getLegalStatus(): Promise<LegalAcceptanceStatus> {
         return this.request<LegalAcceptanceStatus>('/api/legal/status');
     }
 
-    /** Build accept legal documents from the supplied domain inputs. */
     acceptLegalDocuments(payload: LegalAcceptanceRequest): Promise<LegalAcceptanceStatus> {
         return this.request<LegalAcceptanceStatus>('/api/legal/acceptance', {
             method: 'POST',
@@ -624,7 +611,6 @@ export class CalibrateApiClient {
     }
 
 
-    /** Complete onboarding using the supplied validated inputs. */
     completeOnboarding(
         payload: OnboardingCompleteRequest,
         operationId: string
@@ -636,7 +622,6 @@ export class CalibrateApiClient {
         });
     }
 
-    /** Resolve the calorie plan options from the current validated state. */
     getCaloriePlanOptions(payload: CaloriePlanOptionsRequest): Promise<CaloriePlanOptionsResponse> {
         return this.request<CaloriePlanOptionsResponse>('/api/calorie-plan/options', {
             method: 'POST',
@@ -737,7 +722,6 @@ export class CalibrateApiClient {
         });
     }
 
-    /** Build copy food logs from the supplied domain inputs. */
     copyFoodLogs(payload: FoodLogCopyPayload): Promise<FoodLogCopyResponse> {
         return this.request<FoodLogCopyResponse>('/api/food/copy', {
             method: 'POST',
@@ -779,7 +763,6 @@ export class CalibrateApiClient {
         return this.request<MyFoodSummary[]>('/api/my-foods');
     }
 
-    /** Resolve the my foods library from the current validated state. */
     getMyFoodsLibrary(options: MyFoodsLibraryQuery = {}): Promise<MyFoodsLibraryResponse> {
         const query = new URLSearchParams();
         if (options.q !== undefined) query.set('q', options.q);
@@ -1012,7 +995,6 @@ export class CalibrateApiClient {
         });
     }
 
-    /** Mark all in app notifications read using validated domain inputs. */
     markAllInAppNotificationsRead(): Promise<MarkAllInAppNotificationsReadResponse> {
         return this.request<MarkAllInAppNotificationsReadResponse>('/api/notifications/in-app/read-all', {
             method: 'PATCH'

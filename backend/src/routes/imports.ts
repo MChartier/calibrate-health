@@ -43,13 +43,11 @@ type LoseItImportOptions = {
   includeBodyFat: boolean;
 };
 
-/** Build the future weight warning with stable fields for the backend domain boundary. */
 function buildFutureWeightWarning(count: number): string | null {
   if (count <= 0) return null;
   return `${count} future-dated weight ${count === 1 ? 'entry was' : 'entries were'} excluded.`;
 }
 
-/** Partition imported weights into accepted, warning, and rejected policy groups. */
 function partitionWeightsByPolicy(imports: LoseItWeightImport[], unit: WeightUnit) {
   return imports.reduce<{ eligible: LoseItWeightImport[]; invalid: LoseItWeightImport[] }>((result, entry) => {
     try {
@@ -62,7 +60,6 @@ function partitionWeightsByPolicy(imports: LoseItWeightImport[], unit: WeightUni
   }, { eligible: [], invalid: [] });
 }
 
-/** Build the invalid weight warning with stable fields for the backend domain boundary. */
 function buildInvalidWeightWarning(count: number): string | null {
   if (count <= 0) return null;
   return `${count} weight ${count === 1 ? 'entry was' : 'entries were'} outside the supported range and excluded.`;

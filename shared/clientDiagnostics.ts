@@ -1,6 +1,3 @@
-/**
- * Defines the shared client diagnostics domain contract.
- */
 export const CLIENT_DIAGNOSTIC_EVENTS = [
     'client_failure',
     'operation_failure',
@@ -33,7 +30,6 @@ export const CLIENT_DIAGNOSTIC_PLATFORMS = ['web', 'android_phone', 'wear_os'] a
 
 export const CLIENT_DIAGNOSTIC_REQUEST_ID_PATTERN = /^(?:[a-fA-F0-9]{16,64}|[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[1-5][a-fA-F0-9]{3}-[89aAbB][a-fA-F0-9]{3}-[a-fA-F0-9]{12})$/;
 
-/** Determine whether the input conforms to the client diagnostic request id contract. */
 export const isClientDiagnosticRequestId = (value: unknown): value is string =>
     typeof value === 'string' && CLIENT_DIAGNOSTIC_REQUEST_ID_PATTERN.test(value);
 

@@ -1,6 +1,3 @@
-/**
- * Exercises cache isolation web behavior and regression boundaries.
- */
 import {
     PWA_CACHE_MESSAGES,
     clearBrowserUserScopedCaches

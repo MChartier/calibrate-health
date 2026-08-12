@@ -1,6 +1,3 @@
-/**
- * Exercises dashboard state behavior and regression boundaries.
- */
 import { ASYNC_RESOURCE_STATES } from '../asyncState/resolveAsyncState';
 import {
     hasTodayDashboardFailure,
@@ -8,7 +5,6 @@ import {
     type TodayDashboardQuerySnapshot
 } from './dashboardState';
 
-/** Resolve the query fixture with deterministic loading and error transitions. */
 const resolvedQuery = (
     data: unknown,
     overrides: Partial<TodayDashboardQuerySnapshot> = {}
@@ -21,7 +17,6 @@ const resolvedQuery = (
     ...overrides
 });
 
-/** Build deterministic populated dashboard for regression coverage. */
 const populatedDashboard = () => [
     resolvedQuery({ calorieSummary: {} }),
     resolvedQuery([{ id: 1 }]),

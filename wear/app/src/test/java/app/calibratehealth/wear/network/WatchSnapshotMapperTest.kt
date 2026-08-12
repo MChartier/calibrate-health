@@ -129,7 +129,6 @@ class WatchSnapshotMapperTest {
         assertTrue(runCatching { StrictJson.parse("{}[]") }.isFailure)
     }
 
-    /** Proves missing or unsafe plan ownership cannot retain target or projection math. */
     @Test
     fun `fails closed when server plan ownership is absent or unsafe`() {
         val oldServer = validSnapshot().replace(
@@ -152,7 +151,6 @@ class WatchSnapshotMapperTest {
         assertEquals(null, unsafeMapped.caloriesRemaining)
     }
 
-    /** Preserves non-plan snapshot state while sanitizing review-only weight targets. */
     @Test
     fun `accepts review-only snapshot with sanitized null weights and preserves other state`() {
         val reviewOnly = validSnapshot()
@@ -174,7 +172,6 @@ class WatchSnapshotMapperTest {
         assertEquals(2, mapped.reminders.size)
     }
 
-    /** Protects large but valid server-owned targets from accidental range truncation. */
     @Test
     fun `accepts a server-owned target above one hundred thousand for the Room cache`() {
         val mapped = WatchSnapshotMapper.map(

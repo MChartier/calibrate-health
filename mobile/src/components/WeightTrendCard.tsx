@@ -66,7 +66,6 @@ const DESKTOP_CHART_MAX_HEIGHT = 420;
 const CHART_PADDING = { left: 58, right: 12, top: 12, bottom: 32 };
 const MIN_WEIGHT_AXIS_SPAN = 0.4;
 // Keeps chart growth deterministic across compact and wide viewports.
-/** Resolve the weight trend chart height bounds from the current validated state. */
 export function getWeightTrendChartHeightBounds(viewportWidth: number): {
     minimum: number;
     maximum: number;
@@ -83,7 +82,6 @@ const TREND_TABLE_DATE_COLUMN_WIDTH = 128;
 const TREND_TABLE_VALUE_COLUMN_WIDTH = 132;
 const TREND_TABLE_RANGE_COLUMN_WIDTH = 196;
 
-/** Decide whether to apply stack weight trend table. */
 export function shouldStackWeightTrendTable(viewportWidth: number, fontScale: number): boolean {
     return viewportWidth < COMPACT_TREND_TABLE_BREAKPOINT || fontScale >= 1.6;
 }
@@ -122,17 +120,14 @@ function getChartPressX(nativeEvent: ChartPressNativeEvent): number | null {
     return typeof pressX === 'number' && Number.isFinite(pressX) ? pressX : null;
 }
 
-/** Resolve the keyboard key from the current validated state. */
 function getKeyboardKey(event: KeyboardLikeEvent): string {
     return event.key ?? event.nativeEvent?.key ?? '';
 }
 
-/** Clamp chart height using validated domain inputs. */
 function clampChartHeight(value: number, minimum: number, maximum: number): number {
     return Math.max(minimum, Math.min(value, maximum));
 }
 
-/** Describe selected trend point using validated domain inputs. */
 function describeSelectedTrendPoint(
     point: WeightTrendChartPoint,
     unit: Parameters<typeof formatWeight>[1]
@@ -531,7 +526,6 @@ export const WeightTrendCard: React.FC<WeightTrendCardProps> = ({
     );
 };
 
-/** Render the weight trend data table interface. */
 const WeightTrendDataTable: React.FC<{
     points: WeightTrendChartPoint[];
     unit: Parameters<typeof formatWeight>[1];
@@ -617,7 +611,6 @@ const WeightTrendDataTable: React.FC<{
     );
 };
 
-/** Render the selected trend panel interface. */
 const SelectedTrendPanel: React.FC<{
     point: WeightTrendChartPoint;
     unit: Parameters<typeof formatWeight>[1];
@@ -706,7 +699,6 @@ const SelectedTrendPanel: React.FC<{
     );
 };
 
-/** Render the point navigation button interface. */
 const PointNavigationButton: React.FC<{
     direction: 'previous' | 'next';
     disabled: boolean;
@@ -732,7 +724,6 @@ const PointNavigationButton: React.FC<{
     );
 };
 
-/** Render the trend chart legend interface. */
 const TrendChartLegend: React.FC = () => {
     const theme = useAppTheme();
     const styles = useMemo(() => createStyles(theme), [theme]);

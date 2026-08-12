@@ -1,6 +1,3 @@
-/**
- * Provides Expo client behavior for account cleanup.
- */
 import { IndexedDbOutbox, openBrowserOutboxDatabase } from './indexedDbOutbox.web';
 import { createOutboxNamespace } from './queuedMutation';
 

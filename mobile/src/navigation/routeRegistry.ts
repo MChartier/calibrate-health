@@ -1,6 +1,3 @@
-/**
- * Provides Expo client behavior for route registry.
- */
 export const ROUTE_IDS = [
   'root',
   'login',
@@ -53,7 +50,6 @@ export type RouteDefinition = {
   aliases: readonly RouteAlias[];
 };
 
-/** Build route from the supplied domain inputs. */
 const route = (
   definition: Omit<RouteDefinition, 'documentTitle' | 'aliases'> & {
     documentTitle?: string;
@@ -358,7 +354,6 @@ export type RouteMatch = {
   isAlias: boolean;
 };
 
-/** Trim route path using validated domain inputs. */
 const trimRoutePath = (pathname: string): string => {
   const pathOnly = pathname.split(/[?#]/, 1)[0] ?? '/';
   if (pathOnly === '/') return pathOnly;
@@ -370,17 +365,14 @@ export const REGISTERED_ROUTE_PATHS = ROUTE_IDS.flatMap((routeId) => {
   return [definition.path, ...definition.aliases.map((alias) => alias.path)];
 });
 
-/** Resolve the route definition from the current validated state. */
 export function getRouteDefinition(routeId: RouteId): RouteDefinition {
   return ROUTE_REGISTRY[routeId];
 }
 
-/** Check whether the current state permits onical path for route. */
 export function canonicalPathForRoute(routeId: RouteId): RouteDefinition['path'] {
   return ROUTE_REGISTRY[routeId].path;
 }
 
-/** Resolve the route by path from the current validated state. */
 export function getRouteByPath(pathname: string): RouteMatch | null {
   const matchedPath = trimRoutePath(pathname);
   for (const routeId of ROUTE_IDS) {
@@ -407,13 +399,11 @@ export function getRouteByPath(pathname: string): RouteMatch | null {
   return null;
 }
 
-/** Resolve the route parent from the current validated state. */
 export function getRouteParent(routeId: RouteId): RouteDefinition | null {
   const parent = ROUTE_REGISTRY[routeId].parent;
   return parent ? ROUTE_REGISTRY[parent] : null;
 }
 
-/** Resolve the route fallback from the current validated state. */
 export function getRouteFallback(routeId: RouteId): RouteDefinition | null {
   const fallback = ROUTE_REGISTRY[routeId].fallback;
   return fallback ? ROUTE_REGISTRY[fallback] : null;

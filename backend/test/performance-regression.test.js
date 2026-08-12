@@ -1,6 +1,3 @@
-/**
- * Exercises performance regression behavior and regression boundaries.
- */
 const assert = require('node:assert/strict');
 const test = require('node:test');
 

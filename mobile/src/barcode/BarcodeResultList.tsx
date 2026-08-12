@@ -1,6 +1,3 @@
-/**
- * Provides Expo client behavior for barcode result list.
- */
 import { Pressable, StyleSheet, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import type { SearchedFoodItem } from '../food/serving';
@@ -13,7 +10,6 @@ type BarcodeResultListProps = {
     onChoose: (candidate: SearchedFoodItem) => void;
 };
 
-/** Render the barcode result list interface. */
 export function BarcodeResultList({ candidates, disabled = false, onChoose }: BarcodeResultListProps) {
     const theme = useAppTheme();
 

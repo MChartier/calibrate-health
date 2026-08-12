@@ -1,6 +1,3 @@
-/**
- * Provides backend domain operations for reminder schedule.
- */
 export const DEFAULT_REMINDER_LOCAL_MINUTE = 9 * 60;
 export const MINUTES_PER_DAY = 24 * 60;
 
@@ -17,7 +14,6 @@ export const parseLocalWallClockTime = (value: unknown): number | null => {
   return Number(match[1]) * 60 + Number(match[2]);
 };
 
-/** Format local wall clock minute for stable display or serialization. */
 export const formatLocalWallClockMinute = (minute: number): string => {
   const safeMinute = Number.isInteger(minute) && minute >= 0 && minute < MINUTES_PER_DAY
     ? minute
@@ -68,6 +64,5 @@ export const isWithinQuietHours = (
   return minuteOfDay >= startMinute || minuteOfDay < endMinute;
 };
 
-/** Determine whether the input conforms to the reminder due contract. */
 export const isReminderDue = (minuteOfDay: number, reminderMinute: number): boolean =>
   minuteOfDay >= reminderMinute;

@@ -1,6 +1,3 @@
-/**
- * Exercises notification history behavior and regression boundaries.
- */
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { InAppNotificationPageItem, InAppNotificationPageResponse } from '@calibrate/api-client';
@@ -29,7 +26,6 @@ jest.mock('../hooks/useNativePushRegistration', () => ({
     useNativePushRegistration: () => mockPush()
 }));
 
-/** Build deterministic notification for regression coverage. */
 function notification(id: number, overrides: Partial<InAppNotificationPageItem> = {}): InAppNotificationPageItem {
     return {
         id,
@@ -47,7 +43,6 @@ function notification(id: number, overrides: Partial<InAppNotificationPageItem> 
     };
 }
 
-/** Build deterministic page for regression coverage. */
 function page(
     notifications: InAppNotificationPageItem[],
     nextCursor: string | null = null,
@@ -56,7 +51,6 @@ function page(
     return { notifications, unread_count: unreadCount, next_cursor: nextCursor };
 }
 
-/** Render history. */
 function renderHistory() {
     const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     mockQueryClients.push(queryClient);

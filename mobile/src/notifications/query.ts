@@ -1,6 +1,3 @@
-/**
- * Provides Expo client behavior for query.
- */
 import type { InfiniteData, QueryClient } from '@tanstack/react-query';
 import type { InAppNotification } from '@calibrate/api-client';
 
@@ -42,7 +39,6 @@ export function dedupeNotificationPages(
     return notifications;
 }
 
-/** Update history notification. */
 function updateHistoryNotification(
     data: InfiniteData<NotificationListPage> | undefined,
     notificationId: number,
@@ -60,7 +56,6 @@ function updateHistoryNotification(
     };
 }
 
-/** Reconcile notification read using validated domain inputs. */
 export function reconcileNotificationRead(
     queryClient: QueryClient,
     notificationId: number,
@@ -81,7 +76,6 @@ export function reconcileNotificationRead(
     );
 }
 
-/** Reconcile notification dismissed using validated domain inputs. */
 export function reconcileNotificationDismissed(
     queryClient: QueryClient,
     notificationId: number,
@@ -97,7 +91,6 @@ export function reconcileNotificationDismissed(
     );
 }
 
-/** Reconcile all notifications read using validated domain inputs. */
 export function reconcileAllNotificationsRead(
     queryClient: QueryClient,
     readAt = new Date().toISOString()
@@ -120,7 +113,6 @@ export function reconcileAllNotificationsRead(
     }) : current);
 }
 
-/** Invalidate notification queries using the supplied validated inputs. */
 export function invalidateNotificationQueries(queryClient: QueryClient): Promise<void> {
     return queryClient.invalidateQueries({ queryKey: [...MOBILE_NOTIFICATION_QUERY_KEY] });
 }

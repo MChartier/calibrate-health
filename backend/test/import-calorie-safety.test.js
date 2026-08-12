@@ -1,11 +1,7 @@
-/**
- * Exercises import calorie safety behavior and regression boundaries.
- */
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const Module = require('node:module');
 
-/** Build deterministic stub module for regression coverage. */
 function stubModule(path, exports) {
   const stub = new Module(path);
   stub.exports = exports;

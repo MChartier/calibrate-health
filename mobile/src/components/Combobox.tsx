@@ -1,6 +1,3 @@
-/**
- * Provides the shared combobox component and interaction contract.
- */
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
@@ -72,12 +69,10 @@ type FocusableOption = {
 
 const TYPEAHEAD_RESET_MS = 650;
 
-/** Resolve the key from the current validated state. */
 function getKey(event: KeyboardLikeEvent) {
     return event.key ?? event.nativeEvent?.key ?? '';
 }
 
-/** Find the next typeahead match while wrapping at the option-list boundaries. */
 function findTypeaheadIndex<T extends string>(
     options: ReadonlyArray<ComboboxOption<T>>,
     search: string,
@@ -418,7 +413,6 @@ export function Combobox<T extends string>({
     );
 }
 
-/** Build the styles for the active theme from validated configuration and dependencies. */
 function createStyles(theme: AppTheme) {
     return StyleSheet.create({
         trigger: {

@@ -1,6 +1,3 @@
-/**
- * Runs the repository-owned native release evidence workflow.
- */
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -187,7 +184,6 @@ const SHA256_PATTERN = /^[0-9a-f]{64}$/;
 const COMMIT_PATTERN = /^[0-9a-f]{40}$/;
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
-/** Check whether the current state has exact fields. */
 function hasExactFields(value, expected, label, errors) {
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
     errors.push(`${label} must be an object.`);
@@ -202,12 +198,10 @@ function hasExactFields(value, expected, label, errors) {
   return missing.length === 0 && unexpected.length === 0;
 }
 
-/** Determine whether the input conforms to the non empty string contract. */
 function isNonEmptyString(value) {
   return typeof value === 'string' && value.trim().length > 0;
 }
 
-/** Normalize the repository path into the canonical representation used at this boundary. */
 function normalizedRepositoryPath(value) {
   if (!isNonEmptyString(value) || path.isAbsolute(value)) return null;
   const normalized = value.replaceAll('\\', '/');
@@ -215,12 +209,10 @@ function normalizedRepositoryPath(value) {
   return normalized;
 }
 
-/** Sha256 using validated domain inputs. */
 function sha256(value) {
   return crypto.createHash('sha256').update(value).digest('hex');
 }
 
-/** Validate no serial fields. */
 function validateNoSerialFields(value, label, errors) {
   if (!value || typeof value !== 'object') return;
   for (const [key, nested] of Object.entries(value)) {
@@ -231,7 +223,6 @@ function validateNoSerialFields(value, label, errors) {
   }
 }
 
-/** Release version using validated domain inputs. */
 function releaseVersion(manifest, role) {
   const client = role === 'phone' ? 'mobile' : 'wear';
   const value = manifest?.android?.[client];
@@ -241,7 +232,6 @@ function releaseVersion(manifest, role) {
   };
 }
 
-/** Parse and validate keytool signer fingerprint. */
 export function parseKeytoolSignerFingerprint(output) {
   const fingerprints = [...output.matchAll(/\bSHA256:\s*([0-9a-f:]{64,})/gi)]
     .map((match) => match[1].replaceAll(':', '').toLowerCase())
@@ -253,7 +243,6 @@ export function parseKeytoolSignerFingerprint(output) {
   return unique[0];
 }
 
-/** Build native release capabilities from the supplied domain inputs. */
 export function deriveNativeReleaseCapabilities(checkpoints) {
   return Object.entries(NATIVE_RELEASE_CHECKPOINT_GROUPS)
     .filter(([, required]) => required.every((checkpoint) => checkpoints?.[checkpoint]?.outcome === true))
@@ -261,7 +250,6 @@ export function deriveNativeReleaseCapabilities(checkpoints) {
     .sort();
 }
 
-/** Validate checkpoints. */
 function validateCheckpoints(checkpoints, errors) {
   if (!checkpoints || typeof checkpoints !== 'object' || Array.isArray(checkpoints)) {
     errors.push('Native release checkpoints must be an object.');
@@ -292,7 +280,6 @@ function validateCheckpoints(checkpoints, errors) {
   return deriveNativeReleaseCapabilities(checkpoints);
 }
 
-/** Validate artifacts. */
 function validateArtifacts(artifacts, manifest, errors) {
   if (!Array.isArray(artifacts) || artifacts.length !== NATIVE_RELEASE_ARTIFACT_CONTRACTS.length) {
     errors.push('Native release evidence must contain exactly four APK/AAB artifact records.');
@@ -351,7 +338,6 @@ function validateArtifacts(artifacts, manifest, errors) {
   return { signerSha256: signers.size === 1 ? [...signers][0] : null, byRole };
 }
 
-/** Validate build provenance. */
 function validateBuildProvenance(provenance, sourceCommit, releaseManifest, artifacts, errors) {
   hasExactFields(provenance, BUILD_PROVENANCE_FIELDS, 'Native release build provenance', errors);
   if (provenance?.schemaVersion !== NATIVE_RELEASE_BUILD_PROVENANCE_SCHEMA_VERSION) {
@@ -393,7 +379,6 @@ function validateBuildProvenance(provenance, sourceCommit, releaseManifest, arti
   }
 }
 
-/** Validate devices. */
 function validateDevices(devices, errors) {
   if (!Array.isArray(devices) || devices.length !== 2) {
     errors.push('Native release evidence must contain one phone and one watch device record.');
@@ -429,7 +414,6 @@ function validateDevices(devices, errors) {
   return byRole;
 }
 
-/** Validate install state. */
 function validateInstallState(state, label, errors) {
   hasExactFields(state, INSTALL_STATE_FIELDS, label, errors);
   if (!isNonEmptyString(state?.versionName)) errors.push(`${label} versionName must be recorded.`);
@@ -440,7 +424,6 @@ function validateInstallState(state, label, errors) {
   if (!SHA256_PATTERN.test(state?.signerSha256 ?? '')) errors.push(`${label} signer SHA-256 is invalid.`);
 }
 
-/** Validate upgrades. */
 function validateUpgrades(upgrades, artifactsByRole, sharedSigner, errors) {
   hasExactFields(upgrades, ['phone', 'watch'], 'Native release upgrades', errors);
   for (const role of ['phone', 'watch']) {
@@ -474,7 +457,6 @@ function validateUpgrades(upgrades, artifactsByRole, sharedSigner, errors) {
   }
 }
 
-/** Parse and validate release manifest. */
 function parseReleaseManifest(content, errors) {
   try {
     const manifest = JSON.parse(Buffer.isBuffer(content) ? content.toString('utf8') : content);
@@ -494,7 +476,6 @@ function parseReleaseManifest(content, errors) {
   }
 }
 
-/** Determine whether the input conforms to the exact calendar date contract. */
 function isExactCalendarDate(value) {
   if (!DATE_PATTERN.test(value ?? '')) return false;
   const parsed = new Date(`${value}T00:00:00.000Z`);
@@ -602,7 +583,6 @@ export function validateNativeReleaseObservation(observation, options = {}) {
   return result;
 }
 
-/** Build finalize native release evidence from the supplied domain inputs. */
 export function finalizeNativeReleaseEvidence(observation, details, options = {}) {
   const observationResult = validateNativeReleaseObservation(observation, options);
   if (observationResult.errors.length) {
@@ -678,7 +658,6 @@ export function validateEvidenceOnlyAttestation({
   return errors;
 }
 
-/** Run git and surface failures to the caller. */
 function runGit(root, args) {
   const result = spawnSync('git', args, { cwd: root, encoding: 'utf8', windowsHide: true });
   if (result.error) throw result.error;
@@ -688,7 +667,6 @@ function runGit(root, args) {
   return result.stdout;
 }
 
-/** Read evidence git context. */
 export function readEvidenceGitContext({
   root = repositoryRoot,
   sourceCommit,
@@ -733,7 +711,6 @@ export function readEvidenceGitContext({
   };
 }
 
-/** Build native release evidence result path from the supplied domain inputs. */
 export function nativeReleaseEvidenceResultPath(value) {
   const normalized = normalizedRepositoryPath(value);
   if (!normalized || !/^quality\/physical-results\/[a-z0-9][a-z0-9._-]*\.json$/.test(normalized)) {
@@ -742,14 +719,12 @@ export function nativeReleaseEvidenceResultPath(value) {
   return normalized;
 }
 
-/** Build required option from the supplied domain inputs. */
 function requiredOption(argv, index, option) {
   const value = argv[index + 1];
   if (!value || value.startsWith('--')) throw new Error(`${option} requires a value.`);
   return value;
 }
 
-/** Parse and validate native release evidence args. */
 export function parseNativeReleaseEvidenceArgs(argv) {
   const result = {
     command: argv[0] ?? null,
@@ -783,7 +758,6 @@ export function parseNativeReleaseEvidenceArgs(argv) {
   return result;
 }
 
-/** Build print help from the supplied domain inputs. */
 function printHelp() {
   process.stdout.write(`Usage:
   node scripts/native-release-evidence.mjs finalize --observation <json> --checkpoints <json> --output <quality/physical-results/result.json> --owner <owner> --executed-on <YYYY-MM-DD> --synthetic-account
@@ -793,12 +767,10 @@ The retained result names frozen source candidate C only. Verification supplies 
 `);
 }
 
-/** Read json. */
 function readJson(file) {
   return JSON.parse(fs.readFileSync(file, 'utf8'));
 }
 
-/** Run native release evidence cli and surface failures to the caller. */
 export function runNativeReleaseEvidenceCli(argv = process.argv.slice(2), options = {}) {
   const root = options.repositoryRoot ?? repositoryRoot;
   const args = parseNativeReleaseEvidenceArgs(argv);

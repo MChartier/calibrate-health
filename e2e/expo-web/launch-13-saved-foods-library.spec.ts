@@ -1,6 +1,3 @@
-/**
- * Exercises launch 13 saved foods library behavior and regression boundaries.
- */
 import { mkdir } from 'node:fs/promises';
 import path from 'node:path';
 import type { Page, TestInfo } from '@playwright/test';
@@ -26,7 +23,6 @@ const TRANSIENT_PWA_TITLES = new Set([
   'Updating Calibrate',
 ]);
 
-/** Assert that no horizontal overflow. */
 async function expectNoHorizontalOverflow(page: Page) {
   const widths = await page.evaluate(() => ({
     clientWidth: document.documentElement.clientWidth,
@@ -35,13 +31,11 @@ async function expectNoHorizontalOverflow(page: Page) {
   expect(widths.scrollWidth).toBeLessThanOrEqual(widths.clientWidth);
 }
 
-/** Build deterministic reveal logged meal for regression coverage. */
 async function revealLoggedMeal(page: Page, mealPeriod: keyof typeof MEAL_LABELS) {
   const expandMeal = page.getByRole('button', { name: `Expand ${MEAL_LABELS[mealPeriod]}`, exact: true });
   if (await expandMeal.count()) await expandMeal.click();
 }
 
-/** Capture evidence only when explicit evidence collection is enabled. */
 async function captureEvidence(page: Page, testInfo: TestInfo) {
   if (process.env.CALIBRATE_CAPTURE_EVIDENCE !== '1') return;
   const filename = testInfo.project.name === 'desktop-chrome'

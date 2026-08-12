@@ -767,7 +767,6 @@ export async function executeUpgradeInstallSequence(options) {
   };
 }
 
-/** Build hosted upgrade evidence from validated configuration and dependencies. */
 export function createHostedUpgradeEvidence(rawEvidence, sourceCommit) {
   const hosted = createStartedHostedNativeEvidence('upgrade', sourceCommit);
   const plan = rawEvidence?.plan;

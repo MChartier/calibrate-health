@@ -1,6 +1,3 @@
-/**
- * Provides Expo client behavior for saved foods library.
- */
 import { useEffect, useMemo, useState } from 'react';
 import { StyleSheet, View, useWindowDimensions } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
@@ -39,12 +36,10 @@ const FILTER_OPTIONS: Array<{ value: SavedFoodsFilter; label: string }> = [
     { value: 'RECIPE', label: 'Recipes' }
 ];
 
-/** Resolve the saved foods library query key from the current validated state. */
 export function getSavedFoodsLibraryQueryKey(query: string, filter: SavedFoodsFilter) {
     return [...SAVED_FOODS_LIBRARY_QUERY_KEY, query, filter] as const;
 }
 
-/** Render the saved foods library interface. */
 export function SavedFoodsLibrary({
     onCreateFood,
     onCreateRecipe,
@@ -248,7 +243,6 @@ export function SavedFoodsLibrary({
     );
 }
 
-/** Build the styles for the active theme from validated configuration and dependencies. */
 function createStyles(theme: AppTheme) {
     return StyleSheet.create({
         header: {

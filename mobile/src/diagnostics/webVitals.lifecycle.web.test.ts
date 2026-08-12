@@ -1,6 +1,3 @@
-/**
- * Exercises web vitals lifecycle web behavior and regression boundaries.
- */
 import { reportClientDiagnostic } from './clientDiagnostics';
 import { observeClientWebVitals } from './webVitals.web';
 

@@ -1,6 +1,3 @@
-/**
- * Exercises combobox behavior and regression boundaries.
- */
 import { fireEvent, render } from '@testing-library/react-native';
 import { useState } from 'react';
 import { Combobox, Listbox } from './Combobox';

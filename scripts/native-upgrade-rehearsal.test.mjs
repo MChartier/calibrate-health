@@ -44,7 +44,6 @@ function packageDump(versionCode, firstInstallTime = '2026-07-13 10:00:00') {
   `;
 }
 
-/** Build fake tooling from validated configuration and dependencies. */
 function createFakeTooling(root) {
   const tooling = {
     sdkRoot: path.join(root, 'sdk'),

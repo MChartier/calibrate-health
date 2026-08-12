@@ -1,6 +1,3 @@
-/**
- * Provides the shared copy food sheet component and interaction contract.
- */
 import React, { useEffect, useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
@@ -35,14 +32,12 @@ type CopyFoodSheetProps = {
     onSubmit: (selection: FoodCopySelection) => void;
 };
 
-/** Resolve the default copy target date from the current validated state. */
 export function getDefaultCopyTargetDate(sourceDate: string, minDate: string, maxDate: string): string {
     if (sourceDate < maxDate) return clampDateOnly(addDaysToDateOnly(sourceDate, 1), minDate, maxDate);
     if (sourceDate > minDate) return clampDateOnly(addDaysToDateOnly(sourceDate, -1), minDate, maxDate);
     return sourceDate;
 }
 
-/** Render the copy food sheet interface. */
 export const CopyFoodSheet: React.FC<CopyFoodSheetProps> = ({
     visible,
     source,
@@ -149,7 +144,6 @@ export const CopyFoodSheet: React.FC<CopyFoodSheetProps> = ({
     );
 };
 
-/** Build the styles for the active theme from validated configuration and dependencies. */
 const createStyles = (theme: AppTheme) => StyleSheet.create({
     fieldGroup: {
         gap: theme.spacing.sm

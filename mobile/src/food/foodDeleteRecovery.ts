@@ -1,6 +1,3 @@
-/**
- * Provides Expo client behavior for food delete recovery.
- */
 import type { QueuedMutation } from '../offline/queuedMutation';
 import { OUTBOX_MUTATION_STATES } from '../offline/queuedMutation';
 import { OFFLINE_MUTATION_OPERATIONS } from '../offline/operations';
@@ -28,7 +25,6 @@ export type FoodDeleteRecoveryState<TEntry extends FoodDeleteEntry> = Readonly<{
     failures: readonly FoodDeleteFailure<TEntry>[];
 }>;
 
-/** Build empty food delete recovery state from validated configuration and dependencies. */
 export function createEmptyFoodDeleteRecoveryState<
     TEntry extends FoodDeleteEntry
 >(): FoodDeleteRecoveryState<TEntry> {
@@ -40,7 +36,6 @@ export function createEmptyFoodDeleteRecoveryState<
     };
 }
 
-/** Resolve the food delete hidden ids from the current validated state. */
 export function getFoodDeleteHiddenIds<TEntry extends FoodDeleteEntry>(
     state: FoodDeleteRecoveryState<TEntry>,
     queuedDeleteIds: readonly number[] = [],
@@ -55,7 +50,6 @@ export function getFoodDeleteHiddenIds<TEntry extends FoodDeleteEntry>(
     ]));
 }
 
-/** Filter visible food log entries to the accepted records. */
 export function filterVisibleFoodLogEntries<TEntry extends FoodDeleteEntry>(
     entries: readonly TEntry[],
     hiddenIds: readonly number[]
@@ -65,7 +59,6 @@ export function filterVisibleFoodLogEntries<TEntry extends FoodDeleteEntry>(
     return entries.filter(({ id }) => !hidden.has(id));
 }
 
-/** Read queued food delete id. */
 function readQueuedFoodDeleteId(
     mutation: Pick<QueuedMutation, 'operation' | 'payload'>
 ): number | null {

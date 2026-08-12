@@ -1,6 +1,3 @@
-/**
- * Exercises operational alert collector behavior and regression boundaries.
- */
 import assert from 'node:assert/strict';
 import { readFile, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
@@ -19,7 +16,6 @@ import {
 
 const PROCESS_STARTED_AT = '2026-08-09T10:00:00.000Z';
 
-/** Build deterministic metrics snapshot for regression coverage. */
 function metricsSnapshot(operations = {}, lastSuccessAt = '2026-08-09T11:55:00.000Z') {
   return {
     process_started_at: PROCESS_STARTED_AT,
@@ -30,7 +26,6 @@ function metricsSnapshot(operations = {}, lastSuccessAt = '2026-08-09T11:55:00.0
   };
 }
 
-/** Build deterministic fixture fetch for regression coverage. */
 function fixtureFetch(snapshots, observedServerVersion = '0.14.0') {
   return async (url, init) => {
     if (String(url).endsWith('/internal/diagnostics/metrics')) {
@@ -48,7 +43,6 @@ function fixtureFetch(snapshots, observedServerVersion = '0.14.0') {
   };
 }
 
-/** Collect or input from the supplied records. */
 function collectorInput(statePath, sink, fetchImpl, now) {
   return {
     metricsUrl: 'https://staging.example.invalid/internal/diagnostics/metrics',

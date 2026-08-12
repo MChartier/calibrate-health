@@ -1,6 +1,3 @@
-/**
- * Exercises nested route stacks behavior and regression boundaries.
- */
 import { mkdir } from 'node:fs/promises';
 import path from 'node:path';
 import type { Page } from '@playwright/test';
@@ -8,7 +5,6 @@ import { expect, expectApiFailure, hideTransientPwaNotices, test } from './fixtu
 
 const EVIDENCE_DIR = path.resolve('docs/screenshots/launch-07');
 
-/** Assert that no horizontal overflow. */
 async function expectNoHorizontalOverflow(page: Page) {
   const widths = await page.evaluate(() => ({
     clientWidth: document.documentElement.clientWidth,
@@ -17,7 +13,6 @@ async function expectNoHorizontalOverflow(page: Page) {
   expect(widths.scrollWidth).toBeLessThanOrEqual(widths.clientWidth);
 }
 
-/** Assert that focused route title. */
 async function expectFocusedRouteTitle(page: Page, title: string, documentTitle: string) {
   const heading = page.locator('#route-focus-title');
   await expect(heading).toHaveText(title);
@@ -25,7 +20,6 @@ async function expectFocusedRouteTitle(page: Page, title: string, documentTitle:
   await expect(page).toHaveTitle(documentTitle);
 }
 
-/** Assert that direct entry title. */
 async function expectDirectEntryTitle(page: Page, title: string, documentTitle: string) {
   const heading = page.locator('#route-focus-title');
   await expect(heading).toHaveText(title);
@@ -33,7 +27,6 @@ async function expectDirectEntryTitle(page: Page, title: string, documentTitle: 
   await expect(page).toHaveTitle(documentTitle);
 }
 
-/** Capture  only when explicit evidence collection is enabled. */
 async function capture(page: Page, filename: string) {
   if (process.env.CALIBRATE_CAPTURE_EVIDENCE !== '1') return;
 

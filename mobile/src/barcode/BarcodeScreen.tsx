@@ -1,6 +1,3 @@
-/**
- * Provides Expo client behavior for barcode screen.
- */
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Linking, StyleSheet, View } from 'react-native';
 import { useCameraPermissions, type BarcodeScanningResult } from 'expo-camera';
@@ -75,14 +72,12 @@ import {
 
 type BarcodeMode = 'scan' | 'manual-barcode' | 'manual-food';
 
-/** Resolve the initial mode from the current validated state. */
 function getInitialMode(resume: BarcodeResumeContext): BarcodeMode {
     if (resume.resumeStep === BARCODE_RESUME_STEPS.MANUAL) return 'manual-barcode';
     if (resume.resumeStep === BARCODE_RESUME_STEPS.MANUAL_FOOD) return 'manual-food';
     return 'scan';
 }
 
-/** Render the barcode screen interface. */
 export default function BarcodeScreen() {
     const theme = useAppTheme();
     const styles = useMemo(() => createStyles(theme), [theme]);
@@ -728,7 +723,6 @@ export default function BarcodeScreen() {
     );
 }
 
-/** Build the styles for the active theme from validated configuration and dependencies. */
 const createStyles = (theme: AppTheme) => StyleSheet.create({
     scannerRoot: {
         paddingHorizontal: 0,

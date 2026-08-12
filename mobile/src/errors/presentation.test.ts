@@ -1,6 +1,3 @@
-/**
- * Exercises presentation behavior and regression boundaries.
- */
 import { ApiError } from '@calibrate/api-client';
 import { getErrorPresentation, getSafeActionErrorMessage } from './presentation';
 

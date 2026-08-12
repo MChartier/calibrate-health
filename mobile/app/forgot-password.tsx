@@ -1,6 +1,3 @@
-/**
- * Defines the forgot password Expo Router screen.
- */
 import { useState } from 'react';
 import { Pressable } from 'react-native';
 import { Link } from 'expo-router';
@@ -14,7 +11,6 @@ import { useAppTheme } from '../src/theme';
 
 const GENERIC_RESET_MESSAGE = 'If an eligible account matches that email, reset instructions will arrive shortly.';
 
-/** Render the forgot password route interface. */
 export default function ForgotPasswordRoute() {
     const { api } = useAuth();
     const { colors } = useAppTheme();

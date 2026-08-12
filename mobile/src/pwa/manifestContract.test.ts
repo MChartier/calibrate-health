@@ -1,13 +1,9 @@
-/**
- * Exercises manifest contract behavior and regression boundaries.
- */
 import fs from 'node:fs';
 import path from 'node:path';
 
 type ManifestIcon = { src: string; sizes: string; type: string; purpose?: string };
 type ManifestShortcut = { name: string; url: string; icons?: ManifestIcon[] };
 
-/** Build deterministic png dimensions for regression coverage. */
 function pngDimensions(filePath: string): { width: number; height: number } {
     const bytes = fs.readFileSync(filePath);
     expect(bytes.subarray(1, 4).toString('ascii')).toBe('PNG');

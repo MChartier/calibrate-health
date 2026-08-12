@@ -1,7 +1,4 @@
 #!/usr/bin/env node
-/**
- * Runs the repository-owned postgres weight trend concurrency smoke workflow.
- */
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
 import path from 'node:path';
@@ -21,12 +18,10 @@ const ISOLATED_SCHEMA_PATTERN = /^calibrate_upgrade_smoke_[a-z0-9_]+$/;
 const WAIT_TIMEOUT_MS = 5000;
 const WAIT_POLL_MS = 25;
 
-/** Build delay from the supplied domain inputs. */
 function delay(milliseconds) {
   return new Promise((resolve) => setTimeout(resolve, milliseconds));
 }
 
-/** Wait for queued recomputes while preserving the module's lifecycle and failure guarantees. */
 async function waitForQueuedRecomputes(client, namespace, userId, expectedCount) {
   const deadline = Date.now() + WAIT_TIMEOUT_MS;
   while (Date.now() < deadline) {
@@ -45,7 +40,6 @@ async function waitForQueuedRecomputes(client, namespace, userId, expectedCount)
   throw new Error('Timed out waiting for ' + expectedCount + ' queued weight-trend recomputations.');
 }
 
-/** Run weight trend concurrency smoke and surface failures to the caller. */
 export async function runWeightTrendConcurrencySmoke(rawDatabaseUrl = process.env.DATABASE_URL) {
   if (!rawDatabaseUrl) {
     throw new Error('DATABASE_URL is required for the Postgres weight-trend concurrency smoke test.');

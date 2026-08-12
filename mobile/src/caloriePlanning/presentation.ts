@@ -1,6 +1,3 @@
-/**
- * Provides Expo client behavior for presentation.
- */
 import type { CaloriePlanReasonCode, CaloriePlanStatus } from '@calibrate/shared';
 
 export type CaloriePlanPresentation = {
@@ -129,7 +126,6 @@ const PRESENTATIONS: Record<CaloriePlanReasonCode, CaloriePlanPresentation> = {
     SERVER_POLICY_UNAVAILABLE: DEFAULT_PRESENTATION
 };
 
-/** Resolve the calorie plan presentation from the current validated state. */
 export function getCaloriePlanPresentation(
     reasonCode: CaloriePlanReasonCode | null | undefined,
     status?: CaloriePlanStatus | 'unknown'
@@ -146,7 +142,6 @@ export function getCaloriePlanPresentation(
     return DEFAULT_PRESENTATION;
 }
 
-/** Resolve the plan option unavailable copy from the current validated state. */
 export function getPlanOptionUnavailableCopy(reasonCode: CaloriePlanReasonCode | null | undefined): string {
     return getCaloriePlanPresentation(reasonCode).message;
 }

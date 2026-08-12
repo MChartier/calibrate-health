@@ -1,6 +1,3 @@
-/**
- * Provides backend domain operations for weight trend source revision.
- */
 import { createHash } from 'node:crypto';
 
 export type WeightTrendSourceMetric = {

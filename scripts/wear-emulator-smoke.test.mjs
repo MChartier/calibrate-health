@@ -45,7 +45,6 @@ test('Wear connection actions expose one explicitly named semantic click target'
   );
 });
 
-/** Build deterministic node for regression coverage. */
 function node(attributes) {
   return `<node ${Object.entries(attributes).map(([key, value]) => `${key}="${value}"`).join(' ')} />`;
 }

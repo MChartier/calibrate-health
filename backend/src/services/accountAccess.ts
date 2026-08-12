@@ -1,6 +1,3 @@
-/**
- * Provides backend domain operations for account access.
- */
 import prisma from '../config/database';
 import {
   CURRENT_PRIVACY_VERSION,
@@ -33,7 +30,6 @@ export type LegalStatusPayload = {
   };
 };
 
-/** Serialize legal status. */
 export function serializeLegalStatus(source: AccountAccessSource): LegalStatusPayload {
   const latestAcceptance = source.legal_acceptances[0] ?? null;
   return {
@@ -50,7 +46,6 @@ export function serializeLegalStatus(source: AccountAccessSource): LegalStatusPa
   };
 }
 
-/** Resolve the account access from the current validated state. */
 export async function getAccountAccess(userId: number): Promise<AccountAccess | null> {
   const user = await prisma.user.findUnique({
     where: { id: userId },
@@ -59,7 +54,6 @@ export async function getAccountAccess(userId: number): Promise<AccountAccess | 
   return user ? serializeAccountAccess(user) : null;
 }
 
-/** Resolve the legal status from the current validated state. */
 export async function getLegalStatus(userId: number): Promise<LegalStatusPayload | null> {
   const user = await prisma.user.findUnique({
     where: { id: userId },

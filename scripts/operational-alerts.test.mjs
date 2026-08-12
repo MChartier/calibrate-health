@@ -1,6 +1,3 @@
-/**
- * Exercises operational alerts behavior and regression boundaries.
- */
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { evaluateOperationalAlerts } from './operational-alerts.mjs';
@@ -8,7 +5,6 @@ import { evaluateOperationalAlerts } from './operational-alerts.mjs';
 const STARTED = '2026-08-09T10:00:00.000Z';
 const NOW = new Date('2026-08-09T12:00:00.000Z');
 
-/** Build deterministic snapshot for regression coverage. */
 function snapshot() {
   return {
     process_started_at: STARTED,
@@ -19,7 +15,6 @@ function snapshot() {
   };
 }
 
-/** Evaluate against the module's reviewed constraints. */
 function evaluate(previous, current) {
   return evaluateOperationalAlerts({ previous, current, now: NOW, correlationId: '11111111-1111-4111-8111-111111111111' });
 }

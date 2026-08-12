@@ -1,6 +1,3 @@
-/**
- * Provides backend domain operations for my foods library.
- */
 import { Prisma } from '@prisma/client';
 import type { MyFoodType } from '@prisma/client';
 import { createHash } from 'node:crypto';
@@ -60,29 +57,24 @@ type MyFoodsLibraryDatabase = {
 
 export class MyFoodsLibraryRequestError extends Error {}
 
-/** Build invalid request from the supplied domain inputs. */
 function invalidRequest(message: string): never {
   throw new MyFoodsLibraryRequestError(message);
 }
 
-/** Normalize query into the canonical representation used at this boundary. */
 function normalizeQuery(value: string): string {
   return value.trim().replace(MULTI_SPACE_PATTERN, ' ');
 }
 
-/** Build cursor query key from the supplied domain inputs. */
 function cursorQueryKey(value: string): string {
   return createHash('sha256').update(value.toLowerCase(), 'utf8').digest('base64url');
 }
 
-/** Parse and validate single query value. */
 function parseSingleQueryValue(value: unknown, field: string): string | undefined {
   if (value === undefined) return undefined;
   if (typeof value !== 'string') invalidRequest(`${field} must be a single string`);
   return value;
 }
 
-/** Parse and validate type. */
 function parseType(value: unknown): MyFoodType | null {
   const raw = parseSingleQueryValue(value, 'type');
   if (raw === undefined) return null;
@@ -93,7 +85,6 @@ function parseType(value: unknown): MyFoodType | null {
   return normalized;
 }
 
-/** Parse and validate limit. */
 function parseLimit(value: unknown): number {
   const raw = parseSingleQueryValue(value, 'limit');
   if (raw === undefined) return DEFAULT_MY_FOODS_LIBRARY_LIMIT;
@@ -104,12 +95,10 @@ function parseLimit(value: unknown): number {
   return parsed;
 }
 
-/** Determine whether the input conforms to the positive integer contract. */
 function isPositiveInteger(value: unknown): value is number {
   return typeof value === 'number' && Number.isSafeInteger(value) && value > 0;
 }
 
-/** Decode cursor into the canonical representation used at this boundary. */
 function decodeCursor(value: string, q: string, type: MyFoodType | null): MyFoodsLibraryCursor {
   if (!value || value.length > MAX_CURSOR_LENGTH || !BASE64URL_PATTERN.test(value)) {
     invalidRequest('Invalid cursor');
@@ -151,12 +140,10 @@ function decodeCursor(value: string, q: string, type: MyFoodType | null): MyFood
   }
 }
 
-/** Encode cursor into the canonical representation used at this boundary. */
 function encodeCursor(cursor: MyFoodsLibraryCursor): string {
   return Buffer.from(JSON.stringify(cursor), 'utf8').toString('base64url');
 }
 
-/** Parse and validate my foods library query. */
 export function parseMyFoodsLibraryQuery(query: Record<string, unknown>): MyFoodsLibraryQuery {
   const rawQuery = parseSingleQueryValue(query.q, 'q');
   const q = normalizeQuery(rawQuery ?? '');
@@ -171,7 +158,6 @@ export function parseMyFoodsLibraryQuery(query: Record<string, unknown>): MyFood
   return { q, type, cursor, limit };
 }
 
-/** Build the cursor clause with stable fields for the backend domain boundary. */
 function buildCursorClause(cursor: MyFoodsLibraryCursor): Prisma.Sql {
   const samePinStateAfterCursor = Prisma.sql`
     "is_pinned" = ${cursor.p}
@@ -184,7 +170,6 @@ function buildCursorClause(cursor: MyFoodsLibraryCursor): Prisma.Sql {
   return Prisma.sql`((${samePinStateAfterCursor}) OR "is_pinned" = false)`;
 }
 
-/** List the paginated My Foods library using validated filters and cursor state. */
 export async function listMyFoodsLibrary(
   database: MyFoodsLibraryDatabase,
   userId: number,

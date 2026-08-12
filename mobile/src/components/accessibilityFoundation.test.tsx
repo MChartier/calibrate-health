@@ -1,6 +1,3 @@
-/**
- * Exercises accessibility foundation behavior and regression boundaries.
- */
 import { render } from '@testing-library/react-native';
 import { Platform } from 'react-native';
 import Svg from 'react-native-svg';

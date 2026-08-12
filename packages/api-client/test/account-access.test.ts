@@ -1,6 +1,3 @@
-/**
- * Exercises account access behavior and regression boundaries.
- */
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { CalibrateApiClient } from '../src/client.ts';
@@ -26,7 +23,6 @@ const LEGAL_STATUS = {
     }
 };
 
-/** Build client from validated configuration and dependencies. */
 const createClient = (requests: CapturedRequest[]): CalibrateApiClient =>
     new CalibrateApiClient({
         baseUrl: 'https://calibrate.example',
@@ -49,7 +45,6 @@ const createClient = (requests: CapturedRequest[]): CalibrateApiClient =>
         }) as typeof fetch
     });
 
-/** Build deterministic request json for regression coverage. */
 const requestJson = (request: CapturedRequest): unknown => JSON.parse(String(request.init.body));
 
 test('registration sends explicit legal versions and acceptance', async () => {

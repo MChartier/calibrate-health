@@ -51,7 +51,6 @@ const RANGE_RESPONSE = {
     ]
 };
 
-/** Render picker. */
 function renderPicker(queryClient: QueryClient) {
     return render(
         <QueryClientProvider client={queryClient}>

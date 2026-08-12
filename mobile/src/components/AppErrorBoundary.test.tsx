@@ -21,7 +21,6 @@ const AlwaysThrows = () => {
     throw error;
 };
 
-/** Render the throwing root runtime interface. */
 const ThrowingRootRuntime = () => {
     useMemo(() => {
         throw new Error('Root theme hook failed before providers mounted');

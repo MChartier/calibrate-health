@@ -1,6 +1,3 @@
-/**
- * Provides Expo client behavior for operation diagnostics.
- */
 import { useEffect, useRef } from 'react';
 import type { ClientDiagnosticOperation, ClientDiagnosticRoute } from '@calibrate/shared';
 import {

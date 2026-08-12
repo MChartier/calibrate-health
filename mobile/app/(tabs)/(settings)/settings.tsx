@@ -1,6 +1,3 @@
-/**
- * Defines the settings Expo Router screen.
- */
 import React, { useEffect, useState } from 'react';
 import { Image, Platform, StyleSheet, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
@@ -71,12 +68,10 @@ import { getCaloriePlanPresentation } from '../../../src/caloriePlanning/present
 import { getHeightPolicyError, isHeightWithinPolicy } from '../../../src/caloriePlanning/heightInput';
 
 const MIN_PASSWORD_LENGTH = 8;
-/** Resolve the avatar label from the current validated state. */
 function getAvatarLabel(email?: string | null): string {
     return email?.trim().charAt(0).toUpperCase() || 'C';
 }
 
-/** Check whether the current state has resolved resource data. */
 function hasResolvedResourceData(state: AsyncResourceState): boolean {
     return state.kind === ASYNC_RESOURCE_STATES.CONTENT
         || state.kind === ASYNC_RESOURCE_STATES.EMPTY
@@ -84,7 +79,6 @@ function hasResolvedResourceData(state: AsyncResourceState): boolean {
         || state.kind === ASYNC_RESOURCE_STATES.DEGRADED;
 }
 
-/** Render the settings screen interface. */
 export default function SettingsScreen() {
     const router = useRouter();
     const {
@@ -909,7 +903,6 @@ export default function SettingsScreen() {
     );
 }
 
-/** Render the settings resource skeleton interface. */
 const SettingsResourceSkeleton: React.FC<{ label: string }> = ({ label }) => (
     <AppCard accessibilityLabel={label}>
         <AppText variant="muted">{label}</AppText>
@@ -917,7 +910,6 @@ const SettingsResourceSkeleton: React.FC<{ label: string }> = ({ label }) => (
     </AppCard>
 );
 
-/** Render the device list skeleton interface. */
 const DeviceListSkeleton: React.FC = () => (
     <AppCard accessibilityLabel="Loading active devices">
         {[0, 1].map((row) => (

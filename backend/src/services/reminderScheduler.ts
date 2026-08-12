@@ -68,7 +68,6 @@ const resolveInactiveInAppReminders = async (now: Date): Promise<void> => {
     }
 };
 
-/** Group due reminder types using the supplied validated inputs. */
 export const groupDueReminderTypes = ({
     dueWeight,
     dueFood

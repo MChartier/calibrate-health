@@ -1,6 +1,3 @@
-/**
- * Exercises health connect connection action behavior and regression boundaries.
- */
 import { fireEvent, render } from '@testing-library/react-native';
 import { useHealthConnect } from '../healthConnect/provider';
 import { DEFAULT_HEALTH_CONNECT_SELECTION } from '../healthConnect/types';
@@ -11,7 +8,6 @@ jest.mock('../healthConnect/provider', () => ({ useHealthConnect: jest.fn() }));
 
 const mockUseHealthConnect = useHealthConnect as jest.MockedFunction<typeof useHealthConnect>;
 
-/** Build deterministic health connect value for regression coverage. */
 function healthConnectValue(overrides: Partial<ReturnType<typeof useHealthConnect>> = {}) {
     return {
         connected: false,

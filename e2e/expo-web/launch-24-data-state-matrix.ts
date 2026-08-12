@@ -1,6 +1,3 @@
-/**
- * Defines the reviewed launch 24 data state matrix browser coverage contract.
- */
 import type { ApiResourceFixture } from './fixtures';
 import {
   ROUTE_REGISTRY,
@@ -146,7 +143,6 @@ const NOTIFICATION = {
   updated_at: '2026-07-21T18:45:00.000Z',
 };
 
-/** Build a deterministic food-day fixture from the request date and lifecycle status. */
 function foodDay(url: URL, status: 'OPEN' | 'INCOMPLETE') {
   return {
     date: url.searchParams.get('date') ?? LOCAL_DATE,
@@ -160,7 +156,6 @@ function foodDay(url: URL, status: 'OPEN' | 'INCOMPLETE') {
   };
 }
 
-/** Build a deterministic activity response for the requested date range. */
 function activityResponse(url: URL, populated: boolean) {
   const startDate = url.searchParams.get('start') ?? LOCAL_DATE;
   const endDate = url.searchParams.get('end') ?? startDate;
@@ -183,7 +178,6 @@ function activityResponse(url: URL, populated: boolean) {
   return { start_date: startDate, end_date: endDate, days: [day] };
 }
 
-/** Attach canonical route metadata to a data-state case definition. */
 function routeCase(
   id: Launch24DataRouteCase['id'],
   definition: Omit<Launch24DataRouteCase, 'id' | 'path'>,

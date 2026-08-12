@@ -1,6 +1,3 @@
-/**
- * Exercises card header behavior and regression boundaries.
- */
 import { render } from '@testing-library/react-native';
 import { AppButton } from './AppButton';
 import { CardHeader } from './CardHeader';

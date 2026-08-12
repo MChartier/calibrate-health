@@ -1,6 +1,3 @@
-/**
- * Provides Expo client behavior for state.
- */
 export const BARCODE_PERMISSION_STATES = {
     CHECKING: 'checking',
     FIRST_REQUEST: 'first-request',
@@ -72,7 +69,6 @@ export type BarcodeLookupSnapshot = {
     fetchStatus?: 'fetching' | 'paused' | 'idle';
 };
 
-/** Build error status from the supplied domain inputs. */
 function errorStatus(error: unknown): number | null {
     if (!error || typeof error !== 'object') return null;
     const status = (error as { status?: unknown }).status;
@@ -85,7 +81,6 @@ function errorStatus(error: unknown): number | null {
         : null;
 }
 
-/** Looks like connectivity failure using validated domain inputs. */
 function looksLikeConnectivityFailure(error: unknown): boolean {
     if (error instanceof TypeError) return true;
     const message = error instanceof Error ? error.message : '';

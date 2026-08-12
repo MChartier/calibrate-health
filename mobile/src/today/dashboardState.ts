@@ -1,6 +1,3 @@
-/**
- * Provides Expo client behavior for dashboard state.
- */
 import {
     resolveAsyncResourceState,
     type AsyncQuerySnapshot,
@@ -9,7 +6,6 @@ import {
 
 export type TodayDashboardQuerySnapshot = AsyncQuerySnapshot<unknown>;
 
-/** Check whether the current state has today dashboard failure. */
 export function hasTodayDashboardFailure(
     queries: readonly TodayDashboardQuerySnapshot[]
 ): boolean {

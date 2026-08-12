@@ -1,6 +1,3 @@
-/**
- * Exercises hosted native evidence behavior and regression boundaries.
- */
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
@@ -16,7 +13,6 @@ import {
 
 const SOURCE_COMMIT = 'a'.repeat(40);
 
-/** Build deterministic artifact for regression coverage. */
 function artifact(id, buildType = 'release') {
   return {
     id,
@@ -29,7 +25,6 @@ function artifact(id, buildType = 'release') {
   };
 }
 
-/** Build deterministic passed wear evidence for regression coverage. */
 function passedWearEvidence() {
   const evidence = createStartedHostedNativeEvidence('wear', SOURCE_COMMIT);
   return {

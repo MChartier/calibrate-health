@@ -20,29 +20,24 @@ function isBackendPath(pathname) {
   return /^\/(?:api|auth)(?:\/|$)/.test(pathname);
 }
 
-/** Determine whether the input conforms to the versioned static asset contract. */
 function isVersionedStaticAsset(pathname) {
   return /^\/_expo\/static\/(?:js|css)\/.+-[0-9a-f]{8,}\.(?:js|css)$/.test(pathname)
     || /^\/assets\/.+-[0-9a-f]{8,}\.[a-z0-9]+$/i.test(pathname);
 }
 
-/** Determine whether the input conforms to the explicit shell asset contract. */
 function isExplicitShellAsset(pathname) {
   return pathname !== '/index.html' && APP_SHELL.includes(pathname);
 }
 
-/** Determine whether the input conforms to the cacheable static asset contract. */
 function isCacheableStaticAsset(url) {
   return url.origin === self.location.origin
     && (isVersionedStaticAsset(url.pathname) || isExplicitShellAsset(url.pathname));
 }
 
-/** Determine whether the input conforms to the cacheable response contract. */
 function isCacheableResponse(response) {
   return response.ok && (response.type === 'basic' || response.type === 'default');
 }
 
-/** Clear user scoped caches while preserving the module's lifecycle and failure guarantees. */
 async function clearUserScopedCaches() {
   const keys = await caches.keys();
   await Promise.all(keys

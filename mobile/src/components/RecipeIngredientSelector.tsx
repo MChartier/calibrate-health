@@ -1,6 +1,3 @@
-/**
- * Provides the shared recipe ingredient selector component and interaction contract.
- */
 import React, { useEffect, useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { useInfiniteQuery } from '@tanstack/react-query';
@@ -131,7 +128,6 @@ export const RecipeIngredientSelector: React.FC<RecipeIngredientSelectorProps> =
     );
 };
 
-/** Build the styles for the active theme from validated configuration and dependencies. */
 function createStyles(theme: AppTheme) {
     return StyleSheet.create({
         root: {

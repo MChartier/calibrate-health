@@ -1,6 +1,3 @@
-/**
- * Runs the repository-owned synthetic alert smoke workflow.
- */
 import assert from 'node:assert/strict';
 import { dispatchOperationalAlerts } from './operational-alerts.mjs';
 

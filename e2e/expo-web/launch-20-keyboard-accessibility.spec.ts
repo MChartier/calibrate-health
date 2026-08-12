@@ -1,6 +1,3 @@
-/**
- * Exercises launch 20 keyboard accessibility behavior and regression boundaries.
- */
 import { mkdir } from 'node:fs/promises';
 import path from 'node:path';
 import type { Locator, Page, TestInfo } from '@playwright/test';
@@ -14,7 +11,6 @@ const TRANSIENT_PWA_TITLES = new Set([
   'Updating Calibrate',
 ]);
 
-/** Build deterministic focus with keyboard for regression coverage. */
 async function focusWithKeyboard(page: Page, target: Locator, maximumTabs = 160) {
   await expect(target).toBeVisible();
   for (let index = 0; index < maximumTabs; index += 1) {
@@ -26,14 +22,12 @@ async function focusWithKeyboard(page: Page, target: Locator, maximumTabs = 160)
   throw new Error(`Keyboard focus did not reach ${await target.evaluate((node) => node.outerHTML.slice(0, 240))}`);
 }
 
-/** Build deterministic activate with keyboard for regression coverage. */
 async function activateWithKeyboard(page: Page, target: Locator) {
   await focusWithKeyboard(page, target);
   await expect(target).toBeFocused();
   await page.keyboard.press('Enter');
 }
 
-/** Assert that route focus. */
 async function expectRouteFocus(page: Page, title: string) {
   const routeTitle = page.locator('#route-focus-title');
   await expect(routeTitle).toHaveRole('heading');
@@ -42,7 +36,6 @@ async function expectRouteFocus(page: Page, title: string) {
   await expect(page.locator('[role="main"]:visible')).toHaveCount(1);
 }
 
-/** Assert that direct entry keeps skip link first. */
 async function expectDirectEntryKeepsSkipLinkFirst(page: Page, title: string) {
   const routeTitle = page.locator('#route-focus-title');
   await expect(routeTitle).toHaveText(title);
@@ -58,7 +51,6 @@ async function expectDirectEntryKeepsSkipLinkFirst(page: Page, title: string) {
   await expect(skipLink).toBeFocused();
 }
 
-/** Assert that no duplicate ids. */
 async function expectNoDuplicateIds(page: Page) {
   const duplicates = await page.evaluate(() => {
     const counts = new Map<string, number>();
@@ -70,7 +62,6 @@ async function expectNoDuplicateIds(page: Page) {
   expect(duplicates).toEqual([]);
 }
 
-/** Assert that one dimensional reflow. */
 async function expectOneDimensionalReflow(page: Page) {
   const result = await page.evaluate(() => {
     const viewportWidth = document.documentElement.clientWidth;
@@ -97,7 +88,6 @@ async function expectOneDimensionalReflow(page: Page) {
   expect(result.twoDimensionalScrollers).toEqual([]);
 }
 
-/** Build deterministic simulate two hundred percent text for regression coverage. */
 async function simulateTwoHundredPercentText(page: Page) {
   return page.evaluate(() => {
     let scaled = 0;
@@ -121,7 +111,6 @@ async function simulateTwoHundredPercentText(page: Page) {
   });
 }
 
-/** Build deterministic hide transient pwa notices for regression coverage. */
 async function hideTransientPwaNotices(page: Page) {
   await page.locator('[role="status"], [role="alert"]').evaluateAll((notices, titles) => {
     for (const notice of notices) {
@@ -133,7 +122,6 @@ async function hideTransientPwaNotices(page: Page) {
   }, [...TRANSIENT_PWA_TITLES]);
 }
 
-/** Capture evidence only when explicit evidence collection is enabled. */
 async function captureEvidence(page: Page, testInfo: TestInfo, filename: string) {
   if (process.env.CALIBRATE_CAPTURE_EVIDENCE !== '1') return;
   await page.evaluate(() => document.fonts.ready);

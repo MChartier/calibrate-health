@@ -1,6 +1,3 @@
-/**
- * Exercises weight trend route behavior and regression boundaries.
- */
 import { render } from '@testing-library/react-native';
 import WeightTrendScreen from '../../app/(tabs)/(progress)/weight-trend';
 

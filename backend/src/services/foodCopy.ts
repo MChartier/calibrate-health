@@ -1,6 +1,3 @@
-/**
- * Provides backend domain operations for food copy.
- */
 import type { FoodLog, MealPeriod } from '@prisma/client';
 import { parseClientOperationId, recordSyncChange, type MutationDatabase } from './clientOperations';
 import { getFoodDayWriteBlock, type FoodDayWriteBlock } from './foodTracking';
@@ -35,14 +32,12 @@ export type FoodCopyRequestParseResult =
   | { ok: true; request: ParsedFoodCopyRequest }
   | { ok: false; statusCode: 400; message: string };
 
-/** Build invalid request from the supplied domain inputs. */
 const invalidRequest = (message: string): FoodCopyRequestParseResult => ({
   ok: false,
   statusCode: 400,
   message
 });
 
-/** Parse and validate exact local date. */
 const parseExactLocalDate = (value: unknown): { date: Date; key: string } | null => {
   if (typeof value !== 'string') return null;
   const key = value.trim();

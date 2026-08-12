@@ -1,6 +1,3 @@
-/**
- * Provides Expo client behavior for use barcode search handoff.
- */
 import { useEffect, useRef } from 'react';
 import type { MealPeriod } from '@calibrate/shared';
 import { MEAL_OPTIONS } from '../utils/meals';
