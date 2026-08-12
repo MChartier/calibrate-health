@@ -15,23 +15,35 @@ const LOGO_GAUGE_STROKE_WIDTH = 9; // Controls the weight of the dial ring in th
 const LOGO_NOTCH_STROKE_WIDTH = 6; // Keeps the top reference notch readable at app-bar sizes.
 const LOGO_NEEDLE_STROKE_WIDTH = 7; // Controls the visual weight of the green gauge needle.
 
+/** Map the optional logo label to platform-safe SVG accessibility props. */
+function getLogoAccessibilityProps(accessibilityLabel: string | undefined): SvgProps {
+    const decorative = !accessibilityLabel;
+    if (Platform.OS === 'web') {
+        if (decorative) return { 'aria-hidden': true };
+        return { 'aria-label': accessibilityLabel, role: 'img' };
+    }
+    if (decorative) {
+        return {
+            accessible: false,
+            accessibilityElementsHidden: true,
+            importantForAccessibility: 'no-hide-descendants'
+        };
+    }
+    return {
+        accessible: true,
+        accessibilityElementsHidden: false,
+        importantForAccessibility: 'auto',
+        accessibilityRole: 'image',
+        accessibilityLabel
+    };
+}
+
 /**
  * Native SVG version of the Calibrate gauge mark used in the PWA header.
  */
 export const CalibrateLogo: React.FC<CalibrateLogoProps> = ({ accessibilityLabel, size = 32, testID }) => {
     const theme = useAppTheme();
-    const decorative = !accessibilityLabel;
-    const accessibilityProps: SvgProps = Platform.OS === 'web'
-        ? decorative
-            ? { 'aria-hidden': true }
-            : { 'aria-label': accessibilityLabel, role: 'img' }
-        : {
-            accessible: !decorative,
-            accessibilityElementsHidden: decorative,
-            importantForAccessibility: decorative ? 'no-hide-descendants' : 'auto',
-            accessibilityRole: decorative ? undefined : 'image',
-            accessibilityLabel
-        };
+    const accessibilityProps = getLogoAccessibilityProps(accessibilityLabel);
 
     return <Svg
         width={size}

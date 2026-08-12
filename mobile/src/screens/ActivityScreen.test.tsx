@@ -54,7 +54,11 @@ jest.mock('../hooks/useLogDateNavigation', () => ({
     useLogDateNavigation: () => mockNavigation
 }));
 
-jest.mock('../components/DateNavigation', () => ({ DateNavigation: () => null }));
+jest.mock('../components/DateNavigation', () => {
+    const ReactModule = require('react');
+    const { View } = require('react-native');
+    return { DateNavigation: () => ReactModule.createElement(View, { testID: 'activity-date-navigation' }) };
+});
 jest.mock('../components/TabScreen', () => {
     const ReactModule = require('react');
     const { View } = require('react-native');
@@ -174,6 +178,7 @@ describe('ActivityScreen async resource states', () => {
         expect(screen.queryByTestId('activity-details')).toBeNull();
         expect(screen.getByText('No activity imported yet')).toBeTruthy();
         expect(screen.getAllByRole('button', { name: 'Connect Health Connect' })).toHaveLength(1);
+        expect(screen.getByTestId('activity-date-navigation')).toBeTruthy();
         expect(screen.queryByText('Today')).toBeNull();
         expect(screen.queryByText('Recent Days')).toBeNull();
         expect(screen.getByText(

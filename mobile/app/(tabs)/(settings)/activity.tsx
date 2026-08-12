@@ -279,9 +279,9 @@ export default function ActivityScreen() {
                     standalone={!healthConnectPresentation.shouldShowActivity}
                 />
             )}
+            <DateNavigation navigation={navigation} />
             {healthConnectPresentation.shouldShowActivity ? (
                 <>
-                <DateNavigation navigation={navigation} />
                 <SectionHeader
                     title={navigation.isToday ? 'Today' : formatDateOnlyForDisplay(navigation.selectedDate)}
                     description="Read-only activity reported by connected health apps."
