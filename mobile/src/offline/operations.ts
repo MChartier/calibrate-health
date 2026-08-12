@@ -1,11 +1,13 @@
 import {
-    ApiError,
     type CalibrateApiClient,
     type FoodLogCreatePayload,
     type FoodLogUpdatePayload
 } from '@calibrate/api-client';
 import * as Crypto from 'expo-crypto';
 import type { QueuedMutationExecutor } from './reconciler';
+import { isRetryableMutationError } from './retryability';
+
+export { isRetryableMutationError } from './retryability';
 
 export const OFFLINE_MUTATION_OPERATIONS = {
     CREATE_FOOD_LOG: 'food.create',
@@ -49,16 +51,6 @@ function requirePositiveInteger(value: unknown, operation: string): number {
         throw new Error(`Queued ${operation} payload is invalid.`);
     }
     return value;
-}
-
-/** HTTP validation/auth failures must return to the caller instead of masquerading as offline writes. */
-export function isRetryableMutationError(error: unknown): boolean {
-    if (error instanceof ApiError) {
-        return error.status === 408 || error.status === 429 || error.status >= 500;
-    }
-    if (error instanceof TypeError) return true;
-    if (!(error instanceof Error)) return false;
-    return error.message.startsWith('Request timed out while connecting to ');
 }
 
 /** Uses one operation ID for the uncertain direct attempt and every later replay. */

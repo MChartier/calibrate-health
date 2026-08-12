@@ -24,11 +24,25 @@ type AccountEmail = {
   token: string;
 };
 
-let cachedConfig: EmailDeliveryConfig | null = null;
+let cachedConfig: Extract<EmailDeliveryConfig, { mode: 'smtp' }> | null = null;
 let cachedTransport: Transporter | null = null;
 
+/** Compare transport-defining fields because the default resolver returns a fresh object for every send. */
+function matchesCachedSmtpConfig(
+  current: Extract<EmailDeliveryConfig, { mode: 'smtp' }>,
+  candidate: Extract<EmailDeliveryConfig, { mode: 'smtp' }>
+): boolean {
+  return current.host === candidate.host
+    && current.port === candidate.port
+    && current.secure === candidate.secure
+    && current.username === candidate.username
+    && current.password === candidate.password
+    && current.from === candidate.from
+    && current.publicAppOrigin === candidate.publicAppOrigin;
+}
+
 const transportFor = (config: Extract<EmailDeliveryConfig, { mode: 'smtp' }>): Transporter => {
-  if (cachedConfig === config && cachedTransport) return cachedTransport;
+  if (cachedConfig && cachedTransport && matchesCachedSmtpConfig(cachedConfig, config)) return cachedTransport;
   cachedConfig = config;
   cachedTransport = nodemailer.createTransport({
     host: config.host,

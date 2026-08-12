@@ -43,6 +43,7 @@ const SAMPLE_INTERVAL_MS = 10 * 60 * 1000;
 const SAMPLE_TOLERANCE_MS = 2 * 60 * 1000;
 const LOCK_STALE_MS = 20 * 60 * 1000;
 const REQUEST_TIMEOUT_MS = 15_000;
+const RESPONSE_BODY_LIMIT_BYTES = 1024 * 1024; // Bounds every remote JSON body before parsing it in memory.
 const ALERT_ENVIRONMENTS = new Set(['staging', 'production']);
 
 function counter(value) {
@@ -171,6 +172,45 @@ function configuredRequestTimeout(value = REQUEST_TIMEOUT_MS) {
   return value;
 }
 
+/** Read a remote JSON body without buffering more than the reviewed response limit. */
+async function readBoundedJson(response, label) {
+  const declaredLength = Number(response.headers?.get?.('content-length'));
+  if (Number.isFinite(declaredLength) && declaredLength > RESPONSE_BODY_LIMIT_BYTES) {
+    throw new Error(`${label} response exceeded ${RESPONSE_BODY_LIMIT_BYTES} bytes.`);
+  }
+  if (!response.body) return null;
+
+  const reader = response.body.getReader();
+  const chunks = [];
+  let totalBytes = 0;
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      if (!(value instanceof Uint8Array)) throw new Error(`${label} returned an invalid response body.`);
+      totalBytes += value.byteLength;
+      if (totalBytes > RESPONSE_BODY_LIMIT_BYTES) {
+        try { await reader.cancel(); } catch { /* The size violation remains the authoritative error. */ }
+        throw new Error(`${label} response exceeded ${RESPONSE_BODY_LIMIT_BYTES} bytes.`);
+      }
+      chunks.push(value);
+    }
+  } finally {
+    reader.releaseLock();
+  }
+
+  const body = new Uint8Array(totalBytes);
+  let offset = 0;
+  for (const chunk of chunks) {
+    body.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  try {
+    return JSON.parse(new TextDecoder().decode(body));
+  } catch {
+    return null;
+  }
+}
 async function boundedJsonRequest({ url, init, fetchImpl, label, timeoutMs = REQUEST_TIMEOUT_MS }) {
   const controller = new AbortController();
   const boundedTimeoutMs = configuredRequestTimeout(timeoutMs);
@@ -184,9 +224,12 @@ async function boundedJsonRequest({ url, init, fetchImpl, label, timeoutMs = REQ
   try {
     const request = (async () => {
       const response = await fetchImpl(url, { ...init, signal: controller.signal });
-      return { response, body: await response.json().catch(() => null) };
+      return { response, body: await readBoundedJson(response, label) };
     })();
     return await Promise.race([request, timeout]);
+  } catch (error) {
+    controller.abort();
+    throw error;
   } finally {
     clearTimeout(timeoutId);
   }

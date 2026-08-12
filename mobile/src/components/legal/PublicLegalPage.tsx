@@ -110,14 +110,16 @@ export function PublicLegalPage({ title, lastUpdated, intro, sections, links, ac
                 <AppCard testID="legal-page">
                     <View style={styles.content}>
                         <View style={styles.section}>
-                            <AppText
-                                nativeID={inApp ? undefined : 'route-focus-title'}
-                                accessibilityRole="header"
-                                aria-level={inApp ? 2 : 1}
-                                variant="title"
-                            >
-                                {title}
-                            </AppText>
+                            {!inApp ? (
+                                <AppText
+                                    nativeID="route-focus-title"
+                                    accessibilityRole="header"
+                                    aria-level={1}
+                                    variant="title"
+                                >
+                                    {title}
+                                </AppText>
+                            ) : null}
                             {lastUpdated && <AppText variant="label">Last updated: {lastUpdated}</AppText>}
                             {intro.map((paragraph) => (
                                 <AppText key={paragraph}>{paragraph}</AppText>

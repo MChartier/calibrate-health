@@ -8,7 +8,11 @@ const {
   isEmailVerificationRequired,
   resolveEmailDeliveryConfig
 } = require('../src/config/emailDelivery');
-const { buildAccountEmailMessage } = require('../src/services/accountEmail');
+const {
+  buildAccountEmailMessage,
+  deliverAccountEmail,
+  resetAccountEmailTransportForTests
+} = require('../src/services/accountEmail');
 
 test('hosted deployed registration requires configured account email', () => {
   const config = resolveEmailDeliveryConfig({
@@ -79,4 +83,38 @@ test('account links keep credentials out of query strings and referrers', () => 
   }, config);
   assert.match(message.text, /\/verify-email#token=opaque%2B%2Ftoken/);
   assert.doesNotMatch(message.text, /\?token=/);
+});
+test('equivalent resolved SMTP settings reuse one transport', async () => {
+  const nodemailer = require('nodemailer');
+  const originalCreateTransport = nodemailer.createTransport;
+  let transportCreations = 0;
+  nodemailer.createTransport = () => {
+    transportCreations += 1;
+    return { sendMail: async () => undefined };
+  };
+  const config = {
+    mode: 'smtp',
+    hostedRequired: true,
+    publicAppOrigin: 'https://calibratehealth.app',
+    host: 'smtp.example.test',
+    port: 587,
+    secure: false,
+    username: 'account',
+    password: 'secret',
+    from: 'no-reply@example.test'
+  };
+
+  resetAccountEmailTransportForTests();
+  try {
+    await deliverAccountEmail({
+      kind: 'email_verification', recipient: 'first@example.test', token: 'token-1'
+    }, { ...config });
+    await deliverAccountEmail({
+      kind: 'password_reset', recipient: 'second@example.test', token: 'token-2'
+    }, { ...config });
+    assert.equal(transportCreations, 1);
+  } finally {
+    resetAccountEmailTransportForTests();
+    nodemailer.createTransport = originalCreateTransport;
+  }
 });

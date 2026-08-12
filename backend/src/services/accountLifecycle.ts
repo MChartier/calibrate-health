@@ -2,7 +2,7 @@ import { Prisma } from '@prisma/client';
 import prisma from '../config/database';
 
 export const ACCOUNT_EXPORT_FORMAT = 'calibrate-account-export';
-export const ACCOUNT_EXPORT_VERSION = 7;
+export const ACCOUNT_EXPORT_VERSION = 8;
 
 // Auth sessions, password hashes, push endpoints/tokens, and internal replay metadata are
 // deliberately absent. User-visible account, tracking, and derived plan history is exported.
@@ -17,6 +17,10 @@ const ACCOUNT_EXPORT_SELECT = {
   language: true,
   reminder_log_weight_enabled: true,
   reminder_log_food_enabled: true,
+  reminder_log_weight_minute: true,
+  reminder_log_food_minute: true,
+  reminder_quiet_hours_start_minute: true,
+  reminder_quiet_hours_end_minute: true,
   haptics_enabled: true,
   date_of_birth: true,
   sex: true,
@@ -84,6 +88,10 @@ export type AccountExport = {
     language: string;
     reminder_log_weight_enabled: boolean;
     reminder_log_food_enabled: boolean;
+    reminder_log_weight_minute: number;
+    reminder_log_food_minute: number;
+    reminder_quiet_hours_start_minute: number | null;
+    reminder_quiet_hours_end_minute: number | null;
     haptics_enabled: boolean;
     date_of_birth: string | null;
     sex: string | null;
@@ -304,6 +312,10 @@ export function serializeAccountExport(user: AccountExportRow, now = new Date())
       language: user.language,
       reminder_log_weight_enabled: user.reminder_log_weight_enabled,
       reminder_log_food_enabled: user.reminder_log_food_enabled,
+      reminder_log_weight_minute: user.reminder_log_weight_minute,
+      reminder_log_food_minute: user.reminder_log_food_minute,
+      reminder_quiet_hours_start_minute: user.reminder_quiet_hours_start_minute,
+      reminder_quiet_hours_end_minute: user.reminder_quiet_hours_end_minute,
       haptics_enabled: user.haptics_enabled,
       date_of_birth: user.date_of_birth ? toIsoDate(user.date_of_birth) : null,
       sex: user.sex,

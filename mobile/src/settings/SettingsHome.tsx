@@ -280,7 +280,7 @@ export function SettingsHome({
                 <SettingsRow
                     icon="information-circle-outline"
                     label="About Calibrate"
-                    supportingText="Purpose, trust, version, and update details"
+                    supportingText="Purpose, trust, and product links"
                     value={isWeb ? undefined : `v${MOBILE_CLIENT_IDENTITY.version}`}
                     showDivider
                     onPress={onOpenAbout}

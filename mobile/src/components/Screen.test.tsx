@@ -18,6 +18,15 @@ describe('Screen', () => {
         expect(view.getByTestId('responsive-screen')).toHaveProp('role', 'main');
     });
 
+    it('preserves an explicit tab stop for keyboard-scrollable content', () => {
+        const view = render(
+            <Screen testID="keyboard-scrollable-screen" tabIndex={0}>
+                <AppText>Long diagnostics</AppText>
+            </Screen>
+        );
+
+        expect(view.getByTestId('keyboard-scrollable-screen')).toHaveProp('tabIndex', 0);
+    });
     it('uses the native viewport as the flex floor for scroll content', () => {
         const view = render(
             <Screen testID="responsive-screen">

@@ -39,6 +39,10 @@ const exportRow = {
   language: 'en',
   reminder_log_weight_enabled: true,
   reminder_log_food_enabled: false,
+  reminder_log_weight_minute: 480,
+  reminder_log_food_minute: 1260,
+  reminder_quiet_hours_start_minute: 1320,
+  reminder_quiet_hours_end_minute: 420,
   haptics_enabled: true,
   date_of_birth: at('1990-05-03T00:00:00.000Z'),
   sex: 'MALE',
@@ -246,10 +250,16 @@ test('account export returns canonical versioned tracking data without credentia
   const result = await exportAccountData(7, at('2026-07-11T20:00:00.000Z'));
 
   assert.equal(result.format, 'calibrate-account-export');
-  assert.equal(result.version, 7);
+  assert.equal(result.version, 8);
   assert.equal(result.exported_at, '2026-07-11T20:00:00.000Z');
   assert.equal(result.account.date_of_birth, '1990-05-03');
   assert.equal(result.account.email_verified_at, '2025-01-02T12:00:00.000Z');
+  assert.deepEqual({
+    weight: result.account.reminder_log_weight_minute,
+    food: result.account.reminder_log_food_minute,
+    quietStart: result.account.reminder_quiet_hours_start_minute,
+    quietEnd: result.account.reminder_quiet_hours_end_minute
+  }, { weight: 480, food: 1260, quietStart: 1320, quietEnd: 420 });
   assert.deepEqual(result.legal_acceptances, [{
     terms_version: '2026-08-09',
     privacy_version: '2026-07-24',

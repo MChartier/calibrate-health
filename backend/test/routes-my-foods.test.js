@@ -373,7 +373,7 @@ test('myFoods route: POST /recipes maps validation errors thrown in the transact
 
 test('myFoods route: POST /recipes returns 404 when a MY_FOOD ingredient is missing', async () => {
   const txStub = {
-    myFood: { findFirst: async () => null },
+    myFood: { findMany: async () => [] },
     recipeIngredient: { createMany: async () => {} }
   };
 
@@ -403,6 +403,51 @@ test('myFoods route: POST /recipes returns 404 when a MY_FOOD ingredient is miss
   assert.deepEqual(res.body, { message: 'Ingredient my food not found' });
 });
 
+test('myFoods route: POST /recipes batches owned MY_FOOD ingredient lookup', async () => {
+  let findManyCalls = 0;
+  let receivedWhere = null;
+  let ingredientData = null;
+  const txStub = {
+    myFood: {
+      findMany: async ({ where }) => {
+        findManyCalls += 1;
+        receivedWhere = where;
+        return [
+          { id: 1, name: 'Oats', calories_per_serving: 150, serving_size_quantity: 1, serving_unit_label: 'cup' },
+          { id: 2, name: 'Milk', calories_per_serving: 90, serving_size_quantity: 1, serving_unit_label: 'cup' }
+        ];
+      },
+      create: async ({ data }) => ({ id: 55, ...data })
+    },
+    recipeIngredient: {
+      createMany: async ({ data }) => { ingredientData = data; }
+    }
+  };
+  const handler = getRouteHandler(loadMyFoodsRouter({
+    $transaction: async (fn) => fn(txStub)
+  }), 'post', '/recipes');
+  const res = createRes();
+
+  await handler({
+    user: { id: 7 },
+    body: {
+      name: 'Breakfast',
+      serving_size_quantity: 1,
+      serving_unit_label: 'serving',
+      yield_servings: 1,
+      ingredients: [
+        { source: 'MY_FOOD', my_food_id: 1, quantity_servings: 2 },
+        { source: 'MY_FOOD', my_food_id: 2, quantity_servings: 1 }
+      ]
+    }
+  }, res);
+
+  assert.equal(res.statusCode, 200);
+  assert.equal(findManyCalls, 1);
+  assert.deepEqual(receivedWhere, { id: { in: [1, 2] }, user_id: 7, type: 'FOOD' });
+  assert.deepEqual(ingredientData.map((row) => row.name_snapshot), ['Oats', 'Milk']);
+  assert.deepEqual(ingredientData.map((row) => row.calories_total_snapshot), [300, 90]);
+});
 test('myFoods route: POST /recipes creates a recipe and ingredient snapshots', async () => {
   let receivedRecipeData = null;
   let receivedIngredientData = null;

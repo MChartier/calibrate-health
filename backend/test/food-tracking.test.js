@@ -4,6 +4,7 @@ process.env.DATABASE_URL ??= 'postgresql://test:test@localhost:5432/test';
 const {
   getActiveFoodTrackingPause,
   getEffectiveFoodDay,
+  materializeActiveFoodTrackingPauses,
   materializePauseThrough,
   resumeFoodTracking,
   startFoodTrackingPause,
@@ -84,6 +85,29 @@ function createPauseDatabase() {
   };
   return { db, state };
 }
+
+test('background pause materialization excludes accounts without current access', async () => {
+  let capturedWhere;
+  await materializeActiveFoodTrackingPauses(
+    new Date('2026-07-11T08:00:00Z'),
+    {
+      foodTrackingPause: {
+        findMany: async ({ where }) => {
+          capturedWhere = where;
+          return [];
+        }
+      },
+      $transaction: async () => {
+        throw new Error('No pause should be materialized in this fixture.');
+      }
+    }
+  );
+
+  assert.deepEqual(capturedWhere, {
+    resumed_on: null,
+    user: { is: { email_verified_at: { not: null } } }
+  });
+});
 
 test('pause lifecycle materializes dates, preserves an explicit override, and reopens resume day', async () => {
   const { db, state } = createPauseDatabase();

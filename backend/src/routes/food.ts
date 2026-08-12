@@ -489,10 +489,7 @@ router.delete('/:id', async (req, res) => {
             requestPayload: { id },
             mutate: async (tx, claimedOperationId) => {
                 const deleteResult = await tx.foodLog.deleteMany({ where: { id, user_id: user.id } });
-                if (deleteResult.count === 0) {
-                    return { status: 404, body: { message: 'Food log not found' } };
-                }
-                await recordSyncChange({
+                if (deleteResult.count > 0) await recordSyncChange({
                     tx,
                     userId: user.id,
                     entityType: 'food_log',

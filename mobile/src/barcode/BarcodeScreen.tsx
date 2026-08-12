@@ -626,6 +626,7 @@ export default function BarcodeScreen() {
         || lookupState.kind === BARCODE_LOOKUP_STATES.ERROR;
     const canRetryLookup = isOnline && (
         lookupState.kind === BARCODE_LOOKUP_STATES.NO_RESULT
+        || (lookupState.kind === BARCODE_LOOKUP_STATES.OFFLINE && lookupState.failure.canRetry)
         || (lookupState.kind === BARCODE_LOOKUP_STATES.ERROR && lookupState.failure.canRetry)
     );
     const statusIsAlert = lookupState.kind === BARCODE_LOOKUP_STATES.OFFLINE

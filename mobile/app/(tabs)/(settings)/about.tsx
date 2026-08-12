@@ -61,6 +61,7 @@ export default function AboutScreen() {
                         <Link key={link.label} href={link.href as Href} asChild>
                             <Pressable
                                 accessibilityRole="link"
+                                accessibilityLabel={link.label}
                                 style={({ pressed }) => [
                                     styles.productLink,
                                     {

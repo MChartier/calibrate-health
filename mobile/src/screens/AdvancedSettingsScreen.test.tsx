@@ -2,6 +2,7 @@
  * Exercises the consolidated Advanced settings route and interaction boundaries.
  */
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
+import { Platform } from 'react-native';
 import { HOSTED_SERVER_URL } from '../config/server';
 import { useAuth } from '../auth/AuthContext';
 import { useAppUpdateController } from '../updates/useAppUpdateController';
@@ -93,6 +94,20 @@ describe('AdvancedSettingsScreen', () => {
 
         expect(mockTestServerUrl).toHaveBeenCalledWith(serverUrl);
         await waitFor(() => expect(mockSetServerUrl).toHaveBeenCalledWith(serverUrl));
+    });
+
+    it('does not offer the origin-bound server editor on web', () => {
+        const platform = jest.replaceProperty(Platform, 'OS', 'web');
+        try {
+            const view = render(<AdvancedSettingsScreen />);
+
+            expect(view.queryByRole('header', { name: 'Connection' })).toBeNull();
+            expect(view.queryByLabelText('Server URL')).toBeNull();
+            expect(view.queryByRole('button', { name: 'Save connection' })).toBeNull();
+            expect(view.getByRole('header', { name: 'Diagnostics' })).toBeTruthy();
+        } finally {
+            platform.restore();
+        }
     });
 
     it('offers the update action from Advanced settings', () => {

@@ -38,6 +38,16 @@ ALTER TABLE "PushSubscription"
 ADD COLUMN "last_sent_weight_local_date" DATE,
 ADD COLUMN "last_sent_food_local_date" DATE;
 
+UPDATE "PushSubscription"
+SET "last_sent_weight_local_date" = "last_sent_local_date",
+    "last_sent_food_local_date" = "last_sent_local_date"
+WHERE "last_sent_local_date" IS NOT NULL;
+
 ALTER TABLE "NativePushSubscription"
 ADD COLUMN "last_sent_weight_local_date" DATE,
 ADD COLUMN "last_sent_food_local_date" DATE;
+
+UPDATE "NativePushSubscription"
+SET "last_sent_weight_local_date" = "last_sent_local_date",
+    "last_sent_food_local_date" = "last_sent_local_date"
+WHERE "last_sent_local_date" IS NOT NULL;

@@ -1,5 +1,6 @@
 import type { OutboxStore } from './outbox';
 import type { QueuedMutation } from './queuedMutation';
+import { isRetryableMutationError } from './retryability';
 
 export type QueuedMutationExecutor = (mutation: QueuedMutation) => Promise<void>;
 
@@ -55,6 +56,10 @@ export class OutboxReconciler {
                 replayed += 1;
                 replayedOperations.push(mutation.operation);
             } catch (error) {
+                if (isRetryableMutationError(error)) {
+                    await this.outbox.defer(mutation.id, describeReplayError(error));
+                    return { replayed, replayedOperations, failedMutation: null };
+                }
                 const failedMutation = await this.outbox.fail(mutation.id, describeReplayError(error));
                 return { replayed, replayedOperations, failedMutation };
             }

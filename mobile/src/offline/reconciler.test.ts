@@ -1,3 +1,4 @@
+import { ApiError } from '@calibrate/api-client';
 import type { OutboxStore } from './outbox';
 import { OutboxReconciler } from './reconciler';
 import {
@@ -50,6 +51,13 @@ class MemoryOutbox implements OutboxStore {
     async fail(id: string, error: string): Promise<QueuedMutation> {
         const mutation = this.requireMutation(id);
         mutation.state = OUTBOX_MUTATION_STATES.FAILED;
+        mutation.lastError = error;
+        return { ...mutation };
+    }
+
+    async defer(id: string, error: string): Promise<QueuedMutation> {
+        const mutation = this.requireMutation(id);
+        mutation.state = OUTBOX_MUTATION_STATES.PENDING;
         mutation.lastError = error;
         return { ...mutation };
     }
@@ -132,6 +140,28 @@ describe('OutboxReconciler', () => {
 
         await reconciler.reconcile();
         expect(outbox.mutations[1]).toEqual(expect.objectContaining({ id: later.id, state: 'pending' }));
+    });
+
+    it('returns explicit retryable replay failures to pending for a later recovery trigger', async () => {
+        const outbox = new MemoryOutbox();
+        const deferred = await outbox.enqueue({ operation: 'food.create', payload: {} });
+        const reconciler = new OutboxReconciler(outbox, async () => {
+            throw new ApiError('operation is still settling', 409, { retryable: true });
+        });
+
+        await expect(reconciler.reconcile()).resolves.toEqual({
+            replayed: 0,
+            replayedOperations: [],
+            failedMutation: null
+        });
+        expect(outbox.mutations).toEqual([
+            expect.objectContaining({
+                id: deferred.id,
+                state: OUTBOX_MUTATION_STATES.PENDING,
+                attemptCount: 1,
+                lastError: 'operation is still settling'
+            })
+        ]);
     });
 
     it('coalesces concurrent reconciliation requests into one replay loop', async () => {

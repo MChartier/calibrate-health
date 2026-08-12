@@ -341,12 +341,16 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
         && Number.isFinite(Number(quickCalories))
         && Number(quickCalories) >= 0;
 
-    function openBarcodeScanner() {
+    /** Leave the sheet for barcode capture without silently discarding a food draft. */
+    async function openBarcodeScanner() {
+        if (hasUnsavedDraft && !await confirmDiscardChanges()) return;
         onClose();
         router.push({ pathname: '/barcode', params: { date, meal, returnTo } });
     }
 
-    function openSavedFoods() {
+    /** Leave the sheet for the saved-food library without silently discarding a food draft. */
+    async function openSavedFoods() {
+        if (hasUnsavedDraft && !await confirmDiscardChanges()) return;
         onClose();
         router.push('/my-foods');
     }
@@ -530,7 +534,7 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
                 title="Saved foods"
                 variant="ghost"
                 leftIcon={<Ionicons name="bookmark-outline" size={18} color={theme.colors.onSurface} />}
-                onPress={openSavedFoods}
+                onPress={() => void openSavedFoods()}
                 style={styles.savedFoodsLink}
             />
         );
@@ -616,7 +620,7 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
                             variant="secondary"
                             disabled={logFood.isPending}
                             leftIcon={<Ionicons name="barcode-outline" size={18} color={theme.colors.onSurface} />}
-                            onPress={openBarcodeScanner}
+                            onPress={() => void openBarcodeScanner()}
                             style={styles.scanButton}
                         />
                     </View>

@@ -69,6 +69,23 @@ describe('IndexedDbOutbox', () => {
         await expect(outbox.claimNext()).resolves.toEqual(expect.objectContaining({ id: 'second', attemptCount: 1 }));
     });
 
+    it('returns transient replay failures to pending without creating a queue barrier', async () => {
+        const outbox = new IndexedDbOutbox(database, FIRST_NAMESPACE, () => 'deferred', () => 100);
+        await outbox.enqueue({ operation: 'food.create', payload: { calories: 100 } });
+        await outbox.claimNext();
+
+        await expect(outbox.defer('deferred', 'operation still in progress')).resolves.toEqual(
+            expect.objectContaining({
+                id: 'deferred',
+                state: OUTBOX_MUTATION_STATES.PENDING,
+                attemptCount: 1,
+                lastError: 'operation still in progress'
+            })
+        );
+        await expect(outbox.claimNext()).resolves.toEqual(
+            expect.objectContaining({ id: 'deferred', state: OUTBOX_MUTATION_STATES.REPLAYING, attemptCount: 2 })
+        );
+    });
     it('recovers an interrupted replay after restart without changing its operation ID', async () => {
         const outbox = new IndexedDbOutbox(database, FIRST_NAMESPACE, () => 'stable-id', () => 100);
         await outbox.enqueue({ operation: 'metric.add', payload: { date: '2026-07-18', weight: 88 } });

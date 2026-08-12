@@ -9,6 +9,10 @@ jest.mock('@expo/vector-icons/Ionicons', () => () => null);
 jest.mock('expo-router', () => ({ router: { push: jest.fn() } }));
 jest.mock('expo-crypto', () => ({ randomUUID: jest.fn(() => 'food-operation-id') }));
 jest.mock('../utils/haptics', () => ({ triggerHapticFeedback: jest.fn() }));
+const mockConfirmDiscardChanges = jest.fn(async () => true);
+jest.mock('./confirmDiscardChanges', () => ({
+    confirmDiscardChanges: () => mockConfirmDiscardChanges()
+}));
 
 const mockApi = {
     getFoodDay: jest.fn(),
@@ -136,5 +140,47 @@ describe('AddFoodSheet async resource states', () => {
 
         fireEvent.press(screen.getByRole('radio', { name: 'Recipes' }));
         expect(screen.getByRole('button', { name: 'Saved foods' })).toBeTruthy();
+    });
+
+    it('confirms before Saved foods or Scan discards a selected food draft', async () => {
+        onlineManager.setOnline(true);
+        mockConfirmDiscardChanges.mockResolvedValue(false);
+        const recentFood = {
+            id: 'recent-1',
+            name: 'Greek yogurt',
+            meal_period: MEAL_PERIODS.BREAKFAST,
+            calories: 150,
+            my_food_id: null,
+            servings_consumed: 1,
+            serving_size_quantity_snapshot: 1,
+            serving_unit_label_snapshot: 'container',
+            calories_per_serving_snapshot: 150,
+            external_source: null,
+            external_id: null,
+            brand_snapshot: null,
+            locale_snapshot: null,
+            barcode_snapshot: null,
+            measure_label_snapshot: null,
+            grams_per_measure_snapshot: null,
+            measure_quantity_snapshot: null,
+            grams_total_snapshot: null,
+            last_logged_at: '2026-08-08T12:00:00.000Z',
+            times_logged: 1
+        };
+        mockApi.getRecentFoods.mockResolvedValue({ items: [recentFood] });
+        const screen = renderSheet();
+        const { router } = jest.requireMock('expo-router') as { router: { push: jest.Mock } };
+
+        fireEvent.press(await screen.findByLabelText('Choose amount for Greek yogurt'));
+        fireEvent.press(screen.getByRole('button', { name: 'Saved foods' }));
+        fireEvent.press(screen.getByRole('button', { name: 'Scan' }));
+
+        await waitFor(() => expect(mockConfirmDiscardChanges).toHaveBeenCalledTimes(2));
+        expect(router.push).not.toHaveBeenCalled();
+
+        mockConfirmDiscardChanges.mockResolvedValue(true);
+        fireEvent.press(screen.getByRole('button', { name: 'Saved foods' }));
+
+        await waitFor(() => expect(router.push).toHaveBeenCalledWith('/my-foods'));
     });
 });

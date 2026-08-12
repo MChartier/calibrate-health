@@ -223,6 +223,26 @@ export class IndexedDbOutbox implements OutboxStore {
         return mapStoredMutation(failed);
     }
 
+    /** Return a transient replay failure to pending without making it a durable queue barrier. */
+    async defer(id: string, error: string): Promise<QueuedMutation> {
+        const transaction = this.database.transaction(MUTATION_STORE, 'readwrite');
+        const done = transactionDone(transaction);
+        const store = transaction.objectStore(MUTATION_STORE);
+        const row = await requestResult<StoredMutation | undefined>(store.index(NAMESPACE_ID_INDEX).get([this.namespace, id]));
+        if (!row || row.state !== OUTBOX_MUTATION_STATES.REPLAYING) {
+            await done;
+            throw new Error(`Unable to defer queued mutation ${id}.`);
+        }
+        const deferred: StoredMutation = {
+            ...row,
+            state: OUTBOX_MUTATION_STATES.PENDING,
+            lastError: error.slice(0, MAX_PERSISTED_ERROR_LENGTH),
+            updatedAt: this.now()
+        };
+        await requestResult(store.put(deferred));
+        await done;
+        return mapStoredMutation(deferred);
+    }
     recoverInterrupted(): Promise<void> {
         return this.updateNamespaceRows(
             (row) => row.state === OUTBOX_MUTATION_STATES.REPLAYING,

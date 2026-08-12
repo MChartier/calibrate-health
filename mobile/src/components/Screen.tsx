@@ -23,6 +23,7 @@ export const Screen: React.FC<ScreenProps> = ({
     style,
     accessibilityRole,
     role,
+    tabIndex,
     ...viewProps
 }) => {
     const insets = useSafeAreaInsets();
@@ -52,7 +53,7 @@ export const Screen: React.FC<ScreenProps> = ({
                 accessibilityRole={accessibilityRole}
                 role={resolvedRole}
                 focusable={Platform.OS === 'web'}
-                tabIndex={Platform.OS === 'web' ? -1 : undefined}
+                tabIndex={Platform.OS === 'web' ? (tabIndex ?? -1) : tabIndex}
                 style={[
                     styles.root,
                     {
@@ -74,7 +75,7 @@ export const Screen: React.FC<ScreenProps> = ({
             accessibilityRole={accessibilityRole}
             role={resolvedRole}
             focusable={Platform.OS === 'web'}
-            tabIndex={Platform.OS === 'web' ? -1 : undefined}
+            tabIndex={Platform.OS === 'web' ? (tabIndex ?? -1) : tabIndex}
             contentContainerStyle={contentStyle}
             style={styles.scroller}
         >

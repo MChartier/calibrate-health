@@ -92,11 +92,18 @@ export function getBarcodeLookupFailure(
     error: unknown,
     options: { isOnline?: boolean } = {}
 ): BarcodeLookupFailure {
-    if (options.isOnline === false || looksLikeConnectivityFailure(error)) {
+    if (options.isOnline === false) {
         return {
             kind: 'offline',
             message: 'Connect to the internet to look up this barcode.',
             canRetry: false
+        };
+    }
+    if (looksLikeConnectivityFailure(error)) {
+        return {
+            kind: 'offline',
+            message: 'Barcode lookup could not reach food providers. Check your connection and try again.',
+            canRetry: true
         };
     }
 
@@ -147,7 +154,7 @@ export function resolveBarcodeLookupState(snapshot: BarcodeLookupSnapshot): Barc
         return { kind: BARCODE_LOOKUP_STATES.SEARCHING, barcode };
     }
     if (snapshot.status === 'error') {
-        const failure = getBarcodeLookupFailure(snapshot.error);
+        const failure = getBarcodeLookupFailure(snapshot.error, { isOnline: snapshot.isOnline });
         if (failure.kind === 'offline') {
             return { kind: BARCODE_LOOKUP_STATES.OFFLINE, barcode, failure };
         }

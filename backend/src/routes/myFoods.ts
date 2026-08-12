@@ -215,49 +215,67 @@ type RecipeIngredientSnapshotRow = {
     grams_total_snapshot?: number | null;
 };
 
+/** Validate recipe inputs, then resolve all owned saved-food ingredients in one scoped query. */
 async function resolveRecipeIngredientRows(
     tx: Prisma.TransactionClient,
     userId: number,
     ingredients: CreateRecipeIngredientInput[]
 ): Promise<RecipeIngredientSnapshotRow[]> {
-    const rows: RecipeIngredientSnapshotRow[] = [];
+    const myFoodInputs = new Map<number, { myFoodId: number; quantityServings: number }>();
+    const externalRows = new Map<number, RecipeIngredientSnapshotRow>();
+    const sortOrders = new Map<number, number>();
+
     for (let idx = 0; idx < ingredients.length; idx += 1) {
         const ingredient = ingredients[idx];
-        const sortOrderRaw = ingredient.sort_order;
-        const sortOrder = parsePositiveInteger(sortOrderRaw) ?? idx + 1;
-        const source = ingredient.source;
-        if (source !== 'MY_FOOD' && source !== 'EXTERNAL') {
-            throw createHttpError(400, 'Invalid ingredient source');
-        }
-
-        if (source === 'MY_FOOD') {
+        const sortOrder = parsePositiveInteger(ingredient.sort_order) ?? idx + 1;
+        sortOrders.set(idx, sortOrder);
+        if (ingredient.source === 'MY_FOOD') {
             const parsedIngredient = parseMyFoodIngredientInput(ingredient);
             if (!parsedIngredient.ok) throw parsedIngredient.error;
-            const sourceFood = await tx.myFood.findFirst({
-                where: { id: parsedIngredient.value.myFoodId, user_id: userId, type: 'FOOD' }
-            });
-            if (!sourceFood) throw createHttpError(404, 'Ingredient my food not found');
-            rows.push({
-                sort_order: sortOrder,
-                source,
-                name_snapshot: sourceFood.name,
-                calories_total_snapshot: parsedIngredient.value.quantityServings * sourceFood.calories_per_serving,
-                source_my_food_id: sourceFood.id,
-                quantity_servings: parsedIngredient.value.quantityServings,
-                serving_size_quantity_snapshot: sourceFood.serving_size_quantity,
-                serving_unit_label_snapshot: sourceFood.serving_unit_label,
-                calories_per_serving_snapshot: sourceFood.calories_per_serving
-            });
+            myFoodInputs.set(idx, parsedIngredient.value);
             continue;
         }
-
+        if (ingredient.source !== 'EXTERNAL') {
+            throw createHttpError(400, 'Invalid ingredient source');
+        }
         const externalSnapshot = buildExternalIngredientSnapshotRow(ingredient, sortOrder);
         if (!externalSnapshot.ok) throw externalSnapshot.error;
-        rows.push({ ...externalSnapshot.value, source });
+        externalRows.set(idx, externalSnapshot.value);
     }
-    return rows;
-}
 
+    const requestedFoodIds = [...new Set(
+        [...myFoodInputs.values()].map((ingredient) => ingredient.myFoodId)
+    )];
+    const sourceFoods = requestedFoodIds.length > 0
+        ? await tx.myFood.findMany({
+            where: { id: { in: requestedFoodIds }, user_id: userId, type: 'FOOD' }
+        })
+        : [];
+    const sourceFoodById = new Map(sourceFoods.map((food) => [food.id, food]));
+
+    return ingredients.map((ingredient, idx) => {
+        const externalRow = externalRows.get(idx);
+        if (externalRow) return externalRow;
+
+        const parsedIngredient = myFoodInputs.get(idx);
+        if (!parsedIngredient || ingredient.source !== 'MY_FOOD') {
+            throw createHttpError(400, 'Invalid ingredient source');
+        }
+        const sourceFood = sourceFoodById.get(parsedIngredient.myFoodId);
+        if (!sourceFood) throw createHttpError(404, 'Ingredient my food not found');
+        return {
+            sort_order: sortOrders.get(idx) ?? idx + 1,
+            source: 'MY_FOOD',
+            name_snapshot: sourceFood.name,
+            calories_total_snapshot: parsedIngredient.quantityServings * sourceFood.calories_per_serving,
+            source_my_food_id: sourceFood.id,
+            quantity_servings: parsedIngredient.quantityServings,
+            serving_size_quantity_snapshot: sourceFood.serving_size_quantity,
+            serving_unit_label_snapshot: sourceFood.serving_unit_label,
+            calories_per_serving_snapshot: sourceFood.calories_per_serving
+        };
+    });
+}
 function toRecipeIngredientCreateRow(recipeId: number, row: RecipeIngredientSnapshotRow) {
     return {
         recipe_id: recipeId,

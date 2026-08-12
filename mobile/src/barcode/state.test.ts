@@ -76,6 +76,14 @@ describe('barcode recovery state', () => {
             kind: BARCODE_LOOKUP_STATES.ERROR,
             failure: { kind: 'provider-unavailable' }
         });
+        expect(resolveBarcodeLookupState({
+            ...base,
+            status: 'error',
+            error: new TypeError('Network request failed')
+        })).toMatchObject({
+            kind: BARCODE_LOOKUP_STATES.OFFLINE,
+            failure: { kind: 'offline', canRetry: true }
+        });
     });
 
     it('keeps verified results usable after the connection changes', () => {
@@ -102,6 +110,8 @@ describe('barcode recovery state', () => {
             'rate-limited',
             'offline'
         ]);
+        expect(getBarcodeLookupFailure(new TypeError('Network failed'), { isOnline: true }).canRetry).toBe(true);
+        expect(getBarcodeLookupFailure(new TypeError('Network failed'), { isOnline: false }).canRetry).toBe(false);
         for (const failure of failures) {
             expect(failure.message).not.toContain(privateGatewayText);
             expect(failure.message).not.toMatch(/password|SQL|food name/i);

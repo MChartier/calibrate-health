@@ -117,4 +117,32 @@ describe('Listbox', () => {
         fireEvent(america, 'keyDown', { key: 'Enter', preventDefault: jest.fn() });
         expect(onSelect).toHaveBeenCalledWith('america');
     });
+
+    it('restores a keyboard-focusable option when filtering removes the active row', () => {
+        const onActiveChange = jest.fn();
+        const screen = render(
+            <Listbox
+                label="Regions"
+                options={options}
+                onActiveChange={onActiveChange}
+                onSelect={jest.fn()}
+                onDismiss={jest.fn()}
+                focusInitialOption={false}
+            />
+        );
+        fireEvent(screen.getByLabelText('Pacific'), 'focus');
+        expect(screen.getByLabelText('Pacific').props.tabIndex).toBe(0);
+
+        screen.rerender(
+            <Listbox
+                label="Regions"
+                options={[options[1]]}
+                onActiveChange={onActiveChange}
+                onSelect={jest.fn()}
+                onDismiss={jest.fn()}
+                focusInitialOption={false}
+            />
+        );
+        expect(screen.getByLabelText('Europe').props.tabIndex).toBe(0);
+    });
 });

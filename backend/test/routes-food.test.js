@@ -943,3 +943,30 @@ test('food route: DELETE /:id validates ids and returns 204 on delete', async ()
   assert.equal(res.statusCode, 204);
   assert.deepEqual(receivedDeleteWhere, { id: 123, user_id: 7 });
 });
+
+test('food route: DELETE /:id treats an already-absent owned log as idempotent success', async () => {
+  let syncChanges = 0;
+  const prismaStub = {
+    foodLog: {
+      deleteMany: async () => ({ count: 0 })
+    },
+    syncChange: {
+      create: async () => {
+        syncChanges += 1;
+        return { id: 1n };
+      }
+    }
+  };
+
+  const router = loadFoodRouter({
+    prismaStub,
+    foodDataStub: { getFoodDataProvider: () => ({}) }
+  });
+  const handler = getRouteHandler(router, 'delete', '/:id');
+  const res = createRes();
+
+  await handler({ user: { id: 7 }, params: { id: '123' } }, res);
+
+  assert.equal(res.statusCode, 204);
+  assert.equal(syncChanges, 0);
+});

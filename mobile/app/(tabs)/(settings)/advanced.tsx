@@ -73,29 +73,31 @@ export default function AdvancedSettingsScreen() {
     }
 
     return (
-        <TabScreen testID="advanced-settings-page">
-            <AppCard>
-                <View style={styles.sectionHeading}>
-                    <AppText accessibilityRole="header" aria-level={2} variant="subtitle">Connection</AppText>
-                    <AppText variant="caption">Optional connection settings for self-hosted services.</AppText>
-                </View>
-                <ServerUrlControl
-                    presentation="editor"
-                    value={serverInput}
-                    onChangeText={setServerInput}
-                    connection={serverConnection}
-                    onTestConnection={testServerUrl}
-                />
-                <AppText variant="caption">
-                    Calibrate tests a new service before signing out of the current one.
-                </AppText>
-                <AppButton
-                    title={isSavingServer ? 'Saving connection...' : 'Save connection'}
-                    disabled={isSavingServer}
-                    leftIcon={<Ionicons name="server-outline" size={18} color={theme.colors.onPrimary} />}
-                    onPress={() => void handleSaveServer()}
-                />
-            </AppCard>
+        <TabScreen testID="advanced-settings-page" tabIndex={Platform.OS === 'web' ? 0 : undefined}>
+            {Platform.OS !== 'web' ? (
+                <AppCard>
+                    <View style={styles.sectionHeading}>
+                        <AppText accessibilityRole="header" aria-level={2} variant="subtitle">Connection</AppText>
+                        <AppText variant="caption">Optional connection settings for self-hosted services.</AppText>
+                    </View>
+                    <ServerUrlControl
+                        presentation="editor"
+                        value={serverInput}
+                        onChangeText={setServerInput}
+                        connection={serverConnection}
+                        onTestConnection={testServerUrl}
+                    />
+                    <AppText variant="caption">
+                        Calibrate tests a new service before signing out of the current one.
+                    </AppText>
+                    <AppButton
+                        title={isSavingServer ? 'Saving connection...' : 'Save connection'}
+                        disabled={isSavingServer}
+                        leftIcon={<Ionicons name="server-outline" size={18} color={theme.colors.onPrimary} />}
+                        onPress={() => void handleSaveServer()}
+                    />
+                </AppCard>
+            ) : null}
 
             <AppCard>
                 <View style={styles.sectionHeading}>
