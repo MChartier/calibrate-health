@@ -110,6 +110,8 @@ model User {
   password_hash     String
   created_at        DateTime  @default(now())
   email_verified_at DateTime?
+  /// Set only after the required onboarding writes commit together.
+  onboarding_completed_at DateTime?
 
   weight_unit   WeightUnit @default(KG)
   height_unit   HeightUnit @default(CM)

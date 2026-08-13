@@ -39,6 +39,35 @@ paths:
               schema: { $ref: '#/components/schemas/ApiError' }
         '401':
           $ref: '#/components/responses/Unauthorized'
+  /api/v1/onboarding/complete:
+    post:
+      operationId: completeOnboarding
+      description: Atomically persist onboarding data and replay the exact durable receipt for the same operation ID.
+      parameters:
+        - $ref: '#/components/parameters/RequiredClientOperationId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/OnboardingCompleteRequest' }
+      responses:
+        '200':
+          description: Durable completion receipt and current authenticated user.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/OnboardingCompleteResponse' }
+        '400':
+          description: Invalid or incomplete onboarding data.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiError' }
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          description: Completed setup, operation reuse, or operation in progress.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiError' }
   /api/v1/user/profile:
     get:
       operationId: getUserProfile
@@ -1011,6 +1040,15 @@ components:
       in: header
       required: false
       description: Stable client-generated identifier used to safely replay a mutation.
+      schema:
+        type: string
+        minLength: 8
+        maxLength: 128
+    RequiredClientOperationId:
+      name: x-client-operation-id
+      in: header
+      required: true
+      description: Stable client-generated identifier required to replay an atomic mutation safely.
       schema:
         type: string
         minLength: 8
@@ -2083,6 +2121,44 @@ components:
         days:
           type: array
           items: { $ref: '#/components/schemas/ActivityDay' }
+    OnboardingCompleteData:
+      type: object
+      additionalProperties: false
+      required: [weight_unit, height_unit, timezone, date_of_birth, sex, height_mm, activity_level, current_weight_grams, target_weight_grams, daily_deficit]
+      properties:
+        weight_unit: { type: string, enum: [KG, LB] }
+        height_unit: { type: string, enum: [CM, FT_IN] }
+        timezone: { type: string, minLength: 1, maxLength: 100 }
+        date_of_birth: { type: string, format: date }
+        sex: { type: string, enum: [MALE, FEMALE] }
+        height_mm: { type: integer, minimum: 1000, maximum: 2500 }
+        activity_level: { type: string, enum: [SEDENTARY, LIGHT, MODERATE, ACTIVE, VERY_ACTIVE] }
+        current_weight_grams: { type: integer, minimum: 25000, maximum: 400000 }
+        target_weight_grams: { type: integer, minimum: 25000, maximum: 400000 }
+        daily_deficit: { type: integer, enum: [-1000, -750, -500, -250, 0, 250, 500, 750, 1000] }
+    OnboardingCompleteRequest:
+      type: object
+      additionalProperties: false
+      required: [data]
+      properties:
+        data: { $ref: '#/components/schemas/OnboardingCompleteData' }
+    OnboardingCompleteReceipt:
+      type: object
+      additionalProperties: false
+      required: [operation_id, completed_at, goal_id, metric_id, sync_cursor]
+      properties:
+        operation_id: { type: string }
+        completed_at: { type: string, format: date-time }
+        goal_id: { type: integer, minimum: 1 }
+        metric_id: { type: integer, minimum: 1 }
+        sync_cursor: { type: string }
+    OnboardingCompleteResponse:
+      type: object
+      additionalProperties: false
+      required: [receipt, user]
+      properties:
+        receipt: { $ref: '#/components/schemas/OnboardingCompleteReceipt' }
+        user: { $ref: '#/components/schemas/UserClientPayload' }
     ApiError:
       type: object
       required: [message, code, retryable, request_id]
@@ -2795,6 +2871,9 @@ components:
           enum: [SEDENTARY, LIGHT, MODERATE, ACTIVE, VERY_ACTIVE, null]
         profile_image_url:
           type: [string, 'null']
+        onboarding_completed_at:
+          type: [string, 'null']
+          format: date-time
         account_access:
           $ref: '#/components/schemas/AccountAccess'
 security:

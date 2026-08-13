@@ -71,6 +71,9 @@ describe('route registry', () => {
     expect(ROUTE_REGISTRY['my-foods'].title).toBe('Saved foods');
     expect(ROUTE_REGISTRY['my-foods'].documentTitle).toBe('Saved foods - Calibrate');
   });
+  it('lets authenticated users reach onboarding so runtime completion state decides the redirect', () => {
+    expect(ROUTE_REGISTRY.onboarding.authenticatedRedirect).toBeNull();
+  });
   it('preserves the exported production root document title', () => {
     expect(ROUTE_REGISTRY.root.documentTitle).toBe('calibrate');
   });

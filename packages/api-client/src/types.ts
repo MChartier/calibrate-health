@@ -98,8 +98,40 @@ export type UserClientPayload = {
     height_mm: number | null;
     activity_level: ActivityLevel | null;
     profile_image_url: string | null;
+    /** Absent only when connected to a legacy self-host that predates atomic onboarding. */
+    onboarding_completed_at?: string | null;
     /** Absent only when connected to a legacy self-host that predates account-access gates. */
     account_access?: AccountAccess;
+};
+
+export type OnboardingCompleteData = {
+    weight_unit: WeightUnit;
+    height_unit: HeightUnit;
+    timezone: string;
+    date_of_birth: string;
+    sex: Sex;
+    height_mm: number;
+    activity_level: ActivityLevel;
+    current_weight_grams: number;
+    target_weight_grams: number;
+    daily_deficit: number;
+};
+
+export type OnboardingCompleteRequest = {
+    data: OnboardingCompleteData;
+};
+
+export type OnboardingCompleteReceipt = {
+    operation_id: string;
+    completed_at: string;
+    goal_id: number;
+    metric_id: number;
+    sync_cursor: string;
+};
+
+export type OnboardingCompleteResponse = {
+    receipt: OnboardingCompleteReceipt;
+    user: UserClientPayload;
 };
 
 export type AccountExport = {

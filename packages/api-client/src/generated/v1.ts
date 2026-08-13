@@ -37,6 +37,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/onboarding/complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Atomically persist onboarding data and replay the exact durable receipt for the same operation ID. */
+        post: operations["completeOnboarding"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/user/profile": {
         parameters: {
             query?: never;
@@ -1441,6 +1458,39 @@ export interface components {
             end_date: string;
             days: components["schemas"]["ActivityDay"][];
         };
+        OnboardingCompleteData: {
+            /** @enum {string} */
+            weight_unit: "KG" | "LB";
+            /** @enum {string} */
+            height_unit: "CM" | "FT_IN";
+            timezone: string;
+            /** Format: date */
+            date_of_birth: string;
+            /** @enum {string} */
+            sex: "MALE" | "FEMALE";
+            height_mm: number;
+            /** @enum {string} */
+            activity_level: "SEDENTARY" | "LIGHT" | "MODERATE" | "ACTIVE" | "VERY_ACTIVE";
+            current_weight_grams: number;
+            target_weight_grams: number;
+            /** @enum {integer} */
+            daily_deficit: -1000 | -750 | -500 | -250 | 0 | 250 | 500 | 750 | 1000;
+        };
+        OnboardingCompleteRequest: {
+            data: components["schemas"]["OnboardingCompleteData"];
+        };
+        OnboardingCompleteReceipt: {
+            operation_id: string;
+            /** Format: date-time */
+            completed_at: string;
+            goal_id: number;
+            metric_id: number;
+            sync_cursor: string;
+        };
+        OnboardingCompleteResponse: {
+            receipt: components["schemas"]["OnboardingCompleteReceipt"];
+            user: components["schemas"]["UserClientPayload"];
+        };
         ApiError: {
             message: string;
             code: string | null;
@@ -1897,6 +1947,8 @@ export interface components {
             /** @enum {string|null} */
             activity_level?: "SEDENTARY" | "LIGHT" | "MODERATE" | "ACTIVE" | "VERY_ACTIVE" | null;
             profile_image_url?: string | null;
+            /** Format: date-time */
+            onboarding_completed_at?: string | null;
             account_access?: components["schemas"]["AccountAccess"];
         };
     };
@@ -1916,6 +1968,8 @@ export interface components {
         MetricId: number;
         /** @description Stable client-generated identifier used to safely replay a mutation. */
         ClientOperationId: string;
+        /** @description Stable client-generated identifier required to replay an atomic mutation safely. */
+        RequiredClientOperationId: string;
     };
     requestBodies: never;
     headers: never;
@@ -1975,6 +2029,52 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+        };
+    };
+    completeOnboarding: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Stable client-generated identifier required to replay an atomic mutation safely. */
+                "x-client-operation-id": components["parameters"]["RequiredClientOperationId"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OnboardingCompleteRequest"];
+            };
+        };
+        responses: {
+            /** @description Durable completion receipt and current authenticated user. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OnboardingCompleteResponse"];
+                };
+            };
+            /** @description Invalid or incomplete onboarding data. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            /** @description Completed setup, operation reuse, or operation in progress. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
         };
     };
     getUserProfile: {

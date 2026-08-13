@@ -207,7 +207,7 @@ export const ROUTE_REGISTRY = {
     authClass: 'authenticated',
     shellPolicy: 'standalone',
     deepLink: 'session-redirect',
-    authenticatedRedirect: 'today',
+    authenticatedRedirect: null,
   }),
   today: route({
     path: '/today',

@@ -182,6 +182,10 @@ const resetDevTestAccountHistory = async (userId: number): Promise<void> => {
     await tx.foodLogDay.deleteMany({ where: { user_id: userId } });
     await tx.foodTrackingPause.deleteMany({ where: { user_id: userId } });
     await tx.bodyMetric.deleteMany({ where: { user_id: userId } });
+    await tx.user.update({
+      where: { id: userId },
+      data: { onboarding_completed_at: null }
+    });
   });
 };
 
@@ -195,6 +199,16 @@ const createBodyMetrics = async (userId: number, days: Date[]): Promise<void> =>
       date: day,
       weight_grams: getSeedWeightGramsForDayIndex(index, TEST_USER_WEIGHT_GRAMS),
     }))
+  });
+};
+
+/** Mark the seeded baseline complete only after its required goal and metric writes exist. */
+const markTestUserOnboardingComplete = async (userId: number, completedAt: Date): Promise<void> => {
+  await prisma.$transaction(async (tx) => {
+    await tx.user.update({
+      where: { id: userId },
+      data: { onboarding_completed_at: completedAt }
+    });
   });
 };
 
@@ -227,6 +241,9 @@ export const seedDevTestData = async (options: SeedDevTestDataOptions = {}): Pro
   await timedSeedPhase(options, 'baseline reset', () => resetDevTestAccountHistory(user.id));
   await timedSeedPhase(options, 'goal', () => createTestGoal(user.id, goalCreatedAt));
   await timedSeedPhase(options, 'body metrics', () => createBodyMetrics(user.id, metricDays));
+  await timedSeedPhase(options, 'onboarding completion', () =>
+    markTestUserOnboardingComplete(user.id, goalCreatedAt)
+  );
   await timedSeedPhase(options, 'weight trends', () => refreshMaterializedWeightTrendsBestEffort(user.id));
   await timedSeedPhase(options, 'food logs', () => createFoodLogs(user.id, foodLogDays));
   await timedSeedPhase(options, 'completed food days', () => createCompletedFoodLogDays(user.id, foodLogDays));
@@ -267,6 +284,7 @@ export const resetDevTestUserToPreOnboardingState = async (): Promise<number> =>
         activity_level: null,
         profile_image: null,
         profile_image_mime_type: null,
+        onboarding_completed_at: null,
       },
       select: { id: true },
     });

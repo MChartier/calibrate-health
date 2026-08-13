@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import * as Crypto from 'expo-crypto';
 import { KeyboardAvoidingView, Platform, StyleSheet, useWindowDimensions, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Redirect, router } from 'expo-router';
@@ -31,7 +32,7 @@ import {
     ProfileIdentityFields
 } from '../src/components/profile/ProfileDetailsFields';
 import { useAuth } from '../src/auth/AuthContext';
-import { gramsToDisplayWeight, millimetersToCentimeters, millimetersToFeetInches } from '../src/utils/bodyMeasurements';
+import { restrictedAccountRoute } from '../src/auth/accountAccess';
 import { getTodayDate } from '../src/utils/dates';
 import { formatWeightUnit } from '../src/utils/format';
 import {
@@ -41,20 +42,23 @@ import {
     GOAL_MODE_OPTIONS,
     type GoalMode
 } from '../src/utils/goals';
-import { isProfileSetupComplete } from '../src/utils/profileCompletion';
 import { ACTIVITY_OPTIONS, SEX_OPTIONS, WEIGHT_UNIT_OPTIONS } from '../src/utils/profileOptions';
 import { getKeyboardAvoidingBehavior } from '../src/utils/keyboard';
 import { detectDeviceTimeZone, formatTimeZoneLabel, resolveOnboardingTimeZone } from '../src/utils/timezones';
 import {
     getNextButtonTitle,
     getOnboardingSteps,
-    isOptionalConnectionStep,
+    isPostCompletionStep,
     type OnboardingStepKey
 } from '../src/onboarding/steps';
+import {
+    buildOnboardingCompleteData,
+    type OnboardingFormState
+} from '../src/onboarding/completionState';
 import { OnboardingProgress } from '../src/onboarding/OnboardingProgress';
 import { radius, spacing, useAppTheme } from '../src/theme';
 import { WEIGHT_INPUT_INCREMENT } from '../src/config/inputPrecision';
-import { ASYNC_RESOURCE_STATES, isNeverEmpty } from '../src/asyncState/resolveAsyncState';
+import { isNeverEmpty } from '../src/asyncState/resolveAsyncState';
 import { getSafeActionErrorMessage } from '../src/errors/presentation';
 import { getCaloriePlanPresentation } from '../src/caloriePlanning/presentation';
 import { getMinimumDateOfBirth } from '../src/caloriePlanning/dateBounds';
@@ -98,14 +102,9 @@ function validateGoal(
 export default function OnboardingScreen() {
     const { colors: themeColors } = useAppTheme();
     const { fontScale } = useWindowDimensions();
-    const { api, user, updateCurrentUser } = useAuth();
+    const { api, user, isLoading: isAuthLoading, updateCurrentUser } = useAuth();
     const queryClient = useQueryClient();
-    const profileQuery = useQuery({
-        queryKey: ['mobile-profile'],
-        queryFn: () => api.getUserProfile(),
-        enabled: Boolean(user)
-    });
-    const profileState = useAsyncResourceState(profileQuery, isNeverEmpty);
+    const accountAccessRoute = restrictedAccountRoute(user);
     const isOnline = useOnlineStatus();
     const onboardingSteps = useMemo(() => getOnboardingSteps(Platform.OS), []);
     const [activeStepIndex, setActiveStepIndex] = useState(0);
@@ -131,7 +130,7 @@ export default function OnboardingScreen() {
     const [setupSaved, setSetupSaved] = useState(false);
     const [isFinishing, setIsFinishing] = useState(false);
     const weightBounds = getWeightDisplayBounds(weightUnit);
-    const optionalStartIndex = onboardingSteps.findIndex(({ key }) => isOptionalConnectionStep(key));
+    const optionalStartIndex = onboardingSteps.findIndex(({ key }) => isPostCompletionStep(key));
     const minimumSelectableStepIndex = setupSaved && optionalStartIndex >= 0 ? optionalStartIndex : 0;
 
     const signedDailyDeficit = getSignedDailyDeficit(goalMode, dailyChangeAbs);
@@ -205,85 +204,43 @@ export default function OnboardingScreen() {
         }
     }, [dailyChangeAbs, goalMode, planOptionsQuery.data, selectedPlanOption?.available]);
 
-    useEffect(() => {
-        if (!profileQuery.data) return;
+    function getFormState(): OnboardingFormState {
+        return {
+            weightUnit,
+            heightUnit,
+            timezone,
+            dateOfBirth,
+            sex,
+            activityLevel,
+            currentWeight,
+            targetWeight: resolvedTargetWeight,
+            goalMode,
+            dailyChangeAbs,
+            heightCm,
+            heightFeet,
+            heightInches
+        };
+    }
 
-        setWeightUnit(user?.weight_unit ?? WEIGHT_UNITS.KG);
-        setHeightUnit(user?.height_unit ?? HEIGHT_UNITS.CM);
-        const profile = profileQuery.data.profile;
-        const profileHasStarted = Boolean(
-            profile.date_of_birth ||
-            profile.sex ||
-            profile.height_mm ||
-            profile.activity_level ||
-            profileQuery.data.goal_daily_deficit !== null
-        );
-        setTimezone(resolveOnboardingTimeZone(profile.timezone, deviceTimeZone, profileHasStarted));
-        setDateOfBirth(profileQuery.data.profile.date_of_birth?.slice(0, 10) ?? '');
-        setSex(profileQuery.data.profile.sex);
-        setActivityLevel(profileQuery.data.profile.activity_level ?? ACTIVITY_LEVELS.LIGHT);
-        setCurrentWeight(gramsToDisplayWeight(profileQuery.data.latest_weight_grams, user?.weight_unit ?? WEIGHT_UNITS.KG));
-        setHeightCm(millimetersToCentimeters(profileQuery.data.profile.height_mm));
-        const imperialHeight = millimetersToFeetInches(profileQuery.data.profile.height_mm);
-        setHeightFeet(imperialHeight.feet);
-        setHeightInches(imperialHeight.inches);
-    }, [deviceTimeZone, profileQuery.data, user?.height_unit, user?.weight_unit]);
-
-    const setupMutation = useMutation({
-        mutationFn: async () => {
-            const parsedCurrentWeight = Number(currentWeight);
-            const parsedTargetWeight = Number(resolvedTargetWeight);
-            const goalError = validateGoal(goalMode, parsedCurrentWeight, parsedTargetWeight, weightUnit);
-            if (goalError) {
-                throw new Error(goalError);
-            }
-
-            if (!sex || !activityLevel) {
-                throw new Error('Complete sex and activity level.');
-            }
-            if (!isHeightWithinPolicy({
-                unit: heightUnit,
-                centimeters: Number(heightCm),
-                feet: Number(heightFeet),
-                inches: Number(heightInches || '0')
-            })) {
-                throw new Error(getHeightPolicyError(heightUnit));
-            }
-
-            const resolvedTimezone = timezone.trim() || 'UTC';
-            await api.updatePreferences({ weight_unit: weightUnit, height_unit: heightUnit });
-            const profileResponse = await api.updateProfile({
-                timezone: resolvedTimezone,
-                date_of_birth: dateOfBirth,
-                sex,
-                activity_level: activityLevel,
-                ...(heightUnit === HEIGHT_UNITS.CM
-                    ? { height_cm: heightCm }
-                    : { height_feet: heightFeet, height_inches: heightInches || '0' })
-            });
-            await api.addMetric({
-                date: getTodayDate(resolvedTimezone),
-                weight: parsedCurrentWeight
-            });
-            await api.createGoal({
-                start_weight: parsedCurrentWeight,
-                target_weight: parsedTargetWeight,
-                daily_deficit: signedDailyDeficit
-            });
-            return profileResponse;
-        },
-        onSuccess: async (response) => {
+    const completionMutation = useMutation({
+        mutationFn: () => api.completeOnboarding({
+            data: buildOnboardingCompleteData(getFormState())
+        }, Crypto.randomUUID()),
+        onSuccess: async (result) => {
             setValidationError(null);
-            updateCurrentUser(response.user);
-            if (nextStep && isOptionalConnectionStep(nextStep.key)) {
-                setSetupSaved(true);
-                setActiveStepIndex((current) => Math.min(current + 1, onboardingSteps.length - 1));
+            updateCurrentUser(result.user);
+            setSetupSaved(true);
+            if (optionalStartIndex >= 0) {
+                setActiveStepIndex(optionalStartIndex);
                 return;
             }
             await finishOnboarding();
         },
         onError: (error) => {
-            setValidationError(getSafeActionErrorMessage(error, 'Unable to finish setup.'));
+            setValidationError(getSafeActionErrorMessage(
+                error,
+                'Unable to complete setup. Check your connection and try again.'
+            ));
         }
     });
 
@@ -307,31 +264,16 @@ export default function OnboardingScreen() {
         }
     });
 
+    if (isAuthLoading) {
+        return <LoadingState label="Checking your session..." />;
+    }
     if (!user) {
         return <Redirect href="/(auth)/login" />;
     }
-
-    if (profileState.kind === ASYNC_RESOURCE_STATES.LOADING) {
-        return <LoadingState label="Preparing setup..." />;
+    if (accountAccessRoute) {
+        return <Redirect href={accountAccessRoute} />;
     }
-
-    if (profileState.kind === ASYNC_RESOURCE_STATES.ERROR) {
-        return (
-            <Screen safeTop style={[styles.profileGate, { backgroundColor: themeColors.background }]}>
-                <AsyncStateBoundary
-                    state={profileState}
-                    resourceLabel="your profile"
-                    loading={<LoadingState label="Preparing setup..." />}
-                    empty={null}
-                    onRetry={isOnline ? () => profileQuery.refetch() : undefined}
-                >
-                    {null}
-                </AsyncStateBoundary>
-            </Screen>
-        );
-    }
-
-    if (!setupSaved && profileQuery.data && isProfileSetupComplete(profileQuery.data)) {
+    if (user.onboarding_completed_at && !setupSaved) {
         return <Redirect href="/today" />;
     }
 
@@ -413,7 +355,7 @@ export default function OnboardingScreen() {
             if (setupSaved) {
                 setActiveStepIndex((current) => Math.min(current + 1, onboardingSteps.length - 1));
             } else {
-                setupMutation.mutate();
+                completionMutation.mutate();
             }
             return;
         }
@@ -655,7 +597,6 @@ export default function OnboardingScreen() {
         }
     }
 
-    const navigationPending = setupMutation.isPending || isFinishing;
     const paceBlocked = activeStep.key === 'pace' && (
         planOptionsQuery.isPending ||
         planOptionsQuery.isError ||
@@ -663,27 +604,23 @@ export default function OnboardingScreen() {
         planOptionsQuery.data?.eligibility.status !== 'eligible' ||
         selectedPlanOption?.available !== true
     );
-    let primaryActionTitle = getNextButtonTitle(nextStep?.key);
-    if (setupMutation.isPending) {
-        primaryActionTitle = 'Saving...';
+    const navigationPending = completionMutation.isPending || isFinishing;
+    let primaryActionTitle = activeStep.key === 'review' && !setupSaved
+        ? 'Complete setup'
+        : getNextButtonTitle(nextStep?.key);
+    if (completionMutation.isPending) {
+        primaryActionTitle = 'Completing setup...';
     } else if (isFinishing) {
         primaryActionTitle = 'Finishing...';
     }
 
     return (
-        <Screen scroll={false} safeTop style={[styles.screen, { backgroundColor: themeColors.background }]}>
-            {(profileState.kind === ASYNC_RESOURCE_STATES.STALE
-                || profileState.kind === ASYNC_RESOURCE_STATES.DEGRADED) && (
-                <AsyncStateBoundary
-                    state={profileState}
-                    resourceLabel="your profile"
-                    loading={null}
-                    empty={null}
-                    onRetry={isOnline ? () => profileQuery.refetch() : undefined}
-                >
-                    {null}
-                </AsyncStateBoundary>
-            )}
+        <Screen
+            testID="onboarding-root"
+            scroll={false}
+            safeTop
+            style={[styles.screen, { backgroundColor: themeColors.background }]}
+        >
             <View style={styles.setupHeader}>
                 <CalibrateLogo size={30} />
                 <View style={styles.setupHeaderCopy}>
@@ -729,10 +666,11 @@ export default function OnboardingScreen() {
                             style={styles.actionButton}
                         />
                         <AppButton
+                            testID={activeStep.key === 'review' ? 'onboarding-complete' : 'onboarding-continue'}
                             title={primaryActionTitle}
                             disabled={(activeStep.key === 'review' && !canSubmit) || paceBlocked || navigationPending}
                             leftIcon={<Ionicons name={!nextStep ? 'checkmark' : 'chevron-forward'} size={18} color={themeColors.onPrimary} />}
-                            onPress={handleNext}
+                            onPress={() => void handleNext()}
                             style={styles.actionButton}
                         />
                     </View>

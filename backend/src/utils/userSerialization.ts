@@ -12,6 +12,7 @@ export type UserClientPayload = {
   id: number;
   email: string;
   created_at: Date;
+  onboarding_completed_at: Date | null;
   weight_unit: WeightUnit;
   height_unit: HeightUnit;
   timezone: string;
@@ -35,6 +36,7 @@ export const USER_CLIENT_SELECT = {
   id: true,
   email: true,
   created_at: true,
+  onboarding_completed_at: true,
   weight_unit: true,
   height_unit: true,
   timezone: true,
@@ -70,6 +72,7 @@ export const serializeUserForClient = (user: UserForClient): UserClientPayload =
     id: user.id,
     email: user.email,
     created_at: user.created_at,
+    onboarding_completed_at: user.onboarding_completed_at ?? null,
     weight_unit: user.weight_unit,
     height_unit: user.height_unit,
     timezone: user.timezone,
