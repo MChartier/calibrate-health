@@ -4,7 +4,7 @@
     "slug": "calibrate-health-app",
     "owner": "calibrate-health",
     "scheme": "calibrate",
-    "version": "0.2.5",
+    "version": "0.2.6",
     "orientation": "default",
     "userInterfaceStyle": "automatic",
     "icon": "./assets/icon.png",
@@ -18,7 +18,7 @@
     ],
     "android": {
       "package": "app.calibratehealth.mobile",
-      "versionCode": 7,
+      "versionCode": 8,
       "allowBackup": false,
       "softwareKeyboardLayoutMode": "resize",
       "adaptiveIcon": {

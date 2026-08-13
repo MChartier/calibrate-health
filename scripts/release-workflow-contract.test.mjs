@@ -64,6 +64,7 @@ test('pull requests run the reviewed Windows UX gate and retain sanitized eviden
 test('pull requests run hosted Android, Wear release, and two-emulator package upgrade gates', () => {
   const workflow = readWorkflow('builds.yml');
   const packageConfig = JSON.parse(readFileSync(path.join(repositoryRoot, 'package.json'), 'utf8'));
+  const mobileBuild = workflowJobBlock(workflow, 'mobile-build');
   const android = workflowJobBlock(workflow, 'android-emulator-e2e');
   const wear = workflowJobBlock(workflow, 'wear-release-emulator-smoke');
   const upgrade = workflowJobBlock(workflow, 'native-package-upgrade');
@@ -74,6 +75,13 @@ test('pull requests run hosted Android, Wear release, and two-emulator package u
   assert.match(packageConfig.scripts['test:native-release'], /wear-build-task-guard\.test\.mjs/);
 
   assert.match(workflow, /Share Android debug APK with emulator E2E/);
+  assert.match(
+    mobileBuild,
+    /name: android-debug-apk-\$\{\{ github\.event\.pull_request\.head\.sha \}\}[\s\S]*overwrite: true/,
+  );
+  assert.match(android, /name: android-debug-apk-\$\{\{ github\.event\.pull_request\.head\.sha \}\}/);
+  assert.doesNotMatch(mobileBuild, /android-debug-apk-\$\{\{ github\.run_id \}\}-\$\{\{ github\.run_attempt \}\}/);
+  assert.doesNotMatch(android, /android-debug-apk-\$\{\{ github\.run_id \}\}-\$\{\{ github\.run_attempt \}\}/);
   assert.match(android, /needs: mobile-build/);
   assert.match(android, /ANDROID_ADB_SERIAL: emulator-5554/);
   assert.match(android, /image: postgres:15-alpine/);

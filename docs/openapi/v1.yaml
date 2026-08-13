@@ -2644,8 +2644,8 @@ components:
       allOf:
         - oneOf:
             - properties: { platform: { const: web }, version: { enum: [0.33.5, 0.33.4] } }
-            - properties: { platform: { const: android_phone }, version: { enum: [0.2.5, 0.2.4, 0.2.3, 0.2.2, 0.2.1, 0.1.0] } }
-            - properties: { platform: { const: wear_os }, version: { enum: [0.2.5, 0.2.3, 0.2.2, 0.2.1, 0.2.0] } }
+            - properties: { platform: { const: android_phone }, version: { enum: [0.2.6, 0.2.5, 0.2.4, 0.2.3, 0.2.2, 0.2.1, 0.1.0] } }
+            - properties: { platform: { const: wear_os }, version: { enum: [0.2.6, 0.2.5, 0.2.3, 0.2.2, 0.2.1, 0.2.0] } }
         - oneOf:
             - properties:
                 event: { const: client_failure }
