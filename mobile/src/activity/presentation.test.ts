@@ -2,6 +2,7 @@ import type { ActivityDaySummary, ActivityRecordEntry } from '@calibrate/api-cli
 import {
     formatActivitySource,
     getActivitySourceLabels,
+    hasImportedActivity,
     isActivitySummaryDelayed,
     isActivitySummaryEmpty
 } from './presentation';
@@ -46,5 +47,21 @@ describe('activity presentation', () => {
         })).toBe(true);
         expect(isActivitySummaryDelayed(summary, true, new Date('2026-07-11T17:00:01.000Z'))).toBe(true);
         expect(isActivitySummaryDelayed(summary, false, new Date('2026-07-12T17:00:01.000Z'))).toBe(false);
+    });
+    it('detects imported summaries or records across selected and recent days', () => {
+        const emptySummary = {
+            ...summary,
+            steps: null,
+            active_calories_kcal: null,
+            total_calories_kcal: null,
+            exercise_minutes: null
+        };
+        expect(hasImportedActivity([{ local_date: '2026-07-11', summary: emptySummary, records: [] }])).toBe(false);
+        expect(hasImportedActivity([{ local_date: '2026-07-11', summary, records: [] }])).toBe(true);
+        expect(hasImportedActivity([{
+            local_date: '2026-07-11',
+            summary: emptySummary,
+            records: [{ data_origin: 'other.app' } as ActivityRecordEntry]
+        }])).toBe(true);
     });
 });

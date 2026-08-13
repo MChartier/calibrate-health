@@ -1,4 +1,4 @@
-import type { ActivityDaySummary, ActivityRecordEntry } from '@calibrate/api-client';
+import type { ActivityDaySummary, ActivityDaysResponse, ActivityRecordEntry } from '@calibrate/api-client';
 
 const ACTIVITY_DELAY_THRESHOLD_MS = 6 * 60 * 60 * 1000; // Flag same-day summaries that have not refreshed for most of a waking day.
 
@@ -33,6 +33,9 @@ export function isActivitySummaryEmpty(summary: ActivityDaySummary | null | unde
         .every((value) => value === null);
 }
 
+export function hasImportedActivity(days: ActivityDaysResponse['days'] | null | undefined): boolean {
+    return (days ?? []).some((day) => !isActivitySummaryEmpty(day.summary) || day.records.length > 0);
+}
 export function isActivitySummaryDelayed(
     summary: ActivityDaySummary | null | undefined,
     isToday: boolean,
