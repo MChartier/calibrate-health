@@ -62,7 +62,7 @@ const TAB_BAR_BASE_HEIGHT = TAB_BAR_CONTENT_HEIGHT + (TAB_BAR_VERTICAL_PADDING *
 const HEADER_ROW_MIN_HEIGHT = 56; // Standard compact Android app-bar height before large-text expansion.
 const LARGE_TEXT_HEIGHT_INCREMENT = 18; // Adds vertical room as Android font scale grows toward 200%.
 const DESKTOP_NAV_BREAKPOINT = 1024;
-const DESKTOP_NAV_RAIL_WIDTH = 104;
+const DESKTOP_NAV_RAIL_WIDTH = 176;
 const DESKTOP_CONTENT_MAX_WIDTH = 1040;
 const QUERY_GATE_MAX_WIDTH = 640; // Keeps terminal shell errors readable on wide screens.
 
