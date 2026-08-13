@@ -233,7 +233,9 @@ test('computeWeightTrend: exposes coherent level and rate uncertainty bounds', (
     date: addDays(start, index),
     weight: 85 - index * 0.06 + (index % 2 === 0 ? 0.15 : -0.15)
   }));
-  const result = computeWeightTrend(observations);
+  const result = computeWeightTrend(observations, {
+    calibrationWindow: { startDate: addDays(start, 1), endDate: addDays(start, 29) }
+  });
   const latest = result.points[result.points.length - 1];
 
   assert.ok(Math.abs(latest.lower95 - (latest.trendWeight - 1.96 * latest.trendStd)) < 1e-12);
@@ -256,20 +258,31 @@ test('computeWeightTrend: exposes coherent level and rate uncertainty bounds', (
   assert.equal(result.windowAverageRate.spanDays, 28);
 });
 
-test('computeWeightTrend: bounds the configurable window-average pace scope', () => {
+test('computeWeightTrend: requires explicit 7-42 day calibration-window bounds', () => {
   const start = new Date('2026-01-01T00:00:00Z');
   const observations = Array.from({ length: 60 }, (_unused, index) => ({
     date: addDays(start, index),
     weight: 85 - index * 0.05
   }));
 
-  const minimum = computeWeightTrend(observations, { rateWindowDays: 1 });
-  const selected = computeWeightTrend(observations, { rateWindowDays: 35 });
-  const maximum = computeWeightTrend(observations, { rateWindowDays: 1000 });
+  const omitted = computeWeightTrend(observations);
+  const tooShort = computeWeightTrend(observations, {
+    calibrationWindow: { startDate: addDays(start, 53), endDate: addDays(start, 59) }
+  });
+  const selected = computeWeightTrend(observations, {
+    calibrationWindow: { startDate: addDays(start, 24), endDate: addDays(start, 59) }
+  });
+  const tooLong = computeWeightTrend(observations, {
+    calibrationWindow: { startDate: start, endDate: addDays(start, 59) }
+  });
 
-  assert.equal(minimum.windowAverageRate.spanDays, 7);
+  assert.equal(omitted.windowAverageRate.status, 'insufficient');
+  assert.equal(Number.isFinite(omitted.windowAverageRate.estimateKgPerWeek), false);
+  assert.equal(tooShort.windowAverageRate.status, 'insufficient');
+  assert.equal(Number.isFinite(tooShort.windowAverageRate.estimateKgPerWeek), false);
   assert.equal(selected.windowAverageRate.spanDays, 35);
-  assert.equal(maximum.windowAverageRate.spanDays, 42);
+  assert.equal(tooLong.windowAverageRate.status, 'insufficient');
+  assert.equal(Number.isFinite(tooLong.windowAverageRate.estimateKgPerWeek), false);
   assert.equal(selected.currentRate.spanDays, 59, 'current velocity evidence is not truncated to the regression window');
 });
 
@@ -360,11 +373,15 @@ test('computeWeightTrend: withholds pace until the latest segment spans seven el
   const spanSix = computeWeightTrend([
     { date: start, weight: 80 },
     { date: addDays(start, 6), weight: 79.7 }
-  ]);
+  ], {
+    calibrationWindow: { startDate: start, endDate: addDays(start, 6) }
+  });
   const spanSeven = computeWeightTrend([
     { date: start, weight: 80 },
     { date: addDays(start, 7), weight: 79.65 }
-  ]);
+  ], {
+    calibrationWindow: { startDate: start, endDate: addDays(start, 7) }
+  });
 
   assert.equal(spanSix.evidence.status, 'limited');
   assert.equal(spanSix.currentRate.status, 'insufficient');
@@ -374,6 +391,50 @@ test('computeWeightTrend: withholds pace until the latest segment spans seven el
   assert.equal(spanSeven.windowAverageRate.status, 'limited');
 });
 
+test('computeWeightTrend: deprecated weekly rate uses only the latest uninterrupted segment', () => {
+  const start = new Date('2026-01-01T00:00:00Z');
+  const beforeGap = Array.from({ length: 14 }, (_unused, index) => ({
+    date: addDays(start, index),
+    weight: 80 + index * 0.2
+  }));
+  const afterGapStart = addDays(start, 29);
+  const afterGap = Array.from({ length: 8 }, (_unused, index) => ({
+    date: addDays(afterGapStart, index),
+    weight: 83 - index * 0.2
+  }));
+
+  const result = computeWeightTrend([...beforeGap, ...afterGap]);
+  const latestSegment = result.points.filter((point) => point.segmentId === 2);
+  const expected = (
+    (latestSegment.at(-1).trendWeight - latestSegment[0].trendWeight) /
+    7
+  ) * 7;
+
+  assert.equal(result.segments.length, 2);
+  assert.equal(result.weeklyRate, expected);
+  assert.ok(result.weeklyRate < 0, 'pre-gap gain must not invert the post-gap loss rate');
+});
+
+test('computeWeightTrend: exact calibration window never falls back across a reset gap', () => {
+  const start = new Date('2026-01-01T00:00:00Z');
+  const observations = [
+    { date: start, weight: 80 },
+    { date: addDays(start, 1), weight: 80.2 },
+    { date: addDays(start, 17), weight: 79.8 },
+    { date: addDays(start, 24), weight: 79.2 },
+    { date: addDays(start, 28), weight: 78.8 }
+  ];
+
+  const result = computeWeightTrend(observations, {
+    calibrationWindow: { startDate: start, endDate: addDays(start, 28) }
+  });
+
+  assert.equal(result.segments.length, 2);
+  assert.equal(result.currentRate.estimateKgPerWeek, result.points.at(-1).trendRatePerDay * 7);
+  assert.equal(result.windowAverageRate.status, 'insufficient');
+  assert.equal(result.windowAverageRate.pointCount, observations.length);
+  assert.equal(Number.isFinite(result.windowAverageRate.estimateKgPerWeek), false);
+});
 test('classifyWeightTrendRate: requires sufficient evidence before assigning a confident direction', () => {
   assert.deepEqual(classifyWeightTrendRate(-0.8, -0.1, 'sufficient'), {
     direction: 'down',

@@ -31,6 +31,23 @@ function buildScenario({ days, weeklyRateKg, noiseStdKg, seed, outlierEvery = 0 
   }));
 }
 
+function computeTrend(observations, options = {}) {
+  const cutoffMs = options.asOfDate instanceof Date
+    ? options.asOfDate.getTime()
+    : Number.POSITIVE_INFINITY;
+  const eligible = observations
+    .filter((point) => point.date.getTime() <= cutoffMs)
+    .slice()
+    .sort((left, right) => left.date.getTime() - right.date.getTime());
+  const latestDate = eligible.at(-1)?.date;
+  const calibrationWindow = latestDate
+    ? {
+        startDate: new Date(latestDate.getTime() - 28 * MS_PER_DAY),
+        endDate: new Date(latestDate.getTime())
+      }
+    : undefined;
+  return computeWeightTrend(observations, { ...options, calibrationWindow });
+}
 test('weight trend benchmark: recovers representative steady rates without outlier-driven reversal', () => {
   const cases = [
     { weeklyRateKg: -0.9, noiseStdKg: 0.4, seed: 31, outlierEvery: 0 },
@@ -41,7 +58,7 @@ test('weight trend benchmark: recovers representative steady rates without outli
   ];
 
   for (const scenario of cases) {
-    const result = computeWeightTrend(buildScenario({ days: 90, ...scenario }));
+    const result = computeTrend(buildScenario({ days: 90, ...scenario }));
     assert.ok(
       Math.abs(result.windowAverageRate.estimateKgPerWeek - scenario.weeklyRateKg) < 0.2,
       `expected ${scenario.weeklyRateKg}, received ${result.windowAverageRate.estimateKgPerWeek}`
@@ -63,7 +80,7 @@ test('weight trend benchmark: seeded level and window-average pace intervals ach
       noiseStdKg: 0.9,
       seed
     });
-    const result = computeWeightTrend(observations);
+    const result = computeTrend(observations);
     for (let index = 14; index < result.points.length; index += 1) {
       const latent = 85 - 0.35 * index / 7;
       const point = result.points[index];
@@ -100,7 +117,7 @@ test('weight trend benchmark: local velocity-state intervals achieve 90%-98% pro
       });
     }
 
-    const result = computeWeightTrend(observations);
+    const result = computeTrend(observations);
     const currentRateKgPerWeek = latentRateKgPerDay * 7;
     covered += result.currentRate.lower95KgPerWeek <= currentRateKgPerWeek &&
       currentRateKgPerWeek <= result.currentRate.upper95KgPerWeek ? 1 : 0;
@@ -120,7 +137,7 @@ test('weight trend benchmark: causal stable and linear level RMSE is no more tha
     const scenarioCount = 120;
     for (let seed = 1; seed <= scenarioCount; seed += 1) {
       const observations = buildScenario({ days: 60, weeklyRateKg, noiseStdKg: 0.6, seed });
-      const result = computeWeightTrend(observations);
+      const result = computeTrend(observations);
       for (let index = 14; index < result.points.length; index += 1) {
         const latent = 85 + weeklyRateKg * index / 7;
         levelSquaredError += (result.points[index].trendWeight - latent) ** 2;
@@ -160,7 +177,7 @@ test('weight trend benchmark: a sustained reversal becomes confidently visible w
     });
   }
 
-  const result = computeWeightTrend(observations);
+  const result = computeTrend(observations);
   assert.equal(result.currentRate.direction, 'down');
   assert.equal(result.currentRate.status, 'confident');
   assert.ok(result.currentRate.estimateKgPerWeek < 0);
@@ -188,7 +205,7 @@ test('weight trend benchmark: local v2 pace changes direction sooner than v1 aft
       date: new Date(startMs + (59 + day) * MS_PER_DAY),
       weight: reversalWeight - 0.7 * day / 7 + (day % 2 === 0 ? -0.15 : 0.15)
     });
-    const v2 = computeWeightTrend(observations);
+    const v2 = computeTrend(observations);
     const v1 = computeWeightTrendV1(observations);
     if (v2.currentRate.estimateKgPerWeek < 0 && !Number.isFinite(v2ReversalLagDays)) {
       v2ReversalLagDays = day;
@@ -226,7 +243,7 @@ test('weight trend benchmark: plateau after loss is recognized as steady', () =>
     });
   }
 
-  const result = computeWeightTrend(observations);
+  const result = computeTrend(observations);
   assert.equal(result.windowAverageRate.direction, 'steady');
   assert.equal(result.windowAverageRate.status, 'confident');
   assert.ok(Math.abs(result.windowAverageRate.estimateKgPerWeek) < 0.03);
@@ -241,8 +258,8 @@ test('weight trend benchmark: isolated spikes are damped and recover within two 
     ...point,
     weight: point.weight + (index === 30 ? 8 : 0)
   }));
-  const baselineResult = computeWeightTrend(baseline);
-  const spikeResult = computeWeightTrend(spiked);
+  const baselineResult = computeTrend(baseline);
+  const spikeResult = computeTrend(spiked);
 
   assert.ok(spikeResult.points[30].huberWeight < 0.2);
   assert.ok(Math.abs(spikeResult.points[30].trendWeight - baselineResult.points[30].trendWeight) < 0.4);
@@ -255,14 +272,14 @@ test('weight trend benchmark: positive and negative three-kilogram spikes do not
     date: new Date(Date.parse('2026-01-01T00:00:00.000Z') + index * MS_PER_DAY),
     weight: 85 - 0.4 * index / 7 + (index % 2 === 0 ? -0.2 : 0.2)
   }));
-  const baselineResult = computeWeightTrend(baseline);
+  const baselineResult = computeTrend(baseline);
 
   for (const spikeKg of [3, -3]) {
     const spiked = baseline.map((point, index) => ({
       ...point,
       weight: point.weight + (index === 30 ? spikeKg : 0)
     }));
-    const result = computeWeightTrend(spiked);
+    const result = computeTrend(spiked);
     assert.ok(result.points[30].huberWeight < 0.5);
     assert.ok(Math.abs(result.points[30].trendWeight - baselineResult.points[30].trendWeight) < 0.3);
     assert.ok(Math.abs(result.points[44].trendWeight - baselineResult.points[44].trendWeight) < 0.06);
@@ -276,12 +293,12 @@ test('weight trend benchmark: a short hydration outlier run does not leave a las
     date: new Date(Date.parse('2026-01-01T00:00:00.000Z') + index * MS_PER_DAY),
     weight: 85 - 0.4 * index / 7 + (index % 2 === 0 ? -0.2 : 0.2)
   }));
-  const baselineResult = computeWeightTrend(baseline);
+  const baselineResult = computeTrend(baseline);
   const withOutlierRun = baseline.map((point, index) => ({
     ...point,
     weight: point.weight + (index >= 30 && index <= 32 ? 3 : 0)
   }));
-  const result = computeWeightTrend(withOutlierRun);
+  const result = computeTrend(withOutlierRun);
 
   assert.ok(Math.abs(result.points[44].trendWeight - baselineResult.points[44].trendWeight) < 0.2);
   assert.equal(result.windowAverageRate.direction, 'down');
@@ -295,15 +312,15 @@ test('weight trend benchmark: actual-date pace survives cadence changes without 
     weight: 82 - 0.42 * day / 7
   }));
   const mixedCadence = daily.filter((_point, day) => day < 8 || day % 3 === 1 || day === 28);
-  const dailyResult = computeWeightTrend(daily);
-  const mixedResult = computeWeightTrend(mixedCadence);
+  const dailyResult = computeTrend(daily);
+  const mixedResult = computeTrend(mixedCadence);
 
   assert.ok(Math.abs(dailyResult.windowAverageRate.estimateKgPerWeek + 0.42) < 1e-10);
   assert.ok(Math.abs(mixedResult.windowAverageRate.estimateKgPerWeek + 0.42) < 1e-10);
   assert.equal(mixedResult.segments.length, 1);
   assert.ok(mixedResult.points.some((point) => point.gapDays === 3));
 
-  const afterGap = computeWeightTrend([
+  const afterGap = computeTrend([
     ...mixedCadence,
     { date: new Date(startMs + 44 * MS_PER_DAY), weight: 79 }
   ]);
@@ -319,8 +336,8 @@ test('weight trend benchmark: backfills do not rewrite earlier forward states ma
     weight: 85 - 0.4 * index / 7 + (index % 3 === 0 ? 0.2 : -0.1)
   }));
   const missing = complete.filter((_point, index) => index !== 20);
-  const beforeBackfill = computeWeightTrend(missing);
-  const afterBackfill = computeWeightTrend(complete);
+  const beforeBackfill = computeTrend(missing);
+  const afterBackfill = computeTrend(complete);
   const afterByDate = new Map(afterBackfill.points.map((point) => [point.date.getTime(), point]));
   const precedingChanges = beforeBackfill.points
     .filter((point) => point.date < complete[20].date)
@@ -338,9 +355,9 @@ test('weight trend benchmark: input order and kilogram boundary conversion are i
     (left.date.getUTCDate() * 17) % 11 - (right.date.getUTCDate() * 17) % 11
   ));
   const pounds = kilograms.map((point) => ({ ...point, weight: point.weight * 2.2046226218487757 }));
-  const chronologicalResult = computeWeightTrend(kilograms);
-  const shuffledResult = computeWeightTrend(shuffled);
-  const convertedResult = computeWeightTrend(pounds.map((point) => ({
+  const chronologicalResult = computeTrend(kilograms);
+  const shuffledResult = computeTrend(shuffled);
+  const convertedResult = computeTrend(pounds.map((point) => ({
     ...point,
     weight: point.weight / 2.2046226218487757
   })));
@@ -364,13 +381,13 @@ test('weight trend benchmark: appending one consistent observation keeps prior h
     date: new Date(Date.parse('2026-01-01T00:00:00.000Z') + index * MS_PER_DAY),
     weight: 85 - 0.35 * index / 7 + (index % 2 === 0 ? -0.2 : 0.25)
   }));
-  const before = computeWeightTrend(observations);
+  const before = computeTrend(observations);
   const appendedObservation = {
     date: new Date(Date.parse('2026-01-01T00:00:00.000Z') + 60 * MS_PER_DAY),
     weight: 85 - 0.35 * 60 / 7 - 0.2
   };
   const extendedObservations = [...observations, appendedObservation];
-  const after = computeWeightTrend(extendedObservations);
+  const after = computeTrend(extendedObservations);
   const maximumHistoricalChange = Math.max(...before.points.map((point, index) => (
     Math.abs(point.trendWeight - after.points[index].trendWeight)
   )));
@@ -378,7 +395,7 @@ test('weight trend benchmark: appending one consistent observation keeps prior h
   assert.ok(maximumHistoricalChange < 1e-10, `maximum historical change was ${maximumHistoricalChange}`);
   assert.deepEqual(after.points.slice(0, before.points.length), before.points);
   assert.deepEqual(
-    computeWeightTrend(extendedObservations, { asOfDate: observations.at(-1).date }).points,
+    computeTrend(extendedObservations, { asOfDate: observations.at(-1).date }).points,
     before.points
   );
 });
@@ -393,7 +410,7 @@ test('weight trend benchmark: bounded-window workloads remain inexpensive', () =
   });
   const startedAt = performance.now();
   for (let iteration = 0; iteration < 500; iteration += 1) {
-    computeWeightTrend(observations);
+    computeTrend(observations);
   }
   const elapsedMs = performance.now() - startedAt;
   assert.ok(elapsedMs < 5000, `500 bounded trend evaluations took ${elapsedMs.toFixed(1)} ms`);

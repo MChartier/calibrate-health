@@ -10,6 +10,9 @@ const {
   getUtcTodayDateOnly
 } = require('../src/utils/date');
 const { computeWeightTrend } = require('../../shared/weightTrend.ts');
+const {
+  computeWeightTrendSourceRevision
+} = require('../src/services/weightTrendSourceRevision');
 
 function formatDateOnly(date) {
   return date.toISOString().slice(0, 10);
@@ -37,6 +40,7 @@ function loadMetricsRouter(prismaStub) {
 
   const normalizedPrismaStub = {
     ...prismaStub,
+    $queryRaw: prismaStub.$queryRaw ?? (async () => []),
     $transaction: prismaStub.$transaction ?? (async (callback) => callback(normalizedPrismaStub)),
     bodyMetric: {
       findUnique: async () => null,
@@ -492,7 +496,9 @@ test('metrics route: GET / adds scoped v2 evidence and freshness metadata', asyn
   assert.equal(summary.evidence, 'sufficient');
   assert.equal(summary.freshness, 'current');
   assert.equal(summary.status, 'sufficient');
-  assert.equal(summary.modeled_points, 10);
+  assert.equal(summary.modeled_observations, 10);
+  assert.equal(summary.returned_modeled_points, 10);
+  assert.equal(summary.modeled_points, 10, 'legacy count aliases returned modeled points');
   assert.equal(summary.observation_span_days, 9);
   assert.equal(summary.segment_start_date, formatDateOnly(rows[0].date));
   assert.equal(summary.interval_kind, 'latent_weight_model_uncertainty');
@@ -513,6 +519,310 @@ test('metrics route: GET / adds scoped v2 evidence and freshness metadata', asyn
   assert.equal(summary.weekly_rate.interval_kind, 'local_velocity_state_model_uncertainty');
   assert.ok(summary.short_term_variation.standard_deviation > 0);
   assert.equal(res.body.metrics[res.body.metrics.length - 1].trend_segment_start, true);
+});
+
+test('metrics route: GET / derives point bands and summary from one raw source revision', async () => {
+  const today = getUtcTodayDateOnly();
+  const rows = Array.from({ length: 10 }, (_unused, index) => ({
+    id: index + 1,
+    user_id: 7,
+    date: addUtcDays(today, index - 9),
+    weight_grams: 81000 - index * 100,
+    body_fat_percent: null,
+    // Simulate stored materialization from an incompatible source revision.
+    trend: {
+      trend_weight_grams: 200000 + index * 1000,
+      trend_ci_lower_grams: 199000 + index * 1000,
+      trend_ci_upper_grams: 201000 + index * 1000,
+      trend_std_grams: 500,
+      trend_rate_grams_per_day: 1000,
+      trend_rate_std_grams_per_day: 500,
+      model_version: 2
+    }
+  }));
+  const router = loadMetricsRouter({ bodyMetric: { findMany: async () => rows } });
+  const handler = getRouteHandler(router, 'get', '/');
+  const res = createRes();
+
+  await handler({
+    user: { id: 7, weight_unit: 'KG', timezone: 'UTC' },
+    query: { include_trend: 'true', range: 'all' }
+  }, res);
+
+  const expected = computeWeightTrend(rows.map((row) => ({
+    date: row.date,
+    weight: row.weight_grams / 1000
+  })));
+  const newest = res.body.metrics[0];
+  assert.equal(res.statusCode, 200);
+  assert.equal(newest.trend_weight, Math.round(expected.points.at(-1).trendWeight * 1000) / 1000);
+  assertNearlyEqual(res.body.meta.trend_summary.latest_trend.weight, expected.points.at(-1).trendWeight);
+  assert.ok(newest.trend_weight < 100, 'stored revision A must not leak into raw revision B');
+  assert.equal(res.body.meta.trend_summary.modeled_observations, rows.length);
+  assert.equal(res.body.meta.trend_summary.returned_modeled_points, rows.length);
+});
+
+test('metrics route: GET / preserves raw measurements and marks trend unavailable after refresh failure', async () => {
+  const today = getUtcTodayDateOnly();
+  const rows = [
+    {
+      id: 1,
+      user_id: 7,
+      date: addUtcDays(today, -1),
+      weight_grams: 80100,
+      body_fat_percent: null,
+      trend: {
+        trend_weight_grams: 150000,
+        trend_ci_lower_grams: 149000,
+        trend_ci_upper_grams: 151000,
+        trend_std_grams: 500,
+        trend_rate_grams_per_day: 1000,
+        trend_rate_std_grams_per_day: 500,
+        model_version: 2
+      }
+    },
+    {
+      id: 2,
+      user_id: 7,
+      date: today,
+      weight_grams: 80000,
+      body_fat_percent: null,
+      trend: {
+        trend_weight_grams: 149000,
+        trend_ci_lower_grams: 148000,
+        trend_ci_upper_grams: 150000,
+        trend_std_grams: 500,
+        trend_rate_grams_per_day: 1000,
+        trend_rate_std_grams_per_day: 500,
+        model_version: 2
+      }
+    }
+  ];
+  const sourceRevision = computeWeightTrendSourceRevision(rows);
+  for (const row of rows) {
+    if (row.trend) row.trend.source_revision = sourceRevision;
+  }
+  const router = loadMetricsRouter({
+    bodyMetric: {
+      findFirst: async () => { throw new Error('simulated refresh failure'); },
+      findMany: async () => rows
+    }
+  });
+  const handler = getRouteHandler(router, 'get', '/');
+  const res = createRes();
+  const previousWarn = console.warn;
+  console.warn = () => {};
+  try {
+    await handler({
+      user: { id: 7, weight_unit: 'KG', timezone: 'UTC' },
+      query: { include_trend: 'true', range: 'all' }
+    }, res);
+  } finally {
+    console.warn = previousWarn;
+  }
+
+  const summary = res.body.meta.trend_summary;
+  assert.equal(res.statusCode, 200);
+  assert.deepEqual(res.body.metrics.map((metric) => metric.weight), [80, 80.1]);
+  assert.ok(res.body.metrics.every((metric) => metric.trend_is_materialized === false));
+  assert.ok(res.body.metrics.every((metric) => metric.trend_weight === metric.weight));
+  assert.ok(res.body.metrics.every((metric) => metric.trend_ci_lower === metric.weight));
+  assert.ok(res.body.metrics.every((metric) => metric.trend_ci_upper === metric.weight));
+  assert.ok(res.body.metrics.every((metric) => metric.trend_std === 0));
+  assert.equal(summary.status, 'unavailable');
+  assert.equal(summary.evidence, 'insufficient');
+  assert.equal(summary.freshness, 'unavailable');
+  assert.equal(summary.model_version, null);
+  assert.equal(summary.latest_observation_date, formatDateOnly(today));
+  assert.equal(summary.days_since_latest, 0);
+  assert.equal(summary.modeled_start_date, null);
+  assert.equal(summary.modeled_observations, 0);
+  assert.equal(summary.returned_modeled_points, 0);
+  assert.equal(summary.modeled_points, 0);
+  assert.equal(summary.observation_span_days, 0);
+  assert.equal(summary.segment_start_date, null);
+  assert.equal(summary.latest_trend, null);
+  assert.equal(summary.weekly_rate, null);
+  assert.equal(summary.short_term_variation, null);
+  assert.equal(res.body.meta.weekly_rate, -7);
+  assert.equal(res.body.meta.volatility, 'low');
+});
+
+test('metrics route: GET / degrades after a same-day source edit when read-time refitting still fails', async () => {
+  const today = getUtcTodayDateOnly();
+  const oldMetric = {
+    id: 1,
+    user_id: 7,
+    date: today,
+    weight_grams: 80000
+  };
+  const oldRevision = computeWeightTrendSourceRevision([oldMetric]);
+  const rows = [{
+    ...oldMetric,
+    weight_grams: 81234,
+    body_fat_percent: null,
+    trend: {
+      trend_weight_grams: 79000,
+      trend_ci_lower_grams: 78500,
+      trend_ci_upper_grams: 79500,
+      trend_std_grams: 250,
+      trend_rate_grams_per_day: -100,
+      trend_rate_std_grams_per_day: 50,
+      model_version: 2,
+      source_revision: oldRevision
+    }
+  }];
+  const updatedRevision = computeWeightTrendSourceRevision(rows);
+  let modelWindowReads = 0;
+  const router = loadMetricsRouter({
+    bodyMetric: {
+      findFirst: async (args) => (
+        args.where.OR ? { id: rows[0].id } : { date: today }
+      ),
+      findMany: async () => {
+        modelWindowReads += 1;
+        if (modelWindowReads === 2) {
+          throw new Error('persistent same-day refit failure for weight_grams=81234');
+        }
+        return rows;
+      }
+    }
+  });
+  const handler = getRouteHandler(router, 'get', '/');
+  const res = createRes();
+  const previousWarn = console.warn;
+  const warnings = [];
+  console.warn = (message) => warnings.push(String(message));
+
+  try {
+    await handler({
+      user: { id: 7, weight_unit: 'KG', timezone: 'UTC' },
+      query: { include_trend: 'true', range: 'all' }
+    }, res);
+  } finally {
+    console.warn = previousWarn;
+  }
+
+  assert.notEqual(updatedRevision, oldRevision);
+  assert.equal(modelWindowReads, 3, 'ensure inspection, failed locked refit, and response snapshot are distinct reads');
+  assert.equal(res.statusCode, 200);
+  assert.equal(res.body.metrics[0].weight, 81.2);
+  assert.equal(res.body.metrics[0].trend_is_materialized, false);
+  assert.equal(res.body.metrics[0].trend_weight, 81.2);
+  assert.equal(res.body.meta.trend_summary.status, 'unavailable');
+  assert.equal(res.body.meta.trend_summary.freshness, 'unavailable');
+  assert.equal(res.body.meta.trend_summary.latest_trend, null);
+  assert.equal(res.body.meta.trend_summary.weekly_rate, null);
+  assert.equal(res.body.meta.weekly_rate, 0, 'stale same-date LKG metadata must not be reused');
+  assert.equal(res.body.meta.volatility, 'low');
+  assert.ok(warnings.length >= 1);
+  assert.ok(warnings.every((warning) => !warning.includes('81234') && !warning.includes('weight_grams')));
+});
+
+test('metrics route: GET / catches a fitting race and still returns raw measurements', async () => {
+  const today = getUtcTodayDateOnly();
+  let weightReads = 0;
+  const row = {
+    id: 1,
+    user_id: 7,
+    date: today,
+    body_fat_percent: null,
+    trend: null,
+    get weight_grams() {
+      weightReads += 1;
+      if (weightReads === 2) throw new Error('simulated fitting race for weight_grams=80000');
+      return 80000;
+    }
+  };
+  const router = loadMetricsRouter({
+    bodyMetric: {
+      findFirst: async () => null,
+      findMany: async () => [row]
+    }
+  });
+  const handler = getRouteHandler(router, 'get', '/');
+  const res = createRes();
+  const previousWarn = console.warn;
+  const warnings = [];
+  console.warn = (message) => warnings.push(String(message));
+
+  try {
+    await handler({
+      user: { id: 7, weight_unit: 'KG', timezone: 'UTC' },
+      query: { include_trend: 'true', range: 'all' }
+    }, res);
+  } finally {
+    console.warn = previousWarn;
+  }
+
+  assert.equal(res.statusCode, 200);
+  assert.equal(res.body.metrics[0].weight, 80);
+  assert.equal(res.body.metrics[0].trend_is_materialized, false);
+  assert.equal(res.body.meta.trend_summary.status, 'unavailable');
+  assert.equal(res.body.meta.trend_summary.weekly_rate, null);
+  assert.deepEqual(warnings, [
+    'Unable to fit the requested weight trend snapshot. Returning raw measurements with trend status unavailable.'
+  ]);
+});
+
+test('metrics route: GET / keeps legacy fallback when last-known-good trends do not cover newest raw data', async () => {
+  const today = getUtcTodayDateOnly();
+  const rows = [
+    {
+      id: 1,
+      user_id: 7,
+      date: addUtcDays(today, -1),
+      weight_grams: 80100,
+      body_fat_percent: null,
+      trend: {
+        trend_weight_grams: 80100,
+        trend_ci_lower_grams: 79600,
+        trend_ci_upper_grams: 80600,
+        trend_std_grams: 250,
+        trend_rate_grams_per_day: -100,
+        trend_rate_std_grams_per_day: 50,
+        model_version: 2
+      }
+    },
+    {
+      id: 2,
+      user_id: 7,
+      date: today,
+      weight_grams: 80000,
+      body_fat_percent: null,
+      trend: null
+    }
+  ];
+  const sourceRevision = computeWeightTrendSourceRevision(rows);
+  for (const row of rows) {
+    if (row.trend) row.trend.source_revision = sourceRevision;
+  }
+  const router = loadMetricsRouter({
+    bodyMetric: {
+      findFirst: async () => { throw new Error('simulated refresh failure'); },
+      findMany: async () => rows
+    }
+  });
+  const handler = getRouteHandler(router, 'get', '/');
+  const res = createRes();
+  const previousWarn = console.warn;
+  console.warn = () => {};
+  try {
+    await handler({
+      user: { id: 7, weight_unit: 'KG', timezone: 'UTC' },
+      query: { include_trend: 'true', range: 'all' }
+    }, res);
+  } finally {
+    console.warn = previousWarn;
+  }
+
+  assert.equal(res.statusCode, 200);
+  assert.equal(res.body.meta.trend_summary.status, 'unavailable');
+  assert.equal(res.body.meta.trend_summary.latest_trend, null);
+  assert.equal(res.body.meta.trend_summary.weekly_rate, null);
+  assert.ok(res.body.metrics.every((metric) => metric.trend_is_materialized === false));
+  assert.equal(res.body.meta.weekly_rate, 0);
+  assert.equal(res.body.meta.volatility, 'low');
 });
 
 test('metrics route: GET / excludes future rows and suppresses outdated pace', async () => {
@@ -641,6 +951,8 @@ test('metrics route: GET / keeps stale as-of metadata when a narrow range has no
   assert.equal(res.statusCode, 200);
   assert.equal(res.body.metrics.length, 0);
   assert.equal(res.body.meta.trend_summary.returned_points, 0);
+  assert.equal(res.body.meta.trend_summary.modeled_observations, 8);
+  assert.equal(res.body.meta.trend_summary.returned_modeled_points, 0);
   assert.equal(res.body.meta.trend_summary.modeled_points, 0);
   assert.equal(res.body.meta.trend_summary.latest_observation_date, formatDateOnly(latestDate));
   assert.equal(res.body.meta.trend_summary.days_since_latest, 8);
@@ -686,11 +998,48 @@ test('metrics route: GET / recomputes a bounded historical trend as of the reque
   assert.equal(res.body.meta.trend_summary.as_of_date, formatDateOnly(historicalEnd));
   assert.equal(res.body.meta.trend_summary.latest_observation_date, formatDateOnly(historicalEnd));
   assert.equal(res.body.meta.trend_summary.freshness, 'current');
+  assert.equal(res.body.meta.trend_summary.modeled_observations, 10);
+  assert.equal(res.body.meta.trend_summary.returned_modeled_points, 10);
   assert.equal(res.body.meta.trend_summary.modeled_points, 10);
   assert.equal(res.body.meta.trend_summary.returned_points, 10);
   assert.equal(res.body.meta.trend_summary.observation_span_days, 9);
 });
 
+test('metrics route: GET / legacy weekly rate ignores a pre-gap reversal', async () => {
+  const start = new Date('2025-01-01T00:00:00Z');
+  const beforeGap = Array.from({ length: 14 }, (_unused, index) => ({
+    id: index + 1,
+    user_id: 7,
+    date: addUtcDays(start, index),
+    weight_grams: 80000 + index * 200,
+    body_fat_percent: null,
+    trend: null
+  }));
+  const afterGapStart = addUtcDays(start, 29);
+  const afterGap = Array.from({ length: 8 }, (_unused, index) => ({
+    id: index + 15,
+    user_id: 7,
+    date: addUtcDays(afterGapStart, index),
+    weight_grams: 83000 - index * 200,
+    body_fat_percent: null,
+    trend: null
+  }));
+  const rows = [...beforeGap, ...afterGap];
+  const end = rows.at(-1).date;
+  const router = loadMetricsRouter({ bodyMetric: { findMany: async () => rows } });
+  const handler = getRouteHandler(router, 'get', '/');
+  const res = createRes();
+
+  await handler({
+    user: { id: 7, weight_unit: 'KG', timezone: 'UTC' },
+    query: { include_trend: 'true', range: 'all', end: formatDateOnly(end) }
+  }, res);
+
+  assert.equal(res.statusCode, 200);
+  assert.ok(res.body.meta.weekly_rate < 0, 'pre-gap gain must not invert post-gap legacy pace');
+  assert.equal(res.body.meta.trend_summary.modeled_observations, rows.length);
+  assert.equal(res.body.metrics.filter((metric) => metric.trend_segment_start).length, 2);
+});
 test('metrics route: GET / trend payload stays unit-invariant across KG and LB preferences', async () => {
   const rows = [
     {

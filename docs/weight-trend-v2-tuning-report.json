@@ -1,0 +1,136 @@
+{
+  "schemaVersion": 1,
+  "reportVersion": 1,
+  "modelVersion": 2,
+  "generator": "npm run weight-trend:tuning-report",
+  "parameterManifest": {
+    "manifestVersion": 1,
+    "modelVersion": 2,
+    "confidence": {
+      "level": 0.95,
+      "zScore": 1.96
+    },
+    "measurement": {
+      "defaultStdKg": 0.9,
+      "minimumStdKg": 0.25,
+      "maximumStdKg": 3.5,
+      "shrinkagePoints": 10
+    },
+    "filter": {
+      "initialRateStdKgPerDay": 0.15,
+      "rateProcessStdKgPerDaySqrtDay": 0.007,
+      "minimumVariance": 1e-10,
+      "huberK": 2.5,
+      "segmentResetDays": 14
+    },
+    "currentRate": {
+      "estimand": "latest_local_velocity_state",
+      "sufficientEvidencePoints": 3,
+      "sufficientEvidenceSpanDays": 7
+    },
+    "calibrationWindowAverageRate": {
+      "estimand": "robust_average_rate_over_exact_uninterrupted_window",
+      "defaultWindowDays": 28,
+      "minimumWindowDays": 7,
+      "maximumWindowDays": 42,
+      "minimumResidualStdKg": 0.02
+    },
+    "legacySummary": {
+      "recentWindowPoints": 14,
+      "lowVolatilityStdKg": 0.5,
+      "mediumVolatilityStdKg": 1.2,
+      "steadyRateKgPerWeek": 0.05
+    }
+  },
+  "parameterGovernance": {
+    "approvedModelVersion": 2,
+    "approvedNumericParameterFingerprintSha256": "848378b772e64d0e40cfa8974a26ec5bc798b77cc6fdc785bd83462b7199c195",
+    "currentNumericParameterFingerprintSha256": "848378b772e64d0e40cfa8974a26ec5bc798b77cc6fdc785bd83462b7199c195",
+    "constantsChanged": false,
+    "modelVersionBumped": false,
+    "modelVersionNotRegressed": true,
+    "numericParameterChangeHasModelVersionBump": true
+  },
+  "fixtures": {
+    "seedRange": [
+      1,
+      120
+    ],
+    "simulatedDays": 60,
+    "linearWeeklyRatesKg": [
+      0,
+      -0.5
+    ],
+    "measurementNoiseStdKg": [
+      0.6,
+      0.9
+    ],
+    "calibrationWindowDays": 28
+  },
+  "gates": {
+    "intervalCoverage": {
+      "minimum": 0.9,
+      "maximum": 0.98
+    },
+    "maximumV2ToV1LevelRmseRatio": 1.05,
+    "maximumWindowRateRmseKgPerWeek": 0.12,
+    "maximumConfidentReversalLagDays": 14,
+    "maximumSpikeRecoveryErrorKgAt14Days": 0.06,
+    "invarianceToleranceKg": 1e-10,
+    "appendStabilityToleranceKg": 1e-10
+  },
+  "results": {
+    "coverage": {
+      "scenarioCount": 120,
+      "levelCoverage": 0.942935,
+      "windowAverageRateCoverage": 0.916667,
+      "currentVelocityRateCoverage": 0.975
+    },
+    "rmse": [
+      {
+        "weeklyRateKg": 0,
+        "v2LevelRmseKg": 0.22717,
+        "v1LevelRmseKg": 0.231227,
+        "v2ToV1LevelRmseRatio": 0.982456,
+        "windowAverageRateRmseKgPerWeek": 0.09506
+      },
+      {
+        "weeklyRateKg": -0.5,
+        "v2LevelRmseKg": 0.227798,
+        "v1LevelRmseKg": 0.23056,
+        "v2ToV1LevelRmseRatio": 0.98802,
+        "windowAverageRateRmseKgPerWeek": 0.09506
+      }
+    ],
+    "reversal": {
+      "v2DirectionLagDays": 8,
+      "v2ConfidenceLagDays": 13,
+      "v1DirectionLagDays": 9
+    },
+    "stability": {
+      "maximumSpikeRecoveryErrorKgAt14Days": 0.047958166,
+      "kilogramBoundaryMaximumErrorKg": 0,
+      "inputOrderMaximumErrorKg": 0,
+      "appendOneHistoricalMaximumErrorKg": 0
+    },
+    "gateResults": {
+      "levelCoverage": true,
+      "windowAverageRateCoverage": true,
+      "currentVelocityRateCoverage": true,
+      "v2LevelRmseWithinFivePercentOfV1": true,
+      "windowAverageRateRmse": true,
+      "reversalConfidenceWithinFourteenDays": true,
+      "reversalDirectionFasterThanV1": true,
+      "spikeRecoveryWithinTwoWeeks": true,
+      "inputOrderAndUnitInvariant": true,
+      "appendOneHistoryStable": true,
+      "modelVersionNotRegressed": true,
+      "numericParameterChangeHasModelVersionBump": true
+    }
+  },
+  "decision": {
+    "gatesPassed": true,
+    "constantsChanged": false,
+    "rationale": "Existing Weight Trend v2 parameters match the approved fingerprint and pass every deterministic gate; no numeric change is justified."
+  }
+}

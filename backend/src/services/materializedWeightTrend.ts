@@ -1,16 +1,26 @@
-import { type Prisma } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import prisma from '../config/database';
 import { diagnosticsRegistry } from '../observability';
 import { addUtcDays, getSafeUtcTodayDateOnlyInTimeZone } from '../utils/date';
 import { computeWeightTrend, WEIGHT_TREND_MODEL_VERSION } from './weightTrend';
+import { computeWeightTrendSourceRevision } from './weightTrendSourceRevision';
+
+export { computeWeightTrendSourceRevision } from './weightTrendSourceRevision';
 
 const GRAMS_PER_KILOGRAM = 1000; // Canonical storage-to-model conversion for trend persistence.
+const MATERIALIZATION_TRANSACTION_MAX_ATTEMPTS = 3; // A waiting RR lock may require a fresh post-conflict snapshot.
+export const WEIGHT_TREND_ADVISORY_LOCK_NAMESPACE = 0x57544754; // WTGT isolates these per-user advisory locks.
 export const MATERIALIZED_TREND_ACTIVE_HORIZON_DAYS = 120; // Keep trend modeling focused on recent weight behavior.
 export const MATERIALIZED_TREND_WARMUP_DAYS = 30; // Extra context stabilizes the first active-window trend points.
 export { WEIGHT_TREND_MODEL_VERSION };
 
-type TrendPersistenceClient = Pick<typeof prisma, 'bodyMetric' | 'bodyMetricTrend' | 'user' | '$transaction'>;
-type TrendReplacementClient = Pick<Prisma.TransactionClient, 'bodyMetricTrend'>;
+export type WeightTrendMaterializationAvailability = 'available' | 'unavailable';
+
+type TrendPersistenceClient = Pick<typeof prisma, '$transaction'>;
+type TrendSnapshotClient = Pick<
+    Prisma.TransactionClient,
+    'bodyMetric' | 'bodyMetricTrend' | 'user' | '$queryRaw'
+>;
 type MetricHistoryRow = {
     id: number;
     user_id: number;
@@ -37,7 +47,7 @@ function kilogramsPerDayToGramsPerDay(value: number | undefined): number | null 
 /** Resolve today's date-only boundary in the account timezone unless a caller supplies an explicit as-of day. */
 async function resolveTrendAsOfDate(
     userId: number,
-    client: TrendPersistenceClient,
+    client: TrendSnapshotClient,
     explicitAsOfDate?: Date
 ): Promise<Date> {
     if (explicitAsOfDate) return explicitAsOfDate;
@@ -58,6 +68,7 @@ export function getMaterializedTrendWindowFromLatestDate(latestMetricDate: Date)
     return { activeStartDate, modelStartDate };
 }
 
+
 /**
  * Load only the metrics needed to model the active trend horizon.
  */
@@ -65,7 +76,7 @@ async function loadMetricsForModelWindow(
     userId: number,
     modelStartDate: Date,
     asOfDate: Date,
-    client: TrendPersistenceClient
+    client: TrendSnapshotClient
 ): Promise<MetricHistoryRow[]> {
     return client.bodyMetric.findMany({
         where: {
@@ -83,7 +94,7 @@ async function loadMetricsForModelWindow(
 async function findLatestMetricDate(
     userId: number,
     asOfDate: Date,
-    client: TrendPersistenceClient
+    client: TrendSnapshotClient
 ): Promise<Date | null> {
     const latestMetric = await client.bodyMetric.findFirst({
         where: { user_id: userId, date: { lte: asOfDate } },
@@ -98,7 +109,8 @@ async function findLatestMetricDate(
  */
 function buildActiveTrendRows(
     metricsForModelWindow: MetricHistoryRow[],
-    activeStartDate: Date
+    activeStartDate: Date,
+    sourceRevision: string
 ): Array<{
     metric_id: number;
     user_id: number;
@@ -110,6 +122,7 @@ function buildActiveTrendRows(
     trend_rate_grams_per_day: number | null;
     trend_rate_std_grams_per_day: number | null;
     model_version: number;
+    source_revision: string;
 }> {
     const trendResult = computeWeightTrend(
         metricsForModelWindow.map((metric) => ({
@@ -142,10 +155,17 @@ function buildActiveTrendRows(
                 trend_std_grams: kilogramsToRoundedGrams(point.trendStd),
                 trend_rate_grams_per_day: kilogramsPerDayToGramsPerDay(point.trendRatePerDay),
                 trend_rate_std_grams_per_day: kilogramsPerDayToGramsPerDay(point.trendRateStdPerDay),
-                model_version: WEIGHT_TREND_MODEL_VERSION
+                model_version: WEIGHT_TREND_MODEL_VERSION,
+                source_revision: sourceRevision
             }
         ];
     });
+}
+
+function isRetryableMaterializationConflict(error: unknown): boolean {
+    if (typeof error !== 'object' || error === null || !('code' in error)) return false;
+    const code = String(error.code);
+    return code === 'P2002' || code === 'P2034' || code === '23505' || code === '40001' || code === '40P01';
 }
 
 /**
@@ -159,32 +179,53 @@ export async function recomputeAndStoreUserWeightTrends(
     const startedAt = Date.now();
     let outcome: 'success' | 'failure' = 'failure';
     try {
-        const asOfDate = await resolveTrendAsOfDate(userId, client, explicitAsOfDate);
-        const latestMetricDate = await findLatestMetricDate(userId, asOfDate, client);
-        if (!latestMetricDate) {
-            await client.$transaction(async (tx) => {
-                await tx.bodyMetricTrend.deleteMany({
-                    where: { user_id: userId }
-                });
-            });
-            outcome = 'success';
-            return;
-        }
+        for (let attempt = 1; attempt <= MATERIALIZATION_TRANSACTION_MAX_ATTEMPTS; attempt += 1) {
+            try {
+                await client.$transaction(
+                    async (tx) => {
+                        // Serialize each user's replacements and keep every source read on one repeatable revision.
+                        await tx.$queryRaw(
+                            Prisma.sql`SELECT pg_advisory_xact_lock(${WEIGHT_TREND_ADVISORY_LOCK_NAMESPACE}::integer, ${userId}::integer)::text AS lock_result`
+                        );
 
-        const { activeStartDate, modelStartDate } = getMaterializedTrendWindowFromLatestDate(latestMetricDate);
-        const metricsForModelWindow = await loadMetricsForModelWindow(userId, modelStartDate, asOfDate, client);
-        const rows = buildActiveTrendRows(metricsForModelWindow, activeStartDate);
+                        const asOfDate = await resolveTrendAsOfDate(userId, tx, explicitAsOfDate);
+                        const latestMetricDate = await findLatestMetricDate(userId, asOfDate, tx);
+                        if (!latestMetricDate) {
+                            await tx.bodyMetricTrend.deleteMany({
+                                where: { user_id: userId }
+                            });
+                            return;
+                        }
 
-        await client.$transaction(async (tx: TrendReplacementClient) => {
-            await tx.bodyMetricTrend.deleteMany({
-                where: { user_id: userId }
-            });
+                        const { activeStartDate, modelStartDate } =
+                            getMaterializedTrendWindowFromLatestDate(latestMetricDate);
+                        const metricsForModelWindow =
+                            await loadMetricsForModelWindow(userId, modelStartDate, asOfDate, tx);
+                        // Fit before touching persisted rows so model failures preserve the last-known-good snapshot.
+                        const sourceRevision = computeWeightTrendSourceRevision(metricsForModelWindow);
+                        const rows = buildActiveTrendRows(metricsForModelWindow, activeStartDate, sourceRevision);
 
-            if (rows.length > 0) {
-                await tx.bodyMetricTrend.createMany({ data: rows });
+                        await tx.bodyMetricTrend.deleteMany({
+                            where: { user_id: userId }
+                        });
+
+                        if (rows.length > 0) {
+                            await tx.bodyMetricTrend.createMany({ data: rows });
+                        }
+                    },
+                    { isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead }
+                );
+                outcome = 'success';
+                return;
+            } catch (error) {
+                const shouldRetry =
+                    attempt < MATERIALIZATION_TRANSACTION_MAX_ATTEMPTS &&
+                    isRetryableMaterializationConflict(error);
+                if (!shouldRetry) throw error;
+                // A waiter can pin its RR snapshot while blocked on the advisory lock. Retry the
+                // whole transaction so lock acquisition and every source/replacement query are fresh.
             }
-        });
-        outcome = 'success';
+        }
     } finally {
         // Operational counters include only outcome and duration; raw weights never enter diagnostics.
         diagnosticsRegistry.recordOperation('weight_trend_recompute', outcome, Date.now() - startedAt);
@@ -194,48 +235,61 @@ export async function recomputeAndStoreUserWeightTrends(
 /**
  * Ensure active-horizon trend rows exist and match the active model version.
  */
-export async function ensureMaterializedWeightTrends(userId: number, explicitAsOfDate?: Date): Promise<void> {
-    const asOfDate = await resolveTrendAsOfDate(userId, prisma, explicitAsOfDate);
-    const latestMetric = await prisma.bodyMetric.findFirst({
-        where: { user_id: userId, date: { lte: asOfDate } },
-        orderBy: { date: 'desc' },
-        select: { date: true }
-    });
-    if (!latestMetric) return;
+export async function ensureMaterializedWeightTrends(
+    userId: number,
+    explicitAsOfDate?: Date
+): Promise<WeightTrendMaterializationAvailability> {
+    try {
+        const asOfDate = await resolveTrendAsOfDate(userId, prisma, explicitAsOfDate);
+        const latestMetric = await prisma.bodyMetric.findFirst({
+            where: { user_id: userId, date: { lte: asOfDate } },
+            orderBy: { date: 'desc' },
+            select: { date: true }
+        });
+        if (!latestMetric) return 'available';
 
-    const { activeStartDate } = getMaterializedTrendWindowFromLatestDate(latestMetric.date);
-    const staleOrMissing = await prisma.bodyMetric.findFirst({
-        where: {
-            user_id: userId,
-            date: { gte: activeStartDate, lte: asOfDate },
-            OR: [{ trend: { is: null } }, { trend: { is: { model_version: { not: WEIGHT_TREND_MODEL_VERSION } } } }]
-        },
-        select: { id: true }
-    });
+        const { activeStartDate, modelStartDate } = getMaterializedTrendWindowFromLatestDate(latestMetric.date);
+        const metricsForModelWindow = await loadMetricsForModelWindow(userId, modelStartDate, asOfDate, prisma);
+        const sourceRevision = computeWeightTrendSourceRevision(metricsForModelWindow);
+        const staleOrMissing = await prisma.bodyMetric.findFirst({
+            where: {
+                user_id: userId,
+                date: { gte: activeStartDate, lte: asOfDate },
+                OR: [
+                    { trend: { is: null } },
+                    { trend: { is: { model_version: { not: WEIGHT_TREND_MODEL_VERSION } } } },
+                    { trend: { is: { source_revision: null } } },
+                    { trend: { is: { source_revision: { not: sourceRevision } } } }
+                ]
+            },
+            select: { id: true }
+        });
 
-    if (!staleOrMissing) return;
-    await recomputeAndStoreUserWeightTrends(userId, prisma, asOfDate);
+        if (!staleOrMissing) return 'available';
+        await recomputeAndStoreUserWeightTrends(userId, prisma, asOfDate);
+        return 'available';
+    } catch {
+        console.warn(
+            `Unable to ensure materialized weight trends for user ${userId}. Return raw measurements with trend status unavailable, and check weight_trend_recompute diagnostics and database health if this persists.`
+        );
+        return 'unavailable';
+    }
 }
 
 /**
  * Refresh trend rows after metric writes without blocking user data writes on transient failures.
  */
-export async function refreshMaterializedWeightTrendsBestEffort(userId: number, explicitAsOfDate?: Date): Promise<void> {
+export async function refreshMaterializedWeightTrendsBestEffort(
+    userId: number,
+    explicitAsOfDate?: Date
+): Promise<WeightTrendMaterializationAvailability> {
     try {
         await recomputeAndStoreUserWeightTrends(userId, prisma, explicitAsOfDate);
+        return 'available';
     } catch {
-        try {
-            // Remove stale rows so read-time ensure can deterministically recompute on next trend fetch.
-            await prisma.bodyMetricTrend.deleteMany({
-                where: { user_id: userId }
-            });
-            console.warn(
-                `Unable to refresh materialized weight trends for user ${userId}; existing trend rows were invalidated and will be recomputed on next trend read. Check weight_trend_recompute diagnostics and database health if this persists.`
-            );
-        } catch {
-            console.warn(
-                `Unable to refresh materialized weight trends for user ${userId}, and stale rows could not be invalidated. Trend visualizations may remain stale until recompute succeeds. Check weight_trend_recompute diagnostics and database health, then rerun trend recompute.`
-            );
-        }
+        console.warn(
+            `Unable to refresh materialized weight trends for user ${userId}; the last-known-good trend snapshot was preserved. Return raw measurements if a read-time refresh also fails, and check weight_trend_recompute diagnostics and database health if this persists.`
+        );
+        return 'unavailable';
     }
 }

@@ -435,6 +435,7 @@ async function ci() {
     run("npm", ["run", "test:deploy"]);
     run("npm", ["run", "api:contract:check"]);
     run("npm", ["run", "test:db:upgrade"]);
+    run("npm", ["run", "test:weight-trend:postgres"]);
   });
   await timed("Build backend", () => run("npm", ["--prefix", "backend", "run", "build"]));
   await timed("Build Expo web", () => {

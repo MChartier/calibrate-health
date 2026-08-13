@@ -80,7 +80,7 @@ export function createLegacyMigrationTree(migrationNames) {
 }
 
 /** Apply migrations through Prisma's production deployment path. */
-function migrateDeploy(databaseUrl, schemaPath) {
+export function migrateDeploy(databaseUrl, schemaPath) {
   const prismaCli = path.join(backendDirectory, 'node_modules', 'prisma', 'build', 'index.js');
   if (!fs.existsSync(prismaCli)) {
     throw new Error('Prisma CLI is missing. Run npm --prefix backend ci before this smoke test.');
@@ -119,11 +119,20 @@ async function insertRepresentativeLegacyData(client, schemaName) {
     ) VALUES ($1, 95254, 81647, 750, $2)`,
     [userId, new Date('2026-07-01T12:00:00Z')]
   );
-  await client.query(
+  const metricResult = await client.query(
     `INSERT INTO ${schema}."BodyMetric" (
       "user_id", "date", "weight_grams", "body_fat_percent"
-    ) VALUES ($1, $2, 94710, 24.5)`,
+    ) VALUES ($1, $2, 94710, 24.5)
+    RETURNING "id"`,
     [userId, '2026-07-10']
+  );
+  await client.query(
+    `INSERT INTO ${schema}."BodyMetricTrend" (
+      "metric_id", "user_id", "date", "trend_weight_grams",
+      "trend_ci_lower_grams", "trend_ci_upper_grams", "trend_std_grams",
+      "model_version", "computed_at"
+    ) VALUES ($1, $2, $3, 94680, 93980, 95380, 357, 1, $4)`,
+    [metricResult.rows[0].id, userId, '2026-07-10', new Date('2026-07-11T06:05:00Z')]
   );
   await client.query(
     `INSERT INTO ${schema}."FoodLog" (
@@ -151,11 +160,16 @@ async function verifyUpgradedSchema(client, schemaName, userId, migrationNames) 
       u."email", u."timezone", u."height_mm",
       g."start_weight_grams", g."target_weight_grams", g."daily_deficit",
       b."date"::text AS "metric_date", b."weight_grams", b."body_fat_percent",
+      t."trend_weight_grams", t."trend_ci_lower_grams", t."trend_ci_upper_grams",
+      t."trend_std_grams", t."trend_rate_grams_per_day",
+      t."trend_rate_std_grams_per_day", t."model_version" AS "trend_model_version",
+      t."source_revision" AS "trend_source_revision",
       f."local_date"::text AS "food_local_date", f."meal_period"::text AS "meal_period",
       f."name", f."calories", f."external_source", f."external_id"
     FROM ${schema}."User" u
     JOIN ${schema}."Goal" g ON g."user_id" = u."id"
     JOIN ${schema}."BodyMetric" b ON b."user_id" = u."id"
+    JOIN ${schema}."BodyMetricTrend" t ON t."metric_id" = b."id"
     JOIN ${schema}."FoodLog" f ON f."user_id" = u."id"
     WHERE u."id" = $1`,
     [userId]
@@ -171,6 +185,14 @@ async function verifyUpgradedSchema(client, schemaName, userId, migrationNames) 
     metric_date: '2026-07-10',
     weight_grams: 94710,
     body_fat_percent: 24.5,
+    trend_weight_grams: 94680,
+    trend_ci_lower_grams: 93980,
+    trend_ci_upper_grams: 95380,
+    trend_std_grams: 357,
+    trend_rate_grams_per_day: null,
+    trend_rate_std_grams_per_day: null,
+    trend_model_version: 1,
+    trend_source_revision: null,
     food_local_date: '2026-07-10',
     meal_period: 'DINNER',
     name: 'Upgrade smoke burrito',

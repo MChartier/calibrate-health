@@ -76,6 +76,12 @@
       "browser": "./weightTrend.ts",
       "react-native": "./weightTrend.ts",
       "default": "./dist/cjs/weightTrend.js"
+    },
+    "./weightTrendParameters": {
+      "types": "./weightTrendParameters.ts",
+      "browser": "./weightTrendParameters.ts",
+      "react-native": "./weightTrendParameters.ts",
+      "default": "./dist/cjs/weightTrendParameters.js"
     }
   },
   "scripts": {

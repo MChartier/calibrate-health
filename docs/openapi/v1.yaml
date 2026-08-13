@@ -840,6 +840,8 @@ components:
         - latest_observation_date
         - days_since_latest
         - modeled_points
+        - modeled_observations
+        - returned_modeled_points
         - modeled_start_date
         - returned_points
         - observation_span_days
@@ -853,10 +855,13 @@ components:
         - weekly_rate
         - short_term_variation
       properties:
-        model_version: { type: integer, enum: [1, 2] }
+        model_version:
+          type: [integer, 'null']
+          enum: [1, 2, null]
+          description: Null when trend fitting or refresh is unavailable and only raw measurements are returned.
         status:
           type: string
-          enum: [insufficient, provisional, sufficient, stale]
+          enum: [insufficient, provisional, sufficient, stale, unavailable]
           deprecated: true
           description: Compatibility field; use evidence and freshness independently.
         as_of_date: { type: string, format: date }
@@ -865,8 +870,23 @@ components:
         latest_observation_date: { type: [string, 'null'], format: date }
         days_since_latest: { type: [integer, 'null'], minimum: 0 }
         modeled_start_date: { type: [string, 'null'], format: date }
-        returned_points: { type: integer, minimum: 0 }
-        modeled_points: { type: integer, minimum: 0 }
+        returned_points:
+          type: integer
+          minimum: 0
+          description: All measurements returned for the requested display scope.
+        modeled_observations:
+          type: integer
+          minimum: 0
+          description: Source observations included in the coherent bounded model pass; zero when unavailable.
+        returned_modeled_points:
+          type: integer
+          minimum: 0
+          description: Returned measurements that also have a modeled trend point.
+        modeled_points:
+          type: integer
+          minimum: 0
+          deprecated: true
+          description: Legacy alias of returned_modeled_points.
         observation_span_days: { type: number, minimum: 0 }
         segment_start_date: { type: [string, 'null'], format: date }
         interval_kind:
@@ -874,7 +894,7 @@ components:
           const: latent_weight_model_uncertainty
         confidence_level: { type: number, const: 0.95 }
         evidence: { type: string, enum: [insufficient, provisional, sufficient] }
-        freshness: { type: string, enum: [current, stale, outdated] }
+        freshness: { type: string, enum: [current, stale, outdated, unavailable] }
         latest_trend:
           oneOf:
             - type: 'null'
@@ -902,12 +922,12 @@ components:
             weekly_rate:
               type: number
               deprecated: true
-              description: Legacy compatibility estimate; use trend_summary.weekly_rate.
+              description: Legacy compatibility estimate from the latest uninterrupted segment. On unavailable refreshes, a safe last-known-good value is used or the established zero fallback.
             volatility:
               type: string
               enum: [low, medium, high]
               deprecated: true
-              description: Legacy compatibility label; use trend_summary.short_term_variation.
+              description: Legacy compatibility label. On unavailable refreshes, a safe last-known-good value is used or the established low fallback; use trend_summary.short_term_variation for availability.
             total_points: { type: integer, minimum: 0 }
             total_span_days: { type: number, minimum: 0 }
             trend_summary: { $ref: '#/components/schemas/WeightTrendSummary' }
