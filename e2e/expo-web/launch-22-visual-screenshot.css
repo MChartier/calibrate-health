@@ -1,0 +1,5 @@
+[data-testid="pwa-back-online"],
+[data-testid="pwa-update-ready"],
+[data-testid="pwa-update-error"] {
+  display: none !important;
+}

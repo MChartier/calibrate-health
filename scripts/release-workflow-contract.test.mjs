@@ -8,8 +8,31 @@ const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url))
 const workflowsDirectory = path.join(repositoryRoot, '.github', 'workflows');
 const readWorkflow = (name) => readFileSync(path.join(workflowsDirectory, name), 'utf8');
 
+function uxJobBlock(workflow) {
+  const match = workflow.match(/\n  ux-regression:\n[\s\S]*?(?=\n  [a-z0-9_-]+:)/);
+  assert.ok(match, 'workflow must define one ux-regression job');
+  return match[0];
+}
+
+function assertWindowsUxJob(workflow) {
+  const job = uxJobBlock(workflow);
+  assert.match(job, /runs-on: windows-latest/);
+  assert.match(job, /node-version: 24\.14\.0/);
+  assert.match(job, /node node_modules\/@playwright\/test\/cli\.js install chromium/);
+  assert.match(job, /npm\.cmd run test:ux/);
+  assert.match(job, /if: always\(\)/);
+  assert.match(job, /actions\/upload-artifact@v4/);
+  assert.match(job, /path: \.codex-screenshots\/expo-web-ux-results/);
+  assert.match(job, /include-hidden-files: true/);
+  assert.match(job, /if-no-files-found: error/);
+  assert.doesNotMatch(job, /update-snapshots|CALIBRATE_APPROVE_UX_SNAPSHOTS/);
+}
 test('master merges publish only when the reviewed manifest version advances', () => {
   const workflow = readWorkflow('cut-release.yml');
+
+  assertWindowsUxJob(workflow);
+  assert.match(workflow, /publish:\s*\n\s+needs: ux-regression/);
+  assert.ok(workflow.indexOf('  ux-regression:') < workflow.indexOf('git tag -a'));
 
   assert.match(workflow, /push:\s*\n\s+branches: \[master\]/);
   assert.match(workflow, /node scripts\/release-config\.mjs plan/);
@@ -24,6 +47,12 @@ test('master merges publish only when the reviewed manifest version advances', (
   assert.doesNotMatch(workflow, /createWorkflowDispatch|workflow_id:/);
 });
 
+test('pull requests run the reviewed Windows UX gate and retain sanitized evidence', () => {
+  const workflow = readWorkflow('builds.yml');
+
+  assertWindowsUxJob(workflow);
+  assert.match(workflow, /on:\s*\n\s+pull_request:/);
+});
 test('release images publish immutable identity and guard the moving latest tag', () => {
   const workflow = readWorkflow('container.yml');
   const deployEnvironment = readFileSync(path.join(repositoryRoot, 'deploy', '.env.example'), 'utf8');

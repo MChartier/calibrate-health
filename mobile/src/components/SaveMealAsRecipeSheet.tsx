@@ -128,6 +128,7 @@ export const SaveMealAsRecipeSheet: React.FC<SaveMealAsRecipeSheetProps> = ({
                     return (
                         <Pressable
                             key={entry.id}
+                            aria-checked={checked}
                             accessibilityRole="checkbox"
                             accessibilityLabel={`${checked ? 'Exclude' : 'Include'} ${entry.name}`}
                             accessibilityState={{ checked }}

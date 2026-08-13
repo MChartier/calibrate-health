@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pressable, StyleSheet, Switch, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { AppText } from '../components/AppText';
 import { BottomSheetModal, type BottomSheetModalProps } from '../components/BottomSheetModal';
 import { spacing, useAppTheme } from '../theme';
@@ -19,20 +19,30 @@ export const PreferenceSwitch: React.FC<PreferenceSwitchProps> = ({
 
     return (
         <Pressable
+            aria-checked={value}
+            accessibilityLabel={label}
             accessibilityRole="switch"
             accessibilityState={{ checked: value }}
             onPress={() => onValueChange(!value)}
             style={({ pressed }) => [styles.switchRow, pressed && styles.pressedRow]}
         >
             <AppText variant="body" style={styles.switchLabel}>{label}</AppText>
-            <Switch
+            <View
                 accessible={false}
                 importantForAccessibility="no-hide-descendants"
-                pointerEvents="none"
-                value={value}
-                trackColor={{ false: colors.outlineVariant, true: colors.primaryContainer }}
-                thumbColor={value ? colors.primary : colors.outline}
-            />
+                style={[
+                    styles.switchTrack,
+                    { backgroundColor: value ? colors.primaryContainer : colors.outlineVariant },
+                    value && styles.switchTrackSelected
+                ]}
+            >
+                <View
+                    style={[
+                        styles.switchThumb,
+                        { backgroundColor: value ? colors.primary : colors.outline }
+                    ]}
+                />
+            </View>
         </Pressable>
     );
 };
@@ -99,6 +109,23 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'space-between',
         gap: spacing.md
+    },
+    switchTrack: {
+        width: 44,
+        height: 24,
+        flexShrink: 0,
+        flexDirection: 'row',
+        alignItems: 'center',
+        borderRadius: 12,
+        padding: 2
+    },
+    switchTrackSelected: {
+        justifyContent: 'flex-end'
+    },
+    switchThumb: {
+        width: 20,
+        height: 20,
+        borderRadius: 10
     },
     switchLabel: {
         flex: 1,

@@ -438,6 +438,7 @@ export const ResumeTrackingPrompt: React.FC = () => {
     return (
         <BottomSheetModal
             visible={visible}
+            accessibilityLabel="Ready to resume tracking?"
             onRequestClose={() => setDismissedThisForeground(true)}
         >
             {!showExtend ? (

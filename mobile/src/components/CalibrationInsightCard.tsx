@@ -30,6 +30,7 @@ import { usePendingCalibrationEvidenceMutation } from '../offline/usePendingCali
 
 const RECOMMENDATION_STACK_BREAKPOINT = 560; // Keeps paired panels and action labels legible on compact screens.
 
+type CalibrationInsightCardProps = ViewProps & { suppressStaleNotice?: boolean };
 type CalibrationInsightCardViewProps = ViewProps & {
     status?: CalibrationStatusResponse;
     isLoading?: boolean;
@@ -42,7 +43,7 @@ type CalibrationInsightCardViewProps = ViewProps & {
 };
 
 /** Production data wrapper for the shared calibration presentation. */
-export const CalibrationInsightCard: React.FC<ViewProps> = (props) => {
+export const CalibrationInsightCard: React.FC<CalibrationInsightCardProps> = ({ suppressStaleNotice, ...props }) => {
     const { api, user } = useAuth();
     const queryClient = useQueryClient();
     const statusQuery = useQuery({
@@ -93,6 +94,7 @@ export const CalibrationInsightCard: React.FC<ViewProps> = (props) => {
             empty={<CalibrationInsightCardView {...props} isLoading timezone={user?.timezone} />}
             onRetry={isOnline ? () => statusQuery.refetch() : undefined}
             retrying={statusQuery.isFetching}
+            suppressStaleNotice={suppressStaleNotice}
         >
             <CalibrationInsightCardView
                 {...props}

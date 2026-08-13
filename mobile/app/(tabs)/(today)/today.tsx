@@ -147,6 +147,7 @@ export default function TodayScreen() {
                     ? retryFailedDashboardResources
                     : undefined}
                 retrying={failedDashboardQueries.some((query) => query.isFetching)}
+                suppressStaleNotice
             >
                 <>
                     <CalorieBalanceCard

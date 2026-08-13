@@ -36,15 +36,17 @@ jest.mock('./BottomSheetModal', () => {
         BottomSheetModal: ({
             visible,
             children,
+            accessibilityLabel,
             onRequestClose
         }: {
             visible: boolean;
             children: any;
+            accessibilityLabel?: string;
             onRequestClose: () => void;
         }) => visible
             ? ReactModule.createElement(
                 View,
-                null,
+                { accessible: true, accessibilityRole: 'dialog', accessibilityLabel },
                 children,
                 ReactModule.createElement(
                     Pressable,
@@ -247,6 +249,7 @@ describe('food tracking day resolution', () => {
         const screen = renderWithQuery(<ResumeTrackingPrompt />);
 
         await waitFor(() => expect(screen.getByText('Ready to resume tracking?')).toBeTruthy());
+        expect(screen.getByRole('dialog', { name: 'Ready to resume tracking?' })).toBeTruthy();
         expect(screen.getByText('Resume tracking')).toBeTruthy();
         fireEvent.press(screen.getByText('Extend pause'));
 

@@ -113,6 +113,30 @@ describe('AsyncStateBoundary', () => {
         expect(view.queryByLabelText('Retry')).toBeNull();
     });
 
+    it('lets a parent boundary own stale copy without hiding cached content or degraded recovery', () => {
+        const view = render(
+            <AsyncStateBoundary
+                {...baseProps}
+                state={{ kind: ASYNC_RESOURCE_STATES.STALE, error: null }}
+                suppressStaleNotice
+            />
+        );
+
+        expect(view.getByText('Cached breakfast')).toBeTruthy();
+        expect(view.queryByText('Offline - showing saved information')).toBeNull();
+
+        view.rerender(
+            <AsyncStateBoundary
+                {...baseProps}
+                state={{ kind: ASYNC_RESOURCE_STATES.DEGRADED, error: new Error('private provider text') }}
+                onRetry={jest.fn()}
+                suppressStaleNotice
+            />
+        );
+        expect(view.getByText("Couldn't refresh food log")).toBeTruthy();
+        expect(view.getByLabelText('Retry')).toBeTruthy();
+    });
+
     it('renders uncached offline content as a connection-specific terminal state without Retry', () => {
         const view = render(
             <AsyncStateBoundary

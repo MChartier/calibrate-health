@@ -17,6 +17,7 @@ const backendRequire = createRequire(path.join(repoRoot, "backend", "package.jso
 const DEV_SEED_USER_EMAIL = "test@calibratehealth.app";
 const DATABASE_WAIT_TIMEOUT_MS = 120_000;
 const DATABASE_WAIT_RETRY_MS = 2_000;
+const playwrightCli = path.join(repoRoot, "node_modules", "@playwright", "test", "cli.js");
 const packageLockHashCache = new Map();
 let cachedNpmVersion = null;
 
@@ -27,6 +28,7 @@ const packages = [
     installArgs: ["ci", "--prefer-offline", "--no-audit", "--fund=false"],
     requiredPaths: [
       "node_modules/expo/package.json",
+      "node_modules/@playwright/test/cli.js",
       "mobile/node_modules/expo-router/package.json",
     ],
   },
@@ -293,10 +295,17 @@ async function generatePrismaClient() {
   await timed("Generate Prisma client", () => run("npm", ["run", "prisma:generate"]));
 }
 
+async function ensurePlaywrightChromium() {
+  await timed("Install Playwright Chromium", () =>
+    run(process.execPath, [playwrightCli, "install", "chromium"])
+  );
+}
+
 async function setupHost() {
   await ensureDependencies();
+  await ensurePlaywrightChromium();
   await generatePrismaClient();
-  printDone("Host dependencies and Prisma client are ready.");
+  printDone("Host dependencies, Playwright Chromium, and Prisma client are ready.");
 }
 
 function canConnectToDatabase(databaseUrl) {
@@ -439,7 +448,7 @@ async function ci() {
   });
   await timed("Build backend", () => run("npm", ["--prefix", "backend", "run", "build"]));
   await timed("Build Expo web", () => {
-    run("npm", ["run", "build:expo-web"]);
+    run("npm", ["run", process.platform === "win32" ? "test:ux" : "test:ux:a11y"]);
     run("npm", ["run", "test:expo-web:release"]);
   });
   await timed("Type-check mobile", () =>

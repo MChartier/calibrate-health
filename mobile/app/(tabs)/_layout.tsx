@@ -300,7 +300,9 @@ export default function TabsLayout() {
                             tabBarPosition: usesNavigationRail ? 'left' : 'bottom',
                             tabBarVariant: usesNavigationRail ? 'material' : 'uikit',
                             tabBarLabelPosition: 'below-icon',
-                            tabBarActiveTintColor: theme.colors.primary,
+                            tabBarActiveTintColor: usesNavigationRail
+                                ? theme.colors.onPrimaryContainer
+                                : theme.colors.primary,
                             tabBarInactiveTintColor: theme.colors.muted,
                             tabBarActiveBackgroundColor: usesNavigationRail ? theme.colors.primaryContainer : undefined,
                             tabBarHideOnKeyboard: true,
