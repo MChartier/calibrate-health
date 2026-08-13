@@ -55,6 +55,7 @@ describe('route registry', () => {
       activity: 'settings',
       'my-foods': 'settings',
       about: 'settings',
+      advanced: 'settings',
       notifications: 'today',
       weight: 'progress',
       barcode: 'today',

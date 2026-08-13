@@ -280,37 +280,39 @@ export default function ActivityScreen() {
                 />
             )}
             <DateNavigation navigation={navigation} />
-            <SectionHeader
-                title={navigation.isToday ? 'Today' : formatDateOnlyForDisplay(navigation.selectedDate)}
-                description="Read-only activity reported by connected health apps."
-            />
-            <AsyncStateBoundary
-                state={selectedState}
-                resourceLabel="selected-day activity"
-                loading={<ActivitySummaryCard day={undefined} isToday={navigation.isToday} isLoading />}
-                empty={(
+            {healthConnectPresentation.shouldShowActivity ? (
+                <>
+                <SectionHeader
+                    title={navigation.isToday ? 'Today' : formatDateOnlyForDisplay(navigation.selectedDate)}
+                    description="Read-only activity reported by connected health apps."
+                />
+                <AsyncStateBoundary
+                    state={selectedState}
+                    resourceLabel="selected-day activity"
+                    loading={<ActivitySummaryCard day={undefined} isToday={navigation.isToday} isLoading />}
+                    empty={(
+                        <>
+                            <ActivitySummaryCard day={undefined} isToday={navigation.isToday} />
+                            <ActivityDetailsDisclosure
+                                key={navigation.selectedDate}
+                                day={undefined}
+                                weightUnit={user?.weight_unit ?? WEIGHT_UNITS.KG}
+                            />
+                        </>
+                    )}
+                    onRetry={isOnline ? () => selectedQuery.refetch() : undefined}
+                    retrying={selectedQuery.isFetching}
+                >
                     <>
-                        <ActivitySummaryCard day={undefined} isToday={navigation.isToday} />
+                        <ActivitySummaryCard day={selectedDay} isToday={navigation.isToday} />
+                        <ExerciseSessions records={exerciseRecords} />
                         <ActivityDetailsDisclosure
-                            key={navigation.selectedDate}
-                            day={undefined}
+                            key={selectedDay?.local_date ?? navigation.selectedDate}
+                            day={selectedDay}
                             weightUnit={user?.weight_unit ?? WEIGHT_UNITS.KG}
                         />
                     </>
-                )}
-                onRetry={isOnline ? () => selectedQuery.refetch() : undefined}
-                retrying={selectedQuery.isFetching}
-            >
-                <>
-                    <ActivitySummaryCard day={selectedDay} isToday={navigation.isToday} />
-                    <ExerciseSessions records={exerciseRecords} />
-                    <ActivityDetailsDisclosure
-                        key={selectedDay?.local_date ?? navigation.selectedDate}
-                        day={selectedDay}
-                        weightUnit={user?.weight_unit ?? WEIGHT_UNITS.KG}
-                    />
-                </>
-            </AsyncStateBoundary>
+                </AsyncStateBoundary>
             <AsyncStateBoundary
                 state={historyState}
                 resourceLabel="recent activity"
@@ -354,6 +356,8 @@ export default function ActivityScreen() {
                     ))}
                 </AppCard>
             </AsyncStateBoundary>
+                </>
+            ) : null}
         </TabScreen>
     );
 }

@@ -2,7 +2,6 @@ import React, { useMemo, useState } from 'react';
 import {
     Platform,
     Pressable,
-    ScrollView,
     StyleSheet,
     View,
     useWindowDimensions,
@@ -11,6 +10,7 @@ import {
 } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import Svg, { Circle, Line, Path, Polygon, Text as SvgText } from 'react-native-svg';
+import type { SvgProps } from 'react-native-svg';
 import { useQuery } from '@tanstack/react-query';
 import { AppCard } from './AppCard';
 import { AppChip } from './AppChip';
@@ -75,17 +75,6 @@ export function getWeightTrendChartHeightBounds(viewportWidth: number): {
         : { minimum: MOBILE_CHART_MIN_HEIGHT, maximum: MOBILE_CHART_MAX_HEIGHT };
 }
 
-const TREND_TABLE_MIN_WIDTH = 620;
-const COMPACT_TREND_TABLE_BREAKPOINT = 720;
-// Wide layouts retain columns; compact and large-text layouts stack labeled cells to avoid nested scrolling.
-const TREND_TABLE_DATE_COLUMN_WIDTH = 128;
-const TREND_TABLE_VALUE_COLUMN_WIDTH = 132;
-const TREND_TABLE_RANGE_COLUMN_WIDTH = 196;
-
-export function shouldStackWeightTrendTable(viewportWidth: number, fontScale: number): boolean {
-    return viewportWidth < COMPACT_TREND_TABLE_BREAKPOINT || fontScale >= 1.6;
-}
-
 type ChartPressNativeEvent = {
     locationX?: unknown;
     offsetX?: unknown;
@@ -124,6 +113,16 @@ function getKeyboardKey(event: KeyboardLikeEvent): string {
     return event.key ?? event.nativeEvent?.key ?? '';
 }
 
+/** Map the chart summary to platform-safe SVG accessibility props. */
+function getChartAccessibilityProps(accessibilityLabel: string): SvgProps {
+    if (Platform.OS === 'web') return { 'aria-label': accessibilityLabel, role: 'img' };
+    return {
+        accessible: true,
+        accessibilityRole: 'image',
+        accessibilityLabel
+    };
+}
+
 function clampChartHeight(value: number, minimum: number, maximum: number): number {
     return Math.max(minimum, Math.min(value, maximum));
 }
@@ -157,7 +156,6 @@ export const WeightTrendCard: React.FC<WeightTrendCardProps> = ({
     const [range, setRange] = useState<TrendRange>('month');
     const [selectedPointKey, setSelectedPointKey] = useState<string | null>(null);
     const [selectionAnnouncement, setSelectionAnnouncement] = useState('');
-    const [showDataTable, setShowDataTable] = useState(false);
     const [chartCanvasWidth, setChartCanvasWidth] = useState(DEFAULT_CHART_WIDTH);
     const [chartCanvasHeight, setChartCanvasHeight] = useState(0);
     const chartHeightBounds = getWeightTrendChartHeightBounds(viewportWidth);
@@ -326,9 +324,7 @@ export const WeightTrendCard: React.FC<WeightTrendCardProps> = ({
                     >
                         <Svg
                             testID="weight-trend-chart"
-                            accessible
-                            accessibilityRole="image"
-                            accessibilityLabel={accessibleChartSummary}
+                            {...getChartAccessibilityProps(accessibleChartSummary)}
                             width="100%"
                             height={chartHeight}
                             viewBox={`0 0 ${chartLayout.width} ${chartHeight}`}
@@ -512,102 +508,11 @@ export const WeightTrendCard: React.FC<WeightTrendCardProps> = ({
                             {visibleTrendSummary}
                         </AppText>
                     )}
-                    <WeightTrendDataTable
-                        points={chartPoints}
-                        unit={user?.weight_unit}
-                        expanded={showDataTable}
-                        onToggle={() => setShowDataTable((current) => !current)}
-                    />
                 </View>
             )}
             </AsyncStateBoundary>
             {footer}
         </AppCard>
-    );
-};
-
-const WeightTrendDataTable: React.FC<{
-    points: WeightTrendChartPoint[];
-    unit: Parameters<typeof formatWeight>[1];
-    expanded: boolean;
-    onToggle: () => void;
-}> = ({ points, unit, expanded, onToggle }) => {
-    const theme = useAppTheme();
-    const styles = useMemo(() => createStyles(theme), [theme]);
-    const { width, fontScale } = useWindowDimensions();
-    const stacked = shouldStackWeightTrendTable(width, fontScale);
-    const label = expanded ? 'Hide data table' : 'View data table';
-    const table = (
-        <View
-            testID="weight-trend-data-table"
-            role="table"
-            accessibilityLabel="Weight trend data table"
-            style={[styles.dataTable, stacked && styles.dataTableStacked]}
-        >
-            {!stacked && (
-                <View role="row" style={[styles.dataTableRow, styles.dataTableHeader]}>
-                    <AppText role="columnheader" variant="label" style={styles.dataTableDateCell}>Date</AppText>
-                    <AppText role="columnheader" variant="label" style={styles.dataTableValueCell}>Scale reading</AppText>
-                    <AppText role="columnheader" variant="label" style={styles.dataTableValueCell}>Underlying estimate</AppText>
-                    <AppText role="columnheader" variant="label" style={styles.dataTableRangeCell}>95% range</AppText>
-                </View>
-            )}
-            {[...points].reverse().map((point) => {
-                const trendRange = point.hasVisibleTrend
-                    ? formatEstimatedTrendRange({
-                        weight: point.metric.trend_weight,
-                        lower: point.metric.trend_ci_lower,
-                        upper: point.metric.trend_ci_upper
-                    }, unit)
-                    : '-';
-                if (stacked) {
-                    return (
-                        <View key={getPointKey(point)} role="row" style={[styles.dataTableRow, styles.dataTableStackedRow]}>
-                            <AppText role="cell" style={styles.dataTableStackedCell}>Date: {formatDateOnlyForDisplay(point.dateKey)}</AppText>
-                            <AppText role="cell" style={styles.dataTableStackedCell}>Scale reading: {formatWeight(point.metric.weight, unit)}</AppText>
-                            <AppText role="cell" style={styles.dataTableStackedCell}>
-                                Underlying estimate: {point.hasVisibleTrend ? formatWeight(point.metric.trend_weight, unit) : '-'}
-                            </AppText>
-                            <AppText role="cell" style={styles.dataTableStackedCell}>95% range: {trendRange}</AppText>
-                        </View>
-                    );
-                }
-                return (
-                    <View key={getPointKey(point)} role="row" style={styles.dataTableRow}>
-                        <AppText role="cell" style={styles.dataTableDateCell}>{formatDateOnlyForDisplay(point.dateKey)}</AppText>
-                        <AppText role="cell" style={styles.dataTableValueCell}>{formatWeight(point.metric.weight, unit)}</AppText>
-                        <AppText role="cell" style={styles.dataTableValueCell}>
-                            {point.hasVisibleTrend ? formatWeight(point.metric.trend_weight, unit) : '-'}
-                        </AppText>
-                        <AppText role="cell" style={styles.dataTableRangeCell}>{trendRange}</AppText>
-                    </View>
-                );
-            })}
-        </View>
-    );
-
-    return (
-        <View style={styles.dataTableDisclosure}>
-            <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={label}
-                accessibilityState={{ expanded }}
-                onPress={onToggle}
-                style={({ pressed }) => [styles.dataTableToggle, pressed && styles.pressed]}
-            >
-                <AppText variant="label" style={styles.dataTableToggleLabel}>{label}</AppText>
-                <Ionicons
-                    name={expanded ? 'chevron-up' : 'chevron-down'}
-                    size={18}
-                    color={theme.colors.primary}
-                />
-            </Pressable>
-            {expanded ? (stacked ? table : (
-                <ScrollView horizontal showsHorizontalScrollIndicator style={styles.dataTableScroller}>
-                    {table}
-                </ScrollView>
-            )) : null}
-        </View>
     );
 };
 
@@ -875,56 +780,6 @@ const createStyles = (theme: AppTheme) => StyleSheet.create({
         ...theme.shadows.raised
     },
     rangeTooltipText: { color: theme.colors.onSurface },
-    dataTableDisclosure: { gap: spacing.sm },
-    dataTableToggle: {
-        minHeight: theme.interaction.minimumTouchTarget,
-        alignSelf: 'flex-start',
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: spacing.xs,
-        borderRadius: radius.md,
-        paddingHorizontal: spacing.md
-    },
-    dataTableToggleLabel: { color: theme.colors.primary },
-    dataTableScroller: {
-        width: '100%',
-        borderColor: theme.colors.outlineVariant,
-        borderWidth: StyleSheet.hairlineWidth,
-        borderRadius: radius.md
-    },
-    dataTable: { minWidth: TREND_TABLE_MIN_WIDTH },
-    dataTableStacked: { minWidth: 0, width: '100%', gap: spacing.sm },
-    dataTableStackedRow: {
-        flexDirection: 'column',
-        borderWidth: StyleSheet.hairlineWidth,
-        borderColor: theme.colors.outlineVariant,
-        borderRadius: radius.sm,
-        padding: spacing.sm,
-        gap: spacing.xs
-    },
-    dataTableStackedCell: { width: '100%' },
-    dataTableRow: {
-        flexDirection: 'row',
-        borderBottomColor: theme.colors.outlineVariant,
-        borderBottomWidth: StyleSheet.hairlineWidth
-    },
-    dataTableHeader: { backgroundColor: theme.colors.surfaceContainerHigh },
-    dataTableDateCell: {
-        width: TREND_TABLE_DATE_COLUMN_WIDTH,
-        paddingHorizontal: spacing.sm,
-        paddingVertical: spacing.sm
-    },
-    dataTableValueCell: {
-        width: TREND_TABLE_VALUE_COLUMN_WIDTH,
-        paddingHorizontal: spacing.sm,
-        paddingVertical: spacing.sm
-    },
-    dataTableRangeCell: {
-        width: TREND_TABLE_RANGE_COLUMN_WIDTH,
-        paddingHorizontal: spacing.sm,
-        paddingVertical: spacing.sm
-    },
     liveStatus: { height: 0, overflow: 'hidden' },
     summary: { textAlign: 'center' },
     boundaryNote: { color: theme.colors.onSurfaceVariant, textAlign: 'center' },

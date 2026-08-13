@@ -239,16 +239,6 @@ test('critical web flows remain keyboard-operable across forced colors, reflow, 
     await page.keyboard.press('End');
     await expect(page.getByTestId('selected-trend-summary')).toContainText('Jul 18, 2026');
 
-    const viewTable = page.getByRole('button', { name: 'View data table', exact: true });
-    await activateWithKeyboard(page, viewTable);
-    const table = page.getByRole('table', { name: 'Weight trend data table', exact: true });
-    await expect(table).toBeVisible();
-    await expect(table.getByRole('columnheader')).toHaveCount(4);
-    const latestRow = table.getByRole('row').nth(1);
-    await expect(latestRow).toContainText('Jul 18, 2026');
-    await expect(latestRow).toContainText('88.2 kg');
-    await expect(latestRow).toContainText('88.4 kg');
-    await expect(latestRow).toContainText('88 kg - 88.8 kg');
     await expectOneDimensionalReflow(page);
     await expectNoDuplicateIds(page);
     return;
@@ -258,13 +248,8 @@ test('critical web flows remain keyboard-operable across forced colors, reflow, 
   await page.setViewportSize({ width: 320, height: 568 });
   await page.goto('/weight-trend');
   await expectDirectEntryKeepsSkipLinkFirst(page, 'Trend');
-  const compactTableToggle = page.getByRole('button', { name: 'View data table', exact: true });
-  await activateWithKeyboard(page, compactTableToggle);
-  const compactTable = page.getByRole('table', { name: 'Weight trend data table', exact: true });
-  await expect(compactTable).toBeVisible();
-  await expect(compactTable.getByRole('columnheader')).toHaveCount(0);
-  await expect(compactTable.getByRole('row')).toHaveCount(3);
-  await expect(compactTable.getByRole('row').first().getByRole('cell')).toHaveCount(4);
+  await expect(page.getByRole('button', { name: 'View data table', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('img', { name: /^Weight chart from/ })).toHaveCount(1);
   expect(await simulateTwoHundredPercentText(page)).toBeGreaterThan(10);
   await expectOneDimensionalReflow(page);
 

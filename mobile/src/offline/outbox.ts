@@ -30,6 +30,7 @@ export interface OutboxStore {
     claimNext(): Promise<QueuedMutation | null>;
     complete(id: string): Promise<void>;
     fail(id: string, error: string): Promise<QueuedMutation>;
+    defer(id: string, error: string): Promise<QueuedMutation>;
     recoverInterrupted(): Promise<void>;
     retryFailed(id?: string): Promise<void>;
     clear(): Promise<void>;
@@ -156,6 +157,26 @@ export class SqliteOutbox implements OutboxStore {
         const failed = await this.getById(id);
         if (!failed) throw new Error(`Failed queued mutation ${id} could not be read.`);
         return failed;
+    }
+
+    /** Return a transient replay failure to pending without making it a durable queue barrier. */
+    async defer(id: string, error: string): Promise<QueuedMutation> {
+        const result = await this.database.runAsync(
+            `UPDATE queued_mutations SET state = ?, last_error = ?, updated_at = ?
+             WHERE id = ? AND namespace = ? AND state = ?`,
+            [
+                OUTBOX_MUTATION_STATES.PENDING,
+                error.slice(0, MAX_PERSISTED_ERROR_LENGTH),
+                this.now(),
+                id,
+                this.namespace,
+                OUTBOX_MUTATION_STATES.REPLAYING
+            ]
+        );
+        if (result.changes !== 1) throw new Error(`Unable to defer queued mutation ${id}.`);
+        const deferred = await this.getById(id);
+        if (!deferred) throw new Error(`Deferred queued mutation ${id} could not be read.`);
+        return deferred;
     }
 
     async recoverInterrupted(): Promise<void> {

@@ -198,14 +198,6 @@ export const UX_ACCESSIBILITY_OVERLAY_CASES: readonly UxAccessibilityOverlayCase
     ready: { kind: 'role', role: 'dialog', name: 'Details', exact: true },
   },
   {
-    id: 'galaxy-watch',
-    routeId: 'settings',
-    path: ROUTE_REGISTRY.settings.path,
-    fixtureState: 'populated',
-    open: [{ kind: 'role', role: 'button', name: 'Galaxy Watch', exact: true }],
-    ready: { kind: 'role', role: 'dialog', name: 'Details', exact: true },
-  },
-  {
     id: 'password',
     routeId: 'settings',
     path: ROUTE_REGISTRY.settings.path,
@@ -339,13 +331,5 @@ export const UX_ACCESSIBILITY_OVERLAY_CASES: readonly UxAccessibilityOverlayCase
     fixtureState: 'populated',
     open: [{ kind: 'test-id', value: 'settings-delete-account' }],
     ready: { kind: 'role', role: 'dialog', name: 'Delete account permanently', exact: true },
-  },
-  {
-    id: 'advanced-connection',
-    routeId: 'settings',
-    path: ROUTE_REGISTRY.settings.path,
-    fixtureState: 'populated',
-    open: [{ kind: 'test-id', value: 'settings-advanced' }],
-    ready: { kind: 'role', role: 'dialog', name: 'Advanced', exact: true },
   },
 ];

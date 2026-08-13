@@ -113,7 +113,10 @@ test('stale lock takeover is owner-safe and JSON body reads time out below the l
     sinkToken: 'sink-token-123456',
     environment: 'staging',
     requestTimeoutMs: 5,
-    fetchImpl: async () => ({ ok: true, json: async () => new Promise(() => undefined) }),
+    fetchImpl: async () => new Response(new ReadableStream({ start() {} }), {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+    }),
   });
   await assert.rejects(
     async () => timeoutSink.send({
@@ -126,6 +129,40 @@ test('stale lock takeover is owner-safe and JSON body reads time out below the l
   );
 });
 
+test('remote JSON responses reject declared and streamed bodies above the byte cap', async () => {
+  const alert = {
+    correlation_id: 'aaaaaaaaaaaaaaaa',
+    code: 'provider_failure_warning',
+    owner_role: 'backend_maintainer',
+    dimensions: {},
+  };
+  const sinkOptions = {
+    sinkUrl: 'https://alerts.example.invalid/v1/alerts',
+    sinkToken: 'sink-token-123456',
+    environment: 'staging',
+  };
+  const declaredOversizeSink = createHttpAlertSink({
+    ...sinkOptions,
+    fetchImpl: async () => new Response('{}', {
+      status: 202,
+      headers: { 'content-length': String(1024 * 1024 + 1) },
+    }),
+  });
+  await assert.rejects(() => declaredOversizeSink.send(alert), /exceeded 1048576 bytes/);
+
+  const chunk = new Uint8Array(600_000).fill(0x20);
+  const streamedOversizeSink = createHttpAlertSink({
+    ...sinkOptions,
+    fetchImpl: async () => new Response(new ReadableStream({
+      start(controller) {
+        controller.enqueue(chunk);
+        controller.enqueue(chunk);
+        controller.close();
+      },
+    }), { status: 202 }),
+  });
+  await assert.rejects(() => streamedOversizeSink.send(alert), /exceeded 1048576 bytes/);
+});
 test('collector rejects metrics tokens shorter than the backend contract', async (t) => {
   const statePath = path.join(os.tmpdir(), `calibrate-alert-token-${process.pid}-${Date.now()}.json`);
   t.after(() => rm(statePath, { force: true }));

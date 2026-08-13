@@ -1,9 +1,9 @@
 import { fireEvent, render, within } from '@testing-library/react-native';
+import { Platform } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import type { TrendMetricEntry, TrendMetricsResponse, WeightTrendSummary } from '@calibrate/api-client';
 import {
     getWeightTrendChartHeightBounds,
-    shouldStackWeightTrendTable,
     WeightTrendCard
 } from './WeightTrendCard';
 
@@ -327,43 +327,40 @@ describe('WeightTrendCard', () => {
     });
 
     it('exposes the dynamic chart as one named image', () => {
-        const screen = render(<WeightTrendCard />);
-        const chart = screen.getByTestId('weight-trend-chart');
-        expect(chart).toHaveProp('accessibilityRole', 'image');
-        expect(chart.props.accessibilityLabel).toContain('Weight chart from Jul 13, 2026 to Jul 15, 2026');
-        expect(screen.queryByLabelText('170 lb weight axis label')).toBeNull();
-        expect(screen.queryByLabelText('Jul 15 date axis label')).toBeNull();
-        expect(screen.getByLabelText('Chart legend')).toBeTruthy();
-        expect(screen.queryByText('Current pace estimate')).toBeNull();
+        const platform = jest.replaceProperty(Platform, 'OS', 'ios');
+        try {
+            const screen = render(<WeightTrendCard />);
+            const chart = screen.getByTestId('weight-trend-chart');
+            expect(chart).toHaveProp('accessibilityRole', 'image');
+            expect(chart.props.accessibilityLabel).toContain('Weight chart from Jul 13, 2026 to Jul 15, 2026');
+            expect(screen.queryByLabelText('170 lb weight axis label')).toBeNull();
+            expect(screen.queryByLabelText('Jul 15 date axis label')).toBeNull();
+            expect(screen.getByLabelText('Chart legend')).toBeTruthy();
+            expect(screen.queryByText('Current pace estimate')).toBeNull();
+        } finally {
+            platform.restore();
+        }
     });
 
-    it('stacks the data table for compact or large-text layouts', () => {
-        expect(shouldStackWeightTrendTable(320, 1)).toBe(true);
-        expect(shouldStackWeightTrendTable(844, 2)).toBe(true);
-        expect(shouldStackWeightTrendTable(1_024, 1)).toBe(false);
+    it('uses DOM-safe accessibility props for the web chart', () => {
+        const platform = jest.replaceProperty(Platform, 'OS', 'web');
+        try {
+            const chart = render(<WeightTrendCard />).getByTestId('weight-trend-chart');
+            expect(chart.props).toEqual(expect.objectContaining({
+                'aria-label': expect.stringContaining('Weight chart from Jul 13, 2026 to Jul 15, 2026'),
+                role: 'img'
+            }));
+            expect(chart.props).not.toHaveProperty('accessible');
+            expect(chart.props).not.toHaveProperty('accessibilityLabel');
+            expect(chart.props).not.toHaveProperty('accessibilityRole');
+        } finally {
+            platform.restore();
+        }
     });
-    it('exposes the chart values through a semantic data table disclosure', () => {
+
+    it('does not expose the raw chart data table', () => {
         const screen = render(<WeightTrendCard />);
-        const showTable = screen.getByLabelText('View data table');
-
-        expect(showTable).toHaveProp('accessibilityState', { expanded: false });
-        expect(screen.queryByTestId('weight-trend-data-table')).toBeNull();
-        fireEvent.press(showTable);
-
-        expect(screen.getByLabelText('Hide data table')).toHaveProp('accessibilityState', { expanded: true });
-        const table = screen.getByTestId('weight-trend-data-table');
-        expect(table).toHaveProp('role', 'table');
-        expect(within(table).queryByRole('columnheader')).toBeNull();
-        expect(within(table).getByText('Date: Jul 15, 2026')).toHaveProp('role', 'cell');
-        expect(within(table).getByText('Scale reading: 168.3 lb')).toHaveProp('role', 'cell');
-        const estimateCells = within(table).getAllByText('Underlying estimate: 168.2 lb');
-        expect(estimateCells).toHaveLength(3);
-        estimateCells.forEach((cell) => expect(cell).toHaveProp('role', 'cell'));
-        const rangeCells = within(table).getAllByText('95% range: 167.1 lb - 169.3 lb');
-        expect(rangeCells).toHaveLength(3);
-        rangeCells.forEach((cell) => expect(cell).toHaveProp('role', 'cell'));
-
-        fireEvent.press(screen.getByLabelText('Hide data table'));
+        expect(screen.queryByLabelText('View data table')).toBeNull();
         expect(screen.queryByTestId('weight-trend-data-table')).toBeNull();
     });
 

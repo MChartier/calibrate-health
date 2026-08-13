@@ -190,7 +190,7 @@ export default function TodayScreen() {
 
                     <View style={[styles.summaryCards, useSummaryGrid && styles.summaryCardsWide]}>
                         {(!isPaused || entries.length > 0) && (
-                            <View style={styles.summaryCard}>
+                            <View style={[styles.summaryCard, useSummaryGrid && styles.summaryCardWide]}>
                                 <FoodLogSummaryCard
                                     entries={entries}
                                     trackingUnavailable={dayStatus?.status !== 'OPEN' && dayStatus?.status !== 'COMPLETE'}
@@ -201,7 +201,7 @@ export default function TodayScreen() {
                             </View>
                         )}
 
-                        <View style={styles.summaryCard}>
+                        <View style={[styles.summaryCard, useSummaryGrid && styles.summaryCardWide]}>
                             <TodayWeightCard
                                 metric={selectedDateMetric}
                                 weightUnit={user?.weight_unit}
@@ -252,7 +252,11 @@ const styles = StyleSheet.create({
         alignItems: 'stretch'
     },
     summaryCard: {
-        flex: 1,
+        width: '100%',
         minWidth: 0
+    },
+    summaryCardWide: {
+        flex: 1,
+        width: 'auto'
     }
 });

@@ -341,12 +341,16 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
         && Number.isFinite(Number(quickCalories))
         && Number(quickCalories) >= 0;
 
-    function openBarcodeScanner() {
+    /** Leave the sheet for barcode capture without silently discarding a food draft. */
+    async function openBarcodeScanner() {
+        if (hasUnsavedDraft && !await confirmDiscardChanges()) return;
         onClose();
         router.push({ pathname: '/barcode', params: { date, meal, returnTo } });
     }
 
-    function openSavedFoods() {
+    /** Leave the sheet for the saved-food library without silently discarding a food draft. */
+    async function openSavedFoods() {
+        if (hasUnsavedDraft && !await confirmDiscardChanges()) return;
         onClose();
         router.push('/my-foods');
     }
@@ -523,6 +527,19 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
         );
     }
 
+    /** Render the compact library shortcut beside searchable mode labels. */
+    function renderSavedFoodsAction() {
+        return (
+            <AppButton
+                title="Saved foods"
+                variant="ghost"
+                leftIcon={<Ionicons name="bookmark-outline" size={18} color={theme.colors.onSurface} />}
+                onPress={() => void openSavedFoods()}
+                style={styles.savedFoodsLink}
+            />
+        );
+    }
+
     function renderModeContent() {
         if (mode === 'quick') {
             return (
@@ -575,9 +592,14 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
         if (mode === 'search') {
             return (
                 <View style={styles.flex}>
+                    <View style={styles.modeFieldHeader}>
+                        <AppText variant="label">Search foods</AppText>
+                        {renderSavedFoodsAction()}
+                    </View>
                     <View style={styles.searchControls}>
                         <TextField
                             label="Search foods"
+                            hideLabel
                             value={query}
                             onChangeText={(value) => {
                                 setQuery(value);
@@ -598,7 +620,7 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
                             variant="secondary"
                             disabled={logFood.isPending}
                             leftIcon={<Ionicons name="barcode-outline" size={18} color={theme.colors.onSurface} />}
-                            onPress={openBarcodeScanner}
+                            onPress={() => void openBarcodeScanner()}
                             style={styles.scanButton}
                         />
                     </View>
@@ -625,8 +647,13 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
 
         return (
             <View style={styles.flex}>
+                <View style={styles.modeFieldHeader}>
+                    <AppText variant="label">Search recipes</AppText>
+                    {renderSavedFoodsAction()}
+                </View>
                 <TextField
                     label="Search recipes"
+                    hideLabel
                     value={recipeQuery}
                     onChangeText={(value) => {
                         setRecipeQuery(value);
@@ -684,6 +711,7 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
             isDirty={hasUnsavedDraft}
             confirmDismiss={confirmDiscardChanges}
             onRequestClose={onClose}
+            contentStyle={Platform.OS === 'web' ? styles.webSheetContent : undefined}
         >
             <View style={styles.mealControl}>
                 <AppText variant="label">Meal</AppText>
@@ -700,13 +728,6 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
                 />
             </View>
             <SegmentedControl accessibilityLabel="Add food method" options={ADD_FOOD_MODES} value={mode} onChange={selectMode} />
-            <AppButton
-                title="Saved foods"
-                variant="ghost"
-                leftIcon={<Ionicons name="bookmark-outline" size={18} color={theme.colors.onSurface} />}
-                onPress={openSavedFoods}
-                style={styles.savedFoodsLink}
-            />
             <View style={styles.modeContent}>{renderModeContent()}</View>
         </BottomSheetModal>
     );
@@ -762,8 +783,19 @@ const createStyles = (theme: AppTheme) => StyleSheet.create({
         flex: 1,
         minHeight: 0
     },
+    webSheetContent: {
+        paddingBottom: 0
+    },
     savedFoodsLink: {
-        alignSelf: 'flex-end'
+        flexShrink: 0,
+        paddingHorizontal: spacing.sm
+    },
+    modeFieldHeader: {
+        minHeight: theme.interaction.minimumTouchTarget,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: spacing.sm
     },
     formContent: {
         gap: spacing.md,

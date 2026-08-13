@@ -200,6 +200,7 @@ test('Today is legible, keyboard-operable, and unclipped at every configured vie
   await expectFullWidthPrimary(foodSurface, foodPrimary);
   await expectInside(weightSurface, weightPrimary);
   await expectFullWidthPrimary(weightSurface, weightPrimary);
+  await expectNoOverlap(foodSurface, weightSurface);
 
   if (testInfo.project.name === 'desktop-chrome') {
     const balanceSurface = page.getByLabel(/^Daily balance\./);
@@ -218,7 +219,26 @@ test('Today is legible, keyboard-operable, and unclipped at every configured vie
 
     const todayPath = new URL(page.url()).pathname;
     await page.getByRole('button', { name: 'Add food', exact: true }).click();
-    await expect(page.getByRole('dialog', { name: 'Add food', exact: true })).toBeVisible();
+    const addFoodDialog = page.getByRole('dialog', { name: 'Add food', exact: true });
+    await expect(addFoodDialog).toBeVisible();
+    const [searchLabelBox, savedFoodsBox] = await Promise.all([
+      addFoodDialog.getByText('Search foods', { exact: true }).boundingBox(),
+      addFoodDialog.getByRole('button', { name: 'Saved foods', exact: true }).boundingBox(),
+    ]);
+    expect(searchLabelBox).not.toBeNull();
+    expect(savedFoodsBox).not.toBeNull();
+    const searchLabelCenter = searchLabelBox!.y + (searchLabelBox!.height / 2);
+    const savedFoodsCenter = savedFoodsBox!.y + (savedFoodsBox!.height / 2);
+    expect(Math.abs(searchLabelCenter - savedFoodsCenter)).toBeLessThanOrEqual(2);
+    const [panelBox, resultsBox] = await Promise.all([
+      addFoodDialog.boundingBox(),
+      addFoodDialog.getByTestId('food-search-results').boundingBox(),
+    ]);
+    expect(panelBox).not.toBeNull();
+    expect(resultsBox).not.toBeNull();
+    expect(Math.abs(
+      (panelBox!.y + panelBox!.height) - (resultsBox!.y + resultsBox!.height),
+    )).toBeLessThanOrEqual(2);
     expect(new URL(page.url()).pathname).toBe(todayPath);
     await page.keyboard.press('Escape');
 
@@ -247,6 +267,10 @@ test('Today is legible, keyboard-operable, and unclipped at every configured vie
     await expect(page.getByRole('button', { name: 'Add food', exact: true })).toBeVisible();
     await expectWithinViewportWidth(page, page.getByTestId('food-log-summary-card'));
     await expectWithinViewportWidth(page, page.getByTestId('today-weight-card'));
+    await expectNoOverlap(
+      page.getByTestId('food-log-summary-card'),
+      page.getByTestId('today-weight-card'),
+    );
   }
 });
 

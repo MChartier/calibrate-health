@@ -100,6 +100,21 @@ describe('BottomSheetModal', () => {
         });
     });
 
+    it('allows fixed-content sheets to own their bottom inset', () => {
+        const screen = render(
+            <BottomSheetModal
+                visible
+                scrollable={false}
+                contentStyle={{ paddingBottom: 0 }}
+                onRequestClose={jest.fn()}
+            >
+                <Text>Edge-aligned results</Text>
+            </BottomSheetModal>
+        );
+
+        expect(StyleSheet.flatten(screen.getByTestId('bottom-sheet-content').props.style).paddingBottom).toBe(0);
+    });
+
     it('normalizes stacked web modal containers and lets a successor observer take over after cleanup', () => {
         function createContainer(role: string | null) {
             const attributes = new Map<string, string>([['aria-modal', 'true']]);

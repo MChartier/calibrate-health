@@ -99,6 +99,27 @@ describe('SqliteOutbox', () => {
         ]);
     });
 
+    it('returns retryable replay failures to pending with bounded diagnostic context', async () => {
+        const deferredRow = row({ state: OUTBOX_MUTATION_STATES.PENDING, last_error: 'retry later' });
+        const database = databaseMock({
+            getFirstAsync: jest.fn(async () => deferredRow)
+        });
+        const outbox = new SqliteOutbox(database, namespace, () => 'unused', () => 300);
+
+        await expect(outbox.defer('operation-1', 'retry later')).resolves.toEqual(expect.objectContaining({
+            state: OUTBOX_MUTATION_STATES.PENDING,
+            lastError: 'retry later'
+        }));
+        expect(database.runAsync).toHaveBeenCalledWith(expect.stringContaining('SET state = ?, last_error = ?'), [
+            OUTBOX_MUTATION_STATES.PENDING,
+            'retry later',
+            300,
+            'operation-1',
+            namespace,
+            OUTBOX_MUTATION_STATES.REPLAYING
+        ]);
+    });
+
     it('treats the oldest durable failure as a barrier to later pending writes', async () => {
         const transaction = databaseMock({
             getFirstAsync: jest.fn(async () => row({ state: OUTBOX_MUTATION_STATES.FAILED }))

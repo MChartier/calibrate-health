@@ -259,6 +259,24 @@ test('script contract uses production backup/restore and cleanup without externa
   assert.match(source, /finally \{/);
   assert.match(source, /refs\/tags\/\$\{ROLLBACK_BASE\.tag\}/);
   assert.match(source, /environment\.CALIBRATE_SOURCE_COMMIT/);
+  assert.match(source, /p\."last_sent_local_date" = \$1::date AS "web_legacy_receipt_preserved"/);
+  assert.match(
+    source,
+    /p\."last_sent_weight_local_date" = p\."last_sent_local_date" AS "web_weight_receipt_backfilled"/,
+  );
+  assert.match(
+    source,
+    /p\."last_sent_food_local_date" = p\."last_sent_local_date" AS "web_food_receipt_backfilled"/,
+  );
+  assert.match(source, /n\."last_sent_local_date" = \$1::date AS "native_legacy_receipt_preserved"/);
+  assert.match(
+    source,
+    /n\."last_sent_weight_local_date" = n\."last_sent_local_date" AS "native_weight_receipt_backfilled"/,
+  );
+  assert.match(
+    source,
+    /n\."last_sent_food_local_date" = n\."last_sent_local_date" AS "native_food_receipt_backfilled"/,
+  );
   assert.doesNotMatch(source, /GITHUB_SHA/);
   assert.doesNotMatch(source, /process\.env\.DATABASE_URL/);
   assert.doesNotMatch(source, /v0\.13\.3/);

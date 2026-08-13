@@ -83,8 +83,9 @@ missing platform test may be time-bounded only when the PR records the exact man
 and follow-up release gate; high or critical failures are not waived by a healthy global percentage.
 
 Physical Galaxy phone and Galaxy Watch Ultra validation is currently represented by a
-release-blocking waiver owned by `MChartier`, tracked in issues `#219` and `#222`, and expiring on
-2026-08-12. The normal verifier reports that blocker without breaking fast development checks; the
+release-blocking waiver owned by `MChartier`, tracked in issues `#219`, `#222`, and `#303`, and
+re-reviewed on 2026-08-12 with an expiry of 2026-08-26. The normal verifier reports that blocker
+without breaking fast development checks; the
 release variant fails until the physical happy-path and offline/reconnect evidence replaces it.
 Replacement requires a retained JSON result tied to the tested release commit, execution date,
 owner, phone/watch models, exact command or manual protocol, and covered physical capabilities;

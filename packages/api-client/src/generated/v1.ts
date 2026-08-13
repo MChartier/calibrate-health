@@ -1130,7 +1130,7 @@ export interface components {
             /** @constant */
             format: "calibrate-account-export";
             /** @constant */
-            version: 7;
+            version: 8;
             /** Format: date-time */
             exported_at: string;
             account: components["schemas"]["AccountExportProfile"];
@@ -1163,6 +1163,10 @@ export interface components {
             language: string;
             reminder_log_weight_enabled: boolean;
             reminder_log_food_enabled: boolean;
+            reminder_log_weight_minute: number;
+            reminder_log_food_minute: number;
+            reminder_quiet_hours_start_minute: number | null;
+            reminder_quiet_hours_end_minute: number | null;
             haptics_enabled: boolean;
             /** Format: date */
             date_of_birth: string | null;
@@ -1801,7 +1805,7 @@ export interface components {
             /** @constant */
             platform?: "web";
             /** @enum {unknown} */
-            version?: "0.33.4" | "0.33.3";
+            version?: "0.33.5" | "0.33.4";
         } | {
             /** @constant */
             platform?: "android_phone";

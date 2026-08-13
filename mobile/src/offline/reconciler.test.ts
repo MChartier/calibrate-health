@@ -1,5 +1,11 @@
+import { ApiError } from '@calibrate/api-client';
 import type { OutboxStore } from './outbox';
-import { OutboxReconciler } from './reconciler';
+import {
+    OUTBOX_RETRY_BASE_DELAY_MS,
+    OUTBOX_RETRY_MAX_DELAY_MS,
+    OutboxReconciler,
+    getOutboxRetryDelayMs
+} from './reconciler';
 import {
     OUTBOX_MUTATION_STATES,
     parseMutationPayload,
@@ -54,6 +60,13 @@ class MemoryOutbox implements OutboxStore {
         return { ...mutation };
     }
 
+    async defer(id: string, error: string): Promise<QueuedMutation> {
+        const mutation = this.requireMutation(id);
+        mutation.state = OUTBOX_MUTATION_STATES.PENDING;
+        mutation.lastError = error;
+        return { ...mutation };
+    }
+
     async recoverInterrupted(): Promise<void> {
         this.mutations.forEach((mutation) => {
             if (mutation.state === OUTBOX_MUTATION_STATES.REPLAYING) {
@@ -101,7 +114,9 @@ describe('OutboxReconciler', () => {
         await expect(reconciler.reconcile()).resolves.toEqual({
             replayed: 2,
             replayedOperations: ['food.create', 'weight.create'],
-            failedMutation: null
+            failedMutation: null,
+            deferredMutation: null,
+            retryAfterMs: null
         });
         expect(events).toEqual(['food.create', 'weight.create']);
         expect(outbox.mutations).toEqual([]);
@@ -134,6 +149,57 @@ describe('OutboxReconciler', () => {
         expect(outbox.mutations[1]).toEqual(expect.objectContaining({ id: later.id, state: 'pending' }));
     });
 
+    it('returns explicit retryable replay failures to pending for a later recovery trigger', async () => {
+        const outbox = new MemoryOutbox();
+        const deferred = await outbox.enqueue({ operation: 'food.create', payload: {} });
+        const reconciler = new OutboxReconciler(outbox, async () => {
+            throw new ApiError('operation is still settling', 409, { retryable: true });
+        });
+
+        await expect(reconciler.reconcile()).resolves.toEqual({
+            replayed: 0,
+            replayedOperations: [],
+            failedMutation: null,
+            deferredMutation: expect.objectContaining({
+                id: deferred.id,
+                state: OUTBOX_MUTATION_STATES.PENDING,
+                attemptCount: 1
+            }),
+            retryAfterMs: getOutboxRetryDelayMs(1, deferred.id)
+        });
+        expect(outbox.mutations).toEqual([
+            expect.objectContaining({
+                id: deferred.id,
+                state: OUTBOX_MUTATION_STATES.PENDING,
+                attemptCount: 1,
+                lastError: 'operation is still settling'
+            })
+        ]);
+        await expect(reconciler.reconcile()).resolves.toEqual({
+            replayed: 0,
+            replayedOperations: [],
+            failedMutation: null,
+            deferredMutation: expect.objectContaining({ attemptCount: 2 }),
+            retryAfterMs: getOutboxRetryDelayMs(2, deferred.id)
+        });
+    });
+
+    it('slows persistent retry traffic with deterministic jitter and a fifteen-minute ceiling', () => {
+        const mutationId = 'persistent-operation';
+        const delays = [1, 2, 3, 4, 5, 6, 7, 8, 9].map((attempt) =>
+            getOutboxRetryDelayMs(attempt, mutationId)
+        );
+        expect(getOutboxRetryDelayMs(0, mutationId)).toBe(delays[0]);
+        expect(getOutboxRetryDelayMs(6, mutationId)).toBeGreaterThan(2 * 60_000);
+        expect(delays.every((delay, index) => index === 0 || delay > delays[index - 1])).toBe(true);
+        const cappedDelay = getOutboxRetryDelayMs(100, mutationId);
+        expect(cappedDelay).toBeGreaterThanOrEqual(OUTBOX_RETRY_MAX_DELAY_MS * 0.75);
+        expect(cappedDelay).toBeLessThanOrEqual(OUTBOX_RETRY_MAX_DELAY_MS);
+        expect(getOutboxRetryDelayMs(100, mutationId)).toBe(cappedDelay);
+        expect(getOutboxRetryDelayMs(100, 'different-operation')).not.toBe(cappedDelay);
+        expect(OUTBOX_RETRY_BASE_DELAY_MS).toBe(5_000);
+    });
+
     it('coalesces concurrent reconciliation requests into one replay loop', async () => {
         const outbox = new MemoryOutbox();
         await outbox.enqueue({ operation: 'weight.create', payload: { weight: 80 } });
@@ -150,7 +216,9 @@ describe('OutboxReconciler', () => {
         await expect(first).resolves.toEqual({
             replayed: 1,
             replayedOperations: ['weight.create'],
-            failedMutation: null
+            failedMutation: null,
+            deferredMutation: null,
+            retryAfterMs: null
         });
         expect(executor).toHaveBeenCalledTimes(1);
     });
@@ -170,7 +238,9 @@ describe('OutboxReconciler', () => {
         await expect(reconciler.retryFailed(first.id)).resolves.toEqual({
             replayed: 2,
             replayedOperations: ['food.create', 'food.delete'],
-            failedMutation: null
+            failedMutation: null,
+            deferredMutation: null,
+            retryAfterMs: null
         });
         expect(outbox.mutations).toEqual([]);
     });
@@ -186,7 +256,9 @@ describe('OutboxReconciler', () => {
         await expect(reconciler.reconcile()).resolves.toEqual({
             replayed: 1,
             replayedOperations: ['metric.add'],
-            failedMutation: expect.objectContaining({ id: failed.id, state: 'failed' })
+            failedMutation: expect.objectContaining({ id: failed.id, state: 'failed' }),
+            deferredMutation: null,
+            retryAfterMs: null
         });
     });
 });

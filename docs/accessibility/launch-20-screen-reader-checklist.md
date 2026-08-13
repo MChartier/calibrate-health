@@ -35,7 +35,7 @@ Run this checklist against a release build with a populated deterministic accoun
    - Confirm `Goal progress` is announced as a progress indicator with its current value.
    - Open Trend and confirm the chart is announced once as a named image; axis labels and SVG descendants must not create a second reading sequence.
    - On `Select nearest weigh-in`, use Left, Right, Home, and End and confirm each selected date/value update is announced.
-   - Open `View data table` and navigate its dates, scale readings, underlying estimates, and 95% ranges. Confirm the values match the chart summary.
+   - Confirm Previous and Next weigh-in controls expose their disabled state at range boundaries and keep the selected point summary in sync.
 
 4. Settings and dialogs
    - Open Preferences and confirm it is announced as a modal dialog with its description.
@@ -44,5 +44,5 @@ Run this checklist against a release build with a populated deterministic accoun
    - Close Preferences and confirm focus returns to its Settings row.
 
 5. Reflow and high contrast
-   - At 200% text, repeat Trend table and Preferences checks without horizontal page scrolling or clipped labels/actions.
+   - At 200% text, repeat Trend chart navigation and Preferences checks without horizontal page scrolling or clipped labels/actions.
    - In Windows High Contrast, confirm keyboard focus, selected radios, and progress tracks/fills remain distinguishable without relying on app colors alone.

@@ -23,13 +23,13 @@ describe('SettingsHome', () => {
         const onOpenActivity = jest.fn();
         const onOpenSavedFoods = jest.fn();
         const onOpenAbout = jest.fn();
+        const onOpenAdvanced = jest.fn();
         const onOpenProductLink = jest.fn();
         const onDeleteAccount = jest.fn();
         const onOpenSheet = jest.fn();
         const screen = render(
             <SettingsHome
                 email="person@example.invalid"
-                emailVerified={false}
                 goalSummary="Maintain weight"
                 weightUnit={WEIGHT_UNITS.KG}
                 heightUnit={HEIGHT_UNITS.CM}
@@ -42,6 +42,7 @@ describe('SettingsHome', () => {
                 onOpenActivity={onOpenActivity}
                 onOpenSavedFoods={onOpenSavedFoods}
                 onOpenAbout={onOpenAbout}
+                onOpenAdvanced={onOpenAdvanced}
                 onOpenProductLink={onOpenProductLink}
                 onDeleteAccount={onDeleteAccount}
                 onLogout={jest.fn()}
@@ -56,7 +57,7 @@ describe('SettingsHome', () => {
         fireEvent.press(screen.getByRole('button', { name: 'Terms of service' }));
         fireEvent.press(screen.getByRole('button', { name: 'Open-source licenses' }));
         fireEvent.press(screen.getByRole('button', { name: 'Delete account' }));
-        fireEvent.press(screen.getByRole('button', { name: 'Advanced' }));
+        fireEvent.press(screen.getByRole('button', { name: 'Advanced settings' }));
 
         expect(onOpenActivity).toHaveBeenCalledTimes(1);
         expect(onOpenSavedFoods).toHaveBeenCalledTimes(1);
@@ -68,7 +69,10 @@ describe('SettingsHome', () => {
             ['licenses']
         ]);
         expect(onDeleteAccount).toHaveBeenCalledTimes(1);
-        expect(screen.getByText('Action required')).toBeTruthy();
+        expect(screen.queryByText('Email verification')).toBeNull();
+        expect(screen.getByRole('button', { name: 'Health Connect' })).toBeTruthy();
+        expect(screen.queryByRole('button', { name: 'Galaxy Watch' })).toBeNull();
+        expect(screen.getAllByText('person@example.invalid')).toHaveLength(1);
         expect(screen.getByTestId('settings-section-account')).toBeTruthy();
         expect(screen.getByTestId('settings-section-personal')).toBeTruthy();
         expect(screen.getByTestId('settings-section-connections')).toBeTruthy();
@@ -76,10 +80,11 @@ describe('SettingsHome', () => {
         expect(screen.getByTestId('settings-section-data')).toBeTruthy();
         expect(screen.getByTestId('settings-section-help')).toBeTruthy();
         expect(screen.getByTestId('settings-section-app')).toBeTruthy();
-        expect(onOpenSheet).toHaveBeenCalledWith('advanced');
+        expect(onOpenAdvanced).toHaveBeenCalledTimes(1);
     });
 
-    it('keeps native self-hosting controls behind the same generic Advanced entry', () => {
+    it('routes native self-hosting controls through the Advanced settings page', () => {
+        const onOpenAdvanced = jest.fn();
         const onOpenSheet = jest.fn();
         const screen = render(
             <SettingsHome
@@ -96,6 +101,7 @@ describe('SettingsHome', () => {
                 onOpenActivity={jest.fn()}
                 onOpenSavedFoods={jest.fn()}
                 onOpenAbout={jest.fn()}
+                onOpenAdvanced={onOpenAdvanced}
                 onOpenProductLink={jest.fn()}
                 onDeleteAccount={jest.fn()}
                 onLogout={jest.fn()}
@@ -103,7 +109,9 @@ describe('SettingsHome', () => {
         );
 
         expect(screen.queryByText('Calibrate server')).toBeNull();
-        fireEvent.press(screen.getByRole('button', { name: 'Advanced' }));
-        expect(onOpenSheet).toHaveBeenCalledWith('advanced');
+        fireEvent.press(screen.getByRole('button', { name: 'Galaxy Watch' }));
+        fireEvent.press(screen.getByRole('button', { name: 'Advanced settings' }));
+        expect(onOpenSheet).toHaveBeenCalledWith('watch');
+        expect(onOpenAdvanced).toHaveBeenCalledTimes(1);
     });
 });

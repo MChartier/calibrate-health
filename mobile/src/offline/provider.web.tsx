@@ -1,4 +1,4 @@
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useAuth } from '../auth/AuthContext';
 import { hasFullAccountAccess } from '../auth/accountAccess';
 import { IndexedDbOutbox, openBrowserOutboxDatabase } from './indexedDbOutbox.web';
@@ -21,12 +21,18 @@ type BrowserConnectivity = {
     subscribe: (listener: () => void) => () => void;
 };
 
+type BrowserVisibility = {
+    isVisible: () => boolean;
+    subscribe: (listener: () => void) => () => void;
+};
+
 type OfflineOutboxProviderProps = {
     children: React.ReactNode;
     executeMutation: QueuedMutationExecutor;
     onReplayCompleted?: (result: ReconcileResult) => void | Promise<void>;
     openDatabase?: () => Promise<IDBDatabase>;
     connectivity?: BrowserConnectivity;
+    visibility?: BrowserVisibility;
 };
 
 const OfflineOutboxContext = createContext<OfflineOutboxContextValue | null>(null);
@@ -36,7 +42,20 @@ const DEFAULT_BROWSER_CONNECTIVITY: BrowserConnectivity = {
     subscribe: (listener) => {
         if (typeof window === 'undefined') return () => undefined;
         window.addEventListener('online', listener);
-        return () => window.removeEventListener('online', listener);
+        window.addEventListener('offline', listener);
+        return () => {
+            window.removeEventListener('online', listener);
+            window.removeEventListener('offline', listener);
+        };
+    }
+};
+
+const DEFAULT_BROWSER_VISIBILITY: BrowserVisibility = {
+    isVisible: () => typeof document === 'undefined' || document.visibilityState !== 'hidden',
+    subscribe: (listener) => {
+        if (typeof document === 'undefined') return () => undefined;
+        document.addEventListener('visibilitychange', listener);
+        return () => document.removeEventListener('visibilitychange', listener);
     }
 };
 
@@ -58,7 +77,8 @@ export function OfflineOutboxProvider({
     executeMutation,
     onReplayCompleted,
     openDatabase = openBrowserOutboxDatabase,
-    connectivity = DEFAULT_BROWSER_CONNECTIVITY
+    connectivity = DEFAULT_BROWSER_CONNECTIVITY,
+    visibility = DEFAULT_BROWSER_VISIBILITY
 }: OfflineOutboxProviderProps) {
     const { serverUrl, user } = useAuth();
     const userId = hasFullAccountAccess(user) ? user?.id : undefined;
@@ -66,7 +86,10 @@ export function OfflineOutboxProvider({
     const [binding, setBinding] = useState<{ namespace: string; outbox: IndexedDbOutbox } | null>(null);
     const [mutations, setMutations] = useState<QueuedMutation[]>([]);
     const [initializationError, setInitializationError] = useState<string | null>(null);
+    const retrySchedulerRef = useRef<(result: ReconcileResult) => void>(() => undefined);
     const outbox = binding?.namespace === namespace.value ? binding.outbox : null;
+    const currentBindingRef = useRef({ namespace: namespace.value, outbox });
+    currentBindingRef.current = { namespace: namespace.value, outbox };
 
     useEffect(() => {
         let active = true;
@@ -106,8 +129,17 @@ export function OfflineOutboxProvider({
     }, [initializationError, outbox]);
 
     const refresh = useCallback(async () => {
-        setMutations(await requireOutbox().list());
-    }, [requireOutbox]);
+        const sourceOutbox = requireOutbox();
+        const sourceNamespace = namespace.value;
+        /** Match a delayed queue read to the browser namespace binding that started it. */
+        const isCurrentBinding = () => {
+            const current = currentBindingRef.current;
+            return current.namespace === sourceNamespace && current.outbox === sourceOutbox;
+        };
+        if (!isCurrentBinding()) return;
+        const nextMutations = await sourceOutbox.list();
+        if (isCurrentBinding()) setMutations(nextMutations);
+    }, [namespace.value, requireOutbox]);
 
     const notifyAfterReplay = useCallback(async (result: ReconcileResult) => {
         if (result.replayed === 0 || !onReplayCompleted) return;
@@ -122,7 +154,9 @@ export function OfflineOutboxProvider({
 
     const reconcile = useCallback(async () => {
         if (!reconciler) throw new Error(initializationError ?? 'Browser offline storage is unavailable until authentication is ready.');
+        const scheduleRetry = retrySchedulerRef.current;
         const result = await reconciler.reconcile();
+        scheduleRetry(result);
         await notifyAfterReplay(result);
         await refresh();
         return result;
@@ -130,7 +164,9 @@ export function OfflineOutboxProvider({
 
     const retryFailed = useCallback(async (id?: string) => {
         if (!reconciler) throw new Error(initializationError ?? 'Browser offline storage is unavailable until authentication is ready.');
+        const scheduleRetry = retrySchedulerRef.current;
         const result = await reconciler.retryFailed(id);
+        scheduleRetry(result);
         await notifyAfterReplay(result);
         await refresh();
         return result;
@@ -144,11 +180,31 @@ export function OfflineOutboxProvider({
     useEffect(() => {
         if (!reconciler) return;
         let active = true;
+        let isOnline = connectivity.isOnline();
+        let isVisible = visibility.isVisible();
+        let retryTimer: ReturnType<typeof setTimeout> | null = null;
+        /** Cancel the single provider-owned deferred replay timer. */
+        const clearRetry = () => {
+            if (retryTimer !== null) clearTimeout(retryTimer);
+            retryTimer = null;
+        };
+        /** Schedule one eligible retry using the reconciler's bounded backoff. */
+        const scheduleRetry = (result: ReconcileResult) => {
+            clearRetry();
+            if (!active || !isOnline || !isVisible || result.retryAfterMs === null) return;
+            retryTimer = setTimeout(() => {
+                retryTimer = null;
+                if (active && isOnline && isVisible) void replay(false);
+            }, result.retryAfterMs);
+        };
+        /** Reconcile this provider generation and apply retry timing before post-replay work. */
         const replay = async (includeFailures: boolean) => {
             try {
                 const result = includeFailures
                     ? await reconciler.retryFailed()
                     : await reconciler.reconcile();
+                // Apply retry state before any slower invalidation or queue refresh can reorder completions.
+                scheduleRetry(result);
                 await notifyAfterReplay(result);
                 if (active) setMutations(await requireOutbox().list());
                 return result;
@@ -157,15 +213,35 @@ export function OfflineOutboxProvider({
                 return null;
             }
         };
+        /** Resume durable failures only while the current tab is both visible and online. */
+        const replayIfEligible = () => {
+            if (!isOnline || !isVisible) {
+                clearRetry();
+                return;
+            }
+            void replay(true);
+        };
+        retrySchedulerRef.current = scheduleRetry;
 
-        if (connectivity.isOnline()) void replay(false);
-        const unsubscribe = connectivity.subscribe(() => { void replay(true); });
+        if (isOnline && isVisible) void replay(false);
+        const unsubscribeConnectivity = connectivity.subscribe(() => {
+            isOnline = connectivity.isOnline();
+            replayIfEligible();
+        });
+        const unsubscribeVisibility = visibility.subscribe(() => {
+            isVisible = visibility.isVisible();
+            replayIfEligible();
+        });
         return () => {
             active = false;
-            unsubscribe();
+            clearRetry();
+            if (retrySchedulerRef.current === scheduleRetry) {
+                retrySchedulerRef.current = () => undefined;
+            }
+            unsubscribeConnectivity();
+            unsubscribeVisibility();
         };
-    }, [connectivity, notifyAfterReplay, reconciler, refresh, requireOutbox]);
-
+    }, [connectivity, notifyAfterReplay, reconciler, refresh, requireOutbox, visibility]);
     const value = useMemo<OfflineOutboxContextValue>(() => ({
         isReady: outbox !== null,
         initializationError,

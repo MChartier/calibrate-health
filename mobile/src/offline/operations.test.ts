@@ -33,6 +33,11 @@ describe('retryable mutation classification', () => {
         expect(isRetryableMutationError(new ApiError('request rejected', status, null))).toBe(false);
     });
 
+    it('honors an explicit server retryability envelope before the status fallback', () => {
+        expect(isRetryableMutationError(new ApiError('still running', 409, { retryable: true }))).toBe(true);
+        expect(isRetryableMutationError(new ApiError('terminal failure', 503, { retryable: false }))).toBe(false);
+    });
+
     it('retries fetch transport failures and API timeouts only', () => {
         expect(isRetryableMutationError(new TypeError('Network request failed'))).toBe(true);
         expect(isRetryableMutationError(new Error(

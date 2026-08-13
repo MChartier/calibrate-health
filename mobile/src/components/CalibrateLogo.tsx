@@ -1,5 +1,7 @@
 import React from 'react';
+import { Platform } from 'react-native';
 import Svg, { Circle, Defs, LinearGradient, Path, Stop } from 'react-native-svg';
+import type { SvgProps } from 'react-native-svg';
 import { useAppTheme } from '../theme';
 
 type CalibrateLogoProps = {
@@ -13,22 +15,41 @@ const LOGO_GAUGE_STROKE_WIDTH = 9; // Controls the weight of the dial ring in th
 const LOGO_NOTCH_STROKE_WIDTH = 6; // Keeps the top reference notch readable at app-bar sizes.
 const LOGO_NEEDLE_STROKE_WIDTH = 7; // Controls the visual weight of the green gauge needle.
 
+/** Map the optional logo label to platform-safe SVG accessibility props. */
+function getLogoAccessibilityProps(accessibilityLabel: string | undefined): SvgProps {
+    const decorative = !accessibilityLabel;
+    if (Platform.OS === 'web') {
+        if (decorative) return { 'aria-hidden': true };
+        return { 'aria-label': accessibilityLabel, role: 'img' };
+    }
+    if (decorative) {
+        return {
+            accessible: false,
+            accessibilityElementsHidden: true,
+            importantForAccessibility: 'no-hide-descendants'
+        };
+    }
+    return {
+        accessible: true,
+        accessibilityElementsHidden: false,
+        importantForAccessibility: 'auto',
+        accessibilityRole: 'image',
+        accessibilityLabel
+    };
+}
+
 /**
  * Native SVG version of the Calibrate gauge mark used in the PWA header.
  */
 export const CalibrateLogo: React.FC<CalibrateLogoProps> = ({ accessibilityLabel, size = 32, testID }) => {
     const theme = useAppTheme();
-    const decorative = !accessibilityLabel;
+    const accessibilityProps = getLogoAccessibilityProps(accessibilityLabel);
+
     return <Svg
         width={size}
         height={size}
         viewBox={LOGO_VIEW_BOX}
-        accessible={!decorative}
-        accessibilityElementsHidden={decorative}
-        importantForAccessibility={decorative ? 'no-hide-descendants' : 'auto'}
-        aria-hidden={decorative}
-        accessibilityRole={decorative ? undefined : 'image'}
-        accessibilityLabel={accessibilityLabel}
+        {...accessibilityProps}
         testID={testID}
     >
         <Defs>

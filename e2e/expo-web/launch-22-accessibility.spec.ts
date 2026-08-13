@@ -204,7 +204,6 @@ test.describe('Launch 22 accessibility coverage contracts', () => {
       'profile-time-zone-options',
       'profile-photo',
       'health-connect',
-      'galaxy-watch',
       'password',
       'import',
       'offline',
@@ -221,7 +220,6 @@ test.describe('Launch 22 accessibility coverage contracts', () => {
       'session-revoke-confirmation',
       'account-export',
       'delete-account',
-      'advanced-connection',
     ]));
 
     for (const overlayCase of UX_ACCESSIBILITY_OVERLAY_CASES) {

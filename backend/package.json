@@ -1,6 +1,6 @@
 {
   "name": "backend",
-  "version": "0.33.4",
+  "version": "0.33.5",
   "scripts": {
     "prebuild": "npm run prisma:generate",
     "build": "tsc -p tsconfig.build.json",

@@ -1,12 +1,17 @@
-import { StyleSheet, View } from 'react-native';
-import { Link, type Href } from 'expo-router';
+import { Platform, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { Link, router, type Href } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../auth/AuthContext';
 import { AppCard } from '../AppCard';
+import { AppIconButton } from '../AppIconButton';
 import { AppText } from '../AppText';
 import { CalibrateLogo } from '../CalibrateLogo';
 import { Screen } from '../Screen';
 import type { PublicLegalSection } from '../../legal/publicLegalContent';
 import { radius, spacing, useAppTheme } from '../../theme';
+
+const DESKTOP_HEADER_BREAKPOINT = 1024; // Matches the app shell's navigation-rail breakpoint.
+const DESKTOP_HEADER_MAX_WIDTH = 1040; // Aligns legal-page app-bar content with the authenticated shell.
 
 type PublicLegalLink = {
     href: string;
@@ -22,93 +27,189 @@ type PublicLegalPageProps = {
     actions?: React.ReactNode;
 };
 
-/** Public legal content keeps its own trust shell and gives signed-in users a clear return to Settings. */
+/** Use public trust navigation when signed out and the app-bar contract when signed in. */
 export function PublicLegalPage({ title, lastUpdated, intro, sections, links, actions }: PublicLegalPageProps) {
     const { user } = useAuth();
     const { colors } = useAppTheme();
+    const insets = useSafeAreaInsets();
+    const { width } = useWindowDimensions();
     const inApp = Boolean(user);
+    const desktop = Platform.OS === 'web' && width >= DESKTOP_HEADER_BREAKPOINT;
 
     return (
-        <Screen
-            testID={inApp ? 'legal-in-app-shell' : 'legal-public-shell'}
-            safeTop
-            style={styles.screen}
-        >
-            <View style={[styles.brandBar, { borderBottomColor: colors.outlineVariant }]}>
-                <View style={styles.brandIdentity}>
-                    <CalibrateLogo size={36} />
-                    <AppText variant="label" style={{ color: colors.primary }}>Calibrate Health</AppText>
-                </View>
-                <Link
-                    href={(inApp ? '/settings' : '/') as Href}
-                    style={StyleSheet.flatten([styles.homeLink, { color: colors.primary }])}
+        <View style={[styles.root, { backgroundColor: colors.background }]}>
+            {inApp ? (
+                <View
+                    role="banner"
+                    testID="legal-app-header"
+                    style={[
+                        styles.appHeader,
+                        { borderBottomColor: colors.border, backgroundColor: colors.surface, paddingTop: insets.top }
+                    ]}
                 >
-                    {inApp ? 'Back to Settings' : 'Calibrate home'}
-                </Link>
-            </View>
-
-            <AppCard testID="legal-page">
-                <View style={styles.content}>
-                    <View style={styles.section}>
-                        <AppText
-                            nativeID="route-focus-title"
-                            accessibilityRole="header"
-                            aria-level={1}
-                            variant="title"
-                        >
-                            {title}
-                        </AppText>
-                        {lastUpdated && <AppText variant="label">Last updated: {lastUpdated}</AppText>}
-                        {intro.map((paragraph) => (
-                            <AppText key={paragraph}>{paragraph}</AppText>
-                        ))}
+                    <View style={[styles.appHeaderRow, desktop && styles.appHeaderRowDesktop]}>
+                        <View style={styles.appHeaderLeading}>
+                            <AppIconButton
+                                accessibilityLabel="Back to Settings"
+                                icon="chevron-back"
+                                iconSize={24}
+                                variant="ghost"
+                                onPress={() => router.replace('/settings')}
+                            />
+                            <AppText
+                                accessibilityRole="header"
+                                aria-level={1}
+                                nativeID="route-focus-title"
+                                numberOfLines={2}
+                                style={styles.appHeaderTitle}
+                            >
+                                {title}
+                            </AppText>
+                        </View>
+                        <View accessibilityRole="toolbar" accessibilityLabel="App actions" style={styles.appHeaderActions}>
+                            <AppIconButton
+                                accessibilityLabel="Open notifications"
+                                icon="notifications-outline"
+                                iconSize={21}
+                                variant="ghost"
+                                onPress={() => router.push('/notifications')}
+                            />
+                            <AppIconButton
+                                accessibilityLabel="Account & settings"
+                                accessibilityHint="Opens account details and app settings"
+                                icon="person-circle-outline"
+                                iconSize={29}
+                                variant="ghost"
+                                onPress={() => router.push('/settings')}
+                            />
+                        </View>
                     </View>
+                </View>
+            ) : null}
 
-                    {actions}
-
-                    {sections.map((section) => (
-                        <View
-                            key={section.title}
-                            style={[styles.section, styles.dividedSection, { borderTopColor: colors.outlineVariant }]}
+            <Screen
+                testID={inApp ? 'legal-in-app-shell' : 'legal-public-shell'}
+                safeTop={!inApp}
+                style={styles.screen}
+            >
+                {!inApp ? (
+                    <View style={[styles.brandBar, { borderBottomColor: colors.outlineVariant }]}>
+                        <View style={styles.brandIdentity}>
+                            <CalibrateLogo size={36} />
+                            <AppText variant="label" style={{ color: colors.primary }}>Calibrate Health</AppText>
+                        </View>
+                        <Link
+                            href={'/' as Href}
+                            style={StyleSheet.flatten([styles.homeLink, { color: colors.primary }])}
                         >
-                            <AppText accessibilityRole="header" aria-level={2} variant="subtitle">{section.title}</AppText>
-                            {section.paragraphs?.map((paragraph) => (
+                            Calibrate home
+                        </Link>
+                    </View>
+                ) : null}
+
+                <AppCard testID="legal-page">
+                    <View style={styles.content}>
+                        <View style={styles.section}>
+                            {!inApp ? (
+                                <AppText
+                                    nativeID="route-focus-title"
+                                    accessibilityRole="header"
+                                    aria-level={1}
+                                    variant="title"
+                                >
+                                    {title}
+                                </AppText>
+                            ) : null}
+                            {lastUpdated && <AppText variant="label">Last updated: {lastUpdated}</AppText>}
+                            {intro.map((paragraph) => (
                                 <AppText key={paragraph}>{paragraph}</AppText>
                             ))}
-                            {section.bullets?.map((bullet) => (
-                                <View key={bullet} style={styles.bulletRow}>
-                                    <AppText accessibilityElementsHidden importantForAccessibility="no">-</AppText>
-                                    <AppText style={styles.bulletCopy}>{bullet}</AppText>
-                                </View>
+                        </View>
+
+                        {actions}
+
+                        {sections.map((section) => (
+                            <View
+                                key={section.title}
+                                style={[styles.section, styles.dividedSection, { borderTopColor: colors.outlineVariant }]}
+                            >
+                                <AppText accessibilityRole="header" aria-level={2} variant="subtitle">{section.title}</AppText>
+                                {section.paragraphs?.map((paragraph) => (
+                                    <AppText key={paragraph}>{paragraph}</AppText>
+                                ))}
+                                {section.bullets?.map((bullet) => (
+                                    <View key={bullet} style={styles.bulletRow}>
+                                        <AppText accessibilityElementsHidden importantForAccessibility="no">-</AppText>
+                                        <AppText style={styles.bulletCopy}>{bullet}</AppText>
+                                    </View>
+                                ))}
+                            </View>
+                        ))}
+
+                        <View style={[styles.links, styles.dividedSection, { borderTopColor: colors.outlineVariant }]}>
+                            {links.map((link) => (
+                                <Link
+                                    key={link.href}
+                                    href={link.href as Href}
+                                    style={StyleSheet.flatten([
+                                        styles.link,
+                                        { borderColor: colors.outline, color: colors.primary }
+                                    ])}
+                                >
+                                    {link.label}
+                                </Link>
                             ))}
                         </View>
-                    ))}
-
-                    <View style={[styles.links, styles.dividedSection, { borderTopColor: colors.outlineVariant }]}>
-                        {links.map((link) => (
-                            <Link
-                                key={link.href}
-                                href={link.href as Href}
-                                style={StyleSheet.flatten([
-                                    styles.link,
-                                    { borderColor: colors.outline, color: colors.primary }
-                                ])}
-                            >
-                                {link.label}
-                            </Link>
-                        ))}
                     </View>
-                </View>
-            </AppCard>
-        </Screen>
+                </AppCard>
+            </Screen>
+        </View>
     );
 }
 
 const styles = StyleSheet.create({
+    root: {
+        flex: 1,
+        width: '100%'
+    },
     screen: {
         width: '100%',
         maxWidth: 920,
         alignSelf: 'center'
+    },
+    appHeader: {
+        borderBottomWidth: StyleSheet.hairlineWidth
+    },
+    appHeaderRow: {
+        minHeight: 56,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingHorizontal: spacing.lg
+    },
+    appHeaderRowDesktop: {
+        width: '100%',
+        maxWidth: DESKTOP_HEADER_MAX_WIDTH,
+        alignSelf: 'center',
+        paddingHorizontal: spacing.xl
+    },
+    appHeaderLeading: {
+        flex: 1,
+        minWidth: 0,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.sm
+    },
+    appHeaderTitle: {
+        flexShrink: 1,
+        fontSize: 20,
+        lineHeight: 26,
+        fontWeight: '800'
+    },
+    appHeaderActions: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.xs
     },
     brandBar: {
         minHeight: 56,
@@ -127,6 +228,9 @@ const styles = StyleSheet.create({
     },
     homeLink: {
         minHeight: 48,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
         paddingHorizontal: spacing.sm,
         paddingVertical: spacing.sm,
         textAlign: 'center',
@@ -158,6 +262,9 @@ const styles = StyleSheet.create({
     },
     link: {
         minHeight: 48,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
         borderWidth: StyleSheet.hairlineWidth,
         borderRadius: radius.md,
         paddingHorizontal: spacing.md,

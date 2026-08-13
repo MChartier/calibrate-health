@@ -1,7 +1,7 @@
 import { Image, StyleSheet, View } from 'react-native';
 import { HEIGHT_UNITS, WEIGHT_UNITS, type HeightUnit, type WeightUnit } from '@calibrate/shared';
 import { AppText } from '../components/AppText';
-import { SettingsRow, SettingsSection, SettingsStatusRow } from '../components/settings/SettingsList';
+import { SettingsRow, SettingsSection } from '../components/settings/SettingsList';
 import { MOBILE_CLIENT_IDENTITY } from '../config/nativeClient';
 import { spacing, useAppTheme } from '../theme';
 import { ASYNC_RESOURCE_STATES, type AsyncResourceState } from '../asyncState/resolveAsyncState';
@@ -15,14 +15,12 @@ export type SettingsSheetId =
     | 'password'
     | 'devices'
     | 'offline'
-    | 'data'
-    | 'advanced';
+    | 'data';
 
 type ProductLink = 'support' | 'privacy' | 'terms' | 'licenses';
 
 type SettingsHomeProps = {
     email?: string | null;
-    emailVerified?: boolean;
     profileImageUrl?: string | null;
     goalSummary: string;
     weightUnit: WeightUnit;
@@ -37,6 +35,7 @@ type SettingsHomeProps = {
     onOpenActivity: () => void;
     onOpenSavedFoods: () => void;
     onOpenAbout: () => void;
+    onOpenAdvanced: () => void;
     onOpenProductLink: (link: ProductLink) => void;
     onDeleteAccount: () => void;
     onLogout: () => void;
@@ -53,7 +52,6 @@ export function shouldShowSettingsResourceStatus(state: AsyncResourceState, isWe
 
 export function SettingsHome({
     email,
-    emailVerified,
     profileImageUrl,
     goalSummary,
     weightUnit,
@@ -68,6 +66,7 @@ export function SettingsHome({
     onOpenActivity,
     onOpenSavedFoods,
     onOpenAbout,
+    onOpenAdvanced,
     onOpenProductLink,
     onDeleteAccount,
     onLogout
@@ -80,14 +79,6 @@ export function SettingsHome({
         ? `${failedMutationCount} failed`
         : `${pendingMutationCount} pending`;
 
-    let verificationValue = 'Not reported';
-    let verificationText = email ?? 'Verification status for this account email.';
-    if (emailVerified === true) {
-        verificationValue = 'Verified';
-    } else if (emailVerified === false) {
-        verificationValue = 'Action required';
-        verificationText = 'Verify this email before using all account features.';
-    }
     return (
         <View testID="settings-home" style={styles.home}>
             <SettingsSection
@@ -121,14 +112,6 @@ export function SettingsHome({
                         <AppText variant="caption" numberOfLines={2}>{goalSummary}</AppText>
                     </View>
                 </View>
-                <SettingsStatusRow
-                    testID="settings-email-verification"
-                    icon="checkmark-circle-outline"
-                    label="Email verification"
-                    supportingText={verificationText}
-                    value={verificationValue}
-                    tone={emailVerified === true ? 'success' : 'warning'}
-                />
                 <SettingsRow
                     icon="image-outline"
                     label="Profile photo"
@@ -180,15 +163,18 @@ export function SettingsHome({
                     icon="fitness-outline"
                     label="Health Connect"
                     supportingText="Read activity and weight from Android"
+                    showDivider={!isWeb}
                     onPress={() => onOpenSheet('health-connect')}
                 />
-                <SettingsRow
-                    icon="watch-outline"
-                    label="Galaxy Watch"
-                    supportingText="Pair, sync, and manage the Wear OS companion"
-                    showDivider={false}
-                    onPress={() => onOpenSheet('watch')}
-                />
+                {!isWeb ? (
+                    <SettingsRow
+                        icon="watch-outline"
+                        label="Galaxy Watch"
+                        supportingText="Pair, sync, and manage the Wear OS companion"
+                        showDivider={false}
+                        onPress={() => onOpenSheet('watch')}
+                    />
+                ) : null}
             </SettingsSection>
 
             <SettingsSection
@@ -294,7 +280,7 @@ export function SettingsHome({
                 <SettingsRow
                     icon="information-circle-outline"
                     label="About Calibrate"
-                    supportingText="Purpose, trust, version, and update details"
+                    supportingText="Purpose, trust, and product links"
                     value={isWeb ? undefined : `v${MOBILE_CLIENT_IDENTITY.version}`}
                     showDivider
                     onPress={onOpenAbout}
@@ -302,10 +288,10 @@ export function SettingsHome({
                 <SettingsRow
                     testID="settings-advanced"
                     icon="options-outline"
-                    label="Advanced"
-                    supportingText="Alternate server and technical connection options"
+                    label="Advanced settings"
+                    supportingText="Connection, diagnostics, and software updates"
                     showDivider={false}
-                    onPress={() => onOpenSheet('advanced')}
+                    onPress={onOpenAdvanced}
                 />
             </SettingsSection>
         </View>

@@ -105,9 +105,12 @@ export function Listbox<T extends string>({
     const optionRefs = useRef<Array<FocusableOption | null>>([]);
     const typeaheadTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
     const typeahead = useRef(initialTypeahead.toLocaleLowerCase());
-    const enabledIndexes = options
-        .map((option, index) => (!option.disabled ? index : -1))
-        .filter((index) => index >= 0);
+    const enabledIndexes = useMemo(
+        () => options
+            .map((option, index) => (!option.disabled ? index : -1))
+            .filter((index) => index >= 0),
+        [options]
+    );
     const requestedActiveIndex = options.findIndex((option) => option.value === activeValue);
     const selectedIndex = options.findIndex((option) => option.value === value);
     let initialIndex = requestedActiveIndex;
@@ -124,6 +127,15 @@ export function Listbox<T extends string>({
         const focusTimer = setTimeout(() => optionRefs.current[initialIndex]?.focus?.(), 0);
         return () => clearTimeout(focusTimer);
     }, [focusInitialOption, initialIndex]);
+
+    useEffect(() => {
+        if (enabledIndexes.includes(activeIndex) || activeIndex === initialIndex) return;
+        setActiveIndex(initialIndex);
+        const nextActiveOption = options[initialIndex];
+        if (nextActiveOption && !nextActiveOption.disabled) {
+            onActiveChange?.(nextActiveOption.value);
+        }
+    }, [activeIndex, enabledIndexes, initialIndex, onActiveChange, options]);
 
     useEffect(() => () => {
         if (typeaheadTimer.current) clearTimeout(typeaheadTimer.current);

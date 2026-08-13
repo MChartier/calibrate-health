@@ -339,7 +339,7 @@ test('hosted and installed web keep public trust, route truth, and server-accoun
 
     await page.goto('/privacy');
     await expect(page.getByTestId('legal-in-app-shell')).toBeVisible();
-    await expect(page.getByRole('link', { name: 'Back to Settings' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Back to Settings' })).toBeVisible();
     await expectAxeStyleAccessibilityBaseline(page);
 
     expectApiFailure(page, { method: 'GET', pathname: '/missing-launch-19-authenticated', status: 404 });
@@ -409,17 +409,15 @@ test('hosted and installed web keep public trust, route truth, and server-accoun
   await expect(page.getByRole('main')).toBeVisible();
   await expectAxeStyleAccessibilityBaseline(page);
   await page.getByTestId('settings-advanced').click();
-  const advanced = page.getByTestId('settings-advanced-sheet');
+  await expect(page).toHaveURL((url) => url.pathname === '/advanced');
+  const advanced = page.getByTestId('advanced-settings-page');
   await expect(advanced).toBeVisible();
-  await expect(advanced.getByRole('textbox', { name: 'Server URL' })).toBeVisible();
-  await expect(advanced).toContainText('Its operator is responsible for privacy, security, availability, backups, and support.');
+  await expect(advanced.getByRole('textbox', { name: 'Server URL' })).toHaveCount(0);
+  await expect(advanced).toContainText("A self-hosted service's operator is responsible for privacy, security, availability, backups, and support.");
 
   await controller.activateOffline();
   const offlineNotice = page.getByTestId('pwa-offline');
-  await expect(offlineNotice).toBeHidden();
-  await expect(advanced.getByRole('button', { name: 'Save connection' })).toBeVisible();
-  await page.getByRole('button', { name: 'Close advanced' }).click();
-  await expect(advanced).toHaveCount(0);
+  await expect(advanced.getByRole('button', { name: 'Save connection' })).toHaveCount(0);
   await expect(offlineNotice).toContainText("You're offline");
   await expect(offlineNotice).toContainText('Some information may be out of date. Reconnect before making changes.');
   await expect(offlineNotice.getByRole('button')).toHaveCount(0);

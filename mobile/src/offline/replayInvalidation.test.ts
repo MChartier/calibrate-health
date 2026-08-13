@@ -7,7 +7,9 @@ function replayResult(replayedOperations: string[]) {
     return {
         replayed: replayedOperations.length,
         replayedOperations,
-        failedMutation: null
+        failedMutation: null,
+        deferredMutation: null,
+        retryAfterMs: null
     };
 }
 

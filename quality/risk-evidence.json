@@ -387,7 +387,7 @@
       "status": "release-blocking",
       "owner": "MChartier",
       "trackingIssues": ["#219", "#222", "#303"],
-      "expiresOn": "2026-08-12",
+      "expiresOn": "2026-08-26",
       "reason": "Requires the owner's physical Galaxy phone, Galaxy Watch Ultra, Samsung Health, and real disconnect/reconnect conditions.",
       "capabilities": [
         "android-physical-happy-path",

@@ -5,6 +5,7 @@ import {
   getSafeUtcTodayDateOnlyInTimeZone,
   parseLocalDateOnly
 } from '../utils/date';
+import { CURRENT_ACCOUNT_ACCESS_WHERE } from '../utils/accountAccessSerialization';
 import { type MutationDatabase, recordSyncChange } from './clientOperations';
 
 export const FOOD_DAY_STATUSES = ['OPEN', 'COMPLETE', 'INCOMPLETE', 'PAUSED'] as const;
@@ -424,14 +425,20 @@ export async function materializePauseThrough(options: {
   }
 }
 
-export async function materializeActiveFoodTrackingPauses(now = new Date()): Promise<void> {
-  const pauses = await prisma.foodTrackingPause.findMany({
-    where: { resumed_on: null },
+export async function materializeActiveFoodTrackingPauses(
+  now = new Date(),
+  db: typeof prisma = prisma
+): Promise<void> {
+  const pauses = await db.foodTrackingPause.findMany({
+    where: {
+      resumed_on: null,
+      user: { is: CURRENT_ACCOUNT_ACCESS_WHERE }
+    },
     include: { user: { select: { timezone: true } } }
   });
   for (const pause of pauses) {
     const today = getSafeUtcTodayDateOnlyInTimeZone(pause.user.timezone, now);
-    await prisma.$transaction(async (tx) => {
+    await db.$transaction(async (tx) => {
       await materializePauseThrough({ tx, pause, through: today });
     });
   }
