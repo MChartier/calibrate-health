@@ -37,9 +37,9 @@ export function registerBrowserPushSessionCleanup(handler: BrowserPushCleanupHan
 export async function cleanupBrowserPushBeforeSessionChange(): Promise<void> {
     try {
         await sessionCleanupHandler?.();
-    } catch (error) {
+    } catch {
         // Session teardown must continue even if an unreachable old server cannot forget the endpoint.
-        console.warn('Could not remove the browser push endpoint from the previous Calibrate session.', error);
+        console.warn('Could not remove the browser push endpoint from the previous Calibrate session.');
     }
 }
 

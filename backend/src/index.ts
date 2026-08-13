@@ -15,6 +15,7 @@ import { configureFrontendStaticAssets } from './frontendStatic';
 import { isAuthenticatedUser } from './middleware/authenticatedUser';
 import authRoutes from './routes/auth';
 import clientConfigRoutes from './routes/clientConfig';
+import clientDiagnosticsRoutes from './routes/clientDiagnostics';
 import devRoutes from './routes/dev';
 import devTestRoutes from './routes/devTest';
 import foodRoutes from './routes/food';
@@ -41,7 +42,11 @@ import {
   apiRequestErrorHandler,
   createApiErrorResponseMiddleware
 } from './middleware/apiErrorResponse';
-import { createAuthRateLimiters, createBrowserMutationOriginGuard } from './middleware/security';
+import {
+  createAuthRateLimiters,
+  createBrowserMutationOriginGuard,
+  createClientDiagnosticsRateLimiter
+} from './middleware/security';
 import { startReminderScheduler } from './services/reminderScheduler';
 import { checkDatabaseReadiness } from './services/readiness';
 import { DUMMY_AUTH_PASSWORD_HASH, normalizeEmailCredential } from './utils/authCredentials';
@@ -115,6 +120,7 @@ const bootstrap = async (): Promise<void> => {
   }));
   app.get('/internal/diagnostics/metrics', createDiagnosticsMetricsHandler({ config: observabilityConfig }));
   const authRateLimiters = createAuthRateLimiters();
+  const clientDiagnosticsRateLimiter = createClientDiagnosticsRateLimiter();
 
   const secureCookieEnv = process.env.SESSION_COOKIE_SECURE;
   const useSecureCookies = secureCookieEnv ? secureCookieEnv === 'true' : isProductionOrStaging;
@@ -147,6 +153,7 @@ const bootstrap = async (): Promise<void> => {
     isProductionOrStaging,
     useSecureRequestOrigin: useSecureCookies
   })));
+  app.use(['/api/v1/client-diagnostics', '/api/client-diagnostics'], clientDiagnosticsRateLimiter);
   app.use('/auth/register', authRateLimiters.registration);
   app.use('/auth/mobile/register', authRateLimiters.registration);
   app.use('/auth/login', authRateLimiters.login);
@@ -267,6 +274,7 @@ const bootstrap = async (): Promise<void> => {
   });
 
   apiRouter.use('/client-config', clientConfigRoutes);
+  apiRouter.use('/client-diagnostics', clientDiagnosticsRoutes);
   apiRouter.use('/goals', goalRoutes);
   apiRouter.use('/metrics', metricRoutes);
   apiRouter.use('/activity', activityRoutes);

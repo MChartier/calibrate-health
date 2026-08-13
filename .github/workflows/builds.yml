@@ -29,6 +29,7 @@ jobs:
         run: |
           npm run release:check
           npm run test:release
+          npm run test:operations
           npm run test:native-release
           npm run test:wear:emulator:unit
           npm run test:deploy
@@ -59,29 +60,58 @@ jobs:
       - name: Build backend
         run: npm run build
 
+
+  performance-regression:
+    name: Deterministic Performance Regression
+    runs-on: windows-latest
+    timeout-minutes: 10
+
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup reviewed benchmark Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24.14.0
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install deps
+        run: npm.cmd ci --no-audit --fund=false
+
+      - name: Enforce deterministic API and recompute performance budget
+        run: npm.cmd run performance:regression
+
   expo-web-build:
     name: Expo Web Build
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     timeout-minutes: 15
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node
+      - name: Setup reviewed bundle Node
         uses: actions/setup-node@v4
         with:
-          node-version: 22.13.0
+          node-version: 24.14.0
           cache: npm
           cache-dependency-path: package-lock.json
 
       - name: Install deps
-        run: npm ci --no-audit --fund=false
+        run: npm.cmd ci --no-audit --fund=false
 
       - name: Build and validate Expo web
         run: |
-          npm run build:expo-web
-          npm run test:expo-web:release
+          npm.cmd run build:expo-web
+          npm.cmd run test:expo-web:release
+          npm.cmd run performance:bundle
+          npm.cmd run test:performance:web
 
   mobile-build:
     name: Mobile Build

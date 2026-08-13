@@ -8,6 +8,7 @@ const {
   createDiagnosticsMetricsHandler,
   createRequestObservabilityMiddleware,
   diagnosticOperationOutcomeForStatus,
+  emitDiagnosticEvent,
   resolveObservabilityConfig,
   logSafeOperationalError,
   safeErrorType,
@@ -162,4 +163,81 @@ test('operation status mapping uses a fixed bounded outcome vocabulary', () => {
   assert.equal(diagnosticOperationOutcomeForStatus(400), 'rejected');
   assert.equal(diagnosticOperationOutcomeForStatus(409), 'conflict');
   assert.equal(diagnosticOperationOutcomeForStatus(503), 'failure');
+});
+test('scheduler metrics keep lastSuccessAt pinned across later failed and skipped runs', () => {
+  const registry = new DiagnosticsRegistry();
+  registry.recordJob('reminder_scheduler', 'success', 10);
+  const successful = registry.snapshot().background_jobs.reminder_scheduler;
+  assert.match(successful.lastSuccessAt, /^\d{4}-\d{2}-\d{2}T/);
+  assert.equal(successful.lastSuccessAt, successful.lastFinishedAt);
+
+  registry.recordJob('reminder_scheduler', 'failure', 20);
+  registry.recordJob('reminder_scheduler', 'skipped', 0);
+  const afterNonSuccess = registry.snapshot().background_jobs.reminder_scheduler;
+  assert.equal(afterNonSuccess.lastSuccessAt, successful.lastSuccessAt);
+  assert.equal(afterNonSuccess.lastOutcome, 'skipped');
+  assert.equal(afterNonSuccess.successes, 1);
+  assert.equal(afterNonSuccess.failures, 1);
+  assert.equal(afterNonSuccess.skipped, 1);
+});
+test('maps generated error names to closed categories and keeps sensitive values out of emitted JSON and metrics', () => {
+  let seed = 0x301cafe;
+  const random = () => {
+    seed = (1664525 * seed + 1013904223) >>> 0;
+    return seed;
+  };
+  const registry = new DiagnosticsRegistry();
+  const emitted = [];
+  const opaqueIds = [];
+
+  for (let index = 0; index < 256; index += 1) {
+    const sensitiveName = 'AliceWeight' + random().toString(16);
+    const sensitiveValue = 'person' + index + '@example.invalid token=' + random().toString(16) + ' weight=' + (80000 + index);
+    const error = new Error(sensitiveValue);
+    error.name = sensitiveName;
+    error.stack = 'private-stack-' + sensitiveValue;
+
+    assert.equal(safeErrorType(error), 'UnknownError');
+    emitDiagnosticEvent(
+      { enabled: true, metricsEnabled: false, metricsToken: null },
+      'property.error',
+      {
+        error_type: error.name,
+        message: error.message,
+        stack: error.stack,
+        url: 'https://private.invalid/' + sensitiveValue,
+      },
+      (line) => emitted.push(line)
+    );
+    const requestId = random().toString(16).padStart(16, '0');
+    opaqueIds.push(requestId);
+    registry.recordClientDiagnostic({
+      event: 'client_failure',
+      operation: 'root_render',
+      route: 'app_shell',
+      platform: 'web',
+      version: '0.14.0',
+      outcome: 'failure',
+      duration_bucket: 'not_applicable',
+      request_id: requestId
+    });
+  }
+
+  const encodedEvents = emitted.join('\n');
+  assert.equal(emitted.length, 256);
+  assert.equal(encodedEvents.includes('AliceWeight'), false);
+  assert.equal(encodedEvents.includes('example.invalid'), false);
+  assert.equal(encodedEvents.includes('private-stack'), false);
+  for (const line of emitted) {
+    const event = JSON.parse(line);
+    assert.equal(event.error_type, 'UnknownError');
+    assert.equal(event.message, '[REDACTED]');
+    assert.equal(event.stack, '[REDACTED]');
+    assert.equal(event.url, '[REDACTED]');
+  }
+
+  const encodedMetrics = JSON.stringify(registry.snapshot());
+  assert.equal(encodedMetrics.includes('request_id'), false);
+  for (const requestId of opaqueIds) assert.equal(encodedMetrics.includes(requestId), false);
+  assert.equal(registry.snapshot().client_diagnostics.total, 256);
 });

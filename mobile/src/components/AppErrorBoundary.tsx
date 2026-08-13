@@ -1,4 +1,5 @@
 import React from 'react';
+import * as Crypto from 'expo-crypto';
 import {
     DevSettings,
     Platform,
@@ -8,21 +9,35 @@ import {
     Text,
     View
 } from 'react-native';
-import { radius, spacing, typography, useAppTheme, type AppTheme } from '../theme';
+import {
+    reportClientDiagnostic,
+    type ClientDiagnosticSignal
+} from '../diagnostics/clientDiagnostics';
+import { radius, spacing, themes, typography, type AppTheme } from '../theme';
 
 type AppErrorBoundaryProps = {
     children: React.ReactNode;
     /** Override exists for deterministic tests and alternate native reload hosts. */
     restartApp?: () => void;
+    /** Override exists for deterministic tests of the provider-independent emergency shell. */
+    reportDiagnostic?: (signal: ClientDiagnosticSignal) => Promise<string | null>;
 };
 
 type AppErrorBoundaryState = {
-    error: Error | null;
+    hasError: boolean;
+    requestId: string | null;
     resetVersion: number;
 };
 
 const FALLBACK_MAX_WIDTH = 420; // Keeps recovery copy readable on tablets and unfolded devices.
 const BRAND_MARK_SIZE = 52; // Gives the emergency shell a recognizable mark without loading SVG/native modules.
+const ROOT_FAILURE_DIAGNOSTIC: ClientDiagnosticSignal = {
+    event: 'client_failure',
+    operation: 'root_render',
+    route: 'app_shell',
+    outcome: 'failure',
+    duration_bucket: 'not_applicable'
+};
 
 /** Restart through the host that actually owns the current runtime. */
 export function restartAppRuntime(
@@ -45,29 +60,36 @@ const defaultRestartApp = (): void => restartAppRuntime();
  * The fallback intentionally uses only React Native core primitives so it remains
  * available when navigation, providers, or feature components are what failed.
  */
-type ThemedAppErrorBoundaryProps = AppErrorBoundaryProps & { theme: AppTheme };
-
-class ThemedAppErrorBoundary extends React.Component<ThemedAppErrorBoundaryProps, AppErrorBoundaryState> {
+export class AppErrorBoundary extends React.Component<AppErrorBoundaryProps, AppErrorBoundaryState> {
     state: AppErrorBoundaryState = {
-        error: null,
+        hasError: false,
+        requestId: null,
         resetVersion: 0
     };
 
-    static getDerivedStateFromError(error: unknown): Partial<AppErrorBoundaryState> {
-        return {
-            error: error instanceof Error ? error : new Error('An unexpected error occurred.')
-        };
+    static getDerivedStateFromError(_error: unknown): Partial<AppErrorBoundaryState> {
+        return { hasError: true, requestId: Crypto.randomUUID() };
     }
 
-    componentDidCatch(error: Error, info: React.ErrorInfo): void {
-        if (__DEV__) {
-            console.error('[calibrate] Unhandled app render error', error, info.componentStack);
-        }
+    componentDidCatch(_error: Error, _info: React.ErrorInfo): void {
+        void this.reportRootFailure(this.state.resetVersion);
     }
+
+    private reportRootFailure = async (resetVersion: number): Promise<void> => {
+        const requestId = this.state.requestId;
+        if (!requestId || this.state.resetVersion !== resetVersion) return;
+        const reporter = this.props.reportDiagnostic ?? reportClientDiagnostic;
+        try {
+            await reporter({ ...ROOT_FAILURE_DIAGNOSTIC, request_id: requestId });
+        } catch {
+            // The local support reference remains useful when diagnostics cannot be delivered.
+        }
+    };
 
     private resetAppShell = (): void => {
         this.setState((state) => ({
-            error: null,
+            hasError: false,
+            requestId: null,
             resetVersion: state.resetVersion + 1
         }));
     };
@@ -77,11 +99,12 @@ class ThemedAppErrorBoundary extends React.Component<ThemedAppErrorBoundaryProps
     };
 
     render(): React.ReactNode {
-        if (this.state.error) {
-            const { theme } = this.props;
+        if (this.state.hasError) {
+            const theme = themes.light;
             const styles = createStyles(theme);
             return (
                 <View
+                    testID="app-error-boundary"
                     style={styles.screen}
                     accessible
                     accessibilityRole="alert"
@@ -105,14 +128,24 @@ class ThemedAppErrorBoundary extends React.Component<ThemedAppErrorBoundaryProps
                         <Text style={styles.description}>
                             Your saved data is safe. Try loading the app again, or restart Calibrate if the problem continues.
                         </Text>
+                        {this.state.requestId ? (
+                            <Text
+                                testID="app-error-reference"
+                                accessibilityLiveRegion="polite"
+                                style={styles.reference}
+                            >
+                                Support reference: {this.state.requestId}. Include this reference when contacting Calibrate support.
+                            </Text>
+                        ) : null}
                         {__DEV__ ? (
                             <Text style={styles.developmentError} testID="app-error-detail">
-                                Technical details are hidden. Check the development console for the captured error.
+                                Technical details are hidden to protect your privacy.
                             </Text>
                         ) : null}
 
                         <View style={styles.actions}>
                             <Pressable
+                                testID="app-error-retry"
                                 accessibilityRole="button"
                                 accessibilityLabel="Try loading Calibrate again"
                                 onPress={this.resetAppShell}
@@ -121,6 +154,7 @@ class ThemedAppErrorBoundary extends React.Component<ThemedAppErrorBoundaryProps
                                 <Text style={styles.primaryButtonLabel}>Try again</Text>
                             </Pressable>
                             <Pressable
+                                testID="app-error-restart"
                                 accessibilityRole="button"
                                 accessibilityLabel="Restart Calibrate"
                                 onPress={this.restartApp}
@@ -137,11 +171,6 @@ class ThemedAppErrorBoundary extends React.Component<ThemedAppErrorBoundaryProps
         return <React.Fragment key={this.state.resetVersion}>{this.props.children}</React.Fragment>;
     }
 }
-
-export const AppErrorBoundary: React.FC<AppErrorBoundaryProps> = (props) => {
-    const theme = useAppTheme();
-    return <ThemedAppErrorBoundary {...props} theme={theme} />;
-};
 
 const createStyles = (theme: AppTheme) => StyleSheet.create({
     screen: {
@@ -195,6 +224,12 @@ const createStyles = (theme: AppTheme) => StyleSheet.create({
         color: theme.colors.onSurfaceVariant,
         fontSize: typography.body,
         lineHeight: 21
+    },
+    reference: {
+        color: theme.colors.onSurface,
+        fontSize: typography.body,
+        lineHeight: 21,
+        marginTop: spacing.xl
     },
     developmentError: {
         color: theme.colors.onDangerContainer,

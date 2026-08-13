@@ -15,6 +15,7 @@ import { TextField } from '../components/TextField';
 import { getSafeActionErrorMessage } from '../errors/presentation';
 import { formatCalories } from '../utils/format';
 import { spacing, useAppTheme, type AppTheme } from '../theme';
+import { useClientQueryFailureDiagnostic } from '../diagnostics/operationDiagnostics';
 
 type SavedFoodsFilter = 'ALL' | MyFoodSummary['type'];
 
@@ -76,6 +77,12 @@ export function SavedFoodsLibrary({
     const libraryState = useAsyncResourceState(libraryQuery, (data) =>
         data.pages.every((page) => page.items.length === 0)
     );
+    useClientQueryFailureDiagnostic({
+        operation: 'saved_foods_load',
+        isError: libraryQuery.isError || libraryQuery.isFetchNextPageError,
+        error: libraryQuery.error,
+        errorUpdatedAt: libraryQuery.errorUpdatedAt
+    });
     const isWaitingForSearch = normalizedSearch !== debouncedSearch;
 
     const setPinned = useMutation({

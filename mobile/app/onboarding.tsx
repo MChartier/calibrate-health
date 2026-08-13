@@ -60,6 +60,8 @@ import { radius, spacing, useAppTheme } from '../src/theme';
 import { WEIGHT_INPUT_INCREMENT } from '../src/config/inputPrecision';
 import { isNeverEmpty } from '../src/asyncState/resolveAsyncState';
 import { getSafeActionErrorMessage } from '../src/errors/presentation';
+import { reportClientOperationFailure } from '../src/diagnostics/operationDiagnostics';
+
 import { getCaloriePlanPresentation } from '../src/caloriePlanning/presentation';
 import { getMinimumDateOfBirth } from '../src/caloriePlanning/dateBounds';
 import { getHeightPolicyError, isHeightWithinPolicy } from '../src/caloriePlanning/heightInput';
@@ -236,7 +238,8 @@ export default function OnboardingScreen() {
             }
             await finishOnboarding();
         },
-        onError: (error) => {
+onError: (error) => {
+            reportClientOperationFailure('onboarding_complete', error);
             setValidationError(getSafeActionErrorMessage(
                 error,
                 'Unable to complete setup. Check your connection and try again.'

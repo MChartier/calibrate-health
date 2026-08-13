@@ -1,7 +1,14 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { compareSemver, createReleaseMetadata, getReleasePlan, getReleaseTag, validateManifest } from './release-config.mjs';
+import {
+  compareSemver,
+  createReleaseMetadata,
+  getReleasePlan,
+  getReleaseTag,
+  validateClientDiagnosticVersionContract,
+  validateManifest
+} from './release-config.mjs';
 
 const validManifest = {
   schema_version: 1,
@@ -19,12 +26,64 @@ const validManifest = {
   }
 };
 
+const validDiagnosticVersions = {
+  schema_version: 1,
+  previous_web_release: '1.2.2',
+  supported_versions: {
+    web: ['1.2.3', '1.2.2'],
+    android_phone: ['2.0.0', '1.5.0'],
+    wear_os: ['2.0.0', '1.0.0']
+  }
+};
+
+const validDiagnosticOpenApi = `
+- properties: { platform: { const: web }, version: { enum: [1.2.3, 1.2.2] } }
+- properties: { platform: { const: android_phone }, version: { enum: [2.0.0, 1.5.0] } }
+- properties: { platform: { const: wear_os }, version: { enum: [2.0.0, 1.0.0] } }
+`;
+
 test('semantic versions compare numerically', () => {
   assert.equal(compareSemver('1.10.0', '1.9.9'), 1);
   assert.equal(compareSemver('2.0.0-internal', '2.0.0'), -1);
   assert.equal(compareSemver('2.0.0-internal.10', '2.0.0-internal.2'), 1);
   assert.equal(compareSemver('999999999999999999999.0.0', '999999999999999999998.0.0'), 1);
   assert.equal(compareSemver('2.0.0+build.2', '2.0.0+build.1'), 0);
+});
+
+test('diagnostics rollout versions must track the current release and exact OpenAPI enums', () => {
+  assert.deepEqual(
+    validateClientDiagnosticVersionContract(validManifest, validDiagnosticVersions, validDiagnosticOpenApi),
+    []
+  );
+
+  const bumpedManifest = structuredClone(validManifest);
+  bumpedManifest.server.version = '1.2.4';
+  assert.match(
+    validateClientDiagnosticVersionContract(bumpedManifest, validDiagnosticVersions, validDiagnosticOpenApi).join('\n'),
+    /must start with the current release 1\.2\.4/
+  );
+
+  const missingImmediatePrior = structuredClone(validDiagnosticVersions);
+  missingImmediatePrior.previous_web_release = '1.2.2';
+  missingImmediatePrior.supported_versions.web = ['1.2.3', '1.2.1'];
+  assert.match(
+    validateClientDiagnosticVersionContract(validManifest, missingImmediatePrior, validDiagnosticOpenApi).join('\n'),
+    /retain exactly the reviewed previous_web_release/
+  );
+
+  const staleOpenApi = validDiagnosticOpenApi.replace('[2.0.0, 1.5.0]', '[2.0.0]');
+  assert.match(
+    validateClientDiagnosticVersionContract(validManifest, validDiagnosticVersions, staleOpenApi).join('\n'),
+    /OpenAPI client diagnostic android_phone versions do not match/
+  );
+});
+
+test('diagnostics rollout versions stay bounded, unique, and within native support floors', () => {
+  const invalid = structuredClone(validDiagnosticVersions);
+  invalid.supported_versions.android_phone = ['2.0.0', '1.4.9', '1.4.9'];
+  const errors = validateClientDiagnosticVersionContract(validManifest, invalid, validDiagnosticOpenApi).join('\n');
+  assert.match(errors, /must be unique/);
+  assert.match(errors, /outside the supported release range/);
 });
 
 test('manifest rejects malformed semantic versions', () => {

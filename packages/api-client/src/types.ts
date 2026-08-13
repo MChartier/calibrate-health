@@ -1,6 +1,8 @@
 import type {
     ActivityLevel,
     ActivityRecordType,
+    ClientDiagnosticInput as SharedClientDiagnosticInput,
+    ClientDiagnosticResponse as SharedClientDiagnosticResponse,
     HeightUnit,
     MealPeriod,
     MobileDevicePlatform,
@@ -9,6 +11,10 @@ import type {
     Sex,
     WeightUnit
 } from '@calibrate/shared';
+
+export type ClientDiagnosticInput = SharedClientDiagnosticInput;
+export type ClientDiagnosticResponse = SharedClientDiagnosticResponse;
+
 import type {
     CaloriePlanOption as SharedCaloriePlanOption,
     CaloriePlanReasonCode as SharedCaloriePlanReasonCode,

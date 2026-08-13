@@ -22,6 +22,8 @@ import { useQueryOnlineManager } from '../src/connectivity/queryOnlineManager.we
 import { resolveRouteMetadata } from '../src/navigation/routeMetadata';
 import { useBrowserRouteFocus } from '../src/navigation/useBrowserRouteFocus';
 import { scrubBrowserOneTimeTokenFromUrl } from '../src/auth/oneTimeToken';
+import { ClientDiagnosticsRuntime } from '../src/diagnostics/ClientDiagnosticsRuntime';
+import { ClientWebVitalsRuntime } from '../src/diagnostics/ClientWebVitalsRuntime.web';
 
 const queryClient = new QueryClient();
 
@@ -107,7 +109,7 @@ const BrowserPwaStatus: React.FC = () => {
     return <PwaStatusBanner showUpdateNotices={Boolean(user)} hasCompactNavigation={Boolean(user)} />;
 };
 
-export default function RootLayout() {
+const WebRootRuntime: React.FC = () => {
     const theme = useAppTheme();
     useQueryOnlineManager();
     const visualViewportHeight = useVisualViewportHeight();
@@ -135,11 +137,13 @@ export default function RootLayout() {
     }, [theme]);
 
     return (
-        <AppErrorBoundary>
+        <>
             <WebSkipLink />
             <SafeAreaProvider>
                 <QueryClientProvider client={queryClient}>
                     <AuthProvider>
+                        <ClientDiagnosticsRuntime />
+                        <ClientWebVitalsRuntime />
                         <BrowserPwaStatus />
                         <NativePushRegistrationProvider>
                             <BrowserRuntime>
@@ -159,6 +163,14 @@ export default function RootLayout() {
                     </AuthProvider>
                 </QueryClientProvider>
             </SafeAreaProvider>
+        </>
+    );
+};
+
+export default function RootLayout() {
+    return (
+        <AppErrorBoundary>
+            <WebRootRuntime />
         </AppErrorBoundary>
     );
 }

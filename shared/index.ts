@@ -1,5 +1,6 @@
 export * from './date';
 export * from './clientCompatibility';
+export * from './clientDiagnostics';
 export * from './domain';
 export * from './goalDeficit';
 export * from './caloriePolicy';

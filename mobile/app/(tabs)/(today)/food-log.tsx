@@ -43,6 +43,7 @@ import { MEAL_SELECT_OPTIONS } from '../../../src/utils/meals';
 import { type AppTheme, useAppTheme } from '../../../src/theme';
 import { SERVING_INPUT_INCREMENT } from '../../../src/config/inputPrecision';
 import { useBarcodeSearchHandoff } from '../../../src/barcode/useBarcodeSearchHandoff';
+import { reportClientOperationFailure } from '../../../src/diagnostics/operationDiagnostics';
 
 export default function FoodLogScreen() {
     const routeParams = useLocalSearchParams<{ date?: string; meal?: string; openAddFood?: string }>();
@@ -167,6 +168,9 @@ export default function FoodLogScreen() {
             );
             triggerHapticFeedback(user?.haptics_enabled, 'success');
             await invalidateLogQueries([response.target_date]);
+        },
+        onError: (error) => {
+            reportClientOperationFailure('food_copy', error);
         }
     });
 

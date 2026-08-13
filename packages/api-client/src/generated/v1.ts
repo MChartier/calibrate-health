@@ -20,6 +20,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/client-diagnostics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Accept a strictly registered, privacy-safe client failure, degradation, or web-vital tuple. Only the exact root-render failure tuple may be anonymous; all other tuples require a browser session or native bearer token. */
+        post: operations["reportClientDiagnostic"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/calorie-plan/options": {
         parameters: {
             query?: never;
@@ -1765,6 +1782,144 @@ export interface components {
             /** @description Correlation identifier also returned in the x-request-id response header. */
             request_id: string;
         };
+        ClientDiagnosticInput: {
+            /** @enum {string} */
+            event: "client_failure" | "operation_failure" | "degraded_result" | "web_vital";
+            /** @enum {string} */
+            operation: "root_render" | "onboarding_complete" | "food_copy" | "saved_foods_load" | "notification_history_page" | "weight_trend_load" | "largest_contentful_paint" | "interaction_to_next_paint" | "cumulative_layout_shift";
+            /** @enum {string} */
+            route: "app_shell" | "onboarding" | "today" | "saved_foods" | "notifications" | "progress";
+            /** @enum {string} */
+            platform: "web" | "android_phone" | "wear_os";
+            version: string;
+            /** @enum {string} */
+            outcome: "failure" | "degraded" | "good" | "needs_improvement" | "poor";
+            /** @enum {string} */
+            duration_bucket: "not_applicable" | "under_100_ms" | "100_to_200_ms" | "200_to_500_ms" | "500_ms_to_1_s" | "1_to_2_5_s" | "2_5_to_4_s" | "4_s_or_more";
+            request_id?: string;
+        } & (({
+            /** @constant */
+            platform?: "web";
+            /** @enum {unknown} */
+            version?: "0.33.0" | "0.32.1";
+        } | {
+            /** @constant */
+            platform?: "android_phone";
+            /** @enum {unknown} */
+            version?: "0.2.5" | "0.2.4" | "0.2.3" | "0.2.2" | "0.2.1" | "0.1.0";
+        } | {
+            /** @constant */
+            platform?: "wear_os";
+            /** @enum {unknown} */
+            version?: "0.2.5" | "0.2.3" | "0.2.2" | "0.2.1" | "0.2.0";
+        }) & ({
+            /** @constant */
+            event?: "client_failure";
+            /** @constant */
+            operation?: "root_render";
+            /** @constant */
+            route?: "app_shell";
+            /** @constant */
+            outcome?: "failure";
+            /** @constant */
+            duration_bucket?: "not_applicable";
+        } | ({
+            /** @constant */
+            event?: "operation_failure";
+            /** @constant */
+            outcome?: "failure";
+            /** @constant */
+            duration_bucket?: "not_applicable";
+        } & ({
+            /** @constant */
+            operation?: "onboarding_complete";
+            /** @constant */
+            route?: "onboarding";
+        } | {
+            /** @constant */
+            operation?: "food_copy";
+            /** @constant */
+            route?: "today";
+        } | {
+            /** @constant */
+            operation?: "saved_foods_load";
+            /** @constant */
+            route?: "saved_foods";
+        } | {
+            /** @constant */
+            operation?: "notification_history_page";
+            /** @constant */
+            route?: "notifications";
+        } | {
+            /** @constant */
+            operation?: "weight_trend_load";
+            /** @constant */
+            route?: "progress";
+        })) | {
+            /** @constant */
+            event?: "degraded_result";
+            /** @constant */
+            operation?: "weight_trend_load";
+            /** @constant */
+            route?: "progress";
+            /** @constant */
+            outcome?: "degraded";
+            /** @constant */
+            duration_bucket?: "not_applicable";
+        } | ({
+            /** @constant */
+            event?: "web_vital";
+            /** @constant */
+            platform?: "web";
+        } & (({
+            /** @constant */
+            operation?: "largest_contentful_paint";
+        } & ({
+            /** @constant */
+            outcome?: "good";
+            /** @enum {unknown} */
+            duration_bucket?: "under_100_ms" | "100_to_200_ms" | "200_to_500_ms" | "500_ms_to_1_s" | "1_to_2_5_s";
+        } | {
+            /** @constant */
+            outcome?: "needs_improvement";
+            /** @constant */
+            duration_bucket?: "2_5_to_4_s";
+        } | {
+            /** @constant */
+            outcome?: "poor";
+            /** @constant */
+            duration_bucket?: "4_s_or_more";
+        })) | ({
+            /** @constant */
+            operation?: "interaction_to_next_paint";
+        } & ({
+            /** @constant */
+            outcome?: "good";
+            /** @enum {unknown} */
+            duration_bucket?: "under_100_ms" | "100_to_200_ms";
+        } | {
+            /** @constant */
+            outcome?: "needs_improvement";
+            /** @constant */
+            duration_bucket?: "200_to_500_ms";
+        } | {
+            /** @constant */
+            outcome?: "poor";
+            /** @enum {unknown} */
+            duration_bucket?: "500_ms_to_1_s" | "1_to_2_5_s" | "2_5_to_4_s" | "4_s_or_more";
+        })) | {
+            /** @constant */
+            operation?: "cumulative_layout_shift";
+            /** @enum {unknown} */
+            outcome?: "good" | "needs_improvement" | "poor";
+            /** @constant */
+            duration_bucket?: "not_applicable";
+        }))));
+        ClientDiagnosticResponse: {
+            /** @constant */
+            ok: true;
+            request_id: string;
+        };
         ClientConfigResponse: {
             /** @constant */
             api_version: 1;
@@ -2290,6 +2445,51 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ClientConfigResponse"];
+                };
+            };
+        };
+    };
+    reportClientDiagnostic: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClientDiagnosticInput"];
+            };
+        };
+        responses: {
+            /** @description Diagnostic aggregate accepted. */
+            202: {
+                headers: {
+                    "Cache-Control"?: "no-store";
+                    "X-Request-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClientDiagnosticResponse"];
+                };
+            };
+            /** @description Unknown field, enum value, version, request ID, or incoherent registry tuple. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            /** @description Network rate limit exceeded. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
                 };
             };
         };

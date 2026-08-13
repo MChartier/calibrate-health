@@ -30,6 +30,7 @@ import {
     reconcileNotificationRead
 } from './query';
 import { getNotificationAction, getPushStatusPresentation, NATIVE_PUSH_STATES } from './workflow';
+import { useClientQueryFailureDiagnostic } from '../diagnostics/operationDiagnostics';
 
 type DeliveryAction = {
     label: string;
@@ -59,6 +60,12 @@ export function NotificationHistory() {
     const historyState = useAsyncResourceState(historyQuery, (data) =>
         data.pages.every((page) => page.notifications.length === 0)
     );
+    useClientQueryFailureDiagnostic({
+        operation: 'notification_history_page',
+        isError: historyQuery.isError || historyQuery.isFetchNextPageError,
+        error: historyQuery.error,
+        errorUpdatedAt: historyQuery.errorUpdatedAt
+    });
     const notifications = dedupeNotificationPages(historyQuery.data?.pages);
     const unreadCount = historyQuery.data?.pages[0]?.unread_count ?? 0;
 

@@ -3,6 +3,8 @@ import { rateLimit, type RateLimitRequestHandler } from 'express-rate-limit';
 import { isOriginTrustedByPolicy } from '../config/cors';
 
 const AUTH_RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000;
+export const CLIENT_DIAGNOSTICS_RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000;
+export const CLIENT_DIAGNOSTICS_RATE_LIMIT_MAX = 120;
 const SAFE_HTTP_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
 
 type AuthRateLimiters = {
@@ -49,6 +51,24 @@ export function createAuthRateLimiters(): AuthRateLimiters {
     }),
     pairingExchange: createLimiter(30, 'Too many Wear pairing attempts. Try again later.')
   };
+}
+
+/** Anonymous diagnostics accept only fixed tuples, with an IP ceiling for aggregate integrity. */
+export function createClientDiagnosticsRateLimiter(options: {
+  windowMs?: number;
+  limit?: number;
+} = {}): RateLimitRequestHandler {
+  return rateLimit({
+    windowMs: options.windowMs ?? CLIENT_DIAGNOSTICS_RATE_LIMIT_WINDOW_MS,
+    limit: options.limit ?? CLIENT_DIAGNOSTICS_RATE_LIMIT_MAX,
+    standardHeaders: 'draft-8',
+    legacyHeaders: false,
+    message: { message: 'Too many client diagnostics. Try again later.' },
+    handler: (_req, res, _next, options) => {
+      res.setHeader('cache-control', 'no-store');
+      res.status(options.statusCode).send(options.message);
+    }
+  });
 }
 
 function normalizedOrigin(value: string | undefined): string | null {

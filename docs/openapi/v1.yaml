@@ -17,6 +17,41 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ClientConfigResponse'
+  /api/v1/client-diagnostics:
+    post:
+      operationId: reportClientDiagnostic
+      description: Accept a strictly registered, privacy-safe client failure, degradation, or web-vital tuple. Only the exact root-render failure tuple may be anonymous; all other tuples require a browser session or native bearer token.
+      security:
+        - mobileBearer: []
+        - {}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ClientDiagnosticInput' }
+      responses:
+        '202':
+          description: Diagnostic aggregate accepted.
+          headers:
+            Cache-Control:
+              schema: { type: string, const: no-store }
+            X-Request-Id:
+              schema: { type: string }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ClientDiagnosticResponse' }
+        '400':
+          description: Unknown field, enum value, version, request ID, or incoherent registry tuple.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiError' }
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          description: Network rate limit exceeded.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiError' }
   /api/v1/calorie-plan/options:
     post:
       operationId: getCaloriePlanOptions
@@ -2574,6 +2609,91 @@ components:
         request_id:
           type: string
           description: Correlation identifier also returned in the x-request-id response header.
+    ClientDiagnosticInput:
+      type: object
+      additionalProperties: false
+      required: [event, operation, route, platform, version, outcome, duration_bucket]
+      properties:
+        event:
+          type: string
+          enum: [client_failure, operation_failure, degraded_result, web_vital]
+        operation:
+          type: string
+          enum: [root_render, onboarding_complete, food_copy, saved_foods_load, notification_history_page, weight_trend_load, largest_contentful_paint, interaction_to_next_paint, cumulative_layout_shift]
+        route:
+          type: string
+          enum: [app_shell, onboarding, today, saved_foods, notifications, progress]
+        platform:
+          type: string
+          enum: [web, android_phone, wear_os]
+        version:
+          type: string
+        outcome:
+          type: string
+          enum: [failure, degraded, good, needs_improvement, poor]
+        duration_bucket:
+          type: string
+          enum: [not_applicable, under_100_ms, 100_to_200_ms, 200_to_500_ms, 500_ms_to_1_s, 1_to_2_5_s, 2_5_to_4_s, 4_s_or_more]
+        request_id:
+          type: string
+          pattern: '^(?:[a-fA-F0-9]{16,64}|[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[1-5][a-fA-F0-9]{3}-[89aAbB][a-fA-F0-9]{3}-[a-fA-F0-9]{12})$'
+      allOf:
+        - oneOf:
+            - properties: { platform: { const: web }, version: { enum: [0.33.0, 0.32.1] } }
+            - properties: { platform: { const: android_phone }, version: { enum: [0.2.5, 0.2.4, 0.2.3, 0.2.2, 0.2.1, 0.1.0] } }
+            - properties: { platform: { const: wear_os }, version: { enum: [0.2.5, 0.2.3, 0.2.2, 0.2.1, 0.2.0] } }
+        - oneOf:
+            - properties:
+                event: { const: client_failure }
+                operation: { const: root_render }
+                route: { const: app_shell }
+                outcome: { const: failure }
+                duration_bucket: { const: not_applicable }
+            - properties:
+                event: { const: operation_failure }
+                outcome: { const: failure }
+                duration_bucket: { const: not_applicable }
+              oneOf:
+                - properties: { operation: { const: onboarding_complete }, route: { const: onboarding } }
+                - properties: { operation: { const: food_copy }, route: { const: today } }
+                - properties: { operation: { const: saved_foods_load }, route: { const: saved_foods } }
+                - properties: { operation: { const: notification_history_page }, route: { const: notifications } }
+                - properties: { operation: { const: weight_trend_load }, route: { const: progress } }
+            - properties:
+                event: { const: degraded_result }
+                operation: { const: weight_trend_load }
+                route: { const: progress }
+                outcome: { const: degraded }
+                duration_bucket: { const: not_applicable }
+            - properties:
+                event: { const: web_vital }
+                platform: { const: web }
+              oneOf:
+                - properties:
+                    operation: { const: largest_contentful_paint }
+                  oneOf:
+                    - properties: { outcome: { const: good }, duration_bucket: { enum: [under_100_ms, 100_to_200_ms, 200_to_500_ms, 500_ms_to_1_s, 1_to_2_5_s] } }
+                    - properties: { outcome: { const: needs_improvement }, duration_bucket: { const: 2_5_to_4_s } }
+                    - properties: { outcome: { const: poor }, duration_bucket: { const: 4_s_or_more } }
+                - properties:
+                    operation: { const: interaction_to_next_paint }
+                  oneOf:
+                    - properties: { outcome: { const: good }, duration_bucket: { enum: [under_100_ms, 100_to_200_ms] } }
+                    - properties: { outcome: { const: needs_improvement }, duration_bucket: { const: 200_to_500_ms } }
+                    - properties: { outcome: { const: poor }, duration_bucket: { enum: [500_ms_to_1_s, 1_to_2_5_s, 2_5_to_4_s, 4_s_or_more] } }
+                - properties:
+                    operation: { const: cumulative_layout_shift }
+                    outcome: { enum: [good, needs_improvement, poor] }
+                    duration_bucket: { const: not_applicable }
+    ClientDiagnosticResponse:
+      type: object
+      additionalProperties: false
+      required: [ok, request_id]
+      properties:
+        ok: { type: boolean, const: true }
+        request_id:
+          type: string
+          pattern: '^(?:[a-fA-F0-9]{16,64}|[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[1-5][a-fA-F0-9]{3}-[89aAbB][a-fA-F0-9]{3}-[a-fA-F0-9]{12})$'
     ClientConfigResponse:
       type: object
       required:

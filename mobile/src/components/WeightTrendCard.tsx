@@ -33,6 +33,10 @@ import {
     formatEstimatedTrendRange,
     getLatestWeightTrendSnapshot,
 } from '../weightTrend/presentation';
+import {
+    useClientQueryFailureDiagnostic,
+    useWeightTrendDegradationDiagnostic
+} from '../diagnostics/operationDiagnostics';
 
 type TrendRange = 'week' | 'month' | 'year' | 'all';
 
@@ -194,6 +198,13 @@ export const WeightTrendCard: React.FC<WeightTrendCardProps> = ({
 
     const hasWeightHistory = (trendQuery.data?.meta.total_points ?? 0) > 0;
     const trendUnavailable = trendSummary?.status === 'unavailable';
+    useClientQueryFailureDiagnostic({
+        operation: 'weight_trend_load',
+        isError: trendQuery.isError,
+        error: trendQuery.error,
+        errorUpdatedAt: trendQuery.errorUpdatedAt
+    });
+    useWeightTrendDegradationDiagnostic(trendUnavailable, trendQuery.dataUpdatedAt);
     const latestSnapshot = getLatestWeightTrendSnapshot(metrics, trendSummary);
     const visibleTrendSummary = describeVisibleWeightTrend(metrics, user?.weight_unit);
     const showModelBoundary = (range === 'year' || range === 'all') && chartLayout.modelBoundaryPoint !== null;
