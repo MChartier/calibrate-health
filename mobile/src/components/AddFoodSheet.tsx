@@ -697,7 +697,7 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
                     }}
                 />
             </View>
-            <SegmentedControl options={ADD_FOOD_MODES} value={mode} onChange={selectMode} />
+            <SegmentedControl accessibilityLabel="Add food method" options={ADD_FOOD_MODES} value={mode} onChange={selectMode} />
             <AppButton
                 title="Saved foods"
                 variant="ghost"

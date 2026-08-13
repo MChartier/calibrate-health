@@ -108,6 +108,7 @@ export const ProfileEnergyFields: React.FC<ProfileEnergyFieldsProps> = ({
             <>
                 <AppText variant="label">Height unit</AppText>
                 <SegmentedControl
+                    accessibilityLabel="Height unit"
                     options={HEIGHT_UNIT_OPTIONS}
                     value={heightUnit}
                     onChange={onHeightUnitChange}

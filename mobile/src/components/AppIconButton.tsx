@@ -1,10 +1,11 @@
 import React from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, type PressableProps } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, View, type PressableProps } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { type AppTheme, useAppTheme } from '../theme';
 import { useFocusVisible } from './useFocusVisible';
 
-type AppIconButtonProps = Omit<PressableProps, 'children'> & {
+type AppIconButtonProps = Omit<PressableProps, 'accessibilityLabel' | 'children'> & {
+    accessibilityLabel: string;
     icon: React.ComponentProps<typeof Ionicons>['name'];
     iconColor?: string;
     iconSize?: number;
@@ -75,9 +76,16 @@ export const AppIconButton: React.FC<AppIconButtonProps> = ({
                 typeof style === 'function' ? style({ pressed }) : style
             ]}
         >
-            {busy
-                ? <ActivityIndicator color={defaultIconColor} />
-                : <Ionicons name={icon} size={iconSize} color={iconColor ?? defaultIconColor} />}
+            <View
+                accessible={false}
+                accessibilityElementsHidden
+                importantForAccessibility="no-hide-descendants"
+                aria-hidden
+            >
+                {busy
+                    ? <ActivityIndicator color={defaultIconColor} />
+                    : <Ionicons name={icon} size={iconSize} color={iconColor ?? defaultIconColor} />}
+            </View>
         </Pressable>
     );
 };

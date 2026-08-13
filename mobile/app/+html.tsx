@@ -1,5 +1,6 @@
 import { type PropsWithChildren } from 'react';
 import { ScrollViewStyleReset } from 'expo-router/html';
+import { WEB_ACCESSIBILITY_STYLES } from '../src/accessibility/webAccessibilityStyles';
 
 const ONE_TIME_TOKEN_BOOTSTRAP = `
 (function () {
@@ -29,6 +30,7 @@ export default function RootHtml({ children }: PropsWithChildren) {
                 <meta name="color-scheme" content="light dark" />
                 <link rel="manifest" href="/manifest.webmanifest" />
                 <link rel="icon" href="/calibrate-icon.svg" type="image/svg+xml" />
+                <style dangerouslySetInnerHTML={{ __html: WEB_ACCESSIBILITY_STYLES }} />
                 <script dangerouslySetInnerHTML={{ __html: ONE_TIME_TOKEN_BOOTSTRAP }} />
                 <ScrollViewStyleReset />
             </head>

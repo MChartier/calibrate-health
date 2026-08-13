@@ -23,7 +23,6 @@ import { useFoodDayStatus } from '../../../src/components/FoodTrackingStatus';
 import { NumberStepperField } from '../../../src/components/NumberStepperField';
 import { OverlaySelect } from '../../../src/components/OverlaySelect';
 import { TabScreen } from '../../../src/components/TabScreen';
-import { SectionHeader } from '../../../src/components/SectionHeader';
 import { SaveMealAsRecipeSheet } from '../../../src/components/SaveMealAsRecipeSheet';
 import { SkeletonBlock } from '../../../src/components/SkeletonBlock';
 import { TextField } from '../../../src/components/TextField';
@@ -395,12 +394,13 @@ export default function FoodLogScreen() {
 
             <BottomSheetModal
                 visible={Boolean(editEntry)}
+                title="Edit food"
+                description="Update this log entry snapshot."
                 onRequestClose={() => {
                     setIsEditMealSelectorOpen(false);
                     setEditEntry(null);
                 }}
             >
-                <SectionHeader title="Edit food" description="Update this log entry snapshot." />
                 <TextField label="Food name" value={editName} onChangeText={setEditName} />
                 {editAmountConfig && (
                     <NumberStepperField

@@ -4,6 +4,7 @@ import { AppText } from '../components/AppText';
 import { SettingsRow, SettingsSection, SettingsStatusRow } from '../components/settings/SettingsList';
 import { MOBILE_CLIENT_IDENTITY } from '../config/nativeClient';
 import { spacing, useAppTheme } from '../theme';
+import { ASYNC_RESOURCE_STATES, type AsyncResourceState } from '../asyncState/resolveAsyncState';
 
 export type SettingsSheetId =
     | 'preferences'
@@ -43,6 +44,11 @@ type SettingsHomeProps = {
 
 function getAvatarLabel(email?: string | null): string {
     return email?.trim().charAt(0).toUpperCase() || 'C';
+}
+
+export function shouldShowSettingsResourceStatus(state: AsyncResourceState, isWeb: boolean): boolean {
+    if (isWeb && state.kind === ASYNC_RESOURCE_STATES.STALE) return false;
+    return state.kind !== ASYNC_RESOURCE_STATES.CONTENT && state.kind !== ASYNC_RESOURCE_STATES.EMPTY;
 }
 
 export function SettingsHome({

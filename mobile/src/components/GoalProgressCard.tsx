@@ -176,7 +176,7 @@ export const GoalProgressCard: React.FC<GoalProgressCardProps> = ({
     } else if (hasReachedGoal) {
         progressDetails = (
             <>
-                <ProgressBar value={1} tone="primary" />
+                <ProgressBar accessibilityLabel="Goal progress" value={1} tone="primary" />
                 <View style={styles.goalEndpoints}>
                     <AppText variant="muted">Start {formatWeight(goal.start_weight, user?.weight_unit)}</AppText>
                     <AppText variant="muted" style={styles.progressSummary}>100% reached</AppText>
@@ -196,7 +196,7 @@ export const GoalProgressCard: React.FC<GoalProgressCardProps> = ({
     } else {
         progressDetails = (
             <>
-                <ProgressBar value={(progress?.percent ?? 0) / 100} tone="primary" />
+                <ProgressBar accessibilityLabel="Goal progress" value={(progress?.percent ?? 0) / 100} tone="primary" />
                 <View style={styles.goalEndpoints}>
                     <AppText variant="muted">Start {formatWeight(goal.start_weight, user?.weight_unit)}</AppText>
                     {progress && (

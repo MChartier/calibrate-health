@@ -20,6 +20,13 @@ async function expectFocusedRouteTitle(page: Page, title: string, documentTitle:
   await expect(page).toHaveTitle(documentTitle);
 }
 
+async function expectDirectEntryRouteTitle(page: Page, title: string, documentTitle: string) {
+  const heading = page.locator('#route-focus-title');
+  await expect(heading).toHaveText(title);
+  await expect(heading).not.toBeFocused();
+  await expect(page).toHaveTitle(documentTitle);
+}
+
 async function capture(page: Page, filename: string) {
   await mkdir(EVIDENCE_DIR, { recursive: true });
   await page.screenshot({
@@ -52,7 +59,7 @@ test('Activity direct entry falls back to its registered Settings parent', async
   await ux.install('populated');
   await page.goto('/activity');
 
-  await expectFocusedRouteTitle(page, 'Activity', 'Activity - Calibrate');
+  await expectDirectEntryRouteTitle(page, 'Activity', 'Activity - Calibrate');
   await expect(page.getByRole('button', { name: 'Back to Settings', exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Open notifications' })).toBeVisible();
   await expectNoHorizontalOverflow(page);

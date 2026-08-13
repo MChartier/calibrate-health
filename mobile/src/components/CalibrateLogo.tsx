@@ -3,7 +3,9 @@ import Svg, { Circle, Defs, LinearGradient, Path, Stop } from 'react-native-svg'
 import { useAppTheme } from '../theme';
 
 type CalibrateLogoProps = {
+    accessibilityLabel?: string;
     size?: number;
+    testID?: string;
 };
 
 const LOGO_VIEW_BOX = '0 0 64 64';
@@ -14,9 +16,21 @@ const LOGO_NEEDLE_STROKE_WIDTH = 7; // Controls the visual weight of the green g
 /**
  * Native SVG version of the Calibrate gauge mark used in the PWA header.
  */
-export const CalibrateLogo: React.FC<CalibrateLogoProps> = ({ size = 32 }) => {
+export const CalibrateLogo: React.FC<CalibrateLogoProps> = ({ accessibilityLabel, size = 32, testID }) => {
     const theme = useAppTheme();
-    return <Svg width={size} height={size} viewBox={LOGO_VIEW_BOX} accessibilityRole="image" accessibilityLabel="calibrate">
+    const decorative = !accessibilityLabel;
+    return <Svg
+        width={size}
+        height={size}
+        viewBox={LOGO_VIEW_BOX}
+        accessible={!decorative}
+        accessibilityElementsHidden={decorative}
+        importantForAccessibility={decorative ? 'no-hide-descendants' : 'auto'}
+        aria-hidden={decorative}
+        accessibilityRole={decorative ? undefined : 'image'}
+        accessibilityLabel={accessibilityLabel}
+        testID={testID}
+    >
         <Defs>
             <LinearGradient id="calibrateNeedleGradient" x1="20" y1="48" x2="50" y2="18" gradientUnits="userSpaceOnUse">
                 <Stop stopColor={theme.colors.primary} />

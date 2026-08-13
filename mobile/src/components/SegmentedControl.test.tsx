@@ -9,10 +9,19 @@ const OPTIONS = [
     { value: 'search', label: 'Search' },
     { value: 'recipes', label: 'Recipes' }
 ] as const;
+type OptionValue = (typeof OPTIONS)[number]['value'];
 
 function TestControl() {
-    const [value, setValue] = useState<(typeof OPTIONS)[number]['value']>('quick');
-    return <SegmentedControl testID="segmented-control" options={[...OPTIONS]} value={value} onChange={setValue} />;
+    const [value, setValue] = useState<OptionValue>('quick');
+    return (
+        <SegmentedControl<OptionValue>
+            accessibilityLabel="Add food method"
+            testID="segmented-control"
+            options={OPTIONS}
+            value={value}
+            onChange={setValue}
+        />
+    );
 }
 
 describe('SegmentedControl', () => {
@@ -22,6 +31,7 @@ describe('SegmentedControl', () => {
             screen: { width: 1_024, height: 768, scale: 1, fontScale: 1 }
         });
     });
+
     it('keeps previously selected labels visible when the selection changes', () => {
         const { getByRole, getByText } = render(<TestControl />);
 
@@ -41,6 +51,32 @@ describe('SegmentedControl', () => {
         expect(getByText('Quick')).toBeTruthy();
         expect(getByText('Search')).toBeTruthy();
         expect(getByText('Recipes')).toBeTruthy();
+    });
+
+    it('uses one named roving tab stop and selects with arrow, Home, and End keys', () => {
+        Dimensions.set({
+            window: { width: 1_024, height: 768, scale: 1, fontScale: 1 },
+            screen: { width: 1_024, height: 768, scale: 1, fontScale: 1 }
+        });
+        const { getAllByRole, getByRole, getByTestId } = render(<TestControl />);
+        const group = getByTestId('segmented-control');
+        expect(group.props.accessibilityLabel).toBe('Add food method');
+        expect(group.props.accessibilityRole).toBe('radiogroup');
+        expect(group.props['aria-orientation']).toBe('horizontal');
+
+        let radios = getAllByRole('radio');
+        expect(radios.map((radio) => radio.props.tabIndex)).toEqual([0, -1, -1]);
+
+        fireEvent(radios[0], 'keyDown', { key: 'ArrowRight', preventDefault: jest.fn() });
+        radios = getAllByRole('radio');
+        expect(radios.map((radio) => radio.props.accessibilityState.checked)).toEqual([false, true, false]);
+        expect(radios.map((radio) => radio.props.tabIndex)).toEqual([-1, 0, -1]);
+
+        fireEvent(radios[1], 'keyDown', { key: 'End', preventDefault: jest.fn() });
+        expect(getByRole('radio', { name: 'Recipes' }).props.accessibilityState.checked).toBe(true);
+
+        fireEvent(getByRole('radio', { name: 'Recipes' }), 'keyDown', { key: 'Home', preventDefault: jest.fn() });
+        expect(getByRole('radio', { name: 'Quick' }).props.accessibilityState.checked).toBe(true);
     });
 
     it('stacks three options at compact width so labels remain whole', () => {

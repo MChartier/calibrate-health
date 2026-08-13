@@ -41,7 +41,11 @@ import {
     DeleteAccountSheet,
     ProfileEditorSheet
 } from '../../../src/settings/AccountSettingsSheets';
-import { SettingsHome, type SettingsSheetId } from '../../../src/settings/SettingsHome';
+import {
+    SettingsHome,
+    shouldShowSettingsResourceStatus,
+    type SettingsSheetId
+} from '../../../src/settings/SettingsHome';
 import { AccountSessionsPanel } from '../../../src/settings/AccountSessionsPanel';
 import { ReminderSettingsPanel } from '../../../src/settings/ReminderSettingsPanel';
 import {
@@ -67,10 +71,6 @@ import { getHeightPolicyError, isHeightWithinPolicy } from '../../../src/calorie
 const MIN_PASSWORD_LENGTH = 8;
 function getAvatarLabel(email?: string | null): string {
     return email?.trim().charAt(0).toUpperCase() || 'C';
-}
-
-function shouldShowResourceStatus(state: AsyncResourceState): boolean {
-    return state.kind !== ASYNC_RESOURCE_STATES.CONTENT && state.kind !== ASYNC_RESOURCE_STATES.EMPTY;
 }
 
 function hasResolvedResourceData(state: AsyncResourceState): boolean {
@@ -517,7 +517,7 @@ export default function SettingsScreen() {
                     />
                 </AppCard>
             )}
-            {shouldShowResourceStatus(profileState) && (
+            {shouldShowSettingsResourceStatus(profileState, isWeb) && (
                 <AsyncStateBoundary
                     state={profileState}
                     resourceLabel="profile settings"
@@ -528,7 +528,7 @@ export default function SettingsScreen() {
                     {null}
                 </AsyncStateBoundary>
             )}
-            {shouldShowResourceStatus(goalState) && (
+            {shouldShowSettingsResourceStatus(goalState, isWeb) && (
                 <AsyncStateBoundary
                     state={goalState}
                     resourceLabel="your current goal"
@@ -573,9 +573,9 @@ export default function SettingsScreen() {
             >
                 <View testID="settings-preferences-sheet" style={styles.sheetContent}>
                     <AppText variant="label">Weight unit</AppText>
-                    <SegmentedControl options={WEIGHT_UNIT_OPTIONS} value={weightUnit} onChange={setWeightUnit} />
+                    <SegmentedControl accessibilityLabel="Weight unit" options={WEIGHT_UNIT_OPTIONS} value={weightUnit} onChange={setWeightUnit} />
                     <AppText variant="label">Height unit</AppText>
-                    <SegmentedControl options={HEIGHT_UNIT_OPTIONS} value={heightUnit} onChange={setHeightUnit} />
+                    <SegmentedControl accessibilityLabel="Height unit" options={HEIGHT_UNIT_OPTIONS} value={heightUnit} onChange={setHeightUnit} />
                     <ReminderSettingsPanel
                         timezone={timezone}
                         logFoodEnabled={logFoodReminders}
