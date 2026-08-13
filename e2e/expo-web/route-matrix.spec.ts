@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
+import type { Page } from '@playwright/test';
 import {
   DETERMINISTIC_CLOCK_STEP_MS,
   FROZEN_NOW,
@@ -26,6 +27,15 @@ const AUTHENTICATED_ROUTE_GROUPS = [
   { name: 'public and primary routes', routes: ROUTE_MATRIX.slice(0, 10) },
   { name: 'secondary and alias routes', routes: ROUTE_MATRIX.slice(10) },
 ];
+const BARCODE_ROUTE_HEADING = /Checking camera|Camera permission|Camera access denied|Camera access blocked|Camera unavailable|Scan barcode|Food logging is unavailable/;
+
+function waitForBarcodeFoodDay(page: Page) {
+  return page.waitForResponse((response) => (
+    new URL(response.url()).pathname === '/api/v1/food-days'
+    && response.request().method() === 'GET'
+    && response.ok()
+  ));
+}
 
 function collectRouteFiles(directory: string): string[] {
   return fs.readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
@@ -104,7 +114,19 @@ for (const routeGroup of AUTHENTICATED_ROUTE_GROUPS) {
     await ux.install('populated');
 
     for (const route of routeGroup.routes) {
+      const authRestored = route.authenticatedPath === '/barcode'
+        ? page.waitForResponse((response) => (
+            new URL(response.url()).pathname === '/auth/me'
+            && response.request().method() === 'GET'
+            && response.ok()
+          ))
+        : null;
+      const barcodeFoodDayReady = route.authenticatedPath === '/barcode'
+        ? waitForBarcodeFoodDay(page)
+        : null;
       const directResponse = await page.goto(route.path);
+      await authRestored;
+      await barcodeFoodDayReady;
       expect(directResponse?.status(), `authenticated direct entry for ${route.path}`).toBe(200);
       await expect(page, `authenticated destination for ${route.path}`).toHaveURL((url) => (
         url.pathname === route.authenticatedPath
@@ -117,7 +139,7 @@ for (const routeGroup of AUTHENTICATED_ROUTE_GROUPS) {
         route.authenticatedPath as keyof typeof AUTHENTICATED_DESTINATION_HEADINGS
       ];
       if (route.path === '/log') {
-        await expect(page.getByRole('dialog').filter({ hasText: 'Add food' })).toBeVisible();
+        await expect(page.getByRole('dialog', { name: 'Add food', exact: true })).toBeVisible();
       } else if (publicHeading) {
         await expect(page.getByRole('heading', { name: publicHeading, exact: true })).toBeVisible();
       } else if (shellHeading) {
@@ -126,7 +148,7 @@ for (const routeGroup of AUTHENTICATED_ROUTE_GROUPS) {
         await expect(page.getByRole('dialog', { name: 'Weight entry', exact: true })).toBeVisible();
       } else if (route.authenticatedPath === '/barcode') {
         await expect(page.getByRole('heading', {
-          name: /Camera permission|Scan barcode|Food logging is unavailable/,
+          name: BARCODE_ROUTE_HEADING,
         }).first()).toBeVisible();
       }
 
@@ -193,10 +215,18 @@ test('barcode preserves its direct route while authentication restoration is pen
   await expect(page).toHaveURL((url) => url.pathname === '/barcode');
   await expect(page.getByText('Restoring session...', { exact: true })).toBeVisible();
 
+  const restoredResponse = page.waitForResponse((response) => (
+    new URL(response.url()).pathname === '/auth/me'
+    && response.request().method() === 'GET'
+    && response.ok()
+  ));
+  const restoredFoodDay = waitForBarcodeFoodDay(page);
   restoreSession();
+  await Promise.all([restoredResponse, restoredFoodDay]);
+  await expect(page.getByText('Restoring session...', { exact: true })).toBeHidden();
   await expect(page).toHaveURL((url) => url.pathname === '/barcode');
   await expect(page.getByRole('heading', {
-    name: /Camera permission|Scan barcode|Food logging is unavailable/,
+    name: BARCODE_ROUTE_HEADING,
   }).first()).toBeVisible();
 });
 

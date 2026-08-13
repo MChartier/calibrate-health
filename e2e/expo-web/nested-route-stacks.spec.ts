@@ -1,7 +1,7 @@
 import { mkdir } from 'node:fs/promises';
 import path from 'node:path';
 import type { Page } from '@playwright/test';
-import { expect, expectApiFailure, test } from './fixtures';
+import { expect, expectApiFailure, hideTransientPwaNotices, test } from './fixtures';
 
 const EVIDENCE_DIR = path.resolve('docs/screenshots/launch-07');
 
@@ -20,7 +20,7 @@ async function expectFocusedRouteTitle(page: Page, title: string, documentTitle:
   await expect(page).toHaveTitle(documentTitle);
 }
 
-async function expectDirectEntryRouteTitle(page: Page, title: string, documentTitle: string) {
+async function expectDirectEntryTitle(page: Page, title: string, documentTitle: string) {
   const heading = page.locator('#route-focus-title');
   await expect(heading).toHaveText(title);
   await expect(heading).not.toBeFocused();
@@ -28,6 +28,8 @@ async function expectDirectEntryRouteTitle(page: Page, title: string, documentTi
 }
 
 async function capture(page: Page, filename: string) {
+  if (process.env.CALIBRATE_CAPTURE_EVIDENCE !== '1') return;
+
   await mkdir(EVIDENCE_DIR, { recursive: true });
   await page.screenshot({
     path: path.join(EVIDENCE_DIR, filename),
@@ -45,7 +47,7 @@ test('Trend keeps the app shell and browser Back returns through real Progress h
   await expectFocusedRouteTitle(page, 'Trend', 'Trend - Calibrate');
   await expect(page.getByRole('button', { name: 'Go back', exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Open notifications' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Open account', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Account & settings', exact: true })).toBeVisible();
   await expectNoHorizontalOverflow(page);
   await capture(page, 'trend-desktop-1024x1000.png');
 
@@ -59,7 +61,7 @@ test('Activity direct entry falls back to its registered Settings parent', async
   await ux.install('populated');
   await page.goto('/activity');
 
-  await expectDirectEntryRouteTitle(page, 'Activity', 'Activity - Calibrate');
+  await expectDirectEntryTitle(page, 'Activity', 'Activity - Calibrate');
   await expect(page.getByRole('button', { name: 'Back to Settings', exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Open notifications' })).toBeVisible();
   await expectNoHorizontalOverflow(page);
@@ -108,7 +110,8 @@ test('signed-in not-found recovery returns to Today', async ({ page, ux }) => {
   expectApiFailure(page, { method: 'GET', pathname: '/missing-signed-in-page', status: 404 });
   await page.goto('/missing-signed-in-page');
 
-  await expectFocusedRouteTitle(page, 'Page not found', 'Page not found - Calibrate');
+  await expectDirectEntryTitle(page, 'Page not found', 'Page not found - Calibrate');
+  await hideTransientPwaNotices(page);
   await page.getByRole('button', { name: 'Go to Today', exact: true }).click();
   await expect(page).toHaveURL((url) => url.pathname === '/today');
 });
@@ -130,7 +133,7 @@ test('signed-out not-found recovery returns to the hosted home', async ({ page, 
   }));
   await page.goto('/missing-signed-out-page');
 
-  await expectFocusedRouteTitle(page, 'Page not found', 'Page not found - Calibrate');
+  await expectDirectEntryTitle(page, 'Page not found', 'Page not found - Calibrate');
   await page.getByRole('button', { name: 'Go to Calibrate home', exact: true }).click();
   await expect(page).toHaveURL((url) => url.pathname === '/');
 });

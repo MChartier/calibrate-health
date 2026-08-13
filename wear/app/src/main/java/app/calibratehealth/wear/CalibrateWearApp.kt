@@ -36,7 +36,9 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.progressBarRangeInfo
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -202,7 +204,15 @@ private fun SummaryScreen(
                     onClick = onOpenConnection,
                     label = { Text("Connection") },
                     secondaryLabel = { Text(connectionLabel(appState, homeState.syncStatus)) },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clearAndSetSemantics {
+                            contentDescription = "Connection. ${connectionLabel(appState, homeState.syncStatus)}"
+                            onClick(label = "Connection") {
+                                onOpenConnection()
+                                true
+                            }
+                        }
                 )
             }
         }
@@ -318,6 +328,13 @@ private fun ReadySummaryDashboard(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = SUMMARY_ITEM_HORIZONTAL_PADDING)
+                            .clearAndSetSemantics {
+                                contentDescription = "Connection. ${connectionLabel(WearAppState.Ready(summary), homeState.syncStatus)}"
+                                onClick(label = "Connection") {
+                                    onOpenConnection()
+                                    true
+                                }
+                            }
                     )
                 }
                 item(key = "bottom-space") {

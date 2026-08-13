@@ -1,5 +1,10 @@
 import type { Page, Route } from '@playwright/test';
-import { expect, expectApiFailure, test } from './fixtures';
+import {
+  activateFixtureOffline,
+  expect,
+  expectApiFailure,
+  test,
+} from './fixtures';
 
 const unexpectedApiRequests = new WeakMap<Page, string[]>();
 
@@ -190,6 +195,9 @@ async function stubAuthenticatedApi(page: Page, options: AuthenticatedApiOptions
     const url = new URL(route.request().url());
     const pathname = url.pathname;
     if (pathname === '/auth/me') return fulfillJson(route, { user: AUTHENTICATED_USER });
+    if (pathname === '/api/v1/client-diagnostics' && route.request().method() === 'POST') {
+      return route.fulfill({ status: 204 });
+    }
     if (pathname === '/api/v1/client-config') {
       return fulfillJson(route, {
         api_version: 1,
@@ -203,6 +211,7 @@ async function stubAuthenticatedApi(page: Page, options: AuthenticatedApiOptions
         },
       });
     }
+    if (pathname === '/auth/sessions') return fulfillJson(route, { sessions: [] });
     if (pathname === '/auth/mobile/sessions') return fulfillJson(route, { sessions: [] });
     if (pathname === '/api/v1/user/profile') {
       return fulfillJson(route, options.profileResponse ?? PROFILE_RESPONSE);
@@ -368,7 +377,7 @@ test('production export boots to the signed-out shell at each release viewport',
   await page.goto('/');
 
   await expect(page).toHaveURL((url) => url.pathname === '/');
-  await expect(page).toHaveTitle('calibrate');
+  await expect(page).toHaveTitle('Calibrate - Private calorie tracking');
   await expect(page.getByText('Calibrate Health', { exact: true })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Sign in', exact: true })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Create account', exact: true })).toBeVisible();
@@ -387,16 +396,19 @@ test('installed shell reports connection loss and recovery', async ({ page }) =>
     if ('serviceWorker' in navigator) await navigator.serviceWorker.ready;
   });
 
-  await page.context().setOffline(true);
+  await activateFixtureOffline(page);
   await expect(page.getByText("You're offline", { exact: true })).toBeVisible();
   await expect(page.getByText(
-    'Queued changes stay on this device and sync when the server is reachable.',
+    'Some information may be out of date. Reconnect before making changes.',
     { exact: true }
   )).toBeVisible();
 
   await page.context().setOffline(false);
   await expect(page.getByText('Back online', { exact: true })).toBeVisible();
-  await expect(page.getByText('Queued changes are syncing now.', { exact: true })).toBeVisible();
+  await expect(page.getByText(
+    'Connection restored. Calibrate is refreshing account data.',
+    { exact: true }
+  )).toBeVisible();
 });
 
 test('auth deep links and reloads resolve through the static-host fallback', async ({ page }) => {
@@ -442,14 +454,14 @@ test('authenticated shell renders real dashboard data and navigates release surf
   await foodLogSummary.click();
   await expect(page).toHaveURL((url) => url.pathname === '/food-log' && Boolean(url.searchParams.get('date')));
   await expect(page.getByRole('heading', { name: 'Food log', exact: true })).toBeVisible();
-  await page.getByRole('button', { name: 'Expand Breakfast', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Collapse Breakfast', exact: true })).toBeVisible();
   await expect(page.getByRole('main').getByText('Greek yogurt and berries', { exact: true })).toBeVisible();
   await expectNoHorizontalOverflow(page);
 
   await page.getByRole('tab', { name: /Today$/ }).click();
   await expect(page).toHaveURL(/\/today$/);
 
-  await page.getByRole('button', { name: 'Open notifications', exact: true }).click();
+  await page.getByRole('button', { name: 'Open notifications', exact: true }).press('Enter');
   await expect(page.getByRole('heading', { name: 'Notifications', exact: true })).toBeVisible();
   await expect(page.getByText('All caught up', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Close notifications', exact: true }).click();
@@ -457,10 +469,11 @@ test('authenticated shell renders real dashboard data and navigates release surf
 
   await page.goto('/log?date=2026-07-18&meal=DINNER');
   await expect(page).toHaveURL((url) => url.pathname === '/today' && url.searchParams.get('openAddFood') === 'true');
-  await expect(page.getByRole('dialog')).toContainText('Add food');
-  await expect(page.getByRole('dialog')).toContainText('Dinner');
+  const addFoodDialog = page.getByRole('dialog', { name: 'Add food', exact: true });
+  await expect(addFoodDialog).toContainText('Add food');
+  await expect(addFoodDialog).toContainText('Dinner');
   await page.keyboard.press('Escape');
-  await expect(page.getByRole('dialog')).toBeHidden();
+  await expect(addFoodDialog).toBeHidden();
 
   const todayNavigation = page.getByRole('tab', { name: /Today$/ });
   await expect(todayNavigation).toBeVisible();
@@ -504,12 +517,13 @@ test('authenticated shell renders real dashboard data and navigates release surf
   const reloadResponse = await page.reload();
   expect(reloadResponse?.status()).toBe(200);
   await expect(page).toHaveURL(/\/progress$/);
-  await expect(page.getByText('Goal projection', { exact: true })).toBeVisible();
+  await expect(page.getByTestId('goal-projection')).toContainText('Goal date at selected pace');
+  await expect(page.getByTestId('goal-projection')).toContainText('Nov 20, 2026');
 
-  await page.getByRole('button', { name: 'Open account', exact: true }).click();
+  await page.getByRole('button', { name: 'Account & settings', exact: true }).press('Enter');
   await expect(page).toHaveURL(/\/settings$/);
   await expect(page.getByRole('heading', { name: 'Account', exact: true })).toBeVisible();
-  await expect(page.getByText('Personal', { exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Personal details', exact: true })).toBeVisible();
   await expect(page.getByText('Connections', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: /Health Connect/ }).click();
   await expect(page.getByRole('button', { name: 'View activity history', exact: true })).toBeVisible();
@@ -524,9 +538,11 @@ test('paused days omit calorie progress and only preview food when entries exist
   await stubAuthenticatedApi(page, options);
   await page.goto('/today');
 
-  await expect(page.getByText('Calorie tracking paused', { exact: true })).toBeVisible();
-  await expect(page.getByText('Daily balance', { exact: true })).toBeHidden();
-  await expect(page.getByText('0%', { exact: true })).toBeHidden();
+  await expect(page.getByLabel(/^Daily balance\./)).toHaveAccessibleName(
+    'Daily balance. Tracking paused. 360 calories logged.',
+  );
+  await expect(page.getByRole('heading', { name: 'Paused', exact: true })).toBeVisible();
+  await expect(page.getByTestId('calorie-gauge-progress')).toHaveCount(0);
   await expect(page.getByRole('button', { name: /Food log.*View full log/ })).toHaveAccessibleName(
     'Food log. Breakfast, 360 kcal, 1 item. View full log',
   );
@@ -538,8 +554,11 @@ test('paused days omit calorie progress and only preview food when entries exist
   options.foodEntries = [];
   await page.reload();
 
-  await expect(page.getByText('Calorie tracking paused', { exact: true })).toBeVisible();
-  await expect(page.getByText('Daily balance', { exact: true })).toBeHidden();
+  await expect(page.getByLabel(/^Daily balance\./)).toHaveAccessibleName(
+    'Daily balance. Tracking paused. 0 calories logged.',
+  );
+  await expect(page.getByRole('heading', { name: 'Paused', exact: true })).toBeVisible();
+  await expect(page.getByTestId('calorie-gauge-progress')).toHaveCount(0);
   await expect(page.getByRole('button', { name: /Food log.*View full log/ })).toBeHidden();
 });
 

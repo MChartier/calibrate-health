@@ -1,0 +1,82 @@
+name: Release Acceptance
+
+on:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      candidate_commit:
+        description: Frozen lowercase 40-character candidate C
+        required: true
+        type: string
+      evidence_commit:
+        description: Evidence-only child A whose sole parent is C
+        required: true
+        type: string
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: release-acceptance-${{ github.event.pull_request.number || inputs.evidence_commit || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  implementation-contract:
+    if: github.event_name == 'pull_request'
+    name: Frozen Candidate Implementation Contract
+    runs-on: windows-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout candidate C
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Validate implementation acceptance contract
+        id: acceptance_contract
+        run: npm.cmd run release:acceptance
+
+      - name: Record sanitized candidate-bound contract result
+        if: always()
+        run: >-
+          node scripts/release-acceptance.mjs hosted-result
+          --workflow release-acceptance
+          --gate hosted-release-contracts
+          --candidate "${{ github.event.pull_request.head.sha || github.sha }}"
+          --outcome "${{ steps.acceptance_contract.outcome }}"
+          --output .codex-screenshots/release-acceptance/contract.json
+
+      - name: Upload sanitized release acceptance contract
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-acceptance-contract-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .codex-screenshots/release-acceptance/contract.json
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 90
+
+  external-launch:
+    if: github.event_name == 'workflow_dispatch'
+    name: Evidence-only External Launch Gate
+    runs-on: windows-latest
+    timeout-minutes: 10
+    env:
+      CALIBRATE_RELEASE_CANDIDATE: ${{ inputs.candidate_commit }}
+      CALIBRATE_RELEASE_EVIDENCE: ${{ inputs.evidence_commit }}
+      GH_TOKEN: ${{ github.token }}
+
+    steps:
+      - name: Checkout evidence child A with candidate history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ inputs.evidence_commit || github.sha }}
+
+      - name: Verify integrated external-launch acceptance
+        run: npm.cmd run release:acceptance:external
+
+      - name: Verify release-blocking native risk evidence
+        run: npm.cmd run test:risk-evidence:release

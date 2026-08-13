@@ -130,7 +130,7 @@ async function semanticColorAssertions(page: Page, testInfo: TestInfo, schemeNam
   await page.goto('/progress');
 
   const projection = page.getByTestId('goal-projection');
-  await expect(projection).toHaveCSS('background-color', cssRgb(scheme.infoContainer));
+  await expect(projection).toHaveCSS('background-color', cssRgb(scheme.surfaceContainer));
   await expect(projection).not.toHaveCSS('background-color', cssRgb(scheme.cautionContainer));
   await captureLocatorEvidence(projection, testInfo, `production-info-${schemeName}.png`);
 
@@ -281,11 +281,10 @@ test('production caution, danger, and focus roles remain visually distinct', asy
   await captureLocatorEvidence(cautionMessage, testInfo, 'production-caution-light.png');
 
   await page.goto('/settings');
-  const logout = page.getByRole('button', { name: 'Log out', exact: true });
-  await logout.scrollIntoViewIfNeeded();
-  await page.keyboard.press('Tab');
-  await logout.focus();
-  await expect(logout).toHaveCSS('outline-color', cssRgb(scheme.focusRing));
-  await expect(logout.getByText('Log out', { exact: true })).toHaveCSS('color', cssRgb(scheme.danger));
-  await captureLocatorEvidence(logout, testInfo, 'production-danger-focus-light.png');
+  const deleteAccount = page.getByRole('button', { name: 'Delete account', exact: true });
+  await deleteAccount.scrollIntoViewIfNeeded();
+  await deleteAccount.focus();
+  await expect(deleteAccount).toHaveCSS('outline-color', cssRgb(scheme.focusRing));
+  await expect(deleteAccount.getByText('Delete account', { exact: true })).toHaveCSS('color', cssRgb(scheme.danger));
+  await captureLocatorEvidence(deleteAccount, testInfo, 'production-danger-focus-light.png');
 });

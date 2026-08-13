@@ -65,8 +65,7 @@ test('hosted web entry and sign-in share canonical public trust destinations', a
   await page.goto('/');
   const publicHeading = page.getByRole('heading', { name: 'calibrate', level: 1, exact: true });
   await expect(publicHeading).toBeVisible();
-  await expect(page.getByText("Create an account on Calibrate's hosted service, or sign in to one you already use."))
-    .toBeVisible();
+  await expect(page.getByTestId('hosted-landing-trust')).toContainText('Your account stays under your control.');
   await expectLink(page, 'Privacy policy', CALIBRATE_PRODUCT_LINKS.privacy);
   await expectLink(page, 'Terms of service', CALIBRATE_PRODUCT_LINKS.terms);
   await expectLink(page, 'Support', CALIBRATE_PRODUCT_LINKS.support);

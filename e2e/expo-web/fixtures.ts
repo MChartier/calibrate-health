@@ -11,6 +11,33 @@ export const FROZEN_NOW = '2026-07-21T19:00:00.000Z';
 export const FROZEN_LOCAL_DATE = '2026-07-21';
 export const DETERMINISTIC_CLOCK_STEP_MS = 16;
 
+const TRANSIENT_PWA_TITLES = [
+  'Back online',
+  'Update ready',
+  'Update failed',
+  'Updating Calibrate',
+] as const;
+
+/** Keep unrelated late PWA lifecycle notices from intercepting feature-test actions. */
+export async function hideTransientPwaNotices(page: Page) {
+  await page.evaluate((titles) => {
+    const testWindow = window as typeof window & {
+      __calibrateTransientPwaObserver?: MutationObserver;
+    };
+    const hideKnownNotices = () => {
+      for (const notice of document.querySelectorAll<HTMLElement>('[role="status"], [role="alert"]')) {
+        const text = notice.textContent ?? '';
+        if (titles.some((title) => text.includes(title))) notice.style.display = 'none';
+      }
+    };
+    testWindow.__calibrateTransientPwaObserver?.disconnect();
+    hideKnownNotices();
+    const observer = new MutationObserver(hideKnownNotices);
+    observer.observe(document.documentElement, { childList: true, subtree: true, characterData: true });
+    testWindow.__calibrateTransientPwaObserver = observer;
+  }, [...TRANSIENT_PWA_TITLES]);
+}
+
 export const UX_FIXTURE_STATES = [
   'signed-out',
   'populated',
@@ -27,6 +54,27 @@ export type CaloriePlanFixtureState =
   | 'available'
   | 'requires-review'
   | 'selected-options-unavailable';
+
+export const API_RESOURCE_FIXTURE_STATES = [
+  'content',
+  'empty',
+  'loading',
+  'error',
+  'stale',
+  'offline',
+] as const;
+
+export type ApiResourceFixtureState = (typeof API_RESOURCE_FIXTURE_STATES)[number];
+
+export type ApiResourceFixture = {
+  pathname: string;
+  state: ApiResourceFixtureState;
+  content: unknown | ((url: URL) => unknown);
+  empty: unknown | ((url: URL) => unknown);
+  method?: string;
+  /** Match a query-bearing resource without coupling the fixture to parameter order. */
+  matches?: (url: URL) => boolean;
+};
 
 type StubMetricEntry = { id: number; date: string; weight: number };
 
@@ -63,6 +111,7 @@ export type AuthenticatedApiOptions = {
   metrics?: StubMetricEntry[];
   trendMetrics?: StubTrendMetricEntry[];
   trendAvailability?: 'available' | 'unavailable';
+  apiResources?: readonly ApiResourceFixture[];
 };
 
 type FixtureDiagnostics = {
@@ -315,6 +364,14 @@ export function expectApiFailure(page: Page, failure: ExpectedApiFailure): void 
   diagnostics.expectedApiFailures.add(apiFailureKey(failure));
 }
 
+/** Activate browser offline mode while allowing only its exact expected resource-console diagnostic. */
+export async function activateFixtureOffline(page: Page): Promise<void> {
+  const diagnostics = diagnosticsByPage.get(page);
+  if (!diagnostics) throw new Error('Fixture diagnostics must be installed before activating offline mode.');
+  diagnostics.intentionalOffline = true;
+  await page.context().setOffline(true);
+}
+
 function fulfillJson(route: Route, body: unknown, status = 200): Promise<void> {
   return route.fulfill({
     status,
@@ -336,6 +393,10 @@ function fulfillApiError(route: Route, status: number, code: string, message: st
       request_id: requestId,
     }),
   });
+}
+
+function resolveResourceFixtureBody(body: ApiResourceFixture['content'], url: URL): unknown {
+  return typeof body === 'function' ? body(url) : body;
 }
 
 async function freezeBrowserInputs(page: Page): Promise<void> {
@@ -415,6 +476,7 @@ async function installAuthenticatedApi(
   const defaultFoodDayStatus = state === 'paused' ? 'PAUSED' : 'OPEN';
   const caloriePlan = getCaloriePlanFixture(options.caloriePlanFixture ?? 'available');
   const foodRequestCounts = new Map<string, number>();
+  const apiResourceRequestCounts = new Map<string, number>();
   const mutableFoodEntriesByDate = new Map(
     Object.entries(options.foodEntriesByDate ?? {}).map(([date, entries]) => [
       date,
@@ -442,6 +504,15 @@ async function installAuthenticatedApi(
   if (state === 'failed-request' || state === 'stale') {
     expectApiFailure(page, { method: 'GET', pathname: '/api/v1/food', status: 503 });
   }
+  for (const resource of options.apiResources ?? []) {
+    if (resource.state === 'error' || resource.state === 'stale') {
+      expectApiFailure(page, {
+        method: resource.method ?? 'GET',
+        pathname: resource.pathname,
+        status: 503,
+      });
+    }
+  }
 
   await page.route('**/*', async (route) => {
     const url = new URL(route.request().url());
@@ -460,7 +531,55 @@ async function installAuthenticatedApi(
         },
       });
     }
+    const resourceFixture = options.apiResources?.find((resource) => (
+      pathname === resource.pathname
+      && route.request().method() === (resource.method ?? 'GET')
+      && (resource.matches?.(url) ?? true)
+    ));
+    if (resourceFixture) {
+      const resourceKey = `${pathname}${url.search}`;
+      const requestCount = (apiResourceRequestCounts.get(resourceKey) ?? 0) + 1;
+      apiResourceRequestCounts.set(resourceKey, requestCount);
+      if (resourceFixture.state === 'loading') await releaseLoading;
+      if (
+        resourceFixture.state === 'error'
+        || (resourceFixture.state === 'stale' && requestCount > 1)
+      ) {
+        return fulfillApiError(
+          route,
+          503,
+          'SERVICE_UNAVAILABLE',
+          'This fixture request failed with private upstream detail.',
+        );
+      }
+      const body = resourceFixture.state === 'empty'
+        ? resourceFixture.empty
+        : resourceFixture.content;
+      return fulfillJson(route, resolveResourceFixtureBody(body, url));
+    }
+    if (pathname === '/api/v1/client-diagnostics' && route.request().method() === 'POST') {
+      return route.fulfill({ status: 204 });
+    }
+    if (pathname === '/auth/sessions') return fulfillJson(route, { sessions: [] });
     if (pathname === '/auth/mobile/sessions') return fulfillJson(route, { sessions: [] });
+    if (pathname === '/api/v1/legal/status') {
+      return fulfillJson(route, {
+        account_access: { state: 'full', email_verified: true, legal_current: true },
+        required: { terms_version: '2026-08-09', privacy_version: '2026-07-24' },
+        accepted: {
+          terms_version: '2026-08-09',
+          privacy_version: '2026-07-24',
+          accepted_at: '2026-08-09T12:00:00.000Z',
+        },
+      });
+    }
+    if (pathname === '/api/v1/onboarding/draft') {
+      return fulfillJson(route, {
+        draft: null,
+        recovered_from_legacy: false,
+        onboarding_completed_at: null,
+      });
+    }
     if (pathname === '/api/v1/user/profile') return fulfillJson(route, caloriePlan.profile);
     if (pathname === '/api/v1/calorie-plan/options') return fulfillJson(route, caloriePlan.options);
     if (pathname === '/api/v1/notifications/in-app') {
@@ -471,6 +590,9 @@ async function installAuthenticatedApi(
     }
     if (pathname === '/api/v1/food/recent') return fulfillJson(route, { items: [] });
     if (pathname === '/api/v1/my-foods') return fulfillJson(route, []);
+    if (pathname === '/api/v1/my-foods/library') {
+      return fulfillJson(route, { items: [], next_cursor: null });
+    }
     if (pathname === '/api/v1/food/copy' && route.request().method() === 'POST') {
       const payload = route.request().postDataJSON() as {
         operation_id: string;
@@ -690,7 +812,7 @@ async function installState(
     await installAuthenticatedApi(page, state === 'offline' ? 'populated' : state, options, loadingReleased);
   }
   return {
-    activateOffline: () => context.setOffline(true),
+    activateOffline: () => activateFixtureOffline(page),
     releaseLoading: resolveLoading,
   };
 }
@@ -701,6 +823,10 @@ function attachFixtureDiagnostics(page: Page, diagnostics: FixtureDiagnostics): 
   page.on('pageerror', (error) => diagnostics.browserErrors.push(`pageerror: ${error.message}`));
   page.on('console', (message) => {
     if (message.type() !== 'error') return;
+    if (
+      diagnostics.intentionalOffline
+      && message.text() === 'Failed to load resource: net::ERR_INTERNET_DISCONNECTED'
+    ) return;
     const resourceStatus = Number(RESOURCE_ERROR_STATUS_PATTERN.exec(message.text())?.[1]);
     if (Number.isInteger(resourceStatus)) {
       diagnostics.resourceErrors.set(resourceStatus, (diagnostics.resourceErrors.get(resourceStatus) ?? 0) + 1);

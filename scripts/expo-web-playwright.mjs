@@ -12,6 +12,7 @@ const portText = process.env.CALIBRATE_EXPO_WEB_PORT?.trim() || '4174';
 if (!/^\d+$/.test(portText)) throw new Error(`Invalid Expo web test port: ${portText}`);
 const baseURL = `http://127.0.0.1:${portText}`;
 const playwrightCli = path.join(repoRoot, 'node_modules', '@playwright', 'test', 'cli.js');
+const DATA_STATE_MATRIX_SPEC = path.normalize('e2e/expo-web/launch-24-data-state-matrix.spec.ts');
 const supportedConfigs = new Set(['playwright.expo-web.config.ts', 'playwright.ux.config.ts']);
 const playwrightConfig = process.env.CALIBRATE_PLAYWRIGHT_CONFIG?.trim()
   || 'playwright.expo-web.config.ts';
@@ -19,6 +20,9 @@ if (!supportedConfigs.has(playwrightConfig)) {
   throw new Error(`Unsupported Playwright config: ${playwrightConfig}`);
 }
 const requestedArguments = process.argv.slice(2);
+const dataStateMatrixRequested = requestedArguments.some((argument) => (
+  path.normalize(argument) === DATA_STATE_MATRIX_SPEC
+));
 const requestsSnapshotUpdate = requestedArguments.some((argument) => (
   argument === '--update-snapshots' || argument.startsWith('--update-snapshots=')
 ));
@@ -31,7 +35,10 @@ function runPlaywright(env) {
   return new Promise((resolve) => {
     const child = spawn(process.execPath, [playwrightCli, ...playwrightArgs], {
       cwd: repoRoot,
-      env,
+      env: {
+        ...env,
+        CALIBRATE_INCLUDE_DATA_STATE_MATRIX: dataStateMatrixRequested ? '1' : '0',
+      },
       stdio: 'inherit',
     });
     child.once('exit', (code, signal) => resolve(code ?? (signal ? 1 : 0)));

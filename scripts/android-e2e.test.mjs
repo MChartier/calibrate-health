@@ -15,6 +15,7 @@ import {
   fetchAndroidE2eProxyUpstream,
   isAndroidE2eAddAndCloseNode,
   isAndroidE2eRecentFoodNode,
+  parseAndroidPackageVersion,
   resolveAndroidE2eAdb,
   summarizeAndroidE2eUi
 } from './android-e2e.mjs';
@@ -130,7 +131,7 @@ test('Android E2E explicitly reopens the seeded current day before adding recent
   assert.deepEqual(JSON.parse(request.body), { date: '2026-08-10', status: 'OPEN' });
 });
 
-test('Android E2E crash checks ignore uiautomator but catch the Calibrate process', () => {
+test('Android E2E crash checks ignore uiautomator but catch Java and native Calibrate crashes', () => {
   const uiautomatorCrash = `
 E/AndroidRuntime( 4036): FATAL EXCEPTION: main
 E/AndroidRuntime( 4036): PID: 4036
@@ -139,8 +140,11 @@ E/AndroidRuntime( 4036): java.lang.RuntimeException: Timeout while connecting Ui
 E/AndroidRuntime( 8123): FATAL EXCEPTION: main
 E/AndroidRuntime( 8123): Process: app.calibratehealth.mobile, PID: 8123`;
 
+  const nativeCrash = 'Fatal signal 11 (SIGSEGV)\npid: 8123 >>> app.calibratehealth.mobile <<<';
+
   assert.equal(crashBufferContainsCalibrateProcess(uiautomatorCrash), false);
   assert.equal(crashBufferContainsCalibrateProcess(calibrateCrash), true);
+  assert.equal(crashBufferContainsCalibrateProcess(nativeCrash), true);
 });
 
 test('hosted Android E2E scopes every adb request to its explicit emulator', () => {
@@ -162,5 +166,16 @@ test('hosted Android E2E scopes every adb request to its explicit emulator', () 
   assert.equal(
     resolveAndroidE2eAdb({ ANDROID_SDK_ROOT: 'C:\\Android' }, 'win32'),
     'C:\\Android\\platform-tools\\adb.exe'
+  );
+});
+
+test('hosted Android evidence parses only fixed installed package identity', () => {
+  assert.deepEqual(
+    parseAndroidPackageVersion('versionCode=7 minSdk=24 targetSdk=35\nversionName=0.2.5-dev'),
+    { versionName: '0.2.5-dev', versionCode: 7 }
+  );
+  assert.throws(
+    () => parseAndroidPackageVersion('versionName=0.2.5-dev'),
+    /parse installed Android package version/
   );
 });

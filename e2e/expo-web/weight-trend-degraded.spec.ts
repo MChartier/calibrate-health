@@ -42,9 +42,11 @@ test('Trend Details keeps raw measurements visible when the trend estimate is un
 
   await expect(page.getByTestId('weight-trend-chart')).toBeVisible();
   await expect(page.getByTestId('weight-trend-smoothed-path-0')).toHaveCount(0);
-  await expect(page.getByText('Scale reading', { exact: true }).first()).toBeVisible();
-  await expect(page.getByText('Underlying trend', { exact: true })).toHaveCount(0);
-  await expect(page.getByText('95% estimate range', { exact: true })).toHaveCount(0);
+  await expect(page.getByTestId('weight-trend-range-0')).toHaveCount(0);
+  const legend = page.getByLabel('Chart legend');
+  await expect(legend.getByText('Scale reading', { exact: true })).toBeVisible();
+  await expect(legend.getByText('Underlying trend', { exact: true })).toBeVisible();
+  await expect(legend.getByText('95% estimate range', { exact: true })).toBeVisible();
 
   for (const label of ['Week', 'Month', 'Year', 'All']) {
     const box = await page.getByText(label, { exact: true }).boundingBox();

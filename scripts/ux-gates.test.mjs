@@ -123,3 +123,27 @@ test('the Playwright wrapper preserves the mobile web prebuild lifecycle', () =>
   assert.match(source, /resolveNpmCli\(\), '--prefix', mobileDir, 'run', 'build:web'/);
   assert.doesNotMatch(source, /scripts', 'expo-web-build\.mjs/);
 });
+
+test('the legacy exported-web runner is read-only and excludes config-owned suites', () => {
+  const source = fs.readFileSync(path.join(repositoryRoot, 'playwright.expo-web.config.ts'), 'utf8');
+  assert.ok(source.includes("updateSnapshots: 'none'"));
+  assert.ok(source.includes('/launch-22-(?:accessibility|visual)\\.spec\\.ts/'));
+  assert.ok(source.includes("process.env.CALIBRATE_INCLUDE_DATA_STATE_MATRIX === '1'"));
+  assert.ok(source.includes('/launch-24-data-state-matrix\\.spec\\.ts/'));
+});
+
+test('the wrapper opts into the separately hosted data-state matrix only when named explicitly', () => {
+  const source = fs.readFileSync(path.join(repositoryRoot, 'scripts', 'expo-web-playwright.mjs'), 'utf8');
+  assert.match(source, /DATA_STATE_MATRIX_SPEC = path\.normalize/);
+  assert.match(source, /path\.normalize\(argument\) === DATA_STATE_MATRIX_SPEC/);
+  assert.match(source, /CALIBRATE_INCLUDE_DATA_STATE_MATRIX: dataStateMatrixRequested \? '1' : '0'/);
+});
+
+test('documentation screenshots require explicit evidence capture', () => {
+  for (const filename of ['adaptive-forms.spec.ts', 'nested-route-stacks.spec.ts']) {
+    const source = fs.readFileSync(path.join(repositoryRoot, 'e2e', 'expo-web', filename), 'utf8');
+    const optIn = "if (process.env.CALIBRATE_CAPTURE_EVIDENCE !== '1') return;";
+    assert.ok(source.includes(optIn), filename + ' must require ' + optIn);
+    assert.ok(source.indexOf(optIn) < source.indexOf('page.screenshot('));
+  }
+});
