@@ -17,6 +17,7 @@ import { HealthConnectProvider } from '../src/healthConnect/provider';
 import { PwaStatusBanner } from '../src/pwa/PwaStatusBanner.web';
 import { useBrowserNotificationStream } from '../src/notifications/useBrowserNotificationStream.web';
 import { useVisualViewportHeight } from '../src/hooks/useVisualViewportHeight';
+import { useQueryOnlineManager } from '../src/connectivity/queryOnlineManager.web';
 
 const queryClient = new QueryClient();
 
@@ -87,6 +88,7 @@ const BrowserPwaStatus: React.FC = () => {
 
 export default function RootLayout() {
     const theme = useAppTheme();
+    useQueryOnlineManager();
     const visualViewportHeight = useVisualViewportHeight();
 
     React.useEffect(() => {

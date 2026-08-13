@@ -5,7 +5,10 @@ import type { TrendMetricEntry } from '@calibrate/api-client';
 import { WeightTrendPreviewCard } from './WeightTrendPreviewCard';
 
 jest.mock('@expo/vector-icons/Ionicons', () => () => null);
-jest.mock('@tanstack/react-query', () => ({ useQuery: jest.fn() }));
+jest.mock('@tanstack/react-query', () => ({
+    ...jest.requireActual('@tanstack/react-query'),
+    useQuery: jest.fn()
+}));
 jest.mock('../../auth/AuthContext', () => ({
     useAuth: () => ({
         api: { getTrendMetrics: jest.fn() },
@@ -63,7 +66,7 @@ describe('WeightTrendPreviewCard', () => {
                 }
             },
             error: null,
-            isLoading: false
+            isLoading: false, status: 'success'
         });
     });
 
@@ -114,7 +117,7 @@ describe('WeightTrendPreviewCard', () => {
                 meta: { weekly_rate: -0.35, volatility: 'low', total_points: 3, total_span_days: 3 }
             },
             error: null,
-            isLoading: false
+            isLoading: false, status: 'success'
         });
 
         const screen = render(<WeightTrendPreviewCard onPress={jest.fn()} />);
@@ -132,7 +135,7 @@ describe('WeightTrendPreviewCard', () => {
                 meta: { weekly_rate: 0, volatility: 'low', total_points: 4, total_span_days: 120 }
             },
             error: null,
-            isLoading: false
+            isLoading: false, status: 'success'
         });
         const screen = render(<WeightTrendPreviewCard onPress={onPress} />);
         expect(screen.getByText('No weigh-ins in the last four weeks. Open Details to view your history.')).toBeTruthy();

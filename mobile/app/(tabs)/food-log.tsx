@@ -6,6 +6,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { FoodLogEntry, FoodLogUpdatePayload } from '@calibrate/api-client';
 import type { MealPeriod } from '@calibrate/shared';
 import { AddFoodSheet } from '../../src/components/AddFoodSheet';
+import { AsyncStateBoundary, useAsyncResourceState, useOnlineStatus } from '../../src/components/AsyncStateBoundary';
 import { AppButton } from '../../src/components/AppButton';
 import { AppCard } from '../../src/components/AppCard';
 import { AppText } from '../../src/components/AppText';
@@ -25,6 +26,7 @@ import { useAddFoodRequest } from '../../src/context/AddFoodRequestContext';
 import { useSharedLogDateNavigation } from '../../src/context/LogDateContext';
 import { calibrationStatusQueryKey } from '../../src/calibration/queryKeys';
 import { usePrefetchPreviousFoodLog } from '../../src/hooks/usePrefetchPreviousFoodLog';
+import { getSafeActionErrorMessage } from '../../src/errors/presentation';
 import { getFoodLogEditableAmount } from '../../src/food/foodLogAmount';
 import { getActiveTabRoute } from '../../src/navigation/contextualFab';
 import { executeOrQueueMutation, OFFLINE_MUTATION_OPERATIONS } from '../../src/offline/operations';
@@ -62,6 +64,9 @@ export default function FoodLogScreen() {
 
     const foodQuery = useQuery({ queryKey: ['mobile-food', selectedDate], queryFn: () => api.getFoodLog(selectedDate) });
     const foodDayQuery = useFoodDayStatus(selectedDate);
+    const isOnline = useOnlineStatus();
+    const foodState = useAsyncResourceState(foodQuery, (entries) => entries.length === 0);
+    const foodDayState = useAsyncResourceState(foodDayQuery, () => false);
     const canEditFood = foodDayQuery.data?.status === 'OPEN';
     const editAmountConfig = editEntry ? getFoodLogEditableAmount(editEntry) : null;
 
@@ -139,7 +144,7 @@ export default function FoodLogScreen() {
             await invalidateLogQueries();
         },
         onError: (error) => {
-            setEditError(error instanceof Error ? error.message : 'Unable to update food entry.');
+            setEditError(getSafeActionErrorMessage(error, 'Unable to update food entry.'));
         }
     });
 
@@ -207,9 +212,22 @@ export default function FoodLogScreen() {
         <TabScreen reserveFab={canEditFood}>
             <DateNavigation navigation={dateNavigation} />
 
-            {foodQuery.isLoading ? (
-                <FoodLogSkeleton />
-            ) : (
+            <AsyncStateBoundary
+                state={foodState}
+                resourceLabel="food log"
+                loading={<FoodLogSkeleton />}
+                empty={(
+                    <FoodLogTimelineCard
+                        title="Meals"
+                        entries={[]}
+                        disabled={!canEditFood}
+                        onEditEntry={openEditEntry}
+                        onDeleteEntry={(entry) => deleteFood.mutate(entry.id)}
+                    />
+                )}
+                onRetry={isOnline ? () => foodQuery.refetch() : undefined}
+                retrying={foodQuery.isFetching}
+            >
                 <FoodLogTimelineCard
                     title="Meals"
                     entries={foodQuery.data ?? []}
@@ -222,14 +240,27 @@ export default function FoodLogScreen() {
                         setRecipeDraftEntries(entries);
                     }}
                 />
-            )}
+            </AsyncStateBoundary>
+
+            <AsyncStateBoundary
+                state={foodDayState}
+                resourceLabel="day status"
+                loading={null}
+                empty={null}
+                onRetry={isOnline ? () => foodDayQuery.refetch() : undefined}
+                retrying={foodDayQuery.isFetching}
+            >
+                {null}
+            </AsyncStateBoundary>
 
             {recipeSavedMessage && (
                 <AppText accessibilityLiveRegion="polite" variant="muted">{recipeSavedMessage}</AppText>
             )}
-            {foodQuery.error && <AppText style={styles.error}>{foodQuery.error.message}</AppText>}
-            {deleteFood.error && <AppText style={styles.error}>{deleteFood.error.message}</AppText>}
-            {foodDayQuery.error && <AppText style={styles.error}>{foodDayQuery.error.message}</AppText>}
+            {deleteFood.error && (
+                <AppText accessibilityRole="alert" style={styles.error}>
+                    {getSafeActionErrorMessage(deleteFood.error, 'Unable to delete this food entry.')}
+                </AppText>
+            )}
 
             <AddFoodSheet
                 visible={addFoodMeal !== undefined && canEditFood}
@@ -297,7 +328,11 @@ export default function FoodLogScreen() {
                         setIsEditMealSelectorOpen(false);
                     }}
                 />
-                {(editError || updateFood.error) && <AppText style={styles.error}>{editError ?? updateFood.error?.message}</AppText>}
+                {(editError || updateFood.error) && (
+                    <AppText accessibilityRole="alert" style={styles.error}>
+                        {editError ?? getSafeActionErrorMessage(updateFood.error, 'Unable to update food entry.')}
+                    </AppText>
+                )}
                 <View style={styles.row}>
                     <AppButton
                         title="Cancel"

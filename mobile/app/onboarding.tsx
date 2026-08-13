@@ -14,6 +14,7 @@ import {
 import { AppButton } from '../src/components/AppButton';
 import { AppCard } from '../src/components/AppCard';
 import { AppText } from '../src/components/AppText';
+import { AsyncStateBoundary, useAsyncResourceState, useOnlineStatus } from '../src/components/AsyncStateBoundary';
 import { CalibrateLogo } from '../src/components/CalibrateLogo';
 import { HealthConnectOnboardingStep } from '../src/components/HealthConnectOnboardingStep';
 import { LoadingState } from '../src/components/LoadingState';
@@ -52,6 +53,10 @@ import {
 import { OnboardingProgress } from '../src/onboarding/OnboardingProgress';
 import { radius, spacing, useAppTheme } from '../src/theme';
 import { WEIGHT_INPUT_INCREMENT } from '../src/config/inputPrecision';
+import { ASYNC_RESOURCE_STATES, isNeverEmpty } from '../src/asyncState/resolveAsyncState';
+import { getSafeActionErrorMessage } from '../src/errors/presentation';
+
+const ONBOARDING_CONTENT_MAX_WIDTH = 760; // Keeps the wizard and its error gate readable on desktop.
 
 function getTargetWeightForGoal(goalMode: GoalMode, currentWeight: string, targetWeight: string): string {
     if (goalMode === 'maintain' && targetWeight.trim().length === 0) {
@@ -83,6 +88,8 @@ export default function OnboardingScreen() {
         queryFn: () => api.getUserProfile(),
         enabled: Boolean(user)
     });
+    const profileState = useAsyncResourceState(profileQuery, isNeverEmpty);
+    const isOnline = useOnlineStatus();
     const onboardingSteps = useMemo(() => getOnboardingSteps(Platform.OS), []);
     const [activeStepIndex, setActiveStepIndex] = useState(0);
     const activeStep = onboardingSteps[activeStepIndex];
@@ -189,7 +196,7 @@ export default function OnboardingScreen() {
             await finishOnboarding();
         },
         onError: (error) => {
-            setValidationError(error instanceof Error ? error.message : 'Unable to finish setup.');
+            setValidationError(getSafeActionErrorMessage(error, 'Unable to finish setup.'));
         }
     });
 
@@ -223,11 +230,27 @@ export default function OnboardingScreen() {
         return <Redirect href="/(auth)/login" />;
     }
 
-    if (profileQuery.isLoading) {
+    if (profileState.kind === ASYNC_RESOURCE_STATES.LOADING) {
         return <LoadingState label="Preparing setup..." />;
     }
 
-    if (!setupSaved && profileQuery.isSuccess && isProfileSetupComplete(profileQuery.data)) {
+    if (profileState.kind === ASYNC_RESOURCE_STATES.ERROR) {
+        return (
+            <Screen safeTop style={[styles.profileGate, { backgroundColor: themeColors.background }]}>
+                <AsyncStateBoundary
+                    state={profileState}
+                    resourceLabel="your profile"
+                    loading={<LoadingState label="Preparing setup..." />}
+                    empty={null}
+                    onRetry={isOnline ? () => profileQuery.refetch() : undefined}
+                >
+                    {null}
+                </AsyncStateBoundary>
+            </Screen>
+        );
+    }
+
+    if (!setupSaved && profileQuery.data && isProfileSetupComplete(profileQuery.data)) {
         return <Redirect href="/(tabs)/today" />;
     }
 
@@ -320,7 +343,7 @@ export default function OnboardingScreen() {
             ]);
             router.replace('/(tabs)/today');
         } catch (error) {
-            setValidationError(error instanceof Error ? error.message : 'Unable to finish setup.');
+            setValidationError(getSafeActionErrorMessage(error, 'Unable to finish setup.'));
         } finally {
             setIsFinishing(false);
         }
@@ -440,7 +463,11 @@ export default function OnboardingScreen() {
                                 )}
                             </>
                         )}
-                        {importMutation.error && <AppText style={{ color: themeColors.danger }}>{importMutation.error.message}</AppText>}
+                        {importMutation.error && (
+                            <AppText accessibilityRole="alert" style={{ color: themeColors.danger }}>
+                                {getSafeActionErrorMessage(importMutation.error, 'Unable to import that ZIP file.')}
+                            </AppText>
+                        )}
                         <AppButton
                             title={importMutation.isPending ? 'Importing...' : 'Import Lose It ZIP'}
                             variant="secondary"
@@ -505,6 +532,18 @@ export default function OnboardingScreen() {
 
     return (
         <Screen scroll={false} safeTop style={[styles.screen, { backgroundColor: themeColors.background }]}>
+            {(profileState.kind === ASYNC_RESOURCE_STATES.STALE
+                || profileState.kind === ASYNC_RESOURCE_STATES.DEGRADED) && (
+                <AsyncStateBoundary
+                    state={profileState}
+                    resourceLabel="your profile"
+                    loading={null}
+                    empty={null}
+                    onRetry={isOnline ? () => profileQuery.refetch() : undefined}
+                >
+                    {null}
+                </AsyncStateBoundary>
+            )}
             <View style={styles.setupHeader}>
                 <CalibrateLogo size={30} />
                 <View style={styles.setupHeaderCopy}>
@@ -535,9 +574,9 @@ export default function OnboardingScreen() {
                 </KeyboardAwareScrollView>
 
                 <View style={[styles.actionBar, { borderTopColor: themeColors.outlineVariant, backgroundColor: themeColors.background }]}>
-                    {(validationError || setupMutation.error) && (
+                    {validationError && (
                         <AppText accessibilityRole="alert" style={{ color: themeColors.danger }}>
-                            {validationError ?? setupMutation.error?.message}
+                            {validationError}
                         </AppText>
                     )}
                     <View style={[styles.actions, fontScale >= 1.5 && styles.actionsLargeText]}>
@@ -622,10 +661,15 @@ const ReviewRow: React.FC<{ label: string; value: string; compact?: boolean }> =
 };
 
 const styles = StyleSheet.create({
+    profileGate: {
+        flex: 1,
+        justifyContent: 'center',
+        maxWidth: ONBOARDING_CONTENT_MAX_WIDTH
+    },
     screen: {
         flex: 1,
         width: '100%',
-        maxWidth: 760,
+        maxWidth: ONBOARDING_CONTENT_MAX_WIDTH,
         alignSelf: 'center',
         gap: spacing.md
     },

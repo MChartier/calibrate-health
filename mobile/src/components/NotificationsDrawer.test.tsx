@@ -1,8 +1,9 @@
 import React from 'react';
-import { fireEvent, render } from '@testing-library/react-native';
+import { act, fireEvent, render } from '@testing-library/react-native';
 import { Modal, StyleSheet } from 'react-native';
 import type { InAppNotification } from '@calibrate/api-client';
 import { IN_APP_NOTIFICATION_TYPES } from '@calibrate/shared/inAppNotifications';
+import { ASYNC_RESOURCE_STATES } from '../asyncState/resolveAsyncState';
 import { NotificationsDrawer, notificationDrawerWidth } from './NotificationsDrawer';
 
 jest.mock('@expo/vector-icons/Ionicons', () => () => null);
@@ -27,7 +28,7 @@ function renderDrawer(overrides: Partial<React.ComponentProps<typeof Notificatio
         visible: true,
         notifications: [NOTIFICATION],
         unreadCount: 1,
-        isLoading: false,
+        state: { kind: ASYNC_RESOURCE_STATES.CONTENT, error: null },
         isBusy: false,
         onClose: jest.fn(),
         onOpenNotification: jest.fn(),
@@ -51,6 +52,7 @@ describe('NotificationsDrawer', () => {
 
     it('uses the rendered panel width as its off-screen translation', () => {
         expect(notificationDrawerWidth(320)).toBe(288);
+        expect(notificationDrawerWidth(390)).toBe(351);
         expect(notificationDrawerWidth(1_024)).toBe(440);
     });
 
@@ -78,5 +80,43 @@ describe('NotificationsDrawer', () => {
         const { screen } = renderDrawer({ visible: false });
 
         expect(screen.queryByText('Notifications')).toBeNull();
+    });
+
+    it('does not render empty reassurance when the notification request fails', async () => {
+        const rawError = new Error('select * from private_notifications');
+        const { props, screen } = renderDrawer({
+            notifications: [],
+            unreadCount: null,
+            state: { kind: ASYNC_RESOURCE_STATES.ERROR, error: rawError }
+        });
+
+        expect(screen.getByText("Can't load notifications")).toBeTruthy();
+        expect(screen.getByText('Unread count unavailable')).toBeTruthy();
+        expect(screen.queryByText('All caught up')).toBeNull();
+        expect(screen.queryByText(rawError.message)).toBeNull();
+
+        await act(async () => {
+            fireEvent.press(screen.getByText('Retry'));
+        });
+        expect(props.onRetry).toHaveBeenCalledTimes(1);
+    });
+
+    it('keeps cached notifications visible after a failed refresh', () => {
+        const { screen } = renderDrawer({
+            state: { kind: ASYNC_RESOURCE_STATES.DEGRADED, error: new Error('provider failed') }
+        });
+
+        expect(screen.getByText("Couldn't refresh notifications")).toBeTruthy();
+        expect(screen.getByText('Time to weigh in')).toBeTruthy();
+        expect(screen.queryByText('provider failed')).toBeNull();
+    });
+
+    it('does not relay notification action failures', () => {
+        const rawError = new Error('update notifications set read_at = now()');
+        const { screen } = renderDrawer({ actionError: rawError });
+
+        expect(screen.getByText('Unable to update that notification. Try again.')).toBeTruthy();
+        expect(screen.queryByText(rawError.message)).toBeNull();
+        expect(screen.getByText('Time to weigh in')).toBeTruthy();
     });
 });

@@ -99,7 +99,7 @@ export function getWearPairingErrorMessage(error: unknown): string {
     if (/Call to function|Caused by:|com\.google\.android\.gms|\bjava\.[a-z]/i.test(message)) {
         return WEAR_PAIRING_FALLBACK_MESSAGE;
     }
-    return message;
+    return WEAR_PAIRING_FALLBACK_MESSAGE;
 }
 
 function accountScope(serverOrigin: string, userId: number): string {
@@ -489,8 +489,8 @@ export async function processWearPairingInbox(options: {
                 // Persist result correlation before removing the durable native hello.
                 processed += 1;
                 acknowledgedMessageIds.push(message.id);
-            } catch (error) {
-                errors.push(error instanceof Error ? error.message : 'Unable to create a watch pairing credential.');
+            } catch {
+                errors.push('Unable to create a watch pairing credential.');
             }
             continue;
         }

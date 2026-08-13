@@ -1,9 +1,10 @@
 import React from 'react';
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
 import { StyleSheet } from 'react-native';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { onlineManager, QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { FoodLogDay, FoodLogDaySource, FoodLogDayStatus } from '@calibrate/api-client';
 import { themes } from '../theme';
+import { foodDayRangeQueryKey } from './calendar';
 import { HistoricalDatePicker } from './HistoricalDatePicker';
 
 const mockGetFoodDays = jest.fn();
@@ -38,20 +39,42 @@ function day(
     };
 }
 
+const RANGE_RESPONSE = {
+    start_date: '2026-07-11',
+    end_date: '2026-07-18',
+    days: [
+        day('2026-07-11', 'COMPLETE', 'STORED'),
+        day('2026-07-12', 'INCOMPLETE', 'STORED'),
+        day('2026-07-13', 'INCOMPLETE', 'INFERRED_EMPTY'),
+        day('2026-07-14', 'PAUSED', 'ACTIVE_PAUSE'),
+        day('2026-07-18', 'OPEN', 'DEFAULT')
+    ]
+};
+
+function renderPicker(queryClient: QueryClient) {
+    return render(
+        <QueryClientProvider client={queryClient}>
+            <HistoricalDatePicker
+                visible
+                selectedDate="2026-07-12"
+                minDate="2026-07-11"
+                maxDate="2026-07-18"
+                onSelectDate={jest.fn()}
+                onRequestClose={jest.fn()}
+            />
+        </QueryClientProvider>
+    );
+}
+
 describe('HistoricalDatePicker', () => {
     beforeEach(() => {
+        onlineManager.setOnline(true);
         mockGetFoodDays.mockReset();
-        mockGetFoodDays.mockResolvedValue({
-            start_date: '2026-07-11',
-            end_date: '2026-07-18',
-            days: [
-                day('2026-07-11', 'COMPLETE', 'STORED'),
-                day('2026-07-12', 'INCOMPLETE', 'STORED'),
-                day('2026-07-13', 'INCOMPLETE', 'INFERRED_EMPTY'),
-                day('2026-07-14', 'PAUSED', 'ACTIVE_PAUSE'),
-                day('2026-07-18', 'OPEN', 'DEFAULT')
-            ]
-        });
+        mockGetFoodDays.mockResolvedValue(RANGE_RESPONSE);
+    });
+
+    afterEach(() => {
+        onlineManager.setOnline(true);
     });
 
     it('loads the visible range, exposes status labels, and selects a day', async () => {
@@ -114,6 +137,62 @@ describe('HistoricalDatePicker', () => {
         expect(onRequestClose).toHaveBeenCalledTimes(1);
         expect(screen.getByLabelText('Previous month').props.accessibilityState.disabled).toBe(true);
         expect(screen.getByLabelText('Next month').props.accessibilityState.disabled).toBe(true);
+        screen.unmount();
+        queryClient.clear();
+    });
+    it('never exposes unresolved days as selectable status after an uncached failure and announces Retry', async () => {
+        let resolveRetry!: (value: typeof RANGE_RESPONSE) => void;
+        const retryResult = new Promise<typeof RANGE_RESPONSE>((resolve) => { resolveRetry = resolve; });
+        mockGetFoodDays
+            .mockRejectedValueOnce(new Error('provider details that must stay private'))
+            .mockImplementationOnce(() => retryResult);
+        const queryClient = new QueryClient({ defaultOptions: { queries: { gcTime: Infinity, retry: false } } });
+        const screen = renderPicker(queryClient);
+
+        expect(await screen.findByText("Can't load tracking history")).toBeTruthy();
+        expect(screen.queryByLabelText(/in progress/i)).toBeNull();
+        expect(screen.queryByText(/provider details that must stay private/i)).toBeNull();
+
+        fireEvent.press(screen.getByRole('button', { name: 'Retry' }));
+        await waitFor(() => {
+            expect(screen.getByRole('button', { name: 'Retrying...' }).props.accessibilityState.busy).toBe(true);
+        });
+        expect(screen.getByText('Retrying tracking history').props.accessibilityLiveRegion).toBe('polite');
+
+        resolveRetry(RANGE_RESPONSE);
+        expect(await screen.findByLabelText(/Jul 11, 2026, completed/i)).toBeTruthy();
+        screen.unmount();
+        queryClient.clear();
+    });
+
+    it('keeps cached calendar days selectable and labels refresh failure as degraded', async () => {
+        mockGetFoodDays.mockRejectedValue(new Error('private SQL exception'));
+        const queryClient = new QueryClient({ defaultOptions: { queries: { gcTime: Infinity, retry: false } } });
+        queryClient.setQueryData(
+            foodDayRangeQueryKey('2026-07-11', '2026-07-18'),
+            RANGE_RESPONSE
+        );
+        const screen = renderPicker(queryClient);
+
+        expect(await screen.findByText("Couldn't refresh tracking history")).toBeTruthy();
+        expect(screen.getByLabelText(/Jul 11, 2026, completed/i)).toBeTruthy();
+        expect(screen.queryByText(/private SQL exception/i)).toBeNull();
+        screen.unmount();
+        queryClient.clear();
+    });
+
+    it('labels cached calendar days stale while native or web connectivity is offline', async () => {
+        onlineManager.setOnline(false);
+        const queryClient = new QueryClient({ defaultOptions: { queries: { gcTime: Infinity, retry: false } } });
+        queryClient.setQueryData(
+            foodDayRangeQueryKey('2026-07-11', '2026-07-18'),
+            RANGE_RESPONSE
+        );
+        const screen = renderPicker(queryClient);
+
+        expect(await screen.findByText('Offline - showing saved information')).toBeTruthy();
+        expect(screen.getByLabelText(/Jul 11, 2026, completed/i)).toBeTruthy();
+        expect(screen.queryByRole('button', { name: 'Retry' })).toBeNull();
         screen.unmount();
         queryClient.clear();
     });

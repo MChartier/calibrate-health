@@ -19,6 +19,7 @@ import type {
 } from '@calibrate/api-client';
 import { AppButton } from './AppButton';
 import { AppText } from './AppText';
+import { AsyncRetryLiveStatus, useOnlineStatus } from './AsyncStateBoundary';
 import { BottomSheetModal } from './BottomSheetModal';
 import { SectionHeader } from './SectionHeader';
 import { WeightSaveResult } from '../weightEntry/WeightSaveResult';
@@ -35,6 +36,7 @@ import { triggerHapticFeedback } from '../utils/haptics';
 import { getMetricDate } from '../utils/metrics';
 import { spacing, useAppTheme } from '../theme';
 import { WEIGHT_INPUT_INCREMENT } from '../config/inputPrecision';
+import { getErrorPresentation, getSafeActionErrorMessage } from '../errors/presentation';
 
 type WeightEntrySheetProps = {
     visible: boolean;
@@ -64,10 +66,6 @@ function findMetricOnOrBeforeDate(metrics: MetricEntry[], targetDate: string): M
     return sorted.find((metric) => getMetricDate(metric) <= targetDate) ?? null;
 }
 
-function getErrorMessage(error: unknown): string | null {
-    return error instanceof Error ? error.message : null;
-}
-
 /** Focused two-stage weigh-in sheet shared by Today and deep-linked weight routes. */
 export const WeightEntrySheet: React.FC<WeightEntrySheetProps> = ({ visible, date, onClose, onSaved }) => {
     const theme = useAppTheme();
@@ -76,6 +74,7 @@ export const WeightEntrySheet: React.FC<WeightEntrySheetProps> = ({ visible, dat
     const { enqueue } = useOfflineOutbox();
     const queryClient = useQueryClient();
     const reduceMotion = useReducedMotionPreference();
+    const isOnline = useOnlineStatus();
     const inputRef = useRef<TextInput>(null);
     const resultHeadingRef = useRef<View>(null);
     const [phase, setPhase] = useState<SheetPhase>('loading');
@@ -181,10 +180,12 @@ export const WeightEntrySheet: React.FC<WeightEntrySheetProps> = ({ visible, dat
     }, [date, visible]); // Mutation reset functions are stable React Query callbacks.
 
     useEffect(() => {
+        const hasUsableMetrics = Boolean(metricsQuery.data && metricsQuery.data.length > 0);
         if (!visible || phase !== 'loading' || metricsQuery.isLoading) return;
+        if ((!isOnline || metricsQuery.isError) && !hasUsableMetrics) return;
         setWeight(prefillMetric ? formatWeightInput(prefillMetric.weight) : '');
         setPhase('editing');
-    }, [metricsQuery.isLoading, phase, prefillMetric, visible]);
+    }, [isOnline, metricsQuery.data, metricsQuery.isError, metricsQuery.isLoading, phase, prefillMetric, visible]);
 
     useEffect(() => {
         if (!visible || phase !== 'editing' || metricsQuery.isLoading) return;
@@ -230,9 +231,17 @@ export const WeightEntrySheet: React.FC<WeightEntrySheetProps> = ({ visible, dat
     );
     const canSave = parsedWeight !== null && !isUnchanged;
     const isBusy = phase === 'saving' || addWeight.isPending || deleteWeight.isPending;
-    const loadError = getErrorMessage(metricsQuery.error);
-    const saveError = getErrorMessage(addWeight.error);
-    const deleteError = getErrorMessage(deleteWeight.error);
+    const loadError = metricsQuery.error
+        ? getErrorPresentation(metricsQuery.error, 'weigh-ins').message
+        : !isOnline && metricsQuery.data ? 'Offline - using saved weigh-ins.' : null;
+    const saveError = addWeight.error
+        ? getSafeActionErrorMessage(addWeight.error, 'Unable to save this weigh-in.')
+        : null;
+    const deleteError = deleteWeight.error
+        ? getSafeActionErrorMessage(deleteWeight.error, 'Unable to delete this weigh-in.')
+        : null;
+    const metricsUnavailable = (!isOnline || metricsQuery.isError)
+        && !(metricsQuery.data && metricsQuery.data.length > 0);
 
     function mutateWeight() {
         setPendingAction('save');
@@ -301,7 +310,28 @@ export const WeightEntrySheet: React.FC<WeightEntrySheetProps> = ({ visible, dat
     );
 
     let content: React.ReactNode;
-    if (phase === 'loading') {
+    if (phase === 'loading' && metricsUnavailable) {
+        const presentation = getErrorPresentation(metricsQuery.error, 'weigh-ins');
+        content = (
+            <>
+                <SheetHeader title="Log weight" description={`${formatDateOnlyForDisplay(date)} | ${weightUnit}`} action={closeButton} />
+                <AppText accessibilityRole="alert" style={{ color: colors.danger }}>
+                    {isOnline ? presentation.message : 'Connect to load your weigh-ins, then try again.'}
+                </AppText>
+                {presentation.requestId && <AppText variant="caption">Reference: {presentation.requestId}</AppText>}
+                {isOnline && (
+                    <AppButton
+                        title={metricsQuery.isFetching ? 'Retrying...' : 'Retry weigh-ins'}
+                        variant="secondary"
+                        disabled={metricsQuery.isFetching}
+                        accessibilityState={{ busy: metricsQuery.isFetching }}
+                        onPress={() => void metricsQuery.refetch()}
+                    />
+                )}
+                <AsyncRetryLiveStatus retrying={metricsQuery.isFetching} resourceLabel="weigh-ins" />
+            </>
+        );
+    } else if (phase === 'loading') {
         content = (
             <>
                 <SheetHeader title="Log weight" description={`${formatDateOnlyForDisplay(date)} | ${weightUnit}`} action={closeButton} />
@@ -365,7 +395,9 @@ export const WeightEntrySheet: React.FC<WeightEntrySheetProps> = ({ visible, dat
                     progressUpdate={result.progressUpdate}
                     trend={trendQuery.data}
                     trendLoading={trendQuery.isLoading || trendQuery.isFetching}
-                    trendError={getErrorMessage(trendQuery.error)}
+                    trendError={trendQuery.error
+                        ? getErrorPresentation(trendQuery.error, 'weight trend').message
+                        : null}
                     reduceMotion={reduceMotion}
                     headingRef={resultHeadingRef}
                 />

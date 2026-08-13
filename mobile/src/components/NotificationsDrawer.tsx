@@ -2,12 +2,14 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, Easing, Modal, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
 import type { InAppNotification } from '@calibrate/api-client';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { AppButton } from './AppButton';
 import { AppCard } from './AppCard';
 import { AppIconButton } from './AppIconButton';
 import { AppText } from './AppText';
 import { NotificationCard } from './NotificationCard';
 import { SkeletonBlock } from './SkeletonBlock';
+import { AsyncStateBoundary } from './AsyncStateBoundary';
+import type { AsyncResourceState } from '../asyncState/resolveAsyncState';
+import { getSafeActionErrorMessage } from '../errors/presentation';
 import { useReducedMotionPreference } from '../hooks/useReducedMotionPreference';
 import { spacing, useAppTheme, type AppTheme } from '../theme';
 
@@ -23,14 +25,14 @@ export function notificationDrawerWidth(windowWidth: number): number {
 type NotificationsDrawerProps = {
     visible: boolean;
     notifications: InAppNotification[];
-    unreadCount: number;
-    isLoading: boolean;
+    unreadCount: number | null;
+    state: AsyncResourceState;
     isBusy: boolean;
-    errorMessage?: string | null;
+    actionError?: unknown;
     onClose: () => void;
     onOpenNotification: (notification: InAppNotification) => void;
     onDismissNotification: (notification: InAppNotification) => void;
-    onRetry: () => void;
+    onRetry?: () => void;
 };
 
 /** Keeps notification review in the app shell until the user chooses a destination. */
@@ -38,9 +40,9 @@ export const NotificationsDrawer: React.FC<NotificationsDrawerProps> = ({
     visible,
     notifications,
     unreadCount,
-    isLoading,
+    state,
     isBusy,
-    errorMessage,
+    actionError,
     onClose,
     onOpenNotification,
     onDismissNotification,
@@ -134,7 +136,9 @@ export const NotificationsDrawer: React.FC<NotificationsDrawerProps> = ({
                             <AppText accessibilityRole="header" aria-level={2} variant="screenTitle">
                                 Notifications
                             </AppText>
-                            <AppText variant="caption">{unreadCount} unread</AppText>
+                            <AppText variant="caption">
+                                {unreadCount === null ? 'Unread count unavailable' : `${unreadCount} unread`}
+                            </AppText>
                         </View>
                         <AppIconButton
                             icon="close"
@@ -145,41 +149,37 @@ export const NotificationsDrawer: React.FC<NotificationsDrawerProps> = ({
                     </View>
 
                     <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-                        {isLoading && notifications.length === 0 && (
-                            <AppCard>
-                                {[0, 1, 2].map((row) => (
-                                    <View key={row} style={styles.skeletonRow}>
-                                        <SkeletonBlock width={40} height={40} radius={20} />
-                                        <View style={styles.skeletonText}>
-                                            <SkeletonBlock width="64%" height={18} />
-                                            <SkeletonBlock width="90%" height={14} />
-                                        </View>
-                                    </View>
-                                ))}
-                            </AppCard>
-                        )}
+                        <AsyncStateBoundary
+                            state={state}
+                            resourceLabel="notifications"
+                            loading={<NotificationsSkeleton styles={styles} />}
+                            empty={(
+                                <AppCard>
+                                    <AppText variant="subtitle">All caught up</AppText>
+                                    <AppText variant="muted">Reminder notifications will appear here.</AppText>
+                                </AppCard>
+                            )}
+                            onRetry={onRetry}
+                        >
+                            {notifications.map((notification) => (
+                                <NotificationCard
+                                    key={notification.id}
+                                    notification={notification}
+                                    isBusy={isBusy}
+                                    onOpen={onOpenNotification}
+                                    onDismiss={onDismissNotification}
+                                />
+                            ))}
+                        </AsyncStateBoundary>
 
-                        {notifications.map((notification) => (
-                            <NotificationCard
-                                key={notification.id}
-                                notification={notification}
-                                isBusy={isBusy}
-                                onOpen={onOpenNotification}
-                                onDismiss={onDismissNotification}
-                            />
-                        ))}
-
-                        {!isLoading && notifications.length === 0 && (
-                            <AppCard>
-                                <AppText variant="subtitle">All caught up</AppText>
-                                <AppText variant="muted">Reminder notifications will appear here.</AppText>
-                            </AppCard>
-                        )}
-
-                        {errorMessage && (
-                            <AppCard>
-                                <AppText accessibilityRole="alert" style={styles.error}>{errorMessage}</AppText>
-                                <AppButton title="Try again" variant="secondary" onPress={onRetry} />
+                        {actionError != null && (
+                            <AppCard accessibilityRole="alert">
+                                <AppText style={styles.error}>
+                                    {getSafeActionErrorMessage(
+                                        actionError,
+                                        'Unable to update that notification. Try again.'
+                                    )}
+                                </AppText>
                             </AppCard>
                         )}
                     </ScrollView>
@@ -188,6 +188,20 @@ export const NotificationsDrawer: React.FC<NotificationsDrawerProps> = ({
         </Modal>
     );
 };
+
+const NotificationsSkeleton: React.FC<{ styles: ReturnType<typeof createStyles> }> = ({ styles }) => (
+    <AppCard>
+        {[0, 1, 2].map((row) => (
+            <View key={row} style={styles.skeletonRow}>
+                <SkeletonBlock width={40} height={40} radius={20} />
+                <View style={styles.skeletonText}>
+                    <SkeletonBlock width="64%" height={18} />
+                    <SkeletonBlock width="90%" height={14} />
+                </View>
+            </View>
+        ))}
+    </AppCard>
+);
 
 const createStyles = (theme: AppTheme) => StyleSheet.create({
     root: {

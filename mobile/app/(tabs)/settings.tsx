@@ -1,11 +1,13 @@
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Alert, Image, Platform, StyleSheet, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useRouter } from 'expo-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ACTIVITY_LEVELS, HEIGHT_UNITS, WEIGHT_UNITS, type ActivityLevel, type HeightUnit, type Sex, type WeightUnit } from '@calibrate/shared';
 import { AppButton } from '../../src/components/AppButton';
+import { AppCard } from '../../src/components/AppCard';
 import { AppText } from '../../src/components/AppText';
+import { AsyncStateBoundary, useAsyncResourceState, useOnlineStatus } from '../../src/components/AsyncStateBoundary';
 import { HealthConnectCard } from '../../src/components/HealthConnectCard';
 import { WearPairingCard } from '../../src/components/WearPairingCard';
 import { BottomSheetModal } from '../../src/components/BottomSheetModal';
@@ -13,6 +15,7 @@ import { TabScreen } from '../../src/components/TabScreen';
 import { SectionHeader } from '../../src/components/SectionHeader';
 import { SegmentedControl } from '../../src/components/SegmentedControl';
 import { TextField } from '../../src/components/TextField';
+import { SkeletonBlock } from '../../src/components/SkeletonBlock';
 import { useAuth } from '../../src/auth/AuthContext';
 import { calibrationStatusQueryKey } from '../../src/calibration/queryKeys';
 import {
@@ -40,6 +43,13 @@ import {
     SettingsDetailSheet,
     SummaryRow
 } from '../../src/settings/SettingsPrimitives';
+import {
+    ASYNC_RESOURCE_STATES,
+    isNeverEmpty,
+    isNullResource,
+    type AsyncResourceState
+} from '../../src/asyncState/resolveAsyncState';
+import { getSafeActionErrorMessage } from '../../src/errors/presentation';
 
 const MIN_PASSWORD_LENGTH = 8;
 function getAvatarLabel(email?: string | null): string {
@@ -50,6 +60,17 @@ function formatSessionActivity(value: string | null, fallback: string): string {
     const timestamp = value ?? fallback;
     const parsed = new Date(timestamp);
     return Number.isNaN(parsed.getTime()) ? 'Unknown activity' : `Active ${parsed.toLocaleDateString()}`;
+}
+
+function shouldShowResourceStatus(state: AsyncResourceState): boolean {
+    return state.kind !== ASYNC_RESOURCE_STATES.CONTENT && state.kind !== ASYNC_RESOURCE_STATES.EMPTY;
+}
+
+function hasResolvedResourceData(state: AsyncResourceState): boolean {
+    return state.kind === ASYNC_RESOURCE_STATES.CONTENT
+        || state.kind === ASYNC_RESOURCE_STATES.EMPTY
+        || state.kind === ASYNC_RESOURCE_STATES.STALE
+        || state.kind === ASYNC_RESOURCE_STATES.DEGRADED;
 }
 
 export default function SettingsScreen() {
@@ -68,6 +89,7 @@ export default function SettingsScreen() {
     } = useOfflineOutbox();
     const queryClient = useQueryClient();
     const { colors: themeColors } = useAppTheme();
+    const isOnline = useOnlineStatus();
     const healthConnect = useHealthConnect();
     const nativePush = useNativePushRegistration();
     const isWeb = Platform.OS === 'web';
@@ -102,6 +124,12 @@ export default function SettingsScreen() {
         queryKey: ['mobile-sessions'],
         queryFn: () => api.getMobileSessions()
     });
+    const profileState = useAsyncResourceState(profileQuery, isNeverEmpty);
+    const goalState = useAsyncResourceState(goalQuery, isNullResource);
+    const sessionsState = useAsyncResourceState(
+        sessionsQuery,
+        ({ sessions }) => sessions.length === 0
+    );
     const pendingMutationCount = queuedMutations.filter(
         ({ state }) => state === OUTBOX_MUTATION_STATES.PENDING || state === OUTBOX_MUTATION_STATES.REPLAYING
     ).length;
@@ -109,11 +137,14 @@ export default function SettingsScreen() {
     const syncOutbox = useMutation({ mutationFn: () => reconcileOutbox() });
     const retryOutbox = useMutation({ mutationFn: () => retryFailedOutbox() });
     const outboxActionError = syncOutbox.error ?? retryOutbox.error;
-    let outboxErrorMessage = outboxInitializationError;
+    let outboxErrorMessage = outboxInitializationError
+        ? 'Offline changes are not available on this device. Reload Calibrate and try again.'
+        : null;
     if (!outboxErrorMessage && outboxActionError) {
-        outboxErrorMessage = outboxActionError instanceof Error
-            ? outboxActionError.message
-            : 'Unable to sync offline changes.';
+        outboxErrorMessage = getSafeActionErrorMessage(
+            outboxActionError,
+            'Unable to sync offline changes. Try again.'
+        );
     }
     const exportAccount = useMutation({
         mutationFn: async () => {
@@ -248,7 +279,7 @@ export default function SettingsScreen() {
         },
         onError: (error) => {
             setPasswordStatus(null);
-            setPasswordError(error instanceof Error ? error.message : 'Unable to update password.');
+            setPasswordError(getSafeActionErrorMessage(error, 'Unable to update password.'));
         }
     });
 
@@ -337,17 +368,50 @@ export default function SettingsScreen() {
         );
     }
 
+    let goalSummary = 'Current goal unavailable';
+    if (goalState.kind === ASYNC_RESOURCE_STATES.LOADING) {
+        goalSummary = 'Loading current goal...';
+    } else if (hasResolvedResourceData(goalState)) {
+        goalSummary = formatGoalSummary(goalQuery.data ?? null, user?.weight_unit);
+    }
+    const sessionCount = hasResolvedResourceData(sessionsState)
+        ? sessionsQuery.data?.sessions.length
+        : undefined;
+    const calorieTarget = hasResolvedResourceData(profileState)
+        ? profileQuery.data?.calorieSummary.dailyCalorieTarget
+        : undefined;
+
     return (
         <TabScreen>
+            {shouldShowResourceStatus(profileState) && (
+                <AsyncStateBoundary
+                    state={profileState}
+                    resourceLabel="profile settings"
+                    loading={<SettingsResourceSkeleton label="Loading profile settings..." />}
+                    empty={null}
+                    onRetry={isOnline ? () => profileQuery.refetch() : undefined}
+                >
+                    {null}
+                </AsyncStateBoundary>
+            )}
+            {shouldShowResourceStatus(goalState) && (
+                <AsyncStateBoundary
+                    state={goalState}
+                    resourceLabel="your current goal"
+                    loading={<SettingsResourceSkeleton label="Loading your current goal..." />}
+                    empty={null}
+                    onRetry={isOnline ? () => goalQuery.refetch() : undefined}
+                >
+                    {null}
+                </AsyncStateBoundary>
+            )}
             <SettingsHome
                 email={user?.email}
                 profileImageUrl={user?.profile_image_url}
-                goalSummary={goalQuery.isLoading
-                    ? 'Loading current goal...'
-                    : formatGoalSummary(goalQuery.data, user?.weight_unit)}
+                goalSummary={goalSummary}
                 weightUnit={weightUnit}
                 heightUnit={heightUnit}
-                sessionCount={sessionsQuery.data?.sessions.length}
+                sessionCount={sessionCount}
                 isOutboxReady={isOutboxReady}
                 failedMutationCount={failedMutations.length}
                 pendingMutationCount={pendingMutationCount}
@@ -448,7 +512,11 @@ export default function SettingsScreen() {
                     value={hapticsEnabled}
                     onValueChange={setHapticsEnabled}
                 />
-                {savePreferences.error && <AppText style={[styles.error, { color: themeColors.danger }]}>{savePreferences.error.message}</AppText>}
+                {savePreferences.error && (
+                    <AppText accessibilityRole="alert" style={[styles.error, { color: themeColors.danger }]}>
+                        {getSafeActionErrorMessage(savePreferences.error, 'Unable to save preferences.')}
+                    </AppText>
+                )}
                 <AppButton
                     title={savePreferences.isPending ? 'Saving...' : 'Save preferences'}
                     disabled={savePreferences.isPending}
@@ -487,7 +555,11 @@ export default function SettingsScreen() {
                         )}
                     </>
                 )}
-                {importMutation.error && <AppText style={[styles.error, { color: themeColors.danger }]}>{importMutation.error.message}</AppText>}
+                {importMutation.error && (
+                    <AppText accessibilityRole="alert" style={[styles.error, { color: themeColors.danger }]}>
+                        {getSafeActionErrorMessage(importMutation.error, 'Unable to import that ZIP file.')}
+                    </AppText>
+                )}
                 <AppButton
                     title={importMutation.isPending ? 'Importing...' : 'Import Lose It ZIP'}
                     variant="secondary"
@@ -537,8 +609,11 @@ export default function SettingsScreen() {
                     </View>
                 </View>
                 {(updateProfileImage.error || removeProfileImage.error) && (
-                    <AppText style={[styles.error, { color: themeColors.danger }]}>
-                        {updateProfileImage.error?.message ?? removeProfileImage.error?.message}
+                    <AppText accessibilityRole="alert" style={[styles.error, { color: themeColors.danger }]}>
+                        {getSafeActionErrorMessage(
+                            updateProfileImage.error ?? removeProfileImage.error,
+                            'Unable to update your profile photo.'
+                        )}
                     </AppText>
                 )}
             </SettingsDetailSheet>
@@ -568,35 +643,57 @@ export default function SettingsScreen() {
                 onClose={() => setActiveSheet(null)}
             >
                 <SectionHeader title="Devices" description="Review and revoke active phone and watch sessions." />
-                {sessionsQuery.isLoading && <AppText variant="muted">Loading active devices...</AppText>}
-                {sessionsQuery.error && <AppText style={[styles.error, { color: themeColors.danger }]}>{sessionsQuery.error.message}</AppText>}
-                {sessionsQuery.data?.sessions.map((session) => (
-                    <View key={session.id} style={[styles.deviceRow, { borderBottomColor: themeColors.outlineVariant }]}>
-                        <View style={styles.deviceText}>
-                            <AppText variant="body" style={styles.deviceName}>
-                                {session.device_name || (session.device_platform === 'wear_os' ? 'Wear OS device' : 'Android device')}
-                            </AppText>
-                            <AppText variant="caption">
-                                {session.current ? 'This device | ' : ''}
-                                {formatSessionActivity(session.last_used_at, session.created_at)}
-                            </AppText>
-                        </View>
-                        <AppButton
-                            title={revokeSession.isPending && revokeSession.variables === session.id ? 'Revoking...' : 'Revoke'}
-                            variant={session.current ? 'danger' : 'ghost'}
-                            disabled={revokeSession.isPending || revokeOtherSessions.isPending}
-                            onPress={() => revokeSession.mutate(session.id)}
-                        />
-                    </View>
-                ))}
-                {(sessionsQuery.data?.sessions.length ?? 0) > 1 && (
-                    <AppButton
-                        title={revokeOtherSessions.isPending ? 'Revoking...' : 'Revoke other devices'}
-                        variant="secondary"
-                        disabled={revokeSession.isPending || revokeOtherSessions.isPending}
-                        leftIcon={<Ionicons name="phone-portrait-outline" size={18} color={themeColors.onSurface} />}
-                        onPress={() => revokeOtherSessions.mutate()}
-                    />
+                <AsyncStateBoundary
+                    state={sessionsState}
+                    resourceLabel="active devices"
+                    loading={<DeviceListSkeleton />}
+                    empty={(
+                        <AppCard>
+                            <AppText variant="subtitle">No active devices</AppText>
+                            <AppText variant="muted">No phone or watch sessions are signed in.</AppText>
+                        </AppCard>
+                    )}
+                    onRetry={isOnline ? () => sessionsQuery.refetch() : undefined}
+                    retrying={sessionsQuery.isFetching}
+                >
+                    <>
+                        {sessionsQuery.data?.sessions.map((session) => (
+                            <View key={session.id} style={[styles.deviceRow, { borderBottomColor: themeColors.outlineVariant }]}>
+                                <View style={styles.deviceText}>
+                                    <AppText variant="body" style={styles.deviceName}>
+                                        {session.device_name || (session.device_platform === 'wear_os' ? 'Wear OS device' : 'Android device')}
+                                    </AppText>
+                                    <AppText variant="caption">
+                                        {session.current ? 'This device | ' : ''}
+                                        {formatSessionActivity(session.last_used_at, session.created_at)}
+                                    </AppText>
+                                </View>
+                                <AppButton
+                                    title={revokeSession.isPending && revokeSession.variables === session.id ? 'Revoking...' : 'Revoke'}
+                                    variant={session.current ? 'danger' : 'ghost'}
+                                    disabled={revokeSession.isPending || revokeOtherSessions.isPending}
+                                    onPress={() => revokeSession.mutate(session.id)}
+                                />
+                            </View>
+                        ))}
+                        {(sessionsQuery.data?.sessions.length ?? 0) > 1 && (
+                            <AppButton
+                                title={revokeOtherSessions.isPending ? 'Revoking...' : 'Revoke other devices'}
+                                variant="secondary"
+                                disabled={revokeSession.isPending || revokeOtherSessions.isPending}
+                                leftIcon={<Ionicons name="phone-portrait-outline" size={18} color={themeColors.onSurface} />}
+                                onPress={() => revokeOtherSessions.mutate()}
+                            />
+                        )}
+                    </>
+                </AsyncStateBoundary>
+                {(revokeSession.error || revokeOtherSessions.error) && (
+                    <AppText accessibilityRole="alert" style={[styles.error, { color: themeColors.danger }]}>
+                        {getSafeActionErrorMessage(
+                            revokeSession.error ?? revokeOtherSessions.error,
+                            'Unable to revoke that device session.'
+                        )}
+                    </AppText>
                 )}
             </SettingsDetailSheet>
 
@@ -616,10 +713,16 @@ export default function SettingsScreen() {
                             <SummaryRow label="Pending" value={String(pendingMutationCount)} />
                             <SummaryRow label="Failed" value={String(failedMutations.length)} />
                         </View>
-                        {failedMutations[0]?.lastError && (
-                            <AppText style={[styles.error, { color: themeColors.danger }]}>Last failure: {failedMutations[0].lastError}</AppText>
+                        {failedMutations.length > 0 && (
+                            <AppText accessibilityRole="alert" style={[styles.error, { color: themeColors.danger }]}>
+                                A saved change could not sync. Retry it or discard offline changes.
+                            </AppText>
                         )}
-                        {outboxErrorMessage && <AppText style={[styles.error, { color: themeColors.danger }]}>{outboxErrorMessage}</AppText>}
+                        {outboxErrorMessage && (
+                            <AppText accessibilityRole="alert" style={[styles.error, { color: themeColors.danger }]}>
+                                {outboxErrorMessage}
+                            </AppText>
+                        )}
                         <View style={styles.row}>
                             <AppButton
                                 title={syncOutbox.isPending ? 'Syncing...' : 'Sync now'}
@@ -657,8 +760,8 @@ export default function SettingsScreen() {
                     description="Export a portable JSON copy or permanently delete this account."
                 />
                 {exportAccount.error && (
-                    <AppText style={[styles.error, { color: themeColors.danger }]}>
-                        {exportAccount.error instanceof Error ? exportAccount.error.message : 'Unable to export account data.'}
+                    <AppText accessibilityRole="alert" style={[styles.error, { color: themeColors.danger }]}>
+                        {getSafeActionErrorMessage(exportAccount.error, 'Unable to export account data.')}
                     </AppText>
                 )}
                 <AppButton
@@ -709,7 +812,7 @@ export default function SettingsScreen() {
                 onHeightFeetChange={setHeightFeet}
                 heightInches={heightInches}
                 onHeightInchesChange={setHeightInches}
-                calorieTarget={profileQuery.data?.calorieSummary.dailyCalorieTarget}
+                calorieTarget={calorieTarget}
                 saveError={saveProfile.error}
                 isSaving={saveProfile.isPending}
                 onClose={() => setIsProfileEditorOpen(false)}
@@ -731,6 +834,27 @@ export default function SettingsScreen() {
         </TabScreen>
     );
 }
+
+const SettingsResourceSkeleton: React.FC<{ label: string }> = ({ label }) => (
+    <AppCard accessibilityLabel={label}>
+        <AppText variant="muted">{label}</AppText>
+        <SkeletonBlock width="72%" height={18} />
+    </AppCard>
+);
+
+const DeviceListSkeleton: React.FC = () => (
+    <AppCard accessibilityLabel="Loading active devices">
+        {[0, 1].map((row) => (
+            <View key={row} style={styles.deviceSkeletonRow}>
+                <View style={styles.deviceSkeletonCopy}>
+                    <SkeletonBlock width="58%" height={18} />
+                    <SkeletonBlock width="76%" height={14} />
+                </View>
+                <SkeletonBlock width={72} height={36} />
+            </View>
+        ))}
+    </AppCard>
+);
 
 const styles = StyleSheet.create({
     row: {
@@ -781,6 +905,16 @@ const styles = StyleSheet.create({
     },
     deviceName: {
         fontWeight: '800'
+    },
+    deviceSkeletonRow: {
+        alignItems: 'center',
+        flexDirection: 'row',
+        gap: spacing.md,
+        minHeight: 52
+    },
+    deviceSkeletonCopy: {
+        flex: 1,
+        gap: spacing.sm
     },
     chips: {
         flexDirection: 'row',

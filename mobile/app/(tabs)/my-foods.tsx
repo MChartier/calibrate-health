@@ -4,6 +4,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { MyFoodSummary } from '@calibrate/api-client';
 import { AppButton } from '../../src/components/AppButton';
+import { AsyncStateBoundary, useAsyncResourceState, useOnlineStatus } from '../../src/components/AsyncStateBoundary';
 import { AppCard } from '../../src/components/AppCard';
 import { AppChip } from '../../src/components/AppChip';
 import { AppIconButton } from '../../src/components/AppIconButton';
@@ -11,6 +12,7 @@ import { AppText } from '../../src/components/AppText';
 import { BottomSheetModal } from '../../src/components/BottomSheetModal';
 import { NumberStepperField } from '../../src/components/NumberStepperField';
 import { SectionHeader } from '../../src/components/SectionHeader';
+import { SkeletonBlock } from '../../src/components/SkeletonBlock';
 import { TabScreen } from '../../src/components/TabScreen';
 import { TextField } from '../../src/components/TextField';
 import { useAuth } from '../../src/auth/AuthContext';
@@ -23,6 +25,7 @@ import {
 } from '../../src/utils/myFoodEditing';
 import { radius, spacing, useAppTheme, type AppTheme } from '../../src/theme';
 import { SERVING_INPUT_INCREMENT } from '../../src/config/inputPrecision';
+import { getSafeActionErrorMessage } from '../../src/errors/presentation';
 
 type MyFoodSheet = 'food' | 'recipe' | null;
 
@@ -32,6 +35,8 @@ export default function MyFoodsScreen() {
     const { api } = useAuth();
     const queryClient = useQueryClient();
     const myFoodsQuery = useQuery({ queryKey: ['mobile-my-foods'], queryFn: () => api.getMyFoods() });
+    const isOnline = useOnlineStatus();
+    const myFoodsState = useAsyncResourceState(myFoodsQuery, (items) => items.length === 0);
     const [activeSheet, setActiveSheet] = useState<MyFoodSheet>(null);
     const [editingItem, setEditingItem] = useState<MyFoodSummary | null>(null);
     const [foodName, setFoodName] = useState('');
@@ -207,62 +212,85 @@ export default function MyFoodsScreen() {
         );
     }
 
+    const libraryHeader = (
+        <View style={styles.cardHeader}>
+            <View style={styles.headerText}>
+                <AppText accessibilityRole="header" aria-level={2} variant="subtitle">Saved library</AppText>
+                <AppText variant="caption">{allFoods.length} foods and recipes</AppText>
+            </View>
+            <View style={styles.headerActions}>
+                <AppIconButton
+                    icon="add"
+                    accessibilityLabel="Create saved food"
+                    variant="container"
+                    onPress={() => openNew('food')}
+                />
+                <AppIconButton
+                    icon="restaurant-outline"
+                    accessibilityLabel="Create recipe"
+                    variant="container"
+                    onPress={() => openNew('recipe')}
+                />
+            </View>
+        </View>
+    );
+
     return (
         <TabScreen>
-            <AppCard>
-                <View style={styles.cardHeader}>
-                    <View style={styles.headerText}>
-                        <AppText accessibilityRole="header" aria-level={2} variant="subtitle">Saved library</AppText>
-                        <AppText variant="caption">{allFoods.length} foods and recipes</AppText>
-                    </View>
-                    <View style={styles.headerActions}>
-                        <AppIconButton
-                            icon="add"
-                            accessibilityLabel="Create saved food"
-                            variant="container"
-                            onPress={() => openNew('food')}
-                        />
-                        <AppIconButton
-                            icon="restaurant-outline"
-                            accessibilityLabel="Create recipe"
-                            variant="container"
-                            onPress={() => openNew('recipe')}
-                        />
-                    </View>
-                </View>
-
-                <View style={styles.libraryList}>
-                    {allFoods.map((item) => (
-                        <View key={item.id} style={styles.libraryRow}>
-                            <View style={styles.libraryText}>
-                                <AppText variant="body" numberOfLines={1}>{item.name}</AppText>
-                                <AppText variant="caption" numberOfLines={1}>
-                                    {item.type === 'RECIPE' ? 'Recipe' : 'Food'} | {formatCalories(item.calories_per_serving)} per {item.serving_size_quantity} {item.serving_unit_label}
-                                </AppText>
+            <AsyncStateBoundary
+                state={myFoodsState}
+                resourceLabel="saved foods"
+                loading={(
+                    <AppCard>
+                        <SkeletonBlock width="38%" height={28} />
+                        {[0, 1, 2].map((row) => <SkeletonBlock key={row} height={58} />)}
+                    </AppCard>
+                )}
+                empty={(
+                    <AppCard>
+                        {libraryHeader}
+                        <AppText variant="muted">No saved foods yet.</AppText>
+                    </AppCard>
+                )}
+                onRetry={isOnline ? () => myFoodsQuery.refetch() : undefined}
+                retrying={myFoodsQuery.isFetching}
+            >
+                <AppCard>
+                    {libraryHeader}
+                    <View style={styles.libraryList}>
+                        {allFoods.map((item) => (
+                            <View key={item.id} style={styles.libraryRow}>
+                                <View style={styles.libraryText}>
+                                    <AppText variant="body" numberOfLines={1}>{item.name}</AppText>
+                                    <AppText variant="caption" numberOfLines={1}>
+                                        {item.type === 'RECIPE' ? 'Recipe' : 'Food'} | {formatCalories(item.calories_per_serving)} per {item.serving_size_quantity} {item.serving_unit_label}
+                                    </AppText>
+                                </View>
+                                <View style={styles.libraryActions}>
+                                    <AppIconButton
+                                        icon="create-outline"
+                                        accessibilityLabel={`Edit ${item.name}`}
+                                        iconColor={theme.colors.onSurface}
+                                        onPress={() => openEditor(item)}
+                                    />
+                                    <AppIconButton
+                                        icon={item.is_pinned ? 'star' : 'star-outline'}
+                                        accessibilityLabel={`${item.is_pinned ? 'Unpin' : 'Pin'} ${item.name}`}
+                                        disabled={setPinned.isPending && setPinned.variables?.id === item.id}
+                                        iconColor={item.is_pinned ? theme.colors.primary : theme.colors.onSurfaceVariant}
+                                        onPress={() => setPinned.mutate(item)}
+                                    />
+                                </View>
                             </View>
-                            <View style={styles.libraryActions}>
-                                <AppIconButton
-                                    icon="create-outline"
-                                    accessibilityLabel={`Edit ${item.name}`}
-                                    iconColor={theme.colors.onSurface}
-                                    onPress={() => openEditor(item)}
-                                />
-                                <AppIconButton
-                                    icon={item.is_pinned ? 'star' : 'star-outline'}
-                                    accessibilityLabel={`${item.is_pinned ? 'Unpin' : 'Pin'} ${item.name}`}
-                                    disabled={setPinned.isPending && setPinned.variables?.id === item.id}
-                                    iconColor={item.is_pinned ? theme.colors.primary : theme.colors.onSurfaceVariant}
-                                    onPress={() => setPinned.mutate(item)}
-                                />
-                            </View>
-                        </View>
-                    ))}
-                    {myFoodsQuery.isLoading && <AppText variant="muted">Loading saved foods...</AppText>}
-                    {!myFoodsQuery.isLoading && allFoods.length === 0 && <AppText variant="muted">No saved foods yet.</AppText>}
-                    {myFoodsQuery.error && <AppText style={styles.error}>{myFoodsQuery.error.message}</AppText>}
-                    {setPinned.error && <AppText style={styles.error}>{setPinned.error.message}</AppText>}
-                </View>
-            </AppCard>
+                        ))}
+                        {setPinned.error && (
+                            <AppText accessibilityRole="alert" style={styles.error}>
+                                {getSafeActionErrorMessage(setPinned.error, 'Unable to update this saved food.')}
+                            </AppText>
+                        )}
+                    </View>
+                </AppCard>
+            </AsyncStateBoundary>
 
             <BottomSheetModal visible={activeSheet === 'food'} onRequestClose={closeEditor}>
                 <SectionHeader
@@ -289,8 +317,8 @@ export default function MyFoodsScreen() {
                     min={0}
                     suffix="kcal"
                 />
-                {saveFood.error && <AppText style={styles.error}>{saveFood.error.message}</AppText>}
-                {deleteItem.error && <AppText style={styles.error}>{deleteItem.error.message}</AppText>}
+                {saveFood.error && <AppText style={styles.error}>{getSafeActionErrorMessage(saveFood.error, 'Unable to save this food.')}</AppText>}
+                {deleteItem.error && <AppText style={styles.error}>{getSafeActionErrorMessage(deleteItem.error, 'Unable to delete this food.')}</AppText>}
                 {editingItem && (
                     <AppButton
                         title={deleteItem.isPending ? 'Deleting...' : 'Delete food'}
@@ -342,7 +370,7 @@ export default function MyFoodsScreen() {
                 </View>
                 <NumberStepperField label="Yield servings" value={recipeYield} onChangeText={setRecipeYield} step={1} min={1} />
                 {loadRecipe.isPending && <AppText variant="muted">Loading recipe snapshots...</AppText>}
-                {loadRecipe.error && <AppText style={styles.error}>{loadRecipe.error.message}</AppText>}
+                {loadRecipe.error && <AppText style={styles.error}>{getSafeActionErrorMessage(loadRecipe.error, 'Unable to load this recipe.')}</AppText>}
                 <AppText variant="label">Ingredients</AppText>
                 <View style={styles.chips}>
                     {savedFoods.slice(0, 12).map((item) => (
@@ -387,8 +415,8 @@ export default function MyFoodsScreen() {
                         />
                     </View>
                 ))}
-                {saveRecipe.error && <AppText style={styles.error}>{saveRecipe.error.message}</AppText>}
-                {deleteItem.error && <AppText style={styles.error}>{deleteItem.error.message}</AppText>}
+                {saveRecipe.error && <AppText style={styles.error}>{getSafeActionErrorMessage(saveRecipe.error, 'Unable to save this recipe.')}</AppText>}
+                {deleteItem.error && <AppText style={styles.error}>{getSafeActionErrorMessage(deleteItem.error, 'Unable to delete this recipe.')}</AppText>}
                 {editingItem && (
                     <AppButton
                         title={deleteItem.isPending ? 'Deleting...' : 'Delete recipe'}

@@ -27,6 +27,7 @@ import { triggerHapticFeedback } from '../src/utils/haptics';
 import { MEAL_OPTIONS, MEAL_SELECT_OPTIONS } from '../src/utils/meals';
 import { createProviderFoodSelection, type FoodLogSelection } from '../src/food/foodLogSelection';
 import { radius, spacing, useAppTheme, type AppTheme } from '../src/theme';
+import { getSafeActionErrorMessage } from '../src/errors/presentation';
 import {
     BarcodeScanGate,
     getBarcodeLookupErrorMessage,
@@ -417,7 +418,9 @@ export default function BarcodeScreen() {
                         date={selectedDate}
                         meal={meal}
                         isSubmitting={logFood.isPending}
-                        error={logFood.error?.message ?? null}
+                        error={logFood.error
+                            ? getSafeActionErrorMessage(logFood.error, 'Food could not be added. Try again.')
+                            : null}
                         onCancel={() => {
                             logFood.reset();
                             setSelection(null);

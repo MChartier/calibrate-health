@@ -15,6 +15,7 @@ import { AppText } from './AppText';
 import { MetricTile } from './MetricTile';
 import { SectionHeader } from './SectionHeader';
 import { SkeletonBlock } from './SkeletonBlock';
+import { getErrorPresentation } from '../errors/presentation';
 
 export type ActivityDay = ActivityDaysResponse['days'][number];
 
@@ -28,12 +29,6 @@ type ActivitySummaryCardProps = {
     onOpenDetails?: () => void;
     compact?: boolean;
 };
-
-function errorMessage(error: unknown): string {
-    return error instanceof Error && error.message
-        ? error.message
-        : 'Activity is temporarily unavailable. Food and weight logging still work normally.';
-}
 
 function formatSyncFreshness(observedAt: Date | null): string | null {
     if (!observedAt || Number.isNaN(observedAt.getTime())) return null;
@@ -71,6 +66,7 @@ export function ActivitySummaryCard({
     const profileBaseline = typeof profileTdee === 'number' && Number.isFinite(profileTdee)
         ? formatCalories(profileTdee)
         : 'your profile estimate';
+    const errorPresentation = getErrorPresentation(error, 'activity');
 
     return (
         <AppCard>
@@ -86,7 +82,10 @@ export function ActivitySummaryCard({
                 </View>
             ) : error ? (
                 <>
-                    <AppText accessibilityRole="alert" style={styles.error}>{errorMessage(error)}</AppText>
+                    <AppText accessibilityRole="alert" style={styles.error}>{errorPresentation.message}</AppText>
+                    {errorPresentation.requestId && (
+                        <AppText variant="caption">Reference: {errorPresentation.requestId}</AppText>
+                    )}
                     {onRetry && (
                         <AppButton
                             title="Retry activity"

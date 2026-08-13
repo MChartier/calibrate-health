@@ -1119,11 +1119,13 @@ export interface components {
         };
         ApiError: {
             message: string;
-            code?: string | null;
+            code: string | null;
             field_errors?: {
                 [key: string]: string[];
             };
-            retryable?: boolean;
+            retryable: boolean;
+            /** @description Correlation identifier also returned in the x-request-id response header. */
+            request_id: string;
         };
         ClientConfigResponse: {
             /** @constant */

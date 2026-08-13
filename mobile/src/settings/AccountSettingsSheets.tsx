@@ -15,6 +15,7 @@ import { TimeZonePickerField } from '../components/TimeZonePickerField';
 import { spacing, useAppTheme } from '../theme';
 import { getTodayDate } from '../utils/dates';
 import { formatCalories } from '../utils/format';
+import { getSafeActionErrorMessage } from '../errors/presentation';
 
 type ProfileEditorSheetProps = {
     visible: boolean;
@@ -89,7 +90,11 @@ export function ProfileEditorSheet({
                 heightLayout="row"
             />
             <AppText variant="muted">Current calorie target: {formatCalories(calorieTarget)}</AppText>
-            {saveError && <AppText style={{ color: colors.danger }}>{saveError.message}</AppText>}
+            {saveError && (
+                <AppText accessibilityRole="alert" style={{ color: colors.danger }}>
+                    {getSafeActionErrorMessage(saveError, 'Unable to save your profile.')}
+                </AppText>
+            )}
             <View style={styles.row}>
                 <AppButton
                     title="Cancel"
@@ -160,7 +165,11 @@ export function DeleteAccountSheet({
                 autoCapitalize="characters"
                 editable={!isDeleting}
             />
-            {error && <AppText style={{ color: colors.danger }}>{error.message}</AppText>}
+            {error && (
+                <AppText accessibilityRole="alert" style={{ color: colors.danger }}>
+                    {getSafeActionErrorMessage(error, 'Unable to delete this account.')}
+                </AppText>
+            )}
             <View style={styles.row}>
                 <AppButton
                     title="Cancel"

@@ -601,7 +601,8 @@ describe('CalibrationInsightCard', () => {
 
         fireEvent.press(screen.getByText('Apply 1,750 kcal'));
 
-        await waitFor(() => expect(screen.getByText('Recommendation is no longer current.')).toBeTruthy());
+        await waitFor(() => expect(screen.getByText('Unable to apply this recommendation.')).toBeTruthy());
+        expect(screen.queryByText('Recommendation is no longer current.')).toBeNull();
         expect(screen.getByRole('alert')).toBeTruthy();
         expect(screen.queryByText('Why we suggest 1,750 kcal')).toBeNull();
     });

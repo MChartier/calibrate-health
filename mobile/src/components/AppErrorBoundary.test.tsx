@@ -32,7 +32,10 @@ describe('AppErrorBoundary', () => {
         expect(view.getByLabelText('Calibrate')).toBeTruthy();
         expect(view.getByLabelText('Try loading Calibrate again')).toHaveProp('accessibilityRole', 'button');
         expect(view.getByLabelText('Restart Calibrate')).toHaveProp('accessibilityRole', 'button');
-        expect(view.getByTestId('app-error-detail')).toHaveTextContent('Example render failure');
+        expect(view.getByTestId('app-error-detail')).toHaveTextContent(
+            'Technical details are hidden. Check the development console for the captured error.'
+        );
+        expect(view.queryByText('Example render failure')).toBeNull();
     });
 
     it('resets and remounts the app subtree without reloading the process', () => {

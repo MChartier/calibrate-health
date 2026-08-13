@@ -12,6 +12,13 @@ import { TextField } from '../../src/components/TextField';
 import { useAuth } from '../../src/auth/AuthContext';
 import { readAuthServerDraft } from '../../src/auth/authServerDraft';
 import { useAppTheme } from '../../src/theme';
+import { getAuthActionErrorMessage } from '../../src/errors/presentation';
+import {
+    MAX_AUTH_PASSWORD_BYTES,
+    MIN_AUTH_PASSWORD_LENGTH,
+    normalizeAuthEmailCredential,
+    utf8ByteLength
+} from '../../../shared/authCredentials';
 
 export default function RegisterScreen() {
     const { colors } = useAppTheme();
@@ -31,12 +38,17 @@ export default function RegisterScreen() {
     }, [routedServerDraft, serverUrl]);
 
     async function handleRegister() {
-        if (!email.trim()) {
-            setError('Enter your email address.');
+        const normalizedEmail = normalizeAuthEmailCredential(email);
+        if (!normalizedEmail) {
+            setError('Enter a valid email address.');
             return;
         }
-        if (!password) {
-            setError('Enter a password.');
+        if (password.length < MIN_AUTH_PASSWORD_LENGTH) {
+            setError(`Password must be at least ${MIN_AUTH_PASSWORD_LENGTH} characters.`);
+            return;
+        }
+        if (utf8ByteLength(password) > MAX_AUTH_PASSWORD_BYTES) {
+            setError(`Password must be at most ${MAX_AUTH_PASSWORD_BYTES} bytes.`);
             return;
         }
         if (password !== confirmPassword) {
@@ -47,9 +59,9 @@ export default function RegisterScreen() {
         setIsSubmitting(true);
         setError(null);
         try {
-            await register(email, password, serverInput);
+            await register(normalizedEmail, password, serverInput);
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'Unable to create account.');
+            setError(getAuthActionErrorMessage(err, 'create account'));
         } finally {
             setIsSubmitting(false);
         }

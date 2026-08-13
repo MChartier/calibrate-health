@@ -13,6 +13,7 @@ import { useAuth } from '../../src/auth/AuthContext';
 import { accountDeletionCleanupGuidance } from '../../src/account/accountDeletionNotice';
 import { readAuthServerDraft } from '../../src/auth/authServerDraft';
 import { useAppTheme } from '../../src/theme';
+import { getAuthActionErrorMessage } from '../../src/errors/presentation';
 
 export default function LoginScreen() {
     const { colors } = useAppTheme();
@@ -40,7 +41,7 @@ export default function LoginScreen() {
         try {
             await login(email, password, serverInput);
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'Unable to sign in.');
+            setError(getAuthActionErrorMessage(err, 'sign in'));
         } finally {
             setIsSubmitting(false);
         }

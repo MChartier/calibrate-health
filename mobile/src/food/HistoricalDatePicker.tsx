@@ -16,7 +16,9 @@ import {
 import { formatDateOnlyForDisplay } from '../utils/dates';
 import { type AppTheme, useAppTheme } from '../theme';
 import { AppText } from '../components/AppText';
+import { AsyncStateBoundary, useAsyncResourceState, useOnlineStatus } from '../components/AsyncStateBoundary';
 import { CalendarModal } from '../components/CalendarModal';
+import { isNeverEmpty } from '../asyncState/resolveAsyncState';
 
 type HistoricalDatePickerProps = {
     visible: boolean;
@@ -106,6 +108,8 @@ export const HistoricalDatePicker: React.FC<HistoricalDatePickerProps> = ({
         queryFn: () => api.getFoodDays(monthRange.startDate, monthRange.endDate),
         enabled: visible && monthRange.startDate <= monthRange.endDate
     });
+    const isOnline = useOnlineStatus();
+    const rangeState = useAsyncResourceState(rangeQuery, isNeverEmpty);
     const dayByDate = useMemo(
         () => new Map((rangeQuery.data?.days ?? []).map((day) => [day.date, day])),
         [rangeQuery.data?.days]
@@ -169,8 +173,22 @@ export const HistoricalDatePicker: React.FC<HistoricalDatePickerProps> = ({
                     </Pressable>
                 </View>
 
-                <View>
-                    <View style={styles.week}>
+                <AsyncStateBoundary
+                    state={rangeState}
+                    resourceLabel="tracking history"
+                    loading={(
+                        <View style={styles.queryLoading}>
+                            <ActivityIndicator color={theme.colors.primary} size="small" />
+                            <AppText variant="caption">Loading history...</AppText>
+                        </View>
+                    )}
+                    empty={null}
+                    onRetry={isOnline ? () => rangeQuery.refetch() : undefined}
+                    retrying={rangeQuery.isFetching}
+                >
+                    <>
+                        <View>
+                            <View style={styles.week}>
                         {WEEKDAY_LABELS.map((label, index) => (
                             <View key={`${label}-${index}`} style={styles.weekday}>
                                 <AppText variant="caption" style={styles.weekdayLabel}>{label}</AppText>
@@ -245,36 +263,16 @@ export const HistoricalDatePicker: React.FC<HistoricalDatePickerProps> = ({
                             })}
                         </View>
                     ))}
-                </View>
+                        </View>
 
-                <View style={styles.queryStatus}>
-                    {rangeQuery.isLoading && (
-                        <>
-                            <ActivityIndicator color={theme.colors.primary} size="small" />
-                            <AppText variant="caption">Loading history...</AppText>
-                        </>
-                    )}
-                    {rangeQuery.error && (
-                        <>
-                            <AppText variant="caption" style={styles.errorText}>Could not load tracking history.</AppText>
-                            <Pressable
-                                accessibilityRole="button"
-                                accessibilityLabel="Retry tracking history"
-                                onPress={() => void rangeQuery.refetch()}
-                                style={({ pressed }) => [styles.retryButton, pressed && styles.pressed]}
-                            >
-                                <AppText variant="label" style={styles.retryLabel}>Retry</AppText>
-                            </Pressable>
-                        </>
-                    )}
-                </View>
-
-                <View style={styles.legend}>
-                    <LegendItem label="Complete" marker="complete" theme={theme} styles={styles} />
-                    <LegendItem label="Incomplete" marker="incomplete" theme={theme} styles={styles} />
-                    <LegendItem label="Not started" marker="not-started" theme={theme} styles={styles} />
-                    <LegendItem label="Paused" marker="paused" theme={theme} styles={styles} />
-                </View>
+                        <View style={styles.legend}>
+                            <LegendItem label="Complete" marker="complete" theme={theme} styles={styles} />
+                            <LegendItem label="Incomplete" marker="incomplete" theme={theme} styles={styles} />
+                            <LegendItem label="Not started" marker="not-started" theme={theme} styles={styles} />
+                            <LegendItem label="Paused" marker="paused" theme={theme} styles={styles} />
+                        </View>
+                    </>
+                </AsyncStateBoundary>
             </View>
         </CalendarModal>
     );
@@ -412,24 +410,11 @@ function createStyles(theme: AppTheme) {
             borderRadius: CALENDAR_LEGEND_MARKER_SIZE / 2,
             backgroundColor: theme.colors.surfaceContainer
         },
-        queryStatus: {
-            minHeight: 20,
-            flexDirection: 'row',
+        queryLoading: {
+            minHeight: CALENDAR_DAY_HEIGHT * 3,
             alignItems: 'center',
             justifyContent: 'center',
             gap: theme.spacing.sm
-        },
-        errorText: {
-            color: theme.colors.danger
-        },
-        retryButton: {
-            minHeight: 32,
-            justifyContent: 'center',
-            paddingHorizontal: theme.spacing.sm,
-            borderRadius: theme.radius.sm
-        },
-        retryLabel: {
-            color: theme.colors.primary
         },
         legend: {
             flexDirection: 'row',

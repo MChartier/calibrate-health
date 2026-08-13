@@ -106,8 +106,8 @@ class ThemedAppErrorBoundary extends React.Component<ThemedAppErrorBoundaryProps
                             Your saved data is safe. Try loading the app again, or restart Calibrate if the problem continues.
                         </Text>
                         {__DEV__ ? (
-                            <Text selectable style={styles.developmentError} testID="app-error-detail">
-                                {this.state.error.message}
+                            <Text style={styles.developmentError} testID="app-error-detail">
+                                Technical details are hidden. Check the development console for the captured error.
                             </Text>
                         ) : null}
 

@@ -53,6 +53,67 @@ import {
     type NativeClientIdentity
 } from '@calibrate/shared/clientCompatibility';
 
+export type ApiFieldErrors = Readonly<Record<string, readonly string[]>>;
+
+export type ParsedApiError = {
+    code: string | null;
+    fieldErrors?: ApiFieldErrors;
+    retryable?: boolean;
+    requestId: string | null;
+};
+
+const MAX_ERROR_CODE_LENGTH = 128;
+const MAX_REQUEST_ID_LENGTH = 128;
+const MAX_FIELD_NAME_LENGTH = 128;
+const MAX_FIELD_MESSAGE_LENGTH = 1_000;
+const MAX_FIELD_COUNT = 32;
+const MAX_MESSAGES_PER_FIELD = 8;
+const SAFE_TOKEN_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]*$/;
+
+const nonEmptyBoundedString = (value: unknown, maxLength: number): string | null => {
+    if (typeof value !== 'string') return null;
+    const normalized = value.trim();
+    return normalized.length > 0 && normalized.length <= maxLength ? normalized : null;
+};
+
+const boundedToken = (value: unknown, maxLength: number): string | null => {
+    const parsed = nonEmptyBoundedString(value, maxLength);
+    return parsed && SAFE_TOKEN_PATTERN.test(parsed) ? parsed : null;
+};
+
+const parseFieldErrors = (value: unknown): ApiFieldErrors | undefined => {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) return undefined;
+
+    const parsed: Record<string, readonly string[]> = {};
+    for (const [field, messages] of Object.entries(value).slice(0, MAX_FIELD_COUNT)) {
+        const normalizedField = nonEmptyBoundedString(field, MAX_FIELD_NAME_LENGTH);
+        if (!normalizedField || /[\u0000-\u001f\u007f]/.test(normalizedField) || !Array.isArray(messages)) continue;
+
+        const normalizedMessages = messages.slice(0, MAX_MESSAGES_PER_FIELD)
+            .map((message) => nonEmptyBoundedString(message, MAX_FIELD_MESSAGE_LENGTH))
+            .filter((message): message is string => message !== null);
+        if (normalizedMessages.length > 0) parsed[normalizedField] = normalizedMessages;
+    }
+
+    return Object.keys(parsed).length > 0 ? parsed : undefined;
+};
+
+/** Read additive v1 metadata while remaining compatible with legacy message-only servers. */
+export function parseApiError(body: unknown, requestIdHeader?: string | null): ParsedApiError {
+    const record = body && typeof body === 'object' && !Array.isArray(body)
+        ? body as Record<string, unknown>
+        : null;
+    const headerRequestId = nonEmptyBoundedString(requestIdHeader, MAX_REQUEST_ID_LENGTH);
+
+    return {
+        code: boundedToken(record?.code, MAX_ERROR_CODE_LENGTH),
+        fieldErrors: parseFieldErrors(record?.field_errors),
+        retryable: typeof record?.retryable === 'boolean' ? record.retryable : undefined,
+        requestId: boundedToken(headerRequestId, MAX_REQUEST_ID_LENGTH)
+            ?? boundedToken(record?.request_id, MAX_REQUEST_ID_LENGTH)
+    };
+}
+
 export type ApiClientOptions = {
     baseUrl: string;
     /** Native identity is attached to every request so a self-host can enforce release floors continuously. */
@@ -80,12 +141,20 @@ const isBrowserBlobUri = (uri: string): boolean => uri.toLowerCase().startsWith(
 export class ApiError extends Error {
     readonly status: number;
     readonly body: unknown;
+    readonly code: string | null;
+    readonly fieldErrors?: ApiFieldErrors;
+    readonly retryable?: boolean;
+    readonly requestId: string | null;
 
-    constructor(message: string, status: number, body: unknown) {
+    constructor(message: string, status: number, body: unknown, parsed = parseApiError(body)) {
         super(message);
         this.name = 'ApiError';
         this.status = status;
         this.body = body;
+        this.code = parsed.code;
+        this.fieldErrors = parsed.fieldErrors;
+        this.retryable = parsed.retryable;
+        this.requestId = parsed.requestId;
     }
 }
 
@@ -304,7 +373,13 @@ export class CalibrateApiClient {
             if (response.status === 401 && auth) {
                 await this.onUnauthorized?.();
             }
-            throw new ApiError(getErrorMessage(body, `Request failed with status ${response.status}`), response.status, body);
+            const parsedError: ParsedApiError = parseApiError(body, response.headers.get('x-request-id'));
+            throw new ApiError(
+                getErrorMessage(body, `Request failed with status ${response.status}`),
+                response.status,
+                body,
+                parsedError
+            );
         }
 
         if (response.status === 204) return undefined as T;

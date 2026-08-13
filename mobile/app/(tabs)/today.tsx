@@ -4,7 +4,7 @@ import { router, useLocalSearchParams, usePathname } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import type { MealPeriod } from '@calibrate/shared';
 import { AddFoodSheet } from '../../src/components/AddFoodSheet';
-import { AppText } from '../../src/components/AppText';
+import { AsyncStateBoundary, useAsyncResourceState, useOnlineStatus } from '../../src/components/AsyncStateBoundary';
 import { CalorieBalanceCard } from '../../src/components/CalorieBalanceCard';
 import { DateNavigation } from '../../src/components/DateNavigation';
 import { FoodLogSummaryCard } from '../../src/components/FoodLogSummaryCard';
@@ -22,10 +22,9 @@ import { getActiveTabRoute } from '../../src/navigation/contextualFab';
 import { MEAL_OPTIONS } from '../../src/utils/meals';
 import { getTodayDate } from '../../src/utils/dates';
 import { getMetricDate } from '../../src/utils/metrics';
-import { spacing, useAppTheme } from '../../src/theme';
+import { spacing } from '../../src/theme';
 
 export default function TodayScreen() {
-    const { colors } = useAppTheme();
     const routeParams = useLocalSearchParams<{ openAddFood?: string; date?: string; meal?: string }>();
     const pathname = usePathname();
     const { api, user } = useAuth();
@@ -42,6 +41,30 @@ export default function TodayScreen() {
     const foodQuery = useQuery({ queryKey: ['mobile-food', selectedDate], queryFn: () => api.getFoodLog(selectedDate) });
     const foodDayQuery = useFoodDayStatus(selectedDate);
     const metricsQuery = useQuery({ queryKey: ['mobile-metrics'], queryFn: () => api.getMetrics() });
+    const isOnline = useOnlineStatus();
+
+    const dashboardQueries = [profileQuery, foodQuery, foodDayQuery, metricsQuery] as const;
+    const failedDashboardQueries = dashboardQueries.filter((query) => query.isError);
+    const allDashboardDataResolved = dashboardQueries.every((query) => query.data !== undefined);
+    const failedResourcesHaveUsableCache = failedDashboardQueries.every((query) =>
+        query.data != null && (!Array.isArray(query.data) || query.data.length > 0)
+    );
+    const dashboardHasUsableData = allDashboardDataResolved && failedResourcesHaveUsableCache;
+    const dashboardState = useAsyncResourceState({
+        data: dashboardHasUsableData ? true : undefined,
+        status: failedDashboardQueries.length > 0
+            ? 'error'
+            : dashboardQueries.every((query) => query.status === 'success') ? 'success' : 'pending',
+        fetchStatus: dashboardQueries.some((query) => query.fetchStatus === 'paused')
+            ? 'paused'
+            : dashboardQueries.some((query) => query.fetchStatus === 'fetching') ? 'fetching' : 'idle',
+        error: failedDashboardQueries[0]?.error ?? null,
+        dataUpdatedAt: dashboardHasUsableData ? 1 : 0,
+        isPlaceholderData: dashboardQueries.some((query) => query.isPlaceholderData)
+    }, () => false);
+    const retryFailedDashboardResources = React.useCallback(async () => {
+        await Promise.all(failedDashboardQueries.map((query) => query.refetch()));
+    }, [failedDashboardQueries]);
 
     useEffect(() => {
         if (!addFoodRequest || getActiveTabRoute(pathname) !== 'today') return;
@@ -89,32 +112,35 @@ export default function TodayScreen() {
     });
     let unavailableLabel = 'Day unresolved';
     if (dayStatus?.status === 'INCOMPLETE') unavailableLabel = 'Incomplete day';
-    const showContentSkeleton =
-        (!profileQuery.data || !foodQuery.data || !metricsQuery.data || !foodDayQuery.data) &&
-        (profileQuery.isLoading || foodQuery.isLoading || metricsQuery.isLoading || foodDayQuery.isLoading);
     const emphasizePausedStatus = shouldEmphasizePausedStatus({
         status: dayStatus?.status,
         isToday,
         hasFoodEntries: entries.length > 0,
-        isContentLoading: showContentSkeleton
+        isContentLoading: dashboardState.kind === 'loading'
     });
 
     return (
         <TabScreen style={styles.screenContent}>
             <DateNavigation navigation={dateNavigation} />
-            {isPaused && (
-                <DayStatusCard
-                    date={selectedDate}
-                    isToday={isToday}
-                    compact
-                    expanded={emphasizePausedStatus}
-                />
-            )}
-
-            {showContentSkeleton ? (
-                <LogContentSkeleton />
-            ) : (
+            <AsyncStateBoundary
+                state={dashboardState}
+                resourceLabel="today's log"
+                loading={<LogContentSkeleton />}
+                empty={<LogContentSkeleton />}
+                onRetry={isOnline && failedDashboardQueries.length > 0
+                    ? retryFailedDashboardResources
+                    : undefined}
+                retrying={failedDashboardQueries.some((query) => query.isFetching)}
+            >
                 <>
+                    {isPaused && (
+                        <DayStatusCard
+                            date={selectedDate}
+                            isToday={isToday}
+                            compact
+                            expanded={emphasizePausedStatus}
+                        />
+                    )}
                     {!isPaused && (
                         <CalorieBalanceCard
                             totalCalories={calories}
@@ -141,21 +167,15 @@ export default function TodayScreen() {
                         onPress={() => setIsWeightSheetOpen(true)}
                         compact
                     />
+                    {!isPaused && (
+                        <DayStatusCard
+                            date={selectedDate}
+                            isToday={isToday}
+                            compact
+                        />
+                    )}
                 </>
-            )}
-
-            {!isPaused && (
-                <DayStatusCard
-                    date={selectedDate}
-                    isToday={isToday}
-                    compact
-                />
-            )}
-
-            {foodQuery.error && <AppText style={{ color: colors.danger }}>{foodQuery.error.message}</AppText>}
-            {profileQuery.error && <AppText style={{ color: colors.danger }}>{profileQuery.error.message}</AppText>}
-            {metricsQuery.error && <AppText style={{ color: colors.danger }}>{metricsQuery.error.message}</AppText>}
-            {foodDayQuery.error && <AppText style={{ color: colors.danger }}>{foodDayQuery.error.message}</AppText>}
+            </AsyncStateBoundary>
             <AddFoodSheet
                 visible={addFoodMeal !== undefined && dayStatus?.status === 'OPEN'}
                 date={selectedDate}

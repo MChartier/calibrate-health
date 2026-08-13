@@ -8,6 +8,7 @@ import * as Haptics from 'expo-haptics';
 import { AppButton } from './AppButton';
 import { AppCard } from './AppCard';
 import { AppText } from './AppText';
+import { AsyncStateBoundary, useAsyncResourceState, useOnlineStatus } from './AsyncStateBoundary';
 import { BottomSheetModal } from './BottomSheetModal';
 import { ProgressBar } from './ProgressBar';
 import { SectionHeader } from './SectionHeader';
@@ -24,6 +25,7 @@ import {
 import { addDaysToDateOnly, formatDateOnlyForDisplay, getTodayDate } from '../utils/dates';
 import { calibrationStatusQueryKey } from '../calibration/queryKeys';
 import { spacing, type AppTheme, useAppTheme } from '../theme';
+import { getErrorPresentation, getSafeActionErrorMessage } from '../errors/presentation';
 
 const RECOMMENDATION_STACK_BREAKPOINT = 560; // Keeps paired panels and action labels legible on compact screens.
 
@@ -46,6 +48,8 @@ export const CalibrationInsightCard: React.FC<ViewProps> = (props) => {
         queryKey: calibrationStatusQueryKey,
         queryFn: () => api.getCalibrationStatus()
     });
+    const isOnline = useOnlineStatus();
+    const statusState = useAsyncResourceState(statusQuery, () => false);
 
     async function applyRecommendation(recommendationId: number) {
         const change = await api.applyCalibrationRecommendation(recommendationId, Crypto.randomUUID());
@@ -69,16 +73,22 @@ export const CalibrationInsightCard: React.FC<ViewProps> = (props) => {
     }
 
     return (
-        <CalibrationInsightCardView
-            {...props}
-            status={statusQuery.data}
-            isLoading={statusQuery.isLoading}
-            error={statusQuery.error}
-            timezone={user?.timezone}
-            onRetry={() => void statusQuery.refetch()}
-            onApplyRecommendation={applyRecommendation}
-            onCancelScheduledChange={cancelScheduledChange}
-        />
+        <AsyncStateBoundary
+            state={statusState}
+            resourceLabel="calibration insight"
+            loading={<CalibrationInsightCardView {...props} isLoading timezone={user?.timezone} />}
+            empty={<CalibrationInsightCardView {...props} isLoading timezone={user?.timezone} />}
+            onRetry={isOnline ? () => statusQuery.refetch() : undefined}
+            retrying={statusQuery.isFetching}
+        >
+            <CalibrationInsightCardView
+                {...props}
+                status={statusQuery.data}
+                timezone={user?.timezone}
+                onApplyRecommendation={applyRecommendation}
+                onCancelScheduledChange={cancelScheduledChange}
+            />
+        </AsyncStateBoundary>
     );
 };
 
@@ -159,11 +169,13 @@ export const CalibrationInsightCardView: React.FC<CalibrationInsightCardViewProp
     }
 
     if (error && !status) {
+        const presentation = getErrorPresentation(error, 'calibration insight');
         return (
             <AppCard {...props} style={style}>
                 <CompactCardHeader title="Calibration" metadata="Unable to evaluate your latest history." />
-                <AppText style={styles.error}>{error.message}</AppText>
-                {onRetry && <AppButton title="Try again" variant="secondary" onPress={onRetry} />}
+                <AppText accessibilityRole="alert" style={styles.error}>{presentation.message}</AppText>
+                {presentation.requestId && <AppText variant="caption">Reference: {presentation.requestId}</AppText>}
+                {onRetry && <AppButton title="Retry" variant="secondary" onPress={onRetry} />}
             </AppCard>
         );
     }
@@ -281,7 +293,7 @@ export const CalibrationInsightCardView: React.FC<CalibrationInsightCardViewProp
                         )}
                         {cancelError && (
                             <AppText accessibilityRole="alert" style={styles.error}>
-                                {cancelError.message}
+                                {getSafeActionErrorMessage(cancelError, 'Unable to undo this scheduled update.')}
                             </AppText>
                         )}
                     </View>
@@ -346,7 +358,9 @@ export const CalibrationInsightCardView: React.FC<CalibrationInsightCardViewProp
                             />
                         </View>
                         {applyError && (
-                            <AppText accessibilityRole="alert" style={styles.error}>{applyError.message}</AppText>
+                            <AppText accessibilityRole="alert" style={styles.error}>
+                                {getSafeActionErrorMessage(applyError, 'Unable to apply this recommendation.')}
+                            </AppText>
                         )}
                     </>
                 ) : (
@@ -547,7 +561,9 @@ export const CalibrationInsightCardView: React.FC<CalibrationInsightCardViewProp
                     </View>
                 )}
                 {applyError && (
-                    <AppText accessibilityRole="alert" style={styles.error}>{applyError.message}</AppText>
+                    <AppText accessibilityRole="alert" style={styles.error}>
+                        {getSafeActionErrorMessage(applyError, 'Unable to apply this recommendation.')}
+                    </AppText>
                 )}
                 <View style={[styles.actions, stackRecommendation && styles.actionsStacked]}>
                     <AppButton

@@ -16,6 +16,7 @@ import { AppText } from './AppText';
 import { BottomSheetModal } from './BottomSheetModal';
 import { DatePickerField } from './DatePickerField';
 import { SectionHeader } from './SectionHeader';
+import { getSafeActionErrorMessage } from '../errors/presentation';
 
 export const foodDayQueryKey = (date: string) => ['mobile-food-day', date] as const;
 export const foodTrackingPauseQueryKey = ['mobile-food-tracking-pause'] as const;
@@ -162,7 +163,7 @@ export const DayStatusCard: React.FC<{
     const useCompactOpenLayout = compact && isToday && day.status === 'OPEN';
     const useExpandedPauseLayout = expanded && isToday && day.status === 'PAUSED';
     const isBusy = setStatus.isPending || startPause.isPending || resume.isPending;
-    const error = dayQuery.error ?? setStatus.error ?? startPause.error ?? resume.error;
+    const actionError = setStatus.error ?? startPause.error ?? resume.error;
     let icon: React.ComponentProps<typeof Ionicons>['name'] = 'options-outline';
     let title = isToday ? 'Tracking options' : 'Resolve this day';
     let description = isToday
@@ -306,7 +307,11 @@ export const DayStatusCard: React.FC<{
                             : undefined}
                     />
                 )}
-                {error && <AppText style={styles.error}>{error.message}</AppText>}
+                {actionError && (
+                    <AppText accessibilityRole="alert" style={styles.error}>
+                        {getSafeActionErrorMessage(actionError, 'Unable to update food tracking.')}
+                    </AppText>
+                )}
             </AppCard>
 
             <BottomSheetModal
@@ -424,7 +429,7 @@ export const ResumeTrackingPrompt: React.FC = () => {
         pause.resume_confirmation_due &&
         !dismissedThisForeground
     );
-    const error = resume.error ?? extend.error;
+    const error = pauseQuery.error ?? resume.error ?? extend.error;
 
     return (
         <BottomSheetModal
@@ -479,7 +484,11 @@ export const ResumeTrackingPrompt: React.FC = () => {
                     <AppButton title="Back" variant="ghost" onPress={() => setShowExtend(false)} />
                 </>
             )}
-            {error && <AppText style={styles.error}>{error.message}</AppText>}
+            {error && (
+                <AppText accessibilityRole="alert" style={styles.error}>
+                    {getSafeActionErrorMessage(error, 'Unable to update the tracking pause.')}
+                </AppText>
+            )}
         </BottomSheetModal>
     );
 };

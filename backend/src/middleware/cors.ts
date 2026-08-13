@@ -62,6 +62,10 @@ export function createCorsOptionsDelegate(options: {
       return;
     }
 
-    callback(null, { origin: true, credentials: true });
+    callback(null, {
+      origin: true,
+      credentials: true,
+      exposedHeaders: ['x-request-id']
+    });
   };
 }
