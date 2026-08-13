@@ -1,4 +1,5 @@
 import { fireEvent, render, within } from '@testing-library/react-native';
+import { Platform } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import type { TrendMetricEntry, TrendMetricsResponse, WeightTrendSummary } from '@calibrate/api-client';
 import {
@@ -327,14 +328,35 @@ describe('WeightTrendCard', () => {
     });
 
     it('exposes the dynamic chart as one named image', () => {
-        const screen = render(<WeightTrendCard />);
-        const chart = screen.getByTestId('weight-trend-chart');
-        expect(chart).toHaveProp('accessibilityRole', 'image');
-        expect(chart.props.accessibilityLabel).toContain('Weight chart from Jul 13, 2026 to Jul 15, 2026');
-        expect(screen.queryByLabelText('170 lb weight axis label')).toBeNull();
-        expect(screen.queryByLabelText('Jul 15 date axis label')).toBeNull();
-        expect(screen.getByLabelText('Chart legend')).toBeTruthy();
-        expect(screen.queryByText('Current pace estimate')).toBeNull();
+        const platform = jest.replaceProperty(Platform, 'OS', 'ios');
+        try {
+            const screen = render(<WeightTrendCard />);
+            const chart = screen.getByTestId('weight-trend-chart');
+            expect(chart).toHaveProp('accessibilityRole', 'image');
+            expect(chart.props.accessibilityLabel).toContain('Weight chart from Jul 13, 2026 to Jul 15, 2026');
+            expect(screen.queryByLabelText('170 lb weight axis label')).toBeNull();
+            expect(screen.queryByLabelText('Jul 15 date axis label')).toBeNull();
+            expect(screen.getByLabelText('Chart legend')).toBeTruthy();
+            expect(screen.queryByText('Current pace estimate')).toBeNull();
+        } finally {
+            platform.restore();
+        }
+    });
+
+    it('uses DOM-safe accessibility props for the web chart', () => {
+        const platform = jest.replaceProperty(Platform, 'OS', 'web');
+        try {
+            const chart = render(<WeightTrendCard />).getByTestId('weight-trend-chart');
+            expect(chart.props).toEqual(expect.objectContaining({
+                'aria-label': expect.stringContaining('Weight chart from Jul 13, 2026 to Jul 15, 2026'),
+                role: 'img'
+            }));
+            expect(chart.props).not.toHaveProperty('accessible');
+            expect(chart.props).not.toHaveProperty('accessibilityLabel');
+            expect(chart.props).not.toHaveProperty('accessibilityRole');
+        } finally {
+            platform.restore();
+        }
     });
 
     it('stacks the data table for compact or large-text layouts', () => {

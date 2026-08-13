@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import Svg, { Circle, Line, Path, Polygon, Text as SvgText } from 'react-native-svg';
+import type { SvgProps } from 'react-native-svg';
 import { useQuery } from '@tanstack/react-query';
 import { AppCard } from './AppCard';
 import { AppChip } from './AppChip';
@@ -122,6 +123,16 @@ function getChartPressX(nativeEvent: ChartPressNativeEvent): number | null {
 
 function getKeyboardKey(event: KeyboardLikeEvent): string {
     return event.key ?? event.nativeEvent?.key ?? '';
+}
+
+/** Map the chart summary to platform-safe SVG accessibility props. */
+function getChartAccessibilityProps(accessibilityLabel: string): SvgProps {
+    if (Platform.OS === 'web') return { 'aria-label': accessibilityLabel, role: 'img' };
+    return {
+        accessible: true,
+        accessibilityRole: 'image',
+        accessibilityLabel
+    };
 }
 
 function clampChartHeight(value: number, minimum: number, maximum: number): number {
@@ -326,9 +337,7 @@ export const WeightTrendCard: React.FC<WeightTrendCardProps> = ({
                     >
                         <Svg
                             testID="weight-trend-chart"
-                            accessible
-                            accessibilityRole="image"
-                            accessibilityLabel={accessibleChartSummary}
+                            {...getChartAccessibilityProps(accessibleChartSummary)}
                             width="100%"
                             height={chartHeight}
                             viewBox={`0 0 ${chartLayout.width} ${chartHeight}`}
